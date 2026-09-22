@@ -5,6 +5,8 @@
 //! Ports `src/measurement/types.ts:60-77`, and the `STAGES` / status sets that
 //! `src/measurement/plans.ts:7-15,57-68` checks against.
 
+use quoin_store::RawFileSha256Digest;
+
 use crate::types::ids::NonEmptyText;
 
 /// Where a plan is in its lifecycle.
@@ -116,6 +118,9 @@ pub struct MeasurementPlan {
     pub owner: Option<String>,
     /// What to do about it, when governance fields were requested.
     pub action: Option<String>,
+    /// The plan's own tamper-evidence attestation over its "Comparison and
+    /// Enforcement" section (PLAT-936), when the document declares one.
+    pub preregistration: Option<PlanPreregistration>,
 }
 
 impl MeasurementPlan {
@@ -123,5 +128,38 @@ impl MeasurementPlan {
     #[must_use]
     pub fn sort_key(&self) -> (&str, &str) {
         (self.metric.as_str(), self.id.as_str())
+    }
+}
+
+/// A `MeasurementPlan`'s `preregistration` block: tamper evidence over its own
+/// "Comparison and Enforcement" section, not an ordering proof.
+///
+/// This closes exactly one gap: a bar text silently edited after it was
+/// recorded, without the frontmatter digest being recomputed to match. It
+/// proves nothing about *when* the bar was written relative to any result —
+/// PLAT-935's design research found that check unbuildable, because both a
+/// commit's author-date and a collection's `timestamp` are self-reported
+/// strings nobody attests independently. Residual gaps this does not close:
+/// reporting only a favourable pre-registered variant, repeated re-runs until
+/// one passes, and editing an unprotected input (such as the baseline) instead
+/// of the bar text. See PLAT-936.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PlanPreregistration {
+    /// The digest the document's frontmatter declares.
+    pub declared_digest: RawFileSha256Digest,
+    /// The digest actually computed from the document's own "Comparison and
+    /// Enforcement" section at load time.
+    pub computed_digest: RawFileSha256Digest,
+}
+
+impl PlanPreregistration {
+    /// Whether the declared digest still matches the section as it reads now.
+    ///
+    /// `false` is exactly the condition PLAT-936 exists to catch: the section
+    /// changed since `declared_digest` was recorded, and nobody updated it to
+    /// match.
+    #[must_use]
+    pub fn matches(&self) -> bool {
+        self.declared_digest == self.computed_digest
     }
 }

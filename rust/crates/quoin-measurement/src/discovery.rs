@@ -45,10 +45,16 @@ pub fn frontmatter(text: &str) -> Option<&str> {
 
 /// Every assurance document whose frontmatter declares `type: <kind>`, mapped.
 ///
-/// `build` is called with the repository-relative document path and the parsed
-/// frontmatter mapping, and returns the record or refuses. A document with no
+/// `build` is called with the repository-relative document path, the parsed
+/// frontmatter mapping, and the document's complete raw text (frontmatter
+/// fence and body both), and returns the record or refuses. A document with no
 /// frontmatter, or with a different `type`, is skipped rather than refused —
 /// `plans.ts:41-43` and `profiles.ts:41-43` both `return null` for those.
+///
+/// The raw text is threaded through for [`crate::plans`]'s benefit: a
+/// `MeasurementPlan`'s optional `preregistration` block (PLAT-936) digests a
+/// heading in the document's own body, which frontmatter alone cannot see.
+/// [`crate::profiles`] does not need it and ignores the parameter.
 ///
 /// # Errors
 ///
@@ -57,7 +63,7 @@ pub fn frontmatter(text: &str) -> Option<&str> {
 pub(crate) fn documents<S, T>(
     source: &S,
     kind: &str,
-    mut build: impl FnMut(&str, &Value) -> Result<T, MeasurementError>,
+    mut build: impl FnMut(&str, &Value, &str) -> Result<T, MeasurementError>,
 ) -> Result<Vec<T>, MeasurementError>
 where
     S: MeasurementSource + ?Sized,
@@ -72,7 +78,7 @@ where
         if value.get("type").and_then(Value::as_str) != Some(kind) {
             continue;
         }
-        out.push(build(&path, &value)?);
+        out.push(build(&path, &value, &text)?);
     }
     Ok(out)
 }

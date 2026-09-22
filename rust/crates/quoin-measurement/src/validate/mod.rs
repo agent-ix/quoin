@@ -271,6 +271,26 @@ pub fn measurement_collection(
                 observation.definition_version, plan.definition_version
             ));
         }
+        // PLAT-936: tamper evidence, not an ordering proof. A plan that
+        // declares a `preregistration` block asserts that its own "Comparison
+        // and Enforcement" section reads today the way it did when the digest
+        // was recorded; this is the one place that assertion is checked, and
+        // only for a *new* collection — `stored_measurement_collection` never
+        // reaches this loop, so historical evidence is unaffected. Residual
+        // gaps this does not close (reporting only a favourable pre-registered
+        // variant, a repeated re-run, editing an unprotected input such as the
+        // baseline instead of the bar text) are exactly what PLAT-935's design
+        // research found this class of check cannot buy, and nothing here
+        // claims otherwise.
+        if let Some(preregistration) = &plan.preregistration
+            && !preregistration.matches()
+        {
+            findings.push(format!(
+                "metric `{metric}` plan {} bar text no longer matches its pre-registered digest \
+                 {}; the \"Comparison and Enforcement\" section was edited since it was recorded",
+                plan.id, preregistration.declared_digest
+            ));
+        }
     }
 
     if findings.is_empty() {

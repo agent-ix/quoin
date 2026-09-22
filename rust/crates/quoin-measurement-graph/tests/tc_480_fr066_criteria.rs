@@ -100,6 +100,7 @@ fn plan(value: &Value) -> MeasurementPlan {
         path: value["path"].as_str().expect("a path").to_owned(),
         owner: None,
         action: None,
+        preregistration: None,
     }
 }
 
