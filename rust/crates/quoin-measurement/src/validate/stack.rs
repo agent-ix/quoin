@@ -45,15 +45,63 @@ pub(crate) fn verification_stack(
     if read::string(object, "schemaVersion") != Some(VERIFICATION_STACK_SCHEMA_VERSION) {
         return Err(refuse("verificationStack has unsupported schemaVersion"));
     }
-    Ok(VerificationStackAttestation {
-        lock_digest: digest(object, "lockDigest")?,
-        executable_digest: digest(object, "executableDigest")?,
-        build_profile: build_profile(object)?,
-        toolchains: toolchains(object)?,
-        sources: sources(object)?,
-        capabilities: capabilities(object)?,
-        artifacts: artifacts(object)?,
-    })
+
+    // Every member is checked, even after an earlier one fails, and each
+    // failing member's own findings (not just its headline) are kept, so a
+    // caller sees every problem with the attestation in one refusal rather
+    // than fixing them one round trip at a time (PLAT-929).
+    let mut findings = Vec::new();
+    let lock_digest = note(&mut findings, digest(object, "lockDigest"));
+    let executable_digest = note(&mut findings, digest(object, "executableDigest"));
+    let build_profile = note(&mut findings, build_profile(object));
+    let toolchains = note(&mut findings, toolchains(object));
+    let sources = note(&mut findings, sources(object));
+    let capabilities = note(&mut findings, capabilities(object));
+    let artifacts = note(&mut findings, artifacts(object));
+    if !findings.is_empty() {
+        return Err(MeasurementError::with_findings(
+            CODE,
+            "verificationStack is invalid",
+            findings,
+        ));
+    }
+
+    // Every `note` call above returned `Some`, or `findings` would not be
+    // empty; assembled through `?` inside an `Option`-returning closure
+    // rather than `unwrap`/`expect`, which production code here may not use.
+    (|| {
+        Some(VerificationStackAttestation {
+            lock_digest: lock_digest?,
+            executable_digest: executable_digest?,
+            build_profile: build_profile?,
+            toolchains: toolchains?,
+            sources: sources?,
+            capabilities: capabilities?,
+            artifacts: artifacts?,
+        })
+    })()
+    .ok_or_else(|| refuse("verificationStack is invalid"))
+}
+
+/// Record a member check's failure as a finding and return what succeeded.
+///
+/// Unlike a `?`, this lets every member be checked even after an earlier one
+/// fails (PLAT-929): a failing member's own findings are kept when it has
+/// any (so an internally-accumulating check like [`toolchains`] or
+/// [`sources`] does not lose all but one of its own problems), and its
+/// subject otherwise.
+fn note<T>(findings: &mut Vec<String>, result: Result<T, MeasurementError>) -> Option<T> {
+    match result {
+        Ok(value) => Some(value),
+        Err(error) => {
+            if error.findings().is_empty() {
+                findings.push(error.subject().to_owned());
+            } else {
+                findings.extend(error.findings().iter().cloned());
+            }
+            None
+        }
+    }
 }
 
 /// One `sha256:<64 hex>` member, read as `quoin-store`'s own digest type.
@@ -86,61 +134,128 @@ fn toolchains(object: &JsonObject) -> Result<Option<Toolchains>, MeasurementErro
     let Some(value) = object.get("toolchains") else {
         return Ok(None);
     };
-    let pinned = "verificationStack.toolchains must pin node, rust, and python";
-    let toolchains = read::object(value, CODE, pinned)?;
-    let read_one = |name: &str| -> Result<NonEmptyText, MeasurementError> {
-        read::string(toolchains, name)
-            .filter(|text| !text.is_empty())
-            .map_or_else(
-                || Err(refuse(pinned)),
-                |text| NonEmptyText::parse(text, CODE, name),
-            )
-    };
-    Ok(Some(Toolchains {
-        node: read_one(TOOLCHAIN_NAMES[0])?,
-        rust: read_one(TOOLCHAIN_NAMES[1])?,
-        python: read_one(TOOLCHAIN_NAMES[2])?,
-    }))
+    let toolchains = read::object(
+        value,
+        CODE,
+        "verificationStack.toolchains must be an object",
+    )?;
+
+    // Every language is checked, even after an earlier one fails, so several
+    // malformed toolchain identities are named individually rather than only
+    // the first (PLAT-929).
+    let mut findings = Vec::new();
+    let node = note(
+        &mut findings,
+        toolchain_identity(toolchains, TOOLCHAIN_NAMES[0]),
+    );
+    let rust = note(
+        &mut findings,
+        toolchain_identity(toolchains, TOOLCHAIN_NAMES[1]),
+    );
+    let python = note(
+        &mut findings,
+        toolchain_identity(toolchains, TOOLCHAIN_NAMES[2]),
+    );
+    if !findings.is_empty() {
+        return Err(MeasurementError::with_findings(
+            CODE,
+            "verificationStack.toolchains is invalid",
+            findings,
+        ));
+    }
+    let (node, rust, python) = (|| Some((node?, rust?, python?)))()
+        .ok_or_else(|| refuse("verificationStack.toolchains is invalid"))?;
+
+    // PLAT-930 made each language optional, but a stack that pins none of
+    // them names nothing: an empty `{}` must not satisfy "toolchains was
+    // supplied" any more than an absent member would. Require at least one.
+    if node.is_none() && rust.is_none() && python.is_none() {
+        return Err(refuse(
+            "verificationStack.toolchains must name at least one language; mark a language not \
+             used as absent or null rather than omitting all three",
+        ));
+    }
+
+    Ok(Some(Toolchains { node, rust, python }))
+}
+
+/// One toolchain identity (PLAT-930): absent or explicit `null` means "not
+/// applicable" for this language, and anything else must be a non-empty
+/// string. Only the malformed shapes refuse — an empty string, or a value
+/// that is neither a string nor `null`.
+fn toolchain_identity(
+    toolchains: &JsonObject,
+    name: &str,
+) -> Result<Option<NonEmptyText>, MeasurementError> {
+    match toolchains.get(name) {
+        None | Some(JsonValue::Null) => Ok(None),
+        Some(JsonValue::String(text)) if !text.is_empty() => {
+            NonEmptyText::parse(text, CODE, name).map(Some)
+        }
+        _ => Err(refuse(format!(
+            "verificationStack.toolchains.{name} must be a non-empty string, null, or absent"
+        ))),
+    }
 }
 
 fn sources(object: &JsonObject) -> Result<BTreeMap<String, SourceAttestation>, MeasurementError> {
+    let non_empty = "verificationStack.sources must be a non-empty object";
     let Some(JsonValue::Object(sources)) = object.get("sources") else {
-        return Err(refuse(
-            "verificationStack.sources must be a non-empty object",
-        ));
+        return Err(refuse(non_empty));
     };
     if sources.is_empty() {
-        return Err(refuse(
-            "verificationStack.sources must be a non-empty object",
-        ));
+        return Err(refuse(non_empty));
     }
+
+    // Every named source is checked, even after an earlier one fails, so
+    // several malformed sources are named individually rather than only the
+    // first (PLAT-929).
+    let mut findings = Vec::new();
     let mut out = BTreeMap::new();
     for (name, value) in sources.iter() {
-        let unclean = format!("verificationStack.sources.{name} is not a clean full-SHA source");
-        let source = read::object(value, CODE, &unclean)?;
-        let revision = read::string(source, "revision").map_or_else(
-            || Err(refuse(unclean.clone())),
-            |text| FullGitRevision::parse(text, CODE, &unclean),
-        )?;
-        if read::string(source, "sourceState") != Some(CleanSourceState::AS_STR) {
-            return Err(refuse(unclean));
+        match source_attestation(name, value) {
+            Ok(source) => {
+                out.insert(name.clone(), source);
+            }
+            Err(error) => findings.push(error.subject().to_owned()),
         }
-        let remote = read::string(source, "remote")
-            .filter(|text| !text.is_empty())
-            .map_or_else(
-                || Err(refuse(unclean)),
-                |text| NonEmptyText::parse(text, CODE, "remote"),
-            )?;
-        out.insert(
-            name.clone(),
-            SourceAttestation {
-                revision,
-                source_state: CleanSourceState,
-                remote,
-            },
-        );
     }
-    Ok(out)
+    if findings.is_empty() {
+        Ok(out)
+    } else {
+        Err(MeasurementError::with_findings(
+            CODE,
+            "verificationStack.sources is invalid",
+            findings,
+        ))
+    }
+}
+
+/// One named entry of `verificationStack.sources`.
+fn source_attestation(
+    name: &str,
+    value: &JsonValue,
+) -> Result<SourceAttestation, MeasurementError> {
+    let unclean = format!("verificationStack.sources.{name} is not a clean full-SHA source");
+    let source = read::object(value, CODE, &unclean)?;
+    let revision = read::string(source, "revision").map_or_else(
+        || Err(refuse(unclean.clone())),
+        |text| FullGitRevision::parse(text, CODE, &unclean),
+    )?;
+    if read::string(source, "sourceState") != Some(CleanSourceState::AS_STR) {
+        return Err(refuse(unclean));
+    }
+    let remote = read::string(source, "remote")
+        .filter(|text| !text.is_empty())
+        .map_or_else(
+            || Err(refuse(unclean)),
+            |text| NonEmptyText::parse(text, CODE, "remote"),
+        )?;
+    Ok(SourceAttestation {
+        revision,
+        source_state: CleanSourceState,
+        remote,
+    })
 }
 
 fn capabilities(object: &JsonObject) -> Result<Vec<NonEmptyText>, MeasurementError> {
@@ -151,42 +266,68 @@ fn capabilities(object: &JsonObject) -> Result<Vec<NonEmptyText>, MeasurementErr
     if items.is_empty() {
         return Err(refuse(non_empty));
     }
-    items
-        .iter()
-        .map(|item| {
-            item.as_str().filter(|text| !text.is_empty()).map_or_else(
-                || Err(refuse(non_empty)),
-                |text| NonEmptyText::parse(text, CODE, "capability"),
-            )
-        })
-        .collect()
+
+    // Every entry is checked, even after an earlier one fails, so several
+    // malformed capabilities are named individually rather than only the
+    // first (PLAT-929).
+    let mut findings = Vec::new();
+    let mut out = Vec::with_capacity(items.len());
+    for item in items {
+        match item.as_str().filter(|text| !text.is_empty()) {
+            Some(text) => match NonEmptyText::parse(text, CODE, "capability") {
+                Ok(capability) => out.push(capability),
+                Err(error) => findings.push(error.subject().to_owned()),
+            },
+            None => findings.push(non_empty.to_owned()),
+        }
+    }
+    if findings.is_empty() {
+        Ok(out)
+    } else {
+        Err(MeasurementError::with_findings(
+            CODE,
+            "verificationStack.capabilities is invalid",
+            findings,
+        ))
+    }
 }
 
 fn artifacts(
     object: &JsonObject,
 ) -> Result<BTreeMap<String, RawFileSha256Digest>, MeasurementError> {
+    let non_empty = "verificationStack.artifacts must be a non-empty object";
     let Some(JsonValue::Object(artifacts)) = object.get("artifacts") else {
-        return Err(refuse(
-            "verificationStack.artifacts must be a non-empty object",
-        ));
+        return Err(refuse(non_empty));
     };
     if artifacts.is_empty() {
-        return Err(refuse(
-            "verificationStack.artifacts must be a non-empty object",
-        ));
+        return Err(refuse(non_empty));
     }
-    artifacts
-        .iter()
-        .map(|(name, value)| {
-            value
-                .as_str()
-                .and_then(|text| RawFileSha256Digest::parse_stored(text).ok())
-                .map(|digest| (name.clone(), digest))
-                .ok_or_else(|| {
-                    refuse(format!(
-                        "verificationStack.artifacts.{name} must be a full sha256 digest"
-                    ))
-                })
-        })
-        .collect()
+
+    // Every named artifact is checked, even after an earlier one fails, so
+    // several malformed digests are named individually rather than only the
+    // first (PLAT-929).
+    let mut findings = Vec::new();
+    let mut out = BTreeMap::new();
+    for (name, value) in artifacts.iter() {
+        match value
+            .as_str()
+            .and_then(|text| RawFileSha256Digest::parse_stored(text).ok())
+        {
+            Some(digest) => {
+                out.insert(name.clone(), digest);
+            }
+            None => findings.push(format!(
+                "verificationStack.artifacts.{name} must be a full sha256 digest"
+            )),
+        }
+    }
+    if findings.is_empty() {
+        Ok(out)
+    } else {
+        Err(MeasurementError::with_findings(
+            CODE,
+            "verificationStack.artifacts is invalid",
+            findings,
+        ))
+    }
 }

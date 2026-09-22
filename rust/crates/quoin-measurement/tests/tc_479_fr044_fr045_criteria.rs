@@ -446,7 +446,9 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
     );
 }
 
-/// A schema-v2 attestation that pins no toolchain identities is refused.
+/// A schema-v2 attestation that carries no `toolchains` member at all is
+/// refused; omitting one language inside it is accepted as "not applicable"
+/// (PLAT-930).
 ///
 /// `tests/measurement.test.ts:131`, which carried no criterion tag. **No
 /// FR-044 criterion's text names `verificationStack`**: AC-1's member census
@@ -456,9 +458,9 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
 /// makes. The criterion text is the gap, and closing it is a spec change.
 ///
 /// Trace: FR-044-AC-1
-/// Provenance: quoin#479
+/// Provenance: quoin#479, PLAT-930
 #[test]
-fn tc_479_003_a_schema_v2_attestation_with_no_toolchains_is_refused() {
+fn tc_479_003_a_new_collection_requires_toolchains_and_a_release_build_but_not_every_language() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
 
@@ -468,33 +470,47 @@ fn tc_479_003_a_schema_v2_attestation_with_no_toolchains_is_refused() {
         &from_serde(&drifted).expect("the drifted case crosses the bridge"),
         &plans,
     )
-    .expect_err("an attestation pinning no toolchains is refused");
+    .expect_err("an attestation with no `toolchains` member at all is refused");
     assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
     assert!(
         refusal
             .to_string()
-            .contains("toolchains must pin node, rust, and python"),
-        "the refusal must name the three identities it wanted; it said {refusal}"
+            .contains("verificationStack.toolchains must be present"),
+        "the refusal must say the `toolchains` member itself is missing; it said {refusal}"
     );
 
-    // Each of the three on its own, so "pins node, rust and python" is three
-    // requirements rather than one presence check on the object.
+    // A measurement rarely touches every language: omitting one is "not
+    // applicable" for it, not a refusal. Each is tried on its own, so this is
+    // three acceptances rather than one presence check on the object.
     for toolchain in ["node", "rust", "python"] {
         let mut partial = new_collection_json();
         delete_at(
             &mut partial,
             &["verificationStack", "toolchains", toolchain],
         );
-        let refusal = validate::measurement_collection(
+        let admitted = validate::measurement_collection(
             &from_serde(&partial).expect("the partial case crosses the bridge"),
             &plans,
         )
-        .err()
-        .unwrap_or_else(|| panic!("an attestation with no `{toolchain}` identity was admitted"));
-        assert_eq!(
-            refusal.code(),
-            MeasurementErrorCode::CollectionInvalid,
-            "a missing `{toolchain}` identity must refuse the collection"
+        .unwrap_or_else(|error| {
+            panic!("an attestation with no `{toolchain}` identity must be admitted: {error}")
+        });
+        let toolchains = admitted
+            .verification_stack
+            .as_ref()
+            .expect("the attestation is still parsed")
+            .toolchains
+            .as_ref()
+            .expect("the toolchains member itself is still present");
+        let observed = match toolchain {
+            "node" => &toolchains.node,
+            "rust" => &toolchains.rust,
+            "python" => &toolchains.python,
+            _ => unreachable!("the loop only names the three languages above"),
+        };
+        assert!(
+            observed.is_none(),
+            "`{toolchain}` was omitted, so it must read as not applicable, not invented"
         );
     }
 
@@ -521,6 +537,229 @@ fn tc_479_003_a_schema_v2_attestation_with_no_toolchains_is_refused() {
             "{profile:?}: the refusal must name the profile it wanted; it said {refusal}"
         );
     }
+}
+
+/// Omitting a toolchain identity is "not applicable" (`tc_479_003`), but a
+/// genuinely malformed one — present and the wrong shape — is still refused.
+///
+/// PLAT-930: `Option<NonEmptyText>` gives absence exactly one spelling. An
+/// empty string is not that spelling; it is a value someone supplied and got
+/// wrong, and it must be named rather than silently treated as "not
+/// applicable" too.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-930
+#[test]
+fn tc_479_018_a_malformed_toolchain_identity_is_still_refused() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    for (toolchain, malformed) in [
+        ("node", Value::String(String::new())),
+        ("rust", Value::Number(1.into())),
+        ("python", Value::Array(Vec::new())),
+    ] {
+        let mut candidate = new_collection_json();
+        candidate["verificationStack"]["toolchains"][toolchain] = malformed.clone();
+        let refusal = validate::measurement_collection(
+            &from_serde(&candidate).expect("the malformed case crosses the bridge"),
+            &plans,
+        )
+        .err()
+        .unwrap_or_else(|| {
+            panic!("a malformed `{toolchain}` identity ({malformed:?}) was admitted")
+        });
+        assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+        assert!(
+            refusal
+                .to_string()
+                .contains(&format!("verificationStack.toolchains.{toolchain}")),
+            "the refusal must name the malformed identity; it said {refusal}"
+        );
+    }
+
+    // `null` is explicit absence, not malformed — it is accepted exactly as
+    // an omitted key is, and reads back as not applicable.
+    let mut explicit_null = new_collection_json();
+    explicit_null["verificationStack"]["toolchains"]["node"] = Value::Null;
+    let admitted = validate::measurement_collection(
+        &from_serde(&explicit_null).expect("the null case crosses the bridge"),
+        &plans,
+    )
+    .expect("an explicit `null` toolchain identity is accepted as not applicable");
+    assert!(
+        admitted
+            .verification_stack
+            .as_ref()
+            .expect("the attestation is parsed")
+            .toolchains
+            .as_ref()
+            .expect("the toolchains member is present")
+            .node
+            .is_none(),
+        "an explicit `null` must read as not applicable, not as an empty identity"
+    );
+}
+
+/// Two independent defects inside `verificationStack` are both named by one
+/// call, not discovered one round trip at a time.
+///
+/// PLAT-929: an evaluator who fixed a malformed `lockDigest`, resubmitted, and
+/// was then told `executableDigest` was ALSO wrong is the exact failure mode
+/// this closes — every member of the attestation is checked regardless of an
+/// earlier member's outcome, and every failure lands in one refusal.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-929
+#[test]
+fn tc_479_019_two_verification_stack_defects_are_both_named_in_one_refusal() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["lockDigest"] = json!("not-a-digest");
+    candidate["verificationStack"]["executableDigest"] = json!("also-not-a-digest");
+    let refusal = validate::measurement_collection(
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+        &plans,
+    )
+    .expect_err("two malformed digests are refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("lockDigest")),
+        "the one refusal must name `lockDigest`, got {:?}",
+        refusal.findings()
+    );
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("executableDigest")),
+        "the SAME refusal must also name `executableDigest`, not just the first defect found; \
+         got {:?}",
+        refusal.findings()
+    );
+}
+
+/// Two independent defects in the intake's own checks — beyond
+/// `verificationStack` — are also both named by one call.
+///
+/// PLAT-929: a non-release build and an unplanned metric are unrelated facts
+/// about one candidate; fixing the build profile alone must not require a
+/// second submission to learn about the unplanned metric.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-929
+#[test]
+fn tc_479_020_a_bad_build_profile_and_an_unplanned_metric_are_both_named_in_one_refusal() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["buildProfile"] = json!("debug");
+    candidate["observations"][0]["metric"] = json!("quality.unplanned");
+    let refusal = validate::measurement_collection(
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+        &plans,
+    )
+    .expect_err("a debug build and an unplanned metric are each refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("buildProfile must be release")),
+        "the one refusal must name the build profile defect, got {:?}",
+        refusal.findings()
+    );
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("quality.unplanned")
+                && finding.contains("has no MeasurementPlan")),
+        "the SAME refusal must also name the unplanned metric, not just the build profile; \
+         got {:?}",
+        refusal.findings()
+    );
+}
+
+/// An empty `toolchains` object satisfies "the member is present" but names
+/// no language, which would let an attestation claim zero pinned toolchains —
+/// exactly the gap PLAT-930's optional fields opened. It is refused, the same
+/// as an omitted `toolchains` member.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-930
+#[test]
+fn tc_479_021_an_empty_toolchains_object_names_no_language_and_is_refused() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["toolchains"] = json!({});
+    let refusal = validate::measurement_collection(
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+        &plans,
+    )
+    .expect_err("a toolchains object naming no language is refused, not treated as present");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert!(
+        refusal
+            .to_string()
+            .contains("verificationStack.toolchains must name at least one language"),
+        "the refusal must say no language was named; it said {refusal}"
+    );
+}
+
+/// A `verificationStack` defect that fails the stack's own parse (as opposed
+/// to one merely holding a wrong-but-well-formed value, `tc_479_020`'s case)
+/// must not swallow every collection-level check below it.
+///
+/// PLAT-929: an evaluator who fixed a malformed `lockDigest` (which refuses
+/// inside `stack::verification_stack` itself, not merely inside
+/// `measurement_collection`'s own checks) and resubmitted, only to be told an
+/// unplanned metric was ALSO wrong, is the exact two-round-trip failure this
+/// closes — the outer collection-vs-stack boundary accumulates too, not just
+/// each side of it on its own (review finding #5(a) on quoin#580).
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-929
+#[test]
+fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one_refusal() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["lockDigest"] = json!("not-a-digest");
+    candidate["observations"][0]["metric"] = json!("quality.unplanned");
+    let refusal = validate::measurement_collection(
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+        &plans,
+    )
+    .expect_err("a malformed lockDigest and an unplanned metric are each refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("lockDigest")),
+        "the one refusal must name the stack's own defect, got {:?}",
+        refusal.findings()
+    );
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("quality.unplanned")
+                && finding.contains("has no MeasurementPlan")),
+        "the SAME refusal must also name the unplanned metric, not just the stack defect; \
+         got {:?}",
+        refusal.findings()
+    );
 }
 
 /// Historical evidence stays readable after the attestation grew members it
@@ -651,6 +890,67 @@ fn tc_479_005_a_collection_lands_atomically_and_an_identical_rewrite_is_idempote
         vec!["run-001.json".to_owned()],
         "a refused invocation must leave no partial collection; the store holds {names:?}"
     );
+}
+
+/// A named `verificationStack.artifacts` entry that resolves to a real local
+/// file under `repo` is truth-checked automatically, not merely trusted
+/// because it has the right shape.
+///
+/// PLAT-931: server-side verification is not opt-in — no `--digest-from-file`
+/// flag is passed here at all. `write_measurement_collection` is the intake
+/// every caller of `measurement.record` goes through, so this is the real
+/// path, not the CLI convenience layered on top of it.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-931
+#[test]
+fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    let matching = "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d";
+    std::fs::create_dir_all(root.join("dist"))
+        .unwrap_or_else(|error| panic!("cannot create the local artifact fixture dir: {error}"));
+    std::fs::write(root.join("dist/quoin"), b"artifact bytes")
+        .unwrap_or_else(|error| panic!("cannot write the local artifact fixture: {error}"));
+
+    // A submitted digest that matches the local bytes is admitted.
+    let mut agreeing = new_collection_json();
+    agreeing["verificationStack"]["artifacts"] = json!({ "dist/quoin": matching });
+    write_measurement_collection(
+        root,
+        &from_serde(&agreeing).expect("the agreeing case crosses the bridge"),
+    )
+    .expect("a submitted digest matching the local file is admitted");
+
+    // A submitted digest that disagrees with the local bytes is refused,
+    // without ever being told to check by a flag.
+    let mut disagreeing = new_collection_json();
+    disagreeing["collectionId"] = json!("run-002");
+    disagreeing["verificationStack"]["artifacts"] =
+        json!({ "dist/quoin": format!("sha256:{}", "9".repeat(64)) });
+    let refusal = write_measurement_collection(
+        root,
+        &from_serde(&disagreeing).expect("the disagreeing case crosses the bridge"),
+    )
+    .expect_err("a submitted digest that disagrees with the local file is refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert!(
+        refusal.to_string().contains("artifacts.dist/quoin"),
+        "the refusal must name the artifact; it said {refusal}"
+    );
+
+    // A name the record does not carry a matching local file for is not
+    // verifiable here, so the submitted digest is still only checked for
+    // shape, exactly as before this check existed.
+    let mut unreachable = new_collection_json();
+    unreachable["collectionId"] = json!("run-003");
+    unreachable["verificationStack"]["artifacts"] =
+        json!({ "no-such-file": format!("sha256:{}", "9".repeat(64)) });
+    write_measurement_collection(
+        root,
+        &from_serde(&unreachable).expect("the unreachable case crosses the bridge"),
+    )
+    .expect("an artifact name with no local file is trusted on shape alone, as before");
 }
 
 /// A moved definition and a moved producer configuration each block the delta,
