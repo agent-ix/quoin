@@ -91,10 +91,11 @@ residue:
     reason: "a credential in a public repository is a disclosure"
 
 # The private-registry class is defined over PUBLICATION configuration, not over
-# every mention of a private host. A rendered repository names exactly one
-# private index — the `dev-quire` provisioning command — because no index it may
-# depend on serves the engine wheel. That one occurrence is declared here and
-# the gate asserts it is the only one.
+# every mention of a private host. A rendered repository names no dev-only
+# mirror at all: the Quire engine resolves from the `internal-pypi` Poetry
+# source (`tool.poetry.source`, a `publication_keys` entry below) and the
+# schema toolchain resolves from the user-level npm configuration. The forbid
+# is unconditional — there is no allowed occurrence.
 private_registry:
   hosts:
     - "pypi.ix"
@@ -105,17 +106,6 @@ private_registry:
     - "tool.poetry.source"
     - "repository-url"
     - "extra_index_url"
-  allowed_occurrences:
-    - path: "pyproject.toml"
-      context: "tool.poe.tasks.dev-quire"
-      reason: >-
-        The engine wheel exposing `extract_semantic` is on no index a repository
-        may depend on (agent-ix/quire-rs#392). This is a provisioning command,
-        not a dependency declaration and not a publication target, and it names
-        the tracking issue beside it.
-    - path: "toolchain.yaml"
-      context: "quire (python wheel)"
-      reason: "the same provisioning command, recorded with its floor"
 
 # The maintained semantic-module repositories the drift check reads, each pinned
 # by remote and by one full commit revision. Two runs of the check must read the

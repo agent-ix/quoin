@@ -22,13 +22,15 @@ install command whenever a tool it needs is absent.
 
 ## Rationale
 
-The Quire wheel exposing `extract_semantic` is on no index this repository may
-depend on (`agent-ix/quire-rs#392`), so it is provisioned by `make dev-quire`
-rather than declared. The obvious handling of an absent optional import —
+The Quire wheel exposing `extract_semantic` is a declared dev dependency
+resolved from the `internal-pypi` Poetry source (`poetry install`); the
+TypeSpec toolchain and `@agent-ix/semantic-core` are resolved by
+`make semantic-install`. The obvious handling of an absent optional import —
 `pytest.importorskip` — turns every semantic row green in exactly the environment
-where none of them ran, and the clean runner is precisely that environment. The
-same reasoning covers the schema toolchain and the validator: a drift gate that
-reports success without running is the defect the gate exists to catch.
+where none of them ran, and a clean runner that has not yet installed is
+precisely that environment. The same reasoning covers the schema toolchain and
+the validator: a drift gate that reports success without running is the defect
+the gate exists to catch.
 
 ## Measurement and Evaluation
 
@@ -53,4 +55,4 @@ message naming the command that restores it.
 
 ## Dependencies
 
-- **Upstream**: [FR-003](../functional/FR-003-authoring-forms-and-fixtures.md), `agent-ix/quire-rs#392`
+- **Upstream**: [FR-003](../functional/FR-003-authoring-forms-and-fixtures.md)
