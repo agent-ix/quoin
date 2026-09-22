@@ -8,6 +8,34 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-044-AC-6: an artifact label is admitted, never silently**
+  (PLAT-969, owner's ruling). A `verificationStack.artifacts` name with no
+  local filesystem entry stays a label — quoin does not require every
+  declared artifact to be locally reachable — but the write now records every
+  such name, sorted, as the collection's `verificationStack.unverifiedArtifacts`;
+  a digested name never appears there, and a collection with nothing
+  unverified states no such member at all. `quoin report` states each
+  unverified artifact beside the collection's provenance, in the rendered text
+  and the JSON view alike. Separately, only the artifact name's final path
+  component was checked for a symlink; a symlinked directory earlier in the
+  path was followed, so `dist -> /elsewhere` could digest a file outside the
+  repository and `dist -> /missing` could pass as a label. Every path
+  component is now checked, left to right, and a symlink at any of them
+  refuses the write as `QM-ARTIFACT-UNREADABLE`, naming the component.
+  TC-1732, TC-1734.
+
+* **2026-09-22** — **FR-044-AC-6: local artifact verification never skips**
+  (PLAT-969). `write_measurement_collection` tried each
+  `verificationStack.artifacts` name as a repository-relative path but skipped
+  a name that was not a safe relative path, and a name whose entry could not
+  be digested, so a record naming `../outside` or a directory was admitted
+  with its digest unchecked. Both now refuse the write with their own codes,
+  `QM-ARTIFACT-NAME-UNSAFE` and `QM-ARTIFACT-UNREADABLE`, naming the artifact.
+  A name with no filesystem entry at all remains an artifact label admitted on
+  shape: the collections' own fixture artifact `config` is one, and
+  `quoin measurement record --digest-from-file` exists for artifacts stored
+  under a name other than their path. TC-1731..TC-1733.
+
 * **2026-09-18** — **FR-068: the change-assurance exit grammar, restored**
   (agent-ix/quoin#543). Every refusal on the `quoin change-assurance` surface
   exited **1** rather than the documented **2** after the TypeScript-to-Rust

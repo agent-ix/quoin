@@ -196,6 +196,10 @@ pub(crate) struct CollectionSummaryWire<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     corpus_revision: Option<&'a str>,
     path: &'a str,
+    /// Absent when there is nothing unverified, matching every other
+    /// optional member here — never an empty array (PLAT-969).
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    unverified_artifacts: &'a [String],
 }
 
 impl<'a> CollectionSummaryWire<'a> {
@@ -210,6 +214,7 @@ impl<'a> CollectionSummaryWire<'a> {
             source_revision: &summary.source_revision,
             corpus_revision: summary.corpus_revision.as_deref(),
             path: &summary.path,
+            unverified_artifacts: &summary.unverified_artifacts,
         }
     }
 }

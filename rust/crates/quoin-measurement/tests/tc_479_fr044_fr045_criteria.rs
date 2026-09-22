@@ -5,7 +5,7 @@
 //! restated against this crate, plus the FR-067-AC-8 assertion that
 //! `tests/measurement-store-results.test.ts` holds.
 //!
-//! Trace: FR-044-AC-1, FR-044-AC-2, FR-044-AC-3, FR-044-AC-4
+//! Trace: FR-044-AC-1, FR-044-AC-2, FR-044-AC-3, FR-044-AC-4, FR-044-AC-6
 //! Trace: FR-045-AC-1, FR-045-AC-2, FR-045-AC-3, FR-045-AC-4
 //! Trace: FR-067-AC-8
 //! Provenance: quoin#479
@@ -59,6 +59,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use std::os::unix::fs::PermissionsExt as _;
 use std::path::{Path, PathBuf};
 
 use quoin_measurement::error::MeasurementErrorCode;
@@ -74,7 +75,7 @@ use quoin_measurement::report::comparison::{
 };
 use quoin_measurement::report::{
     build_measurement_report, comparison_for, render_measurement_comparison,
-    render_measurement_report,
+    render_measurement_report, render_measurement_report_json,
 };
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::store::{
@@ -901,7 +902,7 @@ fn tc_479_005_a_collection_lands_atomically_and_an_identical_rewrite_is_idempote
 /// every caller of `measurement.record` goes through, so this is the real
 /// path, not the CLI convenience layered on top of it.
 ///
-/// Trace: FR-044-AC-1
+/// Trace: FR-044-AC-1, FR-044-AC-6
 /// Provenance: PLAT-931
 #[test]
 fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
@@ -939,9 +940,9 @@ fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
         "the refusal must name the artifact; it said {refusal}"
     );
 
-    // A name the record does not carry a matching local file for is not
-    // verifiable here, so the submitted digest is still only checked for
-    // shape, exactly as before this check existed.
+    // A name with no filesystem entry under the repository is an artifact
+    // label, not a local file (FR-044-AC-6): the fixture's own `config` is
+    // one. Its submitted digest is checked for shape only.
     let mut unreachable = new_collection_json();
     unreachable["collectionId"] = json!("run-003");
     unreachable["verificationStack"]["artifacts"] =
@@ -950,7 +951,357 @@ fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
         root,
         &from_serde(&unreachable).expect("the unreachable case crosses the bridge"),
     )
-    .expect("an artifact name with no local file is trusted on shape alone, as before");
+    .expect("an artifact name with no local entry is a label, admitted on shape");
+}
+
+/// Write `artifacts` into an otherwise admissible collection under `root`.
+fn publish_with_artifacts(
+    root: &Path,
+    artifacts: Value,
+) -> Result<PathBuf, quoin_measurement::MeasurementError> {
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["artifacts"] = artifacts;
+    write_measurement_collection(
+        root,
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+    )
+}
+
+/// Every collection file the store holds under `root`.
+fn stored_collections(root: &Path) -> Vec<String> {
+    let store = measurements_root(root);
+    if !store.exists() {
+        return Vec::new();
+    }
+    std::fs::read_dir(store)
+        .expect("the store is readable")
+        .map(|entry| {
+            entry
+                .expect("a store entry")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect()
+}
+
+/// An artifact name that is not a safe repository-relative path refuses the
+/// publish, naming the artifact, and leaves no collection behind. Before
+/// PLAT-969 each of these was skipped and the record was admitted with its
+/// digest unchecked.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    let digest = format!("sha256:{}", "9".repeat(64));
+    for name in [
+        "../outside",
+        "/etc/hostname",
+        "dist//quoin",
+        "dist\\quoin",
+        "./dist",
+    ] {
+        let refusal = publish_with_artifacts(root, json!({ name: digest }))
+            .expect_err("an unsafe artifact name is refused");
+        assert_eq!(
+            refusal.code(),
+            MeasurementErrorCode::ArtifactNameUnsafe,
+            "{name}: {refusal}"
+        );
+        assert!(
+            refusal
+                .to_string()
+                .contains(&format!("verificationStack.artifacts.{name}")),
+            "the refusal must name the artifact; it said {refusal}"
+        );
+    }
+    assert_eq!(stored_collections(root), Vec::<String>::new());
+}
+
+/// A name that resolves to an entry under the repository which cannot be
+/// digested refuses the publish, naming the artifact and the path. A
+/// directory and a symlink are both entries `digest_file_sha256` declines;
+/// before PLAT-969 each was skipped and the record admitted unchecked.
+///
+/// Two vacuous rewrites of the guard this test also has to catch: pinning
+/// `reach_local_artifact`'s early return to `.is_err()` rather than
+/// `.is_err_and(|e| e.kind() == NotFound)`, and swapping the
+/// `symlink_metadata` check for `!path.exists()`. Both pass every case above,
+/// because none of them produces a filesystem error *other* than `NotFound`
+/// for the early-return check to over-match, and none puts a symlink where
+/// `path.exists()`'s target-following would disagree with `symlink_metadata`.
+/// `Makefile/x` (a regular file used as a directory, `ENOTDIR`) and a
+/// mode-000 parent directory (`EACCES`) are errors the mutant's `.is_err()`
+/// wrongly treats as absence; a dangling symlink is an entry `path.exists()`
+/// wrongly treats as absent because its *target* is missing, even though the
+/// link itself is there and `symlink_metadata` sees it.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    let digest = format!("sha256:{}", "9".repeat(64));
+    std::fs::create_dir_all(root.join("dist/quoin")).expect("the directory fixture");
+    std::fs::write(root.join("target.bin"), b"artifact bytes").expect("the link target");
+    std::os::unix::fs::symlink(root.join("target.bin"), root.join("linked.bin"))
+        .expect("the symlink fixture");
+    std::fs::write(root.join("Makefile"), b"a regular file, not a directory")
+        .expect("the Makefile fixture");
+    std::os::unix::fs::symlink(root.join("does-not-exist.bin"), root.join("dangling.bin"))
+        .expect("the dangling symlink fixture");
+
+    for name in [
+        "dist/quoin",
+        "linked.bin",
+        // `Makefile` is a regular file, so treating it as a directory to
+        // reach `x` fails with `ENOTDIR`, not `NotFound`.
+        "Makefile/x",
+        // The link itself exists (`symlink_metadata` sees it); only its
+        // target is missing.
+        "dangling.bin",
+    ] {
+        let refusal = publish_with_artifacts(root, json!({ name: digest }))
+            .expect_err("an entry that cannot be digested is refused");
+        assert_eq!(
+            refusal.code(),
+            MeasurementErrorCode::ArtifactUnreadable,
+            "{name}: {refusal}"
+        );
+        let said = refusal.to_string();
+        assert!(
+            said.contains(&format!("verificationStack.artifacts.{name}")),
+            "the refusal must name the artifact; it said {said}"
+        );
+        assert!(
+            said.contains(&root.join(name).display().to_string()),
+            "the refusal must name the path; it said {said}"
+        );
+    }
+
+    // A parent directory intake cannot search into it (mode 000) fails the
+    // same way — skipped when running as root, where the permission bit does
+    // not block traversal and the case cannot be exercised.
+    let restricted_dir = root.join("restricted");
+    std::fs::create_dir_all(&restricted_dir).expect("the restricted directory fixture");
+    std::fs::write(restricted_dir.join("artifact.bin"), b"secret bytes")
+        .expect("the restricted file fixture");
+    std::fs::set_permissions(&restricted_dir, std::fs::Permissions::from_mode(0o000))
+        .expect("the restricted directory's permissions");
+    let running_as_root = std::fs::symlink_metadata(restricted_dir.join("artifact.bin")).is_ok();
+    if running_as_root {
+        std::fs::set_permissions(&restricted_dir, std::fs::Permissions::from_mode(0o755))
+            .expect("permissions restored so the temp dir can be cleaned up");
+    } else {
+        let name = "restricted/artifact.bin";
+        let refusal = publish_with_artifacts(root, json!({ name: digest }))
+            .expect_err("a name behind an unsearchable directory is refused");
+        assert_eq!(
+            refusal.code(),
+            MeasurementErrorCode::ArtifactUnreadable,
+            "{name}: {refusal}"
+        );
+        let said = refusal.to_string();
+        assert!(
+            said.contains(&format!("verificationStack.artifacts.{name}")),
+            "the refusal must name the artifact; it said {said}"
+        );
+        std::fs::set_permissions(&restricted_dir, std::fs::Permissions::from_mode(0o755))
+            .expect("permissions restored so the temp dir can be cleaned up");
+    }
+
+    assert_eq!(stored_collections(root), Vec::<String>::new());
+}
+
+/// A symlink anywhere before an artifact name's final component refuses the
+/// publish naming the symlinked component, whether or not the link's own
+/// target exists. Before PLAT-969 F3, only the final component was checked:
+/// a symlinked directory earlier in the path was followed, so `dist ->
+/// /elsewhere` digested a file outside the repository and `dist -> /missing`
+/// `lstat`-ed as `NotFound` and passed as a label.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_004_a_symlinked_path_component_refuses_before_digest_or_label() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    let digest = format!("sha256:{}", "9".repeat(64));
+
+    // `dist` points at a real directory outside `root`, holding a file that
+    // would digest happily if the link were followed.
+    let elsewhere = tempfile::tempdir().expect("an external directory");
+    std::fs::write(
+        elsewhere.path().join("quoin"),
+        b"not this repository's bytes",
+    )
+    .expect("the external file");
+    std::os::unix::fs::symlink(elsewhere.path(), root.join("dist"))
+        .expect("the live symlinked component");
+
+    let refusal = publish_with_artifacts(root, json!({ "dist/quoin": digest }))
+        .expect_err("a live symlinked component is refused, not followed");
+    assert_eq!(refusal.code(), MeasurementErrorCode::ArtifactUnreadable);
+    let said = refusal.to_string();
+    assert!(
+        said.contains("verificationStack.artifacts.dist/quoin"),
+        "the refusal must name the artifact; it said {said}"
+    );
+    assert!(
+        said.contains("`dist`"),
+        "the refusal must name the symlinked component; it said {said}"
+    );
+
+    // `stray` points nowhere at all: before the fix this labelled the name
+    // (admitted on shape) because the lookup failed with `NotFound`.
+    std::os::unix::fs::symlink(root.join("nowhere"), root.join("stray"))
+        .expect("the dangling symlinked component");
+
+    let refusal = publish_with_artifacts(root, json!({ "stray/quoin": digest }))
+        .expect_err("a dangling symlinked component is refused, not admitted as a label");
+    assert_eq!(refusal.code(), MeasurementErrorCode::ArtifactUnreadable);
+    let said = refusal.to_string();
+    assert!(
+        said.contains("verificationStack.artifacts.stray/quoin"),
+        "the refusal must name the artifact; it said {said}"
+    );
+    assert!(
+        said.contains("`stray`"),
+        "the refusal must name the symlinked component; it said {said}"
+    );
+
+    assert_eq!(stored_collections(root), Vec::<String>::new());
+}
+
+/// The owner's ruling on PLAT-969: a `verificationStack.artifacts` name with
+/// no local filesystem entry stays admitted as a label — quoin does not
+/// require every declared artifact to be locally reachable — but the write
+/// never leaves that fact unstated. Every label lands in the stored
+/// collection's `unverifiedArtifacts`, sorted; a digested name never does;
+/// and a collection with nothing unverified states nothing, not an empty
+/// array.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    std::fs::create_dir_all(root.join("dist")).expect("the artifact dir");
+    std::fs::write(root.join("dist/quoin"), b"artifact bytes").expect("the digested artifact");
+
+    let path = publish_with_artifacts(
+        root,
+        json!({
+            "dist/quoin": "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d",
+            "no-such-file": format!("sha256:{}", "9".repeat(64)),
+            "another-label": format!("sha256:{}", "8".repeat(64)),
+        }),
+    )
+    .expect("a digested artifact beside two labels is admitted");
+
+    let stored: Value = serde_json::from_str(
+        &std::fs::read_to_string(&path).expect("the published collection is readable"),
+    )
+    .expect("the published collection is JSON");
+    assert_eq!(
+        stored["verificationStack"]["unverifiedArtifacts"],
+        json!(["another-label", "no-such-file"]),
+        "unverifiedArtifacts must hold every label, sorted, and never a digested name \
+         (`dist/quoin` here); got {stored}"
+    );
+
+    // A second collection with nothing unverified states nothing: not an
+    // empty `unverifiedArtifacts` array, an absent member.
+    let mut all_digested = new_collection_json();
+    all_digested["collectionId"] = json!("run-002");
+    all_digested["verificationStack"]["artifacts"] = json!({
+        "dist/quoin": "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d",
+    });
+    let path = write_measurement_collection(
+        root,
+        &from_serde(&all_digested).expect("the all-digested case crosses the bridge"),
+    )
+    .expect("an all-digested collection is admitted");
+    let stored: Value = serde_json::from_str(
+        &std::fs::read_to_string(&path).expect("the second collection is readable"),
+    )
+    .expect("the second collection is JSON");
+    assert!(
+        stored["verificationStack"]
+            .as_object()
+            .expect("verificationStack is an object")
+            .get("unverifiedArtifacts")
+            .is_none(),
+        "a collection with nothing unverified must state nothing, not an empty array; got {stored}"
+    );
+}
+
+/// `quoin report` shows every artifact a collection's owner ruling admitted
+/// but could not verify, beside that collection's provenance — in the
+/// rendered text and in the JSON view alike (PLAT-969).
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_006_the_report_shows_an_unverified_artifact_next_to_its_provenance() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    publish_with_artifacts(
+        root,
+        json!({ "no-such-file": format!("sha256:{}", "9".repeat(64)) }),
+    )
+    .expect("a label-only artifact is admitted");
+
+    let source = DiskMeasurement::new(root);
+    let report = build_measurement_report(&source, root).expect("the report builds");
+
+    let rendered = render_measurement_report(&report).expect("the report renders");
+    assert!(
+        rendered.contains("digest not checked: no-such-file"),
+        "the rendered report must show the unverified artifact next to the collection's \
+         provenance; it rendered:\n{rendered}"
+    );
+
+    let json_text = render_measurement_report_json(&report).expect("the JSON report renders");
+    let parsed: Value = serde_json::from_str(&json_text).expect("the JSON view is JSON");
+    let unverified = parsed["current"]
+        .as_array()
+        .expect("current is an array")
+        .iter()
+        .find_map(|row| row["collection"]["unverifiedArtifacts"].as_array())
+        .unwrap_or_else(|| panic!("no row's collection states unverifiedArtifacts in {parsed}"));
+    assert_eq!(unverified, &vec![json!("no-such-file")]);
+}
+
+/// A publish whose every artifact is a readable local file with a matching
+/// digest, beside a label with no local entry, is admitted and lands.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_003_a_publish_whose_every_local_artifact_is_readable_is_admitted() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    std::fs::create_dir_all(root.join("dist")).expect("the artifact dir");
+    std::fs::write(root.join("dist/quoin"), b"artifact bytes").expect("the first artifact");
+    std::fs::write(root.join("Makefile"), b"").expect("the second artifact");
+
+    let written = publish_with_artifacts(
+        root,
+        json!({
+            "dist/quoin": "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d",
+            "Makefile": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "config": format!("sha256:{}", "3".repeat(64)),
+        }),
+    )
+    .expect("readable, matching artifacts are admitted");
+    assert!(written.is_file(), "{} was not written", written.display());
+    assert_eq!(stored_collections(root), vec!["run-001.json".to_owned()]);
 }
 
 /// `configDigest` is not a member of `verificationStack` itself, but it is

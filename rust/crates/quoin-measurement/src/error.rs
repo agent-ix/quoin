@@ -70,11 +70,19 @@ pub enum MeasurementErrorCode {
     Io,
     /// A refusal raised by `quoin-store` and passed through unchanged.
     Store,
+    /// A `verificationStack.artifacts` name is not a safe repository-relative
+    /// path, so intake cannot tell whether it names a local file (PLAT-969).
+    ArtifactNameUnsafe,
+    /// A `verificationStack.artifacts` name resolves to an entry under the
+    /// repository that cannot be digested — a directory, a symlink, an
+    /// unreadable or oversized file — so its submitted digest cannot be
+    /// checked (PLAT-969).
+    ArtifactUnreadable,
 }
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 18] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
@@ -91,6 +99,8 @@ impl MeasurementErrorCode {
         Self::Yaml,
         Self::Io,
         Self::Store,
+        Self::ArtifactNameUnsafe,
+        Self::ArtifactUnreadable,
     ];
 
     /// The stable wire spelling of this code.
@@ -113,6 +123,8 @@ impl MeasurementErrorCode {
             Self::Yaml => "QM-YAML",
             Self::Io => "QM-IO",
             Self::Store => "QM-STORE",
+            Self::ArtifactNameUnsafe => "QM-ARTIFACT-NAME-UNSAFE",
+            Self::ArtifactUnreadable => "QM-ARTIFACT-UNREADABLE",
         }
     }
 

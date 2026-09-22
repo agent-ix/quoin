@@ -213,6 +213,11 @@ fn collection_ref(
             .corpus_revision
             .clone()
             .filter(|revision| !revision.is_empty()),
+        unverified_artifacts: collection
+            .verification_stack
+            .as_ref()
+            .map(|stack| stack.unverified_artifacts.clone())
+            .unwrap_or_default(),
     })
 }
 

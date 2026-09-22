@@ -75,6 +75,7 @@ pub(crate) fn verification_stack(
     let sources = note(&mut findings, sources(object));
     let capabilities = note(&mut findings, capabilities(object));
     let artifacts = note(&mut findings, artifacts(object));
+    let unverified_artifacts = note(&mut findings, unverified_artifacts(object));
     if !findings.is_empty() {
         return Err(MeasurementError::with_findings(
             CODE,
@@ -95,6 +96,7 @@ pub(crate) fn verification_stack(
             sources: sources?,
             capabilities: capabilities?,
             artifacts: artifacts?,
+            unverified_artifacts: unverified_artifacts?,
         })
     })()
     .ok_or_else(|| refuse("verificationStack is invalid"))
@@ -361,5 +363,44 @@ fn artifacts(
             "verificationStack.artifacts is invalid",
             findings,
         ))
+    }
+}
+
+/// `unverifiedArtifacts`, the `artifacts` names this repository has no
+/// filesystem entry for at all (PLAT-969's ruling). Absent reads as empty —
+/// evidence written before the ruling, or authored by hand, states nothing
+/// here and that is not a defect — and a present member must be an array of
+/// non-empty strings. Nothing here cross-checks the names against
+/// `artifacts`: this function reads what the stored document says, and
+/// [`crate::store::publish`] is the only writer that computes the list from
+/// the filesystem, so a document this crate did not write can say anything.
+fn unverified_artifacts(object: &JsonObject) -> Result<Vec<String>, MeasurementError> {
+    match object.get("unverifiedArtifacts") {
+        None => Ok(Vec::new()),
+        Some(JsonValue::Array(items)) => {
+            let mut out = Vec::with_capacity(items.len());
+            let mut findings = Vec::new();
+            for item in items {
+                match item.as_str().filter(|text| !text.is_empty()) {
+                    Some(text) => out.push(text.to_owned()),
+                    None => findings.push(
+                        "verificationStack.unverifiedArtifacts entries must be non-empty strings"
+                            .to_owned(),
+                    ),
+                }
+            }
+            if findings.is_empty() {
+                Ok(out)
+            } else {
+                Err(MeasurementError::with_findings(
+                    CODE,
+                    "verificationStack.unverifiedArtifacts is invalid",
+                    findings,
+                ))
+            }
+        }
+        Some(_) => Err(refuse(
+            "verificationStack.unverifiedArtifacts must be an array of strings",
+        )),
     }
 }
