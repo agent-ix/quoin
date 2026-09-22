@@ -104,11 +104,48 @@
 //! pair, so the bar is 50% — a coin flip — and this file does not report the
 //! number as an accuracy.
 //!
-//! # Measured
+//! # Measured — three live runs, every bar reported, two of six not held
 //!
-//! Results are recorded in `spec/assurance/MP-233-*.md` and in this PR's
-//! description, not restated here, so the two cannot drift silently if one is
-//! edited alone.
+//! Stable across three consecutive `FullBattery` passes (56 requests each,
+//! ~8s wall clock). **Bars 2, 4, 5 and 6 held in all three runs; Bars 1 and 3
+//! failed in all three.** A strong number on one question says nothing about
+//! another, and this file asserts every bar rather than the ones that passed.
+//!
+//! | Bar | Measured (runs 1/2/3) | Constant predictor | Held |
+//! | --- | --- | --- | --- |
+//! | 1 `test_asserts_intent` | 45.5% / 45.5% / 45.5% | `always yes` 81.8% | **no** |
+//! | 2 `code_implements_intent` | 66.7% / 66.7% / 66.7% | `always yes` 50.0% | yes |
+//! | 3 `tests_only_its_own_mock` | 73.0% / 70.3% / 67.6% | `always no` 78.4% | **no** |
+//! | 4 `code_exceeds_requirement` | 62.5% / 62.5% / 56.2% | `always yes` 50.0% | yes |
+//! | 5 `divergence_kind`, derived | 46.4% / 46.4% / 42.9% | majority label 32.1% | yes |
+//! | 5 `divergence_kind`, asked | 39.3% / 35.7% / 35.7% | majority label 32.1% | yes |
+//! | 6 `severity` discrimination | 100% / 88.9% / 88.9% of 9 pairs | coin flip 50% | yes |
+//!
+//! Bar 1 is the sharpest negative. On the eleven violating mutants the lens
+//! was shown the SHIPPED triple and asked whether its test asserts the
+//! requirement's stated behaviour; it was right 5 times out of 11, said yes to
+//! both tests that in fact missed their targeted mutant, and said no to four
+//! tests that caught theirs. Saying "yes" to everything would have scored
+//! 81.8%.
+//!
+//! Bar 3's failure has a second number that matters more than the headline.
+//! The static check finds ZERO mock-only tests among the 29 real ones, and the
+//! lens called 10, 11 and 12 of them mock-only across the three runs — a false
+//! positive on roughly a third of a corpus with no positives in it. It did
+//! find all eight constructed mock-only rows every time (recall 100%), so the
+//! failure is specificity, not blindness.
+//!
+//! Bar 5 reproduces PLAT-838's lesson on a second lens: deriving the six-way
+//! label from the response's own `noul` answers beat asking for it directly in
+//! all three runs (46.4/46.4/42.9 vs. 39.3/35.7/35.7). Both beat the majority
+//! label, so the bar held either way, and neither is near usable accuracy.
+//!
+//! One shape worth naming for whoever picks this up: for several triples the
+//! `divergence_kind` answer did not move at all between the shipped body and
+//! its mutant (`GAP-09`, `GAP-12`, `GAP-20`, `GAP-22` answer the same label for
+//! the original, the violating mutant and the additive mutant). The `noul`
+//! answers underneath it do move — Bar 2 and Bar 6 both separate the classes —
+//! so the closed six-way choice is losing information the open questions carry.
 
 #![cfg(feature = "live-api")]
 #![allow(
@@ -207,33 +244,75 @@ fn binary_row(
     }
 }
 
-/// Asserts one question's two standing conditions: beat the constant
-/// predictor, and answer both classes at least once.
-fn assert_beats_constant(bar: &str, rows: &[BinaryRow], both_classes: bool) {
-    let (stats, unanswered) = tally_binary(rows);
-    let (label, baseline) = constant_binary_baseline(rows);
-    let agreement = stats
-        .accuracy()
-        .unwrap_or_else(|| panic!("{bar}: the lens answered none of {} rows", rows.len()));
-    println!(
-        "**{bar}** agreement {agreement:.1}% vs. constant predictor `{label}` {baseline:.1}% \
-         ({} rows, {unanswered} unanswered)",
-        rows.len()
-    );
-    assert!(
-        agreement > baseline,
-        "{bar}: {agreement:.1}% is no better than the constant predictor `{label}` \
-         at {baseline:.1}%"
-    );
-    if both_classes {
-        assert!(
-            stats.recall().is_some_and(|value| value > 0.0),
-            "{bar}: the lens never once said yes to a row that IS yes"
+/// Records one bar's verdict instead of panicking on the spot.
+///
+/// A bar that fails must not stop the bars after it from being MEASURED. The
+/// first live run of this file failed Bar 1 and, with a plain `assert!`, that
+/// left the other five unmeasured — which reads as "we do not know" but is
+/// easily mistaken for "they were fine". Every bar is evaluated, every number
+/// is printed, and [`Bars::settle`] fails the test at the end naming every
+/// bar that did not hold.
+#[derive(Debug, Default)]
+struct Bars {
+    failed: Vec<String>,
+}
+
+impl Bars {
+    /// Records `bar` as failed when `held` is false.
+    fn check(&mut self, held: bool, bar: &str, why: &str) {
+        println!("{} {bar}: {why}", if held { "PASS" } else { "FAIL" });
+        if !held {
+            self.failed.push(format!("{bar}: {why}"));
+        }
+    }
+
+    /// One question's two standing conditions: beat the constant predictor,
+    /// and answer both classes at least once.
+    fn beats_constant(&mut self, bar: &str, rows: &[BinaryRow], both_classes: bool) {
+        let (stats, unanswered) = tally_binary(rows);
+        let (label, baseline) = constant_binary_baseline(rows);
+        let Some(agreement) = stats.accuracy() else {
+            self.check(
+                false,
+                bar,
+                &format!("the lens answered none of {} rows", rows.len()),
+            );
+            return;
+        };
+        self.check(
+            agreement > baseline,
+            bar,
+            &format!(
+                "agreement {agreement:.1}% vs. constant predictor `{label}` \
+                 {baseline:.1}% over {} rows ({unanswered} unanswered)",
+                rows.len()
+            ),
         );
+        if both_classes {
+            self.check(
+                stats.recall().is_some_and(|value| value > 0.0),
+                bar,
+                &format!("yes-class recall {:?}", stats.recall()),
+            );
+            self.check(
+                stats.no_defect_recall().is_some_and(|value| value > 0.0),
+                bar,
+                &format!(
+                    "no-class recall {:?} (a lens that answers one way for \
+                     everything fails here by construction)",
+                    stats.no_defect_recall()
+                ),
+            );
+        }
+    }
+
+    /// Fails the test naming every bar that did not hold.
+    fn settle(self) {
         assert!(
-            stats.no_defect_recall().is_some_and(|value| value > 0.0),
-            "{bar}: the lens never once said no to a row that IS no — it answers one \
-             way for everything, the failure PLAT-917 found in a sibling lens"
+            self.failed.is_empty(),
+            "{} pre-registered bar(s) did not hold:\n  - {}",
+            self.failed.len(),
+            self.failed.join("\n  - ")
         );
     }
 }
@@ -248,6 +327,7 @@ async fn the_rest_of_the_battery_beats_doing_nothing() {
     let all_mutants = mutants();
     let targets = request_targets();
     let said = ask_all(&client, &targets).await;
+    let mut bars = Bars::default();
 
     // ---- Bar 1: test_asserts_intent -------------------------------------
     let violating: Vec<_> = all_mutants
@@ -286,7 +366,7 @@ async fn the_rest_of_the_battery_beats_doing_nothing() {
          result to report.",
         asserts_intent.len()
     );
-    assert_beats_constant("BAR 1 test_asserts_intent", &asserts_intent, false);
+    bars.beats_constant("BAR 1 test_asserts_intent", &asserts_intent, false);
 
     // ---- Bar 2: code_implements_intent ----------------------------------
     let confirmed: Vec<_> = violating
@@ -334,7 +414,7 @@ async fn the_rest_of_the_battery_beats_doing_nothing() {
             &implements
         )
     );
-    assert_beats_constant("BAR 2 code_implements_intent", &implements, true);
+    bars.beats_constant("BAR 2 code_implements_intent", &implements, true);
 
     // ---- Bar 3: tests_only_its_own_mock ---------------------------------
     let mut mock_rows: Vec<BinaryRow> = Vec::new();
@@ -383,11 +463,15 @@ async fn the_rest_of_the_battery_beats_doing_nothing() {
             &mock_rows
         )
     );
-    assert_beats_constant("BAR 3 tests_only_its_own_mock", &mock_rows, false);
+    bars.beats_constant("BAR 3 tests_only_its_own_mock", &mock_rows, false);
     let (mock_stats, _) = tally_binary(&mock_rows);
-    assert!(
+    bars.check(
         mock_stats.recall().is_some_and(|value| value > 0.0),
-        "BAR 3: the lens found none of the constructed mock-only tests"
+        "BAR 3 tests_only_its_own_mock",
+        &format!(
+            "mock-only-class recall {:?} over the constructed rows",
+            mock_stats.recall()
+        ),
     );
 
     // ---- Bar 4: code_exceeds_requirement --------------------------------
@@ -433,7 +517,7 @@ async fn the_rest_of_the_battery_beats_doing_nothing() {
             &exceeds
         )
     );
-    assert_beats_constant("BAR 4 code_exceeds_requirement", &exceeds, true);
+    bars.beats_constant("BAR 4 code_exceeds_requirement", &exceeds, true);
 
     // ---- Bar 5: divergence_kind -----------------------------------------
     let mut labels: BTreeMap<String, LabelRow> = BTreeMap::new();
@@ -510,10 +594,13 @@ async fn the_rest_of_the_battery_beats_doing_nothing() {
     );
     println!("- majority-label constant predictor `{majority}`: {majority_rate:.1}%");
     let best = asked_rate.max(derived_rate);
-    assert!(
+    bars.check(
         best > majority_rate,
-        "BAR 5: neither asking for divergence_kind ({asked_rate:.1}%) nor deriving it \
-         ({derived_rate:.1}%) beats the majority label `{majority}` at {majority_rate:.1}%"
+        "BAR 5 divergence_kind",
+        &format!(
+            "asked {asked_rate:.1}%, derived {derived_rate:.1}%, majority label \
+             `{majority}` {majority_rate:.1}%"
+        ),
     );
 
     // ---- Bar 6: severity discrimination ---------------------------------
@@ -529,9 +616,14 @@ async fn the_rest_of_the_battery_beats_doing_nothing() {
         compared >= 5,
         "too few severity pairs both sides answered to say anything: {compared}"
     );
-    assert!(
+    bars.check(
         win_rate > 50.0,
-        "BAR 6: the lens does not score a confirmed defect more severely than the \
-         shipped code it was made from ({win_rate:.1}% of {compared} pairs)"
+        "BAR 6 severity discrimination",
+        &format!(
+            "the confirmed-defective mutant scored strictly more severe in \
+             {win_rate:.1}% of {compared} pairs, against a 50% coin-flip null"
+        ),
     );
+
+    bars.settle();
 }

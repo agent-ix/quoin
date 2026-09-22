@@ -114,5 +114,7 @@ the other.
 This plan assigns no verdict. MP-230 states gap-analysis's bar on the
 `assertion_vacuous` metric; the bars for these six are pre-registered in
 `rust/crates/quoin-jev/tests/live_gap_battery.rs`'s module doc and committed
-before the first live call that measures them. Compare only like lens, variant,
-corpus revision and mutation log.
+before the first live call that measures them (commit `99b478a`). The measured
+numbers are reported in that file's own `# Measured` section and in the PR
+description, not here, so a plan and a result cannot drift into each other.
+Compare only like lens, variant, corpus revision and mutation log.
