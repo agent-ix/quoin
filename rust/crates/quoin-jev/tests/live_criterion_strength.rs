@@ -160,6 +160,7 @@
 
 mod support;
 
+use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
 
 use typesafe_sdk_client::Client;
@@ -789,4 +790,87 @@ async fn the_lens_with_noul_derived_labels_v3() {
         "v3-derived does not clear the pre-registered bars: {}",
         derived_bars.line()
     );
+}
+
+/// Provenance: PLAT-917 follow-up. **Reported, never gated** -- the
+/// diagnostic that says whether `v3`'s failure is the derivation rule or the
+/// answers it derives from.
+///
+/// [`the_lens_with_noul_derived_labels_v3`] scores one composed label per
+/// row, so a wrong label cannot say *which* of the five `noul` answers was
+/// wrong. This measures each `noul` question on its own against the answer
+/// the corpus's reader recorded for it (`labels.falsifiable` and its four
+/// siblings, which three fixtures omit -- an omitted id is "no answer
+/// recorded", so it is skipped rather than defaulted). It asserts only that
+/// rows were compared at all; every rate it prints is a measure.
+///
+/// Read it beside the constant predictor printed for each question: a
+/// question whose answers never vary carries no information, whatever its
+/// agreement rate.
+#[tokio::test]
+async fn the_noul_answers_are_reported_per_question() {
+    let client = live_client();
+    let questions = QuestionSet::parse(QUESTION_SET).expect("the shipped question set parses");
+    let corpus = corpus();
+
+    // question id -> (agreed, compared, jev said true, reader said true)
+    let mut per_question: BTreeMap<&'static str, (u32, u32, u32, u32)> = BTreeMap::new();
+
+    for fixture in &corpus.weakness_kind_fixtures {
+        let context = fixture.context();
+        let ac_ids = context.ac_ids();
+        let request = quoin_jev::lens::build_request(&context, &questions);
+        let response = client
+            .system_one(request)
+            .await
+            .map_err(|error| quoin_jev::error::classify(&error))
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}: {} — {}",
+                    fixture.fixture_id,
+                    error.code.as_str(),
+                    error.message
+                )
+            });
+        let ac_id = &ac_ids[0];
+        for (id, expected) in fixture.labels.noul() {
+            let Some(entry) = questions.noul.iter().find(|entry| entry.id == id) else {
+                continue;
+            };
+            let key = QuestionSet::noul_key(ac_id, entry);
+            let Some(typesafe_sdk_answers::Answer::Noul(answer)) = response.answer(&key) else {
+                continue;
+            };
+            let actual = answer.noul >= 0.5;
+            let slot = per_question.entry(id).or_default();
+            slot.1 += 1;
+            if actual == expected {
+                slot.0 += 1;
+            }
+            if actual {
+                slot.2 += 1;
+            }
+            if expected {
+                slot.3 += 1;
+            }
+        }
+    }
+
+    println!("\n## noul answers, per question (M2 diagnostic, reported only)\n");
+    println!("| question | compared | agreed | agreement | Jev said true | reader said true | best constant |");
+    println!("| --- | --- | --- | --- | --- | --- | --- |");
+    for (id, (agreed, compared, jev_true, reader_true)) in &per_question {
+        let total = f64::from(*compared);
+        let constant = f64::from((*reader_true).max(compared - reader_true)) / total * 100.0;
+        println!(
+            "| `{id}` | {compared} | {agreed} | {:.1}% | {jev_true} | {reader_true} | {constant:.1}% |",
+            f64::from(*agreed) / total * 100.0
+        );
+    }
+
+    assert!(
+        per_question.values().all(|(_, compared, _, _)| *compared > 0),
+        "a question with nothing compared means the key or the corpus changed, not that Jev agreed"
+    );
+    assert!(!per_question.is_empty(), "no noul answer was compared at all");
 }

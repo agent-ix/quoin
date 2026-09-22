@@ -211,7 +211,7 @@ impl WeaknessLabels {
     /// Three fixtures omit some ids; an omitted id is "this reader did not
     /// record one", never "false", so it is absent here rather than
     /// defaulted.
-    fn noul(&self) -> Vec<(&'static str, bool)> {
+    pub(crate) fn noul(&self) -> Vec<(&'static str, bool)> {
         [
             ("falsifiable", self.falsifiable),
             ("states_observable_outcome", self.states_observable_outcome),
