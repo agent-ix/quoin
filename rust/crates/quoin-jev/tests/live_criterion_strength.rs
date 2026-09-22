@@ -189,6 +189,60 @@
 //! different decision rule composes the same non-signal differently. The
 //! corpus said as much before the run, on `CS-FIX-014`: "`weakness_kind` is
 //! not a deterministic function of the five `noul` answers".
+//!
+//! # `v4`, pre-registered before its first call -- follow-up (PLAT-917)
+//!
+//! Every variant so far has sent the `weakness_kind` question through the
+//! SDK's [`typesafe_sdk_questions::choice_of`] builder, which maps each label
+//! to `Entry::null()` -- the wire carries the six label *strings* and nothing
+//! else. The six labels are in-house jargon: their meanings live in
+//! `skills/spec-criterion-strength-analysis/SKILL.md` and in
+//! `question-set.json`'s five `noul` question texts, neither of which was ever
+//! sent. Jev has been asked to pick between `unfalsifiable`,
+//! `unmeasurable_threshold`, `restates_requirement`, `implementation_coupled`
+//! and `happy_path_only` from those words alone.
+//!
+//! The vendor's own documentation for the `choice` primitive
+//! (<https://docs.typesafe.ai/primitives/choice.md>) states that `criteria`
+//! carries a description per label and exists specifically to disambiguate
+//! similar or overlapping options. The SDK exposes it as
+//! [`typesafe_sdk_questions::choice`], and [`typesafe_sdk_questions::Entry`]
+//! accepts rich JSON anywhere a description is accepted, so a criterion can be
+//! a `{what, not_for, examples}` object rather than a sentence.
+//!
+//! `v4` is that one change and nothing else:
+//!
+//! | | context | primitive | `weakness_kind` question text |
+//! | --- | --- | --- | --- |
+//! | `v0` | corpus fields only | `choice_of` (all labels `null`) | shipped |
+//! | `v4` | corpus fields only, identical to `v0` | `choice` with described `criteria` | shipped, identical to `v0` |
+//!
+//! Context stays minimal deliberately. `v1` showed full FR context made the
+//! shipped question *worse* (46.7% to 33.3%), and the vendor's own jaggedness
+//! notes name "Noisy State -- large irrelevant context acts as a distractor"
+//! as a known failure mode. Adding context and adding criteria at once would
+//! confound the two.
+//!
+//! **Provenance of the criteria text.** [`weakness_kind_criteria`] is written
+//! from two sources and no others: the five `noul` question texts in
+//! `question-set.json` (which already state the concepts -- falsifiability,
+//! external observability, stated thresholds, restatement, implementation
+//! coupling), and `SKILL.md`'s own severity-mapping prose defining each label.
+//! Its `examples` are short generic illustrations written from those
+//! definitions. **No fixture text, fixture label or fixture rationale was read
+//! while writing it**, because criteria fitted to the answer key they are
+//! graded against would make any margin meaningless -- the same discipline
+//! [`derive_weakness_kind`] was held to.
+//!
+//! **Stated risk, before running:** described criteria are more tokens in the
+//! request, and the jaggedness note above says more text can itself distract.
+//! If `v4` scores below `v0`, that is the reading, and it is a result either
+//! way.
+//!
+//! Bars: identical to every prior variant -- agreement beats the constant
+//! predictor, defect recall > 0, `sound` cleared >= 3 of 5. `JEV_RUNS`
+//! (default 1) repeats the pass; GO would need the bars cleared on the gate
+//! pass and in at least 3 of 5 repeats.
 
 #![cfg(feature = "live-api")]
 #![allow(
@@ -851,6 +905,290 @@ async fn the_lens_with_noul_derived_labels_v3() {
         derived_bars.all(),
         "v3-derived does not clear the pre-registered bars: {}",
         derived_bars.line()
+    );
+}
+
+/// `v4`'s described `choice` criteria: one `{what, not_for, examples}` object
+/// per label, in the answer space's own order.
+///
+/// See this file's module doc for where every sentence here comes from and
+/// why no fixture was read while writing it.
+fn weakness_kind_criteria() -> Vec<(&'static str, serde_json::Value)> {
+    vec![
+        (
+            "sound",
+            serde_json::json!({
+                "what": "No weakness applies. A concrete system behaviour would make this \
+                         criterion false; it names an outcome observable from outside rather \
+                         than a property of the implementation; any quantity it asserts is \
+                         stated as an actual number; and it says something the FR sentence it \
+                         belongs to does not already say.",
+                "not_for": "A criterion that fails any one of those four checks. Pick the \
+                            weakness that applies instead.",
+                "examples": [
+                    "The command exits with status 2 and prints no output when the input file is absent.",
+                    "A report file exists at the configured path within 5 seconds of the run completing."
+                ]
+            }),
+        ),
+        (
+            "unfalsifiable",
+            serde_json::json!({
+                "what": "There is no concrete system behaviour that would make this criterion \
+                         false. Nothing anyone could observe would contradict it, so a test \
+                         matrix row backed by it proves nothing.",
+                "not_for": "A criterion that could fail but is vague about a number -- that is \
+                            `unmeasurable_threshold`. A criterion that could fail but merely \
+                            repeats the FR sentence -- that is `restates_requirement`.",
+                "examples": [
+                    "The system behaves correctly under load.",
+                    "Errors are handled appropriately.",
+                    "The output is of acceptable quality."
+                ]
+            }),
+        ),
+        (
+            "unmeasurable_threshold",
+            serde_json::json!({
+                "what": "The criterion asserts a quantity -- a duration, rate, size, count or \
+                         limit -- but the number itself is never stated, so there is no value to \
+                         measure against.",
+                "not_for": "A criterion that asserts no quantity at all. If nothing else is \
+                            wrong with such a criterion it is `sound`; if nothing could falsify \
+                            it at all it is `unfalsifiable`.",
+                "examples": [
+                    "The response returns quickly.",
+                    "Memory use stays within acceptable bounds.",
+                    "Retries stop after a reasonable number of attempts."
+                ]
+            }),
+        ),
+        (
+            "restates_requirement",
+            serde_json::json!({
+                "what": "This is the FR sentence with `shall` swapped out. It adds no \
+                         discriminating power beyond the requirement it belongs to: anything \
+                         satisfying the FR satisfies this criterion automatically.",
+                "not_for": "A criterion that adds an observable detail, a number, a precondition \
+                            or an error case the FR sentence does not itself carry.",
+                "examples": [
+                    "FR: The system SHALL emit a report after each run. AC: A report is emitted after each run.",
+                    "FR: The parser SHALL reject malformed input. AC: Malformed input is rejected."
+                ]
+            }),
+        ),
+        (
+            "implementation_coupled",
+            serde_json::json!({
+                "what": "The criterion names an internal symbol, a private field, or a call \
+                         sequence. Such a criterion is satisfiable by exactly one implementation \
+                         and passes forever once written, surviving refactors that should have \
+                         broken it. This is over-specification, a distinct defect from vagueness.",
+                "not_for": "A criterion naming something externally observable -- a written file, \
+                            an exit code, a response field, a CLI flag, a log line a user can \
+                            read. Naming a public artifact is an observable outcome, not \
+                            implementation coupling.",
+                "examples": [
+                    "`Parser::parse_inner` is called before `validate`.",
+                    "The private `cache` field is reset to `None` on shutdown.",
+                    "The handler invokes `normalize()` then `persist()` in that order."
+                ]
+            }),
+        ),
+        (
+            "happy_path_only",
+            serde_json::json!({
+                "what": "The criterion exercises only the successful path. It states what happens \
+                         when everything goes right and covers no error case, no boundary or edge \
+                         case, and no explicit negative case.",
+                "not_for": "A criterion that does state an error, a boundary or a negative \
+                            condition. Also not for defects of wording or precision -- those are \
+                            the other labels; this one is about which cases are covered.",
+                "examples": [
+                    "A valid request returns 200 and the created record.",
+                    "The file is written successfully when the directory exists."
+                ]
+            }),
+        ),
+    ]
+}
+
+/// `v4`'s question map for one FR: the shipped five `noul` and the shipped
+/// `score`, with the `weakness_kind` question rebuilt through
+/// [`typesafe_sdk_questions::choice`] and described criteria.
+///
+/// Keys are produced by [`QuestionSet`]'s own key functions, so
+/// [`quoin_jev::verdict::extract`] reads this response exactly as it reads a
+/// shipped one -- there is no second parsing path.
+fn v4_questions_for_fr(set: &QuestionSet, ac_ids: &[String]) -> typesafe_sdk_questions::Questions {
+    let mut questions = typesafe_sdk_questions::Questions::new();
+    for ac_id in ac_ids {
+        for entry in &set.noul {
+            questions.insert(
+                QuestionSet::noul_key(ac_id, entry),
+                typesafe_sdk_questions::noul(entry.question.as_str()),
+            );
+        }
+        // The answer space and the criteria map must name the same six labels,
+        // or the request would silently offer a different vocabulary than the
+        // one `verdict::extract` validates answers against.
+        let criteria = weakness_kind_criteria();
+        let described: Vec<&str> = criteria.iter().map(|(label, _)| *label).collect();
+        assert_eq!(
+            described, set.choice.answer_space,
+            "v4's criteria must describe exactly the shipped answer space, in its order"
+        );
+        questions.insert(
+            set.weakness_kind_key(ac_id),
+            typesafe_sdk_questions::choice(
+                set.choice.question.as_str(),
+                criteria.into_iter().map(|(label, description)| {
+                    (label, typesafe_sdk_questions::Entry(description))
+                }),
+            ),
+        );
+    }
+    let (key, question) = set.adverse_case_coverage_question();
+    questions.insert(key, question);
+    questions
+}
+
+/// One `v4` pass over the whole corpus, graded.
+async fn run_once_v4(client: &Client, set: &QuestionSet) -> (Vec<Graded>, u64, u64) {
+    let corpus = corpus();
+    let mut graded = Vec::with_capacity(15);
+    let mut input_tokens = 0u64;
+    let mut output_tokens = 0u64;
+
+    for fixture in &corpus.weakness_kind_fixtures {
+        // `context()`, not `context_full()`: v4 holds v0's minimal context
+        // fixed and varies only the primitive.
+        let context = fixture.context();
+        let ac_ids = context.ac_ids();
+        let request = typesafe_sdk_client::SystemOneRequest::new(
+            typesafe_sdk_questions::Entry::from(&context),
+            v4_questions_for_fr(set, &ac_ids),
+        );
+        let response = client
+            .system_one(request)
+            .await
+            .map_err(|error| quoin_jev::error::classify(&error))
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}: {} — {}",
+                    fixture.fixture_id,
+                    error.code.as_str(),
+                    error.message
+                )
+            });
+        input_tokens += response.usage.input_tokens;
+        output_tokens += response.usage.output_tokens;
+        graded.push(grade_weakness(
+            fixture,
+            &quoin_jev::verdict::extract(&response, set, &ac_ids, CONFIDENCE_THRESHOLD),
+        ));
+    }
+
+    // Coverage rows are a `score` question, untouched by this hypothesis, and
+    // are sent exactly as v0 sends them.
+    for fixture in &corpus.adverse_case_coverage_fixtures {
+        let context = fixture.context();
+        let verdict = quoin_jev::lens::run(client, &context, set, CONFIDENCE_THRESHOLD)
+            .await
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}: {} — {}",
+                    fixture.fixture_id,
+                    error.code.as_str(),
+                    error.message
+                )
+            });
+        input_tokens += verdict.usage_input_tokens;
+        output_tokens += verdict.usage_output_tokens;
+        graded.push(grade_coverage(fixture, &verdict));
+    }
+
+    (graded, input_tokens, output_tokens)
+}
+
+/// Provenance: PLAT-917 follow-up. **`v4`, pre-registered before its first
+/// call.** The shipped question and v0's minimal context, sent through the
+/// `choice` primitive with a described `{what, not_for, examples}` criterion
+/// per label instead of `choice_of`'s bare label strings.
+///
+/// Gates on the same three bars every prior variant was held to; `JEV_RUNS`
+/// (default 1) repeats the pass and reports how many cleared.
+#[tokio::test]
+async fn the_lens_with_described_choice_criteria_v4() {
+    let runs: usize = std::env::var("JEV_RUNS")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(1);
+    assert!(runs >= 1, "a variant needs at least one pass");
+
+    let client = live_client();
+    let set = QuestionSet::parse(QUESTION_SET).expect("the shipped question set parses");
+
+    let mut passes = Vec::with_capacity(runs);
+    let mut cleared = 0;
+    let mut input_tokens = 0u64;
+    let mut output_tokens = 0u64;
+    for run in 1..=runs {
+        let (graded, input, output) = run_once_v4(&client, &set).await;
+        input_tokens += input;
+        output_tokens += output;
+        let bars = Bars::of(&graded);
+        println!("run {run} (v4): {}", bars.line());
+        if bars.all() {
+            cleared += 1;
+        }
+        passes.push(graded);
+    }
+
+    let first = &passes[0];
+    println!(
+        "{}",
+        report("criterion-strength v4 (described choice criteria)", first)
+    );
+    let bars = Bars::of(first);
+    println!("**GATE v4** {}", bars.line());
+    println!("**Bars cleared** in {cleared} of {runs} run(s) for v4 (GO needs at least 3 of 5).");
+    println!(
+        "tokens: {input_tokens} in, {output_tokens} out over {runs} pass(es) \
+         ({:.0} in/request)",
+        input_tokens as f64 / (15.0 * runs as f64)
+    );
+
+    // The call worked and the crate understood the answer, before any accuracy
+    // bar is read off a possibly-empty denominator.
+    assert_eq!(first.len(), 15, "every fixture was graded");
+    let unanswered: Vec<&str> = first
+        .iter()
+        .filter(|row| row.verdict == Verdict::Unanswered)
+        .map(|row| row.fixture_id.as_str())
+        .collect();
+    assert!(
+        unanswered.is_empty(),
+        "the service left fixtures unanswered: {unanswered:?}"
+    );
+    let unrecognized: Vec<(&str, &str)> = first
+        .iter()
+        .filter(|row| row.verdict == Verdict::Unrecognized)
+        .map(|row| (row.fixture_id.as_str(), row.actual.as_str()))
+        .collect();
+    assert!(
+        unrecognized.is_empty(),
+        "labels outside the declared answer_space: {unrecognized:?}"
+    );
+    assert!(
+        input_tokens > 0,
+        "a pass that consumed no input tokens never reached the service"
+    );
+
+    assert!(
+        bars.all(),
+        "v4 does not clear the pre-registered bars: {}",
+        bars.line()
     );
 }
 
