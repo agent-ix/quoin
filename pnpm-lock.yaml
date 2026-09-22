@@ -8,29 +8,29 @@ importers:
 
   .:
     dependencies:
-      '@agent-ix/filament-core-data':
-        specifier: 0.1.0
-        version: 0.1.0
       '@agent-ix/ix-spec-workflows':
         specifier: '>=0.1.3'
         version: 0.1.3
       '@agent-ix/semantic-core':
+        specifier: 0.3.0
+        version: 0.3.0(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))
+      '@agent-ix/semantic-schema':
         specifier: 0.1.0
-        version: 0.1.0(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))
+        version: 0.1.0
 
 packages:
-
-  '@agent-ix/filament-core-data@0.1.0':
-    resolution: {integrity: sha512-VgWt+b7gmqsozhcRkMf9ie1LACeXBwHmdgQma1urpvzXrJRF6Pcl9/0S8P5uOvcwC/RhgBduTxbCGmQf4binzw==, tarball: http://npm.ix/@agent-ix/filament-core-data/-/3ff3d3c6ae7e2db7da15c6ddff4277a60dd9d022}
 
   '@agent-ix/ix-spec-workflows@0.1.3':
     resolution: {integrity: sha512-XEV7il1jwVd3wN4VeZITwW4ryB25o7NRMsuxKDj0kJKeogsvDoCyvKEDsr/MG6QXxUSnrH96dtODfZ9JCUF8ug==, tarball: http://npm.ix/@agent-ix/ix-spec-workflows/-/1b264a8f796318c5c8e023b70a7e53e7fe2683a7}
 
-  '@agent-ix/semantic-core@0.1.0':
-    resolution: {integrity: sha512-y1cuTf1KQUa9rDkzXDc0mynE7T5V49NcYuVCU6JoH1bNoroUfkNhpQ7TppY/EzRuvdUOWM4FjNQ3TvgfONeq7g==}
+  '@agent-ix/semantic-core@0.3.0':
+    resolution: {integrity: sha512-ygmBl+YzYaNDkkMsoejRuylBa+MbwqcqFAg/xjK2is+dKA6IbX9VlBQPU0hLc91fzDKGVIsTSBRUzDVs5YBcyw==, tarball: http://npm.ix/@agent-ix/semantic-core/-/bfeb9ba3a7381d08f02f96b2745859f5acdb3506}
     peerDependencies:
       '@typespec/compiler': 1.15.0
       '@typespec/json-schema': 1.15.0
+
+  '@agent-ix/semantic-schema@0.1.0':
+    resolution: {integrity: sha512-ocBOQ6hc8PBvyX2rqHQLQHTqlhfg6DMebCMZk7CuwYbg1HdXBep3F7AnleWex8qRwr2Yl6xLFWsk4kSTcH4Q6g==, tarball: http://npm.ix/@agent-ix/semantic-schema/-/ede0d3d815c5d43c8b516362c9245365421291ae}
 
   '@agent-ix/workflow-core@0.1.6':
     resolution: {integrity: sha512-sVMNt9RwBOt2bw5WNVrqdpaHv81L+A36H2jsSc+nIA1a7xpLodudngYfgydERASdeU2bw+n3iVRd3OnRK+RAew==, tarball: http://npm.ix/@agent-ix/workflow-core/-/0693441d3e94b827244733b2bed6f44b05a60e4e}
@@ -391,16 +391,16 @@ packages:
 
 snapshots:
 
-  '@agent-ix/filament-core-data@0.1.0': {}
-
   '@agent-ix/ix-spec-workflows@0.1.3':
     dependencies:
       '@agent-ix/workflow-core': 0.1.6
 
-  '@agent-ix/semantic-core@0.1.0(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))':
+  '@agent-ix/semantic-core@0.3.0(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))':
     dependencies:
       '@typespec/compiler': 1.15.0
       '@typespec/json-schema': 1.15.0(@typespec/compiler@1.15.0)
+
+  '@agent-ix/semantic-schema@0.1.0': {}
 
   '@agent-ix/workflow-core@0.1.6':
     dependencies:

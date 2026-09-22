@@ -5,17 +5,15 @@
 //! FR-075; issue #293).
 //!
 //! Port of `src/semantic/contract.ts`. One family of schema is quoin's own
-//! (`sweep-report.schema.json`); the other two are `agent-ix/filament-core-data`'s
+//! (`sweep-report.schema.json`); the rest are `agent-ix/filament-core-data`'s
 //! module-manifest, package-manifest, common and semantic-core schemas --
 //! real dependency edges, not copies, resolved through the published npm
-//! packages `@agent-ix/filament-core-data` and `@agent-ix/semantic-core` in
-//! this repository's own `node_modules` (PLAT-887 de-vendoring; see
-//! `build.rs` for why module-manifest/package-manifest/common are still
-//! blocked on that package publishing `schema/semantic/v1/`, and why that is
-//! reported rather than bridged). `build.rs` embeds the installed packages'
-//! bytes into the compiled binary at their own paths, under the internal
-//! names the path helpers below expect, so a release built from this crate
-//! stays self-contained with no runtime dependency on `node_modules` existing.
+//! packages `@agent-ix/semantic-schema` and `@agent-ix/semantic-core` in this
+//! repository's own `node_modules` (PLAT-887 de-vendoring). `build.rs` embeds
+//! the installed packages' bytes into the compiled binary at their own paths,
+//! under the internal names the path helpers below expect, so a release built
+//! from this crate stays self-contained with no runtime dependency on
+//! `node_modules` existing.
 //!
 //! [`schema_dir`] and its siblings locate the *embedded* tree, materialized
 //! at runtime by [`crate::materialize_embedded_contract`] -- not a directory
@@ -23,10 +21,9 @@
 //! `bundle_digest` fields are compiled assertions: every test in this crate
 //! that reads a schema re-derives its digest from the live embedded bytes and
 //! compares it here -- that is the actual gate. `source_revision` is not
-//! re-derived the same way -- it names the published package version the
+//! re-derived the same way -- it names the published npm tarball's shasum the
 //! bytes were embedded from, for humans reading a diagnostic, and the tests
-//! only check its shape. For the three still blocked on publish it is a
-//! placeholder (see below), because there is no real version to name yet.
+//! only check its shape.
 
 use std::path::{Path, PathBuf};
 
@@ -104,7 +101,7 @@ impl SemanticContract {
 /// The pinned contract. Every hash is asserted by the crate's tests.
 pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
     contract_version: "1.0.0",
-    semantic_core_versions: &["0.1.0"],
+    semantic_core_versions: &["0.3.0"],
     semantic_keys: &[
         "contract_version",
         "semantic_core",
@@ -117,39 +114,33 @@ pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
         "legacy_forms",
         "sweep_report",
     ],
-    // BLOCKED (PLAT-887): filament-core-data has not yet published
-    // `schema/semantic/v1/module-manifest.schema.json` -- see `build.rs`.
-    // `source_revision` and `sha256` are explicit 40/64-zero placeholders,
-    // not a guess: `SemanticValidators::load` refuses at runtime with
-    // `SemanticError::VendoredSchemaUnreadable` until the real file is
-    // embedded, and every test that needs its real bytes is `#[ignore]`d
-    // with this same reason. Fill in the real values once published.
+    // Published by `agent-ix/filament-core-data` as `@agent-ix/semantic-schema`
+    // (PLAT-887 de-vendoring). `source_revision` is that npm tarball's SHA-1
+    // shasum, informational only -- `sha256` is the compiled assertion.
     module_manifest_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "0000000000000000000000000000000000000000",
+        source_revision: "ede0d3d815c5d43c8b516362c9245365421291ae",
         source_path: "schema/semantic/v1/module-manifest.schema.json",
-        sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        sha256: "sha256:1a00f32afd03b53caafc90cb2db388b65bc36b6a4fe3faab16560d1afaffd6c5",
     },
     semantic_core: VendoredBundle {
         repository: "agent-ix/filament-core-data",
-        source_revision: "03ddad89553e449b645fafc7ce47acaba4504590",
+        source_revision: "bfeb9ba3a7381d08f02f96b2745859f5acdb3506",
         source_path: "packages/semantic-core/generated/json-schema",
-        version: "0.1.0",
-        bundle_digest: "sha256:dd33c886f70e908b14507c35e078d163b76308c3d170d2b54ddf933d1a4ebb52",
+        version: "0.3.0",
+        bundle_digest: "sha256:65b4e8d4c71a343e270618c9a8ca7e33687f10324ef5e9fe68d150056101c627",
     },
-    // BLOCKED (PLAT-887): see module_manifest_schema above.
     package_manifest_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "0000000000000000000000000000000000000000",
+        source_revision: "ede0d3d815c5d43c8b516362c9245365421291ae",
         source_path: "schema/semantic/v1/package-manifest.schema.json",
-        sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        sha256: "sha256:d6e696577f58abd59c36588803c019ad3a43f9a7078c873ad41a0aec41031ffd",
     },
-    // BLOCKED (PLAT-887): see module_manifest_schema above.
     common_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "0000000000000000000000000000000000000000",
+        source_revision: "ede0d3d815c5d43c8b516362c9245365421291ae",
         source_path: "schema/semantic/v1/common.schema.json",
-        sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        sha256: "sha256:1de370f344b099b511960c32ddc98d512218183c13b03350201627bdcba7710a",
     },
 };
 
@@ -286,8 +277,8 @@ mod tests {
     /// Trace: FR-070
     #[test]
     fn tc_378_041_ships_semantic_core_is_exact() {
-        assert!(SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.1.0")));
-        assert!(!SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.1.1")));
+        assert!(SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.0")));
+        assert!(!SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.1")));
     }
 
     /// Trace: FR-070

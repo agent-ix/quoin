@@ -5,8 +5,8 @@
   "description": "Pulls in published packages quoin depends on instead of vendoring: the ix-flow specification workflows quoin-cli launches (`quoin review`, `quoin matrix`, `quoin to-plan`, PLAT-157), and the semantic-core JSON Schema bundle quoin-semantic embeds into native releases (PLAT-887).",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "@agent-ix/filament-core-data": "0.1.0",
     "@agent-ix/ix-spec-workflows": ">=0.1.3",
-    "@agent-ix/semantic-core": "0.1.0"
+    "@agent-ix/semantic-core": "0.3.0",
+    "@agent-ix/semantic-schema": "0.1.0"
   }
 }
