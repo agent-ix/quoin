@@ -134,13 +134,20 @@ enum LocalArtifact {
 /// Only a name with **no filesystem entry at all** is a [`LocalArtifact::Label`].
 /// An entry that exists and cannot be digested — a directory, a symlink, an
 /// unreadable or oversized file — is refused, because the record names a
-/// local thing whose bytes intake then cannot see.
+/// local thing whose bytes intake then cannot see. A symlink anywhere
+/// *before* the final component is refused the same way, before the
+/// NotFound-or-digest decision is even made (PLAT-969 F3): otherwise a
+/// directory the name walks through, not just the name's last segment,
+/// silently redirects the check — `dist -> /elsewhere` would digest a file
+/// this repository does not hold, and `dist -> /missing` would `lstat` as
+/// `NotFound` and pass as a label, both without the write ever refusing.
 ///
 /// # Errors
 ///
 /// [`MeasurementErrorCode::ArtifactNameUnsafe`] when the name is not a safe
 /// relative path, and [`MeasurementErrorCode::ArtifactUnreadable`] when it
-/// resolves to an entry that cannot be digested. Both name the artifact.
+/// resolves to an entry that cannot be digested, or passes through a
+/// symlinked component. Both name the artifact.
 fn reach_local_artifact(repo: &Path, name: &str) -> Result<LocalArtifact, MeasurementError> {
     let relative = RawEvidencePath::parse(name).map_err(|error| {
         MeasurementError::new(
@@ -153,6 +160,16 @@ fn reach_local_artifact(repo: &Path, name: &str) -> Result<LocalArtifact, Measur
         )
     })?;
     let path = repo.join(relative.as_str());
+    if let Some(component) = first_symlink_ancestor(repo, relative.as_str()) {
+        return Err(MeasurementError::new(
+            MeasurementErrorCode::ArtifactUnreadable,
+            format!(
+                "verificationStack.artifacts.{name} names {} but `{component}` is a symlink, so \
+                 the path cannot be checked against a local file",
+                path.display()
+            ),
+        ));
+    }
     // Only absence makes a label. Any other answer — an entry, or a stat that
     // failed for another reason — goes to the digest, which refuses what it
     // cannot read and says why.
@@ -174,4 +191,29 @@ fn reach_local_artifact(repo: &Path, name: &str) -> Result<LocalArtifact, Measur
                 ),
             )
         })
+}
+
+/// The first path component before `relative`'s final one that is a symlink
+/// on disk under `repo`, checked left to right so the first one found is the
+/// one a refusal names.
+///
+/// Walked against the real filesystem rather than decided lexically: a safe
+/// *name* (no `..`, no leading `/`) says nothing about what the filesystem
+/// actually put at each component, and only `symlink_metadata` can see that a
+/// component the name calls a directory is a link elsewhere. The final
+/// component's own symlink-ness is left to `digest_file_sha256`, which
+/// already refuses it.
+fn first_symlink_ancestor<'name>(repo: &Path, relative: &'name str) -> Option<&'name str> {
+    let mut cursor = repo.to_path_buf();
+    let mut segments = relative.split('/').peekable();
+    while let Some(segment) = segments.next() {
+        segments.peek()?;
+        cursor.push(segment);
+        let is_symlink = std::fs::symlink_metadata(&cursor)
+            .is_ok_and(|metadata| metadata.file_type().is_symlink());
+        if is_symlink {
+            return Some(segment);
+        }
+    }
+    None
 }

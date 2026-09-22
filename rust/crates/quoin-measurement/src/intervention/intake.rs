@@ -122,6 +122,14 @@ impl From<MeasurementError> for InterventionIntakeError {
             | MeasurementErrorCode::Yaml
             | MeasurementErrorCode::Io
             | MeasurementErrorCode::Store
+            // `ArtifactNameUnsafe` and `ArtifactUnreadable` are raised only by
+            // `store::publish::verify_local_artifacts` (PLAT-969), which
+            // `write_intervention_record` never calls — intake has no
+            // `verificationStack.artifacts` check of its own. Both arms are
+            // unreachable from this conversion today; they are kept here so
+            // this match stays exhaustive over `MeasurementErrorCode` rather
+            // than falling back to a catch-all the next code added would
+            // silently absorb.
             | MeasurementErrorCode::ArtifactNameUnsafe
             | MeasurementErrorCode::ArtifactUnreadable => InterventionRefusalCode::InvalidRecord,
         };

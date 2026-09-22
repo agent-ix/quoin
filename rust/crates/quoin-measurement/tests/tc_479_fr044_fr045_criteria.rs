@@ -59,6 +59,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use std::os::unix::fs::PermissionsExt as _;
 use std::path::{Path, PathBuf};
 
 use quoin_measurement::error::MeasurementErrorCode;
@@ -1025,6 +1026,19 @@ fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
 /// directory and a symlink are both entries `digest_file_sha256` declines;
 /// before PLAT-969 each was skipped and the record admitted unchecked.
 ///
+/// Two vacuous rewrites of the guard this test also has to catch: pinning
+/// `reach_local_artifact`'s early return to `.is_err()` rather than
+/// `.is_err_and(|e| e.kind() == NotFound)`, and swapping the
+/// `symlink_metadata` check for `!path.exists()`. Both pass every case above,
+/// because none of them produces a filesystem error *other* than `NotFound`
+/// for the early-return check to over-match, and none puts a symlink where
+/// `path.exists()`'s target-following would disagree with `symlink_metadata`.
+/// `Makefile/x` (a regular file used as a directory, `ENOTDIR`) and a
+/// mode-000 parent directory (`EACCES`) are errors the mutant's `.is_err()`
+/// wrongly treats as absence; a dangling symlink is an entry `path.exists()`
+/// wrongly treats as absent because its *target* is missing, even though the
+/// link itself is there and `symlink_metadata` sees it.
+///
 /// Trace: FR-044-AC-6
 /// Provenance: PLAT-969
 #[test]
@@ -1036,8 +1050,21 @@ fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish
     std::fs::write(root.join("target.bin"), b"artifact bytes").expect("the link target");
     std::os::unix::fs::symlink(root.join("target.bin"), root.join("linked.bin"))
         .expect("the symlink fixture");
+    std::fs::write(root.join("Makefile"), b"a regular file, not a directory")
+        .expect("the Makefile fixture");
+    std::os::unix::fs::symlink(root.join("does-not-exist.bin"), root.join("dangling.bin"))
+        .expect("the dangling symlink fixture");
 
-    for name in ["dist/quoin", "linked.bin"] {
+    for name in [
+        "dist/quoin",
+        "linked.bin",
+        // `Makefile` is a regular file, so treating it as a directory to
+        // reach `x` fails with `ENOTDIR`, not `NotFound`.
+        "Makefile/x",
+        // The link itself exists (`symlink_metadata` sees it); only its
+        // target is missing.
+        "dangling.bin",
+    ] {
         let refusal = publish_with_artifacts(root, json!({ name: digest }))
             .expect_err("an entry that cannot be digested is refused");
         assert_eq!(
@@ -1055,6 +1082,98 @@ fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish
             "the refusal must name the path; it said {said}"
         );
     }
+
+    // A parent directory intake cannot search into it (mode 000) fails the
+    // same way — skipped when running as root, where the permission bit does
+    // not block traversal and the case cannot be exercised.
+    let restricted_dir = root.join("restricted");
+    std::fs::create_dir_all(&restricted_dir).expect("the restricted directory fixture");
+    std::fs::write(restricted_dir.join("artifact.bin"), b"secret bytes")
+        .expect("the restricted file fixture");
+    std::fs::set_permissions(&restricted_dir, std::fs::Permissions::from_mode(0o000))
+        .expect("the restricted directory's permissions");
+    let running_as_root = std::fs::symlink_metadata(restricted_dir.join("artifact.bin")).is_ok();
+    if running_as_root {
+        std::fs::set_permissions(&restricted_dir, std::fs::Permissions::from_mode(0o755))
+            .expect("permissions restored so the temp dir can be cleaned up");
+    } else {
+        let name = "restricted/artifact.bin";
+        let refusal = publish_with_artifacts(root, json!({ name: digest }))
+            .expect_err("a name behind an unsearchable directory is refused");
+        assert_eq!(
+            refusal.code(),
+            MeasurementErrorCode::ArtifactUnreadable,
+            "{name}: {refusal}"
+        );
+        let said = refusal.to_string();
+        assert!(
+            said.contains(&format!("verificationStack.artifacts.{name}")),
+            "the refusal must name the artifact; it said {said}"
+        );
+        std::fs::set_permissions(&restricted_dir, std::fs::Permissions::from_mode(0o755))
+            .expect("permissions restored so the temp dir can be cleaned up");
+    }
+
+    assert_eq!(stored_collections(root), Vec::<String>::new());
+}
+
+/// A symlink anywhere before an artifact name's final component refuses the
+/// publish naming the symlinked component, whether or not the link's own
+/// target exists. Before PLAT-969 F3, only the final component was checked:
+/// a symlinked directory earlier in the path was followed, so `dist ->
+/// /elsewhere` digested a file outside the repository and `dist -> /missing`
+/// `lstat`-ed as `NotFound` and passed as a label.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_004_a_symlinked_path_component_refuses_before_digest_or_label() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    let digest = format!("sha256:{}", "9".repeat(64));
+
+    // `dist` points at a real directory outside `root`, holding a file that
+    // would digest happily if the link were followed.
+    let elsewhere = tempfile::tempdir().expect("an external directory");
+    std::fs::write(
+        elsewhere.path().join("quoin"),
+        b"not this repository's bytes",
+    )
+    .expect("the external file");
+    std::os::unix::fs::symlink(elsewhere.path(), root.join("dist"))
+        .expect("the live symlinked component");
+
+    let refusal = publish_with_artifacts(root, json!({ "dist/quoin": digest }))
+        .expect_err("a live symlinked component is refused, not followed");
+    assert_eq!(refusal.code(), MeasurementErrorCode::ArtifactUnreadable);
+    let said = refusal.to_string();
+    assert!(
+        said.contains("verificationStack.artifacts.dist/quoin"),
+        "the refusal must name the artifact; it said {said}"
+    );
+    assert!(
+        said.contains("`dist`"),
+        "the refusal must name the symlinked component; it said {said}"
+    );
+
+    // `stray` points nowhere at all: before the fix this labelled the name
+    // (admitted on shape) because the lookup failed with `NotFound`.
+    std::os::unix::fs::symlink(root.join("nowhere"), root.join("stray"))
+        .expect("the dangling symlinked component");
+
+    let refusal = publish_with_artifacts(root, json!({ "stray/quoin": digest }))
+        .expect_err("a dangling symlinked component is refused, not admitted as a label");
+    assert_eq!(refusal.code(), MeasurementErrorCode::ArtifactUnreadable);
+    let said = refusal.to_string();
+    assert!(
+        said.contains("verificationStack.artifacts.stray/quoin"),
+        "the refusal must name the artifact; it said {said}"
+    );
+    assert!(
+        said.contains("`stray`"),
+        "the refusal must name the symlinked component; it said {said}"
+    );
+
     assert_eq!(stored_collections(root), Vec::<String>::new());
 }
 
