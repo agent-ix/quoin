@@ -528,7 +528,6 @@ mod tests {
     /// The control for everything below: without it a gate that refused
     /// everything would satisfy the refusal tests.
     #[test]
-    #[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
     fn a_module_alone_in_its_home_is_clean_and_pinned() {
         let home = home(&["alpha"]);
         let verdict = home.gate().inspect(&name("alpha"), &home.root("alpha"));
@@ -546,7 +545,6 @@ mod tests {
     /// (quoin#450 review, finding 2) because nothing judged this gate's own
     /// rules — `main.rs` carried no `#[cfg(test)]` at all.
     #[test]
-    #[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
     fn a_package_already_claimed_by_an_installed_module_is_refused() {
         let home = home(&["alpha", "beta"]);
         let verdict = home.gate().inspect(&name("beta"), &home.root("beta"));
@@ -570,7 +568,6 @@ mod tests {
     /// happens to be on disk: a registry entry whose module is gone REFUSES
     /// rather than shrinking the set the rules are judged against.
     #[test]
-    #[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
     fn a_registered_module_with_no_manifest_refuses_rather_than_shrinking_the_population() {
         let home = home(&["alpha", "beta"]);
         fs::remove_file(home.root("alpha").join("manifest.yaml")).unwrap();
@@ -589,7 +586,6 @@ mod tests {
 
     /// An unreadable registry is not an empty registry.
     #[test]
-    #[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
     fn an_unreadable_registry_refuses() {
         let home = home(&["alpha", "beta"]);
         fs::write(&home.registry_path, "{ not json").unwrap();
@@ -604,7 +600,6 @@ mod tests {
     /// A sibling whose manifest is present but unparsable is unjudged, not
     /// absent from the population.
     #[test]
-    #[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
     fn an_unreadable_sibling_refuses() {
         let home = home(&["alpha", "beta"]);
         fs::write(home.root("alpha").join("manifest.yaml"), "\t- [unclosed").unwrap();
@@ -620,7 +615,6 @@ mod tests {
     /// clean. `validate_installed` refuses on the identical error, and two
     /// answers to one condition is how a gate stops meaning anything.
     #[test]
-    #[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
     fn an_unreadable_subject_manifest_refuses_rather_than_passing() {
         let home = home(&["alpha"]);
         fs::write(home.root("alpha").join("manifest.yaml"), "\t- [unclosed").unwrap();
@@ -642,7 +636,6 @@ mod tests {
 
     /// `validate_installed` walks what is there and passes a clean home.
     #[test]
-    #[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
     fn validate_installed_passes_a_clean_home() {
         let home = home(&["alpha", "beta"]);
         home.gate().validate_installed().unwrap();
@@ -650,13 +643,12 @@ mod tests {
 
     /// A module tampered with after it was installed is caught on re-read.
     #[test]
-    #[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
     fn validate_installed_refuses_a_tampered_module() {
         let home = home(&["alpha"]);
         let manifest = fs::read_to_string(home.root("alpha").join("manifest.yaml")).unwrap();
         fs::write(
             home.root("alpha").join("manifest.yaml"),
-            manifest.replace("semantic_core: 0.1.0", "semantic_core: 9.9.9"),
+            manifest.replace("semantic_core: 0.3.0", "semantic_core: 9.9.9"),
         )
         .unwrap();
         let error = home.gate().validate_installed().unwrap_err();

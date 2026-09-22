@@ -48,7 +48,6 @@ fn module(
 /// Trace: FR-075-AC-1
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_630_the_derived_package_manifest_validates_and_carries_the_declarations() {
     let validators = validators();
     let scratch = Scratch::new();
@@ -74,7 +73,7 @@ fn tc_452_630_the_derived_package_manifest_validates_and_carries_the_declaration
         value["imports"],
         json!([{
             "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.1.0",
+            "versionConstraint": "=0.3.0",
             "exports": [],
             "capabilities": [],
         }])
@@ -102,7 +101,6 @@ fn tc_452_630_the_derived_package_manifest_validates_and_carries_the_declaration
 /// Trace: FR-075-AC-1
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_631_declared_mappings_become_sorted_identities_at_the_root_and_the_profile() {
     let validators = validators();
     let scratch = Scratch::new();
@@ -136,14 +134,13 @@ fn tc_452_631_declared_mappings_become_sorted_identities_at_the_root_and_the_pro
 /// Trace: FR-075-AC-2
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_632_one_digest_per_export_moves_when_the_shipped_schema_moves() {
     let validators = validators();
     let scratch = Scratch::new();
     let root = scratch.plain_copy("pins");
     let pin = registry_pin(&module(&root, &validators)).unwrap();
     assert_eq!(pin.package, "agent-ix/spec-objects-fixture");
-    assert_eq!(pin.semantic_core, "0.1.0");
+    assert_eq!(pin.semantic_core, "0.3.0");
     assert_eq!(pin.exports.keys().collect::<Vec<_>>(), vec!["entity"]);
     let digest = pin.exports["entity"].clone();
     assert!(
@@ -172,7 +169,6 @@ fn tc_452_632_one_digest_per_export_moves_when_the_shipped_schema_moves() {
 /// Trace: FR-075-AC-3
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_633_an_unresolved_import_names_the_installed_versions_and_a_cycle_names_the_cycle() {
     let validators = validators();
     let scratch = Scratch::new();
@@ -254,7 +250,6 @@ fn tc_452_633_an_unresolved_import_names_the_installed_versions_and_a_cycle_name
 /// Trace: FR-075-AC-4
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_634_the_loaded_and_the_derived_type_identities_agree() {
     let validators = validators();
     let scratch = Scratch::new();
@@ -286,7 +281,6 @@ fn tc_452_634_the_loaded_and_the_derived_type_identities_agree() {
 /// Trace: FR-075-AC-5, FR-075-CON-2
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_635_a_url_package_is_refused_and_admitted_packages_derive_ix_identities() {
     let validators = validators();
     let scratch = Scratch::new();

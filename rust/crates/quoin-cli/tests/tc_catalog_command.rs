@@ -77,7 +77,6 @@ fn text(bytes: &[u8]) -> String {
 ///
 /// Trace: FR-099, FR-101, FR-102, TC-1650
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
     let home = scratch.path().join("ix-home");
@@ -108,7 +107,6 @@ fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
 ///
 /// Trace: FR-099, FR-101, FR-102
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
     let home = scratch.path().join("ix-home");
@@ -148,7 +146,6 @@ fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
 /// Trace: FR-099, FR-101, FR-102
 #[cfg(unix)]
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_521_catalog_list_preserves_a_symlink_candidate_path() {
     use std::os::unix::fs::symlink;
 
@@ -174,7 +171,6 @@ fn tc_521_catalog_list_preserves_a_symlink_candidate_path() {
 ///
 /// Trace: FR-099, FR-101, FR-102
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_521_catalog_methods_preserves_first_wins_data() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
     let home = scratch.path().join("ix-home");

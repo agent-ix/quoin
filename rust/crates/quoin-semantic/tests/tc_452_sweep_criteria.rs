@@ -322,7 +322,6 @@ fn report(root: &Path) -> Value {
 /// Trace: FR-074-AC-3
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_655_legacy_forms_error_needs_a_matching_schema_valid_sweep_report() {
     let validators = validators();
     let scratch = Scratch::new();

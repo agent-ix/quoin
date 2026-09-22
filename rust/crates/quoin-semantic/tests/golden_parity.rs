@@ -56,13 +56,11 @@ use serde_json::Value;
 
 /// The semantic contract's root, materialized from the same embedded bytes
 /// `build.rs` compiled into this test binary (PLAT-887): quoin's own
-/// `sweep-report.schema.json`, plus the semantic-core bundle depended on from
-/// the published `@agent-ix/semantic-core` npm package (resolved through
-/// `node_modules` rather than copied into `src/semantic/`). The
-/// module-manifest, package-manifest and common schemas are the same kind of
-/// dependency but are not embedded yet: `@agent-ix/filament-core-data` has
-/// not published `schema/semantic/v1/` (see `build.rs`), so those three paths
-/// simply do not exist under this root until it does.
+/// `sweep-report.schema.json`, the semantic-core bundle depended on from the
+/// published `@agent-ix/semantic-core` npm package, and the module-manifest,
+/// package-manifest and common schemas depended on from the published
+/// `@agent-ix/semantic-schema` npm package -- all resolved through
+/// `node_modules` rather than copied into `src/semantic/`.
 ///
 /// One directory per process (a `OnceLock` over a `std::process::id()`-named
 /// scratch dir), not `OUT_DIR`: `OUT_DIR` is shared across every test binary
@@ -172,7 +170,6 @@ fn validators() -> SemanticValidators {
 /// Trace: FR-070, FR-096
 /// Provenance: agent-ix/quoin#378
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_378_100_semantic_block_schema_reaches_exact_verdict_parity() {
     let corpus = golden("schema-semantic-block.json");
     let (verdicts, shapes) = run_schema_corpus(validators().semantic_block(), &corpus);
@@ -196,7 +193,6 @@ fn tc_378_100_semantic_block_schema_reaches_exact_verdict_parity() {
 /// Trace: FR-074, FR-096
 /// Provenance: agent-ix/quoin#378
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_378_101_sweep_report_schema_reaches_exact_verdict_parity() {
     let corpus = golden("schema-sweep-report.json");
     let (verdicts, shapes) = run_schema_corpus(validators().sweep_report(), &corpus);
@@ -217,7 +213,6 @@ fn tc_378_101_sweep_report_schema_reaches_exact_verdict_parity() {
 /// Trace: FR-075, FR-096
 /// Provenance: agent-ix/quoin#378
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_378_102_package_manifest_schema_reaches_exact_verdict_parity() {
     let root = semantic_root();
     let schema_path = package_manifest_schema_path(&root);
@@ -254,7 +249,6 @@ fn tc_378_102_package_manifest_schema_reaches_exact_verdict_parity() {
 /// Trace: FR-070
 /// Provenance: agent-ix/quoin#378
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_378_103_read_semantic_block_matches_the_oracle() {
     let corpus = golden("read-semantic-block.json");
     let validators = validators();
@@ -568,7 +562,6 @@ fn module_from(golden_module: &Value) -> SemanticModule {
 /// Trace: FR-075
 /// Provenance: agent-ix/quoin#378
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_378_105_derived_package_manifest_matches_the_oracle() {
     let corpus = golden("derive-package-manifest.json");
     let validator = match PackageManifestValidator::load(&semantic_root()) {
@@ -701,7 +694,6 @@ fn tc_378_109_classify_data_schema_matches_the_oracle() {
 /// Trace: FR-070, NFR-025
 /// Provenance: agent-ix/quoin#378
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_378_110_vendored_bytes_still_hash_to_the_recorded_provenance() {
     let root = semantic_root();
     let golden = golden("contract.json");

@@ -70,17 +70,9 @@ fn required_arrays(node: &Value, path: &str, found: &mut BTreeMap<String, Vec<St
 /// The module-manifest schema records filament-core-data provenance, the
 /// vendored bytes hash to it, and it admits exactly the contract's keys.
 ///
-/// BLOCKED (PLAT-887): filament-core-data has not yet published
-/// `schema/semantic/v1/module-manifest.schema.json` (moved there from the
-/// private `filament-core-service`, which this public repo may not depend
-/// on). See `build.rs` and `SEMANTIC_CONTRACT.module_manifest_schema`'s
-/// placeholder values. Remove this `#[ignore]` once it is published and
-/// `pnpm install` picks it up.
-///
 /// Trace: FR-070-CON-2
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_640_the_module_manifest_schema_carries_its_provenance_and_the_bytes_match() {
     let record = SEMANTIC_CONTRACT.module_manifest_schema;
     assert_eq!(record.repository, "agent-ix/filament-core-data");
@@ -131,13 +123,9 @@ fn tc_452_640_the_module_manifest_schema_carries_its_provenance_and_the_bytes_ma
 /// constant is that nothing here needs to re-read it to keep asserting the
 /// constraint.
 ///
-/// BLOCKED (PLAT-887): see `tc_452_640` above -- this reads the same
-/// unpublished file.
-///
 /// Trace: FR-070-CON-1, NFR-017-AC-4
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
     const PRE_CR003_REQUIRED_ARRAYS: &[(&str, &[&str])] = &[
         ("", &["manifest_version", "name", "version"]),
@@ -191,7 +179,15 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
     }
     for path in after.keys().filter(|path| !before.contains_key(*path)) {
         assert!(
-            path.contains("/properties/semantic") || path.contains("/data_schema/"),
+            path.contains("/properties/semantic")
+                || path.contains("/data_schema/")
+                // `$defs/ConstructDeclaration` (filament-core-service#33): an optional
+                // semantic-IR construct declaration a manifest may attach to an object
+                // type via `ObjectTypeEntry.properties.construct`, which is itself
+                // optional -- a manifest that never sets `construct` never has this
+                // def's own `required` array evaluated, so it adds no obligation to a
+                // manifest that validated before.
+                || path.contains("/$defs/ConstructDeclaration"),
             "new required array outside the optional nodes: {path}"
         );
     }
@@ -270,15 +266,9 @@ fn tc_452_642_the_vendored_semantic_core_bundle_matches_its_recorded_digest() {
 /// the hashes the contract records, and the common schema's target registry is
 /// the declared five.
 ///
-/// BLOCKED (PLAT-887): filament-core-data has not yet published
-/// `schema/semantic/v1/{package-manifest,common}.schema.json`. See
-/// `tc_452_640`'s doc for the full explanation; the same placeholder values
-/// and runtime refusal apply here.
-///
 /// Trace: FR-075-AC-1
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/{package-manifest,common}.schema.json"]
 fn tc_452_643_the_package_manifest_and_common_schemas_are_vendored_at_their_hashes() {
     assert_eq!(
         file_sha256(&package_manifest_schema_path(&semantic_root())).unwrap(),

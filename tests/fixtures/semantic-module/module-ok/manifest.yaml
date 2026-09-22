@@ -7,7 +7,7 @@ object_types:
 - name: entity
   data_schema:
     schema: schemas/Entity.json
-    digest: sha256:8692992e186f40a73b78fd1b0915f0fe78e05a2b00782fb1df58c951a37c91d5
+    digest: sha256:6f18b27364f458ffd4319a6b44c1b4be96484395a2dd3a6d8c516c3ed457ce8d
   body_extraction:
     yield_pattern:
       match:
@@ -18,7 +18,7 @@ object_types:
     type: object
 semantic:
   contract_version: 1.0.0
-  semantic_core: 0.1.0
+  semantic_core: 0.3.0
   package: agent-ix/spec-objects-fixture
   exports: [entity]
   targets: [json-schema, markdown]

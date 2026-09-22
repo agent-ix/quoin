@@ -156,7 +156,6 @@ fn fixture() -> PathBuf {
 /// Trace: FR-070-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
     let module = fixture();
     let request = json!({ "roots": [module.to_string_lossy(), module.to_string_lossy()] });
@@ -200,7 +199,6 @@ fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
 /// Trace: FR-070-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_602_a_module_root_with_no_manifest_is_refused_not_reported_empty() {
     let temp = tempfile::tempdir().unwrap();
     let request = json!({ "roots": [temp.path().to_string_lossy()] });
@@ -224,7 +222,6 @@ fn tc_452_602_a_module_root_with_no_manifest_is_refused_not_reported_empty() {
 /// Trace: FR-070-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452, agent-ix/quoin#527, agent-ix/quoin#539
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_603_without_a_contract_root_the_embedded_contract_answers() {
     let home = tempfile::tempdir().unwrap();
     let request = json!({ "roots": [fixture().to_string_lossy()] });

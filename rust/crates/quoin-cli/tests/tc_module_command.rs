@@ -81,7 +81,6 @@ fn output_text(output: &Output) -> String {
 /// Trace: FR-070, FR-101, FR-102
 /// Provenance: quoin#449, quoin#521
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_521_module_install_list_and_remove_use_the_shipped_binary() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
     let home = scratch.path().join("ix-home");
@@ -119,7 +118,6 @@ fn tc_521_module_install_list_and_remove_use_the_shipped_binary() {
 /// Trace: FR-070, FR-101
 /// Provenance: quoin#527, quoin#531, quoin#533
 #[test]
-#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_527_001_native_module_install_bootstraps_without_a_semantic_root_env() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
     let home = scratch.path().join("ix-home");
