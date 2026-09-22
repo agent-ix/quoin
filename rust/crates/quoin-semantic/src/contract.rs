@@ -101,7 +101,7 @@ impl SemanticContract {
 /// The pinned contract. Every hash is asserted by the crate's tests.
 pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
     contract_version: "1.0.0",
-    semantic_core_versions: &["0.1.0"],
+    semantic_core_versions: &["0.3.0"],
     semantic_keys: &[
         "contract_version",
         "semantic_core",
@@ -125,10 +125,10 @@ pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
     },
     semantic_core: VendoredBundle {
         repository: "agent-ix/filament-core-data",
-        source_revision: "03ddad89553e449b645fafc7ce47acaba4504590",
+        source_revision: "bfeb9ba3a7381d08f02f96b2745859f5acdb3506",
         source_path: "packages/semantic-core/generated/json-schema",
-        version: "0.1.0",
-        bundle_digest: "sha256:dd33c886f70e908b14507c35e078d163b76308c3d170d2b54ddf933d1a4ebb52",
+        version: "0.3.0",
+        bundle_digest: "sha256:65b4e8d4c71a343e270618c9a8ca7e33687f10324ef5e9fe68d150056101c627",
     },
     package_manifest_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
@@ -277,8 +277,8 @@ mod tests {
     /// Trace: FR-070
     #[test]
     fn tc_378_041_ships_semantic_core_is_exact() {
-        assert!(SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.1.0")));
-        assert!(!SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.1.1")));
+        assert!(SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.0")));
+        assert!(!SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.1")));
     }
 
     /// Trace: FR-070
