@@ -464,7 +464,7 @@ fn grade_defect_derived(fixture: &M2Fixture, verdict: &EarsVerdict) -> Graded {
     let actual_class = derive_defect_from_noul(&fixture.engine_naive_pattern, verdict).to_owned();
     let outcome = if actual_class == expected {
         Verdict::Primary
-    } else if contested.iter().any(|r| *r == actual_class) {
+    } else if contested.contains(&actual_class) {
         Verdict::Contested
     } else {
         Verdict::Wrong
@@ -500,6 +500,38 @@ fn grade_defect_derived(fixture: &M2Fixture, verdict: &EarsVerdict) -> Graded {
 /// through `jev_flags_defect`, which this change does not touch, and it
 /// already passed. A `v3` that cleared bars 1-3 would still need bar 4 rerun
 /// before any GO.
+///
+/// # `v3` result, 2026-09-21: bars 1-3 clear, by a wide margin
+///
+/// MEASURED against `jev-latest`, N=5 full passes. Every pass returned the
+/// identical `v3-derived` score; the `v3-direct` column moved once (no-defect
+/// recall 45.5% to 54.5%), so the spread is the shipped rule's, not the
+/// derived rule's.
+///
+/// | column | MP-222 agreement | margin | MP-223 defect recall | MP-224 no-defect recall |
+/// | --- | --- | --- | --- | --- |
+/// | `v3-direct` (shipped rule) | 62.5% | -12.5 pp | 75.0% | 45.5-54.5% |
+/// | **`v3-derived`** | **93.8%** | **+18.8 pp** | **100.0%** | **81.8%** |
+///
+/// Deleting the six-way term turned a -12.5pp failure into a +18.8pp pass,
+/// on the same sixteen responses. Fourteen rows land on the primary
+/// reading, one on the contested reading (`EARS-FIX-011`), one wrong
+/// (`EARS-FIX-013`, a clean statement called defective).
+///
+/// The shipped gate [`the_ears_lens_gate_mp_229`], rerun the same day,
+/// still fails bar 1 only: MP-225 disagreement 2.5% (range 0.0-6.2%) over
+/// 10 pairs, and MP-231 forward delta 45.0% over 20/20 answered, inverse
+/// 8.0% over 25/25 -- so bar 4 clears its noise floor today as it did
+/// before.
+///
+/// **What this does not yet establish.** Bar 4 is measured through
+/// `jev_flags_defect`, which still consults the six-way choice, so the M6
+/// pool is not flagged by the rule `v3` gates on. Re-deriving that flagging
+/// under [`derive_defect_from_noul`] and re-measuring MP-231 is the
+/// remaining step, and it must be pre-registered before it is run. The
+/// corpus is also sixteen agent-labelled fixtures carrying five defects,
+/// three of them `unmeasurable_response` -- a single `noul` question
+/// reaches those three, so the margin rests on a narrow base.
 #[tokio::test]
 async fn the_ears_lens_with_noul_derived_defect_v3() {
     let client = live_client();
