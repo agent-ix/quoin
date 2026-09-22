@@ -58,11 +58,12 @@ use typesafe_sdk_env::Process;
 
 use quoin_jev::JevErrorCode;
 use support::ears::{
-    EarsQuestionSet, EarsVerdict, NO_DEFECT, QUESTION_SET_JSON, grade_defect, grade_pattern,
-    jev_flags_defect, m2_corpus, m6_corpus, run as ears_run,
+    EarsQuestionSet, EarsVerdict, M2Fixture, NO_DEFECT, QUESTION_SET_JSON, grade_defect,
+    grade_pattern, jev_flags_defect, m2_corpus, m6_corpus, run as ears_run,
 };
 use support::grading::{
-    Graded, defect_recall, disagreement, no_defect_recall, percent, report, tally, trivial_baseline,
+    Graded, Verdict, defect_recall, disagreement, no_defect_recall, percent, report, tally,
+    trivial_baseline,
 };
 
 /// PLAT-838's stated floor: "M1 disagreement (N=5 minimum, state N)". This
@@ -390,5 +391,193 @@ async fn benchmark_latency_and_throughput() {
             .iter()
             .all(|latency| *latency > Duration::ZERO),
         "a request that took no time did not reach the network"
+    );
+}
+
+// ---------------------------------------------------------------------
+// v3: derive the defect call from the `noul` answers alone
+// ---------------------------------------------------------------------
+
+/// `v3`'s derivation rule, fixed before its first call.
+///
+/// The shipped rule ([`support::ears::grade_defect`]) calls a statement
+/// defective when Jev's six-way `ears_pattern_actual` choice disagrees with
+/// the engine's naive pattern, **or** when Jev judges the response
+/// unmeasurable. `v3` deletes the first term: the label comes only from the
+/// three `noul` answers, plus the engine's own deterministic pattern as
+/// context. Jev's six-way pick is not consulted at all.
+///
+/// The priority order is read off `ears-question-set.json`'s own `note`
+/// fields, not fitted to this corpus's answer key:
+///
+/// * `response_measurable` — the note names the denylist it exists to
+///   replace ("`shall be robust` sails through"), so an unmeasurable
+///   response is a defect on any pattern.
+/// * `condition_is_unwanted` — the note says "Disambiguates When/If", so on
+///   a statement the engine read as `event_driven`, an unwanted condition
+///   means the `When` should have been an `If`.
+/// * `trigger_is_momentary` — the note says "Disambiguates When/While", so
+///   on the same engine reading, a non-momentary trigger means the `When`
+///   should have been a `While`.
+///
+/// A missing answer scores `0.5`, which fires no branch: an answer the
+/// service did not give must not manufacture a defect.
+///
+/// **Stated blind spot, before running.** Both disambiguators are phrased
+/// relative to a `When` statement, so this rule can raise a
+/// pattern-confusion defect only where the engine already read
+/// `event_driven`. A `While`-really-`When` or an `If`-really-`When`
+/// statement is unreachable. Both pattern-confusion defects in this corpus
+/// (`EARS-FIX-002`, `EARS-FIX-007`) happen to be engine-`event_driven`, so
+/// the blind spot costs nothing here — that is a fact about the corpus, not
+/// a property of the rule, and it means this corpus cannot measure the cost.
+fn derive_defect_from_noul(engine_naive_pattern: &str, verdict: &EarsVerdict) -> &'static str {
+    if verdict.response_measurable.unwrap_or(0.5) < 0.5 {
+        return "defect";
+    }
+    if engine_naive_pattern == "event_driven"
+        && (verdict.condition_is_unwanted.unwrap_or(0.5) >= 0.5
+            || verdict.trigger_is_momentary.unwrap_or(0.5) < 0.5)
+    {
+        return "defect";
+    }
+    NO_DEFECT
+}
+
+/// Grades one M2 fixture under [`derive_defect_from_noul`], through the same
+/// primary/contested/wrong comparison [`support::ears::grade_defect`] uses,
+/// so the two columns differ only in how the label was reached.
+fn grade_defect_derived(fixture: &M2Fixture, verdict: &EarsVerdict) -> Graded {
+    let expected = if fixture.labels.has_defect {
+        "defect"
+    } else {
+        NO_DEFECT
+    }
+    .to_owned();
+    let contested: Vec<String> = match &fixture.labels.has_defect_contested {
+        Some(all) => all
+            .iter()
+            .map(|v| if *v { "defect" } else { NO_DEFECT }.to_owned())
+            .collect(),
+        None => vec![expected.clone()],
+    };
+    let actual_class = derive_defect_from_noul(&fixture.engine_naive_pattern, verdict).to_owned();
+    let outcome = if actual_class == expected {
+        Verdict::Primary
+    } else if contested.iter().any(|r| *r == actual_class) {
+        Verdict::Contested
+    } else {
+        Verdict::Wrong
+    };
+    Graded {
+        fixture_id: fixture.fixture_id.clone(),
+        tier: fixture.confidence,
+        expected,
+        contested,
+        actual: actual_class.clone(),
+        actual_class,
+        verdict: outcome,
+        confidence: verdict.pattern_confidence,
+    }
+}
+
+/// Provenance: PLAT-838 follow-up. **`v3`, pre-registered before its first
+/// call.**
+///
+/// The shipped question failed MP-229 bar 1 by -12.5pp. Its label depends on
+/// a six-way `choice`; PLAT-839's gap-analysis lens passed its own gate
+/// asking narrow yes/no questions. `v3` tests whether that shape helps here:
+/// the request is unchanged (same question set, same context, the six-way
+/// choice is still asked and still answered), but the defect call is derived
+/// from the three `noul` answers via [`derive_defect_from_noul`] instead.
+/// Both columns are graded from the same responses, so service variance is
+/// not a confound between them.
+///
+/// **Bars.** MP-229 bars 1-3, verbatim, applied to the `v3-derived` column:
+/// margin over the best constant predictor > 0, defect recall > 0,
+/// no-defect recall > 0. Bar 4 (MP-231's forward delta) is **out of scope
+/// and not evaluated here**: it measures the M6 real-statement corpus
+/// through `jev_flags_defect`, which this change does not touch, and it
+/// already passed. A `v3` that cleared bars 1-3 would still need bar 4 rerun
+/// before any GO.
+#[tokio::test]
+async fn the_ears_lens_with_noul_derived_defect_v3() {
+    let client = live_client();
+    let qs = EarsQuestionSet::parse(QUESTION_SET_JSON);
+    let corpus = m2_corpus();
+
+    let mut direct: Vec<Graded> = Vec::with_capacity(corpus.fixtures.len());
+    let mut derived: Vec<Graded> = Vec::with_capacity(corpus.fixtures.len());
+    let mut input_tokens = 0u64;
+
+    for fixture in &corpus.fixtures {
+        let verdict: EarsVerdict = ears_run(&client, &fixture.context(), &qs)
+            .await
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}: {} — {}",
+                    fixture.fixture_id,
+                    error.code.as_str(),
+                    error.message
+                )
+            });
+        input_tokens += verdict.usage_input_tokens;
+        direct.push(grade_defect(fixture, &verdict));
+        derived.push(grade_defect_derived(fixture, &verdict));
+    }
+
+    println!(
+        "{}",
+        report(
+            "M2 v3-direct (shipped rule: pattern mismatch OR unmeasurable; same calls as v3-derived)",
+            &direct,
+            NO_DEFECT,
+        )
+    );
+    println!(
+        "{}",
+        report(
+            "M2 v3-derived (noul answers only, six-way choice not consulted)",
+            &derived,
+            NO_DEFECT,
+        )
+    );
+
+    assert!(
+        input_tokens > 0,
+        "a pass that consumed no input tokens never reached the service"
+    );
+
+    for (name, graded) in [("v3-direct", &direct), ("v3-derived", &derived)] {
+        let agreement = tally(graded).agreement().expect("16 rows graded");
+        let (baseline_label, baseline) = trivial_baseline(graded);
+        let defect_r = defect_recall(graded, NO_DEFECT);
+        let no_defect_r = no_defect_recall(graded, NO_DEFECT);
+        println!(
+            "**GATE {name}** MP-222 agreement {agreement:.1}% vs `{baseline_label}` \
+             {baseline:.1}% — margin {:+.1}pp | MP-223 defect recall {} | MP-224 no-defect \
+             recall {}",
+            agreement - baseline,
+            defect_r.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+            no_defect_r.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        );
+    }
+
+    let agreement = tally(&derived).agreement().expect("16 rows graded");
+    let (_, baseline) = trivial_baseline(&derived);
+    let margin = agreement - baseline;
+    let defect_r = defect_recall(&derived, NO_DEFECT);
+    let no_defect_r = no_defect_recall(&derived, NO_DEFECT);
+    assert!(
+        margin > 0.0,
+        "MP-229 bar 1 (MP-222 margin > 0) on v3-derived: got {margin:+.1}pp"
+    );
+    assert!(
+        defect_r.is_some_and(|v| v > 0.0),
+        "MP-229 bar 2 (MP-223 defect recall > 0%) on v3-derived: got {defect_r:?}"
+    );
+    assert!(
+        no_defect_r.is_some_and(|v| v > 0.0),
+        "MP-229 bar 3 (MP-224 no-defect recall > 0%) on v3-derived: got {no_defect_r:?}"
     );
 }
