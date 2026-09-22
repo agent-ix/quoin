@@ -5,6 +5,10 @@
 //! Ports `src/measurement/types.ts:60-77`, and the `STAGES` / status sets that
 //! `src/measurement/plans.ts:7-15,57-68` checks against.
 
+use std::fmt;
+
+use quoin_store::{RawFileSha256Digest, digest_bytes_sha256};
+
 use crate::types::ids::NonEmptyText;
 
 /// Where a plan is in its lifecycle.
@@ -116,6 +120,9 @@ pub struct MeasurementPlan {
     pub owner: Option<String>,
     /// What to do about it, when governance fields were requested.
     pub action: Option<String>,
+    /// The plan's own tamper-evidence attestation over its "Comparison and
+    /// Enforcement" section (PLAT-936), when the document declares one.
+    pub preregistration: Option<PlanPreregistration>,
 }
 
 impl MeasurementPlan {
@@ -123,5 +130,95 @@ impl MeasurementPlan {
     #[must_use]
     pub fn sort_key(&self) -> (&str, &str) {
         (self.metric.as_str(), self.id.as_str())
+    }
+}
+
+/// A `MeasurementPlan`'s `preregistration` block: tamper evidence over its own
+/// "Comparison and Enforcement" section, not an ordering proof.
+///
+/// This closes exactly one gap: a bar text silently edited after it was
+/// recorded, without the frontmatter digest being recomputed to match. It
+/// proves nothing about *when* the bar was written relative to any result —
+/// PLAT-935's design research found that check unbuildable, because both a
+/// commit's author-date and a collection's `timestamp` are self-reported
+/// strings nobody attests independently. Residual gaps this does not close:
+/// reporting only a favourable pre-registered variant, repeated re-runs until
+/// one passes, and editing an unprotected input (such as the baseline) instead
+/// of the bar text. See PLAT-936.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PlanPreregistration {
+    /// The digest the document's frontmatter declares.
+    pub declared_digest: BarDigest,
+    /// The digest actually computed from the document's own "Comparison and
+    /// Enforcement" section at load time.
+    pub computed_digest: BarDigest,
+}
+
+impl PlanPreregistration {
+    /// Whether the declared digest still matches the section as it reads now.
+    ///
+    /// `false` is exactly the condition PLAT-936 exists to catch: the section
+    /// changed since `declared_digest` was recorded, and nobody updated it to
+    /// match.
+    #[must_use]
+    pub fn matches(&self) -> bool {
+        self.declared_digest == self.computed_digest
+    }
+}
+
+/// A sha256 digest over a plan's normalized "Comparison and Enforcement"
+/// section text (PLAT-936).
+///
+/// Deliberately **not** [`RawFileSha256Digest`]. That type's domain, per
+/// `quoin-store`'s own `DigestDomain` doc, is "the complete bytes of a file on
+/// disk... as measurement records and contract pins reference them" —
+/// `FR-201-canonical-identity-domain` forbids substituting one digest domain
+/// for another, even when the algorithm and stored spelling agree. This
+/// digest is over neither a whole file nor bytes exactly as supplied: it is a
+/// normalized **excerpt** of a document's body (CRLF collapsed, each line's
+/// trailing whitespace trimmed, leading/trailing blank lines dropped before
+/// hashing — see [`crate::plans`]'s `bar_section`). That is a fourth question
+/// none of `quoin-store`'s existing domains answer, so it gets its own type
+/// rather than borrowing one whose doc comment would then be wrong about what
+/// it holds.
+///
+/// What *is* shared with [`RawFileSha256Digest`], deliberately: the algorithm
+/// and the `sha256:<64 hex>` stored spelling, and the hashing itself still
+/// routes through [`quoin_store::digest_bytes_sha256`] — the one sha256 call
+/// site `FR-100-CON-4` permits this crate — via [`BarDigest::of`].
+/// [`BarDigest::parse_stored`] reuses [`RawFileSha256Digest::parse_stored`]
+/// purely as a format validator (same grammar, so no second parser), and
+/// immediately re-wraps the result rather than keeping it: nothing here ever
+/// holds a live `RawFileSha256Digest`, so a `BarDigest` cannot compile where a
+/// raw-file digest belongs, or vice versa.
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct BarDigest(String);
+
+impl BarDigest {
+    /// Parse a stored `sha256:<64 hex>` value, or `None` when it is not one.
+    #[must_use]
+    pub fn parse_stored(value: &str) -> Option<Self> {
+        RawFileSha256Digest::parse_stored(value)
+            .ok()
+            .map(|digest| Self(digest.to_stored()))
+    }
+
+    /// The digest of `bytes` exactly as supplied — the caller normalizes
+    /// first; this does not.
+    #[must_use]
+    pub fn of(bytes: &[u8]) -> Self {
+        Self(digest_bytes_sha256(bytes).to_stored())
+    }
+
+    /// The stored spelling, `sha256:` prefix included.
+    #[must_use]
+    pub fn as_stored(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for BarDigest {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.0)
     }
 }

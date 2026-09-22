@@ -301,6 +301,7 @@ mod tests {
             path: "spec/assurance/a.md".to_owned(),
             owner: None,
             action: None,
+            preregistration: None,
         }
     }
 

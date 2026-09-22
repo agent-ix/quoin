@@ -41,6 +41,17 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
 /// The count below which this census is not measuring the crate at all.
 const SOURCE_FLOOR: usize = 20;
 
+/// Modules permitted above [`SOFT_CEILING`], named so the next one to cross it
+/// is visible rather than quiet.
+///
+/// `plans.rs` crossed it under PLAT-936: catching a `#`-prefixed comment
+/// inside a fenced code block from ending the "Comparison and Enforcement"
+/// section early (quoin#583's blocking review finding) needs fence-tracking
+/// state threaded through the heading walk, and the tests proving it holds
+/// live in the same file as the rest of this module's unit tests, per this
+/// crate's existing convention.
+const NAMED_OVER_SOFT_CEILING: &[&str] = &["plans.rs"];
+
 /// Every `.rs` file under `src/`, as `(relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {
     fn walk(root: &Path, directory: &Path, into: &mut Vec<(String, usize)>) {
@@ -106,11 +117,18 @@ fn tc_468_the_modules_over_the_soft_ceiling_are_the_ones_named_here() {
         .filter(|(_, lines)| *lines > SOFT_CEILING)
         .map(|(name, lines)| format!("{name} ({lines})"))
         .collect();
+    let expected: Vec<String> = NAMED_OVER_SOFT_CEILING
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect();
+    let over_names: Vec<String> = over
+        .iter()
+        .map(|entry| entry.split(" (").next().unwrap_or(entry).to_owned())
+        .collect();
     assert_eq!(
-        over,
-        Vec::<String>::new(),
-        "the set of modules over the {SOFT_CEILING}-line soft ceiling changed. Splitting one \
-         out, or letting a new one cross, is a deliberate act: update this list and say which \
-         it was."
+        over_names, expected,
+        "the set of modules over the {SOFT_CEILING}-line soft ceiling changed (saw {over:?}). \
+         Splitting one out, or letting a new one cross, is a deliberate act: update \
+         NAMED_OVER_SOFT_CEILING and say which it was."
     );
 }
