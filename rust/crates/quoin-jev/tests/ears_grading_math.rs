@@ -17,8 +17,9 @@
 mod support;
 
 use support::ears::{
-    EarsQuestionSet, EarsVerdict, NO_DEFECT, QUESTION_SET_JSON, grade_defect, grade_pattern,
-    jev_flags_defect, m2_corpus, m6_corpus,
+    EarsQuestionSet, EarsVerdict, NO_DEFECT, QUESTION_SET_JSON, derive_defect_from_noul,
+    grade_defect, grade_pattern, jev_flags_defect, jev_flags_defect_v3, m2_corpus, m6_corpus,
+    v3_reaches,
 };
 use support::grading::{
     Verdict, class_stats, defect_recall, no_defect_recall, tally, trivial_baseline,
@@ -70,7 +71,31 @@ fn the_question_set_asset_parses_with_the_tickets_own_vocabulary() {
 #[test]
 fn the_m2_corpus_holds_the_tickets_named_acceptance_fixtures() {
     let corpus = m2_corpus();
-    assert_eq!(corpus.fixtures.len(), 16);
+    // The grown revision: 59 fixtures, 19 agent-labelled defects. Asserted as
+    // an exact number rather than a floor so that losing rows to a bad edit
+    // is a failure and not a quietly smaller corpus.
+    assert_eq!(corpus.fixtures.len(), 59);
+    let defects = corpus
+        .fixtures
+        .iter()
+        .filter(|f| f.labels.has_defect)
+        .count();
+    assert_eq!(defects, 19);
+    let real = corpus
+        .fixtures
+        .iter()
+        .filter(|f| f.provenance == "real")
+        .count();
+    assert_eq!(real, 31, "31 rows are verbatim statements from real spec trees");
+    for fixture in corpus.fixtures.iter().filter(|f| f.provenance == "real") {
+        assert!(
+            fixture.source_repo.is_some()
+                && fixture.source_path.is_some()
+                && fixture.source_commit.is_some(),
+            "{}: a real-provenance row must name the repo, path and commit it was read at",
+            fixture.fixture_id,
+        );
+    }
 
     let when_is_really_while = corpus
         .fixtures
@@ -99,6 +124,113 @@ fn the_m2_corpus_holds_the_tickets_named_acceptance_fixtures() {
     assert!(
         ambiguous >= 2,
         "the corpus must include genuinely hard cases"
+    );
+
+    // The blind spot the v3 rule states about itself must be represented, or
+    // the defect-recall number it produces measures nothing about it.
+    let unreachable: Vec<&str> = corpus
+        .fixtures
+        .iter()
+        .filter(|f| f.labels.has_defect && !v3_reaches(f))
+        .filter_map(|f| f.labels.defect_kind.as_deref())
+        .collect();
+    assert!(
+        unreachable.len() >= 5,
+        "the corpus must carry defects the v3 noul rule cannot reach, or its recall number          says nothing about that blind spot; got {unreachable:?}"
+    );
+}
+
+/// Provenance: PLAT-838 follow-up. The `v3` derivation rule fires on exactly
+/// the three branches it documents, and on nothing else.
+#[test]
+fn the_v3_rule_fires_only_on_its_three_documented_branches() {
+    let noul = |measurable: Option<f64>, momentary: Option<f64>, unwanted: Option<f64>| {
+        let mut base = verdict(Some("ubiquitous"), measurable, 0.9);
+        base.trigger_is_momentary = momentary;
+        base.condition_is_unwanted = unwanted;
+        base
+    };
+
+    // Unmeasurable response: a defect on any pattern.
+    assert_eq!(
+        derive_defect_from_noul("ubiquitous", &noul(Some(0.1), None, None)),
+        "defect"
+    );
+    assert_eq!(
+        derive_defect_from_noul("optional_feature", &noul(Some(0.1), None, None)),
+        "defect"
+    );
+    // The two disambiguators, on an engine-`event_driven` statement.
+    assert_eq!(
+        derive_defect_from_noul("event_driven", &noul(Some(0.9), Some(0.9), Some(0.9))),
+        "defect",
+        "an unwanted condition means the When should have been an If"
+    );
+    assert_eq!(
+        derive_defect_from_noul("event_driven", &noul(Some(0.9), Some(0.1), Some(0.1))),
+        "defect",
+        "a non-momentary trigger means the When should have been a While"
+    );
+    assert_eq!(
+        derive_defect_from_noul("event_driven", &noul(Some(0.9), Some(0.9), Some(0.1))),
+        NO_DEFECT
+    );
+    // The stated blind spot: the same answers on any other engine pattern
+    // raise nothing.
+    for pattern in ["state_driven", "unwanted_behaviour", "optional_feature", "ubiquitous"] {
+        assert_eq!(
+            derive_defect_from_noul(pattern, &noul(Some(0.9), Some(0.1), Some(0.9))),
+            NO_DEFECT,
+            "{pattern}: the v3 disambiguators are phrased for a When statement"
+        );
+    }
+    // A missing answer: the rule's prose says it fires no branch; the rule
+    // as pre-registered and measured does not honour that for
+    // `condition_is_unwanted`, because `unwrap_or(0.5) >= 0.5` is true at
+    // the default. This asserts what the code does, which is what was
+    // measured -- see `derive_defect_from_noul`'s own "Defect found" note.
+    // The live gate reports an unanswered-noul count so a reader can see
+    // whether this branch could have moved any number.
+    assert_eq!(
+        derive_defect_from_noul("event_driven", &noul(None, None, None)),
+        "defect",
+        "an unanswered condition_is_unwanted fires the When/If branch at the 0.5 default"
+    );
+    assert_eq!(
+        derive_defect_from_noul("ubiquitous", &noul(None, None, None)),
+        NO_DEFECT,
+        "off an event_driven reading, a fully unanswered row raises nothing"
+    );
+}
+
+/// Provenance: PLAT-838 follow-up. MP-231's `v3` flag counts a statement out
+/// of the denominator when the service answered none of the nouls it reads,
+/// rather than scoring it as agreement.
+#[test]
+fn the_v3_m6_flag_excludes_a_statement_with_no_consulted_answer() {
+    let corpus = m6_corpus();
+    let statement = &corpus.clean[0];
+    let mut silent = verdict(Some(statement.engine_naive_pattern.as_str()), None, 0.9);
+    silent.trigger_is_momentary = None;
+    silent.condition_is_unwanted = None;
+    assert_eq!(jev_flags_defect_v3(statement, &silent), None);
+
+    let answered = verdict(Some("complex"), Some(0.2), 0.9);
+    assert_eq!(
+        jev_flags_defect_v3(statement, &answered),
+        Some(true),
+        "an unmeasurable response is a v3 flag whatever the six-way choice said"
+    );
+    let measurable_echo = verdict(Some("complex"), Some(0.9), 0.9);
+    assert_eq!(
+        jev_flags_defect_v3(statement, &measurable_echo),
+        Some(false),
+        "v3 does not consult the six-way choice, so a disagreeing choice alone is not a flag"
+    );
+    assert_eq!(
+        jev_flags_defect(statement, &measurable_echo),
+        Some(true),
+        "the v1 rule does consult it -- this is exactly the difference between the two"
     );
 }
 

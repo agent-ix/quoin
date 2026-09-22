@@ -58,13 +58,15 @@ use typesafe_sdk_env::Process;
 
 use quoin_jev::JevErrorCode;
 use support::ears::{
-    EarsQuestionSet, EarsVerdict, M2Fixture, NO_DEFECT, QUESTION_SET_JSON, grade_defect,
-    grade_pattern, jev_flags_defect, m2_corpus, m6_corpus, run as ears_run,
+    EarsQuestionSet, EarsVerdict, NO_DEFECT, QUESTION_SET_JSON, grade_defect, grade_defect_derived,
+    grade_pattern, jev_flags_defect, jev_flags_defect_v3, m2_corpus, m6_corpus, run as ears_run,
+    v3_reaches,
 };
 use support::grading::{
     Graded, Verdict, defect_recall, disagreement, no_defect_recall, percent, report, tally,
     trivial_baseline,
 };
+
 
 /// PLAT-838's stated floor: "M1 disagreement (N=5 minimum, state N)". This
 /// default is intentionally the floor, not the ticket's own N>=20 (300
@@ -202,6 +204,12 @@ async fn run_m6_pass(client: &Client, qs: &EarsQuestionSet) -> M6Pass {
 /// was committed before this file made its first live call (`git log` on
 /// that path shows the commit predates any `TYPESAFE_API_KEY` use in this
 /// branch's history).
+///
+/// This test grades through the **shipped** rule ([`grade_defect`] /
+/// [`jev_flags_defect`]), which consults the six-way `ears_pattern_actual`
+/// choice. It is kept as the `v1` column. The verdict PLAT-838 reports is
+/// [`the_ears_lens_gate_mp_229_v3`], which applies the same four bars to the
+/// `v3` derivation rule end to end.
 #[tokio::test]
 async fn the_ears_lens_gate_mp_229() {
     let client = live_client();
@@ -239,7 +247,7 @@ async fn the_ears_lens_gate_mp_229() {
     let unanswered: Vec<&str> = first
         .defect_graded
         .iter()
-        .filter(|row| row.verdict == support::grading::Verdict::Unanswered)
+        .filter(|row| row.verdict == Verdict::Unanswered)
         .map(|row| row.fixture_id.as_str())
         .collect();
     assert!(
@@ -398,89 +406,6 @@ async fn benchmark_latency_and_throughput() {
 // v3: derive the defect call from the `noul` answers alone
 // ---------------------------------------------------------------------
 
-/// `v3`'s derivation rule, fixed before its first call.
-///
-/// The shipped rule ([`support::ears::grade_defect`]) calls a statement
-/// defective when Jev's six-way `ears_pattern_actual` choice disagrees with
-/// the engine's naive pattern, **or** when Jev judges the response
-/// unmeasurable. `v3` deletes the first term: the label comes only from the
-/// three `noul` answers, plus the engine's own deterministic pattern as
-/// context. Jev's six-way pick is not consulted at all.
-///
-/// The priority order is read off `ears-question-set.json`'s own `note`
-/// fields, not fitted to this corpus's answer key:
-///
-/// * `response_measurable` — the note names the denylist it exists to
-///   replace ("`shall be robust` sails through"), so an unmeasurable
-///   response is a defect on any pattern.
-/// * `condition_is_unwanted` — the note says "Disambiguates When/If", so on
-///   a statement the engine read as `event_driven`, an unwanted condition
-///   means the `When` should have been an `If`.
-/// * `trigger_is_momentary` — the note says "Disambiguates When/While", so
-///   on the same engine reading, a non-momentary trigger means the `When`
-///   should have been a `While`.
-///
-/// A missing answer scores `0.5`, which fires no branch: an answer the
-/// service did not give must not manufacture a defect.
-///
-/// **Stated blind spot, before running.** Both disambiguators are phrased
-/// relative to a `When` statement, so this rule can raise a
-/// pattern-confusion defect only where the engine already read
-/// `event_driven`. A `While`-really-`When` or an `If`-really-`When`
-/// statement is unreachable. Both pattern-confusion defects in this corpus
-/// (`EARS-FIX-002`, `EARS-FIX-007`) happen to be engine-`event_driven`, so
-/// the blind spot costs nothing here — that is a fact about the corpus, not
-/// a property of the rule, and it means this corpus cannot measure the cost.
-fn derive_defect_from_noul(engine_naive_pattern: &str, verdict: &EarsVerdict) -> &'static str {
-    if verdict.response_measurable.unwrap_or(0.5) < 0.5 {
-        return "defect";
-    }
-    if engine_naive_pattern == "event_driven"
-        && (verdict.condition_is_unwanted.unwrap_or(0.5) >= 0.5
-            || verdict.trigger_is_momentary.unwrap_or(0.5) < 0.5)
-    {
-        return "defect";
-    }
-    NO_DEFECT
-}
-
-/// Grades one M2 fixture under [`derive_defect_from_noul`], through the same
-/// primary/contested/wrong comparison [`support::ears::grade_defect`] uses,
-/// so the two columns differ only in how the label was reached.
-fn grade_defect_derived(fixture: &M2Fixture, verdict: &EarsVerdict) -> Graded {
-    let expected = if fixture.labels.has_defect {
-        "defect"
-    } else {
-        NO_DEFECT
-    }
-    .to_owned();
-    let contested: Vec<String> = match &fixture.labels.has_defect_contested {
-        Some(all) => all
-            .iter()
-            .map(|v| if *v { "defect" } else { NO_DEFECT }.to_owned())
-            .collect(),
-        None => vec![expected.clone()],
-    };
-    let actual_class = derive_defect_from_noul(&fixture.engine_naive_pattern, verdict).to_owned();
-    let outcome = if actual_class == expected {
-        Verdict::Primary
-    } else if contested.contains(&actual_class) {
-        Verdict::Contested
-    } else {
-        Verdict::Wrong
-    };
-    Graded {
-        fixture_id: fixture.fixture_id.clone(),
-        tier: fixture.confidence,
-        expected,
-        contested,
-        actual: actual_class.clone(),
-        actual_class,
-        verdict: outcome,
-        confidence: verdict.pattern_confidence,
-    }
-}
-
 /// Provenance: PLAT-838 follow-up. **`v3`, pre-registered before its first
 /// call.**
 ///
@@ -489,7 +414,7 @@ fn grade_defect_derived(fixture: &M2Fixture, verdict: &EarsVerdict) -> Graded {
 /// asking narrow yes/no questions. `v3` tests whether that shape helps here:
 /// the request is unchanged (same question set, same context, the six-way
 /// choice is still asked and still answered), but the defect call is derived
-/// from the three `noul` answers via [`derive_defect_from_noul`] instead.
+/// from the three `noul` answers via [`support::ears::derive_defect_from_noul`] instead.
 /// Both columns are graded from the same responses, so service variance is
 /// not a confound between them.
 ///
@@ -527,11 +452,22 @@ fn grade_defect_derived(fixture: &M2Fixture, verdict: &EarsVerdict) -> Graded {
 /// **What this does not yet establish.** Bar 4 is measured through
 /// `jev_flags_defect`, which still consults the six-way choice, so the M6
 /// pool is not flagged by the rule `v3` gates on. Re-deriving that flagging
-/// under [`derive_defect_from_noul`] and re-measuring MP-231 is the
-/// remaining step, and it must be pre-registered before it is run. The
+/// under [`support::ears::derive_defect_from_noul`] and re-measuring MP-231
+/// is the remaining step, and it must be pre-registered before it is run. The
 /// corpus is also sixteen agent-labelled fixtures carrying five defects,
 /// three of them `unmeasurable_response` -- a single `noul` question
 /// reaches those three, so the margin rests on a narrow base.
+///
+/// # Superseded, and by what
+///
+/// **Every number in the table above was measured against the sixteen-fixture
+/// M2 corpus revision (`8b5d87f`), not the grown fifty-nine-fixture one this
+/// file now reads.** This test still runs and still reports its two columns,
+/// but on the grown corpus its numbers are not the ones above; treat the
+/// table as a dated record of the sixteen-fixture run, not as a live
+/// measurement. [`the_ears_lens_gate_mp_229_v3`] is the test that carries the
+/// verdict now: it applies all four MP-229 bars to the `v3-derived` column
+/// over the grown corpus, with MP-231 re-derived under the same rule.
 #[tokio::test]
 async fn the_ears_lens_with_noul_derived_defect_v3() {
     let client = live_client();
@@ -611,5 +547,341 @@ async fn the_ears_lens_with_noul_derived_defect_v3() {
     assert!(
         no_defect_r.is_some_and(|v| v > 0.0),
         "MP-229 bar 3 (MP-224 no-defect recall > 0%) on v3-derived: got {no_defect_r:?}"
+    );
+}
+
+/// PLAT-838's stated M1 floor is N>=5 passes on the sixteen-fixture corpus
+/// (80 requests). The grown corpus is 59 fixtures, so five passes plus the M6
+/// pool would be 340 requests in one test. Three passes over 59 fixtures is
+/// 177 requests -- more than the 80 the N=5 run cost, still three
+/// independent pairs for MP-225, and the sampling that matters for
+/// MP-222/223/224 is the corpus itself, which grew 3.7x. `JEV_RUNS` raises
+/// it; whatever N is used is printed with every number it produced.
+const DEFAULT_M2_RUNS_V3: usize = 3;
+
+/// One `v3` M2 pass over the grown corpus: every fixture once, graded under
+/// both the shipped rule and the `v3` derivation, from the same response.
+struct V3Pass {
+    direct: Vec<Graded>,
+    derived: Vec<Graded>,
+    input_tokens: u64,
+    /// Rows where the service left at least one noul the `v3` rule consults
+    /// unanswered. This exists because the rule's `unwrap_or(0.5)` default
+    /// does NOT behave as its own prose claims on `condition_is_unwanted`
+    /// (see [`support::ears::derive_defect_from_noul`]'s "Defect found"
+    /// note): at the default the When/If branch fires. The code is left as
+    /// pre-registered; this count is how a reader tells whether that branch
+    /// could have touched the numbers. Zero means it could not have.
+    unanswered_noul_rows: usize,
+}
+
+async fn run_v3_m2_pass(client: &Client, qs: &EarsQuestionSet) -> V3Pass {
+    let corpus = m2_corpus();
+    let mut pass = V3Pass {
+        direct: Vec::with_capacity(corpus.fixtures.len()),
+        derived: Vec::with_capacity(corpus.fixtures.len()),
+        input_tokens: 0,
+        unanswered_noul_rows: 0,
+    };
+    for fixture in &corpus.fixtures {
+        let verdict = ears_run(client, &fixture.context(), qs)
+            .await
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}: {} — {}",
+                    fixture.fixture_id,
+                    error.code.as_str(),
+                    error.message
+                )
+            });
+        pass.input_tokens += verdict.usage_input_tokens;
+        let consults_disambiguators = fixture.engine_naive_pattern == "event_driven";
+        if verdict.response_measurable.is_none()
+            || (consults_disambiguators
+                && (verdict.condition_is_unwanted.is_none()
+                    || verdict.trigger_is_momentary.is_none()))
+        {
+            pass.unanswered_noul_rows += 1;
+        }
+        pass.direct.push(grade_defect(fixture, &verdict));
+        pass.derived.push(grade_defect_derived(fixture, &verdict));
+    }
+    pass
+}
+
+/// Defect recall over just the rows whose fixture id is in `ids`.
+fn defect_recall_over(graded: &[Graded], ids: &[String]) -> Option<f64> {
+    let subset: Vec<Graded> = graded
+        .iter()
+        .filter(|row| ids.contains(&row.fixture_id))
+        .cloned()
+        .collect();
+    defect_recall(&subset, NO_DEFECT)
+}
+
+/// Provenance: PLAT-838 follow-up. **The `v3` gate — all four MP-229 bars,
+/// one classification rule, one corpus revision.**
+///
+/// # What this test exists to fix
+///
+/// [`the_ears_lens_with_noul_derived_defect_v3`] cleared MP-229 bars 1-3 on
+/// the `v3` derivation but left two holes its own doc names:
+///
+/// 1. **Bar 4 was measured under the wrong rule.** MP-231's forward delta
+///    came from [`jev_flags_defect`], which consults the six-way choice --
+///    the term `v3` deletes. A verdict mixing a `v1` delta into a `v3`
+///    decision is not internally consistent. This test computes MP-231
+///    through [`jev_flags_defect_v3`], which calls the same
+///    [`support::ears::derive_defect_from_noul`] the M2 grading calls, and
+///    gates on that number. The `v1` delta is still printed beside it, as
+///    the comparison it now is rather than the gate input it was.
+/// 2. **Five confirmed defects is too small a base for a recall number.**
+///    The M2 corpus grew from 16 fixtures / 5 defects to 59 fixtures / 19
+///    defects, holding the defect share at 32.2% (it was 31.2%) so that the
+///    constant-predictor baseline MP-222 measures against does not move
+///    merely because defects were added. Thirty-one of the fifty-nine rows
+///    are now verbatim real statements from four agent-ix spec trees, each
+///    recorded with its repo, path and commit. Every label remains
+///    **agent-labelled, not human ground truth** -- unchanged from the
+///    original corpus, and stated in the fixture file's own `$comment`.
+///
+/// # Pre-registration
+///
+/// The four bars are MP-229's "Ship-as-advisory bars", **unchanged** -- this
+/// test adds no bar and moves no threshold, so those bars need no fresh
+/// pre-registration. What is new and therefore pre-registered before this
+/// test's first live call is (a) the grown corpus, (b) the `v3` MP-231
+/// derivation, added to `spec/assurance/MP-231-jev-ears-engine-semantic-delta.md`
+/// as `jev.ears-delta-v3`, and (c) the reachable/unreachable defect-recall
+/// split below. All three are committed in the same commit as this test and
+/// before any live call it makes.
+///
+/// # The reachable/unreachable split is reported, never filtered
+///
+/// [`support::ears::derive_defect_from_noul`]'s two disambiguators are
+/// phrased for a `When` statement, so the rule can raise a pattern-confusion
+/// defect only where the engine read `event_driven`. The original corpus
+/// happened to contain no unreachable defect, so its 100% defect recall was
+/// a fact about that corpus. The grown corpus carries five unreachable
+/// defects on purpose (`while_is_really_when`, `if_is_really_when`,
+/// `where_is_really_if`, `where_is_really_while`, `missing_trigger`). Both
+/// halves are printed. The gate is MP-229's bar on the **whole**
+/// population; the split exists so nobody reads an overall number without
+/// seeing where it comes from.
+#[tokio::test]
+async fn the_ears_lens_gate_mp_229_v3() {
+    let client = live_client();
+    let qs = EarsQuestionSet::parse(QUESTION_SET_JSON);
+    let corpus = m2_corpus();
+
+    let reachable: Vec<String> = corpus
+        .fixtures
+        .iter()
+        .filter(|fixture| v3_reaches(fixture))
+        .map(|fixture| fixture.fixture_id.clone())
+        .collect();
+    let unreachable: Vec<String> = corpus
+        .fixtures
+        .iter()
+        .filter(|fixture| !v3_reaches(fixture))
+        .map(|fixture| fixture.fixture_id.clone())
+        .collect();
+    let defect_rows = corpus
+        .fixtures
+        .iter()
+        .filter(|fixture| fixture.labels.has_defect)
+        .count();
+    let real_rows = corpus
+        .fixtures
+        .iter()
+        .filter(|fixture| fixture.provenance == "real")
+        .count();
+    println!(
+        "\n## M2 corpus revision under test: {} fixtures ({real_rows} real, {} synthetic), \
+         {defect_rows} agent-labelled defects\n",
+        corpus.fixtures.len(),
+        corpus.fixtures.len() - real_rows,
+    );
+
+    let runs: usize = std::env::var("JEV_RUNS")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(DEFAULT_M2_RUNS_V3);
+    assert!(runs >= 2, "a disagreement rate needs at least two runs");
+
+    let mut passes = Vec::with_capacity(runs);
+    for _ in 0..runs {
+        passes.push(run_v3_m2_pass(&client, &qs).await);
+    }
+    let first = &passes[0];
+    assert!(
+        first.input_tokens > 0,
+        "a pass that consumed no input tokens never reached the service"
+    );
+
+    println!(
+        "{}",
+        report(
+            "M2 v3-derived (noul answers only, six-way choice not consulted) — pass 1",
+            &first.derived,
+            NO_DEFECT,
+        )
+    );
+    println!(
+        "{}",
+        report(
+            "M2 v1-direct (shipped rule, same responses) — pass 1, comparison only",
+            &first.direct,
+            NO_DEFECT,
+        )
+    );
+
+    for (name, graded) in [("v1-direct", &first.direct), ("v3-derived", &first.derived)] {
+        let agreement = tally(graded).agreement().expect("the corpus is non-empty");
+        let (baseline_label, baseline) = trivial_baseline(graded);
+        println!(
+            "**{name}** MP-222 agreement {agreement:.1}% vs `{baseline_label}` {baseline:.1}% \
+             — margin {:+.1}pp | MP-223 defect recall {} | MP-224 no-defect recall {}",
+            agreement - baseline,
+            defect_recall(graded, NO_DEFECT)
+                .map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+            no_defect_recall(graded, NO_DEFECT)
+                .map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        );
+    }
+
+    // The gated column.
+    let agreement = tally(&first.derived)
+        .agreement()
+        .expect("the corpus is non-empty");
+    let (baseline_label, baseline) = trivial_baseline(&first.derived);
+    let margin = agreement - baseline;
+    let defect_r = defect_recall(&first.derived, NO_DEFECT);
+    let no_defect_r = no_defect_recall(&first.derived, NO_DEFECT);
+
+    let unanswered_rows: usize = passes.iter().map(|pass| pass.unanswered_noul_rows).sum();
+    println!(
+        "\n**Unanswered consulted nouls:** {unanswered_rows} row(s) across all {runs} pass(es). \
+         Zero means the `condition_is_unwanted` default-fires defect documented on \
+         `derive_defect_from_noul` could not have affected any number below."
+    );
+    println!(
+        "**MP-223 split** reachable-by-v3 rows {} | unreachable-by-v3 rows {}",
+        defect_recall_over(&first.derived, &reachable)
+            .map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        defect_recall_over(&first.derived, &unreachable)
+            .map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+    );
+
+    // MP-225 on the gated column.
+    let mut rates = Vec::new();
+    for left in 0..passes.len() {
+        for right in (left + 1)..passes.len() {
+            rates.push(
+                disagreement(&passes[left].derived, &passes[right].derived)
+                    .expect("both passes graded"),
+            );
+        }
+    }
+    let mp225 = rates.iter().sum::<f64>() / rates.len() as f64;
+    println!(
+        "**MP-225** (v3-derived) disagreement under repetition, N={runs}, {} pair(s): mean \
+         {mp225:.1}%, range {:.1}%-{:.1}%",
+        rates.len(),
+        rates.iter().copied().fold(f64::INFINITY, f64::min),
+        rates.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+    );
+
+    // MP-231, re-derived under the v3 rule, over the same M6 corpus.
+    let m6 = m6_corpus();
+    let mut forward_v3 = Vec::new();
+    let mut forward_v1 = Vec::new();
+    let mut inverse_v3 = Vec::new();
+    let mut inverse_v1 = Vec::new();
+    let mut m6_tokens = 0u64;
+    for (pool, delta_v3, delta_v1) in [
+        (&m6.clean, &mut forward_v3, &mut forward_v1),
+        (&m6.flagged, &mut inverse_v3, &mut inverse_v1),
+    ] {
+        for statement in pool {
+            let verdict = ears_run(&client, &statement.context(), &qs)
+                .await
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "{}: {} — {}",
+                        statement.id(),
+                        error.code.as_str(),
+                        error.message
+                    )
+                });
+            m6_tokens += verdict.usage_input_tokens;
+            if let Some(flag) = jev_flags_defect_v3(statement, &verdict) {
+                delta_v3.push(flag);
+            }
+            if let Some(flag) = jev_flags_defect(statement, &verdict) {
+                delta_v1.push(flag);
+            }
+        }
+    }
+    assert!(m6_tokens > 0, "the M6 pass never reached the service");
+
+    let rate = |answered: &[bool], want: bool| {
+        (!answered.is_empty())
+            .then(|| percent(answered.iter().filter(|f| **f == want).count(), answered.len()))
+    };
+    let forward_delta = rate(&forward_v3, true);
+    let inverse_delta = rate(&inverse_v3, false);
+    println!(
+        "\n**MP-231 (v3, `jev.ears-delta-v3`)** forward delta {} over {}/{} answered — inverse \
+         delta {} over {}/{} answered",
+        forward_delta.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        forward_v3.len(),
+        m6.clean.len(),
+        inverse_delta.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        inverse_v3.len(),
+        m6.flagged.len(),
+    );
+    println!(
+        "**MP-231 (v1, comparison only)** forward delta {} over {}/{} answered — inverse delta \
+         {} over {}/{} answered",
+        rate(&forward_v1, true).map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        forward_v1.len(),
+        m6.clean.len(),
+        rate(&inverse_v1, false)
+            .map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        inverse_v1.len(),
+        m6.flagged.len(),
+    );
+
+    println!(
+        "\n### MP-229 verdict inputs (v3-derived, N={runs}, corpus {} fixtures)\n\n\
+         | bar | metric | value |\n| --- | --- | --- |\n\
+         | 1 | MP-222 margin over `{baseline_label}` | {margin:+.1}pp |\n\
+         | 2 | MP-223 defect recall | {} |\n\
+         | 3 | MP-224 no-defect recall | {} |\n\
+         | 4 | MP-231 forward delta vs MP-225 {mp225:.1}% | {} |",
+        corpus.fixtures.len(),
+        defect_r.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        no_defect_r.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        forward_delta.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+    );
+
+    // ---- GATE ASSERTIONS — MP-229's four bars, verbatim, on the v3 column ----
+    assert!(
+        margin > 0.0,
+        "MP-229 bar 1 (MP-222 margin > 0) on v3-derived over the grown corpus: got {margin:+.1}pp"
+    );
+    assert!(
+        defect_r.is_some_and(|v| v > 0.0),
+        "MP-229 bar 2 (MP-223 defect recall > 0%) on v3-derived: got {defect_r:?}"
+    );
+    assert!(
+        no_defect_r.is_some_and(|v| v > 0.0),
+        "MP-229 bar 3 (MP-224 no-defect recall > 0%) on v3-derived: got {no_defect_r:?}"
+    );
+    assert!(
+        forward_delta.is_some_and(|v| v > 0.0 && v > mp225),
+        "MP-229 bar 4 (MP-231 forward delta non-zero and above the MP-225 noise floor), both \
+         re-derived under the v3 rule: forward delta {forward_delta:?}, MP-225 {mp225:.1}%"
     );
 }

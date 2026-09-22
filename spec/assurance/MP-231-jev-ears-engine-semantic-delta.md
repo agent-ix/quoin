@@ -6,7 +6,7 @@ status: active
 owner: quoin-maintainers
 stage: branch-comparison
 metric: jev.ears_engine_semantic_delta
-definition_version: jev.ears-delta-v1
+definition_version: jev.ears-delta-v3
 relationships: []
 ---
 
@@ -31,7 +31,11 @@ statements the engine's `[ears:*]` check left the owning document fully
 
 ## Measure Definition
 
-Two rates, both `jev.ears-delta-v1`:
+Two rates. **Two definition versions exist, and an observation states which
+one it used; they are never compared to each other as if they were the same
+number.**
+
+### `jev.ears-delta-v1` -- the original, six-way-choice rule
 
 - **Forward delta**: of the engine-clean statements, the fraction where Jev's
   `ears_pattern_actual` choice disagrees with the pattern the statement's own
@@ -44,6 +48,40 @@ Two rates, both `jev.ears-delta-v1`:
   answers give no reason to treat the statement as defective (candidate
   engine false positives, reported separately and never netted against the
   forward delta).
+
+### `jev.ears-delta-v3` -- the noul-derived rule
+
+Pre-registered here before the first live call that uses it. MP-229's bar 4
+reads this version whenever the verdict it feeds was reached under the `v3`
+classification rule, because a verdict must not mix a `v1` delta into a `v3`
+decision.
+
+Same two populations and the same two directions, but the flag is the `v3`
+derivation rule (`tests/support/ears.rs::derive_defect_from_noul`), the
+identical function the M2 grading uses, applied to the statement's own
+engine-derived pattern:
+
+- a statement is flagged when Jev's `response_measurable` noul reads below
+  0.5; or
+- when the engine's naive pattern is `event_driven` and either
+  `condition_is_unwanted` reads at or above 0.5, or `trigger_is_momentary`
+  reads below 0.5.
+
+Jev's six-way `ears_pattern_actual` choice is **not consulted**. It is still
+asked and still recorded, so the `v1` rate is computable from the same
+responses and is reported beside the `v3` rate as a comparison.
+
+A statement is counted in the denominator only where the service answered at
+least one noul this rule consults; an unanswered statement is excluded, never
+scored as agreement.
+
+**Stated asymmetry, before running.** Because both disambiguators are phrased
+for a `When` statement, `jev.ears-delta-v3` can raise a pattern-confusion
+flag only on engine-`event_driven` statements. On any other engine pattern
+only the measurability branch can fire. A `v3` forward delta is therefore
+expected to be at or below the `v1` forward delta on the same corpus, and a
+lower number here is not by itself evidence the lens got better or worse --
+it is a fact about which questions the rule reads.
 
 A zero denominator on either side is `not_computed`, never zero.
 

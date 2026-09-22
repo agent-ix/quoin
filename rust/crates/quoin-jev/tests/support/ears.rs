@@ -244,7 +244,23 @@ pub(crate) struct M2Fixture {
     #[serde(default)]
     pub(crate) constraints: Option<String>,
     pub(crate) engine_naive_pattern: String,
+    /// `real` (verbatim from a spec tree under `~/dev`, with `source_repo`,
+    /// `source_path` and `source_commit` recorded) or `synthetic` (authored
+    /// for this evaluation). Defaults to `synthetic` so the original sixteen
+    /// fixtures keep their meaning if the field is ever dropped.
+    #[serde(default = "provenance_synthetic")]
+    pub(crate) provenance: String,
+    #[serde(default)]
+    pub(crate) source_repo: Option<String>,
+    #[serde(default)]
+    pub(crate) source_path: Option<String>,
+    #[serde(default)]
+    pub(crate) source_commit: Option<String>,
     pub(crate) labels: M2Labels,
+}
+
+fn provenance_synthetic() -> String {
+    "synthetic".to_owned()
 }
 
 impl M2Fixture {
@@ -486,4 +502,140 @@ pub(crate) fn jev_flags_defect(statement: &M6Statement, verdict: &EarsVerdict) -
     let pattern_mismatch = pattern != &statement.engine_naive_pattern;
     let unmeasurable = verdict.response_measurable.is_some_and(|value| value < 0.5);
     Some(pattern_mismatch || unmeasurable)
+}
+
+// ---------------------------------------------------------------------
+// v3: derive the defect call from the `noul` answers alone
+// ---------------------------------------------------------------------
+
+/// `v3`'s derivation rule, unchanged from the form pre-registered in commit
+/// `2965c25` and measured in `8b5d87f`; it moved here from
+/// `tests/live_ears_semantic.rs` so that the M2 grading and the MP-231 M6
+/// flagging call **one** function rather than two copies of a rule.
+///
+/// The shipped rule ([`grade_defect`] / [`jev_flags_defect`]) calls a
+/// statement defective when Jev's six-way `ears_pattern_actual` choice
+/// disagrees with the engine's naive pattern, **or** when Jev judges the
+/// response unmeasurable. `v3` deletes the first term: the label comes only
+/// from the three `noul` answers, plus the engine's own deterministic
+/// pattern as context. Jev's six-way pick is not consulted at all.
+///
+/// The priority order is read off `ears-question-set.json`'s own `note`
+/// fields, not fitted to any corpus's answer key:
+///
+/// * `response_measurable` — the note names the denylist it exists to
+///   replace ("`shall be robust` sails through"), so an unmeasurable
+///   response is a defect on any pattern.
+/// * `condition_is_unwanted` — the note says "Disambiguates When/If", so on
+///   a statement the engine read as `event_driven`, an unwanted condition
+///   means the `When` should have been an `If`.
+/// * `trigger_is_momentary` — the note says "Disambiguates When/While", so
+///   on the same engine reading, a non-momentary trigger means the `When`
+///   should have been a `While`.
+///
+/// # Defect found in this rule's own documentation, 2026-09-21
+///
+/// The rule as pre-registered says "a missing answer scores `0.5`, which
+/// fires no branch: an answer the service did not give must not manufacture
+/// a defect". **That is not what the code does, and the code is what was
+/// measured.** `condition_is_unwanted.unwrap_or(0.5) >= 0.5` is `true` at
+/// exactly `0.5`, so on an engine-`event_driven` statement an *unanswered*
+/// `condition_is_unwanted` raises a defect. Only `response_measurable`
+/// (`< 0.5`) and `trigger_is_momentary` (`< 0.5`) behave as the prose
+/// claims.
+///
+/// The code is **left exactly as pre-registered**: narrowing it after seeing
+/// a corpus would be fitting the rule to a result, which is the whole thing
+/// pre-registration exists to prevent. What is added instead is a count --
+/// every live pass reports how many rows had an unanswered consulted noul,
+/// so a reader can tell whether this branch could have affected the numbers
+/// at all. On every pass measured so far the service answered all three
+/// nouls on every row, so the count is zero and the discrepancy is latent.
+/// `the_v3_rule_fires_only_on_its_three_documented_branches` asserts the
+/// real behaviour, not the prose, so the mismatch cannot be forgotten.
+///
+/// # Stated blind spot
+///
+/// Both disambiguators are phrased relative to a `When` statement, so this
+/// rule can raise a pattern-confusion defect only where the engine already
+/// read `event_driven` — see [`v3_reaches`]. A `While`-really-`When`, an
+/// `If`-really-`When`, a `Where`-misuse or a missing trigger is unreachable.
+/// The original sixteen-fixture corpus contained no such case, so the cost
+/// was unmeasurable there; the grown corpus carries five deliberately, which
+/// is what makes the v3 defect-recall number below mean something.
+pub(crate) fn derive_defect_from_noul(
+    engine_naive_pattern: &str,
+    verdict: &EarsVerdict,
+) -> &'static str {
+    if verdict.response_measurable.unwrap_or(0.5) < 0.5 {
+        return "defect";
+    }
+    if engine_naive_pattern == "event_driven"
+        && (verdict.condition_is_unwanted.unwrap_or(0.5) >= 0.5
+            || verdict.trigger_is_momentary.unwrap_or(0.5) < 0.5)
+    {
+        return "defect";
+    }
+    NO_DEFECT
+}
+
+/// Whether [`derive_defect_from_noul`] is even able to raise this fixture's
+/// recorded defect — an honest split of the defect-recall denominator, not a
+/// filter: both halves are reported.
+///
+/// An `unmeasurable_response` defect is reachable on any pattern (the
+/// `response_measurable` branch has no pattern precondition). Every other
+/// defect kind is a pattern confusion, and the rule can only raise one where
+/// the engine's naive read was `event_driven`.
+pub(crate) fn v3_reaches(fixture: &M2Fixture) -> bool {
+    if fixture.labels.defect_kind.as_deref() == Some("unmeasurable_response") {
+        return true;
+    }
+    fixture.engine_naive_pattern == "event_driven"
+}
+
+/// Grades one M2 fixture under [`derive_defect_from_noul`], through the same
+/// primary/contested/wrong comparison [`grade_defect`] uses, so the two
+/// columns differ only in how the label was reached.
+pub(crate) fn grade_defect_derived(fixture: &M2Fixture, verdict: &EarsVerdict) -> Graded {
+    let expected = expected_defect_label(&fixture.labels);
+    let contested: Vec<String> = fixture
+        .defect_readings()
+        .iter()
+        .map(|reading| (*reading).to_owned())
+        .collect();
+    let actual_class = derive_defect_from_noul(&fixture.engine_naive_pattern, verdict).to_owned();
+    let outcome = if actual_class == expected {
+        Verdict::Primary
+    } else if contested.contains(&actual_class) {
+        Verdict::Contested
+    } else {
+        Verdict::Wrong
+    };
+    Graded {
+        fixture_id: fixture.fixture_id.clone(),
+        tier: fixture.confidence,
+        expected,
+        contested,
+        actual: actual_class.clone(),
+        actual_class,
+        verdict: outcome,
+        confidence: verdict.pattern_confidence,
+    }
+}
+
+/// The `v3` counterpart of [`jev_flags_defect`]: whether Jev's answers for
+/// one M6 statement give reason to treat it as a semantic defect **under the
+/// rule `v3` is gated on**, so MP-231's delta and MP-222/223/224's labels
+/// come from one classification method rather than two.
+///
+/// `None` when the service answered none of the `noul` questions this rule
+/// consults — a statement with no consulted answer is not evidence either
+/// way, and MP-231 counts it out of the denominator rather than as agreement.
+pub(crate) fn jev_flags_defect_v3(statement: &M6Statement, verdict: &EarsVerdict) -> Option<bool> {
+    let consults_disambiguators = statement.engine_naive_pattern == "event_driven";
+    let answered = verdict.response_measurable.is_some()
+        || (consults_disambiguators
+            && (verdict.condition_is_unwanted.is_some() || verdict.trigger_is_momentary.is_some()));
+    answered.then(|| derive_defect_from_noul(&statement.engine_naive_pattern, verdict) == "defect")
 }

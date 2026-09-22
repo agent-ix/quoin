@@ -27,6 +27,15 @@ labelled fixture corpus, plus MP-231 (engine/semantic delta) over the M6 real-
 statement corpus and MP-225 (disagreement under repetition) over the M2
 corpus at whatever `variant` and `N` were actually run.
 
+The M2 corpus revision a verdict is computed over is part of the verdict.
+PLAT-838's first run used a 16-fixture, 5-defect revision; the `v3` run uses
+a 59-fixture, 19-defect revision (31 rows verbatim from real agent-ix spec
+trees, 28 authored), holding the defect share at 32.2% against the original
+31.2% so the constant-predictor baseline in bar 1 does not move merely
+because defects were added. Every label in either revision is
+**agent-labelled, not human ground truth**, and a verdict that does not say
+so is misreported.
+
 ## Measure Definition
 
 A composite boolean, `jev.ears-gate-v1`: GO only when every bar in
@@ -77,6 +86,14 @@ first live call this plan judges):**
    the engine misses. (MP-231's inverse delta carries no bar: a low inverse
    delta is evidence about the engine, not a lens defect, and is reported
    for its own sake per MP-231's Interpretation.)
+
+**One classification rule per verdict.** Every bar in a single verdict reads
+the same classification rule. A verdict reached under the `v3` noul-derived
+rule takes its MP-231 number from `jev.ears-delta-v3`, never from
+`jev.ears-delta-v1`; the other version may be reported beside it as a
+comparison and carries no bar. This is a statement of what "one variant"
+already meant in **Environment and Sampling**, written out because the first
+`v3` run did mix the two.
 
 Any bar unmet, or resting on a `not_computed` value, is NO-GO. A lens whose
 gate plan is missing or backdated is NO-GO by refusal per AP-202's

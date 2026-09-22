@@ -1,5 +1,5 @@
 {
-  "$comment": "PLAT-838 M2 labelled corpus. AGENT-LABELLED, NOT HUMAN GROUND TRUTH: every `labels` block below was assigned by the agent authoring this evaluation harness, reading each statement the same way the skill's step 2 asks a human to. No second human reader adjudicated these. `engine_naive_pattern` is this agent's mechanical application of FR-042's documented EARS keyword rule (When->event_driven, While->state_driven, If...then->unwanted_behaviour, Where->optional_feature, no trigger->ubiquitous, a non-canonical trigger word canonicalised to the pattern it would imply once reworded) -- these are synthetic statements written for this corpus, not real spec files, so `quire validate` was not run against them; `engine_naive_pattern_method` states this per row. Fixtures 002 and 003/016 satisfy PLAT-838's acceptance criteria: a When that is really a While (002, 007-as-If), and a statement passing the vague-verb denylist but unmeasurable (003).",
+  "$comment": "PLAT-838 M2 corpus, grown for the v3 re-measurement. EVERY label in this file is AGENT-LABELLED, not human ground truth: one agent read each statement, applied the EARS pattern definitions and recorded its reading, with a second defensible reading in `has_defect_contested` where one exists. Fixtures EARS-FIX-001..016 are the original synthetic set and are unchanged, so the v3 numbers measured against them remain comparable. EARS-FIX-017.. carry `provenance`: `real` rows are verbatim statements from the agent-ix spec trees under ~/dev (repo, path and commit recorded per row, and each was checked to appear verbatim in that file at that commit before this corpus was written); `synthetic` rows were authored for this evaluation to cover defect kinds the four real spec trees supplied no instance of. The defect/clean ratio is held near the original 5/16 so that the constant-predictor baseline MP-222 measures against does not move merely because defects were added. `engine_naive_pattern` is the mechanical keyword derivation, never Jev's answer.",
   "fixtures": [
     {
       "fixture_id": "EARS-FIX-001",
@@ -15,7 +15,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "Sound event pattern, concrete threshold (2 seconds)."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-002",
@@ -31,7 +34,10 @@
         "has_defect": true,
         "defect_kind": "when_is_really_while",
         "note": "PLAT-838 acceptance case: 'is under heavy load' names a sustained condition, not a momentary event -- this is really a While. Engine parses it as a grammatically clean When statement and has no way to see this."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-003",
@@ -47,7 +53,10 @@
         "has_defect": true,
         "defect_kind": "unmeasurable_response",
         "note": "PLAT-838 acceptance case: 'robust' is not in the vague-response denylist (support/handle/manage/process/provide/enable/be able to), so the engine's denylist check does not fire, yet the response names no observable, falsifiable behaviour."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-004",
@@ -63,7 +72,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "Sound ubiquitous requirement with an observable, falsifiable outcome."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-005",
@@ -79,7 +91,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "Sound state pattern; the sustained condition and the measurable response both match the While reading."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-006",
@@ -95,7 +110,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "Sound unwanted-behaviour pattern: the condition is genuinely undesired and phrased canonically."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-007",
@@ -111,7 +129,10 @@
         "has_defect": true,
         "defect_kind": "when_is_really_if",
         "note": "The third judgment step 2 names: 'the disk quota is exceeded' is an undesired condition stated with When instead of If...then. Engine parses it as a clean event statement."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-008",
@@ -127,7 +148,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "Sound optional-feature pattern with a concrete interval."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-009",
@@ -143,7 +167,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "A genuine compound pattern (sustained state gating a discrete event); complex is the right EARS reading, not a defect."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-010",
@@ -159,7 +186,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "The engine's non-canonical-trigger finding is a wording defect it already catches; the underlying pattern this lens judges is genuinely event-driven, so this is a no-defect row for the SEMANTIC layer even though the engine's own grammar pass is not clean on this line."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-011",
@@ -171,13 +201,22 @@
       "engine_naive_pattern_method": "mechanical: When -> event_driven",
       "labels": {
         "true_pattern": "event_driven",
-        "true_pattern_contested": ["event_driven", "state_driven"],
+        "true_pattern_contested": [
+          "event_driven",
+          "state_driven"
+        ],
         "response_measurable": true,
         "has_defect": false,
-        "has_defect_contested": [false, true],
+        "has_defect_contested": [
+          false,
+          true
+        ],
         "defect_kind": null,
         "note": "Genuinely ambiguous: 'backs up' can read as a threshold-crossing instant (sound When) or an ongoing backlog condition (really a While). Recorded both ways rather than resolved, per this ticket's own instruction to include cases the lens is expected to find hard."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-012",
@@ -190,12 +229,21 @@
       "labels": {
         "true_pattern": "ubiquitous",
         "response_measurable": false,
-        "response_measurable_contested": [false, true],
+        "response_measurable_contested": [
+          false,
+          true
+        ],
         "has_defect": true,
-        "has_defect_contested": [true, false],
+        "has_defect_contested": [
+          true,
+          false
+        ],
         "defect_kind": "unmeasurable_response",
         "note": "'Available' with no stated threshold or SLA is unmeasurable on the strict reading; a lenient reading treats it as a binary health-check pass. Recorded both ways."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-013",
@@ -211,7 +259,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "Sound event pattern, concrete measurable response (a specific status code and a logging side effect)."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-014",
@@ -227,7 +278,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "Per-archetype dialect: an NFR with no trigger is fine (SKILL.md's own Notes section) -- this is a control row confirming Jev does not manufacture a trigger-based finding where the engine's own dialect rule says there is none to find."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-015",
@@ -243,7 +297,10 @@
         "has_defect": false,
         "defect_kind": null,
         "note": "Per-archetype dialect: StR may use a stakeholder subject (SKILL.md's own Notes section) -- a control row confirming Jev does not flag the stakeholder-subject phrasing itself as a defect."
-      }
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
     },
     {
       "fixture_id": "EARS-FIX-016",
@@ -259,6 +316,939 @@
         "has_defect": true,
         "defect_kind": "unmeasurable_response",
         "note": "Control row: the engine's own vague-response denylist already catches 'provide', so this is not a delta case -- included to confirm Jev's independent unmeasurability judgment agrees with the engine on an easy one, not to claim credit for a defect the engine already finds."
+      },
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation; not drawn from a real spec tree.",
+      "labeller": "agent"
+    },
+    {
+      "fixture_id": "EARS-FIX-017",
+      "confidence": "clean",
+      "statement_id": "FR-077",
+      "statement_type": "FR",
+      "statement_text": "When `tsp compile` fails, the emit command SHALL fail carrying the compiler diagnostics, leaving the committed output untouched.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-077-generated-schema-emission.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-077-generated-schema-emission.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "when_is_really_if",
+        "note": "A compiler failure is an undesired condition; EARS reserves `If <unwanted condition>, then` for it. The response is measurable."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-018",
+      "confidence": "clean",
+      "statement_id": "FR-080",
+      "statement_type": "FR",
+      "statement_text": "When the grammar package is not installed, the rendered suite SHALL fail naming the install command rather than skipping the schema checks.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-080-generated-verification-suite.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-080-generated-verification-suite.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "when_is_really_if",
+        "note": "A missing package is an undesired state, not a momentary event."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-019",
+      "confidence": "clean",
+      "statement_id": "FR-096",
+      "statement_type": "FR",
+      "statement_text": "When a request declares a protocol version `quoin-core` does not implement, `quoin-core` SHALL refuse the request before performing any filesystem write or downstream action.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-096-versioned-rust-engine-boundary.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-096-versioned-rust-engine-boundary.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "when_is_really_if",
+        "note": "An unimplemented protocol version is the unwanted case; `If ... then` is the EARS pattern."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-020",
+      "confidence": "clean",
+      "statement_id": "FR-269",
+      "statement_type": "FR",
+      "statement_text": "When a selected consumer cannot represent a required fact, the consumer adapter SHALL classify the mapped obligation as conditional, unrepresented or refused rather than as preserved.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-specification:spec/objects/observation/FR-269-consumer-mapping-loss.md at 2449ceb534ae13bef517cacfa415e101e75de88b",
+      "source_repo": "quire-specification",
+      "source_path": "spec/objects/observation/FR-269-consumer-mapping-loss.md",
+      "source_commit": "2449ceb534ae13bef517cacfa415e101e75de88b",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "when_is_really_if",
+        "note": "`cannot represent` is an undesired condition."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-021",
+      "confidence": "clean",
+      "statement_id": "FR-060",
+      "statement_type": "FR",
+      "statement_text": "When a standing capability is `available`, `quoin report` SHALL label it as evidence that the control exists, but SHALL NOT label it as evidence that the control was exercised.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-060-operational-evidence-intake-report.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-060-operational-evidence-intake-report.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "when_is_really_while",
+        "note": "`is available` is a sustained state, not an instantaneous event; EARS says `While`."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-022",
+      "confidence": "clean",
+      "statement_id": "FR-071",
+      "statement_type": "FR",
+      "statement_text": "When the tag is `quire` under a semantic-core version that admits it, the engine SHALL extract the clause with no advisory.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-071-clause-and-operation-extraction.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-071-clause-and-operation-extraction.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "when_is_really_while",
+        "note": "`the tag is X` is a state that holds over the extraction, not an event that fires."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-023",
+      "confidence": "clean",
+      "statement_id": "FR-029",
+      "statement_type": "FR",
+      "statement_text": "`quire-rs` SHALL expose an input contract for each loaded archetype that is suitable for LLM render agents and other non-Rust consumers.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-029-archetype-input-contract.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-029-archetype-input-contract.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": false,
+        "has_defect": true,
+        "defect_kind": "unmeasurable_response",
+        "note": "`suitable for LLM render agents` states no acceptance condition and uses none of the denylisted verbs."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-024",
+      "confidence": "clean",
+      "statement_id": "FR-090",
+      "statement_type": "FR",
+      "statement_text": "Where a partition's denominator is zero, the measurement SHALL publish that partition with a denominator of zero and no rate value, rather than a rate of zero or an omitted row.",
+      "engine_naive_pattern": "optional_feature",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-090-publish-rates-with-unit-population-and-method.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-090-publish-rates-with-unit-population-and-method.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "where_is_really_if",
+        "note": "EARS `Where` marks an included optional feature. A zero denominator is a data condition, not a feature selection."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-025",
+      "confidence": "clean",
+      "statement_id": "FR-088",
+      "statement_type": "FR",
+      "statement_text": "Where a document's classified form is `none`, the measurement SHALL record the document `not-applicable` for this check.",
+      "engine_naive_pattern": "optional_feature",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-088-measure-the-l3-semantic-dimension.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-088-measure-the-l3-semantic-dimension.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "where_is_really_while",
+        "note": "A classified form is a state of the document under measurement, not an optional feature of the system."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-026",
+      "confidence": "clean",
+      "statement_id": "FR-043",
+      "statement_type": "FR",
+      "statement_text": "When `validate_document_in_registry` runs the grammar, the engine SHALL pass the `Registry`'s merged lexicon to the check.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-043-module-concrete-lexicon.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-043-module-concrete-lexicon.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Momentary trigger, wanted condition, concrete response."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-027",
+      "confidence": "clean",
+      "statement_id": "FR-044",
+      "statement_type": "FR",
+      "statement_text": "When a `Spec` corpus is validated as a bundle, `validate_bundle` SHALL harvest the corpus's project terms once and SHALL validate each document with the combined lexicon.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-044-project-glossary-lexicon.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-044-project-glossary-lexicon.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Event trigger, measurable two-part response."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-028",
+      "confidence": "clean",
+      "statement_id": "FR-045",
+      "statement_type": "FR",
+      "statement_text": "When the engine receives an ObjectType with `body_extraction` absent and `has_plugin` false, the engine SHALL run Tier 1 frontmatter extraction.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-045-filament-core-extraction-engine.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-045-filament-core-extraction-engine.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "`receives` is a momentary event; the response names an exact tier."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-029",
+      "confidence": "clean",
+      "statement_id": "FR-048",
+      "statement_type": "FR",
+      "statement_text": "When a grammar emits a finding, the framework SHALL set the finding's severity from the merged map keyed by the finding's `grammar` and `check`, defaulting to `warning` when the key is absent.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-048-per-check-grammar-severity.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-048-per-check-grammar-severity.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "`emits a finding` is an event; response is fully determined."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-030",
+      "confidence": "ambiguous",
+      "statement_id": "FR-047",
+      "statement_type": "FR",
+      "statement_text": "When reporting a native producer failure, the producer SHALL derive its machine-readable classification from a typed cause in its versioned diagnostic catalog rather than diagnostic message text.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-specification:spec/functional/foundation/FR-047-emit-typed-located-causes.md at 2449ceb534ae13bef517cacfa415e101e75de88b",
+      "source_repo": "quire-specification",
+      "source_path": "spec/functional/foundation/FR-047-emit-typed-located-causes.md",
+      "source_commit": "2449ceb534ae13bef517cacfa415e101e75de88b",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Reporting is the event; the failure it reports is context, not the trigger. A reader could argue for `If`.",
+        "has_defect_contested": [
+          false,
+          true
+        ]
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-031",
+      "confidence": "clean",
+      "statement_id": "FR-084",
+      "statement_type": "FR",
+      "statement_text": "While a repository's working tree is dirty, the measurement SHALL record `clean: false` against that repository, because its measured documents are not the documents at the recorded commit.",
+      "engine_naive_pattern": "state_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-084-pin-and-enumerate-the-governed-corpus.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-084-pin-and-enumerate-the-governed-corpus.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sustained state, exact recorded value."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-032",
+      "confidence": "clean",
+      "statement_id": "FR-086",
+      "statement_type": "FR",
+      "statement_text": "While a document is in the `unreadable` state, the measurement SHALL continue to enumerate and state the sibling documents of that document.",
+      "engine_naive_pattern": "state_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-086-assign-one-measurement-state-per-document.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-086-assign-one-measurement-state-per-document.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sustained state, concrete response."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-033",
+      "confidence": "clean",
+      "statement_id": "FR-043",
+      "statement_type": "FR",
+      "statement_text": "While the decision scope is closed and complete, the evaluator SHALL settle with basis `closed-scope`.",
+      "engine_naive_pattern": "state_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-spec-language:spec/functional/FR-043-evaluate-bounded-native-temporal.md at 18393434072d43daa6e6b6a689640e96dc9ee07f",
+      "source_repo": "quire-spec-language",
+      "source_path": "spec/functional/FR-043-evaluate-bounded-native-temporal.md",
+      "source_commit": "18393434072d43daa6e6b6a689640e96dc9ee07f",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sustained state, named basis value."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-034",
+      "confidence": "ambiguous",
+      "statement_id": "FR-057",
+      "statement_type": "FR",
+      "statement_text": "While a record is failed, inconclusive, or `cause_not_established`, Quoin SHALL preserve it as queryable evidence.",
+      "engine_naive_pattern": "state_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-057-intervention-experiment-intake-report.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-057-intervention-experiment-intake-report.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sustained state, but the states named are undesired ones, so an `If` reading is defensible.",
+        "has_defect_contested": [
+          false,
+          true
+        ]
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-035",
+      "confidence": "clean",
+      "statement_id": "FR-048",
+      "statement_type": "FR",
+      "statement_text": "If two modules redeclare the same key with different values, then the loader SHALL emit one non-fatal `DuplicateGrammarSeverity` diagnostic.",
+      "engine_naive_pattern": "unwanted_behaviour",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-048-per-check-grammar-severity.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-048-per-check-grammar-severity.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Canonical `If ... then` on a genuinely unwanted condition."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-036",
+      "confidence": "clean",
+      "statement_id": "FR-051",
+      "statement_type": "FR",
+      "statement_text": "If an adapter cannot parse a file, then the extractor SHALL emit a per-file diagnostic, skip the file, and continue.",
+      "engine_naive_pattern": "unwanted_behaviour",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-051-source-symbol-extraction.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-051-source-symbol-extraction.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Unwanted condition, three concrete responses."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-037",
+      "confidence": "clean",
+      "statement_id": "FR-046",
+      "statement_type": "FR",
+      "statement_text": "If the next charged operation exceeds the run's admitted budget, then the language pipeline SHALL retain resource incompleteness without returning an unfinished query value as complete.",
+      "engine_naive_pattern": "unwanted_behaviour",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-spec-language:spec/functional/FR-046-execute-predicates-and-ordered-queries.md at 18393434072d43daa6e6b6a689640e96dc9ee07f",
+      "source_repo": "quire-spec-language",
+      "source_path": "spec/functional/FR-046-execute-predicates-and-ordered-queries.md",
+      "source_commit": "18393434072d43daa6e6b6a689640e96dc9ee07f",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Budget exhaustion is unwanted; the response names the exact disposition."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-038",
+      "confidence": "clean",
+      "statement_id": "FR-036",
+      "statement_type": "FR",
+      "statement_text": "If a package processing budget is exhausted, then the linker SHALL report resource_exhausted for unfinished dependent work without claiming complete package admission.",
+      "engine_naive_pattern": "unwanted_behaviour",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-spec-language:spec/functional/FR-036-link-composed-native-packages.md at 18393434072d43daa6e6b6a689640e96dc9ee07f",
+      "source_repo": "quire-spec-language",
+      "source_path": "spec/functional/FR-036-link-composed-native-packages.md",
+      "source_commit": "18393434072d43daa6e6b6a689640e96dc9ee07f",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Unwanted condition, named error code."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-039",
+      "confidence": "clean",
+      "statement_id": "FR-083",
+      "statement_type": "FR",
+      "statement_text": "Where the schema toolchain is installed, Quoin's gate SHALL run the rendered emit command, asserting that it reproduces the committed schemas byte for byte.",
+      "engine_naive_pattern": "optional_feature",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-083-template-render-self-tests.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-083-template-render-self-tests.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "optional_feature",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "An optional installed component; byte-for-byte is measurable."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-040",
+      "confidence": "clean",
+      "statement_id": "FR-076",
+      "statement_type": "FR",
+      "statement_text": "Where the template is run interactively, it SHALL prompt for the same inputs it accepts as arguments.",
+      "engine_naive_pattern": "optional_feature",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-076-semantic-module-template-variants.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-076-semantic-module-template-variants.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "optional_feature",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "An optional mode of operation."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-041",
+      "confidence": "clean",
+      "statement_id": "FR-065",
+      "statement_type": "FR",
+      "statement_text": "Where a case is **mutating** — exercising a command that writes, such as `quire fix` — the runner SHALL operate on a copy, leaving the checked-in input unmodified.",
+      "engine_naive_pattern": "optional_feature",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-065-controlled-corpus-contract.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-065-controlled-corpus-contract.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "optional_feature",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "A declared case property selecting optional behaviour."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-042",
+      "confidence": "ambiguous",
+      "statement_id": "FR-025",
+      "statement_type": "FR",
+      "statement_text": "Where the `origin` remote names a local path — an absolute or relative filesystem path, or a `file://` URL — the command SHALL yield no organization rather than a segment of that path.",
+      "engine_naive_pattern": "optional_feature",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-025-resolve-authoring-organization.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-025-resolve-authoring-organization.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "optional_feature",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "A configuration shape selecting behaviour; a reader could call this a plain condition instead.",
+        "has_defect_contested": [
+          false,
+          true
+        ]
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-043",
+      "confidence": "clean",
+      "statement_id": "FR-045",
+      "statement_type": "FR",
+      "statement_text": "The engine SHALL produce stable SHA-256 ids for object type, node, and edge records.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/functional/FR-045-filament-core-extraction-engine.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/functional/FR-045-filament-core-extraction-engine.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "No trigger, named algorithm, checkable."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-044",
+      "confidence": "clean",
+      "statement_id": "FR-047",
+      "statement_type": "FR",
+      "statement_text": "The graph input validator SHALL reject duplicate complete storage identities.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-spec-language:spec/functional/FR-047-evaluate-finite-object-reference-graphs.md at 18393434072d43daa6e6b6a689640e96dc9ee07f",
+      "source_repo": "quire-spec-language",
+      "source_path": "spec/functional/FR-047-evaluate-finite-object-reference-graphs.md",
+      "source_commit": "18393434072d43daa6e6b6a689640e96dc9ee07f",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "No trigger, binary observable outcome."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-045",
+      "confidence": "clean",
+      "statement_id": "FR-090",
+      "statement_type": "FR",
+      "statement_text": "A partition SHALL NOT be omitted from a published breakdown because its denominator is small.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quoin:spec/functional/FR-090-publish-rates-with-unit-population-and-method.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "source_repo": "quoin",
+      "source_path": "spec/functional/FR-090-publish-rates-with-unit-population-and-method.md",
+      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Invariant, directly checkable against a published breakdown."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-046",
+      "confidence": "clean",
+      "statement_id": "FR-059",
+      "statement_type": "FR",
+      "statement_text": "Open or incomplete histories SHALL NOT establish complete global success.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-specification:spec/functional/protocol/FR-059-assess-finite-global-conformance.md at 2449ceb534ae13bef517cacfa415e101e75de88b",
+      "source_repo": "quire-specification",
+      "source_path": "spec/functional/protocol/FR-059-assess-finite-global-conformance.md",
+      "source_commit": "2449ceb534ae13bef517cacfa415e101e75de88b",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Invariant over a named vocabulary."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-047",
+      "confidence": "ambiguous",
+      "statement_id": "NFR-012",
+      "statement_type": "NFR",
+      "statement_text": "Library test suite size SHALL stay small enough for the miri job to complete within 30 minutes (GitHub Actions default timeout).",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "real",
+      "provenance_note": "verbatim from quire-rs:spec/non-functional/NFR-012-miri-ub-check.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "source_repo": "quire-rs",
+      "source_path": "spec/non-functional/NFR-012-miri-ub-check.md",
+      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "The 30-minute bound is measurable, but `small enough` states the requirement indirectly.",
+        "has_defect_contested": [
+          false,
+          true
+        ]
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-048",
+      "confidence": "clean",
+      "statement_id": "SYN-017",
+      "statement_type": "FR",
+      "statement_text": "While the ingest queue receives a new document, the system SHALL assign it a stable identifier before acknowledging receipt.",
+      "engine_naive_pattern": "state_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "while_is_really_when",
+        "note": "`receives a new document` is a momentary event; `While` claims a sustained state. Unreachable by the v3 rule, whose two disambiguators are phrased for a `When` statement."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-049",
+      "confidence": "clean",
+      "statement_id": "SYN-018",
+      "statement_type": "FR",
+      "statement_text": "While the operator holds an administrative session, the system SHALL record each configuration write with the session identifier.",
+      "engine_naive_pattern": "state_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Genuine sustained state, concrete response."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-050",
+      "confidence": "clean",
+      "statement_id": "SYN-019",
+      "statement_type": "FR",
+      "statement_text": "If the operator requests an export, then the system SHALL produce a CSV file containing every row in the current view.",
+      "engine_naive_pattern": "unwanted_behaviour",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "if_is_really_when",
+        "note": "Requesting an export is a wanted, momentary event; `If ... then` claims an unwanted condition. Unreachable by the v3 rule."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-051",
+      "confidence": "clean",
+      "statement_id": "SYN-020",
+      "statement_type": "FR",
+      "statement_text": "If the uploaded archive exceeds the configured size limit, then the system SHALL reject the upload and report the limit that was exceeded.",
+      "engine_naive_pattern": "unwanted_behaviour",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Canonical unwanted-behaviour statement."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-052",
+      "confidence": "clean",
+      "statement_id": "SYN-021",
+      "statement_type": "FR",
+      "statement_text": "The system SHALL send a password-reset email to the account holder within 60 seconds of a reset request.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "missing_trigger",
+        "note": "A reset request is an event trigger stated inside the response instead of as a `When` clause. Unreachable by the v3 rule."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-053",
+      "confidence": "clean",
+      "statement_id": "SYN-022",
+      "statement_type": "FR",
+      "statement_text": "The system SHALL retain every audit record for at least seven years.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Genuine invariant with a concrete bound."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-054",
+      "confidence": "clean",
+      "statement_id": "SYN-023",
+      "statement_type": "NFR",
+      "statement_text": "The system SHALL remain resilient under sustained peak traffic.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": false,
+        "has_defect": true,
+        "defect_kind": "unmeasurable_response",
+        "note": "`resilient` names no acceptance condition and is on no denylist; `sustained peak traffic` is unquantified."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-055",
+      "confidence": "clean",
+      "statement_id": "SYN-024",
+      "statement_type": "NFR",
+      "statement_text": "The system SHALL scale appropriately as the number of connected clients grows.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": false,
+        "has_defect": true,
+        "defect_kind": "unmeasurable_response",
+        "note": "`appropriately` is unmeasurable and dodges the vague-verb denylist."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-056",
+      "confidence": "clean",
+      "statement_id": "SYN-025",
+      "statement_type": "FR",
+      "statement_text": "While the replica lags the primary, when a read arrives, the system SHALL serve it from the primary and SHALL record the lag in milliseconds.",
+      "engine_naive_pattern": "complex",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "complex",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Genuine complex pattern: sustained state plus an event trigger, measurable response."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-057",
+      "confidence": "clean",
+      "statement_id": "SYN-026",
+      "statement_type": "FR",
+      "statement_text": "Where audit logging is enabled, while the system is in maintenance mode, the system SHALL write each rejected request to the audit log with its rejection code.",
+      "engine_naive_pattern": "complex",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "complex",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Optional feature plus sustained state, concrete response."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-058",
+      "confidence": "ambiguous",
+      "statement_id": "SYN-027",
+      "statement_type": "FR",
+      "statement_text": "When the certificate expires, the system SHALL stop accepting new TLS connections and SHALL emit a `cert_expired` event.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Expiry is momentary, but the post-expiry situation is undesired, so an `If` reading is defensible.",
+        "has_defect_contested": [
+          false,
+          true
+        ]
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-059",
+      "confidence": "clean",
+      "statement_id": "SYN-028",
+      "statement_type": "FR",
+      "statement_text": "Where the optional reporting module is installed, the system SHALL expose a `/reports` endpoint returning HTTP 200 for an authenticated request.",
+      "engine_naive_pattern": "optional_feature",
+      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
+      "provenance": "synthetic",
+      "provenance_note": "Authored for this evaluation to cover a defect kind the four real spec trees supplied no instance of.",
+      "labeller": "agent",
+      "labels": {
+        "true_pattern": "optional_feature",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Canonical optional-feature statement."
       }
     }
   ]
