@@ -103,7 +103,7 @@ fn new_collection_json() -> Value {
         "scope": { "cases": 1 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
-        "configDigest": "sha256:config-a",
+        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": "2026-09-21T00:00:00.000Z",
         "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },

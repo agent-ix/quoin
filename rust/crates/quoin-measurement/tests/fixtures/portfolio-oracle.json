@@ -3,6 +3,7 @@
   "produced_from_revision": "9e7c33eb0d4891fe9718c76860d5f8ecfe6e3cb0",
   "produced_by_node": "v22.15.0",
   "capture_script": "eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-measurement/oracle/capture-portfolio-oracle.mjs",
+  "hand_edits": "PLAT-939: every occurrence of the fixture-tree's placeholder configDigest \"sha256:cfg-b\" was hand-substituted (not re-captured — capture-portfolio-oracle.mjs's src/measurement/ target no longer exists) with a real sha256-shaped digest, so the new format check quoin-measurement/src/validate/stack.rs added admits the schemaVersion-2 fixture it is captured from. This header's produced_by/produced_from_revision/capture_script fields describe the original 2026 capture only; they are not live for this one field.",
   "fixture_tree": "rust/crates/quoin-measurement/tests/fixtures/portfolio-tree",
   "tree_token": "@@TREE@@",
   "reports": [

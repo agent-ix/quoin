@@ -144,7 +144,7 @@ fn digest(object: &JsonObject, name: &str) -> Result<RawFileSha256Digest, Measur
 fn config_digest_shape(text: &str) -> Result<(), MeasurementError> {
     RawFileSha256Digest::parse_stored(text)
         .map(|_| ())
-        .map_err(|_| refuse("configDigest must be a full sha256 digest"))
+        .map_err(|_| refuse("collection.configDigest must be a full sha256 digest"))
 }
 
 /// `buildProfile` is optional in a stored record and `release`-only in a new

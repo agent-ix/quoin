@@ -982,8 +982,9 @@ fn tc_479_024_config_digest_must_be_a_full_sha256_digest() {
         refusal
             .findings()
             .iter()
-            .any(|finding| finding.contains("configDigest")),
-        "the refusal must name `configDigest`, got {:?}",
+            .any(|finding| finding == "collection.configDigest must be a full sha256 digest"),
+        "the refusal must name `collection.configDigest`, not `verificationStack.configDigest` — \
+         configDigest lives on the collection envelope, not inside verificationStack; got {:?}",
         refusal.findings()
     );
 
@@ -1002,8 +1003,8 @@ fn tc_479_024_config_digest_must_be_a_full_sha256_digest() {
         refusal
             .findings()
             .iter()
-            .any(|finding| finding.contains("configDigest")),
-        "the one refusal must name `configDigest`, got {:?}",
+            .any(|finding| finding == "collection.configDigest must be a full sha256 digest"),
+        "the one refusal must name `collection.configDigest`, got {:?}",
         refusal.findings()
     );
     assert!(
