@@ -31,12 +31,24 @@ fn refuse(message: impl Into<String>) -> MeasurementError {
 
 /// Read a `verificationStack`, or refuse.
 ///
+/// `config_digest` is the collection envelope's own `configDigest`, already
+/// read (and confirmed non-empty) by
+/// [`crate::validate::parse_stored_measurement_collection`] before this runs
+/// — it is not a member of the `verificationStack` object itself. It is
+/// checked here anyway: `verify_local_artifacts`'s doc comment
+/// (`crate::store::publish`) already treats `lockDigest`, `executableDigest`
+/// and `configDigest` as the three digests the stack attests, and until this
+/// (PLAT-939) `configDigest` was the one of the three accepted on any
+/// non-empty string, never confirmed to even be shaped like a sha256 digest.
+///
 /// # Errors
 ///
 /// [`MeasurementErrorCode::CollectionInvalid`] for every shape
-/// `validateVerificationStack` rejects.
+/// `validateVerificationStack` rejects, plus a `configDigest` that is not a
+/// full sha256 digest.
 pub(crate) fn verification_stack(
     value: Option<&JsonValue>,
+    config_digest: &str,
 ) -> Result<VerificationStackAttestation, MeasurementError> {
     let Some(value) = value else {
         return Err(refuse("schemaVersion 2 requires `verificationStack`"));
@@ -49,10 +61,15 @@ pub(crate) fn verification_stack(
     // Every member is checked, even after an earlier one fails, and each
     // failing member's own findings (not just its headline) are kept, so a
     // caller sees every problem with the attestation in one refusal rather
-    // than fixing them one round trip at a time (PLAT-929).
+    // than fixing them one round trip at a time (PLAT-929). `configDigest`'s
+    // shape joins the same accumulation rather than short-circuiting, for the
+    // same reason (PLAT-939).
     let mut findings = Vec::new();
     let lock_digest = note(&mut findings, digest(object, "lockDigest"));
     let executable_digest = note(&mut findings, digest(object, "executableDigest"));
+    if let Err(error) = config_digest_shape(config_digest) {
+        findings.push(error.subject().to_owned());
+    }
     let build_profile = note(&mut findings, build_profile(object));
     let toolchains = note(&mut findings, toolchains(object));
     let sources = note(&mut findings, sources(object));
@@ -113,6 +130,21 @@ fn digest(object: &JsonObject, name: &str) -> Result<RawFileSha256Digest, Measur
                 "verificationStack.{name} must be a full sha256 digest"
             ))
         })
+}
+
+/// Confirm `configDigest` is shaped like a sha256 digest.
+///
+/// Unlike [`digest`], the caller already has the text in hand — `configDigest`
+/// lives on the collection envelope, not inside a `verificationStack` member
+/// object — so this only checks shape and discards the parsed value; the
+/// envelope keeps carrying `configDigest` as [`crate::types::ids::NonEmptyText`]
+/// (schemaVersion 1 collections still accept any non-empty string here, since
+/// this check only runs for schemaVersion 2, same as `lockDigest` and
+/// `executableDigest`).
+fn config_digest_shape(text: &str) -> Result<(), MeasurementError> {
+    RawFileSha256Digest::parse_stored(text)
+        .map(|_| ())
+        .map_err(|_| refuse("collection.configDigest must be a full sha256 digest"))
 }
 
 /// `buildProfile` is optional in a stored record and `release`-only in a new
