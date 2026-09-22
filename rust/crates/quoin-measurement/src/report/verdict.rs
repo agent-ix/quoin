@@ -11,7 +11,7 @@
 //! # The rule
 //!
 //! A value's *badness* under an objective is one number where smaller is
-//! better — see [`badness`]. A `ratchet` plan's newest value is `held` when its
+//! better — see `badness`. A `ratchet` plan's newest value is `held` when its
 //! badness is no greater than the best (least bad) value any **earlier**
 //! collection measured for the same plan, slice and `definition_version`, and
 //! `regressed` otherwise. A `target` plan reports how far the newest value
@@ -158,7 +158,7 @@ pub enum TargetOutcome {
         /// The objective's bound.
         bound: f64,
         /// How far `current` is from `bound`, never negative — see
-        /// [`target_progress`].
+        /// `target_progress`.
         distance: f64,
         /// Whether `current` has reached `bound` in the objective's direction.
         reached: bool,
