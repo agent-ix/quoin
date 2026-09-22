@@ -22,7 +22,11 @@ description: "Chronological log of structural changes to this bundle."
   with every observation"); a count short of the plan's
   `statistical_design.repetitions` is refused as `QM-REPETITIONS-SHORT`, and
   an unstated one as `QM-POPULATION-UNSTATED` when the plan requires more than
-  one. TC-1740..TC-1751.
+  one. A stated count that is not a whole number (a stated `examined` under a
+  minimum, or any stated `repetitions`) is refused as
+  `QM-POPULATION-MALFORMED` rather than coerced or read as absent, and the
+  JSON report keeps a stored `repetitions` exactly as stored.
+  TC-1740..TC-1755.
 
 * **2026-09-22** — **FR-044-AC-6: an artifact label is admitted, never silently**
   (PLAT-969, owner's ruling). A `verificationStack.artifacts` name with no

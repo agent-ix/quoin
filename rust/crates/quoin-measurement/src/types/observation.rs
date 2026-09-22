@@ -96,10 +96,11 @@ pub struct MeasurementPopulation {
     pub matched: Option<f64>,
     /// Whether the producer considers the population complete.
     pub complete: Option<bool>,
-    /// How many repeated runs produced the observation (PLAT-960), checked
-    /// against the plan's `statistical_design.repetitions`. Read like
-    /// `examined`: a non-numeric value reads as absent.
-    pub repetitions: Option<f64>,
+    /// How many repeated runs produced the observation (PLAT-960), exactly
+    /// as stored. Intake requires a whole number of at least 1 and holds it
+    /// against the plan's `statistical_design.repetitions`; the stored value
+    /// is kept verbatim so a report shows what a retained collection carries.
+    pub repetitions: Option<JsonValue>,
     /// A producer-defined identity for the population.
     pub identity: Option<JsonValue>,
     /// Every other member of the stored object, kept as it was stored.

@@ -30,12 +30,12 @@
 //! Enforcing `minimum_population` and `repetitions` against a collection is
 //! [`crate::validate::measurement_collection`]'s job, not this module's.
 
+mod design;
+
 use crate::discovery;
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::source::MeasurementSource;
 use crate::types::ids::NonEmptyText;
-mod design;
-
 use crate::types::plan::{
     BarDigest, LifecycleStatus, MeasurementPlan, MeasurementStage, PlanPreregistration,
 };

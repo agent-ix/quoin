@@ -137,7 +137,8 @@ impl From<MeasurementError> for InterventionIntakeError {
             // exhaustiveness reason as the two arms above.
             | MeasurementErrorCode::PopulationBelowMinimum
             | MeasurementErrorCode::PopulationUnstated
-            | MeasurementErrorCode::RepetitionsShort => InterventionRefusalCode::InvalidRecord,
+            | MeasurementErrorCode::RepetitionsShort
+            | MeasurementErrorCode::PopulationMalformed => InterventionRefusalCode::InvalidRecord,
         };
         let findings = if error.findings().is_empty() {
             vec![error.to_string()]

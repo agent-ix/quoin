@@ -89,11 +89,15 @@ pub enum MeasurementErrorCode {
     /// A measured observation's `population.repetitions` is below its plan's
     /// `statistical_design.repetitions` (PLAT-960).
     RepetitionsShort,
+    /// A stated `population.repetitions` is not a whole number of at least 1,
+    /// or a stated `population.examined` under a plan with a minimum is not a
+    /// non-negative whole number (PLAT-960).
+    PopulationMalformed,
 }
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 21] = [
+    pub const ALL: [Self; 22] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
@@ -115,6 +119,7 @@ impl MeasurementErrorCode {
         Self::PopulationBelowMinimum,
         Self::PopulationUnstated,
         Self::RepetitionsShort,
+        Self::PopulationMalformed,
     ];
 
     /// The stable wire spelling of this code.
@@ -142,6 +147,7 @@ impl MeasurementErrorCode {
             Self::PopulationBelowMinimum => "QM-POPULATION-BELOW-MINIMUM",
             Self::PopulationUnstated => "QM-POPULATION-UNSTATED",
             Self::RepetitionsShort => "QM-REPETITIONS-SHORT",
+            Self::PopulationMalformed => "QM-POPULATION-MALFORMED",
         }
     }
 

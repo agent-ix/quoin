@@ -30,11 +30,14 @@ use std::path::Path;
 use quoin_measurement::error::MeasurementErrorCode;
 use quoin_measurement::json_bridge::from_serde;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
+use quoin_measurement::portfolio::{
+    build_portfolio_report, render_portfolio_report, render_portfolio_report_json,
+};
 use quoin_measurement::report::{
     build_measurement_report, render_measurement_report, render_measurement_report_json,
 };
 use quoin_measurement::source::DiskMeasurement;
-use quoin_measurement::store::write_measurement_collection;
+use quoin_measurement::store::{measurements_root, write_measurement_collection};
 use quoin_measurement::types::plan::{GroundTruthKind, MeasurementPlan};
 use quoin_measurement::validate;
 use serde_json::{Value, json};
@@ -354,6 +357,21 @@ fn tc_960_006_the_report_states_the_plans_ground_truth_kind() {
         parsed["plans"][0]["groundTruthKind"],
         json!("human-labelled")
     );
+
+    // The portfolio view quotes the same plan cell and the same plan wire.
+    let portfolio = build_portfolio_report(&[root.to_path_buf()]);
+    let rendered = render_portfolio_report(&portfolio).expect("the portfolio renders");
+    assert!(
+        rendered.contains("MP-900 (spec/assurance/MP-900.md; ground truth: human-labelled)"),
+        "the portfolio Plan cell must state the ground-truth kind:\n{rendered}"
+    );
+    let json_text = render_portfolio_report_json(&portfolio).expect("the portfolio JSON renders");
+    let parsed: Value = serde_json::from_str(&json_text).expect("the portfolio JSON is JSON");
+    assert_eq!(
+        parsed["repositories"][0]["plans"][0]["groundTruthKind"],
+        json!("human-labelled"),
+        "the portfolio JSON plan must carry groundTruthKind: {json_text}"
+    );
 }
 
 /// The design members are parsed into the plan, `repetitions` included, and
@@ -568,5 +586,154 @@ fn tc_960_013_the_json_report_carries_a_stated_repetition_count() {
     assert_eq!(
         parsed["current"][0]["observation"]["population"],
         json!({ "examined": 40, "matched": 1, "repetitions": 3 })
+    );
+}
+
+/// A stated `population.repetitions` that is not a whole number of at least
+/// 1 is refused as `QM-POPULATION-MALFORMED`, naming the member and the
+/// value, whatever the plan says — a quoted number, a fraction, a negative
+/// and an object alike. It is never coerced, and never read as absent.
+///
+/// Trace: FR-044-AC-9
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_014_a_malformed_repetition_count_is_refused_whatever_the_plan() {
+    for document in [
+        plan_document(&design_with_repetitions("3")),
+        plan_document(""),
+    ] {
+        let repository = repository_with(&document);
+        let plans = authored_plans(repository.path());
+        for (stated, spelled) in [
+            (json!("3"), r#""3""#),
+            (json!(2.5), "2.5"),
+            (json!(-1), "-1"),
+            (json!({}), "{}"),
+        ] {
+            let mut candidate = observation(Some(40));
+            candidate["population"]["repetitions"] = stated;
+            let refusal = intake(&plans, &collection(&[candidate]))
+                .expect_err("a malformed repetition count is refused");
+            assert_eq!(
+                refusal.code(),
+                MeasurementErrorCode::PopulationMalformed,
+                "{spelled}"
+            );
+            assert_eq!(
+                refusal.findings(),
+                [format!(
+                    "QM-POPULATION-MALFORMED: metric `quality.gate` states \
+                     population.repetitions {spelled}; it must be a whole number of at least 1"
+                )],
+                "{document}"
+            );
+        }
+    }
+}
+
+/// Under a plan with a minimum, a stated `population.examined` that is not a
+/// non-negative whole number is malformed — a quoted `"50"` is not fifty, and
+/// a negative count is malformed rather than short.
+///
+/// Trace: FR-044-AC-7
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_015_a_malformed_examined_count_is_refused_under_a_minimum() {
+    let repository = repository_with(&plan_document(&design_with_minimum("10")));
+    let plans = authored_plans(repository.path());
+    for (stated, spelled) in [(json!("50"), r#""50""#), (json!(-1), "-1")] {
+        let mut candidate = observation(Some(40));
+        candidate["population"]["examined"] = stated;
+        let refusal = intake(&plans, &collection(&[candidate]))
+            .expect_err("a malformed examined count is refused");
+        assert_eq!(refusal.code(), MeasurementErrorCode::PopulationMalformed);
+        assert_eq!(
+            refusal.findings(),
+            [format!(
+                "QM-POPULATION-MALFORMED: metric `quality.gate` states population.examined \
+                 {spelled}; it must be a whole number of at least 0"
+            )]
+        );
+    }
+}
+
+/// A retained collection whose `population.repetitions` is not a number is
+/// still shown exactly as stored in the JSON report: the read path keeps the
+/// raw value rather than dropping what it cannot parse.
+///
+/// Trace: FR-044-AC-9
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_016_the_json_report_keeps_a_stored_non_numeric_repetition_count() {
+    let repository = repository_with(&plan_document(""));
+    let root = repository.path();
+    let mut stored = observation(Some(40));
+    stored["population"]["repetitions"] = json!("three");
+    let store = measurements_root(root);
+    std::fs::create_dir_all(&store).expect("the store is creatable");
+    std::fs::write(
+        store.join("run-960.json"),
+        serde_json::to_string(&collection(&[stored])).expect("the collection serialises"),
+    )
+    .expect("the retained collection is writable");
+
+    let report = build_measurement_report(&DiskMeasurement::new(root), root)
+        .expect("the report builds over a retained collection");
+    let parsed: Value = serde_json::from_str(
+        &render_measurement_report_json(&report).expect("the JSON report renders"),
+    )
+    .expect("the JSON view is JSON");
+    assert_eq!(
+        parsed["current"][0]["observation"]["population"],
+        json!({ "examined": 40, "matched": 1, "repetitions": "three" })
+    );
+}
+
+/// A population finding beside an untyped one is a mixed refusal: it carries
+/// `QM-COLLECTION-INVALID`, not the population code.
+///
+/// Trace: FR-044-AC-7
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_017_a_population_finding_beside_an_unplanned_metric_is_collection_invalid() {
+    let repository = repository_with(&plan_document(&design_with_minimum("10")));
+    let plans = authored_plans(repository.path());
+    let mut unplanned = observation(Some(100));
+    unplanned["metric"] = json!("quality.unplanned");
+
+    let refusal = intake(&plans, &collection(&[observation(Some(2)), unplanned]))
+        .expect_err("a short population and an unplanned metric are refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert_eq!(refusal.findings().len(), 2, "{:?}", refusal.findings());
+    assert!(refusal.findings()[0].starts_with("QM-POPULATION-BELOW-MINIMUM: "));
+}
+
+/// Population findings of two different kinds and nothing else are still a
+/// mixed refusal: `QM-COLLECTION-INVALID`, each finding naming its own code.
+///
+/// Trace: FR-044-AC-7, FR-044-AC-9
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_018_population_findings_of_different_kinds_are_collection_invalid() {
+    let repository = repository_with(&plan_document(&design(
+        "\x20\x20minimum_population: 10\n",
+        "3",
+    )));
+    let plans = authored_plans(repository.path());
+
+    let refusal = intake(
+        &plans,
+        &collection(&[with_repetitions(observation(Some(2)), 1)]),
+    )
+    .expect_err("a small population run too few times is refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert_eq!(
+        refusal.findings(),
+        [
+            "QM-POPULATION-BELOW-MINIMUM: metric `quality.gate` examined 2 but plan MP-900 \
+             requires a population of at least 10",
+            "QM-REPETITIONS-SHORT: metric `quality.gate` ran 1 repetitions but plan MP-900 \
+             requires 3",
+        ]
     );
 }
