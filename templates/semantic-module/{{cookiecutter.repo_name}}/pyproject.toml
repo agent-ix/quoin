@@ -33,11 +33,6 @@ exclude = [
 
 [tool.poetry.dependencies]
 python = ">={{ cookiecutter.python_version }},<3.14"
-# The Quire engine is deliberately NOT declared here. No index this repository
-# may commit against serves the wheel exposing `extract_semantic`
-# (agent-ix/quire-rs#392), so declaring it would make `poetry install` fail on
-# every machine. `make dev-quire` provisions it, and the suite FAILS rather than
-# skips without it — see tests/conftest.py.
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.1.0"
@@ -48,6 +43,7 @@ pytest = "^9.0.2"
 pytest-cov = "^7.0.0"
 pytest-json-report = "^1.5.0"
 pyyaml = "^6.0.2"
+quire = { version = "^{{ cookiecutter.quire_engine_floor }}", source = "internal-pypi" }
 referencing = "^0.36.2"
 ruff = "^0.14.13"
 
@@ -83,15 +79,6 @@ help = "Emit {{ cookiecutter.package_name }}/schemas/ from typespec/main.tsp and
 [tool.poe.tasks.schemas-check]
 cmd = "node scripts/generate-schemas.mjs --check"
 help = "Fail when the committed schemas, toolchain, or manifest digests differ from the source"
-
-[tool.poe.tasks.dev-quire]
-# The one place this repository names a non-public index. It is a provisioning
-# command, not a dependency declaration and not a publication target: no index
-# this repository may depend on serves a Quire wheel exposing
-# `extract_semantic` (agent-ix/quire-rs#392). Delete this task the day that
-# issue closes and declare the engine as an ordinary dev dependency.
-shell = "pip install --index-url http://pypi.ix/root/dev/+simple/ --trusted-host pypi.ix 'quire>={{ cookiecutter.quire_engine_floor }}'"
-help = "Install the Quire wheel the semantic tests need (agent-ix/quire-rs#392)"
 
 [tool.poe.tasks.lint]
 sequence = ["ruff-check", "black-check", "schemas-check"]
@@ -132,6 +119,11 @@ ignore = ["E203"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
+
+[[tool.poetry.source]]
+name = "internal-pypi"
+url = "https://us-west1-python.pkg.dev/agent-ix/internal-pypi/simple/"
+priority = "supplemental"
 
 [tool.poetry-dynamic-versioning]
 enable = true

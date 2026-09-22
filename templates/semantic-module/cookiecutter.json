@@ -22,7 +22,7 @@
   "nav_category_label": "Example",
   "nav_category_icon": "Boxes",
   "nav_category_order": "90",
-  "quire_engine_floor": "0.46.0",
+  "quire_engine_floor": "0.47.1",
   "_copy_without_render": [
     "LICENSE",
     ".github/workflows/*.yml"
