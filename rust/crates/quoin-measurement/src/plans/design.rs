@@ -17,7 +17,7 @@ use super::CODE;
 ///
 /// # Errors
 ///
-/// [`MeasurementErrorCode::PlanInvalid`] when the member is present but is not
+/// [`crate::error::MeasurementErrorCode::PlanInvalid`] when the member is present but is not
 /// one of [`GroundTruthKind`]'s three spellings.
 pub(super) fn ground_truth_kind_from(
     path: &str,
@@ -46,7 +46,7 @@ pub(super) fn ground_truth_kind_from(
 ///
 /// # Errors
 ///
-/// [`MeasurementErrorCode::PlanInvalid`] when the block is present but is not
+/// [`crate::error::MeasurementErrorCode::PlanInvalid`] when the block is present but is not
 /// an object, or when either member is present but is not a whole number from
 /// 1 to [`u32::MAX`].
 pub(super) fn statistical_design_from(
