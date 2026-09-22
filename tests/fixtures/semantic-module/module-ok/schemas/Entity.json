@@ -6,19 +6,19 @@
     "fields": {
       "type": "array",
       "items": {
-        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.0/FieldDecl.json"
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/FieldDecl.json"
       }
     },
     "relations": {
       "type": "array",
       "items": {
-        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.0/RelationDecl.json"
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/RelationDecl.json"
       }
     },
     "clauses": {
       "type": "array",
       "items": {
-        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.0/ClauseRef.json"
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/ClauseRef.json"
       }
     }
   },

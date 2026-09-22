@@ -24,7 +24,7 @@
 //! - [`keyword`] — ajv's keyword vocabulary, [`SchemaKeyword`].
 //! - [`validator`] — [`SchemaValidator`], the `jsonschema`-to-ajv error
 //!   adapter, and the `format` policy.
-//! - [`vendored`] — the committed measurement schema documents and
+//! - [`measurement_schemas`] — the committed measurement schema documents and
 //!   [`VendoredValidator::parse`], which returns a [`ValidDocument`] rather
 //!   than a `bool`.
 //! - [`error`] — one `thiserror` enum with stable codes.
@@ -48,12 +48,12 @@
 
 pub mod error;
 pub mod keyword;
+pub mod measurement_schemas;
 pub mod validator;
-pub mod vendored;
 
 pub use error::{JsonSchemaError, JsonSchemaErrorCode};
 pub use keyword::SchemaKeyword;
+pub use measurement_schemas::{ValidDocument, VendoredSchema, VendoredValidator};
 pub use validator::{
     FormatCheck, SchemaError, SchemaErrorParams, SchemaValidator, identity_counts,
 };
-pub use vendored::{ValidDocument, VendoredSchema, VendoredValidator};

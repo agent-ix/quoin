@@ -261,7 +261,7 @@ fn tc_452_662_installing_writes_the_derived_manifest_and_pins_every_export() {
 
     let pin = &record["semantic"];
     assert_eq!(pin["package"], "agent-ix/spec-objects-fixture");
-    assert_eq!(pin["semanticCore"], "0.3.0");
+    assert_eq!(pin["semanticCore"], "0.1.0");
     let digest = pin["exports"]["entity"]
         .as_str()
         .expect("the export is pinned");

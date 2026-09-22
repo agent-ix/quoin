@@ -20,8 +20,8 @@
 
 use std::path::PathBuf;
 
+use crate::measurement_schemas::VendoredSchema;
 use crate::validator::SchemaError;
-use crate::vendored::VendoredSchema;
 
 /// The stable code an error reports itself under.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

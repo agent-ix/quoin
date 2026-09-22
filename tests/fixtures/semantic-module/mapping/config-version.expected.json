@@ -1,6 +1,6 @@
 {
   "$comment": "Expected normalized FieldDecl[] for config-version.table.md and config-version.fence.md (FR-071-AC-1/AC-2). Normalized: canonical key order, optional properties omitted, authored form outside the array.",
-  "semanticCore": "0.3.0",
+  "semanticCore": "0.1.0",
   "artifact": "FR-006",
   "fields": [
     {

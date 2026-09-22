@@ -17,16 +17,16 @@
 //! revision it came from. FR-101-AC-5 forbids a live non-Rust runtime oracle
 //! after cutover; a committed byte sequence is not one.
 //!
-//! The operational schema was already a JSON document, so it is vendored
-//! verbatim and `tests/tc_470_vendored_schemas.rs` fails if the vendored copy
-//! and the capture ever disagree.
+//! The operational schema was already a JSON document, so it is carried over
+//! verbatim and `tests/tc_470_measurement_schemas.rs` fails if the committed
+//! document and the capture ever disagree.
 //!
 //! The intervention schema was not a document at all: `intervention-schema.ts`
 //! was a *program* that built an object out of shared fragments. It was run
 //! once, serialized with the repository's own `canonicalJson`, and the capture
-//! is committed beside the vendored document as
+//! is committed beside the retained document as
 //! `tests/goldens/intervention-experiment-v1.captured.json` with its producing
-//! revision. The vendored document then differs from that capture by **exactly
+//! revision. The retained document then differs from that capture by **exactly
 //! two deltas**, both rulings recorded in `DIVERGENCE.md`, and the test
 //! enumerates the difference set rather than asserting that one exists.
 //!
@@ -53,7 +53,7 @@ pub enum VendoredSchema {
 }
 
 impl VendoredSchema {
-    /// Every vendored schema, for the censuses that must not measure nothing.
+    /// Every committed schema, for the censuses that must not measure nothing.
     pub const ALL: &'static [Self] = &[Self::InterventionExperimentV1, Self::OperationalEvidenceV1];
 
     /// The schema's `$id`, which is also how it names itself in a refusal.
@@ -151,7 +151,7 @@ impl std::fmt::Display for VendoredSchema {
     }
 }
 
-/// A compiled validator over one vendored schema.
+/// A compiled validator over one committed schema.
 #[derive(Debug)]
 pub struct VendoredValidator {
     schema: VendoredSchema,

@@ -73,7 +73,7 @@ fn tc_452_630_the_derived_package_manifest_validates_and_carries_the_declaration
         value["imports"],
         json!([{
             "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.3.0",
+            "versionConstraint": "=0.1.0",
             "exports": [],
             "capabilities": [],
         }])
@@ -140,7 +140,7 @@ fn tc_452_632_one_digest_per_export_moves_when_the_shipped_schema_moves() {
     let root = scratch.plain_copy("pins");
     let pin = registry_pin(&module(&root, &validators)).unwrap();
     assert_eq!(pin.package, "agent-ix/spec-objects-fixture");
-    assert_eq!(pin.semantic_core, "0.3.0");
+    assert_eq!(pin.semantic_core, "0.1.0");
     assert_eq!(pin.exports.keys().collect::<Vec<_>>(), vec!["entity"]);
     let digest = pin.exports["entity"].clone();
     assert!(

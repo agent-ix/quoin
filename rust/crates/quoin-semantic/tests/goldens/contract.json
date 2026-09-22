@@ -10,7 +10,7 @@
   "contract": {
     "contractVersion": "1.0.0",
     "semanticCoreVersions": [
-      "0.3.0"
+      "0.1.0"
     ],
     "semanticKeys": [
       "contract_version",
@@ -50,7 +50,7 @@
       "sha256": "sha256:1de370f344b099b511960c32ddc98d512218183c13b03350201627bdcba7710a"
     }
   },
-  "semanticCoreBundleDigest": "sha256:65b4e8d4c71a343e270618c9a8ca7e33687f10324ef5e9fe68d150056101c627",
+  "semanticCoreBundleDigest": "sha256:dd33c886f70e908b14507c35e078d163b76308c3d170d2b54ddf933d1a4ebb52",
   "moduleManifestSchemaSha256": "sha256:69cf9738600e7d8daa45ed5cd7231b17ca8dc58d068bd36af9b0d2c9b69dcbbc",
   "packageManifestSchemaSha256": "sha256:d6e696577f58abd59c36588803c019ad3a43f9a7078c873ad41a0aec41031ffd",
   "commonSchemaSha256": "sha256:1de370f344b099b511960c32ddc98d512218183c13b03350201627bdcba7710a"

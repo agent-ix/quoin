@@ -112,7 +112,7 @@ fn tc_470_no_module_reads_a_schema_from_the_filesystem() {
         .collect();
     assert_eq!(
         including,
-        vec!["vendored.rs".to_owned()],
+        vec!["measurement_schemas.rs".to_owned()],
         "exactly one module may embed the vendored documents"
     );
     for (name, text) in sources() {
