@@ -10,9 +10,9 @@
   "toolIdentity": "quoin-jev tests/live_gap_semantic.rs (the_lens_beats_doing_nothing)",
   "toolVersion": "quoin-jev 0.9.0",
   "configDigest": "sha256:c51df1c1379bda19437128dc5bf0fec088f7f9aef735a63a0d1044e59e7b48f6",
-  "timestamp": "2026-09-21T00:00:00Z",
-  "sourceRevision": "8ec0d4ad02021df63b567e8c8daa58b9798adc37",
-  "corpusRevision": "quoin@8ec0d4ad02021df63b567e8c8daa58b9798adc37",
+  "timestamp": "2026-09-22T02:19:33Z",
+  "sourceRevision": "7b42ade336d94c6e2db19bc173a9b0f436733111",
+  "corpusRevision": "quoin@7b42ade336d94c6e2db19bc173a9b0f436733111",
   "environment": {
     "runner": "manual single-session live-api run, not CI",
     "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)"
@@ -30,7 +30,7 @@
     "sources": {
       "quoin": {
         "remote": "https://github.com/agent-ix/quoin",
-        "revision": "8ec0d4ad02021df63b567e8c8daa58b9798adc37",
+        "revision": "7b42ade336d94c6e2db19bc173a9b0f436733111",
         "sourceState": "clean"
       }
     },
