@@ -45,6 +45,7 @@
 pub mod client;
 pub mod config;
 pub mod context;
+pub mod corpus_check;
 pub mod error;
 pub mod lens;
 pub mod question_set;
@@ -53,6 +54,7 @@ pub mod schema_gate;
 pub mod verdict;
 
 pub use context::{AcRow, FrContext};
+pub use corpus_check::{AdequacyFinding, check_required_fields, check_stated_counts};
 pub use error::{JevError, JevErrorCode, Result};
 pub use question_set::QuestionSet;
 pub use report::{FrReport, render as render_findings};

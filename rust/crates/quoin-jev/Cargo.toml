@@ -21,6 +21,10 @@ workspace = true
 
 [dependencies]
 quoin-modules = { workspace = true }
+# `corpus_check`'s "N of M" prose scan (PLAT-933) -- already a workspace
+# dependency (see the pin's own comment in the root `Cargo.toml`), so this
+# adds a direct edge and no new version.
+regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

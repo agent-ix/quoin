@@ -3125,6 +3125,7 @@ name = "quoin-jev"
 version = "0.9.0"
 dependencies = [
  "quoin-modules",
+ "regex",
  "serde",
  "serde_json",
  "tempfile",
