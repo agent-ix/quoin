@@ -92,13 +92,41 @@
 //! until fixed:** the constant predictor now picks one constant per family
 //! (round one's single-label form scored it at 60%, understating the bar),
 //! and coverage rows no longer count as free "found" defects in recall.
+//!
+//! # Round-two result, 2026-09-21: NO-GO
+//!
+//! MEASURED against `jev-latest`, graded under the corrected grader. The
+//! constant predictor (`sound` on criteria, level 2 on FRs) scores 80.0%.
+//!
+//! | variant | agreement | margin | defect recall | `sound` cleared | ECE | passes clearing all bars | M1 disagreement | tokens/request |
+//! | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+//! | `v0` | 46.7% | -33.3 pp | 2/2 | 0/5 | 0.343 | 0 of 5 | 4.0% | 1521 |
+//! | `v1` | 33.3% | -46.7 pp | 2/2 | 0/5 | 0.277 | 0 of 5 | 4.0% | 2015 |
+//! | `v2` | 60.0-66.7% | -13.3 pp | 1/2 | 4/5 | 0.428 | 0 of 5 | 4.0% | 2110 |
+//!
+//! No variant clears bar 1 on any of fifteen passes. Full FR context made
+//! the shipped question *worse* (46.7% to 33.3%). The neutral question fixes
+//! the never-says-`sound` failure (0/5 to 4/5) but then clears
+//! `CS-FIX-003`, a clean `implementation_coupled` defect, and still trails
+//! the constant by 13 points. Bar 2's denominator is two criteria
+//! (`CS-FIX-003`, `CS-FIX-005`), so it barely constrains anything on this
+//! corpus. Latency is not a concern: p50 about 0.12 s per request, about
+//! 8 requests/s sequential and 22-25 concurrent.
 
 #![cfg(feature = "live-api")]
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss,
+    reason = "test-only statistics: counts are at most a few hundred and confidences lie in [0, 1], \
+              so no cast here can truncate, lose a sign, or lose precision"
 )]
 
 mod support;
@@ -188,7 +216,8 @@ const SOUND_CLEARED_FLOOR: usize = 3;
 impl Bars {
     fn of(graded: &[Graded]) -> Self {
         let (baseline_label, baseline) = trivial_baseline(graded);
-        let (sound_cleared, sound_total) = sound_recall(graded).expect("the corpus has sound criteria");
+        let (sound_cleared, sound_total) =
+            sound_recall(graded).expect("the corpus has sound criteria");
         Self {
             agreement: tally(graded).agreement().expect("rows graded"),
             baseline_label,
@@ -415,7 +444,12 @@ async fn benchmark_latency_and_throughput() {
 
     let count = pass.latencies.len() as f64;
     let total = pass.elapsed.as_secs_f64();
-    let mean = pass.latencies.iter().map(Duration::as_secs_f64).sum::<f64>() / count;
+    let mean = pass
+        .latencies
+        .iter()
+        .map(Duration::as_secs_f64)
+        .sum::<f64>()
+        / count;
     let tokens = pass.input_tokens + pass.output_tokens;
 
     println!("\n## Benchmark — one sequential pass, 15 requests\n");
@@ -424,10 +458,22 @@ async fn benchmark_latency_and_throughput() {
     println!("| requests | {} |", pass.latencies.len());
     println!("| wall clock | {total:.2}s |");
     println!("| latency mean | {mean:.2}s |");
-    println!("| latency min | {:.2}s |", pass.percentile(0.0).as_secs_f64());
-    println!("| latency p50 | {:.2}s |", pass.percentile(0.5).as_secs_f64());
-    println!("| latency p90 | {:.2}s |", pass.percentile(0.9).as_secs_f64());
-    println!("| latency max | {:.2}s |", pass.percentile(1.0).as_secs_f64());
+    println!(
+        "| latency min | {:.2}s |",
+        pass.percentile(0.0).as_secs_f64()
+    );
+    println!(
+        "| latency p50 | {:.2}s |",
+        pass.percentile(0.5).as_secs_f64()
+    );
+    println!(
+        "| latency p90 | {:.2}s |",
+        pass.percentile(0.9).as_secs_f64()
+    );
+    println!(
+        "| latency max | {:.2}s |",
+        pass.percentile(1.0).as_secs_f64()
+    );
     println!("| throughput (sequential) | {:.2} req/s |", count / total);
     println!("| input tokens | {} |", pass.input_tokens);
     println!("| output tokens | {} |", pass.output_tokens);
@@ -459,7 +505,10 @@ async fn benchmark_latency_and_throughput() {
         .max()
         .unwrap()
         .as_secs_f64();
-    println!("| throughput (5 concurrent) | {:.2} req/s |", 5.0 / burst_elapsed);
+    println!(
+        "| throughput (5 concurrent) | {:.2} req/s |",
+        5.0 / burst_elapsed
+    );
     println!("| 5-concurrent wall clock | {burst_elapsed:.2}s (slowest single {slowest:.2}s) |");
     println!(
         "\n5 concurrent requests took {burst_elapsed:.2}s against {:.2}s if run one \
@@ -470,7 +519,9 @@ async fn benchmark_latency_and_throughput() {
 
     assert!(total > 0.0, "a pass that took no time did not happen");
     assert!(
-        pass.latencies.iter().all(|latency| *latency > Duration::ZERO),
+        pass.latencies
+            .iter()
+            .all(|latency| *latency > Duration::ZERO),
         "a request that took no time did not reach the network"
     );
 }

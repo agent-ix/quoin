@@ -34,7 +34,15 @@
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss,
+    reason = "test-only statistics: counts are at most a few hundred and confidences lie in [0, 1], \
+              so no cast here can truncate, lose a sign, or lose precision"
 )]
 
 use std::collections::BTreeMap;
@@ -48,8 +56,9 @@ use quoin_jev::{AcRow, FrContext, FrVerdict};
 /// grader cannot drift -- the same `include_str!` discipline
 /// `question-set.json` is already held to (`question_set.rs`, `lens.rs`,
 /// `verdict.rs`).
-const CORPUS: &str =
-    include_str!("../../../../../skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fixtures.json");
+const CORPUS: &str = include_str!(
+    "../../../../../skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fixtures.json"
+);
 
 /// The FR context each fixture's label was made against, extracted verbatim
 /// from the spec file the fixture cites (PLAT-917).
@@ -58,8 +67,9 @@ const CORPUS: &str =
 /// this file adds input, never a label. The corpus alone left `statement`
 /// empty on 10 of 11 criteria, so the first live run judged sentences in an
 /// isolation the human readers never had.
-const FR_CONTEXT: &str =
-    include_str!("../../../../../skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fr-context.json");
+const FR_CONTEXT: &str = include_str!(
+    "../../../../../skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fr-context.json"
+);
 
 /// One fixture's full FR context.
 #[derive(Debug, Clone, Deserialize)]
@@ -92,10 +102,9 @@ struct FullContextFile {
 pub(crate) fn full_context(fixture_id: &str) -> FullContext {
     let file: FullContextFile =
         serde_json::from_str(FR_CONTEXT).expect("the FR context sidecar parses");
-    file.fixtures
-        .get(fixture_id)
-        .cloned()
-        .unwrap_or_else(|| panic!("{fixture_id} has no entry in criterion-strength-fr-context.json"))
+    file.fixtures.get(fixture_id).cloned().unwrap_or_else(|| {
+        panic!("{fixture_id} has no entry in criterion-strength-fr-context.json")
+    })
 }
 
 /// Replaces a context's FR prose with the full extracted sections.
@@ -508,7 +517,9 @@ fn nearest_level(score: f64) -> Option<u8> {
     if !(-0.5..3.5).contains(&score) {
         return None;
     }
-    u8::try_from(score.round().max(0.0) as i64).ok().map(|level| level.min(3))
+    u8::try_from(score.round().max(0.0) as i64)
+        .ok()
+        .map(|level| level.min(3))
 }
 
 /// Counts over a graded set, split the ways the report needs them.
@@ -736,7 +747,11 @@ pub(crate) fn trivial_baseline(graded: &[Graded]) -> (String, f64) {
             })
             .max_by_key(|(_, count)| *count);
         if let Some((label, count)) = best {
-            labels.push(if family { format!("level {label}") } else { label });
+            labels.push(if family {
+                format!("level {label}")
+            } else {
+                label
+            });
             hits += count;
         }
     }
@@ -779,7 +794,10 @@ pub(crate) fn defect_recall(graded: &[Graded]) -> Option<f64> {
     if defects.is_empty() {
         return None;
     }
-    let found = defects.iter().filter(|row| row.actual_class != "sound").count();
+    let found = defects
+        .iter()
+        .filter(|row| row.actual_class != "sound")
+        .count();
     Some(percent(found, defects.len()))
 }
 
@@ -798,7 +816,10 @@ pub(crate) fn sound_recall(graded: &[Graded]) -> Option<(usize, usize)> {
     if sound.is_empty() {
         return None;
     }
-    let cleared = sound.iter().filter(|row| row.actual_class == "sound").count();
+    let cleared = sound
+        .iter()
+        .filter(|row| row.actual_class == "sound")
+        .count();
     Some((cleared, sound.len()))
 }
 
@@ -838,6 +859,35 @@ fn percent(part: usize, whole: usize) -> f64 {
     part / whole * 100.0
 }
 
+/// The per-class precision/recall table, appended to `out`.
+fn write_class_table(out: &mut String, graded: &[Graded]) {
+    let _ = writeln!(
+        out,
+        "\n**Per class** (against the primary reading only; contested rows are \
+         counted in the agreement block above, not here):\n"
+    );
+    let _ = writeln!(
+        out,
+        "| Label | Predicted | Expected | Correct | Precision | Recall | False positives |"
+    );
+    let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- | --- |");
+    for (label, stats) in class_stats(graded) {
+        let rate = |value: Option<f64>| {
+            value.map_or_else(|| "n/a".to_owned(), |value| format!("{value:.1}%"))
+        };
+        let _ = writeln!(
+            out,
+            "| {label} | {} | {} | {} | {} | {} | {} |",
+            stats.predicted,
+            stats.expected,
+            stats.correct,
+            rate(stats.precision()),
+            rate(stats.recall()),
+            stats.false_positives(),
+        );
+    }
+}
+
 /// Renders the per-fixture table and the M2 rollup.
 ///
 /// Every number says what it counts, per this repo's standing reporting rule;
@@ -845,7 +895,10 @@ fn percent(part: usize, whole: usize) -> f64 {
 pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "\n## {title}\n");
-    let _ = writeln!(out, "| Fixture | Tier | Expected | Returned | Verdict | Confidence |");
+    let _ = writeln!(
+        out,
+        "| Fixture | Tier | Expected | Returned | Verdict | Confidence |"
+    );
     let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- |");
     for row in graded {
         let confidence = row
@@ -870,8 +923,15 @@ pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
         .cloned()
         .collect();
 
-    let _ = writeln!(out, "\n**Agreement** (primary + contested, over every graded row):\n");
-    for (label, set) in [("all", graded), ("clean", &clean), ("ambiguous", &ambiguous)] {
+    let _ = writeln!(
+        out,
+        "\n**Agreement** (primary + contested, over every graded row):\n"
+    );
+    for (label, set) in [
+        ("all", graded),
+        ("clean", &clean),
+        ("ambiguous", &ambiguous),
+    ] {
         let tally = tally(set);
         let rate = tally
             .agreement()
@@ -889,28 +949,7 @@ pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
         );
     }
 
-    let _ = writeln!(
-        out,
-        "\n**Per class** (against the primary reading only; contested rows are \
-         counted in the agreement block above, not here):\n"
-    );
-    let _ = writeln!(out, "| Label | Predicted | Expected | Correct | Precision | Recall | False positives |");
-    let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- | --- |");
-    for (label, stats) in class_stats(graded) {
-        let rate = |value: Option<f64>| {
-            value.map_or_else(|| "n/a".to_owned(), |value| format!("{value:.1}%"))
-        };
-        let _ = writeln!(
-            out,
-            "| {label} | {} | {} | {} | {} | {} | {} |",
-            stats.predicted,
-            stats.expected,
-            stats.correct,
-            rate(stats.precision()),
-            rate(stats.recall()),
-            stats.false_positives(),
-        );
-    }
+    write_class_table(&mut out, graded);
 
     let (buckets, without) = calibration(graded);
     let _ = writeln!(out, "\n**Calibration** (M3):\n");
@@ -928,8 +967,10 @@ pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
         out,
         "- {without} row(s) carried no confidence and are excluded from the curve",
     );
-    let ece = expected_calibration_error(graded)
-        .map_or_else(|| "n/a (no row carried a confidence)".to_owned(), |value| format!("{value:.4}"));
+    let ece = expected_calibration_error(graded).map_or_else(
+        || "n/a (no row carried a confidence)".to_owned(),
+        |value| format!("{value:.4}"),
+    );
     let _ = writeln!(out, "- expected calibration error: {ece}");
     let _ = writeln!(out, "\n(total rows graded: {})", all.total());
     out
