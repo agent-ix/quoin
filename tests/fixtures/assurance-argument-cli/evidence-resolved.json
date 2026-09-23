@@ -1,0 +1,10 @@
+[
+  {
+    "reference": "evidence://discharge/unrelated-widget",
+    "state": "resolved"
+  },
+  {
+    "reference": "evidence://discharge/widget-1018",
+    "state": "resolved"
+  }
+]
