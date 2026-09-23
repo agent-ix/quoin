@@ -54,6 +54,39 @@ neutral `weakness_kind` question. One gate pass per variant, then five repeated
 passes for any variant under consideration. A transport failure aborts the pass
 and is never scored.
 
+Two follow-up variants were pre-registered and measured after round two, each
+in the module doc of `live_criterion_strength.rs` before its first call: `v3`
+derives the label from the five `noul` answers, and `v4` sends described
+`choice` criteria. Both are NO-GO. `v5` is below.
+
+### `v5` (PLAT-979), pre-registered before any `v5` call
+
+PLAT-979 asks for one wording or decomposition retry before the NO-GO is
+treated as final. Its method: classify every disagreement as wording, missing
+sub-question, bad option list, threshold or bad label, in that order, and fix
+the dominant class first.
+
+**Step 1: a diagnostic re-run of `v2`, reported only.** No per-row table from
+any earlier pass was kept, so the method has no input. `v2` is re-run once,
+unchanged, to classify its disagreements. `v2` is the variant to start from:
+it is the only one of five that ever cleared `sound`, and it scored highest.
+This pass scores no new variant, and nothing about `v5` is chosen before it.
+
+**Step 2: `v5`,** designed from step 1's dominant class, is pre-registered in
+its own commit before its first call. The bars are unchanged.
+
+**Stated in advance.** Whoever writes `v5` has read the fixtures and
+their rationales. `v5` is therefore fitted to the corpus in a way `v3` and
+`v4` were not. A GO from `v5` is weak evidence and would need a held-out corpus
+before any wiring. A NO-GO from `v5` is the stronger result: the lens fails
+even when tuned against its own answer key.
+
+**What bar 1 means on this corpus.** The constant predictor gets 12 of 15
+rows right. It misses only `CS-FIX-003`, `CS-FIX-005` and `CS-FIX-011`, so
+beating it means getting 13 or more right, with at most two errors. `sound` is
+an accepted reading on 9 of the 11 criteria. On those rows a lens can only
+match the constant or lose to it.
+
 ## Interpretation
 
 Fifteen fixtures is a small corpus. A GO is evidence that the lens beats a
