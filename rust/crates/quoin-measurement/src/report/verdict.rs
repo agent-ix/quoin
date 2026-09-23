@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! What a `ratchet` or `target` plan's objective says about its newest value
+//! What a `ratchet`, `target` or `gate` plan says about its newest value
 //! (PLAT-958).
 //!
 //! [`crate::compare`] answers only whether two values may be compared and
@@ -16,7 +16,9 @@
 //! collection measured for the same plan, slice and `definition_version`, and
 //! `regressed` otherwise. A `target` plan reports how far the newest value
 //! sits from the objective's bound and whether it has reached it; that is
-//! information, not a pass/fail verdict. `gate` is not decided here.
+//! information, not a pass/fail verdict. `gate` (below) is the one stage
+//! whose verdict is pass/fail, and it is decided from `decision_rule`, never
+//! from `objective.bound`.
 //!
 //! # Never green on missing evidence
 //!
@@ -33,13 +35,36 @@
 //!
 //! In a protected series (PLAT-975), an earlier value measured with a
 //! different recorded protected apparatus is not a floor either, and its
-//! presence makes the ratchet `inconclusive` (`apparatus_changed`); a
-//! collection that recorded none is `apparatus_unrecorded`.
+//! presence makes the ratchet — or a `baseline` gate — `inconclusive`
+//! (`apparatus_changed`); a collection that recorded none is
+//! `apparatus_unrecorded`.
+//!
+//! # Gate: the one stage with a real pass/fail verdict (PLAT-958 part 2)
+//!
+//! Ratchet and target read the plan's `objective`; `gate` does not —
+//! `objective.bound` is informational and is never evaluated (epic-wide
+//! ruling on PLAT-956). A `gate` plan's verdict comes entirely from
+//! `statistical_design.decision_rule`, evaluated through
+//! engineering-assurance's own [`DecisionRule::holds`] exactly as
+//! [`crate::verify`] evaluates it — this module computes no rule logic of its
+//! own, only the baseline value the rule asks for. A `threshold` rule needs
+//! none; a `baseline` rule reads `prior-collection` (the nearest earlier
+//! usable value) or `best-seen` (the maximum for `gt`/`ge`, the minimum for
+//! `lt`/`le`/`eq`) from the same usable-evidence pool [`ratchet`] draws from,
+//! under the same protected-apparatus rule.
+//! `constant-predictor` needs per-item answers by family that no collection
+//! in the report layer carries, so it is `inconclusive`
+//! (`constant_predictor_unsupported`) here, exactly as it is in the checker.
+//! No `decision_rule` at all is `inconclusive` (`no_decision_rule`); the same
+//! never-green rule as `ratchet` and `target` applies to the newest value and
+//! to every value a baseline might draw on.
 
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
-use engineering_assurance::measurement::{Direction, Objective};
+use engineering_assurance::measurement::{
+    Baseline, Comparator, DecisionRule, Direction, Objective, RuleReference,
+};
 use quoin_store::JsonValue;
 
 use crate::compare::incomplete;
@@ -79,11 +104,23 @@ pub enum InconclusiveReason {
     /// In a protected series, the newest collection, or one behind an earlier
     /// value, recorded no protected apparatus (PLAT-975).
     ApparatusUnrecorded,
+    /// A `gate` plan states no `statistical_design.decision_rule` (PLAT-958
+    /// part 2). `objective.bound` is informational only and is never a
+    /// substitute.
+    NoDecisionRule,
+    /// The rule's baseline is `constant-predictor`, which needs per-item
+    /// answers by answer family; no collection the report layer reads
+    /// carries them, so a gate never evaluates this baseline (PLAT-958
+    /// part 2). `quoin measurement verify` has the same limit.
+    ConstantPredictorUnsupported,
+    /// Engineering-assurance could not evaluate the rule on these numbers —
+    /// a non-finite estimate or reference (PLAT-958 part 2).
+    RuleNotEvaluable,
 }
 
 impl InconclusiveReason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 10] = [
+    pub const ALL: [Self; 13] = [
         Self::NoCurrentValue,
         Self::PlanMismatch,
         Self::DefinitionMismatch,
@@ -94,6 +131,9 @@ impl InconclusiveReason {
         Self::NoBound,
         Self::ApparatusChanged,
         Self::ApparatusUnrecorded,
+        Self::NoDecisionRule,
+        Self::ConstantPredictorUnsupported,
+        Self::RuleNotEvaluable,
     ];
 
     /// The stable wire spelling.
@@ -110,6 +150,9 @@ impl InconclusiveReason {
             Self::NoBound => "no_bound",
             Self::ApparatusChanged => "apparatus_changed",
             Self::ApparatusUnrecorded => "apparatus_unrecorded",
+            Self::NoDecisionRule => "no_decision_rule",
+            Self::ConstantPredictorUnsupported => "constant_predictor_unsupported",
+            Self::RuleNotEvaluable => "rule_not_evaluable",
         }
     }
 
@@ -140,6 +183,11 @@ impl InconclusiveReason {
                 "an earlier value was measured with a different protected apparatus"
             }
             Self::ApparatusUnrecorded => "a collection recorded no protected apparatus",
+            Self::NoDecisionRule => "the plan states no decision rule",
+            Self::ConstantPredictorUnsupported => {
+                "the rule's constant-predictor baseline needs per-item answers no collection carries"
+            }
+            Self::RuleNotEvaluable => "the decision rule could not be evaluated on these numbers",
         }
     }
 }
@@ -216,6 +264,44 @@ impl TargetOutcome {
     }
 }
 
+/// A `gate` plan's pass/fail verdict on its newest value (PLAT-958 part 2).
+///
+/// Unlike [`RatchetOutcome`] and [`TargetOutcome`], this is the one outcome
+/// this module decides that is a real pass/fail verdict, not information —
+/// see the module header.
+#[derive(Clone, Debug, PartialEq)]
+pub enum GateOutcome {
+    /// The decision rule holds for the newest value.
+    Pass {
+        /// The newest value.
+        current: f64,
+        /// The baseline value the rule was evaluated against, when its
+        /// reference is a `baseline`; `None` for a `threshold` rule.
+        baseline: Option<f64>,
+    },
+    /// The decision rule does not hold for the newest value.
+    Fail {
+        /// The newest value.
+        current: f64,
+        /// As [`Self::Pass`]'s.
+        baseline: Option<f64>,
+    },
+    /// No verdict, for this reason.
+    Inconclusive(InconclusiveReason),
+}
+
+impl GateOutcome {
+    /// The stable wire spelling of the verdict.
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match *self {
+            Self::Pass { .. } => "pass",
+            Self::Fail { .. } => "fail",
+            Self::Inconclusive(_) => "inconclusive",
+        }
+    }
+}
+
 /// What a plan's stage and objective say about one report row.
 #[derive(Clone, Debug, PartialEq)]
 pub enum StageVerdict {
@@ -233,6 +319,15 @@ pub enum StageVerdict {
         /// The progress.
         outcome: TargetOutcome,
     },
+    /// A `gate` plan's verdict. `objective` is carried for display only —
+    /// its `bound` is never evaluated; the verdict comes from
+    /// `statistical_design.decision_rule` alone.
+    Gate {
+        /// The objective the plan states, shown but not evaluated.
+        objective: Objective,
+        /// The verdict.
+        outcome: GateOutcome,
+    },
 }
 
 impl StageVerdict {
@@ -242,6 +337,7 @@ impl StageVerdict {
         match *self {
             Self::Ratchet { .. } => MeasurementStage::Ratchet,
             Self::Target { .. } => MeasurementStage::Target,
+            Self::Gate { .. } => MeasurementStage::Gate,
         }
     }
 
@@ -249,7 +345,9 @@ impl StageVerdict {
     #[must_use]
     pub const fn objective(&self) -> Objective {
         match *self {
-            Self::Ratchet { objective, .. } | Self::Target { objective, .. } => objective,
+            Self::Ratchet { objective, .. }
+            | Self::Target { objective, .. }
+            | Self::Gate { objective, .. } => objective,
         }
     }
 
@@ -259,6 +357,7 @@ impl StageVerdict {
         match *self {
             Self::Ratchet { ref outcome, .. } => outcome.as_str(),
             Self::Target { ref outcome, .. } => outcome.as_str(),
+            Self::Gate { ref outcome, .. } => outcome.as_str(),
         }
     }
 
@@ -273,8 +372,12 @@ impl StageVerdict {
             | Self::Target {
                 outcome: TargetOutcome::Inconclusive(reason),
                 ..
+            }
+            | Self::Gate {
+                outcome: GateOutcome::Inconclusive(reason),
+                ..
             } => Some(reason),
-            Self::Ratchet { .. } | Self::Target { .. } => None,
+            Self::Ratchet { .. } | Self::Target { .. } | Self::Gate { .. } => None,
         }
     }
 }
@@ -301,11 +404,14 @@ pub fn stage_verdict(
             objective,
             outcome: target_progress(plan, objective, observation),
         }),
+        MeasurementStage::Gate => Some(StageVerdict::Gate {
+            objective,
+            outcome: gate(plan, observation, collection, earlier),
+        }),
         MeasurementStage::Observe
         | MeasurementStage::Baseline
         | MeasurementStage::BranchComparison
-        | MeasurementStage::Trend
-        | MeasurementStage::Gate => None,
+        | MeasurementStage::Trend => None,
     }
 }
 
@@ -494,4 +600,83 @@ fn target_progress(
         distance: if reached { 0.0 } else { shortfall },
         reached,
     }
+}
+
+/// A `gate` plan's verdict on `observation`: entirely from
+/// `statistical_design.decision_rule`, never from `objective.bound`. A
+/// `baseline` rule refuses a baseline across a changed protected apparatus
+/// exactly as a ratchet refuses a floor (`same_apparatus`).
+fn gate(
+    plan: &MeasurementPlan,
+    observation: Option<&MeasurementObservation>,
+    collection: Option<&MeasurementCollection>,
+    earlier: &[MeasurementCollection],
+) -> GateOutcome {
+    let (observation, current) = match usable(plan, observation) {
+        Ok(found) => found,
+        Err(reason) => return GateOutcome::Inconclusive(reason),
+    };
+    let Some(rule) = plan
+        .statistical_design
+        .and_then(|design| design.decision_rule)
+    else {
+        return GateOutcome::Inconclusive(InconclusiveReason::NoDecisionRule);
+    };
+    let baseline_value = match rule.reference() {
+        RuleReference::Threshold(_) => None,
+        RuleReference::Baseline { baseline, .. } => {
+            let slice = observation.dimensions.entries();
+            match same_apparatus(plan, observation, collection, earlier)
+                .and_then(|()| gate_baseline(plan, rule, baseline, slice, earlier))
+            {
+                Ok(value) => Some(value),
+                Err(reason) => return GateOutcome::Inconclusive(reason),
+            }
+        }
+    };
+    match rule.holds(current, baseline_value) {
+        Ok(true) => GateOutcome::Pass {
+            current,
+            baseline: baseline_value,
+        },
+        Ok(false) => GateOutcome::Fail {
+            current,
+            baseline: baseline_value,
+        },
+        Err(_) => GateOutcome::Inconclusive(InconclusiveReason::RuleNotEvaluable),
+    }
+}
+
+/// The baseline value `rule`'s reference asks for, over `earlier`'s usable
+/// values of `slice`: the nearest earlier usable value for
+/// `prior-collection`, and the maximum (`gt`/`ge`) or minimum
+/// (`lt`/`le`/`eq`) for `best-seen` — the same pool and the same rule
+/// [`crate::verify`]'s own `baseline` applies, restated here because the
+/// report layer sees one row's `earlier` collections, not the checker's
+/// full, order-attested history.
+fn gate_baseline(
+    plan: &MeasurementPlan,
+    rule: DecisionRule,
+    baseline: Baseline,
+    slice: &BTreeMap<String, JsonValue>,
+    earlier: &[MeasurementCollection],
+) -> Result<f64, InconclusiveReason> {
+    let found = match baseline {
+        Baseline::ConstantPredictor => {
+            return Err(InconclusiveReason::ConstantPredictorUnsupported);
+        }
+        Baseline::PriorCollection => earlier_values(plan, slice, earlier).last(),
+        Baseline::BestSeen => {
+            let values = earlier_values(plan, slice, earlier);
+            match rule.comparator() {
+                Comparator::Gt | Comparator::Ge => values.max_by(|l, r| l.0.total_cmp(&r.0)),
+                Comparator::Lt | Comparator::Le | Comparator::Eq => {
+                    values.min_by(|l, r| l.0.total_cmp(&r.0))
+                }
+            }
+        }
+    };
+    found
+        .map(|(value, _)| value)
+        .ok_or(InconclusiveReason::NoPrior)
 }

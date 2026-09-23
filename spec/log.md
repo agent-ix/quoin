@@ -36,6 +36,35 @@ description: "Chronological log of structural changes to this bundle."
   FR-065's embedded receipt schema gains the three reasons.
   FR-111-AC-1..AC-4; Matrix: TC-1868..TC-1871.
 
+* **2026-09-22** — **FR-107 gains gate stage verdicts** (PLAT-958, part 2).
+  Part 1 left `gate` undecided (FR-107-CON-2); the scope-correcting comment
+  on the ticket settled how it is decided: **`objective.bound` is
+  informational everywhere in the measurement layer and is never evaluated**
+  (owner ruling, PLAT-956) — `gate` is the one stage verdict this crate
+  decides that is a real pass/fail result, and it comes entirely from
+  `statistical_design.decision_rule`, evaluated through
+  engineering-assurance's own `DecisionRule::holds`, the same call
+  `quoin measurement verify` (FR-108) makes. The report layer restates none
+  of that rule logic — only the baseline value the rule asks for: a
+  `threshold` rule needs none; a `baseline` rule reads `prior-collection`
+  (the nearest earlier usable value) or `best-seen` (the maximum for
+  `gt`/`ge`, the minimum for `lt`/`le`/`eq`) from the same usable-evidence
+  pool the ratchet already draws from, restricted to the report row's own
+  slice. `constant-predictor` needs per-item answers by answer family that no
+  collection the report layer reads carries, so it is `inconclusive`
+  (`constant_predictor_unsupported`), matching the checker's own limit. Never
+  green on missing evidence, exactly as for `ratchet` and `target`: no
+  `decision_rule` (`no_decision_rule`), no earlier usable value for a
+  baseline rule (`no_prior`, as a ratchet's first collection), and an
+  incomplete or empty population are all `inconclusive`, never `pass`. The
+  "Stage verdicts" table and the JSON `stageVerdict` carry a gate the same
+  way as the other two stages (`verdict`: `pass`/`fail`/`inconclusive`,
+  `current`, `baseline`); a `fail` adds an attention item beside a
+  `regressed` ratchet's. `compare.rs` stays verdict-free, unchanged by this
+  part. A `baseline` gate carries the ratchet's protected-apparatus
+  reasons (FR-107-CON-3, review of quoin#605). FR-107-AC-7..AC-9; Matrix:
+  TC-1875..TC-1881.
+
 * **2026-09-22** — **FR-110 (new FR): protected measurement apparatus**
   (PLAT-975). `verificationStack.artifacts` recorded a digest per file and
   nothing compared them, so an answer key edited between a baseline and a new

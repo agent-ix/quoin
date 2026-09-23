@@ -58,8 +58,19 @@ const SOURCE_FLOOR: usize = 20;
 /// crossed the hard ceiling under the same ticket and was split on
 /// responsibility — the filesystem walk into `walk.rs`, what a write records
 /// in `mod.rs`.
-const NAMED_OVER_SOFT_CEILING: &[&str] =
-    &["plans.rs", "store/apparatus/walk.rs", "validate/stack.rs"];
+///
+/// `report/verdict.rs` crossed it under PLAT-958 part 2: the `gate` stage's
+/// verdict (`gate`, `gate_baseline`) shares its `InconclusiveReason` vocabulary
+/// and its `usable`/`earlier_values` evidence pool with `ratchet` and
+/// `target`, so splitting it out would either duplicate that pool or make it
+/// `pub(super)` across two files for one stage's sake; the file stays under
+/// the 700-line hard ceiling (quoin#464).
+const NAMED_OVER_SOFT_CEILING: &[&str] = &[
+    "plans.rs",
+    "report/verdict.rs",
+    "store/apparatus/walk.rs",
+    "validate/stack.rs",
+];
 
 /// Every `.rs` file under `src/`, as `(relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {
