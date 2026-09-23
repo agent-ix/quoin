@@ -177,7 +177,7 @@
       ],
       "receipt_outcome": "valid",
       "receipt_reasons": [],
-      "receipt_digest": "c7e0fc8dfb48d96e1760e2b157355ec4b8b4383c134d4fdc98dfd1b16408352a"
+      "receipt_digest": "9bea11d14b52b1489a321386ca83674fe405bd15b4fc504667a4485bdf52edd2"
     },
     {
       "name": "attestation-not-selected",
@@ -352,7 +352,7 @@
       "receipt_reasons": [
         "attestation_missing"
       ],
-      "receipt_digest": "f3dc735e4e6b3a17f7e53cf0d71c7acbd10d868101750202ff6227c304b0baca"
+      "receipt_digest": "5f4182eb7da21850eaefeb15f0cdd2b08f1338a10e88edb9709ef179d4eb39f9"
     },
     {
       "name": "producer-unavailable",
@@ -532,7 +532,7 @@
       "receipt_reasons": [
         "result_unavailable"
       ],
-      "receipt_digest": "fef6bedd506e15bb0562c39fe943add273a403cf08fd9abdfa96e31fd6dc1ccd"
+      "receipt_digest": "bfa6749334065809642cec3183d55cc0aedbe15df2b01bd4c729b5b885bdd170"
     },
     {
       "name": "producer-did-not-compute",
@@ -712,7 +712,7 @@
       "receipt_reasons": [
         "result_not_computed"
       ],
-      "receipt_digest": "1f8a0a90f495f589791492a0bd1386981096a9e45dd3a44420a91aff8a30ca82"
+      "receipt_digest": "d35200abb154c4421de872de116835e9364ee4b976719fc15bbdce34e2d36cab"
     },
     {
       "name": "audit-left-it-unevaluated",
@@ -894,7 +894,7 @@
       "receipt_reasons": [
         "audit_not_evaluated"
       ],
-      "receipt_digest": "f1236cf00b8e5770f1c30dfb2ed7dd33256baa7643dc910f3c037404ef562772"
+      "receipt_digest": "5e63bf8a8a3c38717d223f0abbf525704cac9317f7d98cf629ef1ec4dcafcc41"
     }
   ]
 }

@@ -121,4 +121,17 @@ pub struct VerificationInput {
     /// (PLAT-964). `None` when the record supports no plan, or the caller
     /// did not resolve one.
     pub governing_plan: Option<GoverningPlan>,
+    /// The `MeasurementPlan` id `governing_plan` was resolved from, when one
+    /// was (PLAT-1015, FR-111).
+    ///
+    /// Carried alongside `governing_plan` rather than folded into it:
+    /// `governing_plan` states only the two members
+    /// [`crate::verify::apparatus`] reads, and a verification's judgment
+    /// never needs the id itself — only the sealed receipt does, so an
+    /// auditor can see *which* plan a receipt was checked against rather
+    /// than infer "some plan or none" from whether `apparatus_touched` /
+    /// `diff_missing` happened to fire. Always `Some` exactly when
+    /// `governing_plan` is `Some`: both are resolved from the same caller
+    /// choice and nothing here constructs one without the other.
+    pub governing_plan_id: Option<String>,
 }

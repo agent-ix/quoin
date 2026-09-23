@@ -15,7 +15,9 @@
     "proofs",
     "unknowns",
     "outcome",
-    "reasons"
+    "reasons",
+    "governing_plan_id",
+    "diff_paths_supplied"
   ],
   "properties": {
     "schema_version": { "const": 1 },
@@ -64,7 +66,11 @@
     "reasons": {
       "type": "array",
       "items": { "$ref": "#/$defs/reason" }
-    }
+    },
+    "governing_plan_id": {
+      "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+    },
+    "diff_paths_supplied": { "type": "boolean" }
   },
   "$defs": {
     "identity": {

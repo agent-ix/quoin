@@ -121,6 +121,24 @@ pub struct UnsealedReceipt {
     pub outcome: Outcome,
     /// Every premise refused anywhere, deduplicated and ordered.
     pub reasons: Vec<Reason>,
+    /// The `MeasurementPlan` id this receipt was checked against, exactly as
+    /// [`crate::verify::input::VerificationInput::governing_plan_id`] carried
+    /// it in (PLAT-1015, FR-111).
+    ///
+    /// `None` records "no plan was linked" as a fact the receipt states,
+    /// rather than something an auditor has to infer from `apparatus_touched`
+    /// / `diff_missing` never firing — a caller that omits `--plan` produces
+    /// that same silence.
+    pub governing_plan_id: Option<NonEmptyText>,
+    /// Whether the caller supplied `diff_paths` at all (PLAT-1015, FR-111),
+    /// distinct from a diff that was supplied and touched nothing.
+    ///
+    /// `true` when [`crate::verify::input::VerificationInput::diff_paths`]
+    /// was `Some(_)` (even `Some(vec![])`), `false` when it was `None`.
+    /// Without this, a receipt with neither `apparatus_touched` nor
+    /// `diff_missing` cannot be told apart from one whose diff was simply
+    /// never given — the omission this ticket exists to make auditable.
+    pub diff_paths_supplied: bool,
 }
 
 /// A sealed verification receipt.
@@ -165,20 +183,28 @@ impl VerificationReceipt {
     /// it checks the digest.
     pub(crate) fn read_sealed(value: &JsonValue) -> Result<Self, ChangeAssuranceError> {
         let root = Fields::read(value, SUBJECT, "verification receipt")?;
-        root.exact(&[
-            "schema_version",
-            "record_type",
-            "digest",
-            "record_digest",
-            "candidate_revision",
-            "decision_event",
-            "parent_digests",
-            "checks",
-            "proofs",
-            "unknowns",
-            "outcome",
-            "reasons",
-        ])?;
+        // `governing_plan_id` and `diff_paths_supplied` (PLAT-1015) are
+        // OPTIONAL here, not required: a receipt sealed before this ticket
+        // carries neither, and refusing to re-read it would break
+        // `verify_receipt` over evidence this crate already retained. Every
+        // receipt `write_receipt` seals from here on carries both.
+        root.exact_with_optional(
+            &[
+                "schema_version",
+                "record_type",
+                "digest",
+                "record_digest",
+                "candidate_revision",
+                "decision_event",
+                "parent_digests",
+                "checks",
+                "proofs",
+                "unknowns",
+                "outcome",
+                "reasons",
+            ],
+            &["governing_plan_id", "diff_paths_supplied"],
+        )?;
         root.equals("schema_version", &number(SCHEMA_VERSION)?)?;
         root.equals("record_type", &JsonValue::string(RECORD_TYPE))?;
         let digest = root.digest("digest")?;
@@ -202,6 +228,18 @@ impl VerificationReceipt {
         let proofs = read_proofs(root)?;
         let unknowns = read_unknowns(root)?;
         let (outcome, reasons) = read_outcome_and_reasons(root)?;
+        let governing_plan_id = match root.optional("governing_plan_id") {
+            None | Some(JsonValue::Null) => None,
+            Some(_) => Some(NonEmptyText::parse(
+                root.text("governing_plan_id")?,
+                SUBJECT,
+                "governing plan id",
+            )?),
+        };
+        let diff_paths_supplied = match root.optional("diff_paths_supplied") {
+            None => false,
+            Some(_) => root.boolean("diff_paths_supplied")?,
+        };
 
         Ok(Self {
             digest,
@@ -215,6 +253,8 @@ impl VerificationReceipt {
                 unknowns,
                 outcome,
                 reasons,
+                governing_plan_id,
+                diff_paths_supplied,
             },
         })
     }
@@ -477,6 +517,17 @@ fn write_receipt(
         ),
         ("outcome", JsonValue::string(receipt.outcome.as_str())),
         ("reasons", reasons_json(&receipt.reasons)),
+        (
+            "governing_plan_id",
+            receipt
+                .governing_plan_id
+                .as_ref()
+                .map_or(JsonValue::Null, |id| JsonValue::string(id.as_str())),
+        ),
+        (
+            "diff_paths_supplied",
+            JsonValue::Bool(receipt.diff_paths_supplied),
+        ),
     ]);
     Ok(object(members))
 }

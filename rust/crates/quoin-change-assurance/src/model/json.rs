@@ -129,6 +129,45 @@ impl<'a> Fields<'a> {
         Ok(())
     }
 
+    /// [`Fields::exact`], except `optional` names may be present or absent
+    /// without either counting as an error.
+    ///
+    /// For a member added to a shape after documents were already sealed
+    /// under it (PLAT-1015): a document sealed before the addition carries
+    /// neither name, and a document sealed after always carries both, so
+    /// `required` alone would refuse every document from before the change.
+    /// `optional` is read with [`Fields::optional`], never [`Fields::value`],
+    /// so its absence is a fact the caller decides what to default to rather
+    /// than a shape refusal.
+    ///
+    /// # Errors
+    ///
+    /// [`FieldFailure::Extra`] for a member outside `required` and `optional`,
+    /// then [`FieldFailure::Missing`] for a `required` member absent.
+    pub fn exact_with_optional(
+        self,
+        required: &[&str],
+        optional: &[&str],
+    ) -> Result<(), ChangeAssuranceError> {
+        for name in self.object.names() {
+            if !required.contains(&name) && !optional.contains(&name) {
+                return Err(ChangeAssuranceError::shape(
+                    self.subject,
+                    FieldFailure::extra(name),
+                ));
+            }
+        }
+        for name in required {
+            if !self.object.contains(name) {
+                return Err(ChangeAssuranceError::shape(
+                    self.subject,
+                    FieldFailure::missing(*name),
+                ));
+            }
+        }
+        Ok(())
+    }
+
     /// The value under `name`.
     ///
     /// # Errors

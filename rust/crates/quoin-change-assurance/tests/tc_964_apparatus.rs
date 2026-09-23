@@ -28,6 +28,7 @@ use engineering_assurance::measurement::{
     ApparatusPath, NegativeControl, NegativeControlKind, NegativeControls, ProtectedApparatus,
 };
 use quoin_change_assurance::model::outcome::{Outcome, Reason};
+use quoin_change_assurance::model::receipt::UnsealedReceipt;
 use quoin_change_assurance::verify::input::GoverningPlan;
 use quoin_change_assurance::verify::verify_change_assurance;
 
@@ -128,7 +129,20 @@ fn tc_964_002_a_diff_outside_the_protected_set_is_unaffected() {
     let receipt = verify_change_assurance(&input).expect("verification succeeds");
     assert_eq!(receipt.body.outcome, Outcome::Valid);
     assert_eq!(receipt.body.reasons, Vec::new());
-    assert_eq!(receipt.body, unlinked.body);
+    // Everything the verification itself decided is unchanged from an
+    // unlinked verification. Only the two PLAT-1015 members that record what
+    // was SUPPLIED (not what mattered to the verdict) legitimately differ:
+    // this scenario supplies a diff, `base_input()` supplies none.
+    assert!(receipt.body.diff_paths_supplied);
+    assert!(!unlinked.body.diff_paths_supplied);
+    assert_eq!(
+        UnsealedReceipt {
+            diff_paths_supplied: false,
+            governing_plan_id: None,
+            ..receipt.body.clone()
+        },
+        unlinked.body
+    );
 }
 
 /// Trace: FR-111-AC-3
@@ -176,4 +190,42 @@ fn tc_964_004_a_protecting_plan_with_no_retained_diff_is_incomplete() {
     let unlinked = verify_change_assurance(&base_input()).expect("verification succeeds");
     assert_eq!(unlinked.body.outcome, Outcome::Valid);
     assert_eq!(unlinked.body.reasons, Vec::new());
+}
+
+/// Trace: FR-111-AC-5, TC-1915
+///
+/// A receipt sealed with both a governing plan and a retained diff records
+/// `governing_plan_id` and `diff_paths_supplied: true`; the same base input
+/// sealed with neither records `governing_plan_id: null` and
+/// `diff_paths_supplied: false` as explicit fields — not silent absence —
+/// so an auditor reading the sealed receipt afterward can tell "no plan/diff
+/// was ever given" apart from "one was given and found nothing to refuse"
+/// (PLAT-1015, closing the audit gap PLAT-997 left open).
+#[test]
+fn tc_1015_005_the_receipt_records_governing_plan_id_and_diff_paths_supplied() {
+    let mut linked = base_input();
+    linked.diff_paths = Some(vec!["src/lib.rs".to_owned()]);
+    linked.governing_plan = Some(plan_protecting(&["checker/config.toml"]));
+    linked.governing_plan_id = Some("MP-1015-LINKED".to_owned());
+    let receipt = verify_change_assurance(&linked).expect("verification succeeds");
+    assert_eq!(
+        receipt.body.governing_plan_id.map(|id| id.to_string()),
+        Some("MP-1015-LINKED".to_owned())
+    );
+    assert!(receipt.body.diff_paths_supplied);
+
+    // Even a retained diff that touches nothing is still "supplied": the
+    // member records whether a diff was given, not whether it mattered.
+    let mut linked_untouched = base_input();
+    linked_untouched.diff_paths = Some(Vec::new());
+    let untouched_receipt =
+        verify_change_assurance(&linked_untouched).expect("verification succeeds");
+    assert!(untouched_receipt.body.diff_paths_supplied);
+    assert_eq!(untouched_receipt.body.governing_plan_id, None);
+
+    // The base fixture is unlinked and carries no diff: both members record
+    // the omission explicitly rather than leaving it silent.
+    let unlinked = verify_change_assurance(&base_input()).expect("verification succeeds");
+    assert_eq!(unlinked.body.governing_plan_id, None);
+    assert!(!unlinked.body.diff_paths_supplied);
 }

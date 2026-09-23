@@ -162,3 +162,34 @@ The `strength` type itself carries no ordering (deliberately — see
 never compares, ranks or defaults it. A missing `strength` is refused by name
 (`FieldFailure::Missing`), never inferred from `result` or defaulted to one of
 the four values.
+
+## §7 — `governing_plan_id` and `diff_paths_supplied`, two required members the oracle never carried (PLAT-1015)
+
+`VerificationReceiptV1` now requires `governing_plan_id` and
+`diff_paths_supplied`, recording which `MeasurementPlan` (if any) and whether
+`diff_paths` (even an empty one) a receipt was actually judged against —
+PLAT-997 wired `diff_paths`/`plan` through `change_assurance.receipt` but left
+the sealed receipt unable to say whether either was ever supplied, versus
+genuinely not applicable. The oracle predates both PLAT-964's plan link and
+this ticket, so every captured `verifications[].input` carries neither, and
+the same "nothing to diverge from, only a member to add" situation as §6
+applies.
+
+`tests/fixtures/oracle.json`'s `verifications[].receipt` entries were
+regenerated in place the same way, restricted to the `receipt` member alone
+(`records`, `attestations` and every `verifications[].input` are untouched):
+each was rebuilt with this crate's own `verify_change_assurance` against its
+existing (unmodified) input, which for every captured scenario means
+`governing_plan_id: null` and `diff_paths_supplied: false` — none of the 37
+regenerated receipts differed from the oracle's on any member but `digest`,
+`governing_plan_id` and `diff_paths_supplied`, checked structurally rather
+than assumed, exactly as §6 checked for `strength`. No outcome, reason, proof
+state or selection moved.
+
+`quoin-change-assurance`'s `read_sealed` reads both members as optional
+(`Fields::exact_with_optional`), not required, precisely so a receipt sealed
+before this ticket — this fixture's own pre-PLAT-1015 form, or anything a
+caller already retained — still re-verifies: absence reads back as `None`
+governing plan and `diff_paths_supplied: false`, the fact that receipt
+genuinely never tracked either. Only `write_receipt` (what this crate seals
+from here on) always emits both.

@@ -110,10 +110,14 @@ fn tc_457_the_modules_over_the_soft_ceiling_are_the_ones_named_here() {
         over,
         vec![
             "model/attestation.rs (516)".to_owned(),
-            "model/receipt.rs (542)".to_owned(),
+            "model/json.rs (524)".to_owned(),
+            "model/receipt.rs (593)".to_owned(),
         ],
         "the set of modules over the {SOFT_CEILING}-line soft ceiling changed. Splitting one \
          out, or letting a new one cross, is a deliberate act: update this list and say which \
-         it was."
+         it was. model/json.rs newly crossed here: `Fields::exact_with_optional` (PLAT-1015) \
+         lets a shape add a member after documents were already sealed under it without \
+         breaking `verify_receipt` on the old ones. model/receipt.rs grew for the two new \
+         `governing_plan_id`/`diff_paths_supplied` members and their doc comments."
     );
 }
