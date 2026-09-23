@@ -314,20 +314,22 @@ restatement of this verdict that drops that sentence is a misreport.
 MEASURED against `jev-latest`, N=3 passes over the same 59-fixture M2
 revision plus one pass over the 45-statement M6 corpus, per variant.
 
-| variant | agreement | margin | defect recall | no-defect recall | ECE (derived conf.) | MP-231 forward delta | all 4 ship bars |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `v4` | 81.4% | +11.9pp | 55.6% | 90.0% | 0.1127 | 30.0% | met |
-| `v5` | 84.7% | +15.3pp | 77.8% | 80.0% | 0.1551 | 45.0% | met |
-| `v6` | 88.1% | +18.6pp | 83.3% | 82.5% | 0.1788 | 45.0% | met |
+| variant | agreement | margin | defect recall | no-defect recall | ECE (derived conf.) | MP-225 rate | MP-231 forward delta | all 4 ship bars |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `v4` | 81.4% | +11.9pp | 55.6% | 90.0% | 0.1127 | 1.1% | 30.0% | met |
+| `v5` | 84.7% | +15.3pp | 77.8% | 80.0% | 0.1551 | 2.3% | 45.0% | met |
+| `v6` | 88.1% | +18.6pp | 83.3% | 82.5% | 0.1788 | 0.0% | 45.0% | met |
 
 All three clear the four ship-as-advisory bars from **Comparison and
 Enforcement** above (margin > 0, both recalls > 0, forward delta non-zero and
-above each variant's own MP-225 rate). `v6` is the strongest on every bar
-that moved: it reads the two `noul` answers `v3` computed but never
+above each variant's own MP-225 rate). `v6` has the best margin and the best
+defect recall: it reads the two `noul` answers `v3` computed but never
 consulted (`condition_is_unwanted`/`trigger_is_momentary` contradicting the
-keyword's own reading), catching `EARS-FIX-048` and `050` as predicted, with
-no new false positive at the `KeywordContradiction` rule's tightened
-threshold.
+keyword's own reading), catching `EARS-FIX-048` and `050` as predicted. That
+is not free: `v6` trades no-defect recall for it, flagging three more clean
+rows than `v4` (33/40 against `v4`'s 36/40), and its `KeywordContradiction`
+rule uses the same strict 0.5 cut `v3`/`v4`/`v5` do -- nothing about the
+threshold itself tightened. `v4` remains the best of the three on bar 3.
 
 **The calibration/accuracy tradeoff runs the other way.** `v4` -- same
 labels as `v3`, only the confidence source changed -- has the best ECE
