@@ -252,18 +252,18 @@ fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
         );
         load_measurement_plans(&source, PlanLoadOptions::default())
     };
-    const CONTROLS: &str =
+    let controls =
         "negative_controls:\n  - kind: apparatus-edit\n    description: the key is digested\n";
     for (extra, member) in [
         (String::new(), "protected_apparatus"),
-        (CONTROLS.to_owned(), "protected_apparatus"),
+        (controls.to_owned(), "protected_apparatus"),
         (PROTECTED.to_owned(), "negative_controls"),
     ] {
         let error = gate(&extra).expect_err("a gate plan missing a list is refused");
         assert_eq!(error.code(), MeasurementErrorCode::PlanInvalid, "{extra}");
         assert!(error.to_string().contains(member), "{extra}: {error}");
     }
-    gate(&format!("{PROTECTED}{CONTROLS}")).expect("a gate plan stating both loads");
+    gate(&format!("{PROTECTED}{controls}")).expect("a gate plan stating both loads");
 
     for (extra, member) in [
         (

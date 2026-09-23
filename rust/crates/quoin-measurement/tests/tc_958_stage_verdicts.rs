@@ -536,9 +536,18 @@ fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reac
 /// Provenance: PLAT-958
 #[test]
 fn tc_958_009_a_plan_without_an_objective_or_at_another_stage_is_unchanged() {
+    // A `gate` plan requires `protected_apparatus` and `negative_controls`
+    // (PLAT-975, FR-110-AC-1); this test is not about apparatus, so the gate
+    // variant carries the minimal lists that satisfy plan load and nothing
+    // else exercises them.
+    let gate_objective = format!(
+        "{}protected_apparatus:\n  - answers.json\nnegative_controls:\n  - kind: apparatus-edit\n    \
+         description: test-only\n",
+        objective("higher", Some("0.9"))
+    );
     for document in [
         plan_document("ratchet", "v1", ""),
-        plan_document("gate", "v1", &objective("higher", Some("0.9"))),
+        plan_document("gate", "v1", &gate_objective),
         plan_document("trend", "v1", &objective("lower", None)),
     ] {
         let plans = plans(&document);

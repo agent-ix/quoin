@@ -427,6 +427,10 @@ mod tests {
 
     /// A repository whose `harness` directory holds `Answers.json` and
     /// nothing else, whatever filesystem the test runs on.
+    #[allow(
+        clippy::unnecessary_wraps,
+        reason = "must match the `Lister` fn-pointer signature, which can fail on a real disk"
+    )]
     fn case_listing(dir: &Path) -> Result<Vec<(String, Kind)>, String> {
         Ok(match dir.to_str() {
             Some("/repo") => vec![("harness".to_owned(), Kind::Directory)],

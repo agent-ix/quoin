@@ -24,9 +24,13 @@ description: "Chronological log of structural changes to this bundle."
   `-TOO-LARGE`. Comparison gains the blocking `apparatus_changed` and the
   non-blocking `artifact_changed`; the ratchet gains `apparatus_changed` and
   `apparatus_unrecorded`; the checker (FR-108's reason table) gains those two
-  and `apparatus_edit`, which rejects only when the plan declares the
-  `apparatus-edit` negative control, because only then do the stored sets
-  contradict the plan. A plan that protects nothing is unaffected.
+  and `apparatus_edit`, which rejects unconditionally whenever two runs under
+  one `definition_version` recorded different sets, whether or not the plan
+  declares the `apparatus-edit` negative control — engineering-assurance
+  FR-024 makes a new `definition_version` unconditional for any change to the
+  resolved set, so a differing recorded set inside one series is a
+  contradiction the data itself proves. A plan that protects nothing is
+  unaffected.
   FR-110-AC-1..AC-8; Matrix: TC-1810..TC-1826.
 
 * **2026-09-22** — **FR-108 (new FR): the independent measurement-verdict
