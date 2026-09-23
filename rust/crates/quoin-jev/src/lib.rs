@@ -53,7 +53,7 @@ pub mod report;
 pub mod schema_gate;
 pub mod verdict;
 
-pub use context::{AcRow, FrContext};
+pub use context::{AcRow, Bound, BoundedContext, ContextPolicy, FrContext};
 pub use corpus_check::{AdequacyFinding, check_required_fields, check_stated_counts};
 pub use error::{JevError, JevErrorCode, Result};
 pub use question_set::QuestionSet;
