@@ -52,8 +52,3 @@ thiserror = { workspace = true }
 name = "capture-assurance-bases"
 path = "oracle/capture-assurance-bases.rs"
 
-[dev-dependencies]
-# The vendored schema's digest is asserted against the one `src/quire/contract.ts`
-# recorded from upstream; hashing it needs a SHA-256 and the workspace already
-# pins one.
-sha2 = { workspace = true }

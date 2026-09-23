@@ -556,7 +556,7 @@ dependencies = [
 [[package]]
 name = "engineering-assurance"
 version = "0.3.1"
-source = "git+https://github.com/agent-ix/engineering-assurance?rev=8971a334e0d09d02ee89e1f6000857f49529765c#8971a334e0d09d02ee89e1f6000857f49529765c"
+source = "git+https://github.com/agent-ix/engineering-assurance?rev=4172627fe62744590158a476087c88564b95c7f1#4172627fe62744590158a476087c88564b95c7f1"
 dependencies = [
  "serde",
  "syn 3.0.5",
@@ -576,7 +576,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -616,18 +616,6 @@ name = "fastrand"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
-
-[[package]]
-name = "filament-plan-sync"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-ide-rs?rev=81e441be0f1e7f6724810021af3f2dac099f35c9#81e441be0f1e7f6724810021af3f2dac099f35c9"
-dependencies = [
- "quire-rs 0.21.0",
- "serde",
- "serde_json",
- "sha2",
- "thiserror",
-]
 
 [[package]]
 name = "filetime"
@@ -2850,7 +2838,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2863,26 +2851,6 @@ dependencies = [
  "tree-sitter-python",
  "tree-sitter-rust",
  "tree-sitter-typescript",
-]
-
-[[package]]
-name = "quire-rs"
-version = "0.21.0"
-source = "git+https://github.com/agent-ix/quire-rs?tag=v0.21.0#cfee56dac516f4793a0dad71b7832ebeba3e2622"
-dependencies = [
- "globset",
- "ignore",
- "indexmap",
- "jsonschema 0.18.3",
- "loom",
- "rayon",
- "regex",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2",
- "thiserror",
- "uuid",
 ]
 
 [[package]]
@@ -2917,7 +2885,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-assurance"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "quoin-evidence-types",
  "quoin-finding-types",
@@ -2929,7 +2897,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-auditor"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "proptest",
  "quoin-combinatorial",
@@ -2949,7 +2917,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-catalog"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "quoin-semantic",
  "quoin-yaml",
@@ -2961,8 +2929,9 @@ dependencies = [
 
 [[package]]
 name = "quoin-change-assurance"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
+ "engineering-assurance",
  "quoin-jsonschema",
  "quoin-store",
  "serde_json",
@@ -2973,14 +2942,14 @@ dependencies = [
 
 [[package]]
 name = "quoin-cli"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "clap",
- "filament-plan-sync",
  "quoin-config",
  "quoin-core",
  "quoin-delivery",
  "quoin-graph-analysis",
+ "quoin-semantic",
  "quoin-store",
  "quoin-validators",
  "quoin-yaml",
@@ -2993,7 +2962,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-combinatorial"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "proptest",
  "quoin-store",
@@ -3005,7 +2974,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-completeness"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "quoin-yaml",
  "schemars",
@@ -3017,7 +2986,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-config"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "engineering-assurance",
  "schemars",
@@ -3030,7 +2999,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-core"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "engineering-assurance",
  "quoin-assurance",
@@ -3059,7 +3028,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-delivery"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "flate2",
  "reqwest 0.13.5",
@@ -3076,7 +3045,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "quoin-quire-types",
  "quoin-store",
@@ -3090,7 +3059,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence-types"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -3098,7 +3067,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-finding-types"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "quoin-evidence",
  "schemars",
@@ -3108,7 +3077,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-graph-analysis"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "quoin-evidence",
  "quoin-finding-types",
@@ -3121,9 +3090,12 @@ dependencies = [
 
 [[package]]
 name = "quoin-jev"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
+ "async-trait",
  "quoin-modules",
+ "quoin-store",
+ "regex",
  "serde",
  "serde_json",
  "tempfile",
@@ -3141,7 +3113,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-jsonschema"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "jsonschema 0.56.0",
  "quoin-measurement",
@@ -3151,8 +3123,10 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
+ "engineering-assurance",
+ "proptest",
  "quoin-evidence",
  "quoin-jsonschema",
  "quoin-store",
@@ -3165,7 +3139,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement-graph"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "quoin-graph-analysis",
  "quoin-measurement",
@@ -3179,7 +3153,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-modules"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "gix",
  "quoin-semantic",
@@ -3193,19 +3167,18 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
- "quire-rs 0.46.0",
+ "quire-rs",
  "quoin-jsonschema",
  "serde",
  "serde_json",
- "sha2",
  "thiserror",
 ]
 
 [[package]]
 name = "quoin-quire-types"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "schemars",
  "serde",
@@ -3215,7 +3188,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-semantic"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "hex",
  "quoin-jsonschema",
@@ -3230,9 +3203,10 @@ dependencies = [
 
 [[package]]
 name = "quoin-store"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "blake3",
+ "libc",
  "ryu-js",
  "sha2",
  "thiserror",
@@ -3240,7 +3214,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-validators"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "regex",
  "schemars",
@@ -3252,7 +3226,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-yaml"
-version = "0.9.0"
+version = "0.24.1"
 dependencies = [
  "saphyr",
  "serde_json",
@@ -3559,7 +3533,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3617,7 +3591,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3827,19 +3801,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "serde_yaml"
-version = "0.9.34+deprecated"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
-dependencies = [
- "indexmap",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
 ]
 
 [[package]]
@@ -4068,7 +4029,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4768,7 +4729,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

@@ -57,7 +57,10 @@ PLAT-837 itself: **this lens never edits an AC, never authors a requirement,
 never changes a matrix row.** Its only write is the `SpecReview` artifact.
 
 A low-confidence verdict is **annotated, not suppressed** — the finding still
-appears in the table marked unconfirmed. This is the opposite of the
+appears in the table marked "unconfirmed, below the confidence threshold". A
+verdict whose top two answers are within the margin is likewise annotated,
+not suppressed, and marked "uncertain, top two answers within the margin";
+when both apply, the margin annotation is the one shown. This is the opposite of the
 `ix-board` low-confidence rule (which suppresses an edge write); the two are
 opposite because one mutates and one reports, per PLAT-837's own note. Do not
 copy the `ix-board` rule across by reflex.
@@ -82,7 +85,8 @@ copy the `ix-board` rule across by reflex.
    (`| ID | Severity | Summary | Refs |`, `FND-NNN` ids, Severity ∈
    `low`/`medium`/`high`). A below-threshold `weakness_kind` or
    `adverse_case_coverage` verdict is still a row in this table, marked
-   unconfirmed — never dropped.
+   unconfirmed, and a verdict whose top two answers are within the margin is
+   still a row, marked uncertain — neither is ever dropped.
 6. **Validate.** `quire validate --scope <repo> "spec/**/*.md"`.
 
 > **`--scope` is the repository root, and must be passed explicitly.** Since
@@ -121,7 +125,8 @@ same underlying gap observed at both granularities, and the `entangled_with`
 note on each explaining why that is one piece of evidence, not two.
 
 A low-confidence verdict in any category is reported at its mapped severity
-and marked unconfirmed, never silently dropped to `low`.
+and marked unconfirmed, never silently dropped to `low`. The same holds for a
+verdict within the margin: reported at its mapped severity, marked uncertain.
 
 ## Fixtures: the adverse-case corpus
 
@@ -143,7 +148,7 @@ the criterion's own text — never constructed examples. It carries:
   expected to find hard, not clean positives and negatives.
 
 **Disagreements are recorded, not resolved.** A second, independent reader
-re-derived every label in this corpus and disputed 5 of the original 14 (see
+re-derived every label in this corpus and disputed 9 of the 15 (agreed 6; see
 the file's top-level `governing_ruling_on_disagreement` field). Every fixture
 where the two readings differ carries a `weakness_kind_contested` or
 `adverse_case_coverage_contested` array naming both, plus a `confidence_note`
@@ -152,6 +157,19 @@ over the other. An answer key with a written-down disagreement is worth more
 than one reader's confident labels, because the corpus exists to grade a
 classifier, and grading against a label that was contestable but nobody
 contested is the failure mode this convention exists to catch.
+
+**Keep this count checkable, not just stated (PLAT-933).** This same prose
+once said "disputed 5 of 14" while the fixtures held 9 of 15 — a mismatch
+nobody caught until a live evaluation was already mid-run.
+`quoin_jev::corpus_check::check_stated_counts` derives the actual counts from
+the fixture data itself and fails a test if this file's own prose drifts from
+them again; `check_required_fields` does the same for a lens-declared
+required input (the FR statement was empty on 10 of 11 fixtures in round one,
+also only discovered mid-run). **Any lens adding its own fixture corpus
+should add one `#[test]` in its crate's default-gate suite calling both**
+(see `rust/crates/quoin-jev/tests/corpus_adequacy.rs` for the pattern against
+this corpus) — the functions are generic over `serde_json::Value` and do not
+need to know a lens's Rust types.
 
 This corpus is **not** the TC-145 `ParsedFile`/`Sync` fixture recorded in
 PLAT-839's comments. That fixture is a test-vs-requirement divergence case for

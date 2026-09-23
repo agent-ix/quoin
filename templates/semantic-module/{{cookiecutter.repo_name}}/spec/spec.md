@@ -103,5 +103,4 @@ verification exists to prevent.
 - The semantic-module contract, `agent-ix/quoin` FR-070 through FR-075.
 - `filament-core-data` ADR-0005 — TypeSpec is the structural schema source.
 - `@agent-ix/semantic-core` {{ cookiecutter.semantic_core_version }} — the shared declaration grammar.
-- `agent-ix/quire-rs#392` — publishing the engine wheel this module's suite needs.
 - This repository's `README.md`, `CONTRIBUTING.md` and `toolchain.yaml`.

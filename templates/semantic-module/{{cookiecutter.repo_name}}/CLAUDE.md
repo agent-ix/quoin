@@ -9,7 +9,7 @@ skeletons, extraction mappings. There is no runtime here.
 
 - `make bootstrap` — install the toolchain and emit `schemas/` plus the manifest digests.
 - `make gate` — the green bar: spec validation, lint, schema drift check, tests.
-- `make dev-quire` — install the Quire wheel the semantic tests need.
+- `make semantic-install` — npm ci for the pinned TypeSpec toolchain and semantic-core.
 
 ## Rules a change here must not break
 

@@ -91,10 +91,22 @@ fn repo_root() -> PathBuf {
     root
 }
 
-/// The vendored contract tree the npm package ships, which stays in
-/// `src/semantic/` after the TypeScript beside it is deleted (quoin#452).
+/// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production.
+/// Materialized once per process from the embedded bytes `quoin-semantic`'s
+/// `build.rs` compiles in (PLAT-887 de-vendoring), not read from a
+/// source-tree `src/semantic`, which no longer holds a schema tree.
 fn semantic_root() -> PathBuf {
-    repo_root().join("src").join("semantic")
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root = std::env::temp_dir().join(format!(
+            "quoin-core-tc-452-install-semantic-{}",
+            std::process::id()
+        ));
+        quoin_semantic::materialize_embedded_contract(&root)
+            .expect("the embedded semantic contract materializes");
+        root
+    })
+    .clone()
 }
 
 fn fixture() -> PathBuf {
@@ -249,7 +261,7 @@ fn tc_452_662_installing_writes_the_derived_manifest_and_pins_every_export() {
 
     let pin = &record["semantic"];
     assert_eq!(pin["package"], "agent-ix/spec-objects-fixture");
-    assert_eq!(pin["semanticCore"], "0.1.0");
+    assert_eq!(pin["semanticCore"], "0.3.0");
     let digest = pin["exports"]["entity"]
         .as_str()
         .expect("the export is pinned");

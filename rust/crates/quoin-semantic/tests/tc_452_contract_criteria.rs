@@ -22,7 +22,7 @@ mod common;
 use std::collections::BTreeMap;
 use std::fs;
 
-use common::{fixtures_dir, semantic_core_dir, semantic_root};
+use common::{semantic_core_dir, semantic_root};
 use quoin_semantic::SEMANTIC_CONTRACT;
 use quoin_semantic::contract::{
     common_schema_path, file_sha256, module_manifest_schema_path, package_manifest_schema_path,
@@ -67,7 +67,7 @@ fn required_arrays(node: &Value, path: &str, found: &mut BTreeMap<String, Vec<St
     }
 }
 
-/// The module-manifest schema records filament-core-service provenance, the
+/// The module-manifest schema records filament-core-data provenance, the
 /// vendored bytes hash to it, and it admits exactly the contract's keys.
 ///
 /// Trace: FR-070-CON-2
@@ -75,7 +75,7 @@ fn required_arrays(node: &Value, path: &str, found: &mut BTreeMap<String, Vec<St
 #[test]
 fn tc_452_640_the_module_manifest_schema_carries_its_provenance_and_the_bytes_match() {
     let record = SEMANTIC_CONTRACT.module_manifest_schema;
-    assert_eq!(record.repository, "agent-ix/filament-core-service");
+    assert_eq!(record.repository, "agent-ix/filament-core-data");
     assert_eq!(record.source_revision.len(), 40);
     assert!(
         record
@@ -87,7 +87,7 @@ fn tc_452_640_the_module_manifest_schema_carries_its_provenance_and_the_bytes_ma
     );
     assert_eq!(
         record.source_path,
-        "filament_core_service/schemas/module-manifest.schema.json"
+        "schema/semantic/v1/module-manifest.schema.json"
     );
     let path = module_manifest_schema_path(&semantic_root());
     assert_eq!(file_sha256(&path).unwrap(), record.sha256);
@@ -110,24 +110,58 @@ fn tc_452_640_the_module_manifest_schema_carries_its_provenance_and_the_bytes_ma
 /// The vendored module-manifest schema adds no required key anywhere against
 /// the pre-CR-003 schema, so a manifest that validated before still validates.
 ///
-/// The census has a floor: the pre-CR-003 document must itself carry required
+/// The census has a floor: the pre-CR-003 baseline must itself carry required
 /// arrays, or "every one of them is unchanged" is a statement about none of
 /// them.
+///
+/// The baseline is the 14 `(path, required)` pairs `required_arrays` produced
+/// over filament-core-service's `module-manifest.schema.json` at the commit
+/// before CR-003 (agent-ix/filament-core-service#21) added the `semantic`
+/// block — recorded here as data rather than as a second copy of the whole
+/// schema document beside the current one. The commit CR-003 landed against
+/// is quoin's own git history, not this working tree; the point of this
+/// constant is that nothing here needs to re-read it to keep asserting the
+/// constraint.
 ///
 /// Trace: FR-070-CON-1, NFR-017-AC-4
 /// Provenance: agent-ix/quoin#452
 #[test]
 fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
-    let mut before = BTreeMap::new();
-    required_arrays(
-        &read_json(
-            &fixtures_dir()
-                .join("vendored")
-                .join("module-manifest.schema.pre-cr003.json"),
+    const PRE_CR003_REQUIRED_ARRAYS: &[(&str, &[&str])] = &[
+        ("", &["manifest_version", "name", "version"]),
+        ("/$defs/ArchetypeEntry", &["kind"]),
+        (
+            "/$defs/ArtifactTypeEntry",
+            &["name", "grammar_ref", "frontmatter_schema_ref"],
         ),
-        "",
-        &mut before,
-    );
+        ("/$defs/BodyExtraction", &["yield_pattern"]),
+        (
+            "/$defs/BodyExtraction/properties/emit_edges/items",
+            &["type", "target"],
+        ),
+        (
+            "/$defs/BodyExtraction/properties/yield_pattern/properties/iterate_over",
+            &["section_path", "kind"],
+        ),
+        ("/$defs/EdgeTypeEntry", &["description", "category"]),
+        ("/$defs/GrammarEntry", &["name"]),
+        ("/$defs/LintRuleEntry/properties/pattern", &["kind"]),
+        ("/$defs/LocatorPrimitive", &["from"]),
+        ("/$defs/ObjectTypeEntry", &["name"]),
+        ("/$defs/RoleEntry", &["description"]),
+        ("/properties/depends_on/items", &["name", "version_range"]),
+        ("/properties/nav/properties/category", &["slug", "label"]),
+    ];
+
+    let before: BTreeMap<String, Vec<String>> = PRE_CR003_REQUIRED_ARRAYS
+        .iter()
+        .map(|(path, required)| {
+            (
+                (*path).to_owned(),
+                required.iter().map(|s| (*s).to_owned()).collect(),
+            )
+        })
+        .collect();
     let mut after = BTreeMap::new();
     required_arrays(
         &read_json(&module_manifest_schema_path(&semantic_root())),
@@ -145,7 +179,15 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
     }
     for path in after.keys().filter(|path| !before.contains_key(*path)) {
         assert!(
-            path.contains("/properties/semantic") || path.contains("/data_schema/"),
+            path.contains("/properties/semantic")
+                || path.contains("/data_schema/")
+                // `$defs/ConstructDeclaration` (filament-core-service#33): an optional
+                // semantic-IR construct declaration a manifest may attach to an object
+                // type via `ObjectTypeEntry.properties.construct`, which is itself
+                // optional -- a manifest that never sets `construct` never has this
+                // def's own `required` array evaluated, so it adds no obligation to a
+                // manifest that validated before.
+                || path.contains("/$defs/ConstructDeclaration"),
             "new required array outside the optional nodes: {path}"
         );
     }

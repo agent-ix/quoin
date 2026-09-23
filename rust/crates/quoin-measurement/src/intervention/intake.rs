@@ -121,7 +121,31 @@ impl From<MeasurementError> for InterventionIntakeError {
             | MeasurementErrorCode::DateTimeInvalid
             | MeasurementErrorCode::Yaml
             | MeasurementErrorCode::Io
-            | MeasurementErrorCode::Store => InterventionRefusalCode::InvalidRecord,
+            | MeasurementErrorCode::Store
+            // `ArtifactNameUnsafe` and `ArtifactUnreadable` are raised only by
+            // `store::publish::verify_local_artifacts` (PLAT-969), which
+            // `write_intervention_record` never calls — intake has no
+            // `verificationStack.artifacts` check of its own. Both arms are
+            // unreachable from this conversion today; they are kept here so
+            // this match stays exhaustive over `MeasurementErrorCode` rather
+            // than falling back to a catch-all the next code added would
+            // silently absorb.
+            | MeasurementErrorCode::ArtifactNameUnsafe
+            | MeasurementErrorCode::ArtifactUnreadable
+            // Raised only by `validate::measurement_collection` (PLAT-960),
+            // which intervention intake does not call; kept for the same
+            // exhaustiveness reason as the two arms above.
+            | MeasurementErrorCode::PopulationBelowMinimum
+            | MeasurementErrorCode::PopulationUnstated
+            | MeasurementErrorCode::RepetitionsShort
+            | MeasurementErrorCode::PopulationMalformed
+            // Raised only by `store::apparatus` when a measurement collection
+            // is written (PLAT-975); kept for the same exhaustiveness reason.
+            | MeasurementErrorCode::ApparatusUnresolved
+            | MeasurementErrorCode::ApparatusSymlink
+            | MeasurementErrorCode::ApparatusUnreadable
+            | MeasurementErrorCode::ApparatusUndeclared
+            | MeasurementErrorCode::ApparatusTooLarge => InterventionRefusalCode::InvalidRecord,
         };
         let findings = if error.findings().is_empty() {
             vec![error.to_string()]

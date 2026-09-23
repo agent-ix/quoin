@@ -1,6 +1,6 @@
 {
   "collectionId": "b-2026-02",
-  "configDigest": "sha256:cfg-b",
+  "configDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "corpusRevision": "corpus-two",
   "environment": {
     "ci": "true"

@@ -113,6 +113,17 @@ pub struct TopClaim {
     pub statement: String,
     /// What the claim is about.
     pub subject: String,
+    /// Evidence the claim cites (PLAT-965, PLAT-966). Absent authored is
+    /// admitted as empty rather than refused — an argument authored before
+    /// this field existed still parses — and the VIEW, not the parser, is
+    /// what turns an empty or unresolved list into an open reason.
+    ///
+    /// Omitted when empty: the golden corpus (`tc_447_500`) compares this
+    /// type's serialisation against a TypeScript oracle that predates this
+    /// field entirely, and an argument authored with no `evidence_refs` must
+    /// still reproduce that oracle's bytes exactly.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub evidence_refs: Vec<String>,
 }
 
 /// One step of reasoning, with the criteria that would make it sufficient.

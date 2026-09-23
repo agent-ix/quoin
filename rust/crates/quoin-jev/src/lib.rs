@@ -14,6 +14,10 @@
 //! typed findings ([`verdict::extract`]) a caller renders into a
 //! `SpecReview` document body ([`report::render`]).
 //!
+//! [`span_ballot`] (PLAT-980) is the reusable piece for a lens that needs
+//! Jev to point at part of a text: candidate spans generated in Rust,
+//! offered as one closed `choice`, and any label not issued rejected.
+//!
 //! It does not itself decide an AC, author a requirement, or write a matrix
 //! row -- the ticket's "findings only" rule holds by construction: nothing
 //! in this crate's public API takes a spec document path to modify.
@@ -42,18 +46,28 @@
 //! does not exist in this crate; per the ticket's own instruction, that is a
 //! property to keep, not relax once a key exists.
 
+pub mod cassette;
 pub mod client;
 pub mod config;
 pub mod context;
+pub mod corpus_check;
 pub mod error;
 pub mod lens;
 pub mod question_set;
 pub mod report;
 pub mod schema_gate;
+pub mod span_ballot;
 pub mod verdict;
 
+pub use cassette::Cassette;
 pub use context::{AcRow, FrContext};
+pub use corpus_check::{
+    AdequacyFinding, check_answerability, check_required_fields, check_stated_counts,
+};
 pub use error::{JevError, JevErrorCode, Result};
 pub use question_set::QuestionSet;
 pub use report::{FrReport, render as render_findings};
-pub use verdict::{CoverageVerdict, Finding, FrVerdict, Severity};
+pub use span_ballot::{BallotOutcome, Granularity, Span, SpanBallot, candidate_spans};
+pub use verdict::{
+    Certainty, CoverageVerdict, Finding, FrVerdict, Severity, SubQuestionCheck, Thresholds,
+};

@@ -34,7 +34,15 @@
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss,
+    reason = "test-only statistics: counts are at most a few hundred and confidences lie in [0, 1], \
+              so no cast here can truncate, lose a sign, or lose precision"
 )]
 
 use std::collections::BTreeMap;
@@ -48,8 +56,66 @@ use quoin_jev::{AcRow, FrContext, FrVerdict};
 /// grader cannot drift -- the same `include_str!` discipline
 /// `question-set.json` is already held to (`question_set.rs`, `lens.rs`,
 /// `verdict.rs`).
-const CORPUS: &str =
-    include_str!("../../../../../skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fixtures.json");
+const CORPUS: &str = include_str!(
+    "../../../../../skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fixtures.json"
+);
+
+/// The FR context each fixture's label was made against, extracted verbatim
+/// from the spec file the fixture cites (PLAT-917).
+///
+/// Separate from [`CORPUS`] so the labelled answer key stays byte-identical;
+/// this file adds input, never a label. The corpus alone left `statement`
+/// empty on 10 of 11 criteria, so the first live run judged sentences in an
+/// isolation the human readers never had.
+const FR_CONTEXT: &str = include_str!(
+    "../../../../../skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fr-context.json"
+);
+
+/// One fixture's full FR context.
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct FullContext {
+    /// The FR's normative sentence: the first `SHALL` paragraph of its
+    /// Statement or Description section.
+    pub(crate) statement: Option<String>,
+    /// The FR's Description (an NFR's Statement), verbatim.
+    pub(crate) description: Option<String>,
+    /// The FR's Behavior section, verbatim, when it has one.
+    pub(crate) behavior: Option<String>,
+    /// The FR's Constraints section, verbatim, when it has one.
+    pub(crate) constraints: Option<String>,
+    /// Informational provenance only. Nothing resolves it.
+    pub(crate) extracted_from_commit: String,
+}
+
+#[derive(Deserialize)]
+struct FullContextFile {
+    fixtures: BTreeMap<String, FullContext>,
+}
+
+/// The full FR context for one fixture.
+///
+/// # Panics
+///
+/// When the sidecar has no entry for `fixture_id` -- a fixture added to the
+/// corpus without its context would otherwise be graded on an empty input
+/// again, silently.
+pub(crate) fn full_context(fixture_id: &str) -> FullContext {
+    let file: FullContextFile =
+        serde_json::from_str(FR_CONTEXT).expect("the FR context sidecar parses");
+    file.fixtures.get(fixture_id).cloned().unwrap_or_else(|| {
+        panic!("{fixture_id} has no entry in criterion-strength-fr-context.json")
+    })
+}
+
+/// Replaces a context's FR prose with the full extracted sections.
+fn with_full_prose(mut context: FrContext, fixture_id: &str) -> FrContext {
+    let full = full_context(fixture_id);
+    context.statement = full.statement.unwrap_or_default();
+    context.description = full.description;
+    context.behaviour = full.behavior;
+    context.constraints = full.constraints;
+    context
+}
 
 /// How sure the corpus is of its own label.
 ///
@@ -145,7 +211,7 @@ impl WeaknessLabels {
     /// Three fixtures omit some ids; an omitted id is "this reader did not
     /// record one", never "false", so it is absent here rather than
     /// defaulted.
-    fn noul(&self) -> Vec<(&'static str, bool)> {
+    pub(crate) fn noul(&self) -> Vec<(&'static str, bool)> {
         [
             ("falsifiable", self.falsifiable),
             ("states_observable_outcome", self.states_observable_outcome),
@@ -175,6 +241,12 @@ pub(crate) struct WeaknessFixture {
 }
 
 impl WeaknessFixture {
+    /// [`Self::context`] with the full FR prose PLAT-837's request shape
+    /// names, from [`full_context`].
+    pub(crate) fn context_full(&self) -> FrContext {
+        with_full_prose(self.context(), &self.fixture_id)
+    }
+
     /// The fixture as the lens's own input type: one FR, one AC row.
     pub(crate) fn context(&self) -> FrContext {
         FrContext {
@@ -238,6 +310,11 @@ pub(crate) struct Ac {
 }
 
 impl CoverageFixture {
+    /// [`Self::context`] with the full FR prose, from [`full_context`].
+    pub(crate) fn context_full(&self) -> FrContext {
+        with_full_prose(self.context(), &self.fixture_id)
+    }
+
     /// The fixture as the lens's own input type: one FR, its whole AC set.
     pub(crate) fn context(&self) -> FrContext {
         FrContext {
@@ -440,7 +517,9 @@ fn nearest_level(score: f64) -> Option<u8> {
     if !(-0.5..3.5).contains(&score) {
         return None;
     }
-    u8::try_from(score.round().max(0.0) as i64).ok().map(|level| level.min(3))
+    u8::try_from(score.round().max(0.0) as i64)
+        .ok()
+        .map(|level| level.min(3))
 }
 
 /// Counts over a graded set, split the ways the report needs them.
@@ -641,28 +720,61 @@ pub(crate) fn expected_calibration_error(graded: &[Graded]) -> Option<f64> {
 /// changing the fixture set moves the bar automatically instead of leaving a
 /// stale number that silently stops being a bar at all.
 pub(crate) fn trivial_baseline(graded: &[Graded]) -> (String, f64) {
-    let mut best = (String::from("<none>"), 0.0f64);
-    let labels: Vec<String> = {
-        let mut labels: Vec<String> = graded.iter().map(|row| row.expected.clone()).collect();
-        labels.sort();
-        labels.dedup();
-        labels
-    };
-    for label in labels {
-        let hits = graded
+    // One constant per family, never one across both. The first version of
+    // this function picked a single label over all fifteen rows, which scored
+    // the constant predictor at 9/15 (60%) -- `sound` everywhere, earning
+    // nothing on the coverage rows. But a constant predictor is free to answer
+    // `sound` on a criterion and a fixed level on an FR, and doing so scores
+    // higher. The single-label form understated the bar, in the lens's favour.
+    let mut labels = Vec::new();
+    let mut hits = 0;
+    for family in [false, true] {
+        let rows: Vec<&Graded> = graded
             .iter()
-            .filter(|row| row.expected == label || row.contested.contains(&label))
-            .count();
-        let rate = percent(hits, graded.len());
-        if rate > best.1 {
-            best = (label, rate);
+            .filter(|row| is_coverage(row) == family)
+            .collect();
+        let mut candidates: Vec<&String> = rows.iter().map(|row| &row.expected).collect();
+        candidates.sort();
+        candidates.dedup();
+        let best = candidates
+            .into_iter()
+            .map(|label| {
+                let count = rows
+                    .iter()
+                    .filter(|row| row.expected == *label || row.contested.contains(label))
+                    .count();
+                (label.clone(), count)
+            })
+            .max_by_key(|(_, count)| *count);
+        if let Some((label, count)) = best {
+            labels.push(if family {
+                format!("level {label}")
+            } else {
+                label
+            });
+            hits += count;
         }
     }
-    best
+    let rate = if graded.is_empty() {
+        0.0
+    } else {
+        percent(hits, graded.len())
+    };
+    (labels.join(" + "), rate)
 }
 
-/// Recall over every class that is not `sound`: of the rows a reader marked
-/// as carrying some weakness, the share the lens also flagged as some
+/// Whether a row grades an FR-level coverage fixture rather than a criterion.
+///
+/// Coverage rows record a 0-3 rubric level; `weakness_kind` rows a label.
+/// Keyed off the recorded label's shape because `Graded` carries no family
+/// field, and every coverage label in the corpus is an integer while no
+/// weakness label is.
+fn is_coverage(row: &Graded) -> bool {
+    row.expected.parse::<u8>().is_ok()
+}
+
+/// Recall over every class that is not `sound`: of the criteria a reader
+/// marked as carrying some weakness, the share the lens also flagged as some
 /// weakness.
 ///
 /// Deliberately coarse — it does not require the lens to pick the *same*
@@ -670,16 +782,45 @@ pub(crate) fn trivial_baseline(graded: &[Graded]) -> (String, f64) {
 /// criterion `implementation_coupled` is a mislabel; calling it `sound` is the
 /// failure this whole lens exists to prevent, and the gate has to separate
 /// those two.
+///
+/// Coverage rows are excluded. They never return `sound`, so the first
+/// version of this function counted all four as "found" and inflated recall.
 pub(crate) fn defect_recall(graded: &[Graded]) -> Option<f64> {
     let defects: Vec<&Graded> = graded
         .iter()
+        .filter(|row| !is_coverage(row))
         .filter(|row| row.expected != "sound" && !row.contested.contains(&"sound".to_owned()))
         .collect();
     if defects.is_empty() {
         return None;
     }
-    let found = defects.iter().filter(|row| row.actual_class != "sound").count();
+    let found = defects
+        .iter()
+        .filter(|row| row.actual_class != "sound")
+        .count();
     Some(percent(found, defects.len()))
+}
+
+/// Of the criteria whose primary reading is `sound`, how many the lens also
+/// called `sound`: `(returned sound, expected sound)`.
+///
+/// The mirror of [`defect_recall`]. The first live run returned `sound` zero
+/// times out of five; a lens that never clears a criterion makes every one of
+/// its flags on a sound criterion a false positive, which PLAT-837's M2 names
+/// as the headline cost.
+pub(crate) fn sound_recall(graded: &[Graded]) -> Option<(usize, usize)> {
+    let sound: Vec<&Graded> = graded
+        .iter()
+        .filter(|row| !is_coverage(row) && row.expected == "sound")
+        .collect();
+    if sound.is_empty() {
+        return None;
+    }
+    let cleared = sound
+        .iter()
+        .filter(|row| row.actual_class == "sound")
+        .count();
+    Some((cleared, sound.len()))
 }
 
 /// The share of fixtures whose verdict changed between two runs (M1).
@@ -718,6 +859,35 @@ fn percent(part: usize, whole: usize) -> f64 {
     part / whole * 100.0
 }
 
+/// The per-class precision/recall table, appended to `out`.
+fn write_class_table(out: &mut String, graded: &[Graded]) {
+    let _ = writeln!(
+        out,
+        "\n**Per class** (against the primary reading only; contested rows are \
+         counted in the agreement block above, not here):\n"
+    );
+    let _ = writeln!(
+        out,
+        "| Label | Predicted | Expected | Correct | Precision | Recall | False positives |"
+    );
+    let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- | --- |");
+    for (label, stats) in class_stats(graded) {
+        let rate = |value: Option<f64>| {
+            value.map_or_else(|| "n/a".to_owned(), |value| format!("{value:.1}%"))
+        };
+        let _ = writeln!(
+            out,
+            "| {label} | {} | {} | {} | {} | {} | {} |",
+            stats.predicted,
+            stats.expected,
+            stats.correct,
+            rate(stats.precision()),
+            rate(stats.recall()),
+            stats.false_positives(),
+        );
+    }
+}
+
 /// Renders the per-fixture table and the M2 rollup.
 ///
 /// Every number says what it counts, per this repo's standing reporting rule;
@@ -725,7 +895,10 @@ fn percent(part: usize, whole: usize) -> f64 {
 pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "\n## {title}\n");
-    let _ = writeln!(out, "| Fixture | Tier | Expected | Returned | Verdict | Confidence |");
+    let _ = writeln!(
+        out,
+        "| Fixture | Tier | Expected | Returned | Verdict | Confidence |"
+    );
     let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- |");
     for row in graded {
         let confidence = row
@@ -750,8 +923,15 @@ pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
         .cloned()
         .collect();
 
-    let _ = writeln!(out, "\n**Agreement** (primary + contested, over every graded row):\n");
-    for (label, set) in [("all", graded), ("clean", &clean), ("ambiguous", &ambiguous)] {
+    let _ = writeln!(
+        out,
+        "\n**Agreement** (primary + contested, over every graded row):\n"
+    );
+    for (label, set) in [
+        ("all", graded),
+        ("clean", &clean),
+        ("ambiguous", &ambiguous),
+    ] {
         let tally = tally(set);
         let rate = tally
             .agreement()
@@ -769,28 +949,7 @@ pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
         );
     }
 
-    let _ = writeln!(
-        out,
-        "\n**Per class** (against the primary reading only; contested rows are \
-         counted in the agreement block above, not here):\n"
-    );
-    let _ = writeln!(out, "| Label | Predicted | Expected | Correct | Precision | Recall | False positives |");
-    let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- | --- |");
-    for (label, stats) in class_stats(graded) {
-        let rate = |value: Option<f64>| {
-            value.map_or_else(|| "n/a".to_owned(), |value| format!("{value:.1}%"))
-        };
-        let _ = writeln!(
-            out,
-            "| {label} | {} | {} | {} | {} | {} | {} |",
-            stats.predicted,
-            stats.expected,
-            stats.correct,
-            rate(stats.precision()),
-            rate(stats.recall()),
-            stats.false_positives(),
-        );
-    }
+    write_class_table(&mut out, graded);
 
     let (buckets, without) = calibration(graded);
     let _ = writeln!(out, "\n**Calibration** (M3):\n");
@@ -808,8 +967,10 @@ pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
         out,
         "- {without} row(s) carried no confidence and are excluded from the curve",
     );
-    let ece = expected_calibration_error(graded)
-        .map_or_else(|| "n/a (no row carried a confidence)".to_owned(), |value| format!("{value:.4}"));
+    let ece = expected_calibration_error(graded).map_or_else(
+        || "n/a (no row carried a confidence)".to_owned(),
+        |value| format!("{value:.4}"),
+    );
     let _ = writeln!(out, "- expected calibration error: {ece}");
     let _ = writeln!(out, "\n(total rows graded: {})", all.total());
     out

@@ -2,14 +2,12 @@
 
 Two policies live here and nowhere else.
 
-**The engine is a hard dependency of the semantic rows.** ``quire`` is not
-declared in ``pyproject.toml`` because no index this repository may commit
-against carries the wheel exposing ``extract_semantic``
-(``agent-ix/quire-rs#392`` tracks publishing it). The wheel is provisioned by
-``make dev-quire``. When it is absent, or too old, or missing the capability,
-the semantic tests **fail** and say how to fix it. They never skip, because a
-skipped row is not coverage — and a clean runner, which is exactly where a
-regression would first show, is exactly where a skip would fire.
+**The engine is a hard dependency of the semantic rows.** ``quire`` is a dev
+dependency resolved from ``internal-pypi`` (``poetry install``). When it is
+absent, or too old, or missing the capability, the semantic tests **fail**
+and say how to fix it. They never skip, because a skipped row is not
+coverage — and a clean runner, which is exactly where a regression would
+first show, is exactly where a skip would fire.
 
 **The grammar resolves from the committed tree.** The emitted schemas are read
 from ``{{ cookiecutter.package_name }}/schemas/`` and every ``$ref`` to
@@ -53,15 +51,17 @@ ENGINE_FLOOR = "{{ cookiecutter.quire_engine_floor }}"
 
 QUIRE_MISSING = (
     "the Quire wheel exposing `extract_semantic` is not installed in this "
-    "environment. Run `make dev-quire` (agent-ix/quire-rs#392 tracks publishing "
-    f"{ENGINE_FLOOR} to an index this repository may depend on). The semantic "
-    "tests fail rather than skip, because a skipped row is not coverage."
+    "environment. Run `poetry install` (quire is a dev dependency resolved "
+    "from internal-pypi). The semantic tests fail rather than skip, because a "
+    "skipped row is not coverage."
 )
 
 SEMANTIC_CORE_MISSING = (
     "@agent-ix/semantic-core is not installed, so `$ref`s to the grammar cannot "
     "resolve and a record test would validate against nothing. Run "
-    "`make install`. `@agent-ix` resolves from the user-level npm "
+    "`make bootstrap` (a fresh clone has no committed `package-lock.json` yet, "
+    "so `make semantic-install`'s `npm ci` needs `make install`'s `npm install` "
+    "to produce one first). `@agent-ix` resolves from the user-level npm "
     "configuration; this repository ships no .npmrc."
 )
 
@@ -144,7 +144,7 @@ def require_quire():
             f"the installed quire is {installed}, older than this module's declared "
             f"floor {ENGINE_FLOOR}. A capability gap in an old engine reads as a "
             "module defect, so this is a failure rather than a warning. Run "
-            "`make dev-quire`."
+            "`poetry install` (or `poetry update quire` to move past the floor)."
         )
     return quire
 

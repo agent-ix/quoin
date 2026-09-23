@@ -128,18 +128,30 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
     Some(match code {
         // The caller's own document: a candidate that does not satisfy the
         // stored envelope, an id that does not name a file, a definition
-        // version no active plan governs, an unsafe raw-evidence reference, or
-        // a value that is not a date-time.
+        // version no active plan governs, an unsafe raw-evidence reference or
+        // artifact name, a value that is not a date-time, or an observation
+        // whose population is below, or does not state, its plan's minimum or
+        // repetition count, or states either malformed, or an artifacts map
+        // that omits a file the plan protects (PLAT-975).
         Code::CollectionInvalid
         | Code::CollectionIdUnsafe
         | Code::DefinitionMismatch
         | Code::RawEvidencePathUnsafe
-        | Code::DateTimeInvalid => CoreErrorCode::BadRequest,
+        | Code::ArtifactNameUnsafe
+        | Code::DateTimeInvalid
+        | Code::PopulationBelowMinimum
+        | Code::PopulationUnstated
+        | Code::RepetitionsShort
+        | Code::PopulationMalformed
+        | Code::ApparatusUndeclared => CoreErrorCode::BadRequest,
 
         // The repository declined: retained bytes that differ, a document that
         // cannot be read back, a plan or profile that is present and
         // unacceptable, no active plan at all, a raw-evidence file that
-        // disagrees with its digest or is absent, unreadable YAML, and every
+        // disagrees with its digest or is absent, a named artifact the
+        // repository holds in a form that cannot be digested, unreadable YAML,
+        // a protected-apparatus entry that names no file, a symlink, an
+        // undigestable file or too many files (PLAT-975), and every
         // filesystem and store refusal. Fixing any of these means changing the
         // repository, not the request.
         Code::CollectionIdCollision
@@ -150,6 +162,11 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         | Code::GoverningPlanAbsent
         | Code::RawEvidenceMismatch
         | Code::RawEvidenceUnavailable
+        | Code::ArtifactUnreadable
+        | Code::ApparatusUnresolved
+        | Code::ApparatusSymlink
+        | Code::ApparatusUnreadable
+        | Code::ApparatusTooLarge
         | Code::Yaml
         | Code::Io
         | Code::Store => CoreErrorCode::Refused,
@@ -239,7 +256,7 @@ mod tests {
     fn the_measurement_mapping_covers_every_code() {
         assert_eq!(
             MeasurementErrorCode::ALL.len(),
-            16,
+            27,
             "quoin-measurement gained or lost an error code; map it deliberately"
         );
 
@@ -248,7 +265,13 @@ mod tests {
             Code::CollectionIdUnsafe,
             Code::DefinitionMismatch,
             Code::RawEvidencePathUnsafe,
+            Code::ArtifactNameUnsafe,
             Code::DateTimeInvalid,
+            Code::PopulationBelowMinimum,
+            Code::PopulationUnstated,
+            Code::RepetitionsShort,
+            Code::PopulationMalformed,
+            Code::ApparatusUndeclared,
         ];
         let refused = [
             Code::CollectionIdCollision,
@@ -259,6 +282,11 @@ mod tests {
             Code::GoverningPlanAbsent,
             Code::RawEvidenceMismatch,
             Code::RawEvidenceUnavailable,
+            Code::ArtifactUnreadable,
+            Code::ApparatusUnresolved,
+            Code::ApparatusSymlink,
+            Code::ApparatusUnreadable,
+            Code::ApparatusTooLarge,
             Code::Yaml,
             Code::Io,
             Code::Store,

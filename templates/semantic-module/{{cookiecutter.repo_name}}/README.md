@@ -49,17 +49,20 @@ emitted one, and this file will not pretend otherwise.
 
 ```bash
 make bootstrap    # install the pinned toolchain, emit schemas/ and the manifest digests
-make dev-quire    # install the Quire wheel the semantic tests need
 make gate         # spec validation, lint, schema drift check, tests
 ```
 
-`make gate` is the green bar. It **fails** without the Quire wheel exposing
-`extract_semantic` and names `make dev-quire` in the failure. It does not skip:
-a skipped row is not coverage, and the environment where a skip fires is exactly
-the clean runner where a regression would first show.
-`agent-ix/quire-rs#392` tracks publishing that wheel to an index this repository
-may depend on; until it closes, the engine is provisioned out of band and is
-deliberately absent from `pyproject.toml`.
+`make gate` is the green bar. It **fails**, rather than skipping, whenever a
+tool it needs is absent — the failure names the install command in place of
+turning a semantic row green in the one environment where it never ran.
+`poetry install` resolves the Quire engine exposing `extract_semantic` from
+the `internal-pypi` Poetry source (see `pyproject.toml`); `make semantic-install`
+resolves the pinned TypeSpec toolchain and `@agent-ix/semantic-core`.
+
+**Commit `package-lock.json` after the first `make bootstrap`, before the
+first CI run.** `make bootstrap` runs `npm install`, which writes the
+lockfile from `package.json`; CI runs `make semantic-install`, which is
+`npm ci` and requires that lockfile to already be committed.
 
 `toolchain.yaml` records every external command this repository invokes and the
 version it must be at or above.
@@ -70,7 +73,7 @@ version it must be at or above.
 | --- | --- |
 | `make bootstrap` | Install dependencies, then emit schemas and digests |
 | `make install` | Python and Node dependencies |
-| `make dev-quire` | Install the Quire wheel the semantic tests need |
+| `make semantic-install` | npm ci for the pinned TypeSpec toolchain and semantic-core |
 | `make gate` | Validate, lint, schema drift check, tests |
 | `make validate` | `quire validate` over `spec/` |
 | `make schemas` | Emit `{{ cookiecutter.package_name }}/schemas/` from `typespec/main.tsp` |

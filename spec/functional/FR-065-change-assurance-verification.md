@@ -162,7 +162,10 @@ When no invalid check exists, any incomplete check SHALL dominate `valid`.
         "evidence_vacuous",
         "evidence_unrelated",
         "audit_finding",
-        "audit_not_evaluated"
+        "audit_not_evaluated",
+        "apparatus_touched",
+        "negative_control_uncaught",
+        "diff_missing"
       ]
     },
     "check": {
@@ -274,6 +277,10 @@ An unavailable or not-computed result, missing evidence, or FR-032
 `not-evaluated` state SHALL be incomplete. The receipt SHALL retain every exact
 FR-032 finding kind and obligation id rather than collapse it into the mapped
 reason.
+
+The `apparatus_touched` (invalid), `diff_missing` (incomplete) and
+`negative_control_uncaught` (incomplete) reasons are defined by FR-111, which
+judges a retained diff against a linked measurement plan's protected apparatus.
 
 The review check SHALL verify the complete ix-flow event chain under ix-flow
 FR-013 and require exactly one matching decision event. `approved` permits a

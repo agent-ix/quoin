@@ -551,7 +551,7 @@ mod tests {
                 violations: vec!["<root>: must have required property 'format'".into()],
             },
             Error::VendoredSchemaInvalid {
-                path: PathBuf::from(crate::schema::VENDORED_PATH),
+                path: PathBuf::from(crate::schema::SOURCE_PATH),
                 detail: "unknown keyword".into(),
             },
             Error::RepositoryEmpty,

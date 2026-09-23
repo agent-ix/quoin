@@ -2,18 +2,26 @@
 
 ## Commands
 
+`quoin` is a native Rust CLI (`rust/crates/quoin-cli`, binary name `quoin`).
+There is no Node/JavaScript build here — no root `package.json`, no `jest`,
+no `pnpm`. `src/semantic/` holds JSON schemas the Rust workspace reads, not a
+second build tree.
+
 ```bash
-make build                      # build library
-make test                       # run jest
-make lint                       # eslint + prettier check
-make format                     # prettier format
-make update-lock                # update pnpm-lock.yaml
-make add-packages p=<name>      # add runtime dependency
-make add-dev-packages p=<name>  # add dev dependency
-make use-local p=<name>         # switch dep to local package
-make use-upstream p=<name>      # switch dep back to upstream
-make check-version              # every version surface agrees; a clean tag reports itself
+make build   # cargo build --workspace --locked
+make test    # make rust-gate: fmt --check, clippy -D warnings, cargo deny, cargo test
+make lint    # cargo fmt --all --check + cargo clippy --all-targets --all-features -D warnings
+make format  # cargo fmt --all
+make clean   # cargo clean
 ```
+
+See `Makefile` for the exact targets; `rust-build`, `rust-lint`, `rust-deny`
+and `rust-test` are the granular pieces `build`/`test` compose. CI
+(`.github/workflows/build-test.yml`) runs `make rust-lint`, `make rust-build`
+and `make rust-test` directly, and releases (`.github/workflows/native-release.yml`)
+build with `cargo build --locked --release -p quoin-cli --bin quoin` and ship
+the resulting binary as a GitHub Release archive — this repo's own workflows
+carry no npm publish step.
 
 ## Agent worktrees
 
@@ -58,36 +66,45 @@ as quoin#184, where `mkdtempSync` fixtures were created with no teardown path.
 ## Dogfooding an unreleased quoin
 
 **There is no local-publish path, and that is a deliberate choice rather than
-something to discover (quoin#196).** `ts-build-chain` classifies quoin as an app
-(it ships a `bin`, not a library entry), so a single-node chain runs green and
-publishes nothing:
-
-```
-$ ts-build-chain start --skip-registry-audit quoin quoin
-✔ Build
-✔ Test
-❯ Publish
-↓ Publish [SKIPPED: Not a library (no publish target)]
-```
+something to discover (quoin#196).** Releases are cut by `native-release.yml`
+on `workflow_dispatch` against an existing tag; there is no local equivalent.
 
 To run unreleased `main`:
 
 ```bash
 make build
-npm i -g .        # or: node bin/quoin.js <command>
+./rust/target/debug/quoin <command>          # debug build, from the repo root
+# or: cargo run --manifest-path rust/Cargo.toml -p quoin-cli -- <command>
 ```
 
-The only path to a registry is a **git tag plus CI**. That matters when `main`
-carries unreleased fixes: npm serves the last tag, so anyone installing the
-normal way gets a build without them. Check what you are actually running —
-`quoin --version` reports the build-time `git describe`, so a
-`-<n>-g<sha>` suffix means the binary is ahead of its tag.
+A release-profile binary, matching what `native-release.yml` ships, is
+`cargo build --manifest-path rust/Cargo.toml --locked --release -p quoin-cli`
+(binary at `rust/target/release/quoin`).
+
+The only path to a published release archive is a **git tag plus CI**. That
+matters when `main` carries unreleased fixes: a downloaded release archive
+reflects the last tag, so anyone installing that way gets a build without
+them. Check what you are actually running — `quoin --version` reports the
+build-time `git describe`, so a `-<n>-g<sha>` suffix means the binary is ahead
+of its tag.
 
 **Version provenance is load-bearing.** Every SpecReview records the tool
 version it measured with, and three reviews in `agent-ix/filament-ide-rs` cite
-numbers from a binary whose self-reported version was wrong. `make check-version`
-asserts that `--version` and `--help` agree and that a clean tag reports itself;
-run it before tagging.
+numbers from a binary whose self-reported version was wrong. Check
+`--version`/`--help` agreement and a clean tag reporting itself before tagging.
+
+**`verificationStack.buildProfile: "release"` in a measurement record is a
+self-declared attestation, not something quoin checks about its own binary.**
+`quoin-measurement`'s intake validator (`rust/crates/quoin-measurement/src/validate/stack.rs`,
+`src/validate/mod.rs`) only checks that the field, if present, is the string
+`"debug"` or `"release"` (and requires `"release"` for a new collection) — it
+never inspects how the `quoin` binary that produced the record was itself
+compiled. Running a debug build of quoin does not stop you from writing
+`buildProfile: "release"` into a record, and running a release build does not
+set the field for you. This is why one evaluation lane got through cleanly and
+another concluded "release" was unreachable from a debug-built test run: both
+readings were about the *content* of a JSON field, never about the *build
+profile of the tool measuring it*.
 
 ## Rust
 
@@ -97,9 +114,12 @@ one stage at a time, and FR-101 requires both trees to be exercised at one
 candidate revision, which two repositories cannot do.
 
 ```bash
-make rust-gate       # fmt --check, clippy -D warnings, cargo deny, tests, difftest
-make rust-difftest   # the retained TypeScript vs quoin-core, one request, one verdict
+make rust-gate       # fmt --check, clippy -D warnings, cargo deny, cargo test
 ```
+
+Difftest-style comparisons against canonical JSON bytes live inside the Rust
+test suite itself (e.g. `quoin-assurance`'s golden cases) — there is no
+separate `rust-difftest` make target.
 
 **Read `.claude/skills/rust-style/SKILL.md` before writing or reviewing
 anything under `rust/`.** It is the repo-level idiom doc and it outranks the

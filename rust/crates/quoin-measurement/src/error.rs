@@ -70,11 +70,52 @@ pub enum MeasurementErrorCode {
     Io,
     /// A refusal raised by `quoin-store` and passed through unchanged.
     Store,
+    /// A `verificationStack.artifacts` name is not a safe repository-relative
+    /// path, so intake cannot tell whether it names a local file (PLAT-969).
+    ArtifactNameUnsafe,
+    /// A `verificationStack.artifacts` name resolves to an entry under the
+    /// repository that cannot be digested — a directory, a symlink, an
+    /// unreadable or oversized file — so its submitted digest cannot be
+    /// checked (PLAT-969).
+    ArtifactUnreadable,
+    /// A measured observation's `population.examined` is below its plan's
+    /// `statistical_design.minimum_population` (PLAT-960).
+    PopulationBelowMinimum,
+    /// A measured observation states no numeric `population.examined`, but
+    /// its plan declares a `statistical_design.minimum_population`, or states
+    /// no `population.repetitions` while its plan requires more than one, so
+    /// intake cannot tell whether the plan was met (PLAT-960).
+    PopulationUnstated,
+    /// A measured observation's `population.repetitions` is below its plan's
+    /// `statistical_design.repetitions` (PLAT-960).
+    RepetitionsShort,
+    /// A stated `population.repetitions` is not a whole number of at least 1,
+    /// or a stated `population.examined` under a plan with a minimum is not a
+    /// non-negative whole number (PLAT-960).
+    PopulationMalformed,
+    /// A governing plan's `protected_apparatus` entry names no file: nothing
+    /// exists at a file entry, it names a directory, or a `<directory>/**`
+    /// entry's directory is absent or holds no file (PLAT-975).
+    ApparatusUnresolved,
+    /// A protected-apparatus entry names, passes through, or finds under its
+    /// directory a symlink, which is refused without being followed
+    /// (PLAT-975, engineering-assurance FR-024).
+    ApparatusSymlink,
+    /// A protected-apparatus file exists but cannot be digested — unreadable,
+    /// oversized, or not a regular file (PLAT-975).
+    ApparatusUnreadable,
+    /// A resolved protected-apparatus file is absent from the candidate's
+    /// `verificationStack.artifacts`: the producer did not declare a file
+    /// that produces the plan's number (PLAT-975).
+    ApparatusUndeclared,
+    /// A plan's protected apparatus resolves to more files than intake
+    /// records (PLAT-975).
+    ApparatusTooLarge,
 }
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 27] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
@@ -91,6 +132,17 @@ impl MeasurementErrorCode {
         Self::Yaml,
         Self::Io,
         Self::Store,
+        Self::ArtifactNameUnsafe,
+        Self::ArtifactUnreadable,
+        Self::PopulationBelowMinimum,
+        Self::PopulationUnstated,
+        Self::RepetitionsShort,
+        Self::PopulationMalformed,
+        Self::ApparatusUnresolved,
+        Self::ApparatusSymlink,
+        Self::ApparatusUnreadable,
+        Self::ApparatusUndeclared,
+        Self::ApparatusTooLarge,
     ];
 
     /// The stable wire spelling of this code.
@@ -113,6 +165,17 @@ impl MeasurementErrorCode {
             Self::Yaml => "QM-YAML",
             Self::Io => "QM-IO",
             Self::Store => "QM-STORE",
+            Self::ArtifactNameUnsafe => "QM-ARTIFACT-NAME-UNSAFE",
+            Self::ArtifactUnreadable => "QM-ARTIFACT-UNREADABLE",
+            Self::PopulationBelowMinimum => "QM-POPULATION-BELOW-MINIMUM",
+            Self::PopulationUnstated => "QM-POPULATION-UNSTATED",
+            Self::RepetitionsShort => "QM-REPETITIONS-SHORT",
+            Self::PopulationMalformed => "QM-POPULATION-MALFORMED",
+            Self::ApparatusUnresolved => "QM-APPARATUS-UNRESOLVED",
+            Self::ApparatusSymlink => "QM-APPARATUS-SYMLINK",
+            Self::ApparatusUnreadable => "QM-APPARATUS-UNREADABLE",
+            Self::ApparatusUndeclared => "QM-APPARATUS-UNDECLARED",
+            Self::ApparatusTooLarge => "QM-APPARATUS-TOO-LARGE",
         }
     }
 

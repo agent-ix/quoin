@@ -99,19 +99,30 @@ def test_check_mode_is_red_when_an_emitted_byte_changes(repo_root, schemas_dir):
 
 
 @pytest.mark.trace("FR-002-AC-7")
-def test_the_package_metadata_declares_no_engine_dependency(repo_root):
+def test_the_package_metadata_declares_the_engine_only_as_a_dev_dependency(repo_root):
     pyproject = (repo_root / "pyproject.toml").read_text()
-    section = pyproject.split("[tool.poetry.dependencies]", 1)[1].split("[", 1)[0]
-    # Comments are not declarations. The section carries one explaining WHY the
-    # engine is absent, and a naive substring search would read that explanation
-    # as the thing it warns about.
-    declarations = "\n".join(
-        line for line in section.splitlines() if not line.strip().startswith("#")
+    runtime_section = pyproject.split("[tool.poetry.dependencies]", 1)[1].split(
+        "[", 1
+    )[0]
+    dev_section = pyproject.split("[tool.poetry.group.dev.dependencies]", 1)[1].split(
+        "[", 1
+    )[0]
+    assert "quire" not in runtime_section, (
+        "the engine is declared as a runtime dependency. A consumer installing "
+        "this module should not also pull in the toolchain that generates it — "
+        "quire belongs in the dev dependency group, never here."
     )
-    assert "quire" not in declarations, (
-        "the engine is declared as a dependency. No index this repository may "
-        "depend on serves the required wheel, so declaring it makes "
-        "`poetry install` fail everywhere."
+    quire_lines = [
+        line for line in dev_section.splitlines() if line.strip().startswith("quire ")
+    ]
+    assert len(quire_lines) == 1, (
+        "the engine is not declared as a dev dependency. It should be resolved "
+        "from the `internal-pypi` Poetry source (see pyproject.toml's "
+        "[[tool.poetry.source]])."
+    )
+    assert 'source = "internal-pypi"' in quire_lines[0], (
+        "the quire dev dependency names no `internal-pypi` source, so Poetry "
+        "could resolve the unrelated `quire` package on public PyPI."
     )
 
 

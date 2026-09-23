@@ -48,7 +48,7 @@ baseline, and — where the source predates the contract — its
 
 - **Given** a rendered repository in an environment where the Quire wheel exposing `extract_semantic` is not installed
 - **When** the maintainer runs the suite
-- **Then** the semantic rows fail, naming `make dev-quire` and the tracking issue, and no row reports as skipped
+- **Then** the semantic rows fail, naming `poetry install`, and no row reports as skipped
 
 ### US-021-EX-3: A skeleton says the same thing twice, and a negative fixture says it once
 

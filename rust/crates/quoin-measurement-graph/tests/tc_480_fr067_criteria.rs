@@ -94,6 +94,12 @@ fn plan() -> MeasurementPlan {
         path: "spec/assurance/10-graph.md".to_owned(),
         owner: Some("assurance-team".to_owned()),
         action: Some("repair retained evidence".to_owned()),
+        preregistration: None,
+        ground_truth_kind: None,
+        statistical_design: None,
+        objective: None,
+        protected_apparatus: None,
+        negative_controls: None,
     }
 }
 
@@ -966,6 +972,12 @@ fn adapted_producer_evidence() -> (MeasurementCollection, MeasurementPlan, Strin
         path: "spec/assurance/MP-001-graph-quality.md".to_owned(),
         owner: Some("assurance-team".to_owned()),
         action: Some("repair retained evidence".to_owned()),
+        preregistration: None,
+        ground_truth_kind: None,
+        statistical_design: None,
+        objective: None,
+        protected_apparatus: None,
+        negative_controls: None,
     };
     let scorer_bytes: Vec<u8> = input["scorerBytes"]
         .as_array()

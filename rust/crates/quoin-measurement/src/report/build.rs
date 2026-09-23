@@ -28,13 +28,15 @@ use crate::operational::read::read_operational_records;
 use crate::operational::record::OperationalEvidenceRecord;
 use crate::operational::report::{OperationalReportEntry, build_operational_report};
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
+use crate::report::vanished::{VanishedSlice, vanished_slices};
+use crate::report::verdict::{StageVerdict, stage_verdict};
 use crate::source::MeasurementSource;
 use crate::store::paths::measurement_path;
 use crate::store::read::read_measurement_collections;
 use crate::types::collection::MeasurementCollection;
 use crate::types::ids::CollectionId;
 use crate::types::observation::MeasurementObservation;
-use crate::types::plan::{LifecycleStatus, MeasurementPlan, MeasurementStage};
+use crate::types::plan::{GroundTruthKind, LifecycleStatus, MeasurementPlan, MeasurementStage};
 
 /// The collection members a report row quotes, and where the record lives.
 ///
@@ -57,6 +59,12 @@ pub struct CollectionSummary {
     pub corpus_revision: Option<String>,
     /// The collection's path, as [`measurement_path`] spells it.
     pub path: String,
+    /// `verificationStack.artifacts` names the collection states with no
+    /// local filesystem entry, sorted; empty when the collection states none
+    /// or carries no verification stack at all (PLAT-969's ruling — a label
+    /// is admitted, and the report says so next to the collection's
+    /// provenance rather than staying silent about it).
+    pub unverified_artifacts: Vec<String>,
 }
 
 /// One row of the "what this repository measures" table.
@@ -75,10 +83,17 @@ pub struct CurrentRow {
     pub plan_definition_version: String,
     /// How far along the measurement ladder the plan sits.
     pub stage: MeasurementStage,
+    /// How the governing plan's ground truth was produced, when it says
+    /// (PLAT-960).
+    pub plan_ground_truth_kind: Option<GroundTruthKind>,
     /// The observation, when one was computed.
     pub observation: Option<MeasurementObservation>,
     /// The collection it was computed in, when there is one.
     pub collection: Option<CollectionSummary>,
+    /// What the plan's stage and `objective` say about this row, when the
+    /// plan states an objective at the `ratchet` or `target` stage
+    /// (PLAT-958).
+    pub stage_verdict: Option<StageVerdict>,
 }
 
 /// Everything the per-repository views render.
@@ -90,6 +105,9 @@ pub struct MeasurementReport {
     pub plans: Vec<MeasurementPlan>,
     /// One row per active plan and computed observation.
     pub current: Vec<CurrentRow>,
+    /// Slices a `ratchet` plan measured earlier that its newest collection
+    /// dropped (PLAT-958); empty unless a plan carries a ratchet objective.
+    pub vanished_slices: Vec<VanishedSlice>,
     /// The newest stated `bounds.gap_count`, when any collection states one.
     pub corpus_gaps: Option<f64>,
     /// The intervention experiments, projected.
@@ -150,13 +168,22 @@ pub fn build_measurement_report_from(
         .collect();
 
     let mut current = Vec::new();
+    let mut vanished = Vec::new();
     for plan in &plans {
         // `[...collections].reverse().find(…)` — the newest collection that
         // computed this metric at all, not the newest collection.
-        let collection = collections
+        let newest = collections
             .iter()
+            .enumerate()
             .rev()
-            .find(|candidate| observes(candidate, plan.metric.as_str()));
+            .find(|(_, candidate)| observes(candidate, plan.metric.as_str()));
+        let collection = newest.map(|(_, found)| found);
+        // A ratchet holds against collections older than the one the row
+        // quotes, never against that collection itself.
+        let earlier = newest
+            .and_then(|(index, _)| collections.get(..index))
+            .unwrap_or_default();
+        vanished.extend(vanished_slices(plan, collection, earlier));
         let summary = collection
             .map(|found| summary_of(repo, found))
             .transpose()?;
@@ -177,8 +204,10 @@ pub fn build_measurement_report_from(
             plan_path: plan.path.clone(),
             plan_definition_version: plan.definition_version.as_str().to_owned(),
             stage: plan.stage,
+            plan_ground_truth_kind: plan.ground_truth_kind,
             observation: observation.cloned(),
             collection: summary.clone(),
+            stage_verdict: stage_verdict(plan, observation, collection, earlier),
         };
         if observations.is_empty() {
             current.push(row(None));
@@ -190,6 +219,7 @@ pub fn build_measurement_report_from(
     Ok(MeasurementReport {
         plans,
         current,
+        vanished_slices: vanished,
         corpus_gaps: latest_gap_count(collections),
         interventions: build_intervention_report(interventions),
         operational: build_operational_report(operational),
@@ -219,6 +249,11 @@ fn summary_of(
         source_revision: collection.source_revision.as_str().to_owned(),
         corpus_revision: collection.corpus_revision.clone(),
         path: measurement_path(repo, &id).to_string_lossy().into_owned(),
+        unverified_artifacts: collection
+            .verification_stack
+            .as_ref()
+            .map(|stack| stack.unverified_artifacts.clone())
+            .unwrap_or_default(),
     })
 }
 

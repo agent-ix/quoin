@@ -26,7 +26,6 @@ mod module;
 mod plugin;
 mod report;
 mod semantic;
-mod sync;
 mod update;
 mod validate;
 mod write;
@@ -231,9 +230,6 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("semantic", semantic)) = matches.subcommand() {
         return semantic::run(semantic);
     }
-    if let Some(("sync", sync)) = matches.subcommand() {
-        return sync::run(sync);
-    }
     if let Some(("validate", validate)) = matches.subcommand() {
         return validate::run(validate);
     }
@@ -354,7 +350,6 @@ fn command() -> Command {
         .subcommand(plugin::command())
         .subcommand(report::command())
         .subcommand(semantic::command())
-        .subcommand(sync::command())
         .subcommand(validate::command())
         .subcommand(write::command())
         .subcommand(update::command())
@@ -552,8 +547,6 @@ mod tests {
     /// topics.  The Stage 8 cutover needs a reviewable answer to "which
     /// command paths does the native parser own?" before individual argument,
     /// rendering, and exit-status fixtures can make that answer executable.
-    /// `sync` is included because #522's native compatibility slice is now
-    /// linked to the Rust plan-sync engine and has its own grammar tests.
     const NATIVE_OWNED_ROUTES: &[&str] = &[
         "quoin advise",
         "quoin assurance",
@@ -596,6 +589,7 @@ mod tests {
         "quoin measurement intervention",
         "quoin measurement operational-release",
         "quoin measurement record",
+        "quoin measurement verify",
         "quoin module",
         "quoin module ensure-defaults",
         "quoin module install",
@@ -610,7 +604,6 @@ mod tests {
         "quoin review",
         "quoin semantic",
         "quoin semantic sweep",
-        "quoin sync",
         "quoin to-plan",
         "quoin update",
         "quoin validate",
@@ -819,7 +812,6 @@ mod tests {
                 "report",
                 "review",
                 "semantic",
-                "sync",
                 "to-plan",
                 "update",
                 "validate",
@@ -846,7 +838,7 @@ mod tests {
         assert_eq!(error.exit, EXIT_UNKNOWN_COMMAND);
         assert_eq!(
             error.message,
-            " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+            " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
         );
     }
 

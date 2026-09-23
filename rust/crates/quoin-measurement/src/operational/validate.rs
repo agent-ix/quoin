@@ -17,7 +17,7 @@
 //!
 //! # One schema, and it is the vendored one
 //!
-//! The schema document is [`VendoredSchema::OperationalEvidenceV1`], compiled
+//! The schema document is [`MeasurementSchema::OperationalEvidenceV1`], compiled
 //! with this crate's one RFC 3339 grammar registered as `format: "date-time"` —
 //! the same wiring the retained `ajv.addFormat` does at
 //! `operational.ts:31-34`. It is not re-vendored here, and the
@@ -26,7 +26,7 @@
 
 use std::sync::OnceLock;
 
-use quoin_jsonschema::{VendoredSchema, VendoredValidator};
+use quoin_jsonschema::{MeasurementSchema, MeasurementValidator};
 use serde_json::Value;
 
 use crate::common::schema::{findings as schema_findings, sorted_unique};
@@ -94,11 +94,11 @@ impl ValidOperationalRecord {
 /// A committed schema that does not compile is a defect in this repository,
 /// never ordinary data, so it is reported as a refusal naming the schema rather
 /// than panicking in a library.
-fn validator() -> Result<&'static VendoredValidator, InterventionIntakeError> {
-    static COMPILED: OnceLock<Result<VendoredValidator, String>> = OnceLock::new();
+fn validator() -> Result<&'static MeasurementValidator, InterventionIntakeError> {
+    static COMPILED: OnceLock<Result<MeasurementValidator, String>> = OnceLock::new();
     COMPILED
         .get_or_init(|| {
-            VendoredSchema::OperationalEvidenceV1
+            MeasurementSchema::OperationalEvidenceV1
                 .compile(|text| Rfc3339DateTime::parse(text).is_ok())
                 .map_err(|error| error.to_string())
         })

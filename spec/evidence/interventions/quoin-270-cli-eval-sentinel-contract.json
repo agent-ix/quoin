@@ -129,6 +129,7 @@
   "record_type": "intervention_experiment",
   "schema_version": 1,
   "status": "completed",
+  "strength": "tested",
   "subject": {
     "id": "agent-ix/cli-agent-evals",
     "revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"

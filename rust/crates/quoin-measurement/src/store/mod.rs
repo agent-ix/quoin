@@ -15,10 +15,12 @@
 //! retained code can lose a published collection to a crash between `link` and
 //! the directory entry reaching disk, and the Rust path cannot.
 
+mod apparatus;
 pub mod paths;
 pub mod publish;
 pub mod read;
 
+pub use apparatus::MAX_PROTECTED_FILES;
 pub use paths::{intervention_path, interventions_root, measurement_path, measurements_root};
 pub use publish::write_measurement_collection;
 pub use read::{

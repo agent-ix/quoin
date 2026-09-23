@@ -4,15 +4,26 @@
 //! The semantic-module contract quoin was written against (FR-070, FR-073,
 //! FR-075; issue #293).
 //!
-//! Port of `src/semantic/contract.ts`. Three families of schema are vendored
-//! under `src/semantic/schemas/`, each with recorded provenance, because there
-//! is no dependency edge along which the files could travel and quoin performs
-//! no network read on a command path.
+//! Port of `src/semantic/contract.ts`. One family of schema is quoin's own
+//! (`sweep-report.schema.json`); the rest are `agent-ix/filament-core-data`'s
+//! module-manifest, package-manifest, common and semantic-core schemas --
+//! real dependency edges, not copies, resolved through the published npm
+//! packages `@agent-ix/semantic-schema` and `@agent-ix/semantic-core` in this
+//! repository's own `node_modules` (PLAT-887 de-vendoring). `build.rs` embeds
+//! the installed packages' bytes into the compiled binary at their own paths,
+//! under the internal names the path helpers below expect, so a release built
+//! from this crate stays self-contained with no runtime dependency on
+//! `node_modules` existing.
 //!
-//! The vendored tree is **not duplicated into this crate**. It stays where the
-//! TypeScript keeps it, and [`schema_dir`] locates it, so the two
-//! implementations cannot drift onto different bytes during the coexistence
-//! window NFR-024 bounds.
+//! [`schema_dir`] and its siblings locate the *embedded* tree, materialized
+//! at runtime by [`crate::materialize_embedded_contract`] -- not a directory
+//! this crate reads off disk directly. `SEMANTIC_CONTRACT`'s `sha256` and
+//! `bundle_digest` fields are compiled assertions: every test in this crate
+//! that reads a schema re-derives its digest from the live embedded bytes and
+//! compares it here -- that is the actual gate. `source_revision` is not
+//! re-derived the same way -- it names the published npm tarball's shasum the
+//! bytes were embedded from, for humans reading a diagnostic, and the tests
+//! only check its shape.
 
 use std::path::{Path, PathBuf};
 
@@ -21,12 +32,16 @@ use sha2::{Digest, Sha256};
 use crate::error::SemanticError;
 use crate::ids::{ContractVersion, SemanticCoreVersion};
 
-/// A vendored file's origin: repository, exact commit, path there, and bytes.
+/// A vendored file's origin: repository, identifying revision, path there,
+/// and bytes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VendoredSource {
     /// Owning repository, `<org>/<repo>`.
     pub repository: &'static str,
-    /// The exact commit the bytes were taken from.
+    /// Informational only -- the compiled assertion is `sha256`. A 40-hex
+    /// identifier for the source the bytes came from: the published npm
+    /// tarball's SHA-1 shasum where one exists, or 40 zeros as an explicit
+    /// placeholder while the source is not yet published (see `build.rs`).
     pub source_revision: &'static str,
     /// The path within that repository.
     pub source_path: &'static str,
@@ -39,7 +54,8 @@ pub struct VendoredSource {
 pub struct VendoredBundle {
     /// Owning repository, `<org>/<repo>`.
     pub repository: &'static str,
-    /// The exact commit the bytes were taken from.
+    /// Informational only -- the compiled assertion is `bundle_digest`. The
+    /// published npm tarball's SHA-1 shasum.
     pub source_revision: &'static str,
     /// The path within that repository.
     pub source_path: &'static str,
@@ -85,7 +101,7 @@ impl SemanticContract {
 /// The pinned contract. Every hash is asserted by the crate's tests.
 pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
     contract_version: "1.0.0",
-    semantic_core_versions: &["0.1.0"],
+    semantic_core_versions: &["0.3.0"],
     semantic_keys: &[
         "contract_version",
         "semantic_core",
@@ -98,28 +114,31 @@ pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
         "legacy_forms",
         "sweep_report",
     ],
+    // Published by `agent-ix/filament-core-data` as `@agent-ix/semantic-schema`
+    // (PLAT-887 de-vendoring). `source_revision` is that npm tarball's SHA-1
+    // shasum, informational only -- `sha256` is the compiled assertion.
     module_manifest_schema: VendoredSource {
-        repository: "agent-ix/filament-core-service",
-        source_revision: "a77f31efc757f3578ad80d8c7e619897aa3b2513",
-        source_path: "filament_core_service/schemas/module-manifest.schema.json",
-        sha256: "sha256:69cf9738600e7d8daa45ed5cd7231b17ca8dc58d068bd36af9b0d2c9b69dcbbc",
+        repository: "agent-ix/filament-core-data",
+        source_revision: "ede0d3d815c5d43c8b516362c9245365421291ae",
+        source_path: "schema/semantic/v1/module-manifest.schema.json",
+        sha256: "sha256:1a00f32afd03b53caafc90cb2db388b65bc36b6a4fe3faab16560d1afaffd6c5",
     },
     semantic_core: VendoredBundle {
         repository: "agent-ix/filament-core-data",
-        source_revision: "d48b8da7ae5e40b8b3d465d45b2bd3e24b994dbb",
+        source_revision: "bfeb9ba3a7381d08f02f96b2745859f5acdb3506",
         source_path: "packages/semantic-core/generated/json-schema",
-        version: "0.1.0",
-        bundle_digest: "sha256:dd33c886f70e908b14507c35e078d163b76308c3d170d2b54ddf933d1a4ebb52",
+        version: "0.3.0",
+        bundle_digest: "sha256:65b4e8d4c71a343e270618c9a8ca7e33687f10324ef5e9fe68d150056101c627",
     },
     package_manifest_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "d48b8da7ae5e40b8b3d465d45b2bd3e24b994dbb",
+        source_revision: "ede0d3d815c5d43c8b516362c9245365421291ae",
         source_path: "schema/semantic/v1/package-manifest.schema.json",
         sha256: "sha256:d6e696577f58abd59c36588803c019ad3a43f9a7078c873ad41a0aec41031ffd",
     },
     common_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "d48b8da7ae5e40b8b3d465d45b2bd3e24b994dbb",
+        source_revision: "ede0d3d815c5d43c8b516362c9245365421291ae",
         source_path: "schema/semantic/v1/common.schema.json",
         sha256: "sha256:1de370f344b099b511960c32ddc98d512218183c13b03350201627bdcba7710a",
     },
@@ -258,8 +277,8 @@ mod tests {
     /// Trace: FR-070
     #[test]
     fn tc_378_041_ships_semantic_core_is_exact() {
-        assert!(SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.1.0")));
-        assert!(!SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.1.1")));
+        assert!(SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.0")));
+        assert!(!SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.1")));
     }
 
     /// Trace: FR-070

@@ -46,14 +46,37 @@ pub fn repo_root() -> PathBuf {
     root
 }
 
-/// The vendored semantic contract the npm package ships.
+/// The semantic contract's root: quoin's own `sweep-report.schema.json` plus
+/// the module-manifest and semantic-core schemas quoin depends on from
+/// `agent-ix/filament-core-data`'s published `@agent-ix/semantic-schema` and
+/// `@agent-ix/semantic-core` packages, read out of `node_modules` (PLAT-887's
+/// de-vendoring) -- not git submodules.
 ///
-/// The live tree under `src/semantic/`, not a copy: those 35 JSON files are
-/// DATA and they stay there after the TypeScript beside them is deleted
-/// (quoin#452). A test judging against a contract of its own making would
-/// agree with whatever it wrote.
+/// Materialized from [`quoin_semantic::materialize_embedded_contract`] --
+/// the exact bytes `build.rs` embedded into this test binary -- rather than
+/// read from a committed copy in the source tree. That is the same function
+/// the production binary calls at run time, so a test judging against this
+/// root is judging against the real embedded contract, not a directory a
+/// test wrote for itself.
+///
+/// One directory per **process**, cached in a `OnceLock` rather than shared
+/// `OUT_DIR` state: `OUT_DIR` is one physical directory reused across every
+/// test binary this package builds, and cargo runs those binaries as
+/// concurrent processes, so two of them materializing into it at once could
+/// race on the same nested directories. A `std::process::id()`-suffixed
+/// scratch directory gives each process its own, and the `OnceLock` keeps
+/// concurrent test *threads* inside one process from re-materializing (and
+/// racing each other) on every call.
 pub fn semantic_root() -> PathBuf {
-    repo_root().join("src").join("semantic")
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root =
+            std::env::temp_dir().join(format!("quoin-semantic-contract-{}", std::process::id()));
+        quoin_semantic::materialize_embedded_contract(&root)
+            .expect("the embedded semantic contract materializes");
+        root
+    })
+    .clone()
 }
 
 /// `src/semantic/schemas`.

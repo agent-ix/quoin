@@ -25,10 +25,11 @@
 //! of the parsed value (`store.ts:40` canonicalizes `candidate`). Nothing here
 //! is a lossy round trip, because nothing here round-trips.
 
+mod population;
 pub(crate) mod read;
 mod stack;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_store::{JsonObject, JsonValue};
 
@@ -49,6 +50,21 @@ fn refuse(message: impl Into<String>) -> MeasurementError {
     MeasurementError::new(CODE, message.into())
 }
 
+/// [`parse_stored_measurement_collection`]'s result: the parsed envelope, plus
+/// the verification stack's own outcome kept separate from the rest of the
+/// parse.
+///
+/// Keeping the stack's `Result` apart from `collection.verification_stack`
+/// (which is `None` either way when the stack fails) is what lets
+/// [`measurement_collection`] see every other collection-level problem even
+/// when the stack itself is the broken part (PLAT-929) — `?`-ing on the stack
+/// the way [`stored_measurement_collection`] still does would stop the parse
+/// before the observations below it are ever read.
+struct ParsedCollection {
+    collection: MeasurementCollection,
+    stack_error: Option<MeasurementError>,
+}
+
 /// Validate a historical stored envelope without rewriting it to the current
 /// plan.
 ///
@@ -59,6 +75,19 @@ fn refuse(message: impl Into<String>) -> MeasurementError {
 pub fn stored_measurement_collection(
     value: &JsonValue,
 ) -> Result<MeasurementCollection, MeasurementError> {
+    let parsed = parse_stored_measurement_collection(value)?;
+    match parsed.stack_error {
+        Some(error) => Err(error),
+        None => Ok(parsed.collection),
+    }
+}
+
+/// The shared parse behind [`stored_measurement_collection`] and
+/// [`measurement_collection`]. See [`ParsedCollection`] for why the stack's
+/// outcome is not simply folded into the returned `Err`.
+fn parse_stored_measurement_collection(
+    value: &JsonValue,
+) -> Result<ParsedCollection, MeasurementError> {
     let object = read::object(value, CODE, "collection must be an object")?;
 
     let schema_version = schema_version(object)?;
@@ -93,10 +122,20 @@ pub fn stored_measurement_collection(
     if !read::present(object, "rawEvidence") {
         return Err(refuse("collection requires attached `rawEvidence`"));
     }
-    let verification_stack = if schema_version == MEASUREMENT_SCHEMA_VERSION {
-        Some(stack::verification_stack(object.get("verificationStack"))?)
+    // The stack's own failure is kept alongside the parse instead of `?`-ing
+    // immediately, so a caller checking further collection-level rules can
+    // still see the observations read below (PLAT-929, review finding #5(a)
+    // on quoin#580). `configDigest`'s shape rides along in the same call
+    // (PLAT-939): it is a collection-envelope member, not a `verificationStack`
+    // one, but it is checked at the same schemaVersion-2 gate as `lockDigest`
+    // and `executableDigest`.
+    let (verification_stack, stack_error) = if schema_version == MEASUREMENT_SCHEMA_VERSION {
+        match stack::verification_stack(object.get("verificationStack"), config_digest.as_str()) {
+            Ok(stack) => (Some(stack), None),
+            Err(error) => (None, Some(error)),
+        }
     } else {
-        None
+        (None, None)
     };
 
     let mut observations: Vec<MeasurementObservation> = Vec::with_capacity(raw_observations.len());
@@ -119,24 +158,27 @@ pub fn stored_measurement_collection(
         observations.push(observation);
     }
 
-    Ok(MeasurementCollection {
-        schema_version,
-        collection_id,
-        subject,
-        scope: object.get("scope").cloned().unwrap_or(JsonValue::Null),
-        tool_identity,
-        tool_version,
-        config_digest,
-        timestamp,
-        source_revision,
-        corpus_revision: read::string(object, "corpusRevision").map(str::to_owned),
-        environment,
-        verification_stack,
-        observations,
-        raw_evidence: object
-            .get("rawEvidence")
-            .cloned()
-            .unwrap_or(JsonValue::Null),
+    Ok(ParsedCollection {
+        collection: MeasurementCollection {
+            schema_version,
+            collection_id,
+            subject,
+            scope: object.get("scope").cloned().unwrap_or(JsonValue::Null),
+            tool_identity,
+            tool_version,
+            config_digest,
+            timestamp,
+            source_revision,
+            corpus_revision: read::string(object, "corpusRevision").map(str::to_owned),
+            environment,
+            verification_stack,
+            observations,
+            raw_evidence: object
+                .get("rawEvidence")
+                .cloned()
+                .unwrap_or(JsonValue::Null),
+        },
+        stack_error,
     })
 }
 
@@ -146,66 +188,205 @@ pub fn stored_measurement_collection(
 ///
 /// Everything [`stored_measurement_collection`] refuses, plus a schema version
 /// other than [`MEASUREMENT_SCHEMA_VERSION`], a build profile other than
-/// release, absent toolchains, and any observation whose metric has no active
-/// plan at the observation's own definition version.
+/// release, absent toolchains, a stated `verificationStack.unverifiedArtifacts`
+/// or `.protectedApparatus` (both computed by intake), and any observation
+/// whose metric has no active plan at the observation's own definition
+/// version.
+///
+/// Every finding is accumulated into one refusal. Its code is
+/// [`MeasurementErrorCode::CollectionInvalid`], except when every finding is
+/// one population refusal kind (PLAT-960), in which case the refusal carries
+/// that kind's own code — [`MeasurementErrorCode::PopulationBelowMinimum`],
+/// [`MeasurementErrorCode::PopulationUnstated`],
+/// [`MeasurementErrorCode::RepetitionsShort`] or
+/// [`MeasurementErrorCode::PopulationMalformed`]. A population finding inside a
+/// mixed refusal still names its code as the finding's first word, so the
+/// typed reason survives the accumulation.
 pub fn measurement_collection(
     value: &JsonValue,
     plans: &[MeasurementPlan],
 ) -> Result<MeasurementCollection, MeasurementError> {
-    let collection = stored_measurement_collection(value)?;
+    let parsed = parse_stored_measurement_collection(value)?;
+    let collection = parsed.collection;
+
+    // Every check below runs regardless of an earlier one's outcome, and every
+    // failure is accumulated rather than returned immediately, so a caller
+    // sees every problem with the candidate in one refusal instead of fixing
+    // them one round trip at a time (PLAT-929). That includes the
+    // verification stack itself: its failure is folded in here rather than
+    // `?`-ed away, so e.g. a bad digest and an unplanned metric are both
+    // named in the same refusal (review finding #5(a) on quoin#580).
+    let mut findings = Vec::new();
+    // The code of each finding that has one of its own, pushed alongside it.
+    // Only the population checks (PLAT-960) are typed today; see this
+    // function's `# Errors` for how the refusal's own code is chosen.
+    let mut typed: Vec<MeasurementErrorCode> = Vec::new();
+
     if collection.schema_version != MEASUREMENT_SCHEMA_VERSION {
-        return Err(refuse(format!(
-            "new collections must use schemaVersion {MEASUREMENT_SCHEMA_VERSION}; v1 is read-only \
-             historical evidence"
-        )));
-    }
-    let stack = collection.verification_stack.as_ref().ok_or_else(|| {
-        refuse("verificationStack.buildProfile must be release for new collections")
-    })?;
-    if stack.build_profile != Some(BuildProfile::Release) {
-        return Err(refuse(
-            "verificationStack.buildProfile must be release for new collections",
+        findings.push(format!(
+            "schemaVersion: new collections must use schemaVersion {MEASUREMENT_SCHEMA_VERSION}; \
+             v1 is read-only historical evidence"
         ));
     }
-    if stack.toolchains.is_none() {
-        return Err(refuse(
-            "verificationStack.toolchains must pin node, rust, and python",
-        ));
+
+    match &parsed.stack_error {
+        Some(error) if error.findings().is_empty() => findings.push(error.subject().to_owned()),
+        Some(error) => findings.extend(error.findings().iter().cloned()),
+        None => match collection.verification_stack.as_ref() {
+            None => findings.push(
+                "verificationStack.buildProfile must be release for new collections".to_owned(),
+            ),
+            Some(stack) => {
+                if stack.build_profile != Some(BuildProfile::Release) {
+                    findings.push(
+                        "verificationStack.buildProfile must be release for new collections"
+                            .to_owned(),
+                    );
+                }
+                if stack.toolchains.is_none() {
+                    findings.push(
+                        "verificationStack.toolchains must be present; mark a language not \
+                         used as absent or null rather than omitting the whole member"
+                            .to_owned(),
+                    );
+                }
+                // `stack::verification_stack` already refuses a `toolchains`
+                // object present with every language absent, so this check
+                // (an omitted `toolchains` member entirely) is no longer
+                // vacuous the way it was before that refusal existed (review
+                // finding #3 on quoin#580).
+            }
+        },
     }
+
+    findings.extend(stack::stated_computed_members(value));
 
     let by_metric: BTreeMap<&str, &MeasurementPlan> = plans
         .iter()
         .map(|plan| (plan.metric.as_str(), plan))
         .collect();
-    for observation in &collection.observations {
-        let metric = observation.metric.as_str();
-        let Some(plan) = by_metric.get(metric) else {
-            return Err(refuse(format!(
-                "metric `{metric}` has no MeasurementPlan under spec/assurance or assurance; \
-                 record refused"
-            )));
-        };
-        if plan.status != LifecycleStatus::Active {
-            return Err(refuse(format!(
-                "metric `{metric}` plan {} is {}, not active",
-                plan.id,
-                plan.status.as_str()
-            )));
-        }
-        if observation.plan_id != plan.id {
-            return Err(refuse(format!(
-                "metric `{metric}` names plan {}; active plan is {}",
-                observation.plan_id, plan.id
-            )));
-        }
-        if observation.definition_version != plan.definition_version {
-            return Err(refuse(format!(
-                "metric `{metric}` definition {} does not match {}",
-                observation.definition_version, plan.definition_version
-            )));
+    // The parse admitted every observation in order, so the stored array and
+    // `collection.observations` pair up by position; the population checks
+    // read the stored member, because a malformed value is exactly what the
+    // parsed model cannot show (PLAT-960).
+    let raw_observations: &[JsonValue] = match value
+        .as_object()
+        .ok()
+        .and_then(|object| object.get("observations"))
+    {
+        Some(JsonValue::Array(raw)) => raw,
+        _ => &[],
+    };
+    for (index, observation) in collection.observations.iter().enumerate() {
+        let plan = by_metric.get(observation.metric.as_str()).copied();
+        findings.extend(plan_findings(observation, plan));
+        let raw_population = raw_observations
+            .get(index)
+            .and_then(|raw| raw.as_object().ok())
+            .and_then(|raw| raw.get("population"));
+        for (code, finding) in population::findings(observation, raw_population, plan) {
+            typed.push(code);
+            findings.push(format!("{code}: {finding}"));
         }
     }
-    Ok(collection)
+
+    // PLAT-936: tamper evidence, not an ordering proof. A plan that declares a
+    // `preregistration` block asserts that its own "Comparison and
+    // Enforcement" section reads today the way it did when the digest was
+    // recorded; this is the one place that assertion is checked, and only for
+    // a *new* collection — `stored_measurement_collection` never reaches this
+    // function, so historical evidence is unaffected. Residual gaps this does
+    // not close (reporting only a favourable pre-registered variant, a
+    // repeated re-run, editing an unprotected input such as the baseline
+    // instead of the bar text) are exactly what PLAT-935's design research
+    // found this class of check cannot buy, and nothing here claims
+    // otherwise.
+    //
+    // Run once per distinct metric actually referenced by an observation, not
+    // once per observation: two observations against the same gate plan (e.g.
+    // different dimensions) share one preregistration, and duplicating an
+    // identical finding for each would misreport how many distinct problems a
+    // candidate has (review finding #3 on quoin#583).
+    let mut checked_metrics = BTreeSet::new();
+    for observation in &collection.observations {
+        let metric = observation.metric.as_str();
+        if !checked_metrics.insert(metric) {
+            continue;
+        }
+        let Some(plan) = by_metric.get(metric) else {
+            continue;
+        };
+        if let Some(preregistration) = &plan.preregistration
+            && !preregistration.matches()
+        {
+            findings.push(format!(
+                "metric `{metric}` plan {} bar text no longer matches its pre-registered digest \
+                 {}; the \"Comparison and Enforcement\" section was edited since it was recorded",
+                plan.id, preregistration.declared_digest
+            ));
+        }
+    }
+
+    if findings.is_empty() {
+        Ok(collection)
+    } else {
+        Err(intake_refusal(findings, &typed))
+    }
+}
+
+/// The untyped findings tying one observation to its plan: none governs it,
+/// or the one that does is inactive, differently named, or at another
+/// definition version.
+fn plan_findings(
+    observation: &MeasurementObservation,
+    plan: Option<&MeasurementPlan>,
+) -> Vec<String> {
+    let metric = observation.metric.as_str();
+    let Some(plan) = plan else {
+        return vec![format!(
+            "metric `{metric}` has no MeasurementPlan under spec/assurance or assurance; \
+             record refused"
+        )];
+    };
+    let mut out = Vec::new();
+    if plan.status != LifecycleStatus::Active {
+        out.push(format!(
+            "metric `{metric}` plan {} is {}, not active",
+            plan.id,
+            plan.status.as_str()
+        ));
+    }
+    if observation.plan_id != plan.id {
+        out.push(format!(
+            "metric `{metric}` names plan {}; active plan is {}",
+            observation.plan_id, plan.id
+        ));
+    }
+    if observation.definition_version != plan.definition_version {
+        out.push(format!(
+            "metric `{metric}` definition {} does not match {}",
+            observation.definition_version, plan.definition_version
+        ));
+    }
+    out
+}
+
+/// One refusal carrying every accumulated finding, under the code chosen as
+/// [`measurement_collection`]'s `# Errors` states: the shared code of the
+/// typed findings when every finding is typed and they agree, and
+/// [`MeasurementErrorCode::CollectionInvalid`] otherwise.
+fn intake_refusal(findings: Vec<String>, typed: &[MeasurementErrorCode]) -> MeasurementError {
+    let code = match typed.first() {
+        Some(first) if typed.len() == findings.len() && typed.iter().all(|code| code == first) => {
+            *first
+        }
+        _ => CODE,
+    };
+    MeasurementError::with_findings(
+        code,
+        "measurement collection failed intake validation",
+        findings,
+    )
 }
 
 /// The schema version, refusing anything but the current one and the retained
@@ -286,6 +467,7 @@ fn population(object: &JsonObject) -> Option<MeasurementPopulation> {
         examined: read::number(population, "examined"),
         matched: read::number(population, "matched"),
         complete: read::boolean(population, "complete"),
+        repetitions: population.get("repetitions").cloned(),
         identity: population.get("identity").cloned(),
         // Kept rather than dropped: see `MeasurementPopulation`'s header for
         // the two retained call sites that see every stored member.

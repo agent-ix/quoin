@@ -4,7 +4,7 @@
 //! carried, restated against this crate.
 //!
 //! Trace: FR-059-AC-1, FR-059-AC-2, FR-059-AC-3, FR-059-AC-4, FR-059-AC-5
-//! Trace: FR-059-AC-6, FR-059-AC-7, FR-059-AC-8, FR-059-AC-9
+//! Trace: FR-059-AC-6, FR-059-AC-7, FR-059-AC-8, FR-059-AC-9, FR-059-AC-10
 //! Provenance: quoin#479
 //!
 //! # Why this file exists
@@ -54,7 +54,8 @@ mod paths;
 use copy::copy_tree;
 use paths::repo_root;
 
-use quoin_jsonschema::VendoredSchema;
+use engineering_assurance::claim_strength::ClaimStrength;
+use quoin_jsonschema::MeasurementSchema;
 
 use quoin_measurement::intervention::intake::{InterventionIntakeError, InterventionRefusalCode};
 use quoin_measurement::operational::intake::write_operational_record;
@@ -292,7 +293,7 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
     let authored: Value =
         serde_json::from_str(authored_text).expect("the authored schema block is JSON");
     assert_eq!(
-        VendoredSchema::OperationalEvidenceV1
+        MeasurementSchema::OperationalEvidenceV1
             .document()
             .expect("the vendored schema parses"),
         authored,
@@ -958,6 +959,53 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
             "{what}: a refused record must leave the store as it found it"
         );
     }
+}
+
+/// Every record, of either shape, carries exactly one EA claim strength, and
+/// for this family it is `observed`: a record with no `strength` is refused
+/// rather than defaulted, and each of the other three wire names, or a label
+/// outside the vocabulary, is refused rather than admitted or coerced.
+///
+/// > FR-059-AC-10: Every record carries `strength`, closed to Engineering
+/// > Assurance's `observed` claim strength (FR-022); a record with no
+/// > `strength` is refused, not defaulted.
+///
+/// Trace: FR-059-AC-10
+/// Provenance: PLAT-972
+#[test]
+fn tc_479_309_strength_is_required_and_closed_to_observed() {
+    let mut measured = 0_usize;
+    for (shape, base) in [("capability", capability()), ("exercise", exercise())] {
+        let admitted = admitted(&base, &format!("the retained {shape}"));
+        assert_eq!(admitted.record().base().strength, ClaimStrength::Observed);
+
+        refused_naming(
+            &without(&base, &["strength"]),
+            &required("/", "strength"),
+            &format!("a {shape} missing `strength`"),
+        );
+
+        for strength in ClaimStrength::ALL {
+            if strength == ClaimStrength::Observed {
+                continue;
+            }
+            refused_naming(
+                &with(&base, &["strength"], json!(strength.wire_name())),
+                "/strength",
+                &format!("a {shape} claiming `{strength}`"),
+            );
+            measured += 1;
+        }
+        refused_naming(
+            &with(&base, &["strength"], json!("verified")),
+            "/strength",
+            &format!("a {shape} with a strength outside the EA vocabulary"),
+        );
+    }
+    assert_eq!(
+        measured, 6,
+        "anti-vacuity floor: every strength but `observed`, for both shapes, is measured"
+    );
 }
 
 // -------------------------------------------------------------- the workspace

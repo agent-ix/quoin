@@ -79,7 +79,20 @@ pub fn parse_assurance_argument(value: &serde_json::Value) -> Checked<AssuranceA
     }
 
     let top = record("top_claim", object.get("top_claim"))?;
-    exact_keys(top, "top_claim", &["id", "statement", "subject"], &[])?;
+    exact_keys(
+        top,
+        "top_claim",
+        &["id", "statement", "subject", "evidence_refs"],
+        &["evidence_refs"],
+    )?;
+    // Optional (PLAT-965, PLAT-966): absent reads as empty so an argument
+    // authored before the field existed still parses. The field is new, so
+    // there is no retained null-tolerance to stay in parity with: an explicit
+    // null is a wrong shape and `string_array` refuses it like any other.
+    let top_evidence_refs = match top.get("evidence_refs") {
+        None => Vec::new(),
+        present => string_array("top_claim.evidence_refs", present, false)?,
+    };
 
     let mut reasoning = Vec::new();
     for (index, item) in array_at(object, "reasoning")?.iter().enumerate() {
@@ -320,6 +333,7 @@ pub fn parse_assurance_argument(value: &serde_json::Value) -> Checked<AssuranceA
             id: top_claim_id,
             statement: string_at(top, "statement")?,
             subject: string_at(top, "subject")?,
+            evidence_refs: top_evidence_refs,
         },
         reasoning,
         assumptions,
@@ -445,6 +459,41 @@ mod tests {
             {"id": "M", "statement": "m", "supports": "CLAIM-900", "sufficiency_criteria": ["c"]}
         ]);
         assert!(parse_assurance_argument(&argument).is_ok());
+    }
+
+    /// PLAT-965/PLAT-966: `top_claim.evidence_refs` is optional, admitted
+    /// empty or absent, and refused when it is the wrong shape.
+    #[test]
+    fn top_claim_evidence_refs_is_optional_and_typed() {
+        let mut argument = base();
+        assert_eq!(
+            parse_assurance_argument(&argument)
+                .expect("absent evidence_refs is admitted")
+                .top_claim
+                .evidence_refs,
+            Vec::<String>::new()
+        );
+
+        argument["top_claim"]["evidence_refs"] = serde_json::json!(["ix://widget/evidence-1"]);
+        assert_eq!(
+            parse_assurance_argument(&argument)
+                .expect("a populated evidence_refs is admitted")
+                .top_claim
+                .evidence_refs,
+            vec!["ix://widget/evidence-1".to_owned()]
+        );
+
+        argument["top_claim"]["evidence_refs"] = serde_json::json!("not-an-array");
+        assert!(
+            parse_assurance_argument(&argument).is_err(),
+            "a non-array evidence_refs must be refused"
+        );
+
+        argument["top_claim"]["evidence_refs"] = serde_json::Value::Null;
+        assert!(
+            parse_assurance_argument(&argument).is_err(),
+            "an explicit null evidence_refs must be refused, not read as empty"
+        );
     }
 
     #[test]

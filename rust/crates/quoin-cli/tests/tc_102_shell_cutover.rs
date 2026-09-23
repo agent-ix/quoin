@@ -38,8 +38,6 @@ fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
     let root = repository_root();
     for retired in [
         "bin/quoin.js",
-        "package.json",
-        "pnpm-lock.yaml",
         "cli-agent-evals.config.mjs",
         "evals",
         "rust/crates/quoin-schemas",
@@ -56,6 +54,26 @@ fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
         assert!(
             !root.join(retired).exists(),
             "the retired Node/oclif shell path remains: {retired}"
+        );
+    }
+
+    // `package.json` and `pnpm-lock.yaml` are no longer on the retired list
+    // (PLAT-157): the repository root carries one, declaring the single
+    // `@agent-ix/ix-spec-workflows` dependency quoin-cli's `flow` module
+    // resolves at run time, which is unrelated to the retired CLI shell. What
+    // actually identified that shell was `oclif` and a `bin` entry pointing at
+    // `bin/quoin.js` -- assert those two markers are absent instead of
+    // banning the manifest outright.
+    if let Ok(package_json) = std::fs::read_to_string(root.join("package.json")) {
+        let manifest: serde_json::Value =
+            serde_json::from_str(&package_json).expect("package.json is valid JSON");
+        assert!(
+            manifest.get("oclif").is_none(),
+            "an `oclif` key in package.json means the retired CLI shell is back"
+        );
+        assert!(
+            manifest.get("bin").is_none(),
+            "a `bin` key in package.json means the retired CLI shell is back"
         );
     }
 

@@ -39,6 +39,7 @@ pub fn load_active_assurance_profiles<S: MeasurementSource + ?Sized>(
 fn profile_from(
     path: &str,
     value: &serde_json::Value,
+    _text: &str,
 ) -> Result<AssuranceProfileSummary, MeasurementError> {
     let required = |name: &str| -> Result<NonEmptyText, MeasurementError> {
         discovery::required(value, name)

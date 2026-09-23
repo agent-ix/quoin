@@ -7,6 +7,7 @@
 
 use std::collections::BTreeMap;
 
+use engineering_assurance::measurement::ApparatusPath;
 use quoin_store::{JsonObject, JsonValue, RawFileSha256Digest};
 
 use crate::types::ids::{FullGitRevision, NonEmptyText};
@@ -50,15 +51,22 @@ impl BuildProfile {
     }
 }
 
-/// The three language toolchains a collection pins.
+/// The three language toolchains a collection may pin.
+///
+/// A collection rarely touches every language: a measurement that only ran
+/// Rust has nothing true to say about `node` or `python`. Each member is
+/// therefore `Option` rather than a placeholder string — `None` means "not
+/// applicable" (PLAT-930). There is deliberately no second, sentinel spelling
+/// of the same absence (a literal `"not-applicable"` string); that would just
+/// give a caller two ways to say one thing.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Toolchains {
-    /// The Node.js toolchain.
-    pub node: NonEmptyText,
-    /// The Rust toolchain.
-    pub rust: NonEmptyText,
-    /// The Python toolchain.
-    pub python: NonEmptyText,
+    /// The Node.js toolchain, when this measurement touched it.
+    pub node: Option<NonEmptyText>,
+    /// The Rust toolchain, when this measurement touched it.
+    pub rust: Option<NonEmptyText>,
+    /// The Python toolchain, when this measurement touched it.
+    pub python: Option<NonEmptyText>,
 }
 
 /// One source repository, pinned at a clean full revision.
@@ -101,6 +109,61 @@ pub struct VerificationStackAttestation {
     pub capabilities: Vec<NonEmptyText>,
     /// Every produced artifact and its digest, non-empty.
     pub artifacts: BTreeMap<String, RawFileSha256Digest>,
+    /// Names from `artifacts` this repository holds no filesystem entry for,
+    /// sorted.
+    ///
+    /// The owner's ruling on PLAT-969: a `verificationStack.artifacts` name
+    /// with no local entry stays admitted as a label — it is not, and never
+    /// was, this crate's place to require every producer's declared artifact
+    /// to be locally reachable — but admission must never be silent. Intake
+    /// ([`crate::store::publish`]) computes this list itself at write time and
+    /// merges it into the stored bytes; a stored collection this crate did not
+    /// write (historical evidence, or one authored directly) carries whatever
+    /// it happened to state here, or nothing.
+    pub unverified_artifacts: Vec<String>,
+    /// Each governing plan's resolved protected apparatus, keyed by plan id
+    /// (PLAT-975, engineering-assurance FR-024).
+    ///
+    /// Intake ([`crate::store::publish`]) resolves every `protected_apparatus`
+    /// entry of every plan governing an observation, digests each file, and
+    /// merges this member into the stored bytes, so a later comparison reads
+    /// the apparatus as it was when the collection was written rather than as
+    /// the disk holds it today. A plan that protects nothing has no entry, and
+    /// a collection no such plan governs states nothing here. Like
+    /// `unverifiedArtifacts`, a stored collection this crate did not write
+    /// carries whatever it happened to state.
+    pub protected_apparatus: BTreeMap<String, ResolvedApparatus>,
+}
+
+/// One plan's resolved protected apparatus: every file its entries named,
+/// repository-relative and `/`-separated, and that file's digest when the
+/// collection was written.
+///
+/// What an apparatus comparison compares is this set of (path, digest)
+/// pairs, so a file added under or removed from a `<directory>/**` entry is a
+/// change exactly as an edited file is (engineering-assurance FR-024).
+pub type ResolvedApparatus = BTreeMap<String, RawFileSha256Digest>;
+
+/// Why `path` cannot be a key of a [`ResolvedApparatus`], or `None` when it
+/// can: a key names one concrete file, so it must parse as an
+/// [`ApparatusPath`] that is not a `<directory>/**` entry (PLAT-985).
+///
+/// Intake's resolver and the stored-record reader both ask this one question.
+/// Before they shared it, the resolver recorded whatever name a directory
+/// listing held, so a protected file named `a:b.json` — or one literally
+/// named `**` — was written into a record the reader then refused as
+/// `QM-COLLECTION-INVALID` forever, and a stored collection cannot be
+/// rewritten under its id.
+pub(crate) fn unrecordable_apparatus_path(path: &str) -> Option<String> {
+    match ApparatusPath::new(path) {
+        Ok(parsed) if parsed.directory().is_some() => Some(
+            "it is a `<directory>/**` entry, and a resolved record names one concrete file per \
+             member"
+                .to_owned(),
+        ),
+        Ok(_) => None,
+        Err(error) => Some(error.to_string()),
+    }
 }
 
 /// One producer invocation. All observations land atomically as this unit.
@@ -141,4 +204,15 @@ pub struct MeasurementCollection {
     pub observations: Vec<MeasurementObservation>,
     /// Complete producer output; report views derive rather than transcribe.
     pub raw_evidence: JsonValue,
+}
+
+impl MeasurementCollection {
+    /// The resolved protected apparatus this collection recorded for
+    /// `plan_id`, or `None` when it recorded none (PLAT-975).
+    #[must_use]
+    pub fn protected_apparatus_of(&self, plan_id: &str) -> Option<&ResolvedApparatus> {
+        self.verification_stack
+            .as_ref()
+            .and_then(|stack| stack.protected_apparatus.get(plan_id))
+    }
 }

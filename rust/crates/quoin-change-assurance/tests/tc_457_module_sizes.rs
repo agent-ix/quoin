@@ -109,7 +109,7 @@ fn tc_457_the_modules_over_the_soft_ceiling_are_the_ones_named_here() {
     assert_eq!(
         over,
         vec![
-            "model/attestation.rs (694)".to_owned(),
+            "model/attestation.rs (516)".to_owned(),
             "model/receipt.rs (542)".to_owned(),
         ],
         "the set of modules over the {SOFT_CEILING}-line soft ceiling changed. Splitting one \

@@ -213,8 +213,12 @@ inside them.
    stage 8: command residue, and deletion of `src/quire/exec.ts`.
 3. **Retire the oclif command shell and `@oclif/core`.** Delivery stage 9,
    completed in `33ca665` after native fixture replay. The resulting executable
-   is `quoin`; the plugin and hook were withdrawn under #396 and `quoin sync`
-   is native.
+   is `quoin`; the plugin and hook were withdrawn under #396. The native
+   `quoin sync` command that briefly replaced it wired the dependency's own
+   test doubles into production and pulled the private AGPL
+   `agent-ix/filament-ide-rs` repository into the graph; it was removed
+   outright rather than kept as a non-functional stand-in. Plan syncing will
+   be designed separately, once Linear integration happens.
 
 Each delivery stage ends in two tickets that are never merged together: a
 reversible cutover, and a deletion of the retained TypeScript together with its
@@ -278,8 +282,10 @@ incompatibilities.
 ## Open questions for the owner
 
 - The `@agent-ix/filament-plan-sync` oclif plugin and the `command_not_found`
-  hook were withdrawn at Stage 9 under #396; native `quoin sync` is their
-  documented successor. This is no longer an open question.
+  hook were withdrawn at Stage 9 under #396. Its native `quoin sync`
+  replacement was removed in turn: quoin does not depend on
+  `filament-ide-rs`, and plan syncing will be designed separately. This is no
+  longer an open question.
 - `filament-core-data` and `quire-rs` pin Rust 1.94.1 today, not 1.98.1. See
   [NFR-026](../../../spec/non-functional/NFR-026-rust-toolchain-floor.md).
 - The `corpus/` submodule points at `agent-ix/qa-corpus`, a repository this

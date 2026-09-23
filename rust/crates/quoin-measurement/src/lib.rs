@@ -38,6 +38,9 @@
 //! | `report.ts` | [`report`]'s five modules |
 //! | `portfolio.ts` | [`portfolio`]'s five modules |
 //!
+//! [`verify`] has no retained counterpart: it is the independent verdict
+//! checker behind `quoin measurement verify` (FR-108, PLAT-961).
+//!
 //! [`common`] holds what those four files declare more than once — the
 //! subject, the producer, the scalar unions — declared once here.
 //!
@@ -86,6 +89,7 @@ pub mod source;
 pub mod store;
 pub mod types;
 pub mod validate;
+pub mod verify;
 
 pub use compare::compare_measurement_collections;
 pub use date_time::Rfc3339DateTime;
@@ -125,3 +129,6 @@ pub use types::observation::MeasurementObservation;
 pub use types::plan::MeasurementPlan;
 pub use types::profile::AssuranceProfileSummary;
 pub use validate::{measurement_collection, stored_measurement_collection};
+pub use verify::{
+    MeasurementVerdict, OrderSource, Ranked, Reason, VERDICT_SCHEMA, Verdict, verdict_json, verify,
+};

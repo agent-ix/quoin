@@ -16,6 +16,7 @@
 
 use std::path::{Path, PathBuf};
 
+use engineering_assurance::claim_strength::ClaimStrength;
 use serde_json::Number;
 
 use crate::common::identity::{MetricName, WireInstant};
@@ -97,6 +98,7 @@ pub fn produce_agent_eval_intervention(
         observed_at: WireInstant::from_stored(treatment.generated_at()),
         subject: definition.subject.clone(),
         producer: producer(definition),
+        strength: ClaimStrength::Tested,
         design: definition.design.clone(),
         baseline: arm(&definition.baseline, baseline.sample_size()),
         treatments: vec![arm(&definition.treatment, treatment.sample_size())],

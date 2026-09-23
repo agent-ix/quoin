@@ -34,8 +34,8 @@ remove the Node/oclif shell without an escape hatch.
 - Quoin SHALL treat a retained command-fixture difference as a regression.
 - `quoin-cli` SHALL parse the retained command names, subcommands, arguments,
   flags, and exit-status meanings.
-- The owner disposition SHALL port `filament-plan-sync` as native `quoin sync`
-  and withdraw the oclif plugin and `command_not_found` hook with the shell.
+- The owner disposition SHALL withdraw the oclif plugin and `command_not_found`
+  hook with the shell.
 - An unrecognised command SHALL exit non-zero and name that command.
 - The cutover SHALL delete the Node entrypoint, oclif configuration, command
   shell, IPC shim, generated TypeScript boundary surface, and their tests.
@@ -62,8 +62,6 @@ plugin disposition, or a remaining Node/oclif shell path blocks the cutover.
 |----|----------|--------------|
 | FR-102-AC-1 | Native fixture tests replay the retained command surface before shell replacement. | Test (TC-1649) |
 | FR-102-AC-2 | `quoin-cli` accepts the retained command grammar and preserves exit status. | Property (TC-1650) |
-| FR-102-AC-3 | A dated disposition ports `quoin sync` and withdraws the plugin and hook before removal. | Test (TC-1651) |
-| FR-102-AC-4 | Native `quoin sync` accepts its retained grammar without a Node extension runtime. | Test (TC-1652) |
 | FR-102-AC-5 | An unrecognised command exits non-zero and names the command. | Test (TC-1653) |
 | FR-102-AC-6 | The repository contains no Node/oclif shell or generated TypeScript boundary surface, and the binary is named `quoin`. | Test (TC-1654) |
 | FR-102-AC-7 | No first-party crate declares a crates.io publication target; executable delivery is GitHub Release-only. | Test (TC-1703) |

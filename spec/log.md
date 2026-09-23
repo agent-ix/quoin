@@ -8,6 +8,228 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-111 (new FR): change-assurance refuses credit for a
+  diff that touches protected measurement apparatus** (PLAT-964). FR-110
+  compares a measurement plan's protected apparatus across *stored*
+  collections, which have no diff; a change-assurance record verifies a
+  *proposed* change, which has one. `VerificationInput` gains `diff_paths`
+  (the repository-relative paths the candidate change's diff touches) and
+  `governing_plan` (the linked `MeasurementPlan`'s `protected_apparatus` and
+  `negative_controls`, engineering-assurance's own types, reused rather than
+  restated). When the diff names a path the plan protects, the reason
+  `apparatus_touched` refuses the verification credit toward the plan's
+  objective, unconditionally — with or without a declared `apparatus-edit`
+  negative control, mirroring why FR-110-AC-7's checker rejects a changed
+  recorded set. A declared negative control this crate has no rule to
+  evaluate (`suppressed-observation`, `gain-within-noise`, `stale-evidence`,
+  `selective-reporting`) is `negative_control_uncaught` rather than silently
+  passed over, and leaves the outcome `incomplete`. Both reasons fold into
+  the receipt's overall reasons/outcome the way `proof_id_mismatch` already
+  does, with no new `checks` member. New dependency: `engineering-assurance`
+  (`measurement` feature), added to `quoin-change-assurance`'s previously
+  three-dependency manifest. A plan that protects apparatus, verified with
+  no retained diff, is `diff_missing` (incomplete) rather than vacuously
+  clean. **Known gap (FR-111-CON-3):** `quoin-core`'s
+  `change_assurance.receipt` request carries no diff or plan link yet, so
+  none of the three reasons is reachable through `quoin change-assurance
+  receipt`; the check exists in the library only until that is wired.
+  FR-065's embedded receipt schema gains the three reasons.
+  FR-111-AC-1..AC-4; Matrix: TC-1868..TC-1871.
+
+* **2026-09-22** — **FR-107 gains gate stage verdicts** (PLAT-958, part 2).
+  Part 1 left `gate` undecided (FR-107-CON-2); the scope-correcting comment
+  on the ticket settled how it is decided: **`objective.bound` is
+  informational everywhere in the measurement layer and is never evaluated**
+  (owner ruling, PLAT-956) — `gate` is the one stage verdict this crate
+  decides that is a real pass/fail result, and it comes entirely from
+  `statistical_design.decision_rule`, evaluated through
+  engineering-assurance's own `DecisionRule::holds`, the same call
+  `quoin measurement verify` (FR-108) makes. The report layer restates none
+  of that rule logic — only the baseline value the rule asks for: a
+  `threshold` rule needs none; a `baseline` rule reads `prior-collection`
+  (the nearest earlier usable value) or `best-seen` (the maximum for
+  `gt`/`ge`, the minimum for `lt`/`le`/`eq`) from the same usable-evidence
+  pool the ratchet already draws from, restricted to the report row's own
+  slice. `constant-predictor` needs per-item answers by answer family that no
+  collection the report layer reads carries, so it is `inconclusive`
+  (`constant_predictor_unsupported`), matching the checker's own limit. Never
+  green on missing evidence, exactly as for `ratchet` and `target`: no
+  `decision_rule` (`no_decision_rule`), no earlier usable value for a
+  baseline rule (`no_prior`, as a ratchet's first collection), and an
+  incomplete or empty population are all `inconclusive`, never `pass`. The
+  "Stage verdicts" table and the JSON `stageVerdict` carry a gate the same
+  way as the other two stages (`verdict`: `pass`/`fail`/`inconclusive`,
+  `current`, `baseline`); a `fail` adds an attention item beside a
+  `regressed` ratchet's. `compare.rs` stays verdict-free, unchanged by this
+  part. A `baseline` gate carries the ratchet's protected-apparatus
+  reasons (FR-107-CON-3, review of quoin#605). FR-107-AC-7..AC-9; Matrix:
+  TC-1875..TC-1881.
+
+* **2026-09-22** — **FR-110 (new FR): protected measurement apparatus**
+  (PLAT-975). `verificationStack.artifacts` recorded a digest per file and
+  nothing compared them, so an answer key edited between a baseline and a new
+  run still produced a delta, a ratchet `held` and a checker `accept`. Plan
+  intake now reads engineering-assurance FR-024's `protected_apparatus` and
+  `negative_controls` into EA's types. Intake resolves every protected entry
+  itself — the producer's artifacts map can omit a file — case-sensitively,
+  dotfiles included, refusing symlinks without following them and a
+  directory entry with no file, requires the artifacts map to declare every
+  resolved file, and records the resolved (path, digest) set per plan in
+  `verificationStack.protectedApparatus`, so comparisons read the apparatus
+  as it was written and never today's disk. New refusal codes
+  `QM-APPARATUS-UNRESOLVED`, `-SYMLINK`, `-UNREADABLE`, `-UNDECLARED` and
+  `-TOO-LARGE`. Comparison gains the blocking `apparatus_changed` and the
+  non-blocking `artifact_changed`; the ratchet gains `apparatus_changed` and
+  `apparatus_unrecorded`; the checker (FR-108's reason table) gains those two
+  and `apparatus_edit`, which rejects unconditionally whenever two runs under
+  one `definition_version` recorded different sets, whether or not the plan
+  declares the `apparatus-edit` negative control — engineering-assurance
+  FR-024 makes a new `definition_version` unconditional for any change to the
+  resolved set, so a differing recorded set inside one series is a
+  contradiction the data itself proves. A plan that protects nothing is
+  unaffected.
+  FR-110-AC-1..AC-9; Matrix: TC-1810..TC-1832.
+
+* **2026-09-22** — **FR-108 (new FR): the independent measurement-verdict
+  checker, `quoin measurement verify`** (PLAT-961, part 1). Nothing decided a
+  measurement verdict from the data: a producer's aggregate `value`, its
+  ordering of its own runs and its claim about the outcome were all taken as
+  stated. The checker is pure and shares no estimator code with producers: it
+  recomputes `proportion` and `count` from each observation's
+  `matched`/`examined` and requires the stored `value` to equal it; `mean`,
+  `median` and `ratio` need rows no collection carries, so those are counted
+  as asserted. The rule is engineering-assurance's (FR-021), read at plan
+  intake into EA's `Estimator` and `DecisionRule` and evaluated by EA's
+  `holds`. Every run under the plan's definition is counted and decided
+  against its own history, so a regression stays visible; a pass after a
+  regressed rerun of the same apparatus is `rerun_until_pass`. The store
+  records no intake order and a collection's `timestamp` is the producer's,
+  so the command orders runs by the git commit that first added each file;
+  a tie that decides the candidate or the prior is `order_unattested`.
+  Empty, incomplete or unstated populations are `inconclusive`, never
+  `accept`. `constant-predictor` is `inconclusive`: no collection carries
+  per-item answers by family. The result is the
+  `quoin.measurement-verdict.v1` document engineering-assurance's promotion
+  invariant (PLAT-962) reads, and it states its `orderSource`
+  (`git-first-parent-add`, `git-shallow`, `caller-supplied` or `none`). A
+  non-accept exits 1 with the payload and a `CORE_REJECTED` or
+  `CORE_INCONCLUSIVE` diagnostic. Review fixes: a `proportion` or `count`
+  with no `matched` is `population_unstated`, not asserted; a slice or an
+  observation the candidate drops is `slice_missing` or
+  `observation_missing`, never an older pass left standing; a non-fraction
+  unit is `unit_unsupported`; a stored value is judged within half a unit of
+  its stated precision; only tampering carries from earlier runs; intake
+  order follows first parents, reports a shallow clone, surfaces git
+  failures, and treats a stated timestamp that contradicts it as
+  `order_unattested`; a collection filed under another id is refused.
+  Prior-collection laundering and unchecked definition history are stated
+  as known limits. MP-207's prose `estimator` and `decision_rule` become
+  EA's typed form (`count`; `eq` 0) at `benchmark.silent-zero-v2`, with the
+  missing-capability refusal kept as prose the checker does not evaluate and
+  the rest of the prose
+  already in its body. FR-108-AC-1..AC-8; Matrix: TC-1780..TC-1806.
+
+* **2026-09-22** — **`quoin sync` and the `filament-plan-sync` dependency are
+  removed.** `quoin-cli/src/sync.rs` wired `filament_plan_sync`'s own test
+  doubles (`FakeDriver`, `InMemoryBaseStore`) into production, so the command
+  always reported `applied=0` — it never did real work. The dependency also
+  pulled the private AGPL `agent-ix/filament-ide-rs` repository plus a second,
+  older `quire-rs 0.21.0` into the graph, which broke release CI. Owner
+  ruling: quoin SHALL NOT depend on `filament-ide-rs`. Plan syncing will be
+  designed separately — possibly through the daemon — once Linear integration
+  happens; no stub, placeholder or compatibility alias is left in its place.
+  `mod sync`, its dispatch and its `Command`, the `filament-plan-sync` git
+  dependency, its `deny.toml` license exception and `bans.skip`/`allow-git`
+  entries, and its retained-help fixture case are all deleted; `rust/Cargo.lock`
+  no longer names `filament-plan-sync`, `filament-ide-rs`, or `quire-rs
+  0.21.0`. FR-102-AC-3 and AC-4 (the `quoin sync` port) are retired along with
+  TC-1651 and TC-1652; TC-1650 no longer credits `sync.rs`.
+
+* **2026-09-22** — **FR-107 (new FR): ratchet and target stage verdicts in
+  `quoin report`** (PLAT-958, part 1). Plans named `ratchet` and `target`
+  stages and nothing applied them. A `MeasurementPlan`'s optional `objective`
+  (engineering-assurance FR-020, parsed into EA's own `Objective`) now decides
+  a `ratchet` row as `held` or `regressed` against the best earlier value for
+  the same plan, slice and `definition_version`, where best follows the
+  direction (max, min, closest to zero, closest to the bound). Missing
+  evidence is never green: a first collection, a missing value, another
+  definition, or an incomplete or empty population is `inconclusive` with a
+  reason code. A `target` row reports its distance to the bound and whether
+  it is reached, as information rather than a verdict. Text, JSON and
+  portfolio views carry it; a plan with no objective renders the same bytes
+  as before. Collection comparison stays verdict-free and `gate` is left to
+  a later change. Review fixes: a newest value under another plan id
+  (`plan_mismatch`) or with no population (`population_unstated`) is
+  `inconclusive`; a slice the newest collection drops is reported rather
+  than silently skipped; a target's distance is the distance still to go,
+  its JSON outcome is `progress`, and a negative `zero` bound is refused at
+  plan load. FR-107-AC-1..AC-6; Matrix: TC-1760..TC-1777.
+
+* **2026-09-22** — **FR-080, NFR-018, US-021: the spec now states the
+  semantic-module template's real dependency story** (PLAT-951 review
+  follow-up). quire 0.47.1 is published to `internal-pypi`, and the template stopped
+  provisioning the Quire engine with a `make dev-quire` command reaching a
+  dev-only `pypi.ix` mirror; FR-080, NFR-018 and US-021-EX-2 still described
+  that retired design. FR-080's behavior, constraints (CON-2) and acceptance
+  criteria (AC-1, AC-4) now state that the rendered repository declares the
+  engine as a dev dependency sourced from the `internal-pypi` Poetry source,
+  resolved by `poetry install`, and that `make semantic-install` (`npm ci`)
+  resolves the schema toolchain; a missing engine still fails the suite rather
+  than skipping it, naming `poetry install`. NFR-018's private-registry
+  paragraph and the template's own `conformance.yaml` no longer forbid
+  `pkg.dev` — `internal-pypi` (`us-west1-python.pkg.dev`) is the sanctioned
+  index the rendered `pyproject.toml` and `ci.yml` name; only `pypi.ix` and
+  `npm.ix`, the dev-only mirrors, remain forbidden. TC-1428, TC-1430
+  re-pointed at the current behavior.
+
+* **2026-09-22** — **FR-044-AC-7..AC-9: a plan's minimum population and
+  repetitions are enforced, and its ground-truth kind is reported**
+  (PLAT-960). Intake read
+  none of a `MeasurementPlan`'s `statistical_design` or `ground_truth_kind`,
+  so a collection examining two items was admitted under a plan requiring
+  more. A declared `minimum_population` now refuses a smaller measured
+  population as `QM-POPULATION-BELOW-MINIMUM` and an unstated one as
+  `QM-POPULATION-UNSTATED`, accumulating with every other intake finding.
+  `quoin report` states the plan's `ground_truth_kind` beside it in text and
+  JSON. FR-044-AC-9: an observation's `population` may now state
+  `repetitions`, the runs actually performed (following MP-225's "N is stated
+  with every observation"); a count short of the plan's
+  `statistical_design.repetitions` is refused as `QM-REPETITIONS-SHORT`, and
+  an unstated one as `QM-POPULATION-UNSTATED` when the plan requires more than
+  one. A stated count that is not a whole number (a stated `examined` under a
+  minimum, or any stated `repetitions`) is refused as
+  `QM-POPULATION-MALFORMED` rather than coerced or read as absent, and the
+  JSON report keeps a stored `repetitions` exactly as stored.
+  TC-1740..TC-1755.
+
+* **2026-09-22** — **FR-044-AC-6: an artifact label is admitted, never silently**
+  (PLAT-969, owner's ruling). A `verificationStack.artifacts` name with no
+  local filesystem entry stays a label — quoin does not require every
+  declared artifact to be locally reachable — but the write now records every
+  such name, sorted, as the collection's `verificationStack.unverifiedArtifacts`;
+  a digested name never appears there, and a collection with nothing
+  unverified states no such member at all. `quoin report` states each
+  unverified artifact beside the collection's provenance, in the rendered text
+  and the JSON view alike. Separately, only the artifact name's final path
+  component was checked for a symlink; a symlinked directory earlier in the
+  path was followed, so `dist -> /elsewhere` could digest a file outside the
+  repository and `dist -> /missing` could pass as a label. Every path
+  component is now checked, left to right, and a symlink at any of them
+  refuses the write as `QM-ARTIFACT-UNREADABLE`, naming the component.
+  TC-1732, TC-1734.
+
+* **2026-09-22** — **FR-044-AC-6: local artifact verification never skips**
+  (PLAT-969). `write_measurement_collection` tried each
+  `verificationStack.artifacts` name as a repository-relative path but skipped
+  a name that was not a safe relative path, and a name whose entry could not
+  be digested, so a record naming `../outside` or a directory was admitted
+  with its digest unchecked. Both now refuse the write with their own codes,
+  `QM-ARTIFACT-NAME-UNSAFE` and `QM-ARTIFACT-UNREADABLE`, naming the artifact.
+  A name with no filesystem entry at all remains an artifact label admitted on
+  shape: the collections' own fixture artifact `config` is one, and
+  `quoin measurement record --digest-from-file` exists for artifacts stored
+  under a name other than their path. TC-1731..TC-1733.
+
 * **2026-09-18** — **FR-068: the change-assurance exit grammar, restored**
   (agent-ix/quoin#543). Every refusal on the `quoin change-assurance` surface
   exited **1** rather than the documented **2** after the TypeScript-to-Rust

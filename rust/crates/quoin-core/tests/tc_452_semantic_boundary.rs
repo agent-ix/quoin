@@ -118,13 +118,23 @@ fn repo_root() -> PathBuf {
     root
 }
 
-/// The vendored semantic contract the npm package ships.
-///
-/// It stays in `src/semantic/` after the TypeScript beside it is deleted: it is
-/// DATA, not code — 35 JSON schemas handed across as `QUOIN_SEMANTIC_ROOT` —
-/// and `quoin-semantic`'s golden parity suite reads the same live tree.
+/// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production:
+/// DATA, not code, handed across as a directory path. Materialized once per
+/// process from the embedded bytes `quoin-semantic`'s `build.rs` compiles in
+/// (PLAT-887 de-vendoring), not read from a source-tree `src/semantic`,
+/// which no longer holds a schema tree.
 fn semantic_root() -> PathBuf {
-    repo_root().join("src").join("semantic")
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root = std::env::temp_dir().join(format!(
+            "quoin-core-tc-452-boundary-semantic-{}",
+            std::process::id()
+        ));
+        quoin_semantic::materialize_embedded_contract(&root)
+            .expect("the embedded semantic contract materializes");
+        root
+    })
+    .clone()
 }
 
 /// The `module-ok` fixture, the same one `tc_446` and `tc_449` install.

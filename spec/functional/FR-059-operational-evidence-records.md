@@ -23,6 +23,16 @@ Quoin SHALL ship this exact schema as
 `schemas/operational-evidence-v1.schema.json`, import it as the runtime validator
 contract, and export the same schema object through the package measurement seam.
 
+Every record SHALL carry a `strength` naming the kind of support it is (FR-022,
+Engineering Assurance's `ClaimStrength`, PLAT-972): operational evidence records
+how a control stood or operated in a deployed scope — a standing capability, or
+one exercise of it, even a deliberate one such as a rollback drill — and never a
+check over a selected set of cases, so this family's `strength` is fixed at
+`observed` and the schema closes the field to that one value with `const`. `strength` is imported from Engineering Assurance's own
+vocabulary — this schema declares no local enum for it — and, because the type
+itself implements neither `Ord` nor `PartialOrd`, no report SHALL rank, compare,
+or aggregate one record's strength against another's.
+
 ## Schema
 
 ```json
@@ -40,6 +50,7 @@ contract, and export the same schema object through the package measurement seam
     "control_kind",
     "subject",
     "producer",
+    "strength",
     "scope",
     "configuration",
     "owner",
@@ -116,6 +127,9 @@ contract, and export the same schema object through the package measurement seam
         "definition_version": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
+    },
+    "strength": {
+      "const": "observed"
     },
     "scope": {
       "type": "object",
@@ -444,6 +458,7 @@ contract, and export the same schema object through the package measurement seam
 | FR-059-AC-7 | Each policy, prompt, model, tool, or data pin record carries at least one matching typed identity, revision, and digest, with no duplicate kind/identity key. | Test (TC-1229) |
 | FR-059-AC-8 | Succeeded, failed, partial, and aborted exercises all validate as retained outcomes. | Test (TC-1230) |
 | FR-059-AC-9 | Gaps, owner, actions, and at least one safe content-digested raw-evidence reference with media type and byte size are retained; invalid capability links and undeclared fields are refused. | Test (TC-1231) |
+| FR-059-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `observed` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test (TC-1883) |
 
 ## Dependencies
 

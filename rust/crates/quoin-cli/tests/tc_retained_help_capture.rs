@@ -18,7 +18,7 @@ use std::process::{Command, Output};
 use serde::Deserialize;
 
 const CAPTURE: &str = include_str!("fixtures/retained-command-help.json");
-const MIN_HELP_ROUTE_COUNT: usize = 61;
+const MIN_HELP_ROUTE_COUNT: usize = 60;
 const MIN_SHELL_CASE_COUNT: usize = 8;
 
 #[derive(Debug, Deserialize)]

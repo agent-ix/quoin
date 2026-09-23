@@ -39,9 +39,8 @@ commands:
   - name: "quire (python wheel)"
     minimum: "{{ cookiecutter.quire_engine_floor }}"
     detect: "python -c 'import quire'"
-    install: "make dev-quire"
+    install: "make install"
     used_by: "make test"
     note: >-
-      Not a declared dependency: no index this repository may commit against
-      serves a wheel exposing `extract_semantic` (agent-ix/quire-rs#392). The
-      suite fails rather than skips without it.
+      A declared dev dependency resolved from the `internal-pypi` Poetry
+      source. The suite fails rather than skips without it.

@@ -4,7 +4,7 @@
 //! carried, restated against this crate.
 //!
 //! Trace: FR-056-AC-1, FR-056-AC-2, FR-056-AC-3, FR-056-AC-4, FR-056-AC-5
-//! Trace: FR-056-AC-6, FR-056-AC-7, FR-056-AC-8, FR-056-AC-9
+//! Trace: FR-056-AC-6, FR-056-AC-7, FR-056-AC-8, FR-056-AC-9, FR-056-AC-10
 //! Provenance: quoin#479
 //!
 //! # Why this file exists
@@ -55,7 +55,8 @@ use paths::repo_root;
 
 use std::path::Path;
 
-use quoin_jsonschema::VendoredSchema;
+use engineering_assurance::claim_strength::ClaimStrength;
+use quoin_jsonschema::MeasurementSchema;
 use quoin_measurement::common::scalar::{EffectValue, ScalarValue};
 use quoin_measurement::intervention::record::{
     InterventionConclusionKind, InterventionDisposition, InterventionExperimentRecord,
@@ -213,7 +214,7 @@ fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
 
     // The versioned identity the record family is pinned to. The literal, not
     // whatever the vendored document happens to say today.
-    let document = VendoredSchema::InterventionExperimentV1
+    let document = MeasurementSchema::InterventionExperimentV1
         .document()
         .expect("the vendored intervention schema is readable");
     assert_eq!(
@@ -1071,6 +1072,44 @@ fn refuses_unsafe_paths_without_writing() {
         1,
         "the valid record is what the store holds"
     );
+}
+
+/// Every record carries exactly one EA claim strength, and for this family it
+/// is `tested`: a record with no `strength` is refused rather than defaulted,
+/// and each of the other three wire names, or a label outside the vocabulary,
+/// is refused rather than admitted or coerced.
+///
+/// > FR-056-AC-10: Every record carries `strength`, closed to Engineering
+/// > Assurance's `tested` claim strength (FR-022); a record with no `strength`
+/// > is refused, not defaulted.
+///
+/// Trace: FR-056-AC-10
+/// Provenance: PLAT-972
+#[test]
+fn tc_479_109_strength_is_required_and_closed_to_tested() {
+    let base = accepted(&retained(), "the retained record");
+    assert_eq!(base.strength, ClaimStrength::Tested);
+
+    required(&["strength"]);
+
+    let mut refused_strengths = 0_usize;
+    for strength in ClaimStrength::ALL {
+        if strength == ClaimStrength::Tested {
+            continue;
+        }
+        let what = format!("an intervention record claiming `{strength}`");
+        let error = refused(&with(&["strength"], json!(strength.wire_name())), &what);
+        names(&error, "/strength", &what);
+        refused_strengths += 1;
+    }
+    assert_eq!(
+        refused_strengths, 3,
+        "anti-vacuity floor: every strength but `tested` is measured"
+    );
+
+    let what = "a strength outside the EA vocabulary";
+    let error = refused(&with(&["strength"], json!("verified")), what);
+    names(&error, "/strength", what);
 }
 
 /// Assert intake refuses this candidate under this code, and writes nothing.

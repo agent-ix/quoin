@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The one vendored schema this crate kept: `assurance-v1` (quoin#474).
+//! `assurance-v1` schema validation (quoin#474).
 //!
-//! ## Why a vendored schema exists here at all
+//! The schema itself is `quire-rs`'s: this crate already links `quire-rs` as
+//! its engine (`Cargo.toml`), and `assurance-v1.schema.json`'s `$id` names
+//! `agent-ix.github.io/quire-rs/...` -- it is quire-rs's document, not
+//! quoin's. A second copy under `schemas/` here, kept in step by hand, could
+//! only drift from the one the linked engine actually emits against; using
+//! [`quire_rs::assurance::ASSURANCE_V1_SCHEMA`] directly means the schema this
+//! crate validates against and the schema the linked engine was built from
+//! are the same bytes by construction.
+//!
+//! ## Why the schema check exists here at all
 //!
 //! [`crate::payload`] explains why the other four vendored schemas did not
 //! come across: a payload read into the engine's own type is checked against
@@ -31,8 +40,9 @@
 //! `src/quire/validate.ts:99` builds `new Ajv2020({ allErrors: true, strict:
 //! false })` and registers **no** format checks — unlike the two measurement
 //! ajv instances, which each register `date-time`. `assurance-v1` carries one
-//! `format`, `uuid` on `$defs.artifact.uuid` (`schemas/assurance-v1.schema.json:110`),
-//! and under that ajv it is an annotation: `"not-a-uuid"` is accepted today.
+//! `format`, `uuid` on `$defs.artifact.uuid`
+//! (`quire_rs::assurance::ASSURANCE_V1_SCHEMA`), and under that ajv it is an
+//! annotation: `"not-a-uuid"` is accepted today.
 //!
 //! So the constructor is [`quoin_jsonschema::SchemaValidator::compile_vendored`],
 //! which registers nothing and asserts nothing. Reaching for
@@ -57,32 +67,22 @@ use serde_json::Value;
 
 use crate::error::{Error, Result};
 
-/// The committed document's path, relative to the repository root.
-pub const VENDORED_PATH: &str = "rust/crates/quoin-quire/schemas/assurance-v1.schema.json";
+/// A name for the schema's origin, for a compile failure to cite. Not a path
+/// in this working tree: the schema comes from the linked `quire-rs` crate,
+/// not from a file quoin ships.
+pub const SOURCE_PATH: &str = "quire_rs::assurance::ASSURANCE_V1_SCHEMA";
 
-/// The `quire-rs` revision these bytes were copied out of.
+/// The schema bytes, straight from the linked `quire-rs` engine.
 ///
-/// Not the revision `Cargo.toml` links, and deliberately so: the linked engine
-/// may be newer while emitting the same schema, which is the case the retained
-/// relock stated as *"a newer engine with unchanged schemas may retain the
-/// older, exact contract source"*. The two numbers are the whole provenance
-/// the deleted `src/quire/contract.ts` carried for this document (quoin#502);
-/// they live here because this crate is now the only thing that vendors it.
-pub const VENDORED_SOURCE_REVISION: &str = "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f";
-
-/// SHA-256 of [`SOURCE`] at [`VENDORED_SOURCE_REVISION`].
-///
-/// Derived from the upstream git object, never from this working tree: an edit
-/// here without a matching upstream refresh fails `tc_474_011` rather than
-/// quietly teaching quoin a contract quire does not emit.
-pub const VENDORED_SHA256: &str =
-    "441e1b8324fe64e234a007216b11867ec937ac4779fcebcdd84b30fa064367e5";
-
-/// The committed schema bytes.
-///
-/// `include_str!`, never `std::fs`: a schema read off disk at run time is a
-/// schema that can differ from the one the tests measured.
-pub const SOURCE: &str = include_str!("../schemas/assurance-v1.schema.json");
+/// Not `include_str!` of a local copy: `quire-rs` already embeds this schema
+/// (`quire_rs::assurance::ASSURANCE_V1_SCHEMA`, itself an `include_str!` in
+/// quire-rs's own source) and re-embedding it here a second time is exactly
+/// the drift a vendored copy risks — the crate this document validates
+/// against and the crate that produces it would then be two different
+/// pinned revisions unless someone remembered to update both. Consuming the
+/// constant means they cannot drift: whatever `Cargo.toml` links is what this
+/// module validates against.
+pub const SOURCE: &str = quire_rs::assurance::ASSURANCE_V1_SCHEMA;
 
 /// A document that satisfied `assurance-v1`.
 ///
@@ -92,7 +92,7 @@ pub const SOURCE: &str = include_str!("../schemas/assurance-v1.schema.json");
 /// caller re-checks what it was handed.
 ///
 /// It is a distinct type rather than a reuse of [`quoin_jsonschema::ValidDocument`]
-/// because that one is indexed by `quoin_jsonschema::VendoredSchema`, the
+/// because that one is indexed by `quoin_jsonschema::MeasurementSchema`, the
 /// closed enum of the two **measurement** documents. `assurance-v1` is a quire
 /// output contract owned by this crate; widening that enum would put it in the
 /// measurement crate's namespace and hand it that enum's format policy, which
@@ -129,12 +129,12 @@ fn validator() -> Result<&'static SchemaValidator> {
         .get_or_init(|| {
             let document: Value = serde_json::from_str(SOURCE)
                 .map_err(|source| format!("the vendored document is not JSON: {source}"))?;
-            SchemaValidator::compile_vendored(Path::new(VENDORED_PATH), &document, &[])
+            SchemaValidator::compile_vendored(Path::new(SOURCE_PATH), &document, &[])
                 .map_err(|source| source.to_string())
         })
         .as_ref()
         .map_err(|detail| Error::VendoredSchemaInvalid {
-            path: Path::new(VENDORED_PATH).to_path_buf(),
+            path: Path::new(SOURCE_PATH).to_path_buf(),
             detail: detail.clone(),
         })
 }

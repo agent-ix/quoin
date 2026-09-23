@@ -154,6 +154,10 @@ struct CollectionRefWire<'a> {
     /// Spread in only when truthy, so absent rather than `null`.
     #[serde(skip_serializing_if = "Option::is_none")]
     corpus_revision: Option<&'a str>,
+    /// Absent when there is nothing unverified (PLAT-969), matching
+    /// `corpus_revision` above rather than an empty array.
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    unverified_artifacts: &'a [String],
 }
 
 impl<'a> CollectionRefWire<'a> {
@@ -168,6 +172,7 @@ impl<'a> CollectionRefWire<'a> {
             tool_version: &reference.tool_version,
             config_digest: &reference.config_digest,
             corpus_revision: reference.corpus_revision.as_deref(),
+            unverified_artifacts: &reference.unverified_artifacts,
         }
     }
 }

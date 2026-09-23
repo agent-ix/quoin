@@ -47,9 +47,9 @@ pub use argument::{
 };
 pub use authored::{
     ArgumentSummary, AssumptionView, AuthoredArgumentView, BuildAuthoredArgumentRequest,
-    ChallengeView, ChallengeViewStatus, CriterionView, DecisionState, ReasoningView,
-    SufficiencyDecision, TopClaimView, UnusedDecision, ViewSchemaVersion, ViewStatus,
-    build_authored_argument_view, render_authored_argument,
+    ChallengeView, ChallengeViewStatus, CriterionView, DecisionState, EvidenceIndexEntry,
+    EvidenceRefState, ReasoningView, SufficiencyDecision, TopClaimView, UnusedDecision,
+    ViewSchemaVersion, ViewStatus, build_authored_argument_view, render_authored_argument,
 };
 pub use case::{AssuranceCase, CaseInput, CaseNode, NodeKind, NodeStatus, Unreadable, build_case};
 pub use discharge::{

@@ -48,15 +48,32 @@ struct Run {
     status: i32,
 }
 
+/// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production.
+/// Materialized once per process from the embedded bytes `quoin-semantic`'s
+/// `build.rs` compiles in (PLAT-887 de-vendoring), not read from a
+/// source-tree `src/semantic`, which no longer holds a schema tree.
+fn semantic_root() -> PathBuf {
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root = std::env::temp_dir().join(format!(
+            "quoin-core-tc-447-census-semantic-{}",
+            std::process::id()
+        ));
+        quoin_semantic::materialize_embedded_contract(&root)
+            .expect("the embedded semantic contract materializes");
+        root
+    })
+    .clone()
+}
+
 fn run(op: &str, stdin: &str) -> Run {
     let request: Value = serde_json::from_str(stdin).expect("census request is JSON");
-    let semantic_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../src/semantic");
     let response = dispatch(
         op,
         &request,
         &RuntimeSettings {
             ix_home: None,
-            semantic_root: Some(semantic_root),
+            semantic_root: Some(semantic_root()),
         },
     );
     let response = match response {

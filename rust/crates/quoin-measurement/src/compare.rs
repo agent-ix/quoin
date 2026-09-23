@@ -16,10 +16,20 @@
 //! [`quoin_store::canonical_bytes`] — the store's JCS writer, which agrees with
 //! `JSON.stringify` on this shape — rather than from a second serializer
 //! written here (FR-100-CON-4).
+//!
+//! # Protected apparatus (PLAT-975)
+//!
+//! A slice whose plan's recorded protected apparatus differs between the two
+//! collections is `apparatus_changed` and blocks the delta, as a moved
+//! definition does. Movement in an artifact the plan does not protect is
+//! `artifact_changed`, reported beside the delta and not blocking. Both read
+//! only what each collection recorded when it was written.
+
+use std::collections::BTreeSet;
 
 use quoin_store::{JsonValue, StoreError, canonical_bytes};
 
-use crate::types::collection::MeasurementCollection;
+use crate::types::collection::{MeasurementCollection, ResolvedApparatus};
 use crate::types::comparison::{
     ComparisonReason, ComparisonReasonCode, ComparisonStatus, MeasurementComparison,
 };
@@ -105,6 +115,16 @@ fn compare_one(
             ),
         ));
     }
+    let protected = (
+        before.protected_apparatus_of(a.plan_id.as_str()),
+        after.protected_apparatus_of(b.plan_id.as_str()),
+    );
+    if let Some(change) = apparatus_change(before, after, protected) {
+        reasons.push(ComparisonReason::new(
+            ComparisonReasonCode::ApparatusChanged,
+            format!("{metric}: protected apparatus changed: {change}"),
+        ));
+    }
     if incomplete(a) || incomplete(b) {
         reasons.push(ComparisonReason::new(
             ComparisonReasonCode::IncompletePopulation,
@@ -130,6 +150,13 @@ fn compare_one(
         ));
     }
 
+    if let Some(moved) = unprotected_movement(before, after, protected) {
+        reasons.push(ComparisonReason::new(
+            ComparisonReasonCode::ArtifactChanged,
+            format!("{metric}: unprotected artifacts moved: {moved}"),
+        ));
+    }
+
     let blocked = reasons.iter().any(|reason| reason.blocking);
     MeasurementComparison {
         metric: metric.to_owned(),
@@ -150,11 +177,115 @@ fn compare_one(
     }
 }
 
+/// How the plan's recorded protected apparatus differs between the two
+/// collections, rendered, or `None` when it does not (PLAT-975).
+///
+/// The comparison is over what each collection **recorded** when it was
+/// written, never the disk as it reads now: a file edited, a file added
+/// under or removed from a directory entry, a set recorded on only one side,
+/// and a protected path either side lists in `unverifiedArtifacts` are each
+/// a change. Two collections that both recorded nothing for the plan are not
+/// compared on apparatus at all — this layer reads no plan, so it cannot
+/// tell that from a plan that protects nothing; the report's ratchet and the
+/// checker, which hold the plan, refuse that case themselves.
+fn apparatus_change(
+    before: &MeasurementCollection,
+    after: &MeasurementCollection,
+    protected: (Option<&ResolvedApparatus>, Option<&ResolvedApparatus>),
+) -> Option<String> {
+    let (left, right) = match protected {
+        (None, None) => return None,
+        (Some(_), None) => return Some("recorded only by the earlier collection".to_owned()),
+        (None, Some(_)) => return Some("recorded only by the later collection".to_owned()),
+        (Some(left), Some(right)) => (left, right),
+    };
+    let mut changes = Vec::new();
+    let edited: Vec<&str> = left
+        .iter()
+        .filter(|(path, digest)| right.get(*path).is_some_and(|other| other != *digest))
+        .map(|(path, _)| path.as_str())
+        .collect();
+    let added: Vec<&str> = right
+        .keys()
+        .filter(|path| !left.contains_key(*path))
+        .map(String::as_str)
+        .collect();
+    let removed: Vec<&str> = left
+        .keys()
+        .filter(|path| !right.contains_key(*path))
+        .map(String::as_str)
+        .collect();
+    let unverified: Vec<&str> = [before, after]
+        .iter()
+        .filter_map(|collection| collection.verification_stack.as_ref())
+        .flat_map(|stack| &stack.unverified_artifacts)
+        .filter(|name| left.contains_key(*name) || right.contains_key(*name))
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    for (label, paths) in [
+        ("edited", edited),
+        ("added", added),
+        ("removed", removed),
+        ("listed as unverified", unverified),
+    ] {
+        if !paths.is_empty() {
+            changes.push(format!("{label} {}", paths.join(", ")));
+        }
+    }
+    (!changes.is_empty()).then(|| changes.join("; "))
+}
+
+/// The `verificationStack.artifacts` names the plan does not protect whose
+/// digest moved, or that only one side states, rendered, or `None` (PLAT-975).
+///
+/// Only asked when at least one side recorded protected apparatus for the
+/// plan: "unprotected" means something only against a declared protected
+/// set, and a comparison under a plan that protects nothing reads exactly as
+/// it did before PLAT-975.
+fn unprotected_movement(
+    before: &MeasurementCollection,
+    after: &MeasurementCollection,
+    protected: (Option<&ResolvedApparatus>, Option<&ResolvedApparatus>),
+) -> Option<String> {
+    let (left, right) = protected;
+    if left.is_none() && right.is_none() {
+        return None;
+    }
+    let is_protected = |name: &str| {
+        left.is_some_and(|set| set.contains_key(name))
+            || right.is_some_and(|set| set.contains_key(name))
+    };
+    let earlier = before
+        .verification_stack
+        .as_ref()
+        .map(|stack| &stack.artifacts);
+    let later = after
+        .verification_stack
+        .as_ref()
+        .map(|stack| &stack.artifacts);
+    let names: BTreeSet<&String> = earlier
+        .into_iter()
+        .chain(later)
+        .flat_map(|map| map.keys())
+        .collect();
+    let moved: Vec<&str> = names
+        .into_iter()
+        .filter(|name| !is_protected(name))
+        .filter(|name| {
+            earlier.and_then(|map| map.get(*name)) != later.and_then(|map| map.get(*name))
+        })
+        .map(String::as_str)
+        .collect();
+    (!moved.is_empty()).then(|| moved.join(", "))
+}
+
 /// Whether an observation's population disqualifies it from comparison.
 ///
 /// `compare.ts:78-88`: a declared `complete` decides on its own; otherwise a
 /// ratio that matched none of a non-empty examined population is incomplete.
-fn incomplete(observation: &MeasurementObservation) -> bool {
+pub(crate) fn incomplete(observation: &MeasurementObservation) -> bool {
     let population = observation
         .population
         .as_ref()
