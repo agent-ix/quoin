@@ -44,7 +44,8 @@ use std::path::{Path, PathBuf};
 use quoin_measurement::json_bridge::from_serde;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::portfolio::{
-    PortfolioCollectionSnapshot, PortfolioRepositoryReport, build_portfolio_report_from_collections,
+    PortfolioCollectionSnapshot, PortfolioRepositoryReport, RANKING_ADVISORY_NOTE,
+    build_portfolio_report_from_collections,
 };
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::store::read_measurement_collection_results;
@@ -111,6 +112,42 @@ fn golden() -> Value {
 /// capture's one normalisation and this file's one normalisation.
 fn normalise(text: &str) -> String {
     text.replace(&tree().to_string_lossy().into_owned(), TREE_TOKEN)
+}
+
+/// PLAT-968 gave [`render_governed_graph_portfolio`]'s inherited first
+/// section — `render_portfolio_report` verbatim, per this crate's own
+/// `render.rs` doc — an appended advisory "Priority ranking" section with no
+/// counterpart in this frozen `graph-portfolio.ts` capture, for the same
+/// reason `quoin-measurement`'s own `tc_473_reporting.rs` strips it: the
+/// section did not exist when the oracle was captured, and FR-101-AC-5
+/// forbids a live TypeScript run to add one. Unlike that file, the ranking
+/// section here is not the last thing rendered — `render_governed_graph_portfolio`
+/// appends its own "Governed graph evidence" sections after it — so this
+/// splices the ranking section out rather than truncating from where it
+/// starts.
+fn without_ranking_section(rendered: &str) -> String {
+    const MARKER: &str = "\n\n## Priority ranking\n";
+    const RESUME: &str = "# Governed graph evidence";
+    let (before, after_marker) = rendered
+        .split_once(MARKER)
+        .expect("the ranking section is rendered unconditionally");
+    let resume_index = after_marker
+        .find(RESUME)
+        .expect("the governed graph sections follow the ranking section");
+    let (section, resumed) = after_marker.split_at(resume_index);
+    // Every spliced-out line must be one the ranking section writes, so the
+    // splice cannot hide any other drift between the marker and RESUME.
+    for line in section.lines() {
+        assert!(
+            line.is_empty()
+                || line == RANKING_ADVISORY_NOTE
+                || line == "Not ranked:"
+                || line.starts_with("| ")
+                || line.starts_with("- "),
+            "unexpected line inside the spliced-out ranking section: {line:?}"
+        );
+    }
+    format!("{before}\n\n{resumed}")
 }
 
 fn text_at<'a>(value: &'a Value, path: &[&str]) -> &'a str {
@@ -381,12 +418,13 @@ fn tc_476_001_governed_portfolio_is_byte_identical() {
         "canonical governed graph portfolio JSON diverged from the capture"
     );
     assert_eq!(
-        normalise(
+        without_ranking_section(&normalise(
             &render_governed_graph_portfolio(&report)
                 .unwrap_or_else(|error| panic!("the Markdown renderer refused: {error}"))
-        ),
+        )),
         text_at(case, &["rendered"]),
-        "the rendered governed graph portfolio diverged from the capture"
+        "the rendered governed graph portfolio diverged from the capture, once PLAT-968's \
+         Rust-only ranking section is set aside"
     );
 
     // `DIVERGENCE.md` §2: an observation with no `dimensions` becomes the

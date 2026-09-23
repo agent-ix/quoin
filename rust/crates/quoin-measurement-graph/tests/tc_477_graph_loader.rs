@@ -40,6 +40,7 @@
 
 use std::path::PathBuf;
 
+use quoin_measurement::portfolio::RANKING_ADVISORY_NOTE;
 use quoin_measurement_graph::input::NormalizedStructuralGraph;
 use quoin_measurement_graph::mapping::GraphPortfolioMappingOptions;
 use quoin_measurement_graph::{
@@ -103,6 +104,37 @@ fn golden() -> Value {
 /// capture's one normalisation and this file's one normalisation.
 fn normalise(text: &str) -> String {
     text.replace(tree().to_string_lossy().as_ref(), TREE_TOKEN)
+}
+
+/// PLAT-968 gave `render_governed_graph_portfolio`'s inherited first section
+/// — `render_portfolio_report` verbatim — an appended advisory "Priority
+/// ranking" section with no counterpart in this frozen `graph-portfolio.ts`
+/// capture. Same fix as `tc_476_graph_portfolio.rs`'s helper of the same
+/// name: splice the section out rather than truncate, since the governed
+/// sections that follow it must stay.
+fn without_ranking_section(rendered: &str) -> String {
+    const MARKER: &str = "\n\n## Priority ranking\n";
+    const RESUME: &str = "# Governed graph evidence";
+    let (before, after_marker) = rendered
+        .split_once(MARKER)
+        .expect("the ranking section is rendered unconditionally");
+    let resume_index = after_marker
+        .find(RESUME)
+        .expect("the governed graph sections follow the ranking section");
+    let (section, resumed) = after_marker.split_at(resume_index);
+    // Every spliced-out line must be one the ranking section writes, so the
+    // splice cannot hide any other drift between the marker and RESUME.
+    for line in section.lines() {
+        assert!(
+            line.is_empty()
+                || line == RANKING_ADVISORY_NOTE
+                || line == "Not ranked:"
+                || line.starts_with("| ")
+                || line.starts_with("- "),
+            "unexpected line inside the spliced-out ranking section: {line:?}"
+        );
+    }
+    format!("{before}\n\n{resumed}")
 }
 
 /// The mappings the capture script built, rebuilt from the same rule.
@@ -200,9 +232,9 @@ fn tc_477_010_byte_identical_report() {
     let rendered = render_governed_graph_portfolio(&report)
         .unwrap_or_else(|error| panic!("the report would not render: {error}"));
     assert_eq!(
-        normalise(&rendered),
+        without_ranking_section(&normalise(&rendered)),
         text_at(case, "rendered"),
-        "rendered text"
+        "rendered text, once PLAT-968's Rust-only ranking section is set aside"
     );
 }
 

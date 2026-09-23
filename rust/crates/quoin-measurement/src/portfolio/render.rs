@@ -14,6 +14,7 @@
 
 use crate::common::scalar::js_f64_string;
 use crate::error::MeasurementError;
+use crate::portfolio::ranking::{PortfolioRanking, RANKING_ADVISORY_NOTE, rank_portfolio};
 use crate::portfolio::types::{PortfolioReport, PortfolioRepositoryReport};
 use crate::report::render::{
     metric_label, observation_cell, plan_cell, row_label, unverified_artifacts_suffix,
@@ -46,7 +47,56 @@ pub fn render_portfolio_report(report: &PortfolioReport) -> Result<String, Measu
         }
         lines.extend(readable(repository)?);
     }
+    lines.extend(ranking_section(&rank_portfolio(report)));
     Ok(lines.join("\n"))
+}
+
+/// The "Priority ranking" section: every rankable plan, scored and ordered,
+/// then every plan the ranking could not score, with why. Present even when
+/// both lists are empty, so a reader always sees [`RANKING_ADVISORY_NOTE`].
+fn ranking_section(ranking: &PortfolioRanking) -> Vec<String> {
+    let mut lines = vec![
+        "## Priority ranking".to_owned(),
+        String::new(),
+        RANKING_ADVISORY_NOTE.to_owned(),
+        String::new(),
+    ];
+    lines.push("| Repository | Plan | Metric | Score | Gap | Weight | Decay | Budget |".to_owned());
+    lines.push("| --- | --- | --- | ---: | ---: | ---: | ---: | --- |".to_owned());
+    if ranking.ranked.is_empty() {
+        lines.push("| n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |".to_owned());
+    } else {
+        for entry in &ranking.ranked {
+            lines.push(format!(
+                "| {} | {} ({}) | {} | {} | {} | {} | {} | {} |",
+                entry.repository,
+                entry.plan_id,
+                entry.plan_path,
+                entry.metric,
+                js_f64_string(entry.score),
+                js_f64_string(entry.gap),
+                js_f64_string(entry.weight),
+                js_f64_string(entry.decay_factor),
+                entry.budget.map_or_else(|| "n/a".to_owned(), js_f64_string),
+            ));
+        }
+    }
+    lines.push(String::new());
+    if !ranking.unranked.is_empty() {
+        lines.push("Not ranked:".to_owned());
+        lines.push(String::new());
+        for plan in &ranking.unranked {
+            lines.push(format!(
+                "- {} — {} ({}): {}",
+                plan.repository,
+                plan.plan_id,
+                plan.plan_path,
+                plan.reason.as_str()
+            ));
+        }
+        lines.push(String::new());
+    }
+    lines
 }
 
 /// The lines for a repository that could be read.

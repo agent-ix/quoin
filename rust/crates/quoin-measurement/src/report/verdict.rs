@@ -437,7 +437,12 @@ fn badness(objective: Objective, value: f64) -> Option<f64> {
 /// every earlier value alike: it names the plan, is measured under the plan's
 /// definition, carries a value, and states a population that is neither
 /// incomplete nor empty.
-pub(super) fn usable<'a>(
+///
+/// `pub(crate)` rather than `pub(super)`: [`crate::portfolio::ranking`] reuses
+/// it verbatim to decide whether a row's newest value is a usable
+/// gap-to-bound input, rather than restating "usable evidence" a second time
+/// (PLAT-968).
+pub(crate) fn usable<'a>(
     plan: &MeasurementPlan,
     observation: Option<&'a MeasurementObservation>,
 ) -> Result<(&'a MeasurementObservation, f64), InconclusiveReason> {

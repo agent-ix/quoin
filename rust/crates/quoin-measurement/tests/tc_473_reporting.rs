@@ -134,6 +134,64 @@ fn denormalise(capture: &Capture, location: &str) -> PathBuf {
     ))
 }
 
+/// PLAT-968 appended an advisory "Priority ranking" section to the rendered
+/// portfolio, and a `ranking` member to its JSON, with no counterpart in the
+/// frozen TypeScript oracle: `portfolio.ts` never ranked anything, and
+/// FR-101-AC-5 forbids re-capturing this oracle from a live TypeScript
+/// runtime to add one. This strips exactly that appended, Rust-only content
+/// before the byte comparison — the one place this suite deliberately does
+/// not assert parity with an oracle that cannot state an opinion about
+/// something it predates.
+fn without_ranking_section(rendered: &str) -> String {
+    // The ranking section is always preceded by exactly one blank line, which
+    // `split_once` consumes along with the header; put back the single
+    // trailing newline every prior repository section already ends its own
+    // lines with, so the prefix reads as though `render_portfolio_report` had
+    // never called `ranking_section` at all.
+    let (before, section) = rendered
+        .split_once("\n\n## Priority ranking\n")
+        .expect("the ranking section is rendered unconditionally");
+    assert_only_ranking_lines(section);
+    format!("{before}\n")
+}
+
+/// Fail unless every line of `section` (the ranking section after its
+/// header) is one `ranking_section` writes: blank, the advisory note, a
+/// table row, the "Not ranked:" label or an unranked bullet. This is what
+/// keeps the strip from hiding any other drift appended after the header.
+fn assert_only_ranking_lines(section: &str) {
+    use quoin_measurement::portfolio::RANKING_ADVISORY_NOTE;
+    for line in section.lines() {
+        assert!(
+            line.is_empty()
+                || line == RANKING_ADVISORY_NOTE
+                || line == "Not ranked:"
+                || line.starts_with("| ")
+                || line.starts_with("- "),
+            "unexpected line inside the stripped ranking section: {line:?}"
+        );
+    }
+}
+
+/// As [`without_ranking_section`], for the JSON form's `ranking` member.
+///
+/// Round-trips through `quoin_store`'s own strict reader and canonical
+/// pretty-printer (not `serde_json::to_string`) so the surrounding bytes stay
+/// exactly what [`render_portfolio_report_json`] would have written without
+/// the member — same two-space indent, same ECMAScript own-property key
+/// order, same trailing newline.
+fn without_ranking_member(json: &str) -> String {
+    let mut value = quoin_store::parse_strict_json_str(json).expect("the rendered JSON parses");
+    let quoin_store::JsonValue::Object(ref mut object) = value else {
+        panic!("the portfolio JSON is an object");
+    };
+    assert!(
+        object.remove("ranking").is_some(),
+        "the ranking member is rendered unconditionally"
+    );
+    quoin_store::canonical_json(&value).expect("the trimmed value re-serializes")
+}
+
 /// Trace: FR-101-AC-11
 /// Provenance: quoin#473
 #[test]
@@ -259,14 +317,18 @@ fn tc_473_render_portfolio_report_is_byte_identical() {
         .map(|location| denormalise(&capture, location))
         .collect();
     let report = build_portfolio_report(&locations);
+    let rendered = normalise(&capture, &render_portfolio_report(&report).unwrap());
     assert_eq!(
-        normalise(&capture, &render_portfolio_report(&report).unwrap()),
+        without_ranking_section(&rendered),
         capture.portfolio.rendered,
-        "the rendered portfolio is not what the TypeScript wrote"
+        "the rendered portfolio is not what the TypeScript wrote, once PLAT-968's \
+         Rust-only ranking section is set aside"
     );
+    let json = normalise(&capture, &render_portfolio_report_json(&report).unwrap());
     assert_eq!(
-        normalise(&capture, &render_portfolio_report_json(&report).unwrap()),
+        without_ranking_member(&json),
         capture.portfolio.json,
-        "the portfolio JSON is not what the TypeScript wrote"
+        "the portfolio JSON is not what the TypeScript wrote, once PLAT-968's \
+         Rust-only ranking member is set aside"
     );
 }
