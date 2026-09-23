@@ -35,7 +35,8 @@
   "toolVersion": "fixture 1",
   "verificationStack": {
     "artifacts": {
-      "config": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+      "config": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "spec/assurance/MP-961-prior.md": "sha256:e26a17d92510c936333e888863cdd7d489c71fe8782b17eae42001c0e3da9666"
     },
     "buildProfile": "release",
     "capabilities": [
@@ -43,6 +44,11 @@
     ],
     "executableDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
     "lockDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "protectedApparatus": {
+      "MP-961-prior": {
+        "spec/assurance/MP-961-prior.md": "sha256:e26a17d92510c936333e888863cdd7d489c71fe8782b17eae42001c0e3da9666"
+      }
+    },
     "schemaVersion": "verification-stack-attestation-v1",
     "sources": {
       "fixture": {

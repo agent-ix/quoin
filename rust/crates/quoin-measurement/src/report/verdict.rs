@@ -30,6 +30,11 @@
 //! `--ratchet` with no baseline once had (CR-029, agent-ix/quoin#169). The
 //! same rule decides which earlier values may *set* the best: an earlier value
 //! that is incomplete, empty or under another definition is not one.
+//!
+//! In a protected series (PLAT-975), an earlier value measured with a
+//! different recorded protected apparatus is not a floor either, and its
+//! presence makes the ratchet `inconclusive` (`apparatus_changed`); a
+//! collection that recorded none is `apparatus_unrecorded`.
 
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -67,11 +72,18 @@ pub enum InconclusiveReason {
     /// `Objective` requires a bound for `direction: target`, the one
     /// direction whose ratchet needs one.
     NoBound,
+    /// An earlier value of the slice under the plan's `definition_version`
+    /// came from a collection whose recorded protected apparatus differs from
+    /// the newest one's (PLAT-975).
+    ApparatusChanged,
+    /// In a protected series, the newest collection, or one behind an earlier
+    /// value, recorded no protected apparatus (PLAT-975).
+    ApparatusUnrecorded,
 }
 
 impl InconclusiveReason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 10] = [
         Self::NoCurrentValue,
         Self::PlanMismatch,
         Self::DefinitionMismatch,
@@ -80,6 +92,8 @@ impl InconclusiveReason {
         Self::EmptyPopulation,
         Self::NoPrior,
         Self::NoBound,
+        Self::ApparatusChanged,
+        Self::ApparatusUnrecorded,
     ];
 
     /// The stable wire spelling.
@@ -94,6 +108,8 @@ impl InconclusiveReason {
             Self::EmptyPopulation => "empty_population",
             Self::NoPrior => "no_prior",
             Self::NoBound => "no_bound",
+            Self::ApparatusChanged => "apparatus_changed",
+            Self::ApparatusUnrecorded => "apparatus_unrecorded",
         }
     }
 
@@ -120,6 +136,10 @@ impl InconclusiveReason {
                 "no earlier collection measured this plan under its definition version"
             }
             Self::NoBound => "the objective states no bound",
+            Self::ApparatusChanged => {
+                "an earlier value was measured with a different protected apparatus"
+            }
+            Self::ApparatusUnrecorded => "a collection recorded no protected apparatus",
         }
     }
 }
@@ -262,19 +282,20 @@ impl StageVerdict {
 /// The verdict for one report row, or `None` when the plan states no
 /// `objective` or sits at a stage this module does not decide.
 ///
-/// `observation` is the row's newest observation; `earlier` is every
-/// collection older than the one it came from, in collection order.
+/// `observation` is the row's newest observation, from `collection`;
+/// `earlier` is every collection older than that one, in collection order.
 #[must_use]
 pub fn stage_verdict(
     plan: &MeasurementPlan,
     observation: Option<&MeasurementObservation>,
+    collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
 ) -> Option<StageVerdict> {
     let objective = plan.objective?;
     match plan.stage {
         MeasurementStage::Ratchet => Some(StageVerdict::Ratchet {
             objective,
-            outcome: ratchet(plan, objective, observation, earlier),
+            outcome: ratchet(plan, objective, observation, collection, earlier),
         }),
         MeasurementStage::Target => Some(StageVerdict::Target {
             objective,
@@ -368,6 +389,7 @@ fn ratchet(
     plan: &MeasurementPlan,
     objective: Objective,
     observation: Option<&MeasurementObservation>,
+    collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
 ) -> RatchetOutcome {
     let (observation, current) = match usable(plan, observation) {
@@ -377,6 +399,9 @@ fn ratchet(
     let Some(current_badness) = badness(objective, current) else {
         return RatchetOutcome::Inconclusive(InconclusiveReason::NoBound);
     };
+    if let Err(reason) = same_apparatus(plan, observation, collection, earlier) {
+        return RatchetOutcome::Inconclusive(reason);
+    }
     let best = earlier_values(plan, observation.dimensions.entries(), earlier)
         .filter_map(|(value, collection)| Some((badness(objective, value)?, value, collection)))
         // `min_by` keeps the first of equal minima, so a tie names the
@@ -400,6 +425,40 @@ fn ratchet(
             best_prior,
         }
     }
+}
+
+/// In a protected series, refuse a floor unless the newest collection and
+/// every collection behind an earlier usable value recorded the same
+/// protected apparatus (PLAT-975).
+///
+/// The series is protected when the plan declares a list or any of these
+/// collections recorded a set, so deleting the plan's list does not switch
+/// the check off. A changed set needs a new `definition_version`
+/// (engineering-assurance FR-024): a set that differs under the plan's own
+/// definition is `apparatus_changed`, and a missing one `apparatus_unrecorded`,
+/// for as long as the series lasts.
+fn same_apparatus(
+    plan: &MeasurementPlan,
+    observation: &MeasurementObservation,
+    collection: Option<&MeasurementCollection>,
+    earlier: &[MeasurementCollection],
+) -> Result<(), InconclusiveReason> {
+    let plan_id = plan.id.as_str();
+    let own = collection.and_then(|found| found.protected_apparatus_of(plan_id));
+    let theirs: Vec<_> = earlier_values(plan, observation.dimensions.entries(), earlier)
+        .map(|(_, found)| found.protected_apparatus_of(plan_id))
+        .collect();
+    if plan.protected_apparatus.is_none() && own.is_none() && theirs.iter().all(Option::is_none) {
+        return Ok(());
+    }
+    let own = own.ok_or(InconclusiveReason::ApparatusUnrecorded)?;
+    if theirs.contains(&None) {
+        return Err(InconclusiveReason::ApparatusUnrecorded);
+    }
+    if theirs.iter().any(|set| *set != Some(own)) {
+        return Err(InconclusiveReason::ApparatusChanged);
+    }
+    Ok(())
 }
 
 /// A `target` plan's progress towards its objective's bound.

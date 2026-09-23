@@ -13,7 +13,7 @@ use quoin_store::{JsonObject, JsonValue, RawFileSha256Digest};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::types::collection::{
-    BuildProfile, CleanSourceState, SourceAttestation, Toolchains,
+    BuildProfile, CleanSourceState, ResolvedApparatus, SourceAttestation, Toolchains,
     VERIFICATION_STACK_SCHEMA_VERSION, VerificationStackAttestation,
 };
 use crate::types::ids::{FullGitRevision, NonEmptyText};
@@ -76,6 +76,7 @@ pub(crate) fn verification_stack(
     let capabilities = note(&mut findings, capabilities(object));
     let artifacts = note(&mut findings, artifacts(object));
     let unverified_artifacts = note(&mut findings, unverified_artifacts(object));
+    let protected_apparatus = note(&mut findings, protected_apparatus(object));
     if !findings.is_empty() {
         return Err(MeasurementError::with_findings(
             CODE,
@@ -97,6 +98,7 @@ pub(crate) fn verification_stack(
             capabilities: capabilities?,
             artifacts: artifacts?,
             unverified_artifacts: unverified_artifacts?,
+            protected_apparatus: protected_apparatus?,
         })
     })()
     .ok_or_else(|| refuse("verificationStack is invalid"))
@@ -403,4 +405,90 @@ fn unverified_artifacts(object: &JsonObject) -> Result<Vec<String>, MeasurementE
             "verificationStack.unverifiedArtifacts must be an array of strings",
         )),
     }
+}
+
+/// `protectedApparatus`, each governing plan's resolved protected apparatus
+/// keyed by plan id (PLAT-975). Absent reads as empty: a collection no
+/// protecting plan governs states nothing, and neither does evidence written
+/// before PLAT-975. A present member must be an object of non-empty objects
+/// whose members are full sha256 digests. As with [`unverified_artifacts`],
+/// this reads what the stored document says; [`crate::store::publish`] is the
+/// only writer that computes it from the repository.
+fn protected_apparatus(
+    object: &JsonObject,
+) -> Result<BTreeMap<String, ResolvedApparatus>, MeasurementError> {
+    let Some(value) = object.get("protectedApparatus") else {
+        return Ok(BTreeMap::new());
+    };
+    let plans = read::object(
+        value,
+        CODE,
+        "verificationStack.protectedApparatus must be an object keyed by plan id",
+    )?;
+    let mut findings = Vec::new();
+    let mut out = BTreeMap::new();
+    for (plan, files) in plans.iter() {
+        let files = match files {
+            JsonValue::Object(files) if !files.is_empty() => files,
+            _ => {
+                findings.push(format!(
+                    "verificationStack.protectedApparatus.{plan} must be a non-empty object of \
+                     file digests"
+                ));
+                continue;
+            }
+        };
+        let mut resolved = ResolvedApparatus::new();
+        for (file, digest) in files.iter() {
+            match digest
+                .as_str()
+                .and_then(|text| RawFileSha256Digest::parse_stored(text).ok())
+            {
+                Some(digest) => {
+                    resolved.insert(file.clone(), digest);
+                }
+                None => findings.push(format!(
+                    "verificationStack.protectedApparatus.{plan}.{file} must be a full sha256 \
+                     digest"
+                )),
+            }
+        }
+        out.insert(plan.clone(), resolved);
+    }
+    if findings.is_empty() {
+        Ok(out)
+    } else {
+        Err(MeasurementError::with_findings(
+            CODE,
+            "verificationStack.protectedApparatus is invalid",
+            findings,
+        ))
+    }
+}
+
+/// The `verificationStack` members intake computes itself (PLAT-969,
+/// PLAT-975).
+const COMPUTED_MEMBERS: [&str; 2] = ["unverifiedArtifacts", "protectedApparatus"];
+
+/// One finding per computed member a new candidate states. A caller that
+/// states either is buggy or is writing its own answer, and neither is
+/// silently overwritten.
+pub(crate) fn stated_computed_members(candidate: &JsonValue) -> Vec<String> {
+    let Some(JsonValue::Object(stack)) = candidate
+        .as_object()
+        .ok()
+        .and_then(|object| object.get("verificationStack"))
+    else {
+        return Vec::new();
+    };
+    COMPUTED_MEMBERS
+        .into_iter()
+        .filter(|member| stack.contains(member))
+        .map(|member| {
+            format!(
+                "verificationStack.{member} is computed by intake and must not be stated by the \
+                 candidate"
+            )
+        })
+        .collect()
 }

@@ -68,4 +68,6 @@ pub use error::{JevError, JevErrorCode, Result};
 pub use question_set::QuestionSet;
 pub use report::{FrReport, render as render_findings};
 pub use span_ballot::{BallotOutcome, Granularity, Span, SpanBallot, candidate_spans};
-pub use verdict::{CoverageVerdict, Finding, FrVerdict, Severity, SubQuestionCheck};
+pub use verdict::{
+    Certainty, CoverageVerdict, Finding, FrVerdict, Severity, SubQuestionCheck, Thresholds,
+};

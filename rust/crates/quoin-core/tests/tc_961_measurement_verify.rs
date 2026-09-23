@@ -88,10 +88,16 @@ fn verify(repo: &Path, claimed: Option<&str>) -> (i32, Value, String) {
 #[test]
 fn tc_961_018_record_verify_accepts_then_a_tampered_observation_is_rejected() {
     let repo = repository();
-    let record: Value = serde_json::from_str(
+    let mut record: Value = serde_json::from_str(
         &std::fs::read_to_string(fixtures().join("right/accept/1.json")).unwrap(),
     )
     .unwrap();
+    // The fixture is the stored form; intake computes `protectedApparatus`
+    // itself and refuses a candidate that states it (PLAT-975).
+    record["verificationStack"]
+        .as_object_mut()
+        .unwrap()
+        .remove("protectedApparatus");
     let recorded = run(
         "measurement.record",
         &json!({ "repo": repo.path().to_str().unwrap(), "record": record }).to_string(),

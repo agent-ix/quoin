@@ -44,7 +44,7 @@
       "owner": "engineering assurance",
       "producer": {
         "configuration_digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
-        "definition_version": "github-actions.release-operational-v1",
+        "definition_version": "github-actions.release-operational-v2",
         "environment": {
           "github_repository": "agent-ix/quoin",
           "github_run_id": 33280266874,
@@ -141,7 +141,7 @@
       "owner": "engineering assurance",
       "producer": {
         "configuration_digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
-        "definition_version": "github-actions.release-operational-v1",
+        "definition_version": "github-actions.release-operational-v2",
         "environment": {
           "github_repository": "agent-ix/quoin",
           "github_run_id": 33280266874,
