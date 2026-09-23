@@ -21,6 +21,11 @@ workspace = true
 
 [dependencies]
 quoin-modules = { workspace = true }
+# The cassette's request key (PLAT-977) hashes the canonical bytes of
+# `{state, questions}` through this crate's own `digest_canonical_value`
+# rather than a second, hand-rolled canonicalizer -- quoin already has exactly
+# one fact called "the canonical hash of a JSON value" and this reuses it.
+quoin-store = { workspace = true }
 # `corpus_check`'s "N of M" prose scan (PLAT-933) -- already a workspace
 # dependency (see the pin's own comment in the root `Cargo.toml`), so this
 # adds a direct edge and no new version.
@@ -28,6 +33,18 @@ regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+# `cassette::Cassette` (PLAT-977) holds its record-mode cache lock across the
+# delegate's `.await`, so two concurrent requests for one key cannot both call
+# the live API and both append a line -- that needs an async-aware mutex. Only
+# the `sync` feature: no runtime is built here (see `lib.rs`). Same pin as the
+# dev-dependency below and as the version already resolved through `reqwest`.
+tokio = { version = "=1.48.0", default-features = false, features = ["sync"] }
+# The cassette (PLAT-977) is a `typesafe_sdk_http::Transport` implementation,
+# and that trait is itself declared with `#[async_trait]` -- an implementer
+# needs the same macro to produce a matching `dyn`-compatible shape. Pinned to
+# 0.1.92, already resolved transitively through `typesafe-sdk-http` (see
+# `Cargo.lock`), so this adds a direct edge and no new version.
+async-trait = "=0.1.92"
 typesafe-sdk-answers = "=0.6.2"
 typesafe-sdk-client = "=0.6.2"
 typesafe-sdk-config = "=0.6.2"
@@ -35,6 +52,10 @@ typesafe-sdk-env = "=0.6.2"
 typesafe-sdk-error = "=0.6.2"
 typesafe-sdk-http = "=0.6.2"
 typesafe-sdk-questions = "=0.6.2"
+# `cassette::Cassette::send` (PLAT-977) builds a `Headers::new()` for every
+# replayed response, in production code -- promoted here from the
+# error-classification tests that used to be its only caller.
+typesafe-sdk-headers = "=0.6.2"
 
 [dev-dependencies]
 # Only for `#[tokio::test]` driving this crate's own async functions in the
@@ -42,10 +63,4 @@ typesafe-sdk-questions = "=0.6.2"
 # `lib.rs`'s module doc: the async/blocking bridge is a future CLI caller's
 # concern, not this library's).
 tokio = { version = "=1.48.0", default-features = false, features = ["rt", "macros"] }
-# typesafe-sdk-http's own mock transport (`typesafe_sdk_http::Mock`/`Exchange`)
-# is the seam used for every test here -- see `client.rs`'s module doc for why
-# the unrelated `typesafe-sdk` (0.1.2, a different crate by a different author
-# despite the name) is NOT used. `typesafe-sdk-headers` is needed directly only
-# to build `Headers` values in error-classification tests.
-typesafe-sdk-headers = "=0.6.2"
 tempfile = { workspace = true }
