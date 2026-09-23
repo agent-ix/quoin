@@ -10,7 +10,7 @@ per supported target:
 | Target | Asset | Archive member |
 | --- | --- | --- |
 | `x86_64-unknown-linux-gnu` | `quoin-v{version}-x86_64-unknown-linux-gnu.tar.gz` | `quoin` |
-| `x86_64-apple-darwin` | `quoin-v{version}-x86_64-apple-darwin.tar.gz` | `quoin` |
+| `aarch64-unknown-linux-gnu` | `quoin-v{version}-aarch64-unknown-linux-gnu.tar.gz` | `quoin` |
 | `aarch64-apple-darwin` | `quoin-v{version}-aarch64-apple-darwin.tar.gz` | `quoin` |
 | `x86_64-pc-windows-msvc` | `quoin-v{version}-x86_64-pc-windows-msvc.zip` | `quoin.exe` |
 

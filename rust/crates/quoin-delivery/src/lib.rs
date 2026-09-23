@@ -226,7 +226,7 @@ fn parse_manifest_url(value: &str, custom: bool) -> Result<Url, DeliveryError> {
 fn host_target() -> Result<&'static str, DeliveryError> {
     match (std::env::consts::OS, std::env::consts::ARCH) {
         ("linux", "x86_64") => Ok("x86_64-unknown-linux-gnu"),
-        ("macos", "x86_64") => Ok("x86_64-apple-darwin"),
+        ("linux", "aarch64") => Ok("aarch64-unknown-linux-gnu"),
         ("macos", "aarch64") => Ok("aarch64-apple-darwin"),
         ("windows", "x86_64") => Ok("x86_64-pc-windows-msvc"),
         (operating_system, architecture) => Err(DeliveryError::UnsupportedTarget(format!(

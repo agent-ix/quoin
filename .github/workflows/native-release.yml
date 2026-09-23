@@ -14,23 +14,26 @@ permissions:
 jobs:
   package:
     name: Package ${{ matrix.target }}
+    # A hung step otherwise blocks for GitHub's 6-hour default.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
+        # The platform set quire-cli ships.
         include:
           - runner: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             extension: tar.gz
             binary: quoin
-          - runner: macos-13
-            target: x86_64-apple-darwin
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
             extension: tar.gz
             binary: quoin
           - runner: macos-14
             target: aarch64-apple-darwin
             extension: tar.gz
             binary: quoin
-          - runner: windows-2022
+          - runner: windows-2025
             target: x86_64-pc-windows-msvc
             extension: zip
             binary: quoin.exe
@@ -81,7 +84,8 @@ jobs:
           if [ "$EXTENSION" = tar.gz ]; then
             tar -C rust/target/release -czf "release/$NAME" "$BINARY"
           else
-            (cd rust/target/release && zip -q "../../../release/$NAME" "$BINARY")
+            # Git Bash on the Windows runner has no `zip`; 7-Zip is preinstalled.
+            (cd rust/target/release && 7z a -tzip -bso0 "../../../release/$NAME" "$BINARY")
           fi
           test -f "release/$NAME"
       - name: Smoke the packaged native executable
@@ -99,7 +103,7 @@ jobs:
           if [ "$EXTENSION" = tar.gz ]; then
             tar -C release-smoke -xzf "release/$NAME"
           else
-            unzip -q "release/$NAME" -d release-smoke
+            7z x -bso0 -orelease-smoke "release/$NAME"
           fi
           test "$(find release-smoke -type f | wc -l | tr -d ' ')" = 1
           test -f "release-smoke/$BINARY"
@@ -134,7 +138,7 @@ jobs:
             digest=$(sha256sum "release/$name" | cut -d ' ' -f1)
             jq -n --arg target "$target" --arg asset "$name" --arg archive "$format" --argjson size "$size" --arg sha256 "$digest" --arg url "https://github.com/${REPOSITORY}/releases/download/${TAG}/${name}" '{target:$target,asset:$asset,archive:$archive,size:$size,sha256:$sha256,url:$url}'
           }
-          jq -n --arg version "$VERSION" --slurpfile artifacts <(asset x86_64-unknown-linux-gnu tar.gz tar-gz; asset x86_64-apple-darwin tar.gz tar-gz; asset aarch64-apple-darwin tar.gz tar-gz; asset x86_64-pc-windows-msvc zip zip) '{schema_version:1,version:$version,artifacts:$artifacts}' > release/quoin-update-manifest.json
+          jq -n --arg version "$VERSION" --slurpfile artifacts <(asset x86_64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-apple-darwin tar.gz tar-gz; asset x86_64-pc-windows-msvc zip zip) '{schema_version:1,version:$version,artifacts:$artifacts}' > release/quoin-update-manifest.json
           jq -e '.schema_version == 1 and (.artifacts | length == 4)' release/quoin-update-manifest.json
       - name: Create and upload the manual GitHub Release
         shell: bash
