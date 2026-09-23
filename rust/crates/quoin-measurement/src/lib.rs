@@ -125,7 +125,10 @@ pub use store::{
 };
 pub use types::collection::{MEASUREMENT_SCHEMA_VERSION, MeasurementCollection};
 pub use types::comparison::MeasurementComparison;
-pub use types::observation::MeasurementObservation;
+pub use types::observation::{
+    CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX, MeasurementObservation, constant_predictor_dims,
+    constant_predictor_item_metric,
+};
 pub use types::plan::MeasurementPlan;
 pub use types::profile::AssuranceProfileSummary;
 pub use validate::{measurement_collection, stored_measurement_collection};

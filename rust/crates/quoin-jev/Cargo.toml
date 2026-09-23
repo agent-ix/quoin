@@ -29,6 +29,13 @@ live-api = []
 
 [dependencies]
 quoin-modules = { workspace = true }
+# `constant_predictor` (PLAT-1016) builds the per-item retained observations
+# `quoin measurement verify`'s `ConstantPredictor` baseline arm reads; the
+# typed `MeasurementObservation`/`MeasurementCollection` shapes and the
+# `constant_predictor_item_metric`/`constant_predictor_dims` naming
+# convention are quoin-measurement's, shared rather than duplicated as string
+# literals in two crates.
+quoin-measurement = { workspace = true }
 # The cassette's request key (PLAT-977) hashes the canonical bytes of
 # `{state, questions}` through this crate's own `digest_canonical_value`
 # rather than a second, hand-rolled canonicalizer -- quoin already has exactly
@@ -72,3 +79,9 @@ typesafe-sdk-headers = "=0.6.2"
 # concern, not this library's).
 tokio = { version = "=1.48.0", default-features = false, features = ["rt", "macros"] }
 tempfile = { workspace = true }
+# `tc_1016_constant_predictor.rs` builds a `DecisionRule::against_baseline`
+# and calls `quoin_measurement::verify` end to end; production code in this
+# crate reads none of `Baseline`/`Comparator`/`DecisionRule`/`Estimator`
+# itself (`quoin-measurement`'s own types re-export what it needs), so this
+# stays a dev-dependency.
+engineering-assurance = { workspace = true, features = ["measurement"] }

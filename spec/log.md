@@ -8,6 +8,26 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-23** — **FR-108 gains a real `constant-predictor` baseline**
+  (PLAT-1016, the last item split out of PLAT-985 into its own ticket).
+  MP-222/PLAT-932's formula — a size-weighted mean of the best-constant
+  agreement per answer family — needed a producer to retain each graded
+  item's own answer, grouped by family; none did, so
+  `Baseline::ConstantPredictor` always answered
+  `constant_predictor_rows_absent`. `quoin-jev`'s new `constant_predictor`
+  module (`item_observations`) is that producer: one retained observation
+  per graded item, under `{metric}.constant-predictor-item`
+  (`quoin_measurement::constant_predictor_item_metric`, never under the
+  governed metric itself), carrying `family`/`expected`/`contested`/`actual`
+  as `dimensions` — chosen over `rawEvidence` (FR-108-CON-3 already refuses
+  to read it) and over a new `population` member (nothing about one item's
+  own label is an aggregate). `quoin-measurement`'s `verify::baseline()`
+  `Baseline::ConstantPredictor` arm now reads a run's own item observations
+  (not history — this baseline is a property of the population, not a prior
+  run) and ports `quoin-jev`'s `tests/support/grading.rs::trivial_baseline()`
+  formula rather than reimplementing it. `constant_predictor_rows_absent`
+  remains the answer for a run that retains none. FR-108-AC-10; Matrix:
+  TC-1915..TC-1919.
 * **2026-09-23** — **FR-112 (new FR): npm distribution of the native `quoin`
   binary is restored** (owner ruling, 2026-09-23). StR-009 and ADR-0003 had
   withdrawn public-npmjs distribution as a dated exemption for the duration
