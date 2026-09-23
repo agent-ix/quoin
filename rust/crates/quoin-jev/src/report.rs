@@ -14,7 +14,7 @@
 
 use std::fmt::Write as _;
 
-use crate::verdict::{FrVerdict, SubQuestionCheck};
+use crate::verdict::{Certainty, FrVerdict, SubQuestionCheck};
 
 /// One FR's findings, paired with the FR id they are about (for `Refs`).
 pub struct FrReport<'a> {
@@ -135,11 +135,7 @@ fn summary_line(finding: &crate::verdict::Finding) -> String {
         "{} classified {} (confidence {:.2})",
         finding.ac_id, finding.weakness_kind, finding.confidence
     );
-    let base = if finding.unconfirmed {
-        format!("{base} -- unconfirmed, below the confidence threshold")
-    } else {
-        base
-    };
+    let base = annotate(base, finding.certainty);
     let base = format!(
         "{base} {}",
         sub_question_note(&finding.weakness_kind, &finding.label_sub_question)
@@ -188,10 +184,21 @@ fn coverage_summary_line(fr_id: &str, coverage: &crate::verdict::CoverageVerdict
         "{fr_id} adverse_case_coverage {:.1} ({label}, confidence {:.2})",
         coverage.score, coverage.confidence
     );
-    if coverage.unconfirmed {
-        format!("{base} -- unconfirmed, below the confidence threshold")
-    } else {
-        base
+    annotate(base, coverage.certainty)
+}
+
+/// Appends the [`Certainty`] annotation to a summary line. One exhaustive
+/// `match`, shared by findings and coverage, so a fourth bucket cannot be
+/// rendered in one place and silently dropped in the other.
+fn annotate(base: String, certainty: Certainty) -> String {
+    match certainty {
+        Certainty::Confident => base,
+        Certainty::Unconfirmed => {
+            format!("{base} -- unconfirmed, below the confidence threshold")
+        }
+        Certainty::Uncertain => {
+            format!("{base} -- uncertain, top two answers within the margin")
+        }
     }
 }
 
@@ -205,16 +212,20 @@ fn coverage_summary_line(fr_id: &str, coverage: &crate::verdict::CoverageVerdict
 mod tests {
     use super::{FrReport, render};
     use crate::verdict::{
-        CoverageVerdict, Finding, FrVerdict, NoulSignals, Severity, SubQuestionCheck,
+        Certainty, CoverageVerdict, Finding, FrVerdict, NoulSignals, Severity, SubQuestionCheck,
     };
 
-    fn finding(unconfirmed: bool) -> Finding {
+    fn finding(certainty: Certainty) -> Finding {
         Finding {
             ac_id: "FR-001-AC-1".to_owned(),
             weakness_kind: "unfalsifiable".to_owned(),
             severity: Severity::High,
-            confidence: if unconfirmed { 0.3 } else { 0.9 },
-            unconfirmed,
+            confidence: if certainty == Certainty::Unconfirmed {
+                0.3
+            } else {
+                0.9
+            },
+            certainty,
             probabilities: vec![("unfalsifiable".to_owned(), 0.9)],
             noul: NoulSignals { values: vec![] },
             label_sub_question: SubQuestionCheck::Unanswered {
@@ -223,20 +234,23 @@ mod tests {
         }
     }
 
-    fn one_finding_body(f: Finding) -> String {
-        let verdict = FrVerdict {
+    fn one_finding(finding: Finding) -> FrVerdict {
+        FrVerdict {
             classifier: "jev-1.13.0".to_owned(),
             usage_input_tokens: 0,
             usage_output_tokens: 0,
-            findings: vec![f],
+            findings: vec![finding],
             sound: vec![],
             unrecognized: vec![],
             unanswered: vec![],
             coverage: None,
-        };
+        }
+    }
+
+    fn one_finding_body(f: Finding) -> String {
         render(&[FrReport {
             fr_id: "FR-001",
-            verdict: &verdict,
+            verdict: &one_finding(f),
         }])
     }
 
@@ -245,7 +259,7 @@ mod tests {
     /// so the wording cannot drift into claiming the sub-question decided it.
     #[test]
     fn a_disagreeing_sub_question_is_named_in_the_findings_row() {
-        let mut f = finding(false);
+        let mut f = finding(Certainty::Confident);
         f.label_sub_question = SubQuestionCheck::Disagrees {
             question: "falsifiable",
             noul: 0.9,
@@ -262,7 +276,7 @@ mod tests {
     /// unconfirmed marker and before the raw `noul` list.
     #[test]
     fn an_agreeing_sub_question_is_rendered_between_the_marker_and_the_noul_list() {
-        let mut f = finding(true);
+        let mut f = finding(Certainty::Unconfirmed);
         f.label_sub_question = SubQuestionCheck::Agrees {
             question: "falsifiable",
             noul: 0.1,
@@ -282,15 +296,35 @@ mod tests {
     /// rendered as themselves, never as agreement.
     #[test]
     fn an_unanswered_or_uncovered_sub_question_is_rendered_as_itself() {
-        let body = one_finding_body(finding(false));
+        let body = one_finding_body(finding(Certainty::Confident));
         assert!(body.contains("[label's sub-question falsifiable unanswered]"));
         assert!(!body.contains("agrees"));
 
-        let mut f = finding(false);
+        let mut f = finding(Certainty::Confident);
         "happy_path_only".clone_into(&mut f.weakness_kind);
         f.label_sub_question = SubQuestionCheck::NoSubQuestion;
         let body = one_finding_body(f);
         assert!(body.contains("[no sub-question covers happy_path_only]"));
+    }
+
+    /// Provenance: PLAT-981. Each certainty bucket renders distinguishably:
+    /// an `Uncertain` finding still appears as a row, and reads as
+    /// "uncertain", never as "unconfirmed" -- the third bucket is visible to
+    /// a reader of the review, not only to a JSON consumer.
+    #[test]
+    fn each_certainty_bucket_renders_its_own_annotation() {
+        let render_one = |certainty| one_finding_body(finding(certainty));
+        let confident = render_one(Certainty::Confident);
+        assert!(!confident.contains("unconfirmed") && !confident.contains("uncertain"));
+
+        let unconfirmed = render_one(Certainty::Unconfirmed);
+        assert!(unconfirmed.contains("unconfirmed, below the confidence threshold"));
+        assert!(!unconfirmed.contains("uncertain"));
+
+        let uncertain = render_one(Certainty::Uncertain);
+        assert!(uncertain.contains("FND-001"));
+        assert!(uncertain.contains("uncertain, top two answers within the margin"));
+        assert!(!uncertain.contains("unconfirmed"));
     }
 
     /// Provenance: PLAT-837. The Findings table header is exactly the
@@ -301,7 +335,7 @@ mod tests {
             classifier: "jev-1.13.0".to_owned(),
             usage_input_tokens: 0,
             usage_output_tokens: 0,
-            findings: vec![finding(false)],
+            findings: vec![finding(Certainty::Confident)],
             sound: vec![],
             unrecognized: vec![],
             unanswered: vec![],
@@ -324,7 +358,7 @@ mod tests {
             classifier: "jev-1.13.0".to_owned(),
             usage_input_tokens: 0,
             usage_output_tokens: 0,
-            findings: vec![finding(true)],
+            findings: vec![finding(Certainty::Unconfirmed)],
             sound: vec![],
             unrecognized: vec![],
             unanswered: vec![],
@@ -402,7 +436,7 @@ mod tests {
                 score: 0.0,
                 label: Some("happy path only".to_owned()),
                 confidence: 0.9,
-                unconfirmed: false,
+                certainty: Certainty::Confident,
             }),
         };
         let body = render(&[FrReport {
@@ -450,7 +484,7 @@ mod tests {
     /// prose.
     #[test]
     fn a_findings_summary_carries_its_noul_values_labelled_uncalibrated() {
-        let mut f = finding(false);
+        let mut f = finding(Certainty::Confident);
         f.noul = NoulSignals {
             values: vec![
                 ("falsifiable".to_owned(), 0.9),
