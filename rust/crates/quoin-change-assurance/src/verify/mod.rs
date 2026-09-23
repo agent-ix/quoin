@@ -97,16 +97,11 @@ pub fn verify_change_assurance(
 
     let proofs = judge_proofs(input, &record);
 
+    let plan = input.governing_plan.as_ref();
     global_reasons.extend(apparatus::judge(&ApparatusContext {
-        protected_apparatus: input
-            .governing_plan
-            .as_ref()
-            .and_then(|plan| plan.protected_apparatus.as_ref()),
-        negative_controls: input
-            .governing_plan
-            .as_ref()
-            .and_then(|plan| plan.negative_controls.as_ref()),
-        diff_paths: &input.diff_paths,
+        protected_apparatus: plan.and_then(|plan| plan.protected_apparatus.as_ref()),
+        negative_controls: plan.and_then(|plan| plan.negative_controls.as_ref()),
+        diff_paths: input.diff_paths.as_deref(),
     }));
 
     let mut all: Vec<Reason> = global_reasons;

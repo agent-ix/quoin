@@ -27,8 +27,14 @@ description: "Chronological log of structural changes to this bundle."
   the receipt's overall reasons/outcome the way `proof_id_mismatch` already
   does, with no new `checks` member. New dependency: `engineering-assurance`
   (`measurement` feature), added to `quoin-change-assurance`'s previously
-  three-dependency manifest.
-  FR-111-AC-1..AC-3; Matrix: TC-1868..TC-1870.
+  three-dependency manifest. A plan that protects apparatus, verified with
+  no retained diff, is `diff_missing` (incomplete) rather than vacuously
+  clean. **Known gap (FR-111-CON-3):** `quoin-core`'s
+  `change_assurance.receipt` request carries no diff or plan link yet, so
+  none of the three reasons is reachable through `quoin change-assurance
+  receipt`; the check exists in the library only until that is wired.
+  FR-065's embedded receipt schema gains the three reasons.
+  FR-111-AC-1..AC-4; Matrix: TC-1868..TC-1871.
 
 * **2026-09-22** — **FR-110 (new FR): protected measurement apparatus**
   (PLAT-975). `verificationStack.artifacts` recorded a digest per file and

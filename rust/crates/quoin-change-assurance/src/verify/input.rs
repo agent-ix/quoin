@@ -108,10 +108,14 @@ pub struct VerificationInput {
     /// The retained audit reports.
     pub audits: Vec<RetainedAudit>,
     /// The repository-relative paths the candidate change's diff touches
-    /// (PLAT-964). Empty when no diff was retained for this verification;
-    /// a verification runs no producer and computes no diff itself, so this
-    /// is exactly what the caller retained, like every other member here.
-    pub diff_paths: Vec<String>,
+    /// (PLAT-964): `/`-separated, as `git diff --name-only` prints them,
+    /// compared byte-for-byte against the plan's entries. `None` when no diff
+    /// was retained for this verification — distinct from `Some(vec![])`, a
+    /// retained diff that touched nothing — so that a plan protecting
+    /// apparatus is `diff_missing` rather than vacuously clean. A
+    /// verification runs no producer and computes no diff itself, so this is
+    /// exactly what the caller retained, like every other member here.
+    pub diff_paths: Option<Vec<String>>,
     /// The measurement plan the record's objective is linked to, when the
     /// caller asks this verification to check the change against one
     /// (PLAT-964). `None` when the record supports no plan, or the caller

@@ -497,7 +497,7 @@ fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
 
 /// Trace: FR-065-AC-2
 ///
-/// The reason census. 34 of the 37 reasons the vocabulary declares are reached
+/// The reason census. 34 of the 38 reasons the vocabulary declares are reached
 /// by the captured scenarios, and every one of them is reached in a receipt
 /// this crate produced rather than only in the oracle's. So this asserts the
 /// exact figure rather than a floor, and a port that quietly stopped emitting
@@ -509,12 +509,13 @@ fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
 /// why over this crate's own code, so the figure stays falsifiable now that the
 /// TypeScript it was originally explained by is gone (quoin#457).
 ///
-/// `apparatus_touched` and `negative_control_uncaught` (PLAT-964) are not
+/// `apparatus_touched`, `negative_control_uncaught` and `diff_missing`
+/// (PLAT-964) are not
 /// reached because the oracle capture predates them: no TypeScript ever
 /// emitted them, so there is nothing here to replay. `tests/tc_964_apparatus.rs`
-/// is the hand-built suite that reaches both.
+/// is the hand-built suite that reaches all three.
 #[test]
-fn tc_455_thirty_four_of_the_thirty_seven_reasons_are_reached() {
+fn tc_455_thirty_four_of_the_thirty_eight_reasons_are_reached() {
     let mut reached: std::collections::BTreeSet<&'static str> = std::collections::BTreeSet::new();
     for (_, _, _, produced) in replayed() {
         let Some(produced) = produced else { continue };
@@ -543,7 +544,7 @@ fn tc_455_thirty_four_of_the_thirty_seven_reasons_are_reached() {
             }
         }
     }
-    assert_eq!(Reason::ALL.len(), 37, "the vocabulary is closed at 37");
+    assert_eq!(Reason::ALL.len(), 38, "the vocabulary is closed at 38");
     let unreached: Vec<&str> = Reason::ALL
         .iter()
         .map(|reason| reason.as_str())
@@ -554,9 +555,10 @@ fn tc_455_thirty_four_of_the_thirty_seven_reasons_are_reached() {
         vec![
             "parent_missing",
             "apparatus_touched",
-            "negative_control_uncaught"
+            "negative_control_uncaught",
+            "diff_missing"
         ],
-        "exactly three reasons are unreached here, each for its own recorded reason"
+        "exactly four reasons are unreached here, each for its own recorded reason"
     );
 }
 

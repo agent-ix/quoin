@@ -118,7 +118,8 @@
         "audit_finding",
         "audit_not_evaluated",
         "apparatus_touched",
-        "negative_control_uncaught"
+        "negative_control_uncaught",
+        "diff_missing"
       ]
     },
     "check": {

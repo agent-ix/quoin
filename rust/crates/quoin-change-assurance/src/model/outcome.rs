@@ -170,6 +170,9 @@ reasons! {
     /// The linked plan declared a negative control this verification has no
     /// rule to evaluate.
     NegativeControlUncaught => "negative_control_uncaught", true;
+    /// The linked plan protects apparatus and no diff was retained to compare
+    /// against it.
+    DiffMissing => "diff_missing", true;
 }
 
 impl fmt::Display for Reason {
@@ -264,7 +267,7 @@ mod tests {
 
     #[test]
     fn the_reason_vocabulary_is_closed_and_round_trips() {
-        assert_eq!(Reason::ALL.len(), 37);
+        assert_eq!(Reason::ALL.len(), 38);
         for reason in Reason::ALL {
             assert_eq!(Reason::parse(reason.as_str()), Some(*reason));
         }
@@ -272,7 +275,7 @@ mod tests {
     }
 
     #[test]
-    fn exactly_twelve_reasons_leave_the_outcome_incomplete() {
+    fn exactly_thirteen_reasons_leave_the_outcome_incomplete() {
         let incomplete: Vec<&str> = Reason::ALL
             .iter()
             .filter(|reason| reason.is_incomplete())
@@ -293,6 +296,7 @@ mod tests {
                 "result_not_computed",
                 "audit_not_evaluated",
                 "negative_control_uncaught",
+                "diff_missing",
             ]
         );
     }

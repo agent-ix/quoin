@@ -33,10 +33,8 @@ use quoin_change_assurance::verify::verify_change_assurance;
 
 use crate::common::{member, oracle, section, text, verification_input};
 
-/// The `everything-agrees` scenario's input, unlinked from any plan.
-///
-/// Trace: none on its own — this is the fixture every test below traces
-/// through.
+/// The `everything-agrees` scenario's input, unlinked from any plan and
+/// with no diff retained.
 fn base_input() -> quoin_change_assurance::verify::input::VerificationInput {
     let captured = section(&oracle(), "verifications")
         .into_iter()
@@ -54,6 +52,15 @@ fn apparatus(entries: &[&str]) -> ProtectedApparatus {
     .unwrap()
 }
 
+fn apparatus_edit_control() -> NegativeControls {
+    NegativeControls::new([NegativeControl::new(
+        NegativeControlKind::ApparatusEdit,
+        "answer key edits",
+    )
+    .unwrap()])
+    .unwrap()
+}
+
 fn plan_protecting(entries: &[&str]) -> GoverningPlan {
     GoverningPlan {
         protected_apparatus: Some(apparatus(entries)),
@@ -65,7 +72,8 @@ fn plan_protecting(entries: &[&str]) -> GoverningPlan {
 ///
 /// A change whose diff touches the harness, the labels, the population or
 /// the checker configuration is refused credit with `apparatus_touched`,
-/// whichever of the four the plan protects and the diff reaches.
+/// whichever of the four the plan protects and the diff reaches, and whether
+/// or not the plan declares the `apparatus-edit` control.
 #[test]
 fn tc_964_001_a_diff_touching_any_protected_category_is_refused() {
     let categories: [(&str, &str, &str); 4] = [
@@ -79,21 +87,27 @@ fn tc_964_001_a_diff_touching_any_protected_category_is_refused() {
         ),
     ];
     for (label, protected_entry, touched_path) in categories {
-        let mut input = base_input();
-        input.diff_paths = vec![touched_path.to_owned()];
-        input.governing_plan = Some(plan_protecting(&[protected_entry]));
-        let receipt = verify_change_assurance(&input)
-            .unwrap_or_else(|error| panic!("{label}: verification failed: {error}"));
-        assert!(
-            receipt.body.reasons.contains(&Reason::ApparatusTouched),
-            "{label}: expected apparatus_touched, got {:?}",
-            receipt.body.reasons
-        );
-        assert_eq!(
-            receipt.body.outcome,
-            Outcome::Invalid,
-            "{label}: a touched apparatus refuses credit rather than leaving it incomplete"
-        );
+        for controls in [None, Some(apparatus_edit_control())] {
+            let declared = controls.is_some();
+            let mut input = base_input();
+            input.diff_paths = Some(vec!["src/lib.rs".to_owned(), touched_path.to_owned()]);
+            input.governing_plan = Some(GoverningPlan {
+                protected_apparatus: Some(apparatus(&[protected_entry])),
+                negative_controls: controls,
+            });
+            let receipt = verify_change_assurance(&input)
+                .unwrap_or_else(|error| panic!("{label}: verification failed: {error}"));
+            assert_eq!(
+                receipt.body.reasons,
+                vec![Reason::ApparatusTouched],
+                "{label} (apparatus-edit declared: {declared})"
+            );
+            assert_eq!(
+                receipt.body.outcome,
+                Outcome::Invalid,
+                "{label}: a touched apparatus refuses credit rather than leaving it incomplete"
+            );
+        }
     }
 }
 
@@ -104,13 +118,17 @@ fn tc_964_001_a_diff_touching_any_protected_category_is_refused() {
 /// with no plan linked at all.
 #[test]
 fn tc_964_002_a_diff_outside_the_protected_set_is_unaffected() {
+    let unlinked = verify_change_assurance(&base_input()).expect("verification succeeds");
     let mut input = base_input();
-    input.diff_paths = vec!["src/lib.rs".to_owned()];
+    input.diff_paths = Some(vec![
+        "src/lib.rs".to_owned(),
+        "eval/labels-archive/gold.jsonl".to_owned(),
+    ]);
     input.governing_plan = Some(plan_protecting(&["checker/config.toml", "eval/labels/**"]));
     let receipt = verify_change_assurance(&input).expect("verification succeeds");
-    assert!(!receipt.body.reasons.contains(&Reason::ApparatusTouched));
     assert_eq!(receipt.body.outcome, Outcome::Valid);
     assert_eq!(receipt.body.reasons, Vec::new());
+    assert_eq!(receipt.body, unlinked.body);
 }
 
 /// Trace: FR-111-AC-3
@@ -128,19 +146,34 @@ fn tc_964_003_an_uncatchable_negative_control_is_reported() {
         NegativeControl::new(NegativeControlKind::GainWithinNoise, "margin claims").unwrap(),
     ])
     .unwrap();
+    input.diff_paths = Some(vec!["src/lib.rs".to_owned()]);
     input.governing_plan = Some(GoverningPlan {
         protected_apparatus: Some(apparatus(&["checker/config.toml"])),
         negative_controls: Some(controls),
     });
     let receipt = verify_change_assurance(&input).expect("verification succeeds");
-    assert!(
-        receipt
-            .body
-            .reasons
-            .contains(&Reason::NegativeControlUncaught)
-    );
     // The declared `apparatus-edit` control has a rule and the diff never
-    // touched anything: it is caught, evaluated, and found clean.
-    assert!(!receipt.body.reasons.contains(&Reason::ApparatusTouched));
+    // touched anything: it is caught, evaluated, and found clean. Only the
+    // uncatchable control remains.
+    assert_eq!(receipt.body.reasons, vec![Reason::NegativeControlUncaught]);
     assert_eq!(receipt.body.outcome, Outcome::Incomplete);
+}
+
+/// Trace: FR-111-AC-4
+///
+/// A plan that protects apparatus, checked with no diff retained, is
+/// `diff_missing` and `incomplete` — never vacuously `valid` — while the same
+/// missing diff with no plan linked changes nothing.
+#[test]
+fn tc_964_004_a_protecting_plan_with_no_retained_diff_is_incomplete() {
+    let mut input = base_input();
+    assert_eq!(input.diff_paths, None);
+    input.governing_plan = Some(plan_protecting(&["checker/config.toml"]));
+    let receipt = verify_change_assurance(&input).expect("verification succeeds");
+    assert_eq!(receipt.body.reasons, vec![Reason::DiffMissing]);
+    assert_eq!(receipt.body.outcome, Outcome::Incomplete);
+
+    let unlinked = verify_change_assurance(&base_input()).expect("verification succeeds");
+    assert_eq!(unlinked.body.outcome, Outcome::Valid);
+    assert_eq!(unlinked.body.reasons, Vec::new());
 }
