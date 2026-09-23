@@ -7,7 +7,7 @@
 //! Before this ticket, the refusal — a supported claim with no
 //! `evidence_refs`, or one citing an unresolved reference, reads as `open`
 //! rather than vacuously `supported` — was covered only by
-//! `quoin-assurance`'s crate-internal `authored::build::tests` (`tc_1868_*`).
+//! `quoin-assurance`'s crate-internal `authored::build::tests` (`tc_1916_*`).
 //! This file spawns the native `quoin` binary, exactly as a caller would:
 //! a real `spec/` document on disk, real `--decisions`/`--evidence` files,
 //! and an assertion on the real stdout and exit code.
