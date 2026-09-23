@@ -19,13 +19,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The platform set quire-cli ships.
+        # The platform set quire-cli ships. Linux builds on 22.04 so the
+        # binary links glibc 2.35 and runs on Ubuntu 22.04+ and default WSL;
+        # a 24.04 build needs glibc 2.39 and fails to start there.
         include:
-          - runner: ubuntu-24.04
+          - runner: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             extension: tar.gz
             binary: quoin
-          - runner: ubuntu-24.04-arm
+          - runner: ubuntu-22.04-arm
             target: aarch64-unknown-linux-gnu
             extension: tar.gz
             binary: quoin
