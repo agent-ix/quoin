@@ -52,7 +52,7 @@ description: "Chronological log of structural changes to this bundle."
   reads four facts from the store's own git history, the same way it already
   read the intake order — only the caller has git, so the checker
   (`quoin_measurement::verify`) stays pure and takes them as inputs
-  (`Ranked::apparatus_forged`, `::edited`, and a new `TamperFacts`) rather
+  (`Ranked::apparatus_forged` and a new `TamperFacts`) rather
   than computing them: a collection once added and later removed
   (`collection_deleted`, attributed to a plan by reading its content at the
   commit before removal); a collection's stored file edited by a commit
@@ -84,8 +84,14 @@ description: "Chronological log of structural changes to this bundle."
   every estimator that carries no row data. **Still blocked:**
   constant-predictor baseline needs a producer to retain per-item answers
   grouped by family; no producer does, and none of PLAT-977/978/983 or
-  quoin-jev's cassette/verdict work changed that — see the ticket for the
-  investigation. FR-108-AC-9; Matrix: TC-1892..TC-1896.
+  quoin-jev's cassette/verdict work changed that — PLAT-1016 tracks it.
+  Review hardening (same PR): `sourceRevision` reaches git only after
+  `--end-of-options` (a value spelled `--output=<file>` made `git show`
+  write a file); a delete and re-add under one id, an edit moving a run off
+  the plan, a corrupt-then-delete, a plan rename, and uncommitted work-tree
+  edits are all caught, with deleted/edited collections attributed by their
+  first-added and last-seen plan ids. FR-108-AC-9; Matrix:
+  TC-1892..TC-1903.
 
 * **2026-09-22** — **FR-111 (new FR): change-assurance refuses credit for a
   diff that touches protected measurement apparatus** (PLAT-964). FR-110

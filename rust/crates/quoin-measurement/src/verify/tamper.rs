@@ -12,14 +12,23 @@ use super::{Finding, Reason, Run, TamperFacts, id_of, plan_level};
 /// [`TamperFacts`] contribute, independent of whether the plan has a rule to
 /// evaluate at all.
 ///
-/// A forged or edited run is evidence of tampering in its own data, so it is
-/// reported whether the run is the candidate or history, the same as
-/// [`Reason::carries_from_history`]'s existing pair.
+/// A forged run is evidence of tampering in its own data, so it is reported
+/// whether the run is the candidate or history, the same as
+/// [`Reason::carries_from_history`]'s existing pair. Deleted and edited
+/// collections come attributed to the plan by the caller, not read off the
+/// runs, since tampering can remove a run from this plan's runs entirely.
 pub(super) fn findings(runs: &[Run<'_>], tamper: TamperFacts<'_>) -> Vec<Finding> {
     let mut findings = Vec::new();
     for id in tamper.deleted_collections {
         findings.push(Finding {
             reason: Reason::CollectionDeleted,
+            collection_id: Some(id.clone()),
+            dimensions: None,
+        });
+    }
+    for id in tamper.edited_collections {
+        findings.push(Finding {
+            reason: Reason::CollectionEdited,
             collection_id: Some(id.clone()),
             dimensions: None,
         });
@@ -31,13 +40,6 @@ pub(super) fn findings(runs: &[Run<'_>], tamper: TamperFacts<'_>) -> Vec<Finding
         if run.apparatus_forged {
             findings.push(Finding {
                 reason: Reason::ApparatusForged,
-                collection_id: Some(id_of(run.collection)),
-                dimensions: None,
-            });
-        }
-        if run.edited {
-            findings.push(Finding {
-                reason: Reason::CollectionEdited,
                 collection_id: Some(id_of(run.collection)),
                 dimensions: None,
             });

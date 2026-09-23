@@ -73,19 +73,31 @@ so the checker itself stays pure and takes these as inputs it does not
 compute:
 
 - a collection that was once added to the store's history and no longer
-  exists there (`collection_deleted`), attributed to a plan by reading the
-  content at the commit before it was removed;
-- a collection whose stored file a commit edited after the one that first
-  added it (`collection_edited`);
+  exists there, or that the uncommitted work tree removed
+  (`collection_deleted`);
+- a collection whose stored file was changed after intake first added it —
+  by a later commit, by a delete and re-add under the same id, or by an
+  uncommitted edit in the work tree (`collection_edited`);
 - a collection's recorded `verificationStack.protectedApparatus` digest for
   this plan disagreeing with `git show <sourceRevision>:<path>` — the file's
   real bytes at the commit the collection claims to be from
   (`apparatus_forged`), which catches a collection written by hand rather
   than through intake's own resolver (FR-110);
 - the plan's own document changing its `objective`, `estimator`,
-  `decision_rule` or `protected_apparatus` between two committed revisions
-  that share a `definition_version` (`definition_changed_without_version_bump`,
-  engineering-assurance's `definition_change_without_version_bump`).
+  `decision_rule` or `protected_apparatus` between two revisions that share
+  a `definition_version` — adjacent committed revisions, each read at the
+  path the document had in its own commit so a rename hides nothing, and the
+  work-tree document against the last commit
+  (`definition_changed_without_version_bump`, engineering-assurance's
+  `definition_change_without_version_bump`).
+
+A deleted or edited collection is attributed to a plan when that plan's id
+appears among its observations' `planId`s in the content intake first added
+*or* in the last content seen (before removal, or on disk now), so neither an
+edit that moves a run off the plan nor one that corrupts the file before
+deleting it leaves the tampering unattributed. Every value read from a
+collection file — `sourceRevision` above all — reaches git after
+`--end-of-options`, so it is only ever a revision, never an option.
 
 Each degrades to "nothing found" rather than an error when git cannot answer
 — outside a work tree, a shallow clone missing the revision in question, or a
@@ -160,7 +172,7 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | FR-108-AC-6 | The result is the `quoin.measurement-verdict.v1` document under Outputs, every member present, and each reason, verdict and order-source spelling round-trips. | Test (TC-1795, TC-1805) |
 | FR-108-AC-7 | `quoin measurement verify` exits 0 on `accept`, and 1 with the complete document on `reject` (`CORE_REJECTED`) or `inconclusive` (`CORE_INCONCLUSIVE`). An unknown plan id, and a collection filed under a name that is not its `collectionId`, are refused (exit 2); an unknown claimed verdict or order source is a bad request (exit 3); each with no verdict. A plan recorded through `quoin measurement record` and verified is accepted; the same store with one observation's stored value edited is rejected with `value_disagrees_with_rows`. | Test (TC-1796, TC-1797, TC-1806) |
 | FR-108-AC-8 | `quoin measurement verify` takes the intake order from `git log --first-parent --diff-filter=A` over the store and reports `orderSource: git-first-parent-add`. Outside a git work tree it reports `none` and says why on stderr; in a shallow clone it reports `git-shallow` and `order_unattested` and says so on stderr; any other git failure fails the command rather than yielding an empty order. | Test (TC-1797, TC-1805) |
-| FR-108-AC-9 | `quoin measurement verify` reads four tamper facts from the store's git history (PLAT-985): a collection this plan governed that was added and later removed is `collection_deleted`, attributed by reading its content at the commit before removal; a collection's stored file edited by a commit after the one that added it is `collection_edited`; a run's recorded protected-apparatus digest for this plan disagreeing with `git show <sourceRevision>:<path>` is `apparatus_forged`; and the plan's own document changing its `objective`, `estimator`, `decision_rule` or `protected_apparatus` between two committed revisions sharing a `definition_version` is `definition_changed_without_version_bump`. Each is `false`/empty, not a false positive, when git cannot answer. | Test (TC-1892..TC-1896) |
+| FR-108-AC-9 | `quoin measurement verify` reads four tamper facts from the store's git history (PLAT-985): a collection this plan governed that was added and later removed (committed, or in the work tree) is `collection_deleted`; a collection's stored file changed after intake added it (a later commit, a delete and re-add under the same id, or an uncommitted edit) is `collection_edited`; each is attributed by the plan ids in its first-added and last-seen content; a run's recorded protected-apparatus digest for this plan disagreeing with `git show <sourceRevision>:<path>` is `apparatus_forged`, and a `sourceRevision` spelled as a git option is never read as one; and the plan's own document changing its `objective`, `estimator`, `decision_rule` or `protected_apparatus` between two revisions sharing a `definition_version` — across a rename, and from the last commit to the work tree — is `definition_changed_without_version_bump`. Each is `false`/empty, not a false positive, when git cannot answer or the history is honest. | Test (TC-1892..TC-1903) |
 
 ## Leaf re-scoring and the asserted-only share (PLAT-961, PLAT-985)
 
@@ -196,8 +208,8 @@ verdict document (Outputs, above).
   — a size-weighted mean of the best-constant agreement per answer family —
   needs a producer to retain each item's own answer, grouped by family; no
   producer does today, so `constant_predictor_rows_absent` stays the
-  checker's only answer for it. See PLAT-985's ticket comments for which
-  producer change this depends on.
+  checker's only answer for it. PLAT-1016 tracks it, and the producer
+  change it depends on.
 - **A forged record naming a source revision this repository never received
   is unattested, not caught.** `apparatus_forged` needs `git show
   <sourceRevision>:<path>` to succeed; a `sourceRevision` from a fetch this
@@ -207,6 +219,12 @@ verdict document (Outputs, above).
   history and `collection_edited`/`collection_deleted` in a shallow clone —
   all four tamper facts need the same full first-parent history the intake
   order does.
+- **The tamper facts attest the history this clone presents.** A history
+  rewritten and force-pushed so the tampering commits never existed leaves
+  nothing for any reader of it to find; protection of the store's branch
+  against force-push is what closes that, not this checker. Likewise a plan
+  document replaced under a different path with too little similarity for
+  git to follow as a rename starts a new history.
 
 ## Constraints
 

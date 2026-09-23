@@ -32,7 +32,7 @@ use crate::error::{CoreError, CoreErrorCode};
 use crate::protocol::Response;
 
 use super::taxonomy::map_measurement;
-use super::wire::{MAX_VERIFY_REQUEST_BYTES, VerifyRequest};
+use super::wire::{MAX_VERIFY_REQUEST_BYTES, TamperedCollectionRequest, VerifyRequest};
 use super::{bound, parse};
 
 /// Answer a `measurement.verify`.
@@ -102,28 +102,24 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
                 .apparatus_forged
                 .iter()
                 .any(|id| id == collection.collection_id.as_str()),
-            edited: request
-                .edited_collections
-                .iter()
-                .any(|id| id == collection.collection_id.as_str()),
         })
         .collect();
-    // A deleted collection is attributed to this plan when the caller read
-    // its own `planId` among the observations it carried before it was
-    // removed (PLAT-985); the caller alone has git and did that reading.
-    let deleted_collections: Vec<String> = request
-        .deleted
-        .iter()
-        .filter(|deleted| {
-            deleted
-                .plan_ids
-                .iter()
-                .any(|id| id.as_str() == plan.id.as_str())
-        })
-        .map(|deleted| deleted.id.clone())
-        .collect();
+    // A deleted or edited collection is attributed to this plan when the
+    // caller read this plan's id among the observations it carried, in any
+    // content it had (PLAT-985); the caller alone has git and did that
+    // reading.
+    let naming_plan = |tampered: &[TamperedCollectionRequest]| -> Vec<String> {
+        tampered
+            .iter()
+            .filter(|entry| entry.plan_ids.iter().any(|id| id == plan.id.as_str()))
+            .map(|entry| entry.id.clone())
+            .collect()
+    };
+    let deleted_collections = naming_plan(&request.deleted);
+    let edited_collections = naming_plan(&request.edited_collections);
     let tamper = TamperFacts {
         deleted_collections: &deleted_collections,
+        edited_collections: &edited_collections,
         definition_changed_without_version_bump: request.definition_changed_without_version_bump,
     };
     let verdict = check(plan, &ranked, tamper, order, claimed);

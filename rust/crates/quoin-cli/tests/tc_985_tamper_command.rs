@@ -398,3 +398,249 @@ fn tc_985_105_a_decision_rule_edited_without_a_version_bump_is_rejected() {
         "{payload}"
     );
 }
+
+fn commit_all(repo: &Path, message: &str) {
+    git(repo, &["add", "-A", "spec"]);
+    git(repo, &["commit", "--quiet", "-m", message]);
+}
+
+fn stored(repo: &Path, id: &str) -> PathBuf {
+    repo.join(MEASUREMENTS).join(format!("{id}.json"))
+}
+
+fn rewrite(repo: &Path, id: &str, edit: impl FnOnce(&mut Value)) {
+    let path = stored(repo, id);
+    let mut collection: Value =
+        serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    edit(&mut collection);
+    std::fs::write(&path, collection.to_string()).unwrap();
+}
+
+/// A `sourceRevision` read from a hand-written collection is attacker
+/// input: spelled as a git option (`--output=<file>`), it must reach git as
+/// a revision git cannot resolve, never as an option that writes a file.
+///
+/// Trace: FR-108-AC-9
+/// Provenance: PLAT-985
+#[test]
+fn tc_985_106_a_source_revision_spelled_as_a_git_option_is_never_an_option() {
+    let repo = tempfile::tempdir().unwrap();
+    init_with_plan(repo.path(), "MP-961-gate.md");
+    let target = tempfile::tempdir().unwrap();
+    let written = target.path().join("written");
+
+    let mut collection: Value = serde_json::from_str(
+        &std::fs::read_to_string(fixtures().join("right/accept/1.json")).unwrap(),
+    )
+    .unwrap();
+    collection["collectionId"] = json!("tamper-option");
+    collection["sourceRevision"] = json!(format!("--output={}", written.display()));
+    collection["verificationStack"]["protectedApparatus"]["MP-961"] =
+        json!({ "x": format!("sha256:{}", "f".repeat(64)) });
+    let measurements = repo.path().join(MEASUREMENTS);
+    std::fs::create_dir_all(&measurements).unwrap();
+    std::fs::write(
+        measurements.join("tamper-option.json"),
+        collection.to_string(),
+    )
+    .unwrap();
+    commit_all(repo.path(), "hand-written collection");
+
+    let _ = quoin(repo.path(), &["measurement", "verify", "--plan", "MP-961"]);
+    assert_eq!(
+        std::fs::read_dir(target.path()).unwrap().count(),
+        0,
+        "git was handed the revision as an option and wrote a file"
+    );
+}
+
+/// Deleting a collection and re-adding a different file under the same id,
+/// in two commits, is `collection_edited` — `--no-renames` alone would read
+/// the re-add as a fresh intake.
+///
+/// Trace: FR-108-AC-9
+/// Provenance: PLAT-985
+#[test]
+fn tc_985_107_a_delete_and_re_add_under_the_same_id_is_edited() {
+    let repo = tempfile::tempdir().unwrap();
+    init_with_plan(repo.path(), "MP-961-gate.md");
+    record(repo.path(), "2.json", "2026-09-01T00:00:00Z");
+    commit_all(repo.path(), "record the pass");
+    let original = std::fs::read_to_string(stored(repo.path(), "verify-rerun-pass")).unwrap();
+
+    git(
+        repo.path(),
+        &["rm", "--quiet", &format!("{MEASUREMENTS}/verify-rerun-pass.json")],
+    );
+    git(repo.path(), &["commit", "--quiet", "-m", "remove it"]);
+    std::fs::create_dir_all(repo.path().join(MEASUREMENTS)).unwrap();
+    std::fs::write(stored(repo.path(), "verify-rerun-pass"), original).unwrap();
+    rewrite(repo.path(), "verify-rerun-pass", |collection| {
+        collection["environment"]["runner"] = json!("re-added");
+    });
+    commit_all(repo.path(), "re-add it, changed");
+
+    let (status, payload, _) = verdict(repo.path(), "MP-961");
+    assert_eq!(status, Some(1));
+    let reasons = reasons(&payload);
+    assert!(reasons.contains(&"collection_edited".to_owned()), "{payload}");
+    assert!(!reasons.contains(&"collection_deleted".to_owned()), "{payload}");
+}
+
+/// An edit that re-targets a run's observations away from the plan removes
+/// it from the plan's runs; it is still `collection_edited` for the plan the
+/// run was first added under.
+///
+/// Trace: FR-108-AC-9
+/// Provenance: PLAT-985
+#[test]
+fn tc_985_108_an_edit_moving_a_run_off_the_plan_is_still_edited() {
+    let repo = tempfile::tempdir().unwrap();
+    init_with_plan(repo.path(), "MP-961-gate.md");
+    record(repo.path(), "1.json", "2026-09-01T00:00:00Z");
+    commit_all(repo.path(), "record the regressed run");
+
+    rewrite(repo.path(), "verify-rerun-regressed", |collection| {
+        for observation in collection["observations"].as_array_mut().unwrap() {
+            observation["definitionVersion"] = json!("some-other-version");
+        }
+    });
+    commit_all(repo.path(), "move the run off the plan");
+
+    let (_, payload, _) = verdict(repo.path(), "MP-961");
+    assert_eq!(payload["verdict"], "reject", "{payload}");
+    assert!(
+        reasons(&payload).contains(&"collection_edited".to_owned()),
+        "{payload}"
+    );
+}
+
+/// Corrupting a collection's file before deleting it still attributes the
+/// deletion to the plan intake first added it under.
+///
+/// Trace: FR-108-AC-9
+/// Provenance: PLAT-985
+#[test]
+fn tc_985_109_a_collection_corrupted_then_deleted_is_still_attributed() {
+    let repo = tempfile::tempdir().unwrap();
+    init_with_plan(repo.path(), "MP-961-gate.md");
+    record(repo.path(), "1.json", "2026-09-01T00:00:00Z");
+    commit_all(repo.path(), "first run");
+    record(repo.path(), "2.json", "2026-09-02T00:00:00Z");
+    commit_all(repo.path(), "second run");
+
+    std::fs::write(stored(repo.path(), "verify-rerun-regressed"), "{}").unwrap();
+    commit_all(repo.path(), "corrupt the regressed run");
+    std::fs::remove_file(stored(repo.path(), "verify-rerun-regressed")).unwrap();
+    commit_all(repo.path(), "delete it");
+
+    let (status, payload, _) = verdict(repo.path(), "MP-961");
+    assert_eq!(status, Some(1));
+    assert!(
+        reasons(&payload).contains(&"collection_deleted".to_owned()),
+        "{payload}"
+    );
+}
+
+/// Renaming the plan document in the same commit that changes its decision
+/// rule, without a `definition_version` bump, is still
+/// `definition_changed_without_version_bump`: each revision is read at the
+/// path it had in its own commit.
+///
+/// Trace: FR-108-AC-9
+/// Provenance: PLAT-985
+#[test]
+fn tc_985_110_a_rename_does_not_hide_the_revisions_before_it() {
+    let repo = tempfile::tempdir().unwrap();
+    init_with_plan(repo.path(), "MP-961-gate.md");
+    git(
+        repo.path(),
+        &[
+            "mv",
+            "spec/assurance/MP-961-gate.md",
+            "spec/assurance/MP-961-renamed.md",
+        ],
+    );
+    let path = repo.path().join("spec/assurance/MP-961-renamed.md");
+    let text = std::fs::read_to_string(&path).unwrap();
+    std::fs::write(
+        &path,
+        text.replace("threshold: 0.8", "threshold: 0.1")
+            .replace("MP-961-gate.md", "MP-961-renamed.md"),
+    )
+    .unwrap();
+    commit_all(repo.path(), "rename and loosen the gate");
+
+    let (_, payload, _) = verdict(repo.path(), "MP-961");
+    assert!(
+        reasons(&payload).contains(&"definition_changed_without_version_bump".to_owned()),
+        "{payload}"
+    );
+}
+
+/// `measurement.verify` reads the work tree, so an uncommitted edit to a
+/// stored collection or to the plan's decision rule is caught as surely as a
+/// committed one.
+///
+/// Trace: FR-108-AC-9
+/// Provenance: PLAT-985
+#[test]
+fn tc_985_111_uncommitted_work_tree_tampering_is_caught() {
+    let repo = tempfile::tempdir().unwrap();
+    init_with_plan(repo.path(), "MP-961-gate.md");
+    record(repo.path(), "2.json", "2026-09-01T00:00:00Z");
+    commit_all(repo.path(), "record the pass");
+
+    rewrite(repo.path(), "verify-rerun-pass", |collection| {
+        collection["environment"]["runner"] = json!("edited, not committed");
+    });
+    let plan_path = repo.path().join("spec/assurance/MP-961-gate.md");
+    let plan_text = std::fs::read_to_string(&plan_path).unwrap();
+    std::fs::write(&plan_path, plan_text.replace("threshold: 0.8", "threshold: 0.1")).unwrap();
+
+    let (status, payload, _) = verdict(repo.path(), "MP-961");
+    assert_eq!(status, Some(1));
+    let reasons = reasons(&payload);
+    assert!(reasons.contains(&"collection_edited".to_owned()), "{payload}");
+    assert!(
+        reasons.contains(&"definition_changed_without_version_bump".to_owned()),
+        "{payload}"
+    );
+}
+
+/// No false positive: an honestly recorded, committed run, a new
+/// uncommitted intake, and a committed plan edit that does bump
+/// `definition_version` raise none of the four tamper reasons.
+///
+/// Trace: FR-108-AC-9
+/// Provenance: PLAT-985
+#[test]
+fn tc_985_112_honest_history_raises_no_tamper_reason() {
+    let repo = tempfile::tempdir().unwrap();
+    init_with_plan(repo.path(), "MP-961-gate.md");
+    record(repo.path(), "1.json", "2026-09-01T00:00:00Z");
+    commit_all(repo.path(), "first run");
+    record(repo.path(), "2.json", "2026-09-02T00:00:00Z");
+    let plan_path = repo.path().join("spec/assurance/MP-961-gate.md");
+    let plan_text = std::fs::read_to_string(&plan_path).unwrap();
+    std::fs::write(
+        &plan_path,
+        plan_text
+            .replace("threshold: 0.8", "threshold: 0.7")
+            .replace("gate.pass-rate-v1", "gate.pass-rate-v2"),
+    )
+    .unwrap();
+    git(repo.path(), &["add", "spec/assurance"]);
+    git(repo.path(), &["commit", "--quiet", "-m", "a genuine version bump"]);
+
+    let (_, payload, stderr) = verdict(repo.path(), "MP-961");
+    let reasons = reasons(&payload);
+    for tamper in [
+        "apparatus_forged",
+        "collection_deleted",
+        "collection_edited",
+        "definition_changed_without_version_bump",
+    ] {
+        assert!(!reasons.contains(&tamper.to_owned()), "{tamper}: {payload} {stderr}");
+    }
+}

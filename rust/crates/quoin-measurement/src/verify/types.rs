@@ -75,10 +75,6 @@ pub struct Ranked<'a> {
     /// a caller with no git access reports no forgery rather than a false
     /// one (PLAT-985).
     pub apparatus_forged: bool,
-    /// Whether this collection's stored file was edited by a commit after
-    /// the one that first added it to the store, as the caller's git history
-    /// read found. `false` when nothing was checked (PLAT-985).
-    pub edited: bool,
 }
 
 impl<'a> Ranked<'a> {
@@ -91,7 +87,6 @@ impl<'a> Ranked<'a> {
             collection,
             intake,
             apparatus_forged: false,
-            edited: false,
         }
     }
 }
@@ -107,6 +102,12 @@ pub struct TamperFacts<'a> {
     /// no longer exist there — the caller attributes a deleted id to a plan
     /// by reading its content at the commit before it was removed.
     pub deleted_collections: &'a [String],
+    /// Ids of collections that named this plan — in the content intake first
+    /// added or in their content now — whose stored file a later commit, or
+    /// the uncommitted work tree, changed or re-added. Attributed by plan
+    /// rather than read off the runs, so an edit that re-targets a run away
+    /// from this plan still reports here rather than silently removing it.
+    pub edited_collections: &'a [String],
     /// Whether the plan's objective, estimator, decision rule or protected
     /// apparatus changed between two committed revisions of its document
     /// that share a `definition_version` — engineering-assurance's

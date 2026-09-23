@@ -84,9 +84,6 @@ struct Run<'a> {
     /// Whether the caller found this run's recorded protected-apparatus
     /// digests to disagree with the committed source they claim (PLAT-985).
     apparatus_forged: bool,
-    /// Whether the caller found this run's file edited after the commit
-    /// that first added it (PLAT-985).
-    edited: bool,
     slices: Vec<(&'a MeasurementObservation, Result<Estimate, Reason>)>,
 }
 
@@ -197,7 +194,6 @@ fn runs<'a>(
             intake: ranked.intake,
             apparatus: ranked.collection.protected_apparatus_of(plan.id.as_str()),
             apparatus_forged: ranked.apparatus_forged,
-            edited: ranked.edited,
             slices: observations_of(plan, ranked.collection)
                 .into_iter()
                 .map(|observation| {

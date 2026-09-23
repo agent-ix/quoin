@@ -126,20 +126,14 @@ fn verify(arguments: &ArgMatches) -> Result<Response, String> {
     let plan = required(arguments, "plan")?;
     let order = intake_order(&repo)?;
     let (deleted, edited) = tamper::deleted_and_edited(&repo)?;
-    let deleted: Vec<serde_json::Value> = deleted
-        .into_iter()
-        .map(|collection| {
-            serde_json::json!({ "id": collection.id, "plan_ids": collection.plan_ids })
-        })
-        .collect();
     let request = serde_json::json!({
         "repo": repo,
         "plan": plan,
         "claimed": arguments.get_one::<String>("claimed"),
         "intake_order": order.groups,
         "order_source": order.source,
-        "deleted": deleted,
-        "edited_collections": edited,
+        "deleted": tamper::to_wire(deleted),
+        "edited_collections": tamper::to_wire(edited),
         "apparatus_forged": tamper::forged_apparatus(&repo, &plan),
         "definition_changed_without_version_bump": tamper::definition_changed(&repo, &plan),
     });
