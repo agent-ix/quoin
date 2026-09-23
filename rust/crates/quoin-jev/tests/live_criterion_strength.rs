@@ -418,6 +418,9 @@ fn synthetic_verdict(ac_id: &str, label: &str, noul_values: Vec<(String, f64)>) 
     }
     let severity = quoin_jev::Severity::for_weakness_kind(label)
         .expect("derive_weakness_kind only returns labels with a severity, or `sound` above");
+    let noul = quoin_jev::verdict::NoulSignals {
+        values: noul_values,
+    };
     FrVerdict {
         classifier: "derived-from-noul".to_owned(),
         usage_input_tokens: 0,
@@ -429,9 +432,8 @@ fn synthetic_verdict(ac_id: &str, label: &str, noul_values: Vec<(String, f64)>) 
             confidence: 1.0,
             unconfirmed: false,
             probabilities: Vec::new(),
-            noul: quoin_jev::verdict::NoulSignals {
-                values: noul_values,
-            },
+            label_sub_question: quoin_jev::SubQuestionCheck::for_label(label, &noul),
+            noul,
         }],
         sound: Vec::new(),
         unrecognized: Vec::new(),
