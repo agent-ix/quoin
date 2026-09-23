@@ -335,6 +335,56 @@
 //! Bars: unchanged. Gate pass (`JEV_VARIANT=v5`, the gate test), then
 //! `JEV_RUNS=5` repeats. GO needs all three bars on the gate pass and in at
 //! least 3 of 5 repeats.
+//!
+//! # `v5` result, 2026-09-22: NO-GO
+//!
+//! MEASURED against `jev-latest`: one gate pass, then 5 repeats. M1
+//! disagreement was 5.3% (range 0.0-13.3%).
+//!
+//! | pass | agreement | margin | defect recall | `sound` cleared | all bars |
+//! | --- | --- | --- | --- | --- | --- |
+//! | gate | 73.3% | -6.7 pp | 1/2 | 2/5 | FAIL |
+//! | repeats 1-4 | 73.3% | -6.7 pp | 1/2 | 2/5 | FAIL |
+//! | repeat 5 | 80.0% | 0.0 pp (tie) | 1/2 | 3/5 | FAIL (bar 1 needs strictly more) |
+//!
+//! No pass cleared all three bars, against the 3 of 5 GO requires. 73.3% is
+//! the highest agreement of any variant, and the 80.0% repeat is the first
+//! pass by any variant to reach the constant. Neither beats it.
+//!
+//! **The fix worked on the rows it targeted.** `CS-FIX-003` is now
+//! `implementation_coupled` (0.94). `CS-FIX-004` is `sound`, an accepted
+//! reading. The two bad-label rows, `CS-FIX-006` and `CS-FIX-008`, went to
+//! `sound`, which is accepted too. `CS-FIX-014` is `happy_path_only`, the
+//! first time any variant returned that primary reading.
+//!
+//! **The errors moved instead of going away.** The gate pass's four
+//! disagreements:
+//!
+//! | fixture | recorded | `v5` said | class |
+//! | --- | --- | --- | --- |
+//! | `CS-FIX-001` | `sound` | `implementation_coupled` (0.37) | wording, over-corrected: flags the two `cargo` commands the NFR gates on |
+//! | `CS-FIX-002` | `sound` | `implementation_coupled` (0.57) | wording, over-corrected: flags `parse_document`, the API the NFR bounds |
+//! | `CS-FIX-005` | `restates_requirement` / `implementation_coupled` | `sound` | wording: "Error Boundary" is not read as a mechanism |
+//! | `CS-FIX-015` | 2 | 2.92, rounded to 3 | threshold: unchanged from `v2` |
+//!
+//! Adding the coupling check to `sound` fixed `CS-FIX-003`. It also flagged
+//! two clean `sound` criteria, even though the definition says outright that
+//! a public command or API under test is not internal. So bar 3, which `v2`
+//! passed, now fails. Across `v0`-`v5` the wording lever trades one error for
+//! another. `v0`/`v1`/`v3`/`v4` never clear `sound`. `v2` clears it and
+//! misses the coupled defect. `v5` catches the defect and flags sound
+//! criteria. Coupling is the dimension no wording has separated:
+//! `CS-FIX-001`/`002`/`007` (public surface) against `003`/`005` (internal).
+//! The rationales make that call from knowledge of each repo's public API,
+//! which the criterion text does not carry.
+//!
+//! **The NO-GO is final for this corpus and question shape.** PLAT-979's
+//! one wording retry has been made, aimed at the dominant class from a
+//! per-row diagnostic, fitted to the corpus. It still fails. Beating the
+//! constant here needs at most two errors in fifteen. The coverage row
+//! `CS-FIX-015` was wrong in both passes whose per-row table was kept
+//! (step 1's `v2` and `v5`'s gate pass). That leaves one error for eleven
+//! criteria, and the answer key contests seven of their readings.
 
 #![cfg(feature = "live-api")]
 #![allow(
@@ -904,6 +954,27 @@ async fn repeated_runs_report_a_disagreement_rate() {
     );
 }
 
+/// The five `noul` answers one response carries for `ac_id`, by question id.
+/// A question the response did not answer is absent, never defaulted.
+fn noul_answers(
+    response: &typesafe_sdk_answers::SystemOneResponse,
+    questions: &QuestionSet,
+    ac_id: &str,
+) -> Vec<(String, f64)> {
+    questions
+        .noul
+        .iter()
+        .filter_map(
+            |entry| match response.answer(&QuestionSet::noul_key(ac_id, entry)) {
+                Some(typesafe_sdk_answers::Answer::Noul(answer)) => {
+                    Some((entry.id.clone(), answer.noul))
+                }
+                _ => None,
+            },
+        )
+        .collect()
+}
+
 /// Provenance: PLAT-917 follow-up. **`v3`, pre-registered before its first
 /// call.** See this file's module doc for the hypothesis, the derivation
 /// rule and its stated blind spot. Reports `v3-direct` and `v3-derived`
@@ -950,19 +1021,7 @@ async fn the_lens_with_noul_derived_labels_v3() {
         // v3-derived: the five `noul` answers from the same response, run
         // through `derive_weakness_kind` instead.
         let ac_id = &ac_ids[0];
-        let noul_values: Vec<(String, f64)> = questions
-            .noul
-            .iter()
-            .filter_map(|entry| {
-                let key = QuestionSet::noul_key(ac_id, entry);
-                match response.answer(&key) {
-                    Some(typesafe_sdk_answers::Answer::Noul(answer)) => {
-                        Some((entry.id.clone(), answer.noul))
-                    }
-                    _ => None,
-                }
-            })
-            .collect();
+        let noul_values = noul_answers(&response, &questions, ac_id);
         let label = derive_weakness_kind(&noul_values);
         let derived_verdict = synthetic_verdict(ac_id, &label, noul_values);
         derived_graded.push(grade_weakness(fixture, &derived_verdict));

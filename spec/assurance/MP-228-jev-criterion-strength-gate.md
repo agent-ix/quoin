@@ -94,6 +94,32 @@ the score is 12 of 15, or 80.0%. That ties the constant and fails bar 1.
 Expected result: NO-GO on bar 1, with the wording rows corrected. If they are
 not corrected, the wording hypothesis is refuted too.
 
+### `v5` result, 2026-09-22: NO-GO
+
+Measured against `jev-latest`: one gate pass and 5 repeats.
+
+| pass | agreement | margin | defect recall | `sound` cleared | all bars |
+| --- | --- | --- | --- | --- | --- |
+| gate | 73.3% | -6.7 pp | 1/2 | 2/5 | FAIL |
+| repeats 1-4 | 73.3% | -6.7 pp | 1/2 | 2/5 | FAIL |
+| repeat 5 | 80.0% | 0.0 pp | 1/2 | 3/5 | FAIL (a tie does not beat the constant) |
+
+The result matched the prediction on bar 1, and bar 3 regressed. The
+targeted rows were fixed: `CS-FIX-003` is now `implementation_coupled`,
+`CS-FIX-004` is `sound`, and `CS-FIX-014` returned `happy_path_only` for the
+first time. But the coupling check that fixed `CS-FIX-003` also flags two
+clean `sound` criteria, `CS-FIX-001` (`cargo` commands) and `CS-FIX-002`
+(`parse_document`). The definition says outright that a public command or API
+under test is not internal, and they are flagged anyway. `CS-FIX-005` went to
+`sound`, and `CS-FIX-015` still rounds to 3.
+
+Across six variants the wording moves errors between `sound` and
+`implementation_coupled` without removing them. The public-API rows and the
+internal rows are separated by knowledge of each repo's surface, which is not
+in the criterion text. PLAT-979's one retry has been made, aimed at the
+dominant disagreement class and fitted to the corpus. It still fails. **The
+NO-GO is final for this corpus and question shape.**
+
 **Stated in advance.** Whoever writes `v5` has read the fixtures and
 their rationales. `v5` is therefore fitted to the corpus in a way `v3` and
 `v4` were not. A GO from `v5` is weak evidence and would need a held-out corpus
