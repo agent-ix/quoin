@@ -43,7 +43,7 @@ reference and which condition failed.
 | FR-047-AC-5 | The closed authored contract, decision shape, uniqueness, timestamps, and digests are validated before rendering. | Test (TC-1135) |
 | FR-047-AC-6 | Markdown and JSON preserve every open reason and render unchanged input deterministically. | Test (TC-1136) |
 | FR-047-AC-7 | An authored instant naming a day, hour, minute or second that does not exist is refused, rather than rolled forward into a different instant that then decides a reported status. | Test (TC-1712) |
-| FR-047-AC-8 | The top claim is reported unbacked — kept open, with a stated reason — when it has no evidence references, when a cited reference does not resolve in the caller's evidence index, or when a cited reference is recorded stale, vacuous, or suspect; every failing reference is reported, and an evidence index naming one reference twice is refused. | Test (TC-1916) |
+| FR-047-AC-8 | The top claim is reported unbacked — kept open, with a stated reason — when it has no evidence references, when a cited reference does not resolve in the caller's evidence index, or when a cited reference is recorded stale, vacuous, or suspect; every failing reference is reported, and an evidence index naming one reference twice is refused. | Test (TC-1925) |
 
 ## Constraints
 

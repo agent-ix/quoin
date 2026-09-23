@@ -316,7 +316,7 @@ pub struct EvidenceIndexEntry {
 /// **Not a new vocabulary.** `quoin_finding_types::FindingKind::STALE_EVIDENCE`,
 /// `VACUOUS_EVIDENCE` and `SUSPECT_LINK` are the auditor's own spellings for
 /// exactly these conditions, and this enum's wire form reuses them verbatim —
-/// `tc_1916_reuses_the_auditors_own_evidence_vocabulary` holds the property. A
+/// `tc_1925_reuses_the_auditors_own_evidence_vocabulary` holds the property. A
 /// claim citing evidence the auditor has already flagged reports the SAME
 /// word a `quoin audit` run would, rather than a second opinion spelled
 /// differently.
@@ -357,7 +357,7 @@ mod tests {
     /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
     #[test]
-    fn tc_1916_reuses_the_auditors_own_evidence_vocabulary() {
+    fn tc_1925_reuses_the_auditors_own_evidence_vocabulary() {
         let cases = [
             (EvidenceRefState::Stale, FindingKind::STALE_EVIDENCE),
             (EvidenceRefState::Vacuous, FindingKind::VACUOUS_EVIDENCE),
