@@ -579,7 +579,7 @@ fn synthetic_verdict(ac_id: &str, label: &str, noul_values: Vec<(String, f64)>) 
             weakness_kind: label.to_owned(),
             severity,
             confidence: 1.0,
-            unconfirmed: false,
+            certainty: quoin_jev::verdict::Certainty::Confident,
             probabilities: Vec::new(),
             label_sub_question: quoin_jev::SubQuestionCheck::for_label(label, &noul),
             noul,
