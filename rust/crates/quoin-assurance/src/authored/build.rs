@@ -684,7 +684,7 @@ mod tests {
     /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
     #[test]
-    fn tc_1868_a_claim_backed_by_resolved_evidence_passes_clean() {
+    fn tc_1915_a_claim_backed_by_resolved_evidence_passes_clean() {
         let view = build(argument(), vec![decision()], AS_OF);
         assert_eq!(view.top_claim.status, ViewStatus::Supported);
         assert_eq!(view.top_claim.reasons, Vec::<String>::new());
@@ -695,7 +695,7 @@ mod tests {
     /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
     #[test]
-    fn tc_1868_a_claim_with_no_evidence_references_is_unbacked() {
+    fn tc_1915_a_claim_with_no_evidence_references_is_unbacked() {
         let claim_without_refs = with(
             &argument()["top_claim"],
             "evidence_refs",
@@ -719,7 +719,7 @@ mod tests {
     /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
     #[test]
-    fn tc_1868_a_claim_citing_an_unresolved_reference_is_unbacked() {
+    fn tc_1915_a_claim_citing_an_unresolved_reference_is_unbacked() {
         let view = build_authored_argument_view(&request_with_evidence(
             argument(),
             vec![decision()],
@@ -742,7 +742,7 @@ mod tests {
     /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
     #[test]
-    fn tc_1868_a_claim_citing_stale_vacuous_or_suspect_evidence_is_unbacked() {
+    fn tc_1915_a_claim_citing_stale_vacuous_or_suspect_evidence_is_unbacked() {
         let cases = [
             (EvidenceRefState::Stale, "is stale"),
             (EvidenceRefState::Vacuous, "is vacuous"),
@@ -776,7 +776,7 @@ mod tests {
     /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
     #[test]
-    fn tc_1868_reports_every_failing_reference_in_authored_order() {
+    fn tc_1915_reports_every_failing_reference_in_authored_order() {
         let claim = with(
             &argument()["top_claim"],
             "evidence_refs",
@@ -823,7 +823,7 @@ mod tests {
     /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
     #[test]
-    fn tc_1868_a_duplicate_evidence_index_entry_is_refused() {
+    fn tc_1915_a_duplicate_evidence_index_entry_is_refused() {
         let mut evidence = vec![EvidenceIndexEntry {
             reference: CLAIM_EVIDENCE_REF.to_owned(),
             state: EvidenceRefState::Stale,
