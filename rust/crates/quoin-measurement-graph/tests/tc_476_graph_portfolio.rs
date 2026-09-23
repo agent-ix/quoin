@@ -113,6 +113,29 @@ fn normalise(text: &str) -> String {
     text.replace(&tree().to_string_lossy().into_owned(), TREE_TOKEN)
 }
 
+/// PLAT-968 gave [`render_governed_graph_portfolio`]'s inherited first
+/// section — `render_portfolio_report` verbatim, per this crate's own
+/// `render.rs` doc — an appended advisory "Priority ranking" section with no
+/// counterpart in this frozen `graph-portfolio.ts` capture, for the same
+/// reason `quoin-measurement`'s own `tc_473_reporting.rs` strips it: the
+/// section did not exist when the oracle was captured, and FR-101-AC-5
+/// forbids a live TypeScript run to add one. Unlike that file, the ranking
+/// section here is not the last thing rendered — `render_governed_graph_portfolio`
+/// appends its own "Governed graph evidence" sections after it — so this
+/// splices the ranking section out rather than truncating from where it
+/// starts.
+fn without_ranking_section(rendered: &str) -> String {
+    const MARKER: &str = "\n\n## Priority ranking\n";
+    const RESUME: &str = "# Governed graph evidence";
+    let Some((before, after_marker)) = rendered.split_once(MARKER) else {
+        return rendered.to_owned();
+    };
+    let Some(resume_index) = after_marker.find(RESUME) else {
+        return rendered.to_owned();
+    };
+    format!("{before}\n\n{}", &after_marker[resume_index..])
+}
+
 fn text_at<'a>(value: &'a Value, path: &[&str]) -> &'a str {
     let mut cursor = value;
     for step in path {
@@ -381,12 +404,13 @@ fn tc_476_001_governed_portfolio_is_byte_identical() {
         "canonical governed graph portfolio JSON diverged from the capture"
     );
     assert_eq!(
-        normalise(
+        without_ranking_section(&normalise(
             &render_governed_graph_portfolio(&report)
                 .unwrap_or_else(|error| panic!("the Markdown renderer refused: {error}"))
-        ),
+        )),
         text_at(case, &["rendered"]),
-        "the rendered governed graph portfolio diverged from the capture"
+        "the rendered governed graph portfolio diverged from the capture, once PLAT-968's \
+         Rust-only ranking section is set aside"
     );
 
     // `DIVERGENCE.md` §2: an observation with no `dimensions` becomes the

@@ -11,6 +11,9 @@
 use serde::Serialize;
 
 use crate::error::MeasurementError;
+use crate::portfolio::ranking::{
+    PortfolioRanking, PortfolioRankingEntry, RANKING_ADVISORY_NOTE, UnrankedPlan, rank_portfolio,
+};
 use crate::portfolio::types::{
     PORTFOLIO_STALE_AFTER_DAYS, PortfolioCollectionRef, PortfolioComparison, PortfolioReport,
     PortfolioRepositoryReport,
@@ -24,7 +27,8 @@ use crate::report::wire::{ComparisonWire, MeasurementReportWire, PlanWire, canon
 ///
 /// As [`crate::report::render_measurement_report_json`].
 pub fn render_portfolio_report_json(report: &PortfolioReport) -> Result<String, MeasurementError> {
-    canonical_json_of(&PortfolioReportWire::of(report)?)
+    let ranking = rank_portfolio(report);
+    canonical_json_of(&PortfolioReportWire::of(report, &ranking)?)
 }
 
 /// `portfolio.ts:65-70`.
@@ -36,11 +40,19 @@ struct PortfolioReportWire<'a> {
     newest_collection_timestamp: Option<&'a str>,
     stale_after_days: i64,
     repositories: Vec<RepositoryWire<'a>>,
+    /// PLAT-968 (FR-113): the advisory priority ranking. Never absent — a
+    /// reader who parses the JSON without reading the prose still gets
+    /// `advisory` stated next to `ranked` and `unranked`.
+    ranking: RankingWire<'a>,
 }
 
 impl<'a> PortfolioReportWire<'a> {
-    /// The wire view of one portfolio.
-    fn of(report: &'a PortfolioReport) -> Result<Self, MeasurementError> {
+    /// The wire view of one portfolio. `ranking` is computed by the caller so
+    /// it outlives this borrow — see [`render_portfolio_report_json`].
+    fn of(
+        report: &'a PortfolioReport,
+        ranking: &'a PortfolioRanking,
+    ) -> Result<Self, MeasurementError> {
         Ok(Self {
             schema_version: PortfolioReport::SCHEMA_VERSION,
             newest_collection_timestamp: report.newest_collection_timestamp.as_deref(),
@@ -50,7 +62,94 @@ impl<'a> PortfolioReportWire<'a> {
                 .iter()
                 .map(RepositoryWire::of)
                 .collect::<Result<Vec<_>, MeasurementError>>()?,
+            ranking: RankingWire::of(ranking),
         })
+    }
+}
+
+/// The wire view of [`PortfolioRanking`] (PLAT-968, FR-113).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RankingWire<'a> {
+    advisory: &'static str,
+    ranked: Vec<RankingEntryWire<'a>>,
+    unranked: Vec<UnrankedPlanWire<'a>>,
+}
+
+impl<'a> RankingWire<'a> {
+    fn of(ranking: &'a PortfolioRanking) -> Self {
+        Self {
+            advisory: RANKING_ADVISORY_NOTE,
+            ranked: ranking.ranked.iter().map(RankingEntryWire::of).collect(),
+            unranked: ranking.unranked.iter().map(UnrankedPlanWire::of).collect(),
+        }
+    }
+}
+
+/// One scored row of `ranking.ranked`.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RankingEntryWire<'a> {
+    repository: &'a str,
+    plan_id: &'a str,
+    plan_path: &'a str,
+    metric: &'a str,
+    current: f64,
+    bound: f64,
+    direction: &'static str,
+    gap: f64,
+    weight: f64,
+    /// `| null`.
+    value_half_life: Option<f64>,
+    /// `| null`.
+    age_days: Option<i64>,
+    decay_factor: f64,
+    /// `| null`.
+    budget: Option<f64>,
+    score: f64,
+}
+
+impl<'a> RankingEntryWire<'a> {
+    fn of(entry: &'a PortfolioRankingEntry) -> Self {
+        Self {
+            repository: &entry.repository,
+            plan_id: &entry.plan_id,
+            plan_path: &entry.plan_path,
+            metric: &entry.metric,
+            current: entry.current,
+            bound: entry.bound,
+            direction: entry.direction.wire_name(),
+            gap: entry.gap,
+            weight: entry.weight,
+            value_half_life: entry.value_half_life,
+            age_days: entry.age_days,
+            decay_factor: entry.decay_factor,
+            budget: entry.budget,
+            score: entry.score,
+        }
+    }
+}
+
+/// One row of `ranking.unranked`.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UnrankedPlanWire<'a> {
+    repository: &'a str,
+    plan_id: &'a str,
+    plan_path: &'a str,
+    metric: &'a str,
+    reason: &'static str,
+}
+
+impl<'a> UnrankedPlanWire<'a> {
+    fn of(plan: &'a UnrankedPlan) -> Self {
+        Self {
+            repository: &plan.repository,
+            plan_id: &plan.plan_id,
+            plan_path: &plan.plan_path,
+            metric: &plan.metric,
+            reason: plan.reason.as_str(),
+        }
     }
 }
 
