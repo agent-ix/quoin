@@ -207,7 +207,7 @@ pub fn build_measurement_report_from(
             plan_ground_truth_kind: plan.ground_truth_kind,
             observation: observation.cloned(),
             collection: summary.clone(),
-            stage_verdict: stage_verdict(plan, observation, earlier),
+            stage_verdict: stage_verdict(plan, observation, collection, earlier),
         };
         if observations.is_empty() {
             current.push(row(None));

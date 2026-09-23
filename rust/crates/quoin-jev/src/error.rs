@@ -70,6 +70,13 @@ pub enum JevErrorCode {
     /// code is a cassette file refusing to load; this one is the response in
     /// hand -- live or replayed -- refusing to be scored.
     ModelMismatch,
+    /// A span ballot (`span_ballot::SpanBallot`) was built with no candidate
+    /// span left to offer (PLAT-980).
+    SpanBallotEmpty,
+    /// A span ballot was built with more distinct candidates than
+    /// `span_ballot::MAX_CANDIDATES` (PLAT-980). Refused rather than
+    /// truncated, so no tail of the source text silently drops off a ballot.
+    SpanBallotTooLarge,
 }
 
 impl JevErrorCode {
@@ -91,6 +98,8 @@ impl JevErrorCode {
             Self::CassetteModelMismatch => "JEV_CASSETTE_MODEL_MISMATCH",
             Self::CassetteMiss => "JEV_CASSETTE_MISS",
             Self::ModelMismatch => "JEV_MODEL_MISMATCH",
+            Self::SpanBallotEmpty => "JEV_SPAN_BALLOT_EMPTY",
+            Self::SpanBallotTooLarge => "JEV_SPAN_BALLOT_TOO_LARGE",
         }
     }
 
@@ -112,6 +121,8 @@ impl JevErrorCode {
             Self::CassetteModelMismatch,
             Self::CassetteMiss,
             Self::ModelMismatch,
+            Self::SpanBallotEmpty,
+            Self::SpanBallotTooLarge,
         ]
     }
 

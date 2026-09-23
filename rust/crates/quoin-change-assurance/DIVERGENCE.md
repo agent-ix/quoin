@@ -128,3 +128,37 @@ TypeScript did, and each is an accepted, declared consequence of the move.
    `tests/change-assurance-command-surface.test.ts` asserts that positively
    (every engine-reaching command goes through that one module) as well as
    negatively (no command reaches `child_process`, Git, or the network).
+
+## §6 — a required `strength` member the oracle never carried (PLAT-972)
+
+`ProofAttestationV1` now requires `strength`, one of Engineering Assurance's
+four `ClaimStrength` wire names (FR-022, PLAT-971): `proven`,
+`bounded-checked`, `tested` or `observed`. The oracle predates the EA
+claim-strength vocabulary and never emitted or read this member; there is
+nothing to diverge from, only a member to add.
+
+The captured `tests/fixtures/oracle.json` was amended in place to carry it:
+`strength` was added to every attestation the file captured (cycling through
+all four values so all four are exercised by the existing "reproduces the
+oracle" tests, not only by `tc_455_every_claim_strength_round_trips`), each
+digest-self-consistent attestation was resealed so its `digest` covers the new
+member, and every `verifications[].receipt` was regenerated with this crate's
+own `verify_change_assurance` against the amended inputs. Two attestations
+were deliberately left digest-inconsistent — `attestation-digest-mismatch`'s
+own attestation, and the fixture whose `result` is the invalid `"maybe"` — so
+the negative-test cases they exist to exercise (`attestation_digest_mismatch`,
+a schema refusal unrelated to `strength`) still fire exactly as before.
+
+Regenerating receipts with this crate's own verifier would hide a port defect
+if anything but digests had moved, so that was measured, not assumed: a
+structural diff of the amended file against its pre-PLAT-972 capture shows
+only added `strength` members and changed digest members (`digest`,
+`attestation_digest`, and each receipt's `digest`, which cover the attestation
+digests). No receipt outcome, reason, proof state or selection moved — every
+verdict in the file is still the oracle's.
+
+The `strength` type itself carries no ordering (deliberately — see
+`engineering_assurance::claim_strength`'s compile-time probe): this crate
+never compares, ranks or defaults it. A missing `strength` is refused by name
+(`FieldFailure::Missing`), never inferred from `result` or defaulted to one of
+the four values.

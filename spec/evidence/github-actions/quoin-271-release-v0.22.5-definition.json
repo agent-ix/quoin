@@ -18,7 +18,7 @@
       "github_workflow_run_id": 33280266874,
       "release_version": "0.22.5"
     },
-    "definition_version": "github-actions.release-operational-v1"
+    "definition_version": "github-actions.release-operational-v2"
   },
   "scope": {
     "service": "agent-ix/quoin",

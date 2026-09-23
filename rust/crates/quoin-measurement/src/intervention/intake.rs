@@ -138,7 +138,14 @@ impl From<MeasurementError> for InterventionIntakeError {
             | MeasurementErrorCode::PopulationBelowMinimum
             | MeasurementErrorCode::PopulationUnstated
             | MeasurementErrorCode::RepetitionsShort
-            | MeasurementErrorCode::PopulationMalformed => InterventionRefusalCode::InvalidRecord,
+            | MeasurementErrorCode::PopulationMalformed
+            // Raised only by `store::apparatus` when a measurement collection
+            // is written (PLAT-975); kept for the same exhaustiveness reason.
+            | MeasurementErrorCode::ApparatusUnresolved
+            | MeasurementErrorCode::ApparatusSymlink
+            | MeasurementErrorCode::ApparatusUnreadable
+            | MeasurementErrorCode::ApparatusUndeclared
+            | MeasurementErrorCode::ApparatusTooLarge => InterventionRefusalCode::InvalidRecord,
         };
         let findings = if error.findings().is_empty() {
             vec![error.to_string()]

@@ -92,6 +92,32 @@ const DECLARED_DIVERGENCES: &[(&str, bool, bool, &str)] = &[
     ),
 ];
 
+/// The capture's document with PLAT-972's `strength` member applied.
+///
+/// ajv ran against the retained schemas, which predate the member and close
+/// the root with `additionalProperties: false`, so the captured documents
+/// carry no `strength` and ajv's verdicts are about documents without one.
+/// The golden stays a byte-literal capture of what ajv saw and said; the
+/// DIVERGENCE.md §7 delta is applied here, visibly, instead of being written
+/// into documents ajv never judged. Each family's one admissible value is
+/// added to every object that lacks it, so a rung's verdict still turns on the
+/// one thing that rung changed. Refusing a missing or foreign `strength` is
+/// `quoin-measurement`'s `tc_479_109`/`tc_479_309`, not a parity question.
+fn with_strength(schema: &str, document: &Value) -> Value {
+    let strength = match schema {
+        "intervention_experiment_v1" => "tested",
+        "operational_evidence_v1" => "observed",
+        other => panic!("no PLAT-972 strength is declared for schema {other}"),
+    };
+    let mut document = document.clone();
+    if let Some(members) = document.as_object_mut() {
+        members
+            .entry("strength")
+            .or_insert_with(|| Value::String(strength.to_owned()));
+    }
+    document
+}
+
 /// The `date-time` check both retained ajv instances asked for, unified on the
 /// permissive grammar per quoin#440. There is no second grammar here: this is
 /// `quoin-measurement`'s, called.
@@ -153,7 +179,8 @@ fn tc_470_ajv_and_jsonschema_agree_on_every_verdict() {
         let mutation = entry["mutation"].as_str().expect("a mutation name");
         let ajv_valid = entry["ajv_valid"].as_bool().expect("an ajv verdict");
         let validator = validators.get(schema).expect("a known schema name");
-        let rust_valid = validator.is_valid(&entry["document"]);
+        let document = with_strength(schema, &entry["document"]);
+        let rust_valid = validator.is_valid(&document);
 
         let declared = DECLARED_DIVERGENCES
             .iter()
@@ -175,7 +202,7 @@ fn tc_470_ajv_and_jsonschema_agree_on_every_verdict() {
             "{id}: ajv said {ajv_valid} and this crate said {rust_valid}. The verdict is \
              contractual. If the difference is intended, it is a delta and belongs in \
              DIVERGENCE.md and in DECLARED_DIVERGENCES; otherwise it is a port defect.\n{:#?}",
-            validator.errors(&entry["document"])
+            validator.errors(&document)
         );
         agreed += 1;
     }

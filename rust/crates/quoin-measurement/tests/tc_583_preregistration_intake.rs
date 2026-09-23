@@ -64,6 +64,11 @@ fn plan_document(bar_digest: &str, bar_text: &str) -> String {
          stage: gate\n\
          metric: quality.gate\n\
          definition_version: quality.gate-v1\n\
+         protected_apparatus:\n\
+         \x20\x20- spec/assurance/MP-900.md\n\
+         negative_controls:\n\
+         \x20\x20- kind: apparatus-edit\n\
+         \x20\x20\x20\x20description: the plan document is digested with every collection\n\
          preregistration:\n\
          \x20\x20bar_digest: {bar_digest}\n\
          ---\n\
@@ -240,6 +245,11 @@ fn tc_583_a_plan_without_preregistration_is_unaffected() {
          stage: gate\n\
          metric: quality.gate\n\
          definition_version: quality.gate-v1\n\
+         protected_apparatus:\n\
+         \x20\x20- spec/assurance/MP-900.md\n\
+         negative_controls:\n\
+         \x20\x20- kind: apparatus-edit\n\
+         \x20\x20\x20\x20description: the plan document is digested with every collection\n\
          ---\n\
          \n\
          # Example gate\n",

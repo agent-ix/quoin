@@ -1547,7 +1547,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     // every status is checked, not the two this test happened to produce.
     assert_eq!(
         ComparisonReasonCode::ALL.len(),
-        5,
+        7,
         "every reason code is measured, not a subset"
     );
     for code in ComparisonReasonCode::ALL {

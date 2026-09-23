@@ -25,6 +25,13 @@ invalidated or overdue assumptions, unresolved challenges, and expired risk
 acceptances SHALL keep the top claim open. The view SHALL NOT emit an aggregate
 score or claim compatibility with an external argument notation.
 
+The top claim MAY cite evidence references. A claim that cites none, cites a
+reference the caller's evidence index does not resolve, or cites evidence the
+evidence index records as stale, vacuous, or suspect (the auditor's own
+states, `quoin_finding_types::FindingKind`) SHALL keep the top claim open,
+with one reason per failing reference, in authored order, naming the
+reference and which condition failed.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
@@ -36,6 +43,7 @@ score or claim compatibility with an external argument notation.
 | FR-047-AC-5 | The closed authored contract, decision shape, uniqueness, timestamps, and digests are validated before rendering. | Test (TC-1135) |
 | FR-047-AC-6 | Markdown and JSON preserve every open reason and render unchanged input deterministically. | Test (TC-1136) |
 | FR-047-AC-7 | An authored instant naming a day, hour, minute or second that does not exist is refused, rather than rolled forward into a different instant that then decides a reported status. | Test (TC-1712) |
+| FR-047-AC-8 | The top claim is reported unbacked — kept open, with a stated reason — when it has no evidence references, when a cited reference does not resolve in the caller's evidence index, or when a cited reference is recorded stale, vacuous, or suspect; every failing reference is reported, and an evidence index naming one reference twice is refused. | Test (TC-1868) |
 
 ## Constraints
 
@@ -52,6 +60,15 @@ reader is shared with the measurement surfaces rather than written a third time.
 - The authored contract remains owned by the separately installed private
   engineering-assurance module.
 - No external argument notation is emitted or claimed.
+- The evaluator resolves no evidence itself. The caller states what the
+  evidence store found for each reference (an evidence index, the same shape
+  `asOf` and the clause discharge report already arrive as); a reference named
+  in the index but not cited by the claim, and vice versa, is ordinary and
+  decides nothing on its own. `quoin assurance --argument` takes the index
+  from `--evidence <path>`; without it every cited reference is unresolved.
+- Where GSN rendering (PLAT-363) exists, an unbacked claim SHALL render as an
+  open node there too; until it exists, the authored view above is the only
+  surface this criterion is verified against.
 
 ## Dependencies
 

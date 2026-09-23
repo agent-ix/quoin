@@ -23,16 +23,26 @@ pub enum ComparisonReasonCode {
     PopulationChanged,
     /// The producing tool's version moved. Not blocking.
     ToolChanged,
+    /// The plan's recorded protected apparatus differs between the two
+    /// collections: a protected file was edited, added under or removed from
+    /// a directory entry, or only one side recorded the set (PLAT-975).
+    ApparatusChanged,
+    /// A `verificationStack.artifacts` digest the plan does not protect
+    /// moved. Not blocking: reported beside the delta, and only for a slice
+    /// whose plan protects apparatus on at least one side (PLAT-975).
+    ArtifactChanged,
 }
 
 impl ComparisonReasonCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 7] = [
         Self::DefinitionChanged,
         Self::ConfigurationChanged,
         Self::IncompletePopulation,
         Self::PopulationChanged,
         Self::ToolChanged,
+        Self::ApparatusChanged,
+        Self::ArtifactChanged,
     ];
 
     /// The stable wire spelling.
@@ -44,6 +54,8 @@ impl ComparisonReasonCode {
             Self::IncompletePopulation => "incomplete_population",
             Self::PopulationChanged => "population_changed",
             Self::ToolChanged => "tool_changed",
+            Self::ApparatusChanged => "apparatus_changed",
+            Self::ArtifactChanged => "artifact_changed",
         }
     }
 
@@ -62,10 +74,11 @@ impl ComparisonReasonCode {
     #[must_use]
     pub const fn is_blocking(self) -> bool {
         match self {
-            Self::DefinitionChanged | Self::ConfigurationChanged | Self::IncompletePopulation => {
-                true
-            }
-            Self::PopulationChanged | Self::ToolChanged => false,
+            Self::DefinitionChanged
+            | Self::ConfigurationChanged
+            | Self::IncompletePopulation
+            | Self::ApparatusChanged => true,
+            Self::PopulationChanged | Self::ToolChanged | Self::ArtifactChanged => false,
         }
     }
 }

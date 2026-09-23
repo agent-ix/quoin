@@ -188,8 +188,10 @@ fn parse_stored_measurement_collection(
 ///
 /// Everything [`stored_measurement_collection`] refuses, plus a schema version
 /// other than [`MEASUREMENT_SCHEMA_VERSION`], a build profile other than
-/// release, absent toolchains, and any observation whose metric has no active
-/// plan at the observation's own definition version.
+/// release, absent toolchains, a stated `verificationStack.unverifiedArtifacts`
+/// or `.protectedApparatus` (both computed by intake), and any observation
+/// whose metric has no active plan at the observation's own definition
+/// version.
 ///
 /// Every finding is accumulated into one refusal. Its code is
 /// [`MeasurementErrorCode::CollectionInvalid`], except when every finding is
@@ -256,6 +258,8 @@ pub fn measurement_collection(
             }
         },
     }
+
+    findings.extend(stack::stated_computed_members(value));
 
     let by_metric: BTreeMap<&str, &MeasurementPlan> = plans
         .iter()

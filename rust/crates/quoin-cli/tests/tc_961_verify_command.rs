@@ -65,6 +65,12 @@ fn record(repo: &Path, name: &str, timestamp: &str) {
     )
     .unwrap();
     collection["timestamp"] = json!(timestamp);
+    // The fixture is the stored form; intake computes `protectedApparatus`
+    // itself and refuses a candidate that states it (PLAT-975).
+    collection["verificationStack"]
+        .as_object_mut()
+        .unwrap()
+        .remove("protectedApparatus");
     let input = repo.join("input.json");
     std::fs::write(&input, collection.to_string()).unwrap();
     let output = quoin(

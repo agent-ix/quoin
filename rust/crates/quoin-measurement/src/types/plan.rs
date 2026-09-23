@@ -8,7 +8,9 @@
 use std::fmt;
 use std::num::NonZeroU32;
 
-use engineering_assurance::measurement::{DecisionRule, Estimator, Objective};
+use engineering_assurance::measurement::{
+    DecisionRule, Estimator, NegativeControls, Objective, ProtectedApparatus,
+};
 use quoin_store::{RawFileSha256Digest, digest_bytes_sha256};
 
 use crate::types::ids::NonEmptyText;
@@ -203,6 +205,15 @@ pub struct MeasurementPlan {
     /// document states an `objective` (PLAT-958). The type is
     /// engineering-assurance's: EA owns the block's schema and validation.
     pub objective: Option<Objective>,
+    /// The files that produce the plan's number, when the document declares
+    /// `protected_apparatus` (PLAT-975). The type is engineering-assurance's
+    /// (its FR-024); intake resolves and digests every entry when it writes a
+    /// collection this plan governs.
+    pub protected_apparatus: Option<ProtectedApparatus>,
+    /// The gaming scenarios the plan declares it guards against, when the
+    /// document declares `negative_controls` (engineering-assurance FR-024).
+    /// The checker reads only whether `apparatus-edit` is among them.
+    pub negative_controls: Option<NegativeControls>,
 }
 
 impl MeasurementPlan {
