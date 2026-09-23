@@ -556,9 +556,10 @@ fn tc_968_011_a_met_bound_has_no_gap_in_the_objectives_direction() {
     assert!((gap("MP-short") - 0.1).abs() < 1e-9);
 }
 
-/// One repository whose one plan, `MP-multi`, has three `quantity` slices:
-/// `cost` (0.1) and `latency` (0.2) usable, `memory` with no value.
-fn multi_slice_report() -> PortfolioReport {
+/// One repository whose one plan, `MP-multi` (higher-is-better, bound
+/// `0.9`), has one row per `(quantity, value)` slice; a `None` value leaves
+/// that slice with no usable estimate.
+fn multi_slice_report(slices: &[(&str, Option<f64>)]) -> PortfolioReport {
     let sliced_plan = plan(
         "MP-multi",
         Some(Objective::new(Direction::Higher, Some(0.9)).unwrap()),
@@ -584,11 +585,10 @@ fn multi_slice_report() -> PortfolioReport {
         }
     };
 
-    let rows = vec![
-        sliced_row("cost", Some(0.1)),
-        sliced_row("latency", Some(0.2)),
-        sliced_row("memory", None),
-    ];
+    let rows = slices
+        .iter()
+        .map(|(quantity, value)| sliced_row(quantity, *value))
+        .collect();
     let repository = PortfolioRepositoryReport {
         name: "repo".to_owned(),
         root: "/repos/repo".to_owned(),
@@ -627,7 +627,11 @@ fn multi_slice_report() -> PortfolioReport {
 /// Provenance: PLAT-1019
 #[test]
 fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
-    let report = multi_slice_report();
+    let report = multi_slice_report(&[
+        ("cost", Some(0.1)),
+        ("latency", Some(0.2)),
+        ("memory", None),
+    ]);
 
     let ranking = rank_portfolio(&report).expect("the ranking builds");
     assert!(
@@ -705,4 +709,40 @@ fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
         ]
     );
     assert_eq!(labels_of("unranked"), ["quality.score [quantity=memory]"]);
+}
+
+/// A dimension value is authored text: a `|` would split the ranking table's
+/// row into extra columns and a CR/LF would end the row or bullet early. The
+/// text form escapes them (and `\\`, so the escapes stay unambiguous) while
+/// the JSON `label` keeps the authored bytes.
+///
+/// Trace: FR-113-AC-6
+/// Provenance: PLAT-1019
+#[test]
+fn tc_1019_ranking_text_escapes_label_characters_that_break_markdown() {
+    let report = multi_slice_report(&[("type|script", Some(0.1)), ("a\\b\r\nc", None)]);
+
+    let text = render_portfolio_report(&report).expect("the portfolio renders");
+    let (_, section) = text
+        .split_once("## Priority ranking")
+        .expect("the ranking section is rendered");
+    assert!(
+        section.contains("| quality.score [quantity=type\\|script] |"),
+        "{section}"
+    );
+    assert!(
+        section.contains("quality.score [quantity=a\\\\b\\r\\nc]: no_current_estimate"),
+        "{section}"
+    );
+
+    let json_text = render_portfolio_report_json(&report).expect("the portfolio JSON renders");
+    let parsed: Value = serde_json::from_str(&json_text).expect("the JSON view is JSON");
+    assert_eq!(
+        parsed["ranking"]["ranked"][0]["label"],
+        "quality.score [quantity=type|script]"
+    );
+    assert_eq!(
+        parsed["ranking"]["unranked"][0]["label"],
+        "quality.score [quantity=a\\b\r\nc]"
+    );
 }

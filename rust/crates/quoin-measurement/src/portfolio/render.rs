@@ -72,7 +72,7 @@ fn ranking_section(ranking: &PortfolioRanking) -> Vec<String> {
                 entry.repository,
                 entry.plan_id,
                 entry.plan_path,
-                entry.label,
+                ranking_cell(&entry.label),
                 js_f64_string(entry.score),
                 js_f64_string(entry.gap),
                 js_f64_string(entry.weight),
@@ -91,13 +91,37 @@ fn ranking_section(ranking: &PortfolioRanking) -> Vec<String> {
                 plan.repository,
                 plan.plan_id,
                 plan.plan_path,
-                plan.label,
+                ranking_cell(&plan.label),
                 plan.reason.as_str()
             ));
         }
         lines.push(String::new());
     }
     lines
+}
+
+/// A ranking label made safe for one Markdown table cell or bullet line.
+///
+/// A dimension value is authored text and may hold `|`, CR or LF (the
+/// graph-portfolio fixture carries `type|script` and `a\\b\r\nc`): raw, a `|`
+/// splits the table row into extra columns and a line break ends the row or
+/// bullet early. The per-repository table keeps the raw bytes for parity with
+/// the frozen `portfolio.ts` oracle; the ranking section has no oracle, so it
+/// escapes them — and `\\` itself, so an escaped `\n` cannot be confused with
+/// an authored backslash followed by `n`. The JSON form's `label` stays
+/// unescaped.
+fn ranking_cell(label: &str) -> String {
+    let mut cell = String::with_capacity(label.len());
+    for character in label.chars() {
+        match character {
+            '\\' => cell.push_str("\\\\"),
+            '|' => cell.push_str("\\|"),
+            '\r' => cell.push_str("\\r"),
+            '\n' => cell.push_str("\\n"),
+            other => cell.push(other),
+        }
+    }
+    cell
 }
 
 /// The lines for a repository that could be read.
