@@ -8,6 +8,16 @@ stage: gate
 metric: jev.gap_analysis_gate_verdict
 definition_version: jev.gap-analysis-gate-v1
 ground_truth_kind: mechanical
+protected_apparatus:
+  - rust/crates/quoin-jev/tests/fixtures/gap-semantic-corpus.json
+  - rust/crates/quoin-jev/tests/fixtures/gap-battery-mutants.json
+  - rust/crates/quoin-jev/tests/fixtures/gap-battery-mockonly.json
+  - rust/crates/quoin-jev/tests/fixtures/gap-battery-mutants-v1-additions.json
+negative_controls:
+  - kind: apparatus-edit
+    description: this gate has no collection of its own (see Collection Procedure) -- its verdict is only as good as the corpus and mutation fixtures MP-222/223/224/232 measured against, so an edit to any of them since measurement invalidates the read the same way it would invalidate those upstream observations
+  - kind: suppressed-observation
+    description: a bar resting on a not_computed upstream observation is itself not_computed, never treated as satisfied, per Comparison and Enforcement
 relationships: []
 ---
 

@@ -8,6 +8,16 @@ stage: gate
 metric: jev.ears_gate_verdict
 definition_version: jev.ears-gate-v1
 ground_truth_kind: agent-labelled
+protected_apparatus:
+  - rust/crates/quoin-jev/tests/fixtures/ears-m2-fixtures.json
+  - rust/crates/quoin-jev/tests/fixtures/ears-m6-corpus.json
+  - rust/crates/quoin-jev/tests/fixtures/ears-question-set.json
+  - rust/crates/quoin-jev/tests/fixtures/ears-question-set-v5.json
+negative_controls:
+  - kind: apparatus-edit
+    description: the M2/M6 fixture corpora and both question-set variants are digested with every collection; an edit to any of them without a new definition version rejects
+  - kind: suppressed-observation
+    description: a transport failure aborts the pass and is never scored, so a fixture the lens fails to answer cannot be quietly left out of the denominator
 relationships: []
 ---
 
