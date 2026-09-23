@@ -229,7 +229,11 @@ impl Walk<'_> {
     /// name exactly and refusing a symlink at any of them. Every segment but
     /// the last must be a directory. Returns the last segment's path and what
     /// it is.
-    fn descend(&self, relative: &str, whole: bool) -> Result<(PathBuf, Found), MeasurementError> {
+    fn descend(
+        &self,
+        relative: &str,
+        expect_directory: bool,
+    ) -> Result<(PathBuf, Found), MeasurementError> {
         let mut cursor = self.repo.to_path_buf();
         let mut segments = relative.split('/').peekable();
         let mut walked = String::new();
@@ -243,7 +247,11 @@ impl Walk<'_> {
                 .into_iter()
                 .find_map(|(name, kind)| (name == segment).then_some(kind))
             else {
-                let what = if whole { "directory" } else { "file" };
+                let what = if expect_directory {
+                    "directory"
+                } else {
+                    "file"
+                };
                 return Err(self.refuse(
                     MeasurementErrorCode::ApparatusUnresolved,
                     format!("names no {what}: `{walked}` does not exist"),
