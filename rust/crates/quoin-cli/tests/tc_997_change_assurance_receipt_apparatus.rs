@@ -263,3 +263,84 @@ fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {
     assert_eq!(payload["outcome"], serde_json::json!("incomplete"));
     assert_eq!(payload["reasons"], serde_json::json!(["diff_missing"]));
 }
+
+/// `quoin change-assurance receipt --json` prints `governing_plan_id` and
+/// `diff_paths_supplied` on the sealed receipt, through the real binary: a
+/// receipt sealed with `--plan`/`--diff-path` records the plan id and
+/// `true`; one sealed with neither records `null` and `false` explicitly, so
+/// an auditor reading `quoin change-assurance receipt`'s own output can tell
+/// a caller's omission apart from a genuinely unlinked receipt (PLAT-1015).
+///
+/// Trace: FR-111-AC-5, TC-1915
+/// Provenance: PLAT-1015
+#[test]
+fn tc_1015_622_receipt_records_the_omission_through_the_real_binary() {
+    let root = repo();
+    let record_digest = seal_record(root.path());
+    let attestation_digest = intake_attestation(root.path());
+    write_protecting_plan(root.path(), "MP-1015-CLI", &["checker/config.toml"]);
+    let decisions = write(
+        root.path(),
+        "decisions.json",
+        &read_fixture("decisions.json"),
+    );
+    let audits = write(root.path(), "audits.json", &read_fixture("audits.json"));
+
+    let linked = quoin(&[
+        "receipt",
+        "--repo",
+        root.path().to_str().unwrap(),
+        "--record",
+        &record_digest,
+        "--candidate-revision",
+        "candidate-1",
+        "--select",
+        &format!("proof-1={attestation_digest}"),
+        "--decisions",
+        decisions.to_str().unwrap(),
+        "--audits",
+        audits.to_str().unwrap(),
+        "--diff-path",
+        "src/lib.rs",
+        "--plan",
+        "MP-1015-CLI",
+        "--json",
+    ]);
+    let linked_payload: serde_json::Value =
+        serde_json::from_str(text(&linked.stdout).trim()).expect("--json emits one document");
+    assert_eq!(
+        linked_payload["governing_plan_id"],
+        serde_json::json!("MP-1015-CLI")
+    );
+    assert_eq!(
+        linked_payload["diff_paths_supplied"],
+        serde_json::json!(true)
+    );
+
+    let unlinked = quoin(&[
+        "receipt",
+        "--repo",
+        root.path().to_str().unwrap(),
+        "--record",
+        &record_digest,
+        "--candidate-revision",
+        "candidate-1",
+        "--select",
+        &format!("proof-1={attestation_digest}"),
+        "--decisions",
+        decisions.to_str().unwrap(),
+        "--audits",
+        audits.to_str().unwrap(),
+        "--json",
+    ]);
+    let unlinked_payload: serde_json::Value =
+        serde_json::from_str(text(&unlinked.stdout).trim()).expect("--json emits one document");
+    assert_eq!(
+        unlinked_payload["governing_plan_id"],
+        serde_json::json!(null)
+    );
+    assert_eq!(
+        unlinked_payload["diff_paths_supplied"],
+        serde_json::json!(false)
+    );
+}

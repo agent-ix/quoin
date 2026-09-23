@@ -884,3 +884,36 @@ fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
     assert_eq!(context["field"], "plan");
     assert_eq!(context["limit_bytes"], "4096");
 }
+
+/// `change_assurance.receipt` records `governing_plan_id` and
+/// `diff_paths_supplied` on the sealed receipt, through the operation and not
+/// only through the library: a receipt sealed with `--plan`/`--diff-path`
+/// records the plan id and `true`; one sealed with neither records `null` and
+/// `false` explicitly, rather than a caller's omission producing the same
+/// silence a genuinely unlinked record would (PLAT-1015).
+///
+/// Trace: FR-111-AC-5, TC-1915
+/// Provenance: PLAT-1015
+#[test]
+fn tc_1015_614_receipt_records_governing_plan_id_and_diff_paths_supplied() {
+    let fixture = case("everything-agrees");
+    let root = repo();
+    seal_record(root.path(), &fixture);
+    intake_all(root.path(), &fixture);
+    write_protecting_plan(root.path(), "MP-1015-CORE", &["checker/config.toml"]);
+
+    let mut linked = receipt_request(root.path(), &fixture);
+    linked["diff_paths"] = json!(["src/lib.rs"]);
+    linked["plan"] = json!("MP-1015-CORE");
+    let payload = ok(&run("change_assurance.receipt", &linked));
+    assert_eq!(
+        payload["receipt"]["governing_plan_id"],
+        json!("MP-1015-CORE")
+    );
+    assert_eq!(payload["receipt"]["diff_paths_supplied"], json!(true));
+
+    let unlinked = receipt_request(root.path(), &fixture);
+    let payload = ok(&run("change_assurance.receipt", &unlinked));
+    assert_eq!(payload["receipt"]["governing_plan_id"], json!(null));
+    assert_eq!(payload["receipt"]["diff_paths_supplied"], json!(false));
+}

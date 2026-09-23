@@ -65,6 +65,7 @@ pub(super) fn governing_plan(
             .with_context("field", "plan")
         })?;
     Ok(GoverningPlan {
+        id: plan.id.as_str().to_owned(),
         protected_apparatus: plan.protected_apparatus.clone(),
         negative_controls: plan.negative_controls.clone(),
     })

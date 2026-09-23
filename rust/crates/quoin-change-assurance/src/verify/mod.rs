@@ -144,7 +144,32 @@ pub fn verify_change_assurance(
         unknowns,
         outcome: outcome_for_reasons(&reasons),
         reasons,
+        governing_plan_id: governing_plan_id(input)?,
+        diff_paths_supplied: input.diff_paths.is_some(),
     })
+}
+
+/// The plan id this receipt was checked against, parsed from
+/// [`GoverningPlan::id`] (PLAT-1015, FR-111).
+///
+/// # Errors
+///
+/// [`ChangeAssuranceError::Shape`] when the caller's plan id is empty — it
+/// already passed [`crate::ids::Identity::parse`] at the wire boundary that
+/// resolved [`VerificationInput::governing_plan`], so this is not expected to
+/// fail in practice, the same way `candidate_revision`'s re-parse above is
+/// not.
+fn governing_plan_id(
+    input: &VerificationInput,
+) -> Result<Option<crate::ids::NonEmptyText>, ChangeAssuranceError> {
+    input
+        .governing_plan
+        .as_ref()
+        .map(|plan| plan.id.as_str())
+        .map(|id| {
+            crate::ids::NonEmptyText::parse(id, crate::error::Subject::Receipt, "governing plan id")
+        })
+        .transpose()
 }
 
 /// What the impact snapshot and the unknowns say about completeness.
@@ -274,6 +299,8 @@ pub fn schema_invalid_receipt(
         unknowns: Vec::new(),
         outcome: Outcome::Invalid,
         reasons: vec![Reason::SchemaInvalid],
+        governing_plan_id: governing_plan_id(input)?,
+        diff_paths_supplied: input.diff_paths.is_some(),
     })
 }
 
