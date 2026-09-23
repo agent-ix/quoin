@@ -497,19 +497,24 @@ fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
 
 /// Trace: FR-065-AC-2
 ///
-/// The reason census. 34 of the 35 reasons the vocabulary declares are reached
+/// The reason census. 34 of the 37 reasons the vocabulary declares are reached
 /// by the captured scenarios, and every one of them is reached in a receipt
 /// this crate produced rather than only in the oracle's. So this asserts the
 /// exact figure rather than a floor, and a port that quietly stopped emitting
 /// a reason fails here.
 ///
-/// The one that is not reached is `parent_missing`, and it is unreachable in
-/// any receipt at all — not merely absent from this capture.
+/// `parent_missing` is not reached because it is unreachable in any receipt
+/// at all — not merely absent from this capture.
 /// `tc_455_parent_missing_is_structurally_unreachable_in_this_crate` states
 /// why over this crate's own code, so the figure stays falsifiable now that the
 /// TypeScript it was originally explained by is gone (quoin#457).
+///
+/// `apparatus_touched` and `negative_control_uncaught` (PLAT-964) are not
+/// reached because the oracle capture predates them: no TypeScript ever
+/// emitted them, so there is nothing here to replay. `tests/tc_964_apparatus.rs`
+/// is the hand-built suite that reaches both.
 #[test]
-fn tc_455_thirty_four_of_the_thirty_five_reasons_are_reached() {
+fn tc_455_thirty_four_of_the_thirty_seven_reasons_are_reached() {
     let mut reached: std::collections::BTreeSet<&'static str> = std::collections::BTreeSet::new();
     for (_, _, _, produced) in replayed() {
         let Some(produced) = produced else { continue };
@@ -538,7 +543,7 @@ fn tc_455_thirty_four_of_the_thirty_five_reasons_are_reached() {
             }
         }
     }
-    assert_eq!(Reason::ALL.len(), 35, "the vocabulary is closed at 35");
+    assert_eq!(Reason::ALL.len(), 37, "the vocabulary is closed at 37");
     let unreached: Vec<&str> = Reason::ALL
         .iter()
         .map(|reason| reason.as_str())
@@ -546,8 +551,12 @@ fn tc_455_thirty_four_of_the_thirty_five_reasons_are_reached() {
         .collect();
     assert_eq!(
         unreached,
-        vec!["parent_missing"],
-        "exactly one reason is unreachable, and only for the recorded reason"
+        vec![
+            "parent_missing",
+            "apparatus_touched",
+            "negative_control_uncaught"
+        ],
+        "exactly three reasons are unreached here, each for its own recorded reason"
     );
 }
 

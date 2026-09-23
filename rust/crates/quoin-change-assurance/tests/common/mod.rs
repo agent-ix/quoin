@@ -140,5 +140,11 @@ pub(crate) fn verification_input(captured: &JsonValue) -> VerificationInput {
                 }
             })
             .collect(),
+        // The oracle capture predates PLAT-964 and carries neither member:
+        // every replayed scenario is unlinked from a plan, which is exactly
+        // "a record that does not support a governed objective" and exercises
+        // the same code path as any other unlinked verification.
+        diff_paths: Vec::new(),
+        governing_plan: None,
     }
 }

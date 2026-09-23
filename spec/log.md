@@ -8,6 +8,28 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-111 (new FR): change-assurance refuses credit for a
+  diff that touches protected measurement apparatus** (PLAT-964). FR-110
+  compares a measurement plan's protected apparatus across *stored*
+  collections, which have no diff; a change-assurance record verifies a
+  *proposed* change, which has one. `VerificationInput` gains `diff_paths`
+  (the repository-relative paths the candidate change's diff touches) and
+  `governing_plan` (the linked `MeasurementPlan`'s `protected_apparatus` and
+  `negative_controls`, engineering-assurance's own types, reused rather than
+  restated). When the diff names a path the plan protects, the reason
+  `apparatus_touched` refuses the verification credit toward the plan's
+  objective, unconditionally — with or without a declared `apparatus-edit`
+  negative control, mirroring why FR-110-AC-7's checker rejects a changed
+  recorded set. A declared negative control this crate has no rule to
+  evaluate (`suppressed-observation`, `gain-within-noise`, `stale-evidence`,
+  `selective-reporting`) is `negative_control_uncaught` rather than silently
+  passed over, and leaves the outcome `incomplete`. Both reasons fold into
+  the receipt's overall reasons/outcome the way `proof_id_mismatch` already
+  does, with no new `checks` member. New dependency: `engineering-assurance`
+  (`measurement` feature), added to `quoin-change-assurance`'s previously
+  three-dependency manifest.
+  FR-111-AC-1..AC-3; Matrix: TC-1868..TC-1870.
+
 * **2026-09-22** — **FR-110 (new FR): protected measurement apparatus**
   (PLAT-975). `verificationStack.artifacts` recorded a digest per file and
   nothing compared them, so an answer key edited between a baseline and a new

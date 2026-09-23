@@ -116,7 +116,9 @@
         "evidence_vacuous",
         "evidence_unrelated",
         "audit_finding",
-        "audit_not_evaluated"
+        "audit_not_evaluated",
+        "apparatus_touched",
+        "negative_control_uncaught"
       ]
     },
     "check": {

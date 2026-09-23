@@ -348,6 +348,14 @@ pub fn receipt(
         attestations: retained,
         decision_history: Some(decisions),
         audits,
+        // `change_assurance.verify`'s wire request carries no diff or plan
+        // link yet (PLAT-964 adds the library-side check; wiring a diff and
+        // a governing plan through this boundary operation's request shape
+        // is follow-on work). Every verification through this operation is
+        // therefore unlinked from a plan today, exactly as it was before
+        // these members existed.
+        diff_paths: Vec::new(),
+        governing_plan: None,
     };
     let sealed = verify::verify_change_assurance(&input).map_err(|e| map_error(&e, OP))?;
     ok(&ReceiptPayload {

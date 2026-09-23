@@ -1,0 +1,114 @@
+---
+id: FR-111
+title: "Change-assurance refuses credit for a diff that touches protected measurement apparatus"
+type: FR
+relationships:
+  - target: "ix://agent-ix/quoin/FR-065"
+    type: "extends"
+  - target: "ix://agent-ix/quoin/FR-110"
+    type: "extends"
+---
+
+# FR-111: Change-assurance refuses credit for a diff that touches protected measurement apparatus
+
+## Description
+
+When a change-assurance verification is asked to check a record against a
+`MeasurementPlan`'s objective, and the change's diff touches a path the
+plan's `protected_apparatus` names (engineering-assurance FR-024), Quoin
+SHALL refuse the verification credit toward that objective with the reason
+`apparatus_touched`. When the plan declares a `negative_controls` entry whose
+kind this verification has no rule to evaluate, Quoin SHALL report
+`negative_control_uncaught` rather than passing over it silently.
+
+## Rationale
+
+FR-110 resolves a plan's protected apparatus at intake and compares the
+*recorded* set across stored measurement collections — a collection has no
+diff, so that is the whole of what a collection can be checked against. A
+change-assurance record is checked against a proposed change instead, and a
+proposed change has exactly the thing a collection lacks: a diff. Without
+this requirement, a change that edits the harness, the answer key, the
+population, or the checker configuration beside the change it grades could
+still receive change-assurance credit toward the plan's objective, because
+nothing between the diff and the plan's protection was ever compared.
+
+A plan may also declare a negative control this verification has no rule for
+— `suppressed-observation`, `gain-within-noise`, `stale-evidence`, or
+`selective-reporting` are about a population, a margin, evidence age, or a
+choice among several runs, none of which one candidate revision's retained
+evidence carries. Silently ignoring a declared control a verification cannot
+evaluate would let a receipt claim more than it checked; instead each such
+control is its own incompleteness.
+
+## Inputs
+
+- `VerificationInput.diff_paths`: the repository-relative paths the
+  candidate change's diff touches, as retained by the caller. Empty when no
+  diff was retained. A verification runs no producer and computes no diff
+  itself — this is exactly what the caller supplied, like every other member
+  of `VerificationInput`.
+- `VerificationInput.governing_plan`: the `MeasurementPlan` the record's
+  objective is linked to, when the caller asks this verification to check
+  one. Carries only the two members this requirement reads —
+  `protected_apparatus` and `negative_controls`, both engineering-assurance's
+  own types (its FR-024) — because `quoin-measurement` owns the rest of a
+  plan's shape and a verification is not a plan load. `None` when the record
+  supports no plan, or the caller did not resolve one.
+
+## Outputs
+
+- The `apparatus_touched` reason (invalid), when `diff_paths` names a path
+  inside `governing_plan.protected_apparatus`: an exact match for a file
+  entry, or a path under a `<directory>/**` entry's directory.
+- The `negative_control_uncaught` reason (incomplete), once per declared
+  `negative_controls` entry whose kind is not `apparatus-edit`.
+- Both reasons are folded into the receipt's overall `reasons`/`outcome` the
+  way `proof_id_mismatch` already is (`verify/mod.rs`'s `global_reasons`):
+  neither has a dedicated member under `checks`, because the judgment is
+  about the change proposed against a linked plan, not about the record's
+  own shape.
+
+## Behavior
+
+- When `governing_plan` is `None`, this requirement adds no reason: a record
+  that supports no plan's objective has nothing here to refuse.
+- When `governing_plan.protected_apparatus` is `Some` and any entry of
+  `diff_paths` matches one of its entries, Quoin SHALL add
+  `apparatus_touched`. This holds whether or not the plan declares the
+  `apparatus-edit` negative control — the protection is unconditional, the
+  same way FR-110-AC-7's checker rejects a changed recorded set with or
+  without that control declared.
+- When `governing_plan.negative_controls` is `Some`, Quoin SHALL add
+  `negative_control_uncaught` once for every declared entry whose kind is not
+  `apparatus-edit`. A declared `apparatus-edit` entry is evaluated by the
+  `apparatus_touched` rule above and adds nothing on its own.
+- An untouched diff under a plan that protects apparatus adds neither reason:
+  the receipt is exactly what it would be with no plan linked.
+
+## Acceptance Criteria
+
+| ID | Criteria | Verification |
+| --- | --- | --- |
+| FR-111-AC-1 | A diff touching a path inside `protected_apparatus` — a protected harness file, a labels directory entry, a population file, or a checker-configuration file — is `apparatus_touched` and the receipt is `invalid`, whether or not `apparatus-edit` is declared. | Test (TC-1868) |
+| FR-111-AC-2 | A diff naming no path inside `protected_apparatus` adds neither reason; the receipt is unchanged from an unlinked verification. | Test (TC-1869) |
+| FR-111-AC-3 | A declared `negative_controls` entry whose kind is not `apparatus-edit` is `negative_control_uncaught`, and this alone leaves the outcome `incomplete` rather than `invalid`; a declared `apparatus-edit` entry over an untouched diff adds nothing. | Test (TC-1870) |
+
+## Constraints
+
+- **FR-111-CON-1**: The entry grammar, list rules and control kinds are
+  engineering-assurance's (FR-024); this requirement states none of them a
+  second time, matching FR-110-CON-3.
+- **FR-111-CON-2**: This verification computes no diff and loads no plan: both
+  arrive as `VerificationInput` members the caller resolved, the same
+  boundary FR-065 already holds for every other member of that input.
+
+## Dependencies
+
+- engineering-assurance FR-024 defines `protected_apparatus`,
+  `negative_controls`, and their entry grammar.
+- FR-065 defines change-assurance verification and the reason/outcome
+  precedence this requirement's reasons fold into.
+- FR-110 defines the same protection at measurement intake and comparison;
+  this requirement is its change-assurance-side counterpart, applied to a
+  diff rather than a recorded set.

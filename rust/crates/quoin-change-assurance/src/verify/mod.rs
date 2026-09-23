@@ -14,6 +14,7 @@
 //! module can return is a canonicalization failure, which means the receipt
 //! could not be sealed at all.
 
+pub mod apparatus;
 pub mod audit;
 pub mod input;
 pub mod lineage;
@@ -27,14 +28,15 @@ use crate::model::outcome::{Check, Outcome, Reason, normalize_reasons, outcome_f
 use crate::model::receipt::{ReceiptChecks, ReceiptUnknown, UnsealedReceipt, VerificationReceipt};
 use crate::model::record::{ChangeAssuranceRecord, Completeness, Disposition};
 use crate::records::{validate_decision, verify_change_record, verify_lineage};
+use crate::verify::apparatus::ApparatusContext;
 use crate::verify::input::VerificationInput;
 use crate::verify::lineage::lineage_reason;
 use crate::verify::proofs::{ProofContext, declared_digest, judge, ordered_obligations};
 
 pub use crate::verify::audit::{AdaptedAudit, AuditState, adapt_audit, map_audit_finding};
 pub use crate::verify::input::{
-    AuditReport, ReportFinding, ReportUnevaluated, RetainedAttestation, RetainedAudit, Selection,
-    VerificationInput as Input,
+    AuditReport, GoverningPlan, ReportFinding, ReportUnevaluated, RetainedAttestation,
+    RetainedAudit, Selection, VerificationInput as Input,
 };
 
 /// Verify retained evidence and produce a sealed receipt.
@@ -94,6 +96,18 @@ pub fn verify_change_assurance(
     }
 
     let proofs = judge_proofs(input, &record);
+
+    global_reasons.extend(apparatus::judge(&ApparatusContext {
+        protected_apparatus: input
+            .governing_plan
+            .as_ref()
+            .and_then(|plan| plan.protected_apparatus.as_ref()),
+        negative_controls: input
+            .governing_plan
+            .as_ref()
+            .and_then(|plan| plan.negative_controls.as_ref()),
+        diff_paths: &input.diff_paths,
+    }));
 
     let mut all: Vec<Reason> = global_reasons;
     all.extend(record_check.reasons.iter().copied());
