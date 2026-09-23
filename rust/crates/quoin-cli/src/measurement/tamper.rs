@@ -234,9 +234,13 @@ fn status_line(line: &str) -> Option<(char, String)> {
 /// unattributed collection is not reported against any plan, rather than
 /// every plan.
 fn plan_ids_at(repo: &str, revision: &str, id: &str) -> BTreeSet<String> {
-    show(repo, revision, &format!("{MEASUREMENTS_DIRECTORY}/{id}.json"))
-        .map(|bytes| plan_ids_of(&bytes))
-        .unwrap_or_default()
+    show(
+        repo,
+        revision,
+        &format!("{MEASUREMENTS_DIRECTORY}/{id}.json"),
+    )
+    .map(|bytes| plan_ids_of(&bytes))
+    .unwrap_or_default()
 }
 
 /// The `planId` of every observation in a collection document's bytes.

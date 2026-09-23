@@ -470,7 +470,11 @@ fn tc_985_107_a_delete_and_re_add_under_the_same_id_is_edited() {
 
     git(
         repo.path(),
-        &["rm", "--quiet", &format!("{MEASUREMENTS}/verify-rerun-pass.json")],
+        &[
+            "rm",
+            "--quiet",
+            &format!("{MEASUREMENTS}/verify-rerun-pass.json"),
+        ],
     );
     git(repo.path(), &["commit", "--quiet", "-m", "remove it"]);
     std::fs::create_dir_all(repo.path().join(MEASUREMENTS)).unwrap();
@@ -483,8 +487,14 @@ fn tc_985_107_a_delete_and_re_add_under_the_same_id_is_edited() {
     let (status, payload, _) = verdict(repo.path(), "MP-961");
     assert_eq!(status, Some(1));
     let reasons = reasons(&payload);
-    assert!(reasons.contains(&"collection_edited".to_owned()), "{payload}");
-    assert!(!reasons.contains(&"collection_deleted".to_owned()), "{payload}");
+    assert!(
+        reasons.contains(&"collection_edited".to_owned()),
+        "{payload}"
+    );
+    assert!(
+        !reasons.contains(&"collection_deleted".to_owned()),
+        "{payload}"
+    );
 }
 
 /// An edit that re-targets a run's observations away from the plan removes
@@ -596,12 +606,19 @@ fn tc_985_111_uncommitted_work_tree_tampering_is_caught() {
     });
     let plan_path = repo.path().join("spec/assurance/MP-961-gate.md");
     let plan_text = std::fs::read_to_string(&plan_path).unwrap();
-    std::fs::write(&plan_path, plan_text.replace("threshold: 0.8", "threshold: 0.1")).unwrap();
+    std::fs::write(
+        &plan_path,
+        plan_text.replace("threshold: 0.8", "threshold: 0.1"),
+    )
+    .unwrap();
 
     let (status, payload, _) = verdict(repo.path(), "MP-961");
     assert_eq!(status, Some(1));
     let reasons = reasons(&payload);
-    assert!(reasons.contains(&"collection_edited".to_owned()), "{payload}");
+    assert!(
+        reasons.contains(&"collection_edited".to_owned()),
+        "{payload}"
+    );
     assert!(
         reasons.contains(&"definition_changed_without_version_bump".to_owned()),
         "{payload}"
@@ -631,7 +648,10 @@ fn tc_985_112_honest_history_raises_no_tamper_reason() {
     )
     .unwrap();
     git(repo.path(), &["add", "spec/assurance"]);
-    git(repo.path(), &["commit", "--quiet", "-m", "a genuine version bump"]);
+    git(
+        repo.path(),
+        &["commit", "--quiet", "-m", "a genuine version bump"],
+    );
 
     let (_, payload, stderr) = verdict(repo.path(), "MP-961");
     let reasons = reasons(&payload);
@@ -641,6 +661,9 @@ fn tc_985_112_honest_history_raises_no_tamper_reason() {
         "collection_edited",
         "definition_changed_without_version_bump",
     ] {
-        assert!(!reasons.contains(&tamper.to_owned()), "{tamper}: {payload} {stderr}");
+        assert!(
+            !reasons.contains(&tamper.to_owned()),
+            "{tamper}: {payload} {stderr}"
+        );
     }
 }
