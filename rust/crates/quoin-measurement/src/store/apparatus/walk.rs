@@ -1,169 +1,27 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! Resolving and digesting a plan's protected apparatus when a collection is
-//! written (PLAT-975, engineering-assurance FR-024).
+//! The resolver's walk: one protected-apparatus entry of one plan, resolved
+//! against the repository into that plan's set (PLAT-975, engineering-assurance
+//! FR-024), under the write's [`Limits`] (PLAT-985).
 //!
-//! # Why intake resolves the set itself
-//!
-//! `verificationStack.artifacts` is the producer's own map. A producer can
-//! leave a file out of it, and a comparison over that map alone would then
-//! never see the file change. So intake walks the repository itself, resolves
-//! every `protected_apparatus` entry of every plan governing an observation,
-//! digests each file, and refuses the write when the producer's map omits a
-//! resolved file ([`MeasurementErrorCode::ApparatusUndeclared`]) or disagrees
-//! with its bytes. The resolved (path, digest) set is what intake records, in
-//! `verificationStack.protectedApparatus`, so a later comparison reads the
-//! apparatus as it was when the collection was written and never today's
-//! disk.
-//!
-//! # The resolver (engineering-assurance FR-024)
-//!
-//! - A file entry names one regular file. Nothing there, or a directory
-//!   there, names no file ([`MeasurementErrorCode::ApparatusUnresolved`]).
-//! - A `<directory>/**` entry names every regular file under the directory,
-//!   recursively, dotfiles included, and must name at least one.
-//! - Every name is matched **exactly** against the directory listing, so the
-//!   match is case-sensitive even on a case-insensitive filesystem, where a
-//!   bare `stat` of `Answers.json` would find `answers.json`.
-//! - A symlink — named by an entry, passed through on the way to it, or found
-//!   under a directory entry — is refused and never followed
-//!   ([`MeasurementErrorCode::ApparatusSymlink`]). Following one would digest
-//!   bytes the repository does not hold, which is PLAT-969's F3 in another
-//!   place.
-//! - A file that cannot be digested, or anything under a directory entry that
-//!   is neither a file, a directory nor a symlink, is
-//!   [`MeasurementErrorCode::ApparatusUnreadable`].
-//! - One plan's set holds at most [`MAX_PROTECTED_FILES`] files; past that
-//!   the write is [`MeasurementErrorCode::ApparatusTooLarge`], because every
-//!   resolved file becomes a member of the stored collection.
+//! Split out of [`super`] when PLAT-985's limits and their tests took that
+//! module past the 700-line ceiling (quoin#464): this is the part that touches
+//! the filesystem, and [`super`] is the part that decides what a write records.
 
-use std::collections::BTreeMap;
 use std::error::Error as _;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 use engineering_assurance::measurement::ApparatusPath;
-use quoin_store::{JsonObject, JsonValue};
 
+use super::{Limits, Spent};
 use crate::error::{MeasurementError, MeasurementErrorCode};
-use crate::types::collection::{MeasurementCollection, ResolvedApparatus};
-use crate::types::plan::MeasurementPlan;
-
-/// The most files one plan's protected apparatus may resolve to.
-///
-/// Each resolved file is one `path: digest` member of the stored collection,
-/// about a hundred bytes; this bounds that member near 5 MB.
-pub const MAX_PROTECTED_FILES: usize = 50_000;
-
-/// Resolve every governing plan's protected apparatus under `repo`, keyed by
-/// plan id, and require the candidate's `verificationStack.artifacts` to
-/// declare every resolved file at its digest.
-///
-/// A plan governs the collection when an observation's metric names it, the
-/// same lookup [`crate::validate::measurement_collection`] admitted the
-/// observation under. A plan with no `protected_apparatus` contributes
-/// nothing, so a collection no protecting plan governs resolves to an empty
-/// map and is written exactly as before PLAT-975.
-///
-/// # Errors
-///
-/// [`MeasurementErrorCode::ApparatusUnresolved`],
-/// [`MeasurementErrorCode::ApparatusSymlink`],
-/// [`MeasurementErrorCode::ApparatusUnreadable`] and
-/// [`MeasurementErrorCode::ApparatusTooLarge`] from resolution, each naming
-/// the plan and the entry;
-/// [`MeasurementErrorCode::ApparatusUndeclared`] naming every resolved file
-/// the artifacts map omits; and
-/// [`MeasurementErrorCode::CollectionInvalid`] when it states a resolved
-/// file at another digest.
-pub(super) fn resolve_protected(
-    repo: &Path,
-    collection: &MeasurementCollection,
-    plans: &[MeasurementPlan],
-) -> Result<BTreeMap<String, ResolvedApparatus>, MeasurementError> {
-    let by_metric: BTreeMap<&str, &MeasurementPlan> = plans
-        .iter()
-        .map(|plan| (plan.metric.as_str(), plan))
-        .collect();
-    let mut resolved = BTreeMap::new();
-    for observation in &collection.observations {
-        let Some(plan) = by_metric.get(observation.metric.as_str()) else {
-            continue;
-        };
-        let Some(protected) = plan.protected_apparatus.as_ref() else {
-            continue;
-        };
-        if resolved.contains_key(plan.id.as_str()) {
-            continue;
-        }
-        let mut files = ResolvedApparatus::new();
-        for entry in protected.iter() {
-            Walk {
-                repo,
-                plan: plan.id.as_str(),
-                entry,
-                files: &mut files,
-                list: disk_listing,
-                limit: MAX_PROTECTED_FILES,
-            }
-            .resolve()?;
-        }
-        declared(collection, plan.id.as_str(), &files)?;
-        resolved.insert(plan.id.as_str().to_owned(), files);
-    }
-    Ok(resolved)
-}
-
-/// Require `artifacts` to state every resolved file at its digest.
-fn declared(
-    collection: &MeasurementCollection,
-    plan: &str,
-    files: &ResolvedApparatus,
-) -> Result<(), MeasurementError> {
-    let artifacts = collection
-        .verification_stack
-        .as_ref()
-        .map(|stack| &stack.artifacts);
-    let mut undeclared = Vec::new();
-    for (path, digest) in files {
-        match artifacts.and_then(|artifacts| artifacts.get(path)) {
-            None => undeclared.push(format!(
-                "verificationStack.artifacts does not declare `{path}`, which plan {plan} \
-                 protects; it digests to {}",
-                digest.to_stored()
-            )),
-            // This runs before `verify_local_artifacts`, so for a protected
-            // file this is the check that refuses a disagreeing digest, under
-            // the same code PLAT-931's check uses for any other file.
-            Some(stated) if stated != digest => {
-                return Err(MeasurementError::new(
-                    MeasurementErrorCode::CollectionInvalid,
-                    format!(
-                        "verificationStack.artifacts.{path} does not match the protected file \
-                         plan {plan} names: the record says {}, the file digests to {}",
-                        stated.to_stored(),
-                        digest.to_stored()
-                    ),
-                ));
-            }
-            Some(_) => {}
-        }
-    }
-    if undeclared.is_empty() {
-        Ok(())
-    } else {
-        Err(MeasurementError::with_findings(
-            MeasurementErrorCode::ApparatusUndeclared,
-            format!("plan {plan}'s protected apparatus is not declared in the collection"),
-            undeclared,
-        ))
-    }
-}
+use crate::types::collection::{ResolvedApparatus, unrecordable_apparatus_path};
 
 /// What one directory entry is, by its own type: a symlink is reported as
 /// one, never as what it points at.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Kind {
+pub(super) enum Kind {
     File,
     Directory,
     Symlink,
@@ -175,22 +33,26 @@ enum Kind {
 ///
 /// A seam, so the exact-name match is tested against a listing that holds a
 /// case-only variant whatever filesystem the tests run on.
-type Lister = fn(&Path) -> Result<Vec<(String, Kind)>, String>;
+pub(super) type Lister = fn(&Path) -> Result<Vec<(String, Kind)>, String>;
 
 /// One entry of one plan, being resolved into that plan's set.
-struct Walk<'a> {
-    repo: &'a Path,
-    plan: &'a str,
-    entry: &'a ApparatusPath,
-    files: &'a mut ResolvedApparatus,
-    list: Lister,
-    /// The most files the plan's set may hold: [`MAX_PROTECTED_FILES`].
-    limit: usize,
+pub(super) struct Walk<'a> {
+    pub(super) repo: &'a Path,
+    pub(super) plan: &'a str,
+    pub(super) entry: &'a ApparatusPath,
+    pub(super) files: &'a mut ResolvedApparatus,
+    pub(super) list: Lister,
+    /// The ceilings: [`super::LIMITS`] outside tests.
+    pub(super) limits: Limits,
+    /// What the write has spent so far, shared by every entry of every plan
+    /// (PLAT-985, quoin#600 review), so the write-wide limits bound the total
+    /// rather than each entry or plan alone.
+    pub(super) spent: &'a mut Spent,
 }
 
 impl Walk<'_> {
     /// Resolve the entry, adding every file it names to the set.
-    fn resolve(&mut self) -> Result<(), MeasurementError> {
+    pub(super) fn resolve(&mut self) -> Result<(), MeasurementError> {
         let Some(directory) = self.entry.directory() else {
             let (on_disk, found) = self.descend(self.entry.as_str(), false)?;
             let path = self.entry.as_str().to_owned();
@@ -216,6 +78,17 @@ impl Walk<'_> {
         let mut pending = vec![(at, directory.to_owned())];
         let mut seen = 0_usize;
         while let Some((dir, relative)) = pending.pop() {
+            self.spent.directories += 1;
+            if self.spent.directories > self.limits.directories {
+                return Err(self.refuse(
+                    MeasurementErrorCode::ApparatusTooLarge,
+                    format!(
+                        "walks more than {} directories, counting empty ones, across every plan \
+                         this write governs",
+                        self.limits.directories
+                    ),
+                ));
+            }
             for (name, kind) in self.listing(&dir)? {
                 let child = format!("{relative}/{name}");
                 match kind {
@@ -311,7 +184,16 @@ impl Walk<'_> {
 
     /// Digest one resolved file into the set under its repository-relative
     /// path.
+    ///
+    /// A path a stored record could not hold is refused before the file is
+    /// opened: writing it would store a record the reader refuses forever.
     fn digest(&mut self, path: &Path, relative: String) -> Result<(), MeasurementError> {
+        if let Some(reason) = unrecordable_apparatus_path(&relative) {
+            return Err(self.refuse(
+                MeasurementErrorCode::ApparatusUnreadable,
+                format!("`{relative}` cannot be recorded in a collection: {reason}"),
+            ));
+        }
         let digest = quoin_store::digest_file_sha256(path).map_err(|error| {
             let cause = error
                 .source()
@@ -327,18 +209,25 @@ impl Walk<'_> {
                 format!("`{relative}` cannot be digested: {error}{cause}"),
             )
         })?;
-        self.files.insert(relative, digest);
-        if self.files.len() > self.limit {
-            return Err(self.too_large());
+        if self.files.insert(relative, digest).is_none() {
+            self.spent.files += 1;
+        }
+        if self.files.len() > self.limits.plan_files {
+            return Err(self.refuse(
+                MeasurementErrorCode::ApparatusTooLarge,
+                format!("resolves to more than {} files", self.limits.plan_files),
+            ));
+        }
+        if self.spent.files > self.limits.total_files {
+            return Err(self.refuse(
+                MeasurementErrorCode::ApparatusTooLarge,
+                format!(
+                    "resolves to more than {} files across every plan this write governs",
+                    self.limits.total_files
+                ),
+            ));
         }
         Ok(())
-    }
-
-    fn too_large(&self) -> MeasurementError {
-        self.refuse(
-            MeasurementErrorCode::ApparatusTooLarge,
-            format!("resolves to more than {} files", self.limit),
-        )
     }
 
     /// A refusal naming the plan and the entry.
@@ -358,7 +247,7 @@ impl Walk<'_> {
 }
 
 /// The repository's own listing of `dir`: see [`Lister`].
-fn disk_listing(dir: &Path) -> Result<Vec<(String, Kind)>, String> {
+pub(super) fn disk_listing(dir: &Path) -> Result<Vec<(String, Kind)>, String> {
     let unreadable =
         |error: std::io::Error| format!("`{}` cannot be listed: {error}", dir.display());
     let entries = match std::fs::read_dir(dir) {
@@ -391,25 +280,6 @@ fn disk_listing(dir: &Path) -> Result<Vec<(String, Kind)>, String> {
     Ok(out)
 }
 
-/// The `verificationStack.protectedApparatus` member intake writes, or `None`
-/// when no plan protects anything, so the member is absent rather than empty.
-pub(super) fn protected_member(
-    resolved: &BTreeMap<String, ResolvedApparatus>,
-) -> Option<JsonValue> {
-    if resolved.is_empty() {
-        return None;
-    }
-    let mut plans = JsonObject::new();
-    for (plan, files) in resolved {
-        let mut digests = JsonObject::new();
-        for (path, digest) in files {
-            digests.set(path.clone(), JsonValue::string(digest.to_stored()));
-        }
-        plans.set(plan.clone(), JsonValue::Object(digests));
-    }
-    Some(JsonValue::Object(plans))
-}
-
 #[allow(
     clippy::unwrap_used,
     clippy::indexing_slicing,
@@ -421,7 +291,11 @@ mod tests {
 
     use engineering_assurance::measurement::ApparatusPath;
 
-    use super::{Kind, MAX_PROTECTED_FILES, Walk, disk_listing};
+    use super::super::{
+        LIMITS, Limits, MAX_PROTECTED_FILES, MAX_TOTAL_PROTECTED_FILES, MAX_WALKED_DIRECTORIES,
+        Spent,
+    };
+    use super::{Kind, Walk, disk_listing};
     use crate::error::MeasurementErrorCode;
     use crate::types::collection::ResolvedApparatus;
 
@@ -439,20 +313,35 @@ mod tests {
         })
     }
 
-    fn walk<'a>(
-        repo: &'a Path,
-        entry: &'a ApparatusPath,
-        files: &'a mut ResolvedApparatus,
-        list: super::Lister,
-        limit: usize,
-    ) -> Walk<'a> {
+    /// Resolve `entry` under `root` as plan `plan`, against `limits`, into a
+    /// fresh set, charging `spent`.
+    fn resolve(
+        root: &Path,
+        plan: &str,
+        entry: &str,
+        limits: Limits,
+        spent: &mut Spent,
+    ) -> Result<ResolvedApparatus, crate::error::MeasurementError> {
+        let entry = ApparatusPath::new(entry).unwrap();
+        let mut files = ResolvedApparatus::new();
         Walk {
-            repo,
-            plan: "MP-1",
-            entry,
-            files,
-            list,
-            limit,
+            repo: root,
+            plan,
+            entry: &entry,
+            files: &mut files,
+            list: disk_listing,
+            limits,
+            spent,
+        }
+        .resolve()?;
+        Ok(files)
+    }
+
+    fn limits(plan_files: usize, directories: usize, total_files: usize) -> Limits {
+        Limits {
+            plan_files,
+            directories,
+            total_files,
         }
     }
 
@@ -461,7 +350,16 @@ mod tests {
         let entry = ApparatusPath::new("harness/answers.json").unwrap();
         let mut files = ResolvedApparatus::new();
         let repo = Path::new("/repo");
-        let walker = walk(repo, &entry, &mut files, case_listing, MAX_PROTECTED_FILES);
+        let mut spent = Spent::default();
+        let walker = Walk {
+            repo,
+            plan: "MP-1",
+            entry: &entry,
+            files: &mut files,
+            list: case_listing,
+            limits: LIMITS,
+            spent: &mut spent,
+        };
         let error = walker.descend("harness/answers.json", false).unwrap_err();
         assert_eq!(error.code(), MeasurementErrorCode::ApparatusUnresolved);
         assert!(
@@ -483,18 +381,147 @@ mod tests {
         for name in ["a", "b", "c"] {
             std::fs::write(root.join("labels").join(name), name).unwrap();
         }
-        let entry = ApparatusPath::new("labels/**").unwrap();
-        let mut files = ResolvedApparatus::new();
-        let error = walk(root, &entry, &mut files, disk_listing, 2)
-            .resolve()
-            .unwrap_err();
+        let error = resolve(
+            root,
+            "MP-1",
+            "labels/**",
+            limits(2, MAX_WALKED_DIRECTORIES, MAX_TOTAL_PROTECTED_FILES),
+            &mut Spent::default(),
+        )
+        .unwrap_err();
         assert_eq!(error.code(), MeasurementErrorCode::ApparatusTooLarge);
         assert!(error.subject().contains("more than 2 files"));
 
-        let mut files = ResolvedApparatus::new();
-        walk(root, &entry, &mut files, disk_listing, 3)
-            .resolve()
-            .unwrap();
+        let files = resolve(
+            root,
+            "MP-1",
+            "labels/**",
+            limits(3, MAX_WALKED_DIRECTORIES, MAX_TOTAL_PROTECTED_FILES),
+            &mut Spent::default(),
+        )
+        .unwrap();
         assert_eq!(files.len(), 3);
+    }
+
+    /// `empty/` holds ten empty subdirectories, so the walk visits eleven
+    /// directories and finds no file: [`MAX_PROTECTED_FILES`] alone never
+    /// stops it. Past the directory limit it is too large before it can be
+    /// "holds no file"; at the limit the walk completes, and the same limit is
+    /// shared by a second entry of the same write.
+    #[test]
+    fn a_walk_past_the_directory_limit_is_too_large_even_with_no_files() {
+        assert_eq!(MAX_WALKED_DIRECTORIES, 100_000);
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path();
+        for index in 0..10 {
+            std::fs::create_dir_all(root.join("empty").join(index.to_string())).unwrap();
+        }
+        std::fs::create_dir_all(root.join("other")).unwrap();
+        std::fs::write(root.join("other").join("f"), "f").unwrap();
+
+        let error = resolve(
+            root,
+            "MP-1",
+            "empty/**",
+            limits(MAX_PROTECTED_FILES, 10, MAX_TOTAL_PROTECTED_FILES),
+            &mut Spent::default(),
+        )
+        .unwrap_err();
+        assert_eq!(error.code(), MeasurementErrorCode::ApparatusTooLarge);
+        assert!(error.subject().contains("more than 10 directories"));
+
+        // At the limit, all eleven are walked; with no file the refusal is
+        // the ordinary empty-directory one, not a size refusal.
+        let mut spent = Spent::default();
+        let error = resolve(
+            root,
+            "MP-1",
+            "empty/**",
+            limits(MAX_PROTECTED_FILES, 11, MAX_TOTAL_PROTECTED_FILES),
+            &mut spent,
+        )
+        .unwrap_err();
+        assert_eq!(error.code(), MeasurementErrorCode::ApparatusUnresolved);
+        assert_eq!(spent.directories, 11);
+
+        // The count is the write's, not the entry's or the plan's: a second
+        // plan's one-directory walk after those eleven passes the limit.
+        let error = resolve(
+            root,
+            "MP-2",
+            "other/**",
+            limits(MAX_PROTECTED_FILES, 11, MAX_TOTAL_PROTECTED_FILES),
+            &mut spent,
+        )
+        .unwrap_err();
+        assert_eq!(error.code(), MeasurementErrorCode::ApparatusTooLarge);
+        assert!(error.subject().contains("plan MP-2"));
+    }
+
+    /// Two plans each resolving two files, each well inside its own limit:
+    /// the write-wide total refuses the second plan past it and not at it.
+    #[test]
+    fn the_cross_plan_total_is_capped_independent_of_any_one_plan() {
+        assert_eq!(MAX_TOTAL_PROTECTED_FILES, 200_000);
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path();
+        for (dir, name) in [
+            ("first", "a"),
+            ("first", "b"),
+            ("second", "c"),
+            ("second", "d"),
+        ] {
+            std::fs::create_dir_all(root.join(dir)).unwrap();
+            std::fs::write(root.join(dir).join(name), name).unwrap();
+        }
+
+        let mut spent = Spent::default();
+        let under = limits(MAX_PROTECTED_FILES, MAX_WALKED_DIRECTORIES, 3);
+        resolve(root, "MP-1", "first/**", under, &mut spent).unwrap();
+        let error = resolve(root, "MP-2", "second/**", under, &mut spent).unwrap_err();
+        assert_eq!(error.code(), MeasurementErrorCode::ApparatusTooLarge);
+        assert!(
+            error
+                .subject()
+                .contains("more than 3 files across every plan this write governs"),
+            "{error}"
+        );
+
+        let mut spent = Spent::default();
+        let at = limits(MAX_PROTECTED_FILES, MAX_WALKED_DIRECTORIES, 4);
+        resolve(root, "MP-1", "first/**", at, &mut spent).unwrap();
+        resolve(root, "MP-2", "second/**", at, &mut spent).unwrap();
+        assert_eq!(spent.files, 4);
+    }
+
+    /// A protected file whose name a stored record cannot hold is refused at
+    /// intake, rather than written into a record the reader then refuses as
+    /// `QM-COLLECTION-INVALID` forever.
+    #[test]
+    fn a_file_name_a_record_cannot_hold_is_refused_at_intake() {
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path();
+        std::fs::create_dir_all(root.join("labels")).unwrap();
+        std::fs::write(root.join("labels").join("ok.json"), "ok").unwrap();
+        for name in ["a:b.json", "**", "x?.json"] {
+            let bad = root.join("labels").join(name);
+            std::fs::write(&bad, "bad").unwrap();
+            let error =
+                resolve(root, "MP-1", "labels/**", LIMITS, &mut Spent::default()).unwrap_err();
+            assert_eq!(
+                error.code(),
+                MeasurementErrorCode::ApparatusUnreadable,
+                "{name}"
+            );
+            assert!(
+                error
+                    .subject()
+                    .contains("cannot be recorded in a collection"),
+                "{error}"
+            );
+            std::fs::remove_file(bad).unwrap();
+        }
+        let files = resolve(root, "MP-1", "labels/**", LIMITS, &mut Spent::default()).unwrap();
+        assert_eq!(files.len(), 1);
     }
 }

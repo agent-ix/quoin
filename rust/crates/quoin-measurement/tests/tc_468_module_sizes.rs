@@ -50,7 +50,16 @@ const SOURCE_FLOOR: usize = 20;
 /// state threaded through the heading walk, and the tests proving it holds
 /// live in the same file as the rest of this module's unit tests, per this
 /// crate's existing convention.
-const NAMED_OVER_SOFT_CEILING: &[&str] = &["plans.rs"];
+///
+/// `store/apparatus/walk.rs` and `validate/stack.rs` crossed it under
+/// PLAT-985 (quoin#600 review): the walk's directory, per-plan and
+/// write-wide limit tests, and the plan-id/path key-validation tests, live
+/// beside the code they cover, per the same convention. `store/apparatus.rs`
+/// crossed the hard ceiling under the same ticket and was split on
+/// responsibility — the filesystem walk into `walk.rs`, what a write records
+/// in `mod.rs`.
+const NAMED_OVER_SOFT_CEILING: &[&str] =
+    &["plans.rs", "store/apparatus/walk.rs", "validate/stack.rs"];
 
 /// Every `.rs` file under `src/`, as `(relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {

@@ -3205,6 +3205,7 @@ name = "quoin-store"
 version = "0.24.1"
 dependencies = [
  "blake3",
+ "libc",
  "ryu-js",
  "sha2",
  "thiserror",

@@ -782,6 +782,43 @@ fn tc_975_017_a_malformed_stored_record_is_refused_on_read() {
     }
 }
 
+/// A stored `protectedApparatus` whose plan-id or path key is malformed is
+/// refused on read, not carried through as an opaque string (PLAT-985,
+/// quoin#600 review): an empty plan-id key can never name a real plan, and a
+/// path key that is a `<directory>/**` glob, an absolute path, or carries a
+/// `..` segment is not a shape intake's own resolver ever writes.
+///
+/// Trace: FR-110-AC-8
+/// Provenance: PLAT-985, quoin#600
+#[test]
+fn tc_985_001_protected_apparatus_key_shapes_are_validated_on_read() {
+    let temporary = repository(PROTECTED);
+    let root = temporary.path();
+    publish_run(root, "run-1", 1, 9);
+    let digest = format!("sha256:{}", "0".repeat(64));
+    for malformed in [
+        // An empty plan-id key.
+        json!({ "": { "harness/answers.json": digest } }),
+        // A `<directory>/**` glob where a resolved record must name one file.
+        json!({ "MP-975": { "labels/**": digest } }),
+        // An absolute path.
+        json!({ "MP-975": { "/etc/passwd": digest } }),
+        // A `..` segment.
+        json!({ "MP-975": { "harness/../../../etc/passwd": digest } }),
+    ] {
+        let mut bytes = stored_bytes(root, "run-1");
+        bytes["verificationStack"]["protectedApparatus"] = malformed.clone();
+        let error = stored_measurement_collection(&from_serde(&bytes).unwrap())
+            .expect_err("a malformed key is refused");
+        assert_eq!(
+            error.code(),
+            MeasurementErrorCode::CollectionInvalid,
+            "{malformed}"
+        );
+        assert!(error.to_string().contains("protectedApparatus"), "{error}");
+    }
+}
+
 /// Trace: FR-110-AC-2
 /// Provenance: PLAT-975
 #[test]

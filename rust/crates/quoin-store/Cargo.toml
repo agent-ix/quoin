@@ -33,3 +33,12 @@ ryu-js = "=1.0.3"
 # quoin-quire-types and quoin-semantic all depend on sha2 too, so one pin in one
 # place is the only arrangement `multiple-versions = "deny"` permits.
 sha2 = { workspace = true }
+
+# Unix only: the Windows release target has neither flag, and takes its own
+# path in `digest_file_sha256`. Already resolves once in the graph (aws-lc-sys's
+# build dependency), so a direct pin here adds no second version. Needed for
+# `O_NOFOLLOW`/`O_NONBLOCK` on the open call `digest_file_sha256` makes: std
+# exposes neither flag constant, and `OpenOptionsExt::custom_flags` needs one to
+# pass (PLAT-985, quoin#600 review — the resolver's stat-then-read race).
+[target.'cfg(unix)'.dependencies]
+libc = "=0.2.189"

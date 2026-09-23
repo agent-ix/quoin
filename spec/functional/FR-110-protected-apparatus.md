@@ -76,16 +76,25 @@ was written, never the repository as it reads today.
   - every path segment is matched exactly against the directory listing, so
     resolution is case-sensitive on every filesystem;
   - a symlink named by an entry, passed through on the way to one, or found
-    under a directory entry is refused and never followed.
+    under a directory entry is refused and never followed;
+  - each resolved file SHALL be opened once, without following a symlink at
+    its final component and without blocking on a FIFO, and its type, size
+    and bytes SHALL be read from that one open handle, never from a second
+    look at the path.
 - Intake SHALL refuse the write, and write nothing, with:
   - `QM-APPARATUS-UNRESOLVED` when an entry names no file: nothing exists
     there, a file entry names a directory, or a directory entry's directory
     is absent or holds no file;
   - `QM-APPARATUS-SYMLINK` for a symlink;
-  - `QM-APPARATUS-UNREADABLE` when a file cannot be digested or listed, or
+  - `QM-APPARATUS-UNREADABLE` when a file cannot be digested or listed,
     something under a directory entry is not a regular file, a directory or
-    a symlink;
-  - `QM-APPARATUS-TOO-LARGE` when one plan's set exceeds 50,000 files;
+    a symlink, or a resolved file's path is not one a stored record can hold
+    (a single-file `ApparatusPath`), so intake never writes a record its own
+    read refuses;
+  - `QM-APPARATUS-TOO-LARGE` when one plan's set exceeds 50,000 files, when
+    the directory walks of one write, summed across every plan it governs,
+    visit more than 100,000 directories (empty ones included), or when every
+    plan's sets together exceed 200,000 files;
   - `QM-APPARATUS-UNDECLARED`, naming every file, when the candidate's
     `verificationStack.artifacts` omits a resolved file;
   - `QM-COLLECTION-INVALID` when it states a resolved file at a digest the
@@ -99,7 +108,8 @@ was written, never the repository as it reads today.
   when no governing plan protects apparatus. A protected file is always a digested artifact, so a protected
   path is never listed in `unverifiedArtifacts`.
 - Reading a stored collection SHALL refuse a `protectedApparatus` that is not
-  an object of non-empty objects of sha256 digests as
+  an object of non-empty objects of sha256 digests, that has an empty plan-id
+  key, or that has a path key that is not a single-file `ApparatusPath`, as
   `QM-COLLECTION-INVALID`. An absent member reads as no record.
 
 ### Comparison (FR-044-AC-3)
@@ -171,8 +181,9 @@ and never rejects.
 | FR-110-AC-5 | A baseline stored before the apparatus was edited cannot be rewritten under its id, and a new run is `apparatus_changed` against it even when a regenerated baseline was stored beside the run. | Test (TC-1820) |
 | FR-110-AC-6 | A ratchet whose earlier value was measured with a different recorded set is `inconclusive` (`apparatus_changed`), and one whose newest collection recorded none is `inconclusive` (`apparatus_unrecorded`), including after the list is removed from the plan; over one set it is `held`. | Test (TC-1825, TC-1828, TC-1830) |
 | FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_edit` (reject) with or without an `apparatus-edit` control, and `apparatus_unrecorded` (inconclusive) when it recorded no set; removing the list from the plan still rejects the changed series; an uncommitted answer-key edit between a regressed run and a pass is `rerun_until_pass`; the same runs over one set are accepted. | Test (TC-1822..TC-1824, TC-1828, TC-1829) |
-| FR-110-AC-8 | A stored `protectedApparatus` that is not an object, holds an empty plan entry, or holds a value that is not a sha256 digest is refused on read as `QM-COLLECTION-INVALID` naming the member. | Test (TC-1826) |
+| FR-110-AC-8 | A stored `protectedApparatus` that is not an object, holds an empty plan entry, or holds a value that is not a sha256 digest is refused on read as `QM-COLLECTION-INVALID` naming the member. An empty plan-id key, and a path key that is not a valid single-file `ApparatusPath` (a `<directory>/**` entry, an absolute path, or a `..` segment among them), are refused the same way, and intake refuses to resolve a protected file whose path such a key could not hold as `QM-APPARATUS-UNREADABLE`. | Test (TC-1826, TC-1833, TC-1838) |
 | FR-110-AC-9 | One plan's resolved set past its limit (50,000 files) is `QM-APPARATUS-TOO-LARGE`; each path segment is matched exactly against the directory listing, so a case-only difference names no file on any filesystem. | Test (TC-1831, TC-1832) |
+| FR-110-AC-10 | A protected file is opened exactly once, with `O_NOFOLLOW` and `O_NONBLOCK`, and its type and bytes are read from the open handle (`fstat`), never from a second look at the path: swapping what the path names after the open changes nothing the digest reads, and a FIFO is refused as not a regular file promptly rather than blocking the resolver waiting for a writer. One write's directory walks, summed across every plan it governs, are refused as `QM-APPARATUS-TOO-LARGE` past 100,000 directories visited, counting empty ones, even when they resolve to no file; the files every plan one write governs resolve to, summed, are refused the same way past 200,000. | Test (TC-1834..TC-1837) |
 
 ## Constraints
 
