@@ -377,8 +377,13 @@ pub(crate) fn defect_recall(graded: &[Graded], no_defect_label: &str) -> Option<
     if defects.is_empty() {
         return None;
     }
+    // An unanswered or unrecognized row found nothing. Before PLAT-1027 its
+    // placeholder class (`<unanswered>`) differed from the no-defect label and
+    // so counted as a defect found, inflating recall by every row the lens
+    // failed to answer.
     let found = defects
         .iter()
+        .filter(|row| !matches!(row.verdict, Verdict::Unanswered | Verdict::Unrecognized))
         .filter(|row| row.actual_class != no_defect_label)
         .count();
     Some(percent(found, defects.len()))

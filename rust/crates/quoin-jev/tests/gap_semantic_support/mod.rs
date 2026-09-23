@@ -195,7 +195,7 @@ fn state(triple: &GapTriple) -> serde_json::Value {
 
 /// Builds the questions for `variant`, verbatim question text from the
 /// ticket's `noul` table and `divergence_kind`/severity sections.
-fn question_set(variant: Variant) -> Questions {
+pub(crate) fn question_set(variant: Variant) -> Questions {
     match variant {
         Variant::Solo => questions([(
             ASSERTION_VACUOUS_KEY,
