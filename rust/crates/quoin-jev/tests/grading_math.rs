@@ -84,7 +84,7 @@ fn the_do_nothing_lens_scores_over_eighty_percent_so_agreement_cannot_be_the_gat
 
     // And it found nothing at all. That is what the gate has to catch.
     assert_eq!(
-        defect_recall(&graded),
+        defect_recall(&graded, "sound"),
         Some(0.0),
         "a lens answering `sound` everywhere has found none of the defects"
     );
@@ -125,7 +125,7 @@ fn defect_recall_credits_a_mislabelled_weakness_but_never_a_sound_verdict() {
         contested_row("C", "unfalsifiable", "sound", "sound", Verdict::Contested),
     ];
     assert_eq!(
-        defect_recall(&rows),
+        defect_recall(&rows, "sound"),
         Some(50.0),
         "two rows are unambiguous defects; the lens flagged one of them"
     );
@@ -243,7 +243,7 @@ fn defect_recall_ignores_coverage_rows() {
         ),
         graded("COV", Tier::Clean, "2", "2", Verdict::Primary, None),
     ];
-    assert_eq!(defect_recall(&rows), Some(0.0));
+    assert_eq!(defect_recall(&rows, "sound"), Some(0.0));
 }
 
 /// Provenance: PLAT-917. `sound_recall` counts only criteria whose primary

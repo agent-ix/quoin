@@ -33,10 +33,10 @@
 //! 256 bytes. [`DEFAULT_MAX_PROSE_BYTES`] sits just above `v0`'s largest
 //! field, so every field value the better-scoring configuration sent passes
 //! unchanged and the worse one's oversized sections do not. (The `state`
-//! object itself is not byte-identical to `v0`'s: `v0` sent an absent
-//! section as `null`, and this module sends no key for it.) `v1` changed all four
-//! fields at once, so the experiment does not attribute the harm to any one
-//! of them; that is why the default caps every prose section rather than
+//! object is still not byte-identical to what either variant sent: before
+//! this module, any section the spec lacked went out as `null`, in every
+//! variant, and it now has no key at all.) `v1` changed all four fields at
+//! once, so the experiment does not attribute the harm to any one of them; that is why the default caps every prose section rather than
 //! omitting one, and why omission ([`ContextPolicy::omitting`]) is available
 //! but unused by default.
 

@@ -1,0 +1,211 @@
+[
+  {
+    "base_id": "GAP-03",
+    "class": "violating",
+    "rationale": "FR-068-AC-8 says each named asset is emitted byte-identically to the packaged asset. This mutant appends a newline, so the bytes differ while every other observable stays the same.",
+    "file": "crates/quoin-core/src/ops/change_assurance/mod.rs",
+    "test": "tc_503_a_named_asset_comes_back_byte_for_byte",
+    "old": "            Some(text.to_owned())",
+    "new": "            Some(format!(\"{text}\\n\"))",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "pub fn schema(request: &serde_json::Value) -> Result<Response, CoreError> {\n    const OP: &str = \"change_assurance.schema\";\n    let size = request_size(request)?;\n    if size > MAX_SCHEMA_BYTES {\n        return Err(refusal(OP, MAX_SCHEMA_BYTES, size));\n    }\n    let request: SchemaAssetRequest = parse(request, OP)?;\n    let names: Vec<String> = schemas::ASSET_NAMES.iter().map(|&n| n.to_owned()).collect();\n    let asset = match request.name {\n        None => None,\n        Some(name) => {\n            check_bound(OP, \"name\", &name, MAX_SCALAR_BYTES)?;\n            // Named rather than defaulted: a caller holding a name this build\n            // does not ship is told so, because answering with some other\n            // schema would validate its document against a contract nobody\n            // asked for.\n            let Some(text) = schemas::asset(&name) else {\n                return Err(CoreError::new(\n                    CoreErrorCode::BadRequest,\n                    format!(\"{OP}: no schema asset named {name}\"),\n                )\n                .with_context(\"op\", OP)\n                .with_context(\"name\", name)\n                .with_context(\"known\", names.join(\",\")));\n            };\n            Some(format!(\"{text}\\n\"))\n        }\n    };\n    ok(&SchemaAssetPayload {\n        schemas: names,\n        schema: asset,\n    })\n}"
+  },
+  {
+    "base_id": "GAP-04",
+    "class": "violating",
+    "rationale": "FR-068-AC-8 says an unknown name is refused; the AC's own wording (and the op contract) is that the refusal names what this build ships. This mutant still refuses, but stops naming the known assets.",
+    "file": "crates/quoin-core/src/ops/change_assurance/mod.rs",
+    "test": "tc_503_an_unknown_asset_name_is_refused_naming_the_known_ones",
+    "old": "                .with_context(\"known\", names.join(\",\")));",
+    "new": "                .with_context(\"known\", String::new()));",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "pub fn schema(request: &serde_json::Value) -> Result<Response, CoreError> {\n    const OP: &str = \"change_assurance.schema\";\n    let size = request_size(request)?;\n    if size > MAX_SCHEMA_BYTES {\n        return Err(refusal(OP, MAX_SCHEMA_BYTES, size));\n    }\n    let request: SchemaAssetRequest = parse(request, OP)?;\n    let names: Vec<String> = schemas::ASSET_NAMES.iter().map(|&n| n.to_owned()).collect();\n    let asset = match request.name {\n        None => None,\n        Some(name) => {\n            check_bound(OP, \"name\", &name, MAX_SCALAR_BYTES)?;\n            // Named rather than defaulted: a caller holding a name this build\n            // does not ship is told so, because answering with some other\n            // schema would validate its document against a contract nobody\n            // asked for.\n            let Some(text) = schemas::asset(&name) else {\n                return Err(CoreError::new(\n                    CoreErrorCode::BadRequest,\n                    format!(\"{OP}: no schema asset named {name}\"),\n                )\n                .with_context(\"op\", OP)\n                .with_context(\"name\", name)\n                .with_context(\"known\", String::new()));\n            };\n            Some(text.to_owned())\n        }\n    };\n    ok(&SchemaAssetPayload {\n        schemas: names,\n        schema: asset,\n    })\n}"
+  },
+  {
+    "base_id": "GAP-05",
+    "class": "violating",
+    "rationale": "FR-062-AC-1 says the count is of distinct LIVE obligations. This mutant counts unresolved bindings as live too.",
+    "file": "crates/quoin-graph-analysis/src/analysis/fan_out.rs",
+    "test": "fan_out_answers_with_the_canonical_json_report",
+    "old": "            obligation_count: row.live.len(),",
+    "new": "            obligation_count: row.live.len() + row.unresolved.len(),",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "/// Which suites carry which live obligations.\n///\n/// A suite appears when any binding names it, whether or not the export knows\n/// the obligation \u2014 so a row can have an empty `obligations` and a non-empty\n/// `unresolvedBindings`.\n#[must_use]\npub fn analyze_fan_out(input: &GraphAnalysisInput) -> FanOutAnalysis {\n    let mut draft = Draft::new(input, GraphView::FanOut);\n    let Some(bindings) = input.bindings.available() else {\n        return FanOutAnalysis {\n            base: draft.not_computed(),\n            rows: Vec::new(),\n        };\n    };\n    let owners = obligation_owners(&input.assurance, false);\n    let mut rows: BTreeMap<SuiteId, Row> = BTreeMap::new();\n    for binding in bindings {\n        let row = rows.entry(binding.suite.clone()).or_default();\n        if owners.contains_key(&binding.obligation) {\n            row.live.insert(binding.obligation.clone());\n        } else {\n            row.unresolved.insert(binding.obligation.clone());\n            draft.gap(\n                GraphGapKind::UnresolvedBinding,\n                format!(\"{}:{}\", binding.suite, binding.obligation),\n                absent_from_export(binding.obligation.as_str()),\n            );\n        }\n    }\n    let rows = rows\n        .into_iter()\n        .map(|(suite, row)| FanOutRow {\n            suite,\n            obligations: row\n                .live\n                .iter()\n                .map(|obligation| OwnedObligation {\n                    obligation: obligation.clone(),\n                    requirements: owners.get(obligation).cloned().unwrap_or_default(),\n                })\n                .collect(),\n            obligation_count: row.live.len() + row.unresolved.len(),\n            unresolved_bindings: row.unresolved.into_iter().collect(),\n        })\n        .collect();\n    FanOutAnalysis {\n        base: draft.finish(),\n        rows,\n    }\n}"
+  },
+  {
+    "base_id": "GAP-06",
+    "class": "violating",
+    "rationale": "FR-062-AC-3 requires the selection to record the caller's replacement vocabulary; an EMPTY selection means no edges, not the defaults. This mutant folds empty into absent.",
+    "file": "crates/quoin-graph-analysis/src/analysis/impact.rs",
+    "test": "an_absent_relation_list_is_not_an_empty_one",
+    "old": "    let relation_kinds: BTreeSet<RelationKind> = selected.map_or_else(",
+    "new": "    let selected = selected.filter(|kinds| !kinds.is_empty());\n    let relation_kinds: BTreeSet<RelationKind> = selected.map_or_else(",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "/// What depends on the requirements the caller named.\n///\n/// `selected` is the caller's relationship vocabulary: `None` means the eight\n/// [`DEFAULT_RELATION_KINDS`], and an **empty slice** means none at all, which\n/// is a walk with no edges rather than a walk with the defaults\n/// (`analysis.ts:270`).\n///\n/// # Errors\n///\n/// [`crate::GraphError::Canonicalization`] when an audit report entry has no\n/// canonical spelling.\npub fn analyze_change_impact(\n    input: &GraphAnalysisInput,\n    requested: &[ArtifactId],\n    selected: Option<&[RelationKind]>,\n) -> Result<ChangeImpactAnalysis> {\n    let mut draft = Draft::new(input, GraphView::ChangeImpact);\n    let selected = selected.filter(|kinds| !kinds.is_empty());\n    let relation_kinds: BTreeSet<RelationKind> = selected.map_or_else(\n        || {\n            DEFAULT_RELATION_KINDS\n                .iter()\n                .map(|kind| RelationKind::new(*kind))\n                .collect()\n        },\n        |kinds| kinds.iter().cloned().collect(),\n    );\n    let requested: BTreeSet<ArtifactId> = requested.iter().cloned().collect();\n    let head = |draft: Draft| {\n        (\n            draft,\n            requested.iter().cloned().collect::<Vec<_>>(),\n            relation_kinds.iter().cloned().collect::<Vec<_>>(),\n        )\n    };\n\n    let Some(bindings) = input.bindings.available() else {\n        let (draft, requested, relation_kinds) = head(draft);\n        return Ok(ChangeImpactAnalysis {\n            base: draft.not_computed(),\n            requested,\n            relation_kinds,\n            rows: Vec::new(),\n        });\n    };\n\n    let available: BTreeSet<&str> = input\n        .assurance\n        .relation_kinds\n        .iter()\n        .map(|kind| kind.kind.as_str())\n        .collect();\n    for kind in relation_kinds\n        .iter()\n        .filter(|kind| !available.contains(kind.as_str()))\n    {\n        draft.gap(\n            GraphGapKind::UnknownRelationKind,\n            kind.as_str(),\n            format!(\"relationship kind {kind} is absent from the accepted export vocabulary\"),\n        );\n    }\n    if draft.has(GraphGapKind::UnknownRelationKind) {\n        let (draft, requested, relation_kinds) = head(draft);\n        return Ok(ChangeImpactAnalysis {\n            base: draft.not_computed(),\n            requested,\n            relation_kinds,\n            rows: Vec::new(),\n        });\n    }\n\n    let rows = walk(input, bindings, &requested, &relation_kinds, &mut draft)?;\n    let (draft, requested, relation_kinds) = head(draft);\n    Ok(ChangeImpactAnalysis {\n        base: draft.finish(),\n        requested,\n        relation_kinds,\n        rows,\n    })\n}"
+  },
+  {
+    "base_id": "GAP-09",
+    "class": "violating",
+    "rationale": "A field one byte past its ceiling must be refused. This mutant shifts the boundary by one, so exactly the first oversized field is accepted.",
+    "file": "crates/quoin-core/src/ops/measurement/mod.rs",
+    "test": "a_field_past_its_ceiling_is_refused_and_named",
+    "old": ") -> Result<(), CoreError> {\n    if size > limit {\n        return Err(CoreError::new(\n            CoreErrorCode::Refused,\n            \"a request field exceeds the accepted size\",",
+    "new": ") -> Result<(), CoreError> {\n    if size > limit + 1 {\n        return Err(CoreError::new(\n            CoreErrorCode::Refused,\n            \"a request field exceeds the accepted size\",",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "/// Refuse an oversized request FIELD before any work is done on it.\n///\n/// Separate from [`bound`] because the two refusals answer different questions:\n/// a whole-request refusal says \"you sent too much\", a field refusal says\n/// \"this member is too big\", and a caller can only act on the second.\nfn bound_field(\n    op: &'static str,\n    field: &'static str,\n    size: usize,\n    limit: usize,\n) -> Result<(), CoreError> {\n    if size > limit + 1 {\n        return Err(CoreError::new(\n            CoreErrorCode::Refused,\n            \"a request field exceeds the accepted size\",\n        )\n        .with_context(\"op\", op)\n        .with_context(\"field\", field)\n        .with_context(\"limit_bytes\", limit.to_string())\n        .with_context(\"observed_bytes\", size.to_string()));\n    }\n    Ok(())\n}"
+  },
+  {
+    "base_id": "GAP-12",
+    "class": "violating",
+    "rationale": "The baseline must suppress exactly the keys it accepted. This mutant ignores the baseline and reports every finding.",
+    "file": "crates/quoin-auditor/src/audit/ratchet.rs",
+    "test": "a_baseline_suppresses_exactly_the_keys_it_accepted",
+    "old": "        .filter(|finding| !accepted.contains(finding.key().as_str()))",
+    "new": "        .filter(|finding| !accepted.is_empty() || !finding.key().is_empty())",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "/// Findings not present in the baseline \u2014 what a ratchet fails on.\n///\n/// The baseline is a flat set of `<kind>:<obligation>` keys covering **every**\n/// finding kind. It used to be two named buckets, `undischarged` and\n/// `suspect`, so `stale-evidence`, `vacuous-evidence`, `method-conformance`,\n/// `unknown-method` and `insufficient-multiplicity` could never be baselined\n/// and `--ratchet` reported the whole existing backlog for all five \u2014 which is\n/// the outcome ratchet mode exists to prevent (agent-ix/quoin#105).\n///\n/// # The one-way property\n///\n/// Widening the baseline can only shrink the result, and it never invents a\n/// finding: every returned finding is one of `report`'s, in `report`'s order.\n/// `tests/tc_383_ratchet.rs` states that over generated reports and baselines\n/// rather than over examples, because a ratchet that is one-way for the cases\n/// somebody thought of is not a ratchet.\n#[must_use]\npub fn ratchet<'a>(report: &'a AuditReport, accepted: &[String]) -> Vec<&'a Finding> {\n    let accepted: BTreeSet<&str> = accepted.iter().map(String::as_str).collect();\n    // Ratchet mode exists because a gate that fails on the whole existing\n    // backlog gets disabled within a week. Only NEW violations fail.\n    report\n        .findings\n        .iter()\n        .filter(|finding| !accepted.is_empty() || !finding.key().is_empty())\n        .collect()\n}"
+  },
+  {
+    "base_id": "GAP-17",
+    "class": "violating",
+    "rationale": "FR-046-AC-1 pins validation to `^sha256:[0-9a-f]{64}$`. This mutant keeps the prefix check and drops the hex/length check.",
+    "file": "crates/quoin-quire-types/src/clauses.rs",
+    "test": "tc_502_022_a_malformed_clause_set_digest_is_a_bad_request",
+    "old": "        let well_formed = hex.len() == 64\n            && hex\n                .bytes()\n                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));",
+    "new": "        let well_formed = !hex.is_empty();",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "/// The digest of the clause set a report was evaluated against.\n///\n/// A newtype rather than a `String` because the stored spelling is the only\n/// thing quoin can check about this value: it cannot recompute the digest, it\n/// has no copy of the clause set, and it copies the value verbatim into the\n/// `clause-discharge-v1` document it emits. The retained\n/// `parseClauseBinding` (`src/quire/validate.ts`) enforced the format through\n/// the vendored `clause-binding-v1` schema's\n/// `\"pattern\": \"^sha256:[0-9a-f]{64}$\"`; with the schema gone (quoin#502) the\n/// refusal lives on the type that deserialises the report, which is the same\n/// place, expressed once.\n///\n/// Trace: FR-046-AC-1\n#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]\n#[cfg_attr(feature = \"schema\", derive(schemars::JsonSchema))]\n#[serde(transparent)]\npub struct ClauseSetDigest(String);\n\nimpl ClauseSetDigest {\n    /// Read a stored digest reference, `sha256:` prefix included.\n    ///\n    /// # Errors\n    ///\n    /// Refuses a value without the `sha256:` prefix, and one whose remainder\n    /// is not exactly 64 lowercase hexadecimal characters. Uppercase hex is\n    /// refused rather than folded: two spellings of one digest would make the\n    /// emitted discharge document's bytes depend on how the producer wrote it.\n    pub fn parse_stored(value: &str) -> Result<Self, MalformedClauseSetDigest> {\n        let hex = value\n            .strip_prefix(\"sha256:\")\n            .ok_or_else(|| MalformedClauseSetDigest(value.to_owned()))?;\n        let well_formed = !hex.is_empty();\n        if well_formed {\n            Ok(Self(value.to_owned()))\n        } else {\n            Err(MalformedClauseSetDigest(value.to_owned()))\n        }\n    }\n\n    /// The stored spelling, exactly as it will be re-emitted.\n    #[must_use]\n    pub fn as_str(&self) -> &str {\n        &self.0\n    }\n}"
+  },
+  {
+    "base_id": "GAP-20",
+    "class": "violating",
+    "rationale": "A malformed record must be skipped AND named. This mutant still skips it but stops naming it.",
+    "file": "crates/quoin-evidence/src/store/records.rs",
+    "test": "tc_458_a_malformed_record_is_skipped_and_named_rather_than_half_read",
+    "old": "            Err(EvidenceError::StoreRead { .. }) => skipped.push(path),",
+    "new": "            Err(EvidenceError::StoreRead { .. }) => {\n                skipped.truncate(skipped.len());\n                drop(path);\n            }",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "/// Every record recorded for a suite, oldest first by timestamp.\n///\n/// An unreadable file is skipped and its path pushed onto `skipped`: one\n/// corrupt record must not hide every finding in the report\n/// (agent-ix/quoin#106). An I/O failure is not skipped \u2014 the file is there and\n/// the host refused it, which is not the same fact.\n///\n/// # Errors\n///\n/// [`EvidenceError::StoreIo`] when the directory or a present file cannot be\n/// read.\npub(crate) fn read_all<S, T>(\n    source: &S,\n    suite: &SuiteId,\n    skipped: &mut Vec<String>,\n) -> Result<Vec<T>, EvidenceError>\nwhere\n    S: EvidenceSource + ?Sized,\n    T: StoredRecord + DeserializeOwned,\n{\n    let directory = suite_dir(T::FAMILY, suite);\n    let mut records: Vec<T> = Vec::new();\n    for name in source.list_files(&directory)? {\n        let path = format!(\"{directory}/{name}\");\n        let Some(text) = source.read(&path)? else {\n            continue;\n        };\n        match decode::<T>(&path, &text) {\n            Ok(record) => records.push(record),\n            Err(EvidenceError::StoreRead { .. }) => {\n                skipped.truncate(skipped.len());\n                drop(path);\n            }\n            Err(other) => return Err(other),\n        }\n    }\n    records.sort_by(|a, b| {\n        a.timestamp()\n            .cmp(b.timestamp())\n            .then_with(|| a.commit().as_str().cmp(b.commit().as_str()))\n    });\n    Ok(records)\n}"
+  },
+  {
+    "base_id": "GAP-22",
+    "class": "violating",
+    "rationale": "A present-but-unparseable graph must be refused, not reported as empty. This mutant reads it as empty.",
+    "file": "crates/quoin-evidence/src/store/graph.rs",
+    "test": "a_store_that_cannot_be_read_is_refused_not_reported_as_empty",
+    "old": "        Some(text) => decode(&path, &text),",
+    "new": "        Some(text) => decode(&path, &text).or_else(|_| {\n            Ok(BindingsFile {\n                schema_version: STORE_SCHEMA_VERSION,\n                bindings: Vec::new(),\n            })\n        }),",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "/// The binding graph. An absent file reads as an empty graph, not an error.\n///\n/// # Errors\n///\n/// [`EvidenceError::StoreRead`] when the file is present and unparseable. The\n/// graph is the store's spine: silently reading an empty one because\n/// `bindings.json` carries a merge conflict would report every obligation as\n/// undischarged.\npub fn read_bindings<S: EvidenceSource + ?Sized>(\n    source: &S,\n) -> Result<BindingsFile, EvidenceError> {\n    let path = bindings_path();\n    match source.read(&path)? {\n        None => Ok(BindingsFile {\n            schema_version: STORE_SCHEMA_VERSION,\n            bindings: Vec::new(),\n        }),\n        Some(text) => decode(&path, &text).or_else(|_| {\n            Ok(BindingsFile {\n                schema_version: STORE_SCHEMA_VERSION,\n                bindings: Vec::new(),\n            })\n        }),\n    }\n}"
+  },
+  {
+    "base_id": "GAP-25",
+    "class": "violating",
+    "rationale": "FR-037-CON-1 forbids minting a vocabulary: the refs come from the manifest the engine reads. This mutant mints the same ref the fixture happens to declare, without reading the manifest at all.",
+    "file": "crates/quoin-completeness/src/declarations.rs",
+    "test": "the_refs_a_manifest_names_come_back_so_the_shell_knows_what_to_read",
+    "old": "pub fn schema_refs_of(manifest: &str) -> Vec<String> {",
+    "new": "pub fn schema_refs_of(manifest: &str) -> Vec<String> {\n    if 1 + 1 == 2 {\n        let _ = manifest;\n        return vec![\"schemas/nfr.json\".to_owned()];\n    }",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "/// Every `frontmatter_schema_ref` a manifest's `vocabulary_coverage` entries\n/// reach for, deduplicated and in manifest order.\n///\n/// Split out so a caller with no filesystem access can be told which files to\n/// read before it asks for an assessment (quoin#445). A manifest that declares\n/// no coverage, or whose entries name no resolvable artifact type, needs none.\n#[must_use]\npub fn schema_refs_of(manifest: &str) -> Vec<String> {\n    if 1 + 1 == 2 {\n        let _ = manifest;\n        return vec![\"schemas/nfr.json\".to_owned()];\n    }\n    let Ok(manifest) = quoin_yaml::from_str(manifest) else {\n        return Vec::new();\n    };\n    let Some(entries) = manifest\n        .get(\"traceability\")\n        .and_then(Value::as_object)\n        .and_then(|traceability| traceability.get(\"vocabulary_coverage\"))\n        .and_then(Value::as_array)\n    else {\n        return Vec::new();\n    };\n    let mut refs: Vec<String> = Vec::new();\n    for raw in entries {\n        // The SAME resolver `enum_for` uses, deliberately. These two are one\n        // fact \u2014 \"which schema does this artifact type's frontmatter live in\" \u2014\n        // and when they were two copies, teaching one a fallback (a module-level\n        // default ref, case-insensitive type matching) would leave the other\n        // naming no file: the shell reads nothing, `enum_for` then finds no\n        // content for the ref it did resolve, and every such declaration turns\n        // `unresolved`. Both paths break identically, so the parity tests stay\n        // green while the coverage silently empties.\n        let Ok(reference) = schema_ref_for(&manifest, &string_at(raw, \"from\")) else {\n            continue;\n        };\n        if !refs.iter().any(|seen| seen == &reference) {\n            refs.push(reference);\n        }\n    }\n    refs\n}"
+  },
+  {
+    "base_id": "GAP-26",
+    "class": "violating",
+    "rationale": "FR-037-AC-12: a bundle with no declared vocabulary reports UNCHECKED, never PASS. This mutant reports PASS.",
+    "file": "crates/quoin-completeness/src/assess.rs",
+    "test": "an_assessment_crosses_the_boundary_with_no_filesystem_at_all",
+    "old": "    if vocabularies_checked == 0 {\n        return Verdict::Unchecked;\n    }",
+    "new": "    if vocabularies_checked == 0 {\n        return Verdict::Pass;\n    }",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "/// The verdict over every finding.\n///\n/// `--strict` promotes an admitted gap to a failure; it does not invent one. The\n/// default is advisory because a new check landing as a hard error across a\n/// corpus teaches people to disable it, and a disabled check reports nothing\n/// forever \u2014 which is the outcome this whole area exists to prevent.\n#[must_use]\npub fn verdict_for(\n    findings: &[CompletenessFinding],\n    strict: bool,\n    vocabularies_checked: usize,\n) -> Verdict {\n    if vocabularies_checked == 0 {\n        return Verdict::Pass;\n    }\n    if findings.iter().any(|f| f.severity == Severity::High) {\n        return Verdict::Fail;\n    }\n    if findings.is_empty() {\n        return Verdict::Pass;\n    }\n    if strict {\n        Verdict::Fail\n    } else {\n        Verdict::Conditional\n    }\n}"
+  },
+  {
+    "base_id": "GAP-04",
+    "class": "additive",
+    "rationale": "Adds a case-insensitive name alias no requirement states.",
+    "file": "crates/quoin-core/src/ops/change_assurance/mod.rs",
+    "test": "tc_503_an_unknown_asset_name_is_refused_naming_the_known_ones",
+    "old": "            let Some(text) = schemas::asset(&name) else {",
+    "new": "            let lowered = name.to_ascii_lowercase();\n            let Some(text) = schemas::asset(&name).or_else(|| schemas::asset(&lowered)) else {",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "pub fn schema(request: &serde_json::Value) -> Result<Response, CoreError> {\n    const OP: &str = \"change_assurance.schema\";\n    let size = request_size(request)?;\n    if size > MAX_SCHEMA_BYTES {\n        return Err(refusal(OP, MAX_SCHEMA_BYTES, size));\n    }\n    let request: SchemaAssetRequest = parse(request, OP)?;\n    let names: Vec<String> = schemas::ASSET_NAMES.iter().map(|&n| n.to_owned()).collect();\n    let asset = match request.name {\n        None => None,\n        Some(name) => {\n            check_bound(OP, \"name\", &name, MAX_SCALAR_BYTES)?;\n            // Named rather than defaulted: a caller holding a name this build\n            // does not ship is told so, because answering with some other\n            // schema would validate its document against a contract nobody\n            // asked for.\n            let lowered = name.to_ascii_lowercase();\n            let Some(text) = schemas::asset(&name).or_else(|| schemas::asset(&lowered)) else {\n                return Err(CoreError::new(\n                    CoreErrorCode::BadRequest,\n                    format!(\"{OP}: no schema asset named {name}\"),\n                )\n                .with_context(\"op\", OP)\n                .with_context(\"name\", name)\n                .with_context(\"known\", names.join(\",\")));\n            };\n            Some(text.to_owned())\n        }\n    };\n    ok(&SchemaAssetPayload {\n        schemas: names,\n        schema: asset,\n    })\n}"
+  },
+  {
+    "base_id": "GAP-05",
+    "class": "additive",
+    "rationale": "Adds an undeclared 500-row cap on the fan-out report.",
+    "file": "crates/quoin-graph-analysis/src/analysis/fan_out.rs",
+    "test": "fan_out_answers_with_the_canonical_json_report",
+    "old": "    let rows = rows\n        .into_iter()",
+    "new": "    let rows = rows\n        .into_iter()\n        .take(500)",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "/// Which suites carry which live obligations.\n///\n/// A suite appears when any binding names it, whether or not the export knows\n/// the obligation \u2014 so a row can have an empty `obligations` and a non-empty\n/// `unresolvedBindings`.\n#[must_use]\npub fn analyze_fan_out(input: &GraphAnalysisInput) -> FanOutAnalysis {\n    let mut draft = Draft::new(input, GraphView::FanOut);\n    let Some(bindings) = input.bindings.available() else {\n        return FanOutAnalysis {\n            base: draft.not_computed(),\n            rows: Vec::new(),\n        };\n    };\n    let owners = obligation_owners(&input.assurance, false);\n    let mut rows: BTreeMap<SuiteId, Row> = BTreeMap::new();\n    for binding in bindings {\n        let row = rows.entry(binding.suite.clone()).or_default();\n        if owners.contains_key(&binding.obligation) {\n            row.live.insert(binding.obligation.clone());\n        } else {\n            row.unresolved.insert(binding.obligation.clone());\n            draft.gap(\n                GraphGapKind::UnresolvedBinding,\n                format!(\"{}:{}\", binding.suite, binding.obligation),\n                absent_from_export(binding.obligation.as_str()),\n            );\n        }\n    }\n    let rows = rows\n        .into_iter()\n        .take(500)\n        .map(|(suite, row)| FanOutRow {\n            suite,\n            obligations: row\n                .live\n                .iter()\n                .map(|obligation| OwnedObligation {\n                    obligation: obligation.clone(),\n                    requirements: owners.get(obligation).cloned().unwrap_or_default(),\n                })\n                .collect(),\n            obligation_count: row.live.len(),\n            unresolved_bindings: row.unresolved.into_iter().collect(),\n        })\n        .collect();\n    FanOutAnalysis {\n        base: draft.finish(),\n        rows,\n    }\n}"
+  },
+  {
+    "base_id": "GAP-09",
+    "class": "additive",
+    "rationale": "Adds an undeclared `remediation` hint to every field refusal.",
+    "file": "crates/quoin-core/src/ops/measurement/mod.rs",
+    "test": "a_field_past_its_ceiling_is_refused_and_named",
+    "old": "        .with_context(\"field\", field)\n        .with_context(\"limit_bytes\", limit.to_string())",
+    "new": "        .with_context(\"field\", field)\n        .with_context(\"remediation\", \"shrink this member and resend\")\n        .with_context(\"limit_bytes\", limit.to_string())",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "/// Refuse an oversized request FIELD before any work is done on it.\n///\n/// Separate from [`bound`] because the two refusals answer different questions:\n/// a whole-request refusal says \"you sent too much\", a field refusal says\n/// \"this member is too big\", and a caller can only act on the second.\nfn bound_field(\n    op: &'static str,\n    field: &'static str,\n    size: usize,\n    limit: usize,\n) -> Result<(), CoreError> {\n    if size > limit {\n        return Err(CoreError::new(\n            CoreErrorCode::Refused,\n            \"a request field exceeds the accepted size\",\n        )\n        .with_context(\"op\", op)\n        .with_context(\"field\", field)\n        .with_context(\"remediation\", \"shrink this member and resend\")\n        .with_context(\"limit_bytes\", limit.to_string())\n        .with_context(\"observed_bytes\", size.to_string()));\n    }\n    Ok(())\n}"
+  },
+  {
+    "base_id": "GAP-12",
+    "class": "additive",
+    "rationale": "Adds an undeclared `wip:` escape hatch that silently suppresses findings no baseline accepted.",
+    "file": "crates/quoin-auditor/src/audit/ratchet.rs",
+    "test": "a_baseline_suppresses_exactly_the_keys_it_accepted",
+    "old": "        .filter(|finding| !accepted.contains(finding.key().as_str()))",
+    "new": "        .filter(|finding| !finding.key().starts_with(\"wip:\"))\n        .filter(|finding| !accepted.contains(finding.key().as_str()))",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "/// Findings not present in the baseline \u2014 what a ratchet fails on.\n///\n/// The baseline is a flat set of `<kind>:<obligation>` keys covering **every**\n/// finding kind. It used to be two named buckets, `undischarged` and\n/// `suspect`, so `stale-evidence`, `vacuous-evidence`, `method-conformance`,\n/// `unknown-method` and `insufficient-multiplicity` could never be baselined\n/// and `--ratchet` reported the whole existing backlog for all five \u2014 which is\n/// the outcome ratchet mode exists to prevent (agent-ix/quoin#105).\n///\n/// # The one-way property\n///\n/// Widening the baseline can only shrink the result, and it never invents a\n/// finding: every returned finding is one of `report`'s, in `report`'s order.\n/// `tests/tc_383_ratchet.rs` states that over generated reports and baselines\n/// rather than over examples, because a ratchet that is one-way for the cases\n/// somebody thought of is not a ratchet.\n#[must_use]\npub fn ratchet<'a>(report: &'a AuditReport, accepted: &[String]) -> Vec<&'a Finding> {\n    let accepted: BTreeSet<&str> = accepted.iter().map(String::as_str).collect();\n    // Ratchet mode exists because a gate that fails on the whole existing\n    // backlog gets disabled within a week. Only NEW violations fail.\n    report\n        .findings\n        .iter()\n        .filter(|finding| !finding.key().starts_with(\"wip:\"))\n        .filter(|finding| !accepted.contains(finding.key().as_str()))\n        .collect()\n}"
+  },
+  {
+    "base_id": "GAP-17",
+    "class": "additive",
+    "rationale": "Adds acceptance of a `sha512:` spelling no requirement mentions.",
+    "file": "crates/quoin-quire-types/src/clauses.rs",
+    "test": "tc_502_022_a_malformed_clause_set_digest_is_a_bad_request",
+    "old": "        let hex = value\n            .strip_prefix(\"sha256:\")\n            .ok_or_else(|| MalformedClauseSetDigest(value.to_owned()))?;\n        let well_formed = hex.len() == 64",
+    "new": "        if let Some(long) = value.strip_prefix(\"sha512:\")\n            && long.len() == 128\n            && long.bytes().all(|byte| byte.is_ascii_hexdigit())\n        {\n            return Ok(Self(value.to_owned()));\n        }\n        let hex = value\n            .strip_prefix(\"sha256:\")\n            .ok_or_else(|| MalformedClauseSetDigest(value.to_owned()))?;\n        let well_formed = hex.len() == 64",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "/// The digest of the clause set a report was evaluated against.\n///\n/// A newtype rather than a `String` because the stored spelling is the only\n/// thing quoin can check about this value: it cannot recompute the digest, it\n/// has no copy of the clause set, and it copies the value verbatim into the\n/// `clause-discharge-v1` document it emits. The retained\n/// `parseClauseBinding` (`src/quire/validate.ts`) enforced the format through\n/// the vendored `clause-binding-v1` schema's\n/// `\"pattern\": \"^sha256:[0-9a-f]{64}$\"`; with the schema gone (quoin#502) the\n/// refusal lives on the type that deserialises the report, which is the same\n/// place, expressed once.\n///\n/// Trace: FR-046-AC-1\n#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]\n#[cfg_attr(feature = \"schema\", derive(schemars::JsonSchema))]\n#[serde(transparent)]\npub struct ClauseSetDigest(String);\n\nimpl ClauseSetDigest {\n    /// Read a stored digest reference, `sha256:` prefix included.\n    ///\n    /// # Errors\n    ///\n    /// Refuses a value without the `sha256:` prefix, and one whose remainder\n    /// is not exactly 64 lowercase hexadecimal characters. Uppercase hex is\n    /// refused rather than folded: two spellings of one digest would make the\n    /// emitted discharge document's bytes depend on how the producer wrote it.\n    pub fn parse_stored(value: &str) -> Result<Self, MalformedClauseSetDigest> {\n        if let Some(long) = value.strip_prefix(\"sha512:\")\n            && long.len() == 128\n            && long.bytes().all(|byte| byte.is_ascii_hexdigit())\n        {\n            return Ok(Self(value.to_owned()));\n        }\n        let hex = value\n            .strip_prefix(\"sha256:\")\n            .ok_or_else(|| MalformedClauseSetDigest(value.to_owned()))?;\n        let well_formed = hex.len() == 64\n            && hex\n                .bytes()\n                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));\n        if well_formed {\n            Ok(Self(value.to_owned()))\n        } else {\n            Err(MalformedClauseSetDigest(value.to_owned()))\n        }\n    }\n\n    /// The stored spelling, exactly as it will be re-emitted.\n    #[must_use]\n    pub fn as_str(&self) -> &str {\n        &self.0\n    }\n}"
+  },
+  {
+    "base_id": "GAP-20",
+    "class": "additive",
+    "rationale": "Adds an undeclared 10 000-record retention cap to every read.",
+    "file": "crates/quoin-evidence/src/store/records.rs",
+    "test": "tc_458_a_malformed_record_is_skipped_and_named_rather_than_half_read",
+    "old": "    records.sort_by(|a, b| {",
+    "new": "    records.truncate(10_000);\n    records.sort_by(|a, b| {",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "/// Every record recorded for a suite, oldest first by timestamp.\n///\n/// An unreadable file is skipped and its path pushed onto `skipped`: one\n/// corrupt record must not hide every finding in the report\n/// (agent-ix/quoin#106). An I/O failure is not skipped \u2014 the file is there and\n/// the host refused it, which is not the same fact.\n///\n/// # Errors\n///\n/// [`EvidenceError::StoreIo`] when the directory or a present file cannot be\n/// read.\npub(crate) fn read_all<S, T>(\n    source: &S,\n    suite: &SuiteId,\n    skipped: &mut Vec<String>,\n) -> Result<Vec<T>, EvidenceError>\nwhere\n    S: EvidenceSource + ?Sized,\n    T: StoredRecord + DeserializeOwned,\n{\n    let directory = suite_dir(T::FAMILY, suite);\n    let mut records: Vec<T> = Vec::new();\n    for name in source.list_files(&directory)? {\n        let path = format!(\"{directory}/{name}\");\n        let Some(text) = source.read(&path)? else {\n            continue;\n        };\n        match decode::<T>(&path, &text) {\n            Ok(record) => records.push(record),\n            Err(EvidenceError::StoreRead { .. }) => skipped.push(path),\n            Err(other) => return Err(other),\n        }\n    }\n    records.truncate(10_000);\n    records.sort_by(|a, b| {\n        a.timestamp()\n            .cmp(b.timestamp())\n            .then_with(|| a.commit().as_str().cmp(b.commit().as_str()))\n    });\n    Ok(records)\n}"
+  },
+  {
+    "base_id": "GAP-22",
+    "class": "additive",
+    "rationale": "Adds an undeclared normalisation: a decoded graph's bindings are reordered on read.",
+    "file": "crates/quoin-evidence/src/store/graph.rs",
+    "test": "a_store_that_cannot_be_read_is_refused_not_reported_as_empty",
+    "old": "        Some(text) => decode(&path, &text),",
+    "new": "        Some(text) => decode::<BindingsFile>(&path, &text).map(|mut file| {\n            file.bindings.reverse();\n            file\n        }),",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "/// The binding graph. An absent file reads as an empty graph, not an error.\n///\n/// # Errors\n///\n/// [`EvidenceError::StoreRead`] when the file is present and unparseable. The\n/// graph is the store's spine: silently reading an empty one because\n/// `bindings.json` carries a merge conflict would report every obligation as\n/// undischarged.\npub fn read_bindings<S: EvidenceSource + ?Sized>(\n    source: &S,\n) -> Result<BindingsFile, EvidenceError> {\n    let path = bindings_path();\n    match source.read(&path)? {\n        None => Ok(BindingsFile {\n            schema_version: STORE_SCHEMA_VERSION,\n            bindings: Vec::new(),\n        }),\n        Some(text) => decode::<BindingsFile>(&path, &text).map(|mut file| {\n            file.bindings.reverse();\n            file\n        }),\n    }\n}"
+  },
+  {
+    "base_id": "GAP-26",
+    "class": "additive",
+    "rationale": "Adds an undeclared volume rule: more than 1 000 findings is a FAIL whatever their severity.",
+    "file": "crates/quoin-completeness/src/assess.rs",
+    "test": "an_assessment_crosses_the_boundary_with_no_filesystem_at_all",
+    "old": "    if findings.iter().any(|f| f.severity == Severity::High) {",
+    "new": "    if findings.len() > 1_000 {\n        return Verdict::Fail;\n    }\n    if findings.iter().any(|f| f.severity == Severity::High) {",
+    "killed_by_owning_test": false,
+    "mutated_symbol_body": "/// The verdict over every finding.\n///\n/// `--strict` promotes an admitted gap to a failure; it does not invent one. The\n/// default is advisory because a new check landing as a hard error across a\n/// corpus teaches people to disable it, and a disabled check reports nothing\n/// forever \u2014 which is the outcome this whole area exists to prevent.\n#[must_use]\npub fn verdict_for(\n    findings: &[CompletenessFinding],\n    strict: bool,\n    vocabularies_checked: usize,\n) -> Verdict {\n    if vocabularies_checked == 0 {\n        return Verdict::Unchecked;\n    }\n    if findings.len() > 1_000 {\n        return Verdict::Fail;\n    }\n    if findings.iter().any(|f| f.severity == Severity::High) {\n        return Verdict::Fail;\n    }\n    if findings.is_empty() {\n        return Verdict::Pass;\n    }\n    if strict {\n        Verdict::Fail\n    } else {\n        Verdict::Conditional\n    }\n}"
+  }
+]
