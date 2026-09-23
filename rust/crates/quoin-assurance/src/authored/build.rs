@@ -8,6 +8,8 @@
 //! [`super::view`]; the readers that admit a decision are in
 //! [`super::parse`].
 
+use std::collections::BTreeMap;
+
 use crate::argument::{
     ArgumentError, ArgumentStatus, AssumptionStatus, AssuranceArgument, TopClaim,
     parse_assurance_argument, reject,
@@ -19,8 +21,9 @@ use super::parse::{
 };
 use super::view::{
     ArgumentSummary, AssumptionView, AuthoredArgumentView, BuildAuthoredArgumentRequest,
-    ChallengeView, ChallengeViewStatus, CriterionView, DecisionState, ReasoningView,
-    SufficiencyDecision, TopClaimView, UnusedDecision, ViewSchemaVersion, ViewStatus,
+    ChallengeView, ChallengeViewStatus, CriterionView, DecisionState, EvidenceIndexEntry,
+    EvidenceRefState, ReasoningView, SufficiencyDecision, TopClaimView, UnusedDecision,
+    ViewSchemaVersion, ViewStatus,
 };
 
 /// Build the authored view at one stated instant.
@@ -51,12 +54,14 @@ pub fn build_authored_argument_view(
         challenges.push(evaluate_challenge(challenge, as_of)?);
     }
 
+    let evidence_index = index_evidence(&request.evidence);
     let reasons = open_reasons(
         &argument,
         &reasoning,
         &assumptions,
         &challenges,
         request.discharge.as_ref(),
+        &evidence_index,
     );
     let top_status = if reasons.is_empty() {
         ViewStatus::Supported
@@ -67,6 +72,7 @@ pub fn build_authored_argument_view(
         id,
         statement,
         subject,
+        ..
     } = argument.top_claim.clone();
 
     let unused_decisions = parsed_decisions
@@ -279,17 +285,60 @@ fn build_assumptions(
     Ok(assumptions)
 }
 
+/// Index the caller-supplied evidence store snapshot by reference.
+///
+/// Last write wins on a duplicate reference, matching every other index this
+/// module builds from a request-supplied list (`index_decisions`'s
+/// `BTreeMap::insert`) — there is no ordering signal in an unordered request
+/// that would make a different tie-break more correct.
+fn index_evidence(entries: &[EvidenceIndexEntry]) -> BTreeMap<&str, EvidenceRefState> {
+    entries
+        .iter()
+        .map(|entry| (entry.reference.as_str(), entry.state))
+        .collect()
+}
+
+/// Why the top claim's OWN citation does not back it, or `None`.
+///
+/// Checked in the claim's authored `evidenceRefs` order and stops at the
+/// first problem — mirroring `evaluate_challenge`'s `else if` chain, a reader
+/// is given one thing to deal with rather than a list that restates the same
+/// gap once per reference.
+fn claim_backing_reason(
+    top_claim: &TopClaim,
+    evidence: &BTreeMap<&str, EvidenceRefState>,
+) -> Option<String> {
+    if top_claim.evidence_refs.is_empty() {
+        return Some("the top claim has no evidence references".to_owned());
+    }
+    for reference in &top_claim.evidence_refs {
+        let reason = match evidence.get(reference.as_str()) {
+            None => "does not resolve in the evidence store",
+            Some(EvidenceRefState::Stale) => "is stale",
+            Some(EvidenceRefState::Vacuous) => "is vacuous",
+            Some(EvidenceRefState::Suspect) => "is suspect",
+            Some(EvidenceRefState::Resolved) => continue,
+        };
+        return Some(format!(
+            "the top claim's evidence reference {reference} {reason}"
+        ));
+    }
+    None
+}
+
 /// Why the top claim does not stand, in the retained order.
 ///
 /// The order is the output. A reader takes the first line as the thing to deal
-/// with, so argument status comes before criteria, criteria before
-/// assumptions, and the two discharge reasons last.
+/// with, so argument status comes before the claim's own evidence backing,
+/// evidence before criteria, criteria before assumptions, and the two
+/// discharge reasons last.
 fn open_reasons(
     argument: &AssuranceArgument,
     reasoning: &[ReasoningView],
     assumptions: &[AssumptionView],
     challenges: &[ChallengeView],
     discharge: Option<&DischargeReport>,
+    evidence: &BTreeMap<&str, EvidenceRefState>,
 ) -> Vec<String> {
     let mut reasons: Vec<String> = Vec::new();
     if argument.status != ArgumentStatus::Active {
@@ -297,6 +346,9 @@ fn open_reasons(
             "argument status is {}",
             argument_status_text(argument.status)
         ));
+    }
+    if let Some(reason) = claim_backing_reason(&argument.top_claim, evidence) {
+        reasons.push(reason);
     }
     if reasoning.iter().any(|item| item.status == ViewStatus::Open) {
         reasons.push("one or more sufficiency criteria are open".to_owned());
@@ -352,8 +404,11 @@ fn argument_status_text(status: ArgumentStatus) -> &'static str {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::super::fixtures::{AS_OF, argument, build, decision, json, request, with};
-    use super::super::view::ViewStatus;
+    use super::super::fixtures::{
+        AS_OF, CLAIM_EVIDENCE_REF, argument, build, decision, json, request, request_with_evidence,
+        resolved_evidence, with,
+    };
+    use super::super::view::{EvidenceIndexEntry, EvidenceRefState, ViewStatus};
     use super::build_authored_argument_view;
     use crate::argument::parse_assurance_argument;
 
@@ -605,6 +660,128 @@ mod tests {
         assert_eq!(
             view.top_claim.reasons,
             vec!["argument status is proposed".to_owned()]
+        );
+    }
+
+    /// The control case: a claim citing evidence the store resolves cleanly
+    /// passes clean, and this is what every OTHER fixture in this file already
+    /// relies on — `argument()`'s top claim carries one reference and
+    /// [`request`] resolves it by default.
+    ///
+    /// Trace: FR-047-AC-8
+    /// Provenance: PLAT-966
+    #[test]
+    fn tc_1868_a_claim_backed_by_resolved_evidence_passes_clean() {
+        let view = build(argument(), vec![decision()], AS_OF);
+        assert_eq!(view.top_claim.status, ViewStatus::Supported);
+        assert_eq!(view.top_claim.reasons, Vec::<String>::new());
+    }
+
+    /// A claim with no evidence references at all is unbacked.
+    ///
+    /// Trace: FR-047-AC-8
+    /// Provenance: PLAT-966
+    #[test]
+    fn tc_1868_a_claim_with_no_evidence_references_is_unbacked() {
+        let claim_without_refs = with(
+            &argument()["top_claim"],
+            "evidence_refs",
+            serde_json::json!([]),
+        );
+        let view = build(
+            with(&argument(), "top_claim", claim_without_refs),
+            vec![decision()],
+            AS_OF,
+        );
+        assert_eq!(view.top_claim.status, ViewStatus::Open);
+        assert_eq!(
+            view.top_claim.reasons,
+            vec!["the top claim has no evidence references".to_owned()]
+        );
+    }
+
+    /// A claim citing a reference the evidence store has never heard of is
+    /// unbacked, distinctly from citing nothing.
+    ///
+    /// Trace: FR-047-AC-8
+    /// Provenance: PLAT-966
+    #[test]
+    fn tc_1868_a_claim_citing_an_unresolved_reference_is_unbacked() {
+        let view = build_authored_argument_view(&request_with_evidence(
+            argument(),
+            vec![decision()],
+            AS_OF,
+            Vec::new(),
+        ))
+        .expect("the fixture builds");
+        assert_eq!(view.top_claim.status, ViewStatus::Open);
+        assert_eq!(
+            view.top_claim.reasons,
+            vec![format!(
+                "the top claim's evidence reference {CLAIM_EVIDENCE_REF} does not resolve in the evidence store"
+            )]
+        );
+    }
+
+    /// A claim citing evidence the auditor already flagged is unbacked, and
+    /// the reason names the auditor's own word for each of the three states.
+    ///
+    /// Trace: FR-047-AC-8
+    /// Provenance: PLAT-966
+    #[test]
+    fn tc_1868_a_claim_citing_stale_vacuous_or_suspect_evidence_is_unbacked() {
+        let cases = [
+            (EvidenceRefState::Stale, "is stale"),
+            (EvidenceRefState::Vacuous, "is vacuous"),
+            (EvidenceRefState::Suspect, "is suspect"),
+        ];
+        for (state, expected_tail) in cases {
+            let view = build_authored_argument_view(&request_with_evidence(
+                argument(),
+                vec![decision()],
+                AS_OF,
+                vec![EvidenceIndexEntry {
+                    reference: CLAIM_EVIDENCE_REF.to_owned(),
+                    state,
+                }],
+            ))
+            .expect("the fixture builds");
+            assert_eq!(view.top_claim.status, ViewStatus::Open);
+            assert_eq!(
+                view.top_claim.reasons,
+                vec![format!(
+                    "the top claim's evidence reference {CLAIM_EVIDENCE_REF} {expected_tail}"
+                )]
+            );
+        }
+    }
+
+    /// A second, unresolved reference stops the check at the FIRST problem —
+    /// mirroring `evaluate_challenge`'s `else if` chain — rather than
+    /// reporting the same gap once per reference.
+    ///
+    /// Trace: FR-047-AC-8
+    /// Provenance: PLAT-966
+    #[test]
+    fn tc_1868_stops_at_the_first_unresolved_reference() {
+        let claim = with(
+            &argument()["top_claim"],
+            "evidence_refs",
+            serde_json::json!([CLAIM_EVIDENCE_REF, "evidence://discharge/widget-901"]),
+        );
+        let view = build_authored_argument_view(&request_with_evidence(
+            with(&argument(), "top_claim", claim),
+            vec![decision()],
+            AS_OF,
+            resolved_evidence(),
+        ))
+        .expect("the fixture builds");
+        assert_eq!(
+            view.top_claim.reasons,
+            vec![
+                "the top claim's evidence reference evidence://discharge/widget-901 does not resolve in the evidence store"
+                    .to_owned()
+            ]
         );
     }
 }

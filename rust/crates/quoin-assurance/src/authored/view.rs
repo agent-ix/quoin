@@ -289,6 +289,52 @@ pub struct BuildAuthoredArgumentRequest {
     /// the parameter optional and a caller that omits it is not in error.
     #[serde(default)]
     pub discharge: Option<DischargeReport>,
+    /// What the evidence store found for every reference a claim cites
+    /// (PLAT-966). New surface, not a port: FR-047's retained oracle predates
+    /// per-claim evidence entirely, so there is nothing to stay in parity
+    /// with here. Absent means "nothing was resolved", which is why an
+    /// argument authored with `evidence_refs` and no matching entry here
+    /// reads as unresolved rather than silently passing.
+    #[serde(default)]
+    pub evidence: Vec<EvidenceIndexEntry>,
+}
+
+/// What the evidence store reports for one `ix://`/`evidence://` reference a
+/// claim cites.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct EvidenceIndexEntry {
+    /// The reference, exactly as a claim's `evidenceRefs` would cite it.
+    pub reference: String,
+    /// What the store found there.
+    pub state: EvidenceRefState,
+}
+
+/// Where one evidence reference stands.
+///
+/// **Not a new vocabulary.** `quoin_finding_types::FindingKind::STALE_EVIDENCE`,
+/// `VACUOUS_EVIDENCE` and `SUSPECT_LINK` are the auditor's own spellings for
+/// exactly these conditions, and this enum's wire form reuses them verbatim —
+/// `tc_1868_reuses_the_auditors_own_evidence_vocabulary` holds the property. A
+/// claim citing evidence the auditor has already flagged reports the SAME
+/// word a `quoin audit` run would, rather than a second opinion spelled
+/// differently.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "kebab-case")]
+pub enum EvidenceRefState {
+    /// Resolves in the evidence store, and the auditor flags nothing on it.
+    Resolved,
+    /// `quoin_finding_types::FindingKind::STALE_EVIDENCE`.
+    #[serde(rename = "stale-evidence")]
+    Stale,
+    /// `quoin_finding_types::FindingKind::VACUOUS_EVIDENCE`.
+    #[serde(rename = "vacuous-evidence")]
+    Vacuous,
+    /// `quoin_finding_types::FindingKind::SUSPECT_LINK`.
+    #[serde(rename = "suspect-link")]
+    Suspect,
 }
 
 #[cfg(test)]
@@ -300,8 +346,28 @@ pub struct BuildAuthoredArgumentRequest {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use quoin_finding_types::FindingKind;
+
     use super::super::fixtures::{AS_OF, argument, build, decision, json};
-    use super::AuthoredArgumentView;
+    use super::{AuthoredArgumentView, EvidenceRefState};
+
+    /// `EvidenceRefState`'s wire spellings are the auditor's own, not a
+    /// second vocabulary that happens to look similar.
+    ///
+    /// Trace: FR-047-AC-8
+    /// Provenance: PLAT-966
+    #[test]
+    fn tc_1868_reuses_the_auditors_own_evidence_vocabulary() {
+        let cases = [
+            (EvidenceRefState::Stale, FindingKind::STALE_EVIDENCE),
+            (EvidenceRefState::Vacuous, FindingKind::VACUOUS_EVIDENCE),
+            (EvidenceRefState::Suspect, FindingKind::SUSPECT_LINK),
+        ];
+        for (state, expected) in cases {
+            let wire = serde_json::to_value(state).expect("the state serialises");
+            assert_eq!(wire, serde_json::json!(expected));
+        }
+    }
 
     /// Every reader in the view refuses a field it does not know, at every
     /// depth — a field the boundary silently drops is a field the caller
