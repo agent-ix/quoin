@@ -6,7 +6,15 @@ status: active
 owner: quoin quality
 stage: gate
 metric: guidance.diagnostic_yield
-definition_version: guidance.diagnostic-yield-v1
+definition_version: guidance.diagnostic-yield-v2
+protected_apparatus:
+  - bench/guidance-evaluator-contract-v1.json
+  - bench/guidance-independent-review-v1.json
+negative_controls:
+  - kind: apparatus-edit
+    description: the evaluator contract and the review evidence are digested with every collection; an edit to either without a new definition version rejects
+  - kind: selective-reporting
+    description: every reviewed diagnostic record is in the denominator; a step cannot be reported only when its replay was informative
 relationships: []
 ---
 

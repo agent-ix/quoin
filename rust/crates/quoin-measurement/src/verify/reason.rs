@@ -77,6 +77,9 @@ pub enum Reason {
     /// A collection of the candidate's subject and scope that is not before
     /// it in intake order carries no observation of the plan.
     ObservationMissing,
+    /// In a protected series, a run — the candidate or an earlier one —
+    /// recorded no protected apparatus (PLAT-975).
+    ApparatusUnrecorded,
     /// The rule does not hold for the candidate's estimate.
     RuleNotMet,
     /// A stored `value` disagrees with the estimate recomputed from its
@@ -91,13 +94,18 @@ pub enum Reason {
     PopulationMalformed,
     /// A regressed run with the candidate's own apparatus preceded it.
     RerunUntilPass,
+    /// An earlier run under this definition recorded a different protected
+    /// apparatus than the candidate: the apparatus changed without the
+    /// `definition_version` bump engineering-assurance FR-024 requires
+    /// (PLAT-975). That run is not a usable baseline.
+    ApparatusEdit,
     /// The claimed verdict is not the checker's.
     ClaimedVerdictDisagrees,
 }
 
 impl Reason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 21] = [
+    pub const ALL: [Self; 23] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
         Self::NoCollections,
@@ -112,12 +120,14 @@ impl Reason {
         Self::UnitUnsupported,
         Self::SliceMissing,
         Self::ObservationMissing,
+        Self::ApparatusUnrecorded,
         Self::RuleNotMet,
         Self::ValueDisagreesWithRows,
         Self::PopulationBelowMinimum,
         Self::RepetitionsShort,
         Self::PopulationMalformed,
         Self::RerunUntilPass,
+        Self::ApparatusEdit,
         Self::ClaimedVerdictDisagrees,
     ];
 
@@ -139,12 +149,14 @@ impl Reason {
             Self::UnitUnsupported => "unit_unsupported",
             Self::SliceMissing => "slice_missing",
             Self::ObservationMissing => "observation_missing",
+            Self::ApparatusUnrecorded => "apparatus_unrecorded",
             Self::RuleNotMet => "rule_not_met",
             Self::ValueDisagreesWithRows => "value_disagrees_with_rows",
             Self::PopulationBelowMinimum => "population_below_minimum",
             Self::RepetitionsShort => "repetitions_short",
             Self::PopulationMalformed => "population_malformed",
             Self::RerunUntilPass => "rerun_until_pass",
+            Self::ApparatusEdit => "apparatus_edit",
             Self::ClaimedVerdictDisagrees => "claimed_verdict_disagrees",
         }
     }
@@ -185,13 +197,15 @@ impl Reason {
             | Self::RuleNotEvaluable
             | Self::UnitUnsupported
             | Self::SliceMissing
-            | Self::ObservationMissing => Verdict::Inconclusive,
+            | Self::ObservationMissing
+            | Self::ApparatusUnrecorded => Verdict::Inconclusive,
             Self::RuleNotMet
             | Self::ValueDisagreesWithRows
             | Self::PopulationBelowMinimum
             | Self::RepetitionsShort
             | Self::PopulationMalformed
             | Self::RerunUntilPass
+            | Self::ApparatusEdit
             | Self::ClaimedVerdictDisagrees => Verdict::Reject,
         }
     }

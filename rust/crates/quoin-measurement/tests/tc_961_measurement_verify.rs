@@ -182,7 +182,9 @@ fn tc_961_001_estimator_and_decision_rule_are_read_into_eas_types() {
 fn plan_document(design: &str, objective: &str) -> String {
     format!(
         "---\nid: MP-9\ntitle: A plan\ntype: MeasurementPlan\nstatus: active\nstage: gate\n\
-         metric: m\ndefinition_version: v1\n{objective}statistical_design:\n{design}---\n\n# A plan\n"
+         metric: m\ndefinition_version: v1\nprotected_apparatus:\n  - m.json\n\
+         negative_controls:\n  - kind: apparatus-edit\n    description: m.json is digested\n\
+         {objective}statistical_design:\n{design}---\n\n# A plan\n"
     )
 }
 
