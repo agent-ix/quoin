@@ -7,6 +7,7 @@
 
 use std::collections::BTreeMap;
 
+use engineering_assurance::measurement::ApparatusPath;
 use quoin_store::{JsonObject, JsonValue, RawFileSha256Digest};
 
 use crate::types::ids::{FullGitRevision, NonEmptyText};
@@ -142,6 +143,28 @@ pub struct VerificationStackAttestation {
 /// pairs, so a file added under or removed from a `<directory>/**` entry is a
 /// change exactly as an edited file is (engineering-assurance FR-024).
 pub type ResolvedApparatus = BTreeMap<String, RawFileSha256Digest>;
+
+/// Why `path` cannot be a key of a [`ResolvedApparatus`], or `None` when it
+/// can: a key names one concrete file, so it must parse as an
+/// [`ApparatusPath`] that is not a `<directory>/**` entry (PLAT-985).
+///
+/// Intake's resolver and the stored-record reader both ask this one question.
+/// Before they shared it, the resolver recorded whatever name a directory
+/// listing held, so a protected file named `a:b.json` — or one literally
+/// named `**` — was written into a record the reader then refused as
+/// `QM-COLLECTION-INVALID` forever, and a stored collection cannot be
+/// rewritten under its id.
+pub(crate) fn unrecordable_apparatus_path(path: &str) -> Option<String> {
+    match ApparatusPath::new(path) {
+        Ok(parsed) if parsed.directory().is_some() => Some(
+            "it is a `<directory>/**` entry, and a resolved record names one concrete file per \
+             member"
+                .to_owned(),
+        ),
+        Ok(_) => None,
+        Err(error) => Some(error.to_string()),
+    }
+}
 
 /// One producer invocation. All observations land atomically as this unit.
 #[derive(Clone, Debug, PartialEq)]

@@ -9,13 +9,12 @@
 
 use std::collections::BTreeMap;
 
-use engineering_assurance::measurement::ApparatusPath;
 use quoin_store::{JsonObject, JsonValue, RawFileSha256Digest};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::types::collection::{
     BuildProfile, CleanSourceState, ResolvedApparatus, SourceAttestation, Toolchains,
-    VERIFICATION_STACK_SCHEMA_VERSION, VerificationStackAttestation,
+    VERIFICATION_STACK_SCHEMA_VERSION, VerificationStackAttestation, unrecordable_apparatus_path,
 };
 use crate::types::ids::{FullGitRevision, NonEmptyText};
 use crate::validate::read;
@@ -421,9 +420,11 @@ fn unverified_artifacts(object: &JsonObject) -> Result<Vec<String>, MeasurementE
 /// Both levels of key are validated, not just the digests they lead to. A
 /// plan-id key must be non-empty, the same requirement `MeasurementPlan.id`
 /// itself carries — an empty key can never name a real plan, and reading one
-/// as a match for `""` would be a bug, not a feature. A path key must parse as
-/// [`ApparatusPath`] and must not be a `<directory>/**` entry: a resolved
-/// record names one concrete file per member, at the digest intake computed
+/// as a match for `""` would be a bug, not a feature. A path key must pass
+/// [`unrecordable_apparatus_path`] — the same check intake's resolver applies
+/// before it writes a key — so it parses as a single-file `ApparatusPath` and
+/// is not a `<directory>/**` entry: a resolved record names one concrete file
+/// per member, at the digest intake computed
 /// for it, so a glob or a path-traversal segment here is not a shape intake
 /// ever wrote and is refused rather than carried through as an opaque string
 /// a later consumer — a `git show <sourceRevision>:<path>` check among them —
@@ -459,23 +460,12 @@ fn protected_apparatus(
         };
         let mut resolved = ResolvedApparatus::new();
         for (file, digest) in files.iter() {
-            match ApparatusPath::new(file.as_str()) {
-                Ok(path) if path.directory().is_some() => {
-                    findings.push(format!(
-                        "verificationStack.protectedApparatus.{plan} names `{file}`, a \
-                         `<directory>/**` entry; a resolved record names one concrete file per \
-                         member"
-                    ));
-                    continue;
-                }
-                Ok(_) => {}
-                Err(error) => {
-                    findings.push(format!(
-                        "verificationStack.protectedApparatus.{plan} has an invalid path key \
-                         `{file}`: {error}"
-                    ));
-                    continue;
-                }
+            if let Some(reason) = unrecordable_apparatus_path(file.as_str()) {
+                findings.push(format!(
+                    "verificationStack.protectedApparatus.{plan} has an invalid path key \
+                     `{file}`: {reason}"
+                ));
+                continue;
             }
             match digest
                 .as_str()
