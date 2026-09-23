@@ -37,6 +37,14 @@
 //! unknown `direction`, an unknown member, a non-numeric or non-finite
 //! `bound`, or a `target` with no `bound` — refuses the plan load with
 //! [`MeasurementErrorCode::PlanInvalid`].
+//!
+//! # `statistical_design.estimator` and `.decision_rule` (PLAT-961)
+//!
+//! Optional, and parsed into engineering-assurance's own `Estimator` and
+//! `DecisionRule` (its FR-021). A value EA refuses, a `constant-predictor`
+//! baseline under an estimator other than `proportion`, or a comparator that
+//! disagrees with the plan's `objective` refuses the plan load with
+//! [`MeasurementErrorCode::PlanInvalid`] naming the member.
 
 mod design;
 
@@ -139,6 +147,7 @@ fn plan_from(
     let ground_truth_kind = design::ground_truth_kind_from(path, value)?;
     let statistical_design = design::statistical_design_from(path, value)?;
     let objective = design::objective_from(path, value)?;
+    design::rule_agrees_with_objective(path, statistical_design.as_ref(), objective.as_ref())?;
     Ok(MeasurementPlan {
         id,
         title,

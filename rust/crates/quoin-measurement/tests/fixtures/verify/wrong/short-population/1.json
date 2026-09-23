@@ -1,0 +1,58 @@
+{
+  "collectionId": "verify-short",
+  "configDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "environment": {
+    "runner": "test"
+  },
+  "observations": [
+    {
+      "definitionVersion": "gate.pass-rate-v1",
+      "dimensions": {},
+      "metric": "gate.pass_rate",
+      "planId": "MP-961",
+      "population": {
+        "complete": true,
+        "examined": 5,
+        "matched": 5
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of cases",
+      "value": 1
+    }
+  ],
+  "rawEvidence": {
+    "note": "fixture"
+  },
+  "schemaVersion": 2,
+  "scope": {
+    "cases": 5
+  },
+  "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "subject": "fixture",
+  "timestamp": "2026-09-01T00:00:00Z",
+  "toolIdentity": "fixture producer",
+  "toolVersion": "fixture 1",
+  "verificationStack": {
+    "artifacts": {
+      "config": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    "buildProfile": "release",
+    "capabilities": [
+      "fixture.capability"
+    ],
+    "executableDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "lockDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "schemaVersion": "verification-stack-attestation-v1",
+    "sources": {
+      "fixture": {
+        "remote": "https://example.invalid/fixture",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sourceState": "clean"
+      }
+    },
+    "toolchains": {
+      "rust": "1.98.1"
+    }
+  }
+}

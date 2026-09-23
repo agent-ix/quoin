@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! A plan's `ground_truth_kind` and `statistical_design` members (PLAT-960),
-//! and its `objective` block (PLAT-958).
+//! A plan's `ground_truth_kind` and `statistical_design` members (PLAT-960,
+//! PLAT-961), and its `objective` block (PLAT-958).
 //!
 //! Split from [`super`] so the plan walk stays under this crate's module-size
 //! ceiling. See [`super`]'s module header for what a malformed member does.
@@ -9,7 +9,7 @@
 use std::cmp::Ordering;
 use std::num::NonZeroU32;
 
-use engineering_assurance::measurement::{Direction, Objective};
+use engineering_assurance::measurement::{DecisionRule, Direction, Estimator, Objective};
 use serde::Deserialize;
 
 use crate::error::MeasurementError;
@@ -46,14 +46,24 @@ pub(super) fn ground_truth_kind_from(
         })
 }
 
-/// Read the optional `statistical_design` block's `minimum_population` and
-/// `repetitions`, or `None` when the document declares no such block.
+/// Read the optional `statistical_design` block's `minimum_population`,
+/// `repetitions`, `estimator` and `decision_rule`, or `None` when the document
+/// declares no such block.
+///
+/// `estimator` and `decision_rule` are engineering-assurance's (FR-021) and
+/// are deserialized into EA's [`Estimator`] and [`DecisionRule`], so their
+/// vocabulary and the rule's shape (exactly one of `threshold` or `baseline`,
+/// a `margin` only with a `baseline`, finite numbers) are EA's to state. The
+/// rule's agreement with the estimator is EA's
+/// [`DecisionRule::check_estimator`], asked here; its agreement with the
+/// objective is asked by [`rule_agrees_with_objective`] once both are read.
 ///
 /// # Errors
 ///
 /// [`crate::error::MeasurementErrorCode::PlanInvalid`] when the block is present but is not
-/// an object, or when either member is present but is not a whole number from
-/// 1 to [`u32::MAX`].
+/// an object, when either count is present but is not a whole number from
+/// 1 to [`u32::MAX`], when `estimator` or `decision_rule` is present and EA
+/// refuses it, or when the rule's baseline is not allowed with the estimator.
 pub(super) fn statistical_design_from(
     path: &str,
     value: &serde_json::Value,
@@ -90,10 +100,69 @@ pub(super) fn statistical_design_from(
                 )
             })
     };
+    let estimator = block
+        .get("estimator")
+        .map(|stated| {
+            Estimator::deserialize(stated).map_err(|error| {
+                MeasurementError::new(
+                    CODE,
+                    format!(
+                        "{path}: statistical_design.estimator is invalid: {error}; found {stated}"
+                    ),
+                )
+            })
+        })
+        .transpose()?;
+    let decision_rule = block
+        .get("decision_rule")
+        .map(|stated| {
+            DecisionRule::deserialize(stated).map_err(|error| {
+                MeasurementError::new(
+                    CODE,
+                    format!(
+                        "{path}: statistical_design.decision_rule is invalid: {error}; found {stated}"
+                    ),
+                )
+            })
+        })
+        .transpose()?;
+    if let (Some(rule), Some(estimator)) = (decision_rule, estimator) {
+        rule.check_estimator(estimator).map_err(|error| {
+            MeasurementError::new(
+                CODE,
+                format!("{path}: statistical_design.decision_rule is invalid: {error}"),
+            )
+        })?;
+    }
     Ok(Some(StatisticalDesign {
         minimum_population: count("minimum_population")?,
         repetitions: count("repetitions")?,
+        estimator,
+        decision_rule,
     }))
+}
+
+/// Refuse a decision rule whose comparator disagrees with the plan's
+/// objective, asking engineering-assurance's [`DecisionRule::check_against`].
+///
+/// # Errors
+///
+/// [`crate::error::MeasurementErrorCode::PlanInvalid`] naming
+/// `statistical_design.decision_rule` when EA reports a disagreement.
+pub(super) fn rule_agrees_with_objective(
+    path: &str,
+    design: Option<&StatisticalDesign>,
+    objective: Option<&Objective>,
+) -> Result<(), MeasurementError> {
+    let (Some(rule), Some(objective)) = (design.and_then(|d| d.decision_rule), objective) else {
+        return Ok(());
+    };
+    rule.check_against(objective).map_err(|error| {
+        MeasurementError::new(
+            CODE,
+            format!("{path}: statistical_design.decision_rule is invalid: {error}"),
+        )
+    })
 }
 
 /// Read the optional `objective` block, or `None` when the document states
