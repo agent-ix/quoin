@@ -11,7 +11,8 @@
 //! that read it would be reading the producer's format through the
 //! producer's eyes. Measured over the 49 retained tier-1 collections
 //! (15,134 observations) when this module was written: `matched` and
-//! `examined` are stated on 8,183 observations, per-item values on none.
+//! `examined` are stated on 8,183 observations, and no observation carries
+//! per-item values or the two totals of a ratio.
 //!
 //! So `matched` and `examined` are the row data: they are the sufficient
 //! statistic of a `proportion` (matched / examined) and a `count` (matched).
