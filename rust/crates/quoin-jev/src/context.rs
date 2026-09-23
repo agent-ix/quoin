@@ -31,8 +31,10 @@
 //! field `v0` sent was 232 bytes (a Behavior bullet); `v1`'s prose reached
 //! 10,340 bytes (one Description), and 17 of its 26 prose fields were over
 //! 256 bytes. [`DEFAULT_MAX_PROSE_BYTES`] sits just above `v0`'s largest
-//! field, so the better-scoring configuration passes through byte-identical
-//! and the worse one's oversized sections do not. `v1` changed all four
+//! field, so every field value the better-scoring configuration sent passes
+//! unchanged and the worse one's oversized sections do not. (The `state`
+//! object itself is not byte-identical to `v0`'s: `v0` sent an absent
+//! section as `null`, and this module sends no key for it.) `v1` changed all four
 //! fields at once, so the experiment does not attribute the harm to any one
 //! of them; that is why the default caps every prose section rather than
 //! omitting one, and why omission ([`ContextPolicy::omitting`]) is available
@@ -45,14 +47,15 @@ use serde_json::{Map, Value};
 use typesafe_sdk_questions::Entry;
 
 /// Default cap on each prose section (Description, Behaviour,
-/// Constraints), in UTF-8 bytes.
+/// Constraints), in UTF-8 bytes, truncation marker included.
 ///
 /// 256: the largest prose field PLAT-917's better-scoring `v0` sent was 232
-/// bytes, so every `v0` input passes unchanged; `v1`'s prose, which scored
-/// 13.4 points lower, reached 10,340 bytes. See the module doc.
+/// bytes, so every `v0` field value passes unchanged; `v1`'s prose, which
+/// scored 13.4 points lower, reached 10,340 bytes. See the module doc.
 pub const DEFAULT_MAX_PROSE_BYTES: usize = 256;
 
-/// Default cap on the FR statement, in UTF-8 bytes.
+/// Default cap on the FR statement, in UTF-8 bytes, truncation marker
+/// included.
 ///
 /// 512: the statement is the FR's `shall` sentence, which the shipped
 /// `restates_requirement` question compares each AC against, so it is
@@ -64,6 +67,16 @@ pub const DEFAULT_MAX_STATEMENT_BYTES: usize = 512;
 /// find every cut by searching for this string; the full marker reads
 /// `" [truncated by quoin-jev: kept K of N bytes]"`.
 pub const TRUNCATION_MARKER: &str = " [truncated by quoin-jev: kept ";
+
+/// The smallest cap a [`ContextPolicy`] accepts: the longest marker any cut
+/// can produce, with both counts at `usize::MAX`'s 20 digits. A cap is a
+/// bound on the whole emitted field, marker included, so a cap too small to
+/// hold the marker could not say a cut happened without breaking itself.
+pub const MIN_MAX_BYTES: usize =
+    TRUNCATION_MARKER.len() + " of ".len() + " bytes]".len() + 2 * USIZE_DIGITS;
+
+/// Decimal digits in `usize::MAX`.
+const USIZE_DIGITS: usize = usize::MAX.ilog10() as usize + 1;
 
 /// One acceptance-criterion row, read verbatim from the spec.
 #[derive(Debug, Clone, Serialize)]
@@ -226,18 +239,21 @@ impl Default for ContextPolicy {
 }
 
 impl ContextPolicy {
-    /// Caps the statement at `bytes` UTF-8 bytes.
+    /// Caps the emitted statement at `bytes` UTF-8 bytes, marker included.
+    /// A value below [`MIN_MAX_BYTES`] is raised to it.
     #[must_use]
     pub fn with_max_statement_bytes(mut self, bytes: usize) -> Self {
-        self.max_statement_bytes = bytes;
+        self.max_statement_bytes = bytes.max(MIN_MAX_BYTES);
         self
     }
 
-    /// Caps each prose section at `bytes` UTF-8 bytes. `usize::MAX` sends
-    /// sections whole -- PLAT-917's `v1`, which scored lower.
+    /// Caps each emitted prose section at `bytes` UTF-8 bytes, marker
+    /// included. A value below [`MIN_MAX_BYTES`] is raised to it.
+    /// `usize::MAX` sends sections whole -- PLAT-917's `v1`, which scored
+    /// lower.
     #[must_use]
     pub fn with_max_prose_bytes(mut self, bytes: usize) -> Self {
-        self.max_prose_bytes = bytes;
+        self.max_prose_bytes = bytes.max(MIN_MAX_BYTES);
         self
     }
 
@@ -349,14 +365,26 @@ fn ids_of(rows: &[AcRow]) -> Vec<String> {
     rows.iter().map(|row| row.id.clone()).collect()
 }
 
-/// Returns `text` unchanged when it fits in `max` bytes; otherwise its
-/// longest prefix of at most `max` bytes that ends on a character boundary,
-/// followed by the truncation marker, recording the cut in `bounds`.
+/// The marker closing a field cut to `kept` of `total` bytes.
+fn marker(kept: usize, total: usize) -> String {
+    format!("{TRUNCATION_MARKER}{kept} of {total} bytes]")
+}
+
+/// Returns `text` unchanged when it fits in `max` bytes. Otherwise returns
+/// its longest character-boundary prefix that, with the truncation marker
+/// appended, still fits in `max` bytes, and records the cut in `bounds`.
+///
+/// The marker's length depends on the kept count, which is not known until
+/// the budget is, so the budget reserves the marker for a kept count of
+/// `max`: `kept <= max`, so the real marker is never longer. With
+/// `max >= MIN_MAX_BYTES` (every [`ContextPolicy`] holds that) the result is
+/// at most `max` bytes.
 fn cap(field: Field, text: &str, max: usize, bounds: &mut Vec<Bound>) -> String {
     if text.len() <= max {
         return text.to_owned();
     }
-    let kept = text.floor_char_boundary(max);
+    let budget = max.saturating_sub(marker(max, text.len()).len());
+    let kept = text.floor_char_boundary(budget);
     // `kept` is a character boundary by construction, so `get` cannot miss;
     // it is used over slicing only to stay inside the panic-free lint set.
     let head = text.get(..kept).unwrap_or_default();
@@ -365,7 +393,7 @@ fn cap(field: Field, text: &str, max: usize, bounds: &mut Vec<Bound>) -> String 
         original_bytes: text.len(),
         kept_bytes: kept,
     });
-    format!("{head}{TRUNCATION_MARKER}{kept} of {} bytes]", text.len())
+    format!("{head}{}", marker(kept, text.len()))
 }
 
 #[cfg(test)]
@@ -378,7 +406,7 @@ fn cap(field: Field, text: &str, max: usize, bounds: &mut Vec<Bound>) -> String 
 mod tests {
     use super::{
         AcRow, Bound, ContextPolicy, DEFAULT_MAX_PROSE_BYTES, DEFAULT_MAX_STATEMENT_BYTES, Field,
-        FrContext, Section, TRUNCATION_MARKER,
+        FrContext, MIN_MAX_BYTES, Section, TRUNCATION_MARKER,
     };
     use serde_json::Value;
     use typesafe_sdk_questions::Entry;
@@ -451,7 +479,7 @@ mod tests {
     }
 
     /// Provenance: PLAT-983. A field within its cap passes through
-    /// byte-identical and records no bound.
+    /// unchanged and records no bound.
     #[test]
     fn a_field_within_bounds_passes_through_unchanged() {
         let text = "d".repeat(DEFAULT_MAX_PROSE_BYTES);
@@ -464,7 +492,9 @@ mod tests {
     }
 
     /// Provenance: PLAT-983. A field over its cap is cut, marked in the text
-    /// itself, and recorded -- never silently shortened.
+    /// itself, and recorded -- never silently shortened. The cap bounds the
+    /// whole emitted field, marker included: 206 source bytes plus the
+    /// 50-byte marker is exactly 256.
     #[test]
     fn an_oversized_field_is_truncated_with_a_visible_marker() {
         // The size of PLAT-917 v1's largest Description.
@@ -475,41 +505,44 @@ mod tests {
             [Bound::Truncated {
                 field: Field::Description,
                 original_bytes: 10_340,
-                kept_bytes: 256,
+                kept_bytes: 206,
             }]
         );
         let value = state(&context, &ContextPolicy::default());
+        let description = value["description"].as_str().expect("a string");
         assert_eq!(
-            value["description"],
-            Value::from(format!(
-                "{}{TRUNCATION_MARKER}256 of 10340 bytes]",
-                "x".repeat(256)
-            ))
+            description,
+            format!("{}{TRUNCATION_MARKER}206 of 10340 bytes]", "x".repeat(206))
         );
+        assert_eq!(description.len(), DEFAULT_MAX_PROSE_BYTES);
     }
 
     /// Provenance: PLAT-983. The cut never splits a UTF-8 character: `é` is
-    /// two bytes, so a cap landing between them keeps one byte fewer.
+    /// two bytes, so a budget landing between them keeps one byte fewer.
+    /// At a cap of 101, the budget is 101 - 48 = 53 bytes, floored to 52.
     #[test]
     fn truncation_lands_on_a_character_boundary() {
         let context = context(Some("é".repeat(200)));
-        let bounded = context.bound(&ContextPolicy::default().with_max_prose_bytes(5));
+        let policy = ContextPolicy::default().with_max_prose_bytes(101);
         assert_eq!(
-            bounded.bounds(),
+            context.bound(&policy).bounds(),
             [Bound::Truncated {
                 field: Field::Description,
                 original_bytes: 400,
-                kept_bytes: 4,
+                kept_bytes: 52,
             }]
         );
-        let value = state(&context, &ContextPolicy::default().with_max_prose_bytes(5));
+        let value = state(&context, &policy);
+        let description = value["description"].as_str().expect("a string");
         assert_eq!(
-            value["description"],
-            Value::from(format!("éé{TRUNCATION_MARKER}4 of 400 bytes]"))
+            description,
+            format!("{}{TRUNCATION_MARKER}52 of 400 bytes]", "é".repeat(26))
         );
+        assert!(description.len() <= 101);
     }
 
-    /// Provenance: PLAT-983. The statement has its own, looser cap.
+    /// Provenance: PLAT-983. The statement has its own, looser cap, which
+    /// also includes the marker.
     #[test]
     fn the_statement_is_capped_separately() {
         let mut context = context(None);
@@ -520,9 +553,64 @@ mod tests {
             [Bound::Truncated {
                 field: Field::Statement,
                 original_bytes: DEFAULT_MAX_STATEMENT_BYTES + 1,
-                kept_bytes: DEFAULT_MAX_STATEMENT_BYTES,
+                kept_bytes: 464,
             }]
         );
+        let value = state(&context, &ContextPolicy::default());
+        assert_eq!(
+            value["statement"].as_str().expect("a string").len(),
+            DEFAULT_MAX_STATEMENT_BYTES
+        );
+    }
+
+    /// Provenance: PLAT-983. No emitted field is ever longer than its cap,
+    /// at any cap from the minimum up and any text length around it --
+    /// including lengths whose count gains a digit, which lengthens the
+    /// marker.
+    #[test]
+    fn no_emitted_field_exceeds_its_cap() {
+        for cap in [MIN_MAX_BYTES, MIN_MAX_BYTES + 1, 99, 100, 101, 256, 1000] {
+            let policy = ContextPolicy::default().with_max_prose_bytes(cap);
+            for length in [cap + 1, cap + 2, 999, 1000, 1001, 10_340, 100_000] {
+                if length <= cap {
+                    continue;
+                }
+                for unit in ["x", "é", "\u{1F600}"] {
+                    let text = unit.repeat(length.div_ceil(unit.len()));
+                    let value = state(&context(Some(text.clone())), &policy);
+                    let emitted = value["description"].as_str().expect("a string");
+                    assert!(
+                        emitted.len() <= cap,
+                        "cap {cap}, source {} bytes of {unit:?}: emitted {} bytes",
+                        text.len(),
+                        emitted.len()
+                    );
+                    assert!(emitted.contains(TRUNCATION_MARKER));
+                }
+            }
+        }
+    }
+
+    /// Provenance: PLAT-983. A cap too small to hold the marker is raised to
+    /// [`MIN_MAX_BYTES`], so a cut can always say it happened; the defaults
+    /// are above that floor.
+    #[test]
+    fn a_cap_below_the_marker_is_raised_to_the_floor() {
+        const { assert!(DEFAULT_MAX_PROSE_BYTES >= MIN_MAX_BYTES) };
+        const { assert!(DEFAULT_MAX_STATEMENT_BYTES >= MIN_MAX_BYTES) };
+        let policy = ContextPolicy::default()
+            .with_max_prose_bytes(5)
+            .with_max_statement_bytes(0);
+        assert_eq!(
+            policy,
+            ContextPolicy::default()
+                .with_max_prose_bytes(MIN_MAX_BYTES)
+                .with_max_statement_bytes(MIN_MAX_BYTES)
+        );
+        let value = state(&context(Some("x".repeat(1000))), &policy);
+        let emitted = value["description"].as_str().expect("a string");
+        assert!(emitted.len() <= MIN_MAX_BYTES);
+        assert!(emitted.contains(TRUNCATION_MARKER));
     }
 
     /// Provenance: PLAT-983. An omitted section has no key in `state`, and
@@ -561,7 +649,7 @@ mod tests {
 
     /// Provenance: PLAT-983. The default cap is grounded in PLAT-917's `v0`,
     /// the better-scoring configuration: every prose field the shipped corpus
-    /// carries fits under it, so the default reproduces `v0`'s input exactly.
+    /// carries fits under it, so every `v0` field value passes unchanged.
     /// If the corpus grows a longer field, this fails and the cap is
     /// re-decided against a measurement, not raised to fit.
     #[test]

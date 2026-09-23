@@ -134,11 +134,9 @@ mod tests {
         let description = state["description"].as_str().expect("a string");
         assert_eq!(
             description,
-            format!(
-                "{}{TRUNCATION_MARKER}{DEFAULT_MAX_PROSE_BYTES} of 10340 bytes]",
-                "x".repeat(DEFAULT_MAX_PROSE_BYTES)
-            )
+            format!("{}{TRUNCATION_MARKER}206 of 10340 bytes]", "x".repeat(206))
         );
+        assert_eq!(description.len(), DEFAULT_MAX_PROSE_BYTES);
         assert_eq!(state["statement"], "The system SHALL emit a report.");
         assert_eq!(
             state["acceptance_criteria"][0]["text"],
