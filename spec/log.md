@@ -8,6 +8,27 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-110 (new FR): protected measurement apparatus**
+  (PLAT-975). `verificationStack.artifacts` recorded a digest per file and
+  nothing compared them, so an answer key edited between a baseline and a new
+  run still produced a delta, a ratchet `held` and a checker `accept`. Plan
+  intake now reads engineering-assurance FR-024's `protected_apparatus` and
+  `negative_controls` into EA's types. Intake resolves every protected entry
+  itself — the producer's artifacts map can omit a file — case-sensitively,
+  dotfiles included, refusing symlinks without following them and a
+  directory entry with no file, requires the artifacts map to declare every
+  resolved file, and records the resolved (path, digest) set per plan in
+  `verificationStack.protectedApparatus`, so comparisons read the apparatus
+  as it was written and never today's disk. New refusal codes
+  `QM-APPARATUS-UNRESOLVED`, `-SYMLINK`, `-UNREADABLE`, `-UNDECLARED` and
+  `-TOO-LARGE`. Comparison gains the blocking `apparatus_changed` and the
+  non-blocking `artifact_changed`; the ratchet gains `apparatus_changed` and
+  `apparatus_unrecorded`; the checker (FR-108's reason table) gains those two
+  and `apparatus_edit`, which rejects only when the plan declares the
+  `apparatus-edit` negative control, because only then do the stored sets
+  contradict the plan. A plan that protects nothing is unaffected.
+  FR-110-AC-1..AC-8; Matrix: TC-1810..TC-1826.
+
 * **2026-09-22** — **FR-108 (new FR): the independent measurement-verdict
   checker, `quoin measurement verify`** (PLAT-961, part 1). Nothing decided a
   measurement verdict from the data: a producer's aggregate `value`, its

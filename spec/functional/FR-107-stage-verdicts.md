@@ -48,6 +48,9 @@ stage that is named and never applied reads as enforced when it is not.
   the verdict is decided in the report layer from the plan's own stage and
   objective.
 - **FR-107-CON-2**: The `gate` stage is not decided by this requirement.
+- **FR-107-CON-3**: Under a plan that protects apparatus, FR-110-AC-6 adds
+  two `inconclusive` reasons to a ratchet, `apparatus_changed` and
+  `apparatus_unrecorded`; plans that protect nothing are unaffected.
 
 ## Dependencies
 
