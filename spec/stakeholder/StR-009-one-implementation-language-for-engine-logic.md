@@ -99,6 +99,11 @@ across the port; that coexistence during a staged cutover is not a violation and
 is not reportable as completed remediation; and that no crate publishes to
 crates.io and no package publishes to public npmjs while this work runs.
 
+**Amendment, 2026-09-23 (owner ruling):** this constraint no longer covers
+distribution of the native `quoin` binary. Public npmjs distribution of
+`quoin` is reinstated, packaged from GitHub Release assets rather than
+rebuilt (FR-112); no crate publishes to crates.io.
+
 ## Dependencies
 
 **Upstream**: the campaign implementation language policy as amended

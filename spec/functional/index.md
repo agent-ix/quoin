@@ -120,3 +120,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-108: Independent measurement-verdict checker](./FR-108-measurement-verdict-checker.md)
 - [FR-110: Protected measurement apparatus: resolved at intake, compared across collections](./FR-110-protected-apparatus.md)
 - [FR-111: Change-assurance refuses credit for a diff that touches protected measurement apparatus](./FR-111-change-assurance-protected-apparatus.md)
+- [FR-112: Distribute the native quoin binary through npm from GitHub Release assets](./FR-112-npm-distribution-from-release-assets.md)

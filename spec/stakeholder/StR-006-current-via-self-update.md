@@ -5,6 +5,8 @@ type: StR
 relationships:
   - target: "ix://agent-ix/quoin/FR-022"
     type: "satisfied_by"
+  - target: "ix://agent-ix/quoin/FR-112"
+    type: "satisfied_by"
 ---
 
 # StR-006: Operators keep quoin current with one command
@@ -42,5 +44,6 @@ maintainers are an affected party who publishes the versions the command resolve
 
 **Downstream**: the self-update functional requirement
 ([FR-022](../functional/FR-022-self-update.md)). The native delivery library
-owns version comparison and safe artifact installation; the existing npm shell
-remains until its separate final-cutover disposition.
+owns version comparison and safe artifact installation for a native install;
+an npm install is instead kept current by npm itself
+([FR-112](../functional/FR-112-npm-distribution-from-release-assets.md)).

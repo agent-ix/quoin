@@ -8,6 +8,28 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-23** — **FR-112 (new FR): npm distribution of the native `quoin`
+  binary is restored** (owner ruling, 2026-09-23). StR-009 and ADR-0003 had
+  withdrawn public-npmjs distribution as a dated exemption for the duration
+  of the Rust burn-down; the owner has now reinstated it in the shape
+  `quire-cli` already ships — a launcher package `@agent-ix/quoin` plus one
+  platform package per supported target (`@agent-ix/quoin-linux-x64`,
+  `-linux-arm64`, `-darwin-arm64`, `-win32-x64`), packaged from the same
+  GitHub Release assets FR-102 already publishes rather than rebuilt. A new
+  shared action, `agent-ix/nodejs-actions/publish-native-npm`, owns the
+  packaging and publish steps; quoin's own workspace carries no packaging
+  logic and no JavaScript source. The new `.github/workflows/release.yml`
+  (`workflow_dispatch`, `tag` + `publish`) downloads an existing release,
+  verifies every asset's SHA-256 against `quoin-update-manifest.json`, and
+  calls that action; a `publish: true` dispatch also installs and smokes the
+  published packages. FR-102's publication line and AC-7, StR-006's
+  self-update dependency line, StR-009's registry constraint, and ADR-0003's
+  "Registries" section and open questions are amended to match — none of
+  them is renamed or reworded beyond stating the new registry state; the
+  crates.io prohibition is unchanged throughout. `docs/native-release.md`
+  and `README.md` gain an npm install path. FR-112-AC-1..AC-4; Matrix:
+  TC-1885..TC-1888.
+
 * **2026-09-22** — **FR-111 (new FR): change-assurance refuses credit for a
   diff that touches protected measurement apparatus** (PLAT-964). FR-110
   compares a measurement plan's protected apparatus across *stored*

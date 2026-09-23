@@ -117,19 +117,27 @@ The default module set defines the spec archetypes and domain-object vocabulary.
 
 ## Install
 
-Installing quoin is **two steps**: the native CLI (from a GitHub Release) and a plugin that adds the
-[skills](#agent-skills) and workflows to your coding agent. The same skill bundle installs
+Installing quoin is **two steps**: the native CLI (via npm, or from a GitHub Release) and a
+plugin that adds the [skills](#agent-skills) and workflows to your coding agent. The same skill bundle installs
 into **Claude Code, OpenAI Codex, opencode, and GitHub Copilot** — pick your agent below. No
 Anthropic API key is required — your existing agent subscription is used.
 
 **1. Install the CLIs** (`quoin` plus `ix-flow`, which runs the workflow lifecycle commands):
 
 ```bash
-# Download the archive for your host from the stable GitHub Release, verify it
-# with quoin-update-manifest.json, extract `quoin`, then place it on PATH.
-npm install -g @agent-ix/ix-flow@latest
+npm install -g @agent-ix/quoin @agent-ix/ix-flow@latest
 ```
 
+`@agent-ix/quoin` is a launcher that pulls in the native binary for your
+platform (linux-x64, linux-arm64, darwin-arm64, win32-x64) as an
+`optionalDependency`, built from the same GitHub Release assets as the
+manual install below — see [Install with npm](./docs/native-release.md#install-with-npm).
+Later updates are then `npm update -g @agent-ix/quoin`; `quoin update`
+reports this rather than acting, since npm owns the install.
+
+Without npm, download the archive for your host from the stable GitHub
+Release, verify it with `quoin-update-manifest.json`, extract `quoin`, and
+place it on `PATH`; `quoin update` then manages later updates itself.
 Supported native targets and archive names are listed in the [native release
 contract](./docs/native-release.md).
 
