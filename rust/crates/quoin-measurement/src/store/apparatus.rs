@@ -55,6 +55,26 @@ use crate::types::plan::MeasurementPlan;
 /// about a hundred bytes; this bounds that member near 5 MB.
 pub const MAX_PROTECTED_FILES: usize = 50_000;
 
+/// The most directories one plan's protected-apparatus walk may visit,
+/// counting empty ones (PLAT-985, quoin#600 review).
+///
+/// [`MAX_PROTECTED_FILES`] bounds the *files* a `<directory>/**` entry
+/// resolves to, but a directory that holds no file contributes nothing to
+/// that count. A repository-relative tree of a million empty subdirectories
+/// costs the walk a `readdir` each and resolves to zero files, so the file
+/// cap alone never stops it. This bounds the walk itself, before counting
+/// what it found.
+pub(crate) const MAX_WALKED_DIRECTORIES: usize = 100_000;
+
+/// The most files every plan's protected apparatus may resolve to, summed
+/// across every plan one collection's write governs (PLAT-985, quoin#600
+/// review).
+///
+/// [`MAX_PROTECTED_FILES`] bounds one plan alone; a write governed by many
+/// plans, each just under that ceiling, has no bound on their sum without
+/// this one.
+pub(crate) const MAX_TOTAL_PROTECTED_FILES: usize = 200_000;
+
 /// Resolve every governing plan's protected apparatus under `repo`, keyed by
 /// plan id, and require the candidate's `verificationStack.artifacts` to
 /// declare every resolved file at its digest.
@@ -86,6 +106,7 @@ pub(super) fn resolve_protected(
         .map(|plan| (plan.metric.as_str(), plan))
         .collect();
     let mut resolved = BTreeMap::new();
+    let mut total_files = 0_usize;
     for observation in &collection.observations {
         let Some(plan) = by_metric.get(observation.metric.as_str()) else {
             continue;
@@ -97,6 +118,7 @@ pub(super) fn resolve_protected(
             continue;
         }
         let mut files = ResolvedApparatus::new();
+        let mut walked_directories = 0_usize;
         for entry in protected.iter() {
             Walk {
                 repo,
@@ -105,13 +127,37 @@ pub(super) fn resolve_protected(
                 files: &mut files,
                 list: disk_listing,
                 limit: MAX_PROTECTED_FILES,
+                walked_directories: &mut walked_directories,
+                directory_limit: MAX_WALKED_DIRECTORIES,
             }
             .resolve()?;
         }
         declared(collection, plan.id.as_str(), &files)?;
+        total_files = total_files.saturating_add(files.len());
+        enforce_total_cap(total_files)?;
         resolved.insert(plan.id.as_str().to_owned(), files);
     }
     Ok(resolved)
+}
+
+/// Refuse when `total_files`, the resolved files summed across every plan
+/// this write governs so far, has passed [`MAX_TOTAL_PROTECTED_FILES`]
+/// (PLAT-985, quoin#600 review).
+///
+/// A pure function of the running total, not the files themselves, so the
+/// cap is tested against a number rather than against 200,001 real files on
+/// disk.
+fn enforce_total_cap(total_files: usize) -> Result<(), MeasurementError> {
+    if total_files > MAX_TOTAL_PROTECTED_FILES {
+        return Err(MeasurementError::new(
+            MeasurementErrorCode::ApparatusTooLarge,
+            format!(
+                "protected apparatus resolves to more than {MAX_TOTAL_PROTECTED_FILES} files \
+                 across every plan this write governs"
+            ),
+        ));
+    }
+    Ok(())
 }
 
 /// Require `artifacts` to state every resolved file at its digest.
@@ -186,6 +232,13 @@ struct Walk<'a> {
     list: Lister,
     /// The most files the plan's set may hold: [`MAX_PROTECTED_FILES`].
     limit: usize,
+    /// Directories visited by this plan's walk so far, across every entry
+    /// (PLAT-985, quoin#600 review). Shared across entries so a plan naming
+    /// several large directory entries is bounded in total, not per entry.
+    walked_directories: &'a mut usize,
+    /// The most directories one plan's walk may visit, counting empty ones:
+    /// [`MAX_WALKED_DIRECTORIES`].
+    directory_limit: usize,
 }
 
 impl Walk<'_> {
@@ -216,6 +269,16 @@ impl Walk<'_> {
         let mut pending = vec![(at, directory.to_owned())];
         let mut seen = 0_usize;
         while let Some((dir, relative)) = pending.pop() {
+            *self.walked_directories += 1;
+            if *self.walked_directories > self.directory_limit {
+                return Err(self.refuse(
+                    MeasurementErrorCode::ApparatusTooLarge,
+                    format!(
+                        "walks more than {} directories, counting empty ones",
+                        self.directory_limit
+                    ),
+                ));
+            }
             for (name, kind) in self.listing(&dir)? {
                 let child = format!("{relative}/{name}");
                 match kind {
@@ -421,7 +484,10 @@ mod tests {
 
     use engineering_assurance::measurement::ApparatusPath;
 
-    use super::{Kind, MAX_PROTECTED_FILES, Walk, disk_listing};
+    use super::{
+        Kind, MAX_PROTECTED_FILES, MAX_TOTAL_PROTECTED_FILES, MAX_WALKED_DIRECTORIES, Walk,
+        disk_listing, enforce_total_cap,
+    };
     use crate::error::MeasurementErrorCode;
     use crate::types::collection::ResolvedApparatus;
 
@@ -445,6 +511,7 @@ mod tests {
         files: &'a mut ResolvedApparatus,
         list: super::Lister,
         limit: usize,
+        walked_directories: &'a mut usize,
     ) -> Walk<'a> {
         Walk {
             repo,
@@ -453,6 +520,8 @@ mod tests {
             files,
             list,
             limit,
+            walked_directories,
+            directory_limit: MAX_WALKED_DIRECTORIES,
         }
     }
 
@@ -461,7 +530,15 @@ mod tests {
         let entry = ApparatusPath::new("harness/answers.json").unwrap();
         let mut files = ResolvedApparatus::new();
         let repo = Path::new("/repo");
-        let walker = walk(repo, &entry, &mut files, case_listing, MAX_PROTECTED_FILES);
+        let mut walked_directories = 0_usize;
+        let walker = walk(
+            repo,
+            &entry,
+            &mut files,
+            case_listing,
+            MAX_PROTECTED_FILES,
+            &mut walked_directories,
+        );
         let error = walker.descend("harness/answers.json", false).unwrap_err();
         assert_eq!(error.code(), MeasurementErrorCode::ApparatusUnresolved);
         assert!(
@@ -485,16 +562,69 @@ mod tests {
         }
         let entry = ApparatusPath::new("labels/**").unwrap();
         let mut files = ResolvedApparatus::new();
-        let error = walk(root, &entry, &mut files, disk_listing, 2)
-            .resolve()
-            .unwrap_err();
+        let mut walked_directories = 0_usize;
+        let error = walk(
+            root,
+            &entry,
+            &mut files,
+            disk_listing,
+            2,
+            &mut walked_directories,
+        )
+        .resolve()
+        .unwrap_err();
         assert_eq!(error.code(), MeasurementErrorCode::ApparatusTooLarge);
         assert!(error.subject().contains("more than 2 files"));
 
         let mut files = ResolvedApparatus::new();
-        walk(root, &entry, &mut files, disk_listing, 3)
-            .resolve()
-            .unwrap();
+        let mut walked_directories = 0_usize;
+        walk(
+            root,
+            &entry,
+            &mut files,
+            disk_listing,
+            3,
+            &mut walked_directories,
+        )
+        .resolve()
+        .unwrap();
         assert_eq!(files.len(), 3);
+    }
+
+    #[test]
+    fn a_walk_past_the_directory_limit_is_too_large_even_with_no_files() {
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path();
+        // Ten empty subdirectories: zero files resolved, so
+        // `MAX_PROTECTED_FILES` alone never stops this walk.
+        for index in 0..10 {
+            std::fs::create_dir_all(root.join("empty").join(index.to_string())).unwrap();
+        }
+        let entry = ApparatusPath::new("empty/**").unwrap();
+        let mut files = ResolvedApparatus::new();
+        let mut walked_directories = 0_usize;
+        let error = Walk {
+            repo: root,
+            plan: "MP-1",
+            entry: &entry,
+            files: &mut files,
+            list: disk_listing,
+            limit: MAX_PROTECTED_FILES,
+            walked_directories: &mut walked_directories,
+            directory_limit: 5,
+        }
+        .resolve()
+        .unwrap_err();
+        assert_eq!(error.code(), MeasurementErrorCode::ApparatusTooLarge);
+        assert!(error.subject().contains("more than 5 directories"));
+    }
+
+    #[test]
+    fn the_cross_plan_total_is_capped_independent_of_any_one_plan() {
+        assert_eq!(MAX_TOTAL_PROTECTED_FILES, 200_000);
+        enforce_total_cap(MAX_TOTAL_PROTECTED_FILES).unwrap();
+        let error = enforce_total_cap(MAX_TOTAL_PROTECTED_FILES + 1).unwrap_err();
+        assert_eq!(error.code(), MeasurementErrorCode::ApparatusTooLarge);
+        assert!(error.subject().contains("more than 200000 files"));
     }
 }

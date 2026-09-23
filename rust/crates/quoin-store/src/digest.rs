@@ -547,20 +547,65 @@ pub fn digest_assurance_record(value: &JsonValue) -> Result<AssuranceRecordId, S
 /// over [`MAX_DIGESTED_FILE_BYTES`], and a file whose length changed between
 /// the stat and the read.
 ///
+/// # The open is race-safe (PLAT-985, quoin#600 review)
+///
+/// An earlier version called [`std::fs::symlink_metadata`] and then
+/// [`std::fs::read`] as two separate syscalls, naming the same path twice.
+/// Between them, whatever the path names on disk can be swapped: a caller who
+/// controls the directory replaces a regular file with a symlink after the
+/// stat and before the read, and the read follows it — the same swap
+/// `crate::store::apparatus`'s `descend` guards against for the walk, but not,
+/// until now, for the digest itself. Worse, if the swap lands a FIFO, a
+/// blocking `read` on it never returns until some other process opens the
+/// other end, so a hostile checkout can hang the digesting process
+/// indefinitely.
+///
+/// This function opens the path exactly once, with `O_NOFOLLOW` (refuse a
+/// symlink at the final component, atomically with the open) and
+/// `O_NONBLOCK` (a FIFO opens immediately rather than blocking for a writer),
+/// then inspects the *open handle*'s metadata (`fstat`, not `stat`) so the
+/// file-type check that follows cannot itself race a second swap. Every
+/// subsequent read is against that same handle.
+///
 /// # Errors
 ///
 /// Refuses, in that order: a symbolic link, anything that is not a regular
 /// file, a file larger than [`MAX_DIGESTED_FILE_BYTES`], and a file whose
-/// length changed between the stat and the read. Also refuses on any I/O
-/// failure reading the file.
+/// length changed between the open and the read. Also refuses on any I/O
+/// failure opening or reading the file.
 pub fn digest_file_sha256(path: &std::path::Path) -> Result<RawFileSha256Digest, StoreError> {
-    let metadata = std::fs::symlink_metadata(path).map_err(|source| StoreError::Io {
-        operation: "stat",
+    use std::os::unix::fs::OpenOptionsExt as _;
+
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+        .open(path)
+        .map_err(|source| {
+            // `O_NOFOLLOW` turns a symlink at the final component into ELOOP
+            // rather than a followed open, so that failure is reported under
+            // the same code a pre-open `symlink_metadata` check would have
+            // used, not folded into the generic `Io` variant.
+            if source.raw_os_error() == Some(libc::ELOOP) {
+                StoreError::DigestSourceIsSymlink {
+                    path: path.to_path_buf(),
+                }
+            } else {
+                StoreError::Io {
+                    operation: "open",
+                    path: path.to_path_buf(),
+                    source,
+                }
+            }
+        })?;
+    let metadata = file.metadata().map_err(|source| StoreError::Io {
+        operation: "fstat",
         path: path.to_path_buf(),
         source,
     })?;
     let file_type = metadata.file_type();
     if file_type.is_symlink() {
+        // `O_NOFOLLOW` already refuses a symlink at open; this is defence in
+        // depth for a platform whose `fstat` could still report one.
         return Err(StoreError::DigestSourceIsSymlink {
             path: path.to_path_buf(),
         });
@@ -583,7 +628,8 @@ pub fn digest_file_sha256(path: &std::path::Path) -> Result<RawFileSha256Digest,
             limit: MAX_DIGESTED_FILE_BYTES,
         });
     }
-    let bytes = std::fs::read(path).map_err(|source| StoreError::Io {
+    let mut bytes = Vec::new();
+    std::io::Read::read_to_end(&mut &file, &mut bytes).map_err(|source| StoreError::Io {
         operation: "read",
         path: path.to_path_buf(),
         source,
@@ -798,6 +844,46 @@ mod tests {
             let error = digest_file_sha256(&link).expect_err("a link is not its target");
             assert_eq!(error.code(), StoreErrorCode::DigestSourceIsSymlink);
         }
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// A FIFO with no writer never blocks `digest_file_sha256`: `O_NONBLOCK`
+    /// on the open makes the open itself return immediately, and the read
+    /// that follows sees no writer connected and fails fast rather than
+    /// waiting forever for one to appear. Run on a thread with a bounded
+    /// join so a regression back to a blocking open reports as a failed
+    /// assertion, not a hung test process.
+    ///
+    /// Trace: PLAT-985, quoin#600 review
+    #[cfg(unix)]
+    #[test]
+    fn tc_985_a_fifo_with_no_writer_fails_fast_rather_than_blocking() {
+        let dir = std::env::temp_dir().join(format!("quoin-store-fifo-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("dir");
+        let fifo = dir.join("blocking.pipe");
+        let _ = std::fs::remove_file(&fifo);
+        let made = std::process::Command::new("mkfifo")
+            .arg(&fifo)
+            .status()
+            .expect("mkfifo is on PATH in this test environment");
+        assert!(made.success(), "mkfifo {fifo:?} failed");
+
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let path = fifo.clone();
+        std::thread::spawn(move || {
+            let _ = sender.send(digest_file_sha256(&path));
+        });
+        let outcome = receiver
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .expect(
+                "digest_file_sha256 blocked past the timeout instead of failing fast on a FIFO \
+                 with no writer",
+            );
+        assert!(
+            outcome.is_err(),
+            "a FIFO is not a regular file and must be refused, not digested"
+        );
+
         std::fs::remove_dir_all(&dir).ok();
     }
 
