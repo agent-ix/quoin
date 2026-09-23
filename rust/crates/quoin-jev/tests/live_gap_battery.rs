@@ -146,6 +146,82 @@
 //! the original, the violating mutant and the additive mutant). The `noul`
 //! answers underneath it do move — Bar 2 and Bar 6 both separate the classes —
 //! so the closed six-way choice is losing information the open questions carry.
+//!
+//! # `battery-v1` (PLAT-979): Bars 1 and 3, pre-registered before its first live call
+//!
+//! Error analysis first. The per-row answers come from a fresh replication of
+//! the v0 `FullBattery` pass, and the row outcomes match the three runs above
+//! (Bar 1 45.5%, Bar 3 70.3%). Each disagreement was classified as one of
+//! wording, missing sub-question, bad option list, threshold or bad label, in
+//! that priority order.
+//!
+//! **Bar 1, 6 disagreements: 4 bad label, 2 wording.** All four false
+//! negatives (`GAP-09`, `GAP-12`, `GAP-20`, `GAP-22`) are FR-101 triples whose
+//! targeted mutant contradicts behaviour the covered SYMBOL documents, never
+//! the cited acceptance criterion. Each rationale names no requirement, and
+//! the corpus's own `note` on each, written before any live call, records the
+//! trace tag as mismatched to the test. The owning test killing that mutant
+//! does not show that the test asserts the REQUIREMENT's stated behaviour.
+//! The lens said no on all four, and against the question as asked, it was
+//! right. The two false positives (`GAP-05` P=0.53, `GAP-25` P=0.63) are
+//! partial tests. Each asserts some output but not the clause its mutant
+//! breaks. "Rather than merely invoking it" sets the bar at any assertion at
+//! all, which a partial test clears.
+//!
+//! **Bar 3, 11 disagreements, all false positives: 10 wording, 1 bad label.**
+//! "Values the test itself configured" is ambiguous, because every test writes
+//! both its inputs and its expected values. `GAP-08`, for example, asserts
+//! enum variants a classifier returns and was called mock-only at P=0.73. One
+//! row, `GAP-15`, is a plausible bad label: its corpus note says the
+//! `MethodCatalogFixture` hands back a canned payload the test then asserts.
+//! That fixture's body is outside the test source the static check reads, and
+//! outside the state the lens is shown. It is reported here and NOT
+//! relabelled. The static check stays the ground truth as pre-registered.
+//!
+//! Two changes, fixed here and committed before the first `FullBatteryV1` call:
+//!
+//! 1. **Bad label, Bar 1 only.** P1 admits only a violating mutant that
+//!    contradicts behaviour its triple's cited requirement states, which is
+//!    MP-233's own definition of P1, applied by
+//!    `gap_battery_support::contradicts_cited_requirement`. That rule drops
+//!    the four FR-101 mutants and leaves 7 rows, below this file's own minimum
+//!    of 8. So one new targeted mutant is added for `GAP-07` (FR-062-AC-9), in
+//!    `fixtures/gap-battery-mutants-v1-additions.json`. `GAP-07` is the only
+//!    remaining real triple whose cited requirement text states the behaviour
+//!    its test exercises. `GAP-01` and `GAP-27` say in their own `ac_text` that
+//!    no criterion covers the behaviour. The mutant targets the FR statement's
+//!    own SHALL clause, "name the failed input". It was applied, run against
+//!    the one owning test, and recorded before any v1 call, the same way as
+//!    the others. The v0 fixture and the v0 test's population are unchanged.
+//! 2. **Wording, Bars 1 and 3 only.** `test_asserts_intent` is asked as the
+//!    counterfactual its ground truth checks: would the test fail if the code
+//!    stopped doing the requirement's stated thing? `tests_only_its_own_mock`
+//!    is asked as the definition its static check applies: no assertion
+//!    states an expected value absent from the test's own inputs. The other
+//!    five questions are word-for-word unchanged. The texts live in
+//!    `gap_semantic_support` as `Variant::FullBatteryV1`.
+//!
+//! **Caveat on change 2 for Bar 3.** The reworded question states the static
+//! check's rule. If the lens now agrees, that shows it can apply a rule a
+//! twenty-line text scan already applies without it. That is not evidence the
+//! lens adds anything over the scan, and it will not be reported as such.
+//!
+//! **Bars, `battery-v1`.** One pass, with `FullBattery` (v0) and
+//! `FullBatteryV1` asked over the same rows, so the label fix and the wording
+//! fix separate:
+//!
+//! - **Bar 1-v1**: `FullBatteryV1`'s `test_asserts_intent` over the corrected
+//!   P1 (at least 8 rows, both classes present) must exceed the constant
+//!   predictor computed over those rows.
+//! - **Bar 3-v1**: `FullBatteryV1`'s `tests_only_its_own_mock` over the same 37
+//!   rows as v0 must exceed the constant predictor, and mock-only recall must
+//!   stay above 0.
+//!
+//! Reported and ungated: v0 wording over the corrected P1, which isolates the
+//! label fix; v0 wording over the original P1, which replicates v0; and the
+//! v1 false-positive count over the 29 real rows. A threshold change was NOT
+//! tried. With 2 negative rows in Bar 1, any threshold would be fitted to
+//! those two answers.
 
 #![cfg(feature = "live-api")]
 #![allow(
@@ -170,10 +246,10 @@ use typesafe_sdk_client::Client;
 use typesafe_sdk_env::Process;
 
 use gap_battery_support::{
-    BatteryAnswers, BinaryRow, LabelRow, MutantClass, SeverityPair, answers,
+    BatteryAnswers, BinaryRow, LabelRow, Mutant, MutantClass, SeverityPair, answers,
     asserts_only_its_own_setup, binary_report, constant_binary_baseline, constant_label_baseline,
-    constructed_mock_only, label_agreement, mutants, mutated, severity_discrimination,
-    tally_binary,
+    constructed_mock_only, contradicts_cited_requirement, label_agreement, mutants,
+    mutants_v1_additions, mutated, severity_discrimination, tally_binary,
 };
 use gap_semantic_support::{GapTriple, Variant, build_request, corpus};
 use quoin_jev::JevErrorCode;
@@ -214,12 +290,16 @@ fn request_targets() -> Vec<GapTriple> {
     by_id.into_values().collect()
 }
 
-/// One `FullBattery` request per target, answers indexed by row id.
-async fn ask_all(client: &Client, targets: &[GapTriple]) -> BTreeMap<String, BatteryAnswers> {
+/// One `variant` request per target, answers indexed by row id.
+async fn ask_all(
+    client: &Client,
+    targets: &[GapTriple],
+    variant: Variant,
+) -> BTreeMap<String, BatteryAnswers> {
     let mut out = BTreeMap::new();
     for triple in targets {
         let response = client
-            .system_one(build_request(triple, Variant::FullBattery))
+            .system_one(build_request(triple, variant))
             .await
             .unwrap_or_else(|error| panic!("{}: {error}", triple.id));
         out.insert(triple.id.clone(), answers(&response));
@@ -326,7 +406,7 @@ async fn the_rest_of_the_battery_beats_doing_nothing() {
     let triples = corpus();
     let all_mutants = mutants();
     let targets = request_targets();
-    let said = ask_all(&client, &targets).await;
+    let said = ask_all(&client, &targets, Variant::FullBattery).await;
     let mut bars = Bars::default();
 
     // ---- Bar 1: test_asserts_intent -------------------------------------
@@ -622,6 +702,166 @@ async fn the_rest_of_the_battery_beats_doing_nothing() {
         &format!(
             "the confirmed-defective mutant scored strictly more severe in \
              {win_rate:.1}% of {compared} pairs, against a 50% coin-flip null"
+        ),
+    );
+
+    bars.settle();
+}
+
+/// Bar 1's rows for `population`, one per violating mutant, scored against
+/// `said`'s `test_asserts_intent` on the UNMUTATED triple.
+fn asserts_intent_rows(
+    said: &BTreeMap<String, BatteryAnswers>,
+    population: &[&Mutant],
+) -> Vec<BinaryRow> {
+    population
+        .iter()
+        .map(|mutant| {
+            binary_row(
+                said,
+                &mutant.base_id,
+                "test_asserts_intent",
+                mutant.killed_by_owning_test,
+            )
+        })
+        .collect()
+}
+
+/// Bar 3's rows: the 29 real triples and the 8 constructed ones, truth from
+/// the static check, exactly as the v0 gate builds them.
+fn mock_only_rows(
+    said: &BTreeMap<String, BatteryAnswers>,
+    triples: &[GapTriple],
+) -> Vec<BinaryRow> {
+    triples
+        .iter()
+        .cloned()
+        .chain(constructed_mock_only())
+        .map(|triple| {
+            let (truth, _) = asserts_only_its_own_setup(&triple.test_body);
+            binary_row(said, &triple.id, "tests_only_its_own_mock", truth)
+        })
+        .collect()
+}
+
+/// **`battery-v1` (PLAT-979).** Provenance: PLAT-979, PLAT-839. The label fix
+/// and the rewording pre-registered in this file's module doc, measured over
+/// the same rows as v0's wording in the same pass, so the effect of each can
+/// be read on its own.
+#[tokio::test]
+async fn battery_v1_corrects_bar_1_labels_and_rewords_bars_1_and_3() {
+    let client = live_client();
+    let triples = corpus();
+
+    let v0_violating: Vec<Mutant> = mutants()
+        .into_iter()
+        .filter(|mutant| mutant.class == MutantClass::Violating)
+        .collect();
+    let additions = mutants_v1_additions();
+    assert!(
+        additions
+            .iter()
+            .all(|mutant| mutant.class == MutantClass::Violating),
+        "the v1 additions are violating mutants for P1 only"
+    );
+    let original: Vec<&Mutant> = v0_violating.iter().collect();
+    let mut corrected: Vec<&Mutant> = Vec::new();
+    for mutant in v0_violating.iter().chain(&additions) {
+        if contradicts_cited_requirement(&triples, mutant) {
+            corrected.push(mutant);
+        } else {
+            println!(
+                "(excluded from corrected P1, the mutant contradicts no behaviour its \
+                 triple's cited requirement states: {} — {})",
+                mutant.id(),
+                mutant.rationale
+            );
+        }
+    }
+    assert!(
+        corrected.len() >= 8,
+        "corrected P1 is below the pre-registered minimum of 8 rows: {}",
+        corrected.len()
+    );
+    let survived = corrected
+        .iter()
+        .filter(|mutant| !mutant.killed_by_owning_test)
+        .count();
+    assert!(
+        survived > 0 && survived < corrected.len(),
+        "corrected P1 is single-class ({survived} of {} survived), so it is not \
+         measurable",
+        corrected.len()
+    );
+
+    // Every row either bar reads: the 29 real triples (a superset of every
+    // P1 base) and the 8 constructed mock-only rows.
+    let targets: Vec<GapTriple> = triples
+        .iter()
+        .cloned()
+        .chain(constructed_mock_only())
+        .collect();
+    let v0 = ask_all(&client, &targets, Variant::FullBattery).await;
+    let v1 = ask_all(&client, &targets, Variant::FullBatteryV1).await;
+    let mut bars = Bars::default();
+
+    // ---- Bar 1 ------------------------------------------------------------
+    let v0_original = asserts_intent_rows(&v0, &original);
+    let v0_corrected = asserts_intent_rows(&v0, &corrected);
+    let v1_corrected = asserts_intent_rows(&v1, &corrected);
+    println!(
+        "{}",
+        binary_report(
+            "Bar 1, v0 wording, ORIGINAL P1 (replicates v0; ungated)",
+            &v0_original
+        )
+    );
+    println!(
+        "{}",
+        binary_report(
+            "Bar 1, v0 wording, CORRECTED P1 (label fix alone; ungated)",
+            &v0_corrected
+        )
+    );
+    println!(
+        "{}",
+        binary_report("Bar 1-v1, v1 wording, CORRECTED P1 (gated)", &v1_corrected)
+    );
+    bars.beats_constant("BAR 1-v1 test_asserts_intent", &v1_corrected, false);
+
+    // ---- Bar 3 ------------------------------------------------------------
+    let v0_mock = mock_only_rows(&v0, &triples);
+    let v1_mock = mock_only_rows(&v1, &triples);
+    for (label, rows) in [("v0", &v0_mock), ("v1", &v1_mock)] {
+        let real: Vec<BinaryRow> = rows
+            .iter()
+            .filter(|row| !row.id.starts_with("MOCK-"))
+            .cloned()
+            .collect();
+        let (stats, _) = tally_binary(&real);
+        println!(
+            "\n**Bar 3 {label}, the 29 REAL rows alone** (ungated): the lens said \
+             mock-only for {} of them and cleared {}.",
+            stats.false_positive + stats.true_positive,
+            stats.true_negative
+        );
+    }
+    println!(
+        "{}",
+        binary_report("Bar 3, v0 wording (replicates v0; ungated)", &v0_mock)
+    );
+    println!(
+        "{}",
+        binary_report("Bar 3-v1, v1 wording (gated)", &v1_mock)
+    );
+    bars.beats_constant("BAR 3-v1 tests_only_its_own_mock", &v1_mock, false);
+    let (v1_mock_stats, _) = tally_binary(&v1_mock);
+    bars.check(
+        v1_mock_stats.recall().is_some_and(|value| value > 0.0),
+        "BAR 3-v1 tests_only_its_own_mock",
+        &format!(
+            "mock-only-class recall {:?} over the constructed rows",
+            v1_mock_stats.recall()
         ),
     );
 

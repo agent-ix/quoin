@@ -76,6 +76,11 @@ use crate::gap_semantic_support::{BinaryStats, GapTriple, corpus, percent};
 pub(crate) const MUTANTS: &str = include_str!("../fixtures/gap-battery-mutants.json");
 /// The constructed mock-only rows, compiled in for the same reason.
 pub(crate) const MOCKONLY: &str = include_str!("../fixtures/gap-battery-mockonly.json");
+/// Targeted mutants added for `FullBatteryV1` (PLAT-979), kept apart from
+/// [`MUTANTS`] so the v0 battery's recorded population does not change under
+/// it on a rerun.
+pub(crate) const MUTANTS_V1_ADDITIONS: &str =
+    include_str!("../fixtures/gap-battery-mutants-v1-additions.json");
 
 /// Which fact a mutation was built to establish.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -126,6 +131,32 @@ impl Mutant {
 /// If the fixture stops matching this shape.
 pub(crate) fn mutants() -> Vec<Mutant> {
     serde_json::from_str(MUTANTS).expect("the targeted-mutation log parses")
+}
+
+/// Parses the mutants added for `FullBatteryV1`.
+///
+/// # Panics
+/// If the fixture stops matching this shape.
+pub(crate) fn mutants_v1_additions() -> Vec<Mutant> {
+    serde_json::from_str(MUTANTS_V1_ADDITIONS).expect("the v1 mutant additions parse")
+}
+
+/// Does this mutant contradict behaviour its triple's CITED requirement
+/// states, as MP-233's P1 requires of a violating mutant?
+///
+/// Read off the mutant's own rationale: it must name the requirement the
+/// triple is traced to. Four v0 mutants (`GAP-09`, `GAP-12`, `GAP-20`,
+/// `GAP-22`) do not. Each contradicts behaviour the covered symbol documents,
+/// not the FR-101 acceptance criterion the test is tagged with, and the
+/// corpus's own `note` on each, written before any live call, records the tag
+/// as mismatched to the test. So the owning test failing under such a mutant
+/// shows that the test asserts the symbol's behaviour. It does not show that
+/// the test asserts the requirement's, which is what `test_asserts_intent`
+/// asks.
+pub(crate) fn contradicts_cited_requirement(triples: &[GapTriple], mutant: &Mutant) -> bool {
+    mutant
+        .rationale
+        .contains(base_of(triples, mutant).fr_id.as_str())
 }
 
 /// Parses the compiled-in constructed mock-only rows.

@@ -113,14 +113,45 @@ pub(crate) fn mutated_corpus() -> Vec<GapTriple> {
         .collect()
 }
 
-/// The two pre-registered request shapes (see this module's doc).
+/// The pre-registered request shapes (see this module's doc, and
+/// `../live_gap_battery.rs` for `FullBatteryV1`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Variant {
     /// `assertion_vacuous` asked alone.
     Solo,
     /// The full noul battery + `divergence_kind` + `severity`, one call.
     FullBattery,
+    /// `FullBattery` with two questions reworded (PLAT-979): the two whose
+    /// error analysis found the question text asking something other than
+    /// what its ground truth measures. Every other question is identical.
+    FullBatteryV1,
 }
+
+/// `test_asserts_intent` as the ticket worded it (`FullBattery`).
+const TEST_ASSERTS_INTENT_V0: &str = "Does the test assert the behaviour the requirement states, \
+                                      rather than merely invoking it?";
+
+/// `test_asserts_intent` reworded for `FullBatteryV1` as the counterfactual its
+/// ground truth checks: a targeted mutant contradicting the stated behaviour,
+/// and whether the owning test fails. "Rather than merely invoking it" sets
+/// the bar at any assertion at all, which a partial test clears.
+const TEST_ASSERTS_INTENT_V1: &str = "Suppose the code were changed so that it no longer does \
+     the specific thing the requirement states, while still compiling and still returning a \
+     well-formed, non-default result. Would this test fail? Judge against the requirement's \
+     own stated behaviour, not against other things the code does.";
+
+/// `tests_only_its_own_mock` as the ticket worded it (`FullBattery`).
+const TESTS_ONLY_ITS_OWN_MOCK_V0: &str =
+    "Do the assertions check only values the test itself configured?";
+
+/// `tests_only_its_own_mock` reworded for `FullBatteryV1` to state the
+/// definition its static-check ground truth applies. "Configured" is
+/// ambiguous: every test writes its own inputs and its own expected values.
+const TESTS_ONLY_ITS_OWN_MOCK_V1: &str = "Does every assertion compare only against values the \
+     test already supplied as input, to the code or to a fake, mock or fixture it set up, so that \
+     no assertion states an independent expected value (a constant, enum variant, error code, \
+     count or literal that does not appear among the test's own inputs)? Answer no if the test \
+     makes no assertions.";
 
 /// The wire key `assertion_vacuous`'s answer is sent under, in both variants.
 pub(crate) const ASSERTION_VACUOUS_KEY: &str = "assertion_vacuous";
@@ -173,49 +204,51 @@ fn question_set(variant: Variant) -> Questions {
                  with a stub returning a default?",
             ),
         )]),
-        Variant::FullBattery => questions([
-            (
-                "test_asserts_intent",
-                noul(
-                    "Does the test assert the behaviour the requirement states, \
-                     rather than merely invoking it?",
-                ),
-            ),
-            (
-                ASSERTION_VACUOUS_KEY,
-                noul(
-                    "Would this test still pass if the implementation were \
-                     replaced with a stub returning a default?",
-                ),
-            ),
-            (
-                "tests_only_its_own_mock",
-                noul("Do the assertions check only values the test itself configured?"),
-            ),
-            (
-                "code_implements_intent",
-                noul("Does the code do what the requirement says?"),
-            ),
-            (
-                "code_exceeds_requirement",
-                noul("Does the code implement behaviour no requirement states?"),
-            ),
-            (
-                DIVERGENCE_KIND_KEY,
-                choice_of(
-                    "Classify how the test, the code and the requirement diverge, if at all.",
-                    DIVERGENCE_KINDS,
-                ),
-            ),
-            (
-                SEVERITY_KEY,
-                score(
-                    "Rate the severity of any divergence found, against the rubric.",
-                    SEVERITY_RUBRIC,
-                ),
-            ),
-        ]),
+        Variant::FullBattery | Variant::FullBatteryV1 => battery(variant == Variant::FullBatteryV1),
     }
+}
+
+/// The seven-question battery; `reworded` swaps in the two `FullBatteryV1`
+/// question texts and changes nothing else.
+fn battery(reworded: bool) -> Questions {
+    let (asserts_intent, only_its_own_mock) = if reworded {
+        (TEST_ASSERTS_INTENT_V1, TESTS_ONLY_ITS_OWN_MOCK_V1)
+    } else {
+        (TEST_ASSERTS_INTENT_V0, TESTS_ONLY_ITS_OWN_MOCK_V0)
+    };
+    questions([
+        ("test_asserts_intent", noul(asserts_intent)),
+        (
+            ASSERTION_VACUOUS_KEY,
+            noul(
+                "Would this test still pass if the implementation were \
+                     replaced with a stub returning a default?",
+            ),
+        ),
+        ("tests_only_its_own_mock", noul(only_its_own_mock)),
+        (
+            "code_implements_intent",
+            noul("Does the code do what the requirement says?"),
+        ),
+        (
+            "code_exceeds_requirement",
+            noul("Does the code implement behaviour no requirement states?"),
+        ),
+        (
+            DIVERGENCE_KIND_KEY,
+            choice_of(
+                "Classify how the test, the code and the requirement diverge, if at all.",
+                DIVERGENCE_KINDS,
+            ),
+        ),
+        (
+            SEVERITY_KEY,
+            score(
+                "Rate the severity of any divergence found, against the rubric.",
+                SEVERITY_RUBRIC,
+            ),
+        ),
+    ])
 }
 
 /// Builds the request for one triple under `variant`, without sending it.
