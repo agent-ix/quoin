@@ -53,6 +53,7 @@ mod apparatus;
 mod order;
 mod reason;
 pub mod rows;
+mod tamper;
 mod types;
 mod wire;
 
@@ -67,7 +68,9 @@ use crate::types::plan::{MeasurementPlan, StatisticalDesign};
 
 pub use reason::{Reason, Verdict};
 pub use rows::{Estimate, EstimateBasis};
-pub use types::{Counts, Finding, MeasurementVerdict, OrderSource, Ranked, SliceDecision};
+pub use types::{
+    Counts, Finding, MeasurementVerdict, OrderSource, Ranked, SliceDecision, TamperFacts,
+};
 pub use wire::{VERDICT_SCHEMA, verdict_json};
 
 /// One run: a collection, its position, and each matching observation's
@@ -78,6 +81,9 @@ struct Run<'a> {
     /// The protected apparatus the collection recorded for the plan, read
     /// whatever the plan declares today; `None` when it recorded none.
     apparatus: Option<&'a ResolvedApparatus>,
+    /// Whether the caller found this run's recorded protected-apparatus
+    /// digests to disagree with the committed source they claim (PLAT-985).
+    apparatus_forged: bool,
     slices: Vec<(&'a MeasurementObservation, Result<Estimate, Reason>)>,
 }
 
@@ -94,6 +100,7 @@ struct Check<'a> {
 pub fn verify(
     plan: &MeasurementPlan,
     collections: &[Ranked<'_>],
+    tamper: TamperFacts<'_>,
     order: OrderSource,
     claimed: Option<Verdict>,
 ) -> MeasurementVerdict {
@@ -127,6 +134,7 @@ pub fn verify(
     if order == OrderSource::GitShallow {
         check.findings.push(plan_level(Reason::OrderUnattested));
     }
+    check.findings.extend(tamper::findings(&check.runs, tamper));
     match (check.rule, design.estimator) {
         (None, _) => check.findings.push(plan_level(Reason::NoDecisionRule)),
         (_, None) => check.findings.push(plan_level(Reason::NoEstimator)),
@@ -185,6 +193,7 @@ fn runs<'a>(
             collection: ranked.collection,
             intake: ranked.intake,
             apparatus: ranked.collection.protected_apparatus_of(plan.id.as_str()),
+            apparatus_forged: ranked.apparatus_forged,
             slices: observations_of(plan, ranked.collection)
                 .into_iter()
                 .map(|observation| {

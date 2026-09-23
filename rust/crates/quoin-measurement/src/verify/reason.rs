@@ -101,11 +101,30 @@ pub enum Reason {
     ApparatusEdit,
     /// The claimed verdict is not the checker's.
     ClaimedVerdictDisagrees,
+    /// A collection's recorded protected-apparatus digest for this plan does
+    /// not match `git show <sourceRevision>:<path>` — the file's actual
+    /// bytes at the commit the collection claims to be from. A collection
+    /// written by hand, rather than through intake's own resolver, can state
+    /// any digest it likes; this is the check that catches it (PLAT-985).
+    ApparatusForged,
+    /// A collection that measured this plan was added to the store and later
+    /// removed, so it no longer appears among the runs counted — detected
+    /// from the store's git history, not from anything a producer states
+    /// (PLAT-985).
+    CollectionDeleted,
+    /// A collection's stored file was edited by a commit after the one that
+    /// first added it — detected from the store's git history (PLAT-985).
+    CollectionEdited,
+    /// The plan's objective, estimator, decision rule or protected apparatus
+    /// changed between two committed revisions that share a
+    /// `definition_version` (engineering-assurance FR-021's
+    /// `definition_change_without_version_bump`).
+    DefinitionChangedWithoutVersionBump,
 }
 
 impl Reason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 23] = [
+    pub const ALL: [Self; 27] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
         Self::NoCollections,
@@ -129,6 +148,10 @@ impl Reason {
         Self::RerunUntilPass,
         Self::ApparatusEdit,
         Self::ClaimedVerdictDisagrees,
+        Self::ApparatusForged,
+        Self::CollectionDeleted,
+        Self::CollectionEdited,
+        Self::DefinitionChangedWithoutVersionBump,
     ];
 
     /// The stable wire spelling.
@@ -158,6 +181,10 @@ impl Reason {
             Self::RerunUntilPass => "rerun_until_pass",
             Self::ApparatusEdit => "apparatus_edit",
             Self::ClaimedVerdictDisagrees => "claimed_verdict_disagrees",
+            Self::ApparatusForged => "apparatus_forged",
+            Self::CollectionDeleted => "collection_deleted",
+            Self::CollectionEdited => "collection_edited",
+            Self::DefinitionChangedWithoutVersionBump => "definition_changed_without_version_bump",
         }
     }
 
@@ -206,7 +233,11 @@ impl Reason {
             | Self::PopulationMalformed
             | Self::RerunUntilPass
             | Self::ApparatusEdit
-            | Self::ClaimedVerdictDisagrees => Verdict::Reject,
+            | Self::ClaimedVerdictDisagrees
+            | Self::ApparatusForged
+            | Self::CollectionDeleted
+            | Self::CollectionEdited
+            | Self::DefinitionChangedWithoutVersionBump => Verdict::Reject,
         }
     }
 }

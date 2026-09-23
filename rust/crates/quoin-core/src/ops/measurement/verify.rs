@@ -26,13 +26,13 @@ use std::path::Path;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::store::read_measurement_collection_results;
-use quoin_measurement::{OrderSource, Ranked, Verdict, verdict_json, verify as check};
+use quoin_measurement::{OrderSource, Ranked, TamperFacts, Verdict, verdict_json, verify as check};
 
 use crate::error::{CoreError, CoreErrorCode};
 use crate::protocol::Response;
 
 use super::taxonomy::map_measurement;
-use super::wire::{MAX_VERIFY_REQUEST_BYTES, VerifyRequest};
+use super::wire::{MAX_VERIFY_REQUEST_BYTES, TamperedCollectionRequest, VerifyRequest};
 use super::{bound, parse};
 
 /// Answer a `measurement.verify`.
@@ -98,9 +98,31 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
         .map(|collection| Ranked {
             collection,
             intake: positions.get(collection.collection_id.as_str()).copied(),
+            apparatus_forged: request
+                .apparatus_forged
+                .iter()
+                .any(|id| id == collection.collection_id.as_str()),
         })
         .collect();
-    let verdict = check(plan, &ranked, order, claimed);
+    // A deleted or edited collection is attributed to this plan when the
+    // caller read this plan's id among the observations it carried, in any
+    // content it had (PLAT-985); the caller alone has git and did that
+    // reading.
+    let naming_plan = |tampered: &[TamperedCollectionRequest]| -> Vec<String> {
+        tampered
+            .iter()
+            .filter(|entry| entry.plan_ids.iter().any(|id| id == plan.id.as_str()))
+            .map(|entry| entry.id.clone())
+            .collect()
+    };
+    let deleted_collections = naming_plan(&request.deleted);
+    let edited_collections = naming_plan(&request.edited_collections);
+    let tamper = TamperFacts {
+        deleted_collections: &deleted_collections,
+        edited_collections: &edited_collections,
+        definition_changed_without_version_bump: request.definition_changed_without_version_bump,
+    };
+    let verdict = check(plan, &ranked, tamper, order, claimed);
     let payload = verdict_json(&verdict).map_err(|error| map_measurement(&error, OP))?;
     if verdict.verdict == Verdict::Accept {
         return Ok(Response::ok(payload));

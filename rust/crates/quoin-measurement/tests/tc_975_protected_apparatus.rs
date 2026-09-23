@@ -33,7 +33,7 @@ use quoin_measurement::types::comparison::{ComparisonReasonCode, ComparisonStatu
 use quoin_measurement::types::ids::CollectionId;
 use quoin_measurement::types::plan::MeasurementPlan;
 use quoin_measurement::{
-    MeasurementError, OrderSource, Ranked, Reason, Verdict, build_measurement_report,
+    MeasurementError, OrderSource, Ranked, Reason, TamperFacts, Verdict, build_measurement_report,
     compare_measurement_collections, stored_measurement_collection, verify,
     write_measurement_collection,
 };
@@ -197,23 +197,31 @@ fn reasons(rows: &[quoin_measurement::MeasurementComparison]) -> Vec<ComparisonR
 fn checked(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Vec<Reason> {
     let ranked: Vec<Ranked<'_>> = (0_u64..)
         .zip(collections)
-        .map(|(intake, collection)| Ranked {
-            collection,
-            intake: Some(intake),
-        })
+        .map(|(intake, collection)| Ranked::new(collection, Some(intake)))
         .collect();
-    verify(plan, &ranked, OrderSource::CallerSupplied, None).reasons
+    verify(
+        plan,
+        &ranked,
+        TamperFacts::default(),
+        OrderSource::CallerSupplied,
+        None,
+    )
+    .reasons
 }
 
 fn verdict_of(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Verdict {
     let ranked: Vec<Ranked<'_>> = (0_u64..)
         .zip(collections)
-        .map(|(intake, collection)| Ranked {
-            collection,
-            intake: Some(intake),
-        })
+        .map(|(intake, collection)| Ranked::new(collection, Some(intake)))
         .collect();
-    verify(plan, &ranked, OrderSource::CallerSupplied, None).verdict
+    verify(
+        plan,
+        &ranked,
+        TamperFacts::default(),
+        OrderSource::CallerSupplied,
+        None,
+    )
+    .verdict
 }
 
 // ------------------------------------------------------------ plan intake

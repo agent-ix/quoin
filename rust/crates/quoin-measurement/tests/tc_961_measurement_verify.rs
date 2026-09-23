@@ -42,7 +42,8 @@ use quoin_measurement::types::plan::{MeasurementPlan, StatisticalDesign};
 use quoin_measurement::verify::rows::{assess, consistent, recompute};
 use quoin_measurement::verify::{EstimateBasis, MeasurementVerdict};
 use quoin_measurement::{
-    OrderSource, Ranked, Reason, Verdict, stored_measurement_collection, verdict_json, verify,
+    OrderSource, Ranked, Reason, TamperFacts, Verdict, stored_measurement_collection, verdict_json,
+    verify,
 };
 use quoin_store::parse_strict_json;
 use serde_json::json;
@@ -94,10 +95,7 @@ fn case(relative: &str) -> Vec<MeasurementCollection> {
 fn in_order(collections: &[MeasurementCollection]) -> Vec<Ranked<'_>> {
     (0_u64..)
         .zip(collections)
-        .map(|(intake, collection)| Ranked {
-            collection,
-            intake: Some(intake),
-        })
+        .map(|(intake, collection)| Ranked::new(collection, Some(intake)))
         .collect()
 }
 
@@ -107,7 +105,13 @@ fn checked(
     collections: &[Ranked<'_>],
     claimed: Option<Verdict>,
 ) -> MeasurementVerdict {
-    verify(plan, collections, OrderSource::CallerSupplied, claimed)
+    verify(
+        plan,
+        collections,
+        TamperFacts::default(),
+        OrderSource::CallerSupplied,
+        claimed,
+    )
 }
 
 fn check(plan_id: &str, relative: &str, claimed: Option<Verdict>) -> MeasurementVerdict {
@@ -490,7 +494,7 @@ fn tc_961_012_intake_order_decides_the_candidate_and_a_tie_is_unattested() {
     for intake in [None, Some(7)] {
         let tied: Vec<Ranked<'_>> = collections
             .iter()
-            .map(|collection| Ranked { collection, intake })
+            .map(|collection| Ranked::new(collection, intake))
             .collect();
         let verdict = checked(&plan("MP-961"), &tied, None);
         assert!(
@@ -501,11 +505,14 @@ fn tc_961_012_intake_order_decides_the_candidate_and_a_tie_is_unattested() {
     }
     // A lone run needs no order.
     let accepted = case("right/accept");
-    let lone = [Ranked {
-        collection: &accepted[0],
-        intake: None,
-    }];
-    let verdict = verify(&plan("MP-961"), &lone, OrderSource::None, None);
+    let lone = [Ranked::new(&accepted[0], None)];
+    let verdict = verify(
+        &plan("MP-961"),
+        &lone,
+        TamperFacts::default(),
+        OrderSource::None,
+        None,
+    );
     assert_eq!(verdict.verdict, Verdict::Accept);
     assert_eq!(verdict.counts.order_unattested, 1);
 }
@@ -752,10 +759,7 @@ fn renamed(mut collection: MeasurementCollection, id: &str) -> MeasurementCollec
 fn at<'a>(positions: &[(&'a MeasurementCollection, u64)]) -> Vec<Ranked<'a>> {
     positions
         .iter()
-        .map(|&(collection, intake)| Ranked {
-            collection,
-            intake: Some(intake),
-        })
+        .map(|&(collection, intake)| Ranked::new(collection, Some(intake)))
         .collect()
 }
 
@@ -919,14 +923,26 @@ fn tc_961_027_a_count_plan_is_recomputed_from_matched() {
 fn tc_961_028_a_shallow_history_attests_no_order_and_says_where_the_order_came_from() {
     let accepted = case("right/accept");
     let lone = in_order(&accepted);
-    let shallow = verify(&plan("MP-961"), &lone, OrderSource::GitShallow, None);
+    let shallow = verify(
+        &plan("MP-961"),
+        &lone,
+        TamperFacts::default(),
+        OrderSource::GitShallow,
+        None,
+    );
     assert_eq!(shallow.reasons, [Reason::OrderUnattested]);
     assert_eq!(shallow.counts.order_unattested, 1);
     assert_eq!(
         verdict_json(&shallow).unwrap()["orderSource"],
         "git-shallow"
     );
-    let git = verify(&plan("MP-961"), &lone, OrderSource::GitFirstParentAdd, None);
+    let git = verify(
+        &plan("MP-961"),
+        &lone,
+        TamperFacts::default(),
+        OrderSource::GitFirstParentAdd,
+        None,
+    );
     assert_eq!(git.verdict, Verdict::Accept);
     assert_eq!(git.counts.order_attested, 1);
     for source in OrderSource::ALL {

@@ -2949,6 +2949,7 @@ dependencies = [
  "quoin-core",
  "quoin-delivery",
  "quoin-graph-analysis",
+ "quoin-measurement",
  "quoin-semantic",
  "quoin-store",
  "quoin-validators",

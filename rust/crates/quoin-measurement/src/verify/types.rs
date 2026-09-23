@@ -67,6 +67,53 @@ pub struct Ranked<'a> {
     /// Its position in an order the producer cannot choose — lower is
     /// earlier, equal is a tie — or `None` when nothing attests one.
     pub intake: Option<u64>,
+    /// Whether this collection's recorded protected-apparatus digests for
+    /// the plan being verified disagree with `git show
+    /// <sourceRevision>:<path>` — the file's actual bytes at the commit the
+    /// collection claims to be from. The caller alone has git, so it checks
+    /// this and hands over the answer; `false` when nothing was checked, so
+    /// a caller with no git access reports no forgery rather than a false
+    /// one (PLAT-985).
+    pub apparatus_forged: bool,
+}
+
+impl<'a> Ranked<'a> {
+    /// A ranked collection with no tamper facts recorded — the common case
+    /// for a caller with no git access to check them, and for a test that is
+    /// not itself exercising PLAT-985's tamper checks.
+    #[must_use]
+    pub const fn new(collection: &'a MeasurementCollection, intake: Option<u64>) -> Self {
+        Self {
+            collection,
+            intake,
+            apparatus_forged: false,
+        }
+    }
+}
+
+/// Facts about the store's own git history that only the caller — which
+/// alone runs git — can supply (PLAT-985). Each defaults to "nothing found",
+/// so a caller with no git access reports no tampering rather than a false
+/// one.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct TamperFacts<'a> {
+    /// Ids of collections that measured this plan under its metric and
+    /// `definition_version`, were once added to the store's git history, and
+    /// no longer exist there — the caller attributes a deleted id to a plan
+    /// by reading its content at the commit before it was removed.
+    pub deleted_collections: &'a [String],
+    /// Ids of collections that named this plan — in the content intake first
+    /// added or in their content now — whose stored file a later commit, or
+    /// the uncommitted work tree, changed or re-added. Attributed by plan
+    /// rather than read off the runs, so an edit that re-targets a run away
+    /// from this plan still reports here rather than silently removing it.
+    pub edited_collections: &'a [String],
+    /// Whether the plan's objective, estimator, decision rule or protected
+    /// apparatus changed between two committed revisions of its document
+    /// that share a `definition_version` — engineering-assurance's
+    /// `definition_change_without_version_bump`, applied by the caller over
+    /// the plan document's git history, which this crate cannot read.
+    pub definition_changed_without_version_bump: bool,
 }
 
 /// One reason, and where it was found.

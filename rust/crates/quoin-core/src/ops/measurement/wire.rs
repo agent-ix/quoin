@@ -183,6 +183,46 @@ pub struct VerifyRequest {
     /// caller that does not say where its order came from attests nothing.
     #[serde(default)]
     pub order_source: Option<String>,
+    /// Collections once present in the store's git history and no longer
+    /// there, with the plan ids their observations named (PLAT-985). Empty
+    /// when the caller has no git access to check, or attests nothing.
+    #[serde(default)]
+    pub deleted: Vec<TamperedCollectionRequest>,
+    /// Collections whose stored file the caller found changed after intake
+    /// first added it — by a later commit, a delete-and-re-add under the same
+    /// id, or an uncommitted edit in the work tree — with the plan ids their
+    /// observations named (PLAT-985). Empty when the caller has no git
+    /// access to check.
+    #[serde(default)]
+    pub edited_collections: Vec<TamperedCollectionRequest>,
+    /// Ids of collections whose recorded protected-apparatus digest for this
+    /// plan disagreed with `git show <sourceRevision>:<path>`, as the caller
+    /// checked (PLAT-985). Empty when the caller has no git access to check,
+    /// or found nothing to disagree.
+    #[serde(default)]
+    pub apparatus_forged: Vec<String>,
+    /// Whether the caller found this plan's objective, estimator, decision
+    /// rule or protected apparatus changed between two revisions of its
+    /// document that share a `definition_version` — committed revisions, and
+    /// the work tree against the last of them
+    /// (engineering-assurance's `definition_change_without_version_bump`,
+    /// PLAT-985). `false` when the caller has no git access to check.
+    #[serde(default)]
+    pub definition_changed_without_version_bump: bool,
+}
+
+/// One collection the caller found tampered with in the store's git history
+/// — removed, or changed after intake added it (FR-108, PLAT-985).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TamperedCollectionRequest {
+    /// The collection's id (its file name).
+    pub id: String,
+    /// Every `MeasurementPlan` id an observation in the collection named, in
+    /// the content intake first added or in any later content the caller
+    /// read. Empty when the caller could not read or parse any of it.
+    #[serde(default)]
+    pub plan_ids: Vec<String>,
 }
 
 /// A revision to compare the latest collection against.
