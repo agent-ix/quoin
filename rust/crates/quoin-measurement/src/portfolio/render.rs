@@ -47,7 +47,7 @@ pub fn render_portfolio_report(report: &PortfolioReport) -> Result<String, Measu
         }
         lines.extend(readable(repository)?);
     }
-    lines.extend(ranking_section(&rank_portfolio(report)));
+    lines.extend(ranking_section(&rank_portfolio(report)?));
     Ok(lines.join("\n"))
 }
 
@@ -72,7 +72,7 @@ fn ranking_section(ranking: &PortfolioRanking) -> Vec<String> {
                 entry.repository,
                 entry.plan_id,
                 entry.plan_path,
-                entry.metric,
+                entry.label,
                 js_f64_string(entry.score),
                 js_f64_string(entry.gap),
                 js_f64_string(entry.weight),
