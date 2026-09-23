@@ -793,6 +793,25 @@ mod tests {
         );
     }
 
+    /// Provenance: PLAT-981. The confidence gate is strict too: a confidence
+    /// exactly AT the threshold is `Confident`, not `Unconfirmed`. The margin
+    /// (0.9 - 0.1) is wide, so only the confidence gate is in play.
+    #[test]
+    fn a_confidence_exactly_at_the_threshold_is_not_unconfirmed() {
+        let thresholds = Thresholds {
+            confidence: 0.5,
+            margin: 0.1,
+        };
+        assert_eq!(
+            Certainty::assess(0.5, [0.9, 0.1], thresholds),
+            Certainty::Confident
+        );
+        assert_eq!(
+            Certainty::assess(0.49, [0.9, 0.1], thresholds),
+            Certainty::Unconfirmed
+        );
+    }
+
     /// Provenance: PLAT-981. The serialised spelling is the `as_str` one, so
     /// a JSON consumer and the rendered report name a bucket the same way.
     #[test]
