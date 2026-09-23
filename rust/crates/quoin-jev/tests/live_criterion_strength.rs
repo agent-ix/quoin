@@ -415,7 +415,7 @@ use std::time::{Duration, Instant};
 use typesafe_sdk_client::Client;
 use typesafe_sdk_env::Process;
 
-use quoin_jev::{FrContext, FrVerdict, JevErrorCode, QuestionSet};
+use quoin_jev::{BoundedContext, ContextPolicy, FrVerdict, JevErrorCode, QuestionSet};
 use support::{
     Graded, Verdict, corpus, defect_recall, disagreement, grade_coverage, grade_weakness, report,
     sound_recall, tally, trivial_baseline,
@@ -502,6 +502,21 @@ impl Variant {
 
     fn full_context(self) -> bool {
         self != Self::V0
+    }
+
+    /// The bounding each variant was measured under (PLAT-983). `v0` sent
+    /// the corpus's short fields, which the default policy passes unchanged.
+    /// Every full-context variant sent whole sections, so it lifts both caps
+    /// -- under the default it would silently stop being the variant it
+    /// names.
+    fn policy(self) -> ContextPolicy {
+        if self.full_context() {
+            ContextPolicy::default()
+                .with_max_prose_bytes(usize::MAX)
+                .with_max_statement_bytes(usize::MAX)
+        } else {
+            ContextPolicy::default()
+        }
     }
 
     fn questions(self) -> QuestionSet {
@@ -694,7 +709,7 @@ fn live_client() -> Client {
 /// let a 503 read as poor accuracy.
 async fn call(
     client: &Client,
-    context: &FrContext,
+    context: &BoundedContext,
     questions: &QuestionSet,
     fixture_id: &str,
 ) -> (FrVerdict, Duration) {
@@ -724,7 +739,8 @@ async fn run_once(client: &Client, questions: &QuestionSet, variant: Variant) ->
             fixture.context_full()
         } else {
             fixture.context()
-        };
+        }
+        .bound(&variant.policy());
         let (verdict, latency) = call(client, &context, questions, &fixture.fixture_id).await;
         pass.input_tokens += verdict.usage_input_tokens;
         pass.output_tokens += verdict.usage_output_tokens;
@@ -736,7 +752,8 @@ async fn run_once(client: &Client, questions: &QuestionSet, variant: Variant) ->
             fixture.context_full()
         } else {
             fixture.context()
-        };
+        }
+        .bound(&variant.policy());
         let (verdict, latency) = call(client, &context, questions, &fixture.fixture_id).await;
         pass.input_tokens += verdict.usage_input_tokens;
         pass.output_tokens += verdict.usage_output_tokens;
@@ -872,7 +889,8 @@ async fn benchmark_latency_and_throughput() {
         corpus.weakness_kind_fixtures[0].context_full()
     } else {
         corpus.weakness_kind_fixtures[0].context()
-    };
+    }
+    .bound(&variant.policy());
     let id = &corpus.weakness_kind_fixtures[0].fixture_id;
     let started = Instant::now();
     let burst = tokio::join!(
@@ -1007,7 +1025,7 @@ async fn the_lens_with_noul_derived_labels_v3() {
         // Corpus-only context, matching `v0` -- isolates the
         // derivation-strategy variable from the context variable `v1`
         // already showed hurts on this corpus.
-        let context = fixture.context();
+        let context = fixture.context().bound(&ContextPolicy::default());
         let ac_ids = context.ac_ids();
         let request = quoin_jev::lens::build_request(&context, &questions);
         let response = client
@@ -1045,7 +1063,7 @@ async fn the_lens_with_noul_derived_labels_v3() {
     // comparison below isolates only the weakness_kind change.
     let mut coverage_graded = Vec::with_capacity(4);
     for fixture in &corpus.adverse_case_coverage_fixtures {
-        let context = fixture.context();
+        let context = fixture.context().bound(&ContextPolicy::default());
         let verdict = quoin_jev::lens::run(&client, &context, &questions, THRESHOLDS)
             .await
             .unwrap_or_else(|error| {
@@ -1261,7 +1279,7 @@ async fn run_once_v4(client: &Client, set: &QuestionSet) -> (Vec<Graded>, u64, u
     for fixture in &corpus.weakness_kind_fixtures {
         // `context()`, not `context_full()`: v4 holds v0's minimal context
         // fixed and varies only the primitive.
-        let context = fixture.context();
+        let context = fixture.context().bound(&ContextPolicy::default());
         let ac_ids = context.ac_ids();
         let request = typesafe_sdk_client::SystemOneRequest::new(
             typesafe_sdk_questions::Entry::from(&context),
@@ -1290,7 +1308,7 @@ async fn run_once_v4(client: &Client, set: &QuestionSet) -> (Vec<Graded>, u64, u
     // Coverage rows are a `score` question, untouched by this hypothesis, and
     // are sent exactly as v0 sends them.
     for fixture in &corpus.adverse_case_coverage_fixtures {
-        let context = fixture.context();
+        let context = fixture.context().bound(&ContextPolicy::default());
         let verdict = quoin_jev::lens::run(client, &context, set, THRESHOLDS)
             .await
             .unwrap_or_else(|error| {
@@ -1419,7 +1437,7 @@ async fn the_noul_answers_are_reported_per_question() {
     let mut per_question: BTreeMap<&'static str, (u32, u32, u32, u32)> = BTreeMap::new();
 
     for fixture in &corpus.weakness_kind_fixtures {
-        let context = fixture.context();
+        let context = fixture.context().bound(&ContextPolicy::default());
         let ac_ids = context.ac_ids();
         let request = quoin_jev::lens::build_request(&context, &questions);
         let response = client

@@ -6,14 +6,20 @@
 //!
 //! "Questions batch within one request, so one FR's whole question block
 //! should be a single call" -- this module is that call. It builds the
-//! request from [`FrContext`] and [`QuestionSet`], sends it through a
+//! request from a [`BoundedContext`] and [`QuestionSet`], sends it through a
 //! [`typesafe_sdk_client::Client`] (production or mocked; this module does
 //! not care which), and hands the response to [`crate::verdict::extract`].
+//!
+//! Both entry points take [`BoundedContext`], not
+//! [`crate::context::FrContext`]: an FR's prose reaches Jev only after a
+//! [`crate::context::ContextPolicy`] has capped it (PLAT-983). A caller
+//! writes `context.bound(&ContextPolicy::default())` for the measured
+//! default, and keeps the returned value to read what was cut.
 
 use typesafe_sdk_client::{Client, SystemOneRequest};
 use typesafe_sdk_questions::Entry;
 
-use crate::context::FrContext;
+use crate::context::BoundedContext;
 use crate::error::{JevError, classify};
 use crate::question_set::QuestionSet;
 use crate::verdict::{FrVerdict, Thresholds, extract};
@@ -24,7 +30,7 @@ use crate::verdict::{FrVerdict, Thresholds, extract};
 /// exact request shape -- the questions map, the state -- before or instead
 /// of sending it.
 #[must_use]
-pub fn build_request(context: &FrContext, question_set: &QuestionSet) -> SystemOneRequest {
+pub fn build_request(context: &BoundedContext, question_set: &QuestionSet) -> SystemOneRequest {
     let state: Entry = context.into();
     let questions = question_set.questions_for_fr(context.ac_ids().iter().map(String::as_str));
     SystemOneRequest::new(state, questions)
@@ -43,7 +49,7 @@ pub fn build_request(context: &FrContext, question_set: &QuestionSet) -> SystemO
 /// [`crate::error::classify`].
 pub async fn run(
     client: &Client,
-    context: &FrContext,
+    context: &BoundedContext,
     question_set: &QuestionSet,
     thresholds: Thresholds,
 ) -> Result<FrVerdict, JevError> {
@@ -76,7 +82,9 @@ mod tests {
     use super::{build_request, run};
     use crate::client::with_transport;
     use crate::config::resolve;
-    use crate::context::{AcRow, FrContext};
+    use crate::context::{
+        AcRow, BoundedContext, ContextPolicy, DEFAULT_MAX_PROSE_BYTES, FrContext, TRUNCATION_MARKER,
+    };
     use crate::error::JevErrorCode;
     use crate::question_set::QuestionSet;
     use crate::verdict::{Certainty, Thresholds};
@@ -90,7 +98,7 @@ mod tests {
         margin: 0.1,
     };
 
-    fn context() -> FrContext {
+    fn fr_context() -> FrContext {
         FrContext {
             fr_id: "FR-900".to_owned(),
             statement: "The system SHALL emit a report.".to_owned(),
@@ -104,6 +112,10 @@ mod tests {
         }
     }
 
+    fn context() -> BoundedContext {
+        fr_context().bound(&ContextPolicy::default())
+    }
+
     /// Provenance: PLAT-837. One FR, one call: the built request carries a
     /// question for every `noul` id plus `weakness_kind` for the one AC row,
     /// and exactly one `adverse_case_coverage` question for the whole FR.
@@ -112,6 +124,30 @@ mod tests {
         let set = QuestionSet::parse(ASSET).expect("parses");
         let request = build_request(&context(), &set);
         assert_eq!(request.questions.len(), 7); // 5 noul + 1 choice + 1 score
+    }
+
+    /// Provenance: PLAT-983. The request path sends the bounded state: under
+    /// the default policy a Description the size of PLAT-917 v1's largest
+    /// goes out cut and marked, not whole, while the statement and AC row
+    /// are untouched.
+    #[test]
+    fn the_request_state_is_bounded_by_the_default_policy() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let mut fr = fr_context();
+        fr.description = Some("x".repeat(10_340));
+        let request = build_request(&fr.bound(&ContextPolicy::default()), &set);
+        let state = &request.state.0;
+        let description = state["description"].as_str().expect("a string");
+        assert_eq!(
+            description,
+            format!("{}{TRUNCATION_MARKER}206 of 10340 bytes]", "x".repeat(206))
+        );
+        assert_eq!(description.len(), DEFAULT_MAX_PROSE_BYTES);
+        assert_eq!(state["statement"], "The system SHALL emit a report.");
+        assert_eq!(
+            state["acceptance_criteria"][0]["text"],
+            "A report file exists after the run completes."
+        );
     }
 
     /// Provenance: PLAT-837. End to end with NO network and NO key beyond a

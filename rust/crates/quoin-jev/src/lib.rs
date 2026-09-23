@@ -60,7 +60,7 @@ pub mod span_ballot;
 pub mod verdict;
 
 pub use cassette::Cassette;
-pub use context::{AcRow, FrContext};
+pub use context::{AcRow, Bound, BoundedContext, ContextPolicy, FrContext};
 pub use corpus_check::{
     AdequacyFinding, check_answerability, check_required_fields, check_stated_counts,
 };
