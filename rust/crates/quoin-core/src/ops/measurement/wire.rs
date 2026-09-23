@@ -131,6 +131,14 @@ pub const MAX_REVISION_BYTES: usize = 256;
 /// records the store accepts or admit records it will not write.
 pub const MAX_RECORD_ID_BYTES: usize = quoin_measurement::MAX_RECORD_ID_BYTES;
 
+/// The largest `measurement.verify` request, in bytes.
+///
+/// A plan id, an optional claimed verdict and the intake order: one group of
+/// collection ids per git commit that added collections. The order grows with
+/// the store — 49 ids of about 40 bytes today — so this is sized like
+/// [`MAX_PORTFOLIO_ROOTS_BYTES`], not like a single name.
+pub const MAX_VERIFY_REQUEST_BYTES: usize = 4 * 1024 * 1024;
+
 /// One measurement store, located.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -151,6 +159,25 @@ pub struct RecordRequest {
     /// its own `record_type` member, and a typed union here would be a second
     /// declaration of the three record shapes `quoin-measurement` already owns.
     pub record: serde_json::Value,
+}
+
+/// A plan to verify, and the store holding its collections (FR-108).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VerifyRequest {
+    /// The repository root holding the measurement store.
+    pub repo: String,
+    /// The `MeasurementPlan` id to verify.
+    pub plan: String,
+    /// The verdict someone claims for the plan, when there is one to check:
+    /// `accept`, `reject` or `inconclusive`.
+    #[serde(default)]
+    pub claimed: Option<String>,
+    /// Collection ids in an order the producer cannot choose, earliest group
+    /// first; ids in one group are tied. A collection named in no group has
+    /// no attested position.
+    #[serde(default)]
+    pub intake_order: Vec<Vec<String>>,
 }
 
 /// A revision to compare the latest collection against.

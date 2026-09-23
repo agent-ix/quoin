@@ -8,7 +8,7 @@
 use std::fmt;
 use std::num::NonZeroU32;
 
-use engineering_assurance::measurement::Objective;
+use engineering_assurance::measurement::{DecisionRule, Estimator, Objective};
 use quoin_store::{RawFileSha256Digest, digest_bytes_sha256};
 
 use crate::types::ids::NonEmptyText;
@@ -139,14 +139,18 @@ impl GroundTruthKind {
 }
 
 /// The members of a plan's `statistical_design` block this crate reads
-/// (PLAT-960).
+/// (PLAT-960, PLAT-961).
 ///
 /// The engineering-assurance schema requires seven members of this block;
-/// the prose ones (`population`, `sampling`, `estimator`, `error_model`,
-/// `uncertainty`, `decision_rule`) are that schema's to validate and are not
-/// read here. Each member below is optional so a plan without it loads exactly
-/// as it did before PLAT-960.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+/// the prose ones (`population`, `sampling`, `error_model`, `uncertainty`) are
+/// that schema's to validate and are not read here. `estimator` and
+/// `decision_rule` are closed data since engineering-assurance FR-021 and are
+/// read into EA's own types. Each member below is optional so a plan without
+/// it loads exactly as it did before.
+///
+/// `PartialEq` only, not `Eq`: [`DecisionRule`]'s threshold and margin are
+/// `f64`.
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StatisticalDesign {
     /// The smallest `population.examined` a measured observation may carry
     /// before intake refuses it.
@@ -155,6 +159,12 @@ pub struct StatisticalDesign {
     /// checked at intake against each measured observation's
     /// `population.repetitions`.
     pub repetitions: Option<NonZeroU32>,
+    /// How the metric is computed from the collected population
+    /// (engineering-assurance FR-021).
+    pub estimator: Option<Estimator>,
+    /// The rule `quoin measurement verify` applies to the estimate
+    /// (engineering-assurance FR-021). EA owns its evaluation.
+    pub decision_rule: Option<DecisionRule>,
 }
 
 /// One measurement plan, as read from an assurance document's frontmatter.

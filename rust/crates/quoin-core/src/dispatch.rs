@@ -76,6 +76,7 @@ pub const OPERATIONS: &[&str] = &[
     "measurement.render_graph_portfolio",
     "measurement.render_portfolio",
     "measurement.render_report",
+    "measurement.verify",
     "modules.ensure_defaults",
     "modules.install",
     "modules.list",
@@ -163,6 +164,7 @@ pub fn dispatch(
         "evidence.read_baseline" => crate::ops::evidence::read_baseline(request, capabilities),
         "evidence.write_baseline" => crate::ops::evidence::write_baseline(request, capabilities),
         "measurement.record" => crate::ops::measurement::record(request),
+        "measurement.verify" => crate::ops::measurement::verify(request),
         "measurement.produce_agent_eval_intervention" => {
             crate::ops::measurement::produce_agent_eval_intervention(request)
         }

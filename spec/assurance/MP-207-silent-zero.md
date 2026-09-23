@@ -15,10 +15,12 @@ statistical_design:
   population: every ratio metric emitted by every completed producer in a benchmark run, excluding count metrics and genuinely empty populations
   sampling: exhaustive over every ratio metric in the run; no subsampling
   repetitions: 1
-  estimator: count of metrics with non-zero examined, zero matched, and no diagnostic
+  estimator: count
   error_model: none -- deterministic recomputation from the same raw payload reproduces the same count
   uncertainty: none -- an exact count, not a statistical estimate
-  decision_rule: gate at exactly zero; any non-zero count or missing capability is a refusal
+  decision_rule:
+    comparator: eq
+    threshold: 0
 relationships: []
 ---
 

@@ -18,12 +18,12 @@
 //!
 //! A host seam earns its keep when SOME of a domain's work is filesystem-free,
 //! so the seam separates the deciding half from the reading half. Here there is
-//! no such half: **all twelve routes open a measurement store**, and every one
+//! no such half: **all thirteen routes open a measurement store**, and every one
 //! of them opens it through `quoin-measurement`'s own seams —
 //! [`MeasurementSource`](quoin_measurement::MeasurementSource) and
 //! [`Clock`](quoin_measurement::source::Clock) — which that crate already
 //! unit-tests against `MemoryMeasurement`. A `MeasurementHost` here would
-//! therefore be twelve pass-through methods and a second copy of the routing
+//! therefore be thirteen pass-through methods and a second copy of the routing
 //! table, whose only content would be "call the function of the same name".
 //! The duplication has a failure mode: a route added to the table and not to
 //! the host, or added to both and spelled differently.
@@ -65,6 +65,7 @@ mod produce;
 mod record;
 mod report;
 mod taxonomy;
+mod verify;
 mod wire;
 
 #[cfg(test)]
@@ -84,7 +85,8 @@ pub use self::wire::{
     MAX_INTERVENTION_RECORD_BYTES, MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES,
     MAX_PORTFOLIO_ROOTS_BYTES, MAX_PRODUCER_DEFINITION_BYTES, MAX_RECORD_ID_BYTES,
     MAX_RETAINED_EXPORT_BYTES, MAX_REVISION_BYTES, MAX_WORKFLOW_YAML_BYTES, PathPayload,
-    PortfolioRequest, RecordRequest, RenderedPayload, RepoRequest, SeriesRequest,
+    MAX_VERIFY_REQUEST_BYTES, PortfolioRequest, RecordRequest, RenderedPayload, RepoRequest,
+    SeriesRequest, VerifyRequest,
 };
 
 pub use self::portfolio::{
@@ -92,6 +94,7 @@ pub use self::portfolio::{
 };
 pub use self::produce::{produce_agent_eval_intervention, produce_github_release_operational};
 pub use self::record::record;
+pub use self::verify::verify;
 pub use self::report::{
     build_comparison, build_report, build_series, render_comparison, render_report,
 };

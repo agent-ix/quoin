@@ -83,10 +83,12 @@ fn design(extra: &str, repetitions: &str) -> String {
          {extra}\
          \x20\x20sampling: exhaustive\n\
          \x20\x20repetitions: {repetitions}\n\
-         \x20\x20estimator: fraction correct\n\
+         \x20\x20estimator: proportion\n\
          \x20\x20error_model: binomial\n\
          \x20\x20uncertainty: wilson interval\n\
-         \x20\x20decision_rule: pass at 0.9\n"
+         \x20\x20decision_rule:\n\
+         \x20\x20\x20\x20comparator: ge\n\
+         \x20\x20\x20\x20threshold: 0.9\n"
     )
 }
 
