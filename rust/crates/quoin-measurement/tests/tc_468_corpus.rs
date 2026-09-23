@@ -33,7 +33,11 @@ use quoin_store::{canonical_json_bytes, parse_strict_json};
 /// How many collections `spec/evidence/measurements/` retains.
 ///
 /// Retained evidence is append-only, so this number may grow and may never
-/// shrink. A change here is a claim that the store gained a collection.
+/// shrink -- with one allowed exception: removing a file that was never an
+/// admissible collection to begin with (the ported validator refused it,
+/// e.g. for a missing `rawEvidence` or a non-clean source) does not "shrink"
+/// a store that never validly held it. A change here is a claim that the
+/// store gained a collection, or shed one that could not pass intake.
 const RETAINED_COLLECTIONS: usize = 51;
 
 fn repo() -> PathBuf {

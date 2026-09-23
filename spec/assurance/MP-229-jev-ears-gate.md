@@ -270,8 +270,18 @@ a result after the fact.
 
 MEASURED by `the_ears_lens_gate_mp_229_v3` at `variant: v3`, N=3 passes over
 the 59-fixture M2 revision plus one pass over the 45-statement M6 corpus, 222
-requests. Full record:
-`spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json`.
+requests.
+
+**The record backing this table was withdrawn, 2026-09-23.**
+`spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json` did not
+carry `rawEvidence` and recorded `verificationStack.sources.quire-rs` as
+`dirty` rather than a clean full-SHA source -- both refused by the ported
+intake validator, so the file was never an admissible collection and was
+removed rather than backfilled with data not actually measured (agent-ix/quoin#607).
+Its bytes remain in git history at `0a257691` (#575). The numbers below are
+unbacked by a retained record until a fresh `v3` run is recorded cleanly;
+they are not retracted, only unproven by machine-readable evidence pending
+that re-run.
 
 | bar | metric | value | met |
 | --- | --- | --- | --- |
