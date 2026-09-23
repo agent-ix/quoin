@@ -308,3 +308,38 @@ met at 10.0%.
 
 Every label in the M2 corpus is agent-labelled, not human ground truth. A
 restatement of this verdict that drops that sentence is a misreport.
+
+## `v4`/`v5`/`v6` result, 2026-09-22: all three clear, `v6` is best
+
+MEASURED against `jev-latest`, N=3 passes over the same 59-fixture M2
+revision plus one pass over the 45-statement M6 corpus, per variant.
+
+| variant | agreement | margin | defect recall | no-defect recall | ECE (derived conf.) | MP-231 forward delta | all 4 ship bars |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `v4` | 81.4% | +11.9pp | 55.6% | 90.0% | 0.1127 | 30.0% | met |
+| `v5` | 84.7% | +15.3pp | 77.8% | 80.0% | 0.1551 | 45.0% | met |
+| `v6` | 88.1% | +18.6pp | 83.3% | 82.5% | 0.1788 | 45.0% | met |
+
+All three clear the four ship-as-advisory bars from **Comparison and
+Enforcement** above (margin > 0, both recalls > 0, forward delta non-zero and
+above each variant's own MP-225 rate). `v6` is the strongest on every bar
+that moved: it reads the two `noul` answers `v3` computed but never
+consulted (`condition_is_unwanted`/`trigger_is_momentary` contradicting the
+keyword's own reading), catching `EARS-FIX-048` and `050` as predicted, with
+no new false positive at the `KeywordContradiction` rule's tightened
+threshold.
+
+**The calibration/accuracy tradeoff runs the other way.** `v4` -- same
+labels as `v3`, only the confidence source changed -- has the best ECE
+(0.1127, the only one of the three under the 0.15 M7 bound) and the worst
+accuracy. `v6` has the best accuracy and the worst ECE of the three (0.1788).
+Nothing here separates them: the wording and rule changes that catch more
+real defects make the model's own confidence a worse predictor of whether
+its call was right. None of `v4`/`v5`/`v6` clears M7's promotion bounds
+(ECE < 0.15 and MP-225 at N >= 20) at the same time it clears the ship bars;
+that decision is unaffected by this result, per **Interpretation** above.
+
+**Recommendation:** ship `v6` as the advisory variant if one is picked from
+this round -- highest margin, highest defect recall, same request shape as
+`v3`/`v4`/`v5`. This is a recommendation for whoever wires PLAT-838 into the
+skill, not itself a wiring decision; this ticket is measurement-only.
