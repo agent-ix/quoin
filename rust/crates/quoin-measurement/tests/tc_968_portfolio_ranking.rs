@@ -556,22 +556,9 @@ fn tc_968_011_a_met_bound_has_no_gap_in_the_objectives_direction() {
     assert!((gap("MP-short") - 0.1).abs() < 1e-9);
 }
 
-/// A plan tracking dimension-sliced quantities (PLAT-968's "tracking two
-/// related quantities" pattern, e.g. `dimensions.quantity: cost` vs
-/// `dimensions.quantity: latency`) produces one ranking row per slice, and
-/// both rendered forms must let a reader tell the rows apart — the exact gap
-/// PLAT-1019 found: neither row named its slice.
-///
-/// Two slices are scorable and a third has no usable value, so the label is
-/// checked on both `ranked` and `unranked`. Text assertions read only the
-/// "Priority ranking" section: the per-repository table above it already
-/// prints each row's sliced label, so a whole-document `contains` would pass
-/// even if the ranking still printed the bare metric.
-///
-/// Trace: FR-113-AC-6
-/// Provenance: PLAT-1019
-#[test]
-fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
+/// One repository whose one plan, `MP-multi`, has three `quantity` slices:
+/// `cost` (0.1) and `latency` (0.2) usable, `memory` with no value.
+fn multi_slice_report() -> PortfolioReport {
     let sliced_plan = plan(
         "MP-multi",
         Some(Objective::new(Direction::Higher, Some(0.9)).unwrap()),
@@ -621,7 +608,26 @@ fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
         comparison: None,
         staleness: Staleness::NotComputed,
     };
-    let report = report(vec![repository], "2026-01-01T00:00:00.000Z");
+    report(vec![repository], "2026-01-01T00:00:00.000Z")
+}
+
+/// A plan tracking dimension-sliced quantities (PLAT-968's "tracking two
+/// related quantities" pattern, e.g. `dimensions.quantity: cost` vs
+/// `dimensions.quantity: latency`) produces one ranking row per slice, and
+/// both rendered forms must let a reader tell the rows apart — the exact gap
+/// PLAT-1019 found: neither row named its slice.
+///
+/// Two slices are scorable and a third has no usable value, so the label is
+/// checked on both `ranked` and `unranked`. Text assertions read only the
+/// "Priority ranking" section: the per-repository table above it already
+/// prints each row's sliced label, so a whole-document `contains` would pass
+/// even if the ranking still printed the bare metric.
+///
+/// Trace: FR-113-AC-6
+/// Provenance: PLAT-1019
+#[test]
+fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
+    let report = multi_slice_report();
 
     let ranking = rank_portfolio(&report).expect("the ranking builds");
     assert!(
