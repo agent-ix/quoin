@@ -27,7 +27,7 @@ use quoin_measurement::portfolio::{
     build_portfolio_report, render_portfolio_report, render_portfolio_report_json,
 };
 use quoin_measurement::report::verdict::{
-    BestPrior, InconclusiveReason, RatchetOutcome, StageVerdict, TargetOutcome,
+    BestPrior, GateOutcome, InconclusiveReason, RatchetOutcome, StageVerdict, TargetOutcome,
 };
 use quoin_measurement::report::{
     MeasurementReport, build_measurement_report, build_measurement_report_from,
@@ -529,25 +529,23 @@ fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reac
     );
 }
 
-/// A plan with no `objective`, or with one at a stage this PR does not
-/// decide, carries no verdict and renders exactly as before.
+/// A plan with no `objective` — a `ratchet` or a `gate` alike — or one at
+/// `trend`, a stage this requirement never decides regardless of its
+/// `objective`, carries no verdict and renders exactly as before.
 ///
 /// Trace: FR-107-AC-6
 /// Provenance: PLAT-958
 #[test]
 fn tc_958_009_a_plan_without_an_objective_or_at_another_stage_is_unchanged() {
     // A `gate` plan requires `protected_apparatus` and `negative_controls`
-    // (PLAT-975, FR-110-AC-1); this test is not about apparatus, so the gate
-    // variant carries the minimal lists that satisfy plan load and nothing
-    // else exercises them.
-    let gate_objective = format!(
-        "{}protected_apparatus:\n  - answers.json\nnegative_controls:\n  - kind: apparatus-edit\n    \
-         description: test-only\n",
-        objective("higher", Some("0.9"))
-    );
+    // (PLAT-975, FR-110-AC-1) whether or not it states an `objective`; this
+    // test is not about apparatus, so it carries the minimal lists that
+    // satisfy plan load and nothing else exercises them.
+    let gate_no_objective = "protected_apparatus:\n  - answers.json\nnegative_controls:\n  - kind: apparatus-edit\n    \
+         description: test-only\n";
     for document in [
         plan_document("ratchet", "v1", ""),
-        plan_document("gate", "v1", &gate_objective),
+        plan_document("gate", "v1", gate_no_objective),
         plan_document("trend", "v1", &objective("lower", None)),
     ] {
         let plans = plans(&document);
@@ -1040,4 +1038,327 @@ fn tc_958_018_a_target_direction_is_reached_only_on_exact_equality() {
             reached: false
         }
     );
+}
+
+// --- PLAT-958 part 2: `gate` ---------------------------------------------
+
+/// A `gate` plan for `quality.score` under `definition`, with `objective`
+/// direction `direction` and `statistical_design.decision_rule` set to
+/// `rule` (already YAML-indented under `decision_rule:`). `protected_apparatus`
+/// and `negative_controls` are the minimal lists FR-110-AC-1 requires of
+/// every `gate` plan; this file is not about apparatus, so nothing else
+/// exercises them.
+fn gate_plan_document(direction: &str, definition: &str, rule: &str) -> String {
+    format!(
+        "---\n\
+         id: MP-958\n\
+         title: Example gate\n\
+         type: MeasurementPlan\n\
+         status: active\n\
+         owner: test\n\
+         stage: gate\n\
+         metric: quality.score\n\
+         definition_version: {definition}\n\
+         objective:\n  direction: {direction}\n\
+         protected_apparatus:\n  - answers.json\n\
+         negative_controls:\n  - kind: apparatus-edit\n    description: test-only\n\
+         statistical_design:\n  decision_rule:\n{rule}\
+         ---\n\
+         \n\
+         # Example gate\n"
+    )
+}
+
+/// The gate outcome over `values`.
+fn gate_over(plans: &[MeasurementPlan], values: &[f64]) -> GateOutcome {
+    match verdict_over(plans, values) {
+        Some(StageVerdict::Gate { outcome, .. }) => outcome,
+        other => panic!("expected a gate verdict, found {other:?}"),
+    }
+}
+
+/// A `gate` plan's verdict comes only from `decision_rule`, never from
+/// `objective.bound`: a `threshold` rule passes when the newest value holds
+/// and fails otherwise, in both directions, and the same value passes or
+/// fails depending only on the rule's own comparator and threshold.
+///
+/// Trace: FR-107-AC-7
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_019_a_threshold_gate_passes_or_fails_by_the_rule_alone_in_both_directions() {
+    let higher = plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: ge\n    threshold: 0.8\n",
+    ));
+    assert_eq!(
+        gate_over(&higher, &[0.9]),
+        GateOutcome::Pass {
+            current: 0.9,
+            baseline: None
+        }
+    );
+    assert_eq!(
+        gate_over(&higher, &[0.5]),
+        GateOutcome::Fail {
+            current: 0.5,
+            baseline: None
+        }
+    );
+    // Exactly the threshold passes: `ge`.
+    assert_eq!(
+        gate_over(&higher, &[0.8]),
+        GateOutcome::Pass {
+            current: 0.8,
+            baseline: None
+        }
+    );
+
+    let lower = plans(&gate_plan_document(
+        "lower",
+        "v1",
+        "    comparator: le\n    threshold: 0.2\n",
+    ));
+    assert_eq!(
+        gate_over(&lower, &[0.1]),
+        GateOutcome::Pass {
+            current: 0.1,
+            baseline: None
+        }
+    );
+    assert_eq!(
+        gate_over(&lower, &[0.5]),
+        GateOutcome::Fail {
+            current: 0.5,
+            baseline: None
+        }
+    );
+}
+
+/// A `baseline` rule reads its reference from the same usable-evidence pool
+/// a ratchet draws from: `prior-collection` is the nearest earlier usable
+/// value, and `best-seen` is the maximum for `gt`/`ge` and the minimum for
+/// `lt`/`le`/`eq`, over the plan's own slice.
+///
+/// Trace: FR-107-AC-7
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_020_a_baseline_gate_reads_prior_collection_or_best_seen() {
+    let prior = plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: gt\n    baseline: prior-collection\n",
+    ));
+    // 0.6 > prior (0.5): pass.
+    assert_eq!(
+        gate_over(&prior, &[0.5, 0.6]),
+        GateOutcome::Pass {
+            current: 0.6,
+            baseline: Some(0.5)
+        }
+    );
+    // 0.4 > prior (0.6): fail — `prior-collection` is the nearest earlier
+    // value, not the best of every earlier value.
+    assert_eq!(
+        gate_over(&prior, &[0.5, 0.6, 0.4]),
+        GateOutcome::Fail {
+            current: 0.4,
+            baseline: Some(0.6)
+        }
+    );
+
+    let best_seen = plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: ge\n    baseline: best-seen\n",
+    ));
+    // best-seen over [0.5, 0.6] is 0.6; 0.55 does not reach it.
+    assert_eq!(
+        gate_over(&best_seen, &[0.5, 0.6, 0.55]),
+        GateOutcome::Fail {
+            current: 0.55,
+            baseline: Some(0.6)
+        }
+    );
+    assert_eq!(
+        gate_over(&best_seen, &[0.5, 0.6, 0.6]),
+        GateOutcome::Pass {
+            current: 0.6,
+            baseline: Some(0.6)
+        }
+    );
+
+    let best_seen_lower = plans(&gate_plan_document(
+        "lower",
+        "v1",
+        "    comparator: le\n    baseline: best-seen\n",
+    ));
+    // best-seen over [5.0, 3.0] under `le` is the minimum, 3.0.
+    assert_eq!(
+        gate_over(&best_seen_lower, &[5.0, 3.0, 4.0]),
+        GateOutcome::Fail {
+            current: 4.0,
+            baseline: Some(3.0)
+        }
+    );
+    assert_eq!(
+        gate_over(&best_seen_lower, &[5.0, 3.0, 2.0]),
+        GateOutcome::Pass {
+            current: 2.0,
+            baseline: Some(3.0)
+        }
+    );
+}
+
+/// A `gate` verdict is `inconclusive`, never `pass`, when the plan states no
+/// `decision_rule`, when a `baseline` rule finds no earlier usable value
+/// (the first collection a gate ever sees), and when the rule's baseline is
+/// `constant-predictor`, which needs per-item rows no collection here
+/// carries.
+///
+/// Trace: FR-107-AC-8
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_021_a_gate_is_inconclusive_with_no_rule_no_prior_or_an_unsupported_baseline() {
+    // No `statistical_design` at all: `no_decision_rule`.
+    let no_rule = plans(&plan_document("gate", "v1", &{
+        let mut objective = objective("higher", None);
+        objective.push_str(
+            "protected_apparatus:\n  - answers.json\nnegative_controls:\n  - kind: \
+             apparatus-edit\n    description: test-only\n",
+        );
+        objective
+    }));
+    assert_eq!(
+        gate_over(&no_rule, &[0.9]),
+        GateOutcome::Inconclusive(InconclusiveReason::NoDecisionRule)
+    );
+
+    // A `baseline` rule on the first collection a gate ever sees: `no_prior`.
+    let prior = plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: gt\n    baseline: prior-collection\n",
+    ));
+    assert_eq!(
+        gate_over(&prior, &[0.9]),
+        GateOutcome::Inconclusive(InconclusiveReason::NoPrior)
+    );
+
+    // `constant-predictor` needs per-item rows this crate never stores.
+    let constant_predictor = plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: gt\n    baseline: constant-predictor\n",
+    ));
+    assert_eq!(
+        gate_over(&constant_predictor, &[0.5, 0.9]),
+        GateOutcome::Inconclusive(InconclusiveReason::ConstantPredictorUnsupported)
+    );
+}
+
+/// An empty or incomplete newest population is `inconclusive`, however good
+/// the value, exactly as for a ratchet and a target (AC-2's usable-evidence
+/// rule applies to a gate too) — never a green `pass`.
+///
+/// Trace: FR-107-AC-8
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_022_an_incomplete_or_empty_population_is_inconclusive_for_a_gate() {
+    let threshold = plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: ge\n    threshold: 0.1\n",
+    ));
+    let empty = admitted(
+        &threshold,
+        0,
+        observation(0.99, "v1", Some(json!({ "examined": 0 }))),
+    );
+    assert_eq!(
+        report(&threshold, &[empty]).current[0]
+            .stage_verdict
+            .as_ref()
+            .and_then(StageVerdict::inconclusive_reason),
+        Some(InconclusiveReason::EmptyPopulation)
+    );
+    let incomplete = admitted(
+        &threshold,
+        0,
+        observation(
+            0.99,
+            "v1",
+            Some(json!({ "examined": 10, "complete": false })),
+        ),
+    );
+    assert_eq!(
+        report(&threshold, &[incomplete]).current[0]
+            .stage_verdict
+            .as_ref()
+            .and_then(StageVerdict::inconclusive_reason),
+        Some(InconclusiveReason::IncompletePopulation)
+    );
+
+    // A `no collection at all` row: `no_current_value`, never `pass`.
+    assert_eq!(
+        gate_over(&threshold, &[]),
+        GateOutcome::Inconclusive(InconclusiveReason::NoCurrentValue)
+    );
+}
+
+/// A gate's verdict renders in the text report's Stage verdicts table with
+/// its baseline, in the JSON `stageVerdict`, and a `fail` adds an attention
+/// item, alongside a `regressed` ratchet's.
+///
+/// Trace: FR-107-AC-9
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_023_a_gate_verdict_renders_in_text_and_json_and_a_fail_is_an_attention_item() {
+    let plans = plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: gt\n    baseline: prior-collection\n",
+    ));
+    let first = admitted(&plans, 0, observation(0.6, "v1", None));
+    let newest = admitted(&plans, 1, observation(0.4, "v1", None));
+    let failing = report(&plans, &[first, newest]);
+
+    let text = render_measurement_report(&failing).expect("the report renders");
+    assert!(
+        text.contains(
+            "| quality.score | MP-958 (spec/assurance/MP-958.md) | gate | higher | fail | \
+             current 0.4; baseline 0.6 |"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("- quality.score: fails its gate at 0.4; plan MP-958 does not pass."),
+        "{text}"
+    );
+
+    let parsed: Value =
+        serde_json::from_str(&render_measurement_report_json(&failing).expect("the JSON renders"))
+            .expect("JSON");
+    assert_eq!(
+        parsed["current"][0]["stageVerdict"],
+        json!({
+            "stage": "gate",
+            "objective": { "direction": "higher" },
+            "verdict": "fail",
+            "reason": null,
+            "current": 0.4,
+            "baseline": 0.6,
+        })
+    );
+
+    // A `pass` adds no attention item.
+    let passing = report(
+        &plans,
+        &[
+            admitted(&plans, 0, observation(0.4, "v1", None)),
+            admitted(&plans, 1, observation(0.6, "v1", None)),
+        ],
+    );
+    let text = render_measurement_report(&passing).expect("the report renders");
+    assert!(!text.contains("does not pass"), "{text}");
 }

@@ -55,5 +55,6 @@ pub use render_json::render_measurement_report_json;
 pub use series::{SeriesPoint, render_series_json, series_for};
 pub use vanished::{VanishedSlice, vanished_slices};
 pub use verdict::{
-    BestPrior, InconclusiveReason, RatchetOutcome, StageVerdict, TargetOutcome, stage_verdict,
+    BestPrior, GateOutcome, InconclusiveReason, RatchetOutcome, StageVerdict, TargetOutcome,
+    stage_verdict,
 };

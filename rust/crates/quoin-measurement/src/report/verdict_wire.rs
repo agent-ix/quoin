@@ -16,7 +16,9 @@ use serde_json::Value;
 
 use crate::error::MeasurementError;
 use crate::report::vanished::VanishedSlice;
-use crate::report::verdict::{InconclusiveReason, RatchetOutcome, StageVerdict, TargetOutcome};
+use crate::report::verdict::{
+    GateOutcome, InconclusiveReason, RatchetOutcome, StageVerdict, TargetOutcome,
+};
 use crate::report::wire::analysis_map;
 
 /// A row's stage verdict (PLAT-958). Each stage states every one of its own
@@ -28,6 +30,8 @@ pub(crate) enum StageVerdictWire<'a> {
     Ratchet(RatchetWire<'a>),
     /// A `target` plan's progress.
     Target(TargetWire),
+    /// A `gate` plan's verdict.
+    Gate(GateWire),
 }
 
 /// `stage: "ratchet"`.
@@ -66,6 +70,23 @@ pub(crate) struct TargetWire {
     current: Option<f64>,
     distance: Option<f64>,
     reached: Option<bool>,
+}
+
+/// `stage: "gate"`. The only real pass/fail verdict this module states;
+/// `objective` is carried for display only — its `bound` is never evaluated.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GateWire {
+    stage: &'static str,
+    objective: Objective,
+    /// `pass`, `fail` or `inconclusive`.
+    verdict: &'static str,
+    /// As [`RatchetWire`]'s.
+    reason: Option<&'static str>,
+    current: Option<f64>,
+    /// The baseline value the rule was evaluated against, `null` for a
+    /// `threshold` rule or an inconclusive verdict.
+    baseline: Option<f64>,
 }
 
 impl<'a> StageVerdictWire<'a> {
@@ -121,6 +142,21 @@ impl<'a> StageVerdictWire<'a> {
                     current,
                     distance,
                     reached,
+                })
+            }
+            StageVerdict::Gate { objective, outcome } => {
+                let (current, baseline) = match *outcome {
+                    GateOutcome::Pass { current, baseline }
+                    | GateOutcome::Fail { current, baseline } => (Some(current), baseline),
+                    GateOutcome::Inconclusive(_) => (None, None),
+                };
+                Self::Gate(GateWire {
+                    stage,
+                    objective: *objective,
+                    verdict: outcome.as_str(),
+                    reason,
+                    current,
+                    baseline,
                 })
             }
         }
