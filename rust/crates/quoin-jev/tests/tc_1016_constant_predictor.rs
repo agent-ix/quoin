@@ -165,8 +165,11 @@ fn plan(decision_rule: DecisionRule) -> MeasurementPlan {
 
 /// The producer writes 15 item observations; the checker groups them by
 /// family and computes exactly `(9 + 3) / 15 = 0.8`.
+///
+/// Trace: FR-108-AC-10
+/// Provenance: PLAT-1016
 #[test]
-fn the_producer_output_reproduces_the_worked_example_baseline() {
+fn tc_1016_101_the_producer_output_reproduces_the_worked_example_baseline() {
     let items = item_observations(PLAN_ID, DEFINITION_VERSION, METRIC, &corpus()).unwrap();
     assert_eq!(items.len(), 15);
     for item in &items {
@@ -198,8 +201,11 @@ fn the_producer_output_reproduces_the_worked_example_baseline() {
 /// The same corpus, but the observed rate (12/15 = 0.8, equal to the
 /// baseline itself) does not clear baseline (0.8) plus a five-point margin:
 /// `rule_not_met`, not `accept`.
+///
+/// Trace: FR-108-AC-10
+/// Provenance: PLAT-1016
 #[test]
-fn a_margin_not_cleared_over_the_real_baseline_rejects() {
+fn tc_1016_102_a_margin_not_cleared_over_the_real_baseline_rejects() {
     let items = item_observations(PLAN_ID, DEFINITION_VERSION, METRIC, &corpus()).unwrap();
     let mut observations = vec![aggregate(12.0, 15.0)];
     observations.extend(items);
@@ -222,8 +228,11 @@ fn a_margin_not_cleared_over_the_real_baseline_rejects() {
 /// A run whose collection carries the aggregate observation but no per-item
 /// observations at all is `constant_predictor_rows_absent`, not a computed
 /// baseline of `0`.
+///
+/// Trace: FR-108-AC-10
+/// Provenance: PLAT-1016
 #[test]
-fn a_run_with_no_retained_items_is_inconclusive_not_a_false_baseline() {
+fn tc_1016_103_a_run_with_no_retained_items_is_inconclusive_not_a_false_baseline() {
     let collections = [collection("run-001", vec![aggregate(10.0, 15.0)])];
     let rule =
         DecisionRule::against_baseline(Comparator::Gt, Baseline::ConstantPredictor, Some(0.05))

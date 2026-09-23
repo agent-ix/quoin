@@ -142,6 +142,8 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `no_prior` | inconclusive | a baseline rule has no earlier usable run |
 | `order_unattested` | inconclusive | the order source is `git-shallow`; or the candidate, or a `prior-collection` rule's prior, shares its intake position with another run, or a run on one side of it states a timestamp on the other side |
 | `constant_predictor_rows_absent` | inconclusive | a `constant-predictor` baseline needs per-item answers by answer family, and the run being decided carries no per-item observations for its metric (PLAT-1016) |
+| `constant_predictor_rows_malformed` | inconclusive | one of the run's constant-predictor item observations lacks a non-empty string `item_id`, `family` or `expected`, states a `contested` that is not an array of strings, or repeats another's `item_id` (PLAT-1016) |
+| `constant_predictor_rows_mismatch` | inconclusive | the run's constant-predictor item observations do not number the governed observation's own `population.examined` (PLAT-1016) |
 | `rule_not_evaluable` | inconclusive | engineering-assurance could not evaluate the rule on these numbers |
 | `unit_unsupported` | inconclusive | a `proportion` observation's unit is not `fraction` or `fraction of …` |
 | `slice_missing` | inconclusive | a slice an earlier run measured under this definition is absent from the candidate |
@@ -166,14 +168,14 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | --- | --- | --- |
 | FR-108-AC-1 | A `MeasurementPlan`'s `statistical_design.estimator` and `.decision_rule` are read when present, as engineering-assurance's `Estimator` and `DecisionRule`. A value engineering-assurance refuses, a `constant-predictor` baseline under an estimator other than `proportion`, or a comparator that disagrees with the plan's `objective` refuses the plan load as `QM-PLAN-INVALID`, naming the member. | Test (TC-1780, TC-1781) |
 | FR-108-AC-2 | Every collection holding an observation of the plan's metric under the plan's id and `definition_version` is a run, and `collectionsConsidered` counts them whatever else the plan lacks. Runs are ordered by intake position, with unpositioned runs after every positioned one; the stated `timestamp` only breaks ties. The candidate is the last run. The candidate, or a `prior-collection` rule's prior, is `order_unattested` when it shares its intake position with another run or when a run before it states a later timestamp (or one after it an earlier one); a lone run needs no order. A slice an earlier run measured that the candidate lacks is `slice_missing`, and a collection of the candidate's subject and scope, not before it, that carries no observation of the plan is `observation_missing`: a dropped measurement never lets an older pass stand. | Test (TC-1782, TC-1789, TC-1791, TC-1797, TC-1799, TC-1800, TC-1803) |
-| FR-108-AC-3 | The rule is applied to every run against the runs before it; each run it does not hold for is listed in `regressedRuns` and counted. `prior-collection` is the latest earlier usable run's estimate and `best-seen` the maximum (`gt`, `ge`) or minimum (`lt`, `le`) of the earlier usable estimates, each computed from recomputed estimates; a run that is not usable evidence contributes none. From a run before the candidate only `value_disagrees_with_rows` and `population_malformed` are findings; its other shortfalls exclude it from baselines and are otherwise history. `constant-predictor` is computed from the run being decided itself, not from history (PLAT-1016; see the section below), and is `inconclusive` with `constant_predictor_rows_absent` when that run carries no per-item observations for its metric. A regressed run whose source revision, configuration digest, tool, corpus revision and verification-stack lock and executable digests equal the candidate's, followed by a candidate the rule holds for, is `rerun_until_pass`. | Test (TC-1784, TC-1785, TC-1790, TC-1792, TC-1797, TC-1802) |
+| FR-108-AC-3 | The rule is applied to every run against the runs before it; each run it does not hold for is listed in `regressedRuns` and counted. `prior-collection` is the latest earlier usable run's estimate and `best-seen` the maximum (`gt`, `ge`) or minimum (`lt`, `le`) of the earlier usable estimates, each computed from recomputed estimates; a run that is not usable evidence contributes none. From a run before the candidate only `value_disagrees_with_rows` and `population_malformed` are findings; its other shortfalls exclude it from baselines and are otherwise history. `constant-predictor` is computed from the run being decided itself, not from history (PLAT-1016; see the section below), and is `inconclusive` with `constant_predictor_rows_absent` when that run carries no per-item observations for its metric (`constant_predictor_rows_malformed` and `constant_predictor_rows_mismatch` under FR-108-AC-10). A regressed run whose source revision, configuration digest, tool, corpus revision and verification-stack lock and executable digests equal the candidate's, followed by a candidate the rule holds for, is `rerun_until_pass`. | Test (TC-1784, TC-1785, TC-1790, TC-1792, TC-1797, TC-1802) |
 | FR-108-AC-4 | An observation's estimate is recomputed from its `population` — `matched / examined` for `proportion`, `matched` for `count` — and a `proportion` or `count` observation with no `matched` is `population_unstated`. The stored `value` is consistent when it is the recomputed `f64` or lies within half a unit of its last stated decimal (read from its shortest round-trip spelling) of the exact quotient; otherwise the run is `value_disagrees_with_rows`. The rule is applied to the recomputed estimate, never the stored value. A `proportion` whose unit is not `fraction` or `fraction of …` is `unit_unsupported`. `mean`, `median` and `ratio` take the stored value and count the observation as asserted. `observationsRecomputed` and `observationsAsserted` count every run's observations. An incomplete or unstated population, including an unstated `complete`, is `inconclusive`, never `accept`; under a `minimum_population` an `examined` below it, `0` included, is `population_below_minimum`, and with no minimum `examined: 0` is `population_empty`; a population short of `repetitions` or malformed is `reject`. | Test (TC-1782, TC-1784, TC-1786..TC-1788, TC-1793, TC-1794, TC-1798, TC-1801, TC-1804) |
 | FR-108-AC-5 | The verdict is `reject` when any finding's reason is a reject reason, otherwise `inconclusive` when any is an inconclusive reason, otherwise `accept`. A claimed verdict that differs adds `claimed_verdict_disagrees` and the verdict is `reject`. | Test (TC-1783, TC-1789, TC-1795) |
 | FR-108-AC-6 | The result is the `quoin.measurement-verdict.v1` document under Outputs, every member present, and each reason, verdict and order-source spelling round-trips. | Test (TC-1795, TC-1805) |
 | FR-108-AC-7 | `quoin measurement verify` exits 0 on `accept`, and 1 with the complete document on `reject` (`CORE_REJECTED`) or `inconclusive` (`CORE_INCONCLUSIVE`). An unknown plan id, and a collection filed under a name that is not its `collectionId`, are refused (exit 2); an unknown claimed verdict or order source is a bad request (exit 3); each with no verdict. A plan recorded through `quoin measurement record` and verified is accepted; the same store with one observation's stored value edited is rejected with `value_disagrees_with_rows`. | Test (TC-1796, TC-1797, TC-1806) |
 | FR-108-AC-8 | `quoin measurement verify` takes the intake order from `git log --first-parent --diff-filter=A` over the store and reports `orderSource: git-first-parent-add`. Outside a git work tree it reports `none` and says why on stderr; in a shallow clone it reports `git-shallow` and `order_unattested` and says so on stderr; any other git failure fails the command rather than yielding an empty order. | Test (TC-1797, TC-1805) |
 | FR-108-AC-9 | `quoin measurement verify` reads four tamper facts from the store's git history (PLAT-985): a collection this plan governed that was added and later removed (committed, or in the work tree) is `collection_deleted`; a collection's stored file changed after intake added it (a later commit, a delete and re-add under the same id, or an uncommitted edit) is `collection_edited`; each is attributed by the plan ids in its first-added and last-seen content; a run's recorded protected-apparatus digest for this plan disagreeing with `git show <sourceRevision>:<path>` is `apparatus_forged`, and a `sourceRevision` spelled as a git option is never read as one; and the plan's own document changing its `objective`, `estimator`, `decision_rule` or `protected_apparatus` between two revisions sharing a `definition_version` — across a rename, and from the last commit to the work tree — is `definition_changed_without_version_bump`. Each is `false`/empty, not a false positive, when git cannot answer or the history is honest. | Test (TC-1892..TC-1903) |
-| FR-108-AC-10 | A `constant-predictor` baseline is computed from the run being decided: every one of its own observations under `{metric}.constant-predictor-item` (`quoin_measurement::constant_predictor_item_metric`) carrying the same `planId`/`definitionVersion`, grouped by their `dimensions.family`. For each family, the best constant's hit count is the maximum, over every label recorded as some item's `dimensions.expected` or a member of its `dimensions.contested`, of the items whose `expected` equals that label or whose `contested` contains it. The baseline is the sum of each family's best-constant hits over the total item count across every family (MP-222/PLAT-932's size-weighted mean of per-family agreement, computed as total best-constant agreements over total items — see the worked example in `engineering_assurance/skeletons/MeasurementPlan.md`). A run with no such observations, or whose observations state no `family` or `expected` dimension, is `constant_predictor_rows_absent`; one with at least one usable item computes a real baseline instead of that reason. | Test (TC-1915, TC-1916, TC-1917) |
+| FR-108-AC-10 | A `constant-predictor` baseline is computed from the run being decided: every one of its own observations under `{metric}.constant-predictor-item` (`quoin_measurement::constant_predictor_item_metric`) carrying the same `planId`/`definitionVersion`, grouped by their `dimensions.family`. For each family, the best constant's hit count is the maximum, over every label recorded as some item's `dimensions.expected` or a member of its `dimensions.contested`, of the items whose `expected` equals that label or whose `contested` contains it. The baseline is the sum of each family's best-constant hits over the total item count across every family (MP-222/PLAT-932's size-weighted mean of per-family agreement — see the worked example in `engineering_assurance/skeletons/MeasurementPlan.md`). A run with no such observations is `constant_predictor_rows_absent`; one where any such observation lacks a non-empty string `item_id`, `family` or `expected`, states a `contested` that is not an array of strings, or repeats an `item_id` is `constant_predictor_rows_malformed`; one whose item count is not the governed observation's own `population.examined` is `constant_predictor_rows_mismatch` — no baseline is computed from a partial set. Intake admits an item observation under its governed metric's plan (same id, definition and lifecycle checks, no population minimum); a plan whose own `metric` ends in `.constant-predictor-item` is refused as `QM-PLAN-INVALID`; `compare` leaves item observations out. | Test (TC-1915..TC-1924) |
 
 ## Leaf re-scoring and the asserted-only share (PLAT-961, PLAT-985)
 
@@ -234,6 +236,15 @@ already exists to distinguish one slice of a metric from another, and an
 item's own row is exactly one more slice — of a metric the plan does not
 itself read.
 
+**Intake and comparison.** Intake admits an item observation under its
+governed metric's own plan — the same active-plan, plan-id and
+definition-version checks as any observation — but never holds one item to
+the plan's `minimum_population` or `repetitions`, which bind the aggregate.
+The suffix is reserved: a plan whose own `metric` ends in
+`.constant-predictor-item` is refused at load, because it would read another
+plan's item rows as its own run. `compare` leaves item observations out; they
+are one graded item's labels, not a slice of a measurement.
+
 **Checker computation.** `quoin-measurement::verify`'s `Baseline::
 ConstantPredictor` arm (FR-108-AC-10) reads the run being decided's own item
 observations for the governed metric, groups them by `family`, and computes
@@ -241,8 +252,23 @@ each family's best-constant hit count: the maximum, over every label any item
 in the family recorded as `expected` or a member of `contested`, of the count
 of items agreeing with that label (by the same `expected`-or-`contested`
 rule). The baseline is the sum of every family's best-constant hits over the
-total item count across every family. A run whose item observations are
-absent, or state no `family` or `expected`, is `constant_predictor_rows_absent`.
+total item count across every family.
+
+It fails closed rather than computing a baseline from a sample it cannot
+vouch for. No item observations is `constant_predictor_rows_absent`. Any
+malformed one — no non-empty string `item_id`, `family` or `expected`, a
+`contested` that is not an array of strings, or a repeated `item_id` — is
+`constant_predictor_rows_malformed`: dropping it would shrink the sample the
+baseline is computed from, silently, and in whichever direction the dropped
+items happened to lean. An item count other than the governed observation's
+own `population.examined` is `constant_predictor_rows_mismatch`: the item rows
+are not the population the rate was measured over. That link is what makes
+the plan's `minimum_population` bind the baseline too — the floor already
+holds on `examined`, and the item rows must number exactly `examined`. It also
+means a sliced governed metric (observations with `dimensions`) is
+`constant_predictor_rows_mismatch` for each slice whose `examined` is smaller
+than the population-wide item rows; per-slice constant-predictor baselines are
+not supported.
 
 ## Known limits
 
@@ -259,24 +285,23 @@ absent, or state no `family` or `expected`, is `constant_predictor_rows_absent`.
   harmless to the verdict — the rule sees the recomputed estimate — but it
   means `value_disagrees_with_rows` catches only a stored value that is wrong
   at the precision it claims.
-- **A constant-predictor item observation with a malformed dimension is
-  dropped, not rejected.** An item observation missing `family` or `expected`,
-  or whose `contested` is not a JSON array, is skipped by the baseline
-  computation rather than failing the whole run; a collection where every
-  item is malformed this way still reads as
-  `constant_predictor_rows_absent`, since the usable set is empty. This
-  favours availability (a producer version drifting a field name does not
-  silently reject the run) over catching the drift itself — the reason code
-  is still visible in `findings`, and a producer's own tests are where a
-  malformed shape should be caught.
-- **A constant-predictor baseline trusts the producer's own `family` and
-  label grouping.** The checker groups by whatever string a `family`
-  dimension states; MP-222's rule that grouping "not be invented here" binds
-  the producer, not something the checker can verify independently — a
-  producer that grouped two answer spaces into one family would understate
-  the baseline the same way a single global constant used to (the worked
-  example this feature exists to fix), and nothing in this checker catches
-  that particular producer defect.
+- **A constant-predictor baseline trusts the producer's own `family`
+  grouping.** The checker groups by whatever string a `family` dimension
+  states; MP-222's rule that grouping "not be invented here" binds the
+  producer, and the plan states its families only in prose, so the checker
+  has nothing to hold the grouping against. The dangerous direction is
+  *collapsing* families: grouping two answer spaces into one understates the
+  baseline the same way a single global constant did in MP-222's worked
+  example (9/15 instead of 12/15), and lets a tool clear a bar it never beat.
+  Splitting too finely only overstates it (a one-item family always scores
+  1.0), which makes the bar harder, not easier. No structural heuristic
+  separates a collapsed family from an honest one: in the worked example's
+  own `weakness_kind` family, `weakness` never co-occurs with `sound` in any
+  item's `contested`, so "disjoint label clusters" would flag the correct
+  grouping too. Closing this needs the plan to declare its families in
+  frontmatter so the checker can require the item rows' family set to equal
+  it — an engineering-assurance `MeasurementPlan` schema change, not a check
+  this crate can make alone.
 - **A forged record naming a source revision this repository never received
   is unattested, not caught.** `apparatus_forged` needs `git show
   <sourceRevision>:<path>` to succeed; a `sourceRevision` from a fetch this

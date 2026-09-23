@@ -432,16 +432,6 @@ fn baseline(
     let RuleReference::Baseline { baseline, .. } = rule.reference() else {
         return Ok((None, None));
     };
-    if baseline == Baseline::ConstantPredictor {
-        let value = constant_predictor::baseline(
-            collection,
-            observation.plan_id.as_str(),
-            observation.definition_version.as_str(),
-            observation.metric.as_str(),
-        )
-        .ok_or(Reason::ConstantPredictorRowsAbsent)?;
-        return Ok((Some(value), None));
-    }
     // A baseline is computed from the checker's own estimates: a run that is
     // not usable evidence — tampered, short, incomplete — contributes nothing.
     let mut earlier = history.iter().enumerate().filter_map(|(index, run)| {
@@ -456,7 +446,10 @@ fn baseline(
         })
     });
     let found = match baseline {
-        Baseline::ConstantPredictor => unreachable!("handled above"),
+        Baseline::ConstantPredictor => {
+            let value = constant_predictor::baseline(collection, observation)?;
+            return Ok((Some(value), None));
+        }
         Baseline::PriorCollection => earlier.next_back(),
         Baseline::BestSeen => match rule.comparator() {
             Comparator::Gt | Comparator::Ge => {

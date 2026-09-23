@@ -26,8 +26,15 @@ description: "Chronological log of structural changes to this bundle."
   (not history — this baseline is a property of the population, not a prior
   run) and ports `quoin-jev`'s `tests/support/grading.rs::trivial_baseline()`
   formula rather than reimplementing it. `constant_predictor_rows_absent`
-  remains the answer for a run that retains none. FR-108-AC-10; Matrix:
-  TC-1915..TC-1919.
+  remains the answer for a run that retains none. Review hardening in the
+  same change: intake admits item rows under the governed metric's plan
+  (the first cut's rows were refused as unplanned, so no stored collection
+  could carry them), the suffix is reserved for plan metrics, `compare`
+  skips item rows, the candidate label set includes contested-only labels
+  (MP-222's "answer space"), and a malformed row or an item count other than
+  the aggregate's `examined` fails closed as `constant_predictor_rows_malformed`
+  / `constant_predictor_rows_mismatch` instead of being dropped.
+  FR-108-AC-10; Matrix: TC-1915..TC-1924.
 * **2026-09-23** — **FR-112 (new FR): npm distribution of the native `quoin`
   binary is restored** (owner ruling, 2026-09-23). StR-009 and ADR-0003 had
   withdrawn public-npmjs distribution as a dated exemption for the duration

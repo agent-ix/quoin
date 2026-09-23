@@ -66,6 +66,15 @@ pub enum Reason {
     /// A `constant-predictor` baseline needs per-item answers by answer
     /// family, which no collection carries.
     ConstantPredictorRowsAbsent,
+    /// A `constant-predictor` baseline's item observations (PLAT-1016) are
+    /// unusable: one lacks a non-empty `item_id`, `family` or `expected`,
+    /// states a `contested` that is not an array of strings, or repeats
+    /// another's `item_id`. The baseline is not computed from the rest.
+    ConstantPredictorRowsMalformed,
+    /// A `constant-predictor` baseline's item observations (PLAT-1016) do not
+    /// number the governed observation's own `population.examined`: they are
+    /// not the population the rate was measured over.
+    ConstantPredictorRowsMismatch,
     /// Engineering-assurance could not evaluate the rule on these numbers.
     RuleNotEvaluable,
     /// A `proportion` observation's unit is not a fraction (`percent of …`,
@@ -124,7 +133,7 @@ pub enum Reason {
 
 impl Reason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 27] = [
+    pub const ALL: [Self; 29] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
         Self::NoCollections,
@@ -152,6 +161,8 @@ impl Reason {
         Self::CollectionDeleted,
         Self::CollectionEdited,
         Self::DefinitionChangedWithoutVersionBump,
+        Self::ConstantPredictorRowsMalformed,
+        Self::ConstantPredictorRowsMismatch,
     ];
 
     /// The stable wire spelling.
@@ -185,6 +196,8 @@ impl Reason {
             Self::CollectionDeleted => "collection_deleted",
             Self::CollectionEdited => "collection_edited",
             Self::DefinitionChangedWithoutVersionBump => "definition_changed_without_version_bump",
+            Self::ConstantPredictorRowsMalformed => "constant_predictor_rows_malformed",
+            Self::ConstantPredictorRowsMismatch => "constant_predictor_rows_mismatch",
         }
     }
 
@@ -221,6 +234,8 @@ impl Reason {
             | Self::NoPrior
             | Self::OrderUnattested
             | Self::ConstantPredictorRowsAbsent
+            | Self::ConstantPredictorRowsMalformed
+            | Self::ConstantPredictorRowsMismatch
             | Self::RuleNotEvaluable
             | Self::UnitUnsupported
             | Self::SliceMissing

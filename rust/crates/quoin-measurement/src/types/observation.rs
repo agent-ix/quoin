@@ -177,9 +177,11 @@ impl Dimensions {
 /// A per-item observation is never itself a run of the plan: the checker's
 /// run-building filter matches on the plan's own `metric` exactly, so an item
 /// observation (whose metric always carries this suffix) is never mistaken
-/// for another slice of the governed metric. See
-/// `crate::verify::constant_predictor_baseline` for the reader and
-/// `quoin-jev`'s `constant_predictor` module for the producer.
+/// for another slice of the governed metric. Intake admits it under the
+/// governed metric's own plan ([`constant_predictor_governed_metric`]), and
+/// `compare` leaves it out of slice-by-slice comparison. See
+/// `crate::verify::constant_predictor` for the reader and `quoin-jev`'s
+/// `constant_predictor` module for the producer.
 pub const CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX: &str = ".constant-predictor-item";
 
 /// The per-item metric name a constant-predictor producer writes for
@@ -187,6 +189,16 @@ pub const CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX: &str = ".constant-predictor-ite
 #[must_use]
 pub fn constant_predictor_item_metric(metric: &str) -> String {
     format!("{metric}{CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX}")
+}
+
+/// The governed metric `metric` is a constant-predictor item metric of, or
+/// `None` when `metric` does not carry
+/// [`CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX`] (or is nothing but the suffix).
+#[must_use]
+pub fn constant_predictor_governed_metric(metric: &str) -> Option<&str> {
+    metric
+        .strip_suffix(CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX)
+        .filter(|governed| !governed.is_empty())
 }
 
 /// `dimensions` keys a constant-predictor per-item observation carries

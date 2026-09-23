@@ -10,101 +10,147 @@
 //! section, for the full producer/checker contract and the shape a run's own
 //! item observations carry.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_store::JsonValue;
 
+use super::Reason;
 use crate::types::collection::MeasurementCollection;
-use crate::types::observation::{constant_predictor_dims as dim, constant_predictor_item_metric};
+use crate::types::observation::{
+    MeasurementObservation, constant_predictor_dims as dim, constant_predictor_item_metric,
+};
+
+/// One usable item row: its primary reading and its contested alternates.
+struct Row<'a> {
+    expected: &'a str,
+    contested: Vec<&'a str>,
+}
+
+impl Row<'_> {
+    /// Whether a constant answer of `label` agrees with this item.
+    fn agrees(&self, label: &str) -> bool {
+        self.expected == label || self.contested.contains(&label)
+    }
+}
 
 /// The size-weighted mean of the best-constant agreement per answer family,
 /// computed from `collection`'s own per-item retained observations for
-/// `metric`.
+/// `observation`'s metric, plan and definition.
 ///
 /// Group the population into the answer-space families the plan's own
 /// Population section states (the plan does not invent a grouping here; the
 /// producer's own `family` dimension is read as-is). For family `f` with
-/// `n_f` items, and for each label `i` recorded as the primary reading or a
-/// contested alternate of some item in `f`, let `n_{f,i}` count every item
-/// where `i` is the primary reading or a contested alternate (an item with
-/// more than one defensible answer counts toward each). That family's best
-/// constant score is `max_i(n_{f,i}) / n_f`. The whole population's baseline
-/// is the size-weighted mean of the per-family rates: total best-constant
-/// agreements over total items.
+/// `n_f` items, and for each label `i` in that family's answer space — every
+/// label recorded as some item's primary reading *or* a contested alternate
+/// — let `n_{f,i}` count every item where `i` is the primary reading or a
+/// contested alternate (an item with more than one defensible answer counts
+/// toward each). That family's best constant score is `max_i(n_{f,i}) / n_f`.
+/// The whole population's baseline is the size-weighted mean of the
+/// per-family rates: total best-constant agreements over total items.
 ///
-/// Returns `None` when `collection` carries no per-item observations for
-/// `metric` under `plan_id`/`definition_version` — the caller reads that as
-/// [`super::Reason::ConstantPredictorRowsAbsent`], exactly as before this
-/// baseline was implemented, only now also when a collection with an
-/// aggregate result simply never retained the rows a constant-predictor rule
-/// depends on.
+/// # Errors
+///
+/// Fails closed rather than computing a baseline from a sample it cannot
+/// vouch for:
+///
+/// - [`Reason::ConstantPredictorRowsAbsent`] when the collection carries no
+///   item observation for this metric, plan and definition.
+/// - [`Reason::ConstantPredictorRowsMalformed`] when any such item
+///   observation lacks a non-empty string `item_id`, `family` or `expected`,
+///   carries a `contested` that is not an array of strings, or repeats
+///   another item's `item_id`. A dropped row would shrink the sample the
+///   baseline is computed from without anyone noticing.
+/// - [`Reason::ConstantPredictorRowsMismatch`] when the number of item
+///   observations is not `observation`'s own `population.examined`: the item
+///   rows are not the population the governed rate was measured over (items
+///   lost or duplicated by the producer, or a sliced observation whose slice
+///   the population-wide item rows do not describe).
 pub(super) fn baseline(
     collection: &MeasurementCollection,
-    plan_id: &str,
-    definition_version: &str,
-    metric: &str,
-) -> Option<f64> {
-    let item_metric = constant_predictor_item_metric(metric);
-    let mut by_family: BTreeMap<String, Vec<(String, Vec<String>)>> = BTreeMap::new();
+    observation: &MeasurementObservation,
+) -> Result<f64, Reason> {
+    let item_metric = constant_predictor_item_metric(observation.metric.as_str());
+    let mut by_family: BTreeMap<&str, Vec<Row<'_>>> = BTreeMap::new();
+    let mut item_ids: BTreeSet<&str> = BTreeSet::new();
+    let mut total = 0usize;
     for item in &collection.observations {
-        if item.plan_id.as_str() != plan_id
-            || item.definition_version.as_str() != definition_version
+        if item.plan_id != observation.plan_id
+            || item.definition_version != observation.definition_version
             || item.metric.as_str() != item_metric
         {
             continue;
         }
         let dimensions = item.dimensions.entries();
-        let Some(family) = dimensions.get(dim::FAMILY).and_then(JsonValue::as_str) else {
-            continue;
+        let text = |key: &str| {
+            dimensions
+                .get(key)
+                .and_then(JsonValue::as_str)
+                .filter(|value| !value.is_empty())
         };
-        let Some(expected) = dimensions.get(dim::EXPECTED).and_then(JsonValue::as_str) else {
-            continue;
+        let (Some(item_id), Some(family), Some(expected)) =
+            (text(dim::ITEM_ID), text(dim::FAMILY), text(dim::EXPECTED))
+        else {
+            return Err(Reason::ConstantPredictorRowsMalformed);
         };
-        let contested = match dimensions.get(dim::CONTESTED) {
-            Some(JsonValue::Array(entries)) => entries
-                .iter()
-                .filter_map(JsonValue::as_str)
-                .map(str::to_owned)
-                .collect(),
-            _ => Vec::new(),
+        let Some(JsonValue::Array(entries)) = dimensions.get(dim::CONTESTED) else {
+            return Err(Reason::ConstantPredictorRowsMalformed);
         };
-        by_family
-            .entry(family.to_owned())
-            .or_default()
-            .push((expected.to_owned(), contested));
-    }
-    if by_family.is_empty() {
-        return None;
-    }
-    let mut hits = 0usize;
-    let mut total = 0usize;
-    for rows in by_family.values() {
-        total += rows.len();
-        let mut labels: Vec<&str> = rows.iter().map(|(expected, _)| expected.as_str()).collect();
-        labels.sort_unstable();
-        labels.dedup();
-        let best = labels
-            .into_iter()
-            .map(|label| {
-                rows.iter()
-                    .filter(|(expected, contested)| {
-                        expected == label || contested.iter().any(|entry| entry == label)
-                    })
-                    .count()
-            })
-            .max()
-            .unwrap_or(0);
-        hits += best;
+        let contested = entries
+            .iter()
+            .map(JsonValue::as_str)
+            .collect::<Option<Vec<&str>>>()
+            .ok_or(Reason::ConstantPredictorRowsMalformed)?;
+        if !item_ids.insert(item_id) {
+            return Err(Reason::ConstantPredictorRowsMalformed);
+        }
+        total += 1;
+        by_family.entry(family).or_default().push(Row {
+            expected,
+            contested,
+        });
     }
     if total == 0 {
-        return None;
+        return Err(Reason::ConstantPredictorRowsAbsent);
     }
     #[allow(
         clippy::cast_precision_loss,
         reason = "a graded corpus's item count is far below f64's 2^53 exact-integer bound"
     )]
-    let rate = hits as f64 / total as f64;
-    Some(rate)
+    let total_f64 = total as f64;
+    let examined = observation
+        .population
+        .as_ref()
+        .and_then(|population| population.examined);
+    #[allow(
+        clippy::float_cmp,
+        reason = "both sides are whole-number counts, exact in f64 at any corpus size"
+    )]
+    let consistent = examined == Some(total_f64);
+    if !consistent {
+        return Err(Reason::ConstantPredictorRowsMismatch);
+    }
+    let hits: usize = by_family.values().map(|rows| best_constant(rows)).sum();
+    #[allow(
+        clippy::cast_precision_loss,
+        reason = "a graded corpus's item count is far below f64's 2^53 exact-integer bound"
+    )]
+    let rate = hits as f64 / total_f64;
+    Ok(rate)
+}
+
+/// One family's best-constant hit count: the most items any single label in
+/// the family's answer space (every primary reading and contested alternate)
+/// agrees with.
+fn best_constant(rows: &[Row<'_>]) -> usize {
+    let labels: BTreeSet<&str> = rows
+        .iter()
+        .flat_map(|row| std::iter::once(row.expected).chain(row.contested.iter().copied()))
+        .collect();
+    labels
+        .into_iter()
+        .map(|label| rows.iter().filter(|row| row.agrees(label)).count())
+        .max()
+        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -123,9 +169,10 @@ mod tests {
     use crate::types::collection::MeasurementCollection;
     use crate::types::ids::NonEmptyText;
     use crate::types::observation::{
-        Dimensions, MeasurementObservation, MeasurementShape, MeasurementState,
-        constant_predictor_dims as dim, constant_predictor_item_metric,
+        Dimensions, MeasurementObservation, MeasurementPopulation, MeasurementShape,
+        MeasurementState, constant_predictor_dims as dim, constant_predictor_item_metric,
     };
+    use crate::verify::Reason;
 
     fn text(value: &str) -> NonEmptyText {
         NonEmptyText::parse(
@@ -136,13 +183,14 @@ mod tests {
         .unwrap()
     }
 
-    fn item(
-        metric: &str,
+    fn row(
+        item_id: &str,
         family: &str,
         expected: &str,
         contested: &[&str],
-    ) -> MeasurementObservation {
+    ) -> BTreeMap<String, JsonValue> {
         let mut dimensions: BTreeMap<String, JsonValue> = BTreeMap::new();
+        dimensions.insert(dim::ITEM_ID.to_owned(), JsonValue::string(item_id));
         dimensions.insert(dim::FAMILY.to_owned(), JsonValue::string(family));
         dimensions.insert(dim::EXPECTED.to_owned(), JsonValue::string(expected));
         dimensions.insert(
@@ -154,8 +202,15 @@ mod tests {
                     .collect(),
             ),
         );
+        dimensions
+    }
+
+    fn observation(
+        metric: &str,
+        dimensions: BTreeMap<String, JsonValue>,
+    ) -> MeasurementObservation {
         MeasurementObservation {
-            metric: text(&constant_predictor_item_metric(metric)),
+            metric: text(metric),
             plan_id: text("MP-1"),
             definition_version: text("v1"),
             state: MeasurementState::Measured,
@@ -168,20 +223,31 @@ mod tests {
         }
     }
 
-    fn malformed(metric: &str) -> MeasurementObservation {
-        // No `family` or `expected` dimension at all.
-        MeasurementObservation {
-            metric: text(&constant_predictor_item_metric(metric)),
-            plan_id: text("MP-1"),
-            definition_version: text("v1"),
-            state: MeasurementState::Measured,
-            value: Some(1.0),
-            unit: text("fraction"),
-            shape: MeasurementShape::Scalar,
-            population: None,
-            dimensions: Dimensions::stated(BTreeMap::new()),
-            reason: None,
-        }
+    fn item(
+        item_id: &str,
+        family: &str,
+        expected: &str,
+        contested: &[&str],
+    ) -> MeasurementObservation {
+        observation(
+            &constant_predictor_item_metric("m"),
+            row(item_id, family, expected, contested),
+        )
+    }
+
+    /// The governed aggregate observation, examining `examined` items.
+    fn governed(examined: f64) -> MeasurementObservation {
+        let mut aggregate = observation("m", BTreeMap::new());
+        aggregate.dimensions = Dimensions::ABSENT;
+        aggregate.population = Some(MeasurementPopulation {
+            examined: Some(examined),
+            matched: Some(0.0),
+            complete: Some(true),
+            repetitions: None,
+            identity: None,
+            unmodelled: BTreeMap::new(),
+        });
+        aggregate
     }
 
     fn collection(observations: Vec<MeasurementObservation>) -> MeasurementCollection {
@@ -203,78 +269,157 @@ mod tests {
         }
     }
 
-    /// The two-family worked example from FR-108: `weakness_kind` (9/11 best
-    /// constant `sound`) and `coverage` (3/4 best constant `2`) combine to
-    /// `(9 + 3) / 15`, not the understated single-global-constant `9/15`.
+    /// FR-108's worked example: `weakness_kind` (11 items; `sound` agrees
+    /// with 6 primary readings and 3 contested alternates, 9/11) and
+    /// `coverage` (4 items; level `2`, 3/4) combine to `(9 + 3) / 15 = 0.8`,
+    /// not the understated single-global-constant `9/15 = 0.6`.
     #[test]
     fn two_families_combine_as_a_size_weighted_mean() {
         let mut items = Vec::new();
-        for (expected, contested) in [
-            ("sound", vec!["sound"]),
-            ("sound", vec!["sound"]),
-            ("sound", vec!["sound"]),
-            ("sound", vec!["sound"]),
-            ("sound", vec!["sound"]),
-            ("sound", vec!["sound"]),
-            ("gap", vec!["gap", "sound"]),
-            ("gap", vec!["gap", "sound"]),
-            ("gap", vec!["gap", "sound"]),
-            ("weakness", vec!["weakness"]),
-            ("weakness", vec!["weakness"]),
-        ] {
-            items.push(item("m", "weakness_kind", expected, &contested));
+        let weakness_kind: [(&str, &[&str]); 11] = [
+            ("sound", &["sound"]),
+            ("sound", &["sound"]),
+            ("sound", &["sound"]),
+            ("sound", &["sound"]),
+            ("sound", &["sound"]),
+            ("sound", &["sound"]),
+            ("gap", &["gap", "sound"]),
+            ("gap", &["gap", "sound"]),
+            ("gap", &["gap", "sound"]),
+            ("weakness", &["weakness"]),
+            ("weakness", &["weakness"]),
+        ];
+        for (index, (expected, contested)) in weakness_kind.into_iter().enumerate() {
+            items.push(item(
+                &format!("w{index}"),
+                "weakness_kind",
+                expected,
+                contested,
+            ));
         }
-        for (expected, contested) in [
-            ("2", vec!["2"]),
-            ("2", vec!["2"]),
-            ("2", vec!["2"]),
-            ("1", vec!["1"]),
-        ] {
-            items.push(item("m", "coverage", expected, &contested));
+        let coverage: [(&str, &[&str]); 4] =
+            [("2", &["2"]), ("2", &["2"]), ("2", &["2"]), ("1", &["1"])];
+        for (index, (expected, contested)) in coverage.into_iter().enumerate() {
+            items.push(item(&format!("c{index}"), "coverage", expected, contested));
         }
-        let collection = collection(items);
-        let value = baseline(&collection, "MP-1", "v1", "m").unwrap();
+        let value = baseline(&collection(items), &governed(15.0)).unwrap();
         assert!((value - 0.8).abs() < f64::EPSILON, "{value}");
     }
 
-    /// An item observation with no `family`/`expected` dimension is dropped
-    /// rather than poisoning the whole computation; the baseline still comes
-    /// from the items that are usable.
+    /// A label recorded only as a contested alternate, never as any item's
+    /// primary reading, is still in the family's answer space: here `x`
+    /// agrees with all three items, so the baseline is `1.0`, not the `1/3`
+    /// a primary-readings-only candidate set would understate it as.
     #[test]
-    fn a_malformed_item_is_dropped_not_fatal() {
+    fn a_contested_only_label_is_a_candidate_constant() {
         let items = vec![
-            item("m", "f", "a", &["a"]),
-            item("m", "f", "a", &["a"]),
-            item("m", "f", "b", &["b"]),
-            malformed("m"),
+            item("a", "f", "p", &["p", "x"]),
+            item("b", "f", "q", &["q", "x"]),
+            item("c", "f", "r", &["r", "x"]),
         ];
-        let collection = collection(items);
-        let value = baseline(&collection, "MP-1", "v1", "m").unwrap();
-        // Only the 3 well-formed items count: best constant "a" agrees twice
-        // of three.
+        let value = baseline(&collection(items), &governed(3.0)).unwrap();
+        assert!((value - 1.0).abs() < f64::EPSILON, "{value}");
+    }
+
+    /// Any malformed item observation fails the baseline closed rather than
+    /// being dropped: a dropped row shrinks the sample silently.
+    #[test]
+    fn a_malformed_item_fails_closed() {
+        let well_formed = || {
+            vec![
+                item("a", "f", "a", &["a"]),
+                item("b", "f", "a", &["a"]),
+                item("c", "f", "b", &["b"]),
+            ]
+        };
+        let metric = constant_predictor_item_metric("m");
+        let mut no_family = row("d", "f", "a", &["a"]);
+        no_family.remove(dim::FAMILY);
+        let mut empty_expected = row("d", "f", "a", &["a"]);
+        empty_expected.insert(dim::EXPECTED.to_owned(), JsonValue::string(""));
+        let mut no_item_id = row("d", "f", "a", &["a"]);
+        no_item_id.remove(dim::ITEM_ID);
+        let mut contested_not_array = row("d", "f", "a", &["a"]);
+        contested_not_array.insert(dim::CONTESTED.to_owned(), JsonValue::string("a"));
+        let mut contested_not_strings = row("d", "f", "a", &["a"]);
+        contested_not_strings.insert(
+            dim::CONTESTED.to_owned(),
+            JsonValue::Array(vec![JsonValue::Bool(true)]),
+        );
+        let duplicate_id = row("a", "g", "a", &["a"]);
+        for bad in [
+            no_family,
+            empty_expected,
+            no_item_id,
+            contested_not_array,
+            contested_not_strings,
+            duplicate_id,
+        ] {
+            let mut items = well_formed();
+            items.push(observation(&metric, bad.clone()));
+            assert_eq!(
+                baseline(&collection(items), &governed(4.0)),
+                Err(Reason::ConstantPredictorRowsMalformed),
+                "{bad:?}"
+            );
+        }
+    }
+
+    /// Item rows that do not number the governed observation's own
+    /// `examined` are not its population: lost rows, extra rows, and an
+    /// aggregate with no stated `examined` all fail closed.
+    #[test]
+    fn an_item_count_other_than_examined_fails_closed() {
+        let items = || {
+            vec![
+                item("a", "f", "a", &["a"]),
+                item("b", "f", "a", &["a"]),
+                item("c", "f", "b", &["b"]),
+            ]
+        };
+        for examined in [2.0, 4.0, 30.0] {
+            assert_eq!(
+                baseline(&collection(items()), &governed(examined)),
+                Err(Reason::ConstantPredictorRowsMismatch),
+                "{examined}"
+            );
+        }
+        let mut unstated = governed(3.0);
+        unstated.population = None;
+        assert_eq!(
+            baseline(&collection(items()), &unstated),
+            Err(Reason::ConstantPredictorRowsMismatch)
+        );
+        let value = baseline(&collection(items()), &governed(3.0)).unwrap();
         assert!((value - (2.0 / 3.0)).abs() < f64::EPSILON, "{value}");
     }
 
-    /// A collection with only malformed item observations, or none at all,
-    /// has no usable rows: `None`, not a baseline of `0`.
-    #[test]
-    fn no_usable_items_is_none() {
-        assert!(baseline(&collection(vec![malformed("m")]), "MP-1", "v1", "m").is_none());
-        assert!(baseline(&collection(vec![]), "MP-1", "v1", "m").is_none());
-    }
-
-    /// An item observation under a different plan, definition version, or
-    /// metric (including the governed metric itself, not its
-    /// `.constant-predictor-item` suffix) is not read.
+    /// A collection with no item observation for the metric is absent, not
+    /// a baseline of `0`; nor is one under a different plan, definition
+    /// version, or metric (including the governed metric itself) read.
     #[test]
     fn only_the_matching_plan_definition_and_item_metric_are_read() {
-        let mut wrong_plan = item("m", "f", "a", &["a"]);
+        assert_eq!(
+            baseline(&collection(vec![]), &governed(1.0)),
+            Err(Reason::ConstantPredictorRowsAbsent)
+        );
+        let mut wrong_plan = item("a", "f", "a", &["a"]);
         wrong_plan.plan_id = text("MP-2");
-        let mut wrong_definition = item("m", "f", "a", &["a"]);
+        let mut wrong_definition = item("b", "f", "a", &["a"]);
         wrong_definition.definition_version = text("v2");
-        let mut governed_metric = item("m", "f", "a", &["a"]);
+        let mut governed_metric = item("c", "f", "a", &["a"]);
         governed_metric.metric = text("m");
-        let collection = collection(vec![wrong_plan, wrong_definition, governed_metric]);
-        assert!(baseline(&collection, "MP-1", "v1", "m").is_none());
+        let mut other_metric = item("d", "f", "a", &["a"]);
+        other_metric.metric = text(&constant_predictor_item_metric("n"));
+        let collection = collection(vec![
+            wrong_plan,
+            wrong_definition,
+            governed_metric,
+            other_metric,
+        ]);
+        assert_eq!(
+            baseline(&collection, &governed(4.0)),
+            Err(Reason::ConstantPredictorRowsAbsent)
+        );
     }
 }

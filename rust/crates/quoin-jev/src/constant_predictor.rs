@@ -44,7 +44,7 @@
 //! describes what was examined in aggregate (`examined`/`matched`/
 //! `complete`), and there is nothing aggregate about one item's own label.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_measurement::constant_predictor_dims as dim;
 use quoin_measurement::error::{MeasurementError, MeasurementErrorCode};
@@ -99,7 +99,12 @@ pub struct Item {
 /// [`MeasurementErrorCode::CollectionInvalid`] when `plan_id`,
 /// `definition_version` or `metric` is empty, or an item's `item_id`,
 /// `family` or `expected` is empty — the identity and label fields this
-/// baseline cannot be computed without.
+/// baseline cannot be computed without — or two items share an `item_id`.
+///
+/// The checker also requires the item count to equal the governed aggregate
+/// observation's own `population.examined`
+/// (`constant_predictor_rows_mismatch` otherwise): pass every graded item the
+/// aggregate rate was computed over, and no other.
 pub fn item_observations(
     plan_id: &str,
     definition_version: &str,
@@ -112,9 +117,16 @@ pub fn item_observations(
     let item_metric = text(&item_metric_name, "metric")?;
     let unit = text("fraction", "unit")?;
 
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
     items
         .iter()
         .map(|item| {
+            if !seen.insert(item.item_id.as_str()) {
+                return Err(MeasurementError::new(
+                    MeasurementErrorCode::CollectionInvalid,
+                    format!("duplicate `item_id` `{}`", item.item_id),
+                ));
+            }
             let mut dimensions: BTreeMap<String, JsonValue> = BTreeMap::new();
             dimensions.insert(
                 dim::ITEM_ID.to_owned(),
@@ -260,5 +272,12 @@ mod tests {
 
         assert!(item_observations("", "v1", "m", &[]).is_err());
         assert!(item_observations("MP-1", "", "m", &[]).is_err());
+
+        let duplicated = [
+            item("w1", "family", "a", &["a"], "a"),
+            item("w1", "other", "b", &["b"], "b"),
+        ];
+        let error = item_observations("MP-1", "v1", "m", &duplicated).unwrap_err();
+        assert_eq!(error.code(), MeasurementErrorCode::CollectionInvalid);
     }
 }
