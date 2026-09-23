@@ -20,8 +20,11 @@ and `rust-test` are the granular pieces `build`/`test` compose. CI
 (`.github/workflows/build-test.yml`) runs `make rust-lint`, `make rust-build`
 and `make rust-test` directly, and releases (`.github/workflows/native-release.yml`)
 build with `cargo build --locked --release -p quoin-cli --bin quoin` and ship
-the resulting binary as a GitHub Release archive — this repo's own workflows
-carry no npm publish step.
+the resulting binary as a GitHub Release archive. A separate workflow,
+`.github/workflows/release.yml`, then repackages that same release's assets
+into npm packages (`@agent-ix/quoin` plus one platform package per target,
+FR-112) via the shared `agent-ix/nodejs-actions/publish-native-npm` action —
+it never builds anything itself, and no packaging logic lives in this repo.
 
 ## Agent worktrees
 

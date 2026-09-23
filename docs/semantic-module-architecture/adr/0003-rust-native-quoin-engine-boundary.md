@@ -13,6 +13,7 @@ requirements:
   - FR-101
   - FR-102
   - FR-103
+  - FR-112
   - NFR-024
   - NFR-025
   - NFR-026
@@ -251,6 +252,15 @@ TypeScript packages publish to `npm.ix` / GitHub Packages. Python packages
 publish to the internal PyPI. Any requirement in this set that touches
 publication carries this restriction.
 
+**Amendment, 2026-09-23 (owner ruling):** the native `quoin` binary is
+distributed on public npmjs again, as a launcher package `@agent-ix/quoin`
+plus one platform package per supported target, packaged from the same
+GitHub Release assets FR-102 already publishes rather than rebuilt
+(FR-112). `agent-ix/nodejs-actions/publish-native-npm` owns the packaging
+and publish steps; quoin's own workspace carries none. Rust crates stay
+off crates.io, and no other package in this set gains a public-npmjs
+publication target — this amendment covers the native binary only.
+
 ## Consequences
 
 - The repository gains an in-tree Rust workspace while retaining its schemas,
@@ -298,9 +308,10 @@ incompatibilities.
   given that the same argument excludes the `corpus/` submodule. Until that
   ruling, the bundle is governed as first-party source and only the 139-line
   invariant shim is treated as hand-written logic.
-- The prior npm package was removed at Stage 9. Native GitHub Release delivery
-  is now the only executable publication route; the first tagged-release smoke
-  remains a promotion/release operation.
+- The prior npm package was removed at Stage 9 and, per the 2026-09-23
+  amendment above, is restored as a repackaging of GitHub Release delivery
+  rather than an independent build; the first tagged-release smoke of each
+  channel remains a promotion/release operation.
 - Whether `engineering-assurance` is a build dependency of this workspace or a
   reference only. This ADR's crate topology says reference;
   [FR-100](../../../spec/functional/FR-100-rust-evidence-measurement-change-assurance.md)

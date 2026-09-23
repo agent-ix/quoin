@@ -216,9 +216,12 @@ is unit-testable without spawning a process.
   there or it is refused.
 - `multiple-versions = "deny"` while the graph is this small. Relaxing it needs
   the reason written into `deny.toml`.
-- #373's "no crates.io, no public npmjs" governs where quoin **publishes**.
-  Dependencies are consumed from crates.io exactly as quire-corpus's are. Every
-  crate here carries `publish = false`.
+- #373's "no crates.io" still governs where a **crate** publishes: every crate
+  here carries `publish = false`, and dependencies are consumed from crates.io
+  exactly as quire-corpus's are. Public npmjs is a separate question — the
+  native `quoin` binary is distributed there again via `@agent-ix/quoin`
+  (FR-112, owner ruling 2026-09-23), packaged from GitHub Release assets by a
+  shared action, not by anything in this crate graph.
 
 ## Headers and docs
 

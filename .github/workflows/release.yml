@@ -1,0 +1,182 @@
+# Repackages an already-published, already-smoked GitHub Release into npm
+# packages. It never builds anything: `native-release.yml` is the only
+# workflow that runs `cargo build`, and this workflow only downloads the
+# release its `tag` input names, verifies each asset against that release's
+# own `quoin-update-manifest.json`, and hands the verified archives to the
+# shared `agent-ix/nodejs-actions/publish-native-npm` action, which owns the
+# npm package layout and the `npm publish` calls. The npm version always
+# equals the tag with its leading `v` stripped — there is no independent npm
+# version counter. Filename is load-bearing: npmjs's Trusted Publisher for
+# `@agent-ix/quoin` is bound to a workflow literally named `release.yml`.
+name: Release to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing GitHub Release tag to repackage, e.g. v0.24.1"
+        required: true
+        type: string
+      publish:
+        description: "Publish to public npm. Leave false for a dry run (package + verify only)."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC token for npm Trusted Publishing (public npm)
+
+jobs:
+  publish-npm:
+    name: Repackage and publish to npm
+    runs-on: ubuntu-24.04
+    # An npm publish is irreversible (a version can never be re-published),
+    # so this only ever runs from reviewed main, never from a branch or a
+    # fork's workflow_dispatch.
+    if: github.ref == 'refs/heads/main'
+    # A hung step otherwise blocks for GitHub's 6-hour default.
+    timeout-minutes: 20
+    steps:
+      # Needed for LICENSE, which the npm packages carry.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download the release
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -D release
+          test -f release/quoin-update-manifest.json
+
+      - name: Compute the npm version
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+
+      - name: Verify the release manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e --arg v "$VERSION" \
+            '.schema_version == 1 and .version == $v and (.artifacts | length == 4)' \
+            release/quoin-update-manifest.json > /dev/null
+
+      - name: Verify asset checksums and extract
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+
+          artifacts_file="$(mktemp)"
+          jq -c '.artifacts[]' release/quoin-update-manifest.json > "$artifacts_file"
+
+          while IFS= read -r artifact; do
+            target=$(jq -r '.target' <<<"$artifact")
+            asset=$(jq -r '.asset' <<<"$artifact")
+            archive=$(jq -r '.archive' <<<"$artifact")
+            expected_sha=$(jq -r '.sha256' <<<"$artifact")
+
+            file="release/$asset"
+            test -f "$file"
+
+            actual_sha=$(sha256sum "$file" | cut -d ' ' -f1)
+            if [ "$actual_sha" != "$expected_sha" ]; then
+              echo "::error::$asset sha256 mismatch: manifest says $expected_sha, downloaded file is $actual_sha" >&2
+              exit 1
+            fi
+
+            dest="artifacts/$target"
+            mkdir -p "$dest"
+            case "$archive" in
+              tar-gz)
+                tar -C "$dest" -xzf "$file"
+                ;;
+              zip)
+                unzip -q -o "$file" -d "$dest"
+                ;;
+              *)
+                echo "::error::$asset names an unrecognised archive kind: $archive" >&2
+                exit 1
+                ;;
+            esac
+
+            count=$(find "$dest" -maxdepth 1 -type f | wc -l | tr -d ' ')
+            if [ "$count" != "1" ]; then
+              echo "::error::expected exactly one file in $dest, found $count" >&2
+              exit 1
+            fi
+          done < "$artifacts_file"
+
+      - name: Verify the linux-x64 binary reports the published version
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x artifacts/x86_64-unknown-linux-gnu/quoin
+          actual_version="$(artifacts/x86_64-unknown-linux-gnu/quoin --version)"
+          if [ "$actual_version" != "$VERSION" ]; then
+            echo "::error::artifacts/x86_64-unknown-linux-gnu/quoin --version printed '$actual_version', expected '$VERSION'; refusing to publish (e.g. a -dirty build)" >&2
+            exit 1
+          fi
+
+      - name: Package and publish the npm distribution
+        uses: agent-ix/nodejs-actions/publish-native-npm@main
+        with:
+          package: "@agent-ix/quoin"
+          binary: quoin
+          version: ${{ env.VERSION }}
+          artifacts-dir: artifacts
+          repository: ${{ github.repository }}
+          description: "Quoin: author validated, traceable ISO/IEC/IEEE 29148-aligned specs, then plan and build against them (native binary)."
+          self-update-command: update
+          publish: ${{ inputs.publish }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
+
+      - name: Smoke the published npm packages
+        if: inputs.publish
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PREFIX="$(mktemp -d)"
+          NPMRC="$(mktemp)"
+          printf '@agent-ix:registry=https://registry.npmjs.org/\n' > "$NPMRC"
+          export NPM_CONFIG_USERCONFIG="$NPMRC"
+          export NPM_CONFIG_PREFIX="$PREFIX"
+          export PATH="$PREFIX/bin:$PATH"
+
+          # Public npm can take a little while to serve a just-published
+          # version; retry with backoff for roughly two minutes rather than
+          # failing the run on ordinary propagation delay.
+          attempt=0
+          max_attempts=8
+          until npm install --global "@agent-ix/quoin@${VERSION}"; do
+            attempt=$((attempt + 1))
+            if [ "$attempt" -ge "$max_attempts" ]; then
+              echo "::error::npm install of @agent-ix/quoin@${VERSION} did not succeed after $attempt attempts" >&2
+              exit 1
+            fi
+            sleep 15
+          done
+
+          actual_version="$("$PREFIX/bin/quoin" --version)"
+          if [ "$actual_version" != "$VERSION" ]; then
+            echo "::error::quoin --version printed '$actual_version', expected '$VERSION'" >&2
+            exit 1
+          fi
+
+          if "$PREFIX/bin/quoin" update 2>update.err; then
+            echo "::error::quoin update exited 0 under an npm install; it must defer to npm instead" >&2
+            cat update.err >&2
+            exit 1
+          fi
+          if ! grep -q "npm install -g @agent-ix/quoin@latest" update.err; then
+            echo "::error::quoin update's stderr did not name the exact npm command to run" >&2
+            cat update.err >&2
+            exit 1
+          fi

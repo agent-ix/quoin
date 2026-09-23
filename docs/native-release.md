@@ -31,4 +31,41 @@ that executable on `PATH`. The native `quoin update` command then manages later
 updates from the same manifest contract. The release workflow smokes the
 extracted archive on every supported target before publishing it.
 
-There is no npm or Node/oclif delivery fallback.
+## Install with npm
+
+```bash
+npm install -g @agent-ix/quoin
+```
+
+`@agent-ix/quoin` is a thin launcher; installing it pulls in the matching
+platform package as an `optionalDependency`:
+
+| Platform | Package |
+| --- | --- |
+| linux-x64 | `@agent-ix/quoin-linux-x64` |
+| linux-arm64 | `@agent-ix/quoin-linux-arm64` |
+| darwin-arm64 | `@agent-ix/quoin-darwin-arm64` |
+| win32-x64 | `@agent-ix/quoin-win32-x64` |
+
+The Linux packages need glibc >= 2.35 (Ubuntu 22.04 or newer, and most
+current distributions); they declare `libc: ["glibc"]` so npm refuses to
+resolve them on a musl host instead of installing a binary that will not run.
+
+Under an npm install, `quoin update` given as the first argument defers to
+npm: it makes no change to the installation and reports the
+`npm install -g @agent-ix/quoin@latest` command to run instead, since npm
+alone owns the files it placed under `node_modules`. The launcher only
+recognises `update` as the first argument — an invocation such as
+`quoin --no-project-config update` is not intercepted and reaches the
+native updater; closing that gap needs npm-install detection inside the
+native updater itself, tracked as PLAT-1013.
+
+## Packaging the npm distribution
+
+`.github/workflows/release.yml` (`workflow_dispatch`, inputs `tag` and
+`publish`) repackages an existing GitHub Release's already-smoked assets into
+the npm packages above; it never rebuilds the binary, and the npm version
+always equals the release tag. `publish: false` (the default) verifies and
+packages without publishing; `publish: true` publishes to public npm and
+smokes the published packages. See
+[FR-112](../spec/functional/FR-112-npm-distribution-from-release-assets.md).
