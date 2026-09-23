@@ -91,6 +91,107 @@ impl Severity {
     }
 }
 
+/// The boundary at which a bare `noul` probability reads as "yes". The same
+/// `>= 0.5` cut the live suite grades `noul` answers with
+/// (`the_noul_answers_are_reported_per_question`, PR #574).
+const NOUL_YES: f64 = 0.5;
+
+/// The `noul` sub-question whose text names the defect a `weakness_kind`
+/// label reports, paired with the yes/no answer that would corroborate it.
+///
+/// Read off `question-set.json`'s own question text, not fit to any corpus:
+/// `unfalsifiable` is `falsifiable` answered no, `unmeasurable_threshold` is
+/// `threshold_present` answered no, and `restates_requirement` /
+/// `implementation_coupled` are their namesake questions answered yes.
+/// `happy_path_only` has no sub-question: none of the five tests coverage
+/// breadth (the blind spot PR #574's `v3` stated before its first call).
+/// `states_observable_outcome` names no label on its own and is never
+/// returned here.
+///
+/// Like [`Severity::for_weakness_kind`], this is only reached from
+/// [`extract`] for a label already checked against `answer_space`, so the
+/// `_` arm is reached by `happy_path_only` and `sound` in practice; an
+/// arbitrary string gets [`None`], never a guessed question.
+#[must_use]
+fn label_sub_question(kind: &str) -> Option<(&'static str, bool)> {
+    match kind {
+        "unfalsifiable" => Some(("falsifiable", false)),
+        "unmeasurable_threshold" => Some(("threshold_present", false)),
+        "restates_requirement" => Some(("restates_requirement", true)),
+        "implementation_coupled" => Some(("implementation_coupled", true)),
+        _ => None,
+    }
+}
+
+/// Whether the `weakness_kind` label a finding carries is backed by the one
+/// `noul` sub-question that names the same defect (PLAT-984).
+///
+/// **This is not a decomposition of the verdict, and does not claim to be.**
+/// PLAT-984 asks for a "which sub-question decided this verdict" breakdown.
+/// For this lens nothing decides `weakness_kind` except a single Jev `choice`
+/// call: the five `noul` answers are asked in the same request but are not
+/// inputs to the label, and PR #574 measured that deriving the label from them
+/// is worse than asking for it (`v3-derived`, 33.3%). So "decided-by" here can
+/// only mean the narrower, still useful thing: for the label Jev chose, did
+/// the sub-question that asks about that very defect answer the same way? A
+/// [`Self::Disagrees`] row is a label that is not coming from the question a
+/// reader would assume it comes from -- the case the ticket wants visible.
+///
+/// PR #574's `the_noul_answers_are_reported_per_question` measures each
+/// question's agreement against a corpus's recorded answers. That needs
+/// ground truth a production run does not have, so it is not what this
+/// promotes; this compares Jev's answers with each other, per finding.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "outcome", rename_all = "snake_case")]
+pub enum SubQuestionCheck {
+    /// The label's sub-question answered in the label's direction.
+    Agrees {
+        /// The `noul` question id.
+        question: &'static str,
+        /// The bare probability Jev answered it with.
+        noul: f64,
+    },
+    /// The label's sub-question answered against the label: Jev chose the
+    /// label, but its own answer to the question about that defect says the
+    /// defect is absent (or, for a "yes" question, present when the label
+    /// says otherwise).
+    Disagrees {
+        /// The `noul` question id.
+        question: &'static str,
+        /// The bare probability Jev answered it with.
+        noul: f64,
+    },
+    /// The label has a sub-question, but the response carried no `noul`
+    /// answer for it on this row. Its own outcome, never read as agreement.
+    Unanswered {
+        /// The `noul` question id that went unanswered.
+        question: &'static str,
+    },
+    /// No `noul` question covers this label (`happy_path_only`).
+    NoSubQuestion,
+}
+
+impl SubQuestionCheck {
+    /// The check for `kind` against one AC row's `noul` answers.
+    #[must_use]
+    pub fn for_label(kind: &str, noul: &NoulSignals) -> Self {
+        let Some((question, corroborating)) = label_sub_question(kind) else {
+            return Self::NoSubQuestion;
+        };
+        match noul.values.iter().find(|(id, _)| id == question) {
+            None => Self::Unanswered { question },
+            Some(&(_, value)) if (value >= NOUL_YES) == corroborating => Self::Agrees {
+                question,
+                noul: value,
+            },
+            Some(&(_, value)) => Self::Disagrees {
+                question,
+                noul: value,
+            },
+        }
+    }
+}
+
 /// The raw `noul` answers for one AC row, carried through for transparency
 /// even though they cannot carry the confidence-annotation rule (see this
 /// module's doc).
@@ -127,6 +228,10 @@ pub struct Finding {
     /// The five raw `noul` values for this row, carried through even though
     /// they have no confidence to annotate.
     pub noul: NoulSignals,
+    /// Whether `weakness_kind`'s label is backed by the `noul` sub-question
+    /// that names the same defect (PLAT-984). See [`SubQuestionCheck`] for
+    /// why this is attribution, not a decomposition of the verdict.
+    pub label_sub_question: SubQuestionCheck,
 }
 
 /// The FR-level `adverse_case_coverage` verdict.
@@ -246,17 +351,21 @@ pub fn extract(
 
         match Severity::for_weakness_kind(&choice.choice) {
             None => sound.push(ac_id.clone()),
-            Some(severity) => findings.push(Finding {
-                ac_id: ac_id.clone(),
-                weakness_kind: choice.choice.clone(),
-                severity,
-                confidence: choice.confidence,
-                unconfirmed: choice.confidence < confidence_threshold,
-                probabilities: choice.probabilities.clone().into_iter().collect(),
-                noul: NoulSignals {
+            Some(severity) => {
+                let noul = NoulSignals {
                     values: noul_values,
-                },
-            }),
+                };
+                findings.push(Finding {
+                    ac_id: ac_id.clone(),
+                    weakness_kind: choice.choice.clone(),
+                    severity,
+                    confidence: choice.confidence,
+                    unconfirmed: choice.confidence < confidence_threshold,
+                    probabilities: choice.probabilities.clone().into_iter().collect(),
+                    label_sub_question: SubQuestionCheck::for_label(&choice.choice, &noul),
+                    noul,
+                });
+            }
         }
     }
 
@@ -313,7 +422,7 @@ fn rubric_label_for(question_set: &QuestionSet, raw_score: f64) -> Option<String
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{Severity, extract};
+    use super::{NoulSignals, Severity, SubQuestionCheck, extract, label_sub_question};
     use crate::question_set::QuestionSet;
 
     const ASSET: &str = include_str!(
@@ -524,6 +633,157 @@ mod tests {
         let verdict = extract(&response, &set, &[], 0.5);
         let coverage = verdict.coverage.expect("a score answer was present");
         assert_eq!(coverage.label, None);
+    }
+
+    fn signals(values: &[(&str, f64)]) -> NoulSignals {
+        NoulSignals {
+            values: values
+                .iter()
+                .map(|(id, value)| ((*id).to_owned(), *value))
+                .collect(),
+        }
+    }
+
+    /// Provenance: PLAT-984. The shared fixture answers `unfalsifiable` while
+    /// its own `falsifiable` sub-answer is 0.9 -- the label is not carried by
+    /// the question that asks about that defect, and the typed verdict says so.
+    #[test]
+    fn a_label_its_own_sub_question_contradicts_is_reported_as_disagreeing() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let response = response_fixture(0.9);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        assert_eq!(
+            verdict.findings[0].label_sub_question,
+            SubQuestionCheck::Disagrees {
+                question: "falsifiable",
+                noul: 0.9
+            }
+        );
+    }
+
+    /// Provenance: PLAT-984. The same label with `falsifiable` answered no is
+    /// corroborated by its sub-question.
+    #[test]
+    fn a_label_its_own_sub_question_backs_is_reported_as_agreeing() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let body = serde_json::json!({
+            "model": "jev-1.13.0",
+            "answers": {
+                "FR-001-AC-1::falsifiable": {"type": "noul", "noul": 0.1},
+                "FR-001-AC-1::weakness_kind": {
+                    "type": "choice", "choice": "unfalsifiable", "confidence": 0.9,
+                    "probabilities": {"unfalsifiable": 0.9}
+                }
+            },
+            "usage": {"input_tokens": 50, "output_tokens": 0}
+        });
+        let response: typesafe_sdk_answers::SystemOneResponse =
+            serde_json::from_value(body).expect("well-formed");
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        assert_eq!(
+            verdict.findings[0].label_sub_question,
+            SubQuestionCheck::Agrees {
+                question: "falsifiable",
+                noul: 0.1
+            }
+        );
+    }
+
+    /// Provenance: PLAT-984. A "yes" sub-question (`restates_requirement`)
+    /// agrees at or above 0.5 and disagrees below it -- the polarity is per
+    /// label, not one direction for all.
+    #[test]
+    fn a_yes_polarity_sub_question_agrees_at_the_boundary_and_disagrees_below_it() {
+        assert_eq!(
+            SubQuestionCheck::for_label(
+                "restates_requirement",
+                &signals(&[("restates_requirement", 0.5)])
+            ),
+            SubQuestionCheck::Agrees {
+                question: "restates_requirement",
+                noul: 0.5
+            }
+        );
+        assert_eq!(
+            SubQuestionCheck::for_label(
+                "implementation_coupled",
+                &signals(&[("implementation_coupled", 0.49)])
+            ),
+            SubQuestionCheck::Disagrees {
+                question: "implementation_coupled",
+                noul: 0.49
+            }
+        );
+        assert_eq!(
+            SubQuestionCheck::for_label(
+                "unmeasurable_threshold",
+                &signals(&[("threshold_present", 0.5)])
+            ),
+            SubQuestionCheck::Disagrees {
+                question: "threshold_present",
+                noul: 0.5
+            }
+        );
+    }
+
+    /// Provenance: PLAT-984. A label with a sub-question whose answer is
+    /// missing from the row is `Unanswered`, never read as agreement; and
+    /// `happy_path_only`, which no `noul` question covers, says so rather
+    /// than naming a question.
+    #[test]
+    fn a_missing_sub_answer_and_an_uncovered_label_have_their_own_outcomes() {
+        assert_eq!(
+            SubQuestionCheck::for_label("unfalsifiable", &signals(&[("threshold_present", 0.1)])),
+            SubQuestionCheck::Unanswered {
+                question: "falsifiable"
+            }
+        );
+        assert_eq!(
+            SubQuestionCheck::for_label("happy_path_only", &signals(&[("falsifiable", 0.1)])),
+            SubQuestionCheck::NoSubQuestion
+        );
+        assert_eq!(
+            SubQuestionCheck::for_label("quantum_uncertainty", &signals(&[])),
+            SubQuestionCheck::NoSubQuestion
+        );
+    }
+
+    /// Provenance: PLAT-984. Every question the label table names is one the
+    /// shipped `question-set.json` actually asks, and every non-`sound` label
+    /// but `happy_path_only` has one -- the table cannot drift from the asset
+    /// silently.
+    #[test]
+    fn every_label_sub_question_is_a_question_the_asset_asks() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        for label in &set.choice.answer_space {
+            let found = label_sub_question(label);
+            if matches!(label.as_str(), "sound" | "happy_path_only") {
+                assert_eq!(found, None, "{label}");
+                continue;
+            }
+            let (question, _) = found.expect("every other label has a sub-question");
+            assert!(
+                set.noul.iter().any(|entry| entry.id == question),
+                "{label} names {question}, which the asset does not ask"
+            );
+        }
+    }
+
+    /// Provenance: PLAT-984. The serialised form is tagged by `outcome`, so a
+    /// consumer of the JSON verdict reads the same four outcomes the type has.
+    #[test]
+    fn the_sub_question_check_serialises_tagged_by_outcome() {
+        let json = serde_json::to_string(&SubQuestionCheck::Disagrees {
+            question: "falsifiable",
+            noul: 0.9,
+        })
+        .expect("serialises");
+        assert_eq!(
+            json,
+            r#"{"outcome":"disagrees","question":"falsifiable","noul":0.9}"#
+        );
+        let json = serde_json::to_string(&SubQuestionCheck::NoSubQuestion).expect("serialises");
+        assert_eq!(json, r#"{"outcome":"no_sub_question"}"#);
     }
 
     /// Provenance: PLAT-837. A `noul` answer has no `confidence` field to
