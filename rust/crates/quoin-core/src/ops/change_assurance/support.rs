@@ -13,20 +13,62 @@
 //! the hex transport this boundary defines, the refusals the wire shapes cannot
 //! express, and the small adapters between `JsonValue` and `serde_json`.
 
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 
+use quoin_change_assurance::verify::input::GoverningPlan;
 use quoin_change_assurance::verify::{
     AuditReport, ReportFinding, ReportUnevaluated, RetainedAudit,
 };
 use quoin_change_assurance::{EvidenceStore, read_change_record};
+use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
+use quoin_measurement::source::DiskMeasurement;
 use quoin_store::{CanonicalDigest, JsonValue, canonical_json_bytes, parse_strict_json};
 
 use crate::capabilities::{Capabilities, ChangeAssuranceHost};
 use crate::error::{CoreError, CoreErrorCode};
+use crate::ops::measurement::map_measurement;
 use crate::protocol::Response;
 
 use super::taxonomy::map_error;
 use super::wire::AuditInput;
+
+/// Resolve a `change_assurance.receipt`'s `plan` link into the two members
+/// FR-111's apparatus judgment reads, through `quoin-measurement`'s own plan
+/// intake (PLAT-997) — the same load `measurement.verify` runs, so
+/// `protected_apparatus` and `negative_controls` are read by the one parser
+/// PLAT-975 already governs rather than a second copy of the entry grammar.
+///
+/// # Errors
+///
+/// [`CoreErrorCode::Refused`] when no `MeasurementPlan` in `repo` has `plan`'s
+/// id, or the mapped [`crate::ops::measurement::map_measurement`] refusal when
+/// a plan document itself cannot be loaded.
+pub(super) fn governing_plan(
+    repo: &str,
+    plan_id: &str,
+    op: &'static str,
+) -> Result<GoverningPlan, CoreError> {
+    let source = DiskMeasurement::new(Path::new(repo));
+    let plans = load_measurement_plans(&source, PlanLoadOptions::default())
+        .map_err(|error| map_measurement(&error, op))?;
+    let plan = plans
+        .iter()
+        .find(|plan| plan.id.as_str() == plan_id)
+        .ok_or_else(|| {
+            CoreError::new(
+                CoreErrorCode::Refused,
+                format!("no MeasurementPlan has id `{plan_id}`"),
+            )
+            .with_context("op", op)
+            .with_context("field", "plan")
+        })?;
+    Ok(GoverningPlan {
+        protected_apparatus: plan.protected_apparatus.clone(),
+        negative_controls: plan.negative_controls.clone(),
+    })
+}
 
 /// Read one stored record, refusing an unknown digest rather than skipping it.
 pub(super) fn stored_record(
@@ -268,6 +310,84 @@ pub(super) fn host<'a>(
         )
         .with_context("op", op)
     })
+}
+
+/// Refuse a list past its accepted length before any of it is read.
+///
+/// The sibling of [`check_bound`] for an accumulator that is bounded by COUNT
+/// rather than by byte length — `diff_paths` is the first such field this
+/// domain accepts (PLAT-997). Named separately from `ops::refusal` because
+/// that helper's context keys (`limit_bytes`, `observed_bytes`) describe a
+/// byte ceiling; a count ceiling earns its own words rather than reusing ones
+/// that would misname what was actually measured.
+pub(super) fn check_count(
+    op: &'static str,
+    field: &'static str,
+    observed: usize,
+    limit: usize,
+) -> Result<(), CoreError> {
+    if observed > limit {
+        return Err(CoreError::new(
+            CoreErrorCode::Refused,
+            "a request list exceeds the accepted number of entries",
+        )
+        .with_context("op", op)
+        .with_context("field", field.to_owned())
+        .with_context("limit_entries", limit.to_string())
+        .with_context("observed_entries", observed.to_string()));
+    }
+    Ok(())
+}
+
+/// Every scalar and list ceiling `change_assurance.receipt` enforces, ahead of
+/// any store or plan read.
+///
+/// Split out of `receipt()` (PLAT-997) so the operation stays under this
+/// workspace's function-length lint; the checks themselves are unchanged from
+/// what `receipt()` ran inline before `diff_paths` and `plan` were added.
+pub(super) fn check_receipt_bounds(
+    op: &'static str,
+    request: &super::wire::ReceiptRequest,
+) -> Result<(), CoreError> {
+    check_bound(op, "repo", &request.repo, super::wire::MAX_SCALAR_BYTES)?;
+    check_bound(
+        op,
+        "candidate_revision",
+        &request.candidate_revision,
+        super::wire::MAX_SCALAR_BYTES,
+    )?;
+    check_bound(
+        op,
+        "record_digest",
+        &request.record_digest,
+        super::wire::MAX_SCALAR_BYTES,
+    )?;
+    for parent in &request.parent_digests {
+        check_bound(op, "parent_digests", parent, super::wire::MAX_SCALAR_BYTES)?;
+    }
+    let diff_len = request.diff_paths.as_ref().map_or(0, Vec::len);
+    check_count(op, "diff_paths", diff_len, super::wire::MAX_DIFF_PATHS)?;
+    for path in request.diff_paths.iter().flatten() {
+        check_bound(op, "diff_paths", path, super::wire::MAX_SCALAR_BYTES)?;
+    }
+    if let Some(plan) = &request.plan {
+        check_bound(op, "plan", plan, super::wire::MAX_SCALAR_BYTES)?;
+    }
+    for selection in &request.selections {
+        check_bound(
+            op,
+            "selections.proof_id",
+            &selection.proof_id,
+            super::wire::MAX_SCALAR_BYTES,
+        )?;
+        check_bound(
+            op,
+            "selections.attestation_digest",
+            &selection.attestation_digest,
+            super::wire::MAX_SCALAR_BYTES,
+        )?;
+    }
+    Ok(())
 }
 
 /// Refuse an oversized field before any work is done on it.

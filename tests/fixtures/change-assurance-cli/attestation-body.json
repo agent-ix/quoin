@@ -21,5 +21,6 @@
   "os": "test"
  },
  "observed_at": "2026-08-31T00:00:00Z",
- "result": "passed"
+ "result": "passed",
+ "strength": "tested"
 }

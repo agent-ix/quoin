@@ -42,7 +42,12 @@ use crate::error::{CoreError, CoreErrorCode};
 /// `MeasurementErrorCode::ALL.len()`, which a loop over `ALL` could not do —
 /// such a loop re-runs this same match and agrees with itself (the quoin#443
 /// failure mode).
-pub(super) fn map_measurement(error: &MeasurementError, op: &'static str) -> CoreError {
+/// `pub(crate)` rather than `pub(super)`, and re-exported from
+/// [`super`]: `ops::change_assurance` reuses this same mapping to resolve a
+/// `change_assurance.receipt` plan link through `quoin-measurement`'s own
+/// plan intake (PLAT-997), rather than restating `MeasurementErrorCode`'s
+/// BadRequest/Refused split a second time.
+pub(crate) fn map_measurement(error: &MeasurementError, op: &'static str) -> CoreError {
     let code = error.code();
     envelope(
         measurement_code(code),

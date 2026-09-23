@@ -92,11 +92,19 @@ pub use self::wire::{
 pub use self::portfolio::{
     build_graph_portfolio, build_portfolio, render_graph_portfolio, render_portfolio,
 };
+// `ops::change_assurance` reuses this mapping to resolve a
+// `change_assurance.receipt` plan link through `quoin-measurement`'s own
+// plan intake (PLAT-997), rather than restating `MeasurementErrorCode`'s
+// BadRequest/Refused split a second time. Re-exported rather than making
+// `taxonomy` itself `pub(crate)`, which would desync
+// `dispatch::tests::the_bound_census_can_see_every_ops_module`'s source-text
+// module scan (it recognises only bare `mod x;`/`pub mod x;`).
 pub use self::produce::{produce_agent_eval_intervention, produce_github_release_operational};
 pub use self::record::record;
 pub use self::report::{
     build_comparison, build_report, build_series, render_comparison, render_report,
 };
+pub(crate) use self::taxonomy::map_measurement;
 pub use self::verify::verify;
 
 /// Refuse an oversized request before it is deserialised.

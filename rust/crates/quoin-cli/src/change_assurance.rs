@@ -75,6 +75,19 @@ pub(crate) fn command() -> Command {
                 .arg(Arg::new("select").long("select").action(ArgAction::Append))
                 .arg(Arg::new("decisions").long("decisions").required(true))
                 .arg(Arg::new("audits").long("audits"))
+                .arg(
+                    Arg::new("diff-path")
+                        .long("diff-path")
+                        .action(ArgAction::Append)
+                        .help(
+                            "A repository-relative path the candidate change's diff touches \
+                             (repeatable); caller-supplied, not computed from git (FR-111)",
+                        ),
+                )
+                .arg(Arg::new("plan").long("plan").value_name("PLAN_ID").help(
+                    "The MeasurementPlan id to check the change against, resolved through \
+                     quoin-measurement's own plan intake (FR-111)",
+                ))
                 .arg(repo_arg())
                 .arg(json_arg()),
         )
@@ -283,6 +296,9 @@ fn receipt(arguments: &ArgMatches) -> Result<Response, String> {
         .flatten()
         .cloned()
         .collect::<Vec<_>>();
+    let diff_paths: Option<Vec<String>> = arguments
+        .get_many::<String>("diff-path")
+        .map(|values| values.cloned().collect());
     let response = invoke(
         "change_assurance.receipt",
         &serde_json::json!({
@@ -293,6 +309,8 @@ fn receipt(arguments: &ArgMatches) -> Result<Response, String> {
             "selections": selections,
             "decisions_hex": hex_of(&decisions),
             "audits_hex": audits.as_deref().map(hex_of),
+            "diff_paths": diff_paths,
+            "plan": arguments.get_one::<String>("plan"),
         }),
     )?;
     receipt_response(response, arguments.get_flag("json"), false)

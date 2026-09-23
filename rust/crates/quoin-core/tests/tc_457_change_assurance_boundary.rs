@@ -741,3 +741,102 @@ fn tc_503_610_schema_emits_the_shipped_assets_and_refuses_any_other_name() {
     );
     failed(&refused, 3);
 }
+
+/// Write a minimal `MeasurementPlan` document protecting `entries`, under
+/// `root`'s `spec/assurance/`, the root `quoin-measurement`'s plan intake
+/// walks (PLAT-975, PLAT-997).
+fn write_protecting_plan(root: &Path, id: &str, entries: &[&str]) {
+    let mut list = String::new();
+    for entry in entries {
+        let _ = writeln!(list, "  - {entry}");
+    }
+    let document = format!(
+        "---\nid: {id}\ntitle: PLAT-997 fixture\ntype: MeasurementPlan\nstatus: active\n\
+         stage: observe\nmetric: change_assurance.apparatus_touched\n\
+         definition_version: v1\nprotected_apparatus:\n{list}---\n\n# PLAT-997 fixture\n"
+    );
+    let path = root.join("spec/assurance").join(format!("{id}.md"));
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(path, document).unwrap();
+}
+
+/// `change_assurance.receipt` resolves a `plan` link through
+/// `quoin-measurement`'s own plan intake and folds FR-111's judgment into the
+/// receipt: a diff touching the linked plan's `protected_apparatus` is
+/// `apparatus_touched` and the receipt is `invalid`, through this operation
+/// and not only through the library (closes FR-111-CON-3).
+///
+/// Trace: FR-111-AC-1, TC-1885
+/// Provenance: PLAT-997
+#[test]
+fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
+    let fixture = case("everything-agrees");
+    let root = repo();
+    seal_record(root.path(), &fixture);
+    intake_all(root.path(), &fixture);
+    write_protecting_plan(root.path(), "MP-997-A", &["checker/config.toml"]);
+
+    let mut request = receipt_request(root.path(), &fixture);
+    request["diff_paths"] = json!(["src/lib.rs", "checker/config.toml"]);
+    request["plan"] = json!("MP-997-A");
+    let payload = ok(&run("change_assurance.receipt", &request));
+    assert_eq!(payload["receipt"]["outcome"], json!("invalid"));
+    assert_eq!(payload["receipt"]["reasons"], json!(["apparatus_touched"]));
+
+    // An unlinked receipt over the SAME store and diff is unaffected: the
+    // judgment only fires when `plan` names it.
+    let mut unlinked = receipt_request(root.path(), &fixture);
+    unlinked["diff_paths"] = json!(["src/lib.rs", "checker/config.toml"]);
+    let baseline = ok(&run("change_assurance.receipt", &unlinked));
+    assert_eq!(baseline["receipt"]["outcome"], json!("valid"));
+    assert_eq!(baseline["receipt"]["reasons"], json!([]));
+
+    // No `MeasurementPlan` names `plan`'s id: refused, not silently ignored.
+    let mut unknown_plan = receipt_request(root.path(), &fixture);
+    unknown_plan["plan"] = json!("MP-997-DOES-NOT-EXIST");
+    let refused = run("change_assurance.receipt", &unknown_plan);
+    let diagnostics = failed(&refused, 2);
+    assert_eq!(diagnostics[0]["context"]["field"], "plan");
+}
+
+/// A plan that protects apparatus, checked with no diff retained, is
+/// `diff_missing` and `incomplete` through the operation — never vacuously
+/// `valid` because the caller omitted `--diff-path` (FR-111-AC-4).
+///
+/// Trace: FR-111-AC-4, TC-1886
+/// Provenance: PLAT-997
+#[test]
+fn tc_997_612_receipt_reports_diff_missing_through_the_operation() {
+    let fixture = case("everything-agrees");
+    let root = repo();
+    seal_record(root.path(), &fixture);
+    intake_all(root.path(), &fixture);
+    write_protecting_plan(root.path(), "MP-997-B", &["checker/config.toml"]);
+
+    let mut request = receipt_request(root.path(), &fixture);
+    request["plan"] = json!("MP-997-B");
+    let payload = ok(&run("change_assurance.receipt", &request));
+    assert_eq!(payload["receipt"]["outcome"], json!("incomplete"));
+    assert_eq!(payload["receipt"]["reasons"], json!(["diff_missing"]));
+}
+
+/// A `diff_paths` list past [`quoin_core::ops::change_assurance::MAX_DIFF_PATHS`]
+/// is refused before any store or plan is consulted, the same shape every
+/// other accumulator on this boundary refuses at its own ceiling.
+///
+/// Trace: FR-111-CON-2
+/// Provenance: PLAT-997
+#[test]
+fn tc_997_613_an_oversized_diff_paths_list_is_refused_before_any_read() {
+    let fixture = case("everything-agrees");
+    let root = repo();
+    let mut request = receipt_request(root.path(), &fixture);
+    request["diff_paths"] = json!(
+        (0..=quoin_core::ops::change_assurance::MAX_DIFF_PATHS)
+            .map(|n| format!("p{n}"))
+            .collect::<Vec<_>>()
+    );
+    let result = run("change_assurance.receipt", &request);
+    let diagnostics = failed(&result, 2);
+    assert_eq!(diagnostics[0]["context"]["field"], "diff_paths");
+}
