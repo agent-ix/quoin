@@ -70,6 +70,52 @@ pub struct Span {
     pub text: String,
 }
 
+/// Abbreviations whose trailing `.` is not a sentence end, written without
+/// that final dot and matched ASCII-case-insensitively as a whole word.
+///
+/// Without this, the delimiter rule cut FR-006's behaviour bullet in the
+/// criterion-strength fixture corpus -- `render a fallback UI (e.g., "Error
+/// loading node") instead of crashing the tree` -- into `... fallback UI
+/// (e.g.` and `"Error loading node") ...`, offering Jev half a phrase
+/// (PLAT-980 review). A delimiter is not a break when the word it closes is
+/// one of these: the `.` of `e.g. x`, and the `,` of `e.g., x` (the word
+/// being `e.g.` there).
+///
+/// Known trade-off: a sentence that really ends in `etc.` is joined to the
+/// next one. That errs toward a longer candidate, never a cut phrase.
+const ABBREVIATIONS: [&str; 5] = ["e.g", "i.e", "etc", "vs", "cf"];
+
+/// Whether the delimiter `ch` at byte `index` of `text` closes one of
+/// [`ABBREVIATIONS`] rather than a sentence or clause.
+fn closes_abbreviation(text: &str, index: usize, ch: char) -> bool {
+    let Some(before) = text.get(..index) else {
+        return false;
+    };
+    // `.` closes the abbreviation itself (`e.g` + `.`); any other delimiter
+    // closes it only when it directly follows the abbreviation's own dot.
+    let stem = if ch == '.' {
+        Some(before)
+    } else {
+        before.strip_suffix('.')
+    };
+    let Some(stem) = stem else {
+        return false;
+    };
+    ABBREVIATIONS.iter().any(|abbreviation| {
+        let Some(word_start) = stem.len().checked_sub(abbreviation.len()) else {
+            return false;
+        };
+        let (Some(head), Some(word)) = (stem.get(..word_start), stem.get(word_start..)) else {
+            return false;
+        };
+        word.eq_ignore_ascii_case(abbreviation)
+            && head
+                .chars()
+                .next_back()
+                .is_none_or(|c| !c.is_alphanumeric())
+    })
+}
+
 /// How finely [`candidate_spans`] cuts a text.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Granularity {
@@ -100,10 +146,20 @@ impl Granularity {
 /// - A delimiter from [`Granularity`] ends a candidate when the next
 ///   character is whitespace or there is no next character. That keeps
 ///   `1.5`, `v0.6.2` and `a,b` whole.
+/// - A delimiter that closes one of a short list of abbreviations
+///   (`e.g.`, `i.e.`, `etc.`, `vs.`, `cf.`) does not break, so
+///   `a fallback UI (e.g., "Error loading node")` stays one candidate.
 /// - Nothing inside a backtick code span breaks: spec text names symbols
 ///   such as `` `Client::system_one` `` and paths such as `` `src/a.rs` ``,
 ///   and cutting through one would offer Jev half a symbol. An unclosed
-///   backtick runs to the end of the text.
+///   backtick runs to the end of the text, line breaks included.
+///
+///   Each backtick toggles "inside code", so only single-backtick inline
+///   code is modelled. A Markdown double-backtick span that contains a
+///   lone backtick (``` ``a`b`` ```) toggles an odd number of times inside
+///   and leaves the rest of the text treated as code. That shape is not
+///   handled because it does not occur in this crate's input: FR/AC prose
+///   in the criterion-strength fixture corpus carries no double backtick.
 /// - The delimiter itself is not part of either candidate. Each candidate is
 ///   trimmed of surrounding whitespace, and a candidate with no alphanumeric
 ///   character (a stray `-`, an empty line) is dropped.
@@ -128,7 +184,8 @@ pub fn candidate_spans(text: &str, granularity: Granularity) -> Vec<Span> {
         }
         let at_break = ch == '\n'
             || (granularity.ends_candidate(ch)
-                && chars.peek().is_none_or(|(_, next)| next.is_whitespace()));
+                && chars.peek().is_none_or(|(_, next)| next.is_whitespace())
+                && !closes_abbreviation(text, index, ch));
         if at_break {
             push_trimmed(text, start, index, &mut spans);
             start = index + ch.len_utf8();
@@ -176,30 +233,34 @@ impl SpanBallot {
     /// - [`JevErrorCode::SpanBallotEmpty`] when no candidate remains -- a
     ///   ballot whose only option is [`ABSTAIN_LABEL`] asks nothing.
     /// - [`JevErrorCode::SpanBallotTooLarge`] when more than
-    ///   [`MAX_CANDIDATES`] distinct candidates remain.
+    ///   [`MAX_CANDIDATES`] distinct candidates remain. The refusal fires at
+    ///   the first distinct candidate past the ceiling; the rest of
+    ///   `candidates` is never read, so the ceiling bounds the work as well
+    ///   as the result (each candidate is compared against at most
+    ///   [`MAX_CANDIDATES`] kept ones).
     pub fn new(
         instructions: impl Into<String>,
         candidates: impl IntoIterator<Item = Span>,
     ) -> Result<Self> {
         let mut distinct: Vec<Span> = Vec::new();
         for candidate in candidates {
-            if !distinct.iter().any(|kept| kept.text == candidate.text) {
-                distinct.push(candidate);
+            if distinct.iter().any(|kept| kept.text == candidate.text) {
+                continue;
             }
+            if distinct.len() == MAX_CANDIDATES {
+                return Err(JevError::new(
+                    JevErrorCode::SpanBallotTooLarge,
+                    format!(
+                        "more than {MAX_CANDIDATES} distinct candidate spans exceed the ballot ceiling"
+                    ),
+                ));
+            }
+            distinct.push(candidate);
         }
         if distinct.is_empty() {
             return Err(JevError::new(
                 JevErrorCode::SpanBallotEmpty,
                 "a span ballot needs at least one candidate span",
-            ));
-        }
-        if distinct.len() > MAX_CANDIDATES {
-            return Err(JevError::new(
-                JevErrorCode::SpanBallotTooLarge,
-                format!(
-                    "{} distinct candidate spans exceed the ballot ceiling of {MAX_CANDIDATES}",
-                    distinct.len()
-                ),
             ));
         }
         let options = (1..)
@@ -210,6 +271,19 @@ impl SpanBallot {
             instructions: instructions.into(),
             options,
         })
+    }
+
+    /// The wire key to ask a ballot under: `<scope>::<ballot_id>`.
+    ///
+    /// The same `<scope>::<question id>` shape
+    /// [`crate::question_set::QuestionSet::weakness_kind_key`] uses, so a
+    /// ballot scoped to an AC row (`FR-006-AC-1::unfalsifiable_clause`) can
+    /// ride in the same `Questions` map as that row's lens questions without
+    /// colliding with them. Pass the same key to `response.answer(key)` when
+    /// resolving.
+    #[must_use]
+    pub fn key(scope: &str, ballot_id: &str) -> String {
+        format!("{scope}::{ballot_id}")
     }
 
     /// The issued labels and the span each stands for, in ballot order.
@@ -238,14 +312,23 @@ impl SpanBallot {
     /// [`BallotOutcome::Unanswered`]. A label is accepted only on an exact,
     /// case-sensitive match with one this ballot issued -- no trimming, no
     /// case folding, no matching against span text.
+    ///
+    /// `confidence_threshold` marks a selection or abstention `unconfirmed`
+    /// when its confidence falls below it -- annotated, never suppressed,
+    /// under the same caller-supplied-threshold rule as
+    /// [`crate::verdict::extract`] (see that function for why this crate
+    /// bakes in no number of its own).
     #[must_use]
-    pub fn resolve(&self, answer: Option<&Answer>) -> BallotOutcome<'_> {
+    pub fn resolve(&self, answer: Option<&Answer>, confidence_threshold: f64) -> BallotOutcome<'_> {
         let Some(Answer::Choice(choice)) = answer else {
             return BallotOutcome::Unanswered;
         };
+        let confidence = choice.confidence;
+        let unconfirmed = confidence < confidence_threshold;
         if choice.choice == ABSTAIN_LABEL {
             return BallotOutcome::Abstained {
-                confidence: choice.confidence,
+                confidence,
+                unconfirmed,
             };
         }
         match self
@@ -255,7 +338,8 @@ impl SpanBallot {
         {
             Some((_, span)) => BallotOutcome::Selected {
                 span,
-                confidence: choice.confidence,
+                confidence,
+                unconfirmed,
             },
             None => BallotOutcome::Unrecognized {
                 label: choice.choice.clone(),
@@ -279,11 +363,16 @@ pub enum BallotOutcome<'a> {
         span: &'a Span,
         /// The choice answer's reported confidence, unmodified.
         confidence: f64,
+        /// Whether `confidence` fell below the caller's threshold. Same
+        /// annotate-never-suppress rule as [`crate::verdict::Finding::unconfirmed`].
+        unconfirmed: bool,
     },
     /// Jev picked [`ABSTAIN_LABEL`]: no offered span applies.
     Abstained {
         /// The choice answer's reported confidence, unmodified.
         confidence: f64,
+        /// Whether `confidence` fell below the caller's threshold.
+        unconfirmed: bool,
     },
     /// Jev returned a label this ballot never issued.
     Unrecognized {
@@ -309,6 +398,10 @@ mod tests {
         candidate_spans,
     };
     use crate::error::JevErrorCode;
+
+    /// A threshold every scripted confidence in these tests sits above,
+    /// except where a test is about the threshold itself.
+    const THRESHOLD: f64 = 0.5;
 
     fn texts(spans: &[Span]) -> Vec<&str> {
         spans.iter().map(|span| span.text.as_str()).collect()
@@ -447,10 +540,11 @@ mod tests {
             text: "a report exists".to_owned(),
         };
         assert_eq!(
-            ballot.resolve(Some(&answer)),
+            ballot.resolve(Some(&answer), THRESHOLD),
             BallotOutcome::Selected {
                 span: &expected,
-                confidence: 0.8
+                confidence: 0.8,
+                unconfirmed: false,
             }
         );
     }
@@ -461,8 +555,41 @@ mod tests {
         let ballot = ballot("The run ends, a report exists.");
         let answer = choice_answer(ABSTAIN_LABEL, 0.6);
         assert_eq!(
-            ballot.resolve(Some(&answer)),
-            BallotOutcome::Abstained { confidence: 0.6 }
+            ballot.resolve(Some(&answer), THRESHOLD),
+            BallotOutcome::Abstained {
+                confidence: 0.6,
+                unconfirmed: false,
+            }
+        );
+    }
+
+    /// Provenance: PLAT-980 review finding 6. A confidence below the
+    /// caller's threshold is annotated `unconfirmed`, never dropped: the
+    /// selection and the abstention both still resolve.
+    #[test]
+    fn a_low_confidence_answer_resolves_marked_unconfirmed() {
+        let ballot = ballot("The run ends, a report exists.");
+        let low = choice_answer("span-1", 0.3);
+        let first = Span {
+            start: 0,
+            end: 12,
+            text: "The run ends".to_owned(),
+        };
+        assert_eq!(
+            ballot.resolve(Some(&low), THRESHOLD),
+            BallotOutcome::Selected {
+                span: &first,
+                confidence: 0.3,
+                unconfirmed: true,
+            }
+        );
+        let low_abstain = choice_answer(ABSTAIN_LABEL, 0.3);
+        assert_eq!(
+            ballot.resolve(Some(&low_abstain), THRESHOLD),
+            BallotOutcome::Abstained {
+                confidence: 0.3,
+                unconfirmed: true,
+            }
         );
     }
 
@@ -475,7 +602,7 @@ mod tests {
         for returned in ["a report exists", "Span-1", " span-1", "span-3", "None"] {
             let answer = choice_answer(returned, 0.9);
             assert_eq!(
-                ballot.resolve(Some(&answer)),
+                ballot.resolve(Some(&answer), THRESHOLD),
                 BallotOutcome::Unrecognized {
                     label: returned.to_owned()
                 },
@@ -497,7 +624,7 @@ mod tests {
         for returned in ["span-2", "The run ends"] {
             let answer = choice_answer(returned, 0.9);
             assert!(matches!(
-                ballot.resolve(Some(&answer)),
+                ballot.resolve(Some(&answer), THRESHOLD),
                 BallotOutcome::Unrecognized { .. }
             ));
         }
@@ -507,10 +634,13 @@ mod tests {
     #[test]
     fn a_missing_or_wrongly_typed_answer_is_unanswered() {
         let ballot = ballot("The run ends, a report exists.");
-        assert_eq!(ballot.resolve(None), BallotOutcome::Unanswered);
+        assert_eq!(ballot.resolve(None, THRESHOLD), BallotOutcome::Unanswered);
         let noul: Answer =
             serde_json::from_value(serde_json::json!({"type": "noul", "noul": 0.9})).unwrap();
-        assert_eq!(ballot.resolve(Some(&noul)), BallotOutcome::Unanswered);
+        assert_eq!(
+            ballot.resolve(Some(&noul), THRESHOLD),
+            BallotOutcome::Unanswered
+        );
     }
 
     /// Provenance: PLAT-980
@@ -542,5 +672,186 @@ mod tests {
         )
         .unwrap_err();
         assert_eq!(error.code, JevErrorCode::SpanBallotTooLarge);
+    }
+
+    /// Provenance: PLAT-980 review finding 1. The ceiling counts DISTINCT
+    /// candidates: exactly the ceiling's worth of distinct texts followed by
+    /// repeats of them is accepted, so the early refusal does not fire on a
+    /// duplicate.
+    #[test]
+    fn repeats_past_the_ceiling_do_not_count_against_it() {
+        let distinct = (0..MAX_CANDIDATES).map(|n| format!("clause {n}"));
+        let repeats = (0..MAX_CANDIDATES).map(|n| format!("clause {n}"));
+        let candidates = distinct.chain(repeats).map(|text| Span {
+            start: 0,
+            end: text.len(),
+            text,
+        });
+        let ballot = SpanBallot::new("q", candidates).unwrap();
+        assert_eq!(ballot.options().len(), MAX_CANDIDATES);
+    }
+
+    /// Provenance: PLAT-980 review finding 1. The refusal fires at the first
+    /// distinct candidate past the ceiling and reads nothing after it, so a
+    /// huge input costs at most `MAX_CANDIDATES + 1` candidates' work -- not
+    /// a full quadratic dedup of the tail before the refusal.
+    #[test]
+    fn the_ceiling_refusal_stops_reading_the_candidates() {
+        let consumed = std::cell::Cell::new(0_usize);
+        let candidates = (0..100_000_usize)
+            .inspect(|_| consumed.set(consumed.get() + 1))
+            .map(|n| {
+                let text = format!("clause {n}");
+                Span {
+                    start: 0,
+                    end: text.len(),
+                    text,
+                }
+            });
+        let error = SpanBallot::new("q", candidates).unwrap_err();
+        assert_eq!(error.code, JevErrorCode::SpanBallotTooLarge);
+        assert_eq!(consumed.get(), MAX_CANDIDATES + 1);
+    }
+
+    /// Provenance: PLAT-980 review finding 2. FR-006's behaviour bullet from
+    /// the criterion-strength fixture corpus: `e.g.,` is not a clause
+    /// boundary, so the parenthetical stays with the phrase it belongs to and
+    /// the only cut is the real one, after "render".
+    #[test]
+    fn an_abbreviation_does_not_cut_a_candidate() {
+        let text = "If a node fails to render, the system SHALL render a fallback UI \
+                    (e.g., \"Error loading node\") instead of crashing the tree.";
+        assert_eq!(
+            texts(&candidate_spans(text, Granularity::Clause)),
+            vec![
+                "If a node fails to render",
+                "the system SHALL render a fallback UI (e.g., \"Error loading node\") \
+                 instead of crashing the tree",
+            ]
+        );
+        let text = "Retry on 5xx, i.e. a server fault. Compare A vs. B, etc. then stop.";
+        assert_eq!(
+            texts(&candidate_spans(text, Granularity::Sentence)),
+            vec![
+                "Retry on 5xx, i.e. a server fault",
+                "Compare A vs. B, etc. then stop"
+            ]
+        );
+    }
+
+    /// Provenance: PLAT-980 review finding 2. An abbreviation matches only as
+    /// a whole word: `devs.` ends in `vs` but is a sentence end.
+    #[test]
+    fn an_abbreviation_matches_only_as_a_whole_word() {
+        let text = "It pings the devs. Then it stops.";
+        assert_eq!(
+            texts(&candidate_spans(text, Granularity::Sentence)),
+            vec!["It pings the devs", "Then it stops"]
+        );
+    }
+
+    /// Provenance: PLAT-980 review finding 3. An unclosed backtick runs to
+    /// the end of the text as one candidate, across a line break and past
+    /// delimiters that would otherwise cut.
+    #[test]
+    fn an_unclosed_backtick_runs_to_the_end_of_the_text() {
+        let text = "It calls. The `tail, runs.\nOn here. And on";
+        assert_eq!(
+            texts(&candidate_spans(text, Granularity::Clause)),
+            vec!["It calls", "The `tail, runs.\nOn here. And on"]
+        );
+    }
+
+    /// Provenance: PLAT-980 review finding 4. `BallotOutcome`'s wire shape,
+    /// written out literally: an `outcome` tag in snake case, the span by
+    /// value, and `unconfirmed` beside `confidence`.
+    #[test]
+    fn the_outcome_serializes_with_an_outcome_tag() {
+        let ballot = ballot("The run ends, a report exists.");
+        let wire = |answer: Option<&Answer>| {
+            serde_json::to_string(&ballot.resolve(answer, THRESHOLD)).unwrap()
+        };
+        assert_eq!(
+            wire(Some(&choice_answer("span-2", 0.8))),
+            concat!(
+                r#"{"outcome":"selected","span":{"start":14,"end":29,"text":"a report exists"},"#,
+                r#""confidence":0.8,"unconfirmed":false}"#
+            )
+        );
+        assert_eq!(
+            wire(Some(&choice_answer(ABSTAIN_LABEL, 0.25))),
+            r#"{"outcome":"abstained","confidence":0.25,"unconfirmed":true}"#
+        );
+        assert_eq!(
+            wire(Some(&choice_answer("span-9", 0.9))),
+            r#"{"outcome":"unrecognized","label":"span-9"}"#
+        );
+        assert_eq!(wire(None), r#"{"outcome":"unanswered"}"#);
+    }
+
+    /// Provenance: PLAT-980 review finding 5. A ballot composes with a real
+    /// request end to end: its question rides in a `Questions` map under
+    /// [`SpanBallot::key`], goes out through the client over the mock
+    /// transport, and the scripted answer under that key resolves to the
+    /// span.
+    #[tokio::test]
+    async fn a_ballot_round_trips_through_a_request() {
+        use std::sync::Arc;
+
+        use typesafe_sdk_client::SystemOneRequest;
+        use typesafe_sdk_env::Fixed;
+        use typesafe_sdk_http::{Exchange, Mock};
+        use typesafe_sdk_questions::Questions;
+
+        use crate::client::with_transport;
+        use crate::config::resolve;
+
+        let ballot = ballot("The run ends, a report exists.");
+        let key = SpanBallot::key("FR-900-AC-1", "untestable_clause");
+        assert_eq!(key, "FR-900-AC-1::untestable_clause");
+        let mut questions = Questions::new();
+        questions.insert(key.clone(), ballot.question());
+
+        let body = serde_json::json!({
+            "model": "jev-1.13.0",
+            "answers": {
+                "FR-900-AC-1::untestable_clause": {
+                    "type": "choice", "choice": "span-2", "confidence": 0.9,
+                    "probabilities": {"span-2": 0.9, "none": 0.1}
+                }
+            },
+            "usage": {"input_tokens": 40, "output_tokens": 0}
+        });
+        let mock = Arc::new(Mock::new(vec![Exchange::ok(&body.to_string())]));
+        let env = Fixed::new(&[("TYPESAFE_API_KEY", "sk_test_key")]);
+        let client = with_transport(resolve(&env).unwrap(), mock.clone());
+        let response = client
+            .system_one(SystemOneRequest::new(
+                "The run ends, a report exists.",
+                questions,
+            ))
+            .await
+            .unwrap();
+
+        let sent: serde_json::Value =
+            serde_json::from_str(mock.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            sent["questions"][key.as_str()]["criteria"]["span-2"],
+            "a report exists",
+            "the ballot's closed label set went out under its key: {sent}"
+        );
+        let expected = Span {
+            start: 14,
+            end: 29,
+            text: "a report exists".to_owned(),
+        };
+        assert_eq!(
+            ballot.resolve(response.answer(&key), THRESHOLD),
+            BallotOutcome::Selected {
+                span: &expected,
+                confidence: 0.9,
+                unconfirmed: false,
+            }
+        );
     }
 }
