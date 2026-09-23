@@ -28,10 +28,24 @@ description: "Chronological log of structural changes to this bundle."
   `accept`. `constant-predictor` is `inconclusive`: no collection carries
   per-item answers by family. The result is the
   `quoin.measurement-verdict.v1` document engineering-assurance's promotion
-  invariant (PLAT-962) reads; a non-accept exits 1 with the payload and the
-  new `CORE_NOT_ACCEPTED` diagnostic. MP-207's prose `estimator` and
-  `decision_rule` become EA's typed form (`count`; `eq` 0), with the prose
-  already in its body. FR-108-AC-1..AC-7; Matrix: TC-1780..TC-1797.
+  invariant (PLAT-962) reads, and it states its `orderSource`
+  (`git-first-parent-add`, `git-shallow`, `caller-supplied` or `none`). A
+  non-accept exits 1 with the payload and a `CORE_REJECTED` or
+  `CORE_INCONCLUSIVE` diagnostic. Review fixes: a `proportion` or `count`
+  with no `matched` is `population_unstated`, not asserted; a slice or an
+  observation the candidate drops is `slice_missing` or
+  `observation_missing`, never an older pass left standing; a non-fraction
+  unit is `unit_unsupported`; a stored value is judged within half a unit of
+  its stated precision; only tampering carries from earlier runs; intake
+  order follows first parents, reports a shallow clone, surfaces git
+  failures, and treats a stated timestamp that contradicts it as
+  `order_unattested`; a collection filed under another id is refused.
+  Prior-collection laundering and unchecked definition history are stated
+  as known limits. MP-207's prose `estimator` and `decision_rule` become
+  EA's typed form (`count`; `eq` 0) at `benchmark.silent-zero-v2`, with the
+  missing-capability refusal kept as prose the checker does not evaluate and
+  the rest of the prose
+  already in its body. FR-108-AC-1..AC-8; Matrix: TC-1780..TC-1806.
 
 * **2026-09-22** — **`quoin sync` and the `filament-plan-sync` dependency are
   removed.** `quoin-cli/src/sync.rs` wired `filament_plan_sync`'s own test
