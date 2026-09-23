@@ -33,6 +33,12 @@ regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+# `cassette::Cassette` (PLAT-977) holds its record-mode cache lock across the
+# delegate's `.await`, so two concurrent requests for one key cannot both call
+# the live API and both append a line -- that needs an async-aware mutex. Only
+# the `sync` feature: no runtime is built here (see `lib.rs`). Same pin as the
+# dev-dependency below and as the version already resolved through `reqwest`.
+tokio = { version = "=1.48.0", default-features = false, features = ["sync"] }
 # The cassette (PLAT-977) is a `typesafe_sdk_http::Transport` implementation,
 # and that trait is itself declared with `#[async_trait]` -- an implementer
 # needs the same macro to produce a matching `dyn`-compatible shape. Pinned to

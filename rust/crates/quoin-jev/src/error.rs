@@ -54,10 +54,11 @@ pub enum JevErrorCode {
     /// valid JSON, or a line missing a required field.
     CassetteInvalid,
     /// A cassette line's recorded `model` does not match the model the caller
-    /// pinned this replay to. Checked eagerly over every line when the
-    /// cassette is loaded, so a version-skewed cassette fails to load rather
-    /// than silently scoring some fraction of a run against a different
-    /// model than the rest (PLAT-977, PLAT-978).
+    /// pinned this record or replay session to. Checked eagerly over every
+    /// line when the cassette is loaded, and on every fresh answer before
+    /// record mode appends it, so a version-skewed cassette fails to load
+    /// rather than silently scoring some fraction of a run against a
+    /// different model than the rest (PLAT-977, PLAT-978).
     CassetteModelMismatch,
     /// A request made during replay matches no line the cassette holds. The
     /// cassette never invents an answer; a miss is a fixture/cassette drift
@@ -184,6 +185,10 @@ pub fn classify(error: &typesafe_sdk_error::Error) -> JevError {
                 crate::cassette::INVALID_PREFIX,
                 JevErrorCode::CassetteInvalid,
             ),
+            (
+                crate::cassette::MODEL_MISMATCH_PREFIX,
+                JevErrorCode::CassetteModelMismatch,
+            ),
         ];
         for (prefix, code) in PREFIXED {
             if let Some(rest) = message.strip_prefix(prefix) {
@@ -274,6 +279,33 @@ mod tests {
         let classified = classify(&error);
         assert_eq!(classified.code, JevErrorCode::CassetteMiss);
         assert_eq!(&*classified.message, "key abc123 not on file");
+    }
+
+    /// Provenance: PLAT-977. The invalid-cassette prefix reaches the caller
+    /// as `CassetteInvalid`, not `Connection`.
+    #[test]
+    fn a_cassette_invalid_message_classifies_by_its_own_code() {
+        let error = typesafe_sdk_error::Error::Invalid(format!(
+            "{}request body is not a JSON object",
+            crate::cassette::INVALID_PREFIX
+        ));
+        let classified = classify(&error);
+        assert_eq!(classified.code, JevErrorCode::CassetteInvalid);
+        assert_eq!(&*classified.message, "request body is not a JSON object");
+    }
+
+    /// Provenance: PLAT-977. A fresh answer from a model other than the
+    /// pinned one, refused inside record mode, reaches the caller as
+    /// `CassetteModelMismatch`.
+    #[test]
+    fn a_cassette_model_mismatch_message_classifies_by_its_own_code() {
+        let error = typesafe_sdk_error::Error::Invalid(format!(
+            "{}answered by jev-2.0.0",
+            crate::cassette::MODEL_MISMATCH_PREFIX
+        ));
+        let classified = classify(&error);
+        assert_eq!(classified.code, JevErrorCode::CassetteModelMismatch);
+        assert_eq!(&*classified.message, "answered by jev-2.0.0");
     }
 
     /// Provenance: PLAT-977. An ordinary `Invalid` message, carrying no
