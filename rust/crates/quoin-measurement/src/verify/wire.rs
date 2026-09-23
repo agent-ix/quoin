@@ -34,6 +34,7 @@ struct VerdictWire<'a> {
     decisions: Vec<DecisionWire>,
     findings: Vec<FindingWire<'a>>,
     regressed_runs: &'a [String],
+    order_source: &'static str,
     counts: CountsWire,
 }
 
@@ -96,6 +97,7 @@ pub fn verdict_json(verdict: &MeasurementVerdict) -> Result<Value, MeasurementEr
             .map(finding)
             .collect::<Result<_, _>>()?,
         regressed_runs: &verdict.regressed_runs,
+        order_source: verdict.order_source.as_str(),
         counts: counts(verdict.counts),
     };
     serde_json::to_value(&wire)

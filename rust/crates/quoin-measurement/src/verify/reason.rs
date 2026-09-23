@@ -49,12 +49,14 @@ pub enum Reason {
     NoCollections,
     /// An observation carries no measured value.
     NoValue,
-    /// No `population`, `examined` or `complete`, or no `repetitions` when
-    /// the plan requires more than one.
+    /// No `population`, `examined` or `complete`; no `matched` under a
+    /// `proportion` or `count` estimator; or no `repetitions` when the plan
+    /// requires more than one.
     PopulationUnstated,
     /// The population states `complete: false`.
     PopulationIncomplete,
-    /// The population examined nothing.
+    /// The population examined nothing, under a plan with no
+    /// `minimum_population` (under one, it is below the minimum).
     PopulationEmpty,
     /// A baseline rule has no earlier usable run to compare against.
     NoPrior,
@@ -66,6 +68,15 @@ pub enum Reason {
     ConstantPredictorRowsAbsent,
     /// Engineering-assurance could not evaluate the rule on these numbers.
     RuleNotEvaluable,
+    /// A `proportion` observation's unit is not a fraction (`percent of …`,
+    /// or anything else not spelled `fraction` or `fraction of …`).
+    UnitUnsupported,
+    /// A slice an earlier run measured under this definition is absent from
+    /// the candidate.
+    SliceMissing,
+    /// A collection of the candidate's subject and scope that is not before
+    /// it in intake order carries no observation of the plan.
+    ObservationMissing,
     /// The rule does not hold for the candidate's estimate.
     RuleNotMet,
     /// A stored `value` disagrees with the estimate recomputed from its
@@ -86,7 +97,7 @@ pub enum Reason {
 
 impl Reason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 18] = [
+    pub const ALL: [Self; 21] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
         Self::NoCollections,
@@ -98,6 +109,9 @@ impl Reason {
         Self::OrderUnattested,
         Self::ConstantPredictorRowsAbsent,
         Self::RuleNotEvaluable,
+        Self::UnitUnsupported,
+        Self::SliceMissing,
+        Self::ObservationMissing,
         Self::RuleNotMet,
         Self::ValueDisagreesWithRows,
         Self::PopulationBelowMinimum,
@@ -122,6 +136,9 @@ impl Reason {
             Self::OrderUnattested => "order_unattested",
             Self::ConstantPredictorRowsAbsent => "constant_predictor_rows_absent",
             Self::RuleNotEvaluable => "rule_not_evaluable",
+            Self::UnitUnsupported => "unit_unsupported",
+            Self::SliceMissing => "slice_missing",
+            Self::ObservationMissing => "observation_missing",
             Self::RuleNotMet => "rule_not_met",
             Self::ValueDisagreesWithRows => "value_disagrees_with_rows",
             Self::PopulationBelowMinimum => "population_below_minimum",
@@ -136,6 +153,18 @@ impl Reason {
     #[must_use]
     pub fn from_wire(value: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|known| known.as_str() == value)
+    }
+
+    /// Whether a run before the candidate carrying this reason still counts
+    /// against the candidate: only evidence of tampering does. An earlier
+    /// run that fell short of the plan is excluded from baselines and
+    /// otherwise left in the past.
+    #[must_use]
+    pub const fn carries_from_history(self) -> bool {
+        matches!(
+            self,
+            Self::ValueDisagreesWithRows | Self::PopulationMalformed
+        )
     }
 
     /// The verdict this reason forces: a contradiction rejects, missing
@@ -153,7 +182,10 @@ impl Reason {
             | Self::NoPrior
             | Self::OrderUnattested
             | Self::ConstantPredictorRowsAbsent
-            | Self::RuleNotEvaluable => Verdict::Inconclusive,
+            | Self::RuleNotEvaluable
+            | Self::UnitUnsupported
+            | Self::SliceMissing
+            | Self::ObservationMissing => Verdict::Inconclusive,
             Self::RuleNotMet
             | Self::ValueDisagreesWithRows
             | Self::PopulationBelowMinimum

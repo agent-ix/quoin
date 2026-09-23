@@ -23,12 +23,13 @@
 //! The store records no intake order, and a collection's `timestamp` and
 //! `collectionId` are the producer's to choose (PLAT-961's review of
 //! quoin#587: a backdated collection sorts as a prior). So every collection
-//! arrives with an [`Ranked::intake`] position from outside this module — the
-//! CLI passes the git commit that first added the file — and the checker
-//! orders by that. A collection with no position sorts after every positioned
-//! one. The stated timestamp only breaks ties, for a deterministic listing,
-//! and whenever a tie decides which collection is the candidate or which is
-//! the prior, the verdict is `inconclusive` with `order_unattested`.
+//! arrives with a [`Ranked::intake`] position from outside this module, and
+//! an [`OrderSource`] saying where the positions came from — the CLI passes
+//! the first-parent git commit that added each file. A collection with no
+//! position sorts after every positioned one, and the stated timestamp only
+//! breaks ties for a deterministic listing. The candidate, or a
+//! `prior-collection` rule's prior, whose place is tied or contradicted by
+//! the stated timestamps is `order_unattested` (see [`order`]).
 //!
 //! # Every run counts
 //!
@@ -40,8 +41,10 @@
 //! verification stack — means the same thing was re-run until it passed,
 //! which is `rerun_until_pass`.
 
+mod order;
 mod reason;
 pub mod rows;
+mod types;
 mod wire;
 
 use std::collections::BTreeMap;
@@ -49,92 +52,14 @@ use std::collections::BTreeMap;
 use engineering_assurance::measurement::{Baseline, Comparator, DecisionRule, RuleReference};
 use quoin_store::JsonValue;
 
-use crate::store::read::collection_order;
 use crate::types::collection::MeasurementCollection;
 use crate::types::observation::MeasurementObservation;
 use crate::types::plan::{MeasurementPlan, StatisticalDesign};
 
 pub use reason::{Reason, Verdict};
 pub use rows::{Estimate, EstimateBasis};
+pub use types::{Counts, Finding, MeasurementVerdict, OrderSource, Ranked, SliceDecision};
 pub use wire::{VERDICT_SCHEMA, verdict_json};
-
-/// One stored collection and its intake position.
-#[derive(Clone, Copy, Debug)]
-pub struct Ranked<'a> {
-    /// The collection as stored.
-    pub collection: &'a MeasurementCollection,
-    /// Its position in an order the producer cannot choose — lower is
-    /// earlier, equal is a tie — or `None` when nothing attests one.
-    pub intake: Option<u64>,
-}
-
-/// One reason, and where it was found.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Finding {
-    /// Why.
-    pub reason: Reason,
-    /// The collection it was found in; `None` for a plan-level reason.
-    pub collection_id: Option<String>,
-    /// The observation's dimensions; `None` for a collection- or plan-level
-    /// reason.
-    pub dimensions: Option<BTreeMap<String, JsonValue>>,
-}
-
-/// The rule applied to one slice of the candidate collection.
-#[derive(Clone, Debug, PartialEq)]
-pub struct SliceDecision {
-    /// The slice.
-    pub dimensions: BTreeMap<String, JsonValue>,
-    /// The estimate, and whether it was recomputed or asserted.
-    pub estimate: Estimate,
-    /// The baseline value, for a baseline rule that found one.
-    pub baseline: Option<f64>,
-    /// Whether the rule holds; `None` when it could not be evaluated.
-    pub holds: Option<bool>,
-}
-
-/// What the checker counted.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct Counts {
-    /// Runs: collections holding the plan's metric under its definition.
-    pub collections_considered: usize,
-    /// Runs the rule does not hold for, against their own history.
-    pub regressed_runs: usize,
-    /// Observations whose estimate was recomputed from `matched` and
-    /// `examined` — including those found to disagree with their `value`.
-    pub observations_recomputed: usize,
-    /// Observations whose stored `value` was used as stated.
-    pub observations_asserted: usize,
-    /// Runs with an intake position.
-    pub order_attested: usize,
-    /// Runs with none.
-    pub order_unattested: usize,
-}
-
-/// The checker's typed result.
-#[derive(Clone, Debug, PartialEq)]
-pub struct MeasurementVerdict {
-    /// The plan checked.
-    pub plan_id: String,
-    /// Its definition version.
-    pub definition_version: String,
-    /// The verdict.
-    pub verdict: Verdict,
-    /// Every distinct reason, sorted; empty exactly when accepted.
-    pub reasons: Vec<Reason>,
-    /// The verdict the caller claimed, when one was.
-    pub claimed: Option<Verdict>,
-    /// The candidate: the last run in intake order.
-    pub candidate: Option<String>,
-    /// The rule applied to each slice of the candidate.
-    pub decisions: Vec<SliceDecision>,
-    /// Every reason, and where.
-    pub findings: Vec<Finding>,
-    /// The runs that regressed, in intake order.
-    pub regressed_runs: Vec<String>,
-    /// What was counted.
-    pub counts: Counts,
-}
 
 /// One run: a collection, its position, and each matching observation's
 /// estimate or the reason it has none.
@@ -144,61 +69,91 @@ struct Run<'a> {
     slices: Vec<(&'a MeasurementObservation, Result<Estimate, Reason>)>,
 }
 
-/// Decide `plan`'s verdict from every stored collection.
+/// What the checker holds while it decides.
+struct Check<'a> {
+    rule: Option<DecisionRule>,
+    runs: Vec<Run<'a>>,
+    findings: Vec<Finding>,
+}
+
+/// Decide `plan`'s verdict from every stored collection, ordered as `order`
+/// says the positions in `collections` were obtained.
 #[must_use]
 pub fn verify(
     plan: &MeasurementPlan,
     collections: &[Ranked<'_>],
+    order: OrderSource,
     claimed: Option<Verdict>,
 ) -> MeasurementVerdict {
-    let mut findings = Vec::new();
-    let mut decisions = Vec::new();
-    let mut regressed = Vec::new();
     let design = plan.statistical_design.unwrap_or(StatisticalDesign {
         minimum_population: None,
         repetitions: None,
         estimator: None,
         decision_rule: None,
     });
-    let runs = design
-        .estimator
-        .map(|estimator| runs(plan, &design, estimator, collections))
-        .unwrap_or_default();
-    let mut counts = count(&runs);
-    match (design.decision_rule, design.estimator) {
-        (None, _) => findings.push(plan_level(Reason::NoDecisionRule)),
-        (_, None) => findings.push(plan_level(Reason::NoEstimator)),
-        (Some(_), Some(_)) if runs.is_empty() => findings.push(plan_level(Reason::NoCollections)),
+    // Positions are ignored when the order's source attests none.
+    let positioned = matches!(
+        order,
+        OrderSource::GitFirstParentAdd | OrderSource::CallerSupplied
+    );
+    let collections: Vec<Ranked<'_>> = collections
+        .iter()
+        .map(|ranked| Ranked {
+            intake: ranked.intake.filter(|_| positioned),
+            ..*ranked
+        })
+        .collect();
+    let collections = collections.as_slice();
+    let mut check = Check {
+        rule: design.decision_rule,
+        runs: runs(plan, &design, collections),
+        findings: Vec::new(),
+    };
+    let counts = count(&check.runs);
+    let mut decisions = Vec::new();
+    let mut regressed = Vec::new();
+    if order == OrderSource::GitShallow {
+        check.findings.push(plan_level(Reason::OrderUnattested));
+    }
+    match (check.rule, design.estimator) {
+        (None, _) => check.findings.push(plan_level(Reason::NoDecisionRule)),
+        (_, None) => check.findings.push(plan_level(Reason::NoEstimator)),
+        (Some(_), Some(_)) if check.runs.is_empty() => {
+            check.findings.push(plan_level(Reason::NoCollections));
+        }
         (Some(rule), Some(_)) => {
-            for (index, run) in runs.iter().enumerate() {
-                let history = runs.get(..index).unwrap_or_default();
-                let is_candidate = index + 1 == runs.len();
-                let outcome = decide(rule, run, history, is_candidate, &mut findings);
+            let last = check.runs.len() - 1;
+            for index in 0..=last {
+                let outcome = check.decide(rule, index, index == last);
                 if outcome.regressed {
                     regressed.push(index);
                 }
-                if is_candidate {
+                if index == last {
                     decisions = outcome.decisions;
+                    check.candidate_checks(last, &regressed, &outcome.priors, collections);
                 }
             }
-            candidate_checks(&runs, &regressed, &mut findings);
         }
     }
-    counts.regressed_runs = regressed.len();
+    let regressed_runs: Vec<String> = regressed
+        .iter()
+        .filter_map(|&index| check.runs.get(index).map(|run| id_of(run.collection)))
+        .collect();
     let mut result = MeasurementVerdict {
         plan_id: plan.id.as_str().to_owned(),
         definition_version: plan.definition_version.as_str().to_owned(),
         verdict: Verdict::Inconclusive,
         reasons: Vec::new(),
         claimed,
-        candidate: runs.last().map(|run| id_of(run.collection)),
+        candidate: check.runs.last().map(|run| id_of(run.collection)),
         decisions,
-        findings,
-        regressed_runs: regressed
-            .iter()
-            .filter_map(|&index| runs.get(index).map(|run| id_of(run.collection)))
-            .collect(),
-        counts,
+        findings: check.findings,
+        counts: Counts {
+            regressed_runs: regressed_runs.len(),
+            ..counts
+        },
+        regressed_runs,
+        order_source: order,
     };
     settle(&mut result);
     result
@@ -208,7 +163,6 @@ pub fn verify(
 fn runs<'a>(
     plan: &MeasurementPlan,
     design: &StatisticalDesign,
-    estimator: engineering_assurance::measurement::Estimator,
     collections: &[Ranked<'a>],
 ) -> Vec<Run<'a>> {
     let mut runs: Vec<Run<'a>> = collections
@@ -216,29 +170,36 @@ fn runs<'a>(
         .map(|ranked| Run {
             collection: ranked.collection,
             intake: ranked.intake,
-            slices: ranked
-                .collection
-                .observations
-                .iter()
-                .filter(|observation| {
-                    observation.plan_id.as_str() == plan.id.as_str()
-                        && observation.metric.as_str() == plan.metric.as_str()
-                        && observation.definition_version.as_str()
-                            == plan.definition_version.as_str()
+            slices: observations_of(plan, ranked.collection)
+                .into_iter()
+                .map(|observation| {
+                    let assessed = design.estimator.map_or(Err(Reason::NoEstimator), |e| {
+                        rows::assess(design, e, observation)
+                    });
+                    (observation, assessed)
                 })
-                .map(|observation| (observation, rows::assess(design, estimator, observation)))
                 .collect(),
         })
         .filter(|run| !run.slices.is_empty())
         .collect();
-    // Positioned runs first, by position; unpositioned after. The stated
-    // timestamp only makes a tie's listing deterministic.
-    runs.sort_by(|a, b| {
-        (a.intake.is_none(), a.intake)
-            .cmp(&(b.intake.is_none(), b.intake))
-            .then_with(|| collection_order(a.collection, b.collection))
-    });
+    order::sort(&mut runs);
     runs
+}
+
+/// The observations of `plan`'s metric under its id and definition.
+fn observations_of<'a>(
+    plan: &MeasurementPlan,
+    collection: &'a MeasurementCollection,
+) -> Vec<&'a MeasurementObservation> {
+    collection
+        .observations
+        .iter()
+        .filter(|observation| {
+            observation.plan_id.as_str() == plan.id.as_str()
+                && observation.metric.as_str() == plan.metric.as_str()
+                && observation.definition_version.as_str() == plan.definition_version.as_str()
+        })
+        .collect()
 }
 
 fn count(runs: &[Run<'_>]) -> Counts {
@@ -274,78 +235,145 @@ fn count(runs: &[Run<'_>]) -> Counts {
 struct RunOutcome {
     regressed: bool,
     decisions: Vec<SliceDecision>,
+    /// The runs a `prior-collection` rule compared each slice against.
+    priors: Vec<usize>,
 }
 
-/// Apply `rule` to every slice of `run` against `history`, recording
-/// findings. The candidate records every reason; an earlier run records only
-/// the contradictions in its own data — its missing evidence and its failed
-/// rule are history, counted but not held against the candidate.
-fn decide(
-    rule: DecisionRule,
-    run: &Run<'_>,
-    history: &[Run<'_>],
-    is_candidate: bool,
-    findings: &mut Vec<Finding>,
-) -> RunOutcome {
-    let mut outcome = RunOutcome {
-        regressed: false,
-        decisions: Vec::new(),
-    };
-    for (observation, assessed) in &run.slices {
-        let dimensions = observation.dimensions.entries();
-        let mut record = |reason: Reason| {
-            if is_candidate || reason.verdict() == Verdict::Reject {
-                findings.push(Finding {
-                    reason,
-                    collection_id: Some(id_of(run.collection)),
-                    dimensions: Some(dimensions.clone()),
+impl Check<'_> {
+    /// Apply `rule` to every slice of the run at `index` against the runs
+    /// before it. The candidate records every reason; an earlier run records
+    /// only evidence of tampering in its own data
+    /// ([`Reason::carries_from_history`]) — its shortfalls and its failed
+    /// rule are history, counted but not held against the candidate.
+    fn decide(&mut self, rule: DecisionRule, index: usize, is_candidate: bool) -> RunOutcome {
+        let mut outcome = RunOutcome {
+            regressed: false,
+            decisions: Vec::new(),
+            priors: Vec::new(),
+        };
+        let Some(run) = self.runs.get(index) else {
+            return outcome;
+        };
+        let history = self.runs.get(..index).unwrap_or_default();
+        for (observation, assessed) in &run.slices {
+            let dimensions = observation.dimensions.entries();
+            let mut record = |reason: Reason| {
+                if is_candidate || reason.carries_from_history() {
+                    self.findings.push(Finding {
+                        reason,
+                        collection_id: Some(id_of(run.collection)),
+                        dimensions: Some(dimensions.clone()),
+                    });
+                }
+            };
+            let estimate = match assessed {
+                Ok(estimate) => *estimate,
+                Err(reason) => {
+                    record(*reason);
+                    continue;
+                }
+            };
+            let (baseline, holds) = match baseline(rule, dimensions, history) {
+                Ok((value, prior)) => {
+                    outcome.priors.extend(prior);
+                    let holds = rule.holds(estimate.value, value).ok();
+                    if holds.is_none() && is_candidate {
+                        record(Reason::RuleNotEvaluable);
+                    }
+                    (value, holds)
+                }
+                Err(reason) => {
+                    if is_candidate {
+                        record(reason);
+                    }
+                    (None, None)
+                }
+            };
+            if holds == Some(false) {
+                outcome.regressed = true;
+                if is_candidate {
+                    record(Reason::RuleNotMet);
+                }
+            }
+            if is_candidate {
+                outcome.decisions.push(SliceDecision {
+                    dimensions: dimensions.clone(),
+                    estimate,
+                    baseline,
+                    holds,
                 });
             }
-        };
-        let estimate = match assessed {
-            Ok(estimate) => *estimate,
-            Err(reason) => {
-                record(*reason);
-                continue;
-            }
-        };
-        let (baseline, holds) = match baseline(rule, dimensions, history) {
-            Ok((value, prior)) => {
-                if is_candidate && prior.is_some_and(|prior| tied(history, prior)) {
-                    record(Reason::OrderUnattested);
-                }
-                let holds = rule.holds(estimate.value, value).ok();
-                if holds.is_none() {
-                    record_open(&mut record, is_candidate, Reason::RuleNotEvaluable);
-                }
-                (value, holds)
-            }
-            Err(reason) => {
-                record_open(&mut record, is_candidate, reason);
-                (None, None)
-            }
-        };
-        if holds == Some(false) {
-            outcome.regressed = true;
-            record_open(&mut record, is_candidate, Reason::RuleNotMet);
         }
-        if is_candidate {
-            outcome.decisions.push(SliceDecision {
-                dimensions: dimensions.clone(),
-                estimate,
-                baseline,
-                holds,
-            });
-        }
+        outcome
     }
-    outcome
-}
 
-/// Record `reason` for the candidate only: an earlier run's missing
-/// baseline, unevaluable rule or failed rule is its history, not a finding.
-fn record_open(record: &mut impl FnMut(Reason), is_candidate: bool, reason: Reason) {
-    if is_candidate {
-        record(reason);
+    /// The checks that look at the candidate against everything else: its
+    /// place in the order and its prior's, slices and observations it
+    /// dropped, and a regressed rerun of its own apparatus.
+    fn candidate_checks(
+        &mut self,
+        last: usize,
+        regressed: &[usize],
+        priors: &[usize],
+        collections: &[Ranked<'_>],
+    ) {
+        let Some(candidate) = self.runs.get(last) else {
+            return;
+        };
+        let at = |reason: Reason, collection: &MeasurementCollection| Finding {
+            reason,
+            collection_id: Some(id_of(collection)),
+            dimensions: None,
+        };
+        let mut found = Vec::new();
+        if order::unattested(&self.runs, last)
+            || priors
+                .iter()
+                .any(|&prior| order::unattested(&self.runs, prior))
+        {
+            found.push(at(Reason::OrderUnattested, candidate.collection));
+        }
+        let mut dropped: Vec<&BTreeMap<String, JsonValue>> = Vec::new();
+        for run in self.runs.get(..last).unwrap_or_default() {
+            for (observation, _) in &run.slices {
+                let slice = observation.dimensions.entries();
+                let measured = candidate
+                    .slices
+                    .iter()
+                    .any(|(own, _)| own.dimensions.entries() == slice);
+                if !measured && !dropped.contains(&slice) {
+                    dropped.push(slice);
+                }
+            }
+        }
+        found.extend(dropped.into_iter().map(|slice| Finding {
+            reason: Reason::SliceMissing,
+            collection_id: Some(id_of(candidate.collection)),
+            dimensions: Some(slice.clone()),
+        }));
+        for ranked in collections {
+            let is_run = self
+                .runs
+                .iter()
+                .any(|run| std::ptr::eq(run.collection, ranked.collection));
+            if !is_run
+                && ranked.collection.subject == candidate.collection.subject
+                && ranked.collection.scope == candidate.collection.scope
+                && order::not_before(ranked.intake, candidate.intake)
+            {
+                found.push(at(Reason::ObservationMissing, ranked.collection));
+            }
+        }
+        if !regressed.contains(&last) {
+            for &index in regressed {
+                if let Some(run) = self.runs.get(index)
+                    && same_apparatus(run.collection, candidate.collection)
+                {
+                    found.push(at(Reason::RerunUntilPass, run.collection));
+                }
+            }
+        }
+        self.findings.extend(found);
     }
 }
 
@@ -359,8 +387,8 @@ fn baseline(
     let RuleReference::Baseline { baseline, .. } = rule.reference() else {
         return Ok((None, None));
     };
-    // A baseline is computed from the checker's own estimates: a run whose
-    // stored value disagrees with its rows contributes nothing.
+    // A baseline is computed from the checker's own estimates: a run that is
+    // not usable evidence — tampered, short, incomplete — contributes nothing.
     let mut earlier = history.iter().enumerate().filter_map(|(index, run)| {
         run.slices.iter().find_map(|(observation, assessed)| {
             (observation.dimensions.entries() == slice)
@@ -384,47 +412,6 @@ fn baseline(
     let (index, value) = found.ok_or(Reason::NoPrior)?;
     let prior = (baseline == Baseline::PriorCollection).then_some(index);
     Ok((Some(value), prior))
-}
-
-/// Whether the run at `index` shares its intake position with another run in
-/// `runs`, so nothing attests which of them came later.
-fn tied(runs: &[Run<'_>], index: usize) -> bool {
-    runs.get(index).is_some_and(|run| {
-        runs.iter()
-            .enumerate()
-            .any(|(other, candidate)| other != index && candidate.intake == run.intake)
-    })
-}
-
-/// The checks that look at the candidate against every other run.
-fn candidate_checks(runs: &[Run<'_>], regressed: &[usize], findings: &mut Vec<Finding>) {
-    let Some(last) = runs.len().checked_sub(1) else {
-        return;
-    };
-    let Some(candidate) = runs.get(last) else {
-        return;
-    };
-    if tied(runs, last) {
-        findings.push(Finding {
-            reason: Reason::OrderUnattested,
-            collection_id: Some(id_of(candidate.collection)),
-            dimensions: None,
-        });
-    }
-    if regressed.contains(&last) {
-        return;
-    }
-    for &index in regressed {
-        if let Some(run) = runs.get(index)
-            && same_apparatus(run.collection, candidate.collection)
-        {
-            findings.push(Finding {
-                reason: Reason::RerunUntilPass,
-                collection_id: Some(id_of(run.collection)),
-                dimensions: None,
-            });
-        }
-    }
 }
 
 /// Whether two collections were produced by the same apparatus: source

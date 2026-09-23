@@ -16,8 +16,10 @@
 //!
 //! So `matched` and `examined` are the row data: they are the sufficient
 //! statistic of a `proportion` (matched / examined) and a `count` (matched).
-//! Those two estimators are **recomputed** here and the stored `value` must
-//! agree exactly. `mean`, `median` and `ratio` need per-item values or two
+//! Those two estimators are **recomputed** here, and a `proportion` or
+//! `count` observation with no `matched` has no rows to recompute from, so it
+//! is `population_unstated`, not asserted. The stored `value` must agree with
+//! the recomputation to within its own stated precision ([`consistent`]). `mean`, `median` and `ratio` need per-item values or two
 //! totals, which no collection carries; for them the stored `value` is used
 //! and the observation is counted as **asserted**, not recomputed.
 //!
@@ -73,23 +75,90 @@ pub struct Estimate {
 /// `matched` and `examined` are whole numbers with `matched <= examined` and
 /// `examined > 0` by the time [`assess`] calls this.
 #[must_use]
-pub fn recompute(estimator: Estimator, matched: Option<f64>, examined: f64) -> Option<f64> {
+pub fn recompute(estimator: Estimator, matched: f64, examined: f64) -> Option<f64> {
     match estimator {
-        Estimator::Proportion => matched.map(|matched| matched / examined),
-        Estimator::Count => matched,
+        Estimator::Proportion => Some(matched / examined),
+        Estimator::Count => Some(matched),
         Estimator::Mean | Estimator::Median | Estimator::Ratio => None,
     }
+}
+
+/// Whether a stored `value` is consistent with the rows it summarises,
+/// `numerator / denominator`: within half a unit of the value's last stated
+/// decimal.
+///
+/// The stated decimals are read from the value's shortest round-trip
+/// spelling, which is what a JSON writer emits: `0.947` states three, so it
+/// is consistent with any `numerator / denominator` within 0.0005 of it.
+/// The comparison is exact, on integers: with the spelling `N` over `10^d`,
+/// `|N / 10^d - numerator / denominator| <= 1 / (2 * 10^d)` is
+/// `2 * |N * denominator - numerator * 10^d| <= denominator`. Comparing the
+/// value's binary `f64` instead would misjudge a spelling one ULP from the
+/// quotient. A value that is the `f64` quotient itself is always consistent
+/// — its shortest spelling identifies that `f64`, not the exact rational — and
+/// a spelling too long for the integer arithmetic must be that quotient.
+///
+/// The rule is only about the aggregate's honesty: the decision rule is
+/// applied to the recomputed estimate, never to the stored value, so a
+/// rounded aggregate cannot move a verdict.
+#[must_use]
+pub fn consistent(stored: f64, numerator: f64, denominator: f64) -> bool {
+    let spelled = stored.to_string();
+    let (whole, fraction) = spelled.split_once('.').unwrap_or((spelled.as_str(), ""));
+    let places = u32::try_from(fraction.len()).ok();
+    let exact =
+        || (numerator / denominator).partial_cmp(&stored) == Some(std::cmp::Ordering::Equal);
+    let digits = format!("{whole}{fraction}");
+    let (Some(places), Ok(spelled), Some(numerator), Some(denominator)) = (
+        places,
+        digits.parse::<i128>(),
+        integer(numerator),
+        integer(denominator),
+    ) else {
+        return exact();
+    };
+    if exact() {
+        return true;
+    }
+    let Some(scale) = 10_i128.checked_pow(places) else {
+        return false;
+    };
+    spelled
+        .checked_mul(denominator)
+        .zip(numerator.checked_mul(scale))
+        .and_then(|(left, right)| left.checked_sub(right))
+        .and_then(i128::checked_abs)
+        .and_then(|gap| gap.checked_mul(2))
+        .is_some_and(|gap| gap <= denominator)
+}
+
+/// A whole `f64` as an integer, or `None` when it is not one.
+fn integer(value: f64) -> Option<i128> {
+    is_whole(value)
+        .then(|| format!("{value:.0}").parse().ok())
+        .flatten()
+}
+
+/// Whether `unit` states a proportion's unit: `fraction`, or `fraction of
+/// …`. Units are free text in the stored corpus (`percent of …`, `seeded
+/// failure`), and a proportion recomputed as `matched / examined` is only
+/// comparable with a value stated as a fraction.
+#[must_use]
+pub fn is_fraction_unit(unit: &str) -> bool {
+    unit == "fraction" || unit.starts_with("fraction ")
 }
 
 /// The estimate one observation contributes, or the first reason it cannot.
 ///
 /// The checks run in a fixed order, and the first failure is the answer:
-/// no value; no `population` or no `examined`; a malformed `examined`,
-/// `matched` or `repetitions`; `complete` unstated or `false`; an empty
-/// population; a population below the plan's `minimum_population`; fewer
-/// repetitions than the plan requires, or none stated when it requires more
-/// than one; and last, a stored `value` that disagrees with the recomputed
-/// estimate.
+/// no value; no `population`, no `examined`, or — for `proportion` and
+/// `count`, whose rows it is — no `matched`; a malformed `examined`,
+/// `matched` or `repetitions`; `complete` unstated or `false`; a population
+/// below the plan's `minimum_population` (an empty one included, when the
+/// plan states a minimum); an empty population; fewer repetitions than the
+/// plan requires, or none stated when it requires more than one; a
+/// `proportion` whose unit is not a fraction; and last, a stored `value`
+/// inconsistent with the recomputed estimate.
 ///
 /// # Errors
 ///
@@ -110,6 +179,10 @@ pub fn assess(
         .as_ref()
         .ok_or(Reason::PopulationUnstated)?;
     let examined = population.examined.ok_or(Reason::PopulationUnstated)?;
+    let rows_required = matches!(estimator, Estimator::Proportion | Estimator::Count);
+    if rows_required && population.matched.is_none() {
+        return Err(Reason::PopulationUnstated);
+    }
     if !is_whole(examined)
         || population
             .matched
@@ -123,14 +196,14 @@ pub fn assess(
         Some(false) => return Err(Reason::PopulationIncomplete),
         None => return Err(Reason::PopulationUnstated),
     }
-    if examined.partial_cmp(&0.0) != Some(Ordering::Greater) {
-        return Err(Reason::PopulationEmpty);
-    }
     if design
         .minimum_population
         .is_some_and(|minimum| examined < f64::from(minimum.get()))
     {
         return Err(Reason::PopulationBelowMinimum);
+    }
+    if examined.partial_cmp(&0.0) != Some(Ordering::Greater) {
+        return Err(Reason::PopulationEmpty);
     }
     if let Some(required) = design.repetitions.filter(|required| required.get() > 1) {
         let performed = repetitions.ok_or(Reason::PopulationUnstated)?;
@@ -138,18 +211,30 @@ pub fn assess(
             return Err(Reason::RepetitionsShort);
         }
     }
-    match recompute(estimator, population.matched, examined) {
-        Some(recomputed) if recomputed.partial_cmp(&value) == Some(Ordering::Equal) => {
-            Ok(Estimate {
-                value: recomputed,
-                basis: EstimateBasis::Recomputed,
-            })
-        }
-        Some(_) => Err(Reason::ValueDisagreesWithRows),
-        None => Ok(Estimate {
+    if estimator == Estimator::Proportion && !is_fraction_unit(observation.unit.as_str()) {
+        return Err(Reason::UnitUnsupported);
+    }
+    let Some((matched, recomputed)) = population
+        .matched
+        .and_then(|matched| Some((matched, recompute(estimator, matched, examined)?)))
+    else {
+        return Ok(Estimate {
             value,
             basis: EstimateBasis::Asserted,
-        }),
+        });
+    };
+    let denominator = if estimator == Estimator::Proportion {
+        examined
+    } else {
+        1.0
+    };
+    if consistent(value, matched, denominator) {
+        Ok(Estimate {
+            value: recomputed,
+            basis: EstimateBasis::Recomputed,
+        })
+    } else {
+        Err(Reason::ValueDisagreesWithRows)
     }
 }
 
