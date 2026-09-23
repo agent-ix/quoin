@@ -95,10 +95,6 @@ const COMMANDS: &[(&str, &str)] = &[
     ),
     ("review", "Run a composite spec review workflow."),
     (
-        "sync",
-        "Synchronize the local plan tree with an external tracker\n                    target.",
-    ),
-    (
         "to-plan",
         "Convert accepted requirements into an implementation plan.",
     ),
@@ -182,7 +178,7 @@ pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<Str
 /// The oclif `command_not_found` hook's compact actionable refusal.
 pub(crate) fn unknown_command(name: &str) -> String {
     format!(
-        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
+        " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
     )
 }
 
@@ -255,7 +251,6 @@ mod tests {
         assert!(rendered.contains("USAGE\n  $ quoin [COMMAND]"));
         assert!(rendered.contains("TOPICS\n  assurance"));
         assert!(rendered.contains("COMMANDS\n  advise"));
-        assert!(rendered.contains("Synchronize the local plan tree with an external tracker"));
     }
 
     #[test]

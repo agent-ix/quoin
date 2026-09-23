@@ -23,12 +23,6 @@ workspace = true
 
 [dependencies]
 clap = { workspace = true }
-# Pinned past agent-ix/filament-ide-rs#608 (81e441be), which relicensed the
-# workspace to AGPL-3.0-or-later -- the old rev resolved as AGPL-3.0-only,
-# which rust-deny's license allow-list refuses. The pin still lands on
-# filament-plan-sync's own quire-rs 0.21.0 (tag-pinned in ITS manifest, not
-# ours to move); see rust/deny.toml's `skip` entry for that duplicate.
-filament-plan-sync = { git = "https://github.com/agent-ix/filament-ide-rs", rev = "81e441be0f1e7f6724810021af3f2dac099f35c9" }
 quoin-core = { workspace = true }
 quoin-config = { workspace = true }
 quoin-delivery = { workspace = true }
