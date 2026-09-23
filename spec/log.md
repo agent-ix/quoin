@@ -31,7 +31,7 @@ description: "Chronological log of structural changes to this bundle."
   resolved set, so a differing recorded set inside one series is a
   contradiction the data itself proves. A plan that protects nothing is
   unaffected.
-  FR-110-AC-1..AC-8; Matrix: TC-1810..TC-1826.
+  FR-110-AC-1..AC-9; Matrix: TC-1810..TC-1832.
 
 * **2026-09-22** — **FR-108 (new FR): the independent measurement-verdict
   checker, `quoin measurement verify`** (PLAT-961, part 1). Nothing decided a
