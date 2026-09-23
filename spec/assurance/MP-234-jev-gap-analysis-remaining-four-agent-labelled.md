@@ -98,6 +98,31 @@ from MP-233's P3, which assumed the shipped FR-101 bodies exceed nothing, and
 that departure is deliberate: MP-233 stated its assumption as unverified, and a
 row-by-row reading does not support it for mismatched traces.
 
+**The same rule also departs from MP-233's P2, and that departure is what
+produces the only passing result here, so it is named plainly.** MP-233
+treats P2 (the shipped body implements its cited requirement) as mechanical
+truth for every row. This plan's `code_implements_intent` labels agree with
+that for the 11 correctly-traced rows, but label the 18 mismatched rows `no`
+-- the code does not implement the requirement the lens is shown, whatever it
+implements relative to its real one. Under MP-233's P2 read applied uniformly,
+every row would be labelled `yes`, the constant predictor would score 100%,
+and the lens (which answers `no` on several rows) would score roughly 52% --
+a clear loss, not a win. The bar this plan gates on only holds under the
+trace-aware reading. A reader who does not accept that reading should treat
+`code_implements_intent`'s bar as NO-GO too.
+
+**Prior exposure, stated plainly.** "Committed before the first live call
+this plan judges" is not the same as "before the lens ever saw these
+triples." All 29 shipped triples were already sent to the lens once before,
+in MP-233's own live battery (`live_gap_battery.rs`, PLAT-839/PLAT-979). The
+labels here were written by reading the corpus's static content (spec text,
+test source, covered code) and MP-233's own already-committed `note` fields,
+which had already flagged the mistraces -- not by reading any `noul`/`choice`
+output from that earlier run. But the pre-registration commit (`7aa3ca2f`)
+cannot prove, and does not claim, that the labeller had never seen MP-233's
+results at all before writing these labels. Weigh the "1 of 4 holds" verdict
+accordingly.
+
 A pass here shows the lens can see that a cited requirement is not about the
 code in front of it. It does not show that the lens judges code-vs-requirement
 semantics on correctly-traced triples. The correctly-traced subset answers
@@ -153,16 +178,23 @@ verdicts. Its one difference is `code_exceeds_requirement` at 67.9% in run 1.
 
 **What the numbers say.**
 
-1. **`code_implements_intent` holds, and it holds by spotting trace
-   mismatches.** On the 11 correctly-traced rows it said `yes` every time, and
-   every label there is `yes`, so that subset cannot separate the lens from a
-   constant. All of its margin comes from the 18 mismatched rows, where it said
-   `no` on 14 in run 1. The misses are stable: `GAP-21`, `GAP-23` and `GAP-24`
-   in all three runs, plus `GAP-19` at P=0.52 and 0.51 in runs 1 and 3. Those
-   three are the FR-101-AC-4 rows the labels already recorded as contested for
-   `divergence_kind` and `severity`, where the test may itself be the restated
-   AC-4 test. The lens took that reading. The labels were not changed after
-   seeing this.
+1. **`code_implements_intent` holds, and it holds by telling the two groups
+   apart, not by margin concentrated in one of them.** The constant predictor
+   (always `no`) scores 18/29 by getting every mismatched row right and every
+   correctly-traced row wrong. The lens beats it by +11 rows on the 11
+   correctly-traced rows (it said `yes` on all 11, matching every label there,
+   where the constant gets 0/11) and *loses* 4 rows on the 18 mismatched rows
+   (it said `no` on only 14/18, where the constant gets 18/18). Net: +11 - 4 =
+   +7 rows, the +24.1 pp margin. So the margin's source is the correctly-traced
+   subset, not the mismatched one -- the mismatched rows cost ground against
+   the constant, they do not supply the win. What the mismatched rows *do*
+   show is that the lens can be pulled off a requirement it is shown when that
+   requirement is not about the code in front of it: its 4 misses there are
+   stable across all three runs (`GAP-21`, `GAP-23`, `GAP-24`, plus `GAP-19` at
+   P=0.52/0.51 in runs 1 and 3), and those are the FR-101-AC-4 rows the labels
+   already recorded as contested for `divergence_kind` and `severity`, where
+   the test may itself be the restated AC-4 test. The lens took that reading.
+   The labels were not changed after seeing this.
 2. **`code_exceeds_requirement` is a coin flip.** Its probabilities sit
    between 0.50 and 0.73 on every row. Its agreement ties the constant
    predictor in runs 1 and 3 and beats it by one row (+3.6 pp) in run 2. On the

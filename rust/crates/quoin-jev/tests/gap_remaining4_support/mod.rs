@@ -59,6 +59,7 @@ pub(crate) const LABELS: &str = include_str!("../fixtures/gap-semantic-remaining
 
 /// The whole labels file.
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct LabelFile {
     /// Who labelled, how, and what it is not. Must say `AGENT-LABELLED`.
     pub(crate) provenance: String,
