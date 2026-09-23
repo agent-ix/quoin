@@ -136,9 +136,10 @@ fn tc_503_only_the_asset_module_embeds_a_file() {
 /// the store, `sha2` for the single ix-flow event hash the store does not
 /// expose, `thiserror`, and `engineering-assurance` (PLAT-964) for the
 /// `ProtectedApparatus`/`NegativeControls` types and entry grammar FR-024
-/// owns — a domain type, not a JSON or digest implementation. Nothing here
-/// serializes JSON or hashes a record on its own, and the manifest is
-/// asserted so that adding a second implementation cannot be done quietly.
+/// owns and (PLAT-972) the FR-022 claim-strength vocabulary — domain types,
+/// not a JSON or digest implementation. Nothing here serializes JSON or
+/// hashes a record on its own, and the manifest is asserted so that adding a
+/// second implementation cannot be done quietly.
 #[test]
 fn tc_455_no_second_canonicalization_or_digest_implementation_exists_here() {
     let manifest =

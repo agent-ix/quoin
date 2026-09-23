@@ -8,6 +8,7 @@
 //! `serde_json::Value`, so a record read and written back returns the bytes it
 //! arrived as.
 
+use engineering_assurance::claim_strength::ClaimStrength;
 use serde::{Deserialize, Serialize};
 
 use crate::common::identity::{ArmId, MetricName, RecordId, WireInstant};
@@ -216,6 +217,12 @@ pub struct InterventionExperimentRecord {
     pub subject: Subject,
     /// What produced the record.
     pub producer: Producer,
+    /// The kind of support this record carries (FR-022, EA `ClaimStrength`,
+    /// PLAT-972). An intervention experiment is a deliberate, controlled
+    /// exercise over a selected set of cases, so it is always `tested`; the
+    /// wire schema fixes it with a `const`, and the field is required rather
+    /// than inferred so a record with no strength is refused, not defaulted.
+    pub strength: ClaimStrength,
     /// The experiment's design.
     pub design: InterventionDesign,
     /// The arm the treatments are measured against.

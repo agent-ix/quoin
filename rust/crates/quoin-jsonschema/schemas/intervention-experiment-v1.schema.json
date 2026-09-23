@@ -414,6 +414,9 @@
       ],
       "type": "string"
     },
+    "strength": {
+      "const": "tested"
+    },
     "subject": {
       "additionalProperties": false,
       "properties": {
@@ -480,6 +483,7 @@
     "interactions",
     "confounders",
     "status",
+    "strength",
     "conclusion",
     "gaps",
     "owner",

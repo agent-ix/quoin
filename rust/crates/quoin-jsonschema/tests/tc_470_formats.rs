@@ -47,11 +47,13 @@ fn is_rfc3339_date_time(value: &str) -> bool {
 ///
 /// The probe is a document that actually occurs with one field changed, not a
 /// stub: a hand-built object would be refused by a dozen structural keywords
-/// and `format` would never be the thing under test.
+/// and `format` would never be the thing under test. The capture predates
+/// PLAT-972, so the family's one admissible `strength` (DIVERGENCE.md §7) is
+/// added here rather than written into the ajv golden.
 fn retained_base(schema: MeasurementSchema) -> Value {
-    let name = match schema {
-        MeasurementSchema::InterventionExperimentV1 => "intervention_experiment_v1",
-        MeasurementSchema::OperationalEvidenceV1 => "operational_evidence_v1",
+    let (name, strength) = match schema {
+        MeasurementSchema::InterventionExperimentV1 => ("intervention_experiment_v1", "tested"),
+        MeasurementSchema::OperationalEvidenceV1 => ("operational_evidence_v1", "observed"),
         other => panic!("no retained base recorded for {other}"),
     };
     let goldens: Value = serde_json::from_str(
@@ -75,7 +77,12 @@ fn retained_base(schema: MeasurementSchema) -> Value {
         })
         .unwrap_or_else(|| panic!("the corpus retains an accepted {name} record"))
         .clone();
-    entry["document"].clone()
+    let mut document = entry["document"].clone();
+    document
+        .as_object_mut()
+        .expect("a record is an object")
+        .insert("strength".to_owned(), json!(strength));
+    document
 }
 
 fn with_observed_at(schema: MeasurementSchema, value: &str) -> Value {

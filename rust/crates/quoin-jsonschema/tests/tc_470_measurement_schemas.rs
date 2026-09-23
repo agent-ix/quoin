@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The committed schema documents are the retained ones, minus two named deltas.
+//! The committed schema documents are the retained ones, minus named deltas.
 //!
-//! # Two documents, two different obligations
+//! # Two documents, two different starting obligations
 //!
 //! `operational-evidence-v1.schema.json` was already a JSON document in the
-//! retained tree, so the obligation is **byte equality**. Nothing was decided
-//! about it and nothing may drift in either copy. The retained TypeScript was
-//! deleted in quoin#479, so its bytes were committed unchanged to
-//! `tests/goldens/operational-evidence-v1.captured.json` beforehand; that
-//! capture, not a live TypeScript tree, is now the comparand. FR-101-AC-5
-//! forbids a non-Rust runtime oracle after cutover, and a committed document is
-//! not one.
+//! retained tree, so before PLAT-972 the obligation was **byte equality**: the
+//! retained TypeScript was deleted in quoin#479, so its bytes were committed
+//! unchanged to `tests/goldens/operational-evidence-v1.captured.json`
+//! beforehand, and that capture — not a live TypeScript tree — was the
+//! comparand (FR-101-AC-5 forbids a non-Rust runtime oracle after cutover, and
+//! a committed document is not one). PLAT-972 moved it onto the same
+//! delta-enumeration shape `intervention-experiment-v1.schema.json` already
+//! used, once it too needed a ruling.
 //!
 //! `intervention-schema.ts` was not a document: it is a program that assembles
 //! an object out of shared fragments (`identity`, `digest`, `immutableVersion`,
@@ -113,28 +114,56 @@ fn differences(pointer: &str, left: &Value, right: &Value, into: &mut Vec<Differ
     }
 }
 
-/// The vendored operational schema is byte-identical to the committed capture.
+/// The vendored operational schema differs from the committed capture by
+/// exactly one recorded delta: `strength` (PLAT-972).
 ///
 /// Trace: FR-100-AC-4, FR-101-AC-5
-/// Provenance: quoin#479
+/// Provenance: quoin#479, PLAT-972
 #[test]
-fn tc_470_the_operational_schema_is_vendored_byte_for_byte() {
-    let captured = read(&goldens().join("operational-evidence-v1.captured.json"));
+fn tc_470_the_operational_schema_carries_exactly_the_one_recorded_delta() {
+    let captured: Value = serde_json::from_str(&read(
+        &goldens().join("operational-evidence-v1.captured.json"),
+    ))
+    .expect("the capture is JSON");
+    let vendored = MeasurementSchema::OperationalEvidenceV1
+        .document()
+        .expect("the vendored schema is JSON");
+
+    let mut found = Vec::new();
+    differences("", &captured, &vendored, &mut found);
+    found.sort();
+
+    let mut expected = vec![
+        // Delta 3 — PLAT-972: every operational record now carries `strength`,
+        // fixed at `observed` (DIVERGENCE.md §7).
+        Difference {
+            pointer: "/properties/strength".to_owned(),
+            captured: "<absent>".to_owned(),
+            committed: "{\"const\":\"observed\"}".to_owned(),
+        },
+        Difference {
+            pointer: "/required".to_owned(),
+            captured: "[\"schema_version\",\"record_type\",\"record_id\",\"observed_at\",\"record_shape\",\"control_kind\",\"subject\",\"producer\",\"scope\",\"configuration\",\"owner\",\"gaps\",\"actions\",\"raw_evidence\"]".to_owned(),
+            committed: "[\"schema_version\",\"record_type\",\"record_id\",\"observed_at\",\"record_shape\",\"control_kind\",\"subject\",\"producer\",\"strength\",\"scope\",\"configuration\",\"owner\",\"gaps\",\"actions\",\"raw_evidence\"]".to_owned(),
+        },
+    ];
+    expected.sort();
+
     assert_eq!(
-        MeasurementSchema::OperationalEvidenceV1.source(),
-        captured,
-        "the vendored operational schema and the committed capture in \
-         tests/goldens/operational-evidence-v1.captured.json have diverged. Neither copy may \
-         move: this schema is vendored verbatim and no ruling applies to it."
+        found, expected,
+        "the vendored operational schema no longer differs from the TypeScript capture by \
+         exactly the one recorded delta (PLAT-972's `strength` member). An unrecorded \
+         difference is a port defect, not a nuance: record it in DIVERGENCE.md and here, or \
+         remove it."
     );
 }
 
-/// The vendored intervention schema differs from the capture by exactly two
+/// The vendored intervention schema differs from the capture by exactly four
 /// recorded deltas.
 ///
 /// Trace: FR-100-AC-4, FR-098-AC-11
 #[test]
-fn tc_470_the_intervention_schema_carries_exactly_the_two_recorded_deltas() {
+fn tc_470_the_intervention_schema_carries_exactly_the_four_recorded_deltas() {
     let captured: Value = serde_json::from_str(&read(
         &goldens().join("intervention-experiment-v1.captured.json"),
     ))
@@ -160,6 +189,18 @@ fn tc_470_the_intervention_schema_carries_exactly_the_two_recorded_deltas() {
             captured: "\"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})$\"".to_owned(),
             committed: "\"^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]+)?(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$\"".to_owned(),
         },
+        // Delta 3 — PLAT-972: every intervention record now carries
+        // `strength`, fixed at `tested` (DIVERGENCE.md §7).
+        Difference {
+            pointer: "/properties/strength".to_owned(),
+            captured: "<absent>".to_owned(),
+            committed: "{\"const\":\"tested\"}".to_owned(),
+        },
+        Difference {
+            pointer: "/required".to_owned(),
+            captured: "[\"schema_version\",\"record_type\",\"record_id\",\"observed_at\",\"subject\",\"producer\",\"design\",\"baseline\",\"treatments\",\"changed_variables\",\"held_constant\",\"measured_effects\",\"interactions\",\"confounders\",\"status\",\"conclusion\",\"gaps\",\"owner\",\"actions\",\"raw_evidence\"]".to_owned(),
+            committed: "[\"schema_version\",\"record_type\",\"record_id\",\"observed_at\",\"subject\",\"producer\",\"design\",\"baseline\",\"treatments\",\"changed_variables\",\"held_constant\",\"measured_effects\",\"interactions\",\"confounders\",\"status\",\"strength\",\"conclusion\",\"gaps\",\"owner\",\"actions\",\"raw_evidence\"]".to_owned(),
+        },
     ];
     let mut expected = expected;
     expected.sort();
@@ -167,9 +208,9 @@ fn tc_470_the_intervention_schema_carries_exactly_the_two_recorded_deltas() {
     assert_eq!(
         found, expected,
         "the vendored intervention schema no longer differs from the TypeScript capture by \
-         exactly the two recorded deltas (quoin#440 case widening, quoin#409 blake3 removal). \
-         An unrecorded difference is a port defect, not a nuance: record it in DIVERGENCE.md \
-         and here, or remove it."
+         exactly the four recorded deltas (quoin#440 case widening, quoin#409 blake3 removal, \
+         PLAT-972's `strength` member). An unrecorded difference is a port defect, not a \
+         nuance: record it in DIVERGENCE.md and here, or remove it."
     );
 }
 

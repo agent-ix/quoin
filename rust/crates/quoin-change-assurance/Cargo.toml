@@ -30,7 +30,11 @@ thiserror = { workspace = true }
 # reuses them rather than restating the entry grammar (PLAT-964). Only the
 # `measurement` feature's types are used; no JSON, canonicalization or digest
 # comes from here (see `tc_455_no_second_canonicalization_or_digest_implementation_exists_here`).
-engineering-assurance = { workspace = true, features = ["measurement"] }
+# `claim-strength` added by PLAT-972: a proof attestation carries one of the
+# four FR-022 `ClaimStrength` wire names EA declares (PLAT-971) rather than a
+# local mirror enum. Neither feature is `full`, which enables
+# `serde_json/arbitrary_precision` for every crate in this workspace.
+engineering-assurance = { workspace = true, features = ["measurement", "claim-strength"] }
 
 [dev-dependencies]
 # `tests/tc_503_schema_assets.rs` validates documents this crate sealed against

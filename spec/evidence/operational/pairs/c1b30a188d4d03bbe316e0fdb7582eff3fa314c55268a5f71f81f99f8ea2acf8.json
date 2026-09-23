@@ -85,6 +85,7 @@
         "population": "v0.22.5 package release",
         "service": "agent-ix/quoin"
       },
+      "strength": "observed",
       "subject": {
         "id": "agent-ix/quoin",
         "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
@@ -182,6 +183,7 @@
         "population": "v0.22.5 package release",
         "service": "agent-ix/quoin"
       },
+      "strength": "observed",
       "subject": {
         "id": "agent-ix/quoin",
         "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"

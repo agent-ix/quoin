@@ -10,6 +10,7 @@
 
 use std::collections::BTreeMap;
 
+use engineering_assurance::claim_strength::ClaimStrength;
 use serde_json::{Map, Value};
 
 use crate::common::identity::{RecordId, WireInstant};
@@ -83,6 +84,7 @@ pub(super) fn base_for(
         control_kind: OperationalControlKind::Release,
         subject: definition.subject.clone(),
         producer: producer.clone(),
+        strength: ClaimStrength::Observed,
         scope: definition.scope.clone(),
         configuration: definition.configuration.clone(),
         owner: definition.owner.clone(),

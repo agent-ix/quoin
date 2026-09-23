@@ -160,3 +160,59 @@ measurement domain (quoin#468), without either duplicating it or depending back
 on it and forming a cycle. Callers pass
 `Rfc3339DateTime::parse(value).is_ok()`. Passing anything else would recreate
 the defect §1 exists to close.
+
+## §7 — Ruling: both measurement schemas now require `strength` (PLAT-972)
+
+**Input that separates them:** any intervention or operational record the
+retained TypeScript oracle produced, with no `strength` member — every one of
+them, since the oracle predates Engineering Assurance's claim-strength
+vocabulary (FR-022, PLAT-971). ajv, replayed against the retained schema,
+accepts them; this crate's vendored schema, with `strength` required, refuses
+them until the member is added.
+
+Quoin's `quoin-measurement` records now carry `strength`, one of EA's four
+`ClaimStrength` wire names, so that a proof and a measurement can be told apart
+in one assurance case without ranking them (PLAT-972). An intervention
+experiment is a deliberate, controlled exercise over a selected set of cases,
+so `intervention-experiment-v1.schema.json`'s `strength` is closed to `tested`
+with `const`; operational evidence records how a control stood or operated
+in a deployed scope — a standing capability or one exercise of it, even a
+deliberate drill — never a check over a selected set of cases, so
+`operational-evidence-v1.schema.json`'s `strength` is closed to `observed` the
+same way. Both additions are `required`, not
+`default`-ed: a record with no `strength` is refused, never silently assigned
+one.
+
+This is not a shape difference between two validator engines (§4) — it is a
+genuine schema change with no TypeScript counterpart to diverge from, so it is
+recorded as a ruling like §1 and §2, one delta per schema:
+
+- `intervention-experiment-v1.schema.json` gains a third and fourth delta
+  against its capture: `/properties/strength` (absent → `{"const":"tested"}`)
+  and `/required` (gains `strength`). `tests/tc_470_measurement_schemas.rs`'s
+  `tc_470_the_intervention_schema_carries_exactly_the_four_recorded_deltas`
+  asserts the enlarged set.
+- `operational-evidence-v1.schema.json` was vendored byte-for-byte before this
+  wave (§3 above only ever named the *intervention* schema's two deltas). It
+  now carries this one delta and the same delta-enumeration test shape as the
+  intervention schema:
+  `tc_470_the_operational_schema_carries_exactly_the_one_recorded_delta`.
+
+`tests/goldens/ajv-verdicts.json` is **not** amended: it stays a byte-literal
+capture of the documents ajv judged and the verdicts it returned. ajv ran
+against schemas whose root is `additionalProperties: false`, so writing
+`strength` into those documents would have left the golden recording `valid`
+verdicts ajv never gave (ajv would refuse the amended documents as carrying an
+undeclared member). Instead `tc_470_parity.rs`'s `with_strength` and
+`tc_470_formats.rs`'s `retained_base` apply this delta visibly at test time —
+each family's one admissible value, added to every captured object — so the
+parity census still turns on the one thing each rung changed. Refusal of a
+missing or foreign `strength` is asserted by `quoin-measurement`'s
+`tc_479_109` and `tc_479_309`, not by the parity census.
+
+`tests/fixtures/report-oracle.json` (`tc_469_reports.rs`) and the retained
+corpus records under `spec/evidence/interventions/` and
+`spec/evidence/operational/pairs/` were amended to carry `strength`. A
+structural diff of the report oracle against its pre-PLAT-972 capture shows
+only added `strength` members (5 intervention, 12 operational records); no
+rendered text, verdict or other member moved.

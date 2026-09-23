@@ -18,6 +18,7 @@
 mod common;
 
 use common::{bytes, member, oracle, section, text};
+use engineering_assurance::claim_strength::ClaimStrength;
 use quoin_change_assurance::attestations::{
     attestation_bytes, seal_attestation, verify_attestation,
 };
@@ -270,4 +271,84 @@ fn tc_455_the_attestation_digest_is_the_pinned_contract_and_every_change_breaks_
         mutated >= 10,
         "anti-vacuity floor: at least 10 members mutated, saw {mutated}"
     );
+}
+
+/// Trace: FR-064-AC-10
+/// Provenance: PLAT-972
+///
+/// A proof attestation carries exactly one EA `ClaimStrength` (FR-022,
+/// PLAT-971). Every declared wire name seals and reads back as itself.
+#[test]
+fn tc_455_every_claim_strength_round_trips() {
+    let (_, sealed, _) = attestations().into_iter().next().expect("an attestation");
+    let mut seen = std::collections::BTreeSet::new();
+    for strength in ClaimStrength::ALL {
+        let input = without(
+            &replacing(&sealed, "strength", JsonValue::string(strength.wire_name())),
+            "digest",
+        );
+        let attestation = seal_attestation(&input)
+            .unwrap_or_else(|error| panic!("`{}` must seal: {error}", strength.wire_name()));
+        assert_eq!(
+            attestation.strength.wire_name(),
+            strength.wire_name(),
+            "`{}` must read back as itself",
+            strength.wire_name()
+        );
+        // Round-trip through the sealed bytes too: writing it back out
+        // produces the same wire spelling that was read in.
+        let json = attestation.to_json().unwrap();
+        assert_eq!(
+            json.as_object()
+                .unwrap()
+                .get("strength")
+                .and_then(JsonValue::as_str),
+            Some(strength.wire_name())
+        );
+        seen.insert(strength.wire_name());
+    }
+    assert_eq!(
+        seen.len(),
+        4,
+        "anti-vacuity floor: all four claim strengths must round-trip"
+    );
+}
+
+/// Trace: FR-064-AC-10
+/// Provenance: PLAT-972
+///
+/// An attestation with no `strength` is refused by name, not silently
+/// defaulted to one of the four values.
+#[test]
+fn tc_455_an_attestation_with_no_strength_is_refused_not_defaulted() {
+    let (_, sealed, _) = attestations().into_iter().next().expect("an attestation");
+    let input = without(&without(&sealed, "digest"), "strength");
+    match seal_attestation(&input) {
+        Err(ChangeAssuranceError::Shape {
+            failure: FieldFailure::Missing { field },
+            ..
+        }) => assert_eq!(field, "strength"),
+        other => panic!("expected a Missing(\"strength\") refusal, got {other:?}"),
+    }
+}
+
+/// Trace: FR-064-AC-10
+/// Provenance: PLAT-972
+///
+/// A `strength` outside the EA vocabulary is refused as malformed, not
+/// coerced to a known value.
+#[test]
+fn tc_455_an_unknown_strength_is_refused() {
+    let (_, sealed, _) = attestations().into_iter().next().expect("an attestation");
+    let input = without(
+        &replacing(&sealed, "strength", JsonValue::string("verified")),
+        "digest",
+    );
+    match seal_attestation(&input) {
+        Err(ChangeAssuranceError::Shape {
+            failure: FieldFailure::Malformed { field },
+            ..
+        }) => assert_eq!(field, "strength"),
+        other => panic!("expected a Malformed(\"strength\") refusal, got {other:?}"),
+    }
 }
