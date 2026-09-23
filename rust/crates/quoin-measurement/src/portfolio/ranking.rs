@@ -216,6 +216,11 @@ pub struct UnrankedPlan {
     pub plan_path: String,
     /// The metric the plan governs.
     pub metric: String,
+    /// `metric` with the row's dimension slice, as
+    /// [`PortfolioRankingEntry::label`]: two slices of one plan can be
+    /// unranked for different reasons (one slice has no usable value, the
+    /// other does), so the unranked list needs the slice too (PLAT-1019).
+    pub label: String,
     /// Why it is not scored.
     pub reason: UnrankedReason,
 }
@@ -256,11 +261,13 @@ pub fn rank_portfolio(report: &PortfolioReport) -> Result<PortfolioRanking, Meas
             continue;
         };
         for row in &measurements.current {
+            let label = row_label(row)?;
             let unrankable = |reason: UnrankedReason| UnrankedPlan {
                 repository: repository.name.clone(),
                 plan_id: row.plan_id.clone(),
                 plan_path: row.plan_path.clone(),
                 metric: row.metric.clone(),
+                label: label.clone(),
                 reason,
             };
             let Some(plan) = repository
@@ -302,7 +309,7 @@ pub fn rank_portfolio(report: &PortfolioReport) -> Result<PortfolioRanking, Meas
                 plan_id: row.plan_id.clone(),
                 plan_path: row.plan_path.clone(),
                 metric: row.metric.clone(),
-                label: row_label(row)?,
+                label,
                 current,
                 bound,
                 direction: objective.direction(),

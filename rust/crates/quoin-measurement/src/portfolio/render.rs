@@ -87,10 +87,11 @@ fn ranking_section(ranking: &PortfolioRanking) -> Vec<String> {
         lines.push(String::new());
         for plan in &ranking.unranked {
             lines.push(format!(
-                "- {} — {} ({}): {}",
+                "- {} — {} ({}) — {}: {}",
                 plan.repository,
                 plan.plan_id,
                 plan.plan_path,
+                plan.label,
                 plan.reason.as_str()
             ));
         }

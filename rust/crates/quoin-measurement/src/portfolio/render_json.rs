@@ -143,6 +143,8 @@ struct UnrankedPlanWire<'a> {
     plan_id: &'a str,
     plan_path: &'a str,
     metric: &'a str,
+    /// As [`RankingEntryWire::label`] (PLAT-1019).
+    label: &'a str,
     reason: &'static str,
 }
 
@@ -153,6 +155,7 @@ impl<'a> UnrankedPlanWire<'a> {
             plan_id: &plan.plan_id,
             plan_path: &plan.plan_path,
             metric: &plan.metric,
+            label: &plan.label,
             reason: plan.reason.as_str(),
         }
     }

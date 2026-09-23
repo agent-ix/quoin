@@ -556,13 +556,19 @@ fn tc_968_011_a_met_bound_has_no_gap_in_the_objectives_direction() {
     assert!((gap("MP-short") - 0.1).abs() < 1e-9);
 }
 
-/// A plan tracking two dimension-sliced quantities (PLAT-968's "tracking two
+/// A plan tracking dimension-sliced quantities (PLAT-968's "tracking two
 /// related quantities" pattern, e.g. `dimensions.quantity: cost` vs
-/// `dimensions.quantity: latency`) produces one ranked row per slice, and
-/// both rendered forms must let a reader tell the two rows apart — the exact
-/// gap PLAT-1019 found: neither row named its slice.
+/// `dimensions.quantity: latency`) produces one ranking row per slice, and
+/// both rendered forms must let a reader tell the rows apart — the exact gap
+/// PLAT-1019 found: neither row named its slice.
 ///
-/// Trace: FR-113-AC-1
+/// Two slices are scorable and a third has no usable value, so the label is
+/// checked on both `ranked` and `unranked`. Text assertions read only the
+/// "Priority ranking" section: the per-repository table above it already
+/// prints each row's sliced label, so a whole-document `contains` would pass
+/// even if the ranking still printed the bare metric.
+///
+/// Trace: FR-113-AC-6
 /// Provenance: PLAT-1019
 #[test]
 fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
@@ -571,27 +577,31 @@ fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
         Some(Objective::new(Direction::Higher, Some(0.9)).unwrap()),
     );
 
-    let sliced_observation = |quantity: &str, value: f64| {
-        let mut observation = observation(sliced_plan.id.as_str(), value);
+    let sliced_row = |quantity: &str, value: Option<f64>| {
+        let mut observation = observation(sliced_plan.id.as_str(), 0.0);
+        observation.value = value;
         observation.dimensions = Dimensions::stated(BTreeMap::from([(
             "quantity".to_owned(),
             JsonValue::string(quantity),
         )]));
-        observation
-    };
-    let sliced_row = |quantity: &str, value: f64| CurrentRow {
-        metric: "quality.score".to_owned(),
-        plan_id: sliced_plan.id.as_str().to_owned(),
-        plan_path: sliced_plan.path.clone(),
-        plan_definition_version: sliced_plan.definition_version.as_str().to_owned(),
-        stage: sliced_plan.stage,
-        plan_ground_truth_kind: None::<GroundTruthKind>,
-        observation: Some(sliced_observation(quantity, value)),
-        collection: Some(collection("2026-01-01T00:00:00.000Z")),
-        stage_verdict: None,
+        CurrentRow {
+            metric: "quality.score".to_owned(),
+            plan_id: sliced_plan.id.as_str().to_owned(),
+            plan_path: sliced_plan.path.clone(),
+            plan_definition_version: sliced_plan.definition_version.as_str().to_owned(),
+            stage: sliced_plan.stage,
+            plan_ground_truth_kind: None::<GroundTruthKind>,
+            observation: Some(observation),
+            collection: Some(collection("2026-01-01T00:00:00.000Z")),
+            stage_verdict: None,
+        }
     };
 
-    let rows = vec![sliced_row("cost", 0.1), sliced_row("latency", 0.2)];
+    let rows = vec![
+        sliced_row("cost", Some(0.1)),
+        sliced_row("latency", Some(0.2)),
+        sliced_row("memory", None),
+    ];
     let repository = PortfolioRepositoryReport {
         name: "repo".to_owned(),
         root: "/repos/repo".to_owned(),
@@ -614,40 +624,79 @@ fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
     let report = report(vec![repository], "2026-01-01T00:00:00.000Z");
 
     let ranking = rank_portfolio(&report).expect("the ranking builds");
-    assert_eq!(ranking.ranked.len(), 2);
     assert!(
         ranking
             .ranked
             .iter()
             .all(|entry| entry.plan_id == "MP-multi" && entry.metric == "quality.score"),
-        "both rows share plan and bare metric -- only the dimension label tells them apart"
+        "every row shares plan and bare metric -- only the label tells them apart"
     );
-    let labels: Vec<&str> = ranking
+    // Higher-is-better toward 0.9: cost (0.1) is further short than latency
+    // (0.2), so it ranks first.
+    let ranked: Vec<&str> = ranking
         .ranked
         .iter()
         .map(|entry| entry.label.as_str())
         .collect();
-    assert_ne!(
-        labels[0], labels[1],
-        "the two slices must render distinctly"
+    assert_eq!(
+        ranked,
+        [
+            "quality.score [quantity=cost]",
+            "quality.score [quantity=latency]"
+        ]
     );
-    assert!(labels.contains(&"quality.score [quantity=cost]"));
-    assert!(labels.contains(&"quality.score [quantity=latency]"));
+    assert_eq!(ranking.unranked.len(), 1);
+    assert_eq!(ranking.unranked[0].label, "quality.score [quantity=memory]");
+    assert_eq!(
+        ranking.unranked[0].reason,
+        UnrankedReason::NoCurrentEstimate
+    );
 
     let text = render_portfolio_report(&report).expect("the portfolio renders");
-    assert!(text.contains("quality.score [quantity=cost]"), "{text}");
-    assert!(text.contains("quality.score [quantity=latency]"), "{text}");
+    let (_, section) = text
+        .split_once("## Priority ranking")
+        .expect("the ranking section is rendered");
+    assert!(
+        section.contains(
+            "| repo | MP-multi (spec/assurance/MP-multi.md) | quality.score [quantity=cost] |"
+        ),
+        "{section}"
+    );
+    assert!(
+        section.contains(
+            "| repo | MP-multi (spec/assurance/MP-multi.md) | quality.score [quantity=latency] |"
+        ),
+        "{section}"
+    );
+    assert!(
+        section.contains(
+            "- repo — MP-multi (spec/assurance/MP-multi.md) — quality.score [quantity=memory]: \
+             no_current_estimate"
+        ),
+        "{section}"
+    );
 
     let json_text = render_portfolio_report_json(&report).expect("the portfolio JSON renders");
     let parsed: Value = serde_json::from_str(&json_text).expect("the JSON view is JSON");
-    let json_labels: Vec<&str> = parsed["ranking"]["ranked"]
-        .as_array()
-        .expect("ranked is an array")
-        .iter()
-        .map(|entry| entry["label"].as_str().expect("label is a string"))
-        .collect();
-    assert_eq!(json_labels.len(), 2);
-    assert_ne!(json_labels[0], json_labels[1]);
-    assert!(json_labels.contains(&"quality.score [quantity=cost]"));
-    assert!(json_labels.contains(&"quality.score [quantity=latency]"));
+    let labels_of = |member: &str| -> Vec<String> {
+        parsed["ranking"][member]
+            .as_array()
+            .expect("the member is an array")
+            .iter()
+            .map(|entry| {
+                entry["label"]
+                    .as_str()
+                    .expect("label is a string")
+                    .to_owned()
+            })
+            .collect()
+    };
+    assert_eq!(
+        labels_of("ranked"),
+        [
+            "quality.score [quantity=cost]",
+            "quality.score [quantity=latency]"
+        ]
+    );
+    assert_eq!(labels_of("unranked"), ["quality.score [quantity=memory]"]);
 }
