@@ -113,8 +113,16 @@ of its own.
 ## Measured values, 2026-09-22
 
 MEASURED at `variant: v3`, one pass over the 45-statement M6 corpus, graded
-both ways from the identical responses. Record:
-`spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json`.
+both ways from the identical responses.
+
+**The record backing this table was withdrawn, 2026-09-23.**
+`spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json` did not
+carry `rawEvidence` and recorded a dirty `quire-rs` source rather than a
+clean full-SHA one -- both refused by the ported intake validator, so it was
+removed rather than backfilled with data not actually measured
+(agent-ix/quoin#607). Its bytes remain in git history at `0a257691` (#575).
+The numbers below are unbacked by a retained record until a fresh `v3` run
+is recorded cleanly.
 
 | direction | `jev.ears-delta-v3` | `jev.ears-delta-v1` | denominator |
 | --- | --- | --- | --- |

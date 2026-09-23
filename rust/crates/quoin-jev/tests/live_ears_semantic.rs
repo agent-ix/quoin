@@ -672,8 +672,15 @@ fn defect_recall_over(graded: &[Graded], ids: &[String]) -> Option<f64> {
 /// # Result, 2026-09-22: all four bars clear — GO, as advisory
 ///
 /// MEASURED, N=3 passes over 59 fixtures plus one 45-statement M6 pass, 222
-/// requests. Record:
-/// `spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json`.
+/// requests.
+///
+/// **The record backing this table was withdrawn, 2026-09-23.**
+/// `spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json` had no
+/// `rawEvidence` and a dirty `quire-rs` source, both refused by the ported
+/// intake validator, so it was removed rather than backfilled with data not
+/// actually measured (agent-ix/quoin#607). Bytes remain in git history at
+/// `0a257691` (#575). The numbers below are unbacked by a retained record
+/// until a fresh `v3` run is recorded cleanly.
 ///
 /// | bar | metric | value |
 /// | --- | --- | --- |

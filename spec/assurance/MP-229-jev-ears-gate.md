@@ -8,6 +8,16 @@ stage: gate
 metric: jev.ears_gate_verdict
 definition_version: jev.ears-gate-v1
 ground_truth_kind: agent-labelled
+protected_apparatus:
+  - rust/crates/quoin-jev/tests/fixtures/ears-m2-fixtures.json
+  - rust/crates/quoin-jev/tests/fixtures/ears-m6-corpus.json
+  - rust/crates/quoin-jev/tests/fixtures/ears-question-set.json
+  - rust/crates/quoin-jev/tests/fixtures/ears-question-set-v5.json
+negative_controls:
+  - kind: apparatus-edit
+    description: the M2/M6 fixture corpora and both question-set variants are digested with every collection; an edit to any of them without a new definition version rejects
+  - kind: suppressed-observation
+    description: a transport failure aborts the pass and is never scored, so a fixture the lens fails to answer cannot be quietly left out of the denominator
 relationships: []
 ---
 
@@ -260,8 +270,18 @@ a result after the fact.
 
 MEASURED by `the_ears_lens_gate_mp_229_v3` at `variant: v3`, N=3 passes over
 the 59-fixture M2 revision plus one pass over the 45-statement M6 corpus, 222
-requests. Full record:
-`spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json`.
+requests.
+
+**The record backing this table was withdrawn, 2026-09-23.**
+`spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json` did not
+carry `rawEvidence` and recorded `verificationStack.sources.quire-rs` as
+`dirty` rather than a clean full-SHA source -- both refused by the ported
+intake validator, so the file was never an admissible collection and was
+removed rather than backfilled with data not actually measured (agent-ix/quoin#607).
+Its bytes remain in git history at `0a257691` (#575). The numbers below are
+unbacked by a retained record until a fresh `v3` run is recorded cleanly;
+they are not retracted, only unproven by machine-readable evidence pending
+that re-run.
 
 | bar | metric | value | met |
 | --- | --- | --- | --- |

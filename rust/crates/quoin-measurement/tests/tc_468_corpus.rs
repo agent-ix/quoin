@@ -8,7 +8,7 @@
 //! has changed the store's contents without saying so — every digest over a
 //! collection, and every `git diff` of the evidence tree, would move. So the
 //! check is byte equality through [`quoin_store::canonical_json_bytes`], over
-//! all 49 collections retained under `spec/evidence/measurements/`, not a
+//! all 51 collections retained under `spec/evidence/measurements/`, not a
 //! value comparison that a whitespace or key-order change would pass.
 //!
 //! The count is asserted, and the census fails at zero: a corpus walk that
@@ -33,8 +33,12 @@ use quoin_store::{canonical_json_bytes, parse_strict_json};
 /// How many collections `spec/evidence/measurements/` retains.
 ///
 /// Retained evidence is append-only, so this number may grow and may never
-/// shrink. A change here is a claim that the store gained a collection.
-const RETAINED_COLLECTIONS: usize = 49;
+/// shrink -- with one allowed exception: removing a file that was never an
+/// admissible collection to begin with (the ported validator refused it,
+/// e.g. for a missing `rawEvidence` or a non-clean source) does not "shrink"
+/// a store that never validly held it. A change here is a claim that the
+/// store gained a collection, or shed one that could not pass intake.
+const RETAINED_COLLECTIONS: usize = 51;
 
 fn repo() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
