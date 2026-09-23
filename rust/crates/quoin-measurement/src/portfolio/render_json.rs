@@ -27,7 +27,7 @@ use crate::report::wire::{ComparisonWire, MeasurementReportWire, PlanWire, canon
 ///
 /// As [`crate::report::render_measurement_report_json`].
 pub fn render_portfolio_report_json(report: &PortfolioReport) -> Result<String, MeasurementError> {
-    let ranking = rank_portfolio(report);
+    let ranking = rank_portfolio(report)?;
     canonical_json_of(&PortfolioReportWire::of(report, &ranking)?)
 }
 
@@ -94,6 +94,10 @@ struct RankingEntryWire<'a> {
     plan_id: &'a str,
     plan_path: &'a str,
     metric: &'a str,
+    /// `metric` with the row's dimension slice, when it has one — the
+    /// distinguishing label a multi-slice plan needs (PLAT-1019). See
+    /// [`crate::portfolio::ranking::PortfolioRankingEntry::label`].
+    label: &'a str,
     current: f64,
     bound: f64,
     direction: &'static str,
@@ -116,6 +120,7 @@ impl<'a> RankingEntryWire<'a> {
             plan_id: &entry.plan_id,
             plan_path: &entry.plan_path,
             metric: &entry.metric,
+            label: &entry.label,
             current: entry.current,
             bound: entry.bound,
             direction: entry.direction.wire_name(),
@@ -138,6 +143,8 @@ struct UnrankedPlanWire<'a> {
     plan_id: &'a str,
     plan_path: &'a str,
     metric: &'a str,
+    /// As [`RankingEntryWire::label`] (PLAT-1019).
+    label: &'a str,
     reason: &'static str,
 }
 
@@ -148,6 +155,7 @@ impl<'a> UnrankedPlanWire<'a> {
             plan_id: &plan.plan_id,
             plan_path: &plan.plan_path,
             metric: &plan.metric,
+            label: &plan.label,
             reason: plan.reason.as_str(),
         }
     }

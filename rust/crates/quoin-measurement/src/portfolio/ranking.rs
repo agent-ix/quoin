@@ -116,7 +116,9 @@
 use engineering_assurance::measurement::Direction;
 
 use crate::date_time::Rfc3339DateTime;
+use crate::error::MeasurementError;
 use crate::portfolio::types::{DAY_MS, PortfolioReport};
+use crate::report::render::row_label;
 use crate::report::verdict::usable;
 
 /// The sentence both rendered forms carry, verbatim, so a reader never sees
@@ -167,6 +169,14 @@ pub struct PortfolioRankingEntry {
     pub plan_path: String,
     /// The metric the plan governs.
     pub metric: String,
+    /// `metric` with the row's dimension slice, when it has one — `metric` or
+    /// `metric [k=v, …]`, exactly as [`crate::report::render::row_label`]
+    /// composes it for the per-repository report. A plan with multiple
+    /// dimension-sliced rows (PLAT-968's "tracking two related quantities"
+    /// pattern, e.g. `dimensions.quantity: cost` vs `dimensions.quantity:
+    /// latency`) otherwise produces two ranked rows a reader cannot tell
+    /// apart (PLAT-1019).
+    pub label: String,
     /// The newest usable value.
     pub current: f64,
     /// The objective's stated bound.
@@ -206,6 +216,11 @@ pub struct UnrankedPlan {
     pub plan_path: String,
     /// The metric the plan governs.
     pub metric: String,
+    /// `metric` with the row's dimension slice, as
+    /// [`PortfolioRankingEntry::label`]: two slices of one plan can be
+    /// unranked for different reasons (one slice has no usable value, the
+    /// other does), so the unranked list needs the slice too (PLAT-1019).
+    pub label: String,
     /// Why it is not scored.
     pub reason: UnrankedReason,
 }
@@ -227,8 +242,13 @@ pub struct PortfolioRanking {
 /// Pure: `report` is already built, so this reads no store and runs no
 /// producer. See the module doc for the formula and for what "rankable"
 /// means.
-#[must_use]
-pub fn rank_portfolio(report: &PortfolioReport) -> PortfolioRanking {
+///
+/// # Errors
+///
+/// [`crate::MeasurementErrorCode::Store`] when a ranked row's dimensions
+/// cannot cross [`crate::json_bridge`] while composing [`row_label`] — see
+/// that function.
+pub fn rank_portfolio(report: &PortfolioReport) -> Result<PortfolioRanking, MeasurementError> {
     let newest = report
         .newest_collection_timestamp
         .as_deref()
@@ -241,11 +261,13 @@ pub fn rank_portfolio(report: &PortfolioReport) -> PortfolioRanking {
             continue;
         };
         for row in &measurements.current {
+            let label = row_label(row)?;
             let unrankable = |reason: UnrankedReason| UnrankedPlan {
                 repository: repository.name.clone(),
                 plan_id: row.plan_id.clone(),
                 plan_path: row.plan_path.clone(),
                 metric: row.metric.clone(),
+                label: label.clone(),
                 reason,
             };
             let Some(plan) = repository
@@ -287,6 +309,7 @@ pub fn rank_portfolio(report: &PortfolioReport) -> PortfolioRanking {
                 plan_id: row.plan_id.clone(),
                 plan_path: row.plan_path.clone(),
                 metric: row.metric.clone(),
+                label,
                 current,
                 bound,
                 direction: objective.direction(),
@@ -314,7 +337,7 @@ pub fn rank_portfolio(report: &PortfolioReport) -> PortfolioRanking {
             .then_with(|| left.plan_id.cmp(&right.plan_id))
     });
 
-    PortfolioRanking { ranked, unranked }
+    Ok(PortfolioRanking { ranked, unranked })
 }
 
 /// How far `current` still falls short of `bound`, in the direction the
