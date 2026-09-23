@@ -168,7 +168,10 @@ fn plan_ids_before_deletion(repo: &str, delete_commit: &str, id: &str) -> Vec<St
 /// Scoped to `plan_id` alone: intake resolves apparatus per plan a
 /// collection governs, and checking only the plan being verified keeps this
 /// bounded by that plan's own protected set rather than every plan every
-/// collection in the store ever named.
+/// collection in the store ever named. The `git show` calls this spends are
+/// still bounded overall by intake's own resolver ceilings
+/// (`MAX_PROTECTED_FILES`, `MAX_TOTAL_PROTECTED_FILES`), which is what stops
+/// a plan's own recorded set — and so this walk — from growing unbounded.
 pub(super) fn forged_apparatus(repo: &str, plan_id: &str) -> Vec<String> {
     let mut forged = Vec::new();
     let Ok(entries) = std::fs::read_dir(Path::new(repo).join(MEASUREMENTS_DIRECTORY)) else {
