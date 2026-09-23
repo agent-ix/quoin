@@ -44,7 +44,8 @@ use std::path::{Path, PathBuf};
 use quoin_measurement::json_bridge::from_serde;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::portfolio::{
-    PortfolioCollectionSnapshot, PortfolioRepositoryReport, build_portfolio_report_from_collections,
+    PortfolioCollectionSnapshot, PortfolioRepositoryReport, RANKING_ADVISORY_NOTE,
+    build_portfolio_report_from_collections,
 };
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::store::read_measurement_collection_results;
@@ -127,13 +128,26 @@ fn normalise(text: &str) -> String {
 fn without_ranking_section(rendered: &str) -> String {
     const MARKER: &str = "\n\n## Priority ranking\n";
     const RESUME: &str = "# Governed graph evidence";
-    let Some((before, after_marker)) = rendered.split_once(MARKER) else {
-        return rendered.to_owned();
-    };
-    let Some(resume_index) = after_marker.find(RESUME) else {
-        return rendered.to_owned();
-    };
-    format!("{before}\n\n{}", &after_marker[resume_index..])
+    let (before, after_marker) = rendered
+        .split_once(MARKER)
+        .expect("the ranking section is rendered unconditionally");
+    let resume_index = after_marker
+        .find(RESUME)
+        .expect("the governed graph sections follow the ranking section");
+    let (section, resumed) = after_marker.split_at(resume_index);
+    // Every spliced-out line must be one the ranking section writes, so the
+    // splice cannot hide any other drift between the marker and RESUME.
+    for line in section.lines() {
+        assert!(
+            line.is_empty()
+                || line == RANKING_ADVISORY_NOTE
+                || line == "Not ranked:"
+                || line.starts_with("| ")
+                || line.starts_with("- "),
+            "unexpected line inside the spliced-out ranking section: {line:?}"
+        );
+    }
+    format!("{before}\n\n{resumed}")
 }
 
 fn text_at<'a>(value: &'a Value, path: &[&str]) -> &'a str {

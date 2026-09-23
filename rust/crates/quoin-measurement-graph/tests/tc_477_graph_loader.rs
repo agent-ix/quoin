@@ -40,6 +40,7 @@
 
 use std::path::PathBuf;
 
+use quoin_measurement::portfolio::RANKING_ADVISORY_NOTE;
 use quoin_measurement_graph::input::NormalizedStructuralGraph;
 use quoin_measurement_graph::mapping::GraphPortfolioMappingOptions;
 use quoin_measurement_graph::{
@@ -114,13 +115,26 @@ fn normalise(text: &str) -> String {
 fn without_ranking_section(rendered: &str) -> String {
     const MARKER: &str = "\n\n## Priority ranking\n";
     const RESUME: &str = "# Governed graph evidence";
-    let Some((before, after_marker)) = rendered.split_once(MARKER) else {
-        return rendered.to_owned();
-    };
-    let Some(resume_index) = after_marker.find(RESUME) else {
-        return rendered.to_owned();
-    };
-    format!("{before}\n\n{}", &after_marker[resume_index..])
+    let (before, after_marker) = rendered
+        .split_once(MARKER)
+        .expect("the ranking section is rendered unconditionally");
+    let resume_index = after_marker
+        .find(RESUME)
+        .expect("the governed graph sections follow the ranking section");
+    let (section, resumed) = after_marker.split_at(resume_index);
+    // Every spliced-out line must be one the ranking section writes, so the
+    // splice cannot hide any other drift between the marker and RESUME.
+    for line in section.lines() {
+        assert!(
+            line.is_empty()
+                || line == RANKING_ADVISORY_NOTE
+                || line == "Not ranked:"
+                || line.starts_with("| ")
+                || line.starts_with("- "),
+            "unexpected line inside the spliced-out ranking section: {line:?}"
+        );
+    }
+    format!("{before}\n\n{resumed}")
 }
 
 /// The mappings the capture script built, rebuilt from the same rule.

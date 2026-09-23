@@ -40,8 +40,8 @@
 //! direction, and optional `weight`, `value_half_life` and `budget`:
 //!
 //! ```text
-//! gap           = |current - bound|
-//! weight'       = weight.unwrap_or(1.0)                       // neutral: no declared priority tilts nothing
+//! gap           = shortfall(direction, current, bound)          // 0 once the bound is met
+//! weight'      = weight.unwrap_or(1.0)                       // neutral: no declared priority tilts nothing
 //! decay         = 0.5 ^ (age_days / value_half_life)            // 1.0 when value_half_life or age is unstated
 //! budget_floor  = max(budget.unwrap_or(1.0), MIN_BUDGET_FLOOR)  // 1.0 when budget is unstated
 //! score         = (weight' * gap * decay) / budget_floor
@@ -52,11 +52,16 @@
 //!
 //! ## Weighted gap-to-bound
 //!
-//! `gap` reuses the same "distance to the goal" idea [`crate::report::verdict`]
-//! already computes for a `target` plan's progress (its `TargetOutcome::Measured::distance`),
-//! generalized to every direction that states a bound: the ranking cares how
-//! far off the mark a value is, not which way is "better" for the badness
-//! ordering a ratchet needs. `weight` scales that gap directly — EA's doc
+//! `gap` is how far the value still falls short of the bound, read in the
+//! objective's direction: for `higher` it is `max(bound - current, 0)`, for
+//! `lower` `max(current - bound, 0)`, for `zero` `max(|current| - |bound|, 0)`,
+//! and for `target` the same `|current - bound|` [`crate::report::verdict`]
+//! computes as a `target` plan's progress distance (overshooting a target
+//! misses it too). A plan that has met or passed its bound scores `0` and
+//! sorts last; it is still listed as ranked, because it does have an
+//! objective, a bound and a value. A direction-blind `|current - bound|`
+//! would instead rank a `higher` plan that cleared its bound by a mile as the
+//! most urgent one. `weight` scales that gap directly — EA's doc
 //! states it as "relative value against the project's other objectives", and
 //! a linear scale is the simplest reading that preserves that: doubling the
 //! weight doubles the plan's claim on attention for the same gap.
@@ -168,7 +173,8 @@ pub struct PortfolioRankingEntry {
     pub bound: f64,
     /// The direction the metric is supposed to move.
     pub direction: Direction,
-    /// `|current - bound|`, before weight, decay or budget are applied.
+    /// How far `current` falls short of `bound` in the objective's direction
+    /// (`0` once met), before weight, decay or budget are applied.
     pub gap: f64,
     /// The weight actually used: `objective.weight()` when stated, `1.0`
     /// otherwise.
@@ -263,7 +269,7 @@ pub fn rank_portfolio(report: &PortfolioReport) -> PortfolioRanking {
                 continue;
             };
 
-            let gap = (current - bound).abs();
+            let gap = shortfall(objective.direction(), current, bound);
             let weight = objective.weight().unwrap_or(1.0);
             let age_days = row
                 .collection
@@ -309,6 +315,25 @@ pub fn rank_portfolio(report: &PortfolioReport) -> PortfolioRanking {
     });
 
     PortfolioRanking { ranked, unranked }
+}
+
+/// How far `current` still falls short of `bound`, in the direction the
+/// objective says is better — `0.0` once the bound is met or passed.
+///
+/// `higher` → `max(bound - current, 0)`; `lower` → `max(current - bound, 0)`;
+/// `zero` → `max(|current| - |bound|, 0)` (the bound as the furthest from zero
+/// the goal tolerates, which is `|current|` for the usual bound of `0`);
+/// `target` → `|current - bound|`, since overshooting a target misses it too.
+/// A plain `|current - bound|` for every direction would score a `higher`
+/// plan that has already cleared its bound as a gap, and rank it higher the
+/// further it cleared it.
+fn shortfall(direction: Direction, current: f64, bound: f64) -> f64 {
+    match direction {
+        Direction::Higher => (bound - current).max(0.0),
+        Direction::Lower => (current - bound).max(0.0),
+        Direction::Zero => (current.abs() - bound.abs()).max(0.0),
+        Direction::Target => (current - bound).abs(),
+    }
 }
 
 /// The half-life discount for a value `age_days` old: `0.5 ^ (age_days /

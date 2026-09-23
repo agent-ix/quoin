@@ -47,7 +47,7 @@ For a rankable plan with newest usable value `current`, objective `bound` and
 `direction`, and optional `weight`, `value_half_life` and `budget`:
 
 ```text
-gap           = |current - bound|
+gap           = shortfall(direction, current, bound)   // 0 once the bound is met
 weight'       = weight.unwrap_or(1.0)
 decay         = 0.5 ^ (age_days / value_half_life)   // 1.0 when value_half_life or age_days is absent
 budget_floor  = max(budget.unwrap_or(1.0), 1.0)        // MIN_BUDGET_FLOOR = 1.0
@@ -59,11 +59,16 @@ the portfolio's own newest collection timestamp — the same reference point FR-
 `Staleness` already uses, so "how old" means one thing across the whole view. Ranked
 descending by `score`, ties broken by repository name then plan id.
 
-**Weighted gap-to-bound.** `gap` generalizes the "distance to the goal" FR-107's
-`target` progress already computes (`TargetOutcome::Measured::distance`) to every
-direction that states a `bound`, not only `target` — a `higher`/`lower`/`zero`
-objective may state a `bound` even though only `target` requires one, and the ranking
-needs some goal to measure distance from regardless of direction. `weight` scales the
+**Weighted gap-to-bound.** `gap` is how far the value still falls short of the
+`bound`, read in the objective's `direction`: `higher` → `max(bound - current, 0)`,
+`lower` → `max(current - bound, 0)`, `zero` → `max(|current| - |bound|, 0)`, and
+`target` → `|current - bound|`, the distance FR-107's `target` progress already
+computes (`TargetOutcome::Measured::distance`), since overshooting a target misses it
+too. A `higher`/`lower`/`zero` objective may state a `bound` even though only `target`
+requires one, and the ranking needs some goal to measure distance from. A plan that
+has met or passed its bound has a gap of `0`, scores `0` and sorts last; a
+direction-blind `|current - bound|` would instead rank a `higher` plan that cleared
+its bound by a wide margin as the most urgent. `weight` scales the
 gap linearly: EA's own doc states it as "relative value against the project's other
 objectives", and doubling the weight doubles the plan's claim on attention for the
 same gap.
@@ -95,7 +100,7 @@ requirement's tests trace against directly.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-113-AC-1 | A plan whose `objective` states a `bound` and whose newest value is usable evidence (as FR-107-AC-2 defines usable) is scored by `weight' * gap * decay / budget_floor` and ranked descending by score. A declared `weight` changes the order relative to the unweighted default of `1.0` for an otherwise smaller gap. | Test (TC-1904, TC-1905) |
+| FR-113-AC-1 | A plan whose `objective` states a `bound` and whose newest value is usable evidence (as FR-107-AC-2 defines usable) is scored by `weight' * gap * decay / budget_floor` and ranked descending by score. A declared `weight` changes the order relative to the unweighted default of `1.0` for an otherwise smaller gap. `gap` is read in the objective's direction, so a met or passed bound has a gap of `0` (`target` excepted: overshoot is a gap). | Test (TC-1904, TC-1905, TC-1914) |
 | FR-113-AC-2 | `decay` halves the score's gap contribution every `value_half_life` days the newest value's collection is behind the portfolio's newest collection timestamp, computed as `0.5 ^ (age_days / value_half_life)`; a stale, large gap can rank behind a fresh, smaller one. No `value_half_life` applies no discount regardless of age. | Test (TC-1906, TC-1907) |
 | FR-113-AC-3 | The score is divided by `max(budget, 1.0)` when a `budget` is stated, and by `1.0` when it is not; a larger budget lowers the score for the same gap, and a budget below the floor is ranked identically to no budget stated. | Test (TC-1908) |
 | FR-113-AC-4 | A plan with no `objective`, an `objective` with no `bound`, or no usable newest value is listed in the ranking's unranked set with the reason (`no_objective`, `no_bound`, `no_current_estimate`) and never appears in the ranked, scored list. | Test (TC-1909, TC-1910, TC-1911) |

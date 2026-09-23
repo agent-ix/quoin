@@ -393,14 +393,30 @@ fn tc_968_008_no_current_estimate_is_unranked() {
     );
 }
 
-/// An empty portfolio ranks and lists nothing.
+/// An empty portfolio ranks and lists nothing, and both rendered forms still
+/// carry the ranking and its advisory sentence.
+///
+/// Trace: FR-113-AC-5
 #[test]
 fn tc_968_009_empty_portfolio_ranks_nothing() {
-    let ranking = rank_portfolio(&PortfolioReport {
+    let empty = PortfolioReport {
         newest_collection_timestamp: None,
         repositories: Vec::new(),
-    });
-    assert_eq!(ranking, PortfolioRanking::default());
+    };
+    assert_eq!(rank_portfolio(&empty), PortfolioRanking::default());
+
+    let text = render_portfolio_report(&empty).expect("the portfolio renders");
+    assert!(text.contains("## Priority ranking"), "{text}");
+    assert!(text.contains(RANKING_ADVISORY_NOTE), "{text}");
+
+    let json_text = render_portfolio_report_json(&empty).expect("the portfolio JSON renders");
+    let parsed: Value = serde_json::from_str(&json_text).expect("the JSON view is JSON");
+    assert_eq!(
+        parsed["ranking"]["advisory"],
+        Value::String(RANKING_ADVISORY_NOTE.to_owned())
+    );
+    assert_eq!(parsed["ranking"]["ranked"], Value::Array(Vec::new()));
+    assert_eq!(parsed["ranking"]["unranked"], Value::Array(Vec::new()));
 }
 
 /// The rendered text carries the advisory sentence verbatim, a ranked plan's
@@ -448,4 +464,88 @@ fn tc_968_010_rendered_text_and_json_both_state_the_ranking_is_advisory() {
         parsed["ranking"]["unranked"][0]["reason"],
         Value::String("no_objective".to_owned())
     );
+}
+
+/// The gap is read in the objective's direction: a `higher` plan past its
+/// bound, a `lower` plan under its bound and a `zero` plan inside its bound
+/// have no gap and sort behind a plan that still falls short, however far
+/// they cleared the bound; overshooting a `target` still counts as a gap.
+///
+/// Trace: FR-113-AC-1
+#[test]
+fn tc_968_011_a_met_bound_has_no_gap_in_the_objectives_direction() {
+    let objective = |direction, bound| Some(Objective::new(direction, Some(bound)).unwrap());
+    let at = "2026-01-01T00:00:00.000Z";
+    let report = report(
+        vec![
+            repository_with_row(
+                "r1",
+                plan("MP-higher-met", objective(Direction::Higher, 0.5)),
+                5.0,
+                at,
+            ),
+            repository_with_row(
+                "r2",
+                plan("MP-lower-met", objective(Direction::Lower, 10.0)),
+                1.0,
+                at,
+            ),
+            repository_with_row(
+                "r3",
+                plan("MP-zero-met", objective(Direction::Zero, 2.0)),
+                -1.5,
+                at,
+            ),
+            repository_with_row(
+                "r4",
+                plan("MP-short", objective(Direction::Higher, 0.9)),
+                0.8,
+                at,
+            ),
+            repository_with_row(
+                "r5",
+                plan("MP-target-over", objective(Direction::Target, 0.5)),
+                0.75,
+                at,
+            ),
+            repository_with_row(
+                "r6",
+                plan("MP-zero-short", objective(Direction::Zero, 0.0)),
+                -0.3,
+                at,
+            ),
+        ],
+        at,
+    );
+    let ranking = rank_portfolio(&report);
+    let order: Vec<&str> = ranking
+        .ranked
+        .iter()
+        .map(|entry| entry.plan_id.as_str())
+        .collect();
+    assert_eq!(
+        order,
+        [
+            "MP-zero-short",
+            "MP-target-over",
+            "MP-short",
+            "MP-higher-met",
+            "MP-lower-met",
+            "MP-zero-met"
+        ]
+    );
+    let gap = |id: &str| {
+        ranking
+            .ranked
+            .iter()
+            .find(|entry| entry.plan_id == id)
+            .unwrap()
+            .gap
+    };
+    assert_eq!(gap("MP-higher-met"), 0.0);
+    assert_eq!(gap("MP-lower-met"), 0.0);
+    assert_eq!(gap("MP-zero-met"), 0.0);
+    assert_eq!(gap("MP-target-over"), 0.25);
+    assert_eq!(gap("MP-zero-short"), 0.3);
+    assert!((gap("MP-short") - 0.1).abs() < 1e-9);
 }

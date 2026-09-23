@@ -144,17 +144,33 @@ fn denormalise(capture: &Capture, location: &str) -> PathBuf {
 /// something it predates.
 fn without_ranking_section(rendered: &str) -> String {
     // The ranking section is always preceded by exactly one blank line, which
-    // `split` consumes along with the header; put back the single trailing
-    // newline every prior repository section already ends its own lines
-    // with, so the prefix reads as though `render_portfolio_report` had
+    // `split_once` consumes along with the header; put back the single
+    // trailing newline every prior repository section already ends its own
+    // lines with, so the prefix reads as though `render_portfolio_report` had
     // never called `ranking_section` at all.
-    format!(
-        "{}\n",
-        rendered
-            .split("\n\n## Priority ranking\n")
-            .next()
-            .unwrap_or(rendered)
-    )
+    let (before, section) = rendered
+        .split_once("\n\n## Priority ranking\n")
+        .expect("the ranking section is rendered unconditionally");
+    assert_only_ranking_lines(section);
+    format!("{before}\n")
+}
+
+/// Fail unless every line of `section` (the ranking section after its
+/// header) is one `ranking_section` writes: blank, the advisory note, a
+/// table row, the "Not ranked:" label or an unranked bullet. This is what
+/// keeps the strip from hiding any other drift appended after the header.
+fn assert_only_ranking_lines(section: &str) {
+    use quoin_measurement::portfolio::RANKING_ADVISORY_NOTE;
+    for line in section.lines() {
+        assert!(
+            line.is_empty()
+                || line == RANKING_ADVISORY_NOTE
+                || line == "Not ranked:"
+                || line.starts_with("| ")
+                || line.starts_with("- "),
+            "unexpected line inside the stripped ranking section: {line:?}"
+        );
+    }
 }
 
 /// As [`without_ranking_section`], for the JSON form's `ranking` member.
@@ -166,9 +182,13 @@ fn without_ranking_section(rendered: &str) -> String {
 /// order, same trailing newline.
 fn without_ranking_member(json: &str) -> String {
     let mut value = quoin_store::parse_strict_json_str(json).expect("the rendered JSON parses");
-    if let quoin_store::JsonValue::Object(ref mut object) = value {
-        object.remove("ranking");
-    }
+    let quoin_store::JsonValue::Object(ref mut object) = value else {
+        panic!("the portfolio JSON is an object");
+    };
+    assert!(
+        object.remove("ranking").is_some(),
+        "the ranking member is rendered unconditionally"
+    );
     quoin_store::canonical_json(&value).expect("the trimmed value re-serializes")
 }
 
