@@ -1,0 +1,26 @@
+[
+  {
+    "reasoningId": "ARG-1018-A",
+    "criterion": "Every binding synthetic clause has a current disposition.",
+    "state": "satisfied",
+    "evidenceRefs": ["evidence://discharge/widget-1018"],
+    "decidedBy": "reviewer-1018",
+    "authority": "may accept or reject this synthetic release",
+    "decidedAt": "2026-08-01T00:00:00.000Z",
+    "expiresAt": "2026-09-01T00:00:00.000Z",
+    "sourceRevision": "0123456789abcdef",
+    "evidenceDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  {
+    "reasoningId": "ARG-1018-B",
+    "criterion": "Every binding synthetic clause has a current disposition.",
+    "state": "satisfied",
+    "evidenceRefs": ["evidence://discharge/widget-1018"],
+    "decidedBy": "reviewer-1018",
+    "authority": "may accept or reject this synthetic release",
+    "decidedAt": "2026-08-01T00:00:00.000Z",
+    "expiresAt": "2026-09-01T00:00:00.000Z",
+    "sourceRevision": "0123456789abcdef",
+    "evidenceDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+]
