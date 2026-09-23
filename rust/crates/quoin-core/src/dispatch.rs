@@ -509,6 +509,11 @@ mod tests {
         ),
         (
             "measurement",
+            "measurement/verify.rs",
+            include_str!("ops/measurement/verify.rs"),
+        ),
+        (
+            "measurement",
             "measurement/wire.rs",
             include_str!("ops/measurement/wire.rs"),
         ),
@@ -1082,6 +1087,10 @@ mod tests {
             (
                 "ops::measurement::MAX_REVISION_BYTES",
                 crate::ops::measurement::MAX_REVISION_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_VERIFY_REQUEST_BYTES",
+                crate::ops::measurement::MAX_VERIFY_REQUEST_BYTES,
             ),
             (
                 "ops::measurement::MAX_WORKFLOW_YAML_BYTES",

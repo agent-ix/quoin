@@ -109,7 +109,11 @@ pub fn assess(
         .as_ref()
         .ok_or(Reason::PopulationUnstated)?;
     let examined = population.examined.ok_or(Reason::PopulationUnstated)?;
-    if !is_whole(examined) || population.matched.is_some_and(|m| !is_whole(m) || m > examined) {
+    if !is_whole(examined)
+        || population
+            .matched
+            .is_some_and(|m| !is_whole(m) || m > examined)
+    {
         return Err(Reason::PopulationMalformed);
     }
     let repetitions = stated_repetitions(population.repetitions.as_ref())?;

@@ -117,3 +117,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-103: Consolidate the Quoin side of corpus tooling](./FR-103-corpus-consolidation.md)
 - [FR-104: Relationships typed table mapping to RelationDecl](./FR-104-relationships-mapping.md)
 - [FR-107: Ratchet and target stage verdicts in the measurement report](./FR-107-stage-verdicts.md)
+- [FR-108: Independent measurement-verdict checker](./FR-108-measurement-verdict-checker.md)

@@ -50,4 +50,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+# Property tests over the verdict checker's estimator recomputation
+# (PLAT-961); the workspace pin.
+proptest = { workspace = true }
 tempfile = "=3.27.0"

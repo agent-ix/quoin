@@ -78,7 +78,11 @@ pub fn verdict_json(verdict: &MeasurementVerdict) -> Result<Value, MeasurementEr
         plan_id: &verdict.plan_id,
         definition_version: &verdict.definition_version,
         verdict: verdict.verdict.as_str(),
-        reasons: verdict.reasons.iter().map(|reason| reason.as_str()).collect(),
+        reasons: verdict
+            .reasons
+            .iter()
+            .map(|reason| reason.as_str())
+            .collect(),
         claimed: verdict.claimed.map(super::Verdict::as_str),
         candidate: verdict.candidate.as_deref(),
         decisions: verdict

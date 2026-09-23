@@ -106,7 +106,9 @@ pub(super) fn statistical_design_from(
             Estimator::deserialize(stated).map_err(|error| {
                 MeasurementError::new(
                     CODE,
-                    format!("{path}: statistical_design.estimator is invalid: {error}; found {stated}"),
+                    format!(
+                        "{path}: statistical_design.estimator is invalid: {error}; found {stated}"
+                    ),
                 )
             })
         })

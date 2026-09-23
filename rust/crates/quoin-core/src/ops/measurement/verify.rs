@@ -90,7 +90,11 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
     if verdict.verdict == Verdict::Accept {
         return Ok(Response::ok(payload));
     }
-    let reasons: Vec<&str> = verdict.reasons.iter().map(|reason| reason.as_str()).collect();
+    let reasons: Vec<&str> = verdict
+        .reasons
+        .iter()
+        .map(|reason| reason.as_str())
+        .collect();
     let diagnostic = CoreError::new(
         CoreErrorCode::NotAccepted,
         format!("{} is {}", verdict.plan_id, verdict.verdict.as_str()),

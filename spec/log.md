@@ -8,6 +8,31 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-108 (new FR): the independent measurement-verdict
+  checker, `quoin measurement verify`** (PLAT-961, part 1). Nothing decided a
+  measurement verdict from the data: a producer's aggregate `value`, its
+  ordering of its own runs and its claim about the outcome were all taken as
+  stated. The checker is pure and shares no estimator code with producers: it
+  recomputes `proportion` and `count` from each observation's
+  `matched`/`examined` and requires the stored `value` to equal it; `mean`,
+  `median` and `ratio` need rows no collection carries, so those are counted
+  as asserted. The rule is engineering-assurance's (FR-021), read at plan
+  intake into EA's `Estimator` and `DecisionRule` and evaluated by EA's
+  `holds`. Every run under the plan's definition is counted and decided
+  against its own history, so a regression stays visible; a pass after a
+  regressed rerun of the same apparatus is `rerun_until_pass`. The store
+  records no intake order and a collection's `timestamp` is the producer's,
+  so the command orders runs by the git commit that first added each file;
+  a tie that decides the candidate or the prior is `order_unattested`.
+  Empty, incomplete or unstated populations are `inconclusive`, never
+  `accept`. `constant-predictor` is `inconclusive`: no collection carries
+  per-item answers by family. The result is the
+  `quoin.measurement-verdict.v1` document engineering-assurance's promotion
+  invariant (PLAT-962) reads; a non-accept exits 1 with the payload and the
+  new `CORE_NOT_ACCEPTED` diagnostic. MP-207's prose `estimator` and
+  `decision_rule` become EA's typed form (`count`; `eq` 0), with the prose
+  already in its body. FR-108-AC-1..AC-7; Matrix: TC-1780..TC-1797.
+
 * **2026-09-22** — **`quoin sync` and the `filament-plan-sync` dependency are
   removed.** `quoin-cli/src/sync.rs` wired `filament_plan_sync`'s own test
   doubles (`FakeDriver`, `InMemoryBaseStore`) into production, so the command

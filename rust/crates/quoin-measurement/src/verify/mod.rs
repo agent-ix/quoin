@@ -477,7 +477,11 @@ fn settle(result: &mut MeasurementVerdict) {
             .push(plan_level(Reason::ClaimedVerdictDisagrees));
     }
     result.verdict = forced(&result.findings);
-    result.reasons = result.findings.iter().map(|finding| finding.reason).collect();
+    result.reasons = result
+        .findings
+        .iter()
+        .map(|finding| finding.reason)
+        .collect();
     result.reasons.sort_unstable();
     result.reasons.dedup();
 }
