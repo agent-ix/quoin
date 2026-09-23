@@ -147,4 +147,5 @@ jobs:
           TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" --verify-tag --title "Quoin $TAG" release/*
+          # This job has no checkout, so gh cannot infer the repository.
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Quoin $TAG" release/*
