@@ -31,6 +31,10 @@ jobs:
   publish-npm:
     name: Repackage and publish to npm
     runs-on: ubuntu-24.04
+    # An npm publish is irreversible (a version can never be re-published),
+    # so this only ever runs from reviewed main, never from a branch or a
+    # fork's workflow_dispatch.
+    if: github.ref == 'refs/heads/main'
     # A hung step otherwise blocks for GitHub's 6-hour default.
     timeout-minutes: 20
     steps:
@@ -47,11 +51,31 @@ jobs:
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -D release
           test -f release/quoin-update-manifest.json
 
+      - name: Compute the npm version
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+
+      - name: Verify the release manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e --arg v "$VERSION" \
+            '.schema_version == 1 and .version == $v and (.artifacts | length == 4)' \
+            release/quoin-update-manifest.json > /dev/null
+
       - name: Verify asset checksums and extract
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p artifacts
+
+          artifacts_file="$(mktemp)"
+          jq -c '.artifacts[]' release/quoin-update-manifest.json > "$artifacts_file"
+
           while IFS= read -r artifact; do
             target=$(jq -r '.target' <<<"$artifact")
             asset=$(jq -r '.asset' <<<"$artifact")
@@ -87,15 +111,18 @@ jobs:
               echo "::error::expected exactly one file in $dest, found $count" >&2
               exit 1
             fi
-          done < <(jq -c '.artifacts[]' release/quoin-update-manifest.json)
+          done < "$artifacts_file"
 
-      - name: Compute the npm version
+      - name: Verify the linux-x64 binary reports the published version
         shell: bash
-        env:
-          TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+          chmod +x artifacts/x86_64-unknown-linux-gnu/quoin
+          actual_version="$(artifacts/x86_64-unknown-linux-gnu/quoin --version)"
+          if [ "$actual_version" != "$VERSION" ]; then
+            echo "::error::artifacts/x86_64-unknown-linux-gnu/quoin --version printed '$actual_version', expected '$VERSION'; refusing to publish (e.g. a -dirty build)" >&2
+            exit 1
+          fi
 
       - name: Package and publish the npm distribution
         uses: agent-ix/nodejs-actions/publish-native-npm@main
@@ -148,8 +175,8 @@ jobs:
             cat update.err >&2
             exit 1
           fi
-          if ! grep -q "installed with npm" update.err; then
-            echo "::error::quoin update's stderr did not say it was installed with npm" >&2
+          if ! grep -q "npm install -g @agent-ix/quoin@latest" update.err; then
+            echo "::error::quoin update's stderr did not name the exact npm command to run" >&2
             cat update.err >&2
             exit 1
           fi

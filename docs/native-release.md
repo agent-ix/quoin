@@ -51,9 +51,14 @@ The Linux packages need glibc >= 2.35 (Ubuntu 22.04 or newer, and most
 current distributions); they declare `libc: ["glibc"]` so npm refuses to
 resolve them on a musl host instead of installing a binary that will not run.
 
-Under an npm install, `quoin update` defers to npm: it makes no change to the
-installation and reports the `npm update -g @agent-ix/quoin` command to run
-instead, since npm alone owns the files it placed under `node_modules`.
+Under an npm install, `quoin update` given as the first argument defers to
+npm: it makes no change to the installation and reports the
+`npm install -g @agent-ix/quoin@latest` command to run instead, since npm
+alone owns the files it placed under `node_modules`. The launcher only
+recognises `update` as the first argument — an invocation such as
+`quoin --no-project-config update` is not intercepted and reaches the
+native updater; closing that gap needs npm-install detection inside the
+native updater itself, tracked as PLAT-1013.
 
 ## Packaging the npm distribution
 

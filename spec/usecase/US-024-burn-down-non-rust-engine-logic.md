@@ -96,6 +96,11 @@ surface must stay stable until it deliberately changes; that user-interface Type
 publishes to crates.io or public npmjs while the work runs. These are context for the requirements,
 not binding statements.
 
+**Amendment, 2026-09-23 (owner ruling):** the native `quoin` binary is now
+distributed on public npmjs, packaged from GitHub Release assets rather than
+rebuilt (FR-112); the constraint above no longer covers that distribution
+channel, and nothing in this programme publishes a crate to crates.io.
+
 ## Dependencies (Contextual)
 
 Upstream: the amended implementation language policy, and the `filament-core-data` schema gate that

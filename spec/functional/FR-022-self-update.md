@@ -35,6 +35,10 @@ command defaults to the public GitHub latest-release manifest.
 - The CLI SHALL report availability without installing when `--check` is given.
 - The CLI SHALL pass a `--registry` manifest endpoint through, and SHALL
   otherwise default to GitHub's stable latest-release manifest.
+- An npm-installed `quoin` (see [FR-112](./FR-112-npm-distribution-from-release-assets.md))
+  is updated by npm rather than by this command's native artifact-replacement
+  path: `update` given as the first argument under an npm install defers to
+  npm instead of running the behavior above.
 
 ## Acceptance Criteria
 
