@@ -59,17 +59,18 @@ use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
 use self::support::{
-    check_bound, decode_hex, digest_of, host, missing, ok, parse, read_audits, refuse_supplied,
-    size_bytes_as_f64, stored_record, strict_document, to_serde,
+    check_bound, check_receipt_bounds, decode_hex, digest_of, governing_plan, host, missing, ok,
+    parse, read_audits, refuse_supplied, size_bytes_as_f64, stored_record, strict_document,
+    to_serde,
 };
 use self::taxonomy::map_error;
 pub use self::wire::{
-    IntakePayload, IntakeRequest, MAX_INTAKE_BYTES, MAX_RECEIPT_BYTES, MAX_RECOVER_BYTES,
-    MAX_SCALAR_BYTES, MAX_SCHEMA_BYTES, MAX_SEAL_ATTESTATION_BYTES, MAX_SEAL_RECORD_BYTES,
-    MAX_VERIFY_RECEIPT_BYTES, ReceiptPayload, ReceiptRequest, RecoverPayload, RecoverRequest,
-    SchemaAssetPayload, SchemaAssetRequest, SealAttestationPayload, SealAttestationRequest,
-    SealRecordPayload, SealRecordRequest, SelectionRequest, VerifyReceiptPayload,
-    VerifyReceiptRequest,
+    IntakePayload, IntakeRequest, MAX_DIFF_PATHS, MAX_INTAKE_BYTES, MAX_RECEIPT_BYTES,
+    MAX_RECOVER_BYTES, MAX_SCALAR_BYTES, MAX_SCHEMA_BYTES, MAX_SEAL_ATTESTATION_BYTES,
+    MAX_SEAL_RECORD_BYTES, MAX_VERIFY_RECEIPT_BYTES, ReceiptPayload, ReceiptRequest,
+    RecoverPayload, RecoverRequest, SchemaAssetPayload, SchemaAssetRequest, SealAttestationPayload,
+    SealAttestationRequest, SealRecordPayload, SealRecordRequest, SelectionRequest,
+    VerifyReceiptPayload, VerifyReceiptRequest,
 };
 
 /// Answer a `change_assurance.seal_record`.
@@ -253,8 +254,11 @@ pub fn recover(
 ///
 /// - [`CoreErrorCode::BadRequest`] when stdin is not a [`ReceiptRequest`] or
 ///   one of its documents does not parse strictly.
-/// - [`CoreErrorCode::Refused`] when a ceiling is exceeded, or when a named
-///   record or attestation is not retained in this store.
+/// - [`CoreErrorCode::Refused`] when a ceiling is exceeded, when a named
+///   record or attestation is not retained in this store, or when no
+///   `MeasurementPlan` in `repo` has the requested `plan` id.
+/// - The mapped `quoin-measurement` refusal when `plan` is named and the
+///   repository's plan documents cannot be loaded.
 pub fn receipt(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,
@@ -265,36 +269,7 @@ pub fn receipt(
         return Err(refusal(OP, MAX_RECEIPT_BYTES, size));
     }
     let request: ReceiptRequest = parse(request, OP)?;
-    check_bound(OP, "repo", &request.repo, MAX_SCALAR_BYTES)?;
-    check_bound(
-        OP,
-        "candidate_revision",
-        &request.candidate_revision,
-        MAX_SCALAR_BYTES,
-    )?;
-    check_bound(
-        OP,
-        "record_digest",
-        &request.record_digest,
-        MAX_SCALAR_BYTES,
-    )?;
-    for parent in &request.parent_digests {
-        check_bound(OP, "parent_digests", parent, MAX_SCALAR_BYTES)?;
-    }
-    for selection in &request.selections {
-        check_bound(
-            OP,
-            "selections.proof_id",
-            &selection.proof_id,
-            MAX_SCALAR_BYTES,
-        )?;
-        check_bound(
-            OP,
-            "selections.attestation_digest",
-            &selection.attestation_digest,
-            MAX_SCALAR_BYTES,
-        )?;
-    }
+    check_receipt_bounds(OP, &request)?;
 
     let decisions = strict_document(&request.decisions_hex, OP, "decisions_hex")?;
     let audits = match request.audits_hex.as_deref() {
@@ -340,6 +315,17 @@ pub fn receipt(
         });
     }
 
+    // PLAT-997: `diff_paths` is the caller's own claim (see `wire::ReceiptRequest`'s
+    // trust-boundary doc), carried straight through with no producer run here.
+    // `plan` is resolved through `quoin-measurement`'s own plan intake so
+    // `protected_apparatus`/`negative_controls` are read by the one parser
+    // PLAT-975 already governs.
+    let governing = request
+        .plan
+        .as_deref()
+        .map(|plan| governing_plan(&request.repo, plan, OP))
+        .transpose()?;
+
     let input = VerificationInput {
         record,
         parents,
@@ -348,15 +334,8 @@ pub fn receipt(
         attestations: retained,
         decision_history: Some(decisions),
         audits,
-        // KNOWN GAP (FR-111-CON-3): `change_assurance.receipt`'s wire
-        // request carries no diff and no plan link, so FR-111's
-        // `apparatus_touched` / `diff_missing` / `negative_control_uncaught`
-        // are unreachable through this operation and through
-        // `quoin change-assurance receipt` today: every receipt it seals is
-        // unlinked from a plan, exactly as before PLAT-964. The library-side
-        // judgment exists; wiring the request is PLAT-964's follow-on.
-        diff_paths: None,
-        governing_plan: None,
+        diff_paths: request.diff_paths,
+        governing_plan: governing,
     };
     let sealed = verify::verify_change_assurance(&input).map_err(|e| map_error(&e, OP))?;
     ok(&ReceiptPayload {

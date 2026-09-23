@@ -30,6 +30,23 @@ description: "Chronological log of structural changes to this bundle."
   and `README.md` gain an npm install path. FR-112-AC-1..AC-4; Matrix:
   TC-1885..TC-1888.
 
+* **2026-09-23** — **FR-111-CON-3 closed: `change_assurance.receipt` now
+  carries the diff and the plan link** (PLAT-997). `quoin-core`'s wire
+  request gains `diff_paths` (the caller's own claim about which paths the
+  candidate's diff touches, hex-free and bounded by count and by entry —
+  FR-111-CON-2 now states this as the trust boundary: the operation runs no
+  `git` and does not check the claim) and `plan` (a `MeasurementPlan` id,
+  resolved through `quoin-measurement`'s own plan intake so
+  `protected_apparatus`/`negative_controls` are read by the one parser
+  PLAT-975 already governs, rather than a document restated on the wire).
+  `quoin change-assurance receipt` gains `--diff-path` (repeatable) and
+  `--plan`. FR-111's three reasons are now reachable through the real
+  binary, closing the known gap FR-111-CON-3 recorded. FR-111-CON-2 also
+  states that `plan` is read from `repo`'s plan documents as they stand on
+  disk when the receipt is sealed, not from `candidate_revision`, and that
+  linking a plan at all is the caller's choice. Boundary and CLI tests:
+  TC-1889..TC-1891.
+
 * **2026-09-22** — **FR-111 (new FR): change-assurance refuses credit for a
   diff that touches protected measurement apparatus** (PLAT-964). FR-110
   compares a measurement plan's protected apparatus across *stored*

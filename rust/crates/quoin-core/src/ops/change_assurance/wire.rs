@@ -88,6 +88,17 @@ pub const MAX_SCHEMA_BYTES: usize = 8 * 1024;
 /// stream.
 pub const MAX_SCALAR_BYTES: usize = 4 * 1024;
 
+/// The largest number of entries `change_assurance.receipt`'s `diff_paths`
+/// will accept (PLAT-997).
+///
+/// Each entry is bounded on its own by [`MAX_SCALAR_BYTES`]; this bounds the
+/// LIST, the accumulator a byte-per-field check cannot see. 65,536 is far past
+/// any candidate diff FR-111 was designed to judge — `ops::config`'s own
+/// `MAX_ENV_ENTRIES` (4,096) is the nearest precedent, sized an order of
+/// magnitude down from this because an environment is a map of declared
+/// bindings and a diff is a list of touched files, which run larger.
+pub const MAX_DIFF_PATHS: usize = 65_536;
+
 /// The request accepted by `change_assurance.seal_record`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -212,6 +223,40 @@ pub struct ReceiptRequest {
     /// input bytes. Absent means no audit was retained, which stays distinct
     /// from an audit with no findings.
     pub audits_hex: Option<String>,
+    /// The repository-relative, `/`-separated paths the candidate change's
+    /// diff touches, exactly as `git diff --name-only` prints them (FR-111,
+    /// PLAT-997).
+    ///
+    /// **Trust boundary**: this operation runs no producer and computes no
+    /// diff of its own — the same boundary
+    /// `quoin_change_assurance::verify::input::VerificationInput::diff_paths`
+    /// already states for the library. It is the caller's own claim about what
+    /// the candidate revision changed, exactly as `decisions_hex` and every
+    /// `selections` entry already are. A caller that supplies the wrong list,
+    /// or a list narrower than the real diff, gets the judgment that list
+    /// implies rather than one FR-111 rejects on its behalf; `quoin
+    /// change-assurance receipt` does not shell out to `git` to check it.
+    /// Absent means no diff was retained, distinct from an empty list, which
+    /// is a retained diff that touched nothing (FR-111's own distinction).
+    #[serde(default)]
+    pub diff_paths: Option<Vec<String>>,
+    /// The `MeasurementPlan` id the record's objective is linked to, when the
+    /// caller asks this receipt to be checked against one (FR-111,
+    /// PLAT-997).
+    ///
+    /// Resolved through `quoin-measurement`'s own plan intake
+    /// (`quoin_measurement::plans::load_measurement_plans`) over this
+    /// request's `repo`, so `protected_apparatus` and `negative_controls` are
+    /// read by the one parser PLAT-975 already governs — this wire shape
+    /// restates none of that grammar. The plan is read from `repo`'s plan
+    /// documents as they stand on disk when the receipt is sealed, not from
+    /// `candidate_revision`: a checkout that edits the plan's own
+    /// `protected_apparatus` is judged against the edited list. `None` when
+    /// the caller asks no plan question, which seals an unlinked receipt
+    /// exactly as before PLAT-997 — linking a plan is the caller's choice,
+    /// like `diff_paths`, not something this operation discovers.
+    #[serde(default)]
+    pub plan: Option<String>,
 }
 
 /// One retained FR-032 audit report, as `--audits` spells it.

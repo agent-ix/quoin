@@ -113,13 +113,24 @@ control is its own incompleteness.
 - **FR-111-CON-2**: This verification computes no diff and loads no plan: both
   arrive as `VerificationInput` members the caller resolved, the same
   boundary FR-065 already holds for every other member of that input.
-- **FR-111-CON-3 (known gap)**: `quoin-core`'s `change_assurance.receipt`
-  operation — and so `quoin change-assurance receipt` — carries no diff and
-  no plan link on its wire request yet, and passes neither. Through the CLI
-  every receipt is unlinked from a plan, so none of this requirement's
-  reasons is reachable there until that request shape is extended (PLAT-964
-  follow-on). The requirement is satisfied by the library
-  (`quoin_change_assurance::verify`) only.
+  `quoin-core`'s `change_assurance.receipt` operation extends this same
+  boundary to its wire request (PLAT-997): `diff_paths` crosses as the
+  caller's own claim about what the candidate revision changed — `quoin
+  change-assurance receipt` does not shell out to `git` to compute or check
+  it, so a caller that supplies the wrong list, or one narrower than the
+  real diff, gets the judgment that list implies. `plan` is resolved
+  differently: it is a `MeasurementPlan` id, not a document, and the
+  operation resolves it itself through `quoin-measurement`'s own plan intake
+  (the load PLAT-975 already governs) so `protected_apparatus` and
+  `negative_controls` are read by that one parser rather than restated on
+  the wire. It is read from `repo`'s plan documents as they stand on disk
+  when the receipt is sealed, not from `candidate_revision`, so a checkout
+  whose change edits the plan's own `protected_apparatus` is judged against
+  the edited list. Whether a plan is linked at all is likewise the caller's
+  choice: a request naming no `plan` seals an unlinked receipt, to which this
+  requirement adds no reason. This requirement therefore guards a caller that
+  asks the question honestly; it does not detect a caller that omits the
+  plan, or the paths, it would be refused for.
 
 ## Dependencies
 
