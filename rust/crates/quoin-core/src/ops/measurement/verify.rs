@@ -12,16 +12,21 @@
 //! cannot choose after the fact the way it chooses a `timestamp`.
 //!
 //! An `accept` is a clean success. A `reject` or `inconclusive` is a complete
-//! payload with a `CORE_NOT_ACCEPTED` diagnostic and exit 1, so a gate can
-//! stop on the status without parsing the verdict.
+//! payload with a `CORE_REJECTED` or `CORE_INCONCLUSIVE` diagnostic and exit
+//! 1, so a gate can stop on the status without parsing the verdict.
+//!
+//! A collection whose file name is not its `collectionId` is refused: the
+//! intake order is keyed by file name and the checker by id, and a file that
+//! names one collection while holding another would take a position that is
+//! not its own.
 
 use std::collections::BTreeMap;
 use std::path::Path;
 
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::source::DiskMeasurement;
-use quoin_measurement::store::read_measurement_collections;
-use quoin_measurement::{Ranked, Verdict, verdict_json, verify as check};
+use quoin_measurement::store::read_measurement_collection_results;
+use quoin_measurement::{OrderSource, Ranked, Verdict, verdict_json, verify as check};
 
 use crate::error::{CoreError, CoreErrorCode};
 use crate::protocol::Response;
@@ -68,8 +73,18 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
             )
             .with_context("op", OP)
         })?;
-    let collections =
-        read_measurement_collections(&source).map_err(|error| map_measurement(&error, OP))?;
+    let order = match request.order_source.as_deref() {
+        Some(stated) => OrderSource::from_wire(stated).ok_or_else(|| {
+            CoreError::new(
+                CoreErrorCode::BadRequest,
+                format!("unknown order source `{stated}`"),
+            )
+            .with_context("op", OP)
+        })?,
+        None if request.intake_order.is_empty() => OrderSource::None,
+        None => OrderSource::CallerSupplied,
+    };
+    let collections = collections(&source)?;
     // The first group a collection id appears in is its position; a later
     // repeat of the same id is ignored rather than moving it.
     let mut positions = BTreeMap::new();
@@ -85,7 +100,7 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
             intake: positions.get(collection.collection_id.as_str()).copied(),
         })
         .collect();
-    let verdict = check(plan, &ranked, claimed);
+    let verdict = check(plan, &ranked, order, claimed);
     let payload = verdict_json(&verdict).map_err(|error| map_measurement(&error, OP))?;
     if verdict.verdict == Verdict::Accept {
         return Ok(Response::ok(payload));
@@ -95,12 +110,55 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
         .iter()
         .map(|reason| reason.as_str())
         .collect();
+    let code = if verdict.verdict == Verdict::Reject {
+        CoreErrorCode::Rejected
+    } else {
+        CoreErrorCode::Inconclusive
+    };
     let diagnostic = CoreError::new(
-        CoreErrorCode::NotAccepted,
+        code,
         format!("{} is {}", verdict.plan_id, verdict.verdict.as_str()),
     )
     .with_context("op", OP)
     .with_context("verdict", verdict.verdict.as_str())
     .with_context("reasons", reasons.join(","));
     Ok(Response::partial(payload, &diagnostic))
+}
+
+/// Every retained collection, refusing the read when one is unreadable or
+/// its file name is not its `collectionId`.
+fn collections(
+    source: &DiskMeasurement,
+) -> Result<Vec<quoin_measurement::MeasurementCollection>, CoreError> {
+    const OP: &str = "measurement.verify";
+    let mut out = Vec::new();
+    for result in
+        read_measurement_collection_results(source).map_err(|error| map_measurement(&error, OP))?
+    {
+        let collection = result.collection.map_err(|error| {
+            CoreError::new(
+                CoreErrorCode::Refused,
+                format!(
+                    "{}: unreadable measurement collection: {error}",
+                    result.path
+                ),
+            )
+            .with_context("op", OP)
+        })?;
+        let named = Path::new(&result.path)
+            .file_stem()
+            .and_then(std::ffi::OsStr::to_str);
+        if named != Some(collection.collection_id.as_str()) {
+            return Err(CoreError::new(
+                CoreErrorCode::Refused,
+                format!(
+                    "{} holds collection `{}`; a collection's file name must be its collectionId",
+                    result.path, collection.collection_id
+                ),
+            )
+            .with_context("op", OP));
+        }
+        out.push(collection);
+    }
+    Ok(out)
 }

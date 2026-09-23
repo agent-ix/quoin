@@ -30,6 +30,8 @@ fn fixtures() -> PathBuf {
 
 fn quoin(repo: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
         .args(arguments)
         .args(["--repo", repo.to_str().unwrap()])
         .output()
@@ -38,6 +40,8 @@ fn quoin(repo: &Path, arguments: &[&str]) -> Output {
 
 fn git(repo: &Path, arguments: &[&str]) {
     let status = Command::new("git")
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
         .args([
             "-c",
             "user.name=fixture",
@@ -75,13 +79,17 @@ fn record(repo: &Path, name: &str, timestamp: &str) {
     std::fs::remove_file(input).unwrap();
 }
 
-fn verdict(repo: &Path) -> (Option<i32>, Value) {
+fn verdict(repo: &Path) -> (Option<i32>, Value, String) {
     let output = quoin(repo, &["measurement", "verify", "--plan", "MP-961"]);
     let payload = serde_json::from_slice(&output.stdout).unwrap();
-    (output.status.code(), payload)
+    (
+        output.status.code(),
+        payload,
+        String::from_utf8_lossy(&output.stderr).into_owned(),
+    )
 }
 
-/// Trace: FR-108-AC-2, FR-108-AC-3, FR-108-AC-7
+/// Trace: FR-108-AC-2, FR-108-AC-3, FR-108-AC-7, FR-108-AC-8
 /// Provenance: PLAT-961
 #[test]
 fn tc_961_020_git_intake_order_decides_the_candidate_over_a_stated_timestamp() {
@@ -100,7 +108,7 @@ fn tc_961_020_git_intake_order_decides_the_candidate_over_a_stated_timestamp() {
     record(repo.path(), "1.json", "2030-01-01T00:00:00Z");
     record(repo.path(), "2.json", "2026-09-01T00:00:00Z");
     // Uncommitted, the two runs have no attested order at all.
-    let (status, uncommitted) = verdict(repo.path());
+    let (status, uncommitted, _) = verdict(repo.path());
     assert_eq!(status, Some(1));
     assert_eq!(uncommitted["counts"]["orderUnattested"], 2);
     assert!(
@@ -125,14 +133,45 @@ fn tc_961_020_git_intake_order_decides_the_candidate_over_a_stated_timestamp() {
     );
     git(repo.path(), &["commit", "--quiet", "-m", "second run"]);
 
-    let (status, committed) = verdict(repo.path());
+    let (status, committed, _) = verdict(repo.path());
     assert_eq!(status, Some(1));
+    assert_eq!(committed["orderSource"], "git-first-parent-add");
     assert_eq!(committed["candidate"], "verify-rerun-pass");
     assert_eq!(committed["verdict"], "reject");
-    assert_eq!(committed["reasons"], json!(["rerun_until_pass"]));
+    // The regressed run states a later time than the pass it was committed
+    // before: the two orders disagree, so the candidate's place is not
+    // attested either.
+    assert_eq!(
+        committed["reasons"],
+        json!(["order_unattested", "rerun_until_pass"])
+    );
     assert_eq!(
         committed["regressedRuns"],
         json!(["verify-rerun-regressed"])
     );
     assert_eq!(committed["counts"]["orderAttested"], 2);
+
+    // A shallow clone has lost the commits that first added the files.
+    let clone = tempfile::tempdir().unwrap();
+    let shallow = clone.path().join("shallow");
+    let source = format!("file://{}", repo.path().display());
+    let status = Command::new("git")
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .args(["clone", "--quiet", "--depth", "1", &source])
+        .arg(&shallow)
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let (status, cloned, stderr) = verdict(&shallow);
+    assert_eq!(status, Some(1));
+    assert_eq!(cloned["orderSource"], "git-shallow");
+    assert_eq!(cloned["counts"]["orderAttested"], 0);
+    assert!(
+        cloned["reasons"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("order_unattested"))
+    );
+    assert!(stderr.contains("shallow clone"), "{stderr}");
 }

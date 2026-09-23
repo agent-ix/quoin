@@ -105,7 +105,8 @@ fn tc_961_018_record_verify_accepts_then_a_tampered_observation_is_rejected() {
     assert_eq!(accepted["counts"]["observationsRecomputed"], 1);
     assert_eq!(accepted["counts"]["collectionsConsidered"], 1);
 
-    // Tamper with the stored observation: the rows still say 9 of 10.
+    // Tamper with the stored observation: the rows still say 9 of 10, and
+    // 0.5 is not 0.9 at the one decimal it states.
     let stored = repo
         .path()
         .join("spec/evidence/measurements/verify-accept.json");
@@ -118,7 +119,7 @@ fn tc_961_018_record_verify_accepts_then_a_tampered_observation_is_rejected() {
     std::fs::set_permissions(&stored, permissions).unwrap();
     let mut collection: Value =
         serde_json::from_str(&std::fs::read_to_string(&stored).unwrap()).unwrap();
-    collection["observations"][0]["value"] = json!(1);
+    collection["observations"][0]["value"] = json!(0.5);
     std::fs::write(&stored, collection.to_string()).unwrap();
 
     let (status, rejected, stderr) = verify(repo.path(), Some("accept"));
@@ -129,7 +130,7 @@ fn tc_961_018_record_verify_accepts_then_a_tampered_observation_is_rejected() {
         json!(["value_disagrees_with_rows", "claimed_verdict_disagrees"])
     );
     let diagnostics: Value = serde_json::from_str(&stderr).unwrap();
-    assert_eq!(diagnostics[0]["code"], "CORE_NOT_ACCEPTED");
+    assert_eq!(diagnostics[0]["code"], "CORE_REJECTED");
     assert_eq!(diagnostics[0]["context"]["verdict"], "reject");
 }
 
@@ -151,8 +152,32 @@ fn tc_961_019_an_unknown_plan_or_claim_is_refused_without_a_verdict() {
     );
     assert_eq!(claim.status, 3, "{}", claim.stderr);
     // No collection yet: inconclusive, with the payload, never accept.
-    let (status, empty, _) = verify(repo.path(), None);
+    let (status, empty, stderr) = verify(repo.path(), None);
     assert_eq!(status, 1);
     assert_eq!(empty["verdict"], "inconclusive");
     assert_eq!(empty["reasons"], json!(["no_collections"]));
+    assert_eq!(empty["orderSource"], "none");
+    let diagnostics: Value = serde_json::from_str(&stderr).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_INCONCLUSIVE");
+}
+
+/// Trace: FR-108-AC-2, FR-108-AC-7
+/// Provenance: PLAT-961
+#[test]
+fn tc_961_029_a_collection_filed_under_another_id_is_refused() {
+    let repo = repository();
+    let measurements = repo.path().join("spec/evidence/measurements");
+    std::fs::create_dir_all(&measurements).unwrap();
+    std::fs::copy(
+        fixtures().join("right/accept/1.json"),
+        measurements.join("not-its-id.json"),
+    )
+    .unwrap();
+    let refused = run(
+        "measurement.verify",
+        &json!({ "repo": repo.path().to_str().unwrap(), "plan": "MP-961" }).to_string(),
+    );
+    assert_eq!(refused.status, 2, "{}", refused.stderr);
+    assert!(refused.stdout.is_empty());
+    assert!(refused.stderr.contains("not-its-id"), "{}", refused.stderr);
 }

@@ -173,11 +173,16 @@ pub struct VerifyRequest {
     /// `accept`, `reject` or `inconclusive`.
     #[serde(default)]
     pub claimed: Option<String>,
-    /// Collection ids in an order the producer cannot choose, earliest group
-    /// first; ids in one group are tied. A collection named in no group has
-    /// no attested position.
+    /// Collection ids in intake order, earliest group first; ids in one
+    /// group are tied. A collection named in no group has no position.
     #[serde(default)]
     pub intake_order: Vec<Vec<String>>,
+    /// Where `intake_order` came from: `git-first-parent-add`,
+    /// `git-shallow`, `caller-supplied` or `none`. Absent, it is
+    /// `caller-supplied` when an order is given and `none` otherwise — a
+    /// caller that does not say where its order came from attests nothing.
+    #[serde(default)]
+    pub order_source: Option<String>,
 }
 
 /// A revision to compare the latest collection against.
