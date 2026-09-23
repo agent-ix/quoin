@@ -18,7 +18,10 @@
 //! [`check_stated_counts`] and [`check_required_fields`] turn both into a
 //! function a corpus's own default-gate test can call, so either mismatch
 //! fails the build instead of surfacing during a run that spends real
-//! tokens. Both operate on plain [`Value`] rather than a lens's own typed
+//! tokens. A third check, [`check_answerability`] (PLAT-982), catches a
+//! label that is not a legal answer to the question meant to produce it --
+//! a corpus asserting a ground truth the lens could never emit. All three
+//! operate on plain [`Value`] rather than a lens's own typed
 //! context so any lens's corpus can call them without this crate knowing
 //! that lens's shape.
 
@@ -264,6 +267,97 @@ pub fn check_stated_counts(corpus: &Value) -> Vec<AdequacyFinding> {
     findings
 }
 
+/// Fails one finding per labeled answer that is not a member of the closed
+/// answer space of the question that is supposed to produce it (PLAT-982).
+///
+/// `fixtures` is either shape [`entries`] reads. `label_path` is the chain of
+/// object keys from a fixture entry down to its label -- `["labels",
+/// "weakness_kind"]` in the criterion-strength corpus. `answer_space` is the
+/// question's closed set, as JSON values so one function serves a `choice`
+/// (string members, e.g. `question-set.json`'s `choice.answer_space`) and a
+/// `score` (integer levels, e.g. its `score.rubric[].level`) alike; a member
+/// matches only by exact JSON equality, so `"Sound"` is not `"sound"` and
+/// `2.0` is not level `2`.
+///
+/// A recorded second reading is checked too: when the label's parent object
+/// carries `<last key>_contested`, that value must be an array and every
+/// element in it must also be in `answer_space`. A contested alternative is
+/// as much a claimed answer as the primary one -- an evaluation that scores
+/// a reply against either reading reads both.
+///
+/// Every entry must carry the label: a missing or `null` label is a finding,
+/// since a fixture that answers nothing contributes nothing to an accuracy
+/// number but still counts toward its denominator. An empty `answer_space`
+/// or an empty container is a finding rather than a vacuous pass.
+///
+/// PLAT-982: a mislabeled item should be a loud failure at corpus-check
+/// time, not a silent wrong answer contributing to a bad accuracy number --
+/// the same defect class as PLAT-917's false provenance claim, a corpus
+/// asserting something about itself that nothing checked.
+#[must_use]
+pub fn check_answerability(
+    fixtures: &Value,
+    label_path: &[&str],
+    answer_space: &[Value],
+) -> Vec<AdequacyFinding> {
+    let Some((last, parents)) = label_path.split_last() else {
+        return vec![AdequacyFinding("label path is empty".to_owned())];
+    };
+    if answer_space.is_empty() {
+        return vec![AdequacyFinding(
+            "answer space is empty; no label could be answerable".to_owned(),
+        )];
+    }
+    let items = entries(fixtures);
+    if items.is_empty() {
+        return vec![AdequacyFinding(
+            "no fixture entries found (expected a JSON array or an object of entries)".to_owned(),
+        )];
+    }
+
+    let path = label_path.join(".");
+    let space = answer_space
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join(", ");
+    let contested_key = format!("{last}_contested");
+    let mut findings = Vec::new();
+    for (id, entry) in &items {
+        let parent = parents
+            .iter()
+            .try_fold(*entry, |value, key| value.get(*key));
+        let label = parent.and_then(|value| value.get(*last));
+        match label {
+            None | Some(Value::Null) => findings.push(AdequacyFinding(format!(
+                "{id}: label `{path}` is missing or null"
+            ))),
+            Some(answer) if !answer_space.contains(answer) => {
+                findings.push(AdequacyFinding(format!(
+                    "{id}: label `{path}` = {answer} is not in the question's answer space \
+                     [{space}]"
+                )));
+            }
+            Some(_) => {}
+        }
+        match parent.and_then(|value| value.get(&contested_key)) {
+            None => {}
+            Some(Value::Array(readings)) => {
+                for reading in readings.iter().filter(|r| !answer_space.contains(r)) {
+                    findings.push(AdequacyFinding(format!(
+                        "{id}: contested reading {reading} in `{path}_contested` is not in the \
+                         question's answer space [{space}]"
+                    )));
+                }
+            }
+            Some(other) => findings.push(AdequacyFinding(format!(
+                "{id}: `{path}_contested` is {other}, not an array of readings"
+            ))),
+        }
+    }
+    findings
+}
+
 /// Flags one captured number against the single actual count it claims to
 /// be. Silently ignores a capture that does not parse as `usize` --
 /// [`OF_CLAIM`] and [`AGREED_CLAIM`] only ever capture digit runs, so this is
@@ -297,7 +391,137 @@ fn check_claim(
 mod tests {
     use serde_json::json;
 
-    use super::{check_required_fields, check_stated_counts};
+    use serde_json::Value;
+
+    use super::{check_answerability, check_required_fields, check_stated_counts};
+
+    /// A `choice` answer space shaped like `question-set.json`'s
+    /// `weakness_kind`, as JSON values.
+    fn kinds() -> Vec<Value> {
+        ["sound", "unfalsifiable", "happy_path_only"]
+            .into_iter()
+            .map(Value::from)
+            .collect()
+    }
+
+    /// Provenance: PLAT-982. A label outside the closed set is flagged by
+    /// fixture id and names the offending value; in-set labels are not.
+    #[test]
+    fn a_label_outside_the_answer_space_is_flagged_by_id() {
+        let fixtures = json!([
+            { "fixture_id": "A", "labels": { "weakness_kind": "sound" } },
+            { "fixture_id": "B", "labels": { "weakness_kind": "vague" } },
+        ]);
+        let findings = check_answerability(&fixtures, &["labels", "weakness_kind"], &kinds());
+        assert_eq!(findings.len(), 1, "got: {findings:?}");
+        assert!(
+            findings[0]
+                .0
+                .starts_with("B: label `labels.weakness_kind` = \"vague\"")
+        );
+    }
+
+    /// Provenance: PLAT-982. Membership is exact JSON equality: a case
+    /// variant is not the member, and a string `"2"` or float `2.0` is not
+    /// score level `2`.
+    #[test]
+    fn membership_is_exact_not_case_or_type_folded() {
+        let kind_fixtures = json!({ "A": { "labels": { "weakness_kind": "Sound" } } });
+        let kind = check_answerability(&kind_fixtures, &["labels", "weakness_kind"], &kinds());
+        assert_eq!(kind.len(), 1, "got: {kind:?}");
+
+        let levels: Vec<Value> = (0..4).map(Value::from).collect();
+        let score_fixtures = json!({
+            "B": { "labels": { "adverse_case_coverage": "2" } },
+            "C": { "labels": { "adverse_case_coverage": 2.0 } },
+            "D": { "labels": { "adverse_case_coverage": 2 } },
+        });
+        let score = check_answerability(
+            &score_fixtures,
+            &["labels", "adverse_case_coverage"],
+            &levels,
+        );
+        let ids: Vec<&str> = score
+            .iter()
+            .map(|f| f.0.split(':').next().unwrap())
+            .collect();
+        assert_eq!(ids, vec!["B", "C"], "got: {score:?}");
+    }
+
+    /// Provenance: PLAT-982. A contested second reading is a claimed answer
+    /// too, so each of its members must be in the answer space.
+    #[test]
+    fn a_contested_reading_outside_the_answer_space_is_flagged() {
+        let fixtures = json!([
+            {
+                "fixture_id": "A",
+                "labels": {
+                    "weakness_kind": "sound",
+                    "weakness_kind_contested": ["sound", "vague"],
+                },
+            },
+            {
+                "fixture_id": "B",
+                "labels": {
+                    "weakness_kind": "sound",
+                    "weakness_kind_contested": ["sound", "unfalsifiable"],
+                },
+            },
+        ]);
+        let findings = check_answerability(&fixtures, &["labels", "weakness_kind"], &kinds());
+        assert_eq!(findings.len(), 1, "got: {findings:?}");
+        assert!(findings[0].0.starts_with("A: contested reading \"vague\""));
+    }
+
+    /// Provenance: PLAT-982. A `_contested` value that is not an array
+    /// cannot be checked member by member, so it is itself a finding.
+    #[test]
+    fn a_non_array_contested_reading_is_flagged() {
+        let fixtures = json!([
+            {
+                "fixture_id": "A",
+                "labels": { "weakness_kind": "sound", "weakness_kind_contested": "sound" },
+            },
+        ]);
+        let findings = check_answerability(&fixtures, &["labels", "weakness_kind"], &kinds());
+        assert_eq!(findings.len(), 1, "got: {findings:?}");
+        assert!(findings[0].0.contains("not an array of readings"));
+    }
+
+    /// Provenance: PLAT-982. A fixture with no label -- absent, `null`, or
+    /// with the parent object missing -- answers nothing and is flagged.
+    #[test]
+    fn a_missing_or_null_label_is_flagged() {
+        let fixtures = json!([
+            { "fixture_id": "A", "labels": {} },
+            { "fixture_id": "B", "labels": { "weakness_kind": null } },
+            { "fixture_id": "C" },
+            { "fixture_id": "D", "labels": { "weakness_kind": "sound" } },
+        ]);
+        let findings = check_answerability(&fixtures, &["labels", "weakness_kind"], &kinds());
+        let ids: Vec<&str> = findings
+            .iter()
+            .map(|f| f.0.split(':').next().unwrap())
+            .collect();
+        assert_eq!(ids, vec!["A", "B", "C"], "got: {findings:?}");
+    }
+
+    /// Provenance: PLAT-982. Degenerate inputs are findings, not vacuous
+    /// passes: an empty answer space, an empty label path, an empty
+    /// container.
+    #[test]
+    fn degenerate_inputs_are_flagged_rather_than_passed() {
+        let fixtures = json!([{ "fixture_id": "A", "labels": { "weakness_kind": "sound" } }]);
+        assert_eq!(
+            check_answerability(&fixtures, &["labels", "weakness_kind"], &[]).len(),
+            1
+        );
+        assert_eq!(check_answerability(&fixtures, &[], &kinds()).len(), 1);
+        assert_eq!(
+            check_answerability(&json!([]), &["labels", "weakness_kind"], &kinds()).len(),
+            1
+        );
+    }
 
     /// Provenance: PLAT-933. Reproduces the real incident's exact phrasing
     /// ("disputed 5 of 14 (agreed 9)") over data shaped like the real
