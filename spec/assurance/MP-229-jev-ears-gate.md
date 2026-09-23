@@ -50,6 +50,147 @@ No collection of its own. Reads the already-collected MP-222/223/224/225/231
 observations for `lens: ears` and states the verdict; retains which variant
 and corpus revision the verdict was computed against.
 
+### Variant log: the PLAT-979 optimization loop
+
+PLAT-979's method is error analysis first. Every disagreement between the lens
+and the corpus is read and classified before anything changes. The ticket's
+classes, in priority order, are wording, missing sub-question, bad option-list,
+threshold and bad label. The dominant class is fixed first, one variant at a
+time. Each variant below was written here, with what it is expected to do,
+before its first live call. Results go under **Interpretation**.
+
+**The target.** `v3` already clears all four ship-as-advisory bars. The bound
+PLAT-979 names for this lens is the failing M7 calibration bound: MP-226 ECE
+0.3551 against 0.15. The loop also aims to shrink the eleven remaining `v3`
+disagreements.
+
+#### Diagnosis of `v3`, 2026-09-22
+
+The per-row answers came from one fresh `v3` pass over the 59-fixture
+revision (`ears_per_row_answers_for_error_analysis`, 59 requests). The pass
+agreed on 48 of 59 rows (47 primary, 1 contested on `EARS-FIX-011`). The
+recorded 04:20 run agreed on 49. MP-225's 0.0% held within one session and
+did not hold across sessions.
+
+| row | miss | answers that decided it | class |
+| --- | --- | --- | --- |
+| EARS-FIX-017 | defect missed (`when_is_really_if`, "`tsp compile` fails") | `condition_is_unwanted` 0.21 | wording |
+| EARS-FIX-019 | defect missed (`when_is_really_if`, unimplemented protocol version) | `condition_is_unwanted` 0.26 | wording |
+| EARS-FIX-023 | defect missed (`unmeasurable_response`, "suitable for LLM render agents") | `response_measurable` 0.54 | wording |
+| EARS-FIX-033 | clean flagged ("settle with basis `closed-scope`") | `response_measurable` 0.42 | wording |
+| EARS-FIX-046 | clean flagged ("SHALL NOT establish complete global success") | `response_measurable` 0.36 | wording |
+| EARS-FIX-048 | defect missed (`while_is_really_when`) | `trigger_is_momentary` 0.87, correct but not read on a `While` | rule gap |
+| EARS-FIX-050 | defect missed (`if_is_really_when`) | `condition_is_unwanted` 0.08, correct but not read on an `If` | rule gap |
+| EARS-FIX-024 | defect missed (`where_is_really_if`) | no question separates a feature condition from a runtime one | missing sub-question |
+| EARS-FIX-025 | defect missed (`where_is_really_while`) | same | missing sub-question |
+| EARS-FIX-052 | defect missed (`missing_trigger`) | `trigger_is_momentary` 0.92, but clean ubiquitous rows also read 0.47-0.57 on it, so it cannot separate them | missing sub-question |
+| EARS-FIX-013 | clean flagged ("When the API receives a webhook payload with an invalid signature") | `condition_is_unwanted` 0.76 | bad label (candidate) |
+
+- **Wording: 5 of 11.** This is the dominant class, and it is also first in
+  the ticket's priority order. Both terse `noul` texts are misread in a
+  consistent direction:
+  - "Does the condition describe an undesired situation?" does not say
+    undesired for whom. Failures that the statement handles by design score
+    as not undesired.
+  - "Is the response measurable?" reads as "is there a number". Checkable
+    responses with no number score as unmeasurable.
+- **Rule gap: 2 of 11.** These are the nearest fit to the ticket's "missing
+  sub-question". The distinction is asked and answered correctly, but `v3`
+  consults the two disambiguators only on a `When`.
+- **Missing sub-question: 3 of 11.** Nothing asked can tell a `Where` misuse
+  or a hidden trigger apart.
+- **Bad label: 1 candidate.** `EARS-FIX-013` has the same shape as
+  `EARS-FIX-007` ("When the disk quota is exceeded") and `EARS-FIX-017`–`020`,
+  which the corpus labels `when_is_really_if` defects. Yet it is labelled
+  clean. **Not edited.** Relabelling a row after seeing the lens disagree with
+  it fits the answer key to the lens. It is recorded here for a labeller.
+- **Threshold: 0 of 11.** No row sits at the 0.5 cut except `EARS-FIX-023`
+  (0.54), and its text is a wording case on its face.
+- **Bad option-list: 0 of 11.** `v3` does not consult the six-way option
+  list at all.
+
+**Calibration is none of the five classes. It is an instrument defect.** Every
+grading through `v3` attaches the six-way pick's confidence to each row
+(`grade_defect_derived` sets `confidence: verdict.pattern_confidence`). `v3`'s
+label never reads the six-way pick. The 0.3551 ECE therefore measures how well
+the confidence of one question predicts whether a different question's
+derived answer agrees with the corpus. It does not measure the lens's
+calibration.
+
+#### `v4` — instrument fix: grade the confidence of the call being graded
+
+- **Change.** The request, the question set and the `v3` label rule are all
+  unchanged. MP-226 reads
+  `derived_confidence(WhenOnly, …)` (`tests/support/ears.rs`) in place of the
+  six-way pick's confidence. The `v3` call is an OR over its consulted
+  branches:
+  - A `defect` call is as sure as its strongest firing branch (the
+    defect-side probability `max`).
+  - A `clean` call is as sure as its weakest resisting branch (`1 - max`).
+
+  This mapping follows from the rule's structure. It was chosen before
+  computing it on any data, and it was not computed on the diagnostic pass
+  above.
+- **Expected.** Labels are identical to `v3` by construction, so bars 1-4
+  move only by service variance (±1 row, going by the diagnosis above). ECE
+  is expected to fall below 0.3551. **No prediction is made about whether it
+  clears 0.15.**
+
+#### `v5` — wording: reword the two misread `noul` questions
+
+- **Change.** `v4`, with `ears-question-set-v5.json` in place of the verbatim
+  question set. Only these two texts change:
+  - `response_measurable` becomes "Does the statement's required response
+    name an outcome a tester could check as pass or fail by observation,
+    without a subjective judgement about what the words mean?"
+  - `condition_is_unwanted` becomes "Does the condition describe a failure,
+    error, fault or other situation that is not part of normal operation?"
+
+  Neither text uses a word taken from a fixture.
+- **Expected.**
+  - `EARS-FIX-017` and `019` flip to defect.
+  - `EARS-FIX-033` and `046` flip to clean.
+  - `EARS-FIX-023` is uncertain.
+  - The named risk is that the broader "checkable" reading lifts
+    `response_measurable` above 0.5 on the genuinely unmeasurable rows (`003`,
+    `016`, `054`, `055`), which would lose defects.
+  - Prediction: net +2 to +4 agreed rows over `v4`, and a bar-1 margin at
+    least `v4`'s.
+- **If refuted.** If `v5`'s margin is below `v4`'s, the wording hypothesis is
+  refuted as worded. `v6` then runs on the verbatim question set, and its test
+  is edited to say so before its call.
+
+#### `v6` — read the answers `v3` ignores
+
+- **Change.** `v5`'s wording with `DefectRule::KeywordContradiction`. This is
+  `v3`'s rule plus two branches:
+  - a `While` whose `trigger_is_momentary` is above 0.5 is really a `When`;
+  - an `If` whose `condition_is_unwanted` is below 0.5 is really a `When`.
+
+  No question is added. This is the relationship MP-231's own `v1` text
+  already describes ("`condition_is_unwanted`/`trigger_is_momentary`
+  contradict the keyword's own implied reading"), which the `v1` code never
+  implemented.
+- **Expected.**
+  - `EARS-FIX-048` and `050` flip to defect.
+  - The named risk is that clean `If` rows with `condition_is_unwanted` near
+    0.5 become false positives. Under the verbatim wording `037` read 0.43
+    and `038` read 0.47. `v5`'s wording is expected to lift them.
+  - Prediction: net 0 to +2 rows over `v5`.
+
+**Not attempted in this round.** The three missing-sub-question rows need a
+new question: "is this condition a feature or configuration that is either
+present or not", and "does this response depend on an event the statement
+does not name". That is a request-shape change with its own false-positive
+risk on every `Where` and ubiquitous row. It is the next variant if this
+round leaves them as the dominant class.
+
+**Overfitting, stated.** Each variant is diagnosed and measured on the same
+59 rows, and no held-out split exists. MP-231's forward delta runs over the
+M6 real-statement corpus, which no variant was diagnosed on. It is the only
+check here against a fix that fits only these fixtures. It is reported for
+every variant.
+
 ## Environment and Sampling
 
 Every upstream metric it reads must share the same corpus revision, question

@@ -58,13 +58,14 @@ use typesafe_sdk_env::Process;
 
 use quoin_jev::JevErrorCode;
 use support::ears::{
-    EarsQuestionSet, EarsVerdict, NO_DEFECT, QUESTION_SET_JSON, grade_defect, grade_defect_derived,
-    grade_pattern, jev_flags_defect, jev_flags_defect_v3, m2_corpus, m6_corpus, run as ears_run,
+    DefectRule, EarsQuestionSet, EarsVerdict, NO_DEFECT, QUESTION_SET_JSON, QUESTION_SET_V5_JSON,
+    grade_defect, grade_defect_derived, grade_pattern, grade_under, jev_flags_defect,
+    jev_flags_defect_v3, jev_flags_under, m2_corpus, m6_corpus, reaches, run as ears_run,
     v3_reaches,
 };
 use support::grading::{
-    Graded, Verdict, defect_recall, disagreement, no_defect_recall, percent, report, tally,
-    trivial_baseline,
+    Graded, Verdict, defect_recall, disagreement, expected_calibration_error, no_defect_recall,
+    percent, report, tally, trivial_baseline,
 };
 
 /// PLAT-838's stated floor: "M1 disagreement (N=5 minimum, state N)". This
@@ -924,4 +925,295 @@ async fn the_ears_lens_gate_mp_229_v3() {
         "MP-229 bar 4 (MP-231 forward delta non-zero and above the MP-225 noise floor), both \
          re-derived under the v3 rule: forward delta {forward_delta:?}, MP-225 {mp225:.1}%"
     );
+}
+
+// ---------------------------------------------------------------------
+// PLAT-979: error analysis before any further variant
+// ---------------------------------------------------------------------
+
+/// Formats an optional probability for a per-row table.
+fn cell(value: Option<f64>) -> String {
+    value.map_or_else(|| "—".to_owned(), |v| format!("{v:.2}"))
+}
+
+/// Provenance: PLAT-979 (PLAT-838 front). **A diagnostic, not a gate.**
+///
+/// PLAT-979's method is error analysis first: every disagreement between the
+/// lens and the corpus is read and classified (wording / missing
+/// sub-question / bad option-list / threshold / bad label) before anything
+/// is changed. The gate tests print only aggregate numbers and the
+/// [`report`] table, which carries the derived label but not the `noul`
+/// answers it was derived from -- so a disagreement cannot be classified
+/// from their output. This test prints, per M2 fixture, every raw answer
+/// the `v3` rule reads, the six-way pick and its confidence, and the label
+/// each rule derives. It asserts only that the service answered.
+#[tokio::test]
+async fn ears_per_row_answers_for_error_analysis() {
+    let client = live_client();
+    let qs = EarsQuestionSet::parse(QUESTION_SET_JSON);
+    let corpus = m2_corpus();
+
+    println!(
+        "\n| fixture | engine | defect_kind | expected | v3 | v1 | response_measurable | \
+         trigger_is_momentary | condition_is_unwanted | six-way pick | pick conf |"
+    );
+    println!("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    let mut answered = 0usize;
+    for fixture in &corpus.fixtures {
+        let verdict = ears_run(&client, &fixture.context(), &qs)
+            .await
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}: {} — {}",
+                    fixture.fixture_id,
+                    error.code.as_str(),
+                    error.message
+                )
+            });
+        if verdict.response_measurable.is_some() {
+            answered += 1;
+        }
+        let v3 = grade_defect_derived(fixture, &verdict);
+        let v1 = grade_defect(fixture, &verdict);
+        println!(
+            "| {} | {} | {} | {} | {}{} | {}{} | {} | {} | {} | {} | {} |",
+            fixture.fixture_id,
+            fixture.engine_naive_pattern,
+            fixture.labels.defect_kind.as_deref().unwrap_or("—"),
+            v3.contested.join("/"),
+            v3.actual_class,
+            if v3.verdict.agrees() { "" } else { " ✗" },
+            v1.actual_class,
+            if v1.verdict.agrees() { "" } else { " ✗" },
+            cell(verdict.response_measurable),
+            cell(verdict.trigger_is_momentary),
+            cell(verdict.condition_is_unwanted),
+            verdict.pattern.as_deref().unwrap_or("—"),
+            cell(verdict.pattern_confidence),
+        );
+    }
+    assert_eq!(
+        answered,
+        corpus.fixtures.len(),
+        "the service left `response_measurable` unanswered on some fixture"
+    );
+}
+
+/// One PLAT-979 variant, measured end to end under MP-229's four bars: `N`
+/// M2 passes and one M6 pass through `question_set_json`, every label and
+/// confidence from `rule` (see [`support::ears::grade_under`]).
+///
+/// Prints, beyond the bars: every disagreement row with the answers behind
+/// it (so the next round of error analysis needs no extra call), the
+/// reachable/unreachable defect-recall split, and MP-226's calibration error
+/// twice -- over the derived confidence this variant grades, and over the
+/// six-way pick's confidence every run through `v3` used, for comparison.
+async fn run_variant_gate(variant: &str, question_set_json: &str, rule: DefectRule) {
+    let client = live_client();
+    let qs = EarsQuestionSet::parse(question_set_json);
+    let corpus = m2_corpus();
+    let runs: usize = std::env::var("JEV_RUNS")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(DEFAULT_M2_RUNS_V3);
+    assert!(runs >= 2, "a disagreement rate needs at least two runs");
+
+    let mut passes: Vec<Vec<Graded>> = Vec::with_capacity(runs);
+    let mut first_pick_confidence: Vec<Graded> = Vec::new();
+    let mut first_rows: Vec<String> = Vec::new();
+    let mut unanswered = 0usize;
+    for pass_index in 0..runs {
+        let mut graded = Vec::with_capacity(corpus.fixtures.len());
+        for fixture in &corpus.fixtures {
+            let verdict = ears_run(&client, &fixture.context(), &qs)
+                .await
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "{}: {} — {}",
+                        fixture.fixture_id,
+                        error.code.as_str(),
+                        error.message
+                    )
+                });
+            if verdict.response_measurable.is_none()
+                || verdict.condition_is_unwanted.is_none()
+                || verdict.trigger_is_momentary.is_none()
+            {
+                unanswered += 1;
+            }
+            let row = grade_under(fixture, &verdict, rule);
+            if pass_index == 0 {
+                if !row.verdict.agrees() {
+                    first_rows.push(format!(
+                        "| {} | {} | {} | {} | {} | {} | {} | {} | {} |",
+                        fixture.fixture_id,
+                        fixture.engine_naive_pattern,
+                        fixture.labels.defect_kind.as_deref().unwrap_or("—"),
+                        row.expected,
+                        row.actual_class,
+                        cell(verdict.response_measurable),
+                        cell(verdict.trigger_is_momentary),
+                        cell(verdict.condition_is_unwanted),
+                        cell(row.confidence),
+                    ));
+                }
+                let mut by_pick = row.clone();
+                by_pick.confidence = verdict.pattern_confidence;
+                first_pick_confidence.push(by_pick);
+            }
+            graded.push(row);
+        }
+        passes.push(graded);
+    }
+    let first = &passes[0];
+
+    println!(
+        "\n## {variant} — {} fixtures, N={runs}, rule {rule:?}\n",
+        corpus.fixtures.len()
+    );
+    println!(
+        "| fixture | engine | defect_kind | expected | {variant} | response_measurable | \
+         trigger_is_momentary | condition_is_unwanted | derived conf |"
+    );
+    println!("| --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    for row in &first_rows {
+        println!("{row}");
+    }
+    println!(
+        "\n{}",
+        report(&format!("M2 {variant} — pass 1"), first, NO_DEFECT)
+    );
+
+    let agreement = tally(first).agreement().expect("the corpus is non-empty");
+    let (baseline_label, baseline) = trivial_baseline(first);
+    let margin = agreement - baseline;
+    let defect_r = defect_recall(first, NO_DEFECT);
+    let no_defect_r = no_defect_recall(first, NO_DEFECT);
+    let ids = |want: bool| -> Vec<String> {
+        corpus
+            .fixtures
+            .iter()
+            .filter(|fixture| reaches(fixture, rule) == want)
+            .map(|fixture| fixture.fixture_id.clone())
+            .collect()
+    };
+    let show = |value: Option<f64>| {
+        value.map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%"))
+    };
+    println!(
+        "**{variant}** MP-222 agreement {agreement:.1}% vs `{baseline_label}` {baseline:.1}% — \
+         margin {margin:+.1}pp | MP-223 defect recall {} (reachable {}, unreachable {}) | \
+         MP-224 no-defect recall {}",
+        show(defect_r),
+        show(defect_recall_over(first, &ids(true))),
+        show(defect_recall_over(first, &ids(false))),
+        show(no_defect_r),
+    );
+    println!(
+        "**MP-226** ECE over the derived confidence {} | over the six-way pick's confidence \
+         (the pre-v4 instrument, same labels) {}",
+        expected_calibration_error(first)
+            .map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.4}")),
+        expected_calibration_error(&first_pick_confidence)
+            .map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.4}")),
+    );
+    println!("**Unanswered nouls:** {unanswered} row(s) across {runs} pass(es)");
+
+    let mut rates = Vec::new();
+    for left in 0..passes.len() {
+        for right in (left + 1)..passes.len() {
+            rates.push(disagreement(&passes[left], &passes[right]).expect("both passes graded"));
+        }
+    }
+    let mp225 = rates.iter().sum::<f64>() / rates.len() as f64;
+    println!(
+        "**MP-225** N={runs}, {} pair(s): mean {mp225:.1}%, range {:.1}%-{:.1}%",
+        rates.len(),
+        rates.iter().copied().fold(f64::INFINITY, f64::min),
+        rates.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+    );
+
+    let m6 = m6_corpus();
+    let mut forward = Vec::new();
+    let mut inverse = Vec::new();
+    for (pool, delta) in [(&m6.clean, &mut forward), (&m6.flagged, &mut inverse)] {
+        for statement in pool {
+            let verdict = ears_run(&client, &statement.context(), &qs)
+                .await
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "{}: {} — {}",
+                        statement.id(),
+                        error.code.as_str(),
+                        error.message
+                    )
+                });
+            if let Some(flag) = jev_flags_under(statement, &verdict, rule) {
+                delta.push(flag);
+            }
+        }
+    }
+    let rate = |answered: &[bool], want: bool| {
+        (!answered.is_empty()).then(|| {
+            percent(
+                answered.iter().filter(|f| **f == want).count(),
+                answered.len(),
+            )
+        })
+    };
+    let forward_delta = rate(&forward, true);
+    println!(
+        "**MP-231 ({variant})** forward delta {} over {}/{} answered — inverse delta {} over \
+         {}/{} answered",
+        show(forward_delta),
+        forward.len(),
+        m6.clean.len(),
+        show(rate(&inverse, false)),
+        inverse.len(),
+        m6.flagged.len(),
+    );
+
+    assert!(
+        margin > 0.0,
+        "MP-229 bar 1 (MP-222 margin > 0) on {variant}: got {margin:+.1}pp"
+    );
+    assert!(
+        defect_r.is_some_and(|v| v > 0.0),
+        "MP-229 bar 2 (MP-223 defect recall > 0%) on {variant}: got {defect_r:?}"
+    );
+    assert!(
+        no_defect_r.is_some_and(|v| v > 0.0),
+        "MP-229 bar 3 (MP-224 no-defect recall > 0%) on {variant}: got {no_defect_r:?}"
+    );
+    assert!(
+        forward_delta.is_some_and(|v| v > 0.0 && v > mp225),
+        "MP-229 bar 4 (MP-231 forward delta non-zero and above MP-225) on {variant}: forward \
+         delta {forward_delta:?}, MP-225 {mp225:.1}%"
+    );
+}
+
+/// Provenance: PLAT-979 (PLAT-838 front). **`v4`: the instrument fix.** Same
+/// request and same labels as `v3`; only the confidence MP-226 grades
+/// changes, from the six-way pick's to the `v3` call's own
+/// ([`support::ears::derived_confidence`]). Pre-registered in MP-229's
+/// Collection Procedure before its first call.
+#[tokio::test]
+async fn the_ears_lens_gate_mp_229_v4() {
+    run_variant_gate("v4", QUESTION_SET_JSON, DefectRule::WhenOnly).await;
+}
+
+/// Provenance: PLAT-979 (PLAT-838 front). **`v5`: wording.** `v4` with two
+/// `noul` questions reworded (`ears-question-set-v5.json`). Pre-registered
+/// in MP-229's Collection Procedure before its first call.
+#[tokio::test]
+async fn the_ears_lens_gate_mp_229_v5() {
+    run_variant_gate("v5", QUESTION_SET_V5_JSON, DefectRule::WhenOnly).await;
+}
+
+/// Provenance: PLAT-979 (PLAT-838 front). **`v6`: read the answers `v3`
+/// ignores.** `v5`'s wording with [`DefectRule::KeywordContradiction`].
+/// Pre-registered in MP-229's Collection Procedure before its first call.
+#[tokio::test]
+async fn the_ears_lens_gate_mp_229_v6() {
+    run_variant_gate("v6", QUESTION_SET_V5_JSON, DefectRule::KeywordContradiction).await;
 }

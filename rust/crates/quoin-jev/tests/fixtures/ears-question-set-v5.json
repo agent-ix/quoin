@@ -1,0 +1,54 @@
+{
+  "$comment": "PLAT-979 variant v5 of PLAT-838's EARS question set: a WORDING variant, pre-registered in spec/assurance/MP-229-jev-ears-gate.md before its first live call. Identical to ears-question-set.json except the `question` text of `response_measurable` and `condition_is_unwanted`. Ids, the six-way choice and the score are unchanged, so the same extractor reads both. The original file stays the verbatim-ticket set; this one exists only for the v5/v6 variant tests. Evaluation-only: not wired into any skill.",
+  "source_ticket": "PLAT-838",
+  "variant": "v5",
+  "request_shape": "One request per requirement-bearing statement (FR Description/Behavior/Constraints, NFR Statement, StR Stakeholder Need).",
+  "choice": {
+    "id": "ears_pattern_actual",
+    "primitive": "choice",
+    "answer_space": [
+      "ubiquitous",
+      "event_driven",
+      "state_driven",
+      "unwanted_behaviour",
+      "optional_feature",
+      "complex"
+    ]
+  },
+  "noul": [
+    {
+      "id": "response_measurable",
+      "question": "Does the statement's required response name an outcome a tester could check as pass or fail by observation, without a subjective judgement about what the words mean?",
+      "primitive": "noul",
+      "note": "v5 wording. The v1 text (\"Is the response measurable?\") read as \"is there a number\": in the v3 per-row diagnosis it scored checkable, number-free responses (EARS-FIX-033, EARS-FIX-046) as unmeasurable."
+    },
+    {
+      "id": "trigger_is_momentary",
+      "question": "Is the trigger an instantaneous event rather than a sustained condition?",
+      "primitive": "noul",
+      "note": "Unchanged from v1. Disambiguates When/While."
+    },
+    {
+      "id": "condition_is_unwanted",
+      "question": "Does the condition describe a failure, error, fault or other situation that is not part of normal operation?",
+      "primitive": "noul",
+      "note": "v5 wording. The v1 text (\"Does the condition describe an undesired situation?\") does not say undesired for whom: in the v3 per-row diagnosis a compile failure and an unimplemented protocol version (EARS-FIX-017, EARS-FIX-019) scored as not undesired, presumably because the statement specifies a designed response to them."
+    }
+  ],
+  "score": {
+    "id": "build_impact_severity",
+    "primitive": "score",
+    "scope": "per statement",
+    "scope_provenance": "unchanged from ears-question-set.json",
+    "rubric": [
+      { "level": 0, "label": "low: cosmetic, does not change what gets built" },
+      { "level": 1, "label": "medium: degrades traceability or verifiability but the build intent is still clear" },
+      { "level": 2, "label": "high: the ambiguity changes what gets built" }
+    ]
+  },
+  "authority": {
+    "findings_only": true,
+    "note": "Evaluation harness only; never edits a spec and is not called from any skill.",
+    "low_confidence": "annotated, not suppressed."
+  }
+}

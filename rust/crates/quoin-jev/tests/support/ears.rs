@@ -639,3 +639,165 @@ pub(crate) fn jev_flags_defect_v3(statement: &M6Statement, verdict: &EarsVerdict
             && (verdict.condition_is_unwanted.is_some() || verdict.trigger_is_momentary.is_some()));
     answered.then(|| derive_defect_from_noul(&statement.engine_naive_pattern, verdict) == "defect")
 }
+
+// ---------------------------------------------------------------------
+// PLAT-979: the error-analysis variants (v4, v5, v6)
+// ---------------------------------------------------------------------
+
+/// `tests/fixtures/ears-question-set-v5.json`: the `v5` wording variant.
+/// Only two `noul` question texts differ from [`QUESTION_SET_JSON`]; ids,
+/// the six-way choice and the score are unchanged, so [`extract`] reads it
+/// with no change.
+pub(crate) const QUESTION_SET_V5_JSON: &str = include_str!("../fixtures/ears-question-set-v5.json");
+
+/// Which derivation rule turns the `noul` answers into a defect call.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DefectRule {
+    /// `v3`'s rule, unchanged: [`derive_defect_from_noul`]. The two
+    /// disambiguators are consulted only where the engine read `When`.
+    WhenOnly,
+    /// `v6`: `v3`'s rule plus the two keyword readings the existing
+    /// disambiguators can also contradict -- a `While` whose trigger is
+    /// momentary (really a `When`) and an `If` whose condition is not
+    /// unwanted (really a `When`). No question is added; the answers are
+    /// already asked on every request and `v3` did not read them.
+    KeywordContradiction,
+}
+
+/// The defect-side probability of every `noul` answer `rule` consults on a
+/// statement the engine read as `engine_naive_pattern`: `1 - p` for a
+/// question whose *no* is the defect, `p` for one whose *yes* is. An
+/// unanswered question contributes nothing.
+fn defect_side_probabilities(
+    rule: DefectRule,
+    engine_naive_pattern: &str,
+    verdict: &EarsVerdict,
+) -> Vec<f64> {
+    let measurable = verdict.response_measurable.map(|p| 1.0 - p);
+    let (unwanted, momentary) = match (rule, engine_naive_pattern) {
+        (_, "event_driven") => (
+            verdict.condition_is_unwanted,
+            verdict.trigger_is_momentary.map(|p| 1.0 - p),
+        ),
+        (DefectRule::KeywordContradiction, "state_driven") => (None, verdict.trigger_is_momentary),
+        (DefectRule::KeywordContradiction, "unwanted_behaviour") => {
+            (verdict.condition_is_unwanted.map(|p| 1.0 - p), None)
+        }
+        _ => (None, None),
+    };
+    [measurable, unwanted, momentary]
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
+/// The defect call under `rule`.
+///
+/// [`DefectRule::WhenOnly`] is exactly [`derive_defect_from_noul`], quirk
+/// included. [`DefectRule::KeywordContradiction`] is that call, or any of its
+/// two added branches reading past `0.5` on the defect side.
+pub(crate) fn derive_defect(
+    rule: DefectRule,
+    engine_naive_pattern: &str,
+    verdict: &EarsVerdict,
+) -> &'static str {
+    let when_only = derive_defect_from_noul(engine_naive_pattern, verdict);
+    match rule {
+        DefectRule::WhenOnly => when_only,
+        DefectRule::KeywordContradiction => {
+            let added = match engine_naive_pattern {
+                "state_driven" => verdict.trigger_is_momentary,
+                "unwanted_behaviour" => verdict.condition_is_unwanted.map(|p| 1.0 - p),
+                _ => None,
+            };
+            if when_only == "defect" || added.is_some_and(|p| p > 0.5) {
+                "defect"
+            } else {
+                NO_DEFECT
+            }
+        }
+    }
+}
+
+/// The confidence of [`derive_defect`]'s own call, read off the answers that
+/// made it -- **not** the six-way pick's confidence, which every grading up
+/// to `v3` attached and which the `v3` rule never consults.
+///
+/// The call is an OR over branches, so the strongest defect-side answer
+/// decides it: a `defect` call is as sure as its strongest firing branch
+/// (`max`), and a `clean` call is only as sure as its weakest resisting
+/// branch (`1 - max`). `None` when no consulted question was answered.
+pub(crate) fn derived_confidence(
+    rule: DefectRule,
+    engine_naive_pattern: &str,
+    verdict: &EarsVerdict,
+) -> Option<f64> {
+    let strongest = defect_side_probabilities(rule, engine_naive_pattern, verdict)
+        .into_iter()
+        .reduce(f64::max)?;
+    Some(
+        if derive_defect(rule, engine_naive_pattern, verdict) == NO_DEFECT {
+            1.0 - strongest
+        } else {
+            strongest
+        },
+    )
+}
+
+/// Grades one M2 fixture under `rule`, carrying [`derived_confidence`] --
+/// the grading every PLAT-979 variant (`v4` on) reports, so MP-226's
+/// calibration error is computed over the confidence of the call actually
+/// graded.
+pub(crate) fn grade_under(fixture: &M2Fixture, verdict: &EarsVerdict, rule: DefectRule) -> Graded {
+    let expected = expected_defect_label(&fixture.labels);
+    let contested: Vec<String> = fixture
+        .defect_readings()
+        .iter()
+        .map(|reading| (*reading).to_owned())
+        .collect();
+    let actual_class = derive_defect(rule, &fixture.engine_naive_pattern, verdict).to_owned();
+    let outcome = if actual_class == expected {
+        Verdict::Primary
+    } else if contested.contains(&actual_class) {
+        Verdict::Contested
+    } else {
+        Verdict::Wrong
+    };
+    Graded {
+        fixture_id: fixture.fixture_id.clone(),
+        tier: fixture.confidence,
+        expected,
+        contested,
+        actual: actual_class.clone(),
+        actual_class,
+        verdict: outcome,
+        confidence: derived_confidence(rule, &fixture.engine_naive_pattern, verdict),
+    }
+}
+
+/// MP-231's flag under `rule`: `None` when no consulted question was
+/// answered, so the statement leaves the denominator.
+pub(crate) fn jev_flags_under(
+    statement: &M6Statement,
+    verdict: &EarsVerdict,
+    rule: DefectRule,
+) -> Option<bool> {
+    let answered =
+        !defect_side_probabilities(rule, &statement.engine_naive_pattern, verdict).is_empty();
+    answered.then(|| derive_defect(rule, &statement.engine_naive_pattern, verdict) == "defect")
+}
+
+/// Whether `rule` can raise this fixture's recorded defect at all -- the
+/// reachable/unreachable split [`v3_reaches`] reports, per rule.
+pub(crate) fn reaches(fixture: &M2Fixture, rule: DefectRule) -> bool {
+    match rule {
+        DefectRule::WhenOnly => v3_reaches(fixture),
+        DefectRule::KeywordContradiction => {
+            v3_reaches(fixture)
+                || matches!(
+                    fixture.labels.defect_kind.as_deref(),
+                    Some("while_is_really_when" | "if_is_really_when")
+                )
+        }
+    }
+}

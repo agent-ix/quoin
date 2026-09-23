@@ -17,9 +17,9 @@
 mod support;
 
 use support::ears::{
-    EarsQuestionSet, EarsVerdict, NO_DEFECT, QUESTION_SET_JSON, derive_defect_from_noul,
-    grade_defect, grade_pattern, jev_flags_defect, jev_flags_defect_v3, m2_corpus, m6_corpus,
-    v3_reaches,
+    DefectRule, EarsQuestionSet, EarsVerdict, NO_DEFECT, QUESTION_SET_JSON, QUESTION_SET_V5_JSON,
+    derive_defect, derive_defect_from_noul, derived_confidence, grade_defect, grade_pattern,
+    jev_flags_defect, jev_flags_defect_v3, m2_corpus, m6_corpus, reaches, v3_reaches,
 };
 use support::grading::{
     Verdict, class_stats, defect_recall, no_defect_recall, tally, trivial_baseline,
@@ -422,4 +422,155 @@ fn the_m6_corpus_parses_and_covers_every_sampled_engine_tag() {
     assert!(!corpus.clean.is_empty());
     assert!(corpus.clean.iter().all(|s| s.engine_tags.is_empty()));
     assert!(corpus.flagged.iter().all(|s| !s.engine_tags.is_empty()));
+}
+
+fn answers(measurable: f64, momentary: f64, unwanted: f64) -> EarsVerdict {
+    let mut base = verdict(Some("ubiquitous"), Some(measurable), 0.99);
+    base.trigger_is_momentary = Some(momentary);
+    base.condition_is_unwanted = Some(unwanted);
+    base
+}
+
+/// Provenance: PLAT-979. `v4`'s confidence is read off the answers that
+/// made the call, never the six-way pick's: a defect call is as sure as its
+/// strongest firing branch, a clean call as sure as its weakest resisting
+/// one. The pick's own confidence (0.99 in every fixture here) must not leak
+/// into it.
+#[test]
+fn the_derived_confidence_belongs_to_the_call_being_graded() {
+    // Clean `When`: branches read 0.2 (1 - measurable), 0.3 (unwanted), 0.1
+    // (1 - momentary). Weakest resistance is 1 - 0.3.
+    let clean = answers(0.8, 0.9, 0.3);
+    assert_eq!(
+        derive_defect(DefectRule::WhenOnly, "event_driven", &clean),
+        NO_DEFECT
+    );
+    let confidence = derived_confidence(DefectRule::WhenOnly, "event_driven", &clean).unwrap();
+    assert!((confidence - 0.7).abs() < 1e-9, "got {confidence}");
+
+    // Defect via the unwanted branch at 0.8, the strongest defect-side read.
+    let defect = answers(0.8, 0.9, 0.8);
+    assert_eq!(
+        derive_defect(DefectRule::WhenOnly, "event_driven", &defect),
+        "defect"
+    );
+    let confidence = derived_confidence(DefectRule::WhenOnly, "event_driven", &defect).unwrap();
+    assert!((confidence - 0.8).abs() < 1e-9, "got {confidence}");
+
+    // A `Where` consults only measurability under both rules.
+    let confidence = derived_confidence(
+        DefectRule::KeywordContradiction,
+        "optional_feature",
+        &defect,
+    )
+    .unwrap();
+    assert!((confidence - 0.8).abs() < 1e-9, "got {confidence}");
+
+    // Nothing answered: no confidence, and the M6 flag leaves the denominator.
+    let mut silent = verdict(Some("ubiquitous"), None, 0.99);
+    silent.trigger_is_momentary = None;
+    silent.condition_is_unwanted = None;
+    assert_eq!(
+        derived_confidence(DefectRule::WhenOnly, "ubiquitous", &silent),
+        None
+    );
+}
+
+/// Provenance: PLAT-979. `v6` reads the two disambiguators on the keywords
+/// they can contradict -- a momentary `While`, a not-unwanted `If` -- and
+/// `v3`'s rule does not. Everywhere else the two rules agree.
+#[test]
+fn the_keyword_contradiction_rule_adds_exactly_two_branches() {
+    let momentary_while = answers(0.9, 0.9, 0.1);
+    assert_eq!(
+        derive_defect(DefectRule::WhenOnly, "state_driven", &momentary_while),
+        NO_DEFECT
+    );
+    assert_eq!(
+        derive_defect(
+            DefectRule::KeywordContradiction,
+            "state_driven",
+            &momentary_while
+        ),
+        "defect"
+    );
+    let sustained_while = answers(0.9, 0.1, 0.9);
+    assert_eq!(
+        derive_defect(
+            DefectRule::KeywordContradiction,
+            "state_driven",
+            &sustained_while
+        ),
+        NO_DEFECT
+    );
+
+    let wanted_if = answers(0.9, 0.9, 0.1);
+    assert_eq!(
+        derive_defect(DefectRule::WhenOnly, "unwanted_behaviour", &wanted_if),
+        NO_DEFECT
+    );
+    assert_eq!(
+        derive_defect(
+            DefectRule::KeywordContradiction,
+            "unwanted_behaviour",
+            &wanted_if
+        ),
+        "defect"
+    );
+    let unwanted_if = answers(0.9, 0.9, 0.9);
+    assert_eq!(
+        derive_defect(
+            DefectRule::KeywordContradiction,
+            "unwanted_behaviour",
+            &unwanted_if
+        ),
+        NO_DEFECT
+    );
+
+    for pattern in ["event_driven", "ubiquitous", "optional_feature", "complex"] {
+        for sample in [
+            answers(0.9, 0.9, 0.1),
+            answers(0.9, 0.1, 0.9),
+            answers(0.2, 0.5, 0.5),
+        ] {
+            assert_eq!(
+                derive_defect(DefectRule::WhenOnly, pattern, &sample),
+                derive_defect(DefectRule::KeywordContradiction, pattern, &sample),
+                "{pattern}: the rules must agree off the two added keywords"
+            );
+        }
+    }
+
+    let corpus = m2_corpus();
+    let newly_reached: Vec<&str> = corpus
+        .fixtures
+        .iter()
+        .filter(|f| {
+            reaches(f, DefectRule::KeywordContradiction) && !reaches(f, DefectRule::WhenOnly)
+        })
+        .map(|f| f.fixture_id.as_str())
+        .collect();
+    assert_eq!(newly_reached, vec!["EARS-FIX-048", "EARS-FIX-050"]);
+}
+
+/// Provenance: PLAT-979. The `v5` wording variant keeps every id and the
+/// answer space, and changes only the two `noul` texts it says it changes.
+#[test]
+fn the_v5_question_set_rewords_two_nouls_and_nothing_else() {
+    let v1 = EarsQuestionSet::parse(QUESTION_SET_JSON);
+    let v5 = EarsQuestionSet::parse(QUESTION_SET_V5_JSON);
+    assert_eq!(v1.choice.answer_space, v5.choice.answer_space);
+    let ids = |qs: &EarsQuestionSet| qs.noul.iter().map(|n| n.id.clone()).collect::<Vec<_>>();
+    assert_eq!(ids(&v1), ids(&v5));
+    let changed: Vec<&str> = v1
+        .noul
+        .iter()
+        .zip(&v5.noul)
+        .filter(|(old, new)| old.question != new.question)
+        .map(|(old, _)| old.id.as_str())
+        .collect();
+    assert_eq!(
+        changed,
+        vec!["response_measurable", "condition_is_unwanted"]
+    );
 }
