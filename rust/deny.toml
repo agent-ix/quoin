@@ -61,15 +61,6 @@ confidence-threshold = 0.9
 crate = "quire-rs"
 allow = ["AGPL-3.0-or-later"]
 
-# `filament-plan-sync` (quoin-cli, quoin#560) is a git dependency on
-# agent-ix/filament-ide-rs, pinned past its relicense to AGPL-3.0-or-later
-# (#608 / 81e441be) -- the same licence quoin itself carries. Named per crate
-# for the same reason as quire-rs above: the `allow` list stays
-# permissive-only, and AGPL is admitted for this one dependency only.
-[[licenses.exceptions]]
-crate = "filament-plan-sync"
-allow = ["AGPL-3.0-or-later"]
-
 # `uluru` (an LRU cache, reached through gix-worktree) is MPL-2.0, which is
 # weak copyleft and therefore a different kind of thing from everything in
 # `allow` above. It gets a named per-crate exception rather than an allow-list
@@ -253,21 +244,6 @@ skip = [
     # must stay counted. 0.23.1 remains reachable only through reqwest under
     # gix-transport. Same entry, better justified.
     { crate = "base64@0.23.1", reason = "quoin#381, gix-only: reqwest 0.13.5 -> gix-transport -> gix -> quoin-modules. 0.22.1 stays checked -- it is reached outside gix, by jsonschema 0.18.3 -> quire-rs -> quoin-quire, as well as by gix-transport and hyper-util" },
-    # --- The quire-rs entry (quoin#560). ---
-    #
-    # `filament-plan-sync` (quoin-cli) pins `quire-rs = { tag = "v0.21.0" }` in
-    # ITS OWN manifest (agent-ix/filament-ide-rs crates/filament-plan-sync/
-    # Cargo.toml) -- a repository we consume but do not own. `quoin-quire`
-    # pins `quire-rs 0.46.0` by rev, and that is the side every one of OUR
-    # crates reaches: quoin-core, quoin-graph-analysis, quoin-measurement-graph.
-    # No pin we control converges the two: bumping filament-plan-sync's own
-    # quire-rs requirement is not ours to make, and downgrading quoin-quire's
-    # 0.46.0 to meet 0.21.0 would trade the engine features Stage 1 already
-    # depends on for a lint result.
-    #
-    # 0.21.0 is skipped and 0.46.0 is NOT: 0.21.0 is the side reachable solely
-    # through filament-plan-sync's own pin, and 0.46.0 is the side we keep.
-    { crate = "quire-rs@0.21.0", reason = "quoin#560: 0.21.0 via filament-plan-sync's own tag=v0.21.0 pin <- quoin-cli. 0.46.0, which quoin-core/quoin-graph-analysis/quoin-measurement-graph reach via quoin-quire, stays checked" },
 
     # --- The typesafe-sdk entries (PLAT-837, criterion-strength lens). ---
     #
@@ -324,32 +300,25 @@ unknown-registry = "deny"
 unknown-git = "deny"
 # quoin#373: "no crates.io, no public npmjs" governs where quoin PUBLISHES;
 # dependencies are consumed from crates.io exactly as quire-corpus and quire-rs
-# consume theirs. Four git sources are admitted, each named by REPOSITORY:
+# consume theirs. Three git sources are admitted, each named by REPOSITORY:
 #
 #   * quire-rs — the engine quoin-quire links (quoin#379).
 #   * engineering-assurance — library containment (quoin#416), the pattern
 #     quire-cli already proves against quire-rs.
-#   * filament-ide-rs — the source of `filament-plan-sync`, the plan-sync
-#     engine quoin-cli links (quoin#560).
 #   * quire-code-rs — the source of `quire-code-parse` (PLAT-850), pulled in
 #     transitively through the quire-rs pin above: quire-rs 456f73f (PLAT-843,
 #     an ancestor of the pin's current `523e47f`) ports rust.rs symbol
 #     extraction onto tree-sitter via this crate.
 #
 # quire-rs and engineering-assurance are each pinned by an exact `rev` in
-# rust/Cargo.toml. filament-plan-sync is pinned by an exact `rev` in
-# rust/crates/quoin-cli/Cargo.toml; its own manifest in turn pins ITS quire-rs
-# dependency by `tag = "v0.21.0"` rather than a rev — not a pin this repository
-# controls, and the reason quire-rs@0.21.0 is a named `bans.skip` above rather
-# than a resolvable duplicate. quire-code-rs is pinned by an exact `rev` in
-# quire-rs's own manifest, not one this repository states directly. Allowing a
-# repository here does not weaken any of these pins: `unknown-git = "deny"`
-# still refuses every other git source, and any other revision of these four
-# still fails resolution. A fifth git dependency is listed here in the commit
-# that adds it, or this check refuses it.
+# rust/Cargo.toml. quire-code-rs is pinned by an exact `rev` in quire-rs's own
+# manifest, not one this repository states directly. Allowing a repository
+# here does not weaken any of these pins: `unknown-git = "deny"` still refuses
+# every other git source, and any other revision of these three still fails
+# resolution. A fourth git dependency is listed here in the commit that adds
+# it, or this check refuses it.
 allow-git = [
     "https://github.com/agent-ix/quire-rs",
     "https://github.com/agent-ix/engineering-assurance",
-    "https://github.com/agent-ix/filament-ide-rs",
     "https://github.com/agent-ix/quire-code-rs",
 ]

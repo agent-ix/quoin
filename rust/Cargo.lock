@@ -576,7 +576,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -616,18 +616,6 @@ name = "fastrand"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
-
-[[package]]
-name = "filament-plan-sync"
-version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-ide-rs?rev=81e441be0f1e7f6724810021af3f2dac099f35c9#81e441be0f1e7f6724810021af3f2dac099f35c9"
-dependencies = [
- "quire-rs 0.21.0",
- "serde",
- "serde_json",
- "sha2",
- "thiserror",
-]
 
 [[package]]
 name = "filetime"
@@ -2850,7 +2838,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2863,26 +2851,6 @@ dependencies = [
  "tree-sitter-python",
  "tree-sitter-rust",
  "tree-sitter-typescript",
-]
-
-[[package]]
-name = "quire-rs"
-version = "0.21.0"
-source = "git+https://github.com/agent-ix/quire-rs?tag=v0.21.0#cfee56dac516f4793a0dad71b7832ebeba3e2622"
-dependencies = [
- "globset",
- "ignore",
- "indexmap",
- "jsonschema 0.18.3",
- "loom",
- "rayon",
- "regex",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2",
- "thiserror",
- "uuid",
 ]
 
 [[package]]
@@ -2976,7 +2944,6 @@ name = "quoin-cli"
 version = "0.24.0"
 dependencies = [
  "clap",
- "filament-plan-sync",
  "quoin-config",
  "quoin-core",
  "quoin-delivery",
@@ -3198,7 +3165,7 @@ dependencies = [
 name = "quoin-quire"
 version = "0.24.0"
 dependencies = [
- "quire-rs 0.46.0",
+ "quire-rs",
  "quoin-jsonschema",
  "serde",
  "serde_json",
@@ -3561,7 +3528,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3619,7 +3586,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3829,19 +3796,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "serde_yaml"
-version = "0.9.34+deprecated"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
-dependencies = [
- "indexmap",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
 ]
 
 [[package]]
@@ -4070,7 +4024,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4770,7 +4724,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

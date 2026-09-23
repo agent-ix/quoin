@@ -8,6 +8,22 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **`quoin sync` and the `filament-plan-sync` dependency are
+  removed.** `quoin-cli/src/sync.rs` wired `filament_plan_sync`'s own test
+  doubles (`FakeDriver`, `InMemoryBaseStore`) into production, so the command
+  always reported `applied=0` — it never did real work. The dependency also
+  pulled the private AGPL `agent-ix/filament-ide-rs` repository plus a second,
+  older `quire-rs 0.21.0` into the graph, which broke release CI. Owner
+  ruling: quoin SHALL NOT depend on `filament-ide-rs`. Plan syncing will be
+  designed separately — possibly through the daemon — once Linear integration
+  happens; no stub, placeholder or compatibility alias is left in its place.
+  `mod sync`, its dispatch and its `Command`, the `filament-plan-sync` git
+  dependency, its `deny.toml` license exception and `bans.skip`/`allow-git`
+  entries, and its retained-help fixture case are all deleted; `rust/Cargo.lock`
+  no longer names `filament-plan-sync`, `filament-ide-rs`, or `quire-rs
+  0.21.0`. FR-102-AC-3 and AC-4 (the `quoin sync` port) are retired along with
+  TC-1651 and TC-1652; TC-1650 no longer credits `sync.rs`.
+
 * **2026-09-22** — **FR-107 (new FR): ratchet and target stage verdicts in
   `quoin report`** (PLAT-958, part 1). Plans named `ratchet` and `target`
   stages and nothing applied them. A `MeasurementPlan`'s optional `objective`

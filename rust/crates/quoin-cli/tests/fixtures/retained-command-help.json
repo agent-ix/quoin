@@ -10,7 +10,7 @@
         "--help"
       ],
       "exit": 0,
-      "stdout": "Spec-driven development for Claude Code — author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.\n\nVERSION\n  @agent-ix/quoin/<VERSION>\n\nUSAGE\n  $ quoin [COMMAND]\n\nTOPICS\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           Inspect the active artifact/object catalog (list, show,\n                    validate).\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  config            Read and store quoin configuration (get, set, edit, doctor).\n  evidence          The evidence store — what actually ran, and against which\n                    statement (record, affirm, gc).\n  graph             Read-only evidence-graph analysis views.\n  measurement       Record plan-validated QA measurements as atomic producer\n                    collections.\n  module            Install and manage user/community spec modules (list,\n                    install, remove, ensure-defaults).\n  semantic          Classify every Markdown artifact's Properties form across\n                    corpus roots (FR-074).\n\nCOMMANDS\n  advise            Recommend a verification method for each obligation, from\n                    the catalog.\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           List the active artifact/object catalog modules.\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  completeness      Report which declared vocabulary values no requirement owns,\n                    and judge the excuses.\n  config            Read a stored quoin config value.\n  discharge         Partition binding clauses into direct evidence,\n                    dispositions, and open work.\n  evidence          The evidence store — what actually ran, and against which\n                    statement.\n  graph             Read-only evidence-graph analysis views.\n  matrix            Build or update a requirements test matrix.\n  measurement       Record and inspect versioned QA measurements.\n  module            List installed spec modules.\n  report            Render QA plans and measurements from the evidence store.\n  review            Run a composite spec review workflow.\n  sync              Synchronize the local plan tree with an external tracker\n                    target.\n  to-plan           Convert accepted requirements into an implementation plan.\n  update            Check for and install the latest published quoin.\n  validate          Validate repository QA gates and report located defects.\n  write             Build an authoring pack for spec files an agent is about to\n                    create or edit.\n\n",
+      "stdout": "Spec-driven development for Claude Code — author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.\n\nVERSION\n  @agent-ix/quoin/<VERSION>\n\nUSAGE\n  $ quoin [COMMAND]\n\nTOPICS\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           Inspect the active artifact/object catalog (list, show,\n                    validate).\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  config            Read and store quoin configuration (get, set, edit, doctor).\n  evidence          The evidence store — what actually ran, and against which\n                    statement (record, affirm, gc).\n  graph             Read-only evidence-graph analysis views.\n  measurement       Record plan-validated QA measurements as atomic producer\n                    collections.\n  module            Install and manage user/community spec modules (list,\n                    install, remove, ensure-defaults).\n  semantic          Classify every Markdown artifact's Properties form across\n                    corpus roots (FR-074).\n\nCOMMANDS\n  advise            Recommend a verification method for each obligation, from\n                    the catalog.\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           List the active artifact/object catalog modules.\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  completeness      Report which declared vocabulary values no requirement owns,\n                    and judge the excuses.\n  config            Read a stored quoin config value.\n  discharge         Partition binding clauses into direct evidence,\n                    dispositions, and open work.\n  evidence          The evidence store — what actually ran, and against which\n                    statement.\n  graph             Read-only evidence-graph analysis views.\n  matrix            Build or update a requirements test matrix.\n  measurement       Record and inspect versioned QA measurements.\n  module            List installed spec modules.\n  report            Render QA plans and measurements from the evidence store.\n  review            Run a composite spec review workflow.\n  to-plan           Convert accepted requirements into an implementation plan.\n  update            Check for and install the latest published quoin.\n  validate          Validate repository QA gates and report located defects.\n  write             Build an authoring pack for spec files an agent is about to\n                    create or edit.\n\n",
       "stderr": ""
     },
     {
@@ -605,16 +605,6 @@
     {
       "kind": "help",
       "argv": [
-        "sync",
-        "--help"
-      ],
-      "exit": 0,
-      "stdout": "Synchronize the local plan tree with an external tracker target.\n\nUSAGE\n  $ quoin sync -t <value> [--config-root <value>]\n    [--no-project-config] [-m full|lazy] [-s <value>]\n\nFLAGS\n  -m, --mode=<option>   [default: full] sync mode\n                        <options: full|lazy>\n  -s, --scope=<value>   comma-separated node ids to limit the sync scope\n                        (default: all)\n  -t, --target=<value>  (required) tracker target id, e.g. \"jira/PROJ\" or\n                        \"gh/owner/repo\"\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Synchronize the local plan tree with an external tracker target.\n\n",
-      "stderr": ""
-    },
-    {
-      "kind": "help",
-      "argv": [
         "to-plan",
         "--help"
       ],
@@ -668,7 +658,7 @@
       ],
       "exit": 2,
       "stdout": "",
-      "stderr": " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+      "stderr": " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
     },
     {
       "kind": "shell",
@@ -680,7 +670,7 @@
       ],
       "exit": 2,
       "stdout": "",
-      "stderr": " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+      "stderr": " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
     },
     {
       "kind": "shell",
