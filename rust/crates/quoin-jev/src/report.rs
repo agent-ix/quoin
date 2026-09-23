@@ -14,7 +14,7 @@
 
 use std::fmt::Write as _;
 
-use crate::verdict::FrVerdict;
+use crate::verdict::{FrVerdict, SubQuestionCheck};
 
 /// One FR's findings, paired with the FR id they are about (for `Refs`).
 pub struct FrReport<'a> {
@@ -140,6 +140,10 @@ fn summary_line(finding: &crate::verdict::Finding) -> String {
     } else {
         base
     };
+    let base = format!(
+        "{base} {}",
+        sub_question_note(&finding.weakness_kind, &finding.label_sub_question)
+    );
     // The five raw `noul` values are carried into the summary as supporting
     // evidence, explicitly labelled uncalibrated (see `verdict.rs`'s module
     // doc: there is no confidence field on a `noul` answer to threshold on,
@@ -155,6 +159,26 @@ fn summary_line(finding: &crate::verdict::Finding) -> String {
             .collect::<Vec<_>>()
             .join(", ");
         format!("{base} [noul, uncalibrated: {noul}]")
+    }
+}
+
+/// PLAT-984's "which sub-question decided this" for one finding, worded as
+/// what it is: whether the label's own sub-question backs it. `weakness_kind`
+/// is one Jev `choice` call, not a composite of the `noul` answers, so the
+/// wording never says the sub-question decided the label (see
+/// [`SubQuestionCheck`]).
+fn sub_question_note(kind: &str, check: &SubQuestionCheck) -> String {
+    match check {
+        SubQuestionCheck::Agrees { question, noul } => {
+            format!("[label's sub-question {question}={noul:.2} agrees]")
+        }
+        SubQuestionCheck::Disagrees { question, noul } => format!(
+            "[label's sub-question {question}={noul:.2} DISAGREES: {kind} is not carried by it]"
+        ),
+        SubQuestionCheck::Unanswered { question } => {
+            format!("[label's sub-question {question} unanswered]")
+        }
+        SubQuestionCheck::NoSubQuestion => format!("[no sub-question covers {kind}]"),
     }
 }
 
@@ -180,7 +204,9 @@ fn coverage_summary_line(fr_id: &str, coverage: &crate::verdict::CoverageVerdict
 )]
 mod tests {
     use super::{FrReport, render};
-    use crate::verdict::{CoverageVerdict, Finding, FrVerdict, NoulSignals, Severity};
+    use crate::verdict::{
+        CoverageVerdict, Finding, FrVerdict, NoulSignals, Severity, SubQuestionCheck,
+    };
 
     fn finding(unconfirmed: bool) -> Finding {
         Finding {
@@ -191,7 +217,80 @@ mod tests {
             unconfirmed,
             probabilities: vec![("unfalsifiable".to_owned(), 0.9)],
             noul: NoulSignals { values: vec![] },
+            label_sub_question: SubQuestionCheck::Unanswered {
+                question: "falsifiable",
+            },
         }
+    }
+
+    fn one_finding_body(f: Finding) -> String {
+        let verdict = FrVerdict {
+            classifier: "jev-1.13.0".to_owned(),
+            usage_input_tokens: 0,
+            usage_output_tokens: 0,
+            findings: vec![f],
+            sound: vec![],
+            unrecognized: vec![],
+            unanswered: vec![],
+            coverage: None,
+        };
+        render(&[FrReport {
+            fr_id: "FR-001",
+            verdict: &verdict,
+        }])
+    }
+
+    /// Provenance: PLAT-984. A finding whose label its own sub-question
+    /// contradicts says so in the rendered Findings row -- the exact line,
+    /// so the wording cannot drift into claiming the sub-question decided it.
+    #[test]
+    fn a_disagreeing_sub_question_is_named_in_the_findings_row() {
+        let mut f = finding(false);
+        f.label_sub_question = SubQuestionCheck::Disagrees {
+            question: "falsifiable",
+            noul: 0.9,
+        };
+        let body = one_finding_body(f);
+        assert!(body.contains(
+            "| FND-001 | high | FR-001-AC-1 classified unfalsifiable (confidence 0.90) \
+             [label's sub-question falsifiable=0.90 DISAGREES: unfalsifiable is not carried by it] \
+             | FR-001-AC-1 |\n"
+        ));
+    }
+
+    /// Provenance: PLAT-984. An agreeing sub-question is rendered after the
+    /// unconfirmed marker and before the raw `noul` list.
+    #[test]
+    fn an_agreeing_sub_question_is_rendered_between_the_marker_and_the_noul_list() {
+        let mut f = finding(true);
+        f.label_sub_question = SubQuestionCheck::Agrees {
+            question: "falsifiable",
+            noul: 0.1,
+        };
+        f.noul = NoulSignals {
+            values: vec![("falsifiable".to_owned(), 0.1)],
+        };
+        let body = one_finding_body(f);
+        assert!(body.contains(
+            "-- unconfirmed, below the confidence threshold \
+             [label's sub-question falsifiable=0.10 agrees] \
+             [noul, uncalibrated: falsifiable=0.10]"
+        ));
+    }
+
+    /// Provenance: PLAT-984. The two outcomes that name no answer are
+    /// rendered as themselves, never as agreement.
+    #[test]
+    fn an_unanswered_or_uncovered_sub_question_is_rendered_as_itself() {
+        let body = one_finding_body(finding(false));
+        assert!(body.contains("[label's sub-question falsifiable unanswered]"));
+        assert!(!body.contains("agrees"));
+
+        let mut f = finding(false);
+        "happy_path_only".clone_into(&mut f.weakness_kind);
+        f.label_sub_question = SubQuestionCheck::NoSubQuestion;
+        let body = one_finding_body(f);
+        assert!(body.contains("[no sub-question covers happy_path_only]"));
     }
 
     /// Provenance: PLAT-837. The Findings table header is exactly the

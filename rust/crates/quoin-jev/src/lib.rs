@@ -58,4 +58,4 @@ pub use corpus_check::{AdequacyFinding, check_required_fields, check_stated_coun
 pub use error::{JevError, JevErrorCode, Result};
 pub use question_set::QuestionSet;
 pub use report::{FrReport, render as render_findings};
-pub use verdict::{CoverageVerdict, Finding, FrVerdict, Severity};
+pub use verdict::{CoverageVerdict, Finding, FrVerdict, Severity, SubQuestionCheck};
