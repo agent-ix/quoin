@@ -64,6 +64,12 @@ pub enum JevErrorCode {
     /// cassette never invents an answer; a miss is a fixture/cassette drift
     /// to fix, not a case to fall through to the network.
     CassetteMiss,
+    /// A System One response named a model other than the one the caller
+    /// pinned [`crate::lens::run`] to, so it was refused before anything was
+    /// scored (PLAT-978). Distinct from [`Self::CassetteModelMismatch`]: that
+    /// code is a cassette file refusing to load; this one is the response in
+    /// hand -- live or replayed -- refusing to be scored.
+    ModelMismatch,
 }
 
 impl JevErrorCode {
@@ -84,6 +90,7 @@ impl JevErrorCode {
             Self::CassetteInvalid => "JEV_CASSETTE_INVALID",
             Self::CassetteModelMismatch => "JEV_CASSETTE_MODEL_MISMATCH",
             Self::CassetteMiss => "JEV_CASSETTE_MISS",
+            Self::ModelMismatch => "JEV_MODEL_MISMATCH",
         }
     }
 
@@ -104,6 +111,7 @@ impl JevErrorCode {
             Self::CassetteInvalid,
             Self::CassetteModelMismatch,
             Self::CassetteMiss,
+            Self::ModelMismatch,
         ]
     }
 

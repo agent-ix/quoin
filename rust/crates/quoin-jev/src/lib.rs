@@ -49,6 +49,7 @@ pub mod context;
 pub mod corpus_check;
 pub mod error;
 pub mod lens;
+mod model_pin;
 pub mod question_set;
 pub mod report;
 pub mod schema_gate;

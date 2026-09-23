@@ -36,9 +36,11 @@
 //! written by this module. Record mode also checks each fresh answer before
 //! appending it, so a session cannot write a line its own next load would
 //! refuse. This is PLAT-977's own acceptance language, and it is also half of
-//! PLAT-978 (fail closed on unexpected Jev model version): the other half --
-//! the same check against a genuinely live, non-cassette response -- belongs
-//! to that ticket's own change to the lens execution path, not to this module.
+//! PLAT-978 (fail closed on unexpected Jev model version). The other half --
+//! the same check against the response [`crate::lens::run`] is about to
+//! score, whether it came off the network or off a cassette -- lives in
+//! `lens::run`. Both compare through `model_pin::check`, so the two
+//! halves cannot disagree about what "the pinned model" means.
 //!
 //! **This is not how to measure repetition.** M1
 //! (`spec/assurance/MP-225-jev-disagreement-under-repetition.md`) repeats an
@@ -63,6 +65,7 @@ use typesafe_sdk_headers::Headers;
 use typesafe_sdk_http::{RawResponse, Request, Transport};
 
 use crate::error::{JevError, JevErrorCode, Result};
+use crate::model_pin;
 
 /// The prefix [`crate::error::classify`] recognises to report a cassette miss
 /// under its own code rather than the generic `Connection` fallback every
@@ -288,7 +291,8 @@ fn to_sdk_error(error: JevError) -> SdkError {
         | JevErrorCode::ApiError
         | JevErrorCode::Connection
         | JevErrorCode::SchemaUnavailable
-        | JevErrorCode::SchemaUnreadable => INVALID_PREFIX,
+        | JevErrorCode::SchemaUnreadable
+        | JevErrorCode::ModelMismatch => INVALID_PREFIX,
     };
     SdkError::Invalid(format!("{prefix}{message}"))
 }
@@ -373,15 +377,12 @@ fn check_model(body: &str, expected_model: &str, at: &str) -> Result<()> {
         .get("model")
         .and_then(JsonValue::as_str)
         .ok_or_else(|| invalid("has no string `model` field"))?;
-    if model != expected_model {
-        return Err(JevError::new(
-            JevErrorCode::CassetteModelMismatch,
-            format!(
-                "{at}: recorded against model {model:?}, expected {expected_model:?}; refusing to load any of it"
-            ),
-        ));
-    }
-    Ok(())
+    model_pin::check(
+        model,
+        expected_model,
+        JevErrorCode::CassetteModelMismatch,
+        at,
+    )
 }
 
 /// Appends one line to `path`, creating the file (and its parent directory)
