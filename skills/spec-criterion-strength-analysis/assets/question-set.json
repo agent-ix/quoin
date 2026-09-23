@@ -33,6 +33,7 @@
   ],
   "choice": {
     "id": "weakness_kind",
+    "question": "Classify this acceptance criterion's weakness, if any.",
     "primitive": "choice",
     "answer_space": [
       "sound",
