@@ -305,7 +305,7 @@ pub struct BuildAuthoredArgumentRequest {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct EvidenceIndexEntry {
-    /// The reference, exactly as a claim's `evidenceRefs` would cite it.
+    /// The reference, exactly as a claim's `top_claim.evidence_refs` cites it.
     pub reference: String,
     /// What the store found there.
     pub state: EvidenceRefState,

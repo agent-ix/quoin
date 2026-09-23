@@ -85,13 +85,13 @@ pub fn parse_assurance_argument(value: &serde_json::Value) -> Checked<AssuranceA
         &["id", "statement", "subject", "evidence_refs"],
         &["evidence_refs"],
     )?;
-    // Optional (PLAT-965, PLAT-966): absent reads as empty, matching the
-    // retained truthiness readers elsewhere in this module rather than
-    // `optionalStringAt`'s presence check — there is no "explicit null" case
-    // to be asymmetric about here because the value is an array, not a string.
+    // Optional (PLAT-965, PLAT-966): absent reads as empty so an argument
+    // authored before the field existed still parses. The field is new, so
+    // there is no retained null-tolerance to stay in parity with: an explicit
+    // null is a wrong shape and `string_array` refuses it like any other.
     let top_evidence_refs = match top.get("evidence_refs") {
-        None | Some(serde_json::Value::Null) => Vec::new(),
-        Some(_) => string_array("top_claim.evidence_refs", top.get("evidence_refs"), false)?,
+        None => Vec::new(),
+        present => string_array("top_claim.evidence_refs", present, false)?,
     };
 
     let mut reasoning = Vec::new();
@@ -487,6 +487,12 @@ mod tests {
         assert!(
             parse_assurance_argument(&argument).is_err(),
             "a non-array evidence_refs must be refused"
+        );
+
+        argument["top_claim"]["evidence_refs"] = serde_json::Value::Null;
+        assert!(
+            parse_assurance_argument(&argument).is_err(),
+            "an explicit null evidence_refs must be refused, not read as empty"
         );
     }
 

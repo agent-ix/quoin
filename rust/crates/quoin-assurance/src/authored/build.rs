@@ -33,7 +33,8 @@ use super::view::{
 /// [`ArgumentError`] when the argument fails any predicate in
 /// [`crate::argument`], when the `asOf` is not an instant, when a decision is
 /// malformed, names an undeclared participant, claims an authority the
-/// participant does not hold, or repeats a `(reasoningId, criterion)` pair.
+/// participant does not hold, or repeats a `(reasoningId, criterion)` pair,
+/// or when the evidence index names one reference twice.
 pub fn build_authored_argument_view(
     request: &BuildAuthoredArgumentRequest,
 ) -> Result<AuthoredArgumentView, ArgumentError> {
@@ -54,7 +55,7 @@ pub fn build_authored_argument_view(
         challenges.push(evaluate_challenge(challenge, as_of)?);
     }
 
-    let evidence_index = index_evidence(&request.evidence);
+    let evidence_index = index_evidence(&request.evidence)?;
     let reasons = open_reasons(
         &argument,
         &reasoning,
@@ -287,43 +288,57 @@ fn build_assumptions(
 
 /// Index the caller-supplied evidence store snapshot by reference.
 ///
-/// Last write wins on a duplicate reference, matching every other index this
-/// module builds from a request-supplied list (`index_decisions`'s
-/// `BTreeMap::insert`) — there is no ordering signal in an unordered request
-/// that would make a different tie-break more correct.
-fn index_evidence(entries: &[EvidenceIndexEntry]) -> BTreeMap<&str, EvidenceRefState> {
-    entries
-        .iter()
-        .map(|entry| (entry.reference.as_str(), entry.state))
-        .collect()
+/// A repeated reference is refused, as `index_decisions` refuses a repeated
+/// decision: with last-write-wins, `[{A, stale}, {A, resolved}]` would read as
+/// backed, so the order of a list the caller never promised to order would
+/// decide whether the claim stands.
+fn index_evidence(
+    entries: &[EvidenceIndexEntry],
+) -> Result<BTreeMap<&str, EvidenceRefState>, ArgumentError> {
+    let mut index = BTreeMap::new();
+    for entry in entries {
+        if index
+            .insert(entry.reference.as_str(), entry.state)
+            .is_some()
+        {
+            return reject(format!(
+                "duplicate evidence index entry for {}",
+                entry.reference
+            ));
+        }
+    }
+    Ok(index)
 }
 
-/// Why the top claim's OWN citation does not back it, or `None`.
+/// Why the top claim's OWN citation does not back it — empty when it does.
 ///
-/// Checked in the claim's authored `evidenceRefs` order and stops at the
-/// first problem — mirroring `evaluate_challenge`'s `else if` chain, a reader
-/// is given one thing to deal with rather than a list that restates the same
-/// gap once per reference.
-fn claim_backing_reason(
+/// One reason per failing reference, in the claim's authored `evidence_refs`
+/// order. Each reference is a separate gap, and stopping at the first would
+/// let an earlier stale reference hide a later suspect one until the first
+/// was fixed and the view re-run.
+fn claim_backing_reasons(
     top_claim: &TopClaim,
     evidence: &BTreeMap<&str, EvidenceRefState>,
-) -> Option<String> {
+) -> Vec<String> {
     if top_claim.evidence_refs.is_empty() {
-        return Some("the top claim has no evidence references".to_owned());
+        return vec!["the top claim has no evidence references".to_owned()];
     }
-    for reference in &top_claim.evidence_refs {
-        let reason = match evidence.get(reference.as_str()) {
-            None => "does not resolve in the evidence store",
-            Some(EvidenceRefState::Stale) => "is stale",
-            Some(EvidenceRefState::Vacuous) => "is vacuous",
-            Some(EvidenceRefState::Suspect) => "is suspect",
-            Some(EvidenceRefState::Resolved) => continue,
-        };
-        return Some(format!(
-            "the top claim's evidence reference {reference} {reason}"
-        ));
-    }
-    None
+    top_claim
+        .evidence_refs
+        .iter()
+        .filter_map(|reference| {
+            let reason = match evidence.get(reference.as_str()) {
+                None => "does not resolve in the evidence store",
+                Some(EvidenceRefState::Stale) => "is stale",
+                Some(EvidenceRefState::Vacuous) => "is vacuous",
+                Some(EvidenceRefState::Suspect) => "is suspect",
+                Some(EvidenceRefState::Resolved) => return None,
+            };
+            Some(format!(
+                "the top claim's evidence reference {reference} {reason}"
+            ))
+        })
+        .collect()
 }
 
 /// Why the top claim does not stand, in the retained order.
@@ -347,9 +362,7 @@ fn open_reasons(
             argument_status_text(argument.status)
         ));
     }
-    if let Some(reason) = claim_backing_reason(&argument.top_claim, evidence) {
-        reasons.push(reason);
-    }
+    reasons.extend(claim_backing_reasons(&argument.top_claim, evidence));
     if reasoning.iter().any(|item| item.status == ViewStatus::Open) {
         reasons.push("one or more sufficiency criteria are open".to_owned());
     }
@@ -756,32 +769,76 @@ mod tests {
         }
     }
 
-    /// A second, unresolved reference stops the check at the FIRST problem —
-    /// mirroring `evaluate_challenge`'s `else if` chain — rather than
-    /// reporting the same gap once per reference.
+    /// Every failing reference is reported, in authored order: an earlier
+    /// stale reference does not hide a later suspect one, and a resolved
+    /// reference between them contributes nothing.
     ///
     /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
     #[test]
-    fn tc_1868_stops_at_the_first_unresolved_reference() {
+    fn tc_1868_reports_every_failing_reference_in_authored_order() {
         let claim = with(
             &argument()["top_claim"],
             "evidence_refs",
-            serde_json::json!([CLAIM_EVIDENCE_REF, "evidence://discharge/widget-901"]),
+            serde_json::json!([
+                "evidence://widget/stale",
+                CLAIM_EVIDENCE_REF,
+                "evidence://widget/suspect",
+                "evidence://widget/missing"
+            ]),
         );
+        let mut evidence = resolved_evidence();
+        evidence.push(EvidenceIndexEntry {
+            reference: "evidence://widget/stale".to_owned(),
+            state: EvidenceRefState::Stale,
+        });
+        evidence.push(EvidenceIndexEntry {
+            reference: "evidence://widget/suspect".to_owned(),
+            state: EvidenceRefState::Suspect,
+        });
         let view = build_authored_argument_view(&request_with_evidence(
             with(&argument(), "top_claim", claim),
             vec![decision()],
             AS_OF,
-            resolved_evidence(),
+            evidence,
         ))
         .expect("the fixture builds");
+        assert_eq!(view.top_claim.status, ViewStatus::Open);
         assert_eq!(
             view.top_claim.reasons,
             vec![
-                "the top claim's evidence reference evidence://discharge/widget-901 does not resolve in the evidence store"
-                    .to_owned()
+                "the top claim's evidence reference evidence://widget/stale is stale".to_owned(),
+                "the top claim's evidence reference evidence://widget/suspect is suspect"
+                    .to_owned(),
+                "the top claim's evidence reference evidence://widget/missing does not resolve in the evidence store"
+                    .to_owned(),
             ]
+        );
+    }
+
+    /// An evidence index naming one reference twice is refused rather than
+    /// resolved by list order: last-write-wins would let a trailing
+    /// `resolved` entry mask a `stale` one.
+    ///
+    /// Trace: FR-047-AC-8
+    /// Provenance: PLAT-966
+    #[test]
+    fn tc_1868_a_duplicate_evidence_index_entry_is_refused() {
+        let mut evidence = vec![EvidenceIndexEntry {
+            reference: CLAIM_EVIDENCE_REF.to_owned(),
+            state: EvidenceRefState::Stale,
+        }];
+        evidence.extend(resolved_evidence());
+        let error = build_authored_argument_view(&request_with_evidence(
+            argument(),
+            vec![decision()],
+            AS_OF,
+            evidence,
+        ))
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            format!("duplicate evidence index entry for {CLAIM_EVIDENCE_REF}")
         );
     }
 }

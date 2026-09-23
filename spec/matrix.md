@@ -255,7 +255,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-074 | FR-074-AC-1, FR-074-AC-2, FR-074-AC-3, FR-074-AC-4, FR-074-AC-5, FR-074-CON-1 | TC-1367, TC-1368, TC-1369, TC-1370, TC-1371, TC-1386 | ✅ Complete |
 | FR-075 | FR-075-AC-1, FR-075-AC-2, FR-075-AC-3, FR-075-AC-4, FR-075-AC-5, FR-075-CON-1, FR-075-CON-2 | TC-1372, TC-1373, TC-1374, TC-1375, TC-1376, TC-1377, TC-1378 | ✅ Complete |
 | FR-046 | FR-046-AC-1, FR-046-AC-2, FR-046-AC-3, FR-046-AC-4, FR-046-AC-5, FR-046-AC-6 | TC-1125, TC-1126, TC-1127, TC-1128, TC-1129, TC-1130 | ✅ Covered |
-| FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5, FR-047-AC-6, FR-047-AC-8 | TC-1131, TC-1132, TC-1133, TC-1134, TC-1135, TC-1136, TC-1868 | ✅ Covered |
+| FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5, FR-047-AC-6, FR-047-AC-7, FR-047-AC-8 | TC-1131, TC-1132, TC-1133, TC-1134, TC-1135, TC-1136, TC-1712, TC-1868 | ✅ Covered |
 | FR-048 | FR-048-AC-1, FR-048-AC-2, FR-048-AC-3, FR-048-AC-4, FR-048-AC-5, FR-048-AC-6, FR-048-AC-7 | TC-1137, TC-1138, TC-1139, TC-1140, TC-1141, TC-1142, TC-1143 | ✅ Covered |
 
 ## Test Case Summary
@@ -1239,7 +1239,8 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1134 | Challenge resolution requires evidence references and accepted risk additionally requires a current expiry | Unit | P0 | FR-047-AC-4 | ✅ |
 | TC-1135 | The closed argument contract rejects unknown fields, duplicate decisions, and authority that differs from the authored participant | Unit | P0 | FR-047-AC-5 | ✅ |
 | TC-1136 | The authored Markdown view is deterministic and retains open reasons and participant authority | Unit | P1 | FR-047-AC-6 | ✅ |
-| TC-1868 | The top claim is reported unbacked when it has no evidence references, cites an unresolved reference, or cites evidence recorded stale, vacuous, or suspect | Unit | P0 | FR-047-AC-8 | ✅ |
+| TC-1712 | An authored instant naming a day, hour, minute or second that does not exist is refused rather than rolled forward | Unit | P0 | FR-047-AC-7 | ✅ |
+| TC-1868 | The top claim is reported unbacked when it has no evidence references, cites an unresolved reference, or cites evidence recorded stale, vacuous, or suspect — every failing reference reported, a duplicate index entry refused | Unit | P0 | FR-047-AC-8 | ✅ |
 | TC-1137 | Each assurance evidence record binds the complete producer-provenance tuple | Unit | P0 | FR-048-AC-1 | ✅ |
 | TC-1138 | Canonical content determines immutable identity and identical publication is byte-stable and idempotent | Unit | P0 | FR-048-AC-2 | ✅ |
 | TC-1139 | Invalid producer provenance is rejected before any record is published | Unit | P0 | FR-048-AC-3 | ✅ |
