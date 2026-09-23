@@ -128,3 +128,65 @@ uncontested subsets.
 
 Compare only like variant, corpus revision and label revision. An edit to the
 labels file is a new definition version.
+
+## Measured outcome -- 1 of 4 holds, 2026-09-23
+
+MEASURED by `the_remaining_four_questions_beat_doing_nothing` after the
+pre-registration commit (`7aa3ca2f`). Three consecutive runs, each 29
+`FullBatteryV1` requests (gated) plus 29 `FullBattery` requests (replication).
+Every response in all three runs came from `jev-1.13.0`. Run 1 is the gated
+run. Runs 2 and 3 are replications, reported and not pooled.
+
+**Every label graded against here is agent-labelled, not human ground truth.**
+
+| question | rows | agreement (runs 1/2/3) | constant predictor | margin, run 1 | defect recall, run 1 | no-defect recall, run 1 | bars held |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `code_implements_intent` | 29 | 86.2% / 89.7% / 86.2% | `no` 62.1% | **+24.1 pp** | 77.8% (14/18) | 100% (11/11) | **yes**, all three runs |
+| `code_exceeds_requirement` | 28 | 64.3% / 67.9% / 64.3% | `yes` 64.3% | **+0.0 pp** | 66.7% (12/18) | 60.0% (6/10) | **no** (A); a tie |
+| `divergence_kind`, asked | 29 | 62.1% / 62.1% / 65.5% | `code_exceeds_requirement` 62.1% | **+0.0 pp** | 84.2% | 66.7% | **no** (A); a tie |
+| `severity`, at its verdict | 29 | 34.5% / 34.5% / 37.9% | `FAIL` 69.0% | **-34.5 pp** | 90.0% | 66.7% | **no** (A) |
+
+Ungated, run 1: `divergence_kind` derived from the `noul` answers by MP-233's
+rule scores 79.3% (+17.2 pp). `severity` at its exact rubric level scores 24.1%
+against `high` at 69.0%. The `FullBattery` replication gives the same four
+verdicts. Its one difference is `code_exceeds_requirement` at 67.9% in run 1.
+
+**What the numbers say.**
+
+1. **`code_implements_intent` holds, and it holds by spotting trace
+   mismatches.** On the 11 correctly-traced rows it said `yes` every time, and
+   every label there is `yes`, so that subset cannot separate the lens from a
+   constant. All of its margin comes from the 18 mismatched rows, where it said
+   `no` on 14 in run 1. The misses are stable: `GAP-21`, `GAP-23` and `GAP-24`
+   in all three runs, plus `GAP-19` at P=0.52 and 0.51 in runs 1 and 3. Those
+   three are the FR-101-AC-4 rows the labels already recorded as contested for
+   `divergence_kind` and `severity`, where the test may itself be the restated
+   AC-4 test. The lens took that reading. The labels were not changed after
+   seeing this.
+2. **`code_exceeds_requirement` is a coin flip.** Its probabilities sit
+   between 0.50 and 0.73 on every row. Its agreement ties the constant
+   predictor in runs 1 and 3 and beats it by one row (+3.6 pp) in run 2. On the
+   10 correctly-traced rows it called four `yes` (`GAP-03`, `05`, `07`, `17`)
+   that the labels call `no`.
+3. **`divergence_kind` as asked never once answered `code_exceeds_requirement`.**
+   It gave 0 of the 18 rows that label. The mismatched rows went to
+   `test_weaker_than_requirement`, `code_short_of_requirement` and `aligned`.
+   Its agreement comes from contested credit (11 of 18 in run 1), and it ties
+   the constant predictor in runs 1 and 2. On the 11 correctly-traced rows it
+   scores 81.8% / 81.8% / 90.9%. The derived label beats the asked one again
+   (79.3% vs. 62.1%), the result PLAT-838 and MP-233 both found.
+4. **`severity` almost never says `high`.** In each run exactly one row of 20
+   labelled `high` came back `high` (`GAP-22`), so FAIL-class recall is 5.0%.
+   The two constructed tests that assert nothing (`GAP-28`, `GAP-29`) came back
+   `low`. Its 90% "defect recall" only means it did not answer `PASS`. It
+   answered `CONDITIONAL` on 21 of 29 rows. The `severity` result rests on the
+   rubric in `skills/gap-analysis/references/step-5-semantic-review.md`, which
+   makes a test unrelated to its tagged AC `high`. A reader who grades a
+   mismatched trace as `medium` would get a different number. The labels
+   record that rubric and its source in `rules.severity`.
+
+**Verdict for PLAT-1014: 1 of 4.** `code_implements_intent` holds all three
+bars in all three runs. `code_exceeds_requirement` and `divergence_kind` (asked)
+tie the constant predictor in the gated run, so Bar A fails. They are within one
+row of it in every run. `severity` fails Bar A by 31-35 pp in every run.
+MP-230's GO rests on `assertion_vacuous` and is not changed by this plan.

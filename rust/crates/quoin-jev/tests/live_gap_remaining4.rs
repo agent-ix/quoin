@@ -70,6 +70,25 @@
 //!
 //! A bar that fails is reported as failing, and every bar is evaluated before
 //! the test fails, so one NO-GO never hides the others.
+//!
+//! # Measured — three runs, `jev-1.13.0`, 1 of 4 holds
+//!
+//! Run 1 is gated. Runs 2 and 3 are replications. Graded against
+//! agent-written labels, not human ground truth. MP-234 carries the full
+//! reading.
+//!
+//! | Question | Agreement (runs 1/2/3) | Constant predictor | Held |
+//! | --- | --- | --- | --- |
+//! | `code_implements_intent` | 86.2% / 89.7% / 86.2% | `no` 62.1% | yes |
+//! | `code_exceeds_requirement` | 64.3% / 67.9% / 64.3% | `yes` 64.3% | **no**, a tie |
+//! | `divergence_kind`, asked | 62.1% / 62.1% / 65.5% | majority label 62.1% | **no**, a tie |
+//! | `severity`, at its verdict | 34.5% / 34.5% / 37.9% | `FAIL` 69.0% | **no** |
+//!
+//! `code_implements_intent`'s whole margin comes from the trace-mismatched
+//! rows. It answered `yes` on all 11 correctly-traced ones, which are all
+//! labelled `yes`. `severity` returned `high` for 1 of the 20 rows labelled
+//! `high` in every run, and returned `low` for both constructed tests that
+//! assert nothing.
 
 #![cfg(feature = "live-api")]
 #![allow(
