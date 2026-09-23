@@ -287,6 +287,54 @@
 //! combination, and the confound this pre-registration deliberately avoided
 //! (context + criteria together) is a different, already-ruled-out
 //! combination.
+//!
+//! # `v5`, pre-registered before its first call -- PLAT-979
+//!
+//! PLAT-979 allows one wording or decomposition retry. Its method: classify
+//! every disagreement as wording, missing sub-question, bad option list,
+//! threshold or bad label, in that order, and fix the dominant class first.
+//!
+//! **Step 1: diagnostic `v2` re-run, 2026-09-22, one pass, reported only.**
+//! It scored 60.0%, the same as round two, with six disagreements:
+//!
+//! | fixture | recorded | `v2` said | class |
+//! | --- | --- | --- | --- |
+//! | `CS-FIX-003` | `implementation_coupled` | `sound` | wording: `v2`'s `sound` definition omits the coupling check |
+//! | `CS-FIX-004` | `unfalsifiable` / `sound` | `unmeasurable_threshold` (0.27) | wording: the label is used with no quantity asserted |
+//! | `CS-FIX-005` | `restates_requirement` / `implementation_coupled` | `unmeasurable_threshold` (0.17) | wording: same |
+//! | `CS-FIX-006` | `unfalsifiable` / `sound` | `restates_requirement` (0.34) | bad label: the AC paraphrases FR-079-CON-1, which ships as context |
+//! | `CS-FIX-008` | `unfalsifiable` / `sound` | `restates_requirement` (0.42) | bad label: "correct nesting" restates the Behaviour bullet on nesting |
+//! | `CS-FIX-015` | 2 | 2.91, rounded to 3 | threshold: the coverage rubric's top level is read generously |
+//!
+//! Wording is the dominant class, with 3 of 6.
+//!
+//! **`v5` is one change from `v2`**: [`V5_CHOICE_QUESTION`] replaces
+//! [`V2_CHOICE_QUESTION`]. It keeps `v2`'s neutral framing and defines each
+//! label in one line, restating the `noul` question behind it. It fixes
+//! the two wording defects: the `sound` definition now includes all five
+//! checks, and `unmeasurable_threshold` requires an asserted quantity. The
+//! context (full), primitive (`choice_of`) and coverage question are unchanged
+//! from `v2`. This is not `v4`. `v4` kept the shipped question, which asks for
+//! a weakness before it offers `sound`, and sent long `{what, not_for,
+//! examples}` criteria. It over-fired `restates_requirement` and cleared no
+//! `sound` criterion.
+//!
+//! **Fitted to the corpus.** This wording was written after reading the
+//! fixtures, their rationales and step 1's per-row answers. A GO would be
+//! weak evidence and would need a held-out corpus. A NO-GO is the strong
+//! result.
+//!
+//! **Prediction, stated before the call.** Fixing all three wording rows and
+//! keeping v2's nine correct rows gives 12/15 = 80.0%. That ties the constant
+//! and fails bar 1, which needs a strictly greater score. `v5` clears bar 1
+//! only if it also gets `CS-FIX-006` or `CS-FIX-008` right, or the coverage
+//! row, none of which it targets. Expected outcome: NO-GO on bar 1, with the
+//! wording rows `CS-FIX-003`/`004`/`005` corrected. If those three stay wrong,
+//! the wording hypothesis is refuted as well.
+//!
+//! Bars: unchanged. Gate pass (`JEV_VARIANT=v5`, the gate test), then
+//! `JEV_RUNS=5` repeats. GO needs all three bars on the gate pass and in at
+//! least 3 of 5 repeats.
 
 #![cfg(feature = "live-api")]
 #![allow(
@@ -340,6 +388,31 @@ written? Answer `sound` when it is falsifiable, names an outcome observable from
 any threshold it relies on, and says more than the FR sentence it belongs to. Otherwise pick the \
 weakness that applies.";
 
+/// The `weakness_kind` question `v5` sends instead of `v2`'s (PLAT-979).
+///
+/// `v2`'s question, with a one-line definition for each label. It fixes the
+/// wording class found in `v2`'s disagreements: `v2`'s definition of `sound`
+/// left out the implementation-coupling check, and no label said that
+/// `unmeasurable_threshold` needs a quantity to be asserted first. Every
+/// definition restates a `noul` question from `question-set.json`. See the
+/// module doc.
+const V5_CHOICE_QUESTION: &str = "Which one label best describes this acceptance criterion as \
+written? Apply these definitions literally. \
+`sound`: all five hold -- a concrete system behaviour could make it false; it names an outcome \
+observable from outside; any quantity it asserts has its number stated; it is not the FR sentence \
+with `shall` swapped out; and it names no internal symbol, private field or call sequence. \
+`unfalsifiable`: no concrete system behaviour could make it false. \
+`unmeasurable_threshold`: it asserts a quantity (a duration, size, count, rate or limit) but never \
+states the number. A criterion that asserts no quantity is never this label. \
+`restates_requirement`: it is an FR sentence with `shall` swapped out and adds no detail of its \
+own. \
+`implementation_coupled`: it names an internal symbol, private field or call sequence, including \
+anything the criterion itself calls internal. The public command, API or file a requirement \
+exists to constrain is not internal. \
+`happy_path_only`: it covers only the success path, and neither it nor its FR states any error, \
+boundary or negative case. \
+When none of the five weaknesses applies, answer `sound`.";
+
 /// Which pre-registered variant this run measures. See the module doc.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Variant {
@@ -349,17 +422,20 @@ enum Variant {
     V1,
     /// Full FR context, neutral question.
     V2,
+    /// Full FR context, neutral question with every label defined (PLAT-979).
+    V5,
 }
 
 impl Variant {
-    /// Reads `JEV_VARIANT`. Panics on anything but the three ids, so a typo
+    /// Reads `JEV_VARIANT`. Panics on anything but the known ids, so a typo
     /// cannot silently measure the default.
     fn from_env() -> Self {
         match std::env::var("JEV_VARIANT").as_deref() {
             Err(_) | Ok("v1") => Self::V1,
             Ok("v0") => Self::V0,
             Ok("v2") => Self::V2,
-            Ok(other) => panic!("JEV_VARIANT must be v0, v1 or v2; got {other:?}"),
+            Ok("v5") => Self::V5,
+            Ok(other) => panic!("JEV_VARIANT must be v0, v1, v2 or v5; got {other:?}"),
         }
     }
 
@@ -369,8 +445,10 @@ impl Variant {
 
     fn questions(self) -> QuestionSet {
         let mut set = QuestionSet::parse(QUESTION_SET).expect("the shipped question set parses");
-        if self == Self::V2 {
-            V2_CHOICE_QUESTION.clone_into(&mut set.choice.question);
+        match self {
+            Self::V0 | Self::V1 => {}
+            Self::V2 => V2_CHOICE_QUESTION.clone_into(&mut set.choice.question),
+            Self::V5 => V5_CHOICE_QUESTION.clone_into(&mut set.choice.question),
         }
         set
     }

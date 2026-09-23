@@ -75,6 +75,25 @@ This pass scores no new variant, and nothing about `v5` is chosen before it.
 **Step 2: `v5`,** designed from step 1's dominant class, is pre-registered in
 its own commit before its first call. The bars are unchanged.
 
+**Step 1 result (one pass, 60.0%, same as round two).** Six disagreements:
+three are wording (`CS-FIX-003`, `004`, `005`), two are bad labels
+(`CS-FIX-006`, `008`), one is threshold (`CS-FIX-015`). Wording is the
+dominant class.
+
+**`v5` differs from `v2` in one thing**: the `weakness_kind` question
+string. It keeps `v2`'s neutral framing and adds a one-line definition for
+each label, each restating a `noul` question. The `sound` definition now
+covers all five checks. `v2`'s left out implementation coupling, which is how
+it cleared `CS-FIX-003`. `unmeasurable_threshold` now requires an asserted
+quantity. Context, primitive and coverage question are unchanged from `v2`.
+The full text and per-row table are in the module doc of
+`live_criterion_strength.rs`.
+
+**Prediction.** If all three wording rows are fixed and nothing else moves,
+the score is 12 of 15, or 80.0%. That ties the constant and fails bar 1.
+Expected result: NO-GO on bar 1, with the wording rows corrected. If they are
+not corrected, the wording hypothesis is refuted too.
+
 **Stated in advance.** Whoever writes `v5` has read the fixtures and
 their rationales. `v5` is therefore fitted to the corpus in a way `v3` and
 `v4` were not. A GO from `v5` is weak evidence and would need a held-out corpus
