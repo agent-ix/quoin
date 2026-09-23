@@ -26,6 +26,12 @@
 //! question about `question-set.json`'s shape, which this crate does not
 //! own and does not change -- see this crate's top-level report for that
 //! finding stated as a recommendation, not applied silently here.
+//!
+//! **Margin gating (PLAT-981).** The same limitation applies to the second
+//! gate, [`Certainty::Uncertain`]: it diffs the top two entries of an
+//! answer's `probabilities` map, and only `choice` and `score` answers carry
+//! one. A `noul` answer is a lone float, so there is nothing to diff and no
+//! margin gate on `falsifiable` either.
 
 use serde::Serialize;
 use typesafe_sdk_answers::{Answer, SystemOneResponse};
@@ -192,6 +198,123 @@ impl SubQuestionCheck {
     }
 }
 
+/// The two caller-owned numbers [`extract`] gates on.
+///
+/// Both are required rather than defaulted, for the reason [`extract`]'s doc
+/// gives for `confidence`: `ix-board` owns the number, and this crate does
+/// not invent one. They travel as one struct rather than two adjacent `f64`
+/// parameters because two same-typed positional floats are silently
+/// swappable at a call site -- `extract(.., 0.1, 0.5)` and
+/// `extract(.., 0.5, 0.1)` both compile. Named fields cannot be crossed.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Thresholds {
+    /// A reported `confidence` strictly below this is
+    /// [`Certainty::Unconfirmed`].
+    pub confidence: f64,
+    /// A gap between the top two `probabilities` strictly below this is
+    /// [`Certainty::Uncertain`].
+    pub margin: f64,
+}
+
+/// How far a `choice` or `score` verdict can be trusted (PLAT-981).
+///
+/// One enum rather than an `uncertain: bool` beside the old `unconfirmed:
+/// bool`: two bools make four states, and the ticket wants exactly three --
+/// "right, wrong, or honestly unsure". With two bools, `unconfirmed &&
+/// uncertain` is representable, and every reader has to re-decide which one
+/// wins. Here the precedence is decided once, in [`Certainty::assess`], and
+/// a consumer's `match` is exhaustive over the three answers there are.
+///
+/// Every variant still carries its finding: like the `unconfirmed` bool this
+/// replaces, a low-certainty verdict is annotated and never suppressed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Certainty {
+    /// Neither gate fired: the reported confidence met its threshold and the
+    /// top label led the runner-up by at least the margin (or there was no
+    /// runner-up to lead).
+    Confident,
+    /// The reported confidence fell below [`Thresholds::confidence`], and the
+    /// top two labels were NOT within the margin -- the model is unsure of
+    /// its answer, but not torn between two answers.
+    Unconfirmed,
+    /// The top two `probabilities` were within [`Thresholds::margin`] of each
+    /// other: the model could not separate two answers. Takes precedence over
+    /// [`Self::Unconfirmed`] -- see [`Certainty::assess`].
+    Uncertain,
+}
+
+impl Certainty {
+    /// Assesses one answer's `confidence` and `probabilities` against
+    /// `thresholds`.
+    ///
+    /// **Precedence: `Uncertain` over `Unconfirmed`.** When both gates fire,
+    /// the answer is `Uncertain`. "Low confidence" says the model doubts its
+    /// pick; "within the margin" says *which* doubt -- a second label it
+    /// nearly chose. That is the more specific statement, and the one PLAT-981
+    /// exists to make visible as its own bucket. Folding it into
+    /// `Unconfirmed` whenever confidence is also low would hide exactly the
+    /// cases the ticket is about, since a near-tie usually drags confidence
+    /// down with it.
+    ///
+    /// **Fewer than two probabilities: no margin exists.** With zero or one
+    /// label there is no runner-up to be close to, so the margin gate does
+    /// not fire and the answer falls through to the confidence gate alone.
+    /// Treating a lone label as a tie would report "torn between two answers"
+    /// when there is only one.
+    #[must_use]
+    pub fn assess(
+        confidence: f64,
+        probabilities: impl IntoIterator<Item = f64>,
+        thresholds: Thresholds,
+    ) -> Self {
+        let within_margin =
+            top_two_margin(probabilities).is_some_and(|margin| margin < thresholds.margin);
+        if within_margin {
+            Self::Uncertain
+        } else if confidence < thresholds.confidence {
+            Self::Unconfirmed
+        } else {
+            Self::Confident
+        }
+    }
+
+    /// The wire spelling, matching the `Serialize` form.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Confident => "confident",
+            Self::Unconfirmed => "unconfirmed",
+            Self::Uncertain => "uncertain",
+        }
+    }
+}
+
+/// The highest probability minus the second highest, or [`None`] when there
+/// are fewer than two.
+///
+/// One pass keeping the top two rather than sorting: the ordering is
+/// `f64::total_cmp`, so a NaN from a malformed response has a defined place
+/// instead of making the comparison panic or depend on input order.
+fn top_two_margin(probabilities: impl IntoIterator<Item = f64>) -> Option<f64> {
+    let mut first: Option<f64> = None;
+    let mut second: Option<f64> = None;
+    for p in probabilities {
+        match first {
+            Some(top) if p.total_cmp(&top).is_le() => {
+                if second.is_none_or(|runner_up| p.total_cmp(&runner_up).is_gt()) {
+                    second = Some(p);
+                }
+            }
+            _ => {
+                second = first;
+                first = Some(p);
+            }
+        }
+    }
+    Some(first? - second?)
+}
+
 /// The raw `noul` answers for one AC row, carried through for transparency
 /// even though they cannot carry the confidence-annotation rule (see this
 /// module's doc).
@@ -214,13 +337,14 @@ pub struct Finding {
     pub severity: Severity,
     /// `weakness_kind`'s reported confidence, unmodified.
     pub confidence: f64,
-    /// Whether `confidence` fell below the caller's threshold.
+    /// How far this verdict can be trusted: [`Certainty::assess`] over
+    /// `confidence` and `probabilities`.
     ///
     /// PLAT-837 states this is the opposite of the `ix-board` rule: a
-    /// low-confidence verdict is annotated here, never dropped from the
+    /// low-certainty verdict is annotated here, never dropped from the
     /// returned list -- there is no suppression path in this function at
     /// all, by construction.
-    pub unconfirmed: bool,
+    pub certainty: Certainty,
     /// Every label's probability, for a reader who wants to see how
     /// contested the choice was (the ticket's own worked example: `0.5
     /// sound` / `0.45 unfalsifiable`).
@@ -243,9 +367,10 @@ pub struct CoverageVerdict {
     pub label: Option<String>,
     /// Reported confidence in the score.
     pub confidence: f64,
-    /// Whether `confidence` fell below the caller's threshold. Same
-    /// annotate-never-suppress rule as [`Finding::unconfirmed`].
-    pub unconfirmed: bool,
+    /// [`Certainty::assess`] over the score answer's `confidence` and
+    /// `probabilities`. Same annotate-never-suppress rule as
+    /// [`Finding::certainty`].
+    pub certainty: Certainty,
 }
 
 /// Everything this module produces for one FR's Jev call.
@@ -288,15 +413,15 @@ pub struct FrVerdict {
 /// Extracts every finding from `response` for the AC rows in `ac_ids`,
 /// against `questions` (for the wire-key shape) and severity mapping.
 ///
-/// `confidence_threshold` is a required argument rather than a baked-in
-/// constant on purpose: PLAT-837 says this crate must use "the same
-/// threshold" as `ix-board`'s existing low-confidence rule, and that
-/// concrete number lives in `ix-board`, outside this crate's ownership and
-/// outside this ticket's stated scope. Hard-coding a guessed value here
-/// would be exactly the kind of folklore-that-compiles this codebase's own
-/// review conventions warn against; the caller supplies it explicitly, and
-/// this crate's own report names that as an open item rather than silently
-/// picking a number.
+/// `thresholds` is a required argument rather than a baked-in constant on
+/// purpose: PLAT-837 says this crate must use "the same threshold" as
+/// `ix-board`'s existing low-confidence rule, and that concrete number lives
+/// in `ix-board`, outside this crate's ownership and outside this ticket's
+/// stated scope. Hard-coding a guessed value here would be exactly the kind
+/// of folklore-that-compiles this codebase's own review conventions warn
+/// against; the caller supplies it explicitly, and this crate's own report
+/// names that as an open item rather than silently picking a number.
+/// PLAT-981's margin is caller-supplied for the same reason.
 ///
 /// Never fails: a missing or wrongly-typed `weakness_kind` answer for an AC
 /// row is tracked in [`FrVerdict::unanswered`] rather than panicking or
@@ -308,7 +433,7 @@ pub fn extract(
     response: &SystemOneResponse,
     question_set: &QuestionSet,
     ac_ids: &[String],
-    confidence_threshold: f64,
+    thresholds: Thresholds,
 ) -> FrVerdict {
     let mut findings = Vec::new();
     let mut sound = Vec::new();
@@ -360,7 +485,11 @@ pub fn extract(
                     weakness_kind: choice.choice.clone(),
                     severity,
                     confidence: choice.confidence,
-                    unconfirmed: choice.confidence < confidence_threshold,
+                    certainty: Certainty::assess(
+                        choice.confidence,
+                        choice.probabilities.values().copied(),
+                        thresholds,
+                    ),
                     probabilities: choice.probabilities.clone().into_iter().collect(),
                     label_sub_question: SubQuestionCheck::for_label(&choice.choice, &noul),
                     noul,
@@ -374,7 +503,11 @@ pub fn extract(
             score: score.score,
             label: rubric_label_for(question_set, score.score),
             confidence: score.confidence,
-            unconfirmed: score.confidence < confidence_threshold,
+            certainty: Certainty::assess(
+                score.confidence,
+                score.probabilities.values().copied(),
+                thresholds,
+            ),
         }),
         _ => None,
     };
@@ -422,12 +555,22 @@ fn rubric_label_for(question_set: &QuestionSet, raw_score: f64) -> Option<String
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{NoulSignals, Severity, SubQuestionCheck, extract, label_sub_question};
+    use super::{
+        Certainty, NoulSignals, Severity, SubQuestionCheck, Thresholds, extract,
+        label_sub_question, top_two_margin,
+    };
     use crate::question_set::QuestionSet;
 
     const ASSET: &str = include_str!(
         "../../../../skills/spec-criterion-strength-analysis/assets/question-set.json"
     );
+
+    /// Confidence 0.5, margin 0.1. The margin is chosen so that no fixture
+    /// written before PLAT-981 (whose top-two gaps are all >= 0.4) crosses it.
+    const T: Thresholds = Thresholds {
+        confidence: 0.5,
+        margin: 0.1,
+    };
 
     /// Provenance: PLAT-837
     #[test]
@@ -456,6 +599,20 @@ mod tests {
     }
 
     fn response_fixture(confidence: f64) -> typesafe_sdk_answers::SystemOneResponse {
+        gated_fixture(
+            confidence,
+            &serde_json::json!({"unfalsifiable": confidence, "sound": 1.0 - confidence}),
+            &serde_json::json!({}),
+        )
+    }
+
+    /// `weakness_kind` answered `unfalsifiable` and `adverse_case_coverage`
+    /// answered, both at `confidence`, with the given `probabilities` maps.
+    fn gated_fixture(
+        confidence: f64,
+        choice_probabilities: &serde_json::Value,
+        score_probabilities: &serde_json::Value,
+    ) -> typesafe_sdk_answers::SystemOneResponse {
         let body = serde_json::json!({
             "model": "jev-1.13.0",
             "answers": {
@@ -468,14 +625,14 @@ mod tests {
                     "type": "choice",
                     "choice": "unfalsifiable",
                     "confidence": confidence,
-                    "probabilities": {"unfalsifiable": confidence, "sound": 1.0 - confidence}
+                    "probabilities": choice_probabilities
                 },
                 "adverse_case_coverage": {
                     "type": "score",
                     "score": 1.4,
                     "confidence": confidence,
                     "legend": {},
-                    "probabilities": {}
+                    "probabilities": score_probabilities
                 }
             },
             "usage": {"input_tokens": 100, "output_tokens": 0}
@@ -489,7 +646,7 @@ mod tests {
     fn the_classifier_is_the_concrete_model_from_the_response() {
         let set = QuestionSet::parse(ASSET).expect("parses");
         let response = response_fixture(0.9);
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert_eq!(verdict.classifier, "jev-1.13.0");
     }
 
@@ -499,9 +656,9 @@ mod tests {
     fn a_high_confidence_verdict_is_not_marked_unconfirmed() {
         let set = QuestionSet::parse(ASSET).expect("parses");
         let response = response_fixture(0.95);
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert_eq!(verdict.findings.len(), 1);
-        assert!(!verdict.findings[0].unconfirmed);
+        assert_eq!(verdict.findings[0].certainty, Certainty::Confident);
         assert_eq!(verdict.findings[0].severity, Severity::High);
     }
 
@@ -513,13 +670,163 @@ mod tests {
     fn a_low_confidence_verdict_still_produces_a_finding_marked_unconfirmed() {
         let set = QuestionSet::parse(ASSET).expect("parses");
         let response = response_fixture(0.3);
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert_eq!(
             verdict.findings.len(),
             1,
             "low confidence must not suppress the finding"
         );
-        assert!(verdict.findings[0].unconfirmed);
+        assert_eq!(verdict.findings[0].certainty, Certainty::Unconfirmed);
+    }
+
+    /// Provenance: PLAT-981. The ticket's own worked example -- 0.5
+    /// `unfalsifiable` / 0.45 `sound` -- reported at HIGH confidence is still
+    /// `Uncertain`: the margin gate fires on its own, not only when the
+    /// confidence gate also does. The finding is annotated, not dropped.
+    #[test]
+    fn a_near_tie_at_high_confidence_is_uncertain_and_still_a_finding() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let response = gated_fixture(
+            0.9,
+            &serde_json::json!({"unfalsifiable": 0.5, "sound": 0.45}),
+            &serde_json::json!({}),
+        );
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
+        assert_eq!(verdict.findings.len(), 1, "uncertain must not suppress");
+        assert_eq!(verdict.findings[0].certainty, Certainty::Uncertain);
+    }
+
+    /// Provenance: PLAT-981. PRECEDENCE: when the confidence gate (0.3 < 0.5)
+    /// and the margin gate (0.52 - 0.48 = 0.04 < 0.1) both fire, the answer is
+    /// `Uncertain`, not `Unconfirmed`. Pinned here because flipping the order
+    /// of the two checks in `Certainty::assess` compiles and would otherwise
+    /// pass every other test.
+    #[test]
+    fn when_both_gates_fire_uncertain_takes_precedence_over_unconfirmed() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let response = gated_fixture(
+            0.3,
+            &serde_json::json!({"unfalsifiable": 0.52, "sound": 0.48}),
+            &serde_json::json!({"1": 0.52, "2": 0.48}),
+        );
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
+        assert_eq!(verdict.findings[0].certainty, Certainty::Uncertain);
+        assert_eq!(
+            verdict.coverage.expect("score answered").certainty,
+            Certainty::Uncertain
+        );
+    }
+
+    /// Provenance: PLAT-981. A `probabilities` map with one label (or none)
+    /// has no margin: it must not panic, must not read as `Uncertain`, and
+    /// falls through to the confidence gate alone -- `Confident` at high
+    /// confidence, `Unconfirmed` at low.
+    #[test]
+    fn a_single_label_has_no_margin_and_falls_through_to_the_confidence_gate() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let ac = ["FR-001-AC-1".to_owned()];
+        let lone = serde_json::json!({"unfalsifiable": 0.95});
+        let none = serde_json::json!({});
+
+        let high = extract(&gated_fixture(0.95, &lone, &none), &set, &ac, T);
+        assert_eq!(high.findings[0].certainty, Certainty::Confident);
+        assert_eq!(
+            high.coverage.expect("score answered").certainty,
+            Certainty::Confident
+        );
+
+        let low = extract(&gated_fixture(0.3, &lone, &none), &set, &ac, T);
+        assert_eq!(low.findings[0].certainty, Certainty::Unconfirmed);
+        assert_eq!(
+            low.coverage.expect("score answered").certainty,
+            Certainty::Unconfirmed
+        );
+    }
+
+    /// Provenance: PLAT-981. The margin gate applies to `adverse_case_coverage`
+    /// too: a score whose top two levels are within the margin is `Uncertain`
+    /// even at high confidence, while a clear `weakness_kind` in the same
+    /// response stays `Confident` -- the two answers are gated independently.
+    #[test]
+    fn a_contested_coverage_score_is_uncertain_independently_of_the_finding() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let response = gated_fixture(
+            0.9,
+            &serde_json::json!({"unfalsifiable": 0.9, "sound": 0.1}),
+            &serde_json::json!({"0": 0.05, "1": 0.47, "2": 0.43, "3": 0.05}),
+        );
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
+        assert_eq!(verdict.findings[0].certainty, Certainty::Confident);
+        assert_eq!(
+            verdict.coverage.expect("score answered").certainty,
+            Certainty::Uncertain
+        );
+    }
+
+    /// Provenance: PLAT-981. The margin is top1 - top2 by VALUE, whatever
+    /// order the map lists labels in; a tie at the top is a zero margin; and
+    /// fewer than two entries is no margin at all.
+    #[test]
+    fn the_margin_is_the_gap_between_the_two_largest_values() {
+        assert_eq!(top_two_margin([0.2, 0.5, 0.25]), Some(0.25));
+        assert_eq!(top_two_margin([0.25, 0.2, 0.5]), Some(0.25));
+        assert_eq!(top_two_margin([0.5, 0.5, 0.0]), Some(0.0));
+        assert_eq!(top_two_margin([0.5]), None);
+        assert_eq!(top_two_margin([]), None);
+    }
+
+    /// Provenance: PLAT-981. Both gates are strict, like the confidence gate
+    /// before them: a margin exactly AT the threshold is not `Uncertain`.
+    #[test]
+    fn a_margin_exactly_at_the_threshold_is_not_uncertain() {
+        let thresholds = Thresholds {
+            confidence: 0.5,
+            margin: 0.25,
+        };
+        assert_eq!(
+            Certainty::assess(0.9, [0.5, 0.25], thresholds),
+            Certainty::Confident
+        );
+        assert_eq!(
+            Certainty::assess(0.9, [0.5, 0.375], thresholds),
+            Certainty::Uncertain
+        );
+    }
+
+    /// Provenance: PLAT-981. The confidence gate is strict too: a confidence
+    /// exactly AT the threshold is `Confident`, not `Unconfirmed`. The margin
+    /// (0.9 - 0.1) is wide, so only the confidence gate is in play.
+    #[test]
+    fn a_confidence_exactly_at_the_threshold_is_not_unconfirmed() {
+        let thresholds = Thresholds {
+            confidence: 0.5,
+            margin: 0.1,
+        };
+        assert_eq!(
+            Certainty::assess(0.5, [0.9, 0.1], thresholds),
+            Certainty::Confident
+        );
+        assert_eq!(
+            Certainty::assess(0.49, [0.9, 0.1], thresholds),
+            Certainty::Unconfirmed
+        );
+    }
+
+    /// Provenance: PLAT-981. The serialised spelling is the `as_str` one, so
+    /// a JSON consumer and the rendered report name a bucket the same way.
+    #[test]
+    fn certainty_serialises_to_its_as_str_spelling() {
+        for (certainty, spelling) in [
+            (Certainty::Confident, "confident"),
+            (Certainty::Unconfirmed, "unconfirmed"),
+            (Certainty::Uncertain, "uncertain"),
+        ] {
+            assert_eq!(certainty.as_str(), spelling);
+            assert_eq!(
+                serde_json::to_value(certainty).unwrap(),
+                serde_json::json!(spelling)
+            );
+        }
     }
 
     /// Provenance: PLAT-837. A `sound` verdict produces no finding, and is
@@ -548,7 +855,7 @@ mod tests {
         });
         let response: typesafe_sdk_answers::SystemOneResponse =
             serde_json::from_value(body).expect("well-formed");
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert!(verdict.findings.is_empty());
         assert_eq!(verdict.sound, vec!["FR-001-AC-1".to_owned()]);
     }
@@ -583,7 +890,7 @@ mod tests {
         });
         let response: typesafe_sdk_answers::SystemOneResponse =
             serde_json::from_value(body).expect("well-formed");
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert!(verdict.sound.is_empty(), "must never land in sound");
         assert!(verdict.findings.is_empty(), "not a mapped finding either");
         assert_eq!(
@@ -603,7 +910,7 @@ mod tests {
             &response,
             &set,
             &["FR-001-AC-1".to_owned(), "FR-001-AC-2".to_owned()],
-            0.5,
+            T,
         );
         assert_eq!(verdict.unanswered, vec!["FR-001-AC-2".to_owned()]);
         assert!(!verdict.sound.contains(&"FR-001-AC-2".to_owned()));
@@ -630,7 +937,7 @@ mod tests {
         });
         let response: typesafe_sdk_answers::SystemOneResponse =
             serde_json::from_value(body).expect("well-formed");
-        let verdict = extract(&response, &set, &[], 0.5);
+        let verdict = extract(&response, &set, &[], T);
         let coverage = verdict.coverage.expect("a score answer was present");
         assert_eq!(coverage.label, None);
     }
@@ -651,7 +958,7 @@ mod tests {
     fn a_label_its_own_sub_question_contradicts_is_reported_as_disagreeing() {
         let set = QuestionSet::parse(ASSET).expect("parses");
         let response = response_fixture(0.9);
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert_eq!(
             verdict.findings[0].label_sub_question,
             SubQuestionCheck::Disagrees {
@@ -679,7 +986,7 @@ mod tests {
         });
         let response: typesafe_sdk_answers::SystemOneResponse =
             serde_json::from_value(body).expect("well-formed");
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert_eq!(
             verdict.findings[0].label_sub_question,
             SubQuestionCheck::Agrees {

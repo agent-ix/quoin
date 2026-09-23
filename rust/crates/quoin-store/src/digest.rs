@@ -545,22 +545,114 @@ pub fn digest_assurance_record(value: &JsonValue) -> Result<AssuranceRecordId, S
 /// Refuses, in order: a symbolic link (a link names a target that can change
 /// after the digest is recorded), anything that is not a regular file, a file
 /// over [`MAX_DIGESTED_FILE_BYTES`], and a file whose length changed between
-/// the stat and the read.
+/// the open and the read.
+///
+/// # The open is race-safe (PLAT-985, quoin#600 review)
+///
+/// An earlier version called [`std::fs::symlink_metadata`] and then
+/// [`std::fs::read`] as two separate syscalls, naming the same path twice.
+/// Between them, whatever the path names on disk can be swapped: a caller who
+/// controls the directory replaces a regular file with a symlink after the
+/// stat and before the read, and the read follows it — the same swap
+/// `crate::store::apparatus`'s `descend` guards against for the walk, but not,
+/// until now, for the digest itself. Worse, if the swap lands a FIFO, a
+/// blocking `read` on it never returns until some other process opens the
+/// other end, so a hostile checkout can hang the digesting process
+/// indefinitely.
+///
+/// This function opens the path exactly once, with `O_NOFOLLOW` (refuse a
+/// symlink at the final component, atomically with the open) and
+/// `O_NONBLOCK` (a FIFO opens immediately rather than blocking for a writer),
+/// then inspects the *open handle*'s metadata (`fstat`, not `stat`) so the
+/// file-type check that follows cannot itself race a second swap. Every
+/// subsequent read is against that same handle, and is bounded one byte past
+/// the size `fstat` reported, so a file that grows after the check cannot
+/// make the read allocate past [`MAX_DIGESTED_FILE_BYTES`].
+///
+/// On Windows — a release target, where neither flag exists — the open
+/// passes `FILE_FLAG_OPEN_REPARSE_POINT` instead, so a symlink is opened as
+/// itself rather than followed, and the handle's metadata reports it as a
+/// symlink, which the type check refuses.
 ///
 /// # Errors
 ///
 /// Refuses, in that order: a symbolic link, anything that is not a regular
 /// file, a file larger than [`MAX_DIGESTED_FILE_BYTES`], and a file whose
-/// length changed between the stat and the read. Also refuses on any I/O
-/// failure reading the file.
+/// length changed between the open and the read. Also refuses on any I/O
+/// failure opening or reading the file.
 pub fn digest_file_sha256(path: &std::path::Path) -> Result<RawFileSha256Digest, StoreError> {
-    let metadata = std::fs::symlink_metadata(path).map_err(|source| StoreError::Io {
-        operation: "stat",
+    digest_opened_file(&open_for_digest(path)?, path)
+}
+
+/// Open `path` for [`digest_file_sha256`], once, without following a symlink
+/// at the final component and without blocking on a FIFO.
+fn open_for_digest(path: &std::path::Path) -> Result<std::fs::File, StoreError> {
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt as _;
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt as _;
+        // From `winbase.h`; std names neither constant, and two flags do not
+        // justify a `windows-sys` pin. `BACKUP_SEMANTICS` lets a directory
+        // open, so it is refused by the type check as on unix rather than as
+        // an I/O failure.
+        const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
+        const FILE_FLAG_BACKUP_SEMANTICS: u32 = 0x0200_0000;
+        options.custom_flags(FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS);
+    }
+    options.open(path).map_err(|source| {
+        // `O_NOFOLLOW` turns a symlink at the final component into ELOOP
+        // rather than a followed open, so that failure is reported under the
+        // same code a pre-open `symlink_metadata` check would have used, not
+        // folded into the generic `Io` variant.
+        if refused_as_symlink(&source) {
+            StoreError::DigestSourceIsSymlink {
+                path: path.to_path_buf(),
+            }
+        } else {
+            StoreError::Io {
+                operation: "open",
+                path: path.to_path_buf(),
+                source,
+            }
+        }
+    })
+}
+
+/// Whether an open failed because `O_NOFOLLOW` met a symlink.
+#[cfg(unix)]
+fn refused_as_symlink(error: &std::io::Error) -> bool {
+    error.raw_os_error() == Some(libc::ELOOP)
+}
+
+/// Whether an open failed because it met a symlink: never, off unix, where the
+/// open does not refuse one and the handle's type check does.
+#[cfg(not(unix))]
+fn refused_as_symlink(_error: &std::io::Error) -> bool {
+    false
+}
+
+/// Digest the file `file` is open on. `path` only names it in a refusal:
+/// nothing here reads the path again, which is what makes the type check and
+/// the read one observation of one file (PLAT-985).
+fn digest_opened_file(
+    file: &std::fs::File,
+    path: &std::path::Path,
+) -> Result<RawFileSha256Digest, StoreError> {
+    let metadata = file.metadata().map_err(|source| StoreError::Io {
+        operation: "fstat",
         path: path.to_path_buf(),
         source,
     })?;
     let file_type = metadata.file_type();
     if file_type.is_symlink() {
+        // `O_NOFOLLOW` already refuses a symlink at open on unix; on Windows
+        // the reparse point is opened as itself and refused here.
         return Err(StoreError::DigestSourceIsSymlink {
             path: path.to_path_buf(),
         });
@@ -583,7 +675,13 @@ pub fn digest_file_sha256(path: &std::path::Path) -> Result<RawFileSha256Digest,
             limit: MAX_DIGESTED_FILE_BYTES,
         });
     }
-    let bytes = std::fs::read(path).map_err(|source| StoreError::Io {
+    let mut bytes = Vec::new();
+    // One byte past the declared size is enough to see that it grew.
+    std::io::Read::read_to_end(
+        &mut std::io::Read::take(file, declared.saturating_add(1)),
+        &mut bytes,
+    )
+    .map_err(|source| StoreError::Io {
         operation: "read",
         path: path.to_path_buf(),
         source,
@@ -697,7 +795,7 @@ mod tests {
     use super::{
         AssuranceRecordId, CanonicalDigest, DigestDomain, RawBytesDigest, RawFileSha256Digest,
         digest_assurance_record, digest_bytes_sha256, digest_canonical_value, digest_file_sha256,
-        digest_raw_bytes, digest_record, verify_record_digest,
+        digest_opened_file, digest_raw_bytes, digest_record, open_for_digest, verify_record_digest,
     };
     use crate::error::StoreErrorCode;
     use crate::json::jcs::canonical_bytes;
@@ -799,6 +897,102 @@ mod tests {
             assert_eq!(error.code(), StoreErrorCode::DigestSourceIsSymlink);
         }
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// A FIFO with no writer is refused as not a regular file, promptly:
+    /// `O_NONBLOCK` makes the open itself return instead of waiting for a
+    /// writer, and the type check on the open handle refuses it before any
+    /// read. Without `O_NONBLOCK` the open blocks until a writer appears, so
+    /// the call runs on a thread with a bounded wait and a regression reports
+    /// as a failed assertion, not a hung test process. The refusal must be
+    /// the type refusal: an `Io` failure would mean the open or read failed
+    /// some other way and proves nothing about the type check.
+    ///
+    /// Trace: FR-110-AC-10
+    /// Provenance: PLAT-985, quoin#600
+    #[cfg(unix)]
+    #[test]
+    fn tc_985_a_fifo_with_no_writer_fails_fast_rather_than_blocking() {
+        let dir = tempdir("fifo");
+        let fifo = dir.join("blocking.pipe");
+        make_fifo(&fifo);
+
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let path = fifo.clone();
+        std::thread::spawn(move || {
+            let _ = sender.send(digest_file_sha256(&path));
+        });
+        let outcome = receiver
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .expect(
+                "digest_file_sha256 blocked past the timeout instead of failing fast on a FIFO \
+                 with no writer",
+            );
+        let error = outcome.expect_err("a FIFO is not a regular file and must be refused");
+        assert_eq!(error.code(), StoreErrorCode::DigestSourceNotRegularFile);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// The type check and the read observe the file that was opened, not
+    /// whatever the path names afterwards. The file is opened, then the path
+    /// is swapped — first for a FIFO, then for a symlink to other bytes —
+    /// before the handle is digested; the digest is still the opened file's.
+    /// A digest that re-read the path (the `symlink_metadata`-then-`read`
+    /// shape this replaced) would see the swap and refuse, block, or digest
+    /// the other bytes.
+    ///
+    /// Trace: FR-110-AC-10
+    /// Provenance: PLAT-985, quoin#600
+    #[cfg(unix)]
+    #[test]
+    fn tc_985_the_digest_reads_the_opened_handle_not_the_path() {
+        let dir = tempdir("swap");
+        let path = dir.join("answers.json");
+        let other = dir.join("other.json");
+        std::fs::write(&other, b"xyz").expect("write");
+        let abc = "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+
+        std::fs::write(&path, b"abc").expect("write");
+        let file = open_for_digest(&path).expect("opens");
+        std::fs::remove_file(&path).expect("unlink");
+        make_fifo(&path);
+        let digest = digest_opened_file(&file, &path).expect("digests the opened file");
+        assert_eq!(digest.to_stored(), abc);
+
+        std::fs::remove_file(&path).expect("unlink");
+        std::fs::write(&path, b"abc").expect("write");
+        let file = open_for_digest(&path).expect("opens");
+        std::fs::remove_file(&path).expect("unlink");
+        std::os::unix::fs::symlink(&other, &path).expect("symlink");
+        let digest = digest_opened_file(&file, &path).expect("digests the opened file");
+        assert_eq!(digest.to_stored(), abc);
+
+        // The path as it now reads is refused, so the two answers above came
+        // from the handle and not from a second look at the path.
+        let error = digest_file_sha256(&path).expect_err("a link is not its target");
+        assert_eq!(error.code(), StoreErrorCode::DigestSourceIsSymlink);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// A fresh directory under the system temporary directory, unique to this
+    /// process and `label`.
+    #[cfg(unix)]
+    fn tempdir(label: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("quoin-store-{label}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("dir");
+        dir
+    }
+
+    #[cfg(unix)]
+    fn make_fifo(path: &std::path::Path) {
+        let made = std::process::Command::new("mkfifo")
+            .arg(path)
+            .status()
+            .expect("mkfifo is on PATH in this test environment");
+        assert!(made.success(), "mkfifo {path:?} failed");
     }
 
     /// The bytes-wise sha256 and the file-wise one answer with the same value

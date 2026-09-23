@@ -16,6 +16,7 @@
     "environment",
     "observed_at",
     "result",
+    "strength",
     "retained_output"
   ],
   "properties": {
@@ -53,6 +54,10 @@
     "result": {
       "type": "string",
       "enum": ["passed", "failed", "unavailable", "not_computed"]
+    },
+    "strength": {
+      "type": "string",
+      "enum": ["proven", "bounded-checked", "tested", "observed"]
     },
     "retained_output": {
       "type": "object",

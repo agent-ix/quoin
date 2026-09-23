@@ -116,5 +116,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-102: Preserve the command surface and retire the oclif shell last](./FR-102-command-surface-and-oclif-retirement.md)
 - [FR-103: Consolidate the Quoin side of corpus tooling](./FR-103-corpus-consolidation.md)
 - [FR-104: Relationships typed table mapping to RelationDecl](./FR-104-relationships-mapping.md)
-- [FR-107: Ratchet and target stage verdicts in the measurement report](./FR-107-stage-verdicts.md)
+- [FR-107: Ratchet, target and gate stage verdicts in the measurement report](./FR-107-stage-verdicts.md)
 - [FR-108: Independent measurement-verdict checker](./FR-108-measurement-verdict-checker.md)
+- [FR-110: Protected measurement apparatus: resolved at intake, compared across collections](./FR-110-protected-apparatus.md)
+- [FR-111: Change-assurance refuses credit for a diff that touches protected measurement apparatus](./FR-111-change-assurance-protected-apparatus.md)

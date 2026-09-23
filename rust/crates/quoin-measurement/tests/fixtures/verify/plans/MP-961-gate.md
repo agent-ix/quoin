@@ -21,6 +21,11 @@ statistical_design:
   decision_rule:
     comparator: ge
     threshold: 0.8
+protected_apparatus:
+  - spec/assurance/MP-961-gate.md
+negative_controls:
+  - kind: apparatus-edit
+    description: the plan document, which states the decision rule the verdict is graded by, is digested with every collection
 relationships: []
 ---
 

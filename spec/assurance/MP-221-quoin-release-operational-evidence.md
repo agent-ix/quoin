@@ -6,7 +6,16 @@ status: active
 owner: engineering assurance
 stage: gate
 metric: release_operational_evidence
-definition_version: github-actions.release-operational-v1
+definition_version: github-actions.release-operational-v2
+protected_apparatus:
+  - spec/evidence/github-actions/quoin-271-release-v0.22.5-workflow.yml
+  - spec/evidence/github-actions/quoin-271-release-v0.22.5-run.json
+  - spec/evidence/github-actions/quoin-271-release-v0.22.5-jobs.json
+negative_controls:
+  - kind: apparatus-edit
+    description: the retained workflow bytes and the run and jobs payloads the pair is parsed from are digested; an edit to any of them without a new definition version rejects
+  - kind: stale-evidence
+    description: the exercise is bound to one immutable source revision and run id; it is not presented as evidence for any other revision
 relationships: []
 ---
 

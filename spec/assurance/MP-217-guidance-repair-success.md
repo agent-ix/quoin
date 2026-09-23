@@ -6,7 +6,15 @@ status: active
 owner: quoin quality
 stage: gate
 metric: guidance.repair_success
-definition_version: guidance.repair-success-v1
+definition_version: guidance.repair-success-v2
+protected_apparatus:
+  - bench/guidance-evaluator-contract-v1.json
+  - bench/guidance-independent-review-v1.json
+negative_controls:
+  - kind: apparatus-edit
+    description: the evaluator contract and the review evidence naming each failure and control fixture are digested with every collection; an edit to either without a new definition version rejects
+  - kind: selective-reporting
+    description: every reviewed remedy record is in the denominator; a remedy cannot be reported only when its repair succeeded
 relationships: []
 ---
 

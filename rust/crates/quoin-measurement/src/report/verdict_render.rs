@@ -11,7 +11,7 @@ use crate::error::MeasurementError;
 use crate::report::build::CurrentRow;
 use crate::report::render::{metric_label, plan_cell, plan_cell_of, row_label};
 use crate::report::vanished::VanishedSlice;
-use crate::report::verdict::{RatchetOutcome, StageVerdict, TargetOutcome};
+use crate::report::verdict::{GateOutcome, RatchetOutcome, StageVerdict, TargetOutcome};
 
 /// The stage-verdict table, one row per report row whose plan carries a
 /// verdict (PLAT-958), or nothing at all when none does — so a report with no
@@ -107,12 +107,44 @@ fn verdict_detail(verdict: &StageVerdict) -> String {
             js_f64_string(*bound),
             js_f64_string(*distance)
         ),
+        StageVerdict::Gate {
+            outcome:
+                GateOutcome::Pass {
+                    current,
+                    baseline: Some(baseline),
+                }
+                | GateOutcome::Fail {
+                    current,
+                    baseline: Some(baseline),
+                },
+            ..
+        } => format!(
+            "current {}; baseline {}",
+            js_f64_string(*current),
+            js_f64_string(*baseline)
+        ),
+        StageVerdict::Gate {
+            outcome:
+                GateOutcome::Pass {
+                    current,
+                    baseline: None,
+                }
+                | GateOutcome::Fail {
+                    current,
+                    baseline: None,
+                },
+            ..
+        } => format!("current {}", js_f64_string(*current)),
         StageVerdict::Ratchet {
             outcome: RatchetOutcome::Inconclusive(reason),
             ..
         }
         | StageVerdict::Target {
             outcome: TargetOutcome::Inconclusive(reason),
+            ..
+        }
+        | StageVerdict::Gate {
+            outcome: GateOutcome::Inconclusive(reason),
             ..
         } => format!("{}: {}", reason.as_str(), reason.sentence()),
     }

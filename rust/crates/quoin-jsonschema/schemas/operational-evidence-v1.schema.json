@@ -12,6 +12,7 @@
     "control_kind",
     "subject",
     "producer",
+    "strength",
     "scope",
     "configuration",
     "owner",
@@ -88,6 +89,9 @@
         "definition_version": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
+    },
+    "strength": {
+      "const": "observed"
     },
     "scope": {
       "type": "object",

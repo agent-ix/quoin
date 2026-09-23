@@ -288,7 +288,9 @@ fn to_sdk_error(error: JevError) -> SdkError {
         | JevErrorCode::ApiError
         | JevErrorCode::Connection
         | JevErrorCode::SchemaUnavailable
-        | JevErrorCode::SchemaUnreadable => INVALID_PREFIX,
+        | JevErrorCode::SchemaUnreadable
+        | JevErrorCode::SpanBallotEmpty
+        | JevErrorCode::SpanBallotTooLarge => INVALID_PREFIX,
     };
     SdkError::Invalid(format!("{prefix}{message}"))
 }

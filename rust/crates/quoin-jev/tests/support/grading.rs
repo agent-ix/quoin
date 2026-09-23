@@ -295,24 +295,57 @@ pub(crate) fn expected_calibration_error(graded: &[Graded]) -> Option<f64> {
 /// changing the fixture set moves the bar automatically instead of leaving a
 /// stale number that silently stops being a bar at all.
 pub(crate) fn trivial_baseline(graded: &[Graded]) -> (String, f64) {
-    let mut best = (String::from("<none>"), 0.0f64);
-    let labels: Vec<String> = {
-        let mut labels: Vec<String> = graded.iter().map(|row| row.expected.clone()).collect();
-        labels.sort();
-        labels.dedup();
-        labels
-    };
-    for label in labels {
-        let hits = graded
+    // One constant per family, never one across both. The first version of
+    // this function picked a single label over all fifteen criterion-strength
+    // rows, which scored the constant predictor at 9/15 (60%) -- `sound`
+    // everywhere, earning nothing on the coverage rows. But a constant
+    // predictor is free to answer `sound` on a criterion and a fixed level on
+    // an FR, and doing so scores higher. The single-label form understated the
+    // bar, in the lens's favour. A corpus with no coverage rows (the EARS
+    // corpus) has one family, and this reduces to the single-label form.
+    let mut labels = Vec::new();
+    let mut hits = 0;
+    for family in [false, true] {
+        let rows: Vec<&Graded> = graded
             .iter()
-            .filter(|row| row.expected == label || row.contested.contains(&label))
-            .count();
-        let rate = percent(hits, graded.len());
-        if rate > best.1 {
-            best = (label, rate);
+            .filter(|row| is_coverage(row) == family)
+            .collect();
+        let mut candidates: Vec<&String> = rows.iter().map(|row| &row.expected).collect();
+        candidates.sort();
+        candidates.dedup();
+        let best = candidates
+            .into_iter()
+            .map(|label| {
+                let count = rows
+                    .iter()
+                    .filter(|row| row.expected == *label || row.contested.contains(label))
+                    .count();
+                (label.clone(), count)
+            })
+            .max_by_key(|(_, count)| *count);
+        if let Some((label, count)) = best {
+            labels.push(if family {
+                format!("level {label}")
+            } else {
+                label
+            });
+            hits += count;
         }
     }
-    best
+    if labels.is_empty() {
+        return (String::from("<none>"), 0.0);
+    }
+    (labels.join(" + "), percent(hits, graded.len()))
+}
+
+/// Whether a row grades an FR-level coverage fixture rather than a criterion.
+///
+/// Coverage rows record a 0-3 rubric level; label rows a label. Keyed off
+/// the recorded label's shape because `Graded` carries no family field, and
+/// every coverage label in the criterion-strength corpus is an integer while
+/// no label in either corpus is.
+pub(crate) fn is_coverage(row: &Graded) -> bool {
+    row.expected.parse::<u8>().is_ok()
 }
 
 /// Recall over every class that is not `no_defect_label`: of the rows the
@@ -323,9 +356,14 @@ pub(crate) fn trivial_baseline(graded: &[Graded]) -> (String, f64) {
 /// defect, only to not wave the row through. Calling a defective row by the
 /// wrong defect name is a mislabel; calling it the no-defect answer is the
 /// failure the lens exists to prevent, and the gate has to separate those two.
+///
+/// Coverage rows are excluded. They never return the no-defect label, so the
+/// first version of this function counted all four criterion-strength
+/// coverage rows as "found" and inflated recall.
 pub(crate) fn defect_recall(graded: &[Graded], no_defect_label: &str) -> Option<f64> {
     let defects: Vec<&Graded> = graded
         .iter()
+        .filter(|row| !is_coverage(row))
         .filter(|row| {
             row.expected != no_defect_label && !row.contested.iter().any(|c| c == no_defect_label)
         })

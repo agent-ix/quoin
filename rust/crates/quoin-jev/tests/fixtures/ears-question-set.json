@@ -4,6 +4,7 @@
   "request_shape": "One request per requirement-bearing statement (FR Description/Behavior/Constraints, NFR Statement, StR Stakeholder Need).",
   "choice": {
     "id": "ears_pattern_actual",
+    "question": "Classify this requirement statement's actual EARS pattern, independent of whichever trigger keyword it happens to use.",
     "primitive": "choice",
     "answer_space": [
       "ubiquitous",

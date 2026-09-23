@@ -93,8 +93,7 @@ pub(crate) fn build_request(context: &StatementContext, qs: &EarsQuestionSet) ->
     questions.insert(
         qs.choice.id.clone(),
         choice_of(
-            "Classify this requirement statement's actual EARS pattern, independent of \
-             whichever trigger keyword it happens to use.",
+            qs.choice.question.as_str(),
             qs.choice.answer_space.iter().map(String::as_str),
         ),
     );

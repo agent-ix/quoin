@@ -24,7 +24,7 @@ use crate::intervention::report::render_intervention_report;
 use crate::json_bridge::to_serde;
 use crate::operational::report::render_operational_report;
 use crate::report::build::{CurrentRow, MeasurementReport};
-use crate::report::verdict::{RatchetOutcome, StageVerdict};
+use crate::report::verdict::{GateOutcome, RatchetOutcome, StageVerdict};
 use crate::report::verdict_render::stage_verdict_table;
 use crate::types::observation::{Dimensions, MeasurementObservation, MeasurementState};
 use crate::types::plan::GroundTruthKind;
@@ -330,6 +330,17 @@ fn attention(report: &MeasurementReport) -> Result<Vec<String>, MeasurementError
                 js_f64_string(*current),
                 js_f64_string(best_prior.value),
                 best_prior.collection_id,
+                row.plan_id
+            ));
+        }
+        if let Some(StageVerdict::Gate {
+            outcome: GateOutcome::Fail { current, .. },
+            ..
+        }) = &row.stage_verdict
+        {
+            out.push(format!(
+                "{name}: fails its gate at {}; plan {} does not pass.",
+                js_f64_string(*current),
                 row.plan_id
             ));
         }

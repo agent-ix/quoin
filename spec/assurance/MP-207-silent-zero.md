@@ -6,7 +6,7 @@ status: active
 owner: quoin-maintainers
 stage: gate
 metric: sentinel.silent_zero
-definition_version: benchmark.silent-zero-v2
+definition_version: benchmark.silent-zero-v3
 ground_truth_kind: mechanical
 subject_identity:
   name: quoin bench-tier1 benchmark instrument
@@ -21,6 +21,14 @@ statistical_design:
   decision_rule:
     comparator: eq
     threshold: 0
+protected_apparatus:
+  - bench/metrics.json
+  - bench/tier1-mapping.json
+negative_controls:
+  - kind: apparatus-edit
+    description: bench/metrics.json (which metrics are ratios and how each is counted) and bench/tier1-mapping.json (which payload fields feed them) are digested with every collection; an edit to either without a new definition version rejects
+  - kind: suppressed-observation
+    description: a completed producer's ratio metric that is left out of the run is a missing observation, and an incomplete producer is a refusal rather than a passing zero
 relationships: []
 ---
 
@@ -42,11 +50,12 @@ meaningful for an instrument-integrity sentinel.
 ## Measure Definition
 
 Count metrics with non-zero examined, zero matched, and no diagnostic,
-definition `benchmark.silent-zero-v2`. `benchmark.silent-zero-v1` is the same
-count; v2 is the version at which `statistical_design.estimator` and
-`.decision_rule` became engineering-assurance's typed form (`count`, and
-`eq` against threshold 0) instead of prose, and a changed definition member
-takes a new version.
+definition `benchmark.silent-zero-v3`. `benchmark.silent-zero-v1` and `-v2`
+are the same count; v2 is the version at which `statistical_design.estimator`
+and `.decision_rule` became engineering-assurance's typed form (`count`, and
+`eq` against threshold 0) instead of prose, and v3 the version at which the
+plan named its `protected_apparatus` and `negative_controls` (PLAT-975). A
+changed definition member takes a new version.
 
 ## Collection Procedure
 

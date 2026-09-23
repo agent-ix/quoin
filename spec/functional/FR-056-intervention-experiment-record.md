@@ -18,6 +18,15 @@ An intervention-experiment evidence record SHALL conform to the versioned JSON
 Schema below so that its design, observations, attribution limits, governance, and
 producer provenance remain engine-independent and independently auditable.
 
+Every record SHALL carry a `strength` naming the kind of support it is (FR-022,
+Engineering Assurance's `ClaimStrength`, PLAT-972): an intervention experiment is
+a deliberate, controlled exercise over a selected set of cases, so this family's
+`strength` is fixed at `tested` and the schema closes the field to that one value
+with `const`. `strength` is imported from Engineering Assurance's own
+vocabulary — this schema declares no local enum for it — and, because the type
+itself implements neither `Ord` nor `PartialOrd`, no report SHALL rank, compare,
+or aggregate one record's strength against another's.
+
 ## Schema
 
 ```json
@@ -42,6 +51,7 @@ producer provenance remain engine-independent and independently auditable.
     "interactions",
     "confounders",
     "status",
+    "strength",
     "conclusion",
     "gaps",
     "owner",
@@ -226,6 +236,9 @@ producer provenance remain engine-independent and independently auditable.
     "status": {
       "type": "string",
       "enum": ["completed", "failed", "inconclusive"]
+    },
+    "strength": {
+      "const": "tested"
     },
     "conclusion": {
       "type": "object",
@@ -486,6 +499,7 @@ producer provenance remain engine-independent and independently auditable.
 | FR-056-AC-7 | Completed, failed, and inconclusive statuses validate; failed and inconclusive records require the first-class `cause_not_established` conclusion. | Test (TC-1201) |
 | FR-056-AC-8 | A causal-effect conclusion requires positive baseline and treatment samples, at least one non-null measured effect, non-`none` attribution confidence, and no uncontrolled or unknown interaction or confounder; a no-effect conclusion requires positive samples and an observed comparison. | Test (TC-1202) |
 | FR-056-AC-9 | Gaps, owner, actions, and at least one content-digested raw-evidence reference with media type and byte size are retained; unsafe paths and undeclared fields are refused. | Test (TC-1203) |
+| FR-056-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `tested` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test (TC-1882) |
 
 ## Dependencies
 

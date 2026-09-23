@@ -35,6 +35,13 @@ pub struct NoulEntry {
 pub struct ChoiceBlock {
     /// The question's id.
     pub id: String,
+    /// The instructions sent to Jev.
+    ///
+    /// In the asset rather than in this crate for the same reason the `noul`
+    /// questions are: the wording is part of the measured instrument, and a
+    /// wording change has to be something a test can vary and a reviewer can
+    /// see in the asset's diff (PLAT-917).
+    pub question: String,
     /// The closed answer space, in the order the ticket states it.
     pub answer_space: Vec<String>,
 }
@@ -114,7 +121,7 @@ impl QuestionSet {
         let weakness_kind = std::iter::once((
             self.weakness_kind_key(ac_id),
             choice_of(
-                "Classify this acceptance criterion's weakness, if any.",
+                self.choice.question.as_str(),
                 self.choice.answer_space.iter().map(String::as_str),
             ),
         ));

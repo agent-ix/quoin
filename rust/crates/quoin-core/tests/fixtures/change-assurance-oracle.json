@@ -12,7 +12,11 @@
         "subject": {
           "repository": "agent-ix/quoin",
           "base_revision": "abc123",
-          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+          "scope": [
+            "docs/é",
+            "docs/𐀀",
+            "src/evidence"
+          ]
         },
         "source_connections": [
           {
@@ -35,7 +39,9 @@
             {
               "id": "FR-063",
               "statement": "seal it",
-              "source_ids": ["FR-063"]
+              "source_ids": [
+                "FR-063"
+              ]
             }
           ],
           "preservation_constraints": [],
@@ -43,10 +49,15 @@
             {
               "proof_id": "proof-1",
               "statement": "tests pass",
-              "obligation_ids": ["FR-063-AC-1"],
+              "obligation_ids": [
+                "FR-063-AC-1"
+              ],
               "evidence_kind": "Unit",
               "command": {
-                "argv": ["pnpm", "test"],
+                "argv": [
+                  "pnpm",
+                  "test"
+                ],
                 "working_directory": "."
               },
               "tool_identity": "vitest",
@@ -65,28 +76,23 @@
       "candidate_revision": "candidate-1",
       "selections": [
         {
-          "proof_id": "proof-1",
-          "attestation_digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+          "attestation_digest": "c7699e25870e218775961a0985f072d974d99312e302f8eabbb9fb8ec81d6abb",
+          "proof_id": "proof-1"
         }
       ],
       "attestations": [
         {
           "attestation": {
-            "schema_version": 1,
-            "record_type": "proof_attestation",
             "attestation_id": "att-1",
-            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
             "candidate_revision": "candidate-1",
-            "proof_id": "proof-1",
             "command": {
-              "argv": ["pnpm", "test"],
+              "argv": [
+                "pnpm",
+                "test"
+              ],
               "working_directory": "."
             },
-            "tool": {
-              "identity": "vitest",
-              "version": "4.1.10",
-              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-            },
+            "digest": "c7699e25870e218775961a0985f072d974d99312e302f8eabbb9fb8ec81d6abb",
             "environment": {
               "os": "test",
               "parallel": true,
@@ -94,17 +100,42 @@
               "workers": 4
             },
             "observed_at": "2026-08-31T00:00:00Z",
+            "proof_id": "proof-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "record_type": "proof_attestation",
             "result": "passed",
             "retained_output": {
-              "media_type": "application/octet-stream",
               "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "media_type": "application/octet-stream",
               "size_bytes": 18
             },
-            "digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+            "schema_version": 1,
+            "strength": "proven",
+            "tool": {
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "identity": "vitest",
+              "version": "4.1.10"
+            }
           },
           "output": [
-            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
-            0, 239, 191, 189
+            110,
+            111,
+            116,
+            32,
+            106,
+            115,
+            111,
+            110,
+            58,
+            32,
+            240,
+            159,
+            152,
+            128,
+            0,
+            239,
+            191,
+            189
           ]
         }
       ],
@@ -137,14 +168,16 @@
           "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "report": {
             "findings": [],
-            "healthy": ["FR-063-AC-1"],
+            "healthy": [
+              "FR-063-AC-1"
+            ],
             "unevaluated": []
           }
         }
       ],
       "receipt_outcome": "valid",
       "receipt_reasons": [],
-      "receipt_digest": "ed17b691f72eaead1d68663cfb324c97f1eaeda2ed895b41931f5b37e41b8a5e"
+      "receipt_digest": "c7e0fc8dfb48d96e1760e2b157355ec4b8b4383c134d4fdc98dfd1b16408352a"
     },
     {
       "name": "attestation-not-selected",
@@ -157,7 +190,11 @@
         "subject": {
           "repository": "agent-ix/quoin",
           "base_revision": "abc123",
-          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+          "scope": [
+            "docs/é",
+            "docs/𐀀",
+            "src/evidence"
+          ]
         },
         "source_connections": [
           {
@@ -180,7 +217,9 @@
             {
               "id": "FR-063",
               "statement": "seal it",
-              "source_ids": ["FR-063"]
+              "source_ids": [
+                "FR-063"
+              ]
             }
           ],
           "preservation_constraints": [],
@@ -188,10 +227,15 @@
             {
               "proof_id": "proof-1",
               "statement": "tests pass",
-              "obligation_ids": ["FR-063-AC-1"],
+              "obligation_ids": [
+                "FR-063-AC-1"
+              ],
               "evidence_kind": "Unit",
               "command": {
-                "argv": ["pnpm", "test"],
+                "argv": [
+                  "pnpm",
+                  "test"
+                ],
                 "working_directory": "."
               },
               "tool_identity": "vitest",
@@ -212,21 +256,16 @@
       "attestations": [
         {
           "attestation": {
-            "schema_version": 1,
-            "record_type": "proof_attestation",
             "attestation_id": "att-1",
-            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
             "candidate_revision": "candidate-1",
-            "proof_id": "proof-1",
             "command": {
-              "argv": ["pnpm", "test"],
+              "argv": [
+                "pnpm",
+                "test"
+              ],
               "working_directory": "."
             },
-            "tool": {
-              "identity": "vitest",
-              "version": "4.1.10",
-              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-            },
+            "digest": "8eeb50a74a4b4c81cf8c0da8d697fec5c73b446484f4841b31444b4f0aa7831f",
             "environment": {
               "os": "test",
               "parallel": true,
@@ -234,17 +273,42 @@
               "workers": 4
             },
             "observed_at": "2026-08-31T00:00:00Z",
+            "proof_id": "proof-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "record_type": "proof_attestation",
             "result": "passed",
             "retained_output": {
-              "media_type": "application/octet-stream",
               "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "media_type": "application/octet-stream",
               "size_bytes": 18
             },
-            "digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+            "schema_version": 1,
+            "strength": "bounded-checked",
+            "tool": {
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "identity": "vitest",
+              "version": "4.1.10"
+            }
           },
           "output": [
-            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
-            0, 239, 191, 189
+            110,
+            111,
+            116,
+            32,
+            106,
+            115,
+            111,
+            110,
+            58,
+            32,
+            240,
+            159,
+            152,
+            128,
+            0,
+            239,
+            191,
+            189
           ]
         }
       ],
@@ -277,13 +341,17 @@
           "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "report": {
             "findings": [],
-            "healthy": ["FR-063-AC-1"],
+            "healthy": [
+              "FR-063-AC-1"
+            ],
             "unevaluated": []
           }
         }
       ],
       "receipt_outcome": "incomplete",
-      "receipt_reasons": ["attestation_missing"],
+      "receipt_reasons": [
+        "attestation_missing"
+      ],
       "receipt_digest": "f3dc735e4e6b3a17f7e53cf0d71c7acbd10d868101750202ff6227c304b0baca"
     },
     {
@@ -297,7 +365,11 @@
         "subject": {
           "repository": "agent-ix/quoin",
           "base_revision": "abc123",
-          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+          "scope": [
+            "docs/é",
+            "docs/𐀀",
+            "src/evidence"
+          ]
         },
         "source_connections": [
           {
@@ -320,7 +392,9 @@
             {
               "id": "FR-063",
               "statement": "seal it",
-              "source_ids": ["FR-063"]
+              "source_ids": [
+                "FR-063"
+              ]
             }
           ],
           "preservation_constraints": [],
@@ -328,10 +402,15 @@
             {
               "proof_id": "proof-1",
               "statement": "tests pass",
-              "obligation_ids": ["FR-063-AC-1"],
+              "obligation_ids": [
+                "FR-063-AC-1"
+              ],
               "evidence_kind": "Unit",
               "command": {
-                "argv": ["pnpm", "test"],
+                "argv": [
+                  "pnpm",
+                  "test"
+                ],
                 "working_directory": "."
               },
               "tool_identity": "vitest",
@@ -350,28 +429,23 @@
       "candidate_revision": "candidate-1",
       "selections": [
         {
-          "proof_id": "proof-1",
-          "attestation_digest": "f62a204007e13341e6efc5d400d41f20882035dcaf5c8d905cd120c6c7ae4ed2"
+          "attestation_digest": "7f2fe345e0c27c46742a37e2bd0acc3aaa33741f57fd6b5a00e8192356cc5840",
+          "proof_id": "proof-1"
         }
       ],
       "attestations": [
         {
           "attestation": {
-            "schema_version": 1,
-            "record_type": "proof_attestation",
             "attestation_id": "att-1",
-            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
             "candidate_revision": "candidate-1",
-            "proof_id": "proof-1",
             "command": {
-              "argv": ["pnpm", "test"],
+              "argv": [
+                "pnpm",
+                "test"
+              ],
               "working_directory": "."
             },
-            "tool": {
-              "identity": "vitest",
-              "version": "4.1.10",
-              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-            },
+            "digest": "7f2fe345e0c27c46742a37e2bd0acc3aaa33741f57fd6b5a00e8192356cc5840",
             "environment": {
               "os": "test",
               "parallel": true,
@@ -379,17 +453,42 @@
               "workers": 4
             },
             "observed_at": "2026-08-31T00:00:00Z",
+            "proof_id": "proof-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "record_type": "proof_attestation",
             "result": "unavailable",
             "retained_output": {
-              "media_type": "application/octet-stream",
               "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "media_type": "application/octet-stream",
               "size_bytes": 18
             },
-            "digest": "f62a204007e13341e6efc5d400d41f20882035dcaf5c8d905cd120c6c7ae4ed2"
+            "schema_version": 1,
+            "strength": "tested",
+            "tool": {
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "identity": "vitest",
+              "version": "4.1.10"
+            }
           },
           "output": [
-            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
-            0, 239, 191, 189
+            110,
+            111,
+            116,
+            32,
+            106,
+            115,
+            111,
+            110,
+            58,
+            32,
+            240,
+            159,
+            152,
+            128,
+            0,
+            239,
+            191,
+            189
           ]
         }
       ],
@@ -422,14 +521,18 @@
           "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "report": {
             "findings": [],
-            "healthy": ["FR-063-AC-1"],
+            "healthy": [
+              "FR-063-AC-1"
+            ],
             "unevaluated": []
           }
         }
       ],
       "receipt_outcome": "incomplete",
-      "receipt_reasons": ["result_unavailable"],
-      "receipt_digest": "1d5263d92964452a2c35549d4aa7360b8248618e49980da4eca549360466273d"
+      "receipt_reasons": [
+        "result_unavailable"
+      ],
+      "receipt_digest": "fef6bedd506e15bb0562c39fe943add273a403cf08fd9abdfa96e31fd6dc1ccd"
     },
     {
       "name": "producer-did-not-compute",
@@ -442,7 +545,11 @@
         "subject": {
           "repository": "agent-ix/quoin",
           "base_revision": "abc123",
-          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+          "scope": [
+            "docs/é",
+            "docs/𐀀",
+            "src/evidence"
+          ]
         },
         "source_connections": [
           {
@@ -465,7 +572,9 @@
             {
               "id": "FR-063",
               "statement": "seal it",
-              "source_ids": ["FR-063"]
+              "source_ids": [
+                "FR-063"
+              ]
             }
           ],
           "preservation_constraints": [],
@@ -473,10 +582,15 @@
             {
               "proof_id": "proof-1",
               "statement": "tests pass",
-              "obligation_ids": ["FR-063-AC-1"],
+              "obligation_ids": [
+                "FR-063-AC-1"
+              ],
               "evidence_kind": "Unit",
               "command": {
-                "argv": ["pnpm", "test"],
+                "argv": [
+                  "pnpm",
+                  "test"
+                ],
                 "working_directory": "."
               },
               "tool_identity": "vitest",
@@ -495,28 +609,23 @@
       "candidate_revision": "candidate-1",
       "selections": [
         {
-          "proof_id": "proof-1",
-          "attestation_digest": "2b74e44e9c3aac962c5875fd8e8407526d9510edfb3683a09328b9678ec86616"
+          "attestation_digest": "a9bacaea454833cb8c20176e3ba24e620c1817f5caa9dcf61902faf359057fec",
+          "proof_id": "proof-1"
         }
       ],
       "attestations": [
         {
           "attestation": {
-            "schema_version": 1,
-            "record_type": "proof_attestation",
             "attestation_id": "att-1",
-            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
             "candidate_revision": "candidate-1",
-            "proof_id": "proof-1",
             "command": {
-              "argv": ["pnpm", "test"],
+              "argv": [
+                "pnpm",
+                "test"
+              ],
               "working_directory": "."
             },
-            "tool": {
-              "identity": "vitest",
-              "version": "4.1.10",
-              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-            },
+            "digest": "a9bacaea454833cb8c20176e3ba24e620c1817f5caa9dcf61902faf359057fec",
             "environment": {
               "os": "test",
               "parallel": true,
@@ -524,17 +633,42 @@
               "workers": 4
             },
             "observed_at": "2026-08-31T00:00:00Z",
+            "proof_id": "proof-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "record_type": "proof_attestation",
             "result": "not_computed",
             "retained_output": {
-              "media_type": "application/octet-stream",
               "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "media_type": "application/octet-stream",
               "size_bytes": 18
             },
-            "digest": "2b74e44e9c3aac962c5875fd8e8407526d9510edfb3683a09328b9678ec86616"
+            "schema_version": 1,
+            "strength": "observed",
+            "tool": {
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "identity": "vitest",
+              "version": "4.1.10"
+            }
           },
           "output": [
-            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
-            0, 239, 191, 189
+            110,
+            111,
+            116,
+            32,
+            106,
+            115,
+            111,
+            110,
+            58,
+            32,
+            240,
+            159,
+            152,
+            128,
+            0,
+            239,
+            191,
+            189
           ]
         }
       ],
@@ -567,14 +701,18 @@
           "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "report": {
             "findings": [],
-            "healthy": ["FR-063-AC-1"],
+            "healthy": [
+              "FR-063-AC-1"
+            ],
             "unevaluated": []
           }
         }
       ],
       "receipt_outcome": "incomplete",
-      "receipt_reasons": ["result_not_computed"],
-      "receipt_digest": "2be0ae0b9025bbf1a8513fdd566034f3b703ad1c694d0209b91cfb7d4de0c523"
+      "receipt_reasons": [
+        "result_not_computed"
+      ],
+      "receipt_digest": "1f8a0a90f495f589791492a0bd1386981096a9e45dd3a44420a91aff8a30ca82"
     },
     {
       "name": "audit-left-it-unevaluated",
@@ -587,7 +725,11 @@
         "subject": {
           "repository": "agent-ix/quoin",
           "base_revision": "abc123",
-          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+          "scope": [
+            "docs/é",
+            "docs/𐀀",
+            "src/evidence"
+          ]
         },
         "source_connections": [
           {
@@ -610,7 +752,9 @@
             {
               "id": "FR-063",
               "statement": "seal it",
-              "source_ids": ["FR-063"]
+              "source_ids": [
+                "FR-063"
+              ]
             }
           ],
           "preservation_constraints": [],
@@ -618,10 +762,15 @@
             {
               "proof_id": "proof-1",
               "statement": "tests pass",
-              "obligation_ids": ["FR-063-AC-1"],
+              "obligation_ids": [
+                "FR-063-AC-1"
+              ],
               "evidence_kind": "Unit",
               "command": {
-                "argv": ["pnpm", "test"],
+                "argv": [
+                  "pnpm",
+                  "test"
+                ],
                 "working_directory": "."
               },
               "tool_identity": "vitest",
@@ -640,28 +789,23 @@
       "candidate_revision": "candidate-1",
       "selections": [
         {
-          "proof_id": "proof-1",
-          "attestation_digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+          "attestation_digest": "8eeb50a74a4b4c81cf8c0da8d697fec5c73b446484f4841b31444b4f0aa7831f",
+          "proof_id": "proof-1"
         }
       ],
       "attestations": [
         {
           "attestation": {
-            "schema_version": 1,
-            "record_type": "proof_attestation",
             "attestation_id": "att-1",
-            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
             "candidate_revision": "candidate-1",
-            "proof_id": "proof-1",
             "command": {
-              "argv": ["pnpm", "test"],
+              "argv": [
+                "pnpm",
+                "test"
+              ],
               "working_directory": "."
             },
-            "tool": {
-              "identity": "vitest",
-              "version": "4.1.10",
-              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-            },
+            "digest": "8eeb50a74a4b4c81cf8c0da8d697fec5c73b446484f4841b31444b4f0aa7831f",
             "environment": {
               "os": "test",
               "parallel": true,
@@ -669,17 +813,42 @@
               "workers": 4
             },
             "observed_at": "2026-08-31T00:00:00Z",
+            "proof_id": "proof-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "record_type": "proof_attestation",
             "result": "passed",
             "retained_output": {
-              "media_type": "application/octet-stream",
               "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "media_type": "application/octet-stream",
               "size_bytes": 18
             },
-            "digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+            "schema_version": 1,
+            "strength": "bounded-checked",
+            "tool": {
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "identity": "vitest",
+              "version": "4.1.10"
+            }
           },
           "output": [
-            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
-            0, 239, 191, 189
+            110,
+            111,
+            116,
+            32,
+            106,
+            115,
+            111,
+            110,
+            58,
+            32,
+            240,
+            159,
+            152,
+            128,
+            0,
+            239,
+            191,
+            189
           ]
         }
       ],
@@ -722,8 +891,10 @@
         }
       ],
       "receipt_outcome": "incomplete",
-      "receipt_reasons": ["audit_not_evaluated"],
-      "receipt_digest": "9edc439c57f79d02647855f9b9d267c6329d9f1501d6c75b1ad9a326231189e9"
+      "receipt_reasons": [
+        "audit_not_evaluated"
+      ],
+      "receipt_digest": "f1236cf00b8e5770f1c30dfb2ed7dd33256baa7643dc910f3c037404ef562772"
     }
   ]
 }

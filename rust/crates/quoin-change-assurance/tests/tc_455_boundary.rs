@@ -132,11 +132,14 @@ fn tc_503_only_the_asset_module_embeds_a_file() {
 /// Trace: FR-100-CON-4
 ///
 /// There is one canonicalizer and one record digest in this workspace, and
-/// they live in `quoin-store`. This crate declares exactly three dependencies:
+/// they live in `quoin-store`. This crate declares exactly four dependencies:
 /// the store, `sha2` for the single ix-flow event hash the store does not
-/// expose, and `thiserror`. Nothing here serializes JSON or hashes a record on
-/// its own, and the manifest is asserted so that adding a second
-/// implementation cannot be done quietly.
+/// expose, `thiserror`, and `engineering-assurance` (PLAT-964) for the
+/// `ProtectedApparatus`/`NegativeControls` types and entry grammar FR-024
+/// owns and (PLAT-972) the FR-022 claim-strength vocabulary — domain types,
+/// not a JSON or digest implementation. Nothing here serializes JSON or
+/// hashes a record on its own, and the manifest is asserted so that adding a
+/// second implementation cannot be done quietly.
 #[test]
 fn tc_455_no_second_canonicalization_or_digest_implementation_exists_here() {
     let manifest =
@@ -158,7 +161,8 @@ fn tc_455_no_second_canonicalization_or_digest_implementation_exists_here() {
         vec![
             "quoin-store".to_owned(),
             "sha2".to_owned(),
-            "thiserror".to_owned()
+            "thiserror".to_owned(),
+            "engineering-assurance".to_owned()
         ],
         "the dependency set is part of the constraint: a second JSON or digest crate here \
          would be a second implementation"

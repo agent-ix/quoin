@@ -8,6 +8,88 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-111 (new FR): change-assurance refuses credit for a
+  diff that touches protected measurement apparatus** (PLAT-964). FR-110
+  compares a measurement plan's protected apparatus across *stored*
+  collections, which have no diff; a change-assurance record verifies a
+  *proposed* change, which has one. `VerificationInput` gains `diff_paths`
+  (the repository-relative paths the candidate change's diff touches) and
+  `governing_plan` (the linked `MeasurementPlan`'s `protected_apparatus` and
+  `negative_controls`, engineering-assurance's own types, reused rather than
+  restated). When the diff names a path the plan protects, the reason
+  `apparatus_touched` refuses the verification credit toward the plan's
+  objective, unconditionally — with or without a declared `apparatus-edit`
+  negative control, mirroring why FR-110-AC-7's checker rejects a changed
+  recorded set. A declared negative control this crate has no rule to
+  evaluate (`suppressed-observation`, `gain-within-noise`, `stale-evidence`,
+  `selective-reporting`) is `negative_control_uncaught` rather than silently
+  passed over, and leaves the outcome `incomplete`. Both reasons fold into
+  the receipt's overall reasons/outcome the way `proof_id_mismatch` already
+  does, with no new `checks` member. New dependency: `engineering-assurance`
+  (`measurement` feature), added to `quoin-change-assurance`'s previously
+  three-dependency manifest. A plan that protects apparatus, verified with
+  no retained diff, is `diff_missing` (incomplete) rather than vacuously
+  clean. **Known gap (FR-111-CON-3):** `quoin-core`'s
+  `change_assurance.receipt` request carries no diff or plan link yet, so
+  none of the three reasons is reachable through `quoin change-assurance
+  receipt`; the check exists in the library only until that is wired.
+  FR-065's embedded receipt schema gains the three reasons.
+  FR-111-AC-1..AC-4; Matrix: TC-1868..TC-1871.
+
+* **2026-09-22** — **FR-107 gains gate stage verdicts** (PLAT-958, part 2).
+  Part 1 left `gate` undecided (FR-107-CON-2); the scope-correcting comment
+  on the ticket settled how it is decided: **`objective.bound` is
+  informational everywhere in the measurement layer and is never evaluated**
+  (owner ruling, PLAT-956) — `gate` is the one stage verdict this crate
+  decides that is a real pass/fail result, and it comes entirely from
+  `statistical_design.decision_rule`, evaluated through
+  engineering-assurance's own `DecisionRule::holds`, the same call
+  `quoin measurement verify` (FR-108) makes. The report layer restates none
+  of that rule logic — only the baseline value the rule asks for: a
+  `threshold` rule needs none; a `baseline` rule reads `prior-collection`
+  (the nearest earlier usable value) or `best-seen` (the maximum for
+  `gt`/`ge`, the minimum for `lt`/`le`/`eq`) from the same usable-evidence
+  pool the ratchet already draws from, restricted to the report row's own
+  slice. `constant-predictor` needs per-item answers by answer family that no
+  collection the report layer reads carries, so it is `inconclusive`
+  (`constant_predictor_unsupported`), matching the checker's own limit. Never
+  green on missing evidence, exactly as for `ratchet` and `target`: no
+  `decision_rule` (`no_decision_rule`), no earlier usable value for a
+  baseline rule (`no_prior`, as a ratchet's first collection), and an
+  incomplete or empty population are all `inconclusive`, never `pass`. The
+  "Stage verdicts" table and the JSON `stageVerdict` carry a gate the same
+  way as the other two stages (`verdict`: `pass`/`fail`/`inconclusive`,
+  `current`, `baseline`); a `fail` adds an attention item beside a
+  `regressed` ratchet's. `compare.rs` stays verdict-free, unchanged by this
+  part. A `baseline` gate carries the ratchet's protected-apparatus
+  reasons (FR-107-CON-3, review of quoin#605). FR-107-AC-7..AC-9; Matrix:
+  TC-1875..TC-1881.
+
+* **2026-09-22** — **FR-110 (new FR): protected measurement apparatus**
+  (PLAT-975). `verificationStack.artifacts` recorded a digest per file and
+  nothing compared them, so an answer key edited between a baseline and a new
+  run still produced a delta, a ratchet `held` and a checker `accept`. Plan
+  intake now reads engineering-assurance FR-024's `protected_apparatus` and
+  `negative_controls` into EA's types. Intake resolves every protected entry
+  itself — the producer's artifacts map can omit a file — case-sensitively,
+  dotfiles included, refusing symlinks without following them and a
+  directory entry with no file, requires the artifacts map to declare every
+  resolved file, and records the resolved (path, digest) set per plan in
+  `verificationStack.protectedApparatus`, so comparisons read the apparatus
+  as it was written and never today's disk. New refusal codes
+  `QM-APPARATUS-UNRESOLVED`, `-SYMLINK`, `-UNREADABLE`, `-UNDECLARED` and
+  `-TOO-LARGE`. Comparison gains the blocking `apparatus_changed` and the
+  non-blocking `artifact_changed`; the ratchet gains `apparatus_changed` and
+  `apparatus_unrecorded`; the checker (FR-108's reason table) gains those two
+  and `apparatus_edit`, which rejects unconditionally whenever two runs under
+  one `definition_version` recorded different sets, whether or not the plan
+  declares the `apparatus-edit` negative control — engineering-assurance
+  FR-024 makes a new `definition_version` unconditional for any change to the
+  resolved set, so a differing recorded set inside one series is a
+  contradiction the data itself proves. A plan that protects nothing is
+  unaffected.
+  FR-110-AC-1..AC-9; Matrix: TC-1810..TC-1832.
+
 * **2026-09-22** — **FR-108 (new FR): the independent measurement-verdict
   checker, `quoin measurement verify`** (PLAT-961, part 1). Nothing decided a
   measurement verdict from the data: a producer's aggregate `value`, its

@@ -348,6 +348,15 @@ pub fn receipt(
         attestations: retained,
         decision_history: Some(decisions),
         audits,
+        // KNOWN GAP (FR-111-CON-3): `change_assurance.receipt`'s wire
+        // request carries no diff and no plan link, so FR-111's
+        // `apparatus_touched` / `diff_missing` / `negative_control_uncaught`
+        // are unreachable through this operation and through
+        // `quoin change-assurance receipt` today: every receipt it seals is
+        // unlinked from a plan, exactly as before PLAT-964. The library-side
+        // judgment exists; wiring the request is PLAT-964's follow-on.
+        diff_paths: None,
+        governing_plan: None,
     };
     let sealed = verify::verify_change_assurance(&input).map_err(|e| map_error(&e, OP))?;
     ok(&ReceiptPayload {
