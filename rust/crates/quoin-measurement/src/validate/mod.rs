@@ -25,6 +25,7 @@
 //! of the parsed value (`store.ts:40` canonicalizes `candidate`). Nothing here
 //! is a lossy round trip, because nothing here round-trips.
 
+mod plan;
 mod population;
 pub(crate) mod read;
 mod stack;
@@ -41,7 +42,7 @@ use crate::types::collection::{
 use crate::types::observation::{
     Dimensions, MeasurementObservation, MeasurementPopulation, MeasurementShape, MeasurementState,
 };
-use crate::types::plan::{LifecycleStatus, MeasurementPlan};
+use crate::types::plan::MeasurementPlan;
 
 /// The code every refusal in this module carries.
 const CODE: MeasurementErrorCode = MeasurementErrorCode::CollectionInvalid;
@@ -191,7 +192,7 @@ fn parse_stored_measurement_collection(
 /// release, absent toolchains, a stated `verificationStack.unverifiedArtifacts`
 /// or `.protectedApparatus` (both computed by intake), and any observation
 /// whose metric has no active plan at the observation's own definition
-/// version.
+/// version (an item row, PLAT-1016, answers to its governed metric's plan).
 ///
 /// Every finding is accumulated into one refusal. Its code is
 /// [`MeasurementErrorCode::CollectionInvalid`], except when every finding is
@@ -278,13 +279,13 @@ pub fn measurement_collection(
         _ => &[],
     };
     for (index, observation) in collection.observations.iter().enumerate() {
-        let plan = by_metric.get(observation.metric.as_str()).copied();
-        findings.extend(plan_findings(observation, plan));
+        let (plan, population_plan) = plan::governing(&by_metric, observation);
+        findings.extend(plan::findings(observation, plan));
         let raw_population = raw_observations
             .get(index)
             .and_then(|raw| raw.as_object().ok())
             .and_then(|raw| raw.get("population"));
-        for (code, finding) in population::findings(observation, raw_population, plan) {
+        for (code, finding) in population::findings(observation, raw_population, population_plan) {
             typed.push(code);
             findings.push(format!("{code}: {finding}"));
         }
@@ -332,43 +333,6 @@ pub fn measurement_collection(
     } else {
         Err(intake_refusal(findings, &typed))
     }
-}
-
-/// The untyped findings tying one observation to its plan: none governs it,
-/// or the one that does is inactive, differently named, or at another
-/// definition version.
-fn plan_findings(
-    observation: &MeasurementObservation,
-    plan: Option<&MeasurementPlan>,
-) -> Vec<String> {
-    let metric = observation.metric.as_str();
-    let Some(plan) = plan else {
-        return vec![format!(
-            "metric `{metric}` has no MeasurementPlan under spec/assurance or assurance; \
-             record refused"
-        )];
-    };
-    let mut out = Vec::new();
-    if plan.status != LifecycleStatus::Active {
-        out.push(format!(
-            "metric `{metric}` plan {} is {}, not active",
-            plan.id,
-            plan.status.as_str()
-        ));
-    }
-    if observation.plan_id != plan.id {
-        out.push(format!(
-            "metric `{metric}` names plan {}; active plan is {}",
-            observation.plan_id, plan.id
-        ));
-    }
-    if observation.definition_version != plan.definition_version {
-        out.push(format!(
-            "metric `{metric}` definition {} does not match {}",
-            observation.definition_version, plan.definition_version
-        ));
-    }
-    out
 }
 
 /// One refusal carrying every accumulated finding, under the code chosen as

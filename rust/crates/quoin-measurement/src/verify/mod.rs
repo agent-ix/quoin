@@ -50,6 +50,7 @@
 //! the candidate — see [`apparatus`] (PLAT-975).
 
 mod apparatus;
+mod constant_predictor;
 mod order;
 mod reason;
 pub mod rows;
@@ -297,7 +298,14 @@ impl Check<'_> {
                     continue;
                 }
             };
-            let (baseline, holds) = match baseline(rule, dimensions, history, run.apparatus) {
+            let (baseline, holds) = match baseline(
+                rule,
+                dimensions,
+                observation,
+                run.collection,
+                history,
+                run.apparatus,
+            ) {
                 Ok((value, prior)) => {
                     outcome.priors.extend(prior);
                     let holds = rule.holds(estimate.value, value).ok();
@@ -407,9 +415,17 @@ impl Check<'_> {
 /// Only runs that recorded `apparatus` — the deciding run's own protected
 /// apparatus — are a baseline (PLAT-975); in a series where no run recorded
 /// one, every run's is `None` and all of them are.
+///
+/// `constant-predictor` is different in kind from the other two: it is not a
+/// comparison against an earlier run at all, but a property of the
+/// population `observation`'s own run measured (MP-222/PLAT-932), so it reads
+/// `collection` — the run being decided, not `history` — through
+/// [`constant_predictor::baseline`].
 fn baseline(
     rule: DecisionRule,
     slice: &BTreeMap<String, JsonValue>,
+    observation: &MeasurementObservation,
+    collection: &MeasurementCollection,
     history: &[Run<'_>],
     apparatus: Option<&ResolvedApparatus>,
 ) -> Result<(Option<f64>, Option<usize>), Reason> {
@@ -430,7 +446,10 @@ fn baseline(
         })
     });
     let found = match baseline {
-        Baseline::ConstantPredictor => return Err(Reason::ConstantPredictorRowsAbsent),
+        Baseline::ConstantPredictor => {
+            let value = constant_predictor::baseline(collection, observation)?;
+            return Ok((Some(value), None));
+        }
         Baseline::PriorCollection => earlier.next_back(),
         Baseline::BestSeen => match rule.comparator() {
             Comparator::Gt | Comparator::Ge => {

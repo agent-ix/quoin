@@ -137,6 +137,20 @@ pub(crate) fn plan_from(
     let stage = required("stage")?;
     let metric = required("metric")?;
     let definition_version = required("definition_version")?;
+    // The suffix is reserved for constant-predictor item observations
+    // (PLAT-1016): a plan governing `x.constant-predictor-item` would read
+    // plan `x`'s item rows as its own run, and intake and `compare` could no
+    // longer tell an item row from a governed observation.
+    if crate::types::observation::constant_predictor_governed_metric(metric.as_str()).is_some() {
+        return Err(MeasurementError::new(
+            CODE,
+            format!(
+                "{path}: MeasurementPlan metric `{metric}` ends with the reserved \
+                 constant-predictor item suffix `{}`",
+                crate::types::observation::CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX
+            ),
+        ));
+    }
 
     let stage = MeasurementStage::from_wire(stage.as_str()).ok_or_else(|| {
         MeasurementError::new(CODE, format!("{path}: unknown measurement stage `{stage}`"))

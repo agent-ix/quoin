@@ -171,6 +171,58 @@ impl Dimensions {
     }
 }
 
+/// The metric-name suffix a constant-predictor producer appends to the
+/// plan's own metric to name its per-item retained observations (PLAT-1016).
+///
+/// A per-item observation is never itself a run of the plan: the checker's
+/// run-building filter matches on the plan's own `metric` exactly, so an item
+/// observation (whose metric always carries this suffix) is never mistaken
+/// for another slice of the governed metric. Intake admits it under the
+/// governed metric's own plan ([`constant_predictor_governed_metric`]), and
+/// `compare` leaves it out of slice-by-slice comparison. See
+/// `crate::verify::constant_predictor` for the reader and `quoin-jev`'s
+/// `constant_predictor` module for the producer.
+pub const CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX: &str = ".constant-predictor-item";
+
+/// The per-item metric name a constant-predictor producer writes for
+/// `metric`'s governed measurement.
+#[must_use]
+pub fn constant_predictor_item_metric(metric: &str) -> String {
+    format!("{metric}{CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX}")
+}
+
+/// The governed metric `metric` is a constant-predictor item metric of, or
+/// `None` when `metric` does not carry
+/// [`CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX`] (or is nothing but the suffix).
+#[must_use]
+pub fn constant_predictor_governed_metric(metric: &str) -> Option<&str> {
+    metric
+        .strip_suffix(CONSTANT_PREDICTOR_ITEM_METRIC_SUFFIX)
+        .filter(|governed| !governed.is_empty())
+}
+
+/// `dimensions` keys a constant-predictor per-item observation carries
+/// (PLAT-1016). Every key's value is a string except
+/// [`CONSTANT_PREDICTOR_DIM_CONTESTED`], which is a JSON array of strings.
+pub mod constant_predictor_dims {
+    /// The answer-space family this item belongs to (the plan's own
+    /// Population grouping — MP-222's rule is "do not invent a new grouping
+    /// here").
+    pub const FAMILY: &str = "family";
+    /// A producer-defined identity for the item, unique within the
+    /// collection's per-item observations for this metric.
+    pub const ITEM_ID: &str = "item_id";
+    /// The primary recorded (ground-truth) label.
+    pub const EXPECTED: &str = "expected";
+    /// Every reading the corpus recorded as defensible, [`EXPECTED`]
+    /// included, as a JSON array of strings.
+    pub const CONTESTED: &str = "contested";
+    /// What the graded tool returned for this item, for traceability. Not
+    /// read by the constant-predictor baseline formula, which depends only
+    /// on the corpus's own labels.
+    pub const ACTUAL: &str = "actual";
+}
+
 /// One observation within a collection.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MeasurementObservation {

@@ -49,6 +49,7 @@
 pub mod cassette;
 pub mod client;
 pub mod config;
+pub mod constant_predictor;
 pub mod context;
 pub mod corpus_check;
 pub mod error;
@@ -61,6 +62,7 @@ pub mod span_ballot;
 pub mod verdict;
 
 pub use cassette::Cassette;
+pub use constant_predictor::{Item as ConstantPredictorItem, item_observations};
 pub use context::{AcRow, Bound, BoundedContext, ContextPolicy, FrContext};
 pub use corpus_check::{
     AdequacyFinding, check_answerability, check_required_fields, check_stated_counts,

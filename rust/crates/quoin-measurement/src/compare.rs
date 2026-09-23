@@ -33,9 +33,18 @@ use crate::types::collection::{MeasurementCollection, ResolvedApparatus};
 use crate::types::comparison::{
     ComparisonReason, ComparisonReasonCode, ComparisonStatus, MeasurementComparison,
 };
-use crate::types::observation::{MeasurementObservation, MeasurementPopulation, MeasurementShape};
+use crate::types::observation::{
+    MeasurementObservation, MeasurementPopulation, MeasurementShape,
+    constant_predictor_governed_metric,
+};
 
 /// Compare two collections, slice by slice.
+///
+/// Constant-predictor item observations (`{metric}.constant-predictor-item`,
+/// PLAT-1016) are left out: each is one graded item's labels, retained for
+/// `quoin measurement verify`'s baseline, not a slice of any measurement, and
+/// comparing them item by item would bury the real slices under one row per
+/// corpus item.
 ///
 /// # Errors
 ///
@@ -47,6 +56,9 @@ pub fn compare_measurement_collections(
 ) -> Result<Vec<MeasurementComparison>, StoreError> {
     let mut keys: Vec<String> = Vec::new();
     for observation in before.observations.iter().chain(&after.observations) {
+        if constant_predictor_governed_metric(observation.metric.as_str()).is_some() {
+            continue;
+        }
         let key = key_of(observation)?;
         if !keys.contains(&key) {
             keys.push(key);

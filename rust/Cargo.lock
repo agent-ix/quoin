@@ -3094,6 +3094,8 @@ name = "quoin-jev"
 version = "0.24.1"
 dependencies = [
  "async-trait",
+ "engineering-assurance",
+ "quoin-measurement",
  "quoin-modules",
  "quoin-store",
  "regex",

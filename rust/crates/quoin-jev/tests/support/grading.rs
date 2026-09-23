@@ -310,7 +310,13 @@ pub(crate) fn trivial_baseline(graded: &[Graded]) -> (String, f64) {
             .iter()
             .filter(|row| is_coverage(row) == family)
             .collect();
-        let mut candidates: Vec<&String> = rows.iter().map(|row| &row.expected).collect();
+        // Every label in the family's answer space: a label recorded only as
+        // a contested alternate is a constant a corpus-blind predictor could
+        // answer too (MP-222's `n_{f,i}` ranges over the answer space).
+        let mut candidates: Vec<&String> = rows
+            .iter()
+            .flat_map(|row| std::iter::once(&row.expected).chain(row.contested.iter()))
+            .collect();
         candidates.sort();
         candidates.dedup();
         let best = candidates
