@@ -161,7 +161,7 @@ pub(crate) const DIVERGENCE_KIND_KEY: &str = "divergence_kind";
 pub(crate) const SEVERITY_KEY: &str = "severity";
 
 /// `divergence_kind`'s closed answer space, verbatim from the ticket.
-const DIVERGENCE_KINDS: [&str; 6] = [
+pub(crate) const DIVERGENCE_KINDS: [&str; 6] = [
     "aligned",
     "test_weaker_than_requirement",
     "test_stronger_than_requirement",
@@ -174,7 +174,7 @@ const DIVERGENCE_KINDS: [&str; 6] = [
 /// "high -> FAIL, medium/low -> CONDITIONAL." `none` is added as the fourth,
 /// lowest rung for a triple with no divergence at all -- the ticket's rubric
 /// only names the three that already map to a verdict.
-const SEVERITY_RUBRIC: [&str; 4] = ["none", "low", "medium", "high"];
+pub(crate) const SEVERITY_RUBRIC: [&str; 4] = ["none", "low", "medium", "high"];
 
 /// The `state` object sent as this triple's context -- exactly the six
 /// fields the ticket's question-set section names, nothing else.
@@ -319,7 +319,7 @@ pub(crate) fn grade(triple: &GapTriple, response: &SystemOneResponse) -> Option<
 }
 
 /// The rubric label nearest a continuous score, or `None` outside `[0, 3]`.
-fn nearest_rubric_label(raw: f64) -> Option<String> {
+pub(crate) fn nearest_rubric_label(raw: f64) -> Option<String> {
     if !(-0.5..3.5).contains(&raw) {
         return None;
     }

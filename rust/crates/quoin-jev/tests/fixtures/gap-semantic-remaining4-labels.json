@@ -1,0 +1,277 @@
+{
+  "provenance": "AGENT-LABELLED, not human ground truth and not mechanically verified. Every label below was written by one Claude agent session (PLAT-1014, 2026-09-23) by reading each triple's fr_statement, ac_text, test_body and symbol_body in gap-semantic-corpus.json, before any live call graded these four questions against it. Unlike MP-232's mutation truth for assertion_vacuous, nothing here was checked against the compiler or the test runner. A restatement of any number graded against these labels that drops this sentence is a misreport.",
+  "unit": "The triple exactly as the lens is shown it: one FR statement, one AC text, one test body, one symbol body. Sibling tests, other requirements and other code are invisible to the lens and are not credited.",
+  "rules": {
+    "code_implements_intent": "true when the covered symbol does what the shown requirement text states. false when the shown requirement states behaviour the symbol does not perform, INCLUDING a trace mismatch where the requirement describes a different subsystem or a process step (FR-101's migration rules, FR-052's module audit) that this symbol has nothing to do with. null (excluded) when the requirement states nothing about code at all.",
+    "code_exceeds_requirement": "true when a substantive decision the symbol makes has no basis in the shown requirement text. Size ceilings, request parsing and error-context enrichment are boundary hygiene every op carries and do not count. On a trace mismatch the symbol's whole behaviour is unstated by the shown requirement, so it is true. This is judged against the requirement SHOWN, which is the only one the lens sees; another FR elsewhere in the repo may well state the behaviour, and that is the main reason this label is a judgment rather than a fact. null (excluded) when the shown requirement is too broad to state or exclude any specific behaviour.",
+    "divergence_kind": "the dominant divergence. A trace mismatch is code_exceeds_requirement primary (the code has no owning requirement in view, which is gap-analysis step 4's 'underspecified code'), contested code_short_of_requirement (the cited requirement is not implemented by this symbol either). A test that fully checks the clause its own name and doc comment claim is aligned, contested test_weaker_than_requirement when the cited AC has further clauses this one test does not reach. A test that leaves the AC's distinctive claim unasserted, or asserts nothing, is test_weaker_than_requirement.",
+    "severity": "skills/gap-analysis/references/step-5-semantic-review.md's own rubric: high = the test does not validate the requirement's intent (a test tagged to an AC that asserts something unrelated to it fails here, per that file) or does not exercise code, or the code contradicts the requirement; medium = partial validation, meaningful edge cases unchecked, minor drift; low = trivial drift; none = no finding. Graded at the verdict the ticket maps it to: high -> FAIL, medium/low -> CONDITIONAL, none -> PASS."
+  },
+  "labels": [
+    {
+      "id": "GAP-01",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": null,
+      "divergence_kind": "requirement_ambiguous",
+      "divergence_kind_contested": ["aligned"],
+      "severity": "low",
+      "severity_contested": ["medium"],
+      "rationale": "FR-099's SHALL is architectural: implement the Quire adapter in Rust behind quoin-core. `coverage` is exactly such a Rust adapter op, so it implements that intent. But the ac_text records that none of FR-099's twelve ACs names quire.coverage, so the specific projection (obligations+diagnostics only, empty lists dropped) can be neither credited nor faulted against the text: code_exceeds is excluded as undecidable, and the divergence is a requirement too general to check this behaviour against. The test itself is strong. A bare-FR trace is traceability drift, not false confidence: low, contested medium, both CONDITIONAL."
+    },
+    {
+      "id": "GAP-02",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. FR-052 is the default-module corpus inventory audit; FR-052-CON-3 does not exist. `properties` keys property shapes by obligation id at the quire boundary, which FR-052 never mentions, and it performs no inventory. The test asserts that keying, which is unrelated to the cited requirement: high per step-5."
+    },
+    {
+      "id": "GAP-03",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "aligned",
+      "divergence_kind_contested": ["test_weaker_than_requirement"],
+      "severity": "none",
+      "severity_contested": ["medium"],
+      "rationale": "`schema` lists ASSET_NAMES, returns a named asset's exact text, and refuses an unknown name as BadRequest (Outcome::Invalid, exit 2): every clause of FR-068-AC-8. The size ceiling is boundary hygiene. The test asserts byte-identity against the compiled-in constant, fully checking the clause it names; it does not reach the listing or refusal clauses (GAP-04 covers refusal), hence contested test_weaker / medium."
+    },
+    {
+      "id": "GAP-04",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "aligned",
+      "divergence_kind_contested": ["test_weaker_than_requirement"],
+      "severity": "none",
+      "severity_contested": ["medium"],
+      "rationale": "Same `schema` body as GAP-03, which implements AC-8's refusal clause. The test checks the BadRequest code, the op, the echoed name and that the known names are listed: the refusal clause it claims. It asserts the error code rather than the exit status 2 directly, and does not reach the byte-identity clause, hence contested test_weaker / medium."
+    },
+    {
+      "id": "GAP-05",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "test_weaker_than_requirement",
+      "severity": "medium",
+      "rationale": "`analyze_fan_out` collects obligations per suite in ordered sets, so duplicate bindings cannot raise obligation_count and rows come out sorted: AC-1 implemented. Unresolved-binding gaps are part of the report the FR statement names. The test's own claim is canonical-JSON rendering; it plants no duplicate symbol or duplicate (suite, obligation) entry, so AC-1's distinctive de-duplication claim is unasserted. Partial validation with the meaningful edge case unchecked: medium. (MP-233's targeted violating mutant for this triple survived the test, consistent with this label, but was not consulted to set it.)"
+    },
+    {
+      "id": "GAP-06",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "aligned",
+      "divergence_kind_contested": ["test_weaker_than_requirement"],
+      "severity": "none",
+      "severity_contested": ["medium"],
+      "rationale": "The shown FR statement is the --relation clause: absent means the eight defaults, an explicit selection replaces them. `selected.map_or_else(defaults, |kinds| kinds)` does exactly that. Refusing a kind absent from the export vocabulary is input validation. The test checks absent -> default count and empty -> empty, the clause shown. AC-3's closure, cycle-termination and shortest-path clauses are not reached by this test, hence contested test_weaker / medium."
+    },
+    {
+      "id": "GAP-07",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "aligned",
+      "divergence_kind_contested": ["test_weaker_than_requirement"],
+      "severity": "none",
+      "severity_contested": ["medium"],
+      "rationale": "The shown FR statement: an absent or unreadable required path fails before row construction and names the failed input. `required` maps a read failure to InputUnreadable carrying `input`, before any GraphAnalysisInput exists; the premises and audit-identity checks are AC-9's own later clauses. The test removes audit.json and checks Refused, exit 2, input=audit and the QGA code: the clause shown. AC-9's retained-input-state clauses are not reached, hence contested test_weaker / medium."
+    },
+    {
+      "id": "GAP-08",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. FR-101-AC-2 is a migration gate (removal refused unless both paths pass at one revision). `Intake::of`/`limit` classify a record by its record_type and pick a byte ceiling, which AC-2 never mentions. The test asserts that classifier, unrelated to AC-2: high."
+    },
+    {
+      "id": "GAP-09",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. FR-101-AC-2 (same-revision removal gating) says nothing about per-field size ceilings. `bound_field` refuses an oversized request field and names it. The test is well built but asserts that refusal, unrelated to AC-2: high."
+    },
+    {
+      "id": "GAP-10",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement", "test_weaker_than_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch, and a tautological test. FR-101-AC-7 is about make lint/test passing with no command-surface change. MAX_RECORD_ID_BYTES is a record-identity ceiling defined AS quoin_measurement's constant, so the test compares the constant to itself and can never fail. Unrelated to the AC and vacuous by construction: high."
+    },
+    {
+      "id": "GAP-11",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. FR-101-AC-1 is the executable-path disposition matrix. `audit` runs the obligation auditor, moves independence assessments and ratchets against an optional baseline, none of which AC-1 states. The test asserts the no-baseline -> no `reported` distinction, unrelated to AC-1: high."
+    },
+    {
+      "id": "GAP-12",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. `ratchet` filters findings against an accepted-key baseline; FR-101-AC-1 (disposition matrix) never mentions it. The round-trip test is real but asserts behaviour unrelated to AC-1: high."
+    },
+    {
+      "id": "GAP-13",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. FR-101-AC-3 is about reverting a cutover and byte-comparing evidence trees. `read` bounds and strictly deserialises an auditor request, refusing unknown fields. The test asserts that strictness, unrelated to AC-3: high."
+    },
+    {
+      "id": "GAP-14",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement", "test_weaker_than_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch, and a change-detector test. FR-101-AC-3 (cutover revert) says nothing about an auditor request ceiling. The test restates the constant's own literal, so it only fails when someone edits one side without the other. Unrelated to the AC: high."
+    },
+    {
+      "id": "GAP-15",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch (bare FR-101; the ac_text records that no FR-101 AC is about catalog.methods). `methods` bounds the request and serialises whatever the catalog host returns. The test's fixture hands back an already-merged payload, so the 'first-wins projection' its name claims is not exercised either. Unrelated to FR-101: high."
+    },
+    {
+      "id": "GAP-16",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch (bare FR-101; the ac_text records that duplicate-module suppression lives in FR-099, not FR-101). `load` skips semantic reading of suppressed duplicate modules. The test proves that guard, which is unrelated to FR-101's migration rule: high."
+    },
+    {
+      "id": "GAP-17",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "aligned",
+      "divergence_kind_contested": ["test_weaker_than_requirement", "code_short_of_requirement"],
+      "severity": "none",
+      "severity_contested": ["medium"],
+      "rationale": "FR-046-AC-1: validate input against the clause-binding-v1 schema before use. `parse_stored` enforces the schema's `^sha256:[0-9a-f]{64}$` pattern on the type that deserialises the report, so a malformed digest is refused before use; the test plants one and sees BadRequest. Two honest dissents are recorded: the test checks one of the schema's constraints (test_weaker / medium), and the code validates through a type rather than 'the pinned schema' the AC names, which no longer exists (code_short)."
+    },
+    {
+      "id": "GAP-18",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. FR-101-AC-1 (disposition matrix) has nothing to do with `store_facts`, which serves store constants to the command layer. The test echoes those constants back, unrelated to AC-1: high."
+    },
+    {
+      "id": "GAP-19",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. FR-101-AC-2 (same-revision removal gating) does not state `gc`'s join of store-relative paths onto the store root. The test asserts that join precisely, but it is unrelated to AC-2: high."
+    },
+    {
+      "id": "GAP-20",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. `read_all` skips and names an undecodable record and sorts by timestamp; FR-101-AC-2 (removal gating) says none of this. The test asserts the skip-and-name branch, unrelated to AC-2: high."
+    },
+    {
+      "id": "GAP-21",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement", "aligned"],
+      "severity": "high",
+      "severity_contested": ["none"],
+      "rationale": "FR-101-AC-4 states a property of TESTS (a deleted test's criterion is restated on a tracking-tagged Rust test that fails under mutation), not of `audit_inputs`. So the code does not do what the requirement says, and its vacuity/independence behaviour is unstated by it. The dissent is real: this test may itself BE the restated AC-4 test (MP-232 found it non-vacuous under a stub), in which case the triple is aligned and there is no finding. The lens cannot see which retained criterion it restates, so the primary reading is the trace mismatch: high, contested none."
+    },
+    {
+      "id": "GAP-22",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch. `read_bindings` reads an absent bindings file as empty and refuses an unparseable one; FR-101-AC-3 is about cutover revert and byte-identical evidence trees. The merge-marker test is a good adversarial case for the symbol, unrelated to AC-3: high."
+    },
+    {
+      "id": "GAP-23",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement", "aligned"],
+      "severity": "high",
+      "severity_contested": ["none"],
+      "rationale": "Same reading as GAP-21. FR-101-AC-4 states a property of tests, not of `affirm_binding`'s write-only-when-found guard. Contested aligned / none because the test may be the restated AC-4 test the requirement asks for, which the lens cannot confirm from the triple."
+    },
+    {
+      "id": "GAP-24",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement", "aligned"],
+      "severity": "high",
+      "severity_contested": ["none"],
+      "rationale": "Same reading as GAP-21. FR-101-AC-4 does not state `record`'s finding-shaped-adapter-first routing. Contested aligned / none for the same reason."
+    },
+    {
+      "id": "GAP-25",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "test_weaker_than_requirement",
+      "severity": "medium",
+      "rationale": "FR-037-AC-1: vocabulary values are read from module data, not minted. `schema_refs_of` reads refs only from the manifest's traceability.vocabulary_coverage and returns nothing when none is declared, so it mints nothing. The test is one happy-path manifest; no case shows a hardcoded or fallback value being absent, so the 'not minted' half is unasserted. Partial validation: medium. (MP-233's violating mutant here survived the test, consistent with this, not consulted to set it.)"
+    },
+    {
+      "id": "GAP-26",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "aligned",
+      "severity": "none",
+      "rationale": "FR-037-AC-12: no declared vocabulary reports UNCHECKED, never PASS. `verdict_for` returns Unchecked when vocabularies_checked == 0, before any other branch; the Fail/Conditional/--strict branches refine the same verdict scheme the shown FR statement describes ('fails only under --strict'). The test drives both a CONDITIONAL bundle and the zero-vocabulary UNCHECKED case end to end. No finding."
+    },
+    {
+      "id": "GAP-27",
+      "code_implements_intent": false,
+      "code_exceeds_requirement": true,
+      "divergence_kind": "code_exceeds_requirement",
+      "divergence_kind_contested": ["code_short_of_requirement"],
+      "severity": "high",
+      "rationale": "Trace mismatch (bare FR-096; the ac_text records it as a self-imposed drift guard traceable to no AC). FR-096 says the crates evaluate semantic validation and completeness analysis preserving verdicts; `CompletenessErrorCode` is a two-variant filesystem error catalogue, which does no evaluation. The test pins the variant count, unrelated to FR-096's statement: high."
+    },
+    {
+      "id": "GAP-28",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "test_weaker_than_requirement",
+      "severity": "high",
+      "rationale": "CONSTRUCTED row. Code as GAP-25: implements FR-037-AC-1, exceeds nothing. The test calls the function and asserts nothing: no behavioural assertion is high in step-4's test-stub table and step-5's rubric."
+    },
+    {
+      "id": "GAP-29",
+      "code_implements_intent": true,
+      "code_exceeds_requirement": false,
+      "divergence_kind": "test_weaker_than_requirement",
+      "severity": "high",
+      "rationale": "CONSTRUCTED row. Code as GAP-26: implements FR-037-AC-12. The test calls verdict_for with one checked vocabulary (never even the zero case the AC is about) and asserts nothing: high."
+    }
+  ]
+}
