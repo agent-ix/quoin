@@ -75,14 +75,22 @@ pub struct RetainedAudit {
 /// The measurement plan a record's objective is linked to, when a
 /// verification is asked to check the change against one (PLAT-964).
 ///
-/// Only the two members [`crate::verify::apparatus`] reads are carried here;
-/// `quoin-measurement` owns the rest of a `MeasurementPlan`'s shape, and a
-/// verification is not a plan load. Both are `engineering-assurance`'s own
-/// types (its FR-024), read exactly as `quoin-measurement`'s plan intake
-/// reads them (PLAT-975) — this crate states no second copy of the entry
-/// grammar or the control kinds.
+/// Only the plan's id and the two members [`crate::verify::apparatus`] reads
+/// are carried here; `quoin-measurement` owns the rest of a
+/// `MeasurementPlan`'s shape, and a verification is not a plan load. The two
+/// apparatus members are `engineering-assurance`'s own types (its FR-024),
+/// read exactly as `quoin-measurement`'s plan intake reads them (PLAT-975) —
+/// this crate states no second copy of the entry grammar or the control kinds.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GoverningPlan {
+    /// The `MeasurementPlan` id this plan was resolved from (PLAT-1015,
+    /// FR-111), sealed onto the receipt as `governing_plan_id`.
+    ///
+    /// A member of the plan rather than a sibling of it on
+    /// [`VerificationInput`], so a receipt cannot record one plan id (or
+    /// none) while its apparatus judgment ran against a different plan (or
+    /// one): the id sealed is always the id of the plan that was read.
+    pub id: String,
     /// The plan's declared `protected_apparatus`, when it declares one.
     pub protected_apparatus: Option<ProtectedApparatus>,
     /// The plan's declared `negative_controls`, when it declares one.
@@ -121,17 +129,4 @@ pub struct VerificationInput {
     /// (PLAT-964). `None` when the record supports no plan, or the caller
     /// did not resolve one.
     pub governing_plan: Option<GoverningPlan>,
-    /// The `MeasurementPlan` id `governing_plan` was resolved from, when one
-    /// was (PLAT-1015, FR-111).
-    ///
-    /// Carried alongside `governing_plan` rather than folded into it:
-    /// `governing_plan` states only the two members
-    /// [`crate::verify::apparatus`] reads, and a verification's judgment
-    /// never needs the id itself — only the sealed receipt does, so an
-    /// auditor can see *which* plan a receipt was checked against rather
-    /// than infer "some plan or none" from whether `apparatus_touched` /
-    /// `diff_missing` happened to fire. Always `Some` exactly when
-    /// `governing_plan` is `Some`: both are resolved from the same caller
-    /// choice and nothing here constructs one without the other.
-    pub governing_plan_id: Option<String>,
 }

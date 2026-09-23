@@ -146,6 +146,5 @@ pub(crate) fn verification_input(captured: &JsonValue) -> VerificationInput {
         // the same code path as any other unlinked verification.
         diff_paths: None,
         governing_plan: None,
-        governing_plan_id: None,
     }
 }

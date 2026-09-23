@@ -150,7 +150,7 @@ pub fn verify_change_assurance(
 }
 
 /// The plan id this receipt was checked against, parsed from
-/// [`VerificationInput::governing_plan_id`] (PLAT-1015, FR-111).
+/// [`GoverningPlan::id`] (PLAT-1015, FR-111).
 ///
 /// # Errors
 ///
@@ -163,8 +163,9 @@ fn governing_plan_id(
     input: &VerificationInput,
 ) -> Result<Option<crate::ids::NonEmptyText>, ChangeAssuranceError> {
     input
-        .governing_plan_id
-        .as_deref()
+        .governing_plan
+        .as_ref()
+        .map(|plan| plan.id.as_str())
         .map(|id| {
             crate::ids::NonEmptyText::parse(id, crate::error::Subject::Receipt, "governing plan id")
         })

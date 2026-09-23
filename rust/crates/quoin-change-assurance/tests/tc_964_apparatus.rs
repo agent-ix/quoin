@@ -64,6 +64,7 @@ fn apparatus_edit_control() -> NegativeControls {
 
 fn plan_protecting(entries: &[&str]) -> GoverningPlan {
     GoverningPlan {
+        id: "MP-964".to_owned(),
         protected_apparatus: Some(apparatus(entries)),
         negative_controls: None,
     }
@@ -93,6 +94,7 @@ fn tc_964_001_a_diff_touching_any_protected_category_is_refused() {
             let mut input = base_input();
             input.diff_paths = Some(vec!["src/lib.rs".to_owned(), touched_path.to_owned()]);
             input.governing_plan = Some(GoverningPlan {
+                id: "MP-964".to_owned(),
                 protected_apparatus: Some(apparatus(&[protected_entry])),
                 negative_controls: controls,
             });
@@ -162,6 +164,7 @@ fn tc_964_003_an_uncatchable_negative_control_is_reported() {
     .unwrap();
     input.diff_paths = Some(vec!["src/lib.rs".to_owned()]);
     input.governing_plan = Some(GoverningPlan {
+        id: "MP-964".to_owned(),
         protected_apparatus: Some(apparatus(&["checker/config.toml"])),
         negative_controls: Some(controls),
     });
@@ -205,8 +208,10 @@ fn tc_964_004_a_protecting_plan_with_no_retained_diff_is_incomplete() {
 fn tc_1015_005_the_receipt_records_governing_plan_id_and_diff_paths_supplied() {
     let mut linked = base_input();
     linked.diff_paths = Some(vec!["src/lib.rs".to_owned()]);
-    linked.governing_plan = Some(plan_protecting(&["checker/config.toml"]));
-    linked.governing_plan_id = Some("MP-1015-LINKED".to_owned());
+    linked.governing_plan = Some(GoverningPlan {
+        id: "MP-1015-LINKED".to_owned(),
+        ..plan_protecting(&["checker/config.toml"])
+    });
     let receipt = verify_change_assurance(&linked).expect("verification succeeds");
     assert_eq!(
         receipt.body.governing_plan_id.map(|id| id.to_string()),
@@ -228,4 +233,36 @@ fn tc_1015_005_the_receipt_records_governing_plan_id_and_diff_paths_supplied() {
     let unlinked = verify_change_assurance(&base_input()).expect("verification succeeds");
     assert_eq!(unlinked.body.governing_plan_id, None);
     assert!(!unlinked.body.diff_paths_supplied);
+}
+
+/// Trace: FR-111-AC-5, TC-1915
+///
+/// A refusal receipt records the two PLAT-1015 members too: a record that
+/// fails its own schema is sealed as `schema_invalid` without any apparatus
+/// judgment, and that receipt still states which plan and whether a diff it
+/// was asked to be checked against — the omission is auditable on every
+/// receipt, not only on the ones whose record parsed.
+#[test]
+fn tc_1015_006_a_schema_invalid_receipt_records_the_plan_and_diff() {
+    let mut linked = base_input();
+    linked.record = quoin_store::JsonValue::string("not a record");
+    linked.diff_paths = Some(vec!["src/lib.rs".to_owned()]);
+    linked.governing_plan = Some(GoverningPlan {
+        id: "MP-1015-REFUSED".to_owned(),
+        ..plan_protecting(&["checker/config.toml"])
+    });
+    let receipt = verify_change_assurance(&linked).expect("a refusal receipt is still sealed");
+    assert_eq!(receipt.body.reasons, vec![Reason::SchemaInvalid]);
+    assert_eq!(
+        receipt.body.governing_plan_id.map(|id| id.to_string()),
+        Some("MP-1015-REFUSED".to_owned())
+    );
+    assert!(receipt.body.diff_paths_supplied);
+
+    let mut unlinked = base_input();
+    unlinked.record = quoin_store::JsonValue::string("not a record");
+    let receipt = verify_change_assurance(&unlinked).expect("a refusal receipt is still sealed");
+    assert_eq!(receipt.body.reasons, vec![Reason::SchemaInvalid]);
+    assert_eq!(receipt.body.governing_plan_id, None);
+    assert!(!receipt.body.diff_paths_supplied);
 }

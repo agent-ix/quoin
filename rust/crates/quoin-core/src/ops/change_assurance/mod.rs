@@ -335,12 +335,9 @@ pub fn receipt(
         decision_history: Some(decisions),
         audits,
         diff_paths: request.diff_paths,
+        // PLAT-1015: the resolved plan carries its own id, which the sealed
+        // receipt records as `governing_plan_id` regardless of outcome.
         governing_plan: governing,
-        // PLAT-1015: recorded on the sealed receipt as `governing_plan_id`
-        // regardless of outcome, so an auditor can see which plan (if any)
-        // this receipt was checked against rather than infer it from whether
-        // `apparatus_touched`/`diff_missing` happened to fire.
-        governing_plan_id: request.plan.clone(),
     };
     let sealed = verify::verify_change_assurance(&input).map_err(|e| map_error(&e, OP))?;
     ok(&ReceiptPayload {

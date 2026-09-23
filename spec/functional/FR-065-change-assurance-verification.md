@@ -48,6 +48,7 @@ When no invalid check exists, any incomplete check SHALL dominate `valid`.
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-ix.github.io/quoin/schemas/verification-receipt-v1.schema.json",
   "title": "VerificationReceiptV1",
+  "$comment": "governing_plan_id and diff_paths_supplied (PLAT-1015, FR-111) are required on every receipt sealed from PLAT-1015 on. This schema describes what is sealed; verify_receipt additionally re-verifies a receipt sealed before PLAT-1015, which carries neither member and reads back as no plan linked and no diff supplied.",
   "type": "object",
   "required": [
     "schema_version",
@@ -61,7 +62,9 @@ When no invalid check exists, any incomplete check SHALL dominate `valid`.
     "proofs",
     "unknowns",
     "outcome",
-    "reasons"
+    "reasons",
+    "governing_plan_id",
+    "diff_paths_supplied"
   ],
   "properties": {
     "schema_version": { "const": 1 },
@@ -110,7 +113,11 @@ When no invalid check exists, any incomplete check SHALL dominate `valid`.
     "reasons": {
       "type": "array",
       "items": { "$ref": "#/$defs/reason" }
-    }
+    },
+    "governing_plan_id": {
+      "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+    },
+    "diff_paths_supplied": { "type": "boolean" }
   },
   "$defs": {
     "identity": {

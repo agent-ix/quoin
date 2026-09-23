@@ -25,7 +25,7 @@ use quoin_change_assurance::ids::NonEmptyText;
 use quoin_change_assurance::model::outcome::{Check, Outcome};
 use quoin_change_assurance::model::receipt::{ReceiptChecks, UnsealedReceipt};
 use quoin_change_assurance::verify::verify_receipt;
-use quoin_store::{CanonicalDigest, JsonValue, digest_canonical_value};
+use quoin_store::{CanonicalDigest, JsonValue, digest_canonical_value, parse_strict_json};
 
 /// A minimal, otherwise-valid receipt, sealed as `write_receipt` always seals
 /// one from here on — `governing_plan_id` and `diff_paths_supplied` present.
@@ -55,7 +55,7 @@ fn minimal() -> UnsealedReceipt {
     }
 }
 
-/// Trace: FR-111-AC-5
+/// Trace: FR-111-AC-5, TC-1915
 ///
 /// A receipt sealed with no plan linked and no diff supplied records both
 /// facts explicitly rather than omitting the members: `governing_plan_id:
@@ -76,7 +76,7 @@ fn tc_1015_001_an_unlinked_receipt_records_the_omission_explicitly() {
     );
 }
 
-/// Trace: FR-111-AC-5
+/// Trace: FR-111-AC-5, TC-1915
 ///
 /// A receipt whose `governing_plan_id` and `diff_paths` were both supplied
 /// round-trips both through sealing and `verify_receipt`.
@@ -99,7 +99,7 @@ fn tc_1015_002_a_linked_receipt_records_the_plan_id_and_that_a_diff_was_supplied
     assert!(verified.body.diff_paths_supplied);
 }
 
-/// Trace: FR-111-AC-5
+/// Trace: FR-111-AC-5, TC-1915
 ///
 /// A receipt sealed before PLAT-1015 carries neither `governing_plan_id` nor
 /// `diff_paths_supplied` at all. `verify_receipt` still reads and verifies
@@ -121,6 +121,32 @@ fn tc_1015_003_a_receipt_sealed_before_plat_1015_still_re_verifies() {
 
     let verified =
         verify_receipt(&sealed).expect("a receipt sealed before PLAT-1015 still re-verifies");
+    assert_eq!(verified.body.governing_plan_id, None);
+    assert!(!verified.body.diff_paths_supplied);
+}
+
+/// Trace: FR-111-AC-5, TC-1915
+///
+/// `tc_1015_003` builds its pre-PLAT-1015 receipt by stripping the two
+/// members from one this crate seals today; this one reads a receipt that the
+/// pre-PLAT-1015 sealer actually produced — the retained CLI fixture
+/// `tests/fixtures/change-assurance-cli/receipt.json`, untouched by PLAT-1015
+/// — so the compatibility claim rests on real retained evidence rather than
+/// on this crate's own idea of the old shape.
+#[test]
+fn tc_1015_004_a_receipt_retained_before_plat_1015_still_re_verifies() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../tests/fixtures/change-assurance-cli/receipt.json");
+    let bytes = std::fs::read(&path).expect("the retained receipt fixture is present");
+    let retained = parse_strict_json(&bytes).expect("the retained receipt is strict JSON");
+    let object = retained.as_object().unwrap();
+    assert!(
+        !object.contains("governing_plan_id") && !object.contains("diff_paths_supplied"),
+        "the fixture must stay a pre-PLAT-1015 receipt for this test to mean anything"
+    );
+
+    let verified = verify_receipt(&retained).expect("a retained pre-PLAT-1015 receipt re-verifies");
+    assert_eq!(verified.body.outcome, Outcome::Valid);
     assert_eq!(verified.body.governing_plan_id, None);
     assert!(!verified.body.diff_paths_supplied);
 }

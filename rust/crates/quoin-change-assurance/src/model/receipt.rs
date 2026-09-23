@@ -122,7 +122,7 @@ pub struct UnsealedReceipt {
     /// Every premise refused anywhere, deduplicated and ordered.
     pub reasons: Vec<Reason>,
     /// The `MeasurementPlan` id this receipt was checked against, exactly as
-    /// [`crate::verify::input::VerificationInput::governing_plan_id`] carried
+    /// [`crate::verify::input::GoverningPlan::id`] carried
     /// it in (PLAT-1015, FR-111).
     ///
     /// `None` records "no plan was linked" as a fact the receipt states,

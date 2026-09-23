@@ -184,7 +184,15 @@ existing (unmodified) input, which for every captured scenario means
 regenerated receipts differed from the oracle's on any member but `digest`,
 `governing_plan_id` and `diff_paths_supplied`, checked structurally rather
 than assumed, exactly as §6 checked for `strength`. No outcome, reason, proof
-state or selection moved.
+state or selection moved. Every one of the 37 still re-verifies (its `digest`
+covers the two new members), and the oracle's 38th scenario, which captures no
+receipt, is unchanged.
+
+`quoin-core`'s `tests/fixtures/change-assurance-oracle.json` carries only each
+case's `receipt_digest`, never the receipt: its 5 cases' `receipt_digest`
+values were re-derived the same way, and each maps one-to-one onto the
+regenerated `oracle.json` receipt it was previously equal to. Its
+`receipt_outcome` and `receipt_reasons` are untouched.
 
 `quoin-change-assurance`'s `read_sealed` reads both members as optional
 (`Fields::exact_with_optional`), not required, precisely so a receipt sealed
@@ -192,4 +200,17 @@ before this ticket — this fixture's own pre-PLAT-1015 form, or anything a
 caller already retained — still re-verifies: absence reads back as `None`
 governing plan and `diff_paths_supplied: false`, the fact that receipt
 genuinely never tracked either. Only `write_receipt` (what this crate seals
-from here on) always emits both.
+from here on) always emits both. `verification-receipt-v1.schema.json` (and
+FR-065's copy of it) requires both, because it describes what is sealed; its
+`$comment` records that `verify_receipt` accepts the older form as well.
+
+This is the opposite call from §6, which made `strength` required on read and
+so refused every attestation sealed before PLAT-972. A receipt is the terminal
+evidence a caller retains; making the pre-PLAT-1015 ones unreadable would
+strand exactly the evidence this ticket exists to make auditable. The
+schema_version stays `1`, as it did for §6 and for PLAT-964's new receipt
+reasons: every one of these changes leaves documents already sealed readable by
+the current reader, which is the property a version bump would exist to
+protect. The reverse direction does not hold and never did for those changes
+either: a reader older than this ticket refuses a new receipt, by name, as
+`extra field diff_paths_supplied`.
