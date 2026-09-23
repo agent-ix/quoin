@@ -42,6 +42,7 @@ use crate::error::{CoreError, CoreErrorCode};
 /// `MeasurementErrorCode::ALL.len()`, which a loop over `ALL` could not do —
 /// such a loop re-runs this same match and agrees with itself (the quoin#443
 /// failure mode).
+///
 /// `pub(crate)` rather than `pub(super)`, and re-exported from
 /// [`super`]: `ops::change_assurance` reuses this same mapping to resolve a
 /// `change_assurance.receipt` plan link through `quoin-measurement`'s own

@@ -248,8 +248,13 @@ pub struct ReceiptRequest {
     /// (`quoin_measurement::plans::load_measurement_plans`) over this
     /// request's `repo`, so `protected_apparatus` and `negative_controls` are
     /// read by the one parser PLAT-975 already governs — this wire shape
-    /// restates none of that grammar. `None` when the caller asks no plan
-    /// question, which is exactly today's behavior.
+    /// restates none of that grammar. The plan is read from `repo`'s plan
+    /// documents as they stand on disk when the receipt is sealed, not from
+    /// `candidate_revision`: a checkout that edits the plan's own
+    /// `protected_apparatus` is judged against the edited list. `None` when
+    /// the caller asks no plan question, which seals an unlinked receipt
+    /// exactly as before PLAT-997 — linking a plan is the caller's choice,
+    /// like `diff_paths`, not something this operation discovers.
     #[serde(default)]
     pub plan: Option<String>,
 }

@@ -161,7 +161,7 @@ fn intake_attestation(root: &Path) -> String {
 /// `apparatus_touched` and refuses the receipt, through the real binary — the
 /// gap FR-111-CON-3 recorded until this ticket.
 ///
-/// Trace: FR-111-AC-1, TC-1885
+/// Trace: FR-111-AC-1, TC-1889
 /// Provenance: PLAT-997
 #[test]
 fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
@@ -219,7 +219,7 @@ fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
 /// `diff_missing` and `incomplete` through the real binary — never vacuously
 /// `valid` because the caller supplied no diff (FR-111-AC-4).
 ///
-/// Trace: FR-111-AC-4, TC-1886
+/// Trace: FR-111-AC-4, TC-1890
 /// Provenance: PLAT-997
 #[test]
 fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {

@@ -123,7 +123,14 @@ control is its own incompleteness.
   operation resolves it itself through `quoin-measurement`'s own plan intake
   (the load PLAT-975 already governs) so `protected_apparatus` and
   `negative_controls` are read by that one parser rather than restated on
-  the wire.
+  the wire. It is read from `repo`'s plan documents as they stand on disk
+  when the receipt is sealed, not from `candidate_revision`, so a checkout
+  whose change edits the plan's own `protected_apparatus` is judged against
+  the edited list. Whether a plan is linked at all is likewise the caller's
+  choice: a request naming no `plan` seals an unlinked receipt, to which this
+  requirement adds no reason. This requirement therefore guards a caller that
+  asks the question honestly; it does not detect a caller that omits the
+  plan, or the paths, it would be refused for.
 
 ## Dependencies
 

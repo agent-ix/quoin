@@ -32,7 +32,7 @@ use crate::ops::measurement::map_measurement;
 use crate::protocol::Response;
 
 use super::taxonomy::map_error;
-use super::wire::AuditInput;
+use super::wire::{AuditInput, MAX_DIFF_PATHS, MAX_SCALAR_BYTES, ReceiptRequest};
 
 /// Resolve a `change_assurance.receipt`'s `plan` link into the two members
 /// FR-111's apparatus judgment reads, through `quoin-measurement`'s own plan
@@ -347,44 +347,44 @@ pub(super) fn check_count(
 /// what `receipt()` ran inline before `diff_paths` and `plan` were added.
 pub(super) fn check_receipt_bounds(
     op: &'static str,
-    request: &super::wire::ReceiptRequest,
+    request: &ReceiptRequest,
 ) -> Result<(), CoreError> {
-    check_bound(op, "repo", &request.repo, super::wire::MAX_SCALAR_BYTES)?;
+    check_bound(op, "repo", &request.repo, MAX_SCALAR_BYTES)?;
     check_bound(
         op,
         "candidate_revision",
         &request.candidate_revision,
-        super::wire::MAX_SCALAR_BYTES,
+        MAX_SCALAR_BYTES,
     )?;
     check_bound(
         op,
         "record_digest",
         &request.record_digest,
-        super::wire::MAX_SCALAR_BYTES,
+        MAX_SCALAR_BYTES,
     )?;
     for parent in &request.parent_digests {
-        check_bound(op, "parent_digests", parent, super::wire::MAX_SCALAR_BYTES)?;
+        check_bound(op, "parent_digests", parent, MAX_SCALAR_BYTES)?;
     }
     let diff_len = request.diff_paths.as_ref().map_or(0, Vec::len);
-    check_count(op, "diff_paths", diff_len, super::wire::MAX_DIFF_PATHS)?;
+    check_count(op, "diff_paths", diff_len, MAX_DIFF_PATHS)?;
     for path in request.diff_paths.iter().flatten() {
-        check_bound(op, "diff_paths", path, super::wire::MAX_SCALAR_BYTES)?;
+        check_bound(op, "diff_paths", path, MAX_SCALAR_BYTES)?;
     }
     if let Some(plan) = &request.plan {
-        check_bound(op, "plan", plan, super::wire::MAX_SCALAR_BYTES)?;
+        check_bound(op, "plan", plan, MAX_SCALAR_BYTES)?;
     }
     for selection in &request.selections {
         check_bound(
             op,
             "selections.proof_id",
             &selection.proof_id,
-            super::wire::MAX_SCALAR_BYTES,
+            MAX_SCALAR_BYTES,
         )?;
         check_bound(
             op,
             "selections.attestation_digest",
             &selection.attestation_digest,
-            super::wire::MAX_SCALAR_BYTES,
+            MAX_SCALAR_BYTES,
         )?;
     }
     Ok(())

@@ -254,8 +254,11 @@ pub fn recover(
 ///
 /// - [`CoreErrorCode::BadRequest`] when stdin is not a [`ReceiptRequest`] or
 ///   one of its documents does not parse strictly.
-/// - [`CoreErrorCode::Refused`] when a ceiling is exceeded, or when a named
-///   record or attestation is not retained in this store.
+/// - [`CoreErrorCode::Refused`] when a ceiling is exceeded, when a named
+///   record or attestation is not retained in this store, or when no
+///   `MeasurementPlan` in `repo` has the requested `plan` id.
+/// - The mapped `quoin-measurement` refusal when `plan` is named and the
+///   repository's plan documents cannot be loaded.
 pub fn receipt(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,
@@ -331,7 +334,7 @@ pub fn receipt(
         attestations: retained,
         decision_history: Some(decisions),
         audits,
-        diff_paths: request.diff_paths.clone(),
+        diff_paths: request.diff_paths,
         governing_plan: governing,
     };
     let sealed = verify::verify_change_assurance(&input).map_err(|e| map_error(&e, OP))?;

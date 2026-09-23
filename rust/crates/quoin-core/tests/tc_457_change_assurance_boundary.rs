@@ -766,7 +766,7 @@ fn write_protecting_plan(root: &Path, id: &str, entries: &[&str]) {
 /// `apparatus_touched` and the receipt is `invalid`, through this operation
 /// and not only through the library (closes FR-111-CON-3).
 ///
-/// Trace: FR-111-AC-1, TC-1885
+/// Trace: FR-111-AC-1, TC-1889
 /// Provenance: PLAT-997
 #[test]
 fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
@@ -803,7 +803,7 @@ fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
 /// `diff_missing` and `incomplete` through the operation — never vacuously
 /// `valid` because the caller omitted `--diff-path` (FR-111-AC-4).
 ///
-/// Trace: FR-111-AC-4, TC-1886
+/// Trace: FR-111-AC-4, TC-1890
 /// Provenance: PLAT-997
 #[test]
 fn tc_997_612_receipt_reports_diff_missing_through_the_operation() {
@@ -820,23 +820,67 @@ fn tc_997_612_receipt_reports_diff_missing_through_the_operation() {
     assert_eq!(payload["receipt"]["reasons"], json!(["diff_missing"]));
 }
 
-/// A `diff_paths` list past [`quoin_core::ops::change_assurance::MAX_DIFF_PATHS`]
-/// is refused before any store or plan is consulted, the same shape every
-/// other accumulator on this boundary refuses at its own ceiling.
+/// `diff_paths` and `plan` are bounded at their ceilings, in the shape every
+/// other accumulator on this boundary uses: a list of exactly
+/// [`quoin_core::ops::change_assurance::MAX_DIFF_PATHS`] entries, and an
+/// entry of exactly [`quoin_core::ops::change_assurance::MAX_SCALAR_BYTES`]
+/// bytes, are accepted and verified; one entry or one byte past either is
+/// refused naming the field and the ceiling before any store or plan is read,
+/// and so is a `plan` id one byte past its ceiling.
 ///
-/// Trace: FR-111-CON-2
+/// Trace: FR-111-CON-2, TC-1891
 /// Provenance: PLAT-997
 #[test]
-fn tc_997_613_an_oversized_diff_paths_list_is_refused_before_any_read() {
+fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
+    use quoin_core::ops::change_assurance::{MAX_DIFF_PATHS, MAX_SCALAR_BYTES};
+
+    // The production ceilings, as literals: a test that read them back
+    // would agree with any value.
+    assert_eq!(MAX_DIFF_PATHS, 65_536);
+    assert_eq!(MAX_SCALAR_BYTES, 4 * 1024);
+
     let fixture = case("everything-agrees");
     let root = repo();
-    let mut request = receipt_request(root.path(), &fixture);
-    request["diff_paths"] = json!(
-        (0..=quoin_core::ops::change_assurance::MAX_DIFF_PATHS)
-            .map(|n| format!("p{n}"))
-            .collect::<Vec<_>>()
-    );
-    let result = run("change_assurance.receipt", &request);
-    let diagnostics = failed(&result, 2);
-    assert_eq!(diagnostics[0]["context"]["field"], "diff_paths");
+    seal_record(root.path(), &fixture);
+    intake_all(root.path(), &fixture);
+    let paths = |count: usize| json!((0..count).map(|n| format!("p{n}")).collect::<Vec<_>>());
+
+    // At the count ceiling: accepted and verified, not refused.
+    let mut at_count = receipt_request(root.path(), &fixture);
+    at_count["diff_paths"] = paths(MAX_DIFF_PATHS);
+    let payload = ok(&run("change_assurance.receipt", &at_count));
+    assert_eq!(payload["receipt"]["outcome"], json!("valid"));
+
+    // One entry past it: refused by count, before any read.
+    let mut past_count = receipt_request(root.path(), &fixture);
+    past_count["diff_paths"] = paths(MAX_DIFF_PATHS + 1);
+    let diagnostics = failed(&run("change_assurance.receipt", &past_count), 2);
+    let context = &diagnostics[0]["context"];
+    assert_eq!(context["field"], "diff_paths");
+    assert_eq!(context["limit_entries"], "65536");
+    assert_eq!(context["observed_entries"], "65537");
+
+    // One entry of exactly the scalar ceiling: accepted.
+    let mut at_bytes = receipt_request(root.path(), &fixture);
+    at_bytes["diff_paths"] = json!(["a".repeat(MAX_SCALAR_BYTES)]);
+    let payload = ok(&run("change_assurance.receipt", &at_bytes));
+    assert_eq!(payload["receipt"]["outcome"], json!("valid"));
+
+    // One byte past it: refused by size.
+    let mut past_bytes = receipt_request(root.path(), &fixture);
+    past_bytes["diff_paths"] = json!(["a".repeat(MAX_SCALAR_BYTES + 1)]);
+    let diagnostics = failed(&run("change_assurance.receipt", &past_bytes), 2);
+    let context = &diagnostics[0]["context"];
+    assert_eq!(context["field"], "diff_paths");
+    assert_eq!(context["limit_bytes"], "4096");
+    assert_eq!(context["observed_bytes"], "4097");
+
+    // A `plan` id one byte past the scalar ceiling: refused by size, not
+    // looked up.
+    let mut past_plan = receipt_request(root.path(), &fixture);
+    past_plan["plan"] = json!("P".repeat(MAX_SCALAR_BYTES + 1));
+    let diagnostics = failed(&run("change_assurance.receipt", &past_plan), 2);
+    let context = &diagnostics[0]["context"];
+    assert_eq!(context["field"], "plan");
+    assert_eq!(context["limit_bytes"], "4096");
 }
