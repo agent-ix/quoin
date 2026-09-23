@@ -435,6 +435,13 @@ const THRESHOLDS: quoin_jev::Thresholds = quoin_jev::Thresholds {
     margin: 0.0,
 };
 
+/// The model `lens::run` is pinned to (PLAT-978), the same concrete version
+/// the crate's own lens tests pin. A response from any other model fails the
+/// pass with `JEV_MODEL_MISMATCH`, naming the model that answered, rather than
+/// being graded -- so a server-side model bump cannot pass itself off as a
+/// change in accuracy. Moving to a new model is a deliberate edit here.
+const PINNED_MODEL: &str = "jev-1.13.0";
+
 /// The shipped question set, compiled in so the asset and this test cannot
 /// drift -- the same discipline `question_set.rs` and `lens.rs` already hold.
 const QUESTION_SET: &str =
@@ -714,7 +721,7 @@ async fn call(
     fixture_id: &str,
 ) -> (FrVerdict, Duration) {
     let started = Instant::now();
-    let verdict = quoin_jev::lens::run(client, context, questions, THRESHOLDS)
+    let verdict = quoin_jev::lens::run(client, context, questions, PINNED_MODEL, THRESHOLDS)
         .await
         .unwrap_or_else(|error| {
             panic!("{fixture_id}: {} — {}", error.code.as_str(), error.message)
@@ -1040,6 +1047,13 @@ async fn the_lens_with_noul_derived_labels_v3() {
                     error.message
                 )
             });
+        // This variant reads the raw response rather than going through
+        // `lens::run`, so it holds the PLAT-978 pin itself.
+        assert_eq!(
+            response.model, PINNED_MODEL,
+            "{}: JEV_MODEL_MISMATCH",
+            fixture.fixture_id
+        );
         input_tokens += response.usage.input_tokens;
         output_tokens += response.usage.output_tokens;
 
@@ -1064,7 +1078,7 @@ async fn the_lens_with_noul_derived_labels_v3() {
     let mut coverage_graded = Vec::with_capacity(4);
     for fixture in &corpus.adverse_case_coverage_fixtures {
         let context = fixture.context().bound(&ContextPolicy::default());
-        let verdict = quoin_jev::lens::run(&client, &context, &questions, THRESHOLDS)
+        let verdict = quoin_jev::lens::run(&client, &context, &questions, PINNED_MODEL, THRESHOLDS)
             .await
             .unwrap_or_else(|error| {
                 panic!(
@@ -1297,6 +1311,13 @@ async fn run_once_v4(client: &Client, set: &QuestionSet) -> (Vec<Graded>, u64, u
                     error.message
                 )
             });
+        // Sent outside `lens::run` (its question block differs), so this
+        // variant holds the PLAT-978 pin itself.
+        assert_eq!(
+            response.model, PINNED_MODEL,
+            "{}: JEV_MODEL_MISMATCH",
+            fixture.fixture_id
+        );
         input_tokens += response.usage.input_tokens;
         output_tokens += response.usage.output_tokens;
         graded.push(grade_weakness(
@@ -1309,7 +1330,7 @@ async fn run_once_v4(client: &Client, set: &QuestionSet) -> (Vec<Graded>, u64, u
     // are sent exactly as v0 sends them.
     for fixture in &corpus.adverse_case_coverage_fixtures {
         let context = fixture.context().bound(&ContextPolicy::default());
-        let verdict = quoin_jev::lens::run(client, &context, set, THRESHOLDS)
+        let verdict = quoin_jev::lens::run(client, &context, set, PINNED_MODEL, THRESHOLDS)
             .await
             .unwrap_or_else(|error| {
                 panic!(

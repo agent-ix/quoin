@@ -64,6 +64,12 @@ pub enum JevErrorCode {
     /// cassette never invents an answer; a miss is a fixture/cassette drift
     /// to fix, not a case to fall through to the network.
     CassetteMiss,
+    /// A System One response named a model other than the one the caller
+    /// pinned [`crate::lens::run`] to, so it was refused before anything was
+    /// scored (PLAT-978). Distinct from [`Self::CassetteModelMismatch`]: that
+    /// code is a cassette file refusing to load; this one is the response in
+    /// hand -- live or replayed -- refusing to be scored.
+    ModelMismatch,
     /// A span ballot (`span_ballot::SpanBallot`) was built with no candidate
     /// span left to offer (PLAT-980).
     SpanBallotEmpty,
@@ -91,6 +97,7 @@ impl JevErrorCode {
             Self::CassetteInvalid => "JEV_CASSETTE_INVALID",
             Self::CassetteModelMismatch => "JEV_CASSETTE_MODEL_MISMATCH",
             Self::CassetteMiss => "JEV_CASSETTE_MISS",
+            Self::ModelMismatch => "JEV_MODEL_MISMATCH",
             Self::SpanBallotEmpty => "JEV_SPAN_BALLOT_EMPTY",
             Self::SpanBallotTooLarge => "JEV_SPAN_BALLOT_TOO_LARGE",
         }
@@ -113,6 +120,7 @@ impl JevErrorCode {
             Self::CassetteInvalid,
             Self::CassetteModelMismatch,
             Self::CassetteMiss,
+            Self::ModelMismatch,
             Self::SpanBallotEmpty,
             Self::SpanBallotTooLarge,
         ]

@@ -302,6 +302,12 @@ pub struct BoundedContext {
 }
 
 impl BoundedContext {
+    /// The FR this context was built from; never bounded.
+    #[must_use]
+    pub fn fr_id(&self) -> &str {
+        &self.fr_id
+    }
+
     /// Every AC id, in document order; identical to [`FrContext::ac_ids`],
     /// since AC rows are never bounded.
     #[must_use]

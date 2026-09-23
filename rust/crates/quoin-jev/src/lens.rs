@@ -8,7 +8,9 @@
 //! should be a single call" -- this module is that call. It builds the
 //! request from a [`BoundedContext`] and [`QuestionSet`], sends it through a
 //! [`typesafe_sdk_client::Client`] (production or mocked; this module does
-//! not care which), and hands the response to [`crate::verdict::extract`].
+//! not care which), refuses a response from any model other than the one the
+//! caller pinned (PLAT-978), and hands the rest to
+//! [`crate::verdict::extract`].
 //!
 //! Both entry points take [`BoundedContext`], not
 //! [`crate::context::FrContext`]: an FR's prose reaches Jev only after a
@@ -20,7 +22,8 @@ use typesafe_sdk_client::{Client, SystemOneRequest};
 use typesafe_sdk_questions::Entry;
 
 use crate::context::BoundedContext;
-use crate::error::{JevError, classify};
+use crate::error::{JevError, JevErrorCode, classify};
+use crate::model_pin;
 use crate::question_set::QuestionSet;
 use crate::verdict::{FrVerdict, Thresholds, extract};
 
@@ -36,21 +39,46 @@ pub fn build_request(context: &BoundedContext, question_set: &QuestionSet) -> Sy
     SystemOneRequest::new(state, questions)
 }
 
-/// Runs the lens for one FR: builds the request, sends it, and extracts
-/// findings.
+/// Runs the lens for one FR: builds the request, sends it, checks the
+/// response came from the pinned model, and extracts findings.
 ///
-/// `thresholds` is threaded straight to [`crate::verdict::extract`] -- see
-/// that function's doc for why this crate does not bake in values of its
-/// own.
+/// `expected_model` is the concrete model version (e.g. `jev-1.13.0`, never
+/// an alias such as `jev-latest`) the caller's `thresholds` were calibrated
+/// against. A response naming any other model is refused with
+/// [`JevErrorCode::ModelMismatch`] and nothing is scored (PLAT-978). Like
+/// `thresholds` -- threaded straight to [`crate::verdict::extract`], see that
+/// function's doc for why this crate does not bake in values of its own --
+/// the value is required and the caller's: this crate does not own the
+/// calibration, so it cannot own the pin either.
+///
+/// **Why the check is here and not inside [`crate::verdict::extract`].**
+/// `extract` is a total function by design: every partial answer it can meet
+/// (a missing row, an out-of-band label) is recorded as its own outcome on
+/// [`FrVerdict`] rather than refusing the FR, and it has no error path at
+/// all. A model mismatch is not that kind of partial answer. Every number in
+/// the response was produced by a model the thresholds were not calibrated
+/// for, so there is no row of it worth keeping; the whole response is
+/// refused. That is a failure of the call, and `run` is where the call's
+/// failures already surface as [`JevError`] (auth, rate limit, connection).
+/// Putting it here keeps `extract` a pure mapping with no refusal to test
+/// around, and puts the refusal on the only path from a response to a
+/// verdict in this crate.
+///
+/// This check also covers a response replayed from a [`crate::Cassette`].
+/// The cassette's own pin guards what is on file when it loads; this one
+/// guards the response in hand at the moment it would be scored. The two
+/// can be given different pins by mistake, and then this one refuses.
 ///
 /// # Errors
 /// Any [`typesafe_sdk_error::Error`] the client raises (auth, validation,
 /// rate limit, connection, timeout), classified through
-/// [`crate::error::classify`].
+/// [`crate::error::classify`]; [`JevErrorCode::ModelMismatch`] if the
+/// response's `model` is not `expected_model`.
 pub async fn run(
     client: &Client,
     context: &BoundedContext,
     question_set: &QuestionSet,
+    expected_model: &str,
     thresholds: Thresholds,
 ) -> Result<FrVerdict, JevError> {
     let request = build_request(context, question_set);
@@ -58,6 +86,12 @@ pub async fn run(
         .system_one(request)
         .await
         .map_err(|error| classify(&error))?;
+    model_pin::check(
+        &response.model,
+        expected_model,
+        JevErrorCode::ModelMismatch,
+        context.fr_id(),
+    )?;
     Ok(extract(
         &response,
         question_set,
@@ -80,6 +114,7 @@ mod tests {
     use typesafe_sdk_http::{Exchange, Mock};
 
     use super::{build_request, run};
+    use crate::cassette::Cassette;
     use crate::client::with_transport;
     use crate::config::resolve;
     use crate::context::{
@@ -88,6 +123,9 @@ mod tests {
     use crate::error::JevErrorCode;
     use crate::question_set::QuestionSet;
     use crate::verdict::{Certainty, Thresholds};
+
+    /// The model every test pins the lens to, unless it is testing a skew.
+    const PINNED: &str = "jev-1.13.0";
 
     const ASSET: &str = include_str!(
         "../../../../skills/spec-criterion-strength-analysis/assets/question-set.json"
@@ -162,29 +200,10 @@ mod tests {
         let env = Fixed::new(&[("TYPESAFE_API_KEY", "sk_test_key")]);
         let config = resolve(&env).expect("the key is present");
         let set = QuestionSet::parse(ASSET).expect("parses");
-        let body = serde_json::json!({
-            "model": "jev-1.13.0",
-            "answers": {
-                "FR-900-AC-1::falsifiable": {"type": "noul", "noul": 0.9},
-                "FR-900-AC-1::states_observable_outcome": {"type": "noul", "noul": 0.9},
-                "FR-900-AC-1::threshold_present": {"type": "noul", "noul": 0.1},
-                "FR-900-AC-1::restates_requirement": {"type": "noul", "noul": 0.05},
-                "FR-900-AC-1::implementation_coupled": {"type": "noul", "noul": 0.02},
-                "FR-900-AC-1::weakness_kind": {
-                    "type": "choice", "choice": "happy_path_only", "confidence": 0.92,
-                    "probabilities": {"happy_path_only": 0.92, "sound": 0.05}
-                },
-                "adverse_case_coverage": {
-                    "type": "score", "score": 1.0, "confidence": 0.8,
-                    "legend": {}, "probabilities": {}
-                }
-            },
-            "usage": {"input_tokens": 120, "output_tokens": 0}
-        });
-        let mock = Arc::new(Mock::new(vec![Exchange::ok(&body.to_string())]));
+        let mock = Arc::new(Mock::new(vec![Exchange::ok(&answer_body(PINNED))]));
         let client = with_transport(config, mock.clone());
 
-        let verdict = run(&client, &context(), &set, THRESHOLDS)
+        let verdict = run(&client, &context(), &set, PINNED, THRESHOLDS)
             .await
             .expect("mocked 200");
         assert_eq!(verdict.classifier, "jev-1.13.0");
@@ -211,6 +230,102 @@ mod tests {
         assert_eq!(mock.attempts(), 1);
     }
 
+    /// Provenance: PLAT-978. A live response naming a model other than the
+    /// pin is refused under its own code and never scored -- the same body
+    /// that scores one finding under the matching pin above produces no
+    /// verdict at all here. The message names both models, and the FR.
+    #[tokio::test]
+    async fn a_response_from_an_unpinned_model_is_refused_not_scored() {
+        let env = Fixed::new(&[("TYPESAFE_API_KEY", "sk_test_key")]);
+        let config = resolve(&env).expect("the key is present");
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let mock = Arc::new(Mock::new(vec![Exchange::ok(&answer_body("jev-2.0.0"))]));
+        let client = with_transport(config, mock.clone());
+
+        let error = run(&client, &context(), &set, PINNED, THRESHOLDS)
+            .await
+            .expect_err("jev-2.0.0 is not the pinned model");
+        assert_eq!(error.code, JevErrorCode::ModelMismatch);
+        assert_eq!(error.code.as_str(), "JEV_MODEL_MISMATCH");
+        for needle in ["FR-900", "jev-2.0.0", "jev-1.13.0"] {
+            assert!(
+                error.message.contains(needle),
+                "{needle}: {}",
+                error.message
+            );
+        }
+        assert_eq!(mock.attempts(), 1, "refused after the call, not retried");
+    }
+
+    /// Provenance: PLAT-978. The pin is the concrete version the response
+    /// reports, so pinning an alias refuses every real answer rather than
+    /// matching whatever version the alias resolved to that day.
+    #[tokio::test]
+    async fn pinning_an_alias_refuses_the_concrete_version_it_resolved_to() {
+        let env = Fixed::new(&[("TYPESAFE_API_KEY", "sk_test_key")]);
+        let config = resolve(&env).expect("the key is present");
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let mock = Arc::new(Mock::new(vec![Exchange::ok(&answer_body(PINNED))]));
+        let client = with_transport(config, mock);
+
+        let error = run(&client, &context(), &set, "jev-latest", THRESHOLDS)
+            .await
+            .expect_err("an alias is never a response's model");
+        assert_eq!(error.code, JevErrorCode::ModelMismatch);
+    }
+
+    /// Provenance: PLAT-978, PLAT-977. A cassette-backed client is not exempt:
+    /// a cassette that loads cleanly under its own pin still has each replayed
+    /// response checked against the lens's pin, so two pins that disagree
+    /// refuse rather than score.
+    #[tokio::test]
+    async fn a_replayed_response_is_checked_against_the_lens_pin_too() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("fixture.jsonl");
+        let env = Fixed::new(&[("TYPESAFE_API_KEY", "sk_test_key")]);
+        let set = QuestionSet::parse(ASSET).expect("parses");
+
+        let mock = Arc::new(Mock::new(vec![Exchange::ok(&answer_body("jev-2.0.0"))]));
+        let recorder = Cassette::record(&path, mock, "jev-2.0.0").expect("opens");
+        let client = with_transport(resolve(&env).expect("key"), Arc::new(recorder));
+        client
+            .system_one(build_request(&context(), &set))
+            .await
+            .expect("records under the cassette's own pin");
+
+        let replay = Cassette::replay(&path, "jev-2.0.0").expect("loads under its own pin");
+        let client = with_transport(resolve(&env).expect("key"), Arc::new(replay));
+        let error = run(&client, &context(), &set, PINNED, THRESHOLDS)
+            .await
+            .expect_err("the lens is pinned elsewhere");
+        assert_eq!(error.code, JevErrorCode::ModelMismatch);
+    }
+
+    /// A full System One answer for [`context`]'s one AC row, reported as
+    /// coming from `model`: `happy_path_only` with scripted `noul` values.
+    fn answer_body(model: &str) -> String {
+        serde_json::json!({
+            "model": model,
+            "answers": {
+                "FR-900-AC-1::falsifiable": {"type": "noul", "noul": 0.9},
+                "FR-900-AC-1::states_observable_outcome": {"type": "noul", "noul": 0.9},
+                "FR-900-AC-1::threshold_present": {"type": "noul", "noul": 0.1},
+                "FR-900-AC-1::restates_requirement": {"type": "noul", "noul": 0.05},
+                "FR-900-AC-1::implementation_coupled": {"type": "noul", "noul": 0.02},
+                "FR-900-AC-1::weakness_kind": {
+                    "type": "choice", "choice": "happy_path_only", "confidence": 0.92,
+                    "probabilities": {"happy_path_only": 0.92, "sound": 0.05}
+                },
+                "adverse_case_coverage": {
+                    "type": "score", "score": 1.0, "confidence": 0.8,
+                    "legend": {}, "probabilities": {}
+                }
+            },
+            "usage": {"input_tokens": 120, "output_tokens": 0}
+        })
+        .to_string()
+    }
+
     /// Provenance: PLAT-837. A 401 (missing/invalid key) surfaces as the
     /// named `JEV_UNAUTHORIZED` code, not a generic failure -- and this needs
     /// no real key or network to prove, only the mock transport.
@@ -225,7 +340,7 @@ mod tests {
         )]));
         let client = with_transport(config, mock);
 
-        let error = run(&client, &context(), &set, THRESHOLDS)
+        let error = run(&client, &context(), &set, PINNED, THRESHOLDS)
             .await
             .expect_err("401 must not read as success");
         assert_eq!(error.code, JevErrorCode::Unauthorized);
@@ -241,7 +356,7 @@ mod tests {
         let config = resolve(&env).expect("present");
         let mock = Arc::new(Mock::new(vec![Exchange::status(422, r#"{"detail": []}"#)]));
         let client = with_transport(config, mock);
-        let error = run(&client, &context(), &set, THRESHOLDS)
+        let error = run(&client, &context(), &set, PINNED, THRESHOLDS)
             .await
             .expect_err("422");
         assert_eq!(error.code, JevErrorCode::Validation);
@@ -257,7 +372,7 @@ mod tests {
             Exchange::status(429, ""),
         ]));
         let client = with_transport(config, mock.clone());
-        let error = run(&client, &context(), &set, THRESHOLDS)
+        let error = run(&client, &context(), &set, PINNED, THRESHOLDS)
             .await
             .expect_err("429");
         assert_eq!(error.code, JevErrorCode::RateLimited);
