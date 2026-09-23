@@ -38,9 +38,10 @@
 //! run against its own history, so a run that regressed stays visible even
 //! when a later one passed; and a regressed run with the candidate's own
 //! apparatus — the same source revision, configuration, tool, corpus and
-//! verification stack, and under a plan that protects apparatus the same
-//! recorded protected apparatus — means the same thing was re-run until it
-//! passed, which is `rerun_until_pass`.
+//! verification stack — means the same thing was re-run until it passed,
+//! which is `rerun_until_pass`. A changed protected apparatus does not make
+//! it a different run: editing the answer key between a failed run and a
+//! pass is the rerun this rule exists to catch.
 //!
 //! # Protected apparatus
 //!
@@ -74,8 +75,8 @@ pub use wire::{VERDICT_SCHEMA, verdict_json};
 struct Run<'a> {
     collection: &'a MeasurementCollection,
     intake: Option<u64>,
-    /// The protected apparatus the collection recorded, under a plan that
-    /// protects some; `None` for every run of a plan that protects nothing.
+    /// The protected apparatus the collection recorded for the plan, read
+    /// whatever the plan declares today; `None` when it recorded none.
     apparatus: Option<&'a ResolvedApparatus>,
     slices: Vec<(&'a MeasurementObservation, Result<Estimate, Reason>)>,
 }
@@ -183,7 +184,7 @@ fn runs<'a>(
         .map(|ranked| Run {
             collection: ranked.collection,
             intake: ranked.intake,
-            apparatus: apparatus::recorded(plan, ranked.collection),
+            apparatus: ranked.collection.protected_apparatus_of(plan.id.as_str()),
             slices: observations_of(plan, ranked.collection)
                 .into_iter()
                 .map(|observation| {
@@ -381,7 +382,6 @@ impl Check<'_> {
         if !regressed.contains(&last) {
             for &index in regressed {
                 if let Some(run) = self.runs.get(index)
-                    && run.apparatus == candidate.apparatus
                     && same_apparatus(run.collection, candidate.collection)
                 {
                     found.push(at(Reason::RerunUntilPass, run.collection));
@@ -396,8 +396,8 @@ impl Check<'_> {
 /// it came from when that one run alone decides it (`prior-collection`).
 ///
 /// Only runs that recorded `apparatus` — the deciding run's own protected
-/// apparatus — are a baseline (PLAT-975); under a plan that protects nothing
-/// every run's is `None` and all of them are.
+/// apparatus — are a baseline (PLAT-975); in a series where no run recorded
+/// one, every run's is `None` and all of them are.
 fn baseline(
     rule: DecisionRule,
     slice: &BTreeMap<String, JsonValue>,

@@ -39,7 +39,6 @@
 
 use std::collections::BTreeMap;
 use std::error::Error as _;
-use std::fs::FileType;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
@@ -104,6 +103,8 @@ pub(super) fn resolve_protected(
                 plan: plan.id.as_str(),
                 entry,
                 files: &mut files,
+                list: disk_listing,
+                limit: MAX_PROTECTED_FILES,
             }
             .resolve()?;
         }
@@ -131,9 +132,9 @@ fn declared(
                  protects; it digests to {}",
                 digest.to_stored()
             )),
-            // `verify_local_artifacts` has already refused a disagreeing
-            // digest for every name that is a file; this is the file changing
-            // between that read and this one.
+            // This runs before `verify_local_artifacts`, so for a protected
+            // file this is the check that refuses a disagreeing digest, under
+            // the same code PLAT-931's check uses for any other file.
             Some(stated) if stated != digest => {
                 return Err(MeasurementError::new(
                     MeasurementErrorCode::CollectionInvalid,
@@ -159,12 +160,32 @@ fn declared(
     }
 }
 
+/// What one directory entry is, by its own type: a symlink is reported as
+/// one, never as what it points at.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Kind {
+    File,
+    Directory,
+    Symlink,
+    Other,
+}
+
+/// Lists one directory as exact names and their [`Kind`]s, sorted by name,
+/// or says why it cannot. A directory that does not exist lists as empty.
+///
+/// A seam, so the exact-name match is tested against a listing that holds a
+/// case-only variant whatever filesystem the tests run on.
+type Lister = fn(&Path) -> Result<Vec<(String, Kind)>, String>;
+
 /// One entry of one plan, being resolved into that plan's set.
 struct Walk<'a> {
     repo: &'a Path,
     plan: &'a str,
     entry: &'a ApparatusPath,
     files: &'a mut ResolvedApparatus,
+    list: Lister,
+    /// The most files the plan's set may hold: [`MAX_PROTECTED_FILES`].
+    limit: usize,
 }
 
 impl Walk<'_> {
@@ -174,19 +195,19 @@ impl Walk<'_> {
             let (on_disk, found) = self.descend(self.entry.as_str(), false)?;
             let path = self.entry.as_str().to_owned();
             return match found {
-                Found::File => self.digest(&on_disk, path),
-                Found::Directory => Err(self.refuse(
+                Kind::File => self.digest(&on_disk, path),
+                Kind::Directory => Err(self.refuse(
                     MeasurementErrorCode::ApparatusUnresolved,
                     format!("names a directory, not a file; protect it as `{path}/**`"),
                 )),
-                Found::Other => Err(self.refuse(
+                Kind::Symlink | Kind::Other => Err(self.refuse(
                     MeasurementErrorCode::ApparatusUnreadable,
                     "names something that is not a regular file",
                 )),
             };
         };
         let (at, found) = self.descend(directory, true)?;
-        if found != Found::Directory {
+        if found != Kind::Directory {
             return Err(self.refuse(
                 MeasurementErrorCode::ApparatusUnresolved,
                 format!("`{directory}` is not a directory"),
@@ -197,22 +218,24 @@ impl Walk<'_> {
         while let Some((dir, relative)) = pending.pop() {
             for (name, kind) in self.listing(&dir)? {
                 let child = format!("{relative}/{name}");
-                if kind.is_symlink() {
-                    return Err(self.refuse(
-                        MeasurementErrorCode::ApparatusSymlink,
-                        format!("`{child}` is a symlink, which is refused and not followed"),
-                    ));
-                }
-                if kind.is_dir() {
-                    pending.push((dir.join(&name), child));
-                } else if kind.is_file() {
-                    seen += 1;
-                    self.digest(&dir.join(&name), child)?;
-                } else {
-                    return Err(self.refuse(
-                        MeasurementErrorCode::ApparatusUnreadable,
-                        format!("`{child}` is not a regular file"),
-                    ));
+                match kind {
+                    Kind::Symlink => {
+                        return Err(self.refuse(
+                            MeasurementErrorCode::ApparatusSymlink,
+                            format!("`{child}` is a symlink, which is refused and not followed"),
+                        ));
+                    }
+                    Kind::Directory => pending.push((dir.join(&name), child)),
+                    Kind::File => {
+                        seen += 1;
+                        self.digest(&dir.join(&name), child)?;
+                    }
+                    Kind::Other => {
+                        return Err(self.refuse(
+                            MeasurementErrorCode::ApparatusUnreadable,
+                            format!("`{child}` is not a regular file"),
+                        ));
+                    }
                 }
             }
         }
@@ -233,7 +256,7 @@ impl Walk<'_> {
         &self,
         relative: &str,
         expect_directory: bool,
-    ) -> Result<(PathBuf, Found), MeasurementError> {
+    ) -> Result<(PathBuf, Kind), MeasurementError> {
         let mut cursor = self.repo.to_path_buf();
         let mut segments = relative.split('/').peekable();
         let mut walked = String::new();
@@ -257,7 +280,7 @@ impl Walk<'_> {
                     format!("names no {what}: `{walked}` does not exist"),
                 ));
             };
-            if kind.is_symlink() {
+            if kind == Kind::Symlink {
                 return Err(self.refuse(
                     MeasurementErrorCode::ApparatusSymlink,
                     format!("`{walked}` is a symlink, which is refused and not followed"),
@@ -265,16 +288,9 @@ impl Walk<'_> {
             }
             cursor.push(segment);
             if segments.peek().is_none() {
-                let found = if kind.is_dir() {
-                    Found::Directory
-                } else if kind.is_file() {
-                    Found::File
-                } else {
-                    Found::Other
-                };
-                return Ok((cursor, found));
+                return Ok((cursor, kind));
             }
-            if !kind.is_dir() {
+            if kind != Kind::Directory {
                 return Err(self.refuse(
                     MeasurementErrorCode::ApparatusUnresolved,
                     format!("`{walked}` is not a directory"),
@@ -286,38 +302,11 @@ impl Walk<'_> {
         Err(self.refuse(MeasurementErrorCode::ApparatusUnresolved, "names nothing"))
     }
 
-    /// Every entry of `dir` as its exact name and its own type (a symlink is
-    /// reported as one, never as what it points at), sorted by name. A
-    /// directory that does not exist lists as empty.
-    fn listing(&self, dir: &Path) -> Result<Vec<(String, FileType)>, MeasurementError> {
-        let unreadable = |error: std::io::Error| {
-            self.refuse(
-                MeasurementErrorCode::ApparatusUnreadable,
-                format!("`{}` cannot be listed: {error}", dir.display()),
-            )
-        };
-        let entries = match std::fs::read_dir(dir) {
-            Ok(entries) => entries,
-            Err(error) if error.kind() == ErrorKind::NotFound => return Ok(Vec::new()),
-            Err(error) => return Err(unreadable(error)),
-        };
-        let mut out = Vec::new();
-        for entry in entries {
-            let entry = entry.map_err(unreadable)?;
-            let kind = entry.file_type().map_err(unreadable)?;
-            let Ok(name) = entry.file_name().into_string() else {
-                return Err(self.refuse(
-                    MeasurementErrorCode::ApparatusUnreadable,
-                    format!(
-                        "`{}` holds a name that is not UTF-8, which a collection cannot record",
-                        dir.display()
-                    ),
-                ));
-            };
-            out.push((name, kind));
-        }
-        out.sort_by(|left, right| left.0.cmp(&right.0));
-        Ok(out)
+    /// `dir`'s listing through [`Walk::list`], a failure refused as
+    /// [`MeasurementErrorCode::ApparatusUnreadable`].
+    fn listing(&self, dir: &Path) -> Result<Vec<(String, Kind)>, MeasurementError> {
+        (self.list)(dir)
+            .map_err(|detail| self.refuse(MeasurementErrorCode::ApparatusUnreadable, detail))
     }
 
     /// Digest one resolved file into the set under its repository-relative
@@ -339,7 +328,7 @@ impl Walk<'_> {
             )
         })?;
         self.files.insert(relative, digest);
-        if self.files.len() > MAX_PROTECTED_FILES {
+        if self.files.len() > self.limit {
             return Err(self.too_large());
         }
         Ok(())
@@ -348,7 +337,7 @@ impl Walk<'_> {
     fn too_large(&self) -> MeasurementError {
         self.refuse(
             MeasurementErrorCode::ApparatusTooLarge,
-            format!("resolves to more than {MAX_PROTECTED_FILES} files"),
+            format!("resolves to more than {} files", self.limit),
         )
     }
 
@@ -368,12 +357,38 @@ impl Walk<'_> {
     }
 }
 
-/// What the last segment of an entry is.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Found {
-    File,
-    Directory,
-    Other,
+/// The repository's own listing of `dir`: see [`Lister`].
+fn disk_listing(dir: &Path) -> Result<Vec<(String, Kind)>, String> {
+    let unreadable =
+        |error: std::io::Error| format!("`{}` cannot be listed: {error}", dir.display());
+    let entries = match std::fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) => return Err(unreadable(error)),
+    };
+    let mut out = Vec::new();
+    for entry in entries {
+        let entry = entry.map_err(unreadable)?;
+        let file_type = entry.file_type().map_err(unreadable)?;
+        let kind = if file_type.is_symlink() {
+            Kind::Symlink
+        } else if file_type.is_dir() {
+            Kind::Directory
+        } else if file_type.is_file() {
+            Kind::File
+        } else {
+            Kind::Other
+        };
+        let Ok(name) = entry.file_name().into_string() else {
+            return Err(format!(
+                "`{}` holds a name that is not UTF-8, which a collection cannot record",
+                dir.display()
+            ));
+        };
+        out.push((name, kind));
+    }
+    out.sort_by(|left, right| left.0.cmp(&right.0));
+    Ok(out)
 }
 
 /// The `verificationStack.protectedApparatus` member intake writes, or `None`
@@ -393,4 +408,89 @@ pub(super) fn protected_member(
         plans.set(plan.clone(), JsonValue::Object(digests));
     }
     Some(JsonValue::Object(plans))
+}
+
+#[allow(
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use engineering_assurance::measurement::ApparatusPath;
+
+    use super::{Kind, MAX_PROTECTED_FILES, Walk, disk_listing};
+    use crate::error::MeasurementErrorCode;
+    use crate::types::collection::ResolvedApparatus;
+
+    /// A repository whose `harness` directory holds `Answers.json` and
+    /// nothing else, whatever filesystem the test runs on.
+    fn case_listing(dir: &Path) -> Result<Vec<(String, Kind)>, String> {
+        Ok(match dir.to_str() {
+            Some("/repo") => vec![("harness".to_owned(), Kind::Directory)],
+            Some("/repo/harness") => vec![("Answers.json".to_owned(), Kind::File)],
+            _ => Vec::new(),
+        })
+    }
+
+    fn walk<'a>(
+        repo: &'a Path,
+        entry: &'a ApparatusPath,
+        files: &'a mut ResolvedApparatus,
+        list: super::Lister,
+        limit: usize,
+    ) -> Walk<'a> {
+        Walk {
+            repo,
+            plan: "MP-1",
+            entry,
+            files,
+            list,
+            limit,
+        }
+    }
+
+    #[test]
+    fn descend_matches_each_name_exactly() {
+        let entry = ApparatusPath::new("harness/answers.json").unwrap();
+        let mut files = ResolvedApparatus::new();
+        let repo = Path::new("/repo");
+        let walker = walk(repo, &entry, &mut files, case_listing, MAX_PROTECTED_FILES);
+        let error = walker.descend("harness/answers.json", false).unwrap_err();
+        assert_eq!(error.code(), MeasurementErrorCode::ApparatusUnresolved);
+        assert!(
+            error
+                .subject()
+                .contains("`harness/answers.json` does not exist")
+        );
+        let (found, kind) = walker.descend("harness/Answers.json", false).unwrap();
+        assert_eq!(found, Path::new("/repo/harness/Answers.json"));
+        assert_eq!(kind, Kind::File);
+    }
+
+    #[test]
+    fn a_set_past_the_limit_is_too_large() {
+        assert_eq!(MAX_PROTECTED_FILES, 50_000);
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path();
+        std::fs::create_dir_all(root.join("labels")).unwrap();
+        for name in ["a", "b", "c"] {
+            std::fs::write(root.join("labels").join(name), name).unwrap();
+        }
+        let entry = ApparatusPath::new("labels/**").unwrap();
+        let mut files = ResolvedApparatus::new();
+        let error = walk(root, &entry, &mut files, disk_listing, 2)
+            .resolve()
+            .unwrap_err();
+        assert_eq!(error.code(), MeasurementErrorCode::ApparatusTooLarge);
+        assert!(error.subject().contains("more than 2 files"));
+
+        let mut files = ResolvedApparatus::new();
+        walk(root, &entry, &mut files, disk_listing, 3)
+            .resolve()
+            .unwrap();
+        assert_eq!(files.len(), 3);
+    }
 }

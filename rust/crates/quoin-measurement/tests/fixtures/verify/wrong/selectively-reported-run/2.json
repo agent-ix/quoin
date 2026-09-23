@@ -35,7 +35,8 @@
   "toolVersion": "fixture 1",
   "verificationStack": {
     "artifacts": {
-      "config": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+      "config": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "spec/assurance/MP-961-gate.md": "sha256:c47b8d3b5a8d0cf94402fd867e52a2df2b15684b7eea49c9f8eb054e7358a59b"
     },
     "buildProfile": "release",
     "capabilities": [
@@ -43,6 +44,11 @@
     ],
     "executableDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
     "lockDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "protectedApparatus": {
+      "MP-961": {
+        "spec/assurance/MP-961-gate.md": "sha256:c47b8d3b5a8d0cf94402fd867e52a2df2b15684b7eea49c9f8eb054e7358a59b"
+      }
+    },
     "schemaVersion": "verification-stack-attestation-v1",
     "sources": {
       "fixture": {

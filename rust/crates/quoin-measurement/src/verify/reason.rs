@@ -77,12 +77,8 @@ pub enum Reason {
     /// A collection of the candidate's subject and scope that is not before
     /// it in intake order carries no observation of the plan.
     ObservationMissing,
-    /// An earlier run under this definition recorded a different protected
-    /// apparatus than the candidate, or none, under a plan that protects
-    /// apparatus (PLAT-975). That run is not a usable baseline.
-    ApparatusChanged,
-    /// The candidate recorded no protected apparatus although the plan
-    /// protects apparatus (PLAT-975).
+    /// In a protected series, a run — the candidate or an earlier one —
+    /// recorded no protected apparatus (PLAT-975).
     ApparatusUnrecorded,
     /// The rule does not hold for the candidate's estimate.
     RuleNotMet,
@@ -99,8 +95,9 @@ pub enum Reason {
     /// A regressed run with the candidate's own apparatus preceded it.
     RerunUntilPass,
     /// An earlier run under this definition recorded a different protected
-    /// apparatus than the candidate, and the plan declares the
-    /// `apparatus-edit` negative control (PLAT-975).
+    /// apparatus than the candidate: the apparatus changed without the
+    /// `definition_version` bump engineering-assurance FR-024 requires
+    /// (PLAT-975). That run is not a usable baseline.
     ApparatusEdit,
     /// The claimed verdict is not the checker's.
     ClaimedVerdictDisagrees,
@@ -108,7 +105,7 @@ pub enum Reason {
 
 impl Reason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 24] = [
+    pub const ALL: [Self; 23] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
         Self::NoCollections,
@@ -123,7 +120,6 @@ impl Reason {
         Self::UnitUnsupported,
         Self::SliceMissing,
         Self::ObservationMissing,
-        Self::ApparatusChanged,
         Self::ApparatusUnrecorded,
         Self::RuleNotMet,
         Self::ValueDisagreesWithRows,
@@ -153,7 +149,6 @@ impl Reason {
             Self::UnitUnsupported => "unit_unsupported",
             Self::SliceMissing => "slice_missing",
             Self::ObservationMissing => "observation_missing",
-            Self::ApparatusChanged => "apparatus_changed",
             Self::ApparatusUnrecorded => "apparatus_unrecorded",
             Self::RuleNotMet => "rule_not_met",
             Self::ValueDisagreesWithRows => "value_disagrees_with_rows",
@@ -203,7 +198,6 @@ impl Reason {
             | Self::UnitUnsupported
             | Self::SliceMissing
             | Self::ObservationMissing
-            | Self::ApparatusChanged
             | Self::ApparatusUnrecorded => Verdict::Inconclusive,
             Self::RuleNotMet
             | Self::ValueDisagreesWithRows

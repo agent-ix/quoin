@@ -109,15 +109,14 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `unit_unsupported` | inconclusive | a `proportion` observation's unit is not `fraction` or `fraction of …` |
 | `slice_missing` | inconclusive | a slice an earlier run measured under this definition is absent from the candidate |
 | `observation_missing` | inconclusive | a collection with the candidate's `subject` and `scope`, not before it in intake order, carries no observation of the plan |
-| `apparatus_changed` | inconclusive | under a plan that protects apparatus, an earlier run recorded a different protected apparatus than the candidate, or none (FR-110) |
-| `apparatus_unrecorded` | inconclusive | under a plan that protects apparatus, the candidate recorded none (FR-110) |
+| `apparatus_unrecorded` | inconclusive | in a protected series, the candidate or an earlier run recorded no protected apparatus (FR-110) |
 | `rule_not_met` | reject | the rule does not hold for the candidate |
 | `value_disagrees_with_rows` | reject | a stored `value` is inconsistent with the estimate recomputed from `matched` and `examined`, in any run |
 | `population_below_minimum` | reject | the candidate's `examined` — `0` included — is below `minimum_population` |
 | `repetitions_short` | reject | the candidate's `repetitions` is below the plan's |
 | `population_malformed` | reject | `examined`, `matched` or `repetitions` is not a whole number, or `matched` exceeds `examined`, in any run |
 | `rerun_until_pass` | reject | a regressed run with the candidate's own apparatus preceded it |
-| `apparatus_edit` | reject | an earlier run recorded a different protected apparatus than the candidate, and the plan declares the `apparatus-edit` negative control (FR-110) |
+| `apparatus_edit` | reject | an earlier run under the same `definition_version` recorded a different protected apparatus than the candidate (FR-110) |
 | `claimed_verdict_disagrees` | reject | the claimed verdict is not the checker's |
 
 ## Acceptance Criteria

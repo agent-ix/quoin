@@ -5,58 +5,49 @@
 //! Split from [`super`] so the checker stays under this crate's module-size
 //! ceiling.
 //!
-//! Under a plan that protects apparatus, each run carries the resolved
-//! (path, digest) set its collection recorded at intake. A changed set needs
-//! a new `definition_version` (engineering-assurance FR-024), and every run
-//! the checker considers shares the plan's, so within one series:
+//! Each run carries the resolved (path, digest) set its collection recorded
+//! at intake, read whatever the plan declares today: deleting the plan's
+//! `protected_apparatus` list must not switch protection off for runs that
+//! were recorded under it. A series is protected when the plan declares a
+//! list or any of its runs recorded a set. Every run the checker considers
+//! shares the plan's `definition_version`, and a changed set needs a new one
+//! (engineering-assurance FR-024), so within a protected series:
 //!
 //! - a run is a baseline only for runs that recorded the same set;
-//! - an earlier run whose set differs from the candidate's, or that recorded
-//!   none, is `apparatus_changed` — the evidence cannot carry a comparison,
-//!   so the question stays open;
-//! - when both recorded a set and they differ, and the plan declares the
-//!   `apparatus-edit` negative control, it is `apparatus_edit` instead: the
-//!   plan named exactly this as gaming it guards against, and the stored data
-//!   shows it, so it is a contradiction and rejects;
-//! - a candidate that recorded no set is `apparatus_unrecorded`.
+//! - an earlier run that recorded a different set than the candidate is
+//!   `apparatus_edit`: the stored data contradicts the version bump FR-024
+//!   makes unconditional, so it rejects whether or not the plan declares the
+//!   `apparatus-edit` negative control;
+//! - a run, earlier or the candidate, that recorded no set is
+//!   `apparatus_unrecorded`: missing evidence, which never rejects.
 //!
-//! A run that recorded no set is missing evidence, never a contradiction, so
-//! it only ever leaves the verdict open.
+//! A plan that never protected anything has no recorded set on any run, so
+//! nothing here changes its verdict.
 
-use engineering_assurance::measurement::NegativeControlKind;
-
-use crate::types::collection::{MeasurementCollection, ResolvedApparatus};
+use crate::types::collection::MeasurementCollection;
 use crate::types::plan::MeasurementPlan;
 
 use super::{Finding, Reason, Run};
 
-/// The set `collection` recorded for `plan`, when the plan protects
-/// apparatus. `None` for a plan that protects nothing, so every run of such a
-/// plan carries the same `None` and nothing here changes its verdict.
-pub(super) fn recorded<'a>(
-    plan: &MeasurementPlan,
-    collection: &'a MeasurementCollection,
-) -> Option<&'a ResolvedApparatus> {
-    plan.protected_apparatus
-        .as_ref()
-        .and(collection.protected_apparatus_of(plan.id.as_str()))
+/// Whether `plan`'s series is protected: the plan declares a list, or any
+/// run recorded a set.
+pub(super) fn protected(plan: &MeasurementPlan, runs: &[Run<'_>]) -> bool {
+    plan.protected_apparatus.is_some() || runs.iter().any(|run| run.apparatus.is_some())
 }
 
 /// The apparatus findings for the candidate, the last of `runs`.
 pub(super) fn findings(plan: &MeasurementPlan, runs: &[Run<'_>]) -> Vec<Finding> {
-    let (Some(_), Some((candidate, history))) = (&plan.protected_apparatus, runs.split_last())
-    else {
+    let Some((candidate, history)) = runs.split_last() else {
         return Vec::new();
     };
+    if !protected(plan, runs) {
+        return Vec::new();
+    }
     let at = |reason: Reason, collection: &MeasurementCollection| Finding {
         reason,
         collection_id: Some(collection.collection_id.as_str().to_owned()),
         dimensions: None,
     };
-    let guarded = plan
-        .negative_controls
-        .as_ref()
-        .is_some_and(|controls| controls.covers(NegativeControlKind::ApparatusEdit));
     let mut out = Vec::new();
     let Some(own) = candidate.apparatus else {
         out.push(at(Reason::ApparatusUnrecorded, candidate.collection));
@@ -65,8 +56,8 @@ pub(super) fn findings(plan: &MeasurementPlan, runs: &[Run<'_>]) -> Vec<Finding>
     for run in history {
         match run.apparatus {
             Some(theirs) if theirs == own => {}
-            Some(_) if guarded => out.push(at(Reason::ApparatusEdit, run.collection)),
-            Some(_) | None => out.push(at(Reason::ApparatusChanged, run.collection)),
+            Some(_) => out.push(at(Reason::ApparatusEdit, run.collection)),
+            None => out.push(at(Reason::ApparatusUnrecorded, run.collection)),
         }
     }
     out

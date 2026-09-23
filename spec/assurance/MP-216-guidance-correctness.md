@@ -6,7 +6,15 @@ status: active
 owner: quoin quality
 stage: gate
 metric: guidance.correctness
-definition_version: guidance.correctness-v1
+definition_version: guidance.correctness-v2
+protected_apparatus:
+  - bench/guidance-evaluator-contract-v1.json
+  - bench/guidance-independent-review-v1.json
+negative_controls:
+  - kind: apparatus-edit
+    description: the evaluator contract and the independent review evidence are digested with every collection; an edit to either without a new definition version rejects
+  - kind: suppressed-observation
+    description: sampling is deterministic and consumer-owned, so a producer cannot drop a record with a missing field from the reviewed population
 relationships: []
 ---
 

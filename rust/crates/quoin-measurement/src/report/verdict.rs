@@ -31,10 +31,10 @@
 //! same rule decides which earlier values may *set* the best: an earlier value
 //! that is incomplete, empty or under another definition is not one.
 //!
-//! Under a plan that protects apparatus (PLAT-975), an earlier value measured
-//! with a different recorded protected apparatus is not a floor either, and
-//! its presence makes the ratchet `inconclusive` (`apparatus_changed`); a
-//! newest collection that recorded none is `apparatus_unrecorded`.
+//! In a protected series (PLAT-975), an earlier value measured with a
+//! different recorded protected apparatus is not a floor either, and its
+//! presence makes the ratchet `inconclusive` (`apparatus_changed`); a
+//! collection that recorded none is `apparatus_unrecorded`.
 
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -74,10 +74,10 @@ pub enum InconclusiveReason {
     NoBound,
     /// An earlier value of the slice under the plan's `definition_version`
     /// came from a collection whose recorded protected apparatus differs from
-    /// the newest one's, or that recorded none (PLAT-975).
+    /// the newest one's (PLAT-975).
     ApparatusChanged,
-    /// The newest collection recorded no protected apparatus although the
-    /// plan protects apparatus (PLAT-975).
+    /// In a protected series, the newest collection, or one behind an earlier
+    /// value, recorded no protected apparatus (PLAT-975).
     ApparatusUnrecorded,
 }
 
@@ -139,9 +139,7 @@ impl InconclusiveReason {
             Self::ApparatusChanged => {
                 "an earlier value was measured with a different protected apparatus"
             }
-            Self::ApparatusUnrecorded => {
-                "the newest collection recorded no protected apparatus the plan protects"
-            }
+            Self::ApparatusUnrecorded => "a collection recorded no protected apparatus",
         }
     }
 }
@@ -429,32 +427,35 @@ fn ratchet(
     }
 }
 
-/// Under a plan that protects apparatus, refuse a floor unless the newest
-/// collection recorded its protected apparatus and every earlier usable value
-/// of the slice came from a collection that recorded the same set (PLAT-975).
+/// In a protected series, refuse a floor unless the newest collection and
+/// every collection behind an earlier usable value recorded the same
+/// protected apparatus (PLAT-975).
 ///
-/// A changed set needs a new `definition_version` (engineering-assurance
-/// FR-024), so an earlier value under the plan's own definition with another
-/// set is an apparatus edited inside one series: a floor set by it, or a
-/// newest value measured against it, compares two different measurements.
-/// That is `apparatus_changed` for as long as the series lasts, rather than a
-/// floor quietly taken from whichever runs happen to agree.
+/// The series is protected when the plan declares a list or any of these
+/// collections recorded a set, so deleting the plan's list does not switch
+/// the check off. A changed set needs a new `definition_version`
+/// (engineering-assurance FR-024): a set that differs under the plan's own
+/// definition is `apparatus_changed`, and a missing one `apparatus_unrecorded`,
+/// for as long as the series lasts.
 fn same_apparatus(
     plan: &MeasurementPlan,
     observation: &MeasurementObservation,
     collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
 ) -> Result<(), InconclusiveReason> {
-    if plan.protected_apparatus.is_none() {
+    let plan_id = plan.id.as_str();
+    let own = collection.and_then(|found| found.protected_apparatus_of(plan_id));
+    let theirs: Vec<_> = earlier_values(plan, observation.dimensions.entries(), earlier)
+        .map(|(_, found)| found.protected_apparatus_of(plan_id))
+        .collect();
+    if plan.protected_apparatus.is_none() && own.is_none() && theirs.iter().all(Option::is_none) {
         return Ok(());
     }
-    let plan_id = plan.id.as_str();
-    let own = collection
-        .and_then(|found| found.protected_apparatus_of(plan_id))
-        .ok_or(InconclusiveReason::ApparatusUnrecorded)?;
-    if earlier_values(plan, observation.dimensions.entries(), earlier)
-        .any(|(_, found)| found.protected_apparatus_of(plan_id) != Some(own))
-    {
+    let own = own.ok_or(InconclusiveReason::ApparatusUnrecorded)?;
+    if theirs.contains(&None) {
+        return Err(InconclusiveReason::ApparatusUnrecorded);
+    }
+    if theirs.iter().any(|set| *set != Some(own)) {
         return Err(InconclusiveReason::ApparatusChanged);
     }
     Ok(())

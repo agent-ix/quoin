@@ -27,7 +27,8 @@
 //! the sorted list of `artifacts` names with no local filesystem entry, is
 //! something no caller can state honestly for itself (only this repository
 //! knows what it holds), so intake computes it and merges it into a clone of
-//! the candidate before canonicalising. PLAT-975 adds the second:
+//! the candidate before canonicalising, and refuses a candidate that states
+//! it. PLAT-975 adds the second, under the same refusal:
 //! `verificationStack.protectedApparatus`, each governing plan's resolved
 //! protected apparatus with every file's digest, which intake resolves from
 //! the repository itself (see [`super::apparatus`]). Nothing else about the
@@ -104,13 +105,14 @@ pub fn write_measurement_collection(
 }
 
 /// Merge the computed `unverifiedArtifacts` list and `protectedApparatus`
-/// record into a clone of the candidate's own `verificationStack`, replacing
-/// whatever the caller may have stated for either.
+/// record into a clone of the candidate's own `verificationStack`.
 ///
-/// Sets each member when it has something to say and removes it otherwise,
-/// so a collection with nothing unverified and no protecting plan states
-/// neither rather than an empty value — the same "absent, not empty" rule the
-/// read side (`validate::stack`) applies back.
+/// `validate::measurement_collection` has already refused a candidate that
+/// states either member, so nothing the caller sent is overwritten. Each is
+/// set only when it has something to say, so a collection with nothing
+/// unverified and no protecting plan states neither rather than an empty
+/// value — the same "absent, not empty" rule the read side
+/// (`validate::stack`) applies back.
 ///
 /// `write_measurement_collection` only reaches this after
 /// `validate::measurement_collection` has already confirmed `verificationStack`
@@ -129,19 +131,12 @@ fn with_computed_members(
     let Some(JsonValue::Object(mut stack)) = root.get("verificationStack").cloned() else {
         return written;
     };
-    if names.is_empty() {
-        stack.remove("unverifiedArtifacts");
-    } else {
+    if !names.is_empty() {
         let array = JsonValue::Array(names.iter().cloned().map(JsonValue::string).collect());
         stack.set("unverifiedArtifacts", array);
     }
-    match protected {
-        Some(record) => {
-            stack.set("protectedApparatus", record);
-        }
-        None => {
-            stack.remove("protectedApparatus");
-        }
+    if let Some(record) = protected {
+        stack.set("protectedApparatus", record);
     }
     root.set("verificationStack", JsonValue::Object(stack));
     written

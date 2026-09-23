@@ -49,8 +49,8 @@ was written, never the repository as it reads today.
   `artifact_changed` (not blocking).
 - The ratchet inconclusive reasons `apparatus_changed` and
   `apparatus_unrecorded`.
-- The checker reasons `apparatus_changed` and `apparatus_unrecorded`
-  (inconclusive) and `apparatus_edit` (reject).
+- The checker reasons `apparatus_unrecorded` (inconclusive) and
+  `apparatus_edit` (reject).
 
 ## Behavior
 
@@ -58,9 +58,12 @@ was written, never the repository as it reads today.
 
 - Plan intake SHALL read `protected_apparatus` and `negative_controls` into
   engineering-assurance's `ProtectedApparatus` and `NegativeControls`. A list
-  engineering-assurance refuses, and an `apparatus-edit` control on a plan
-  with no `protected_apparatus`, SHALL refuse the plan load as
-  `QM-PLAN-INVALID` naming the member.
+  engineering-assurance refuses, a `stage: gate` plan that states no
+  `protected_apparatus` or no `negative_controls`, and an `apparatus-edit`
+  control on a plan with no `protected_apparatus`, SHALL refuse the plan load
+  as `QM-PLAN-INVALID` naming the member. The gate-stage requirement has no
+  exception for a plan written before it: a gate that names nothing it
+  protects gives credit a changed answer key can earn.
 
 ### Resolution at intake
 
@@ -87,10 +90,13 @@ was written, never the repository as it reads today.
     `verificationStack.artifacts` omits a resolved file;
   - `QM-COLLECTION-INVALID` when it states a resolved file at a digest the
     file does not have.
+- Intake SHALL refuse, as `QM-COLLECTION-INVALID`, a candidate that states
+  `verificationStack.protectedApparatus` or `verificationStack.unverifiedArtifacts`:
+  intake computes both, and a caller that states either is mistaken or is
+  writing its own answer.
 - Intake SHALL write `verificationStack.protectedApparatus` as
-  `{ <plan id>: { <path>: "sha256:…" } }`, replacing any value the candidate
-  stated, and SHALL leave the member absent when no governing plan protects
-  apparatus. A protected file is always a digested artifact, so a protected
+  `{ <plan id>: { <path>: "sha256:…" } }`, and SHALL leave the member absent
+  when no governing plan protects apparatus. A protected file is always a digested artifact, so a protected
   path is never listed in `unverifiedArtifacts`.
 - Reading a stored collection SHALL refuse a `protectedApparatus` that is not
   an object of non-empty objects of sha256 digests as
@@ -113,52 +119,60 @@ was written, never the repository as it reads today.
 
 ### Ratchet verdict (FR-107)
 
-- Under a plan that protects apparatus, a `ratchet` SHALL be `inconclusive`
-  with `apparatus_unrecorded` when the newest collection recorded no set for
-  the plan, and with `apparatus_changed` when any earlier usable value of the
-  slice came from a collection whose recorded set differs from the newest
-  one's or that recorded none.
+- A series is **protected** when the plan declares `protected_apparatus`, or
+  when any collection in it recorded a set for the plan. Each collection's
+  recorded set is read whatever the plan declares today, so removing the
+  list from the plan does not switch protection off.
+- In a protected series, a `ratchet` SHALL be `inconclusive` with
+  `apparatus_unrecorded` when the newest collection, or a collection behind
+  an earlier usable value of the slice, recorded no set, and with
+  `apparatus_changed` when such an earlier collection recorded a set that
+  differs from the newest one's.
 
 ### Verdict checker (FR-108)
 
-- Under a plan that protects apparatus, a run SHALL be a baseline only for a
-  run that recorded the same set, and a regressed run SHALL be
-  `rerun_until_pass` only when it also recorded the candidate's set.
-- An earlier run whose recorded set differs from the candidate's SHALL be the
-  finding `apparatus_edit` (reject) when both recorded a set and the plan
-  declares the `apparatus-edit` negative control, and `apparatus_changed`
-  (inconclusive) otherwise, including when the earlier run recorded none. A
-  candidate that recorded no set SHALL be `apparatus_unrecorded`
-  (inconclusive).
+- The checker SHALL read each run's recorded set whatever the plan declares
+  today, and a series is protected as above.
+- In a protected series, a run SHALL be a baseline only for a run that
+  recorded the same set.
+- An earlier run that recorded a set different from the candidate's SHALL be
+  the finding `apparatus_edit` (reject). An earlier run, or a candidate, that
+  recorded no set SHALL be `apparatus_unrecorded` (inconclusive).
+- `rerun_until_pass` SHALL ignore the protected set: a regressed run followed
+  by a pass of the same source revision, configuration, tool, corpus and
+  verification stack is a rerun even when the apparatus changed between them,
+  because editing the answer key between a failed run and a pass is the rerun
+  the rule exists to catch.
 
-### Why `apparatus_edit` rejects only under the control
+### Why a changed set rejects
 
-A changed set needs a new `definition_version` (engineering-assurance
-FR-024), and every run the checker considers shares the plan's, so a set that
-differs inside one series is an apparatus edit that was not versioned. A plan
-that declares the `apparatus-edit` control names exactly that as gaming it
-guards against; the stored sets then contradict the plan, and a contradiction
-rejects (FR-108-AC-5). A plan without the control made no such claim, so the
-changed apparatus only leaves the evidence unable to carry a comparison, which
-is `inconclusive`. A missing record is missing evidence and never rejects.
+Every run the checker considers shares the plan's `definition_version`, and
+engineering-assurance FR-024 makes a new `definition_version` unconditional
+for any change to the resolved set. A recorded set that differs inside one
+series is therefore a change the data proves was not versioned: a
+contradiction, which rejects (FR-108-AC-5), whether or not the plan declares
+the `apparatus-edit` negative control. A missing record is missing evidence
+and never rejects.
 
 ### Plans that protect nothing
 
-- A plan with no `protected_apparatus` SHALL be written, compared, ratcheted
-  and checked exactly as before this requirement.
+- A plan with no `protected_apparatus`, whose collections recorded no set,
+  SHALL be written, compared, ratcheted and checked exactly as before this
+  requirement.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-110-AC-1 | `protected_apparatus` and `negative_controls` load as engineering-assurance's types; an unsafe or `**` entry, an empty or repeated list, an unknown control kind, and an `apparatus-edit` control with no `protected_apparatus` refuse the plan load as `QM-PLAN-INVALID` naming the member. | Test (TC-1810) |
-| FR-110-AC-2 | A written collection records, under the plan's id, every file its entries resolve to — every file under a directory entry, dotfiles and nested files included — with each file's digest, replacing any record the candidate stated; no protected path is in `unverifiedArtifacts`; with no protecting plan the member is absent. | Test (TC-1811, TC-1819) |
+| FR-110-AC-1 | `protected_apparatus` and `negative_controls` load as engineering-assurance's types; an unsafe or `**` entry, an empty or repeated list, an unknown control kind, an `apparatus-edit` control with no `protected_apparatus`, and a `gate` plan missing either list refuse the plan load as `QM-PLAN-INVALID` naming the member; a `gate` plan stating both loads. | Test (TC-1810) |
+| FR-110-AC-2 | A written collection records, under the plan's id, every file its entries resolve to — every file under a directory entry, dotfiles and nested files included — with each file's digest; no protected path is in `unverifiedArtifacts`; with no protecting plan the member is absent. A candidate stating `protectedApparatus` or `unverifiedArtifacts` is `QM-COLLECTION-INVALID` and writes nothing. | Test (TC-1811, TC-1819, TC-1827) |
 | FR-110-AC-3 | A missing protected file, a missing or empty directory entry, a file entry naming a directory, and a case-only name difference are `QM-APPARATUS-UNRESOLVED`; a symlinked entry, ancestor, or file under a directory entry is `QM-APPARATUS-SYMLINK`; a socket under a directory entry or an unlistable directory is `QM-APPARATUS-UNREADABLE`; an artifacts map omitting a resolved file is `QM-APPARATUS-UNDECLARED` naming it, and one stating another digest is `QM-COLLECTION-INVALID`; none writes a collection. | Test (TC-1812..TC-1815) |
 | FR-110-AC-4 | Comparing two stored collections, an edited protected file, a file added under or removed from a directory entry, a record on one side only, and a protected path listed as unverified each add blocking `apparatus_changed` with a `null` delta and `incomparable` status, naming the path; a moved unprotected artifact adds only non-blocking `artifact_changed` with the delta kept; under a plan that protects nothing, neither reason appears. | Test (TC-1816..TC-1819, TC-1821) |
 | FR-110-AC-5 | A baseline stored before the apparatus was edited cannot be rewritten under its id, and a new run is `apparatus_changed` against it even when a regenerated baseline was stored beside the run. | Test (TC-1820) |
-| FR-110-AC-6 | A ratchet whose earlier value was measured with a different recorded set is `inconclusive` (`apparatus_changed`); over one set it is `held`. | Test (TC-1825) |
-| FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_changed` (inconclusive), `apparatus_edit` (reject) under a declared `apparatus-edit` control, and `apparatus_unrecorded` when it recorded no set; the same runs over one set are accepted. | Test (TC-1822..TC-1824) |
+| FR-110-AC-6 | A ratchet whose earlier value was measured with a different recorded set is `inconclusive` (`apparatus_changed`), and one whose newest collection recorded none is `inconclusive` (`apparatus_unrecorded`), including after the list is removed from the plan; over one set it is `held`. | Test (TC-1825, TC-1828, TC-1830) |
+| FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_edit` (reject) with or without an `apparatus-edit` control, and `apparatus_unrecorded` (inconclusive) when it recorded no set; removing the list from the plan still rejects the changed series; an uncommitted answer-key edit between a regressed run and a pass is `rerun_until_pass`; the same runs over one set are accepted. | Test (TC-1822..TC-1824, TC-1828, TC-1829) |
 | FR-110-AC-8 | A stored `protectedApparatus` that is not an object, holds an empty plan entry, or holds a value that is not a sha256 digest is refused on read as `QM-COLLECTION-INVALID` naming the member. | Test (TC-1826) |
+| FR-110-AC-9 | One plan's resolved set past its limit (50,000 files) is `QM-APPARATUS-TOO-LARGE`; each path segment is matched exactly against the directory listing, so a case-only difference names no file on any filesystem. | Test (TC-1831, TC-1832) |
 
 ## Constraints
 

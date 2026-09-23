@@ -44,17 +44,22 @@ use serde_json::{Value, json};
 /// A ratchet on a pass rate that protects an answer key and a labels
 /// directory. `extra` is spliced into the frontmatter.
 fn plan_document(extra: &str) -> String {
+    plan_with("ratchet", "baseline: best-seen", extra)
+}
+
+/// A plan at `stage` whose decision rule is `ge` against `reference`.
+fn plan_with(stage: &str, reference: &str, extra: &str) -> String {
     format!(
         "---\n\
          id: MP-975\n\
          title: Protected answer key\n\
          type: MeasurementPlan\n\
          status: active\n\
-         stage: ratchet\n\
+         stage: {stage}\n\
          metric: gate.pass_rate\n\
          definition_version: gate.pass-rate-v1\n\
          objective:\n  direction: higher\n\
-         statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    baseline: best-seen\n\
+         statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    {reference}\n\
          {extra}\
          ---\n\n# Protected answer key\n"
     )
@@ -239,6 +244,27 @@ fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
         load_measurement_plans(&source, PlanLoadOptions::default())
             .expect_err("the plan load is refused")
     };
+    // A gate plan must state both lists (engineering-assurance FR-024-AC-8).
+    let gate = |extra: &str| {
+        let source = MemoryMeasurement::new().with_document(
+            "spec/assurance/MP-975.md",
+            plan_with("gate", "threshold: 0.8", extra),
+        );
+        load_measurement_plans(&source, PlanLoadOptions::default())
+    };
+    const CONTROLS: &str =
+        "negative_controls:\n  - kind: apparatus-edit\n    description: the key is digested\n";
+    for (extra, member) in [
+        (String::new(), "protected_apparatus"),
+        (CONTROLS.to_owned(), "protected_apparatus"),
+        (PROTECTED.to_owned(), "negative_controls"),
+    ] {
+        let error = gate(&extra).expect_err("a gate plan missing a list is refused");
+        assert_eq!(error.code(), MeasurementErrorCode::PlanInvalid, "{extra}");
+        assert!(error.to_string().contains(member), "{extra}: {error}");
+    }
+    gate(&format!("{PROTECTED}{CONTROLS}")).expect("a gate plan stating both loads");
+
     for (extra, member) in [
         (
             "protected_apparatus:\n  - ../outside.json\n",
@@ -276,12 +302,7 @@ type Case = (&'static str, fn(&Path));
 fn tc_975_002_intake_records_the_resolved_set_it_digested_itself() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    let mut value = candidate("run-1", 1, 9, &artifacts(root, &ALL_FILES));
-    // A caller cannot state the record for itself: whatever it sends is
-    // replaced by what intake resolved.
-    value["verificationStack"]["protectedApparatus"] =
-        json!({ "MP-975": { "harness/answers.json": format!("sha256:{}", "0".repeat(64)) } });
-    publish(root, &value).expect("the run is admitted");
+    publish_run(root, "run-1", 1, 9);
 
     let bytes = stored_bytes(root, "run-1");
     assert_eq!(
@@ -635,7 +656,7 @@ fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
 /// Trace: FR-110-AC-7
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_013_the_checker_uses_no_baseline_across_an_apparatus_change() {
+fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
@@ -645,10 +666,10 @@ fn tc_975_013_the_checker_uses_no_baseline_across_an_apparatus_change() {
     let collections = stored(root);
     assert_eq!(
         checked(&plan, &collections),
-        [Reason::NoPrior, Reason::ApparatusChanged],
-        "the earlier run is not a usable baseline and the change is named"
+        [Reason::NoPrior, Reason::ApparatusEdit],
+        "the earlier run is not a usable baseline, and the unversioned change rejects"
     );
-    assert_eq!(verdict_of(&plan, &collections), Verdict::Inconclusive);
+    assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
 
     // The positive control: the same runs over one apparatus are accepted.
     let same = repository(PROTECTED);
@@ -663,7 +684,7 @@ fn tc_975_013_the_checker_uses_no_baseline_across_an_apparatus_change() {
 /// Trace: FR-110-AC-7
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_014_an_apparatus_edit_under_a_declared_control_rejects() {
+fn tc_975_014_an_apparatus_edit_under_a_declared_control_also_rejects() {
     let temporary = repository(&format!(
         "{PROTECTED}negative_controls:\n  - kind: apparatus-edit\n    description: the answer key is digested\n"
     ));
@@ -759,4 +780,118 @@ fn tc_975_017_a_malformed_stored_record_is_refused_on_read() {
         );
         assert!(error.to_string().contains("protectedApparatus"), "{error}");
     }
+}
+
+/// Trace: FR-110-AC-2
+/// Provenance: PLAT-975
+#[test]
+fn tc_975_018_a_candidate_stating_a_computed_member_is_refused() {
+    let temporary = repository(PROTECTED);
+    let root = temporary.path();
+    for (member, stated) in [
+        (
+            "protectedApparatus",
+            json!({ "MP-975": { "harness/answers.json": format!("sha256:{}", "0".repeat(64)) } }),
+        ),
+        ("unverifiedArtifacts", json!(["config"])),
+    ] {
+        let mut value = candidate("run-1", 1, 9, &artifacts(root, &ALL_FILES));
+        value["verificationStack"][member] = stated;
+        let error = publish(root, &value).expect_err("a stated computed member is refused");
+        assert_eq!(
+            error.code(),
+            MeasurementErrorCode::CollectionInvalid,
+            "{member}"
+        );
+        assert!(error.to_string().contains(member), "{member}: {error}");
+        assert_eq!(stored_count(root), 0, "{member}: nothing is written");
+    }
+}
+
+/// Deleting the plan's list does not switch protection off: the runs
+/// recorded under it still carry their sets.
+///
+/// Trace: FR-110-AC-6, FR-110-AC-7
+/// Provenance: PLAT-975
+#[test]
+fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
+    let temporary = repository(PROTECTED);
+    let root = temporary.path();
+    publish_run(root, "run-1", 1, 9);
+    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
+    publish_run(root, "run-2", 2, 9);
+    write(root, "spec/assurance/MP-975.md", &plan_document(""));
+    let plan = plan_of(root);
+    assert!(plan.protected_apparatus.is_none());
+    let collections = stored(root);
+    let verdict = verdict_of(&plan, &collections);
+    assert_ne!(verdict, Verdict::Accept);
+    assert_eq!(verdict, Verdict::Reject);
+    assert!(checked(&plan, &collections).contains(&Reason::ApparatusEdit));
+    let outcome = ratchet_outcome(root);
+    assert!(
+        !matches!(outcome, RatchetOutcome::Held { .. }),
+        "{outcome:?}"
+    );
+    assert_eq!(
+        outcome,
+        RatchetOutcome::Inconclusive(InconclusiveReason::ApparatusChanged)
+    );
+
+    // A run written after the list was removed records nothing, and that is
+    // not a pass either.
+    publish_run(root, "run-3", 3, 9);
+    let collections = stored(root);
+    assert!(checked(&plan, &collections).contains(&Reason::ApparatusUnrecorded));
+    assert_ne!(verdict_of(&plan, &collections), Verdict::Accept);
+    assert_eq!(
+        ratchet_outcome(root),
+        RatchetOutcome::Inconclusive(InconclusiveReason::ApparatusUnrecorded)
+    );
+}
+
+/// An answer key edited in the working tree between a failed run and a pass
+/// is still a rerun of the same source: the changed apparatus does not
+/// excuse it.
+///
+/// Trace: FR-110-AC-7, FR-108-AC-3
+/// Provenance: PLAT-975
+#[test]
+fn tc_975_020_an_uncommitted_answer_key_edit_then_a_pass_is_a_rerun() {
+    let temporary = repository("");
+    let root = temporary.path();
+    write(
+        root,
+        "spec/assurance/MP-975.md",
+        &plan_with("ratchet", "threshold: 0.8", PROTECTED),
+    );
+    publish_run(root, "run-1", 1, 5);
+    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
+    publish_run(root, "run-2", 2, 9);
+    let plan = plan_of(root);
+    let collections = stored(root);
+    let reasons = checked(&plan, &collections);
+    assert!(reasons.contains(&Reason::RerunUntilPass), "{reasons:?}");
+    assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
+}
+
+/// Trace: FR-110-AC-6
+/// Provenance: PLAT-975
+#[test]
+fn tc_975_021_a_ratchet_whose_newest_collection_recorded_nothing_is_inconclusive() {
+    let temporary = repository(PROTECTED);
+    let root = temporary.path();
+    publish_run(root, "run-1", 1, 9);
+    publish_run(root, "run-2", 2, 9);
+    let path = measurement_path(root, &CollectionId::parse("run-2").unwrap());
+    let mut bytes = stored_bytes(root, "run-2");
+    bytes["verificationStack"]
+        .as_object_mut()
+        .unwrap()
+        .remove("protectedApparatus");
+    std::fs::write(path, serde_json::to_vec(&bytes).unwrap()).unwrap();
+    assert_eq!(
+        ratchet_outcome(root),
+        RatchetOutcome::Inconclusive(InconclusiveReason::ApparatusUnrecorded)
+    );
 }

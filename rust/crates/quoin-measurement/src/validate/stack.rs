@@ -465,3 +465,30 @@ fn protected_apparatus(
         ))
     }
 }
+
+/// The `verificationStack` members intake computes itself (PLAT-969,
+/// PLAT-975).
+const COMPUTED_MEMBERS: [&str; 2] = ["unverifiedArtifacts", "protectedApparatus"];
+
+/// One finding per computed member a new candidate states. A caller that
+/// states either is buggy or is writing its own answer, and neither is
+/// silently overwritten.
+pub(crate) fn stated_computed_members(candidate: &JsonValue) -> Vec<String> {
+    let Some(JsonValue::Object(stack)) = candidate
+        .as_object()
+        .ok()
+        .and_then(|object| object.get("verificationStack"))
+    else {
+        return Vec::new();
+    };
+    COMPUTED_MEMBERS
+        .into_iter()
+        .filter(|member| stack.contains(member))
+        .map(|member| {
+            format!(
+                "verificationStack.{member} is computed by intake and must not be stated by the \
+                 candidate"
+            )
+        })
+        .collect()
+}

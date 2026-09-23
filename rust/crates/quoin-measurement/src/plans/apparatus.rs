@@ -14,25 +14,29 @@ use engineering_assurance::measurement::{
 use serde::Deserialize;
 
 use crate::error::MeasurementError;
+use crate::types::plan::MeasurementStage;
 
 use super::CODE;
 
 /// Read the optional `protected_apparatus` and `negative_controls`, each
 /// `None` when the document does not state it.
 ///
-/// An `apparatus-edit` control over no declared apparatus guards nothing, so
-/// it is refused here, as EA's schema refuses it (FR-024-AC-8). The gate-stage
-/// requirement for both lists is the schema's alone: EA's types carry no
-/// stage, and a gate plan written before FR-024 still loads.
+/// Engineering-assurance's schema rules that EA's types cannot carry are
+/// enforced here too (FR-024-AC-8): a `gate` plan must state both lists, and
+/// an `apparatus-edit` control over no declared apparatus guards nothing.
+/// There is no exception for a gate plan written before FR-024: a gate that
+/// names nothing it protects gives credit a changed answer key can earn.
 ///
 /// # Errors
 ///
 /// [`crate::error::MeasurementErrorCode::PlanInvalid`] when either member is
-/// present and EA refuses it, naming the member and carrying EA's reason, or
-/// when an `apparatus-edit` control is declared with no `protected_apparatus`.
+/// present and EA refuses it, naming the member and carrying EA's reason,
+/// when a `gate` plan states either list not at all, and when an
+/// `apparatus-edit` control is declared with no `protected_apparatus`.
 pub(super) fn apparatus_from(
     path: &str,
     value: &serde_json::Value,
+    stage: MeasurementStage,
 ) -> Result<(Option<ProtectedApparatus>, Option<NegativeControls>), MeasurementError> {
     let protected = value
         .get("protected_apparatus")
@@ -56,6 +60,19 @@ pub(super) fn apparatus_from(
             })
         })
         .transpose()?;
+    if stage == MeasurementStage::Gate {
+        for (member, missing) in [
+            ("protected_apparatus", protected.is_none()),
+            ("negative_controls", controls.is_none()),
+        ] {
+            if missing {
+                return Err(MeasurementError::new(
+                    CODE,
+                    format!("{path}: a `gate` plan requires `{member}`"),
+                ));
+            }
+        }
+    }
     if protected.is_none()
         && controls
             .as_ref()
