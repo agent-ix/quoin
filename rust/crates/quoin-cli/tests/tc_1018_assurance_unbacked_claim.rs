@@ -23,7 +23,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 /// The retained fixture bodies this file reads: the argument documents,
-/// `decisions.json`, and `evidence.json`.
+/// `decisions.json`, `evidence.json` (which does not resolve the cited
+/// reference) and `evidence-resolved.json` (which does).
 fn fixtures() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../../tests/fixtures/assurance-argument-cli")
@@ -150,4 +151,50 @@ fn tc_1018_a_claim_citing_an_unresolved_reference_is_open_through_the_real_binar
              does not resolve in the evidence store"
         ])
     );
+}
+
+/// The control for the case above: the SAME argument document, with an
+/// `--evidence` index that resolves its reference, reads as `supported` with no
+/// reasons. Without it, the unresolved-reference test would pass just as well
+/// if the binary dropped `--evidence` on the floor — an absent index resolves
+/// nothing either — so it is this case that proves the refusal comes from the
+/// index's content and that the fixture is otherwise clean.
+///
+/// Trace: FR-047-AC-8
+/// Provenance: PLAT-966, PLAT-1018
+#[test]
+fn tc_1018_the_same_claim_with_its_reference_resolved_is_supported_through_the_real_binary() {
+    let root = repo_with_argument("argument-unresolved-ref.md");
+    let evidence = write(
+        root.path(),
+        "evidence.json",
+        &read_fixture("evidence-resolved.json"),
+    );
+
+    let output = quoin(&[
+        "--repo",
+        root.path().to_str().unwrap(),
+        "--argument",
+        "AA-10181",
+        "--decisions",
+        root.path().join("decisions.json").to_str().unwrap(),
+        "--evidence",
+        evidence.to_str().unwrap(),
+        "--as-of",
+        "2026-08-15T00:00:00.000Z",
+        "--json",
+    ]);
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "stderr {}",
+        text(&output.stderr)
+    );
+    let rendered: serde_json::Value =
+        serde_json::from_str(text(&output.stdout).trim()).expect("--json emits the view as JSON");
+    assert_eq!(
+        rendered["topClaim"]["status"],
+        serde_json::json!("supported")
+    );
+    assert_eq!(rendered["topClaim"]["reasons"], serde_json::json!([]));
 }
