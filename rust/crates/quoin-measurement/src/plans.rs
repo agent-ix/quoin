@@ -56,6 +56,9 @@
 
 mod apparatus;
 mod design;
+mod history;
+
+pub use history::{definition_changed_without_version_bump, plan_from_text};
 
 use crate::discovery;
 use crate::error::{MeasurementError, MeasurementErrorCode};
@@ -109,7 +112,7 @@ pub fn load_measurement_plans<S: MeasurementSource + ?Sized>(
     Ok(plans)
 }
 
-fn plan_from(
+pub(crate) fn plan_from(
     path: &str,
     value: &serde_json::Value,
     text: &str,

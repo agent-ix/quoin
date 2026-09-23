@@ -26,7 +26,7 @@ use std::path::Path;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::store::read_measurement_collection_results;
-use quoin_measurement::{OrderSource, Ranked, Verdict, verdict_json, verify as check};
+use quoin_measurement::{OrderSource, Ranked, TamperFacts, Verdict, verdict_json, verify as check};
 
 use crate::error::{CoreError, CoreErrorCode};
 use crate::protocol::Response;
@@ -98,9 +98,35 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
         .map(|collection| Ranked {
             collection,
             intake: positions.get(collection.collection_id.as_str()).copied(),
+            apparatus_forged: request
+                .apparatus_forged
+                .iter()
+                .any(|id| id == collection.collection_id.as_str()),
+            edited: request
+                .edited_collections
+                .iter()
+                .any(|id| id == collection.collection_id.as_str()),
         })
         .collect();
-    let verdict = check(plan, &ranked, order, claimed);
+    // A deleted collection is attributed to this plan when the caller read
+    // its own `planId` among the observations it carried before it was
+    // removed (PLAT-985); the caller alone has git and did that reading.
+    let deleted_collections: Vec<String> = request
+        .deleted
+        .iter()
+        .filter(|deleted| {
+            deleted
+                .plan_ids
+                .iter()
+                .any(|id| id.as_str() == plan.id.as_str())
+        })
+        .map(|deleted| deleted.id.clone())
+        .collect();
+    let tamper = TamperFacts {
+        deleted_collections: &deleted_collections,
+        definition_changed_without_version_bump: request.definition_changed_without_version_bump,
+    };
+    let verdict = check(plan, &ranked, tamper, order, claimed);
     let payload = verdict_json(&verdict).map_err(|error| map_measurement(&error, OP))?;
     if verdict.verdict == Verdict::Accept {
         return Ok(Response::ok(payload));

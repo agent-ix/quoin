@@ -183,6 +183,43 @@ pub struct VerifyRequest {
     /// caller that does not say where its order came from attests nothing.
     #[serde(default)]
     pub order_source: Option<String>,
+    /// Collections once present in the store's git history and no longer
+    /// there, with the plan ids their observations named (PLAT-985). Empty
+    /// when the caller has no git access to check, or attests nothing.
+    #[serde(default)]
+    pub deleted: Vec<DeletedCollectionRequest>,
+    /// Ids of collections whose stored file the caller found edited by a
+    /// commit after the one that first added it to the store (PLAT-985).
+    /// Empty when the caller has no git access to check.
+    #[serde(default)]
+    pub edited_collections: Vec<String>,
+    /// Ids of collections whose recorded protected-apparatus digest for this
+    /// plan disagreed with `git show <sourceRevision>:<path>`, as the caller
+    /// checked (PLAT-985). Empty when the caller has no git access to check,
+    /// or found nothing to disagree.
+    #[serde(default)]
+    pub apparatus_forged: Vec<String>,
+    /// Whether the caller found this plan's objective, estimator, decision
+    /// rule or protected apparatus changed between two committed revisions
+    /// of its document that share a `definition_version`
+    /// (engineering-assurance's `definition_change_without_version_bump`,
+    /// PLAT-985). `false` when the caller has no git access to check.
+    #[serde(default)]
+    pub definition_changed_without_version_bump: bool,
+}
+
+/// One collection once added to the store, and later removed, as the caller
+/// found it in the store's git history (FR-108, PLAT-985).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DeletedCollectionRequest {
+    /// The removed collection's id (its former file name).
+    pub id: String,
+    /// Every `MeasurementPlan` id an observation in the removed collection
+    /// named, read from the store's git history at the commit before it was
+    /// removed. Empty when the caller could not read or parse that content.
+    #[serde(default)]
+    pub plan_ids: Vec<String>,
 }
 
 /// A revision to compare the latest collection against.

@@ -70,6 +70,13 @@ const NAMED_OVER_SOFT_CEILING: &[&str] = &[
     "report/verdict.rs",
     "store/apparatus/walk.rs",
     "validate/stack.rs",
+    // PLAT-985: leaf re-scoring's reporting was already here; four new
+    // tamper checks (forged apparatus, deleted/edited collections, a
+    // definition changed without a version bump) added the `TamperFacts`
+    // plumbing and their own findings collection. The findings themselves
+    // moved out to `verify/tamper.rs`; what is left is still over the soft
+    // ceiling by a few lines.
+    "verify/mod.rs",
 ];
 
 /// Every `.rs` file under `src/`, as `(relative path, line count)`.

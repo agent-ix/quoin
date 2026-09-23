@@ -3,6 +3,8 @@
 
 //! Rust adapters for measurement collection publication (quoin#373, Stage 8).
 
+mod tamper;
+
 use std::io::Read as _;
 use std::path::Path;
 
@@ -115,15 +117,31 @@ fn record(arguments: &ArgMatches) -> Result<Response, String> {
 
 /// `quoin measurement verify` (FR-108, PLAT-961): the independent verdict
 /// checker. Prints the verdict document; exits 1 when it is not `accept`.
+///
+/// PLAT-985 adds four git-derived tamper facts alongside the intake order,
+/// gathered in [`tamper`] for the reason stated there: only this binary has
+/// git, and the checker itself stays pure.
 fn verify(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
+    let plan = required(arguments, "plan")?;
     let order = intake_order(&repo)?;
+    let (deleted, edited) = tamper::deleted_and_edited(&repo)?;
+    let deleted: Vec<serde_json::Value> = deleted
+        .into_iter()
+        .map(|collection| {
+            serde_json::json!({ "id": collection.id, "plan_ids": collection.plan_ids })
+        })
+        .collect();
     let request = serde_json::json!({
         "repo": repo,
-        "plan": required(arguments, "plan")?,
+        "plan": plan,
         "claimed": arguments.get_one::<String>("claimed"),
         "intake_order": order.groups,
         "order_source": order.source,
+        "deleted": deleted,
+        "edited_collections": edited,
+        "apparatus_forged": tamper::forged_apparatus(&repo, &plan),
+        "definition_changed_without_version_bump": tamper::definition_changed(&repo, &plan),
     });
     let mut response = invoke("measurement.verify", &request)?;
     if response.outcome.carries_payload() {

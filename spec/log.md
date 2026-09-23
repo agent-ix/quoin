@@ -47,6 +47,46 @@ description: "Chronological log of structural changes to this bundle."
   linking a plan at all is the caller's choice. Boundary and CLI tests:
   TC-1889..TC-1891.
 
+* **2026-09-23** — **FR-108 gains four store-history tamper checks**
+  (PLAT-985, part B of PLAT-961's split). `quoin measurement verify` now
+  reads four facts from the store's own git history, the same way it already
+  read the intake order — only the caller has git, so the checker
+  (`quoin_measurement::verify`) stays pure and takes them as inputs
+  (`Ranked::apparatus_forged`, `::edited`, and a new `TamperFacts`) rather
+  than computing them: a collection once added and later removed
+  (`collection_deleted`, attributed to a plan by reading its content at the
+  commit before removal); a collection's stored file edited by a commit
+  after the one that added it (`collection_edited`); a collection's recorded
+  `verificationStack.protectedApparatus` digest for the plan disagreeing
+  with `git show <sourceRevision>:<path>` (`apparatus_forged` — Peter's own
+  PLAT-985 review comment: a collection committed by hand can state any
+  digest it likes, since intake's resolver is what makes the digest honest,
+  and nothing on the read path re-checked it); and the plan's own document
+  changing its `objective`, `estimator`, `decision_rule` or
+  `protected_apparatus` between two committed revisions sharing a
+  `definition_version` (`definition_changed_without_version_bump`,
+  engineering-assurance's `definition_change_without_version_bump`, wired
+  with access to prior plan definitions through a new
+  `quoin_measurement::plans::plan_from_text` — a plan document parsed from a
+  bare string rather than a repository walk — and
+  `plans::definition_changed_without_version_bump`). Each of the four
+  degrades to "nothing found" rather than a false positive when git cannot
+  answer (outside a work tree, a shallow clone, an unreachable revision).
+  All four are gathered in `quoin-cli`'s new `measurement::tamper` module,
+  the only place in the workspace outside `quoin-cli` itself allowed to
+  shell to `git`: `quoin-core`'s `ops/measurement` boundary is audited to
+  carry no host capability at all (`tc_library_containment.rs`), so this
+  could not live there. **Leaf re-scoring** (also part of PLAT-961's
+  original scope) was already shipped in PLAT-961 part 1: `verify::rows`
+  recomputes `proportion`/`count` from retained `matched`/`examined` rather
+  than trusting the producer's stored value, and `counts.observationsRecomputed`
+  / `counts.observationsAsserted` already report the asserted-only share for
+  every estimator that carries no row data. **Still blocked:**
+  constant-predictor baseline needs a producer to retain per-item answers
+  grouped by family; no producer does, and none of PLAT-977/978/983 or
+  quoin-jev's cassette/verdict work changed that — see the ticket for the
+  investigation. FR-108-AC-9; Matrix: TC-1892..TC-1896.
+
 * **2026-09-22** — **FR-111 (new FR): change-assurance refuses credit for a
   diff that touches protected measurement apparatus** (PLAT-964). FR-110
   compares a measurement plan's protected apparatus across *stored*
