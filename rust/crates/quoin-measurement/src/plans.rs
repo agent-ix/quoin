@@ -45,7 +45,15 @@
 //! baseline under an estimator other than `proportion`, or a comparator that
 //! disagrees with the plan's `objective` refuses the plan load with
 //! [`MeasurementErrorCode::PlanInvalid`] naming the member.
+//!
+//! # `protected_apparatus` and `negative_controls` (PLAT-975)
+//!
+//! Optional, and parsed into engineering-assurance's own types (its FR-024).
+//! A list EA refuses, or an `apparatus-edit` control with no
+//! `protected_apparatus`, refuses the plan load with
+//! [`MeasurementErrorCode::PlanInvalid`] naming the member.
 
+mod apparatus;
 mod design;
 
 use crate::discovery;
@@ -148,6 +156,7 @@ fn plan_from(
     let statistical_design = design::statistical_design_from(path, value)?;
     let objective = design::objective_from(path, value)?;
     design::rule_agrees_with_objective(path, statistical_design.as_ref(), objective.as_ref())?;
+    let (protected_apparatus, negative_controls) = apparatus::apparatus_from(path, value)?;
     Ok(MeasurementPlan {
         id,
         title,
@@ -162,6 +171,8 @@ fn plan_from(
         ground_truth_kind,
         statistical_design,
         objective,
+        protected_apparatus,
+        negative_controls,
     })
 }
 

@@ -131,7 +131,8 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         // version no active plan governs, an unsafe raw-evidence reference or
         // artifact name, a value that is not a date-time, or an observation
         // whose population is below, or does not state, its plan's minimum or
-        // repetition count, or states either malformed.
+        // repetition count, or states either malformed, or an artifacts map
+        // that omits a file the plan protects (PLAT-975).
         Code::CollectionInvalid
         | Code::CollectionIdUnsafe
         | Code::DefinitionMismatch
@@ -141,15 +142,18 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         | Code::PopulationBelowMinimum
         | Code::PopulationUnstated
         | Code::RepetitionsShort
-        | Code::PopulationMalformed => CoreErrorCode::BadRequest,
+        | Code::PopulationMalformed
+        | Code::ApparatusUndeclared => CoreErrorCode::BadRequest,
 
         // The repository declined: retained bytes that differ, a document that
         // cannot be read back, a plan or profile that is present and
         // unacceptable, no active plan at all, a raw-evidence file that
         // disagrees with its digest or is absent, a named artifact the
         // repository holds in a form that cannot be digested, unreadable YAML,
-        // and every filesystem and store refusal. Fixing any of these means
-        // changing the repository, not the request.
+        // a protected-apparatus entry that names no file, a symlink, an
+        // undigestable file or too many files (PLAT-975), and every
+        // filesystem and store refusal. Fixing any of these means changing the
+        // repository, not the request.
         Code::CollectionIdCollision
         | Code::CollectionUnreadable
         | Code::RecordUnreadable
@@ -159,6 +163,10 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         | Code::RawEvidenceMismatch
         | Code::RawEvidenceUnavailable
         | Code::ArtifactUnreadable
+        | Code::ApparatusUnresolved
+        | Code::ApparatusSymlink
+        | Code::ApparatusUnreadable
+        | Code::ApparatusTooLarge
         | Code::Yaml
         | Code::Io
         | Code::Store => CoreErrorCode::Refused,
@@ -248,7 +256,7 @@ mod tests {
     fn the_measurement_mapping_covers_every_code() {
         assert_eq!(
             MeasurementErrorCode::ALL.len(),
-            22,
+            27,
             "quoin-measurement gained or lost an error code; map it deliberately"
         );
 
@@ -263,6 +271,7 @@ mod tests {
             Code::PopulationUnstated,
             Code::RepetitionsShort,
             Code::PopulationMalformed,
+            Code::ApparatusUndeclared,
         ];
         let refused = [
             Code::CollectionIdCollision,
@@ -274,6 +283,10 @@ mod tests {
             Code::RawEvidenceMismatch,
             Code::RawEvidenceUnavailable,
             Code::ArtifactUnreadable,
+            Code::ApparatusUnresolved,
+            Code::ApparatusSymlink,
+            Code::ApparatusUnreadable,
+            Code::ApparatusTooLarge,
             Code::Yaml,
             Code::Io,
             Code::Store,

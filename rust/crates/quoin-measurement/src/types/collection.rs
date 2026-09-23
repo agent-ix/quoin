@@ -120,7 +120,28 @@ pub struct VerificationStackAttestation {
     /// write (historical evidence, or one authored directly) carries whatever
     /// it happened to state here, or nothing.
     pub unverified_artifacts: Vec<String>,
+    /// Each governing plan's resolved protected apparatus, keyed by plan id
+    /// (PLAT-975, engineering-assurance FR-024).
+    ///
+    /// Intake ([`crate::store::publish`]) resolves every `protected_apparatus`
+    /// entry of every plan governing an observation, digests each file, and
+    /// merges this member into the stored bytes, so a later comparison reads
+    /// the apparatus as it was when the collection was written rather than as
+    /// the disk holds it today. A plan that protects nothing has no entry, and
+    /// a collection no such plan governs states nothing here. Like
+    /// `unverifiedArtifacts`, a stored collection this crate did not write
+    /// carries whatever it happened to state.
+    pub protected_apparatus: BTreeMap<String, ResolvedApparatus>,
 }
+
+/// One plan's resolved protected apparatus: every file its entries named,
+/// repository-relative and `/`-separated, and that file's digest when the
+/// collection was written.
+///
+/// What an apparatus comparison compares is this set of (path, digest)
+/// pairs, so a file added under or removed from a `<directory>/**` entry is a
+/// change exactly as an edited file is (engineering-assurance FR-024).
+pub type ResolvedApparatus = BTreeMap<String, RawFileSha256Digest>;
 
 /// One producer invocation. All observations land atomically as this unit.
 #[derive(Clone, Debug, PartialEq)]
@@ -160,4 +181,15 @@ pub struct MeasurementCollection {
     pub observations: Vec<MeasurementObservation>,
     /// Complete producer output; report views derive rather than transcribe.
     pub raw_evidence: JsonValue,
+}
+
+impl MeasurementCollection {
+    /// The resolved protected apparatus this collection recorded for
+    /// `plan_id`, or `None` when it recorded none (PLAT-975).
+    #[must_use]
+    pub fn protected_apparatus_of(&self, plan_id: &str) -> Option<&ResolvedApparatus> {
+        self.verification_stack
+            .as_ref()
+            .and_then(|stack| stack.protected_apparatus.get(plan_id))
+    }
 }

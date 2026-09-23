@@ -93,11 +93,29 @@ pub enum MeasurementErrorCode {
     /// or a stated `population.examined` under a plan with a minimum is not a
     /// non-negative whole number (PLAT-960).
     PopulationMalformed,
+    /// A governing plan's `protected_apparatus` entry names no file: nothing
+    /// exists at a file entry, it names a directory, or a `<directory>/**`
+    /// entry's directory is absent or holds no file (PLAT-975).
+    ApparatusUnresolved,
+    /// A protected-apparatus entry names, passes through, or finds under its
+    /// directory a symlink, which is refused without being followed
+    /// (PLAT-975, engineering-assurance FR-024).
+    ApparatusSymlink,
+    /// A protected-apparatus file exists but cannot be digested — unreadable,
+    /// oversized, or not a regular file (PLAT-975).
+    ApparatusUnreadable,
+    /// A resolved protected-apparatus file is absent from the candidate's
+    /// `verificationStack.artifacts`: the producer did not declare a file
+    /// that produces the plan's number (PLAT-975).
+    ApparatusUndeclared,
+    /// A plan's protected apparatus resolves to more files than intake
+    /// records (PLAT-975).
+    ApparatusTooLarge,
 }
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 22] = [
+    pub const ALL: [Self; 27] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
@@ -120,6 +138,11 @@ impl MeasurementErrorCode {
         Self::PopulationUnstated,
         Self::RepetitionsShort,
         Self::PopulationMalformed,
+        Self::ApparatusUnresolved,
+        Self::ApparatusSymlink,
+        Self::ApparatusUnreadable,
+        Self::ApparatusUndeclared,
+        Self::ApparatusTooLarge,
     ];
 
     /// The stable wire spelling of this code.
@@ -148,6 +171,11 @@ impl MeasurementErrorCode {
             Self::PopulationUnstated => "QM-POPULATION-UNSTATED",
             Self::RepetitionsShort => "QM-REPETITIONS-SHORT",
             Self::PopulationMalformed => "QM-POPULATION-MALFORMED",
+            Self::ApparatusUnresolved => "QM-APPARATUS-UNRESOLVED",
+            Self::ApparatusSymlink => "QM-APPARATUS-SYMLINK",
+            Self::ApparatusUnreadable => "QM-APPARATUS-UNREADABLE",
+            Self::ApparatusUndeclared => "QM-APPARATUS-UNDECLARED",
+            Self::ApparatusTooLarge => "QM-APPARATUS-TOO-LARGE",
         }
     }
 

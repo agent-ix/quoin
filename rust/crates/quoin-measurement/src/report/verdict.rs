@@ -30,6 +30,11 @@
 //! `--ratchet` with no baseline once had (CR-029, agent-ix/quoin#169). The
 //! same rule decides which earlier values may *set* the best: an earlier value
 //! that is incomplete, empty or under another definition is not one.
+//!
+//! Under a plan that protects apparatus (PLAT-975), an earlier value measured
+//! with a different recorded protected apparatus is not a floor either, and
+//! its presence makes the ratchet `inconclusive` (`apparatus_changed`); a
+//! newest collection that recorded none is `apparatus_unrecorded`.
 
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -67,11 +72,18 @@ pub enum InconclusiveReason {
     /// `Objective` requires a bound for `direction: target`, the one
     /// direction whose ratchet needs one.
     NoBound,
+    /// An earlier value of the slice under the plan's `definition_version`
+    /// came from a collection whose recorded protected apparatus differs from
+    /// the newest one's, or that recorded none (PLAT-975).
+    ApparatusChanged,
+    /// The newest collection recorded no protected apparatus although the
+    /// plan protects apparatus (PLAT-975).
+    ApparatusUnrecorded,
 }
 
 impl InconclusiveReason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 10] = [
         Self::NoCurrentValue,
         Self::PlanMismatch,
         Self::DefinitionMismatch,
@@ -80,6 +92,8 @@ impl InconclusiveReason {
         Self::EmptyPopulation,
         Self::NoPrior,
         Self::NoBound,
+        Self::ApparatusChanged,
+        Self::ApparatusUnrecorded,
     ];
 
     /// The stable wire spelling.
@@ -94,6 +108,8 @@ impl InconclusiveReason {
             Self::EmptyPopulation => "empty_population",
             Self::NoPrior => "no_prior",
             Self::NoBound => "no_bound",
+            Self::ApparatusChanged => "apparatus_changed",
+            Self::ApparatusUnrecorded => "apparatus_unrecorded",
         }
     }
 
@@ -120,6 +136,12 @@ impl InconclusiveReason {
                 "no earlier collection measured this plan under its definition version"
             }
             Self::NoBound => "the objective states no bound",
+            Self::ApparatusChanged => {
+                "an earlier value was measured with a different protected apparatus"
+            }
+            Self::ApparatusUnrecorded => {
+                "the newest collection recorded no protected apparatus the plan protects"
+            }
         }
     }
 }
@@ -262,19 +284,20 @@ impl StageVerdict {
 /// The verdict for one report row, or `None` when the plan states no
 /// `objective` or sits at a stage this module does not decide.
 ///
-/// `observation` is the row's newest observation; `earlier` is every
-/// collection older than the one it came from, in collection order.
+/// `observation` is the row's newest observation, from `collection`;
+/// `earlier` is every collection older than that one, in collection order.
 #[must_use]
 pub fn stage_verdict(
     plan: &MeasurementPlan,
     observation: Option<&MeasurementObservation>,
+    collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
 ) -> Option<StageVerdict> {
     let objective = plan.objective?;
     match plan.stage {
         MeasurementStage::Ratchet => Some(StageVerdict::Ratchet {
             objective,
-            outcome: ratchet(plan, objective, observation, earlier),
+            outcome: ratchet(plan, objective, observation, collection, earlier),
         }),
         MeasurementStage::Target => Some(StageVerdict::Target {
             objective,
@@ -368,6 +391,7 @@ fn ratchet(
     plan: &MeasurementPlan,
     objective: Objective,
     observation: Option<&MeasurementObservation>,
+    collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
 ) -> RatchetOutcome {
     let (observation, current) = match usable(plan, observation) {
@@ -377,6 +401,9 @@ fn ratchet(
     let Some(current_badness) = badness(objective, current) else {
         return RatchetOutcome::Inconclusive(InconclusiveReason::NoBound);
     };
+    if let Err(reason) = same_apparatus(plan, observation, collection, earlier) {
+        return RatchetOutcome::Inconclusive(reason);
+    }
     let best = earlier_values(plan, observation.dimensions.entries(), earlier)
         .filter_map(|(value, collection)| Some((badness(objective, value)?, value, collection)))
         // `min_by` keeps the first of equal minima, so a tie names the
@@ -400,6 +427,37 @@ fn ratchet(
             best_prior,
         }
     }
+}
+
+/// Under a plan that protects apparatus, refuse a floor unless the newest
+/// collection recorded its protected apparatus and every earlier usable value
+/// of the slice came from a collection that recorded the same set (PLAT-975).
+///
+/// A changed set needs a new `definition_version` (engineering-assurance
+/// FR-024), so an earlier value under the plan's own definition with another
+/// set is an apparatus edited inside one series: a floor set by it, or a
+/// newest value measured against it, compares two different measurements.
+/// That is `apparatus_changed` for as long as the series lasts, rather than a
+/// floor quietly taken from whichever runs happen to agree.
+fn same_apparatus(
+    plan: &MeasurementPlan,
+    observation: &MeasurementObservation,
+    collection: Option<&MeasurementCollection>,
+    earlier: &[MeasurementCollection],
+) -> Result<(), InconclusiveReason> {
+    if plan.protected_apparatus.is_none() {
+        return Ok(());
+    }
+    let plan_id = plan.id.as_str();
+    let own = collection
+        .and_then(|found| found.protected_apparatus_of(plan_id))
+        .ok_or(InconclusiveReason::ApparatusUnrecorded)?;
+    if earlier_values(plan, observation.dimensions.entries(), earlier)
+        .any(|(_, found)| found.protected_apparatus_of(plan_id) != Some(own))
+    {
+        return Err(InconclusiveReason::ApparatusChanged);
+    }
+    Ok(())
 }
 
 /// A `target` plan's progress towards its objective's bound.

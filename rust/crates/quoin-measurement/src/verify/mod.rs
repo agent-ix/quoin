@@ -38,9 +38,17 @@
 //! run against its own history, so a run that regressed stays visible even
 //! when a later one passed; and a regressed run with the candidate's own
 //! apparatus — the same source revision, configuration, tool, corpus and
-//! verification stack — means the same thing was re-run until it passed,
-//! which is `rerun_until_pass`.
+//! verification stack, and under a plan that protects apparatus the same
+//! recorded protected apparatus — means the same thing was re-run until it
+//! passed, which is `rerun_until_pass`.
+//!
+//! # Protected apparatus
+//!
+//! A run is a baseline only for runs that recorded the same protected
+//! apparatus, and an earlier run that recorded another is a finding against
+//! the candidate — see [`apparatus`] (PLAT-975).
 
+mod apparatus;
 mod order;
 mod reason;
 pub mod rows;
@@ -52,7 +60,7 @@ use std::collections::BTreeMap;
 use engineering_assurance::measurement::{Baseline, Comparator, DecisionRule, RuleReference};
 use quoin_store::JsonValue;
 
-use crate::types::collection::MeasurementCollection;
+use crate::types::collection::{MeasurementCollection, ResolvedApparatus};
 use crate::types::observation::MeasurementObservation;
 use crate::types::plan::{MeasurementPlan, StatisticalDesign};
 
@@ -66,6 +74,9 @@ pub use wire::{VERDICT_SCHEMA, verdict_json};
 struct Run<'a> {
     collection: &'a MeasurementCollection,
     intake: Option<u64>,
+    /// The protected apparatus the collection recorded, under a plan that
+    /// protects some; `None` for every run of a plan that protects nothing.
+    apparatus: Option<&'a ResolvedApparatus>,
     slices: Vec<(&'a MeasurementObservation, Result<Estimate, Reason>)>,
 }
 
@@ -131,6 +142,8 @@ pub fn verify(
                 if index == last {
                     decisions = outcome.decisions;
                     check.candidate_checks(last, &regressed, &outcome.priors, collections);
+                    let found = apparatus::findings(plan, &check.runs);
+                    check.findings.extend(found);
                 }
             }
         }
@@ -170,6 +183,7 @@ fn runs<'a>(
         .map(|ranked| Run {
             collection: ranked.collection,
             intake: ranked.intake,
+            apparatus: apparatus::recorded(plan, ranked.collection),
             slices: observations_of(plan, ranked.collection)
                 .into_iter()
                 .map(|observation| {
@@ -273,7 +287,7 @@ impl Check<'_> {
                     continue;
                 }
             };
-            let (baseline, holds) = match baseline(rule, dimensions, history) {
+            let (baseline, holds) = match baseline(rule, dimensions, history, run.apparatus) {
                 Ok((value, prior)) => {
                     outcome.priors.extend(prior);
                     let holds = rule.holds(estimate.value, value).ok();
@@ -367,6 +381,7 @@ impl Check<'_> {
         if !regressed.contains(&last) {
             for &index in regressed {
                 if let Some(run) = self.runs.get(index)
+                    && run.apparatus == candidate.apparatus
                     && same_apparatus(run.collection, candidate.collection)
                 {
                     found.push(at(Reason::RerunUntilPass, run.collection));
@@ -379,10 +394,15 @@ impl Check<'_> {
 
 /// The baseline value for `slice` over `history`, and the index of the run
 /// it came from when that one run alone decides it (`prior-collection`).
+///
+/// Only runs that recorded `apparatus` — the deciding run's own protected
+/// apparatus — are a baseline (PLAT-975); under a plan that protects nothing
+/// every run's is `None` and all of them are.
 fn baseline(
     rule: DecisionRule,
     slice: &BTreeMap<String, JsonValue>,
     history: &[Run<'_>],
+    apparatus: Option<&ResolvedApparatus>,
 ) -> Result<(Option<f64>, Option<usize>), Reason> {
     let RuleReference::Baseline { baseline, .. } = rule.reference() else {
         return Ok((None, None));
@@ -390,6 +410,9 @@ fn baseline(
     // A baseline is computed from the checker's own estimates: a run that is
     // not usable evidence — tampered, short, incomplete — contributes nothing.
     let mut earlier = history.iter().enumerate().filter_map(|(index, run)| {
+        if run.apparatus != apparatus {
+            return None;
+        }
         run.slices.iter().find_map(|(observation, assessed)| {
             (observation.dimensions.entries() == slice)
                 .then_some(assessed.as_ref().ok())

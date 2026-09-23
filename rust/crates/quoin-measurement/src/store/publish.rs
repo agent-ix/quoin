@@ -23,12 +23,15 @@
 //! [`write_measurement_collection`] writes the **caller's** JSON, canonicalised
 //! — not a re-serialisation of the parsed collection — so that members this
 //! crate does not model are never dropped on the way to disk. PLAT-969's
-//! ruling adds exactly one exception: `verificationStack.unverifiedArtifacts`,
+//! ruling adds one exception: `verificationStack.unverifiedArtifacts`,
 //! the sorted list of `artifacts` names with no local filesystem entry, is
 //! something no caller can state honestly for itself (only this repository
 //! knows what it holds), so intake computes it and merges it into a clone of
-//! the candidate before canonicalising. Nothing else about the candidate is
-//! touched.
+//! the candidate before canonicalising. PLAT-975 adds the second:
+//! `verificationStack.protectedApparatus`, each governing plan's resolved
+//! protected apparatus with every file's digest, which intake resolves from
+//! the repository itself (see [`super::apparatus`]). Nothing else about the
+//! candidate is touched.
 
 use std::error::Error as _;
 use std::io::ErrorKind;
@@ -42,6 +45,7 @@ use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
 use crate::raw_evidence::RawEvidencePath;
 use crate::source::DiskMeasurement;
+use crate::store::apparatus;
 use crate::store::paths::measurement_path;
 use crate::types::collection::MeasurementCollection;
 use crate::types::ids::CollectionId;
@@ -66,7 +70,9 @@ use crate::validate;
 /// [`crate::error::MeasurementErrorCode::ArtifactNameUnsafe`] when an artifact
 /// name is not a safe relative path, and
 /// [`crate::error::MeasurementErrorCode::ArtifactUnreadable`] when it names an
-/// entry under `repo` that cannot be digested (PLAT-969).
+/// entry under `repo` that cannot be digested (PLAT-969), and the
+/// `QM-APPARATUS-*` refusals when a governing plan's protected apparatus
+/// cannot be resolved, or is not declared in `artifacts` (PLAT-975).
 pub fn write_measurement_collection(
     repo: &Path,
     candidate: &JsonValue,
@@ -74,35 +80,48 @@ pub fn write_measurement_collection(
     let source = DiskMeasurement::new(repo);
     let plans = load_measurement_plans(&source, PlanLoadOptions::default())?;
     let collection = validate::measurement_collection(candidate, &plans)?;
+    // The protected apparatus first, so a protected file that is a symlink
+    // or unreadable is refused under its own `QM-APPARATUS-*` code rather
+    // than as an ordinary artifact.
+    let protected = apparatus::resolve_protected(repo, &collection, &plans)?;
     let unverified = verify_local_artifacts(repo, &collection)?;
     let id = CollectionId::parse(collection.collection_id.as_str())?;
     let path = measurement_path(repo, &id);
     // The **caller's** value is what is written, canonicalised — not a
     // re-serialisation of the parsed collection. `store.ts:40` does the same,
     // and it is what keeps members this crate does not model from being
-    // dropped on the way to disk. `unverifiedArtifacts` is the one computed
-    // exception (PLAT-969): see this module's header.
-    let written = with_unverified_artifacts(candidate, &unverified);
+    // dropped on the way to disk. `unverifiedArtifacts`
+    // and `protectedApparatus` are the computed exceptions (PLAT-969,
+    // PLAT-975): see this module's header.
+    let written = with_computed_members(
+        candidate,
+        &unverified,
+        apparatus::protected_member(&protected),
+    );
     let bytes = canonical_json_bytes(&written)?;
     write_content_addressed(&path, &bytes)?;
     Ok(path)
 }
 
-/// Merge the computed `unverifiedArtifacts` list into a clone of the
-/// candidate's own `verificationStack`, replacing whatever the caller may
-/// have stated there.
+/// Merge the computed `unverifiedArtifacts` list and `protectedApparatus`
+/// record into a clone of the candidate's own `verificationStack`, replacing
+/// whatever the caller may have stated for either.
 ///
-/// Sets the member when `names` is non-empty and removes it otherwise, so a
-/// collection with nothing unverified states nothing rather than an empty
-/// array — the same "absent, not empty" rule the read side
-/// (`validate::stack::unverified_artifacts`) applies back.
+/// Sets each member when it has something to say and removes it otherwise,
+/// so a collection with nothing unverified and no protecting plan states
+/// neither rather than an empty value — the same "absent, not empty" rule the
+/// read side (`validate::stack`) applies back.
 ///
 /// `write_measurement_collection` only reaches this after
 /// `validate::measurement_collection` has already confirmed `verificationStack`
 /// is an object (a schemaVersion-2 collection always carries one); if it is
 /// somehow not, the candidate is returned unchanged rather than losing
 /// whatever the caller actually sent.
-fn with_unverified_artifacts(candidate: &JsonValue, names: &[String]) -> JsonValue {
+fn with_computed_members(
+    candidate: &JsonValue,
+    names: &[String],
+    protected: Option<JsonValue>,
+) -> JsonValue {
     let mut written = candidate.clone();
     let JsonValue::Object(root) = &mut written else {
         return written;
@@ -115,6 +134,14 @@ fn with_unverified_artifacts(candidate: &JsonValue, names: &[String]) -> JsonVal
     } else {
         let array = JsonValue::Array(names.iter().cloned().map(JsonValue::string).collect());
         stack.set("unverifiedArtifacts", array);
+    }
+    match protected {
+        Some(record) => {
+            stack.set("protectedApparatus", record);
+        }
+        None => {
+            stack.remove("protectedApparatus");
+        }
     }
     root.set("verificationStack", JsonValue::Object(stack));
     written
