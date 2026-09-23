@@ -165,6 +165,14 @@ reasons! {
     AuditFinding => "audit_finding", false;
     /// The auditor did not evaluate the owning obligation.
     AuditNotEvaluated => "audit_not_evaluated", true;
+    /// The change's diff touched the linked plan's protected apparatus.
+    ApparatusTouched => "apparatus_touched", false;
+    /// The linked plan declared a negative control this verification has no
+    /// rule to evaluate.
+    NegativeControlUncaught => "negative_control_uncaught", true;
+    /// The linked plan protects apparatus and no diff was retained to compare
+    /// against it.
+    DiffMissing => "diff_missing", true;
 }
 
 impl fmt::Display for Reason {
@@ -259,7 +267,7 @@ mod tests {
 
     #[test]
     fn the_reason_vocabulary_is_closed_and_round_trips() {
-        assert_eq!(Reason::ALL.len(), 35);
+        assert_eq!(Reason::ALL.len(), 38);
         for reason in Reason::ALL {
             assert_eq!(Reason::parse(reason.as_str()), Some(*reason));
         }
@@ -267,7 +275,7 @@ mod tests {
     }
 
     #[test]
-    fn exactly_eleven_reasons_leave_the_outcome_incomplete() {
+    fn exactly_thirteen_reasons_leave_the_outcome_incomplete() {
         let incomplete: Vec<&str> = Reason::ALL
             .iter()
             .filter(|reason| reason.is_incomplete())
@@ -287,6 +295,8 @@ mod tests {
                 "result_unavailable",
                 "result_not_computed",
                 "audit_not_evaluated",
+                "negative_control_uncaught",
+                "diff_missing",
             ]
         );
     }

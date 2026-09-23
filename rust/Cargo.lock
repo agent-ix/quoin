@@ -2931,6 +2931,7 @@ dependencies = [
 name = "quoin-change-assurance"
 version = "0.24.1"
 dependencies = [
+ "engineering-assurance",
  "quoin-jsonschema",
  "quoin-store",
  "serde_json",

@@ -119,3 +119,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-107: Ratchet and target stage verdicts in the measurement report](./FR-107-stage-verdicts.md)
 - [FR-108: Independent measurement-verdict checker](./FR-108-measurement-verdict-checker.md)
 - [FR-110: Protected measurement apparatus: resolved at intake, compared across collections](./FR-110-protected-apparatus.md)
+- [FR-111: Change-assurance refuses credit for a diff that touches protected measurement apparatus](./FR-111-change-assurance-protected-apparatus.md)
