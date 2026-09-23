@@ -444,7 +444,7 @@ fn tc_479_402_governing_definition_refusals_name_the_versions_and_write_nothing(
     assert_eq!(
         error.findings(),
         [
-            "requested definition github-actions.release-operational-v1; no active \
+            "requested definition github-actions.release-operational-v2; no active \
              MeasurementPlan exists"
         ]
     );
@@ -456,7 +456,7 @@ fn tc_479_402_governing_definition_refusals_name_the_versions_and_write_nothing(
     let mismatched = patch(
         &capability,
         "/producer/definition_version",
-        json!("github-actions.release-operational-v2"),
+        json!("github-actions.release-operational-v3"),
     );
     let error = write_operational_record(root, &SystemClock, &mismatched)
         .expect_err("an unnamed definition is refused");
@@ -464,16 +464,16 @@ fn tc_479_402_governing_definition_refusals_name_the_versions_and_write_nothing(
     let finding = &error.findings()[0];
     assert!(
         finding.starts_with(
-            "requested definition github-actions.release-operational-v2; expected one of "
+            "requested definition github-actions.release-operational-v3; expected one of "
         ),
         "the refusal must name the requested definition: {finding}"
     );
     assert!(
-        finding.contains("github-actions.release-operational-v1"),
+        finding.contains("github-actions.release-operational-v2"),
         "the refusal must name the expected definitions: {finding}"
     );
     assert!(
-        finding.ends_with("; observed github-actions.release-operational-v2"),
+        finding.ends_with("; observed github-actions.release-operational-v3"),
         "the refusal must name the observed definition: {finding}"
     );
     assert!(json_files(&operational_root(root)).is_empty());

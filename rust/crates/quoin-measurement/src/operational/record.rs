@@ -198,6 +198,8 @@ pub struct OperationalBase {
     pub subject: Subject,
     /// What produced the record.
     pub producer: Producer,
+    /// FR-022 claim strength (PLAT-972): required, schema `const` `observed`.
+    pub strength: engineering_assurance::claim_strength::ClaimStrength,
     /// Where the control was observed.
     pub scope: OperationalScope,
     /// What the control ran under.

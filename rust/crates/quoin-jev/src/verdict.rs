@@ -26,6 +26,12 @@
 //! question about `question-set.json`'s shape, which this crate does not
 //! own and does not change -- see this crate's top-level report for that
 //! finding stated as a recommendation, not applied silently here.
+//!
+//! **Margin gating (PLAT-981).** The same limitation applies to the second
+//! gate, [`Certainty::Uncertain`]: it diffs the top two entries of an
+//! answer's `probabilities` map, and only `choice` and `score` answers carry
+//! one. A `noul` answer is a lone float, so there is nothing to diff and no
+//! margin gate on `falsifiable` either.
 
 use serde::Serialize;
 use typesafe_sdk_answers::{Answer, SystemOneResponse};
@@ -91,6 +97,224 @@ impl Severity {
     }
 }
 
+/// The boundary at which a bare `noul` probability reads as "yes". The same
+/// `>= 0.5` cut the live suite grades `noul` answers with
+/// (`the_noul_answers_are_reported_per_question`, PR #574).
+const NOUL_YES: f64 = 0.5;
+
+/// The `noul` sub-question whose text names the defect a `weakness_kind`
+/// label reports, paired with the yes/no answer that would corroborate it.
+///
+/// Read off `question-set.json`'s own question text, not fit to any corpus:
+/// `unfalsifiable` is `falsifiable` answered no, `unmeasurable_threshold` is
+/// `threshold_present` answered no, and `restates_requirement` /
+/// `implementation_coupled` are their namesake questions answered yes.
+/// `happy_path_only` has no sub-question: none of the five tests coverage
+/// breadth (the blind spot PR #574's `v3` stated before its first call).
+/// `states_observable_outcome` names no label on its own and is never
+/// returned here.
+///
+/// Like [`Severity::for_weakness_kind`], this is only reached from
+/// [`extract`] for a label already checked against `answer_space`, so the
+/// `_` arm is reached by `happy_path_only` and `sound` in practice; an
+/// arbitrary string gets [`None`], never a guessed question.
+#[must_use]
+fn label_sub_question(kind: &str) -> Option<(&'static str, bool)> {
+    match kind {
+        "unfalsifiable" => Some(("falsifiable", false)),
+        "unmeasurable_threshold" => Some(("threshold_present", false)),
+        "restates_requirement" => Some(("restates_requirement", true)),
+        "implementation_coupled" => Some(("implementation_coupled", true)),
+        _ => None,
+    }
+}
+
+/// Whether the `weakness_kind` label a finding carries is backed by the one
+/// `noul` sub-question that names the same defect (PLAT-984).
+///
+/// **This is not a decomposition of the verdict, and does not claim to be.**
+/// PLAT-984 asks for a "which sub-question decided this verdict" breakdown.
+/// For this lens nothing decides `weakness_kind` except a single Jev `choice`
+/// call: the five `noul` answers are asked in the same request but are not
+/// inputs to the label, and PR #574 measured that deriving the label from them
+/// is worse than asking for it (`v3-derived`, 33.3%). So "decided-by" here can
+/// only mean the narrower, still useful thing: for the label Jev chose, did
+/// the sub-question that asks about that very defect answer the same way? A
+/// [`Self::Disagrees`] row is a label that is not coming from the question a
+/// reader would assume it comes from -- the case the ticket wants visible.
+///
+/// PR #574's `the_noul_answers_are_reported_per_question` measures each
+/// question's agreement against a corpus's recorded answers. That needs
+/// ground truth a production run does not have, so it is not what this
+/// promotes; this compares Jev's answers with each other, per finding.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "outcome", rename_all = "snake_case")]
+pub enum SubQuestionCheck {
+    /// The label's sub-question answered in the label's direction.
+    Agrees {
+        /// The `noul` question id.
+        question: &'static str,
+        /// The bare probability Jev answered it with.
+        noul: f64,
+    },
+    /// The label's sub-question answered against the label: Jev chose the
+    /// label, but its own answer to the question about that defect says the
+    /// defect is absent (or, for a "yes" question, present when the label
+    /// says otherwise).
+    Disagrees {
+        /// The `noul` question id.
+        question: &'static str,
+        /// The bare probability Jev answered it with.
+        noul: f64,
+    },
+    /// The label has a sub-question, but the response carried no `noul`
+    /// answer for it on this row. Its own outcome, never read as agreement.
+    Unanswered {
+        /// The `noul` question id that went unanswered.
+        question: &'static str,
+    },
+    /// No `noul` question covers this label (`happy_path_only`).
+    NoSubQuestion,
+}
+
+impl SubQuestionCheck {
+    /// The check for `kind` against one AC row's `noul` answers.
+    #[must_use]
+    pub fn for_label(kind: &str, noul: &NoulSignals) -> Self {
+        let Some((question, corroborating)) = label_sub_question(kind) else {
+            return Self::NoSubQuestion;
+        };
+        match noul.values.iter().find(|(id, _)| id == question) {
+            None => Self::Unanswered { question },
+            Some(&(_, value)) if (value >= NOUL_YES) == corroborating => Self::Agrees {
+                question,
+                noul: value,
+            },
+            Some(&(_, value)) => Self::Disagrees {
+                question,
+                noul: value,
+            },
+        }
+    }
+}
+
+/// The two caller-owned numbers [`extract`] gates on.
+///
+/// Both are required rather than defaulted, for the reason [`extract`]'s doc
+/// gives for `confidence`: `ix-board` owns the number, and this crate does
+/// not invent one. They travel as one struct rather than two adjacent `f64`
+/// parameters because two same-typed positional floats are silently
+/// swappable at a call site -- `extract(.., 0.1, 0.5)` and
+/// `extract(.., 0.5, 0.1)` both compile. Named fields cannot be crossed.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Thresholds {
+    /// A reported `confidence` strictly below this is
+    /// [`Certainty::Unconfirmed`].
+    pub confidence: f64,
+    /// A gap between the top two `probabilities` strictly below this is
+    /// [`Certainty::Uncertain`].
+    pub margin: f64,
+}
+
+/// How far a `choice` or `score` verdict can be trusted (PLAT-981).
+///
+/// One enum rather than an `uncertain: bool` beside the old `unconfirmed:
+/// bool`: two bools make four states, and the ticket wants exactly three --
+/// "right, wrong, or honestly unsure". With two bools, `unconfirmed &&
+/// uncertain` is representable, and every reader has to re-decide which one
+/// wins. Here the precedence is decided once, in [`Certainty::assess`], and
+/// a consumer's `match` is exhaustive over the three answers there are.
+///
+/// Every variant still carries its finding: like the `unconfirmed` bool this
+/// replaces, a low-certainty verdict is annotated and never suppressed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Certainty {
+    /// Neither gate fired: the reported confidence met its threshold and the
+    /// top label led the runner-up by at least the margin (or there was no
+    /// runner-up to lead).
+    Confident,
+    /// The reported confidence fell below [`Thresholds::confidence`], and the
+    /// top two labels were NOT within the margin -- the model is unsure of
+    /// its answer, but not torn between two answers.
+    Unconfirmed,
+    /// The top two `probabilities` were within [`Thresholds::margin`] of each
+    /// other: the model could not separate two answers. Takes precedence over
+    /// [`Self::Unconfirmed`] -- see [`Certainty::assess`].
+    Uncertain,
+}
+
+impl Certainty {
+    /// Assesses one answer's `confidence` and `probabilities` against
+    /// `thresholds`.
+    ///
+    /// **Precedence: `Uncertain` over `Unconfirmed`.** When both gates fire,
+    /// the answer is `Uncertain`. "Low confidence" says the model doubts its
+    /// pick; "within the margin" says *which* doubt -- a second label it
+    /// nearly chose. That is the more specific statement, and the one PLAT-981
+    /// exists to make visible as its own bucket. Folding it into
+    /// `Unconfirmed` whenever confidence is also low would hide exactly the
+    /// cases the ticket is about, since a near-tie usually drags confidence
+    /// down with it.
+    ///
+    /// **Fewer than two probabilities: no margin exists.** With zero or one
+    /// label there is no runner-up to be close to, so the margin gate does
+    /// not fire and the answer falls through to the confidence gate alone.
+    /// Treating a lone label as a tie would report "torn between two answers"
+    /// when there is only one.
+    #[must_use]
+    pub fn assess(
+        confidence: f64,
+        probabilities: impl IntoIterator<Item = f64>,
+        thresholds: Thresholds,
+    ) -> Self {
+        let within_margin =
+            top_two_margin(probabilities).is_some_and(|margin| margin < thresholds.margin);
+        if within_margin {
+            Self::Uncertain
+        } else if confidence < thresholds.confidence {
+            Self::Unconfirmed
+        } else {
+            Self::Confident
+        }
+    }
+
+    /// The wire spelling, matching the `Serialize` form.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Confident => "confident",
+            Self::Unconfirmed => "unconfirmed",
+            Self::Uncertain => "uncertain",
+        }
+    }
+}
+
+/// The highest probability minus the second highest, or [`None`] when there
+/// are fewer than two.
+///
+/// One pass keeping the top two rather than sorting: the ordering is
+/// `f64::total_cmp`, so a NaN from a malformed response has a defined place
+/// instead of making the comparison panic or depend on input order.
+fn top_two_margin(probabilities: impl IntoIterator<Item = f64>) -> Option<f64> {
+    let mut first: Option<f64> = None;
+    let mut second: Option<f64> = None;
+    for p in probabilities {
+        match first {
+            Some(top) if p.total_cmp(&top).is_le() => {
+                if second.is_none_or(|runner_up| p.total_cmp(&runner_up).is_gt()) {
+                    second = Some(p);
+                }
+            }
+            _ => {
+                second = first;
+                first = Some(p);
+            }
+        }
+    }
+    Some(first? - second?)
+}
+
 /// The raw `noul` answers for one AC row, carried through for transparency
 /// even though they cannot carry the confidence-annotation rule (see this
 /// module's doc).
@@ -113,13 +337,14 @@ pub struct Finding {
     pub severity: Severity,
     /// `weakness_kind`'s reported confidence, unmodified.
     pub confidence: f64,
-    /// Whether `confidence` fell below the caller's threshold.
+    /// How far this verdict can be trusted: [`Certainty::assess`] over
+    /// `confidence` and `probabilities`.
     ///
     /// PLAT-837 states this is the opposite of the `ix-board` rule: a
-    /// low-confidence verdict is annotated here, never dropped from the
+    /// low-certainty verdict is annotated here, never dropped from the
     /// returned list -- there is no suppression path in this function at
     /// all, by construction.
-    pub unconfirmed: bool,
+    pub certainty: Certainty,
     /// Every label's probability, for a reader who wants to see how
     /// contested the choice was (the ticket's own worked example: `0.5
     /// sound` / `0.45 unfalsifiable`).
@@ -127,6 +352,10 @@ pub struct Finding {
     /// The five raw `noul` values for this row, carried through even though
     /// they have no confidence to annotate.
     pub noul: NoulSignals,
+    /// Whether `weakness_kind`'s label is backed by the `noul` sub-question
+    /// that names the same defect (PLAT-984). See [`SubQuestionCheck`] for
+    /// why this is attribution, not a decomposition of the verdict.
+    pub label_sub_question: SubQuestionCheck,
 }
 
 /// The FR-level `adverse_case_coverage` verdict.
@@ -138,9 +367,10 @@ pub struct CoverageVerdict {
     pub label: Option<String>,
     /// Reported confidence in the score.
     pub confidence: f64,
-    /// Whether `confidence` fell below the caller's threshold. Same
-    /// annotate-never-suppress rule as [`Finding::unconfirmed`].
-    pub unconfirmed: bool,
+    /// [`Certainty::assess`] over the score answer's `confidence` and
+    /// `probabilities`. Same annotate-never-suppress rule as
+    /// [`Finding::certainty`].
+    pub certainty: Certainty,
 }
 
 /// Everything this module produces for one FR's Jev call.
@@ -183,15 +413,15 @@ pub struct FrVerdict {
 /// Extracts every finding from `response` for the AC rows in `ac_ids`,
 /// against `questions` (for the wire-key shape) and severity mapping.
 ///
-/// `confidence_threshold` is a required argument rather than a baked-in
-/// constant on purpose: PLAT-837 says this crate must use "the same
-/// threshold" as `ix-board`'s existing low-confidence rule, and that
-/// concrete number lives in `ix-board`, outside this crate's ownership and
-/// outside this ticket's stated scope. Hard-coding a guessed value here
-/// would be exactly the kind of folklore-that-compiles this codebase's own
-/// review conventions warn against; the caller supplies it explicitly, and
-/// this crate's own report names that as an open item rather than silently
-/// picking a number.
+/// `thresholds` is a required argument rather than a baked-in constant on
+/// purpose: PLAT-837 says this crate must use "the same threshold" as
+/// `ix-board`'s existing low-confidence rule, and that concrete number lives
+/// in `ix-board`, outside this crate's ownership and outside this ticket's
+/// stated scope. Hard-coding a guessed value here would be exactly the kind
+/// of folklore-that-compiles this codebase's own review conventions warn
+/// against; the caller supplies it explicitly, and this crate's own report
+/// names that as an open item rather than silently picking a number.
+/// PLAT-981's margin is caller-supplied for the same reason.
 ///
 /// Never fails: a missing or wrongly-typed `weakness_kind` answer for an AC
 /// row is tracked in [`FrVerdict::unanswered`] rather than panicking or
@@ -203,7 +433,7 @@ pub fn extract(
     response: &SystemOneResponse,
     question_set: &QuestionSet,
     ac_ids: &[String],
-    confidence_threshold: f64,
+    thresholds: Thresholds,
 ) -> FrVerdict {
     let mut findings = Vec::new();
     let mut sound = Vec::new();
@@ -246,17 +476,25 @@ pub fn extract(
 
         match Severity::for_weakness_kind(&choice.choice) {
             None => sound.push(ac_id.clone()),
-            Some(severity) => findings.push(Finding {
-                ac_id: ac_id.clone(),
-                weakness_kind: choice.choice.clone(),
-                severity,
-                confidence: choice.confidence,
-                unconfirmed: choice.confidence < confidence_threshold,
-                probabilities: choice.probabilities.clone().into_iter().collect(),
-                noul: NoulSignals {
+            Some(severity) => {
+                let noul = NoulSignals {
                     values: noul_values,
-                },
-            }),
+                };
+                findings.push(Finding {
+                    ac_id: ac_id.clone(),
+                    weakness_kind: choice.choice.clone(),
+                    severity,
+                    confidence: choice.confidence,
+                    certainty: Certainty::assess(
+                        choice.confidence,
+                        choice.probabilities.values().copied(),
+                        thresholds,
+                    ),
+                    probabilities: choice.probabilities.clone().into_iter().collect(),
+                    label_sub_question: SubQuestionCheck::for_label(&choice.choice, &noul),
+                    noul,
+                });
+            }
         }
     }
 
@@ -265,7 +503,11 @@ pub fn extract(
             score: score.score,
             label: rubric_label_for(question_set, score.score),
             confidence: score.confidence,
-            unconfirmed: score.confidence < confidence_threshold,
+            certainty: Certainty::assess(
+                score.confidence,
+                score.probabilities.values().copied(),
+                thresholds,
+            ),
         }),
         _ => None,
     };
@@ -313,12 +555,22 @@ fn rubric_label_for(question_set: &QuestionSet, raw_score: f64) -> Option<String
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{Severity, extract};
+    use super::{
+        Certainty, NoulSignals, Severity, SubQuestionCheck, Thresholds, extract,
+        label_sub_question, top_two_margin,
+    };
     use crate::question_set::QuestionSet;
 
     const ASSET: &str = include_str!(
         "../../../../skills/spec-criterion-strength-analysis/assets/question-set.json"
     );
+
+    /// Confidence 0.5, margin 0.1. The margin is chosen so that no fixture
+    /// written before PLAT-981 (whose top-two gaps are all >= 0.4) crosses it.
+    const T: Thresholds = Thresholds {
+        confidence: 0.5,
+        margin: 0.1,
+    };
 
     /// Provenance: PLAT-837
     #[test]
@@ -347,6 +599,20 @@ mod tests {
     }
 
     fn response_fixture(confidence: f64) -> typesafe_sdk_answers::SystemOneResponse {
+        gated_fixture(
+            confidence,
+            &serde_json::json!({"unfalsifiable": confidence, "sound": 1.0 - confidence}),
+            &serde_json::json!({}),
+        )
+    }
+
+    /// `weakness_kind` answered `unfalsifiable` and `adverse_case_coverage`
+    /// answered, both at `confidence`, with the given `probabilities` maps.
+    fn gated_fixture(
+        confidence: f64,
+        choice_probabilities: &serde_json::Value,
+        score_probabilities: &serde_json::Value,
+    ) -> typesafe_sdk_answers::SystemOneResponse {
         let body = serde_json::json!({
             "model": "jev-1.13.0",
             "answers": {
@@ -359,14 +625,14 @@ mod tests {
                     "type": "choice",
                     "choice": "unfalsifiable",
                     "confidence": confidence,
-                    "probabilities": {"unfalsifiable": confidence, "sound": 1.0 - confidence}
+                    "probabilities": choice_probabilities
                 },
                 "adverse_case_coverage": {
                     "type": "score",
                     "score": 1.4,
                     "confidence": confidence,
                     "legend": {},
-                    "probabilities": {}
+                    "probabilities": score_probabilities
                 }
             },
             "usage": {"input_tokens": 100, "output_tokens": 0}
@@ -380,7 +646,7 @@ mod tests {
     fn the_classifier_is_the_concrete_model_from_the_response() {
         let set = QuestionSet::parse(ASSET).expect("parses");
         let response = response_fixture(0.9);
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert_eq!(verdict.classifier, "jev-1.13.0");
     }
 
@@ -390,9 +656,9 @@ mod tests {
     fn a_high_confidence_verdict_is_not_marked_unconfirmed() {
         let set = QuestionSet::parse(ASSET).expect("parses");
         let response = response_fixture(0.95);
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert_eq!(verdict.findings.len(), 1);
-        assert!(!verdict.findings[0].unconfirmed);
+        assert_eq!(verdict.findings[0].certainty, Certainty::Confident);
         assert_eq!(verdict.findings[0].severity, Severity::High);
     }
 
@@ -404,13 +670,163 @@ mod tests {
     fn a_low_confidence_verdict_still_produces_a_finding_marked_unconfirmed() {
         let set = QuestionSet::parse(ASSET).expect("parses");
         let response = response_fixture(0.3);
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert_eq!(
             verdict.findings.len(),
             1,
             "low confidence must not suppress the finding"
         );
-        assert!(verdict.findings[0].unconfirmed);
+        assert_eq!(verdict.findings[0].certainty, Certainty::Unconfirmed);
+    }
+
+    /// Provenance: PLAT-981. The ticket's own worked example -- 0.5
+    /// `unfalsifiable` / 0.45 `sound` -- reported at HIGH confidence is still
+    /// `Uncertain`: the margin gate fires on its own, not only when the
+    /// confidence gate also does. The finding is annotated, not dropped.
+    #[test]
+    fn a_near_tie_at_high_confidence_is_uncertain_and_still_a_finding() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let response = gated_fixture(
+            0.9,
+            &serde_json::json!({"unfalsifiable": 0.5, "sound": 0.45}),
+            &serde_json::json!({}),
+        );
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
+        assert_eq!(verdict.findings.len(), 1, "uncertain must not suppress");
+        assert_eq!(verdict.findings[0].certainty, Certainty::Uncertain);
+    }
+
+    /// Provenance: PLAT-981. PRECEDENCE: when the confidence gate (0.3 < 0.5)
+    /// and the margin gate (0.52 - 0.48 = 0.04 < 0.1) both fire, the answer is
+    /// `Uncertain`, not `Unconfirmed`. Pinned here because flipping the order
+    /// of the two checks in `Certainty::assess` compiles and would otherwise
+    /// pass every other test.
+    #[test]
+    fn when_both_gates_fire_uncertain_takes_precedence_over_unconfirmed() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let response = gated_fixture(
+            0.3,
+            &serde_json::json!({"unfalsifiable": 0.52, "sound": 0.48}),
+            &serde_json::json!({"1": 0.52, "2": 0.48}),
+        );
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
+        assert_eq!(verdict.findings[0].certainty, Certainty::Uncertain);
+        assert_eq!(
+            verdict.coverage.expect("score answered").certainty,
+            Certainty::Uncertain
+        );
+    }
+
+    /// Provenance: PLAT-981. A `probabilities` map with one label (or none)
+    /// has no margin: it must not panic, must not read as `Uncertain`, and
+    /// falls through to the confidence gate alone -- `Confident` at high
+    /// confidence, `Unconfirmed` at low.
+    #[test]
+    fn a_single_label_has_no_margin_and_falls_through_to_the_confidence_gate() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let ac = ["FR-001-AC-1".to_owned()];
+        let lone = serde_json::json!({"unfalsifiable": 0.95});
+        let none = serde_json::json!({});
+
+        let high = extract(&gated_fixture(0.95, &lone, &none), &set, &ac, T);
+        assert_eq!(high.findings[0].certainty, Certainty::Confident);
+        assert_eq!(
+            high.coverage.expect("score answered").certainty,
+            Certainty::Confident
+        );
+
+        let low = extract(&gated_fixture(0.3, &lone, &none), &set, &ac, T);
+        assert_eq!(low.findings[0].certainty, Certainty::Unconfirmed);
+        assert_eq!(
+            low.coverage.expect("score answered").certainty,
+            Certainty::Unconfirmed
+        );
+    }
+
+    /// Provenance: PLAT-981. The margin gate applies to `adverse_case_coverage`
+    /// too: a score whose top two levels are within the margin is `Uncertain`
+    /// even at high confidence, while a clear `weakness_kind` in the same
+    /// response stays `Confident` -- the two answers are gated independently.
+    #[test]
+    fn a_contested_coverage_score_is_uncertain_independently_of_the_finding() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let response = gated_fixture(
+            0.9,
+            &serde_json::json!({"unfalsifiable": 0.9, "sound": 0.1}),
+            &serde_json::json!({"0": 0.05, "1": 0.47, "2": 0.43, "3": 0.05}),
+        );
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
+        assert_eq!(verdict.findings[0].certainty, Certainty::Confident);
+        assert_eq!(
+            verdict.coverage.expect("score answered").certainty,
+            Certainty::Uncertain
+        );
+    }
+
+    /// Provenance: PLAT-981. The margin is top1 - top2 by VALUE, whatever
+    /// order the map lists labels in; a tie at the top is a zero margin; and
+    /// fewer than two entries is no margin at all.
+    #[test]
+    fn the_margin_is_the_gap_between_the_two_largest_values() {
+        assert_eq!(top_two_margin([0.2, 0.5, 0.25]), Some(0.25));
+        assert_eq!(top_two_margin([0.25, 0.2, 0.5]), Some(0.25));
+        assert_eq!(top_two_margin([0.5, 0.5, 0.0]), Some(0.0));
+        assert_eq!(top_two_margin([0.5]), None);
+        assert_eq!(top_two_margin([]), None);
+    }
+
+    /// Provenance: PLAT-981. Both gates are strict, like the confidence gate
+    /// before them: a margin exactly AT the threshold is not `Uncertain`.
+    #[test]
+    fn a_margin_exactly_at_the_threshold_is_not_uncertain() {
+        let thresholds = Thresholds {
+            confidence: 0.5,
+            margin: 0.25,
+        };
+        assert_eq!(
+            Certainty::assess(0.9, [0.5, 0.25], thresholds),
+            Certainty::Confident
+        );
+        assert_eq!(
+            Certainty::assess(0.9, [0.5, 0.375], thresholds),
+            Certainty::Uncertain
+        );
+    }
+
+    /// Provenance: PLAT-981. The confidence gate is strict too: a confidence
+    /// exactly AT the threshold is `Confident`, not `Unconfirmed`. The margin
+    /// (0.9 - 0.1) is wide, so only the confidence gate is in play.
+    #[test]
+    fn a_confidence_exactly_at_the_threshold_is_not_unconfirmed() {
+        let thresholds = Thresholds {
+            confidence: 0.5,
+            margin: 0.1,
+        };
+        assert_eq!(
+            Certainty::assess(0.5, [0.9, 0.1], thresholds),
+            Certainty::Confident
+        );
+        assert_eq!(
+            Certainty::assess(0.49, [0.9, 0.1], thresholds),
+            Certainty::Unconfirmed
+        );
+    }
+
+    /// Provenance: PLAT-981. The serialised spelling is the `as_str` one, so
+    /// a JSON consumer and the rendered report name a bucket the same way.
+    #[test]
+    fn certainty_serialises_to_its_as_str_spelling() {
+        for (certainty, spelling) in [
+            (Certainty::Confident, "confident"),
+            (Certainty::Unconfirmed, "unconfirmed"),
+            (Certainty::Uncertain, "uncertain"),
+        ] {
+            assert_eq!(certainty.as_str(), spelling);
+            assert_eq!(
+                serde_json::to_value(certainty).unwrap(),
+                serde_json::json!(spelling)
+            );
+        }
     }
 
     /// Provenance: PLAT-837. A `sound` verdict produces no finding, and is
@@ -439,7 +855,7 @@ mod tests {
         });
         let response: typesafe_sdk_answers::SystemOneResponse =
             serde_json::from_value(body).expect("well-formed");
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert!(verdict.findings.is_empty());
         assert_eq!(verdict.sound, vec!["FR-001-AC-1".to_owned()]);
     }
@@ -474,7 +890,7 @@ mod tests {
         });
         let response: typesafe_sdk_answers::SystemOneResponse =
             serde_json::from_value(body).expect("well-formed");
-        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
         assert!(verdict.sound.is_empty(), "must never land in sound");
         assert!(verdict.findings.is_empty(), "not a mapped finding either");
         assert_eq!(
@@ -494,7 +910,7 @@ mod tests {
             &response,
             &set,
             &["FR-001-AC-1".to_owned(), "FR-001-AC-2".to_owned()],
-            0.5,
+            T,
         );
         assert_eq!(verdict.unanswered, vec!["FR-001-AC-2".to_owned()]);
         assert!(!verdict.sound.contains(&"FR-001-AC-2".to_owned()));
@@ -521,9 +937,160 @@ mod tests {
         });
         let response: typesafe_sdk_answers::SystemOneResponse =
             serde_json::from_value(body).expect("well-formed");
-        let verdict = extract(&response, &set, &[], 0.5);
+        let verdict = extract(&response, &set, &[], T);
         let coverage = verdict.coverage.expect("a score answer was present");
         assert_eq!(coverage.label, None);
+    }
+
+    fn signals(values: &[(&str, f64)]) -> NoulSignals {
+        NoulSignals {
+            values: values
+                .iter()
+                .map(|(id, value)| ((*id).to_owned(), *value))
+                .collect(),
+        }
+    }
+
+    /// Provenance: PLAT-984. The shared fixture answers `unfalsifiable` while
+    /// its own `falsifiable` sub-answer is 0.9 -- the label is not carried by
+    /// the question that asks about that defect, and the typed verdict says so.
+    #[test]
+    fn a_label_its_own_sub_question_contradicts_is_reported_as_disagreeing() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let response = response_fixture(0.9);
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
+        assert_eq!(
+            verdict.findings[0].label_sub_question,
+            SubQuestionCheck::Disagrees {
+                question: "falsifiable",
+                noul: 0.9
+            }
+        );
+    }
+
+    /// Provenance: PLAT-984. The same label with `falsifiable` answered no is
+    /// corroborated by its sub-question.
+    #[test]
+    fn a_label_its_own_sub_question_backs_is_reported_as_agreeing() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let body = serde_json::json!({
+            "model": "jev-1.13.0",
+            "answers": {
+                "FR-001-AC-1::falsifiable": {"type": "noul", "noul": 0.1},
+                "FR-001-AC-1::weakness_kind": {
+                    "type": "choice", "choice": "unfalsifiable", "confidence": 0.9,
+                    "probabilities": {"unfalsifiable": 0.9}
+                }
+            },
+            "usage": {"input_tokens": 50, "output_tokens": 0}
+        });
+        let response: typesafe_sdk_answers::SystemOneResponse =
+            serde_json::from_value(body).expect("well-formed");
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], T);
+        assert_eq!(
+            verdict.findings[0].label_sub_question,
+            SubQuestionCheck::Agrees {
+                question: "falsifiable",
+                noul: 0.1
+            }
+        );
+    }
+
+    /// Provenance: PLAT-984. A "yes" sub-question (`restates_requirement`)
+    /// agrees at or above 0.5 and disagrees below it -- the polarity is per
+    /// label, not one direction for all.
+    #[test]
+    fn a_yes_polarity_sub_question_agrees_at_the_boundary_and_disagrees_below_it() {
+        assert_eq!(
+            SubQuestionCheck::for_label(
+                "restates_requirement",
+                &signals(&[("restates_requirement", 0.5)])
+            ),
+            SubQuestionCheck::Agrees {
+                question: "restates_requirement",
+                noul: 0.5
+            }
+        );
+        assert_eq!(
+            SubQuestionCheck::for_label(
+                "implementation_coupled",
+                &signals(&[("implementation_coupled", 0.49)])
+            ),
+            SubQuestionCheck::Disagrees {
+                question: "implementation_coupled",
+                noul: 0.49
+            }
+        );
+        assert_eq!(
+            SubQuestionCheck::for_label(
+                "unmeasurable_threshold",
+                &signals(&[("threshold_present", 0.5)])
+            ),
+            SubQuestionCheck::Disagrees {
+                question: "threshold_present",
+                noul: 0.5
+            }
+        );
+    }
+
+    /// Provenance: PLAT-984. A label with a sub-question whose answer is
+    /// missing from the row is `Unanswered`, never read as agreement; and
+    /// `happy_path_only`, which no `noul` question covers, says so rather
+    /// than naming a question.
+    #[test]
+    fn a_missing_sub_answer_and_an_uncovered_label_have_their_own_outcomes() {
+        assert_eq!(
+            SubQuestionCheck::for_label("unfalsifiable", &signals(&[("threshold_present", 0.1)])),
+            SubQuestionCheck::Unanswered {
+                question: "falsifiable"
+            }
+        );
+        assert_eq!(
+            SubQuestionCheck::for_label("happy_path_only", &signals(&[("falsifiable", 0.1)])),
+            SubQuestionCheck::NoSubQuestion
+        );
+        assert_eq!(
+            SubQuestionCheck::for_label("quantum_uncertainty", &signals(&[])),
+            SubQuestionCheck::NoSubQuestion
+        );
+    }
+
+    /// Provenance: PLAT-984. Every question the label table names is one the
+    /// shipped `question-set.json` actually asks, and every non-`sound` label
+    /// but `happy_path_only` has one -- the table cannot drift from the asset
+    /// silently.
+    #[test]
+    fn every_label_sub_question_is_a_question_the_asset_asks() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        for label in &set.choice.answer_space {
+            let found = label_sub_question(label);
+            if matches!(label.as_str(), "sound" | "happy_path_only") {
+                assert_eq!(found, None, "{label}");
+                continue;
+            }
+            let (question, _) = found.expect("every other label has a sub-question");
+            assert!(
+                set.noul.iter().any(|entry| entry.id == question),
+                "{label} names {question}, which the asset does not ask"
+            );
+        }
+    }
+
+    /// Provenance: PLAT-984. The serialised form is tagged by `outcome`, so a
+    /// consumer of the JSON verdict reads the same four outcomes the type has.
+    #[test]
+    fn the_sub_question_check_serialises_tagged_by_outcome() {
+        let json = serde_json::to_string(&SubQuestionCheck::Disagrees {
+            question: "falsifiable",
+            noul: 0.9,
+        })
+        .expect("serialises");
+        assert_eq!(
+            json,
+            r#"{"outcome":"disagrees","question":"falsifiable","noul":0.9}"#
+        );
+        let json = serde_json::to_string(&SubQuestionCheck::NoSubQuestion).expect("serialises");
+        assert_eq!(json, r#"{"outcome":"no_sub_question"}"#);
     }
 
     /// Provenance: PLAT-837. A `noul` answer has no `confidence` field to

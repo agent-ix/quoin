@@ -49,6 +49,28 @@ pub enum JevErrorCode {
     /// JSON) -- distinct from `SchemaUnavailable`, where the file parses fine
     /// and simply does not list the value yet.
     SchemaUnreadable,
+    /// A cassette file (PLAT-977) could not be read, or a line in it is not
+    /// the documented shape -- a malformed request body, a line that is not
+    /// valid JSON, or a line missing a required field.
+    CassetteInvalid,
+    /// A cassette line's recorded `model` does not match the model the caller
+    /// pinned this record or replay session to. Checked eagerly over every
+    /// line when the cassette is loaded, and on every fresh answer before
+    /// record mode appends it, so a version-skewed cassette fails to load
+    /// rather than silently scoring some fraction of a run against a
+    /// different model than the rest (PLAT-977, PLAT-978).
+    CassetteModelMismatch,
+    /// A request made during replay matches no line the cassette holds. The
+    /// cassette never invents an answer; a miss is a fixture/cassette drift
+    /// to fix, not a case to fall through to the network.
+    CassetteMiss,
+    /// A span ballot (`span_ballot::SpanBallot`) was built with no candidate
+    /// span left to offer (PLAT-980).
+    SpanBallotEmpty,
+    /// A span ballot was built with more distinct candidates than
+    /// `span_ballot::MAX_CANDIDATES` (PLAT-980). Refused rather than
+    /// truncated, so no tail of the source text silently drops off a ballot.
+    SpanBallotTooLarge,
 }
 
 impl JevErrorCode {
@@ -66,6 +88,11 @@ impl JevErrorCode {
             Self::Connection => "JEV_CONNECTION",
             Self::SchemaUnavailable => "JEV_SCHEMA_UNAVAILABLE",
             Self::SchemaUnreadable => "JEV_SCHEMA_UNREADABLE",
+            Self::CassetteInvalid => "JEV_CASSETTE_INVALID",
+            Self::CassetteModelMismatch => "JEV_CASSETTE_MODEL_MISMATCH",
+            Self::CassetteMiss => "JEV_CASSETTE_MISS",
+            Self::SpanBallotEmpty => "JEV_SPAN_BALLOT_EMPTY",
+            Self::SpanBallotTooLarge => "JEV_SPAN_BALLOT_TOO_LARGE",
         }
     }
 
@@ -83,6 +110,11 @@ impl JevErrorCode {
             Self::Connection,
             Self::SchemaUnavailable,
             Self::SchemaUnreadable,
+            Self::CassetteInvalid,
+            Self::CassetteModelMismatch,
+            Self::CassetteMiss,
+            Self::SpanBallotEmpty,
+            Self::SpanBallotTooLarge,
         ]
     }
 
@@ -150,6 +182,30 @@ pub fn classify(error: &typesafe_sdk_error::Error) -> JevError {
             | ApiErrorKind::Other => JevErrorCode::ApiError,
         };
         return JevError::new(code, api.message.clone());
+    }
+    // `typesafe_sdk_error::Error` is a closed, foreign enum with no variant of
+    // its own for "the cassette transport refused this request" (PLAT-977):
+    // `Invalid(String)` is the only shape a `Transport` impl outside the SDK
+    // can return. `crate::cassette` prefixes its message with the stable code
+    // it means, so that refusal still reaches the caller as a named code
+    // rather than folding into the generic `Connection` case below.
+    if let typesafe_sdk_error::Error::Invalid(message) = error {
+        const PREFIXED: &[(&str, JevErrorCode)] = &[
+            (crate::cassette::MISS_PREFIX, JevErrorCode::CassetteMiss),
+            (
+                crate::cassette::INVALID_PREFIX,
+                JevErrorCode::CassetteInvalid,
+            ),
+            (
+                crate::cassette::MODEL_MISMATCH_PREFIX,
+                JevErrorCode::CassetteModelMismatch,
+            ),
+        ];
+        for (prefix, code) in PREFIXED {
+            if let Some(rest) = message.strip_prefix(prefix) {
+                return JevError::new(*code, rest.to_owned());
+            }
+        }
     }
     JevError::new(JevErrorCode::Connection, error.to_string())
 }
@@ -219,6 +275,57 @@ mod tests {
             &headers,
         );
         assert_eq!(classify(&error).code, JevErrorCode::Validation);
+    }
+
+    /// Provenance: PLAT-977. A cassette miss reaches the caller as its own
+    /// named code, not the generic `Connection` every other `Invalid`
+    /// message falls into -- see `classify`'s doc for why this needs a
+    /// prefix rather than a distinct SDK-level variant.
+    #[test]
+    fn a_cassette_miss_message_classifies_by_its_own_code() {
+        let error = typesafe_sdk_error::Error::Invalid(format!(
+            "{}key abc123 not on file",
+            crate::cassette::MISS_PREFIX
+        ));
+        let classified = classify(&error);
+        assert_eq!(classified.code, JevErrorCode::CassetteMiss);
+        assert_eq!(&*classified.message, "key abc123 not on file");
+    }
+
+    /// Provenance: PLAT-977. The invalid-cassette prefix reaches the caller
+    /// as `CassetteInvalid`, not `Connection`.
+    #[test]
+    fn a_cassette_invalid_message_classifies_by_its_own_code() {
+        let error = typesafe_sdk_error::Error::Invalid(format!(
+            "{}request body is not a JSON object",
+            crate::cassette::INVALID_PREFIX
+        ));
+        let classified = classify(&error);
+        assert_eq!(classified.code, JevErrorCode::CassetteInvalid);
+        assert_eq!(&*classified.message, "request body is not a JSON object");
+    }
+
+    /// Provenance: PLAT-977. A fresh answer from a model other than the
+    /// pinned one, refused inside record mode, reaches the caller as
+    /// `CassetteModelMismatch`.
+    #[test]
+    fn a_cassette_model_mismatch_message_classifies_by_its_own_code() {
+        let error = typesafe_sdk_error::Error::Invalid(format!(
+            "{}answered by jev-2.0.0",
+            crate::cassette::MODEL_MISMATCH_PREFIX
+        ));
+        let classified = classify(&error);
+        assert_eq!(classified.code, JevErrorCode::CassetteModelMismatch);
+        assert_eq!(&*classified.message, "answered by jev-2.0.0");
+    }
+
+    /// Provenance: PLAT-977. An ordinary `Invalid` message, carrying no
+    /// cassette prefix, keeps classifying as `Connection` -- unchanged from
+    /// before the cassette existed.
+    #[test]
+    fn an_unrelated_invalid_message_still_classifies_as_connection() {
+        let error = typesafe_sdk_error::Error::Invalid("not a cassette matter".to_owned());
+        assert_eq!(classify(&error).code, JevErrorCode::Connection);
     }
 
     /// Provenance: PLAT-837

@@ -21,6 +21,15 @@ reviewed record, candidate revision, proof obligation, command, tool,
 configuration, environment, and retained output. It states what a producer
 reported; it does not decide whether the proof discharges the obligation.
 
+Every attestation SHALL carry a `strength` naming the kind of support behind it
+(FR-022, Engineering Assurance's `ClaimStrength`, PLAT-972): one of `proven`,
+`bounded-checked`, `tested`, or `observed`, as declared by the producer — for
+example, a bounded Kani `Proved` result attests `bounded-checked`. `strength` is
+imported from Engineering Assurance's own vocabulary — this schema declares no
+local enum for it — and, because the type itself implements neither `Ord` nor
+`PartialOrd`, no report SHALL rank, compare, or aggregate one attestation's
+strength against another's.
+
 ## Schema
 
 ```json
@@ -42,6 +51,7 @@ reported; it does not decide whether the proof discharges the obligation.
     "environment",
     "observed_at",
     "result",
+    "strength",
     "retained_output"
   ],
   "properties": {
@@ -79,6 +89,10 @@ reported; it does not decide whether the proof discharges the obligation.
     "result": {
       "type": "string",
       "enum": ["passed", "failed", "unavailable", "not_computed"]
+    },
+    "strength": {
+      "type": "string",
+      "enum": ["proven", "bounded-checked", "tested", "observed"]
     },
     "retained_output": {
       "type": "object",
@@ -165,6 +179,7 @@ discharges a proof until FR-065 checks all bindings and FR-032 findings.
 | FR-064-AC-7 | An unavailable or not-computed producer result retains its diagnostic output, while entirely missing evidence creates no synthetic attestation. | Test (TC-1278) |
 | FR-064-AC-8 | Existing FR-030 run evidence remains readable and unchanged; proof attestations occupy a distinct versioned store family. | Integration (TC-1279) |
 | FR-064-AC-9 | Static boundaries and golden terminology prove intake runs nothing and reports only producer facts, never an audit, approval, identity, authorization, or non-repudiation conclusion (CON-1, CON-3). | Analysis (TC-1280) |
+| FR-064-AC-10 | Each of Engineering Assurance's four claim strengths (FR-022) seals and reads back as itself; an attestation with no `strength` is refused by name rather than defaulted, and a `strength` outside the four wire names is refused as malformed. | Test (TC-1884) |
 
 ## Dependencies
 

@@ -55,6 +55,11 @@ fn plan_document(extra: &str) -> String {
          stage: gate\n\
          metric: quality.gate\n\
          definition_version: quality.gate-v1\n\
+         protected_apparatus:\n\
+         \x20\x20- spec/assurance/MP-900.md\n\
+         negative_controls:\n\
+         \x20\x20- kind: apparatus-edit\n\
+         \x20\x20\x20\x20description: the plan document is digested with every collection\n\
          {extra}\
          ---\n\
          \n\
@@ -83,10 +88,12 @@ fn design(extra: &str, repetitions: &str) -> String {
          {extra}\
          \x20\x20sampling: exhaustive\n\
          \x20\x20repetitions: {repetitions}\n\
-         \x20\x20estimator: fraction correct\n\
+         \x20\x20estimator: proportion\n\
          \x20\x20error_model: binomial\n\
          \x20\x20uncertainty: wilson interval\n\
-         \x20\x20decision_rule: pass at 0.9\n"
+         \x20\x20decision_rule:\n\
+         \x20\x20\x20\x20comparator: ge\n\
+         \x20\x20\x20\x20threshold: 0.9\n"
     )
 }
 
@@ -154,6 +161,25 @@ fn collection(observations: &[Value]) -> Value {
         "observations": observations,
         "rawEvidence": { "payload": [1, 2] },
     })
+}
+
+/// Write `candidate` into `root`, declaring the protected plan document at
+/// its digest as `verificationStack.artifacts` must (PLAT-975).
+fn write_collection(
+    root: &Path,
+    candidate: &Value,
+) -> Result<std::path::PathBuf, quoin_measurement::MeasurementError> {
+    let path = "spec/assurance/MP-900.md";
+    let mut candidate = candidate.clone();
+    candidate["verificationStack"]["artifacts"][path] = json!(
+        quoin_store::digest_file_sha256(&root.join(path))
+            .expect("the plan is digestible")
+            .to_stored()
+    );
+    write_measurement_collection(
+        root,
+        &from_serde(&candidate).expect("the candidate crosses"),
+    )
 }
 
 /// `observation` with `population.repetitions` stated as `performed`.
@@ -302,11 +328,8 @@ fn tc_960_005_a_plan_without_the_fields_behaves_exactly_as_before() {
     assert_eq!(plans[0].ground_truth_kind, None);
     assert_eq!(plans[0].statistical_design, None);
 
-    write_measurement_collection(
-        root,
-        &from_serde(&collection(&[observation(None)])).expect("the candidate crosses"),
-    )
-    .expect("no minimum means nothing new to refuse on");
+    write_collection(root, &collection(&[observation(None)]))
+        .expect("no minimum means nothing new to refuse on");
 
     let report =
         build_measurement_report(&DiskMeasurement::new(root), root).expect("the report builds");
@@ -332,11 +355,8 @@ fn tc_960_005_a_plan_without_the_fields_behaves_exactly_as_before() {
 fn tc_960_006_the_report_states_the_plans_ground_truth_kind() {
     let repository = repository_with(&plan_document(&design_with_minimum("10")));
     let root = repository.path();
-    write_measurement_collection(
-        root,
-        &from_serde(&collection(&[observation(Some(12))])).expect("the candidate crosses"),
-    )
-    .expect("twelve examined meets a minimum of ten");
+    write_collection(root, &collection(&[observation(Some(12))]))
+        .expect("twelve examined meets a minimum of ten");
 
     let report =
         build_measurement_report(&DiskMeasurement::new(root), root).expect("the report builds");
@@ -570,10 +590,9 @@ fn tc_960_012_unstated_repetitions_under_a_plan_of_one_are_admitted() {
 fn tc_960_013_the_json_report_carries_a_stated_repetition_count() {
     let repository = repository_with(&plan_document(&design_with_repetitions("3")));
     let root = repository.path();
-    write_measurement_collection(
+    write_collection(
         root,
-        &from_serde(&collection(&[with_repetitions(observation(Some(40)), 3)]))
-            .expect("the candidate crosses"),
+        &collection(&[with_repetitions(observation(Some(40)), 3)]),
     )
     .expect("three repetitions meet a plan of three");
 

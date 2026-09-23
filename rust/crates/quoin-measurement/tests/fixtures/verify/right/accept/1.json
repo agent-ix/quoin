@@ -1,0 +1,64 @@
+{
+  "collectionId": "verify-accept",
+  "configDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "environment": {
+    "runner": "test"
+  },
+  "observations": [
+    {
+      "definitionVersion": "gate.pass-rate-v1",
+      "dimensions": {},
+      "metric": "gate.pass_rate",
+      "planId": "MP-961",
+      "population": {
+        "complete": true,
+        "examined": 10,
+        "matched": 9
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of cases",
+      "value": 0.9
+    }
+  ],
+  "rawEvidence": {
+    "note": "fixture"
+  },
+  "schemaVersion": 2,
+  "scope": {
+    "cases": 10
+  },
+  "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "subject": "fixture",
+  "timestamp": "2026-09-01T00:00:00Z",
+  "toolIdentity": "fixture producer",
+  "toolVersion": "fixture 1",
+  "verificationStack": {
+    "artifacts": {
+      "config": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "spec/assurance/MP-961-gate.md": "sha256:c47b8d3b5a8d0cf94402fd867e52a2df2b15684b7eea49c9f8eb054e7358a59b"
+    },
+    "buildProfile": "release",
+    "capabilities": [
+      "fixture.capability"
+    ],
+    "executableDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "lockDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "protectedApparatus": {
+      "MP-961": {
+        "spec/assurance/MP-961-gate.md": "sha256:c47b8d3b5a8d0cf94402fd867e52a2df2b15684b7eea49c9f8eb054e7358a59b"
+      }
+    },
+    "schemaVersion": "verification-stack-attestation-v1",
+    "sources": {
+      "fixture": {
+        "remote": "https://example.invalid/fixture",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sourceState": "clean"
+      }
+    },
+    "toolchains": {
+      "rust": "1.98.1"
+    }
+  }
+}

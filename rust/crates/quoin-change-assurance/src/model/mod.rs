@@ -8,6 +8,7 @@
 //! are retained is [`crate::intake`]'s question.
 
 pub mod attestation;
+pub mod attestation_shape;
 pub mod decision;
 pub mod json;
 pub mod outcome;

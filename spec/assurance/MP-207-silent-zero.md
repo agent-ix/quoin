@@ -6,7 +6,7 @@ status: active
 owner: quoin-maintainers
 stage: gate
 metric: sentinel.silent_zero
-definition_version: benchmark.silent-zero-v1
+definition_version: benchmark.silent-zero-v3
 ground_truth_kind: mechanical
 subject_identity:
   name: quoin bench-tier1 benchmark instrument
@@ -15,10 +15,20 @@ statistical_design:
   population: every ratio metric emitted by every completed producer in a benchmark run, excluding count metrics and genuinely empty populations
   sampling: exhaustive over every ratio metric in the run; no subsampling
   repetitions: 1
-  estimator: count of metrics with non-zero examined, zero matched, and no diagnostic
+  estimator: count
   error_model: none -- deterministic recomputation from the same raw payload reproduces the same count
   uncertainty: none -- an exact count, not a statistical estimate
-  decision_rule: gate at exactly zero; any non-zero count or missing capability is a refusal
+  decision_rule:
+    comparator: eq
+    threshold: 0
+protected_apparatus:
+  - bench/metrics.json
+  - bench/tier1-mapping.json
+negative_controls:
+  - kind: apparatus-edit
+    description: bench/metrics.json (which metrics are ratios and how each is counted) and bench/tier1-mapping.json (which payload fields feed them) are digested with every collection; an edit to either without a new definition version rejects
+  - kind: suppressed-observation
+    description: a completed producer's ratio metric that is left out of the run is a missing observation, and an incomplete producer is a refusal rather than a passing zero
 relationships: []
 ---
 
@@ -40,7 +50,12 @@ meaningful for an instrument-integrity sentinel.
 ## Measure Definition
 
 Count metrics with non-zero examined, zero matched, and no diagnostic,
-definition `benchmark.silent-zero-v1`.
+definition `benchmark.silent-zero-v3`. `benchmark.silent-zero-v1` and `-v2`
+are the same count; v2 is the version at which `statistical_design.estimator`
+and `.decision_rule` became engineering-assurance's typed form (`count`, and
+`eq` against threshold 0) instead of prose, and v3 the version at which the
+plan named its `protected_apparatus` and `negative_controls` (PLAT-975). A
+changed definition member takes a new version.
 
 ## Collection Procedure
 
@@ -60,6 +75,13 @@ This proves a narrow instrument-integrity property, not finding correctness.
 
 Gate at exactly zero. Incomplete producers or missing capabilities are refusals,
 not passing zeros.
+
+The typed `decision_rule` covers the first sentence's count. The
+missing-capability refusal is a separate condition and is **not** evaluated by
+`quoin measurement verify` (FR-108): no decision-rule field can state it, and
+the checker reads the plan's rule, not this prose. It is checked by reading a
+collection's `verificationStack.capabilities`, and an `accept` from the
+verifier says nothing about it.
 
 ## Composition
 

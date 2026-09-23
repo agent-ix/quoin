@@ -20,7 +20,10 @@ workspace = true
 # parses the block into EA's type rather than a local mirror of it. Only the
 # `measurement` feature: `full` enables `serde_json/arbitrary_precision`, which
 # feature unification would impose on every crate in this workspace.
-engineering-assurance = { workspace = true, features = ["measurement"] }
+# `claim-strength` added by PLAT-972: intervention-experiment and
+# operational-evidence records each carry one EA `ClaimStrength` (PLAT-971)
+# rather than a local mirror enum.
+engineering-assurance = { workspace = true, features = ["measurement", "claim-strength"] }
 # The ONLY place canonical JSON, strict JSON parsing, sha256 file digests and
 # durable store writes come from. FR-100-CON-4 forbids a second implementation
 # and `tc_468_boundary` asserts over this crate's own sources that there is not
@@ -50,4 +53,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+# Property tests over the verdict checker's estimator recomputation
+# (PLAT-961); the workspace pin.
+proptest = { workspace = true }
 tempfile = "=3.27.0"

@@ -57,7 +57,10 @@ PLAT-837 itself: **this lens never edits an AC, never authors a requirement,
 never changes a matrix row.** Its only write is the `SpecReview` artifact.
 
 A low-confidence verdict is **annotated, not suppressed** — the finding still
-appears in the table marked unconfirmed. This is the opposite of the
+appears in the table marked "unconfirmed, below the confidence threshold". A
+verdict whose top two answers are within the margin is likewise annotated,
+not suppressed, and marked "uncertain, top two answers within the margin";
+when both apply, the margin annotation is the one shown. This is the opposite of the
 `ix-board` low-confidence rule (which suppresses an edge write); the two are
 opposite because one mutates and one reports, per PLAT-837's own note. Do not
 copy the `ix-board` rule across by reflex.
@@ -82,7 +85,8 @@ copy the `ix-board` rule across by reflex.
    (`| ID | Severity | Summary | Refs |`, `FND-NNN` ids, Severity ∈
    `low`/`medium`/`high`). A below-threshold `weakness_kind` or
    `adverse_case_coverage` verdict is still a row in this table, marked
-   unconfirmed — never dropped.
+   unconfirmed, and a verdict whose top two answers are within the margin is
+   still a row, marked uncertain — neither is ever dropped.
 6. **Validate.** `quire validate --scope <repo> "spec/**/*.md"`.
 
 > **`--scope` is the repository root, and must be passed explicitly.** Since
@@ -121,7 +125,8 @@ same underlying gap observed at both granularities, and the `entangled_with`
 note on each explaining why that is one piece of evidence, not two.
 
 A low-confidence verdict in any category is reported at its mapped severity
-and marked unconfirmed, never silently dropped to `low`.
+and marked unconfirmed, never silently dropped to `low`. The same holds for a
+verdict within the margin: reported at its mapped severity, marked uncertain.
 
 ## Fixtures: the adverse-case corpus
 

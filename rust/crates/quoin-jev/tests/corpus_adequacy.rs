@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Runs the PLAT-933 adequacy checks against the real, shipped
+//! Runs the PLAT-933 adequacy checks and PLAT-982's answerability check against the real, shipped
 //! criterion-strength corpus -- the same file the live-evaluation dogfood
 //! (PLAT-917) reads through `include_str!` -- so a stale count or a missing
 //! required field in that file fails `make rust-gate`, offline, before
@@ -14,12 +14,57 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-use quoin_jev::{check_required_fields, check_stated_counts};
+use quoin_jev::{QuestionSet, check_answerability, check_required_fields, check_stated_counts};
 use serde_json::Value;
 
 const CORPUS: &str = include_str!(
     "../../../../skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fixtures.json"
 );
+
+/// The question set the corpus's labels answer, read from the shipped asset
+/// so the closed answer spaces are never restated here.
+const QUESTION_SET: &str =
+    include_str!("../../../../skills/spec-criterion-strength-analysis/assets/question-set.json");
+
+/// Provenance: PLAT-982. Every `weakness_kind` label (and each contested
+/// second reading) is a member of `question-set.json`'s `choice.answer_space`,
+/// and every `adverse_case_coverage` label (and contested reading) is one of
+/// its `score.rubric` levels. A label the lens could never emit makes every
+/// accuracy number computed against it wrong, silently.
+#[test]
+fn the_shipped_corpus_labels_are_legal_answers_to_their_questions() {
+    let corpus: Value = serde_json::from_str(CORPUS).expect("the shipped corpus parses");
+    let set = QuestionSet::parse(QUESTION_SET).expect("the shipped question set parses");
+
+    let kinds: Vec<Value> = set
+        .choice
+        .answer_space
+        .iter()
+        .map(|kind| Value::from(kind.as_str()))
+        .collect();
+    let mut findings = check_answerability(
+        &corpus["weakness_kind_fixtures"],
+        &["labels", set.choice.id.as_str()],
+        &kinds,
+    );
+
+    let levels: Vec<Value> = set
+        .score
+        .rubric
+        .iter()
+        .map(|level| Value::from(level.level))
+        .collect();
+    findings.extend(check_answerability(
+        &corpus["adverse_case_coverage_fixtures"],
+        &["labels", set.score.id.as_str()],
+        &levels,
+    ));
+
+    assert!(
+        findings.is_empty(),
+        "the shipped corpus carries labels outside their question's answer space: {findings:?}"
+    );
+}
 
 /// Provenance: PLAT-933. The corpus's own `governing_ruling_on_disagreement`
 /// used to say "disputed 5 of 14 (agreed 9)" while the fixtures held 9 of 15

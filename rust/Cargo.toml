@@ -40,7 +40,7 @@ cast_sign_loss = "warn"
 cast_possible_wrap = "warn"
 
 [workspace.package]
-version = "0.24.0"
+version = "0.24.1"
 edition = "2024"
 rust-version = "1.98.1"
 license = "AGPL-3.0-or-later"
@@ -159,7 +159,7 @@ regex = "=1.13.1"
 # in its acceptance criterion, so this is the place.
 proptest = { version = "=1.9.0", default-features = false, features = ["std", "bit-set"] }
 jsonschema = { version = "=0.56.0", default-features = false }
-engineering-assurance = { version = "=0.3.1", git = "https://github.com/agent-ix/engineering-assurance", rev = "dff929ba59f7acf88cdcdcfa316890329df24f6a", default-features = false }
+engineering-assurance = { version = "=0.3.1", git = "https://github.com/agent-ix/engineering-assurance", rev = "4172627fe62744590158a476087c88564b95c7f1", default-features = false }
 clap = { version = "=4.5.47", default-features = false, features = ["std", "help", "usage", "error-context"] }
 flate2 = "=1.1.10"
 reqwest = { version = "=0.13.5", default-features = false, features = ["blocking", "rustls"] }

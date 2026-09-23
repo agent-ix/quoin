@@ -370,15 +370,17 @@ fn marker(kept: usize, total: usize) -> String {
     format!("{TRUNCATION_MARKER}{kept} of {total} bytes]")
 }
 
-/// Returns `text` unchanged when it fits in `max` bytes. Otherwise returns
-/// its longest character-boundary prefix that, with the truncation marker
-/// appended, still fits in `max` bytes, and records the cut in `bounds`.
+/// Returns `text` unchanged when it fits in `max` bytes. Otherwise returns a
+/// character-boundary prefix of `text` followed by the truncation marker,
+/// together at most `max` bytes, and records the cut in `bounds`.
 ///
-/// The marker's length depends on the kept count, which is not known until
-/// the budget is, so the budget reserves the marker for a kept count of
-/// `max`: `kept <= max`, so the real marker is never longer. With
-/// `max >= MIN_MAX_BYTES` (every [`ContextPolicy`] holds that) the result is
-/// at most `max` bytes.
+/// The prefix is not always the longest that would fit. The marker's length
+/// depends on the kept count, which is not known until the budget is, so
+/// the budget reserves the marker as written for a kept count of `max`.
+/// `kept <= max`, so the real marker is never longer, but it can be shorter
+/// by a digit or more: at a 101-byte cap over 400 bytes, 52 source bytes
+/// are kept although 54 would fit. With `max >= MIN_MAX_BYTES` (every
+/// [`ContextPolicy`] holds that) the result is at most `max` bytes.
 fn cap(field: Field, text: &str, max: usize, bounds: &mut Vec<Bound>) -> String {
     if text.len() <= max {
         return text.to_owned();

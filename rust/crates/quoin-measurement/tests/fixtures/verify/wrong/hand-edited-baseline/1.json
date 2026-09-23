@@ -1,0 +1,64 @@
+{
+  "collectionId": "verify-edited-prior",
+  "configDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "environment": {
+    "runner": "test"
+  },
+  "observations": [
+    {
+      "definitionVersion": "gate.prior-rate-v1",
+      "dimensions": {},
+      "metric": "gate.prior_rate",
+      "planId": "MP-961-prior",
+      "population": {
+        "complete": true,
+        "examined": 10,
+        "matched": 9
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of cases",
+      "value": 0.5
+    }
+  ],
+  "rawEvidence": {
+    "note": "fixture"
+  },
+  "schemaVersion": 2,
+  "scope": {
+    "cases": 10
+  },
+  "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "subject": "fixture",
+  "timestamp": "2026-09-01T00:00:00Z",
+  "toolIdentity": "fixture producer",
+  "toolVersion": "fixture 1",
+  "verificationStack": {
+    "artifacts": {
+      "config": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "spec/assurance/MP-961-prior.md": "sha256:e26a17d92510c936333e888863cdd7d489c71fe8782b17eae42001c0e3da9666"
+    },
+    "buildProfile": "release",
+    "capabilities": [
+      "fixture.capability"
+    ],
+    "executableDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "lockDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "protectedApparatus": {
+      "MP-961-prior": {
+        "spec/assurance/MP-961-prior.md": "sha256:e26a17d92510c936333e888863cdd7d489c71fe8782b17eae42001c0e3da9666"
+      }
+    },
+    "schemaVersion": "verification-stack-attestation-v1",
+    "sources": {
+      "fixture": {
+        "remote": "https://example.invalid/fixture",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sourceState": "clean"
+      }
+    },
+    "toolchains": {
+      "rust": "1.98.1"
+    }
+  }
+}

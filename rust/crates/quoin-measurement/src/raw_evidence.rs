@@ -305,6 +305,8 @@ mod tests {
             ground_truth_kind: None,
             statistical_design: None,
             objective: None,
+            protected_apparatus: None,
+            negative_controls: None,
         }
     }
 

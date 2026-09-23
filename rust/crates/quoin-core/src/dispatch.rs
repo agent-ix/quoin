@@ -76,6 +76,7 @@ pub const OPERATIONS: &[&str] = &[
     "measurement.render_graph_portfolio",
     "measurement.render_portfolio",
     "measurement.render_report",
+    "measurement.verify",
     "modules.ensure_defaults",
     "modules.install",
     "modules.list",
@@ -163,6 +164,7 @@ pub fn dispatch(
         "evidence.read_baseline" => crate::ops::evidence::read_baseline(request, capabilities),
         "evidence.write_baseline" => crate::ops::evidence::write_baseline(request, capabilities),
         "measurement.record" => crate::ops::measurement::record(request),
+        "measurement.verify" => crate::ops::measurement::verify(request),
         "measurement.produce_agent_eval_intervention" => {
             crate::ops::measurement::produce_agent_eval_intervention(request)
         }
@@ -504,6 +506,11 @@ mod tests {
             "measurement",
             "measurement/tests.rs",
             include_str!("ops/measurement/tests.rs"),
+        ),
+        (
+            "measurement",
+            "measurement/verify.rs",
+            include_str!("ops/measurement/verify.rs"),
         ),
         (
             "measurement",
@@ -1080,6 +1087,10 @@ mod tests {
             (
                 "ops::measurement::MAX_REVISION_BYTES",
                 crate::ops::measurement::MAX_REVISION_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_VERIFY_REQUEST_BYTES",
+                crate::ops::measurement::MAX_VERIFY_REQUEST_BYTES,
             ),
             (
                 "ops::measurement::MAX_WORKFLOW_YAML_BYTES",

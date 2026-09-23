@@ -22,7 +22,7 @@ use typesafe_sdk_questions::Entry;
 use crate::context::BoundedContext;
 use crate::error::{JevError, classify};
 use crate::question_set::QuestionSet;
-use crate::verdict::{FrVerdict, extract};
+use crate::verdict::{FrVerdict, Thresholds, extract};
 
 /// Builds the request for one FR, without sending it.
 ///
@@ -39,9 +39,9 @@ pub fn build_request(context: &BoundedContext, question_set: &QuestionSet) -> Sy
 /// Runs the lens for one FR: builds the request, sends it, and extracts
 /// findings.
 ///
-/// `confidence_threshold` is threaded straight to
-/// [`crate::verdict::extract`] -- see that function's doc for why this crate
-/// does not bake in a value of its own.
+/// `thresholds` is threaded straight to [`crate::verdict::extract`] -- see
+/// that function's doc for why this crate does not bake in values of its
+/// own.
 ///
 /// # Errors
 /// Any [`typesafe_sdk_error::Error`] the client raises (auth, validation,
@@ -51,7 +51,7 @@ pub async fn run(
     client: &Client,
     context: &BoundedContext,
     question_set: &QuestionSet,
-    confidence_threshold: f64,
+    thresholds: Thresholds,
 ) -> Result<FrVerdict, JevError> {
     let request = build_request(context, question_set);
     let response = client
@@ -62,7 +62,7 @@ pub async fn run(
         &response,
         question_set,
         &context.ac_ids(),
-        confidence_threshold,
+        thresholds,
     ))
 }
 
@@ -87,10 +87,16 @@ mod tests {
     };
     use crate::error::JevErrorCode;
     use crate::question_set::QuestionSet;
+    use crate::verdict::{Certainty, Thresholds};
 
     const ASSET: &str = include_str!(
         "../../../../skills/spec-criterion-strength-analysis/assets/question-set.json"
     );
+
+    const THRESHOLDS: Thresholds = Thresholds {
+        confidence: 0.5,
+        margin: 0.1,
+    };
 
     fn fr_context() -> FrContext {
         FrContext {
@@ -178,7 +184,7 @@ mod tests {
         let mock = Arc::new(Mock::new(vec![Exchange::ok(&body.to_string())]));
         let client = with_transport(config, mock.clone());
 
-        let verdict = run(&client, &context(), &set, 0.5)
+        let verdict = run(&client, &context(), &set, THRESHOLDS)
             .await
             .expect("mocked 200");
         assert_eq!(verdict.classifier, "jev-1.13.0");
@@ -190,6 +196,11 @@ mod tests {
             verdict.findings.len(),
             1,
             "happy_path_only maps to exactly one Low finding"
+        );
+        assert_eq!(
+            verdict.findings[0].certainty,
+            Certainty::Confident,
+            "0.92 confidence with a 0.87 lead clears both gates"
         );
         let noul = &verdict.findings[0].noul.values;
         assert!(
@@ -214,7 +225,7 @@ mod tests {
         )]));
         let client = with_transport(config, mock);
 
-        let error = run(&client, &context(), &set, 0.5)
+        let error = run(&client, &context(), &set, THRESHOLDS)
             .await
             .expect_err("401 must not read as success");
         assert_eq!(error.code, JevErrorCode::Unauthorized);
@@ -230,7 +241,9 @@ mod tests {
         let config = resolve(&env).expect("present");
         let mock = Arc::new(Mock::new(vec![Exchange::status(422, r#"{"detail": []}"#)]));
         let client = with_transport(config, mock);
-        let error = run(&client, &context(), &set, 0.5).await.expect_err("422");
+        let error = run(&client, &context(), &set, THRESHOLDS)
+            .await
+            .expect_err("422");
         assert_eq!(error.code, JevErrorCode::Validation);
 
         let config = resolve(&env).expect("present");
@@ -244,7 +257,9 @@ mod tests {
             Exchange::status(429, ""),
         ]));
         let client = with_transport(config, mock.clone());
-        let error = run(&client, &context(), &set, 0.5).await.expect_err("429");
+        let error = run(&client, &context(), &set, THRESHOLDS)
+            .await
+            .expect_err("429");
         assert_eq!(error.code, JevErrorCode::RateLimited);
         assert_eq!(mock.attempts(), 3, "the default policy retries a 429 twice");
     }

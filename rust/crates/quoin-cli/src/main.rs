@@ -589,6 +589,7 @@ mod tests {
         "quoin measurement intervention",
         "quoin measurement operational-release",
         "quoin measurement record",
+        "quoin measurement verify",
         "quoin module",
         "quoin module ensure-defaults",
         "quoin module install",

@@ -37,7 +37,24 @@
 //! unknown `direction`, an unknown member, a non-numeric or non-finite
 //! `bound`, or a `target` with no `bound` — refuses the plan load with
 //! [`MeasurementErrorCode::PlanInvalid`].
+//!
+//! # `statistical_design.estimator` and `.decision_rule` (PLAT-961)
+//!
+//! Optional, and parsed into engineering-assurance's own `Estimator` and
+//! `DecisionRule` (its FR-021). A value EA refuses, a `constant-predictor`
+//! baseline under an estimator other than `proportion`, or a comparator that
+//! disagrees with the plan's `objective` refuses the plan load with
+//! [`MeasurementErrorCode::PlanInvalid`] naming the member.
+//!
+//! # `protected_apparatus` and `negative_controls` (PLAT-975)
+//!
+//! Optional, and parsed into engineering-assurance's own types (its FR-024).
+//! A list EA refuses, a `gate` plan missing either list, or an
+//! `apparatus-edit` control with no `protected_apparatus`, refuses the plan
+//! load with
+//! [`MeasurementErrorCode::PlanInvalid`] naming the member.
 
+mod apparatus;
 mod design;
 
 use crate::discovery;
@@ -139,6 +156,8 @@ fn plan_from(
     let ground_truth_kind = design::ground_truth_kind_from(path, value)?;
     let statistical_design = design::statistical_design_from(path, value)?;
     let objective = design::objective_from(path, value)?;
+    design::rule_agrees_with_objective(path, statistical_design.as_ref(), objective.as_ref())?;
+    let (protected_apparatus, negative_controls) = apparatus::apparatus_from(path, value, stage)?;
     Ok(MeasurementPlan {
         id,
         title,
@@ -153,6 +172,8 @@ fn plan_from(
         ground_truth_kind,
         statistical_design,
         objective,
+        protected_apparatus,
+        negative_controls,
     })
 }
 
@@ -358,7 +379,7 @@ mod tests {
     fn plans_come_back_sorted_by_metric_then_id() {
         let source = MemoryMeasurement::new()
             .with_document("spec/assurance/b.md", document("MP-2", "zeta", "observe"))
-            .with_document("spec/assurance/a.md", document("MP-3", "alpha", "gate"))
+            .with_document("spec/assurance/a.md", document("MP-3", "alpha", "ratchet"))
             .with_document("assurance/c.md", document("MP-1", "alpha", "trend"));
         let plans = load_measurement_plans(&source, PlanLoadOptions::default()).unwrap();
         let order: Vec<&str> = plans.iter().map(|plan| plan.id.as_str()).collect();
@@ -369,8 +390,8 @@ mod tests {
 
     #[test]
     fn governance_members_are_carried_only_when_asked_for() {
-        let source =
-            MemoryMeasurement::new().with_document("assurance/a.md", document("MP-1", "m", "gate"));
+        let source = MemoryMeasurement::new()
+            .with_document("assurance/a.md", document("MP-1", "m", "ratchet"));
         let without = load_measurement_plans(&source, PlanLoadOptions::default()).unwrap();
         assert_eq!(without[0].owner, None);
         let with = load_measurement_plans(
@@ -413,7 +434,7 @@ mod tests {
 
     fn document_with_bar(bar_digest: &str, bar_text: &str) -> String {
         format!(
-            "---\ntype: MeasurementPlan\nid: MP-1\ntitle: T\nstatus: active\nstage: gate\n\
+            "---\ntype: MeasurementPlan\nid: MP-1\ntitle: T\nstatus: active\nstage: ratchet\n\
              metric: m\ndefinition_version: v1\nowner: o\npreregistration:\n  bar_digest: \
              {bar_digest}\n---\n\n# MP-1\n\n## Comparison and Enforcement\n\n{bar_text}\n"
         )
@@ -466,7 +487,7 @@ mod tests {
         let source = MemoryMeasurement::new().with_document(
             "spec/assurance/a.md",
             format!(
-                "---\ntype: MeasurementPlan\nid: MP-1\ntitle: T\nstatus: active\nstage: gate\n\
+                "---\ntype: MeasurementPlan\nid: MP-1\ntitle: T\nstatus: active\nstage: ratchet\n\
                  metric: m\ndefinition_version: v1\nowner: o\npreregistration:\n  bar_digest: \
                  {BAR_DIGEST}\n---\n\n# MP-1\n\nNo such heading here.\n"
             ),
@@ -478,8 +499,8 @@ mod tests {
 
     #[test]
     fn a_plan_with_no_preregistration_block_loads_with_none() {
-        let source =
-            MemoryMeasurement::new().with_document("assurance/a.md", document("MP-1", "m", "gate"));
+        let source = MemoryMeasurement::new()
+            .with_document("assurance/a.md", document("MP-1", "m", "ratchet"));
         let plans = load_measurement_plans(&source, PlanLoadOptions::default()).unwrap();
         assert_eq!(plans[0].preregistration, None);
     }
@@ -593,7 +614,7 @@ mod tests {
         let source = MemoryMeasurement::new().with_document(
             "spec/assurance/a.md",
             format!(
-                "---\ntype: MeasurementPlan\nid: MP-1\ntitle: T\nstatus: active\nstage: gate\n\
+                "---\ntype: MeasurementPlan\nid: MP-1\ntitle: T\nstatus: active\nstage: ratchet\n\
                  metric: m\ndefinition_version: v1\nowner: o\npreregistration:\n  bar_digest: \
                  {BAR_DIGEST}\n---\n\n# MP-1\n\n## Comparison and Enforcement\n\n## Next\n"
             ),

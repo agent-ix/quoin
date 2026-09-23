@@ -13,6 +13,7 @@
 //! includes deciding that one of them is not valid. A signature that could
 //! only accept a valid record could not produce `schema_invalid`.
 
+use engineering_assurance::measurement::{NegativeControls, ProtectedApparatus};
 use quoin_store::JsonValue;
 
 /// One selection: which attestation is offered for which proof obligation.
@@ -71,6 +72,23 @@ pub struct RetainedAudit {
     pub report: AuditReport,
 }
 
+/// The measurement plan a record's objective is linked to, when a
+/// verification is asked to check the change against one (PLAT-964).
+///
+/// Only the two members [`crate::verify::apparatus`] reads are carried here;
+/// `quoin-measurement` owns the rest of a `MeasurementPlan`'s shape, and a
+/// verification is not a plan load. Both are `engineering-assurance`'s own
+/// types (its FR-024), read exactly as `quoin-measurement`'s plan intake
+/// reads them (PLAT-975) — this crate states no second copy of the entry
+/// grammar or the control kinds.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GoverningPlan {
+    /// The plan's declared `protected_apparatus`, when it declares one.
+    pub protected_apparatus: Option<ProtectedApparatus>,
+    /// The plan's declared `negative_controls`, when it declares one.
+    pub negative_controls: Option<NegativeControls>,
+}
+
 /// Everything one verification reads.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerificationInput {
@@ -89,4 +107,18 @@ pub struct VerificationInput {
     pub decision_history: Option<JsonValue>,
     /// The retained audit reports.
     pub audits: Vec<RetainedAudit>,
+    /// The repository-relative paths the candidate change's diff touches
+    /// (PLAT-964): `/`-separated, as `git diff --name-only` prints them,
+    /// compared byte-for-byte against the plan's entries. `None` when no diff
+    /// was retained for this verification — distinct from `Some(vec![])`, a
+    /// retained diff that touched nothing — so that a plan protecting
+    /// apparatus is `diff_missing` rather than vacuously clean. A
+    /// verification runs no producer and computes no diff itself, so this is
+    /// exactly what the caller retained, like every other member here.
+    pub diff_paths: Option<Vec<String>>,
+    /// The measurement plan the record's objective is linked to, when the
+    /// caller asks this verification to check the change against one
+    /// (PLAT-964). `None` when the record supports no plan, or the caller
+    /// did not resolve one.
+    pub governing_plan: Option<GoverningPlan>,
 }
