@@ -1,0 +1,665 @@
+{
+  "$comment": "PLAT-838 M6 corpus: real FR/NFR/StR statements from agent-ix repos under ~/dev (quire-rs, quoin, quire-specification, quire-spec-language). `engine_tags` is the REAL verdict from running `quire validate --scope . \"spec/**/*.md\"` (quire 0.32.2, cli d61afb23, engine 0.46.0@acd1be63) against each repo's actual spec tree -- not imitated. Empty `engine_tags` means the owning document reported zero [grammar] findings of any kind in that run, not just zero ears: ones. This is NOT a human-labelled corpus; there is no ground truth beyond the engine's own mechanical output, which is exactly what M6 measures Jev's independent judgment against.",
+  "quire_version": "quire 0.32.2 (cli d61afb23, engine 0.46.0@acd1be63)",
+  "repo_revisions": {
+    "quire-rs": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
+    "quoin": "f552a59236751b46b58df2f19855acc19d21aac9",
+    "quire-specification": "2449ceb534ae13bef517cacfa415e101e75de88b",
+    "quire-spec-language": "18393434072d43daa6e6b6a689640e96dc9ee07f"
+  },
+  "engine_naive_pattern_method": "Mechanically derived from each statement's leading trigger clause per FR-042's own documented rule (see this script's engine_naive_pattern()), NOT read from `quire validate`'s internal parser output -- the CLI does not expose a per-statement pattern label, only the [ears:*] finding codes. `engine_tags` (empty means clean) IS the real, measured `quire validate` output; `engine_naive_pattern` is this harness's own auditable approximation of what pattern the engine's rule would assign, used only to detect Jev's disagreement with the keyword the engine actually reads.",
+  "flagged": [
+    {
+      "repo": "quoin",
+      "path": "spec/non-functional/NFR-027-rust-implementation-idioms-and-gates.md",
+      "line": 22,
+      "statement_id": "NFR-027",
+      "statement_type": "NFR",
+      "statement_text": "Every crate in the Quoin Rust workspace SHALL forbid `unsafe` code at its root, SHALL take its lints from one workspace-level declaration, SHALL expose one `thiserror`-derived error type per crate boundary drawn from a stable code catalog, and SHALL carry identifiers and resource references as newtypes, and the gates asserting these SHALL be run rather than assumed.",
+      "description": "Every crate in the Quoin Rust workspace SHALL forbid `unsafe` code at its root,\nSHALL take its lints from one workspace-level declaration, SHALL expose one\n`thiserror`-derived error type per crate boundary drawn from a stable code\ncatalog, and SHALL carry identifiers and resource references as newtypes, and the gates asserting\nthese SHALL be run rather than assumed.",
+      "behaviour": null,
+      "constraints": null,
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:non-singular",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/non-functional/NFR-009-single-source-skills-across-agents.md",
+      "line": 21,
+      "statement_id": "NFR-009",
+      "statement_type": "NFR",
+      "statement_text": "quoin SHALL maintain a single skill tree under `skills/<name>/SKILL.md` as the sole source of skill content, and each supported coding agent (Claude Code, OpenAI Codex, opencode, GitHub Copilot) SHALL install from that one tree. Per-agent plugin and marketplace manifests SHALL add only discovery and install metadata and SHALL NOT contain a duplicated copy of any skill body.",
+      "description": "quoin SHALL maintain a single skill tree under `skills/<name>/SKILL.md` as the\nsole source of skill content, and each supported coding agent (Claude Code,\nOpenAI Codex, opencode, GitHub Copilot) SHALL install from that one tree. Per-agent\nplugin and marketplace manifests SHALL add only discovery and install metadata and\nSHALL NOT contain a duplicated copy of any skill body.",
+      "behaviour": null,
+      "constraints": null,
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quire-specification",
+      "path": "spec/functional/observation/FR-112-declare-population-and-completeness.md",
+      "line": 32,
+      "statement_id": "FR-112",
+      "statement_type": "FR",
+      "statement_text": "When retaining configuration and closure definition bytes, the observation service SHALL identify their digests under FR-201 `raw-artifact-digest`, and SHALL identify the domain package and its declarations under `sha256-jcs`.",
+      "description": "When assessing a population or event-time window, the assessment request SHALL\nretain the selected domain package identity/digest and population declaration\nkey, declared finite membership rule/digest, population and snapshot/window identities, bounds,\nobservation sources, configuration/closure identities and digests, and\ncompleteness/progress dependencies.\n\nWhen selecting a v1 membership rule, the observation service SHALL admit only\n`quire.observation.explicit-members/v1` with a sorted distinct bounded list of\nevery required semantic member identity and derive its identity under\n`quire.verification.jcs` from that exact versioned list.\n\nWhen retaining configuration and closure definition bytes, the observation\nservice SHALL identify their digests under FR-201 `raw-artifact-digest`, \u2026",
+      "behaviour": "Unknown required membership, missing external-provider observations, or an absent declared closure input are incomplete/refused assessment causes and cannot establish aggregate success. The request SHALL retain the distinction between a selected snapshot and a selected event-time window.\nWhen a declaration key outside the checked package, missing selected identity,\ndigest mismatch, or ambient default is encountered, the assessment service SHALL refuse it rather\nthan supplying a population, membership, configuration, or closure input.\nWhen admitting a population, the assessment service SHALL take its closed extent\nonly from the population declaration in the checked package and SHALL NOT\nderive it from observation records.\nFor a selected window `[start, end)`, the assessment service \u2026",
+      "constraints": null,
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/stakeholder/StR-006-current-via-self-update.md",
+      "line": 15,
+      "statement_id": "StR-006",
+      "statement_type": "StR",
+      "statement_text": "Operators require that `quoin` shall upgrade itself to the latest published release on request, and shall be able to report whether a newer version is available without installing it, so that keeping the tool current is a single deliberate action rather than a manual package-management chore.",
+      "description": "Operators require that `quoin` shall upgrade itself to the latest published\nrelease on request, and shall be able to report whether a newer version is\navailable without installing it, so that keeping the tool current is a single\ndeliberate action rather than a manual package-management chore.",
+      "behaviour": null,
+      "constraints": null,
+      "engine_tags": [
+        "ears:vague-response"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-098-semantic-and-identity-parity.md",
+      "line": 66,
+      "statement_id": "FR-098",
+      "statement_type": "FR",
+      "statement_text": "- The native fixture suite SHALL replay every retained request against the `quoin-core` operation and compare its canonical-JSON result, exit status and normalized diagnostic shape with the committed expected fixture captured from the retained implementation before cutover. - Quoin SHALL treat a validation verdict as contractual and SHALL treat diagnostic message text as non-contractual, comparing diagnostics as the normalized tuple of instance \u2026",
+      "description": "Quoin SHALL preserve the observable semantics of every ported capability,\nincluding each refusal and non-success path, and SHALL produce byte-identical\ncanonical serializations and identical digests from the Rust implementation and\nthe implementation it replaces.",
+      "behaviour": "- The native fixture suite SHALL replay every retained request against the\n  `quoin-core` operation and compare its canonical-JSON result, exit status\n  and normalized diagnostic shape with the committed expected fixture captured\n  from the retained implementation before cutover.\n- Quoin SHALL treat a validation verdict as contractual and SHALL treat\n  diagnostic message text as non-contractual, comparing diagnostics as the\n  normalized tuple of instance location, schema keyword and schema path.\n- Quoin SHALL preserve every refusal and non-success path a ported capability\n  had, including refusals for malformed input, stale records, tampered records\n  and unavailable hosts.\n- Quoin SHALL implement canonical JSON serialization, JCS canonicalization,\n  sha256 record-identity computation and \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-098-CON-1 | Cutover SHALL NOT change an existing identity domain. | Data Integrity | Test |\n| FR-098-CON-2 | Canonicalization and digest logic SHALL exist in exactly one crate. | Architecture | Test |\n| FR-098-CON-3 | A differential run over an empty population SHALL NOT be recorded as parity evidence. | Reporting | Test |",
+      "engine_tags": [
+        "ears:non-canonical-trigger"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-069-campaign-native-adapters.md",
+      "line": 79,
+      "statement_id": "FR-069",
+      "statement_type": "FR",
+      "statement_text": "| ID | Constraint | Type | Validation | |----|------------|------|------------| | FR-069-CON-1 | An adapter SHALL execute no producer, spawn no process, and perform no network request. | Architecture | Inspection | | FR-069-CON-2 | An adapter SHALL introduce no new record family and SHALL change no stored schema. | Compatibility | Test | | FR-069-CON-3 | An adapter SHALL NOT recover a verdict from unstructured console output. | Responsibility | \u2026",
+      "description": "Quoin SHALL transcribe the structured result formats the contract campaign\nrepositories actually emit, adding an adapter only where a real producer emits\na real format that no existing adapter represents.\n\nAn adapter SHALL validate and transcribe. It SHALL execute no producer and\nSHALL decide no question of assurance sufficiency.",
+      "behaviour": "- An unknown protocol or schema version SHALL be refused rather than read by\n  the nearest reader that recognises the fields it knows.\n- An unknown case or fixture status SHALL be refused rather than mapped to the\n  nearest outcome.\n- An empty result set SHALL be refused: a conformance run that emitted no line\n  did not report that every fixture matched, and a differential that compared\n  no case did not report agreement.\n- A conformance entry's identity SHALL include its corpus and operation, so one\n  replayed fixture cannot overwrite another.\n- A supplied conformance `trace_ids` SHALL be a non-empty array of distinct\n  strings containing non-whitespace text. The adapter SHALL preserve identifiers\n  and their order exactly as `RunEntry.traceIds`, without trimming, sorting,\n  \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|------------|------|------------|\n| FR-069-CON-1 | An adapter SHALL execute no producer, spawn no process, and perform no network request. | Architecture | Inspection |\n| FR-069-CON-2 | An adapter SHALL introduce no new record family and SHALL change no stored schema. | Compatibility | Test |\n| FR-069-CON-3 | An adapter SHALL NOT recover a verdict from unstructured console output. | Responsibility | Inspection |\n| FR-069-CON-4 | Every added adapter \u2026",
+      "engine_tags": [
+        "ears:non-singular"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-009-read-module-manifest.md",
+      "line": 20,
+      "statement_id": "FR-009",
+      "statement_type": "FR",
+      "statement_text": "For each module the loader SHALL read the module `name` (defaulting to the directory basename), the optional `version`, and the `artifact_types` and `object_types` entries, ignoring malformed entries; for each artifact type it SHALL resolve a `frontmatter_schema_ref` to a schema path, and for every type it SHALL resolve a skeleton from `skeletons/<Type>.md`, falling back to a lowercase-filename variant.",
+      "description": "For each module the loader SHALL read the module `name` (defaulting to the\ndirectory basename), the optional `version`, and the `artifact_types` and\n`object_types` entries, ignoring malformed entries; for each artifact type it\nSHALL resolve a `frontmatter_schema_ref` to a schema path, and for every type it\nSHALL resolve a skeleton from `skeletons/<Type>.md`, falling back to a\nlowercase-filename variant.",
+      "behaviour": "- The loader SHALL read `name`, defaulting to the directory basename when absent.\n- The loader SHALL read `version` when present and leave it unset otherwise.\n- The loader SHALL include only `artifact_types`/`object_types` list entries that\n  are objects carrying a `name`, ignoring non-array and malformed entries.\n- For an artifact type, the loader SHALL resolve `frontmatter_schema_ref` against\n  the module root into a schema path when present.\n- For every type, the loader SHALL resolve a skeleton at `skeletons/<Type>.md`,\n  then at the lowercase-filename variant, leaving it unset when neither exists.\n- The loader SHALL match those two filenames against the directory's actual\n  entries, so a resolved path always names a file as it exists on disk and no\n  other casing resolves, whether or \u2026",
+      "constraints": null,
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-069-campaign-native-adapters.md",
+      "line": 24,
+      "statement_id": "FR-069",
+      "statement_type": "FR",
+      "statement_text": "An adapter SHALL validate and transcribe. It SHALL execute no producer and SHALL decide no question of assurance sufficiency.",
+      "description": "Quoin SHALL transcribe the structured result formats the contract campaign\nrepositories actually emit, adding an adapter only where a real producer emits\na real format that no existing adapter represents.\n\nAn adapter SHALL validate and transcribe. It SHALL execute no producer and\nSHALL decide no question of assurance sufficiency.",
+      "behaviour": "- An unknown protocol or schema version SHALL be refused rather than read by\n  the nearest reader that recognises the fields it knows.\n- An unknown case or fixture status SHALL be refused rather than mapped to the\n  nearest outcome.\n- An empty result set SHALL be refused: a conformance run that emitted no line\n  did not report that every fixture matched, and a differential that compared\n  no case did not report agreement.\n- A conformance entry's identity SHALL include its corpus and operation, so one\n  replayed fixture cannot overwrite another.\n- A supplied conformance `trace_ids` SHALL be a non-empty array of distinct\n  strings containing non-whitespace text. The adapter SHALL preserve identifiers\n  and their order exactly as `RunEntry.traceIds`, without trimming, sorting,\n  \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|------------|------|------------|\n| FR-069-CON-1 | An adapter SHALL execute no producer, spawn no process, and perform no network request. | Architecture | Inspection |\n| FR-069-CON-2 | An adapter SHALL introduce no new record family and SHALL change no stored schema. | Compatibility | Test |\n| FR-069-CON-3 | An adapter SHALL NOT recover a verdict from unstructured console output. | Responsibility | Inspection |\n| FR-069-CON-4 | Every added adapter \u2026",
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quire-rs",
+      "path": "spec/functional/FR-061-combinatorial-obligations.md",
+      "line": 22,
+      "statement_id": "FR-061",
+      "statement_type": "FR",
+      "statement_text": "A module SHALL be able to declare that an obligation source reads its table as a **configuration space**, minting one obligation over the interaction of every row.",
+      "description": "Config-space bugs hide in interactions no single-dimension test exercises, and *\"we tested the\nconfigurations\"* is unquantifiable without a declared space. t-way coverage gives a defensible\nnumber \u2014 but nothing lets a spec **declare** its configuration dimensions, so no obligation can\ndemand a strength over them.\n\nA module SHALL be able to declare that an obligation source reads its table as a **configuration\nspace**, minting one obligation over the interaction of every row.\n\n### A new source kind, not a new mechanism\n\n[FR-053](./FR-053-obligation-record.md)'s `ObligationSource` is already a declaration-driven minter\ncarrying a `parameters` map whose own documentation names *\"a t-way strength\"*. The statement hash,\nthe suspect link and the parameter carriage are inherited \u2026",
+      "behaviour": null,
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-061-CON-1 | The engine SHALL contain no dimension name, no value, and no default strength. Every one is read from the module's declaration and the document's table. | Design | Inspection |\n| FR-061-CON-2 | quire SHALL NOT generate or execute combinations (ADR-0011 invariant 1). A covering-array skeleton is a Generator's job and is not scoped here. | Design | Inspection |\n| FR-061-CON-3 | Computing **achieved** \u2026",
+      "engine_tags": [
+        "ears:vague-response"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
+      "line": 94,
+      "statement_id": "FR-099",
+      "statement_type": "FR",
+      "statement_text": "- `quoin-quire` SHALL wrap `quire-rs` as a Cargo dependency rather than re-implementing Quire behaviour, and SHALL replace the vendored Quire contract machinery in `src/quire/`. - `quoin-validators` SHALL evaluate the validator behaviour currently in `src/validators/` and SHALL be the first capability cut over, so that the boundary, the error taxonomy, the generated type surface, the differential harness and the deletion step are all exercised \u2026",
+      "description": "Quoin SHALL implement its Quire adapter, validators, semantic and completeness\nanalysis, configuration, plugin, module and catalog behaviour in Rust crates\nreached through the `quoin-core` boundary, preserving one catalog and one module\nstore.",
+      "behaviour": "- `quoin-quire` SHALL wrap `quire-rs` as a Cargo dependency rather than\n  re-implementing Quire behaviour, and SHALL replace the vendored Quire contract\n  machinery in `src/quire/`.\n- `quoin-validators` SHALL evaluate the validator behaviour currently in\n  `src/validators/` and SHALL be the first capability cut over, so that the\n  boundary, the error taxonomy, the generated type surface, the differential\n  harness and the deletion step are all exercised on a bounded surface.\n- `quoin-semantic` and `quoin-completeness` SHALL evaluate semantic manifest\n  validation and completeness analysis, preserving the existing verdicts.\n- `quoin-config` SHALL resolve the configuration root and the authoring\n  organization, and `quoin-modules` SHALL locate, reconcile, deduplicate and\n  materialize \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-099-CON-1 | Quoin SHALL NOT create a second catalog, registry or module resolver. | Architecture | Test |\n| FR-099-CON-2 | `quoin-quire` SHALL NOT re-implement Quire parsing, extraction or validation semantics. | Responsibility | Inspection |\n| FR-099-CON-3 | Reconcile SHALL NOT perform network access when the declared modules are already materialized. | Behavior | Test |",
+      "engine_tags": [
+        "ears:non-canonical-trigger"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-068-change-assurance-cli-surface.md",
+      "line": 109,
+      "statement_id": "FR-068",
+      "statement_type": "FR",
+      "statement_text": "| ID | Constraint | Type | Validation | |----|------------|------|------------| | FR-068-CON-1 | No command SHALL execute the attested command, invoke Git, or perform a network request. The only process any command SHALL start is the `quoin-core` engine that decides the FR-063..FR-065 contracts, reached through the single FR-096 boundary module. (Amended at [quoin#457](https://github.com/agent-ix/quoin/issues/457), which moved those contracts \u2026",
+      "description": "Quoin SHALL expose the implemented FR-063 record, FR-064 attestation, retained\noutput intake, and FR-065 receipt contracts through supported\n`quoin change-assurance` commands. Every command SHALL consume explicit caller\ninputs and retained bytes only, and SHALL NOT become a producer, runner, or\nscheduler for the work an attestation describes.",
+      "behaviour": "- `seal-attestation` SHALL derive `retained_output.digest` and\n  `retained_output.size_bytes` from the bytes of the named output file and take\n  `media_type` from the caller. It SHALL NOT derive any other field.\n- `intake` SHALL retain the exact canonical attestation bytes and the exact\n  output bytes as one atomic pair, and SHALL refuse an attestation whose\n  recorded output digest or size does not match the supplied bytes.\n- Re-running `intake` with byte-identical inputs SHALL succeed and retain\n  nothing new. A digest collision with differing bytes SHALL be refused.\n- `receipt` SHALL assemble its FR-065 verification input from the named stored\n  record, the named parents, the explicitly selected attestations and their\n  retained outputs, the supplied decision history, and the supplied \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|------------|------|------------|\n| FR-068-CON-1 | No command SHALL execute the attested command, invoke Git, or perform a network request. The only process any command SHALL start is the `quoin-core` engine that decides the FR-063..FR-065 contracts, reached through the single FR-096 boundary module. (Amended at [quoin#457](https://github.com/agent-ix/quoin/issues/457), which moved those contracts out of TypeScript; before the cutover the surface \u2026",
+      "engine_tags": [
+        "ears:non-singular"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-045-portfolio-measurement-report.md",
+      "line": 21,
+      "statement_id": "FR-045",
+      "statement_type": "FR",
+      "statement_text": "The view SHALL retain repository, metric, definition, producer configuration, and population boundaries. It SHALL reuse collection comparison semantics and SHALL NOT create an aggregate quality score, policy verdict, evidence record, or new metric.",
+      "description": "When repository locations are supplied, `quoin report --portfolio` SHALL load\ntheir existing assurance artifacts and measurement stores and SHALL render one\nportfolio view. The command accepts locations and presentation options, never a\ntyped observation value.\n\nThe view SHALL retain repository, metric, definition, producer configuration,\nand population boundaries. It SHALL reuse collection comparison semantics and\nSHALL NOT create an aggregate quality score, policy verdict, evidence record, or\nnew metric.",
+      "behaviour": null,
+      "constraints": "- The portfolio view reads and reports; it runs no producer and writes no store.\n- Staleness is relative to the newest collection in the requested portfolio,\n  so the same stores produce the same result without consulting a wall clock.\n- Historical collections are structurally validated but remain readable after\n  the active plan definition changes; the comparison reports that change.",
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-009-read-module-manifest.md",
+      "line": 19,
+      "statement_id": "FR-009",
+      "statement_type": "FR",
+      "statement_text": "For each module the loader SHALL read the module `name` (defaulting to the directory basename), the optional `version`, and the `artifact_types` and `object_types` entries, ignoring malformed entries; for each artifact type it SHALL resolve a `frontmatter_schema_ref` to a schema path, and for every type it SHALL resolve a skeleton from `skeletons/<Type>.md`, falling back to a lowercase-filename variant.",
+      "description": "For each module the loader SHALL read the module `name` (defaulting to the\ndirectory basename), the optional `version`, and the `artifact_types` and\n`object_types` entries, ignoring malformed entries; for each artifact type it\nSHALL resolve a `frontmatter_schema_ref` to a schema path, and for every type it\nSHALL resolve a skeleton from `skeletons/<Type>.md`, falling back to a\nlowercase-filename variant.",
+      "behaviour": "- The loader SHALL read `name`, defaulting to the directory basename when absent.\n- The loader SHALL read `version` when present and leave it unset otherwise.\n- The loader SHALL include only `artifact_types`/`object_types` list entries that\n  are objects carrying a `name`, ignoring non-array and malformed entries.\n- For an artifact type, the loader SHALL resolve `frontmatter_schema_ref` against\n  the module root into a schema path when present.\n- For every type, the loader SHALL resolve a skeleton at `skeletons/<Type>.md`,\n  then at the lowercase-filename variant, leaving it unset when neither exists.\n- The loader SHALL match those two filenames against the directory's actual\n  entries, so a resolved path always names a file as it exists on disk and no\n  other casing resolves, whether or \u2026",
+      "constraints": null,
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-096-versioned-rust-engine-boundary.md",
+      "line": 52,
+      "statement_id": "FR-096",
+      "statement_type": "FR",
+      "statement_text": "- Each boundary protocol SHALL carry a `quoin-core.<domain>.<op>/vN` discriminator in both request and result. - When a request declares a protocol version `quoin-core` does not implement, `quoin-core` SHALL refuse the request before performing any filesystem write or downstream action. - `quoin-core` SHALL write the machine result only to stdout and diagnostics only to stderr. - `quoin-core` SHALL expose only command-shaped operations \u2026",
+      "description": "Quoin SHALL expose its first-party engine, production and qualification\nbehaviour to the retained TypeScript through one versioned `quoin-core`\nsubprocess boundary that carries structured request and result documents,\ndistinguishes every non-success state, and admits no Node runtime type.",
+      "behaviour": "- Each boundary protocol SHALL carry a `quoin-core.<domain>.<op>/vN`\n  discriminator in both request and result.\n- When a request declares a protocol version `quoin-core` does not implement,\n  `quoin-core` SHALL refuse the request before performing any filesystem write\n  or downstream action.\n- `quoin-core` SHALL write the machine result only to stdout and diagnostics\n  only to stderr.\n- `quoin-core` SHALL expose only command-shaped operations `<domain>.<op>`, and\n  SHALL NOT expose a primitive function such as canonical-JSON serialization as\n  its own boundary operation.\n- `quoin-core` SHALL exit 0 for success, 1 for a partial result carrying a valid\n  payload, 2 for a refusal, 3 for a malformed or unsupported request, and 4 for\n  an internal fault, and a caller SHALL be able to \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-096-CON-1 | The boundary SHALL NOT expose a function-shaped operation. | Architecture | Test |\n| FR-096-CON-2 | The boundary SHALL NOT derive a verdict from unstructured stdout or stderr text. | Responsibility | Test |\n| FR-096-CON-3 | The Rust workspace SHALL remain in this repository. | Architecture | Test |\n| FR-096-CON-4 | No crate of the workspace SHALL be published to crates.io; consumers pin by git \u2026",
+      "engine_tags": [
+        "ears:vague-response"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-098-semantic-and-identity-parity.md",
+      "line": 84,
+      "statement_id": "FR-098",
+      "statement_type": "FR",
+      "statement_text": "- The native fixture suite SHALL replay every retained request against the `quoin-core` operation and compare its canonical-JSON result, exit status and normalized diagnostic shape with the committed expected fixture captured from the retained implementation before cutover. - Quoin SHALL treat a validation verdict as contractual and SHALL treat diagnostic message text as non-contractual, comparing diagnostics as the normalized tuple of instance \u2026",
+      "description": "Quoin SHALL preserve the observable semantics of every ported capability,\nincluding each refusal and non-success path, and SHALL produce byte-identical\ncanonical serializations and identical digests from the Rust implementation and\nthe implementation it replaces.",
+      "behaviour": "- The native fixture suite SHALL replay every retained request against the\n  `quoin-core` operation and compare its canonical-JSON result, exit status\n  and normalized diagnostic shape with the committed expected fixture captured\n  from the retained implementation before cutover.\n- Quoin SHALL treat a validation verdict as contractual and SHALL treat\n  diagnostic message text as non-contractual, comparing diagnostics as the\n  normalized tuple of instance location, schema keyword and schema path.\n- Quoin SHALL preserve every refusal and non-success path a ported capability\n  had, including refusals for malformed input, stale records, tampered records\n  and unavailable hosts.\n- Quoin SHALL implement canonical JSON serialization, JCS canonicalization,\n  sha256 record-identity computation and \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-098-CON-1 | Cutover SHALL NOT change an existing identity domain. | Data Integrity | Test |\n| FR-098-CON-2 | Canonicalization and digest logic SHALL exist in exactly one crate. | Architecture | Test |\n| FR-098-CON-3 | A differential run over an empty population SHALL NOT be recorded as parity evidence. | Reporting | Test |",
+      "engine_tags": [
+        "ears:non-canonical-trigger"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-098-semantic-and-identity-parity.md",
+      "line": 74,
+      "statement_id": "FR-098",
+      "statement_type": "FR",
+      "statement_text": "- The native fixture suite SHALL replay every retained request against the `quoin-core` operation and compare its canonical-JSON result, exit status and normalized diagnostic shape with the committed expected fixture captured from the retained implementation before cutover. - Quoin SHALL treat a validation verdict as contractual and SHALL treat diagnostic message text as non-contractual, comparing diagnostics as the normalized tuple of instance \u2026",
+      "description": "Quoin SHALL preserve the observable semantics of every ported capability,\nincluding each refusal and non-success path, and SHALL produce byte-identical\ncanonical serializations and identical digests from the Rust implementation and\nthe implementation it replaces.",
+      "behaviour": "- The native fixture suite SHALL replay every retained request against the\n  `quoin-core` operation and compare its canonical-JSON result, exit status\n  and normalized diagnostic shape with the committed expected fixture captured\n  from the retained implementation before cutover.\n- Quoin SHALL treat a validation verdict as contractual and SHALL treat\n  diagnostic message text as non-contractual, comparing diagnostics as the\n  normalized tuple of instance location, schema keyword and schema path.\n- Quoin SHALL preserve every refusal and non-success path a ported capability\n  had, including refusals for malformed input, stale records, tampered records\n  and unavailable hosts.\n- Quoin SHALL implement canonical JSON serialization, JCS canonicalization,\n  sha256 record-identity computation and \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-098-CON-1 | Cutover SHALL NOT change an existing identity domain. | Data Integrity | Test |\n| FR-098-CON-2 | Canonicalization and digest logic SHALL exist in exactly one crate. | Architecture | Test |\n| FR-098-CON-3 | A differential run over an empty population SHALL NOT be recorded as parity evidence. | Reporting | Test |",
+      "engine_tags": [
+        "ears:non-singular"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
+      "line": 77,
+      "statement_id": "FR-099",
+      "statement_type": "FR",
+      "statement_text": "- `quoin-quire` SHALL wrap `quire-rs` as a Cargo dependency rather than re-implementing Quire behaviour, and SHALL replace the vendored Quire contract machinery in `src/quire/`. - `quoin-validators` SHALL evaluate the validator behaviour currently in `src/validators/` and SHALL be the first capability cut over, so that the boundary, the error taxonomy, the generated type surface, the differential harness and the deletion step are all exercised \u2026",
+      "description": "Quoin SHALL implement its Quire adapter, validators, semantic and completeness\nanalysis, configuration, plugin, module and catalog behaviour in Rust crates\nreached through the `quoin-core` boundary, preserving one catalog and one module\nstore.",
+      "behaviour": "- `quoin-quire` SHALL wrap `quire-rs` as a Cargo dependency rather than\n  re-implementing Quire behaviour, and SHALL replace the vendored Quire contract\n  machinery in `src/quire/`.\n- `quoin-validators` SHALL evaluate the validator behaviour currently in\n  `src/validators/` and SHALL be the first capability cut over, so that the\n  boundary, the error taxonomy, the generated type surface, the differential\n  harness and the deletion step are all exercised on a bounded surface.\n- `quoin-semantic` and `quoin-completeness` SHALL evaluate semantic manifest\n  validation and completeness analysis, preserving the existing verdicts.\n- `quoin-config` SHALL resolve the configuration root and the authoring\n  organization, and `quoin-modules` SHALL locate, reconcile, deduplicate and\n  materialize \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-099-CON-1 | Quoin SHALL NOT create a second catalog, registry or module resolver. | Architecture | Test |\n| FR-099-CON-2 | `quoin-quire` SHALL NOT re-implement Quire parsing, extraction or validation semantics. | Responsibility | Inspection |\n| FR-099-CON-3 | Reconcile SHALL NOT perform network access when the declared modules are already materialized. | Behavior | Test |",
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
+      "line": 60,
+      "statement_id": "FR-099",
+      "statement_type": "FR",
+      "statement_text": "- `quoin-quire` SHALL wrap `quire-rs` as a Cargo dependency rather than re-implementing Quire behaviour, and SHALL replace the vendored Quire contract machinery in `src/quire/`. - `quoin-validators` SHALL evaluate the validator behaviour currently in `src/validators/` and SHALL be the first capability cut over, so that the boundary, the error taxonomy, the generated type surface, the differential harness and the deletion step are all exercised \u2026",
+      "description": "Quoin SHALL implement its Quire adapter, validators, semantic and completeness\nanalysis, configuration, plugin, module and catalog behaviour in Rust crates\nreached through the `quoin-core` boundary, preserving one catalog and one module\nstore.",
+      "behaviour": "- `quoin-quire` SHALL wrap `quire-rs` as a Cargo dependency rather than\n  re-implementing Quire behaviour, and SHALL replace the vendored Quire contract\n  machinery in `src/quire/`.\n- `quoin-validators` SHALL evaluate the validator behaviour currently in\n  `src/validators/` and SHALL be the first capability cut over, so that the\n  boundary, the error taxonomy, the generated type surface, the differential\n  harness and the deletion step are all exercised on a bounded surface.\n- `quoin-semantic` and `quoin-completeness` SHALL evaluate semantic manifest\n  validation and completeness analysis, preserving the existing verdicts.\n- `quoin-config` SHALL resolve the configuration root and the authoring\n  organization, and `quoin-modules` SHALL locate, reconcile, deduplicate and\n  materialize \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-099-CON-1 | Quoin SHALL NOT create a second catalog, registry or module resolver. | Architecture | Test |\n| FR-099-CON-2 | `quoin-quire` SHALL NOT re-implement Quire parsing, extraction or validation semantics. | Responsibility | Inspection |\n| FR-099-CON-3 | Reconcile SHALL NOT perform network access when the declared modules are already materialized. | Behavior | Test |",
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:non-singular",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-017-reconcile-default-modules.md",
+      "line": 37,
+      "statement_id": "FR-017",
+      "statement_type": "FR",
+      "statement_text": "- On first `catalog`/`write` access, the CLI SHALL reconcile the default set into the shared store. - Reconciliation SHALL be idempotent and SHALL skip git work for a module that is already installed and pinned. - `plugin ensure-defaults` SHALL run the reconcile explicitly and report the installed module names so external tools can trigger the bootstrap directly.",
+      "description": "The CLI SHALL lazily reconcile the default module set into\n`~/.ix/filament/modules` on first `catalog` or `write` access \u2014 installing each\nmodule idempotently and performing no git work once a module is installed and\npinned \u2014 and SHALL expose a `plugin ensure-defaults` command as an explicit entry\npoint that performs the same install and reports the resulting registry for\nexternal tools such as `quire validate`.",
+      "behaviour": "- On first `catalog`/`write` access, the CLI SHALL reconcile the default set into\n  the shared store.\n- Reconciliation SHALL be idempotent and SHALL skip git work for a module that is\n  already installed and pinned.\n- `plugin ensure-defaults` SHALL run the reconcile explicitly and report the\n  installed module names so external tools can trigger the bootstrap directly.",
+      "constraints": null,
+      "engine_tags": [
+        "ears:non-canonical-trigger"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-100-rust-evidence-measurement-change-assurance.md",
+      "line": 95,
+      "statement_id": "FR-100",
+      "statement_type": "FR",
+      "statement_text": "- Quoin SHALL break the `evidence`-to-`change-assurance` dependency cycle and the `auditor`-to-`advisor` dependency cycle before any crate implementing those capabilities exists. - `quoin-store` SHALL own canonical JSON serialization, JCS canonicalization, sha256 record-identity computation, blake3 digest computation and atomic record replacement. - Every other crate SHALL obtain those from `quoin-store` rather than implementing them, and \u2026",
+      "description": "Quoin SHALL implement its evidence store, change-assurance, audit, advisory,\nassurance, graph-analysis and measurement behaviour in Rust crates reached\nthrough the `quoin-core` boundary, keeping one evidence store and one\nmeasurement model and consuming shared assurance capability from\n`engineering-assurance`.",
+      "behaviour": "- Quoin SHALL break the `evidence`-to-`change-assurance` dependency cycle and the\n  `auditor`-to-`advisor` dependency cycle before any crate implementing those\n  capabilities exists.\n- `quoin-store` SHALL own canonical JSON serialization, JCS canonicalization,\n  sha256 record-identity computation, blake3 digest computation and atomic\n  record replacement.\n- Every other crate SHALL obtain those from `quoin-store` rather than\n  implementing them, and canonical serialization SHALL NOT be taken from\n  `engineering-assurance`, because Quoin owns the identity domain its evidence\n  store depends on.\n- `quoin-store` SHALL serialize a record to a temporary file and replace the\n  target by atomic rename, SHALL detect and remove an orphaned temporary left by\n  an interrupted write, and SHALL refuse \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-100-CON-1 | Quoin SHALL NOT create a second evidence store, evidence model or measurement model. | Architecture | Test |\n| FR-100-CON-2 | Quoin SHALL NOT reimplement a capability `engineering-assurance` publishes. | Responsibility | Inspection |\n| FR-100-CON-3 | The Rust implementation SHALL NOT write a governed-corpus byte. | Data Integrity | Test |\n| FR-100-CON-4 | Canonicalization and digest behaviour SHALL \u2026",
+      "engine_tags": [
+        "ears:non-singular"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-008-deduplicate-modules.md",
+      "line": 27,
+      "statement_id": "FR-008",
+      "statement_type": "FR",
+      "statement_text": "- The loader SHALL skip a resolved module root it has already loaded. - The loader SHALL skip a module whose declared name it has already loaded. - Because `QUOIN_MODULE_PATHS` roots are assembled first ([FR-007](./FR-007-assemble-module-roots.md)), an environment-supplied module SHALL take precedence over an installed module of the same name.",
+      "description": "The catalog loader SHALL include each resolved module root and each module name\nonly once, keeping the first occurrence, so that a module supplied earlier in the\nassembly order \u2014 for example via `QUOIN_MODULE_PATHS` \u2014 overrides an installed\nmodule that declares the same name.",
+      "behaviour": "- The loader SHALL skip a resolved module root it has already loaded.\n- The loader SHALL skip a module whose declared name it has already loaded.\n- Because `QUOIN_MODULE_PATHS` roots are assembled first\n  ([FR-007](./FR-007-assemble-module-roots.md)), an environment-supplied module\n  SHALL take precedence over an installed module of the same name.",
+      "constraints": null,
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-101-retire-replaced-executable-paths.md",
+      "line": 77,
+      "statement_id": "FR-101",
+      "statement_type": "FR",
+      "statement_text": "- Quoin SHALL follow the port and cutover order in ADR-0003. - Quoin SHALL keep a replaced path until its Rust replacement passes locally at the same candidate revision across differential, property and, for store-backed capabilities, digest-replay evidence. - Quoin SHALL record the cutover of a capability's direct invocation as its own change, separate from the change that deletes the replaced path, and SHALL demonstrate that reverting the \u2026",
+      "description": "Quoin SHALL retain each replaced TypeScript, JavaScript, MJS or Python\nimplementation until its Rust replacement is demonstrated equivalent at one\ncandidate revision, then cut over the direct invocation in a reversible change,\nand only afterwards delete the replaced path together with its tests.",
+      "behaviour": "- Quoin SHALL follow the port and cutover order in ADR-0003.\n- Quoin SHALL keep a replaced path until its Rust replacement passes locally at\n  the same candidate revision across differential, property and, for\n  store-backed capabilities, digest-replay evidence.\n- Quoin SHALL record the cutover of a capability's direct invocation as its own\n  change, separate from the change that deletes the replaced path, and SHALL\n  demonstrate that reverting the cutover restores the retained invocation.\n- Quoin SHALL delete a replaced implementation and the tests covering it in the\n  same change, and deletion SHALL be the final step for that capability.\n- When a retained test is to be deleted, Quoin SHALL first restate every\n  acceptance criterion that test carried on a tracking-tagged Rust test that\n  \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-101-CON-1 | Deletion SHALL be the final step for each replaced capability. | Lifecycle | Test |\n| FR-101-CON-2 | Cutover SHALL NOT rewrite historical evidence or accepted-corpus bytes. | Data Integrity | Test |\n| FR-101-CON-3 | A criterion backed only by a self-written fixture or by a check over an empty population SHALL NOT satisfy a removal. | Reporting | Test |\n| FR-101-CON-4 | No non-Rust implementation \u2026",
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:non-singular",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-021-launch-ix-flow-runs.md",
+      "line": 18,
+      "statement_id": "FR-021",
+      "statement_type": "FR",
+      "statement_text": "On launch, the CLI SHALL spawn `ix-flow run <flow> --path <skill> --config-root <home> --state-dir <home>/flows`, appending the optional `--id`, `--json`, and `--target` arguments, SHALL propagate the `ix-flow` exit code (defaulting to 1 when the child is terminated by a signal), SHALL surface a spawn error when `ix-flow` cannot be started, and SHALL hand all subsequent lifecycle control to `ix-flow`.",
+      "description": "On launch, the CLI SHALL spawn\n`ix-flow run <flow> --path <skill> --config-root <home> --state-dir <home>/flows`,\nappending the optional `--id`, `--json`, and `--target` arguments, SHALL propagate\nthe `ix-flow` exit code (defaulting to 1 when the child is terminated by a\nsignal), SHALL surface a spawn error when `ix-flow` cannot be started, and SHALL\nhand all subsequent lifecycle control to `ix-flow`.",
+      "behaviour": "- The CLI SHALL spawn `ix-flow run` with the flow, skill path, config root, and\n  a `<home>/flows` state directory.\n- The CLI SHALL append `--id`, `--json`, and each `--target` when provided.\n- The CLI SHALL set its exit status to the `ix-flow` exit code, defaulting to 1\n  when the child reports no code (signal termination).\n- The CLI SHALL surface an error when `ix-flow` cannot be spawned.",
+      "constraints": null,
+      "engine_tags": [
+        "ears:non-canonical-trigger"
+      ],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-004-resolve-config-root.md",
+      "line": 31,
+      "statement_id": "FR-004",
+      "statement_type": "FR",
+      "statement_text": "- The CLI SHALL use `--config-root` when present; otherwise it SHALL use `IX_HOME` when set and non-empty; otherwise it SHALL default to `~/.ix`. - The CLI SHALL export the resolved root to `IX_HOME` for downstream resolution. - The CLI SHALL configure the runtime context with namespace `ix` and project config root `<cwd>/.ix`. - The CLI SHALL enable project config unless `--no-project-config` is given, in which case it SHALL disable it.",
+      "description": "The CLI SHALL resolve a config root from the `--config-root` flag, defaulting to\n`~/.ix` (via the `IX_HOME` environment variable), export the resolved root to\n`IX_HOME`, and configure the shared `ix-cli-core` runtime context with the `ix`\nnamespace and a project config root at `<cwd>/.ix`, treating project config as\nenabled unless `--no-project-config` is given.",
+      "behaviour": "- The CLI SHALL use `--config-root` when present; otherwise it SHALL use `IX_HOME`\n  when set and non-empty; otherwise it SHALL default to `~/.ix`.\n- The CLI SHALL export the resolved root to `IX_HOME` for downstream resolution.\n- The CLI SHALL configure the runtime context with namespace `ix` and project\n  config root `<cwd>/.ix`.\n- The CLI SHALL enable project config unless `--no-project-config` is given, in\n  which case it SHALL disable it.",
+      "constraints": null,
+      "engine_tags": [
+        "ears:non-singular"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-096-versioned-rust-engine-boundary.md",
+      "line": 71,
+      "statement_id": "FR-096",
+      "statement_type": "FR",
+      "statement_text": "- Each boundary protocol SHALL carry a `quoin-core.<domain>.<op>/vN` discriminator in both request and result. - When a request declares a protocol version `quoin-core` does not implement, `quoin-core` SHALL refuse the request before performing any filesystem write or downstream action. - `quoin-core` SHALL write the machine result only to stdout and diagnostics only to stderr. - `quoin-core` SHALL expose only command-shaped operations \u2026",
+      "description": "Quoin SHALL expose its first-party engine, production and qualification\nbehaviour to the retained TypeScript through one versioned `quoin-core`\nsubprocess boundary that carries structured request and result documents,\ndistinguishes every non-success state, and admits no Node runtime type.",
+      "behaviour": "- Each boundary protocol SHALL carry a `quoin-core.<domain>.<op>/vN`\n  discriminator in both request and result.\n- When a request declares a protocol version `quoin-core` does not implement,\n  `quoin-core` SHALL refuse the request before performing any filesystem write\n  or downstream action.\n- `quoin-core` SHALL write the machine result only to stdout and diagnostics\n  only to stderr.\n- `quoin-core` SHALL expose only command-shaped operations `<domain>.<op>`, and\n  SHALL NOT expose a primitive function such as canonical-JSON serialization as\n  its own boundary operation.\n- `quoin-core` SHALL exit 0 for success, 1 for a partial result carrying a valid\n  payload, 2 for a refusal, 3 for a malformed or unsupported request, and 4 for\n  an internal fault, and a caller SHALL be able to \u2026",
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|-----------|------|------------|\n| FR-096-CON-1 | The boundary SHALL NOT expose a function-shaped operation. | Architecture | Test |\n| FR-096-CON-2 | The boundary SHALL NOT derive a verdict from unstructured stdout or stderr text. | Responsibility | Test |\n| FR-096-CON-3 | The Rust workspace SHALL remain in this repository. | Architecture | Test |\n| FR-096-CON-4 | No crate of the workspace SHALL be published to crates.io; consumers pin by git \u2026",
+      "engine_tags": [
+        "ears:missing-subject",
+        "ears:unclassifiable"
+      ],
+      "engine_naive_pattern": "ubiquitous"
+    }
+  ],
+  "clean": [
+    {
+      "repo": "quire-rs",
+      "path": "spec/functional/FR-020-block-addressing.md",
+      "line": null,
+      "statement_id": "FR-020",
+      "statement_type": "FR",
+      "statement_text": "It SHALL NOT be a separate data type: `QuireSection` already carries the heading, the level, the byte-exact content and the nested children, and a parallel `Block` struct would be the same information under a second name, kept in sync by hand.",
+      "description": "A **block** in this engine is a heading-bounded section that carries a stable\nblock id ([FR-019](./FR-019-stable-block-ids.md)). It SHALL NOT be a separate\ndata type: `QuireSection` already carries the heading, the level, the byte-exact\ncontent and the nested children, and a parallel `Block` struct would be the same\ninformation under a second name, kept in sync by hand.\n\nLookup by block id SHALL walk the **nested** section tree, not only the top\nlevel, because a block's depth is an authoring choice and an addressing scheme\nthat stopped at depth one would silently miss the block a consumer asked for.\n\nAn archetype MAY be referred to as a block type. That is a naming convenience\nfor consumers that think in blocks, and SHALL resolve to exactly the same\ncompiled archetype as the type name \u2014 \u2026",
+      "behaviour": null,
+      "constraints": "| ID | Constraint | Type | Validation |\n|----|------------|------|------------|\n| FR-020-CON-1 | Block-type lookup SHALL be an alias over the archetype registry, never a separate store. Two registries would drift, and the second one would be the stale one. | Architecture | Test |",
+      "engine_tags": [],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quire-specification",
+      "path": "spec/functional/analysis/FR-347-admit-inductive-verification.md",
+      "line": null,
+      "statement_id": "FR-347",
+      "statement_type": "FR",
+      "statement_text": "When a verification obligation ranges over an unbounded collection, a recursive value type or another well-founded, unboundedly-sized domain, the verification planner SHALL admit an inductive proof: an authored base case and an inductive step preserving the property across the domain's well-founded construction.",
+      "description": "When a verification obligation ranges over an unbounded collection, a\nrecursive value type or another well-founded, unboundedly-sized domain, the\nverification planner SHALL admit an inductive proof: an authored base case\nand an inductive step preserving the property across the domain's\nwell-founded construction.",
+      "behaviour": "FR-171 already admits a loop with no authored finite maximum when it carries a\nproved invariant and well-founded variant instead; this requirement\ngeneralizes that precedent from one control construct to every domain that is\nunbounded or recursively defined. An obligation over such a domain is not\ndischarged by exhaustive enumeration, because no finite enumeration is\npromised to exist. Instead the planner requires the domain's well-founded\norder, an authored base case covering its minimal elements and an authored\ninductive step showing the property is preserved from every smaller element\nto the next; both are lowered as one target-neutral induction obligation per\nAD-009/AD-010 and negotiated with a registered induction-capable backend. A\nprovider that discharges both parts returns proved; \u2026",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-018-map-plugin-sources.md",
+      "line": null,
+      "statement_id": "FR-018",
+      "statement_type": "FR",
+      "statement_text": "The CLI SHALL map a plugin source argument to a typed `ts-plugin-kit` source: `path:<dir>` to a path source; `github:<owner>/<repo>[@<ref>]` to a GitHub source; `github:<owner>/<repo>//<subdir>[@<ref>]` to a git-subdir source; `package:<pkg>[@<ver>]` to an npm source; and a bare argument to a path source.",
+      "description": "The CLI SHALL map a plugin source argument to a typed `ts-plugin-kit` source:\n`path:<dir>` to a path source; `github:<owner>/<repo>[@<ref>]` to a GitHub\nsource; `github:<owner>/<repo>//<subdir>[@<ref>]` to a git-subdir source;\n`package:<pkg>[@<ver>]` to an npm source; and a bare argument to a path source.",
+      "behaviour": "- A `path:` prefix SHALL produce a path source for the given directory.\n- A `github:` prefix SHALL produce a GitHub source, carrying the `@<ref>` when\n  present; a `//<subdir>` segment SHALL instead produce a git-subdir source with\n  the repo, subdirectory, and optional ref.\n- A `package:` prefix SHALL produce an npm source, preserving a leading scope `@`\n  and splitting the version on the final `@`. The npm source mapping is in place\n  for when `ts-plugin-kit` adds npm install support.\n- A bare argument SHALL produce a path source.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quire-specification",
+      "path": "spec/functional/expressions/FR-346-evaluate-unbounded-quantification.md",
+      "line": null,
+      "statement_id": "FR-346",
+      "statement_type": "FR",
+      "statement_text": "When `forall` or `exists` quantifies over a collection whose type declares no FR-144 bound, the evaluator SHALL negotiate discharge with a registered quantifier-capable backend rather than visiting occurrences.",
+      "description": "When `forall` or `exists` quantifies over a collection whose type declares no\nFR-144 bound, the evaluator SHALL negotiate discharge with a registered\nquantifier-capable backend rather than visiting occurrences.",
+      "behaviour": "FR-145 decides `forall`/`exists` over a bounded collection by visiting each\nretained occurrence in FR-144 canonical order and charging its schedule; that\npath is unchanged by this requirement. A collection type with no declared\nbound carries no promise that a finite occurrence set exists at evaluation\ntime, so the reference evaluator does not visit occurrences to decide the\nquantifier. Instead the claim is lowered as a target-neutral IR obligation per\nAD-010 and negotiated per item with a registered quantifier-capable backend\n(an SMT-style solver or an equivalent registered provider; Kani is one\npossible registrant, never the only one). A provider that establishes the\nquantifier over the full declared unbounded domain returns proved, or refuted\nwith a replayable witness or counterexample; \u2026",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quire-specification",
+      "path": "spec/functional/ecosystem/FR-310-link-semantic-subjects-to-evidence.md",
+      "line": null,
+      "statement_id": "FR-310",
+      "statement_type": "FR",
+      "statement_text": "When recording verification evidence, the producer SHALL link the exact semantic subject independently to its requirements, assumptions, methods, provider runs and evidence artifacts.",
+      "description": "When recording verification evidence, the producer SHALL link the exact semantic\nsubject independently to its requirements, assumptions, methods, provider runs\nand evidence artifacts.",
+      "behaviour": "No source, package, clause, method, run, artifact or evidence identity substitutes\nfor another. Links name their relation and scope. One item may address multiple\nobligations but each discharge is explicit. Circular evidence claims cannot\nestablish themselves.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quire-specification",
+      "path": "spec/functional/expressions/FR-148-evaluate-ieee-floating-profiles.md",
+      "line": null,
+      "statement_id": "FR-148",
+      "statement_type": "FR",
+      "statement_text": "When a source selects an IEEE floating-point profile, the evaluator SHALL use its declared width, rounding mode and exceptional-value comparison policy.",
+      "description": "When a source selects an IEEE floating-point profile, the evaluator SHALL use\nits declared width, rounding mode and exceptional-value comparison policy.",
+      "behaviour": "NaN payloads, infinities and signed zero remain representable. Numeric equality,\ntotal ordering and bitwise identity are distinct selected operations. Each\narithmetic step rounds once under the declared mode. Cross-width or exact-number\nconversion is explicit and reports loss. The checked package selects\n`quire.value.ieee754-2019-default/v1`; absence, a different version or multiple\nIEEE policy selections refuses semantic admission.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quire-specification",
+      "path": "spec/functional/analysis/FR-348-admit-compositional-verification.md",
+      "line": null,
+      "statement_id": "FR-348",
+      "statement_type": "FR",
+      "statement_text": "When a system-level verification obligation decomposes into independently provable sub-obligations over components connected only through their declared interface contracts, the verification planner SHALL admit compositional discharge: each sub-obligation is verified independently and the system obligation follows from their composition under the declared interface contract.",
+      "description": "When a system-level verification obligation decomposes into independently\nprovable sub-obligations over components connected only through their\ndeclared interface contracts, the verification planner SHALL admit\ncompositional discharge: each sub-obligation is verified independently and\nthe system obligation follows from their composition under the declared\ninterface contract.",
+      "behaviour": "A system obligation is not re-verified as one undecomposed whole when its\ncomponents are already independently verified and connect only through\ndeclared interface contracts. The planner checks that each component's\nverified sub-obligation matches what the composition rule requires of it at\nits interface, and, when every interface obligation matches, composes the\nindependently established results into the system-level verdict without\nre-discharging the composed whole. An interface mismatch \u2014 a component's\nproved obligation weaker than what the composition requires of it, or an\nundeclared interface \u2014 refutes with the mismatching interface and component\nidentified. Composition is lowered as a target-neutral obligation per\nAD-009/AD-010 and negotiated with a registered composition-capable \u2026",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quire-specification",
+      "path": "spec/functional/ecosystem/FR-312-preserve-counterexample-lineage.md",
+      "line": null,
+      "statement_id": "FR-312",
+      "statement_type": "FR",
+      "statement_text": "When a method emits or reduces a counterexample, the evidence boundary SHALL retain its typed canonical inputs, semantic/run identity, derivation, reduction and native replay lineage.",
+      "description": "When a method emits or reduces a counterexample, the evidence boundary SHALL retain its typed canonical inputs, semantic/run identity, derivation, reduction and native replay lineage.",
+      "behaviour": "Each revision links to its predecessor and transformation. A minimized example\nmust remain domain-valid and reproduce the same scoped failure. Different\nmethods may relate equivalent examples without merging identities. Redaction or\nloss is explicit and prevents claims requiring removed replay material.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quire-spec-language",
+      "path": "spec/functional/FR-009-lower-qualified-projections.md",
+      "line": null,
+      "statement_id": "FR-009",
+      "statement_type": "FR",
+      "statement_text": "When a backend projection is requested, the compiler shall lower only features qualified for the selected existing binder and backend.",
+      "description": "When a backend projection is requested, the compiler shall lower only features qualified for the selected existing binder and backend.",
+      "behaviour": "When lowering `boolean-oracle/v1`, the compiler shall translate Boolean literals,\nparentheses, direct linked Boolean state/input reads, `not`, `and`, `or` and\n`implies` through the existing IR constructors and strict executable binder.\nThe compiler shall preserve clause identities, kinds, anchors, expression source\ncoordinates, operand order and implication-consequent activation. Parentheses\nretain the inner expression's source; they do not create executable operations.\n\nThe compiler shall derive each clause environment from its actually referenced\nBoolean declarations in the linked context model, retaining declaration kind\nand source. Each projected read shall identify its original model owner, model\ndigest, declaration, native observation and IR observation. Captured invocation\ninputs \u2026",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-007-assemble-module-roots.md",
+      "line": null,
+      "statement_id": "FR-007",
+      "statement_type": "FR",
+      "statement_text": "The catalog loader SHALL assemble its candidate module roots in a defined order: first the colon-separated entries of the `QUOIN_MODULE_PATHS` environment variable (with empty entries dropped), then every module directory under `~/.ix/filament/modules` \u2014 the shared module store also read by `quire`.",
+      "description": "The catalog loader SHALL assemble its candidate module roots in a defined order:\nfirst the colon-separated entries of the `QUOIN_MODULE_PATHS` environment\nvariable (with empty entries dropped), then every module directory under\n`~/.ix/filament/modules` \u2014 the shared module store also read by `quire`.",
+      "behaviour": "- The loader SHALL split `QUOIN_MODULE_PATHS` on `:`, drop empty entries, and\n  place those roots first.\n- The loader SHALL then append every immediate directory under\n  `<config-root>/filament/modules`.\n- When the shared module store does not exist, the loader SHALL contribute only\n  the environment-variable roots.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quire-spec-language",
+      "path": "spec/functional/FR-012-audit-fixtures-in-rust.md",
+      "line": null,
+      "statement_id": "FR-012",
+      "statement_type": "FR",
+      "statement_text": "When a verification fixture audit is requested, the Rust audit command shall report the checks actually performed over the selected immutable inputs.",
+      "description": "When a verification fixture audit is requested, the Rust audit command shall report the checks actually performed over the selected immutable inputs.",
+      "behaviour": "One Rust verification executable in the existing package replaces the four\nPython helpers. Private audit modules share exact-byte hashing, bounded reads,\nstrict JSON intake and contextual errors. The harness is not a production\nshared-reference decoder or a second model authority.\n\nThe review mode checks all selected invocation, snapshot and frame artifacts\nagainst their SHA-256, profile and identity/revision, then exercises stale-digest\nand recomputed-digest immutable-key conflicts for all three roles. Its registry\nkey retains authority, identity and separate revision namespace/value fields;\nit follows the historical review wrapper rather than silently rewriting it as\na newer wire contract.\n\nThe roles mode checks every artifact digest, changed-byte controls, original\nsource \u2026",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quire-specification",
+      "path": "spec/functional/analysis/FR-194-synthesize-bounded-candidates.md",
+      "line": null,
+      "statement_id": "FR-194",
+      "statement_type": "FR",
+      "statement_text": "When bounded synthesis is requested, the synthesizer SHALL search only the declared candidate grammar/domain and keep candidate discovery separate from independent correctness checking.",
+      "description": "When bounded synthesis is requested, the synthesizer SHALL search only the\ndeclared candidate grammar/domain and keep candidate discovery separate from\nindependent correctness checking.",
+      "behaviour": "Search success yields an identified candidate, not a proof. The independent\nchecker consumes the candidate as a new subject under exact bounds. Search\nexhaustion distinguishes proved no-candidate-in-domain from incomplete search.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quire-spec-language",
+      "path": "spec/functional/FR-013-link-formal-environments.md",
+      "line": null,
+      "statement_id": "FR-013",
+      "statement_type": "FR",
+      "statement_text": "When a native unit is linked under the formal-environment binding profile, the linker shall produce an immutable correspondence to its exact selected Contract IR declarations.",
+      "description": "When a native unit is linked under the formal-environment binding profile, the linker shall produce an immutable correspondence to its exact selected Contract IR declarations.",
+      "behaviour": "This profile uses existing IR canonical declaration bytes as its explicit formal\nmodel artifact. Its package is the owner's exact PackageId namespace; its version is the exact\ndecimal spelling of the positive IR requirement revision. Its import byte digest\nis SHA-256 of the existing V1 canonical declaration bytes, distinct from IR's\ndomain-separated CanonicalDigest. This profile does not reinterpret historical\nFilament artifact digests or add a model decoder. All declarations/dependencies\ninside an environment participate in that canonical artifact.\n\nEvery import is resolved before exposing a package. Missing package, stale\nrevision/digest, ambiguous exports and missing declarations have distinct codes.\nRepeated aliases contribute candidate exports; no first/last precedence is\ninferred. A \u2026",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-014-emit-authoring-contract.md",
+      "line": null,
+      "statement_id": "FR-014",
+      "statement_type": "FR",
+      "statement_text": "For each resolved type, the `write` command SHALL emit an authoring contract \u2014 the type name, kind, module name, module root, and any skeleton and schema paths \u2014 rendered as text or as JSON under `--json`, and SHALL mark a type that has neither a skeleton nor a schema as \"manifest only\".",
+      "description": "For each resolved type, the `write` command SHALL emit an authoring contract \u2014\nthe type name, kind, module name, module root, and any skeleton and schema paths\n\u2014 rendered as text or as JSON under `--json`, and SHALL mark a type that has\nneither a skeleton nor a schema as \"manifest only\".",
+      "behaviour": "- The command SHALL render each type's name, kind, module name, and module root.\n- The command SHALL render the skeleton path and schema path when present.\n- The command SHALL mark a type with neither skeleton nor schema as\n  \"manifest only\".\n- The command SHALL render the whole pack as JSON when `--json` is given.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quire-rs",
+      "path": "spec/functional/FR-014-module-activation.md",
+      "line": null,
+      "statement_id": "FR-014",
+      "statement_type": "FR",
+      "statement_text": "`quire-rs` SHALL support **multiple archetype modules coexisting in a single `Registry`**.",
+      "description": "`quire-rs` SHALL support **multiple archetype modules coexisting in a single `Registry`**. A module is one of:\n\n- A `spec-artifacts-*` directory (renders artifacts)\n- A `spec-objects-*` directory (defines object types with `body_extraction` DSLs)\n- A `spec-objects-business`-style directory\n- Any other directory matching the manifest convention ([FR-013](./FR-013-archetype-loader.md))\n\nWhen `Registry::load_from(...)` is given a path containing multiple module roots, each module is loaded independently. The registry tracks:\n\n- The set of archetypes contributed by each module\n- Per-archetype provenance: which module defined this archetype, at what filesystem path, with what manifest version\n\n### Module identity\n\nA **module** is identified by the `name` field declared in its `manifest.yaml`, \u2026",
+      "behaviour": null,
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-010-case-insensitive-type-lookup.md",
+      "line": null,
+      "statement_id": "FR-010",
+      "statement_type": "FR",
+      "statement_text": "The catalog SHALL resolve a type by name case-insensitively, so that requests such as `FR` and `fr` resolve to the same catalog entry.",
+      "description": "The catalog SHALL resolve a type by name case-insensitively, so that requests\nsuch as `FR` and `fr` resolve to the same catalog entry.",
+      "behaviour": "- The catalog SHALL normalize both the requested name and each entry's name to a\n  common case before comparison.\n- A match SHALL return that entry regardless of the case used in the request.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quoin",
+      "path": "spec/functional/FR-023-runtime-configuration.md",
+      "line": null,
+      "statement_id": "FR-023",
+      "statement_type": "FR",
+      "statement_text": "`quoin` SHALL read its configuration from a defined surface of environment variables and command-line flags that select the config root, the module search paths, the workflow skill root, the authoring organization, and per-invocation output and registry options.",
+      "description": "`quoin` SHALL read its configuration from a defined surface of environment\nvariables and command-line flags that select the config root, the module search\npaths, the workflow skill root, the authoring organization, and per-invocation\noutput and registry options. This document defines that configuration surface;\nthe behavior that consumes it is specified by\n[FR-004](./FR-004-resolve-config-root.md),\n[FR-007](./FR-007-assemble-module-roots.md), and\n[FR-025](./FR-025-resolve-authoring-organization.md).",
+      "behaviour": "The CLI reads each environment variable on every invocation, so a change takes\neffect on the next run. A `--config-root` flag overrides `IX_HOME` for that\ninvocation; the resolved root is exported to `IX_HOME` so downstream resolution\nis consistent. Flag values apply only to the invocation that carries them.\n\nThe stored file is layered by `ConfigService`: a project-local `.ix` config\noverrides the user-level one, and a bound environment variable overrides both\n([FR-027](./FR-027-store-the-authoring-organization.md)).\n\nEvery entry above except the authoring organization has a defined default that\napplies when the entry is absent. The organization has none: when neither `--org`\nnor `QUOIN_ORG` is set and no organization can be read from the repository, it\nstays unresolved rather than \u2026",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "ubiquitous"
+    },
+    {
+      "repo": "quire-specification",
+      "path": "spec/functional/analysis/FR-191-analyze-relational-hyperproperties.md",
+      "line": null,
+      "statement_id": "FR-191",
+      "statement_type": "FR",
+      "statement_text": "When a relational or hyperproperty request is checked, the analyzer SHALL bind each quantified execution/trace variable, correspondence and observation scope explicitly.",
+      "description": "When a relational or hyperproperty request is checked, the analyzer SHALL bind\neach quantified execution/trace variable, correspondence and observation scope\nexplicitly.",
+      "behaviour": "Relational expressions compare typed values across named executions only.\nFinite-trace-set hyperproperties quantify over the declared finite trace domain\nand preserve quantifier order. Trace alignment, declassification/assumptions and\npopulation completeness are explicit. No execution is duplicated or correlated\nby local name alone.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quire-spec-language",
+      "path": "spec/functional/FR-004-verify-source-maps.md",
+      "line": null,
+      "statement_id": "FR-004",
+      "statement_type": "FR",
+      "statement_text": "When an extracted body map is supplied, the compiler shall verify its correspondence against immutable original bytes.",
+      "description": "When an extracted body map is supplied, the compiler shall verify its correspondence against immutable original bytes.",
+      "behaviour": "The map covers every body byte once and permits only selected layout deletion. Locations preserve discontiguous regions. Foreign source identity, revision, path or digest cannot be used with the map. The source-map API does not decode Markdown or prove fence ownership.",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    },
+    {
+      "repo": "quire-spec-language",
+      "path": "spec/functional/FR-003-format-native-source.md",
+      "line": null,
+      "statement_id": "FR-003",
+      "statement_type": "FR",
+      "statement_text": "When validated source is formatted, the formatter shall preserve every token spelling and comment.",
+      "description": "When validated source is formatted, the formatter shall preserve every token spelling and comment.",
+      "behaviour": "Formatting changes whitespace and normalizes layout to LF while retaining grouping and original token order. The library returns the complete string; the CLI writes it to stdout and leaves files untouched. The caller assigns a new source revision before using changed bytes in evidence.\n\nThe existing format(unit) API retains the default 1 MiB ceiling. An additive\nformat_with_limit(unit, output_bytes) API accepts lower limits, including zero;\nlarger values are clamped to the implementation ceiling. The byte limit is\ninclusive and counts spaces, indentation, comments and the final newline.\nEvery append is checked before its growth; a refused operation returns no\npartial string. Allocation capacity is an implementation detail and is not a\nseparate heap-accounting promise. Reuse the existing \u2026",
+      "constraints": null,
+      "engine_tags": [],
+      "engine_naive_pattern": "event_driven"
+    }
+  ]
+}

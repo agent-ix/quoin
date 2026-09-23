@@ -395,11 +395,16 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 #![allow(
-    clippy::cast_possible_truncation,
-    clippy::cast_sign_loss,
     clippy::cast_precision_loss,
-    reason = "test-only statistics: counts are at most a few hundred and confidences lie in [0, 1], \
-              so no cast here can truncate, lose a sign, or lose precision"
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation,
+    reason = "every cast in this file converts a request/latency/token count (never \
+              realistically exceeding a few thousand) to or from f64 for a printed ratio or a \
+              percentile index -- none crosses a wire or persistence boundary, which is what \
+              this workspace's cast lints exist to guard. PLAT-838 found these had never \
+              actually been checked under `make rust-lint`'s `--all-features`, since `live-api` \
+              has no default-gate coverage; fixed here rather than left for the next live-api \
+              change to trip over."
 )]
 
 mod support;
@@ -416,13 +421,19 @@ use support::{
     sound_recall, tally, trivial_baseline,
 };
 
-/// The confidence cutoff passed to `verdict::extract`.
+/// The certainty thresholds passed to `verdict::extract`.
 ///
-/// 0.7 is the crate's own unmeasured default, recorded as such in PR #571.
-/// It only sets whether a finding is annotated `unconfirmed`; it never
-/// suppresses one, so it cannot change which rows this file grades -- only
-/// how they print. Resetting it from the calibration curve is M3's job.
-const CONFIDENCE_THRESHOLD: f64 = 0.7;
+/// Confidence 0.7 is the crate's own unmeasured default, recorded as such in
+/// PR #571. Margin 0.0 turns PLAT-981's top-two margin gate off (no gap is
+/// strictly below zero), which is the behaviour every run recorded in this
+/// file was measured under. Both only set how a finding's `certainty` is
+/// annotated; neither suppresses one, so they cannot change which rows this
+/// file grades -- only how they print. Resetting them from the calibration
+/// curve is M3's job.
+const THRESHOLDS: quoin_jev::Thresholds = quoin_jev::Thresholds {
+    confidence: 0.7,
+    margin: 0.0,
+};
 
 /// The shipped question set, compiled in so the asset and this test cannot
 /// drift -- the same discipline `question_set.rs` and `lens.rs` already hold.
@@ -558,7 +569,7 @@ fn synthetic_verdict(ac_id: &str, label: &str, noul_values: Vec<(String, f64)>) 
             weakness_kind: label.to_owned(),
             severity,
             confidence: 1.0,
-            unconfirmed: false,
+            certainty: quoin_jev::Certainty::Confident,
             probabilities: Vec::new(),
             label_sub_question: quoin_jev::SubQuestionCheck::for_label(label, &noul),
             noul,
@@ -592,7 +603,8 @@ impl Bars {
             agreement: tally(graded).agreement().expect("rows graded"),
             baseline_label,
             baseline,
-            defect_recall: defect_recall(graded).expect("the corpus holds unambiguous defects"),
+            defect_recall: defect_recall(graded, "sound")
+                .expect("the corpus holds unambiguous defects"),
             sound_cleared,
             sound_total,
         }
@@ -687,7 +699,7 @@ async fn call(
     fixture_id: &str,
 ) -> (FrVerdict, Duration) {
     let started = Instant::now();
-    let verdict = quoin_jev::lens::run(client, context, questions, CONFIDENCE_THRESHOLD)
+    let verdict = quoin_jev::lens::run(client, context, questions, THRESHOLDS)
         .await
         .unwrap_or_else(|error| {
             panic!("{fixture_id}: {} — {}", error.code.as_str(), error.message)
@@ -753,7 +765,8 @@ async fn the_lens_beats_the_do_nothing_baseline() {
         "{}",
         report(
             &format!("criterion-strength vs. the labelled corpus, variant {variant:?}"),
-            &pass.graded
+            &pass.graded,
+            "sound"
         )
     );
 
@@ -1015,7 +1028,7 @@ async fn the_lens_with_noul_derived_labels_v3() {
         // v3-direct: Jev's own `weakness_kind` choice from this same
         // response -- a fresh, independent v0 sample.
         let direct_verdict =
-            quoin_jev::verdict::extract(&response, &questions, &ac_ids, CONFIDENCE_THRESHOLD);
+            quoin_jev::verdict::extract(&response, &questions, &ac_ids, THRESHOLDS);
         direct_graded.push(grade_weakness(fixture, &direct_verdict));
 
         // v3-derived: the five `noul` answers from the same response, run
@@ -1033,7 +1046,7 @@ async fn the_lens_with_noul_derived_labels_v3() {
     let mut coverage_graded = Vec::with_capacity(4);
     for fixture in &corpus.adverse_case_coverage_fixtures {
         let context = fixture.context();
-        let verdict = quoin_jev::lens::run(&client, &context, &questions, CONFIDENCE_THRESHOLD)
+        let verdict = quoin_jev::lens::run(&client, &context, &questions, THRESHOLDS)
             .await
             .unwrap_or_else(|error| {
                 panic!(
@@ -1054,7 +1067,8 @@ async fn the_lens_with_noul_derived_labels_v3() {
         "{}",
         report(
             "criterion-strength v3-direct (fresh v0 sample, same calls as v3-derived)",
-            &direct_graded
+            &direct_graded,
+            "sound"
         )
     );
     let direct_bars = Bars::of(&direct_graded);
@@ -1064,7 +1078,8 @@ async fn the_lens_with_noul_derived_labels_v3() {
         "{}",
         report(
             "criterion-strength v3-derived (from noul answers)",
-            &derived_graded
+            &derived_graded,
+            "sound"
         )
     );
     let derived_bars = Bars::of(&derived_graded);
@@ -1268,7 +1283,7 @@ async fn run_once_v4(client: &Client, set: &QuestionSet) -> (Vec<Graded>, u64, u
         output_tokens += response.usage.output_tokens;
         graded.push(grade_weakness(
             fixture,
-            &quoin_jev::verdict::extract(&response, set, &ac_ids, CONFIDENCE_THRESHOLD),
+            &quoin_jev::verdict::extract(&response, set, &ac_ids, THRESHOLDS),
         ));
     }
 
@@ -1276,7 +1291,7 @@ async fn run_once_v4(client: &Client, set: &QuestionSet) -> (Vec<Graded>, u64, u
     // are sent exactly as v0 sends them.
     for fixture in &corpus.adverse_case_coverage_fixtures {
         let context = fixture.context();
-        let verdict = quoin_jev::lens::run(client, &context, set, CONFIDENCE_THRESHOLD)
+        let verdict = quoin_jev::lens::run(client, &context, set, THRESHOLDS)
             .await
             .unwrap_or_else(|error| {
                 panic!(
@@ -1331,7 +1346,11 @@ async fn the_lens_with_described_choice_criteria_v4() {
     let first = &passes[0];
     println!(
         "{}",
-        report("criterion-strength v4 (described choice criteria)", first)
+        report(
+            "criterion-strength v4 (described choice criteria)",
+            first,
+            "sound"
+        )
     );
     let bars = Bars::of(first);
     println!("**GATE v4** {}", bars.line());
