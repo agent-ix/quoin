@@ -35,8 +35,9 @@
 //!
 //! In a protected series (PLAT-975), an earlier value measured with a
 //! different recorded protected apparatus is not a floor either, and its
-//! presence makes the ratchet `inconclusive` (`apparatus_changed`); a
-//! collection that recorded none is `apparatus_unrecorded`.
+//! presence makes the ratchet — or a `baseline` gate — `inconclusive`
+//! (`apparatus_changed`); a collection that recorded none is
+//! `apparatus_unrecorded`.
 //!
 //! # Gate: the one stage with a real pass/fail verdict (PLAT-958 part 2)
 //!
@@ -49,7 +50,8 @@
 //! own, only the baseline value the rule asks for. A `threshold` rule needs
 //! none; a `baseline` rule reads `prior-collection` (the nearest earlier
 //! usable value) or `best-seen` (the maximum for `gt`/`ge`, the minimum for
-//! `lt`/`le`/`eq`) from the same usable-evidence pool [`ratchet`] draws from.
+//! `lt`/`le`/`eq`) from the same usable-evidence pool [`ratchet`] draws from,
+//! under the same protected-apparatus rule.
 //! `constant-predictor` needs per-item answers by family that no collection
 //! in the report layer carries, so it is `inconclusive`
 //! (`constant_predictor_unsupported`) here, exactly as it is in the checker.
@@ -404,7 +406,7 @@ pub fn stage_verdict(
         }),
         MeasurementStage::Gate => Some(StageVerdict::Gate {
             objective,
-            outcome: gate(plan, observation, earlier),
+            outcome: gate(plan, observation, collection, earlier),
         }),
         MeasurementStage::Observe
         | MeasurementStage::Baseline
@@ -601,10 +603,13 @@ fn target_progress(
 }
 
 /// A `gate` plan's verdict on `observation`: entirely from
-/// `statistical_design.decision_rule`, never from `objective.bound`.
+/// `statistical_design.decision_rule`, never from `objective.bound`. A
+/// `baseline` rule refuses a baseline across a changed protected apparatus
+/// exactly as a ratchet refuses a floor (`same_apparatus`).
 fn gate(
     plan: &MeasurementPlan,
     observation: Option<&MeasurementObservation>,
+    collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
 ) -> GateOutcome {
     let (observation, current) = match usable(plan, observation) {
@@ -620,13 +625,10 @@ fn gate(
     let baseline_value = match rule.reference() {
         RuleReference::Threshold(_) => None,
         RuleReference::Baseline { baseline, .. } => {
-            match gate_baseline(
-                plan,
-                rule,
-                baseline,
-                observation.dimensions.entries(),
-                earlier,
-            ) {
+            let slice = observation.dimensions.entries();
+            match same_apparatus(plan, observation, collection, earlier)
+                .and_then(|()| gate_baseline(plan, rule, baseline, slice, earlier))
+            {
                 Ok(value) => Some(value),
                 Err(reason) => return GateOutcome::Inconclusive(reason),
             }
@@ -667,20 +669,10 @@ fn gate_baseline(
         Baseline::BestSeen => {
             let values = earlier_values(plan, slice, earlier);
             match rule.comparator() {
-                Comparator::Gt | Comparator::Ge => values.reduce(|best, next| {
-                    if next.0.total_cmp(&best.0) == Ordering::Greater {
-                        next
-                    } else {
-                        best
-                    }
-                }),
-                Comparator::Lt | Comparator::Le | Comparator::Eq => values.reduce(|best, next| {
-                    if next.0.total_cmp(&best.0) == Ordering::Less {
-                        next
-                    } else {
-                        best
-                    }
-                }),
+                Comparator::Gt | Comparator::Ge => values.max_by(|l, r| l.0.total_cmp(&r.0)),
+                Comparator::Lt | Comparator::Le | Comparator::Eq => {
+                    values.min_by(|l, r| l.0.total_cmp(&r.0))
+                }
             }
         }
     };

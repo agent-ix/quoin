@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! PLAT-958 (part 1): a `ratchet` or `target` plan's `objective` is applied to
-//! its newest value in `quoin report`.
+//! PLAT-958: a `ratchet` or `target` plan's `objective` (part 1), and a `gate`
+//! plan's `decision_rule` (part 2), are applied to its newest value in
+//! `quoin report`.
 //!
 //! Every plan here is a real assurance document loaded through
 //! `load_measurement_plans`, so the `objective` parse is exercised along with
@@ -1069,12 +1070,52 @@ fn gate_plan_document(direction: &str, definition: &str, rule: &str) -> String {
     )
 }
 
-/// The gate outcome over `values`.
-fn gate_over(plans: &[MeasurementPlan], values: &[f64]) -> GateOutcome {
-    match verdict_over(plans, values) {
+/// Collection `index` of `observations` for a gate plan, as intake stores
+/// it: admissible under `plans`, and carrying the protected-apparatus record
+/// intake's writer adds (FR-110-AC-2) — the answer key at a digest of
+/// `digit` repeated — or no record at all for `None`.
+fn stored_gate(
+    plans: &[MeasurementPlan],
+    index: u8,
+    observations: &[Value],
+    digit: Option<char>,
+) -> MeasurementCollection {
+    admitted_many(plans, index, observations);
+    let mut value = collection_json(
+        &format!("run-{index}"),
+        &format!("2026-09-{:02}T00:00:00.000Z", index + 1),
+        observations,
+    );
+    if let Some(digit) = digit {
+        value["verificationStack"]["protectedApparatus"] = json!({
+            "MP-958": { "answers.json": format!("sha256:{}", digit.to_string().repeat(64)) }
+        });
+    }
+    quoin_measurement::stored_measurement_collection(&from_serde(&value).expect("the bridge"))
+        .expect("the stored record reads")
+}
+
+/// The one row's gate outcome over `collections`.
+fn gate_of(plans: &[MeasurementPlan], collections: &[MeasurementCollection]) -> GateOutcome {
+    let mut report = report(plans, collections);
+    assert_eq!(report.current.len(), 1);
+    match report.current.remove(0).stage_verdict {
         Some(StageVerdict::Gate { outcome, .. }) => outcome,
         other => panic!("expected a gate verdict, found {other:?}"),
     }
+}
+
+/// The gate outcome over collections of `values`, measured in order under
+/// one unchanged protected apparatus.
+fn gate_over(plans: &[MeasurementPlan], values: &[f64]) -> GateOutcome {
+    let collections: Vec<MeasurementCollection> = values
+        .iter()
+        .zip(0_u8..)
+        .map(|(value, index)| {
+            stored_gate(plans, index, &[observation(*value, "v1", None)], Some('0'))
+        })
+        .collect();
+    gate_of(plans, &collections)
 }
 
 /// A `gate` plan's verdict comes only from `decision_rule`, never from
@@ -1110,6 +1151,36 @@ fn tc_958_019_a_threshold_gate_passes_or_fails_by_the_rule_alone_in_both_directi
         gate_over(&higher, &[0.8]),
         GateOutcome::Pass {
             current: 0.8,
+            baseline: None
+        }
+    );
+
+    // The same rule under an objective whose `bound` disagrees with it in
+    // both directions: a value short of the bound still passes, and a value
+    // past the bound still fails. The bound is never read.
+    let bounded = |bound: &str| {
+        plans(
+            &gate_plan_document("higher", "v1", "    comparator: ge\n    threshold: 0.8\n")
+                .replace(
+                    "direction: higher\n",
+                    &format!("direction: higher\n  bound: {bound}\n"),
+                ),
+        )
+    };
+    let unreachable = bounded("0.99");
+    assert_eq!(unreachable[0].objective.and_then(|o| o.bound()), Some(0.99));
+    assert_eq!(
+        gate_over(&unreachable, &[0.9]),
+        GateOutcome::Pass {
+            current: 0.9,
+            baseline: None
+        }
+    );
+    let already_met = bounded("0.1");
+    assert_eq!(
+        gate_over(&already_met, &[0.5]),
+        GateOutcome::Fail {
+            current: 0.5,
             baseline: None
         }
     );
@@ -1319,8 +1390,8 @@ fn tc_958_023_a_gate_verdict_renders_in_text_and_json_and_a_fail_is_an_attention
         "v1",
         "    comparator: gt\n    baseline: prior-collection\n",
     ));
-    let first = admitted(&plans, 0, observation(0.6, "v1", None));
-    let newest = admitted(&plans, 1, observation(0.4, "v1", None));
+    let first = stored_gate(&plans, 0, &[observation(0.6, "v1", None)], Some('0'));
+    let newest = stored_gate(&plans, 1, &[observation(0.4, "v1", None)], Some('0'));
     let failing = report(&plans, &[first, newest]);
 
     let text = render_measurement_report(&failing).expect("the report renders");
@@ -1355,10 +1426,185 @@ fn tc_958_023_a_gate_verdict_renders_in_text_and_json_and_a_fail_is_an_attention
     let passing = report(
         &plans,
         &[
-            admitted(&plans, 0, observation(0.4, "v1", None)),
-            admitted(&plans, 1, observation(0.6, "v1", None)),
+            stored_gate(&plans, 0, &[observation(0.4, "v1", None)], Some('0')),
+            stored_gate(&plans, 1, &[observation(0.6, "v1", None)], Some('0')),
         ],
+    );
+    assert_eq!(
+        passing.current[0]
+            .stage_verdict
+            .as_ref()
+            .map(StageVerdict::as_str),
+        Some("pass")
     );
     let text = render_measurement_report(&passing).expect("the report renders");
     assert!(!text.contains("does not pass"), "{text}");
+}
+
+/// No unusable earlier value ever becomes a gate's baseline, and no other
+/// slice's does: an incomplete, empty or population-unstated earlier value,
+/// or one under another `definition_version`, is skipped however much it
+/// would flatter the newest value, and with only such values before it a
+/// `baseline` gate is `no_prior` — never `pass`. Each slice is gated against
+/// its own history alone.
+///
+/// Trace: FR-107-AC-7, FR-107-AC-8
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_024_no_unusable_or_foreign_earlier_value_becomes_a_gate_baseline() {
+    let rule = "    comparator: gt\n    baseline: prior-collection\n";
+    let plans = plans(&gate_plan_document("higher", "v1", rule));
+    let gate =
+        |index: u8, observation: Value| stored_gate(&plans, index, &[observation], Some('0'));
+    let unusable = [
+        observation(
+            0.1,
+            "v1",
+            Some(json!({ "examined": 10, "complete": false })),
+        ),
+        observation(0.1, "v1", Some(json!({ "examined": 0 }))),
+        unstated(0.1),
+    ];
+    // Were any of them the nearest earlier value, 0.5 > 0.1 would pass.
+    let mut collections = vec![gate(0, observation(0.8, "v1", None))];
+    collections.extend((1_u8..).zip(unusable.clone()).map(|(i, o)| gate(i, o)));
+    collections.push(gate(4, observation(0.5, "v1", None)));
+    assert_eq!(
+        gate_of(&plans, &collections),
+        GateOutcome::Fail {
+            current: 0.5,
+            baseline: Some(0.8)
+        }
+    );
+
+    // Only unusable values before it: `no_prior`, not a pass.
+    let mut collections: Vec<_> = (0_u8..).zip(unusable).map(|(i, o)| gate(i, o)).collect();
+    collections.push(gate(3, observation(0.9, "v1", None)));
+    assert_eq!(
+        gate_of(&plans, &collections),
+        GateOutcome::Inconclusive(InconclusiveReason::NoPrior)
+    );
+
+    // A newest value with no population is inconclusive whatever its value.
+    let collections = [
+        gate(0, observation(0.1, "v1", None)),
+        gate(1, unstated(0.9)),
+    ];
+    assert_eq!(
+        gate_of(&plans, &collections),
+        GateOutcome::Inconclusive(InconclusiveReason::PopulationUnstated)
+    );
+
+    // An earlier value under a retired definition is not a baseline.
+    let current = plans_v2(rule);
+    let retired = stored_gate(&plans, 0, &[observation(0.1, "v1", None)], Some('0'));
+    let newest = stored_gate(&current, 1, &[observation(0.9, "v2", None)], Some('0'));
+    assert_eq!(
+        gate_of(&current, &[retired, newest]),
+        GateOutcome::Inconclusive(InconclusiveReason::NoPrior)
+    );
+
+    // Each slice against its own history: slice `b`'s low earlier value is
+    // never slice `a`'s baseline.
+    let best_seen = self::plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: ge\n    baseline: best-seen\n",
+    ));
+    let first = stored_gate(
+        &best_seen,
+        0,
+        &[sliced(0.9, "a"), sliced(0.1, "b")],
+        Some('0'),
+    );
+    let newest = stored_gate(
+        &best_seen,
+        1,
+        &[sliced(0.5, "a"), sliced(0.5, "b")],
+        Some('0'),
+    );
+    let sliced_report = report(&best_seen, &[first, newest]);
+    let objective = best_seen[0].objective.expect("an objective");
+    assert_eq!(
+        slice_verdict(&sliced_report, "a"),
+        Some(StageVerdict::Gate {
+            objective,
+            outcome: GateOutcome::Fail {
+                current: 0.5,
+                baseline: Some(0.9)
+            }
+        })
+    );
+    assert_eq!(
+        slice_verdict(&sliced_report, "b"),
+        Some(StageVerdict::Gate {
+            objective,
+            outcome: GateOutcome::Pass {
+                current: 0.5,
+                baseline: Some(0.1)
+            }
+        })
+    );
+}
+
+/// The gate plan of [`gate_plan_document`] under `definition_version: v2`.
+fn plans_v2(rule: &str) -> Vec<MeasurementPlan> {
+    plans(&gate_plan_document("higher", "v2", rule))
+}
+
+/// A `baseline` gate never compares across a changed protected apparatus,
+/// exactly as a ratchet never holds against one (FR-110-AC-6): an earlier
+/// value measured with a different recorded apparatus makes it
+/// `apparatus_changed`, and a collection that recorded none makes it
+/// `apparatus_unrecorded` — where comparing the numbers alone would pass. A
+/// `threshold` gate compares against no earlier value, and is unaffected.
+///
+/// Trace: FR-107-AC-8, FR-107-CON-3
+/// Provenance: PLAT-958, PLAT-975
+#[test]
+fn tc_958_025_a_baseline_gate_does_not_compare_across_another_apparatus() {
+    let plans = plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: gt\n    baseline: prior-collection\n",
+    ));
+    let run = |index: u8, value: f64, digit: Option<char>| {
+        stored_gate(&plans, index, &[observation(value, "v1", None)], digit)
+    };
+    for (earlier, newest, reason) in [
+        (Some('0'), Some('1'), InconclusiveReason::ApparatusChanged),
+        (None, Some('0'), InconclusiveReason::ApparatusUnrecorded),
+        (Some('0'), None, InconclusiveReason::ApparatusUnrecorded),
+    ] {
+        assert_eq!(
+            gate_of(&plans, &[run(0, 0.1, earlier), run(1, 0.5, newest)]),
+            GateOutcome::Inconclusive(reason),
+            "{earlier:?} -> {newest:?}"
+        );
+    }
+    // The same apparatus throughout: the numbers decide.
+    assert_eq!(
+        gate_of(&plans, &[run(0, 0.1, Some('0')), run(1, 0.5, Some('0'))]),
+        GateOutcome::Pass {
+            current: 0.5,
+            baseline: Some(0.1)
+        }
+    );
+
+    let threshold = self::plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: ge\n    threshold: 0.4\n",
+    ));
+    let changed = [
+        stored_gate(&threshold, 0, &[observation(0.1, "v1", None)], Some('0')),
+        stored_gate(&threshold, 1, &[observation(0.5, "v1", None)], Some('1')),
+    ];
+    assert_eq!(
+        gate_of(&threshold, &changed),
+        GateOutcome::Pass {
+            current: 0.5,
+            baseline: None
+        }
+    );
 }
