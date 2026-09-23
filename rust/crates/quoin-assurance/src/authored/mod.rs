@@ -46,6 +46,7 @@ pub use build::build_authored_argument_view;
 pub use render::render_authored_argument;
 pub use view::{
     ArgumentSummary, AssumptionView, AuthoredArgumentView, BuildAuthoredArgumentRequest,
-    ChallengeView, ChallengeViewStatus, CriterionView, DecisionState, ReasoningView,
-    SufficiencyDecision, TopClaimView, UnusedDecision, ViewSchemaVersion, ViewStatus,
+    ChallengeView, ChallengeViewStatus, CriterionView, DecisionState, EvidenceIndexEntry,
+    EvidenceRefState, ReasoningView, SufficiencyDecision, TopClaimView, UnusedDecision,
+    ViewSchemaVersion, ViewStatus,
 };

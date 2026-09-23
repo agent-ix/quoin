@@ -25,6 +25,7 @@ pub(crate) fn command() -> Command {
         .arg(Arg::new("argument").long("argument"))
         .arg(Arg::new("decisions").long("decisions"))
         .arg(Arg::new("discharge").long("discharge"))
+        .arg(Arg::new("evidence").long("evidence"))
         .arg(Arg::new("as-of").long("as-of"))
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
 }
@@ -84,9 +85,21 @@ fn authored(arguments: &ArgMatches) -> Result<Response, String> {
         .get_one::<String>("discharge")
         .map(|path| json_file(path, "discharge report"))
         .transpose()?;
+    // PLAT-966: without an index every cited reference reads as unresolved,
+    // so the top claim can only be `supported` when the caller supplies one.
+    let evidence = match arguments.get_one::<String>("evidence") {
+        Some(path) => {
+            let evidence = json_file(path, "evidence index entries")?;
+            if !evidence.is_array() {
+                return Err("evidence index must be a JSON array".to_owned());
+            }
+            evidence
+        }
+        None => serde_json::json!([]),
+    };
     let view = invoke(
         "assurance.build_authored_argument",
-        &serde_json::json!({ "argument": argument, "decisions": decisions, "asOf": as_of, "discharge": discharge }),
+        &serde_json::json!({ "argument": argument, "decisions": decisions, "asOf": as_of, "discharge": discharge, "evidence": evidence }),
     )?;
     if !view.outcome.carries_payload() {
         return Ok(view);
@@ -311,6 +324,8 @@ mod tests {
                 "decisions.json",
                 "--discharge",
                 "discharge.json",
+                "--evidence",
+                "evidence.json",
                 "--as-of",
                 "2026-09-14T00:00:00Z",
             ])
@@ -319,6 +334,10 @@ mod tests {
         assert_eq!(
             matches.get_one::<String>("argument").map(String::as_str),
             Some("ARG-001")
+        );
+        assert_eq!(
+            matches.get_one::<String>("evidence").map(String::as_str),
+            Some("evidence.json")
         );
         assert_eq!(
             matches.get_one::<String>("as-of").map(String::as_str),
