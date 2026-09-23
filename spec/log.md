@@ -63,7 +63,7 @@ description: "Chronological log of structural changes to this bundle."
   `regressed` ratchet's. `compare.rs` stays verdict-free, unchanged by this
   part. A `baseline` gate carries the ratchet's protected-apparatus
   reasons (FR-107-CON-3, review of quoin#605). FR-107-AC-7..AC-9; Matrix:
-  TC-1868..TC-1874.
+  TC-1875..TC-1881.
 
 * **2026-09-22** — **FR-110 (new FR): protected measurement apparatus**
   (PLAT-975). `verificationStack.artifacts` recorded a digest per file and
