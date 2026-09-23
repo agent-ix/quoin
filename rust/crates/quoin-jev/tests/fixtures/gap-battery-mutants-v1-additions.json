@@ -1,0 +1,13 @@
+[
+  {
+    "base_id": "GAP-07",
+    "class": "violating",
+    "rationale": "FR-062-AC-9's FR statement says an absent or unreadable required path SHALL fail before row construction AND name the failed input. This mutant still refuses before rows, but names the export input for every unreadable required input.",
+    "file": "crates/quoin-graph-analysis/src/load.rs",
+    "test": "ops::graph::tests::a_missing_declared_input_is_refused_by_name",
+    "old": "        .map_err(|error| GraphError::InputUnreadable {\n            input,\n",
+    "new": "        .map_err(|error| GraphError::InputUnreadable {\n            input: GraphInput::Export,\n",
+    "killed_by_owning_test": true,
+    "mutated_symbol_body": "/// Read the three declared inputs and the retained bindings store\n/// (`load.ts:189`).\n///\n/// The three declared inputs are required: a failure to read or parse any of\n/// them is a refusal. The bindings store is not — its absence is an answer the\n/// reports carry as a gap.\n///\n/// # Errors\n///\n/// [`GraphError::InputUnreadable`] naming which input could not be read, and\n/// [`GraphError::InputInvalid`] naming which one did not satisfy its contract.\npub fn load_graph_analysis_input(\n    reader: &dyn GraphInputReader,\n    options: &GraphLoadOptions,\n) -> Result<GraphAnalysisInput> {\n    let assurance =\n        parse_assurance_export(&required(reader, GraphInput::Export, &options.export_path)?)?;\n\n    let premises = parse_accepted_premises(&required(\n        reader,\n        GraphInput::Premises,\n        &options.premises_path,\n    )?)?;\n    check_accepted_premises(&assurance, &premises)?;\n\n    let audit = parse_audit_envelope(&required(reader, GraphInput::Audit, &options.audit_path)?)?;\n    check_audit_identity(&audit, &assurance)?;\n\n    Ok(GraphAnalysisInput {\n        bindings: read_bindings(reader, &options.bindings_path()),\n        assurance,\n        premises,\n        audit,\n    })\n}\n\n/// One of the three required inputs (`load.ts:298`).\nfn required(reader: &dyn GraphInputReader, input: GraphInput, path: &Path) -> Result<String> {\n    reader\n        .read(path)\n        .map_err(|error| GraphError::InputUnreadable {\n            input: GraphInput::Export,\n            path: path.display().to_string(),\n            reason: error.to_string(),\n        })\n}"
+  }
+]
