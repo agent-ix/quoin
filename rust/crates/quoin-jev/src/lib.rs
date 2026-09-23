@@ -42,6 +42,7 @@
 //! does not exist in this crate; per the ticket's own instruction, that is a
 //! property to keep, not relax once a key exists.
 
+pub mod cassette;
 pub mod client;
 pub mod config;
 pub mod context;
@@ -53,6 +54,7 @@ pub mod report;
 pub mod schema_gate;
 pub mod verdict;
 
+pub use cassette::Cassette;
 pub use context::{AcRow, FrContext};
 pub use corpus_check::{AdequacyFinding, check_required_fields, check_stated_counts};
 pub use error::{JevError, JevErrorCode, Result};

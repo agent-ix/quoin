@@ -3124,7 +3124,9 @@ dependencies = [
 name = "quoin-jev"
 version = "0.24.0"
 dependencies = [
+ "async-trait",
  "quoin-modules",
+ "quoin-store",
  "regex",
  "serde",
  "serde_json",
