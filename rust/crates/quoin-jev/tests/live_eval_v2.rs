@@ -18,9 +18,9 @@
 //!
 //! | env | meaning |
 //! | --- | --- |
-//! | `QUOIN_JEV_VARIANTS` | comma-separated variant ids; default every registered one |
+//! | `QUOIN_JEV_VARIANTS` | comma-separated variant ids; default every registered one. Each `variant@version` must match its request-digest pin and be within the 5-version dev cap (`eval_v2_support::preflight`) |
 //! | `QUOIN_JEV_SPLIT` | `dev` (default) or `heldout` |
-//! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; the seal is verified and the run logged before any number prints |
+//! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; the seal is verified, every variant must be covered by `fixtures/eval-v2/heldout-selection.json`, and the run is logged before any number prints |
 //! | `QUOIN_JEV_HELDOUT_RERUN` | a reason; required to run a variant version already on the held-out log |
 //! | `QUOIN_JEV_EXTERNAL_CORPUS` / `QUOIN_JEV_EXTERNAL_ROOT` | optional external corpus and its checkouts |
 //! | `QUOIN_JEV_CASSETTE` | a cassette file (PLAT-977): answers are recorded there, and re-grading replays them |
@@ -56,10 +56,11 @@ use typesafe_sdk_env::{Fixed, Process};
 use typesafe_sdk_http::Reqwest;
 
 use eval_v2_support::corpus::{
-    self, Excluded, HELDOUT_ENV, HELDOUT_RERUN_ENV, HeldoutRun, Row, Source, Split,
-    authorize_heldout, check_heldout_rerun, combined_rows, validate,
+    self, Excluded, HELDOUT_ENV, HELDOUT_RERUN_ENV, HeldoutRun, Row, Source, Split, combined_rows,
+    validate,
 };
 use eval_v2_support::metrics::render_run;
+use eval_v2_support::preflight::{self, RunGate};
 use eval_v2_support::variant::{self, REGISTRY, Variant};
 use quoin_jev::{Cassette, JevErrorCode};
 
@@ -158,20 +159,22 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     );
     let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
     let rerun_reason = env(HELDOUT_RERUN_ENV);
-    let seals = if split == Split::Heldout {
-        let refs: Vec<&Source> = sources.iter().collect();
-        let seals = authorize_heldout(env(HELDOUT_ENV).as_deref(), &refs)
-            .unwrap_or_else(|error| panic!("{error}"));
-        check_heldout_rerun(
-            &corpus::heldout_log_path(),
-            &labels,
-            rerun_reason.as_deref(),
-        )
-        .unwrap_or_else(|error| panic!("{error}"));
-        seals
-    } else {
-        Vec::new()
-    };
+    let heldout_flag = env(HELDOUT_ENV);
+    let selection = corpus::heldout_selection_path();
+    let log = corpus::heldout_log_path();
+    let refs: Vec<&Source> = sources.iter().collect();
+    let seals = preflight::authorize_run(
+        &RunGate {
+            split,
+            heldout_flag: heldout_flag.as_deref(),
+            rerun_reason: rerun_reason.as_deref(),
+            selection: &selection,
+            log: &log,
+        },
+        &variants,
+        &refs,
+    )
+    .unwrap_or_else(|error| panic!("{error}"));
     let rows: Vec<Row> = combined_rows(&sources, split).unwrap_or_else(|error| panic!("{error}"));
     let excluded: Vec<Excluded> = sources
         .iter()

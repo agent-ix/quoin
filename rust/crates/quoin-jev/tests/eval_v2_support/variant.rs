@@ -63,13 +63,14 @@ use std::sync::LazyLock;
 use regex::Regex;
 use typesafe_sdk_answers::{Answer, SystemOneResponse};
 use typesafe_sdk_client::{Client, SystemOneRequest};
-use typesafe_sdk_questions::{Entry, Questions};
+use typesafe_sdk_questions::{Entry, Question, Questions};
 
 use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 
 use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
+use super::variants::severity;
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
 };
@@ -88,12 +89,17 @@ pub(crate) enum RawAnswer {
         /// Every label's probability.
         probabilities: BTreeMap<String, f64>,
     },
-    /// A `score`: the expected level and its confidence.
+    /// A `score`: the expected level, its confidence, and every level's
+    /// probability.
     Score {
         /// The expected score, possibly between levels.
         score: f64,
         /// Its reported confidence.
         confidence: f64,
+        /// Every level's probability, keyed by the level as the service
+        /// spells it (a decimal string). PLAT-1028's S2 reads the mass on
+        /// the top level, not only the expected score.
+        probabilities: BTreeMap<String, f64>,
     },
 }
 
@@ -120,6 +126,11 @@ pub(crate) fn raw_answers(response: &SystemOneResponse) -> RawAnswers {
                 Answer::Score(score) => RawAnswer::Score {
                     score: score.score,
                     confidence: score.confidence,
+                    probabilities: score
+                        .probabilities
+                        .iter()
+                        .map(|(level, p)| (level.clone(), *p))
+                        .collect(),
                 },
             };
             (key.clone(), raw)
@@ -196,7 +207,24 @@ impl Variant {
 }
 
 /// Every variant, in the order a default run uses.
-pub(crate) const REGISTRY: &[Variant] = &[B0, S0, E0, T0, C0];
+pub(crate) const REGISTRY: &[Variant] = &[
+    B0,
+    S0,
+    E0,
+    T0,
+    C0,
+    // PLAT-1028 severity variants; bars in spec/assurance/MP-240.
+    severity::S1,
+    severity::S1_RT,
+    severity::S1_RC,
+    severity::S2,
+    severity::S2_RT,
+    severity::S2_RC,
+    severity::S2M,
+    severity::S2M_RT,
+    severity::S2M_RC,
+    severity::S3,
+];
 
 /// Resolves a comma-separated id list against [`REGISTRY`].
 ///
@@ -307,7 +335,10 @@ pub(crate) fn choice_prediction(answers: &RawAnswers, key: &str) -> Option<Predi
 /// A severity `score` answer: rounded to the nearest rubric level, with the
 /// raw score as the ordinal so ordering quality sees between-level values.
 pub(crate) fn severity_prediction(answers: &RawAnswers, key: &str) -> Option<Prediction> {
-    let RawAnswer::Score { score, confidence } = answers.get(key)? else {
+    let RawAnswer::Score {
+        score, confidence, ..
+    } = answers.get(key)?
+    else {
         return None;
     };
     Some(Prediction {
@@ -391,7 +422,9 @@ pub(crate) fn rollup_max_level(
         .iter()
         .filter(|answered| answered.unit.is_some())
         .filter_map(|answered| match answered.answers.get(key) {
-            Some(RawAnswer::Score { score, confidence }) => Some((*score, *confidence)),
+            Some(RawAnswer::Score {
+                score, confidence, ..
+            }) => Some((*score, *confidence)),
             _ => None,
         })
         .reduce(|best, next| if next.0 > best.0 { next } else { best })?;
@@ -777,6 +810,78 @@ pub(crate) struct RunOutput {
     pub(crate) models: BTreeMap<String, usize>,
 }
 
+/// How far a `score`'s probabilities may sum from 1 before the answer is
+/// refused.
+pub(crate) const SCORE_MASS_TOLERANCE: f64 = 0.01;
+
+/// Refuses a `score` answer whose level probabilities are not a
+/// distribution over the question's own levels:
+///
+/// - every key must be a whole level, `"0"` up to one below the number of
+///   levels (a decimal spelling such as `"2.0"` names the same level);
+/// - no level may be spelled twice (`"2"` and `"2.0"` together);
+/// - every mass must be finite and non-negative;
+/// - the masses must sum to 1 within [`SCORE_MASS_TOLERANCE`];
+/// - the map must not be empty.
+///
+/// A variant reading the distribution (PLAT-1028's S2 and S2M) would
+/// otherwise grade a malformed answer silently (PR #620 review, findings 9
+/// and F7).
+///
+/// # Errors
+/// Naming the question key and what is wrong with its probabilities.
+pub(crate) fn check_score_levels(
+    questions: &Questions,
+    answers: &RawAnswers,
+) -> Result<(), String> {
+    for (key, question) in questions {
+        let Question::Score { criteria, .. } = question else {
+            continue;
+        };
+        let Some(RawAnswer::Score { probabilities, .. }) = answers.get(key) else {
+            continue;
+        };
+        let levels = criteria.len();
+        let spelled_keys: Vec<&String> = probabilities.keys().collect();
+        let refuse = |why: String| {
+            Err(format!(
+                "score `{key}` has {levels} levels, but its probabilities {why} (keys \
+                 {spelled_keys:?}, masses {:?}); expected one mass per level \"0\"..\"{}\", \
+                 summing to 1",
+                probabilities.values().collect::<Vec<_>>(),
+                levels.saturating_sub(1)
+            ))
+        };
+        if probabilities.is_empty() {
+            return refuse("are empty".to_owned());
+        }
+        let whole_level = |spelled: &str| -> Option<usize> {
+            let value = spelled.trim().parse::<f64>().ok()?;
+            (0..levels).find(|level| {
+                (f64::from(u32::try_from(*level).unwrap_or(u32::MAX)) - value).abs() < 1e-9
+            })
+        };
+        let mut seen = std::collections::BTreeSet::new();
+        let mut total = 0.0;
+        for (spelled, p) in probabilities {
+            let Some(level) = whole_level(spelled) else {
+                return refuse(format!("key {spelled:?} is not a level"));
+            };
+            if !seen.insert(level) {
+                return refuse(format!("spell level {level} more than once"));
+            }
+            if !p.is_finite() || *p < 0.0 {
+                return refuse(format!("give level {level} the mass {p}"));
+            }
+            total += p;
+        }
+        if (total - 1.0).abs() > SCORE_MASS_TOLERANCE {
+            return refuse(format!("sum to {total}"));
+        }
+    }
+    Ok(())
+}
+
 /// Runs every variant over every row it applies to, in row then variant
 /// order. Each distinct request is sent once per run: variants sharing a
 /// request shape share its answer. A transport failure aborts the run rather
@@ -808,6 +913,7 @@ pub(crate) async fn run(
                     output.requests_reused += 1;
                     answers.clone()
                 } else {
+                    let questions = ask.request.questions.clone();
                     let response = client
                         .system_one(ask.request)
                         .await
@@ -815,6 +921,18 @@ pub(crate) async fn run(
                     output.requests_sent += 1;
                     *output.models.entry(response.model.clone()).or_default() += 1;
                     let answers = raw_answers(&response);
+                    // A malformed answer aborts the run, but it was paid
+                    // for: the error carries the raw response, and a
+                    // recording cassette has already written it.
+                    check_score_levels(&questions, &answers).map_err(|error| {
+                        let raw = serde_json::to_string(&response)
+                            .unwrap_or_else(|error| format!("<unserializable: {error}>"));
+                        format!(
+                            "{} / {}: {error}; raw response: {raw}",
+                            row.id,
+                            variant.label()
+                        )
+                    })?;
                     cache.insert(key, answers.clone());
                     answers
                 };
