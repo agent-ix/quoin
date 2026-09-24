@@ -10,9 +10,14 @@
 //! triple (`RTC`). This module is the machinery those experiments share. It
 //! decides nothing about which wording wins.
 //!
+//! - [`assemble`] builds `corpus.json` from the committed sample, label
+//!   passes and mutation log, offline and deterministically, so a gate can
+//!   hold the committed corpus equal to its rebuild.
 //! - [`corpus`] reads and validates `fixtures/eval-v2/corpus.json` and the
 //!   optional external corpus, materializes by-reference rows from a local
 //!   checkout, and holds the held-out seal.
+//! - [`criterion_defects`] defines the five criterion-soundness checks once:
+//!   the corpus header, the label passes and the soundness variants read it.
 //! - [`keys`] names every question key and its answer space.
 //! - [`variant`] is the registry: a variant is a named, versioned question set
 //!   plus a `derive` step from raw answers to graded answers. It also holds
@@ -38,7 +43,9 @@
 #[path = "../support/grading.rs"]
 pub(crate) mod grading;
 
+pub(crate) mod assemble;
 pub(crate) mod corpus;
+pub(crate) mod criterion_defects;
 pub(crate) mod fixtures;
 pub(crate) mod keys;
 pub(crate) mod metrics;

@@ -66,6 +66,10 @@ pub(crate) struct CorpusFile {
     pub(crate) seed: u64,
     /// The commit the population was drawn at. Informational.
     pub(crate) source_commit: String,
+    /// The labelling rule per question key, as the labellers were given it
+    /// (PLAT-1025's corpus header). Absent in a corpus with no agent labels.
+    #[serde(default)]
+    pub(crate) labelling_rules: BTreeMap<String, String>,
     /// Every row.
     pub(crate) rows: Vec<Row>,
 }
@@ -230,6 +234,12 @@ pub(crate) struct Mutation {
     /// The unified diff. Provenance on an in-repo row; applied on an
     /// external one.
     pub(crate) patch: String,
+    /// The id of the unmutated row this mutant was made from, in the same
+    /// corpus file; `null` only when that row is not in the corpus. A mutant
+    /// and its source share a split (PLAT-1025), so a held-out mutant is never
+    /// a near-copy of a dev row, and source/mutant pairs can be compared.
+    #[serde(default)]
+    pub(crate) source_id: Option<String>,
 }
 
 /// A truth answer: a label, or a bool read as `yes`/`no`.
@@ -649,15 +659,17 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
 /// answer space, the row carries what the key needs, and the truth kind
 /// agrees with the alternatives; a mutation targets an artifact the row has;
 /// `strata.fr_id` agrees with `requirement.fr_id`; every id carries its
-/// source's prefix ([`Origin::id_prefix`]); and no FR of one repo has more
+/// source's prefix ([`Origin::id_prefix`]); no FR of one repo has more
 /// than [`MAX_NATURAL_ROWS_PER_FR`] natural (unmutated) rows (PLAT-1024
-/// rule 1).
+/// rule 1); and a mutant's `source_id` names an unmutated row of the same
+/// file in the same split.
 pub(crate) fn validate(file: &CorpusFile, origin: Origin) -> Vec<String> {
     let mut problems = Vec::new();
     if file.schema != SCHEMA {
         problems.push(format!("schema is {:?}, expected {SCHEMA:?}", file.schema));
     }
     problems.extend(natural_row_problems(file));
+    problems.extend(mutation_source_problems(file));
     let mut seen = BTreeSet::new();
     for row in &file.rows {
         let mut say = |problem: String| problems.push(format!("{}: {problem}", row.id));
@@ -787,6 +799,42 @@ fn natural_row_problems(file: &CorpusFile) -> Vec<String> {
             )
         })
         .collect()
+}
+
+/// A mutant's `source_id` must resolve to a row of the same file that is not
+/// itself a mutant and sits in the mutant's split: a held-out mutant whose
+/// source was tuned on is leakage, and a pair split across the two halves
+/// cannot be compared (PLAT-1025, PLAT-1031).
+fn mutation_source_problems(file: &CorpusFile) -> Vec<String> {
+    let by_id: BTreeMap<&str, &Row> = file.rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut problems = Vec::new();
+    for row in &file.rows {
+        let Some(source_id) = row
+            .mutation
+            .as_ref()
+            .and_then(|mutation| mutation.source_id.as_deref())
+        else {
+            continue;
+        };
+        match by_id.get(source_id) {
+            None => problems.push(format!(
+                "{}: mutation.source_id {source_id} is not a row of this file",
+                row.id
+            )),
+            Some(source) if source.mutation.is_some() => problems.push(format!(
+                "{}: mutation.source_id {source_id} is itself a mutant",
+                row.id
+            )),
+            Some(source) if source.split != row.split => problems.push(format!(
+                "{}: split {} but its source {source_id} is {}",
+                row.id,
+                row.split.as_str(),
+                source.split.as_str()
+            )),
+            Some(_) => {}
+        }
+    }
+    problems
 }
 
 fn truth_problems(mode: Mode, key: &str, truth: &Truth) -> Vec<String> {
