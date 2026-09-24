@@ -1,4 +1,21 @@
 {
   "schema": "quoin-jev.heldout-selection/v1",
-  "selections": []
+  "selections": [
+    {
+      "mp": "MP-243",
+      "variant": "K1",
+      "version": 1,
+      "selected_at_commit": "5f71aace46f552fb8c918d7bfd287240139b95ed",
+      "dev_evidence": "dev run 1 (jev-1.13.0, 1566 requests): Bar D 67 success / 0 failure / 18 tie, p < 0.0001; Bar A FAIL on 20 AGENT-LABELLED natural rows (13.0 vs constant 15.0). NOT selectable under MP-243's rule; run as a declared confirmation of Bar D, reported as outside the pre-registered selection.",
+      "baselines": ["C0@v1"]
+    },
+    {
+      "mp": "MP-240",
+      "variant": "S2",
+      "version": 1,
+      "selected_at_commit": "5f71aace46f552fb8c918d7bfd287240139b95ed",
+      "dev_evidence": "dev run 1: no family qualified (Bar D not gateable on dev: 18 of 36 RTC sources already >= medium). S2 had the strongest Bar D (9 success / 0 failure, p = 0.0020) and RTC concordance 0.798 (S0 0.792). Run as a declared confirmation outside MP-240's rule.",
+      "baselines": ["S0@v1", "S1@v1", "S1-RT@v1", "S1-RC@v1"]
+    }
+  ]
 }
