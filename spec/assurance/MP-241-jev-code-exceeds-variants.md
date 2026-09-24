@@ -256,11 +256,13 @@ be run on dev. Every version tried is reported with its numbers, including
 those not selected. Retuning E2's tau or any other threshold after seeing dev
 creates a new version, and it counts against the budget.
 
-**Request identity.** Each variant version's request shape is to be pinned
-by a request digest. The digest pins come from PLAT-1028's #620; this PR adds
-none. Once #620 merges, a wording change without a version bump fails a test.
-No live call, dev or held-out, is allowed before #620 merges and E0, E0-RC,
-E1, E2 and E4 are pinned.
+**Request identity.** Each variant version's request shape is pinned by a
+request digest in `REQUEST_DIGEST_PINS` (`tests/eval_v2_support/preflight.rs`,
+from PLAT-1028's #620); E0, E0-RC, E1, E2 and E4 are pinned at v1. The live
+runner's preflight refuses a variant whose wording no longer matches its pin,
+and a version with no pin. The pins cover wording only: a change to a derive
+rule or a threshold (E2's tau, E3's floor) changes no request, so its version
+bump is enforced by review.
 
 **Selection for the held-out run (one variant, one run).**
 
@@ -273,9 +275,8 @@ E1, E2 and E4 are pinned.
    qualifies only through A/B ranks by margin, after every variant that
    qualifies through bar D.
 3. Write the choice into `fixtures/eval-v2/heldout-selection.json`, one entry
-   for MP-241. Held-out enforcement (the runner refusing a held-out run for
-   any variant not listed there) comes from #620. The runner in this PR does
-   not refuse, which is one reason no live call runs before #620 merges.
+   for MP-241. The runner's preflight (#620) refuses a held-out run for any
+   variant not listed there, and a second held-out run of the same selection.
 4. The held-out run is that variant plus E0 and E0-RC, once, under
    `QUOIN_JEV_HELDOUT=1`.
 5. E3 over the chosen variant uses the floor that reached 60% coverage on
