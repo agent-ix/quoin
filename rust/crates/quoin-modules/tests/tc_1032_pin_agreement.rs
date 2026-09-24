@@ -3,11 +3,12 @@
 
 //! Compile the engineering-assurance pin-agreement promise (PLAT-1032).
 //!
-//! quoin pins `engineering-assurance` twice: `rust/Cargo.toml`'s crate
-//! dependency, which decides measurement verdicts, and
-//! `default-modules.yaml`'s `engineering-assurance` module entry, which
-//! carries the schemas that validate `AssuranceProfile` and `MeasurementPlan`
-//! frontmatter. PR #618 moved only the crate to `=0.4.0` and left the module
+//! quoin pins `engineering-assurance` in three committed places that must
+//! hold one revision: `rust/Cargo.toml`'s crate dependency, which decides
+//! measurement verdicts; `default-modules.yaml`'s `engineering-assurance`
+//! module entry, which carries the schemas that validate `AssuranceProfile`
+//! and `MeasurementPlan` frontmatter; and `quoin-cli`'s retained-catalog
+//! fixture registry, which reconciliation compares against that module entry. PR #618 moved only the crate to `=0.4.0` and left the module
 //! at `0.2.0+4e6522f`, which made this repo's own `spec/assurance/AP-201` and
 //! `AP-202` unvalidatable against the module quoin itself ships — v0.4.0
 //! renamed `AssuranceProfile`'s `profile_version` to `schema_version` under
@@ -16,7 +17,13 @@
 //! `include_str!`, so a green `cargo build` proves nothing about its
 //! contents. It was found only by smoke-testing the release binary.
 //!
-//! Both files are read with `include_str!`, not a runtime file read, so the
+//! Bumping the module and leaving the fixture behind then broke `quoin-cli`'s
+//! `tc_1650` with "fixture deliberately resolves no modules" — a failure whose
+//! text points at catalog discovery and says nothing about a pin two crates
+//! away. All three are asserted here so the next bump is told which files to
+//! move, by name, instead of being sent to debug the symptom.
+//!
+//! Every file is read with `include_str!`, not a runtime file read, so the
 //! assertion is a build input and stays honest regardless of the working
 //! directory the test happens to run from.
 
@@ -31,8 +38,23 @@
 use quoin_modules::manifest::MarketplaceManifest;
 use quoin_modules::source::Source;
 
+/// The module and crate this test holds to one revision.
+const NAME: &str = "engineering-assurance";
+
 const DEFAULT_MODULES: &str = include_str!("../../../../default-modules.yaml");
 const CARGO_MANIFEST: &str = include_str!("../../../Cargo.toml");
+
+/// `quoin-cli`'s frozen retained-catalog fixture, whose contract is that
+/// `catalog list` resolves no modules from it. Reconciliation compares this
+/// registry's `ref` against the embedded `default-modules.yaml`, so a pin bump
+/// that leaves this behind makes the fixture reconcile a module into existence
+/// and `tc_1650` fails with "fixture deliberately resolves no modules" — which
+/// reads as a `quoin-cli` catalog-discovery defect and not as what it is, an
+/// unbumped pin two crates away. That is exactly how PLAT-1032 lost time, so
+/// the third copy is asserted here beside the other two rather than left to be
+/// rediscovered from a confusing failure.
+const RETAINED_CATALOG_REGISTRY: &str =
+    include_str!("../../quoin-cli/tests/fixtures/retained-catalog/ix-home/filament/registry.json");
 
 /// The value of `key = "…"` inside one TOML inline-table line.
 ///
@@ -68,13 +90,13 @@ fn field(line: &str, key: &str) -> Option<String> {
 /// Trace: FR-016-AC-2
 /// Provenance: PLAT-1032
 #[test]
-fn tc_1032_the_module_pin_and_the_crate_pin_are_the_same_commit() {
+fn tc_1032_every_engineering_assurance_pin_is_the_same_commit() {
     let manifest =
         MarketplaceManifest::from_yaml(DEFAULT_MODULES).expect("default-modules.yaml parses");
     let entry = manifest
         .entries
         .iter()
-        .find(|e| e.name.as_str() == "engineering-assurance")
+        .find(|e| e.name.as_str() == NAME)
         .expect("default-modules.yaml declares an engineering-assurance entry");
     let module_rev = match &entry.source {
         Source::GitSubdir { r#ref, .. } => r#ref
@@ -86,7 +108,7 @@ fn tc_1032_the_module_pin_and_the_crate_pin_are_the_same_commit() {
     let crate_line = CARGO_MANIFEST
         .lines()
         .map(str::trim)
-        .find(|line| line.starts_with("engineering-assurance"))
+        .find(|line| line.starts_with(NAME))
         .expect("rust/Cargo.toml declares the engineering-assurance dependency");
     let crate_rev =
         field(crate_line, "rev").expect("the engineering-assurance dependency line declares a rev");
@@ -121,5 +143,26 @@ fn tc_1032_the_module_pin_and_the_crate_pin_are_the_same_commit() {
          {crate_version:?} (after normalising the exact-pin `=`). The crate pin and the module \
          pin are two halves of one engineering-assurance version and must be bumped together \
          (PLAT-1032)."
+    );
+
+    let registry: serde_json::Value = serde_json::from_str(RETAINED_CATALOG_REGISTRY)
+        .expect("the retained-catalog fixture registry is JSON");
+    let fixture_rev = registry
+        .get("plugins")
+        .and_then(serde_json::Value::as_array)
+        .expect("the retained-catalog registry lists plugins")
+        .iter()
+        .find(|plugin| plugin.get("name").and_then(serde_json::Value::as_str) == Some(NAME))
+        .and_then(|plugin| plugin.get("ref"))
+        .and_then(serde_json::Value::as_str)
+        .expect("the retained-catalog registry pins engineering-assurance at a ref");
+
+    assert_eq!(
+        module_rev, fixture_rev,
+        "default-modules.yaml's engineering-assurance module pins ref {module_rev:?} but \
+         quoin-cli's retained-catalog fixture registry pins ref {fixture_rev:?}. The fixture's \
+         contract is that `catalog list` resolves nothing from it, and reconciliation compares \
+         that registry's ref against the embedded default-modules.yaml, so leaving the fixture \
+         behind makes tc_1650 fail as though catalog discovery were broken (PLAT-1032)."
     );
 }
