@@ -308,6 +308,7 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         capability_root: repo.path().to_string_lossy().into_owned(),
         environment: BTreeMap::new(),
         inputs: Vec::new(),
+        input_origins: None,
         source_tree: None,
         outputs: if checker {
             vec![OutputBinding {

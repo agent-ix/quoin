@@ -46,7 +46,12 @@ pub(super) fn check_domain_receipt(
     let checker_source = source_inputs
         .get(&checker_procedure.source_repository)
         .ok_or(EvidenceError::Contradiction)?;
-    check_request_contract(&checker_request, checker_procedure, definition)?;
+    check_request_contract(
+        &checker_request,
+        checker_procedure,
+        definition,
+        checker_source,
+    )?;
     check_request_inputs(repo, &checker_request, checker_source)?;
     if checker_result
         .pointer("/requestIdentity/digest")

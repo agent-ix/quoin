@@ -256,9 +256,15 @@ earlier source revision without a self-referential Git commit. The run config
 uses `quoin.campaign-run-config/v1` and selects exact clean source checkouts,
 producer and checker executables, and runtime bindings. Verification reopens
 the retained evidence and the same pinned source revisions. Member dependencies
-require ordering and completion; selected producer input bytes are retained by
-digest. A domain checker must validate any stronger relation between a
-dependent input and an earlier member's output.
+require ordering and completion. Quoin retains every selected producer input
+byte string by digest and independently replays its recorded source-file or
+dependency-artifact origin against the exact Git tree or earlier EA result.
+When an authored procedure declares `inputOrigins`, EA rejects mismatched
+runtime selections and Quoin marks the retained inventory `enforced` only after
+matching every declared role. Older procedures without that declaration remain
+explicitly `unclaimed` for authored origin assurance; their selected bytes and
+recorded origins are still replay-checked. A domain checker interprets the
+measurement-specific meaning of those inputs.
 
 ## Development
 

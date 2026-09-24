@@ -255,6 +255,7 @@ impl ProcedureBindingWire {
             capability_root: String::new(),
             environment: self.environment,
             inputs: Vec::new(),
+            input_origins: None,
             source_tree: None,
             outputs: self
                 .outputs

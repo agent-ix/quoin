@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 mod collection;
+mod origin;
 
 use engineering_assurance::campaign::{
     CampaignAttempt, CampaignAttemptStatus, CampaignDefinition, CampaignRun, CampaignVerdict,

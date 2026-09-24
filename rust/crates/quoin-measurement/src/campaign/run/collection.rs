@@ -11,6 +11,8 @@ use super::{
 use serde::Serialize;
 use std::collections::BTreeSet;
 
+use crate::campaign::input_origin::{InputOriginInventory, from_runtime};
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CollectionPayload<'a> {
@@ -104,6 +106,7 @@ struct CollectionRawEvidence<'a> {
     checker_result_digest: &'a str,
     domain_verdict_digest: &'a str,
     raw_artifacts: Option<&'a [CampaignRawArtifact]>,
+    input_origins: InputOriginInventory,
 }
 
 #[allow(
@@ -118,6 +121,8 @@ pub(super) fn publish_collection(
     member: &engineering_assurance::campaign::CampaignMember,
     plan: &MeasurementPlan,
     runtime: &RunMemberBindings,
+    procedure: &engineering_assurance::campaign::MeasurementProcedure,
+    producer_source: &VerifiedSource,
     plan_source: &VerifiedSource,
     result: &ProducerExecutionResult<ProcessEvidenceObservation>,
     attempt: &mut CampaignAttempt,
@@ -160,6 +165,12 @@ pub(super) fn publish_collection(
         .request_digest
         .as_deref()
         .ok_or_else(|| CampaignRunError::binding("producer request missing".to_owned()))?;
+    let request_bytes = super::read_digest_bytes(repo, "requests", request_digest, "json")?;
+    let request_value: serde_json::Value = serde_json::from_slice(&request_bytes)
+        .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
+    let source_inventory = producer_source.input_inventory()?;
+    let input_origins = from_runtime(runtime, &request_value, &source_inventory, procedure)
+        .map_err(|error| CampaignRunError::binding(error.to_string()))?;
     let checker_result_digest = attempt
         .checker_result_digest
         .as_deref()
@@ -234,6 +245,7 @@ pub(super) fn publish_collection(
             checker_result_digest,
             domain_verdict_digest,
             raw_artifacts: attempt.raw_artifacts.as_deref(),
+            input_origins,
         },
     })
     .map_err(|error| CampaignRunError::encoding(error.to_string()))?;

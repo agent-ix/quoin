@@ -16,6 +16,8 @@ pub mod adapter;
 #[cfg(feature = "campaign")]
 pub mod checker;
 #[cfg(feature = "campaign")]
+pub mod input_origin;
+#[cfg(feature = "campaign")]
 pub mod run;
 #[cfg(feature = "campaign")]
 pub mod source;

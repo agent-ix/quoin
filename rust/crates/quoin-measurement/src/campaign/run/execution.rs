@@ -11,6 +11,7 @@ use super::{
     Read, RunMemberBindings, SourceTreeBinding, VerifiedSource, read_bounded, read_digest_bytes,
     resolve_procedure, retain_bytes, retain_value,
 };
+use crate::campaign::input_origin::selected_declarations;
 
 #[allow(
     clippy::too_many_arguments,
@@ -70,6 +71,7 @@ pub(super) fn run_member(
     let mut bindings = runtime.producer.clone();
     bindings.capability_root = staging.path().to_string_lossy().into_owned();
     bindings.inputs = inputs;
+    bindings.input_origins = selected_declarations(&runtime.inputs, procedure);
     bindings.source_tree = Some(SourceTreeBinding {
         repository: source.repository.clone(),
         manifest: source.manifest.clone(),
@@ -153,6 +155,8 @@ pub(super) fn run_member(
             member,
             plan,
             runtime,
+            procedure,
+            source,
             plan_source,
             sources,
             prior,

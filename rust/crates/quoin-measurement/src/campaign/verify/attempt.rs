@@ -4,6 +4,7 @@
 
 use super::collection::check_collection_context;
 use super::domain::check_domain_receipt;
+use super::origin::check_input_origins;
 use super::{
     AttemptEvidence, BTreeMap, CampaignAttempt, CampaignDefinition, CampaignStoreError,
     EvidenceError, InputBinding, MeasurementPlan, MeasurementProcedure, OrderSource, Path, Ranked,
@@ -42,7 +43,7 @@ pub(super) fn check_attempt(
     let source = source_inputs
         .get(&procedure.source_repository)
         .ok_or(EvidenceError::Contradiction)?;
-    check_request_contract(&request, procedure, definition)?;
+    check_request_contract(&request, procedure, definition, source)?;
     check_request_inputs(repo, &request, source)?;
     if result
         .pointer("/requestIdentity/digest")
@@ -72,6 +73,14 @@ pub(super) fn check_attempt(
     parse_strict_json(&collection_bytes).map_err(|_| EvidenceError::Contradiction)?;
     let collection: Value =
         serde_json::from_slice(&collection_bytes).map_err(|_| EvidenceError::Contradiction)?;
+    let input_origins: crate::campaign::input_origin::InputOriginInventory =
+        serde_json::from_value(
+            collection
+                .pointer("/rawEvidence/inputOrigins")
+                .cloned()
+                .ok_or(EvidenceError::Contradiction)?,
+        )
+        .map_err(|_| EvidenceError::Contradiction)?;
     if collection.get("collectionId").and_then(Value::as_str) != Some(collection_id)
         || !collection
             .get("observations")
@@ -97,6 +106,7 @@ pub(super) fn check_attempt(
         "checkerResultDigest":attempt.checker_result_digest,
         "domainVerdictDigest":attempt.domain_verdict_digest,
         "rawArtifacts":attempt.raw_artifacts,
+        "inputOrigins":input_origins,
     });
     if collection.get("rawEvidence") != Some(&expected_raw_evidence) {
         return Err(EvidenceError::Contradiction);
@@ -108,6 +118,16 @@ pub(super) fn check_attempt(
                 && plan.definition_version.as_str() == member.definition_version
         })
         .ok_or(EvidenceError::Contradiction)?;
+    check_input_origins(
+        repo,
+        &input_origins,
+        &request,
+        member,
+        attempt,
+        run_attempts,
+        source_inputs,
+        procedure,
+    )?;
     check_collection_context(
         &collection,
         definition,
@@ -179,7 +199,16 @@ pub(super) fn check_request_inputs(
         .ok_or(EvidenceError::Contradiction)?;
     let mut roles = std::collections::BTreeSet::new();
     let mut paths = std::collections::BTreeSet::new();
-    let mut source_count = 0;
+    let implicit = expected
+        .iter()
+        .map(|binding| serde_json::to_value(binding).map_err(|_| EvidenceError::Contradiction))
+        .collect::<Result<Vec<_>, _>>()?;
+    if implicit
+        .iter()
+        .any(|binding| observed.iter().filter(|input| *input == binding).count() != 1)
+    {
+        return Err(EvidenceError::Contradiction);
+    }
     for input in observed {
         let role = input
             .get("role")
@@ -196,15 +225,13 @@ pub(super) fn check_request_inputs(
         if !roles.insert(role) || !paths.insert(path) {
             return Err(EvidenceError::Contradiction);
         }
-        if role.starts_with("source/") || role.starts_with("source-exec/") {
-            source_count += 1;
-            if !expected
+        if !implicit.contains(input) {
+            if expected
                 .iter()
-                .any(|binding| serde_json::to_value(binding).ok().as_ref() == Some(input))
+                .any(|binding| binding.role == role || binding.path == path)
             {
                 return Err(EvidenceError::Contradiction);
             }
-        } else {
             let bytes = read_digest_bytes(repo, "inputs", digest, "bin")
                 .map_err(|_| EvidenceError::Missing)?;
             if quoin_store::digest_bytes_sha256(&bytes).as_hex() != digest
@@ -218,9 +245,6 @@ pub(super) fn check_request_inputs(
             }
         }
     }
-    if source_count != expected.len() {
-        return Err(EvidenceError::Contradiction);
-    }
     Ok(())
 }
 
@@ -228,6 +252,7 @@ pub(super) fn check_request_contract(
     request: &Value,
     procedure: &MeasurementProcedure,
     definition: &CampaignDefinition,
+    source_inputs: &[InputBinding],
 ) -> Result<(), EvidenceError> {
     let source = definition
         .source_graph
@@ -265,13 +290,20 @@ pub(super) fn check_request_contract(
         .get("inputs")
         .and_then(Value::as_array)
         .ok_or(EvidenceError::Contradiction)?;
+    let implicit = source_inputs
+        .iter()
+        .map(|binding| serde_json::to_value(binding).map_err(|_| EvidenceError::Contradiction))
+        .collect::<Result<Vec<_>, _>>()?;
     let explicit: Vec<_> = inputs
         .iter()
-        .filter_map(|input| {
-            let role = input.get("role")?.as_str()?;
-            (!role.starts_with("source/") && !role.starts_with("source-exec/")).then_some(role)
+        .filter(|input| !implicit.contains(input))
+        .map(|input| {
+            input
+                .get("role")
+                .and_then(Value::as_str)
+                .ok_or(EvidenceError::Contradiction)
         })
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
     for role in &explicit {
         let exact = procedure
             .inputs
