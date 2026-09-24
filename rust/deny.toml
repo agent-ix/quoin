@@ -178,6 +178,20 @@ allow-wildcard-paths = true
 # of the same crate — still fails. This concedes these resolutions, not the
 # check.
 skip = [
+    # --- PLAT-1043: EA campaign's SHA-2 0.11 and SHA-1 0.10 split. ---
+    #
+    # EA campaign's producer-execution feature requires sha2 0.11, while its
+    # campaign feature and gix require sha1 0.10. Quire and this workspace
+    # also require sha2 0.10. Those older hash crates share digest 0.10,
+    # crypto-common 0.1 and block-buffer 0.10; sha2 0.11 uses their newer
+    # lines. No Quoin-only pin can unify the graph while those upstream
+    # requirements stand. Skip only the exact older versions below; the newer
+    # versions remain checked. Remove each entry when the sha1/sha2 consumers
+    # converge, and prove removal with `cargo deny check bans`.
+    { crate = "block-buffer@0.10.4", reason = "PLAT-1043: sha1 0.10.7 (EA campaign and gix) plus sha2 0.10.9 (Quire/Quoin); 0.12.1 via EA sha2 0.11.0 stays checked" },
+    { crate = "crypto-common@0.1.7", reason = "PLAT-1043: digest 0.10.7 via sha1 0.10.7 and sha2 0.10.9; 0.2.2 via EA sha2 0.11.0 stays checked" },
+    { crate = "digest@0.10.7", reason = "PLAT-1043: sha1 0.10.7 (EA campaign and gix) plus sha2 0.10.9 (Quire/Quoin); 0.11.3 via EA sha2 0.11.0 stays checked" },
+    { crate = "sha2@0.10.9", reason = "PLAT-1043: Quire requires sha2 0.10 and Quoin shares that pin; EA producer-execution requires sha2 0.11.0, which stays checked" },
     { crate = "getrandom@0.2.17", reason = "jsonschema 0.18.3 via quire-rs" },
     { crate = "getrandom@0.3.4", reason = "ahash -> jsonschema 0.18.3 via quire-rs" },
     { crate = "r-efi@5.3.0", reason = "getrandom 0.3.4 -> ahash -> jsonschema 0.18.3 via quire-rs" },

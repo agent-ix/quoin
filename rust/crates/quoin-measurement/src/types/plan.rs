@@ -186,6 +186,10 @@ pub struct MeasurementPlan {
     pub metric: NonEmptyText,
     /// The definition version an observation must match.
     pub definition_version: NonEmptyText,
+    /// Repository-relative path to an EA `MeasurementProcedure` record when
+    /// this plan participates in a runnable campaign. Historical plans need
+    /// no procedure and remain readable.
+    pub execution_procedure: Option<String>,
     /// The repository-relative, `/`-separated document it was read from.
     pub path: String,
     /// Who owns it, when governance fields were requested.

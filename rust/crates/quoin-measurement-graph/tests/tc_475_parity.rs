@@ -306,6 +306,7 @@ fn plan(value: &Value) -> MeasurementPlan {
         objective: None,
         protected_apparatus: None,
         negative_controls: None,
+        execution_procedure: None,
     }
 }
 

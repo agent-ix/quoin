@@ -14,6 +14,11 @@ publish.workspace = true
 [lints]
 workspace = true
 
+[features]
+# The FCD-generated EA campaign value objects and bounded producer executor.
+# Kept opt-in until Quoin's campaign CLI adopts the matching EA revision.
+campaign = ["engineering-assurance/campaign"]
+
 [dependencies]
 # The owner of a `MeasurementPlan`'s `objective` block — its `Direction` and
 # validated `Objective` (engineering-assurance FR-020, PLAT-957). Plan intake
@@ -51,9 +56,9 @@ serde = { workspace = true }
 # round trip through this crate returns the bytes it was handed.
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+tempfile = { workspace = true }
 
 [dev-dependencies]
 # Property tests over the verdict checker's estimator recomputation
 # (PLAT-961); the workspace pin.
 proptest = { workspace = true }
-tempfile = "=3.27.0"

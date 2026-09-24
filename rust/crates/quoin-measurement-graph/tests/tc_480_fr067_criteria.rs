@@ -100,6 +100,7 @@ fn plan() -> MeasurementPlan {
         objective: None,
         protected_apparatus: None,
         negative_controls: None,
+        execution_procedure: None,
     }
 }
 
@@ -978,6 +979,7 @@ fn adapted_producer_evidence() -> (MeasurementCollection, MeasurementPlan, Strin
         objective: None,
         protected_apparatus: None,
         negative_controls: None,
+        execution_procedure: None,
     };
     let scorer_bytes: Vec<u8> = input["scorerBytes"]
         .as_array()

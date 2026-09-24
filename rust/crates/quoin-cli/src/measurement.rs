@@ -3,6 +3,7 @@
 
 //! Rust adapters for measurement collection publication (quoin#373, Stage 8).
 
+mod campaign;
 mod tamper;
 
 use std::io::Read as _;
@@ -67,6 +68,7 @@ pub(crate) fn command() -> Command {
         )
         .subcommand(producer("intervention"))
         .subcommand(producer("operational-release"))
+        .subcommand(campaign::command())
 }
 
 fn repo() -> Arg {
@@ -97,6 +99,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
             "definition",
             "measurement.produce_github_release_operational",
         ),
+        "campaign" => campaign::run(arguments),
         _ => Err("an unknown measurement command reached dispatch".to_owned()),
     }
 }

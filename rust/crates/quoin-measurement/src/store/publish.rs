@@ -80,11 +80,23 @@ pub fn write_measurement_collection(
 ) -> Result<PathBuf, MeasurementError> {
     let source = DiskMeasurement::new(repo);
     let plans = load_measurement_plans(&source, PlanLoadOptions::default())?;
-    let collection = validate::measurement_collection(candidate, &plans)?;
+    write_measurement_collection_with_plans(repo, candidate, &plans)
+}
+
+/// Publish a campaign collection against its exact source-bound selected plans.
+/// The caller must have loaded and validated these plans from the verified
+/// campaign source tree. Admission, apparatus, and artifact checks are shared
+/// with ordinary collection publication.
+pub(crate) fn write_measurement_collection_with_plans(
+    repo: &Path,
+    candidate: &JsonValue,
+    plans: &[crate::types::plan::MeasurementPlan],
+) -> Result<PathBuf, MeasurementError> {
+    let collection = validate::measurement_collection(candidate, plans)?;
     // The protected apparatus first, so a protected file that is a symlink
     // or unreadable is refused under its own `QM-APPARATUS-*` code rather
     // than as an ordinary artifact.
-    let protected = apparatus::resolve_protected(repo, &collection, &plans)?;
+    let protected = apparatus::resolve_protected(repo, &collection, plans)?;
     let unverified = verify_local_artifacts(repo, &collection)?;
     let id = CollectionId::parse(collection.collection_id.as_str())?;
     let path = measurement_path(repo, &id);

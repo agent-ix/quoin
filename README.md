@@ -239,6 +239,33 @@ quoin evidence record-operational --repo . --input operational.json
 See [Assurance workflows](./docs/assurance-workflows.md) for the record shapes,
 expiry behavior, and the boundary that leaves existing run records unchanged.
 
+Generic measurement campaigns run each authored procedure through Engineering
+Assurance's bounded executor and retain a separately replayable verdict:
+
+```bash
+quoin measurement campaign run --repo /path/to/clean-measured-checkout \
+  --definition /path/to/campaign-definition.json --run-id trial-1 \
+  --config /path/to/campaign-run-config.json
+quoin measurement campaign verify --repo /path/to/clean-measured-checkout \
+  --definition-digest SHA256_JCS_DIGEST --run-id trial-1 \
+  --sources /path/to/campaign-sources.json
+```
+
+The definition may live outside the measured checkout, allowing it to pin an
+earlier source revision without a self-referential Git commit. The run config
+uses `quoin.campaign-run-config/v1` and selects exact clean source checkouts,
+producer and checker executables, and runtime bindings. Verification reopens
+the retained evidence and the same pinned source revisions. Member dependencies
+require ordering and completion. Quoin retains every selected producer input
+byte string by digest and independently replays its recorded source-file or
+dependency-artifact origin against the exact Git tree or earlier EA result.
+When an authored procedure declares `inputOrigins`, EA rejects mismatched
+runtime selections and Quoin marks the retained inventory `enforced` only after
+matching every declared role. Older procedures without that declaration remain
+explicitly `unclaimed` for authored origin assurance; their selected bytes and
+recorded origins are still replay-checked. A domain checker interprets the
+measurement-specific meaning of those inputs.
+
 ## Development
 
 ```bash

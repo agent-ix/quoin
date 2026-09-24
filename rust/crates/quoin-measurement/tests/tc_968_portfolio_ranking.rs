@@ -58,6 +58,7 @@ fn plan(id: &str, objective: Option<Objective>) -> MeasurementPlan {
         stage: MeasurementStage::Target,
         metric: text("quality.score"),
         definition_version: text("v1"),
+        execution_procedure: None,
         path: format!("spec/assurance/{id}.md"),
         owner: None,
         action: None,
