@@ -32,7 +32,7 @@
 //! asked is absent from the map [`rule`] reads, and every branch that tests
 //! it is skipped (neither fired nor counted as clean). So an `RT` row's
 //! severity is the rubric applied to axes (a) and (b) only, and an `RC` row's
-//! to axis (c) and the reverse-gap branch only. The trace check is asked in
+//! to axis (c) only. The trace check is asked in
 //! every mode, worded for the artifacts present.
 //!
 //! # Examples
@@ -45,7 +45,7 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
-use typesafe_sdk_questions::{noul, questions, score};
+use typesafe_sdk_questions::{Questions, noul, questions, score};
 
 use super::corpus::Row;
 use super::keys::Mode;
@@ -150,49 +150,65 @@ pub(crate) fn mass(distribution: &Distribution, level: Level) -> f64 {
 // S1: facts and the rule
 // ---------------------------------------------------------------------------
 
-/// One fact S1 asks, as a `noul`.
+/// One fact S1 asks, as a `noul`. Step 5 has two tiers, `high` and
+/// `medium`, and each tier of each axis is asked as its own fact, so the
+/// model never has to place the line between them.
+///
+/// There is no "code exceeds the requirement" fact. v1 of this plan had one,
+/// reusing `FullBatteryV1`'s wording. MP-234 measured that question as a coin
+/// flip (every probability between 0.50 and 0.73), so at the 0.5 threshold it
+/// made clean `RC`/`RTC` rows `medium`, which is the central-tendency collapse
+/// PLAT-1028 exists to fix. Step 5 and the corpus's `rules.severity` have no
+/// exceeds clause either. PR #620 review, before any live call.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Fact {
     /// The requirement is about what the test checks / the code does.
+    /// Defect when `no`.
     TraceCorrect,
-    /// The test would fail if the stated behaviour were broken. Axis (a).
-    TestAssertsIntent,
-    /// The test would still pass against a stub. Axis (b).
+    /// The test would still pass with the stated behaviour broken: it does
+    /// not validate intent. High tier of axis (a). Defect when `yes`.
+    TestPassesWhenBroken,
+    /// The test would still pass against a stub: it does not exercise the
+    /// code. Axis (b), high only. Defect when `yes`.
     AssertionVacuous,
-    /// The test checks every clause the requirement states.
-    TestComplete,
-    /// The code does what the requirement says. Axis (c).
-    CodeImplementsIntent,
-    /// The code handles every case the requirement states.
-    CodeComplete,
-    /// The code does something the requirement does not state.
-    CodeExceedsRequirement,
+    /// The test checks only some of the requirement's clauses. Medium tier
+    /// of axis (a). Defect when `yes`.
+    TestChecksSomeClauses,
+    /// The code contradicts the requirement. High tier of axis (c). Defect
+    /// when `yes`.
+    CodeContradicts,
+    /// The code misses or mishandles a stated case. Medium tier of axis (c).
+    /// Defect when `yes`.
+    CodeMissesStatedCase,
 }
 
 /// Every fact, in the order they are asked.
-const FACTS: [Fact; 7] = [
+const FACTS: [Fact; 6] = [
     Fact::TraceCorrect,
-    Fact::TestAssertsIntent,
+    Fact::TestPassesWhenBroken,
     Fact::AssertionVacuous,
-    Fact::TestComplete,
-    Fact::CodeImplementsIntent,
-    Fact::CodeComplete,
-    Fact::CodeExceedsRequirement,
+    Fact::TestChecksSomeClauses,
+    Fact::CodeContradicts,
+    Fact::CodeMissesStatedCase,
 ];
 
 impl Fact {
-    /// The wire key. Where a fact has a corpus-v2 key of the same meaning,
-    /// this is that key.
+    /// The wire key. Where a fact has a corpus-v2 key of the same meaning
+    /// (`trace_correct`, `assertion_vacuous`), this is that key.
     pub(crate) const fn key(self) -> &'static str {
         match self {
             Self::TraceCorrect => "trace_correct",
-            Self::TestAssertsIntent => "test_asserts_intent",
+            Self::TestPassesWhenBroken => "test_passes_when_broken",
             Self::AssertionVacuous => "assertion_vacuous",
-            Self::TestComplete => "test_complete",
-            Self::CodeImplementsIntent => "code_implements_intent",
-            Self::CodeComplete => "code_complete",
-            Self::CodeExceedsRequirement => "code_exceeds_requirement",
+            Self::TestChecksSomeClauses => "test_checks_only_some_clauses",
+            Self::CodeContradicts => "code_contradicts_requirement",
+            Self::CodeMissesStatedCase => "code_misses_stated_case",
         }
+    }
+
+    /// The answer that is the defect.
+    pub(crate) const fn defect_answer(self) -> bool {
+        !matches!(self, Self::TraceCorrect)
     }
 
     /// The artifact the fact is about, besides the requirement. `None` for
@@ -200,12 +216,10 @@ impl Fact {
     const fn needs(self) -> Option<Artifact> {
         match self {
             Self::TraceCorrect => None,
-            Self::TestAssertsIntent | Self::AssertionVacuous | Self::TestComplete => {
+            Self::TestPassesWhenBroken | Self::AssertionVacuous | Self::TestChecksSomeClauses => {
                 Some(Artifact::Test)
             }
-            Self::CodeImplementsIntent | Self::CodeComplete | Self::CodeExceedsRequirement => {
-                Some(Artifact::Code)
-            }
+            Self::CodeContradicts | Self::CodeMissesStatedCase => Some(Artifact::Code),
         }
     }
 
@@ -226,10 +240,9 @@ impl Fact {
             .collect()
     }
 
-    /// The question text in `mode`. The test facts reuse `FullBatteryV1`'s
-    /// wording where it names no code (`assertion_vacuous`), and otherwise
-    /// say "the implementation", which the wording rule treats as abstract,
-    /// so they are identical in `RT` and `RTC`.
+    /// The question text in `mode`. The test facts say "the implementation",
+    /// which the wording rule treats as abstract, so they read the same in
+    /// `RT` and `RTC`.
     fn question(self, mode: Mode) -> String {
         match self {
             Self::TraceCorrect => {
@@ -249,27 +262,28 @@ impl Fact {
                      from the one {object} about."
                 )
             }
-            Self::TestAssertsIntent => "Suppose the implementation were changed so that it no \
-                 longer does the specific thing the requirement states, while still compiling \
-                 and still returning a well-formed, non-default result. Would this test fail? \
-                 Judge against the requirement's own stated behaviour, not against other things \
-                 the implementation does."
+            Self::TestPassesWhenBroken => "Would this test still pass if the behaviour the \
+                 requirement states were broken, while the implementation still compiled and \
+                 still returned a well-formed, non-default result? Judge against the \
+                 requirement's own stated behaviour, not against other things the \
+                 implementation does."
                 .to_owned(),
             Self::AssertionVacuous => "Would this test still pass if the implementation were \
                  replaced with a stub returning a default?"
                 .to_owned(),
-            Self::TestComplete => "Does the test check every clause the requirement states, \
-                 including each case, boundary and error behaviour it names? Answer yes if the \
+            Self::TestChecksSomeClauses => "Does this test check only some of the clauses, \
+                 cases, boundaries or error behaviours the requirement states, leaving at least \
+                 one stated one unchecked? Answer no if it checks all of them, and no if the \
                  requirement states a single behaviour and the test checks it."
                 .to_owned(),
-            Self::CodeImplementsIntent => "Does the code do what the requirement says?".to_owned(),
-            Self::CodeComplete => "Does the code handle every case, boundary and error \
-                 behaviour the requirement states, exactly as stated? Answer yes if the \
+            Self::CodeContradicts => "Does the code contradict what the requirement states: \
+                 does it do the opposite, or lack the stated behaviour altogether?"
+                .to_owned(),
+            Self::CodeMissesStatedCase => "Does the code do the main behaviour the requirement \
+                 states but miss or mishandle a case, boundary or error behaviour the \
+                 requirement names? Answer no if it handles every stated case, and no if the \
                  requirement names none."
                 .to_owned(),
-            Self::CodeExceedsRequirement => {
-                "Does the code implement behaviour no requirement states?".to_owned()
-            }
         }
     }
 }
@@ -280,18 +294,16 @@ impl Fact {
 pub(crate) enum Branch {
     /// The requirement is not about the test or code shown.
     TraceMismatch,
-    /// Axis (a) fails: the test does not validate intent.
+    /// Axis (a), high tier: the test does not validate intent.
     TestMissesIntent,
-    /// Axis (b) fails: the test does not exercise the code.
+    /// Axis (b): the test does not exercise the code.
     TestHollow,
-    /// Axis (c) fails: the code does not do what the requirement says.
-    CodeMissesIntent,
-    /// Axis (a) partial: some stated clauses or cases unchecked.
+    /// Axis (c), high tier: the code contradicts the requirement.
+    CodeContradicts,
+    /// Axis (a), medium tier: partial validation.
     TestPartial,
-    /// Axis (c) partial: a stated case missed or altered.
-    CodeDrift,
-    /// Reverse gap: the code implements a constraint no requirement states.
-    CodeExceeds,
+    /// Axis (c), medium tier: a stated case missed or mishandled.
+    CodeMissesCase,
     /// No axis fails.
     Clean,
 }
@@ -303,17 +315,15 @@ impl Branch {
             Self::TraceMismatch
             | Self::TestMissesIntent
             | Self::TestHollow
-            | Self::CodeMissesIntent => Level::High,
-            Self::TestPartial | Self::CodeDrift | Self::CodeExceeds => Level::Medium,
+            | Self::CodeContradicts => Level::High,
+            Self::TestPartial | Self::CodeMissesCase => Level::Medium,
             Self::Clean => Level::None,
         }
     }
 
     /// The rubric text the branch transcribes, quoted from
-    /// `skills/gap-analysis/references/step-5-semantic-review.md` (and, for
-    /// [`Branch::CodeExceeds`], `step-4-underspecified-code.md`, which step 5
-    /// names as the source of "the code it governs"). Quoted rather than cited
-    /// by line number, because line numbers move.
+    /// `skills/gap-analysis/references/step-5-semantic-review.md`. Quoted
+    /// rather than cited by line number, because line numbers move.
     pub(crate) const fn rubric(self) -> &'static str {
         match self {
             Self::TraceMismatch => {
@@ -325,17 +335,10 @@ impl Branch {
             Self::TestHollow => {
                 "step 5: \"`high` — ... **or** does not exercise code (false confidence)\""
             }
-            Self::CodeMissesIntent => {
-                "step 5: \"`high` — ... or code contradicts the requirement\""
-            }
-            Self::TestPartial => {
-                "step 5: \"`medium` — partial validation, meaningful edge cases unchecked\""
-            }
-            Self::CodeDrift => {
+            Self::CodeContradicts => "step 5: \"`high` — ... or code contradicts the requirement\"",
+            Self::TestPartial => "step 5: \"`medium` — partial validation\"",
+            Self::CodeMissesCase => {
                 "step 5: \"`medium` — ... meaningful edge cases unchecked, minor drift\""
-            }
-            Self::CodeExceeds => {
-                "step 4 B: \"Each unstated-but-implemented constraint → `medium` finding.\""
             }
             Self::Clean => "step 5: no failing axis, so no finding",
         }
@@ -352,21 +355,19 @@ impl Branch {
 /// this rule never returns it. That is a property of the rubric, recorded in
 /// MP-240, not a choice made here.
 pub(crate) fn rule(facts: &BTreeMap<Fact, bool>) -> Branch {
-    let is = |fact: Fact, value: bool| facts.get(&fact) == Some(&value);
-    if is(Fact::TraceCorrect, false) {
+    let defect = |fact: Fact| facts.get(&fact) == Some(&fact.defect_answer());
+    if defect(Fact::TraceCorrect) {
         Branch::TraceMismatch
-    } else if is(Fact::TestAssertsIntent, false) {
+    } else if defect(Fact::TestPassesWhenBroken) {
         Branch::TestMissesIntent
-    } else if is(Fact::AssertionVacuous, true) {
+    } else if defect(Fact::AssertionVacuous) {
         Branch::TestHollow
-    } else if is(Fact::CodeImplementsIntent, false) {
-        Branch::CodeMissesIntent
-    } else if is(Fact::TestComplete, false) {
+    } else if defect(Fact::CodeContradicts) {
+        Branch::CodeContradicts
+    } else if defect(Fact::TestChecksSomeClauses) {
         Branch::TestPartial
-    } else if is(Fact::CodeComplete, false) {
-        Branch::CodeDrift
-    } else if is(Fact::CodeExceedsRequirement, true) {
-        Branch::CodeExceeds
+    } else if defect(Fact::CodeMissesStatedCase) {
+        Branch::CodeMissesCase
     } else {
         Branch::Clean
     }
@@ -374,11 +375,11 @@ pub(crate) fn rule(facts: &BTreeMap<Fact, bool>) -> Branch {
 
 /// The distribution of [`rule`]'s level when each fact is `yes` with its
 /// `noul` probability, independently: every combination of answers is
-/// enumerated (at most 2^7) and weighted by its probability.
+/// enumerated (at most 2^6) and weighted by its probability.
 ///
 /// Independence is an assumption the facts do not satisfy (a trace mismatch
-/// makes every other defect likely). It is used to give S1 an ordinal and a
-/// confidence, not to claim a calibrated probability.
+/// makes every other defect likely). It is used to give S1 a level, an
+/// ordinal and a confidence, not to claim a calibrated probability.
 pub(crate) fn level_distribution(facts: &[(Fact, f64)]) -> Distribution {
     let mut distribution = [0.0; 4];
     for mask in 0..(1_usize << facts.len()) {
@@ -396,6 +397,24 @@ pub(crate) fn level_distribution(facts: &[(Fact, f64)]) -> Distribution {
     distribution
 }
 
+/// The most probable level under `distribution`, a tie going to the more
+/// severe level. `None` when the distribution carries no mass.
+pub(crate) fn most_probable_level(distribution: &Distribution) -> Option<Level> {
+    if distribution.iter().sum::<f64>() <= 0.0 {
+        return None;
+    }
+    // Scanned highest first, replacing only on a strictly larger mass, so a
+    // tie keeps the more severe level.
+    let mut best: Option<(Level, f64)> = None;
+    for level in Level::ALL.into_iter().rev() {
+        let p = mass(distribution, level);
+        if best.is_none_or(|(_, top)| p > top) {
+            best = Some((level, p));
+        }
+    }
+    best.map(|(level, _)| level)
+}
+
 /// The answers of the single whole-row ask, or empty.
 fn whole_row(answered: &[Answered]) -> RawAnswers {
     answered
@@ -405,26 +424,31 @@ fn whole_row(answered: &[Answered]) -> RawAnswers {
         .unwrap_or_default()
 }
 
+/// S1's questions for `mode`: one `noul` per fact [`Fact::asked_in`] names.
+pub(crate) fn s1_questions(mode: Mode) -> Questions {
+    questions(
+        Fact::asked_in(mode)
+            .into_iter()
+            .map(|fact| (fact.key(), noul(fact.question(mode)))),
+    )
+}
+
 fn s1_asks(row: &Row) -> Vec<Ask> {
-    let facts = Fact::asked_in(row.mode);
-    if facts.is_empty() {
+    if Fact::asked_in(row.mode).is_empty() {
         return Vec::new();
     }
-    let set = questions(
-        facts
-            .iter()
-            .map(|fact| (fact.key(), noul(fact.question(row.mode)))),
-    );
     vec![Ask {
         unit: None,
-        request: request(state(row), set),
+        request: request(state(row), s1_questions(row.mode)),
     }]
 }
 
-/// The level from the facts thresholded at 0.5 (as every `noul` is graded),
-/// its confidence as that level's mass under [`level_distribution`], and the
-/// expected level under the same distribution as the ordinal. Unanswered when
-/// any asked fact is missing, rather than guessing its branch.
+/// S1's level is the most probable level under [`level_distribution`] (a tie
+/// goes to the more severe), not the rule over each fact thresholded alone:
+/// three facts each just under 0.5 can make `high` the likeliest outcome
+/// while every single fact reads clean. The confidence is that level's mass;
+/// the ordinal is the expected level. Unanswered when any asked fact is
+/// missing, rather than guessing its branch.
 fn s1_derive(row: &Row, answered: &[Answered]) -> Predictions {
     let answers = whole_row(answered);
     let mut probabilities = Vec::new();
@@ -434,15 +458,10 @@ fn s1_derive(row: &Row, answered: &[Answered]) -> Predictions {
         };
         probabilities.push((fact, *p));
     }
-    if probabilities.is_empty() {
-        return Predictions::new();
-    }
-    let thresholded: BTreeMap<Fact, bool> = probabilities
-        .iter()
-        .map(|(fact, p)| (*fact, *p >= 0.5))
-        .collect();
-    let level = rule(&thresholded).level();
     let distribution = level_distribution(&probabilities);
+    let Some(level) = most_probable_level(&distribution) else {
+        return Predictions::new();
+    };
     Predictions::from([(
         SEVERITY,
         Prediction {
@@ -464,7 +483,7 @@ const CODE: &[Artifact] = &[Artifact::Code];
 pub(crate) const S1: Variant = Variant {
     id: "S1",
     version: 1,
-    summary: "severity derived in code from seven fact nouls by the step-5 rubric (RTC)",
+    summary: "severity derived in code from six fact nouls by the step-5 rubric (RTC)",
     modes: RTC,
     references: TEST_AND_CODE,
     grades: &[SEVERITY],
@@ -481,10 +500,10 @@ pub(crate) const S1_RT: Variant = Variant {
     ..S1
 };
 
-/// S1 on requirement-plus-code rows: axis (c) and the reverse gap only.
+/// S1 on requirement-plus-code rows: axis (c) only.
 pub(crate) const S1_RC: Variant = Variant {
     id: "S1-RC",
-    summary: "severity derived in code from four fact nouls by the step-5 rubric (RC)",
+    summary: "severity derived in code from three fact nouls by the step-5 rubric (RC)",
     modes: RC,
     references: CODE,
     ..S1
@@ -605,9 +624,9 @@ pub(crate) const EXAMPLES: &[Example] = &[
     example(
         Mode::ReqCode,
         Level::Medium,
-        "Requirement: uploads over 5 MB shall be rejected. Code: rejects them, and also deletes \
-         any stored file older than a week, which nothing states. Medium: it adds behaviour the \
-         requirement does not state.",
+        "Requirement: a CSV export shall quote any field that contains a comma or a line break. \
+         Code: quotes fields containing a comma but not fields containing a line break. Medium: \
+         the main behaviour is right, one stated case is mishandled.",
     ),
     example(
         Mode::ReqCode,
@@ -715,16 +734,16 @@ fn s2_levels(mode: Mode) -> [String; 4] {
     let medium = match (mode.has_test(), mode.has_code()) {
         (true, true) => {
             "the test checks the main behaviour but misses a case, boundary or error the \
-             requirement states; or the code does the main behaviour but misses or alters a \
-             stated case, or adds behaviour the requirement does not state"
+             requirement states; or the code does the main behaviour but misses or mishandles \
+             a stated case, boundary or error"
         }
         (true, false) => {
             "the test checks the main behaviour but misses a case, boundary or error the \
              requirement states"
         }
         _ => {
-            "the code does the main behaviour but misses or alters a stated case, boundary or \
-             error, or adds behaviour the requirement does not state"
+            "the code does the main behaviour but misses or mishandles a stated case, boundary \
+             or error"
         }
     };
     let high = match (mode.has_test(), mode.has_code()) {
@@ -946,8 +965,10 @@ pub(crate) const S3_LEVELS: [&str; 4] = [
 ];
 
 /// S3's instruction. It names no artifact, so one wording serves every mode.
-const S3_INSTRUCTION: &str = "Compare the requirement with everything shown alongside it. Given \
-     the worst mismatch you find between them, what should a reviewer do with this change?";
+const S3_INSTRUCTION: &str = "Compare the requirement with everything shown alongside it. Some \
+     artifacts may not be shown for this row: that is expected, and a missing artifact is not \
+     itself a mismatch. Given the worst mismatch you find between the requirement and what is \
+     shown, what should a reviewer do with this change?";
 
 fn s3_asks(row: &Row) -> Vec<Ask> {
     if !(row.mode.has_test() || row.mode.has_code()) {

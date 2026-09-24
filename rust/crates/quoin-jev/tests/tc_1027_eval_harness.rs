@@ -31,6 +31,7 @@
 mod eval_v2_support;
 mod gap_semantic_support;
 
+use std::fmt::Write as _;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -943,7 +944,8 @@ fn tc_1027_the_coverage_curve_trades_coverage_for_accuracy() {
 // ---------------------------------------------------------------------------
 
 /// A fake Jev: answers every `noul` with `p_yes`, every `choice` with its
-/// alphabetically first label, every `score` with 3.0. Counts requests.
+/// alphabetically first label, every `score` with 3.0 (all mass on level 3).
+/// Counts requests.
 struct FakeJev {
     p_yes: f64,
     calls: AtomicUsize,
@@ -969,7 +971,7 @@ impl Transport for FakeJev {
                            "probabilities": {label: 0.7}})
                 }
                 _ => json!({"type": "score", "score": 3.0, "confidence": 0.6,
-                            "legend": {}, "probabilities": {}}),
+                            "legend": {}, "probabilities": {"3": 1.0}}),
             };
             answers.insert(key.clone(), answer);
         }
@@ -1470,5 +1472,159 @@ fn tc_1027_at_most_three_natural_rows_per_fr() {
             "FR-900 in quoin: 4 natural rows (EV2-0001, EV2-0002, EV2-0003, EV2-0004), \
           at most 3 per FR per repo"
         ]
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Request-digest pins: wording is tied to variant@version (PR #620 review)
+// ---------------------------------------------------------------------------
+
+/// The pinned digest of every registered variant's question text (the
+/// questions of every ask, instructions and labels, never the state) on the
+/// canonical row of each mode it runs in: `four_modes()`'s row for that mode.
+/// A changed wording with an unchanged `version` fails
+/// `tc_1027_request_digest_is_pinned_per_variant_version`; a bumped version has no pin
+/// until one is added here, so a new instrument cannot run under an old
+/// label. The failure message prints the digests to pin.
+const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
+    (
+        "B0@v1",
+        "RTC",
+        "sha256:06b0a47799e9fa6c7059d91db3b0457eb5ed578337128b9a619d41883fe6ce72",
+    ),
+    (
+        "S0@v1",
+        "RTC",
+        "sha256:06b0a47799e9fa6c7059d91db3b0457eb5ed578337128b9a619d41883fe6ce72",
+    ),
+    (
+        "E0@v1",
+        "RTC",
+        "sha256:06b0a47799e9fa6c7059d91db3b0457eb5ed578337128b9a619d41883fe6ce72",
+    ),
+    (
+        "T0@v1",
+        "RTC",
+        "sha256:06b0a47799e9fa6c7059d91db3b0457eb5ed578337128b9a619d41883fe6ce72",
+    ),
+    (
+        "C0@v1",
+        "R",
+        "sha256:61a9cd3492f4f9655ea3422da31e30bf0df0e89f7416f0fb326edaa1fd8d6ea4",
+    ),
+    (
+        "C0@v1",
+        "RT",
+        "sha256:cb993257058030361d99de6e5fe955fff5b6891a0f0bc73660d64bdef421e668",
+    ),
+    (
+        "C0@v1",
+        "RC",
+        "sha256:9c06b2a363798254e4c0890cb10c9eb8e1e8ebdf817c06dbc299defffa9a0458",
+    ),
+    (
+        "C0@v1",
+        "RTC",
+        "sha256:b99912ed3c09d7f9094e23ffa5f3618c328eccd439a9574eb0ac589e3a6a9feb",
+    ),
+    (
+        "S1@v1",
+        "RTC",
+        "sha256:af4001a1b2a994250dd42fffc002d81ff3ef0359b2ad0a715cb8c625017047fa",
+    ),
+    (
+        "S1-RT@v1",
+        "RT",
+        "sha256:a3b3c8666144b550a8bfd64d403edc05ef6b39316509c95778149eef8f4e3219",
+    ),
+    (
+        "S1-RC@v1",
+        "RC",
+        "sha256:b54bb4cdaffaab9f1da35b135aacaccc6d5f97621ab56349ee9f546bfbc9c7d4",
+    ),
+    (
+        "S2@v1",
+        "RTC",
+        "sha256:087dae08a2e4946f8eaf2c7b694566ad2aa3e22ad9cce8f4b316870b9051b7c3",
+    ),
+    (
+        "S2-RT@v1",
+        "RT",
+        "sha256:35dcda595da52ba10aa576fe22a91025d5d85274b63d834d04fee7fa8e20597c",
+    ),
+    (
+        "S2-RC@v1",
+        "RC",
+        "sha256:92b7246971106f34f99681e33a9423175612e3de377bce3ed428397ce7e25640",
+    ),
+    (
+        "S2M@v1",
+        "RTC",
+        "sha256:087dae08a2e4946f8eaf2c7b694566ad2aa3e22ad9cce8f4b316870b9051b7c3",
+    ),
+    (
+        "S2M-RT@v1",
+        "RT",
+        "sha256:35dcda595da52ba10aa576fe22a91025d5d85274b63d834d04fee7fa8e20597c",
+    ),
+    (
+        "S2M-RC@v1",
+        "RC",
+        "sha256:92b7246971106f34f99681e33a9423175612e3de377bce3ed428397ce7e25640",
+    ),
+    (
+        "S3@v1",
+        "RT",
+        "sha256:2690765d45c33f7d8b3f49e8c475221a84c75936171288b0b070251fe15db896",
+    ),
+    (
+        "S3@v1",
+        "RC",
+        "sha256:2690765d45c33f7d8b3f49e8c475221a84c75936171288b0b070251fe15db896",
+    ),
+    (
+        "S3@v1",
+        "RTC",
+        "sha256:2690765d45c33f7d8b3f49e8c475221a84c75936171288b0b070251fe15db896",
+    ),
+];
+
+fn request_digest(variant: &Variant, row: &eval_v2_support::corpus::Row) -> String {
+    let questions: Vec<Value> = (variant.asks)(row)
+        .iter()
+        .map(|ask| serde_json::to_value(&ask.request.questions).unwrap())
+        .collect();
+    quoin_store::digest_bytes_sha256(serde_json::to_string(&questions).unwrap().as_bytes())
+        .to_stored()
+}
+
+/// Provenance: PR #620 review, PLAT-1024 rule 5. Every (variant version,
+/// mode) has a pinned wording digest, and each pin matches: wording cannot
+/// change without a version bump.
+#[test]
+fn tc_1027_request_digest_is_pinned_per_variant_version() {
+    let file = four_modes();
+    let mut actual = Vec::new();
+    for variant in REGISTRY {
+        for row in file.rows.iter().filter(|row| variant.applies_to(row)) {
+            actual.push((
+                variant.label(),
+                row.mode.as_str(),
+                request_digest(variant, row),
+            ));
+        }
+    }
+    let pinned: Vec<(String, &str, String)> = REQUEST_DIGEST_PINS
+        .iter()
+        .map(|(label, mode, digest)| ((*label).to_owned(), *mode, (*digest).to_owned()))
+        .collect();
+    let mut table = String::new();
+    for (label, mode, digest) in &actual {
+        let _ = writeln!(table, "    ({label:?}, {mode:?}, {digest:?}),");
+    }
+    assert_eq!(
+        actual, pinned,
+        "request digests differ from REQUEST_DIGEST_PINS. If a variant's wording changed, bump its \
+         version first; then pin:\n{table}"
     );
 }

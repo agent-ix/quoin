@@ -181,6 +181,84 @@ pub(crate) fn concordance(rows: &[Scored], spec: &KeySpec) -> Option<Concordance
     Some(counts)
 }
 
+/// The most a variant may leave unanswered and still pass an ordering bar,
+/// in percent of its rows (MP-240 Bar C).
+pub(crate) const MAX_ABSTENTION_PERCENT: f64 = 10.0;
+
+/// A variant's ordering against a baseline's on the rows BOTH answered
+/// (PR #620 review). [`concordance`] drops each run's unanswered rows
+/// separately, so a variant that abstains on hard rows is compared over an
+/// easier set; this compares the two over one set, and counts what each
+/// left out.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(crate) struct PairedConcordance {
+    /// The variant's pairs, over the shared rows.
+    pub(crate) variant: Concordance,
+    /// The baseline's pairs, over the same rows.
+    pub(crate) baseline: Concordance,
+    /// Rows both answered with an ordinal.
+    pub(crate) shared: usize,
+    /// The variant's rows.
+    pub(crate) variant_rows: usize,
+    /// The variant's rows with no ordinal.
+    pub(crate) variant_abstained: usize,
+    /// The baseline's rows with no ordinal.
+    pub(crate) baseline_abstained: usize,
+}
+
+impl PairedConcordance {
+    /// The variant's abstention, as a percentage of its rows.
+    pub(crate) fn variant_abstention(&self) -> Option<f64> {
+        (self.variant_rows > 0).then(|| percent(self.variant_abstained, self.variant_rows))
+    }
+
+    /// Bar C: at most [`MAX_ABSTENTION_PERCENT`] of the variant's rows
+    /// unanswered, and a paired index strictly above the baseline's. `None`
+    /// when there is no pair to compare.
+    pub(crate) fn beats_baseline(&self) -> Option<bool> {
+        let (variant, baseline) = (self.variant.index()?, self.baseline.index()?);
+        let abstention = self.variant_abstention()?;
+        Some(abstention <= MAX_ABSTENTION_PERCENT && variant > baseline)
+    }
+}
+
+/// [`PairedConcordance`] of `variant` against `baseline` on `spec`, matching
+/// rows by id. `None` for a non-ordinal key.
+pub(crate) fn paired_concordance(
+    variant: &[Scored],
+    baseline: &[Scored],
+    spec: &KeySpec,
+) -> Option<PairedConcordance> {
+    if !spec.ordinal {
+        return None;
+    }
+    let answered = |row: &Scored| row.prediction.as_ref().and_then(|p| p.ordinal).is_some();
+    let baseline_answered: BTreeMap<&str, &Scored> = baseline
+        .iter()
+        .filter(|row| answered(row))
+        .map(|row| (row.row_id.as_str(), row))
+        .collect();
+    let (mut ours, mut theirs) = (Vec::new(), Vec::new());
+    for row in variant.iter().filter(|row| answered(row)) {
+        if let Some(other) = baseline_answered.get(row.row_id.as_str()) {
+            ours.push(row.clone());
+            theirs.push((*other).clone());
+        }
+    }
+    Some(PairedConcordance {
+        variant: concordance(&ours, spec)?,
+        baseline: concordance(&theirs, spec)?,
+        shared: ours.len(),
+        variant_rows: variant.len(),
+        variant_abstained: variant.iter().filter(|row| !answered(row)).count(),
+        baseline_abstained: baseline.iter().filter(|row| !answered(row)).count(),
+    })
+}
+
+/// For an ordinal key, the baseline variant id its ordering bar compares
+/// against (MP-240 Bar C).
+pub(crate) const ORDINAL_BASELINES: &[(&str, &str)] = &[("severity", "S0")];
+
 /// One point of the coverage/accuracy curve.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct CurvePoint {
@@ -460,12 +538,52 @@ pub(crate) fn render_run(
             .iter()
             .filter(|spec| variant.grades.contains(&spec.key))
         {
-            let _ = write!(
-                out,
-                "{}",
-                render(&label, spec.key, &scored(rows, output, &label, spec.key))
-            );
+            let ours = scored(rows, output, &label, spec.key);
+            let _ = write!(out, "{}", render(&label, spec.key, &ours));
+            let baseline = ORDINAL_BASELINES
+                .iter()
+                .filter(|(key, id)| *key == spec.key && *id != variant.id)
+                .find_map(|(_, id)| variants.iter().find(|other| other.id == *id));
+            if let Some(baseline) = baseline {
+                let theirs = scored(rows, output, &baseline.label(), spec.key);
+                let _ = write!(
+                    out,
+                    "{}",
+                    render_paired(&label, &baseline.label(), &ours, &theirs, spec)
+                );
+            }
         }
     }
     out
+}
+
+/// The paired ordering line: both indices over the rows both answered, and
+/// each side's abstentions.
+fn render_paired(
+    label: &str,
+    baseline: &str,
+    ours: &[Scored],
+    theirs: &[Scored],
+    spec: &KeySpec,
+) -> String {
+    let Some(paired) = paired_concordance(ours, theirs, spec) else {
+        return String::new();
+    };
+    let verdict = match paired.beats_baseline() {
+        Some(true) => "above",
+        Some(false) => "NOT above (or abstains on more than 10%)",
+        None => "no shared pair",
+    };
+    format!(
+        "\nPaired ordering vs `{baseline}` over {} row(s) both answered: {label} {} vs {} \
+         ({verdict}); unanswered: {label} {}/{} ({}), {baseline} {}/{}.\n",
+        paired.shared,
+        show_ratio(paired.variant.index()),
+        show_ratio(paired.baseline.index()),
+        paired.variant_abstained,
+        paired.variant_rows,
+        show_percent(paired.variant_abstention()),
+        paired.baseline_abstained,
+        theirs.len(),
+    )
 }

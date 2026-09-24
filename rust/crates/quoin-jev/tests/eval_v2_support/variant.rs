@@ -63,7 +63,7 @@ use std::sync::LazyLock;
 use regex::Regex;
 use typesafe_sdk_answers::{Answer, SystemOneResponse};
 use typesafe_sdk_client::{Client, SystemOneRequest};
-use typesafe_sdk_questions::{Entry, Questions};
+use typesafe_sdk_questions::{Entry, Question, Questions};
 
 use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 
@@ -810,6 +810,46 @@ pub(crate) struct RunOutput {
     pub(crate) models: BTreeMap<String, usize>,
 }
 
+/// Refuses a `score` answer whose level probabilities are not keyed by the
+/// question's own levels (`"0"` up to one below the number of levels; a
+/// decimal spelling of the same whole number, such as `"2.0"`, is the same
+/// key). An empty distribution is refused too. A variant reading the
+/// distribution (PLAT-1028's S2M) would otherwise leave the row unanswered
+/// without saying why (PR #620 review).
+///
+/// # Errors
+/// Naming the question key and every key the service sent.
+pub(crate) fn check_score_levels(
+    questions: &Questions,
+    answers: &RawAnswers,
+) -> Result<(), String> {
+    for (key, question) in questions {
+        let Question::Score { criteria, .. } = question else {
+            continue;
+        };
+        let Some(RawAnswer::Score { probabilities, .. }) = answers.get(key) else {
+            continue;
+        };
+        let levels = criteria.len();
+        let whole_level = |spelled: &str| {
+            spelled.trim().parse::<f64>().is_ok_and(|value| {
+                (0..levels).any(|level| {
+                    (f64::from(u32::try_from(level).unwrap_or(u32::MAX)) - value).abs() < 1e-9
+                })
+            })
+        };
+        if probabilities.is_empty() || !probabilities.keys().all(|spelled| whole_level(spelled)) {
+            let keys: Vec<&String> = probabilities.keys().collect();
+            return Err(format!(
+                "score `{key}` has {levels} levels, but its probabilities are keyed {keys:?}; \
+                 expected \"0\"..\"{}\"",
+                levels.saturating_sub(1)
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// Runs every variant over every row it applies to, in row then variant
 /// order. Each distinct request is sent once per run: variants sharing a
 /// request shape share its answer. A transport failure aborts the run rather
@@ -841,6 +881,7 @@ pub(crate) async fn run(
                     output.requests_reused += 1;
                     answers.clone()
                 } else {
+                    let questions = ask.request.questions.clone();
                     let response = client
                         .system_one(ask.request)
                         .await
@@ -848,6 +889,8 @@ pub(crate) async fn run(
                     output.requests_sent += 1;
                     *output.models.entry(response.model.clone()).or_default() += 1;
                     let answers = raw_answers(&response);
+                    check_score_levels(&questions, &answers)
+                        .map_err(|error| format!("{} / {}: {error}", row.id, variant.label()))?;
                     cache.insert(key, answers.clone());
                     answers
                 };

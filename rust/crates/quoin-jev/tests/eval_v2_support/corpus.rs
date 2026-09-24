@@ -1020,3 +1020,127 @@ pub(crate) fn record_heldout_run(log: &Path, run: &HeldoutRun) -> Result<(), Str
         .map_err(|error| format!("{}: {error}", log.display()))?;
     writeln!(file, "{line}").map_err(|error| format!("{}: {error}", log.display()))
 }
+
+// ---------------------------------------------------------------------------
+// Held-out selection (PR #620 review)
+// ---------------------------------------------------------------------------
+
+/// The only schema id the held-out selection file may carry.
+pub(crate) const SELECTION_SCHEMA: &str = "quoin-jev.heldout-selection/v1";
+
+/// `fixtures/eval-v2/heldout-selection.json`: which variant each MP chose on
+/// dev for its one held-out run. Committed before that run.
+pub(crate) fn heldout_selection_path() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/eval-v2/heldout-selection.json")
+}
+
+/// The held-out selection file.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct SelectionFile {
+    /// Must be [`SELECTION_SCHEMA`].
+    pub(crate) schema: String,
+    /// At most one entry per MP.
+    pub(crate) selections: Vec<Selection>,
+}
+
+/// One MP's held-out choice.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Selection {
+    /// The MP whose selection rule chose it, e.g. `MP-240`.
+    pub(crate) mp: String,
+    /// The chosen variant id. A family id also covers its per-mode entries:
+    /// `S1` covers `S1-RT` and `S1-RC`, but not `S1X`.
+    pub(crate) variant: String,
+    /// The chosen version. Only this version may run.
+    pub(crate) version: u32,
+    /// The commit at which the selection was made.
+    pub(crate) selected_at_commit: String,
+    /// Where the dev evidence for the choice is (a report path or PR).
+    pub(crate) dev_evidence: String,
+    /// Variant labels (`id@vN`) run beside it as the MP's comparison, e.g.
+    /// `S0@v1` for a bar measured against S0 on the same rows.
+    #[serde(default)]
+    pub(crate) baselines: Vec<String>,
+}
+
+impl Selection {
+    /// Whether this entry lets variant `id` at `version` run on held-out.
+    pub(crate) fn covers(&self, id: &str, version: u32) -> bool {
+        let family = id == self.variant
+            || id
+                .strip_prefix(self.variant.as_str())
+                .is_some_and(|rest| rest.starts_with('-'));
+        (family && version == self.version)
+            || self
+                .baselines
+                .iter()
+                .any(|label| *label == format!("{id}@v{version}"))
+    }
+}
+
+/// Parses and checks a selection file: the schema id, no empty field, and
+/// no MP listed twice.
+///
+/// # Errors
+/// Naming the defect.
+pub(crate) fn parse_selection(text: &str) -> Result<SelectionFile, String> {
+    let file: SelectionFile = serde_json::from_str(text)
+        .map_err(|error| format!("held-out selection does not parse: {error}"))?;
+    if file.schema != SELECTION_SCHEMA {
+        return Err(format!(
+            "held-out selection schema is {:?}, not {SELECTION_SCHEMA:?}",
+            file.schema
+        ));
+    }
+    let mut mps = BTreeSet::new();
+    for selection in &file.selections {
+        for (field, value) in [
+            ("mp", &selection.mp),
+            ("variant", &selection.variant),
+            ("selected_at_commit", &selection.selected_at_commit),
+            ("dev_evidence", &selection.dev_evidence),
+        ] {
+            if value.trim().is_empty() {
+                return Err(format!("held-out selection entry has an empty {field}"));
+            }
+        }
+        if !mps.insert(selection.mp.as_str()) {
+            return Err(format!(
+                "{} has more than one held-out selection; an MP selects once",
+                selection.mp
+            ));
+        }
+    }
+    Ok(file)
+}
+
+/// Refuses a held-out run of any variant no selection entry covers.
+///
+/// # Errors
+/// Naming every uncovered `id@vN`.
+pub(crate) fn check_heldout_selected(
+    file: &SelectionFile,
+    variants: &[(&str, u32)],
+) -> Result<(), String> {
+    let uncovered: Vec<String> = variants
+        .iter()
+        .filter(|(id, version)| {
+            !file
+                .selections
+                .iter()
+                .any(|selection| selection.covers(id, *version))
+        })
+        .map(|(id, version)| format!("{id}@v{version}"))
+        .collect();
+    if uncovered.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{uncovered:?} are not selected for held-out in {}; a held-out run needs a \
+             committed selection entry first",
+            heldout_selection_path().display()
+        ))
+    }
+}

@@ -20,7 +20,7 @@
 //! | --- | --- |
 //! | `QUOIN_JEV_VARIANTS` | comma-separated variant ids; default every registered one |
 //! | `QUOIN_JEV_SPLIT` | `dev` (default) or `heldout` |
-//! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; the seal is verified and the run logged before any number prints |
+//! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; the seal is verified, every variant must be covered by `fixtures/eval-v2/heldout-selection.json`, and the run is logged before any number prints |
 //! | `QUOIN_JEV_HELDOUT_RERUN` | a reason; required to run a variant version already on the held-out log |
 //! | `QUOIN_JEV_EXTERNAL_CORPUS` / `QUOIN_JEV_EXTERNAL_ROOT` | optional external corpus and its checkouts |
 //! | `QUOIN_JEV_CASSETTE` | a cassette file (PLAT-977): answers are recorded there, and re-grading replays them |
@@ -161,6 +161,17 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     let seals = if split == Split::Heldout {
         let refs: Vec<&Source> = sources.iter().collect();
         let seals = authorize_heldout(env(HELDOUT_ENV).as_deref(), &refs)
+            .unwrap_or_else(|error| panic!("{error}"));
+        let selection_path = corpus::heldout_selection_path();
+        let selection = std::fs::read_to_string(&selection_path)
+            .map_err(|error| format!("{}: {error}", selection_path.display()))
+            .and_then(|text| corpus::parse_selection(&text))
+            .unwrap_or_else(|error| panic!("{error}"));
+        let chosen: Vec<(&str, u32)> = variants
+            .iter()
+            .map(|variant| (variant.id, variant.version))
+            .collect();
+        corpus::check_heldout_selected(&selection, &chosen)
             .unwrap_or_else(|error| panic!("{error}"));
         check_heldout_rerun(
             &corpus::heldout_log_path(),

@@ -51,7 +51,7 @@ maths in `tests/support/grading.rs`. The variants are in
 | family | registry ids | how severity is obtained | ordinal graded for ordering |
 | --- | --- | --- | --- |
 | `S0` (baseline) | `S0` (RTC only) | `FullBatteryV1`'s severity `score`, rounded to the nearest level | the raw score |
-| `S1` | `S1` (RTC), `S1-RT`, `S1-RC` | fact `noul`s only (trace correct; test asserts intent; test passes against a stub; test checks every clause; code implements intent; code handles every stated case; code exceeds requirement), with only the present artifact's facts asked. Severity is computed in code by a transcription of the step-5 rubric, one branch per rubric clause | expected level under the fact probabilities, treated as independent |
+| `S1` | `S1` (RTC), `S1-RT`, `S1-RC` | fact `noul`s only, each rubric tier asked as its own fact: trace correct (no -> `high`); the test would still pass with the stated behaviour broken (`high`); the test would pass against a stub (`high`); the test checks only some stated clauses (`medium`); the code contradicts the requirement (`high`); the code misses or mishandles a stated case (`medium`). Only the present artifact's facts are asked. The level is the most probable level of the step-5 rule under the fact probabilities, treated as independent, with a tie going to the more severe level; its confidence is that level's mass | expected level under the same distribution |
 | `S2` | `S2` (RTC), `S2-RT`, `S2-RC` | a severity `score` whose four levels are concrete situations, with invented worked examples in the instruction (three for `high`, two for each other level, per mode) | the expected score |
 | `S2M` | `S2M` (RTC), `S2M-RT`, `S2M-RC` | S2's identical request. `high` when the probability mass on `high` is at least 0.25 (a uniform prior's share); otherwise S2's answer | P(`high`) |
 | `S3` | `S3` (RT, RC, RTC) | a severity `score` whose levels are review actions (no action / backlog / fix before release / block merge), mapped to `none`/`low`/`medium`/`high` by position | the expected score |
@@ -74,6 +74,10 @@ Per variant, per mode slice, and per truth-kind group:
    0.95: the share of rows answered at or above the threshold, and the
    accuracy on them. Reported only, not gated.
 
+5. **Paired mutant contrast.** Over (source row, mutant) pairs linked by
+   `mutation.source_id`: successes, failures and ties under Bar D's rule
+   below, and the one-sided sign-test p-value over the non-tie pairs.
+
 ECE, no-defect recall and the per-class table are reported and not gated.
 
 ## Collection Procedure
@@ -94,8 +98,18 @@ model, and the run records which model answered. Repeat runs are
 replications: they are reported and not pooled.
 
 Phase 2 may revise variants on dev. Any change to wording or to a derive rule
-bumps the variant's `version`. The report states how many versions of each
-family were tried on dev. The bars below do not move.
+bumps the variant's `version`. Every `variant@version` carries a
+request-digest pin (`REQUEST_DIGEST_PINS` in `tc_1027_eval_harness.rs`,
+checked by `tc_1027_request_digest_is_pinned_per_variant_version`): the
+sha256 of the questions it sends, instructions and labels included, on a
+fixed canonical row per mode. A wording change without a version bump fails
+the gate, and a bumped version cannot run until it is pinned.
+
+**Dev iteration is capped at 5 versions per family** (v1 to v5). The report
+states how many versions of each family were tried on dev. A version past
+the cap may still be run, but it is itself reported, with the family's full
+version count, beside any result it produces, and it is named as past the
+cap wherever that result is quoted. The bars below do not move.
 
 ## Interpretation
 
@@ -111,14 +125,24 @@ Known properties of the variants, stated before any live call:
 - **S1 never answers `low`.** Step 5 names conditions for `high` and `medium`
   only, and S1 transcribes step 5. Its `low` recall is 0 by construction. On
   rows labelled `low` it can only score through a contested alternative.
-- **S1's `code exceeds requirement -> medium` branch comes from step 4 B**
-  ("each unstated-but-implemented constraint → `medium` finding"), not from
-  step 5. Step 5 takes "the code it governs" from step 4, and step 4 A's
-  visibility split (high / medium / low) is not asked.
+- **S1 has no "code exceeds the requirement" branch. It was dropped before
+  any live call (PR #620 review).** v1 as first committed asked
+  `FullBatteryV1`'s exceeds question and mapped `yes` to `medium`. MP-234
+  measured that question as a coin flip: every probability sat between 0.50
+  and 0.73. At the 0.5 threshold it would have turned clean `RC` and `RTC`
+  rows `medium`, which is the collapse to the middle this plan exists to
+  fix. Neither step 5 nor the corpus's `rules.severity` has an exceeds
+  clause. S2's levels and examples teach no exceeds `medium` either.
+- **S1 asks each rubric tier separately.** Step 5 puts "test does not
+  validate intent" and "code contradicts the requirement" at `high`, and
+  "partial validation, meaningful edge cases unchecked, minor drift" at
+  `medium`. Each is its own fact, so the model never places the line
+  between tiers.
 - **S1 in `RT` and `RC`** applies only the branches whose facts were asked.
   An `RT` row's severity ignores axis (c). An `RC` row's ignores axes (a) and
   (b). This is the rubric applied to what exists, not a claim about the
-  missing artifact.
+  missing artifact. S3's single wording tells the model that an artifact
+  missing from the row is expected and is not itself a mismatch.
 - **S1's ordinal assumes the facts are independent.** They are not: a trace
   mismatch makes every other defect likely. The ordinal is for ranking, not a
   calibrated probability.
@@ -142,31 +166,79 @@ family is gated per mode, on the dev split, pooled across truth kinds:
 - **Bar B, high recall ≥ 50%.** Of the rows labelled `high`, at least half
   are answered `high`.
 - **Bar C, concordance above S0.** On RTC, the concordance index is strictly
-  greater than S0's on the same RTC rows in the same run. S0 has no RT or RC
-  wording, so in RT and RC Bar C is concordance > 0.5, the value a constant
-  or a coin scores.
+  greater than S0's, both computed over only the rows BOTH the variant and
+  S0 answered in the same run (`metrics::paired_concordance`). Dropping each
+  side's unanswered rows separately would let a variant that abstains on
+  hard rows be ranked over an easier set. Each side's abstention count is
+  reported. S0 has no RT or RC wording, so in RT and RC Bar C is
+  concordance > 0.5, the value a constant or a coin scores. **In every mode,
+  a variant that leaves more than 10% of its rows unanswered fails Bar C**,
+  whatever its concordance.
+
+- **Bar D, paired mutant contrast.** Pairs come only from
+  `mutation.source_id`: each mutant names its unmutated source row, and the
+  two share a split. Bar D uses every dev pair (source row, mutant) whose
+  mutant is a violating-code mutant, a test-weakening mutant or a
+  `trace_swap`, and whose source row is NOT labelled `high` (a rise from
+  `high` is impossible). On the variant's severity ordinal (the same one Bar
+  C ranks by), with δ = 0.5 levels:
+  - the pair **succeeds** iff the mutant's ordinal is at least the `medium`
+    level (2) AND it rose from the source's by at least δ;
+  - the pair **fails** iff the ordinal fell from the source's by at least δ;
+  - anything else is a **tie** and is excluded;
+  - a pair in which the variant leaves either row unanswered **fails**, so
+    abstaining cannot win Bar D.
+
+  D passes on a one-sided sign test at α = 0.05 over the non-tie pairs
+  (successes > failures, binomial p = 0.5). It is gateable only with at
+  least 10 non-tie pairs; fewer is "not gateable (n too small)". D is
+  computed per mode, and reported per mutant kind as a breakdown. Its truth
+  is by-construction (the mutation made the row worse), so D is known truth.
+  This rule is shared with the sibling PLAT-1024 plans. It is implemented in
+  phase 2 on the generic paired-contrast helper PLAT-1029 adds to
+  `metrics.rs`, before any live call.
 
 **Minimum slice.** A mode is gated only if its dev slice has at least 30
 severity rows, of which at least 10 are labelled `high`. A smaller slice is
 reported as "not gateable (n too small)", and no pass or fail is claimed for
 it.
 
-**Truth kinds.** The bars are evaluated on the pooled slice. The same three
-numbers are also reported on the mechanical + by-construction slice and on
-the `AGENT-LABELLED` slice. Suppose a family passes pooled but fails on a
-gateable mechanical + by-construction slice (same minimum). That pass is
-reported as "passes on agent-labelled truth only", and it does not qualify
-for selection.
+**Truth kinds.** Bars A, B and C are evaluated on the pooled slice. The
+same three numbers are also reported on the mechanical + by-construction
+slice and on the `AGENT-LABELLED` slice. A family qualifies for selection on
+known truth by either path, on RTC:
+
+1. its mechanical + by-construction slice is itself gateable (same minimum)
+   AND passes A, B and C there, and A, B and C also pass pooled; or
+2. Bar D is gateable on RTC and passes.
+
+Otherwise it does not qualify. A family that
+passes pooled but fails on that slice is reported as "passes on
+agent-labelled truth only". One whose mechanical + by-construction slice is
+not gateable, and whose Bar D is not gateable either, is reported as "not
+selectable (insufficient mechanical truth)". Neither is a pass.
 
 **Selection rule for the held-out split (decided now).** Only a family that
-passes A, B and C on RTC dev qualifies. RTC is the one mode where S0 exists to
+qualifies on known truth on RTC dev, by either path above, qualifies. RTC is the one mode where S0 exists to
 beat. Of the qualifying families, the one with the highest RTC dev
 concordance index goes to held-out. Ties are broken by higher RTC high recall,
-then by higher RTC margin, then by the fixed order S1, S2, S2M, S3. The
+then by higher RTC margin, then by the lower Bar D sign-test p-value,
+then by the fixed order S1, S2, S2M, S3. The
 winning family's registered versions at selection time run once on held-out,
 in every mode it covers, under the harness's held-out seal and run log. The
-same three bars are reported there once. If no family qualifies, nothing runs
-on held-out and the PLAT-1028 result is "no variant beats S0 on dev".
+same four bars are reported there once. The choice is committed first as
+this plan's single entry in `fixtures/eval-v2/heldout-selection.json`
+(`rust/crates/quoin-jev/tests/fixtures/eval-v2/heldout-selection.json`)
+(variant, version, the commit it was selected at, and the dev evidence), with
+`S0@v1` as its baseline. The runner refuses a held-out run of any variant
+version that file does not cover, and the file refuses a second entry for
+this plan.
+
+If no family qualifies, nothing runs on held-out. What is reported then
+depends on why. If at least one family was gateable on RTC by either
+known-truth path and none passed, the PLAT-1028 result is "no
+variant beats S0 on dev". If no family was gateable, it is "no claim": the
+corpus was too small to judge, and that says nothing about the variants.
 
 Compare only like variant version, corpus revision and label revision. An
 edit to the corpus's severity labels is a new definition version.
