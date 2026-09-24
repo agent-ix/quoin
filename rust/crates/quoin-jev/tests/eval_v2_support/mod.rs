@@ -37,5 +37,7 @@ pub(crate) mod corpus;
 pub(crate) mod keys;
 pub(crate) mod metrics;
 pub(crate) mod patch;
+#[path = "variants/severity.rs"]
+pub(crate) mod severity;
 pub(crate) mod units;
 pub(crate) mod variant;

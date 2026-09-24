@@ -1003,7 +1003,9 @@ fn fake_client(p_yes: f64) -> (typesafe_sdk_client::Client, Arc<FakeJev>) {
 async fn tc_1027_the_runner_grades_every_baseline_end_to_end() {
     let file = four_modes();
     let (client, fake) = fake_client(0.9);
-    let variants: Vec<&Variant> = REGISTRY.iter().collect();
+    // The baselines only: experiment variants add their own requests, and
+    // each ticket's own tests count those.
+    let variants = variant::resolve("B0,S0,E0,T0,C0").unwrap();
     let output = variant::run(&client, &file.rows, &variants).await.unwrap();
 
     // One battery request (the RTC row) and one criterion-strength request

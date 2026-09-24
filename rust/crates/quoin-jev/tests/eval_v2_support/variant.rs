@@ -69,6 +69,7 @@ use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 
 use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
+use super::severity;
 use super::units::{Unit, split_units};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
@@ -88,12 +89,17 @@ pub(crate) enum RawAnswer {
         /// Every label's probability.
         probabilities: BTreeMap<String, f64>,
     },
-    /// A `score`: the expected level and its confidence.
+    /// A `score`: the expected level, its confidence, and every level's
+    /// probability.
     Score {
         /// The expected score, possibly between levels.
         score: f64,
         /// Its reported confidence.
         confidence: f64,
+        /// Every level's probability, keyed by the level as the service
+        /// spells it (a decimal string). PLAT-1028's S2 reads the mass on
+        /// the top level, not only the expected score.
+        probabilities: BTreeMap<String, f64>,
     },
 }
 
@@ -120,6 +126,11 @@ pub(crate) fn raw_answers(response: &SystemOneResponse) -> RawAnswers {
                 Answer::Score(score) => RawAnswer::Score {
                     score: score.score,
                     confidence: score.confidence,
+                    probabilities: score
+                        .probabilities
+                        .iter()
+                        .map(|(level, p)| (level.clone(), *p))
+                        .collect(),
                 },
             };
             (key.clone(), raw)
@@ -196,7 +207,24 @@ impl Variant {
 }
 
 /// Every variant, in the order a default run uses.
-pub(crate) const REGISTRY: &[Variant] = &[B0, S0, E0, T0, C0];
+pub(crate) const REGISTRY: &[Variant] = &[
+    B0,
+    S0,
+    E0,
+    T0,
+    C0,
+    // PLAT-1028 severity variants; bars in spec/assurance/MP-240.
+    severity::S1,
+    severity::S1_RT,
+    severity::S1_RC,
+    severity::S2,
+    severity::S2_RT,
+    severity::S2_RC,
+    severity::S2M,
+    severity::S2M_RT,
+    severity::S2M_RC,
+    severity::S3,
+];
 
 /// Resolves a comma-separated id list against [`REGISTRY`].
 ///
@@ -307,7 +335,10 @@ pub(crate) fn choice_prediction(answers: &RawAnswers, key: &str) -> Option<Predi
 /// A severity `score` answer: rounded to the nearest rubric level, with the
 /// raw score as the ordinal so ordering quality sees between-level values.
 pub(crate) fn severity_prediction(answers: &RawAnswers, key: &str) -> Option<Prediction> {
-    let RawAnswer::Score { score, confidence } = answers.get(key)? else {
+    let RawAnswer::Score {
+        score, confidence, ..
+    } = answers.get(key)?
+    else {
         return None;
     };
     Some(Prediction {
@@ -391,7 +422,9 @@ pub(crate) fn rollup_max_level(
         .iter()
         .filter(|answered| answered.unit.is_some())
         .filter_map(|answered| match answered.answers.get(key) {
-            Some(RawAnswer::Score { score, confidence }) => Some((*score, *confidence)),
+            Some(RawAnswer::Score {
+                score, confidence, ..
+            }) => Some((*score, *confidence)),
             _ => None,
         })
         .reduce(|best, next| if next.0 > best.0 { next } else { best })?;
