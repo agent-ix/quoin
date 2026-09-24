@@ -26,15 +26,18 @@
 //! last logical line. The docstring is the body's first statement, so it is
 //! always inside.
 //!
-//! [`split_python_units`] applies one rule, first match wins:
+//! [`split_python_units`] mirrors the Rust splitter's rule exactly, so a
+//! per-unit variant sees the same shapes in both languages and its results
+//! are not skewed by language. First match wins:
 //!
 //! 1. Two or more `def`s not nested in another `def` (module-level functions
 //!    and methods) → one [`UnitKind::Function`] unit per `def`.
-//! 2. Otherwise, the top-level statements of the single `def`'s body (or of
-//!    the whole text when there is none) → one [`UnitKind::Statement`] unit
-//!    each, when that yields two or more. A compound statement keeps its
-//!    `elif` / `else` / `except` / `finally` clauses, decorators stay with the
-//!    `def` or `class` they decorate, and a leading docstring is not a unit.
+//! 2. Otherwise, in the body of the single `def` (or the whole text when
+//!    there is none), every clause of every `if` / `elif` / `else`,
+//!    `try` / `except` / `else` / `finally` and `match` / `case` statement at
+//!    the body's own indentation → one [`UnitKind::Branch`] unit each, when
+//!    that yields two or more. A comment between two clauses belongs to the
+//!    clause after it.
 //! 3. Otherwise one [`UnitKind::Whole`] unit holding the whole body.
 //!
 //! Limits, all lexical: an f-string that nests its own quote character
@@ -42,29 +45,32 @@
 //! the same bytes unless a bracket or `#` sits between them; a non-ASCII
 //! identifier character directly after a keyword is not a word boundary.
 
-use super::{Unit, UnitKind, short_label, skip_ws, word_at};
+use super::{Unit, UnitKind, short_label, skip_ws, whole, word_at};
 
 /// What every byte of a string literal becomes in the mask: not whitespace
 /// (so a docstring-only line is still a line), not a bracket, not an
 /// identifier byte, and not a newline.
 const MASKED_STRING: u8 = b'"';
 
-/// The clause keywords that continue a compound statement at its own
-/// indentation.
-const CLAUSES: [&str; 4] = ["elif", "else", "except", "finally"];
-
-/// The letters a string prefix may use (`r`, `b`, `u`, `f` and pairs).
-const STRING_PREFIX: &[u8] = b"rRbBuUfF";
+/// The UTF-8 byte-order mark.
+const BOM: &str = "\u{feff}";
 
 /// `text`'s bytes with every comment replaced by spaces and every string
 /// literal, quotes and inner newlines included, replaced by
-/// [`MASKED_STRING`]. Same length as `text`, so every index maps back
-/// unchanged; every `\n` left is a real line break; and every masked range is
-/// whole characters, so every index this module slices at is a char boundary.
+/// [`MASKED_STRING`]. A leading byte-order mark becomes form feeds, which
+/// are whitespace of zero indentation width (as in Python's tokenizer), so
+/// the first line keeps indentation 0 and its decorator stays attached.
+/// Same length as `text`, so every index maps back unchanged; every `\n`
+/// left is a real line break; and every masked range is whole characters,
+/// so every index this module slices at is a char boundary.
 fn mask(text: &str) -> Vec<u8> {
     let bytes = text.as_bytes();
     let mut out = bytes.to_vec();
     let mut at = 0usize;
+    if text.starts_with(BOM) {
+        fill(&mut out, 0, BOM.len(), b'\x0c');
+        at = BOM.len();
+    }
     while let Some(&byte) = bytes.get(at) {
         match byte {
             b'#' => {
@@ -326,7 +332,7 @@ fn block_text(text: &str, masked: &[u8], lines: &[Line], block: &Block) -> Strin
         let previous = line_start(masked, start - 1);
         let comment_only = text
             .get(previous..start)
-            .is_some_and(|line| line.trim_start().starts_with('#'))
+            .is_some_and(|line| line.trim_start_matches(BOM).trim_start().starts_with('#'))
             && masked
                 .get(previous..start)
                 .is_some_and(|line| line.iter().all(u8::is_ascii_whitespace));
@@ -342,6 +348,7 @@ fn block_text(text: &str, masked: &[u8], lines: &[Line], block: &Block) -> Strin
         .map_or(header.end, |last| last.end);
     text.get(start..end)
         .unwrap_or_default()
+        .trim_start_matches(BOM)
         .trim_end()
         .to_owned()
 }
@@ -353,8 +360,9 @@ fn block_text(text: &str, masked: &[u8], lines: &[Line], block: &Block) -> Strin
 /// `.` too). A `def` nested inside another `def`'s body is never a match; a
 /// method is. For a path, the segment before the name is the owning class:
 /// when `source` has a `class` of that name, only `def`s directly in such a
-/// class body match; when it has none (the qualifier is a module), the path
-/// is matched on its last segment alone.
+/// class body match; when it has none, the qualifier is read as a module
+/// (`mymod.run`) and only defs outside any class match, so `Foo.run` never
+/// resolves to `Bar.run`.
 ///
 /// # Errors
 /// When no `def` matches, or more than one does: an ambiguous symbol is
@@ -379,13 +387,13 @@ pub(crate) fn extract_python_def(source: &str, name: &str) -> Result<String, Str
             block.kind == BlockKind::Def && block.name == short && !nested_in_def(&blocks, block)
         })
         .collect();
-    if let Some(qualifier) = qualifier
-        && blocks
+    if let Some(qualifier) = qualifier {
+        let is_class = blocks
             .iter()
-            .any(|block| block.kind == BlockKind::Class && block.name == qualifier)
-    {
-        candidates.retain(|block| {
-            owning_class(&blocks, block).is_some_and(|class| class.name == qualifier)
+            .any(|block| block.kind == BlockKind::Class && block.name == qualifier);
+        candidates.retain(|block| match owning_class(&blocks, block) {
+            Some(class) => is_class && class.name == qualifier,
+            None => !is_class,
         });
     }
     match candidates.as_slice() {
@@ -428,79 +436,143 @@ pub(crate) fn split_python_units(body: &str) -> Vec<Unit> {
     let range = functions
         .first()
         .map_or(0..lines.len(), |block| block.line + 1..block.end);
-    let statements = statements(body, &masked, lines.get(range).unwrap_or_default());
-    if statements.len() >= 2 {
-        return statements;
+    let branches = branches(body, &masked, lines.get(range).unwrap_or_default());
+    if branches.len() >= 2 {
+        return branches;
     }
-    vec![Unit {
-        kind: UnitKind::Whole,
-        label: "whole body".to_owned(),
-        text: body.to_owned(),
-    }]
+    vec![whole(body)]
 }
 
-/// Whether `line` is a bare string literal (a docstring), prefix allowed.
-fn string_only(masked: &[u8], line: &Line) -> bool {
-    let bytes = masked.get(line.head..line.end).unwrap_or_default();
-    let prefix = bytes
-        .iter()
-        .take(2)
-        .take_while(|byte| STRING_PREFIX.contains(*byte))
-        .count();
-    let rest = bytes.get(prefix..).unwrap_or_default();
-    rest.first() == Some(&MASKED_STRING)
-        && rest
-            .iter()
-            .all(|byte| *byte == MASKED_STRING || byte.is_ascii_whitespace())
+/// The clause keywords that may follow an `if` at its own indentation.
+const IF_CLAUSES: &[&str] = &["elif", "else"];
+/// The clause keywords that may follow a `try` at its own indentation.
+const TRY_CLAUSES: &[&str] = &["except", "else", "finally"];
+
+/// Whether `line` opens a `match` statement: `match` is a soft keyword, so
+/// the line must also end in the `:` that opens its block.
+fn opens_match(masked: &[u8], line: &Line) -> bool {
+    word_at(masked, line.head, "match")
+        && masked
+            .get(line.head..line.end)
+            .and_then(|bytes| bytes.iter().rev().find(|byte| !byte.is_ascii_whitespace()))
+            == Some(&b':')
 }
 
-/// One [`UnitKind::Statement`] unit per statement at the indentation of
-/// `lines`' first line, skipping a leading docstring.
-fn statements(text: &str, masked: &[u8], lines: &[Line]) -> Vec<Unit> {
+/// The clause header lines of the compound statement opened at `lines[at]`,
+/// and one past its last line; `None` when that line opens no `if`, `try` or
+/// `match`. For `if`/`try` the clauses are the opener and every `elif` /
+/// `else` / `except` / `finally` at its indentation; for `match` they are
+/// the `case` lines (the `match` line itself is no clause).
+fn clauses(masked: &[u8], lines: &[Line], at: usize) -> Option<(Vec<usize>, usize)> {
+    let line = lines.get(at)?;
+    let base = line.indent;
+    let deeper = |index: usize| lines.get(index).is_some_and(|next| next.indent > base);
+    let mut next = at + 1;
+    if opens_match(masked, line) {
+        let case_indent = lines.get(next).filter(|_| deeper(next))?.indent;
+        let mut starts = Vec::new();
+        while deeper(next) {
+            if lines.get(next).is_some_and(|case| {
+                case.indent == case_indent && word_at(masked, case.head, "case")
+            }) {
+                starts.push(next);
+            }
+            next += 1;
+        }
+        return Some((starts, next));
+    }
+    let continuations = if word_at(masked, line.head, "if") {
+        IF_CLAUSES
+    } else if word_at(masked, line.head, "try") {
+        TRY_CLAUSES
+    } else {
+        return None;
+    };
+    let mut starts = vec![at];
+    loop {
+        while deeper(next) {
+            next += 1;
+        }
+        let continues = lines.get(next).is_some_and(|clause| {
+            clause.indent == base
+                && continuations
+                    .iter()
+                    .any(|keyword| word_at(masked, clause.head, keyword))
+        });
+        if !continues {
+            return Some((starts, next));
+        }
+        starts.push(next);
+        next += 1;
+    }
+}
+
+/// The index of the `:` ending the clause header whose first token is at
+/// `head`: the first at bracket depth zero that is not a walrus `:=`.
+fn header_colon(masked: &[u8], head: usize, end: usize) -> usize {
+    let mut depth = 0i64;
+    for index in head..end {
+        match masked.get(index) {
+            Some(b'(' | b'[' | b'{') => depth += 1,
+            Some(b')' | b']' | b'}') => depth -= 1,
+            Some(b':') if depth == 0 && masked.get(index + 1) != Some(&b'=') => return index,
+            _ => {}
+        }
+    }
+    end
+}
+
+/// One [`UnitKind::Branch`] unit per clause of every `if` / `try` / `match`
+/// statement at the indentation of `lines`' first line, as the Rust half
+/// takes every top-level `if` chain and `match`. A clause's text runs from
+/// the end of the clause before it, so a comment between two clauses stays
+/// with the clause it precedes rather than falling between units.
+fn branches(text: &str, masked: &[u8], lines: &[Line]) -> Vec<Unit> {
     let Some(base) = lines.first().map(|line| line.indent) else {
         return Vec::new();
     };
     let mut units = Vec::new();
     let mut index = 0usize;
     while let Some(line) = lines.get(index) {
-        let mut decorating = masked.get(line.head) == Some(&b'@');
-        let mut next = index + 1;
-        while let Some(following) = lines.get(next) {
-            let joins = if following.indent != base {
-                following.indent > base
-            } else if decorating {
-                let decorator = masked.get(following.head) == Some(&b'@');
-                decorating = decorator;
-                decorator || header(text, masked, following.head).is_some()
-            } else {
-                CLAUSES
-                    .iter()
-                    .any(|clause| word_at(masked, following.head, clause))
+        let found = (line.indent == base)
+            .then(|| clauses(masked, lines, index))
+            .flatten();
+        let Some((starts, end)) = found else {
+            index += 1;
+            continue;
+        };
+        for (position, start) in starts.iter().enumerate() {
+            let Some(header) = lines.get(*start) else {
+                continue;
             };
-            if !joins {
-                break;
-            }
-            next += 1;
-        }
-        let end = lines
-            .get(next - 1)
-            .map_or(line.end, |last_line| last_line.end);
-        let docstring = index == 0 && next == 1 && string_only(masked, line);
-        if !docstring {
-            let first_line = text
-                .get(line.head..line_end(masked, line.head))
+            let last = starts.get(position + 1).map_or(end, |next| *next) - 1;
+            let from = if position == 0 {
+                header.head
+            } else {
+                lines
+                    .get(*start - 1)
+                    .map_or(header.head, |before| before.end + 1)
+            };
+            let to = lines
+                .get(last)
+                .map_or(header.end, |last_line| last_line.end);
+            let keyword: String = text
+                .get(header.head..)
+                .unwrap_or_default()
+                .chars()
+                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                .collect();
+            let colon = header_colon(masked, header.head, header.end);
+            let condition = text
+                .get(header.head + keyword.len()..colon)
                 .unwrap_or_default();
             units.push(Unit {
-                kind: UnitKind::Statement,
-                label: short_label("statement", first_line),
-                text: text
-                    .get(line.head..end)
-                    .unwrap_or_default()
-                    .trim_end()
-                    .to_owned(),
+                kind: UnitKind::Branch,
+                label: short_label(&keyword, condition),
+                text: text.get(from..to).unwrap_or_default().trim().to_owned(),
             });
         }
-        index = next;
+        index = end.max(index + 1);
     }
     units
 }

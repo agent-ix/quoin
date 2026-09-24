@@ -147,6 +147,28 @@ fn tc_1035_a_method_resolves_inside_its_class() {
     );
 }
 
+/// Provenance: PLAT-1035 (review finding 1). A qualifier naming no class in
+/// the file is a module: only defs outside any class match, so `Foo.run`
+/// never resolves to `Bar.run`, and `mymod.run` resolves to the module-level
+/// `run`.
+#[test]
+fn tc_1035_a_qualifier_that_is_not_a_class_is_a_module() {
+    let only_bar = "class Bar:\n    def run(self):\n        return 1\n";
+    assert_eq!(
+        extract_python_def(only_bar, "Foo.run").unwrap_err(),
+        "no `def Foo.run` outside another function's body in the source"
+    );
+    let both = "class Bar:\n    def run(self):\n        return 1\n\n\ndef run():\n    return 2\n";
+    assert_eq!(
+        extract_python_def(both, "mymod.run").unwrap(),
+        "def run():\n    return 2"
+    );
+    assert_eq!(
+        extract_python_def(both, "Bar.run").unwrap(),
+        "    def run(self):\n        return 1"
+    );
+}
+
 /// Provenance: PLAT-1035. A `def` nested inside another `def` never matches:
 /// `helper` resolves to the one method of that name, not to the helper
 /// inside `load`; a name defined only in a nested `def`, only inside a
@@ -232,71 +254,130 @@ fn tc_1035_several_defs_split_into_function_units() {
     assert_eq!(units[0].text, LOAD);
 }
 
-const RUN: &str = r#"def run(items):
-    """Doc."""
+/// Provenance: PLAT-1035 (review finding 3). One `def` splits like one Rust
+/// `fn`: every clause of its top-level `if` / `elif` / `else` is a branch
+/// unit; the nested helper and the docstring are not units.
+#[test]
+fn tc_1035_an_if_chain_splits_into_branch_units() {
+    let units = split_python_units(LOAD);
+    let labels: Vec<(&str, UnitKind)> = units.iter().map(|u| (u.label.as_str(), u.kind)).collect();
+    assert_eq!(
+        labels,
+        [
+            ("if path", UnitKind::Branch),
+            ("elif path is None", UnitKind::Branch),
+            ("else", UnitKind::Branch),
+        ]
+    );
+    assert_eq!(units[0].text, "if path:\n        return helper(1)");
+    assert_eq!(units[2].text, "else:\n        return 0");
+}
+
+const TRY_AND_MATCH: &str = r#"def run(items, mode):
     total = 0
-    for item in items:
-        total += item
-    else:
-        total -= 1
     try:
         check(total)
-    except ValueError:
+    except (ValueError, KeyError) as error:
         return None
+    else:
+        total += 1
     finally:
         log(total)
-    @wrap
-    def inner():
-        return total
-    return (total,
-            inner)
+    match mode:
+        case "a" | "b":
+            return 1
+        case {"k": value}:
+            return value
+        case _:
+            return 0
 "#;
 
-/// Provenance: PLAT-1035. One `def` splits into its body's top-level
-/// statements: a compound statement keeps its clauses, a decorator stays with
-/// its `def`, a bracketed statement spans its lines, the docstring is not a
-/// unit, and an `if` chain is one statement.
+/// Provenance: PLAT-1035 (review finding 3). `try` / `except` / `else` /
+/// `finally` clauses and `match` cases are branch units, as Rust `match`
+/// arms are; a `:` inside a pattern's brackets does not end its label.
 #[test]
-fn tc_1035_one_def_splits_into_statement_units() {
-    let units = split_python_units(RUN);
+fn tc_1035_try_clauses_and_match_cases_split_into_branch_units() {
+    let units = split_python_units(TRY_AND_MATCH);
     let labels: Vec<&str> = units.iter().map(|u| u.label.as_str()).collect();
     assert_eq!(
         labels,
         [
-            "statement total = 0",
-            "statement for item in items:",
-            "statement try:",
-            "statement @wrap",
-            "statement return (total,",
+            "try",
+            "except (ValueError, KeyError) as error",
+            "else",
+            "finally",
+            "case \"a\" | \"b\"",
+            "case {\"k\": value}",
+            "case _",
         ]
     );
-    assert!(units.iter().all(|unit| unit.kind == UnitKind::Statement));
-    assert_eq!(
-        units[1].text,
-        "for item in items:\n        total += item\n    else:\n        total -= 1"
-    );
-    assert_eq!(
-        units[2].text,
-        "try:\n        check(total)\n    except ValueError:\n        return None\n    \
-         finally:\n        log(total)"
-    );
-    assert_eq!(
-        units[3].text,
-        "@wrap\n    def inner():\n        return total"
-    );
-    assert_eq!(units[4].text, "return (total,\n            inner)");
-
-    let load = split_python_units(LOAD);
-    let labels: Vec<&str> = load.iter().map(|u| u.label.as_str()).collect();
-    assert_eq!(labels, ["statement def helper(x):", "statement if path:"]);
-    assert!(load[1].text.ends_with("    else:\n        return 0"));
+    assert!(units.iter().all(|unit| unit.kind == UnitKind::Branch));
+    assert_eq!(units[3].text, "finally:\n        log(total)");
+    assert_eq!(units[6].text, "case _:\n            return 0");
 }
 
-/// Provenance: PLAT-1035. A body with one statement is one whole unit, and a
-/// body in a language the harness does not read is one whole unit too.
+const COMMENTED: &str = "def pick(x):\n    if x < 0:\n        return \"-\"\n    \
+                         # zero is its own case\n    elif x == 0:\n        return \"0\"\n    \
+                         else:\n        # positive\n        return \"+\"\n";
+
+/// Provenance: PLAT-1035 (review finding 6). A comment between two clauses
+/// belongs to the clause after it; a comment inside a clause stays in it.
+/// Every line from the first clause to the last lands in exactly one unit.
+#[test]
+fn tc_1035_a_comment_between_clauses_is_kept() {
+    let units = split_python_units(COMMENTED);
+    let texts: Vec<&str> = units.iter().map(|u| u.text.as_str()).collect();
+    assert_eq!(
+        texts,
+        [
+            "if x < 0:\n        return \"-\"",
+            "# zero is its own case\n    elif x == 0:\n        return \"0\"",
+            "else:\n        # positive\n        return \"+\"",
+        ]
+    );
+}
+
+/// Provenance: PLAT-1035 (review finding 3). Equivalent Rust and Python
+/// shapes produce the same unit kinds and counts, so a per-unit variant is
+/// not skewed by language: two methods, a three-way `if` chain, a
+/// three-way `match`, and a plain body.
+#[test]
+fn tc_1035_equivalent_rust_and_python_shapes_split_alike() {
+    let pairs = [
+        (
+            "impl A {\n    fn one(&self) -> u8 { 1 }\n    fn two(&self) -> u8 { 2 }\n}",
+            "class A:\n    def one(self):\n        return 1\n\n    def two(self):\n        return 2\n",
+        ),
+        (
+            "fn f(x: i32) -> char {\n    if x < 0 { '-' } else if x == 0 { '0' } else { '+' }\n}",
+            "def f(x):\n    if x < 0:\n        return '-'\n    elif x == 0:\n        \
+             return '0'\n    else:\n        return '+'\n",
+        ),
+        (
+            "fn g(x: u8) -> u8 {\n    match x {\n        0 => 1,\n        1 => 2,\n        _ => 3,\n    }\n}",
+            "def g(x):\n    match x:\n        case 0:\n            return 1\n        \
+             case 1:\n            return 2\n        case _:\n            return 3\n",
+        ),
+        (
+            "fn h() -> u8 {\n    let a = 1;\n    a + 1\n}",
+            "def h():\n    a = 1\n    return a + 1\n",
+        ),
+    ];
+    for (rust, python) in pairs {
+        let shape = |units: Vec<eval_v2_support::units::Unit>| -> Vec<UnitKind> {
+            units.into_iter().map(|u| u.kind).collect()
+        };
+        let rust_shape = shape(split_units("src/a.rs", rust));
+        assert_eq!(rust_shape, shape(split_units("a.py", python)), "{python}");
+        assert!(!rust_shape.is_empty());
+    }
+}
+
+/// Provenance: PLAT-1035. A body with nothing to split is one whole unit, and
+/// a body in a language the harness does not read is one whole unit too.
 #[test]
 fn tc_1035_a_plain_body_and_an_unknown_language_are_whole() {
-    let plain = "def one():\n    \"\"\"Doc.\"\"\"\n    return 1\n";
+    let plain = "def one():\n    \"\"\"Doc.\"\"\"\n    x = 1\n    return x\n";
     let units = split_python_units(plain);
     assert_eq!(units.len(), 1);
     assert_eq!(units[0].kind, UnitKind::Whole);
@@ -306,13 +387,87 @@ fn tc_1035_a_plain_body_and_an_unknown_language_are_whole() {
     let units = split_units("main.go", go);
     assert_eq!(units.len(), 1);
     assert_eq!(units[0].kind, UnitKind::Whole);
+}
 
-    let rust = "fn f(x: i32) -> char {\n    if x < 0 { '-' } else { '+' }\n}";
-    let labels: Vec<String> = split_units("src/f.rs", rust)
-        .into_iter()
-        .map(|u| u.label)
-        .collect();
-    assert_eq!(labels, ["if x < 0", "else"]);
+// ---------------------------------------------------------------------------
+// Lexical edge cases
+// ---------------------------------------------------------------------------
+
+/// Provenance: PLAT-1035 (review finding 2). A leading UTF-8 byte-order mark
+/// does not hide the first line: the decorator on it stays attached.
+#[test]
+fn tc_1035_a_byte_order_mark_does_not_drop_the_first_decorator() {
+    let source = "\u{feff}@dec\ndef f():\n    return 1\n";
+    assert_eq!(
+        extract_python_def(source, "f").unwrap(),
+        "@dec\ndef f():\n    return 1"
+    );
+}
+
+/// Provenance: PLAT-1035 (review finding 8). CRLF line endings: the body is
+/// kept verbatim and the trailing `\r` is dropped.
+#[test]
+fn tc_1035_crlf_sources_extract() {
+    let source = "@dec\r\ndef f():\r\n    x = 1\r\n    return x\r\n\r\ndef g():\r\n    pass\r\n";
+    assert_eq!(
+        extract_python_def(source, "f").unwrap(),
+        "@dec\r\ndef f():\r\n    x = 1\r\n    return x"
+    );
+}
+
+/// Provenance: PLAT-1035 (review finding 8). A tab indents to the next
+/// multiple of 8, so a tab and eight spaces are the same level.
+#[test]
+fn tc_1035_tab_indentation_is_read() {
+    let source = "class A:\n\tdef m(self):\n\t\treturn 1\n        \n\tdef n(self):\n        \
+                  \treturn 2\n\ndef m():\n\treturn 3\n";
+    assert_eq!(
+        extract_python_def(source, "A.m").unwrap(),
+        "\tdef m(self):\n\t\treturn 1"
+    );
+    assert_eq!(
+        extract_python_def(source, "A.n").unwrap(),
+        "\tdef n(self):\n        \treturn 2"
+    );
+    assert_eq!(
+        extract_python_def(source, "m").unwrap_err(),
+        "`def m` is ambiguous: 2 definitions in the source"
+    );
+}
+
+/// Provenance: PLAT-1035 (review finding 8). A `\` continuation and an open
+/// bracket both carry a statement onto a column-0 line without ending the
+/// function.
+#[test]
+fn tc_1035_continuation_lines_stay_in_the_body() {
+    let source =
+        "def f(a, b):\n    total = a + \\\nb\n    return (total,\n0)\n\n\ndef g():\n    pass\n";
+    assert_eq!(
+        extract_python_def(source, "f").unwrap(),
+        "def f(a, b):\n    total = a + \\\nb\n    return (total,\n0)"
+    );
+}
+
+const PARAMETRIZED: &str = r##"@pytest.mark.parametrize(
+    "text, expected",
+    [("a#b", "x:y"), ("#(", ":")],
+)
+def test_split(text, expected):
+    assert split(text) == expected
+
+
+def after():
+    pass
+"##;
+
+/// Provenance: PLAT-1035 (review finding 8). A `#`, `:` or bracket inside a
+/// decorator's strings is string content, not a comment or structure.
+#[test]
+fn tc_1035_a_parametrize_decorator_with_hash_and_colon_strings() {
+    assert_eq!(
+        extract_python_def(PARAMETRIZED, "test_split").unwrap(),
+        PARAMETRIZED.split("\n\n\n").next().unwrap()
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -337,7 +492,8 @@ const CODE_FILE: &str = r#"class Store:
     def save(self, item):
         if item is None:
             raise ValueError("item")
-        self.items.append(item)
+        else:
+            self.items.append(item)
 
 
 class Cache:
@@ -378,7 +534,7 @@ fn unit_questions(_unit: &eval_v2_support::units::Unit) -> Questions {
 }
 
 /// Provenance: PLAT-1035. An external row whose test and code are Python
-/// materializes from its checkout; its code splits into statement units for
+/// materializes from its checkout; its code splits into branch units for
 /// per-unit asks; every registered variant's wording rule holds on it as on
 /// a Rust row; and an ambiguous symbol excludes the row with its reason.
 #[test]
@@ -424,23 +580,17 @@ fn tc_1035_an_external_python_row_materializes_and_splits() {
     assert_eq!(
         row.code.as_ref().unwrap().body,
         "    def save(self, item):\n        if item is None:\n            \
-         raise ValueError(\"item\")\n        self.items.append(item)"
+         raise ValueError(\"item\")\n        else:\n            self.items.append(item)"
     );
 
     let labels: Vec<String> = code_units(row).into_iter().map(|u| u.label).collect();
-    assert_eq!(
-        labels,
-        [
-            "statement if item is None:",
-            "statement self.items.append(item)"
-        ]
-    );
+    assert_eq!(labels, ["if item is None", "else"]);
     let asks = per_unit_asks(row, unit_questions);
     assert_eq!(asks.len(), 2);
     let state = serde_json::to_value(&asks[1].request.state).unwrap();
     assert_eq!(
         state.pointer("/code_unit").and_then(Value::as_str),
-        Some("statement self.items.append(item)")
+        Some("else")
     );
 
     for variant in REGISTRY.iter().filter(|variant| variant.applies_to(row)) {
@@ -505,6 +655,29 @@ fn tc_1035_the_per_fr_cap_counts_each_repo_separately() {
     rows.push(fr_008_row("EVX-0007", "agent-ix/quire-rs"));
     assert_eq!(
         validate(&external_file(&rows), Origin::External),
-        ["FR-008 in agent-ix/quire-rs: 4 natural rows, at most 3 per FR per repo"]
+        [
+            "FR-008 in quire-rs: 4 natural rows (EVX-0001, EVX-0002, EVX-0003, EVX-0007), \
+          at most 3 per FR per repo"
+        ]
+    );
+}
+
+/// Provenance: PLAT-1035 (review finding 4). The cap is keyed on the
+/// checkout name, `ref.repo`'s last segment, so `agent-ix/quire-rs` and
+/// `quire-rs` (the same checkout) count together.
+#[test]
+fn tc_1035_the_per_fr_cap_keys_on_the_checkout_name() {
+    let rows = [
+        fr_008_row("EVX-0001", "agent-ix/quire-rs"),
+        fr_008_row("EVX-0002", "agent-ix/quire-rs"),
+        fr_008_row("EVX-0003", "quire-rs"),
+        fr_008_row("EVX-0004", "quire-rs"),
+    ];
+    assert_eq!(
+        validate(&external_file(&rows), Origin::External),
+        [
+            "FR-008 in quire-rs: 4 natural rows (EVX-0001, EVX-0002, EVX-0003, EVX-0004), \
+          at most 3 per FR per repo"
+        ]
     );
 }

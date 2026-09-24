@@ -506,11 +506,16 @@ fn contained(relative: &str) -> Result<&Path, String> {
     Ok(path)
 }
 
+/// `ref.repo`'s last `/` segment: the checkout directory's name.
+fn checkout_name(repo: &str) -> &str {
+    repo.rsplit('/').next().unwrap_or_default()
+}
+
 /// `<root>/<repo name>`, where the repo name is `ref.repo`'s last segment
 /// and must be a plain directory name: non-empty, not starting with `.`
 /// (so neither `.` nor `..`), and only ASCII letters, digits, `-`, `_`, `.`.
 fn checkout_dir(root: &Path, repo: &str) -> Result<PathBuf, String> {
-    let name = repo.rsplit('/').next().unwrap_or_default();
+    let name = checkout_name(repo);
     let plain = !name.is_empty()
         && !name.starts_with('.')
         && name
@@ -742,12 +747,13 @@ pub(crate) fn validate(file: &CorpusFile, origin: Origin) -> Vec<String> {
     problems
 }
 
-/// The repo a row's FR belongs to: `ref.repo` for a by-reference row, and
+/// The checkout a row's FR belongs to: [`checkout_name`] of `ref.repo` for
+/// a by-reference row (the directory [`checkout_dir`] reads), and
 /// [`IN_REPO`] for a row that embeds its bodies.
 fn source_repo(row: &Row) -> &str {
     row.reference
         .as_ref()
-        .map_or(IN_REPO, |reference| reference.repo.as_str())
+        .map_or(IN_REPO, |reference| checkout_name(&reference.repo))
 }
 
 /// The repo name an embedded (in-repo) row's FR ids belong to.
@@ -755,23 +761,29 @@ const IN_REPO: &str = "quoin";
 
 /// PLAT-1024 rule 1: an FR with more than [`MAX_NATURAL_ROWS_PER_FR`]
 /// natural (unmutated) rows. FR ids are per repo, so the count is keyed by
-/// (repo, FR id): FR-008 in quire-rs and FR-008 in engineering-assurance are
-/// different requirements, and counting them together failed the external
-/// corpus at FR-008 = 4 and NFR-001 = 10 with no single repo over 3.
+/// (checkout name, FR id): FR-008 in quire-rs and FR-008 in
+/// engineering-assurance are different requirements, and counting them
+/// together failed the external corpus at FR-008 = 4 and NFR-001 = 10 with no
+/// single repo over 3. Keying on the checkout name, not the full `ref.repo`,
+/// counts `agent-ix/quire-rs` and `quire-rs` as the one checkout they both
+/// read. Each problem names its rows.
 fn natural_row_problems(file: &CorpusFile) -> Vec<String> {
-    let mut natural: BTreeMap<(&str, &str), usize> = BTreeMap::new();
+    let mut natural: BTreeMap<(&str, &str), Vec<&str>> = BTreeMap::new();
     for row in file.rows.iter().filter(|row| row.mutation.is_none()) {
-        *natural
+        natural
             .entry((source_repo(row), row.requirement.fr_id.as_str()))
-            .or_default() += 1;
+            .or_default()
+            .push(row.id.as_str());
     }
     natural
         .into_iter()
-        .filter(|(_, count)| *count > MAX_NATURAL_ROWS_PER_FR)
-        .map(|((repo, fr_id), count)| {
+        .filter(|(_, ids)| ids.len() > MAX_NATURAL_ROWS_PER_FR)
+        .map(|((repo, fr_id), ids)| {
             format!(
-                "{fr_id} in {repo}: {count} natural rows, at most {MAX_NATURAL_ROWS_PER_FR} \
-                 per FR per repo"
+                "{fr_id} in {repo}: {} natural rows ({}), at most {MAX_NATURAL_ROWS_PER_FR} \
+                 per FR per repo",
+                ids.len(),
+                ids.join(", ")
             )
         })
         .collect()

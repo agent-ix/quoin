@@ -18,7 +18,7 @@
 //!   plus a `derive` step from raw answers to graded answers. It also holds
 //!   the per-unit fan-out and the runner.
 //! - [`units`] cuts one named item out of a Rust or Python file, and splits a
-//!   body into functions, branches or statements for fan-out.
+//!   body into functions or branches for fan-out, by one rule in both.
 //! - [`patch`] applies a mutation's unified diff to a by-reference file.
 //! - [`metrics`] grades, reusing `../support/grading.rs`, and renders the
 //!   report broken down by mode and by truth kind.

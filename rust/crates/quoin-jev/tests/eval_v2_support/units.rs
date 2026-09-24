@@ -94,10 +94,9 @@ fn whole(body: &str) -> Unit {
 pub(crate) enum UnitKind {
     /// One function: a Rust `fn` item, a Python `def` or method.
     Function,
-    /// One `match` arm or one `if`/`else` block.
+    /// One `match` arm or one `if`/`else` block (Rust); one `if`/`elif`/
+    /// `else`, `try`/`except`/`else`/`finally` or `case` clause (Python).
     Branch,
-    /// One top-level statement of a function body (Python).
-    Statement,
     /// The whole body: nothing smaller applied.
     Whole,
 }
