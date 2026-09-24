@@ -142,7 +142,8 @@ mod tests {
     use quoin_core::protocol::Outcome;
     use quoin_measurement::campaign::{CAMPAIGN_VERDICT_SCHEMA, CampaignDecision};
 
-    /// Trace: FR-114-AC-5, TC-1946 (response projection; native CLI gate remains pending).
+    /// Trace: FR-114-AC-5, TC-1946
+    // Response projection only; the native CLI path has a separate test.
     #[test]
     fn inconclusive_campaign_response_renders_its_structured_receipt() {
         let receipt = CampaignVerdictReceipt {
