@@ -71,7 +71,7 @@ use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
 use super::variants::intent::{T0_RT, T1, T2, TC_RC, TC_RT, TC_RTC};
-use super::variants::{exceeds, severity};
+use super::variants::{exceeds, severity, soundness};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
 };
@@ -237,6 +237,9 @@ pub(crate) const REGISTRY: &[Variant] = &[
     TC_RTC,
     T1,
     T2,
+    // PLAT-1031 criterion-soundness variants; bars in spec/assurance/MP-243.
+    soundness::K1,
+    soundness::K2,
 ];
 
 /// Resolves a comma-separated id list against [`REGISTRY`].
@@ -708,7 +711,7 @@ const CRITERION_ASSET: &str =
 
 /// The criterion under test: the row's AC, or the statement itself when the
 /// row is about a requirement with no AC.
-fn criterion(row: &Row) -> AcRow {
+pub(crate) fn criterion(row: &Row) -> AcRow {
     let requirement = &row.requirement;
     AcRow {
         id: requirement

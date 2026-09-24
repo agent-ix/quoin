@@ -25,7 +25,8 @@
 //! - [`variants`] holds each experiment's own variants, one module per
 //!   experiment ticket: [`variants::intent`] is PLAT-1030's T0-RT, T1, T2 and
 //!   the trace check TC, with the split-by-trace report, the paired
-//!   comparison with the T0 baselines, and Bar D.
+//!   comparison with the T0 baselines, and Bar D;
+//!   [`variants::soundness`] is PLAT-1031's criterion-soundness checklist K1/K2.
 //! - [`units`] cuts one named item out of a Rust or Python file, and splits a
 //!   body into functions or branches for fan-out, by one rule in both.
 //! - [`fixtures`] holds the synthetic rows the offline tests and the

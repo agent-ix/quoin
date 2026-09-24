@@ -211,6 +211,16 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "RTC",
         "sha256:e14cf165e3a719e91a719102124f0ccce25bb6110dfdde764c9feb9b02eafdd5",
     ),
+    (
+        "K1@v1",
+        "R",
+        "sha256:fa2cb04d182096356a1eabec1f372892d988673f71f4599919c5a0225f579ed5",
+    ),
+    (
+        "K2@v1",
+        "R",
+        "sha256:940c88bc56caf193eee00dcc56e22b9077f62dd558a5ff9da7e6ac23cfaf0b71",
+    ),
 ];
 
 /// The digest of `variant`'s questions on `row`.
