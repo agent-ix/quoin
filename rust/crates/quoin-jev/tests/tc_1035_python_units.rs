@@ -404,6 +404,30 @@ fn tc_1035_a_byte_order_mark_does_not_drop_the_first_decorator() {
     );
 }
 
+/// Provenance: PLAT-1035 (review follow-up). The Rust extractor reads a
+/// leading byte-order mark as whitespace too: an attribute or doc comment on
+/// the first line stays attached, and the mark is not part of the item.
+#[test]
+fn tc_1035_a_byte_order_mark_does_not_detach_rust_attributes() {
+    assert_eq!(
+        extract_item("src/lib.rs", "\u{feff}#[test]\nfn t() {}\n", "t").unwrap(),
+        "#[test]\nfn t() {}"
+    );
+    assert_eq!(
+        extract_item("src/lib.rs", "\u{feff}/// Doc.\n#[test]\nfn t() {}\n", "t").unwrap(),
+        "/// Doc.\n#[test]\nfn t() {}"
+    );
+    assert_eq!(
+        extract_item(
+            "src/lib.rs",
+            "\u{feff}#[cfg(\n    test\n)]\nfn t() {}\n",
+            "t"
+        )
+        .unwrap(),
+        "#[cfg(\n    test\n)]\nfn t() {}"
+    );
+}
+
 /// Provenance: PLAT-1035 (review finding 8). CRLF line endings: the body is
 /// kept verbatim and the trailing `\r` is dropped.
 #[test]

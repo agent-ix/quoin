@@ -379,12 +379,18 @@ fn matching_back(masked: &[u8], close: usize) -> Option<usize> {
 /// attributes (`#[...]`, including ones spanning several lines) and comment
 /// lines (`///` doc comments and plain `//` comments interleaved with them).
 /// A blank line or any other code ends the walk, so an extracted test keeps
-/// its `#[test]`, its `#[allow(\n ...\n)]` and its `/// Trace:` line.
+/// its `#[test]`, its `#[allow(\n ...\n)]` and its `/// Trace:` line. A
+/// leading UTF-8 byte-order mark is read as whitespace and left out of the
+/// item, so it cannot detach an attribute or doc comment on the first line.
 fn item_start(text: &str, masked: &[u8], at: usize) -> usize {
     let mut start = line_start(text, at);
     while start > 0 {
         let previous = line_start(text, start - 1);
-        let line = text.get(previous..start).unwrap_or_default().trim();
+        let line = text
+            .get(previous..start)
+            .unwrap_or_default()
+            .trim_start_matches(BOM)
+            .trim();
         if line.is_empty() || line.starts_with("//!") {
             break;
         }
@@ -403,15 +409,22 @@ fn item_start(text: &str, masked: &[u8], at: usize) -> usize {
             .filter(|hash| {
                 let head = line_start(text, *hash);
                 text.get(head..*hash)
-                    .is_some_and(|lead| lead.trim().is_empty())
+                    .is_some_and(|lead| lead.trim_start_matches(BOM).trim().is_empty())
             });
         match attribute_head {
             Some(hash) if line.ends_with(']') => start = line_start(text, hash),
             _ => break,
         }
     }
-    start
+    if start == 0 && text.starts_with(BOM) {
+        BOM.len()
+    } else {
+        start
+    }
 }
+
+/// The UTF-8 byte-order mark.
+const BOM: &str = "\u{feff}";
 
 /// One `fn` with a body, anywhere in a source file.
 struct FoundFn {
