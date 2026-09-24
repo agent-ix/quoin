@@ -1464,6 +1464,6 @@ fn tc_1027_at_most_three_natural_rows_per_fr() {
     ]);
     assert_eq!(
         validate(&four, Origin::InRepo),
-        ["FR-900: 4 natural rows, at most 3 per FR"]
+        ["FR-900 in quoin: 4 natural rows, at most 3 per FR per repo"]
     );
 }

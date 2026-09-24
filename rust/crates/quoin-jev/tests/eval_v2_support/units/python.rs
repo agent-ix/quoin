@@ -340,7 +340,10 @@ fn block_text(text: &str, masked: &[u8], lines: &[Line], block: &Block) -> Strin
         .checked_sub(1)
         .and_then(|last| lines.get(last))
         .map_or(header.end, |last| last.end);
-    text.get(start..end).unwrap_or_default().trim_end().to_owned()
+    text.get(start..end)
+        .unwrap_or_default()
+        .trim_end()
+        .to_owned()
 }
 
 /// The source of the one `def` `name` names in `source`, from its decorators

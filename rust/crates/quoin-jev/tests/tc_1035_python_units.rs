@@ -430,7 +430,10 @@ fn tc_1035_an_external_python_row_materializes_and_splits() {
     let labels: Vec<String> = code_units(row).into_iter().map(|u| u.label).collect();
     assert_eq!(
         labels,
-        ["statement if item is None:", "statement self.items.append(item)"]
+        [
+            "statement if item is None:",
+            "statement self.items.append(item)"
+        ]
     );
     let asks = per_unit_asks(row, unit_questions);
     assert_eq!(asks.len(), 2);
@@ -443,4 +446,65 @@ fn tc_1035_an_external_python_row_materializes_and_splits() {
     for variant in REGISTRY.iter().filter(|variant| variant.applies_to(row)) {
         assert_eq!(wording_violations(variant, row), Vec::<String>::new());
     }
+}
+
+// ---------------------------------------------------------------------------
+// The per-FR cap is per repo
+// ---------------------------------------------------------------------------
+
+/// A natural `R` row citing `FR-008` in `repo`, by reference.
+fn fr_008_row(id: &str, repo: &str) -> Value {
+    json!({
+        "id": id,
+        "mode": Mode::Req.as_str(),
+        "split": "dev",
+        "strata": {"fr_id": "FR-008", "req_kind": "functional", "test_kind": null,
+                   "crate": repo, "ears_pattern": null},
+        "requirement": {"fr_id": "FR-008", "ac_id": null,
+                        "statement": "The system shall do one thing.",
+                        "ac_text": null, "context": null},
+        "test": null,
+        "code": null,
+        "ref": {"repo": repo, "commit": "c", "paths": {}, "sha256": {}},
+        "mutation": null,
+        "truth": {"criterion_sound": {"answer": true, "kind": "agent_dual",
+                                      "alternatives": [], "rationale": "stated"}},
+    })
+}
+
+fn external_file(rows: &[Value]) -> corpus::CorpusFile {
+    corpus::parse(
+        &json!({
+            "schema": corpus::SCHEMA,
+            "sampling_rule": "every row, synthetic",
+            "seed": 7,
+            "source_commit": "0000000",
+            "rows": rows,
+        })
+        .to_string(),
+    )
+    .unwrap()
+}
+
+/// Provenance: PLAT-1035 (coordinator fix), PLAT-1024 rule 1. FR ids are per
+/// repo: three natural rows of FR-008 in each of two repos is within the
+/// cap, and a fourth in one repo is not.
+#[test]
+fn tc_1035_the_per_fr_cap_counts_each_repo_separately() {
+    let mut rows: Vec<Value> = (1..=3)
+        .map(|n| fr_008_row(&format!("EVX-000{n}"), "agent-ix/quire-rs"))
+        .chain(
+            (4..=6).map(|n| fr_008_row(&format!("EVX-000{n}"), "agent-ix/engineering-assurance")),
+        )
+        .collect();
+    assert_eq!(
+        validate(&external_file(&rows), Origin::External),
+        Vec::<String>::new()
+    );
+
+    rows.push(fr_008_row("EVX-0007", "agent-ix/quire-rs"));
+    assert_eq!(
+        validate(&external_file(&rows), Origin::External),
+        ["FR-008 in agent-ix/quire-rs: 4 natural rows, at most 3 per FR per repo"]
+    );
 }

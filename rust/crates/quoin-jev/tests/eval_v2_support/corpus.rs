@@ -340,7 +340,7 @@ impl Origin {
 }
 
 /// PLAT-1024 corpus rule 1: at most this many natural (unmutated) rows per
-/// FR in one source.
+/// FR, counted per (repo, FR id).
 pub(crate) const MAX_NATURAL_ROWS_PER_FR: usize = 3;
 
 /// Every row of `split` across `sources`, refusing the lot if two rows share
@@ -644,8 +644,9 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
 /// answer space, the row carries what the key needs, and the truth kind
 /// agrees with the alternatives; a mutation targets an artifact the row has;
 /// `strata.fr_id` agrees with `requirement.fr_id`; every id carries its
-/// source's prefix ([`Origin::id_prefix`]); and no FR has more than
-/// [`MAX_NATURAL_ROWS_PER_FR`] natural (unmutated) rows (PLAT-1024 rule 1).
+/// source's prefix ([`Origin::id_prefix`]); and no FR of one repo has more
+/// than [`MAX_NATURAL_ROWS_PER_FR`] natural (unmutated) rows (PLAT-1024
+/// rule 1).
 pub(crate) fn validate(file: &CorpusFile, origin: Origin) -> Vec<String> {
     let mut problems = Vec::new();
     if file.schema != SCHEMA {
@@ -741,18 +742,37 @@ pub(crate) fn validate(file: &CorpusFile, origin: Origin) -> Vec<String> {
     problems
 }
 
+/// The repo a row's FR belongs to: `ref.repo` for a by-reference row, and
+/// [`IN_REPO`] for a row that embeds its bodies.
+fn source_repo(row: &Row) -> &str {
+    row.reference
+        .as_ref()
+        .map_or(IN_REPO, |reference| reference.repo.as_str())
+}
+
+/// The repo name an embedded (in-repo) row's FR ids belong to.
+const IN_REPO: &str = "quoin";
+
 /// PLAT-1024 rule 1: an FR with more than [`MAX_NATURAL_ROWS_PER_FR`]
-/// natural (unmutated) rows.
+/// natural (unmutated) rows. FR ids are per repo, so the count is keyed by
+/// (repo, FR id): FR-008 in quire-rs and FR-008 in engineering-assurance are
+/// different requirements, and counting them together failed the external
+/// corpus at FR-008 = 4 and NFR-001 = 10 with no single repo over 3.
 fn natural_row_problems(file: &CorpusFile) -> Vec<String> {
-    let mut natural: BTreeMap<&str, usize> = BTreeMap::new();
+    let mut natural: BTreeMap<(&str, &str), usize> = BTreeMap::new();
     for row in file.rows.iter().filter(|row| row.mutation.is_none()) {
-        *natural.entry(row.requirement.fr_id.as_str()).or_default() += 1;
+        *natural
+            .entry((source_repo(row), row.requirement.fr_id.as_str()))
+            .or_default() += 1;
     }
     natural
         .into_iter()
         .filter(|(_, count)| *count > MAX_NATURAL_ROWS_PER_FR)
-        .map(|(fr_id, count)| {
-            format!("{fr_id}: {count} natural rows, at most {MAX_NATURAL_ROWS_PER_FR} per FR")
+        .map(|((repo, fr_id), count)| {
+            format!(
+                "{fr_id} in {repo}: {count} natural rows, at most {MAX_NATURAL_ROWS_PER_FR} \
+                 per FR per repo"
+            )
         })
         .collect()
 }
