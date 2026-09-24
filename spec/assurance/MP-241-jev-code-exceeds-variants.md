@@ -332,9 +332,23 @@ success crosses 0.5 upward and rises by at least 0.10, an abstention is a
 failure, one-sided sign test at alpha 0.05, gateable at 10 or more non-tie
 pairs. E0 (RTC) and E0-RC (RC) are the comparators.
 
-**Versions.** `E5@v1` is pinned in `REQUEST_DIGEST_PINS`. E5 is its own family
-with the 5-version dev cap; this round runs at most 3 versions, and every
-version run is reported with its numbers.
+**Versions.** `REQUEST_DIGEST_PINS` holds the pin of E5's current version
+only, now `E5@v4`; each bump replaced the previous version's pin. The pin
+covers the question text on the canonical row, not the state or which units
+are asked, so v3 (a derive change) and v4 (fewer units asked) have v2's
+digest under new labels. E5 is its own family with the 5-version dev cap.
+This round was pre-registered at 3 versions; v4 is the one version past that,
+allowed by the cap and run after PR #630's review. Every version run is
+reported with its numbers.
+
+**Final rule (v4).** The rule above is v1's, as pre-registered. The final
+version differs in three ways, each made after the previous version's dev
+answers were seen. Units (v2): each Rust function is cut into its top-level
+statements, and a statement holding a `match` or an `if`/`else` chain into
+its branches; Python keeps `units.rs`. No breaker (v3): every row is
+answered. Triviality (v4): the three structural rules apply to a statement
+unit too, a lone `if` with no `else` read as the branch it is, so the size-cap
+example above is skipped rather than asked about.
 
 ### Round 2 dev results
 
@@ -348,14 +362,24 @@ mutants. Agreement and margin are on the rows the variant answered.
 | E5@v1 | `units.rs` units, breaker | 4 / 0 / 20, p = 0.0625 | 38.5% (26) | 56.1%, 59.1%, -3.0pp (66) | 3 of 69 |
 | E5@v2 | statement-level units, statements that only log skipped | 9 / 5 / 10 (4 failures are abstentions), p = 0.2120 | 68.2% (22 answered of 26) | 66.1%, 57.6%, +8.5pp (59) | 10 of 69 |
 | E5@v3 | breaker dropped | 9 / 1 / 14, p = 0.0107 | 73.1% (26) | 68.1%, 60.9%, +7.2pp (69) | 0 |
+| E5@v4 | triviality checks applied to statement units (a lone `if` size cap is skipped) | 9 / 1 / 14, p = 0.0107 | 73.1% (26) | 68.1%, 60.9%, +7.2pp (69) | 0 |
 
-E5@v3 is the final version, and Bar D holds for it: 10 non-tie pairs, the
-minimum, with 9 successes. **Caveat:** v3 changes only the derive rule. Its
-requests are v2's, so its Bar D was read off answers that were already seen,
-and the breaker was dropped because v2's abstentions were 4 of its 5 Bar D
-failures. That is dev tuning inside the budget. The held-out split is spent,
-so there is no independent confirmation. Treat the pass as provisional until a
-fresh split exists.
+E5@v4 is the final version, and Bar D holds for it: 10 non-tie pairs, the
+minimum, with 9 successes. v4 asked about 578 units where v3 asked about 581
+(2 size caps and 1 logging-only statement now skipped), and every number in
+its row equals v3's. **Caveat:** v3 changed only the
+derive rule. Its requests are v2's, so its Bar D was read off answers that
+were already seen, and the breaker was dropped because v2's abstentions were
+4 of its 5 Bar D failures. That is dev tuning inside the budget. The held-out
+split is spent, so there is no independent confirmation. Treat the pass as
+provisional until a fresh split exists.
+
+Two limits on what the pass shows. On RC rows alone E5@v4 (as E5@v3) agrees
+on 68.2% of the 22 rows, against E0-RC's 72.7% on the same rows, and its
+margin over the constant predictor there is +0.0pp: E5 adds nothing on RC.
+And the known-truth slice is the 26 by-construction `additive_code` rows,
+whose labels are all `yes`: it measures `yes` recall only, and says nothing
+about false alarms, which only the agent-labelled rows reach.
 
 ## Measured outcome
 

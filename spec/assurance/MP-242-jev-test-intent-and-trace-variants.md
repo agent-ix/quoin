@@ -389,23 +389,49 @@ T2; T1 had 1 success in 22. Jev does not notice when a test's decisive
 assertion is removed or loosened. What worked elsewhere in that run was small,
 concrete facts (K1, S1); worked examples (T2) added nothing.
 
-**What T3 asks.** T3 runs on RT and RTC. Code, not Jev, reads the test body
-and lists its assertion statements: `assert!`, `assert_eq!`, `assert_ne!`,
-`assert!(matches!(..))`, `debug_assert*!`, `prop_assert*!`, a statement that
-calls `.unwrap_err()` or `.expect_err(..)`, and in Python `assert`,
-`self.assert*(..)` and `pytest.raises(..)`. Comments and string literals are
-masked first. The list goes into the state as `test_assertions` (`A1` ..
-`An`, at most 20, the overflow joined into the last). Jev answers one
-`choice`: which listed assertion checks the behaviour the requirement states,
-or `none`. The question names the test and the requirement only, never the
-code, so the same wording runs in RT and RTC.
+**As pre-registered (v1).** Code lists the test's assertion statements and
+Jev answers one `choice`: which listed assertion checks the behaviour the
+requirement states, or `none`. `P(any) = 1 - P(none)`, and
+`test_asserts_intent` is `yes` iff `P(any) >= 0.5`. The v2 rule below
+replaced this one after v1's dev answers were seen: that is dev tuning inside
+the version budget, and T3's result carries it.
 
-**Derive rule.** `P(any) = 1 - P(none)`. `test_asserts_intent` is `yes` iff
-`P(any) >= 0.5`; the confidence is `P(any)` for `yes` and `1 - P(any)` for
-`no`; `P(any)` is the ordinal Bar D reads. A test with no assertion is `no`
-with `P(any) = 0`, derived in code with no call. A choice whose label or
-probabilities fall outside the offered labels, or do not total 1, stops the
-run.
+**What T3 asks (final rule, v3).** T3 runs on RT and RTC. Code, not Jev,
+reads the test body and lists its assertion statements. Rust: `assert!`,
+`assert_eq!`, `assert_ne!`, `assert!(matches!(..))`, `debug_assert*!`,
+`prop_assert*!`, a statement that calls `.unwrap_err()` or
+`.expect_err(..)`, and a failure point: a `panic!(..)` or a proptest
+`Err(TestCaseError::fail(..))`, listed with the match arm, `let .. else` or
+`if` it fails in. Python: `assert` at a line's start or after a `:` on the
+same line, `self.assert*(..)`, `pytest.raises(..)`, and a dotted
+`assert_*(..)` call (a mock's `assert_called*`, `np.testing.assert_*`).
+Comments and string literals are masked first. A statement ends at its `;`,
+at a `,` outside brackets (a match arm), at the `}` closing the block it is
+the tail of, or at a Python line break; a brace-delimited macro ends at its
+own `}`. Whitespace is collapsed outside comments and literals only, so a
+literal is listed verbatim. The list goes into the state as
+`test_assertions` (`A1` .. `An`, at most 20, the overflow joined into the
+last). Jev answers one strict `noul` per listed assertion: on its own, would
+it fail if the system produced a different outcome from the one the
+requirement states. The question names the test and the requirement only,
+never the code, so the same wording runs in RT and RTC.
+
+**`.unwrap()` and `.expect(..)` are not assertions.** They check only that a
+call returned a success value, which T3's own question answers `no` for, and
+nearly every Rust test calls them, so listing them would ask Jev a question
+the rule already settles. A `panic!` inside a closure
+(`.unwrap_or_else(|e| panic!(..))`) is the same check spelled out and is not
+listed either. A test whose only check is one of these (EV2-0111:
+`validator().expect(..)`) has no listed assertion, so it is `no` with
+`P(any) = 0` and confidence 1, derived in code with no call.
+
+**Derive rule (final, v2 and v3).** `P(any)` is the highest per-assertion
+`P`. `test_asserts_intent` is `yes` iff `P(any) >= 0.5`; the confidence is
+`P(any)` for `yes` and `1 - P(any)` for `no`; `P(any)` is the ordinal Bar D
+reads. A test with no assertion is `no` with `P(any) = 0`, derived in code
+with no call. A missing answer, an answer that is not a `noul` or not a
+probability in [0, 1], or an answer to an assertion that was not asked stops
+the run.
 
 **Dev only.** The held-out split was spent in held-out run 1
 (`fixtures/eval-v2/heldout-runs.jsonl`). T3 has no held-out run and gets no
@@ -418,9 +444,14 @@ crosses 0.5 downward and falls by at least 0.10; an abstention on either row
 is a failure; one-sided sign test at alpha 0.05, gateable at 10 or more
 non-tie pairs. T0 is the comparator, on the rows both answered.
 
-**Versions.** `T3@v1` is pinned in `REQUEST_DIGEST_PINS`. T3 is its own family
-with the 5-version dev cap; this round runs at most 3 versions, and every
-version run is reported with its numbers.
+**Versions.** `REQUEST_DIGEST_PINS` holds the pin of T3's current version
+only, now `T3@v3`; each bump replaced the previous version's pin. The pin
+covers the question text on the canonical row, not the state, so v3 (a
+wider assertion list, the same question) has v2's digest under a new label.
+T3 is its own family with the 5-version dev cap. This round was
+pre-registered at 3 versions; v3 is the one version past that, allowed by the
+cap and run after PR #630's review. Every version run is reported with its
+numbers.
 
 ### Round 2 dev results
 
@@ -433,13 +464,17 @@ mutants.
 | T0@v1 | baseline | 0 / 0 / 15, p = 1.0 | 59.0%, 59.0%, +0.0pp, 12.5%, 91.3% (39 rows) | +17.9pp (67) |
 | T3@v1 | one `choice` over the listed assertions plus `none` | 3 / 1 / 18, p = 0.3125 | 55.4%, 55.4%, +0.0pp, 24.0%, 80.6% (56 rows) | +16.7pp (108) |
 | T3@v2 | one strict `noul` per assertion, highest wins; match-arm assertions no longer merge | 6 / 0 / 16, p = 0.0156 | 66.1%, 55.4%, +10.7pp, 56.0%, 74.2% (56 rows) | +17.6pp (108) |
+| T3@v3 | wider assertion list (`panic!` and `TestCaseError::fail` failure points, Python mock / `np.testing` `assert_*`, `assert` after `:`); literals listed verbatim | 6 / 0 / 16, p = 0.0156 | 66.1%, 55.4%, +10.7pp, 56.0%, 74.2% (56 rows) | +17.6pp (108) |
 
-T3@v2 is the final version. Bar D is not gateable (6 non-tie pairs, fewer than
-10). On the mechanical slice (56 rows, both labels present, so gateable) Bars A
-and B hold: margin +10.7pp and both class recalls above 0%. T3@v2 abstained on
-no row. By MP-242's rule it qualifies on dev by path 1; there is no held-out
-run to confirm it. On the 52 RTC rows both answered, T3@v2 was right on 39 and
-T0 on 34.
+T3@v3 is the final version. Its wider list changed some rows' probabilities
+(the confidence curve and ECE moved), but every number in its row equals
+v2's. Bar D is not gateable (6 non-tie pairs,
+fewer than 10). On the mechanical slice (56 rows, both labels present, so
+gateable) Bars A and B hold: margin +10.7pp and both class recalls above 0%.
+T3@v3 abstained on no row. By MP-242's rule it qualifies on dev by path 1;
+there is no held-out run to confirm it, and the v2 rule it runs was chosen
+after v1's answers were seen. On the 52 RTC rows both answered, T3@v3 was
+right on 39 and T0 on 34.
 
 ## Measured outcome
 
