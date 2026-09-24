@@ -338,7 +338,7 @@ pub(super) fn check_request_contract(
     Ok(())
 }
 
-fn checked_raw_artifacts(
+pub(super) fn checked_raw_artifacts(
     repo: &Path,
     attempt: &CampaignAttempt,
     result: &Value,

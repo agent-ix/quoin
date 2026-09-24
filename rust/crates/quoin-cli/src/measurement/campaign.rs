@@ -7,13 +7,21 @@ mod config;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+#[cfg(not(windows))]
+use std::sync::Arc;
+#[cfg(not(windows))]
+use std::thread;
 
 use clap::{Arg, ArgMatches, Command};
 use engineering_assurance::campaign::{CampaignDefinition, canonical_digest};
 use quoin_core::error::{CoreError, CoreErrorCode};
 use quoin_core::protocol::{Response, canonical_json};
 use quoin_measurement::campaign::CampaignOutcome;
-use quoin_measurement::campaign::run::run_campaign;
+use quoin_measurement::campaign::run::RunMemberBindings;
+#[cfg(not(windows))]
+use quoin_measurement::campaign::run::{CampaignCancellation, run_campaign_with_cancellation};
+#[cfg(windows)]
+use quoin_measurement::campaign::run::{CampaignRunError, run_campaign};
 use quoin_measurement::campaign::verify::{CampaignVerdictReceipt, verify_retained_campaign};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
@@ -75,12 +83,52 @@ fn execute(args: &ArgMatches) -> Result<Response, String> {
         return Err("unsupported campaign run-config schema".to_owned());
     }
     let (sources, bindings) = config.into_parts()?;
-    run_campaign(&repo, &definition, &run_id, &sources, &bindings)
-        .map_err(|error| error.to_string())?;
+    run_with_signal(&repo, &definition, &run_id, &sources, &bindings)?;
     let digest = canonical_digest(&definition).map_err(|error| error.to_string())?;
     let receipt = verify_retained_campaign(&repo, digest.as_str(), &run_id, &sources)
         .map_err(|error| error.to_string())?;
     response(receipt)
+}
+
+#[cfg(not(windows))]
+fn run_with_signal(
+    repo: &Path,
+    definition: &CampaignDefinition,
+    run_id: &str,
+    sources: &BTreeMap<String, PathBuf>,
+    bindings: &BTreeMap<String, RunMemberBindings>,
+) -> Result<(), String> {
+    let mut signals = signal_hook::iterator::Signals::new([signal_hook::consts::SIGINT])
+        .map_err(|error| format!("campaign SIGINT handler: {error}"))?;
+    let signal_handle = signals.handle();
+    let cancellation = Arc::new(CampaignCancellation::new());
+    let signal_control = Arc::clone(&cancellation);
+    let signal_thread = thread::spawn(move || {
+        if signals.forever().next().is_some() {
+            signal_control.cancel();
+        }
+    });
+    let outcome =
+        run_campaign_with_cancellation(repo, definition, run_id, sources, bindings, &cancellation);
+    signal_handle.close();
+    signal_thread
+        .join()
+        .map_err(|_| "campaign SIGINT handler panicked".to_owned())?;
+    outcome.map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+#[cfg(windows)]
+fn run_with_signal(
+    repo: &Path,
+    definition: &CampaignDefinition,
+    run_id: &str,
+    sources: &BTreeMap<String, PathBuf>,
+    bindings: &BTreeMap<String, RunMemberBindings>,
+) -> Result<(), String> {
+    run_campaign(repo, definition, run_id, sources, bindings)
+        .map(|_| ())
+        .map_err(|error: CampaignRunError| error.to_string())
 }
 
 fn verify(args: &ArgMatches) -> Result<Response, String> {

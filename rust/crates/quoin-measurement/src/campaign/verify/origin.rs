@@ -16,7 +16,7 @@ use crate::campaign::input_origin::{
     INPUT_ORIGINS_SCHEMA, InputOriginClaim, InputOriginInventory, OriginSource, declaration_for,
 };
 
-use super::{EvidenceError, read_digest_bytes, retained_json};
+use super::{CampaignStoreError, EvidenceError, read_digest_bytes, retained_json};
 
 #[allow(
     clippy::too_many_arguments,
@@ -194,8 +194,17 @@ fn check_dependency(
         .as_deref()
         .ok_or(EvidenceError::Contradiction)?;
     let result = retained_json(repo, "results", result_digest)?;
-    let bytes = read_digest_bytes(repo, "raw", &origin.binding.bytes.digest, "bin")
-        .map_err(|_| EvidenceError::Contradiction)?;
+    let bytes =
+        read_digest_bytes(repo, "raw", &origin.binding.bytes.digest, "bin").map_err(|error| {
+            match error {
+                CampaignStoreError::Io { source, .. }
+                    if source.kind() == std::io::ErrorKind::NotFound =>
+                {
+                    EvidenceError::Missing
+                }
+                _ => EvidenceError::Contradiction,
+            }
+        })?;
     if result
         .pointer("/requestIdentity/digest")
         .and_then(Value::as_str)

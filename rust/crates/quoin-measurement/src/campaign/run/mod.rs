@@ -3,6 +3,7 @@
 //! Sequential generic EA campaign execution and immutable attempt intake.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
@@ -13,10 +14,8 @@ use engineering_assurance::campaign::{
     validate_run,
 };
 use engineering_assurance::producer_execution::{
-    CancellationToken, ContentDigest, InputBinding, ProducerExecutionResult,
-    ProducerExecutionState, ProducerExecutor,
+    ContentDigest, InputBinding, ProducerExecutionResult, ProducerExecutionState, ProducerExecutor,
 };
-use serde_json::Value;
 use thiserror::Error;
 
 use super::adapter::{ProcessEvidenceAdapter, ProcessEvidenceObservation};
@@ -196,10 +195,6 @@ impl CampaignRunError {
 /// # Errors
 /// Refuses malformed campaign/config/source before publication, and any store
 /// failure. A valid failed process is retained as an inconclusive attempt.
-#[allow(
-    clippy::too_many_lines,
-    reason = "sequential member inventory and publication are one transaction"
-)]
 pub fn run_campaign(
     repo: &Path,
     definition: &CampaignDefinition,
@@ -207,7 +202,49 @@ pub fn run_campaign(
     source_checkouts: &BTreeMap<String, PathBuf>,
     bindings: &BTreeMap<String, RunMemberBindings>,
 ) -> Result<CampaignRun, CampaignRunError> {
+    run_campaign_with_cancellation(
+        repo,
+        definition,
+        run_id,
+        source_checkouts,
+        bindings,
+        &CampaignCancellation::new(),
+    )
+}
+
+/// Run a campaign with a caller-controlled event that can cancel an active
+/// producer or checker through its exact EA request binding.
+///
+/// # Errors
+/// Refuses invalid source, bindings, retained evidence or durable publication.
+#[allow(
+    clippy::too_many_lines,
+    reason = "sequential member inventory and publication are one transaction"
+)]
+pub fn run_campaign_with_cancellation(
+    repo: &Path,
+    definition: &CampaignDefinition,
+    run_id: &str,
+    source_checkouts: &BTreeMap<String, PathBuf>,
+    bindings: &BTreeMap<String, RunMemberBindings>,
+    cancellation: &CampaignCancellation,
+) -> Result<CampaignRun, CampaignRunError> {
     let publication_path = run_path(repo, run_id)?;
+    match fs::symlink_metadata(&publication_path) {
+        Ok(_) => {
+            return Err(CampaignRunError::binding(
+                "campaign run already published".to_owned(),
+            ));
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => {
+            return Err(CampaignStoreError::Io {
+                path: publication_path,
+                source: error,
+            }
+            .into());
+        }
+    }
     let sources = verify_source_graph(definition, source_checkouts)?;
     let own_root = repo
         .canonicalize()
@@ -273,15 +310,50 @@ pub fn run_campaign(
     let definition_value = serde_json::to_value(definition)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
     let definition_digest = canonical_digest(definition)?.as_str().to_owned();
+    let source_graph_digest = canonical_digest(&definition.source_graph)?
+        .as_str()
+        .to_owned();
     let (retained_digest, _) = retain_value(repo, "definitions", &definition_value)?;
     if retained_digest != definition_digest {
         return Err(CampaignRunError::identity(
             "definition JCS identity".to_owned(),
         ));
     }
+    let total_attempts = definition
+        .members
+        .iter()
+        .try_fold(0_usize, |total, member| {
+            let procedure = procedures
+                .get(member.plan_id.as_str())
+                .ok_or_else(|| CampaignRunError::binding("member procedure".to_owned()))?;
+            let repetitions = usize::try_from(procedure.repetitions)
+                .map_err(|_| CampaignRunError::binding("procedure repetitions".to_owned()))?;
+            total
+                .checked_add(repetitions)
+                .ok_or_else(|| CampaignRunError::binding("campaign attempt population".to_owned()))
+        })?;
+    let checkpointed = checkpoint::load_prefix(
+        repo,
+        run_id,
+        &definition_digest,
+        &source_graph_digest,
+        total_attempts,
+    )?;
+    checkpoint::validate_prefix(
+        repo,
+        definition,
+        &definition_digest,
+        run_id,
+        &checkpointed,
+        &plans,
+        &procedures,
+        &sources,
+        own_source,
+    )?;
     let executor =
         ProducerExecutor::new(1).map_err(|error| CampaignRunError::execution(error.to_string()))?;
     let mut attempts = Vec::new();
+    let mut ordinal = 0_usize;
     let mut completed = BTreeSet::new();
     while completed.len() < definition.members.len() {
         let Some(member) = definition.members.iter().find(|member| {
@@ -309,28 +381,47 @@ pub fn run_campaign(
             .get(&procedure.source_repository)
             .ok_or_else(|| CampaignRunError::binding("procedure source".to_owned()))?;
         for index in 1..=procedure.repetitions {
-            attempts.push(run_member(
-                repo,
-                definition,
-                &definition_digest,
-                run_id,
-                member,
-                plan,
-                procedure,
-                runtime,
-                source,
-                own_source,
-                &sources,
-                &attempts,
-                &executor,
-                index,
-            )?);
+            ordinal = ordinal
+                .checked_add(1)
+                .ok_or_else(|| CampaignRunError::binding("campaign attempt ordinal".to_owned()))?;
+            if let Some(prior) = checkpointed.get(ordinal - 1) {
+                if prior.member != member.name || prior.index != index {
+                    return Err(CampaignRunError::binding(
+                        "campaign checkpoint schedule".to_owned(),
+                    ));
+                }
+                attempts.push(prior.clone());
+            } else {
+                let attempt = run_member(
+                    repo,
+                    definition,
+                    &definition_digest,
+                    run_id,
+                    member,
+                    plan,
+                    procedure,
+                    runtime,
+                    source,
+                    own_source,
+                    &sources,
+                    &attempts,
+                    &executor,
+                    cancellation,
+                    index,
+                )?;
+                checkpoint::publish(
+                    repo,
+                    run_id,
+                    &definition_digest,
+                    &source_graph_digest,
+                    ordinal,
+                    &attempt,
+                )?;
+                attempts.push(attempt);
+            }
         }
         completed.insert(member.name.as_str());
     }
-    let source_graph_digest = canonical_digest(&definition.source_graph)?
-        .as_str()
-        .to_owned();
     let views: Vec<Attempt<'_>> = attempts
         .iter()
         .filter_map(|attempt| {
@@ -379,66 +470,6 @@ pub fn run_campaign(
     Ok(run)
 }
 
-fn valid_toolchains(toolchains: &BTreeMap<String, String>) -> bool {
-    !toolchains.is_empty()
-        && toolchains.iter().all(|(name, identity)| {
-            matches!(name.as_str(), "node" | "rust" | "python") && !identity.trim().is_empty()
-        })
-}
-
-#[cfg(test)]
-mod toolchain_tests {
-    use super::valid_toolchains;
-    use std::collections::BTreeMap;
-
-    // TC-1942: reject configuration that would fail collection intake after execution.
-    #[test]
-    fn campaign_preflight_requires_supported_toolchain_identity() {
-        assert!(!valid_toolchains(&BTreeMap::new()));
-        assert!(!valid_toolchains(&BTreeMap::from([(
-            "container".to_owned(),
-            "image@sha256:abc".to_owned(),
-        )])));
-        assert!(!valid_toolchains(&BTreeMap::from([(
-            "rust".to_owned(),
-            "  ".to_owned(),
-        )])));
-        assert!(valid_toolchains(&BTreeMap::from([(
-            "rust".to_owned(),
-            "rustc 1.98.1 x86_64-unknown-linux-gnu".to_owned(),
-        )])));
-    }
-}
-
-fn evidence_of_attempt(repo: &Path, attempt: &CampaignAttempt) -> AttemptEvidence {
-    let (Some(domain_digest), Some(verdict_digest)) = (
-        attempt.domain_verdict_digest.as_deref(),
-        attempt.verdict_digest.as_deref(),
-    ) else {
-        return AttemptEvidence::Inconclusive;
-    };
-    let Ok(domain_bytes) = read_digest_bytes(repo, "domain-verdicts", domain_digest, "json") else {
-        return AttemptEvidence::Reject;
-    };
-    let Ok(domain) = serde_json::from_slice::<DomainVerdictReceipt>(&domain_bytes) else {
-        return AttemptEvidence::Reject;
-    };
-    let Ok(verdict_bytes) = read_digest_bytes(repo, "verdicts", verdict_digest, "json") else {
-        return AttemptEvidence::Reject;
-    };
-    let Ok(verdict) = serde_json::from_slice::<Value>(&verdict_bytes) else {
-        return AttemptEvidence::Reject;
-    };
-    match (
-        domain.verdict,
-        verdict.get("verdict").and_then(Value::as_str),
-    ) {
-        (super::checker::DomainOutcome::Accept, Some("accept")) => AttemptEvidence::Accept,
-        (super::checker::DomainOutcome::Reject, _) | (_, Some("reject")) => AttemptEvidence::Reject,
-        _ => AttemptEvidence::Inconclusive,
-    }
-}
-
 fn load_procedures(
     repo: &Path,
     plans: &[MeasurementPlan],
@@ -453,7 +484,14 @@ fn load_procedures(
     Ok(found)
 }
 
+mod cancellation;
+mod checkpoint;
 mod collection;
 mod domain;
+mod evidence;
 mod execution;
+mod preflight;
+pub use cancellation::CampaignCancellation;
+use evidence::evidence_of_attempt;
 use execution::run_member;
+use preflight::valid_toolchains;

@@ -24,16 +24,13 @@ pub(super) struct RunSelection {
     members: BTreeMap<String, MemberBindingWire>,
 }
 
+type SelectedBindings = (
+    BTreeMap<String, PathBuf>,
+    BTreeMap<String, RunMemberBindings>,
+);
+
 impl RunSelection {
-    pub fn into_parts(
-        self,
-    ) -> Result<
-        (
-            BTreeMap<String, PathBuf>,
-            BTreeMap<String, RunMemberBindings>,
-        ),
-        String,
-    > {
+    pub(super) fn into_parts(self) -> Result<SelectedBindings, String> {
         let bindings = self
             .members
             .into_iter()
@@ -357,6 +354,11 @@ fn parse_digest(value: &str) -> Result<ContentDigest, String> {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "fixture shape and identity assertions must fail loudly when setup changes"
+)]
 mod tests {
     use super::{InputSource, RunSelection};
     use serde_json::{Value, json};

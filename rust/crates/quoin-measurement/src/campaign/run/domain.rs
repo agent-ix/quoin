@@ -2,17 +2,18 @@
 // Copyright (C) 2026 Agent-IX
 //! One independently bounded checker invocation and receipt.
 
+use super::CampaignCancellation;
 use super::collection::publish_collection;
 use super::{
     BTreeMap, BindingFailure, CHECKER_DEFINITION_PATH, CHECKER_INPUT_PATH, CHECKER_RAW_BUNDLE_PATH,
     CHECKER_REQUEST_PATH, CHECKER_RESULT_PATH, CampaignAttempt, CampaignDefinition,
-    CampaignRunError, CampaignStoreError, CancellationToken, ContentDigest,
-    DOMAIN_CHECK_INPUT_SCHEMA, DependencyResultInput, DomainCheckInput, DomainVerdictReceipt,
-    InputBinding, MeasurementPlan, Path, ProcessEvidenceAdapter, ProcessEvidenceObservation,
-    ProducerExecutionResult, ProducerExecutionState, ProducerExecutor, RawArtifactInput, Read,
-    RunMemberBindings, SourceError, SourceTreeBinding, VerifiedSource, assess_receipt,
-    canonical_digest, raw_artifact_bundle, read_digest_bytes, resolve_procedure, retain_bytes,
-    retain_json_bytes, retain_value, staged_dependency_path, staged_dependency_raw_path,
+    CampaignRunError, CampaignStoreError, ContentDigest, DOMAIN_CHECK_INPUT_SCHEMA,
+    DependencyResultInput, DomainCheckInput, DomainVerdictReceipt, InputBinding, MeasurementPlan,
+    Path, ProcessEvidenceAdapter, ProcessEvidenceObservation, ProducerExecutionResult,
+    ProducerExecutionState, ProducerExecutor, RawArtifactInput, Read, RunMemberBindings,
+    SourceError, SourceTreeBinding, VerifiedSource, assess_receipt, canonical_digest,
+    raw_artifact_bundle, read_digest_bytes, resolve_procedure, retain_bytes, retain_json_bytes,
+    retain_value, staged_dependency_path, staged_dependency_raw_path,
 };
 
 #[allow(
@@ -34,6 +35,7 @@ pub(super) fn complete_attempt(
     sources: &BTreeMap<String, VerifiedSource>,
     prior: &[CampaignAttempt],
     executor: &ProducerExecutor,
+    cancellation: &CampaignCancellation,
     result: &ProducerExecutionResult<ProcessEvidenceObservation>,
     attempt: &mut CampaignAttempt,
 ) -> Result<(), CampaignRunError> {
@@ -46,6 +48,7 @@ pub(super) fn complete_attempt(
         sources,
         prior,
         executor,
+        cancellation,
         result,
         attempt,
     ) {
@@ -119,6 +122,7 @@ fn check_domain_attempt(
     sources: &BTreeMap<String, VerifiedSource>,
     prior: &[CampaignAttempt],
     executor: &ProducerExecutor,
+    cancellation: &CampaignCancellation,
     result: &ProducerExecutionResult<ProcessEvidenceObservation>,
     attempt: &mut CampaignAttempt,
 ) -> Result<super::AttemptEvidence, CampaignRunError> {
@@ -331,15 +335,17 @@ fn check_domain_attempt(
         ));
     }
     attempt.checker_request_digest = Some(request_digest);
-    let cancellation = CancellationToken::new(checker_request.request.cancellation.clone());
-    let checker_result =
-        match executor.execute(&checker_request.request, &cancellation, &checker_adapter) {
-            Ok(result) => result,
-            Err(error) => {
-                attempt.reason = Some(format!("checker_invalid_request:{error}"));
-                return Ok(super::AttemptEvidence::Inconclusive);
-            }
-        };
+    let executed = {
+        let active = cancellation.register(checker_request.request.cancellation.clone());
+        executor.execute(&checker_request.request, active.token(), &checker_adapter)
+    };
+    let checker_result = match executed {
+        Ok(result) => result,
+        Err(error) => {
+            attempt.reason = Some(format!("checker_invalid_request:{error}"));
+            return Ok(super::AttemptEvidence::Inconclusive);
+        }
+    };
     let result_digest = checker_result
         .identity()
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?

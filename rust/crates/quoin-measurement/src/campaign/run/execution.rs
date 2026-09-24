@@ -2,11 +2,12 @@
 // Copyright (C) 2026 Agent-IX
 //! One bounded producer invocation and exact selected inputs.
 
+use super::CampaignCancellation;
 use super::domain::complete_attempt;
 use super::{
     BTreeMap, BTreeSet, BindingFailure, CampaignAttempt, CampaignAttemptStatus, CampaignDefinition,
-    CampaignRawArtifact, CampaignRunError, CancellationToken, ContentDigest, EnvironmentSource,
-    InputBinding, InputSource, MeasurementPlan, MeasurementProcedure, Path, ProcessEvidenceAdapter,
+    CampaignRawArtifact, CampaignRunError, ContentDigest, EnvironmentSource, InputBinding,
+    InputSource, MeasurementPlan, MeasurementProcedure, Path, ProcessEvidenceAdapter,
     ProcessEvidenceObservation, ProducerExecutionResult, ProducerExecutionState, ProducerExecutor,
     Read, RunMemberBindings, SourceTreeBinding, VerifiedSource, read_bounded, read_digest_bytes,
     resolve_procedure, retain_bytes, retain_value,
@@ -32,6 +33,7 @@ pub(super) fn run_member(
     sources: &BTreeMap<String, VerifiedSource>,
     prior: &[CampaignAttempt],
     executor: &ProducerExecutor,
+    cancellation: &CampaignCancellation,
     index: i64,
 ) -> Result<CampaignAttempt, CampaignRunError> {
     let mut attempt = CampaignAttempt {
@@ -119,8 +121,11 @@ pub(super) fn run_member(
         ));
     }
     attempt.request_digest = Some(request_digest);
-    let cancellation = CancellationToken::new(resolved.request.cancellation.clone());
-    let result = match executor.execute(&resolved.request, &cancellation, &adapter) {
+    let executed = {
+        let active = cancellation.register(resolved.request.cancellation.clone());
+        executor.execute(&resolved.request, active.token(), &adapter)
+    };
+    let result = match executed {
         Ok(result) => result,
         Err(_error) => {
             attempt.reason = Some("invalid_request".to_owned());
@@ -161,6 +166,7 @@ pub(super) fn run_member(
             sources,
             prior,
             executor,
+            cancellation,
             &result,
             &mut attempt,
         )

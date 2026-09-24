@@ -6,11 +6,11 @@ use super::attempt::{check_request_contract, check_request_inputs};
 use super::{
     AttemptEvidence, BTreeMap, CHECKER_DEFINITION_PATH, CHECKER_INPUT_PATH,
     CHECKER_RAW_BUNDLE_PATH, CHECKER_REQUEST_PATH, CHECKER_RESULT_PATH, CampaignAttempt,
-    CampaignAttemptStatus, CampaignDefinition, DOMAIN_CHECK_INPUT_SCHEMA, DependencyResultInput,
-    DomainCheckInput, DomainVerdictReceipt, EvidenceError, InputBinding, Path, RawArtifactBundle,
-    RawArtifactInput, Value, assess_receipt, canonical_digest, parse_strict_json,
-    raw_artifact_bundle, read_digest_bytes, required, retained_json, staged_dependency_path,
-    staged_dependency_raw_path,
+    CampaignAttemptStatus, CampaignDefinition, CampaignStoreError, DOMAIN_CHECK_INPUT_SCHEMA,
+    DependencyResultInput, DomainCheckInput, DomainVerdictReceipt, EvidenceError, InputBinding,
+    Path, RawArtifactBundle, RawArtifactInput, Value, assess_receipt, canonical_digest,
+    parse_strict_json, raw_artifact_bundle, read_digest_bytes, required, retained_json,
+    staged_dependency_path, staged_dependency_raw_path,
 };
 
 #[allow(
@@ -82,8 +82,15 @@ pub(super) fn check_domain_receipt(
         .get("digest")
         .and_then(Value::as_str)
         .ok_or(EvidenceError::Contradiction)?;
-    let raw_receipt = read_digest_bytes(repo, "raw", raw_receipt_digest, "bin")
-        .map_err(|_| EvidenceError::Missing)?;
+    let raw_receipt =
+        read_digest_bytes(repo, "raw", raw_receipt_digest, "bin").map_err(|error| match error {
+            CampaignStoreError::Io { source, .. }
+                if source.kind() == std::io::ErrorKind::NotFound =>
+            {
+                EvidenceError::Missing
+            }
+            _ => EvidenceError::Contradiction,
+        })?;
     if verdict_artifact.get("byteLength").and_then(Value::as_u64)
         != u64::try_from(raw_receipt.len()).ok()
         || !checker_request

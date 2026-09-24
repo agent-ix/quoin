@@ -33,6 +33,7 @@ quoin-graph-analysis = { workspace = true }
 # second reader of the same documents here.
 quoin-measurement = { workspace = true, features = ["campaign"] }
 engineering-assurance = { workspace = true, features = ["campaign"] }
+signal-hook = { workspace = true }
 # `--digest-from-file` (PLAT-931) computes a `measurement.record` digest from a
 # local file with the store's own `digest_file_sha256`, rather than a caller
 # pasting a `sha256:<64 hex>` string by hand and this crate trusting its shape.

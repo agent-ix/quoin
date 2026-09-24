@@ -481,6 +481,102 @@ fn direct_fixture() -> (
     (repo, producer_repo, definition, checkouts, runs)
 }
 
+/// Trace: FR-114-AC-1
+/// Provenance: PLAT-1043, TC-1940
+/// EA's generated wire types and cross-record validator are the campaign
+/// intake boundary for malformed definitions and digest links.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1940_typed_definition_and_run_refusal_matrix() {
+    use engineering_assurance::campaign::{
+        CAMPAIGN_RUN_VERSION, CampaignError, CampaignRun, CampaignVerdict, MeasurementProcedure,
+        PlanRegistration, canonical_digest, validate_definition, validate_run,
+    };
+
+    let (repo, _producer_repo, definition, _checkouts, _runs) = direct_fixture();
+    let procedure: MeasurementProcedure = serde_json::from_slice(
+        &fs::read(repo.path().join("campaign/procedure.json")).expect("procedure bytes"),
+    )
+    .expect("typed procedure");
+    let registration = [PlanRegistration {
+        id: "MP-FIXTURE",
+        definition_version: "v1",
+        procedure: Some(&procedure),
+    }];
+    validate_definition(&definition, &registration).expect("valid definition");
+
+    let mut duplicate = definition.clone();
+    duplicate.members.push(duplicate.members[0].clone());
+    assert!(matches!(
+        validate_definition(&duplicate, &registration),
+        Err(CampaignError::Duplicate { kind: "member", .. })
+    ));
+    let mut missing = definition.clone();
+    missing.members.clear();
+    assert!(matches!(
+        validate_definition(&missing, &registration),
+        Err(CampaignError::NoEntries { field: "members" })
+    ));
+    let mut undeclared = definition.clone();
+    undeclared.members[0].depends_on = Some(vec!["outside".to_owned()]);
+    assert!(matches!(
+        validate_definition(&undeclared, &registration),
+        Err(CampaignError::Unresolved {
+            kind: "dependency",
+            ..
+        })
+    ));
+    let mut cycle = definition.clone();
+    let mut second = cycle.members[0].clone();
+    second.name = "two".to_owned();
+    second.depends_on = Some(vec!["one".to_owned()]);
+    cycle.members[0].depends_on = Some(vec!["two".to_owned()]);
+    cycle.members.push(second);
+    assert!(matches!(
+        validate_definition(&cycle, &registration),
+        Err(CampaignError::DependencyCycle)
+    ));
+    let mut unknown_rule = serde_json::to_value(&definition).expect("definition JSON");
+    unknown_rule["completionRule"] = json!("first-accepted");
+    assert!(serde_json::from_value::<engineering_assurance::campaign::CampaignDefinition>(
+        unknown_rule,
+    ).is_err());
+
+    let mut run = CampaignRun {
+        schema_version: CAMPAIGN_RUN_VERSION.to_owned(),
+        id: "intake-matrix".to_owned(),
+        definition_digest: canonical_digest(&definition)
+            .expect("definition identity")
+            .as_str()
+            .to_owned(),
+        source_graph_digest: canonical_digest(&definition.source_graph)
+            .expect("source graph identity")
+            .as_str()
+            .to_owned(),
+        attempts: None,
+        verdict: CampaignVerdict::Inconclusive,
+    };
+    validate_run(&run, &definition).expect("well-linked run");
+    run.definition_digest = "0".repeat(64);
+    assert!(matches!(
+        validate_run(&run, &definition),
+        Err(CampaignError::Binding {
+            field: "definitionDigest"
+        })
+    ));
+    run.definition_digest = canonical_digest(&definition)
+        .expect("definition identity")
+        .as_str()
+        .to_owned();
+    run.source_graph_digest = "0".repeat(64);
+    assert!(matches!(
+        validate_run(&run, &definition),
+        Err(CampaignError::Binding {
+            field: "sourceGraphDigest"
+        })
+    ));
+}
+
 #[cfg(target_os = "linux")]
 fn assert_retained_unchecked_attempts(
     repo: &Path,
@@ -919,4 +1015,654 @@ fn tc_1942_rehashed_producer_arguments_do_not_replay() {
         CampaignOutcome::Reject,
         "{replay:?}"
     );
+}
+
+/// Trace: FR-114-AC-2
+/// Provenance: PLAT-1043
+/// A source-bound restart reuses completed, write-once attempts under the same
+/// run ID. It never reruns or replaces those Collections when a later member
+/// failed before its own attempt could be retained.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1942_resume_keeps_prior_attempts_and_completes_the_missing_suffix() {
+    use engineering_assurance::campaign::{CampaignVerdict, canonical_digest};
+    use quoin_measurement::campaign::run::{InputSource, SelectedInput, run_campaign};
+
+    let (repo, _producer_repo, mut definition, checkouts, mut runs) = direct_fixture();
+    let mut second = definition.members[0].clone();
+    second.name = "two".to_owned();
+    second.depends_on = Some(vec!["one".to_owned()]);
+    definition.members.push(second);
+    let input_dir = tempfile::tempdir().expect("external selected-input directory");
+    let input_path = input_dir.path().join("later.bin");
+    let mut second_runtime = runs.get("one").expect("first runtime").clone();
+    second_runtime.inputs.push(SelectedInput {
+        role: "extra".to_owned(),
+        path: "selected/later.bin".to_owned(),
+        executable: false,
+        source: InputSource::File(input_path.clone()),
+    });
+    runs.insert("two".to_owned(), second_runtime);
+    let run_id = "fixture-resume-immutable";
+    assert!(run_campaign(repo.path(), &definition, run_id, &checkouts, &runs).is_err());
+    assert!(!run_path(repo.path(), run_id).expect("run path").exists());
+    let checkpoint_root =
+        quoin_measurement::campaign::store::campaigns_root(repo.path()).join("checkpoints");
+    let mut original: Vec<(std::path::PathBuf, Vec<u8>)> = fs::read_dir(&checkpoint_root)
+        .expect("retained checkpoint directory")
+        .map(|entry| {
+            let path = entry.expect("checkpoint entry").path();
+            let bytes = fs::read(&path).expect("checkpoint bytes");
+            (path, bytes)
+        })
+        .collect();
+    original.sort_by_key(|(_, bytes)| {
+        serde_json::from_slice::<serde_json::Value>(bytes).expect("checkpoint JSON")["ordinal"]
+            .as_u64()
+            .expect("checkpoint ordinal")
+    });
+    assert_eq!(
+        original.len(),
+        2,
+        "two completed producer attempts retained"
+    );
+    let prior_attempts: Vec<serde_json::Value> = original
+        .iter()
+        .map(|(_, bytes)| {
+            serde_json::from_slice::<serde_json::Value>(bytes).expect("checkpoint JSON")["attempt"]
+                .clone()
+        })
+        .collect();
+
+    fs::write(&input_path, b"selected bytes").expect("make later input available");
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("resume missing member without repeating prior attempts");
+    assert_eq!(run.verdict, CampaignVerdict::Inconclusive);
+    let attempts = run.attempts.as_ref().expect("complete attempt inventory");
+    assert_eq!(attempts.len(), 4);
+    for (checkpoint, prior) in original.iter().zip(prior_attempts.iter()) {
+        assert_eq!(
+            fs::read(&checkpoint.0).expect("checkpoint after resume"),
+            checkpoint.1
+        );
+        let retained: serde_json::Value =
+            serde_json::from_slice(&checkpoint.1).expect("checkpoint JSON");
+        assert_eq!(retained["attempt"], *prior);
+    }
+    let resumed_first: Vec<_> = attempts
+        .iter()
+        .filter(|attempt| attempt.member == "one")
+        .map(|attempt| serde_json::to_value(attempt).expect("attempt JSON"))
+        .collect();
+    assert_eq!(resumed_first, prior_attempts);
+    let definition_digest = canonical_digest(&definition).expect("definition digest");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("independent resumed-run replay");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
+
+    let published =
+        fs::read(run_path(repo.path(), run_id).expect("run path")).expect("published run bytes");
+    assert!(run_campaign(repo.path(), &definition, run_id, &checkouts, &runs).is_err());
+    assert_eq!(
+        fs::read(run_path(repo.path(), run_id).expect("run path")).expect("run after repeat"),
+        published,
+        "a published run is never replaced"
+    );
+}
+
+/// Trace: FR-114-AC-2, TC-1942. Provenance: PLAT-1043.
+/// A same-run-ID checkpoint claiming InvalidRequest without an EA result has
+/// no replayable preflight authority and cannot suppress that invocation.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1942_resume_refuses_planted_evidence_free_preflight_checkpoint() {
+    use quoin_measurement::campaign::run::{BindingFailure, CampaignRunError, run_campaign};
+
+    let (repo, _producer_repo, definition, checkouts, runs) = direct_fixture();
+    let run_id = "fixture-forged-preflight-checkpoint";
+    run_campaign(repo.path(), &definition, run_id, &checkouts, &runs).expect("initial direct run");
+    let run_file = run_path(repo.path(), run_id).expect("run path");
+    fs::remove_file(&run_file).expect("model interrupted final publication");
+    let checkpoint_root =
+        quoin_measurement::campaign::store::campaigns_root(repo.path()).join("checkpoints");
+    let first_path = fs::read_dir(checkpoint_root)
+        .expect("checkpoint directory")
+        .map(|entry| entry.expect("checkpoint entry").path())
+        .find(|path| {
+            let record: serde_json::Value =
+                serde_json::from_slice(&fs::read(path).expect("checkpoint bytes"))
+                    .expect("checkpoint JSON");
+            record["ordinal"] == 1
+        })
+        .expect("first checkpoint");
+    let mut checkpoint: serde_json::Value =
+        serde_json::from_slice(&fs::read(&first_path).expect("checkpoint bytes"))
+            .expect("checkpoint JSON");
+    checkpoint["attempt"] = json!({
+        "member":"one", "index":1, "status":"invalid_request", "reason":"planted_preflight"
+    });
+    let planted = serde_json::to_vec(&checkpoint).expect("planted checkpoint JSON");
+    fs::write(&first_path, &planted).expect("plant evidence-free checkpoint");
+
+    assert!(matches!(
+        run_campaign(repo.path(), &definition, run_id, &checkouts, &runs),
+        Err(CampaignRunError::Binding(BindingFailure::IdentityMismatch(
+            _
+        )))
+    ));
+    assert!(!run_file.exists(), "no final run may be published");
+    assert_eq!(fs::read(first_path).expect("checkpoint remains"), planted);
+}
+
+/// Trace: FR-114-AC-2
+/// Provenance: PLAT-1043
+/// A crash after publishing a Collection but before its checkpoint cannot
+/// safely rerun that invocation. The existing bytes must win the collision.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1942_orphan_collection_collision_refuses_without_overwrite() {
+    use quoin_measurement::campaign::run::run_campaign;
+
+    let (repo, _producer_repo, definition, checkouts, mut runs) = direct_fixture();
+    let run_id = "fixture-orphan-collision";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("initial direct run");
+    let collection_id = run.attempts.as_ref().expect("attempts")[0]
+        .collection_id
+        .as_ref()
+        .expect("collection ID");
+    let collection_path = quoin_measurement::store::measurement_path(
+        repo.path(),
+        &quoin_measurement::types::ids::CollectionId::parse(collection_id)
+            .expect("valid collection ID"),
+    );
+    let original = fs::read(&collection_path).expect("retained Collection");
+
+    // Model a crash window with an orphan Collection: only the fixture's
+    // final-run/checkpoint metadata is removed, never the Collection itself.
+    fs::remove_file(run_path(repo.path(), run_id).expect("run path"))
+        .expect("remove fixture run metadata");
+    let checkpoint_root =
+        quoin_measurement::campaign::store::campaigns_root(repo.path()).join("checkpoints");
+    for entry in fs::read_dir(checkpoint_root).expect("checkpoint directory") {
+        fs::remove_file(entry.expect("checkpoint entry").path())
+            .expect("remove fixture checkpoint metadata");
+    }
+    runs.get_mut("one").expect("member binding").timestamp = "2026-09-24T00:00:00Z".to_owned();
+    assert!(run_campaign(repo.path(), &definition, run_id, &checkouts, &runs).is_err());
+    assert_eq!(
+        fs::read(&collection_path).expect("Collection after refusal"),
+        original
+    );
+    assert!(!run_path(repo.path(), run_id).expect("run path").exists());
+}
+
+/// Trace: FR-114-AC-2
+/// Provenance: PLAT-1043
+/// A missing executable is a retained EA preflight outcome, with only the
+/// identities EA actually minted and no fabricated Collection.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_unavailable_producer_is_retained_and_replayed() {
+    use engineering_assurance::campaign::{
+        CampaignAttemptStatus, CampaignVerdict, canonical_digest,
+    };
+    use engineering_assurance::producer_execution::ContentDigest;
+    use quoin_measurement::campaign::run::run_campaign;
+
+    let (repo, _producer_repo, definition, checkouts, mut runs) = direct_fixture();
+    let producer = &mut runs
+        .get_mut("one")
+        .expect("member binding")
+        .producer
+        .producer;
+    producer.executable = "/definitely-not-installed/quoin-fixture-producer".to_owned();
+    producer.executable_digest = ContentDigest::of_bytes(b"absent executable");
+    let run_id = "fixture-unavailable-producer";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("typed unavailable result retained");
+    assert_eq!(run.verdict, CampaignVerdict::Inconclusive);
+    for attempt in run.attempts.as_ref().expect("attempts") {
+        assert_eq!(
+            attempt.status,
+            CampaignAttemptStatus::Unavailable,
+            "{attempt:?}"
+        );
+        assert!(attempt.request_digest.is_some());
+        assert!(attempt.result_digest.is_some());
+        assert!(attempt.collection_id.is_none());
+    }
+    let definition_digest = canonical_digest(&definition).expect("definition identity");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("independent terminal replay");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
+
+    // Rehash the first EA result and update the run's claimed digest. Its
+    // changed terminal state still contradicts the retained attempt status.
+    let original_result = run.attempts.as_ref().expect("attempts")[0]
+        .result_digest
+        .as_deref()
+        .expect("result identity");
+    let result_path = quoin_measurement::campaign::store::digest_path(
+        repo.path(),
+        "results",
+        original_result,
+        "json",
+    )
+    .expect("result path");
+    let mut result: serde_json::Value =
+        serde_json::from_slice(&fs::read(result_path).expect("EA result")).expect("EA result JSON");
+    result["state"]["kind"] = json!("timed_out");
+    let (new_result, _) =
+        quoin_measurement::campaign::store::retain_value(repo.path(), "results", &result)
+            .expect("rehash terminal result");
+    let run_file = run_path(repo.path(), run_id).expect("run path");
+    let mut altered_run: serde_json::Value =
+        serde_json::from_slice(&fs::read(&run_file).expect("run bytes")).expect("run JSON");
+    altered_run["attempts"][0]["resultDigest"] = json!(new_result);
+    fs::write(
+        &run_file,
+        serde_json::to_vec(&altered_run).expect("run JSON"),
+    )
+    .expect("substituted run");
+    let rejected =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("well-formed substituted terminal attempt");
+    assert_eq!(rejected.decision.verdict, CampaignOutcome::Reject);
+}
+
+/// Trace: FR-114-AC-2
+/// Provenance: PLAT-1043
+/// An EA request rejected before identity creation records a typed attempt
+/// without inventing request, result or Collection identities.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_invalid_request_has_no_minted_identity() {
+    use engineering_assurance::campaign::{
+        CampaignAttemptStatus, CampaignVerdict, canonical_digest,
+    };
+    use quoin_measurement::campaign::run::run_campaign;
+
+    let (repo, _producer_repo, definition, checkouts, mut runs) = direct_fixture();
+    runs.get_mut("one")
+        .expect("member binding")
+        .producer
+        .producer
+        .source_revision = "unlisted-revision".to_owned();
+    let run_id = "fixture-invalid-request";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("typed invalid-request attempts retained");
+    assert_eq!(run.verdict, CampaignVerdict::Inconclusive);
+    for attempt in run.attempts.as_ref().expect("attempts") {
+        assert_eq!(attempt.status, CampaignAttemptStatus::InvalidRequest);
+        assert_eq!(attempt.reason.as_deref(), Some("invalid_request"));
+        assert!(attempt.request_digest.is_none());
+        assert!(attempt.result_digest.is_none());
+        assert!(attempt.collection_id.is_none());
+    }
+    let definition_digest = canonical_digest(&definition).expect("definition identity");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("independent invalid-request replay");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
+}
+
+/// Trace: FR-114-AC-2
+/// Provenance: PLAT-1043, TC-1941
+/// A selected executable whose actual bytes differ from the request's digest
+/// receives EA's identity-bearing typed prelaunch refusal.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_executable_identity_refusal_is_retained() {
+    use engineering_assurance::campaign::{CampaignAttemptStatus, canonical_digest};
+    use engineering_assurance::producer_execution::ContentDigest;
+    use quoin_measurement::campaign::run::run_campaign;
+
+    let (repo, _producer_repo, definition, checkouts, mut runs) = direct_fixture();
+    runs.get_mut("one")
+        .expect("member binding")
+        .producer
+        .producer
+        .executable_digest = ContentDigest::of_bytes(b"wrong executable bytes");
+    let run_id = "fixture-executable-refused";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("typed EA refusal retained");
+    for attempt in run.attempts.as_ref().expect("attempts") {
+        assert_eq!(
+            attempt.status,
+            CampaignAttemptStatus::Refused,
+            "{attempt:?}"
+        );
+        assert!(attempt.request_digest.is_some());
+        assert!(attempt.result_digest.is_some());
+        assert!(attempt.collection_id.is_none());
+    }
+    let definition_digest = canonical_digest(&definition).expect("definition identity");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("independent refusal replay");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
+}
+
+/// Trace: FR-114-AC-2
+/// Provenance: PLAT-1043, TC-1941
+/// The native producer exceeds its bound stdout budget and EA records the
+/// closed failure category without manufacturing a Collection.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_bounded_stdout_failure_is_retained() {
+    use engineering_assurance::campaign::{CampaignAttemptStatus, canonical_digest};
+    use quoin_measurement::campaign::run::run_campaign;
+
+    let (repo, _producer_repo, definition, checkouts, mut runs) = direct_fixture();
+    runs.get_mut("one")
+        .expect("member binding")
+        .producer
+        .budget
+        .max_stdout_bytes = 1;
+    let run_id = "fixture-stdout-bound";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("typed EA output-bound failure retained");
+    for attempt in run.attempts.as_ref().expect("attempts") {
+        assert_eq!(attempt.status, CampaignAttemptStatus::Failed, "{attempt:?}");
+        assert!(attempt.request_digest.is_some());
+        assert!(attempt.result_digest.is_some());
+        assert!(attempt.collection_id.is_none());
+    }
+    let definition_digest = canonical_digest(&definition).expect("definition identity");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("independent failure replay");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
+}
+
+/// Trace: FR-114-AC-2
+/// Provenance: PLAT-1043, TC-1941
+/// A source-authored short deadline and a sleeping direct producer exercise
+/// the EA timeout path with minted request/result identities.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_timed_out_producer_is_retained() {
+    use engineering_assurance::campaign::{CampaignAttemptStatus, canonical_digest};
+    use quoin_measurement::campaign::run::run_campaign;
+
+    let (repo, producer_repo, mut definition, checkouts, mut runs) = direct_fixture();
+    let procedure_path = repo.path().join("campaign/procedure.json");
+    let mut procedure: serde_json::Value =
+        serde_json::from_slice(&fs::read(&procedure_path).expect("procedure bytes"))
+            .expect("procedure JSON");
+    procedure["timeoutMillis"] = json!(20);
+    fs::write(
+        &procedure_path,
+        serde_json::to_vec(&procedure).expect("procedure JSON"),
+    )
+    .expect("bounded procedure");
+    git(repo.path(), &["add", "campaign/procedure.json"]);
+    git(
+        repo.path(),
+        &[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "-q",
+            "-m",
+            "short deadline",
+        ],
+    );
+    fs::write(
+        producer_repo.path().join("campaign/producer.py"),
+        "import time\ntime.sleep(2)\nprint('ok')\n",
+    )
+    .expect("sleeping producer");
+    git(producer_repo.path(), &["add", "campaign/producer.py"]);
+    git(
+        producer_repo.path(),
+        &[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "-q",
+            "-m",
+            "sleeping producer",
+        ],
+    );
+    for (source, checkout) in definition
+        .source_graph
+        .iter_mut()
+        .zip([repo.path(), producer_repo.path()])
+    {
+        source.revision = String::from_utf8(git(checkout, &["rev-parse", "HEAD"]))
+            .expect("revision")
+            .trim()
+            .to_owned();
+        source.digest = digest_bytes_sha256(&git(
+            checkout,
+            &["ls-tree", "-r", "-z", "--full-tree", &source.revision],
+        ))
+        .as_hex()
+        .to_owned();
+    }
+    let runtime = runs.get_mut("one").expect("member binding");
+    runtime.producer.producer.source_revision = definition.source_graph[1].revision.clone();
+    runtime
+        .checker
+        .as_mut()
+        .expect("checker binding")
+        .producer
+        .source_revision = definition.source_graph[0].revision.clone();
+    let run_id = "fixture-producer-timeout";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("typed EA timeout retained");
+    for attempt in run.attempts.as_ref().expect("attempts") {
+        assert_eq!(
+            attempt.status,
+            CampaignAttemptStatus::TimedOut,
+            "{attempt:?}"
+        );
+        assert!(attempt.request_digest.is_some());
+        assert!(attempt.result_digest.is_some());
+        assert!(attempt.collection_id.is_none());
+    }
+    let definition_digest = canonical_digest(&definition).expect("definition identity");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("independent timeout replay");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
+}
+
+/// Trace: FR-114-AC-2
+/// Provenance: PLAT-1043, TC-1941
+/// A caller cancels the currently registered EA Event-bound direct process;
+/// both the terminal outcome and minted request/result identities replay.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_live_event_cancellation_is_retained() {
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    use engineering_assurance::campaign::{CampaignAttemptStatus, canonical_digest};
+    use engineering_assurance::producer_execution::CancellationBinding;
+    use quoin_measurement::campaign::run::{CampaignCancellation, run_campaign_with_cancellation};
+
+    let (repo, producer_repo, mut definition, checkouts, mut runs) = direct_fixture();
+    fs::write(
+        producer_repo.path().join("campaign/producer.py"),
+        "import time\ntime.sleep(2)\nprint('ok')\n",
+    )
+    .expect("sleeping producer");
+    git(producer_repo.path(), &["add", "campaign/producer.py"]);
+    git(
+        producer_repo.path(),
+        &[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "-q",
+            "-m",
+            "cancellable producer",
+        ],
+    );
+    let source = &mut definition.source_graph[1];
+    source.revision = String::from_utf8(git(producer_repo.path(), &["rev-parse", "HEAD"]))
+        .expect("producer revision")
+        .trim()
+        .to_owned();
+    source.digest = digest_bytes_sha256(&git(
+        producer_repo.path(),
+        &["ls-tree", "-r", "-z", "--full-tree", &source.revision],
+    ))
+    .as_hex()
+    .to_owned();
+    let producer = &mut runs.get_mut("one").expect("member binding").producer;
+    producer.producer.source_revision = source.revision.clone();
+    producer.cancellation = CancellationBinding::Event {
+        authority: "fictional-campaign".to_owned(),
+        event_id: "cancel-current-run".to_owned(),
+    };
+
+    let control = Arc::new(CampaignCancellation::new());
+    let cancelling = Arc::clone(&control);
+    let canceller = std::thread::spawn(move || {
+        assert!(
+            cancelling.wait_for_active(Duration::from_secs(5)),
+            "EA request registered"
+        );
+        assert!(
+            cancelling.cancel(),
+            "Event-bound active token accepted cancellation"
+        );
+    });
+    let run_id = "fixture-live-cancellation";
+    let run = run_campaign_with_cancellation(
+        repo.path(),
+        &definition,
+        run_id,
+        &checkouts,
+        &runs,
+        &control,
+    )
+    .expect("cancelled attempts retained");
+    canceller.join().expect("canceller completed");
+    for attempt in run.attempts.as_ref().expect("attempts") {
+        assert_eq!(
+            attempt.status,
+            CampaignAttemptStatus::Cancelled,
+            "{attempt:?}"
+        );
+        assert!(attempt.request_digest.is_some());
+        assert!(attempt.result_digest.is_some());
+        assert!(attempt.collection_id.is_none());
+    }
+    let definition_digest = canonical_digest(&definition).expect("definition identity");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("independent cancellation replay");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
+}
+
+/// Trace: FR-114-AC-2. Provenance: PLAT-1043, TC-1941.
+/// Disabled request bindings cannot be labelled as cancelled by a caller.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_disabled_cancellation_never_invents_cancelled_state() {
+    use engineering_assurance::campaign::CampaignVerdict;
+    use quoin_measurement::campaign::run::{CampaignCancellation, run_campaign_with_cancellation};
+
+    let (repo, _producer_repo, definition, checkouts, runs) = direct_fixture();
+    let control = CampaignCancellation::new();
+    assert!(!control.cancel(), "no Event-bound token is active");
+    let run = run_campaign_with_cancellation(
+        repo.path(),
+        &definition,
+        "fixture-disabled-cancellation",
+        &checkouts,
+        &runs,
+        &control,
+    )
+    .expect("Disabled binding runs normally");
+    assert_eq!(run.verdict, CampaignVerdict::Accepted);
+}
+
+/// Trace: FR-114-AC-3
+/// Provenance: PLAT-1043, TC-1944
+/// Removing a retained receipt downgrades an originally accepted run to
+/// inconclusive; changing retained bytes is a contradictory reject.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1944_missing_plan_or_domain_receipt_is_inconclusive() {
+    use engineering_assurance::campaign::{CampaignVerdict, canonical_digest};
+    use quoin_measurement::campaign::run::run_campaign;
+    use quoin_measurement::campaign::store::digest_path;
+
+    let (repo, _producer_repo, definition, checkouts, runs) = direct_fixture();
+    let run_id = "fixture-missing-receipts";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("accepted direct fixture");
+    assert_eq!(run.verdict, CampaignVerdict::Accepted);
+    let attempt = &run.attempts.as_ref().expect("attempts")[0];
+    let definition_digest = canonical_digest(&definition).expect("definition identity");
+    for (kind, digest) in [
+        (
+            "verdicts",
+            attempt.verdict_digest.as_deref().expect("plan verdict"),
+        ),
+        (
+            "domain-verdicts",
+            attempt
+                .domain_verdict_digest
+                .as_deref()
+                .expect("domain verdict"),
+        ),
+    ] {
+        let path = digest_path(repo.path(), kind, digest, "json").expect("receipt path");
+        let bytes = fs::read(&path).expect("receipt bytes");
+        fs::remove_file(&path).expect("remove fixture receipt");
+        let missing =
+            verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+                .expect("well-formed run with missing receipt");
+        assert_eq!(
+            missing.decision.verdict,
+            CampaignOutcome::Inconclusive,
+            "{kind}"
+        );
+        fs::write(&path, bytes).expect("restore fixture receipt");
+    }
+
+    let checker_result_digest = attempt
+        .checker_result_digest
+        .as_deref()
+        .expect("checker result identity");
+    let checker_result_path =
+        digest_path(repo.path(), "results", checker_result_digest, "json").expect("result path");
+    let checker_result: serde_json::Value =
+        serde_json::from_slice(&fs::read(checker_result_path).expect("checker result"))
+            .expect("checker result JSON");
+    let raw_digest = checker_result["artifacts"][0]["digest"]
+        .as_str()
+        .expect("raw checker verdict digest");
+    let raw_path = digest_path(repo.path(), "raw", raw_digest, "bin").expect("raw verdict path");
+    let raw_bytes = fs::read(&raw_path).expect("raw checker verdict");
+    fs::remove_file(&raw_path).expect("remove raw checker verdict");
+    let missing =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("well-formed run with missing raw artifact");
+    assert_eq!(missing.decision.verdict, CampaignOutcome::Inconclusive);
+    fs::write(&raw_path, b"altered raw verdict").expect("alter raw checker verdict");
+    let altered =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("well-formed run with altered raw artifact");
+    assert_eq!(altered.decision.verdict, CampaignOutcome::Reject);
+    fs::write(&raw_path, raw_bytes).expect("restore raw checker verdict");
+    let restored =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("restored raw artifact replay");
+    assert_eq!(restored.decision.verdict, CampaignOutcome::Accept);
 }

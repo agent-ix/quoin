@@ -232,6 +232,9 @@ fn member_outcome(
             }
         } else {
             finding.reasons.push(CampaignReason::ExecutionIncomplete);
+            if attempt.evidence == AttemptEvidence::Reject {
+                finding.reasons.push(CampaignReason::EvidenceContradiction);
+            }
         }
     }
     for dependency in member.depends_on {

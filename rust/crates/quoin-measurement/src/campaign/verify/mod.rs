@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 
 mod collection;
 mod origin;
+mod terminal;
 
 use engineering_assurance::campaign::{
     CampaignAttempt, CampaignAttemptStatus, CampaignDefinition, CampaignRun, CampaignVerdict,
@@ -184,11 +185,11 @@ pub fn verify_retained_campaign(
         })
         .collect();
     let run_attempts = run.attempts.as_deref().unwrap_or(&[]);
-    let assessed: Vec<(bool, AttemptEvidence)> = run_attempts
+    let assessed: Vec<(bool, AttemptEvidence, bool)> = run_attempts
         .iter()
         .map(|attempt| {
             let completed = attempt.status == CampaignAttemptStatus::Completed;
-            let evidence = if completed {
+            let (evidence, missing_retained) = if completed {
                 assess_attempt(
                     repo,
                     &definition,
@@ -202,9 +203,19 @@ pub fn verify_retained_campaign(
                     plan_source_inputs,
                 )
             } else {
-                AttemptEvidence::Inconclusive
+                match terminal::check_terminal_attempt(
+                    repo,
+                    &definition,
+                    attempt,
+                    &procedures,
+                    &source_inputs,
+                ) {
+                    Ok(()) => (AttemptEvidence::Inconclusive, false),
+                    Err(EvidenceError::Missing) => (AttemptEvidence::Inconclusive, true),
+                    Err(EvidenceError::Contradiction) => (AttemptEvidence::Reject, false),
+                }
             };
-            (completed, evidence)
+            (completed, evidence, missing_retained)
         })
         .collect();
     let attempts: Vec<Attempt<'_>> = run
@@ -213,7 +224,7 @@ pub fn verify_retained_campaign(
         .unwrap_or(&[])
         .iter()
         .zip(&assessed)
-        .filter_map(|(attempt, (completed, evidence))| {
+        .filter_map(|(attempt, (completed, evidence, _))| {
             u64::try_from(attempt.index).ok().map(|index| Attempt {
                 member: &attempt.member,
                 index,
@@ -235,7 +246,16 @@ pub fn verify_retained_campaign(
         decision.verdict = CampaignOutcome::Inconclusive;
         decision.reasons.push(CampaignReason::MissingAttempt);
     }
-    if claimed != decision.verdict {
+    let missing_bytes = assessed.iter().any(|(_, _, missing)| *missing);
+    let missing_attempt = missing_repetition
+        || decision
+            .members
+            .iter()
+            .any(|member| member.reasons.contains(&CampaignReason::MissingAttempt));
+    if claimed != decision.verdict
+        && !(decision.verdict == CampaignOutcome::Inconclusive
+            && (missing_bytes || missing_attempt))
+    {
         decision.verdict = CampaignOutcome::Reject;
         decision.reasons.push(CampaignReason::EvidenceContradiction);
     }
@@ -295,7 +315,7 @@ fn assess_attempt(
     procedures: &BTreeMap<String, MeasurementProcedure>,
     source_inputs: &BTreeMap<String, Vec<InputBinding>>,
     plan_source_inputs: &[InputBinding],
-) -> AttemptEvidence {
+) -> (AttemptEvidence, bool) {
     match check_attempt(
         repo,
         definition,
@@ -308,9 +328,9 @@ fn assess_attempt(
         source_inputs,
         plan_source_inputs,
     ) {
-        Ok(evidence) => evidence,
-        Err(EvidenceError::Missing) => AttemptEvidence::Inconclusive,
-        Err(EvidenceError::Contradiction) => AttemptEvidence::Reject,
+        Ok(evidence) => (evidence, false),
+        Err(EvidenceError::Missing) => (AttemptEvidence::Inconclusive, true),
+        Err(EvidenceError::Contradiction) => (AttemptEvidence::Reject, false),
     }
 }
 
@@ -339,6 +359,46 @@ mod attempt;
 mod checker_claim;
 mod domain;
 use attempt::check_attempt;
+
+/// Validate a retained checkpoint prefix before it can supply an input to a
+/// resumed producer. An inconclusive but internally coherent attempt is
+/// allowed; missing or contradictory retained evidence is not.
+#[allow(
+    clippy::too_many_arguments,
+    reason = "the checkpoint shares the complete independent replay context"
+)]
+pub(crate) fn checkpoint_prefix_valid(
+    repo: &Path,
+    definition: &CampaignDefinition,
+    definition_digest: &str,
+    run_id: &str,
+    attempts: &[CampaignAttempt],
+    plans: &[MeasurementPlan],
+    procedures: &BTreeMap<String, MeasurementProcedure>,
+    source_inputs: &BTreeMap<String, Vec<InputBinding>>,
+    plan_source_inputs: &[InputBinding],
+) -> bool {
+    attempts.iter().all(|attempt| {
+        if attempt.status == CampaignAttemptStatus::Completed {
+            check_attempt(
+                repo,
+                definition,
+                definition_digest,
+                run_id,
+                attempt,
+                attempts,
+                plans,
+                procedures,
+                source_inputs,
+                plan_source_inputs,
+            )
+            .is_ok()
+        } else {
+            terminal::check_terminal_attempt(repo, definition, attempt, procedures, source_inputs)
+                .is_ok()
+        }
+    })
+}
 #[cfg(test)]
 mod tests {
     #![allow(clippy::expect_used, reason = "fixture setup must fail the test")]
