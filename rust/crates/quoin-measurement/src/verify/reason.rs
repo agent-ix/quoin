@@ -137,7 +137,13 @@ pub enum Reason {
 }
 
 impl Reason {
-    /// Every reason, in declaration order.
+    /// Every reason. This array's own order carries no meaning — `from_wire`
+    /// scans it, and nothing maps a reason to its index.
+    ///
+    /// The enum's *declaration* order does carry meaning: [`Reason`] derives
+    /// [`Ord`], and `verify` sorts a verdict's `reasons` by it, so declaration
+    /// order is the wire order. Place a new reason beside the ones it belongs
+    /// with rather than at the end.
     pub const ALL: [Self; 30] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
