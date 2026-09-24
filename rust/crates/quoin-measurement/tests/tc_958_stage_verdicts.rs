@@ -1608,3 +1608,25 @@ fn tc_958_025_a_baseline_gate_does_not_compare_across_another_apparatus() {
         }
     );
 }
+
+/// EA v0.4.0 added `Baseline::ExternalReference`: a per-dimension value the
+/// checker resolves from a source outside the plan at evaluation time. The
+/// report layer has no such source wired in, so a `gate` reading it is
+/// `inconclusive` with its own reason even when a usable earlier value
+/// exists — never `no_prior` (a different claim) and never silently treated
+/// as `prior-collection` or `best-seen` by a wildcard match arm.
+///
+/// Trace: FR-107-AC-8
+/// Provenance: PLAT-1032
+#[test]
+fn tc_958_026_an_external_reference_baseline_is_inconclusive_with_its_own_reason() {
+    let external_reference = plans(&gate_plan_document(
+        "higher",
+        "v1",
+        "    comparator: gt\n    baseline: external-reference\n",
+    ));
+    assert_eq!(
+        gate_over(&external_reference, &[0.5, 0.9]),
+        GateOutcome::Inconclusive(InconclusiveReason::ExternalReferenceUnsupplied)
+    );
+}

@@ -8,6 +8,23 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-23** — **FR-107/FR-108 gain `external_reference_unsupplied`** for
+  engineering-assurance v0.4.0's fourth `Baseline` variant, `ExternalReference`
+  (PLAT-1032). EA v0.4.0 defines it as a per-dimension value the calling
+  checker resolves from a source outside the plan at evaluation time — never
+  a fixed number in the plan, a prior collection, the corpus, or a running
+  best-seen. Quoin has no such source wired into either layer that evaluates
+  a `baseline` decision rule, so `quoin-measurement`'s checker
+  (`verify::baseline`, FR-108-AC-3) and its report layer
+  (`report::verdict::gate_baseline`, FR-107-AC-8) both answer the new,
+  distinct reason rather than reusing `no_prior` — which means "no earlier
+  collection exists", a different and misleading claim for a baseline that
+  was never going to be computed from history — or falling through a
+  wildcard match arm, which would have silently swallowed the next `Baseline`
+  variant EA adds. The pin bump to EA `=0.4.0` also renamed
+  `spec/assurance/AP-202-jev-lens-evaluation.md`'s `profile_version` to
+  `schema_version` (AP-201 already used the new name; AP-202 was the last
+  straggler). FR-107-AC-8, FR-108-AC-3; Matrix: TC-1927, TC-1928.
 * **2026-09-23** — **FR-108 gains a real `constant-predictor` baseline**
   (PLAT-1016, the last item split out of PLAT-985 into its own ticket).
   MP-222/PLAT-932's formula — a size-weighted mean of the best-constant

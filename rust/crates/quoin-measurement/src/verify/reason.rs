@@ -75,6 +75,11 @@ pub enum Reason {
     /// number the governed observation's own `population.examined`: they are
     /// not the population the rate was measured over.
     ConstantPredictorRowsMismatch,
+    /// The rule's baseline is `external-reference`: engineering-assurance
+    /// defines it as a per-dimension value the calling checker resolves from
+    /// a source outside the plan at evaluation time (PLAT-1032). Quoin has no
+    /// such source wired in, so the baseline is never computed here.
+    ExternalReferenceUnsupplied,
     /// Engineering-assurance could not evaluate the rule on these numbers.
     RuleNotEvaluable,
     /// A `proportion` observation's unit is not a fraction (`percent of …`,
@@ -133,7 +138,7 @@ pub enum Reason {
 
 impl Reason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 29] = [
+    pub const ALL: [Self; 30] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
         Self::NoCollections,
@@ -163,6 +168,7 @@ impl Reason {
         Self::DefinitionChangedWithoutVersionBump,
         Self::ConstantPredictorRowsMalformed,
         Self::ConstantPredictorRowsMismatch,
+        Self::ExternalReferenceUnsupplied,
     ];
 
     /// The stable wire spelling.
@@ -198,6 +204,7 @@ impl Reason {
             Self::DefinitionChangedWithoutVersionBump => "definition_changed_without_version_bump",
             Self::ConstantPredictorRowsMalformed => "constant_predictor_rows_malformed",
             Self::ConstantPredictorRowsMismatch => "constant_predictor_rows_mismatch",
+            Self::ExternalReferenceUnsupplied => "external_reference_unsupplied",
         }
     }
 
@@ -236,6 +243,7 @@ impl Reason {
             | Self::ConstantPredictorRowsAbsent
             | Self::ConstantPredictorRowsMalformed
             | Self::ConstantPredictorRowsMismatch
+            | Self::ExternalReferenceUnsupplied
             | Self::RuleNotEvaluable
             | Self::UnitUnsupported
             | Self::SliceMissing

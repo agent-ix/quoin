@@ -52,12 +52,12 @@
 //! usable value) or `best-seen` (the maximum for `gt`/`ge`, the minimum for
 //! `lt`/`le`/`eq`) from the same usable-evidence pool [`ratchet`] draws from,
 //! under the same protected-apparatus rule.
-//! `constant-predictor` needs per-item answers by family that no collection
-//! in the report layer carries, so it is `inconclusive`
-//! (`constant_predictor_unsupported`) here, exactly as it is in the checker.
-//! No `decision_rule` at all is `inconclusive` (`no_decision_rule`); the same
-//! never-green rule as `ratchet` and `target` applies to the newest value and
-//! to every value a baseline might draw on.
+//! `constant-predictor` and `external-reference` (PLAT-1032) need a value
+//! nothing in the report layer supplies, so both are `inconclusive`
+//! (`constant_predictor_unsupported`, `external_reference_unsupplied`) here,
+//! exactly as in the checker. No `decision_rule` at all is `inconclusive`
+//! (`no_decision_rule`); the same never-green rule as `ratchet` and `target`
+//! applies to the newest value and to every value a baseline might draw on.
 
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -113,6 +113,10 @@ pub enum InconclusiveReason {
     /// carries them, so a gate never evaluates this baseline (PLAT-958
     /// part 2). `quoin measurement verify` has the same limit.
     ConstantPredictorUnsupported,
+    /// The rule's baseline is `external-reference`: a per-dimension value
+    /// resolved from a source outside the plan, which the report layer, like
+    /// `quoin measurement verify`, has none of (PLAT-1032).
+    ExternalReferenceUnsupplied,
     /// Engineering-assurance could not evaluate the rule on these numbers —
     /// a non-finite estimate or reference (PLAT-958 part 2).
     RuleNotEvaluable,
@@ -120,7 +124,7 @@ pub enum InconclusiveReason {
 
 impl InconclusiveReason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 13] = [
+    pub const ALL: [Self; 14] = [
         Self::NoCurrentValue,
         Self::PlanMismatch,
         Self::DefinitionMismatch,
@@ -133,6 +137,7 @@ impl InconclusiveReason {
         Self::ApparatusUnrecorded,
         Self::NoDecisionRule,
         Self::ConstantPredictorUnsupported,
+        Self::ExternalReferenceUnsupplied,
         Self::RuleNotEvaluable,
     ];
 
@@ -152,6 +157,7 @@ impl InconclusiveReason {
             Self::ApparatusUnrecorded => "apparatus_unrecorded",
             Self::NoDecisionRule => "no_decision_rule",
             Self::ConstantPredictorUnsupported => "constant_predictor_unsupported",
+            Self::ExternalReferenceUnsupplied => "external_reference_unsupplied",
             Self::RuleNotEvaluable => "rule_not_evaluable",
         }
     }
@@ -186,6 +192,9 @@ impl InconclusiveReason {
             Self::NoDecisionRule => "the plan states no decision rule",
             Self::ConstantPredictorUnsupported => {
                 "the rule's constant-predictor baseline needs per-item answers no collection carries"
+            }
+            Self::ExternalReferenceUnsupplied => {
+                "the rule's external-reference baseline has no source quoin can read it from"
             }
             Self::RuleNotEvaluable => "the decision rule could not be evaluated on these numbers",
         }
@@ -658,7 +667,9 @@ fn gate(
 /// (`lt`/`le`/`eq`) for `best-seen` — the same pool and the same rule
 /// [`crate::verify`]'s own `baseline` applies, restated here because the
 /// report layer sees one row's `earlier` collections, not the checker's
-/// full, order-attested history.
+/// full, order-attested history. `constant-predictor` and `external-reference`
+/// are not resolvable from `earlier` at all, so both return their own reason
+/// instead of a value (PLAT-1032).
 fn gate_baseline(
     plan: &MeasurementPlan,
     rule: DecisionRule,
@@ -670,6 +681,7 @@ fn gate_baseline(
         Baseline::ConstantPredictor => {
             return Err(InconclusiveReason::ConstantPredictorUnsupported);
         }
+        Baseline::ExternalReference => return Err(InconclusiveReason::ExternalReferenceUnsupplied),
         Baseline::PriorCollection => earlier_values(plan, slice, earlier).last(),
         Baseline::BestSeen => {
             let values = earlier_values(plan, slice, earlier);
