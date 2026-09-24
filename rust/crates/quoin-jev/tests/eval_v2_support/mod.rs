@@ -19,6 +19,9 @@
 //!   the per-unit fan-out and the runner.
 //! - [`units`] cuts one named item out of a Rust or Python file, and splits a
 //!   body into functions or branches for fan-out, by one rule in both.
+//! - [`fixtures`] holds the synthetic rows the offline tests and the
+//!   request-digest pins share.
+//! - [`preflight`] is every check a run passes before its first request.
 //! - [`patch`] applies a mutation's unified diff to a by-reference file.
 //! - [`metrics`] grades, reusing `../support/grading.rs`, and renders the
 //!   report broken down by mode and by truth kind.
@@ -34,9 +37,11 @@
 pub(crate) mod grading;
 
 pub(crate) mod corpus;
+pub(crate) mod fixtures;
 pub(crate) mod keys;
 pub(crate) mod metrics;
 pub(crate) mod patch;
+pub(crate) mod preflight;
 pub(crate) mod units;
 pub(crate) mod variant;
 pub(crate) mod variants;

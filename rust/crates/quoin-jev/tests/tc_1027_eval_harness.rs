@@ -48,11 +48,13 @@ use eval_v2_support::corpus::{
     load_external, validate, verify_seal,
 };
 use eval_v2_support::corpus::{KindGroup, TruthKind};
+use eval_v2_support::fixtures::{self, CODE_BODY, corpus_text, row, truth};
 use eval_v2_support::keys::{KEYS, Mode};
 use eval_v2_support::metrics::{
     Scored, concordance, coverage_curve, graded, render_run, scored, summarize,
 };
 use eval_v2_support::patch::apply_unified_patch;
+use eval_v2_support::preflight;
 use eval_v2_support::units::{UnitKind, extract_rust_fn, split_rust_units};
 use eval_v2_support::variant::{
     self, Answered, Prediction, Predictions, REGISTRY, Variant, per_unit_asks, rollup_any_yes,
@@ -63,96 +65,13 @@ use eval_v2_support::variant::{
 // Fixtures
 // ---------------------------------------------------------------------------
 
-const TEST_BODY: &str = "#[test]\nfn tc_001_refuses_oversize() {\n    \
-    let error = check(\"x\".repeat(5000)).unwrap_err();\n    \
-    assert_eq!(error.code, Code::Refused);\n}";
-
-const CODE_BODY: &str = "pub fn check(input: String) -> Result<(), Error> {\n    \
-    match input.len() {\n        0 => Err(Error::empty()),\n        \
-    n if n > 4096 => { log(\"too big }\"); Err(Error::refused()) }\n        \
-    _ => Ok(()),\n    }\n}";
-
-/// One synthetic row of `mode`, with `truth` as given.
-/// Its FR is `FR-` plus the id's last three digits, so distinct ids are
-/// distinct FRs and PLAT-1024's three-natural-rows-per-FR rule holds.
-fn row(id: &str, mode: Mode, split: &str, truth: &Value) -> Value {
-    let fr = format!("FR-{}", &id[id.len() - 3..]);
-    let test = mode.has_test().then(|| {
-        json!({"path": "tests/tc_001.rs", "fn_name": "tc_001_refuses_oversize", "body": TEST_BODY})
-    });
-    let code = mode
-        .has_code()
-        .then(|| json!({"path": "src/check.rs", "symbol": "check", "body": CODE_BODY}));
-    json!({
-        "id": id,
-        "mode": mode.as_str(),
-        "split": split,
-        "strata": {"fr_id": fr, "req_kind": "functional", "test_kind": null,
-                   "crate": "quoin-core", "ears_pattern": null},
-        "requirement": {"fr_id": fr, "ac_id": format!("{fr}-AC-1"),
-                        "statement": "The system shall refuse a request larger than 4096 bytes.",
-                        "ac_text": "A 5000-byte request is refused with CORE_REFUSED.",
-                        "context": null},
-        "test": test,
-        "code": code,
-        "ref": null,
-        "mutation": null,
-        "truth": truth,
-    })
-}
-
-fn truth(answer: &Value, kind: &str, alternatives: &[&str]) -> Value {
-    json!({"answer": answer, "kind": kind, "alternatives": alternatives, "rationale": "stated"})
-}
-
-fn corpus_text(rows: &[Value]) -> String {
-    serde_json::to_string_pretty(&json!({
-        "schema": corpus::SCHEMA,
-        "sampling_rule": "every row, synthetic",
-        "seed": 7,
-        "source_commit": "0000000",
-        "rows": rows,
-    }))
-    .unwrap()
-}
-
 fn parse(rows: &[Value]) -> CorpusFile {
-    corpus::parse(&corpus_text(rows)).expect("synthetic corpus parses")
+    fixtures::parse(rows).expect("synthetic corpus parses")
 }
 
 /// A four-row corpus, one per mode, with truth each mode supports.
 fn four_modes() -> CorpusFile {
-    parse(&[
-        row(
-            "EV2-0001",
-            Mode::Req,
-            "dev",
-            &json!({"criterion_sound": truth(&json!(true), "agent_dual", &[])}),
-        ),
-        row(
-            "EV2-0002",
-            Mode::ReqTest,
-            "dev",
-            &json!({"test_asserts_intent": truth(&json!("yes"), "mechanical", &[])}),
-        ),
-        row(
-            "EV2-0003",
-            Mode::ReqCode,
-            "dev",
-            &json!({"code_exceeds_requirement": truth(&json!(false), "by_construction", &[])}),
-        ),
-        row(
-            "EV2-0004",
-            Mode::ReqTestCode,
-            "dev",
-            &json!({
-                "severity": truth(&json!("high"), "agent_contested", &["medium"]),
-                "code_exceeds_requirement": truth(&json!(true), "by_construction", &[]),
-                "test_asserts_intent": truth(&json!(false), "mechanical", &[]),
-                "criterion_sound": truth(&json!(false), "agent_dual", &[]),
-            }),
-        ),
-    ])
+    fixtures::four_modes().expect("synthetic corpus parses")
 }
 
 // ---------------------------------------------------------------------------
@@ -1479,142 +1398,14 @@ fn tc_1027_at_most_three_natural_rows_per_fr() {
 // Request-digest pins: wording is tied to variant@version (PR #620 review)
 // ---------------------------------------------------------------------------
 
-/// The pinned digest of every registered variant's question text (the
-/// questions of every ask, instructions and labels, never the state) on the
-/// canonical row of each mode it runs in: `four_modes()`'s row for that mode.
-/// A changed wording with an unchanged `version` fails
-/// `tc_1027_request_digest_is_pinned_per_variant_version`; a bumped version has no pin
-/// until one is added here, so a new instrument cannot run under an old
-/// label. The failure message prints the digests to pin.
-const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
-    (
-        "B0@v1",
-        "RTC",
-        "sha256:06b0a47799e9fa6c7059d91db3b0457eb5ed578337128b9a619d41883fe6ce72",
-    ),
-    (
-        "S0@v1",
-        "RTC",
-        "sha256:06b0a47799e9fa6c7059d91db3b0457eb5ed578337128b9a619d41883fe6ce72",
-    ),
-    (
-        "E0@v1",
-        "RTC",
-        "sha256:06b0a47799e9fa6c7059d91db3b0457eb5ed578337128b9a619d41883fe6ce72",
-    ),
-    (
-        "T0@v1",
-        "RTC",
-        "sha256:06b0a47799e9fa6c7059d91db3b0457eb5ed578337128b9a619d41883fe6ce72",
-    ),
-    (
-        "C0@v1",
-        "R",
-        "sha256:61a9cd3492f4f9655ea3422da31e30bf0df0e89f7416f0fb326edaa1fd8d6ea4",
-    ),
-    (
-        "C0@v1",
-        "RT",
-        "sha256:cb993257058030361d99de6e5fe955fff5b6891a0f0bc73660d64bdef421e668",
-    ),
-    (
-        "C0@v1",
-        "RC",
-        "sha256:9c06b2a363798254e4c0890cb10c9eb8e1e8ebdf817c06dbc299defffa9a0458",
-    ),
-    (
-        "C0@v1",
-        "RTC",
-        "sha256:b99912ed3c09d7f9094e23ffa5f3618c328eccd439a9574eb0ac589e3a6a9feb",
-    ),
-    (
-        "S1@v1",
-        "RTC",
-        "sha256:af4001a1b2a994250dd42fffc002d81ff3ef0359b2ad0a715cb8c625017047fa",
-    ),
-    (
-        "S1-RT@v1",
-        "RT",
-        "sha256:a3b3c8666144b550a8bfd64d403edc05ef6b39316509c95778149eef8f4e3219",
-    ),
-    (
-        "S1-RC@v1",
-        "RC",
-        "sha256:b54bb4cdaffaab9f1da35b135aacaccc6d5f97621ab56349ee9f546bfbc9c7d4",
-    ),
-    (
-        "S2@v1",
-        "RTC",
-        "sha256:087dae08a2e4946f8eaf2c7b694566ad2aa3e22ad9cce8f4b316870b9051b7c3",
-    ),
-    (
-        "S2-RT@v1",
-        "RT",
-        "sha256:35dcda595da52ba10aa576fe22a91025d5d85274b63d834d04fee7fa8e20597c",
-    ),
-    (
-        "S2-RC@v1",
-        "RC",
-        "sha256:92b7246971106f34f99681e33a9423175612e3de377bce3ed428397ce7e25640",
-    ),
-    (
-        "S2M@v1",
-        "RTC",
-        "sha256:087dae08a2e4946f8eaf2c7b694566ad2aa3e22ad9cce8f4b316870b9051b7c3",
-    ),
-    (
-        "S2M-RT@v1",
-        "RT",
-        "sha256:35dcda595da52ba10aa576fe22a91025d5d85274b63d834d04fee7fa8e20597c",
-    ),
-    (
-        "S2M-RC@v1",
-        "RC",
-        "sha256:92b7246971106f34f99681e33a9423175612e3de377bce3ed428397ce7e25640",
-    ),
-    (
-        "S3@v1",
-        "RT",
-        "sha256:2690765d45c33f7d8b3f49e8c475221a84c75936171288b0b070251fe15db896",
-    ),
-    (
-        "S3@v1",
-        "RC",
-        "sha256:2690765d45c33f7d8b3f49e8c475221a84c75936171288b0b070251fe15db896",
-    ),
-    (
-        "S3@v1",
-        "RTC",
-        "sha256:2690765d45c33f7d8b3f49e8c475221a84c75936171288b0b070251fe15db896",
-    ),
-];
-
-fn request_digest(variant: &Variant, row: &eval_v2_support::corpus::Row) -> String {
-    let questions: Vec<Value> = (variant.asks)(row)
-        .iter()
-        .map(|ask| serde_json::to_value(&ask.request.questions).unwrap())
-        .collect();
-    quoin_store::digest_bytes_sha256(serde_json::to_string(&questions).unwrap().as_bytes())
-        .to_stored()
-}
-
 /// Provenance: PR #620 review, PLAT-1024 rule 5. Every (variant version,
 /// mode) has a pinned wording digest, and each pin matches: wording cannot
 /// change without a version bump.
 #[test]
 fn tc_1027_request_digest_is_pinned_per_variant_version() {
-    let file = four_modes();
-    let mut actual = Vec::new();
-    for variant in REGISTRY {
-        for row in file.rows.iter().filter(|row| variant.applies_to(row)) {
-            actual.push((
-                variant.label(),
-                row.mode.as_str(),
-                request_digest(variant, row),
-            ));
-        }
-    }
-    let pinned: Vec<(String, &str, String)> = REQUEST_DIGEST_PINS
+    let registry: Vec<&Variant> = REGISTRY.iter().collect();
+    let actual = preflight::request_digests(&registry).unwrap();
+    let pinned: Vec<(String, &str, String)> = preflight::REQUEST_DIGEST_PINS
         .iter()
         .map(|(label, mode, digest)| ((*label).to_owned(), *mode, (*digest).to_owned()))
         .collect();
@@ -1627,4 +1418,141 @@ fn tc_1027_request_digest_is_pinned_per_variant_version() {
         "request digests differ from REQUEST_DIGEST_PINS. If a variant's wording changed, bump its \
          version first; then pin:\n{table}"
     );
+    preflight::check_request_pins(&registry).unwrap();
+}
+
+// ---------------------------------------------------------------------------
+// The run preflight: pins, the version cap, held-out selection (PR #620
+// re-review, findings 3a, 4 and 5)
+// ---------------------------------------------------------------------------
+
+fn other_wording(row: &eval_v2_support::corpus::Row) -> Vec<variant::Ask> {
+    vec![variant::Ask {
+        unit: None,
+        request: variant::request(
+            variant::state(row),
+            questions([("severity", noul("A wording nobody pinned?"))]),
+        ),
+    }]
+}
+
+/// Provenance: PR #620 re-review finding 4, MP-240. The runner's preflight
+/// refuses a `variant@version` whose wording differs from its pin, a bumped
+/// version with no pin, and a version past the 5-version dev cap; the
+/// registry as committed passes on dev.
+#[test]
+fn tc_1027_the_preflight_refuses_unpinned_wording_and_versions_past_the_cap() {
+    let dir = tempfile::tempdir().unwrap();
+    let selection = dir.path().join("selection.json");
+    let log = dir.path().join("heldout-runs.jsonl");
+    let gate = preflight::RunGate {
+        split: corpus::Split::Dev,
+        heldout_flag: None,
+        rerun_reason: None,
+        selection: &selection,
+        log: &log,
+    };
+    let registry: Vec<&Variant> = REGISTRY.iter().collect();
+    assert_eq!(
+        preflight::authorize_run(&gate, &registry, &[]).unwrap(),
+        Vec::<String>::new()
+    );
+
+    let s1_rt = variant::resolve("S1-RT").unwrap()[0];
+    let reworded = Variant {
+        asks: other_wording,
+        ..*s1_rt
+    };
+    let error = preflight::authorize_run(&gate, &[&reworded], &[]).unwrap_err();
+    assert!(
+        error.contains("S1-RT@v1 in RT asks wording sha256:")
+            && error.contains("a wording change needs a version bump"),
+        "{error}"
+    );
+
+    let bumped = Variant {
+        version: 2,
+        ..*s1_rt
+    };
+    let error = preflight::authorize_run(&gate, &[&bumped], &[]).unwrap_err();
+    assert!(
+        error.contains("S1-RT@v2 in RT has no request-digest pin"),
+        "{error}"
+    );
+
+    assert_eq!(preflight::MAX_DEV_VERSIONS, 5);
+    let past_cap = Variant {
+        version: 6,
+        ..*s1_rt
+    };
+    let error = preflight::authorize_run(&gate, &[&past_cap], &[]).unwrap_err();
+    assert!(error.contains("past the dev cap of 5 versions"), "{error}");
+}
+
+/// Provenance: PR #620 re-review finding 5, PLAT-1024 rule 1. On held-out,
+/// the preflight the live runner calls refuses a variant the committed
+/// selection file does not cover, a missing selection file, a missing flag,
+/// and an unexplained rerun; a covered variant over a sealed source passes
+/// and returns the seal.
+#[test]
+fn tc_1027_the_preflight_runs_heldout_only_for_the_committed_selection() {
+    let dir = tempfile::tempdir().unwrap();
+    let unsealed = sealed_source(dir.path(), None);
+    let digest = heldout_digest(&unsealed.text).unwrap();
+    let sealed = sealed_source(dir.path(), Some(&format!("sha256:{digest}\n")));
+    let selection = dir.path().join("selection.json");
+    let log = dir.path().join("heldout-runs.jsonl");
+    let gate = preflight::RunGate {
+        split: corpus::Split::Heldout,
+        heldout_flag: Some("1"),
+        rerun_reason: None,
+        selection: &selection,
+        log: &log,
+    };
+    let s2_rt = variant::resolve("S2-RT").unwrap();
+    let s1 = variant::resolve("S1").unwrap();
+
+    let missing = preflight::authorize_run(&gate, &s2_rt, &[&sealed]).unwrap_err();
+    assert!(missing.contains("selection.json"), "{missing}");
+
+    std::fs::write(
+        &selection,
+        json!({"schema": corpus::SELECTION_SCHEMA, "selections": [
+            {"mp": "MP-240", "variant": "S2", "version": 1, "selected_at_commit": "abc1234",
+             "dev_evidence": "reviews/dev.md", "baselines": ["S0@v1"]}
+        ]})
+        .to_string(),
+    )
+    .unwrap();
+    assert_eq!(
+        preflight::authorize_run(&gate, &s2_rt, &[&sealed]).unwrap(),
+        vec![digest.clone()]
+    );
+    let refused = preflight::authorize_run(&gate, &s1, &[&sealed]).unwrap_err();
+    assert!(
+        refused.contains("S1@v1") && refused.contains("not selected for held-out"),
+        "{refused}"
+    );
+
+    let no_flag = preflight::RunGate {
+        heldout_flag: None,
+        ..gate
+    };
+    let refused = preflight::authorize_run(&no_flag, &s2_rt, &[&sealed]).unwrap_err();
+    assert!(refused.contains(HELDOUT_ENV), "{refused}");
+
+    corpus::record_heldout_run(
+        &log,
+        &corpus::HeldoutRun {
+            unix_seconds: 1,
+            variants: vec!["S2-RT@v1".to_owned()],
+            seals: vec![digest],
+            rows: 1,
+            models: std::collections::BTreeMap::new(),
+            rerun_reason: None,
+        },
+    )
+    .unwrap();
+    let rerun = preflight::authorize_run(&gate, &s2_rt, &[&sealed]).unwrap_err();
+    assert!(rerun.contains(corpus::HELDOUT_RERUN_ENV), "{rerun}");
 }
