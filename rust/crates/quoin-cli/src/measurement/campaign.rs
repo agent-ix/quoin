@@ -15,7 +15,7 @@ use quoin_core::protocol::{Response, canonical_json};
 use quoin_measurement::campaign::CampaignOutcome;
 use quoin_measurement::campaign::run::run_campaign;
 use quoin_measurement::campaign::verify::{CampaignVerdictReceipt, verify_retained_campaign};
-use serde::{Deserialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use self::config::RunSelection;
 
@@ -24,6 +24,14 @@ use self::config::RunSelection;
 struct SourceSelection {
     schema: String,
     sources: BTreeMap<String, PathBuf>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CampaignCliPayload {
+    #[serde(flatten)]
+    receipt: CampaignVerdictReceipt,
+    rendered: String,
 }
 
 pub(super) fn command() -> Command {
@@ -91,12 +99,9 @@ fn verify(args: &ArgMatches) -> Result<Response, String> {
 
 fn response(receipt: CampaignVerdictReceipt) -> Result<Response, String> {
     let outcome = receipt.decision.verdict;
-    let mut payload = serde_json::to_value(receipt).map_err(|error| error.to_string())?;
-    let rendered = canonical_json(&payload).map_err(|error| error.to_string())?;
-    let Some(fields) = payload.as_object_mut() else {
-        return Err("campaign receipt is not an object".to_owned());
-    };
-    fields.insert("rendered".to_owned(), rendered.into());
+    let rendered = canonical_json(&receipt).map_err(|error| error.to_string())?;
+    let payload = serde_json::to_value(CampaignCliPayload { receipt, rendered })
+        .map_err(|error| error.to_string())?;
     Ok(match outcome {
         CampaignOutcome::Accept => Response::ok(payload),
         CampaignOutcome::Reject => Response::partial(
@@ -137,6 +142,7 @@ mod tests {
     use quoin_core::protocol::Outcome;
     use quoin_measurement::campaign::{CAMPAIGN_VERDICT_SCHEMA, CampaignDecision};
 
+    /// Trace: FR-114-AC-5, TC-1946 (response projection; native CLI gate remains pending).
     #[test]
     fn inconclusive_campaign_response_renders_its_structured_receipt() {
         let receipt = CampaignVerdictReceipt {
