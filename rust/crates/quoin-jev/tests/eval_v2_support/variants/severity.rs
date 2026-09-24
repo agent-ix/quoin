@@ -49,10 +49,12 @@ use typesafe_sdk_questions::{Questions, noul, questions, score};
 
 use crate::eval_v2_support::corpus::Row;
 use crate::eval_v2_support::keys::Mode;
+use crate::eval_v2_support::metrics::{ContrastSpec, Direction, PairedContrast, paired_contrast};
 use crate::eval_v2_support::variant::{
-    Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, Variant, request,
-    state,
+    Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, RunOutput, Variant,
+    request, state,
 };
+use crate::eval_v2_support::variants::exceeds;
 
 /// The key every variant here is graded on.
 pub(crate) const SEVERITY: &str = "severity";
@@ -1053,3 +1055,65 @@ pub(crate) const S3: Variant = Variant {
     asks: s3_asks,
     derive: s2_derive,
 };
+
+// ---------------------------------------------------------------------------
+// Bar D (MP-240)
+// ---------------------------------------------------------------------------
+
+/// The mutation kinds Bar D pairs, fixed in MP-240: each makes the row worse
+/// under step 5.
+pub(crate) const PAIRED_KINDS: [&str; 3] = ["violating_code", "test_weakening", "trace_swap"];
+/// Bar D's threshold: the ordinal must cross `medium` upward.
+pub(crate) const PAIRED_TAU: f64 = 2.0;
+/// Bar D's smallest move, in levels.
+pub(crate) const PAIRED_DELTA: f64 = 0.5;
+
+/// Bar D for one severity variant, by the shared helper and MP-240's fixed
+/// parameters: sources already at or above `medium` are excluded.
+///
+/// # Errors
+/// As [`paired_contrast`]: a pairing the corpus does not support.
+pub(crate) fn bar_d(
+    rows: &[Row],
+    output: &RunOutput,
+    variant: &Variant,
+) -> Result<PairedContrast, String> {
+    let label = variant.label();
+    paired_contrast(
+        rows,
+        output,
+        &ContrastSpec {
+            variant: &label,
+            modes: variant.modes,
+            key: SEVERITY,
+            kinds: &PAIRED_KINDS,
+            direction: Direction::Up,
+            tau: PAIRED_TAU,
+            delta: PAIRED_DELTA,
+            defect_side: &["medium", "high"],
+        },
+        &|row: &Row| row.mutation.as_ref()?.source_id.clone(),
+    )
+}
+
+/// MP-240's Bar D line for every severity variant in the run, S0 included.
+pub(crate) fn render_bars(rows: &[Row], output: &RunOutput, variants: &[&Variant]) -> String {
+    let mut out = String::new();
+    let severity: Vec<&&Variant> = variants
+        .iter()
+        .filter(|variant| variant.grades.contains(&SEVERITY) && variant.id.starts_with('S'))
+        .collect();
+    if severity.is_empty() {
+        return out;
+    }
+    let _ = writeln!(out, "## MP-240 Bar D (paired mutant contrast, severity)\n");
+    for variant in severity {
+        match bar_d(rows, output, variant) {
+            Ok(contrast) => exceeds::render_bar_d(&mut out, &variant.label(), &contrast),
+            Err(error) => {
+                let _ = writeln!(out, "Bar D, {}: not computable: {error}", variant.label());
+            }
+        }
+    }
+    out
+}

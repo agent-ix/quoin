@@ -1341,13 +1341,10 @@ pub(crate) const PAIRED_KINDS: [&str; 1] = ["additive_code"];
 
 /// A mutant's source row id, read from [`metrics::SOURCE_ID_FIELD`].
 ///
-/// This is a stub until PLAT-1025 adds `source_id` to the corpus schema's
-/// `mutation`, when it becomes `row.mutation.as_ref()?.source_id.clone()`.
-/// Until then a run holding an `additive_code` mutant stops at bar D with
-/// "names no `mutation.source_id`". It stops loudly, and never reports zero
-/// pairs.
-pub(crate) fn source_id(_row: &Row) -> Option<String> {
-    None
+/// A mutant with no source still stops bar D loudly, rather than reporting
+/// zero pairs.
+pub(crate) fn source_id(row: &Row) -> Option<String> {
+    row.mutation.as_ref()?.source_id.clone()
 }
 
 /// Bar D for one variant.

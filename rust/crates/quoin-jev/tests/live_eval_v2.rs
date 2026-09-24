@@ -239,6 +239,10 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     );
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
+    println!(
+        "{}",
+        eval_v2_support::variants::severity::render_bars(&rows, &output, &variants)
+    );
 
     if let Some(model) = &model {
         let others: Vec<&String> = output.models.keys().filter(|seen| *seen != model).collect();

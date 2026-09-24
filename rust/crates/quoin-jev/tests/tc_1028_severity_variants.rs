@@ -1074,10 +1074,14 @@ fn tc_1028_check_score_levels_refuses_malformed_distributions() {
     let nan = check(&[("0", f64::NAN), ("3", 1.0)]).unwrap_err();
     assert!(nan.contains("give level 0 the mass NaN"), "{nan}");
 
-    let short = check(&[("0", 0.5), ("3", 0.48)]).unwrap_err();
-    assert!(short.contains("sum to 0.98"), "{short}");
-    let long = check(&[("0", 0.5), ("3", 0.52)]).unwrap_err();
-    assert!(long.contains("sum to 1.02"), "{long}");
+    // Four levels each rounded to two decimals can sum anywhere in
+    // [0.98, 1.02]; the live answer that sums to 0.99 is accepted.
+    check(&[("0", 0.37), ("1", 0.02), ("2", 0.04), ("3", 0.56)]).unwrap();
+    check(&[("0", 0.5), ("3", 0.48)]).unwrap();
+    let short = check(&[("0", 0.5), ("3", 0.47)]).unwrap_err();
+    assert!(short.contains("sum to 0.97"), "{short}");
+    let long = check(&[("0", 0.5), ("3", 0.53)]).unwrap_err();
+    assert!(long.contains("sum to 1.03"), "{long}");
 
     let empty = check(&[]).unwrap_err();
     assert!(empty.contains("are empty"), "{empty}");

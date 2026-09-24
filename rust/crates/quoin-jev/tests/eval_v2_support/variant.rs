@@ -834,9 +834,11 @@ pub(crate) struct RunOutput {
     pub(crate) models: BTreeMap<String, usize>,
 }
 
-/// How far a `score`'s probabilities may sum from 1 before the answer is
-/// refused.
-pub(crate) const SCORE_MASS_TOLERANCE: f64 = 0.01;
+/// How far a `score`'s probabilities may sum from 1, per level, before the
+/// answer is refused. The service rounds each mass to two decimals, so each
+/// level can be off by 0.005 and four levels by 0.02: a live answer summing
+/// to 0.99 (0.37, 0.02, 0.04, 0.56) was refused at a flat 0.01.
+pub(crate) const SCORE_MASS_TOLERANCE_PER_LEVEL: f64 = 0.005;
 
 /// Refuses a `score` answer whose level probabilities are not a
 /// distribution over the question's own levels:
@@ -845,7 +847,8 @@ pub(crate) const SCORE_MASS_TOLERANCE: f64 = 0.01;
 ///   levels (a decimal spelling such as `"2.0"` names the same level);
 /// - no level may be spelled twice (`"2"` and `"2.0"` together);
 /// - every mass must be finite and non-negative;
-/// - the masses must sum to 1 within [`SCORE_MASS_TOLERANCE`];
+/// - the masses must sum to 1 within [`SCORE_MASS_TOLERANCE_PER_LEVEL`] per
+///   level (the service's two-decimal rounding);
 /// - the map must not be empty.
 ///
 /// A variant reading the distribution (PLAT-1028's S2 and S2M) would
@@ -899,7 +902,8 @@ pub(crate) fn check_score_levels(
             }
             total += p;
         }
-        if (total - 1.0).abs() > SCORE_MASS_TOLERANCE {
+        let levels_f64 = f64::from(u32::try_from(levels).unwrap_or(u32::MAX));
+        if (total - 1.0).abs() > SCORE_MASS_TOLERANCE_PER_LEVEL.mul_add(levels_f64, 1e-9) {
             return refuse(format!("sum to {total}"));
         }
     }
