@@ -997,7 +997,7 @@ pub(crate) fn authorize_heldout(
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct HeldoutRun {
-    /// Seconds since the Unix epoch when the run finished.
+    /// Seconds since the Unix epoch when the run finished, or stopped.
     pub(crate) unix_seconds: u64,
     /// Every variant label run, in run order.
     pub(crate) variants: Vec<String>,
@@ -1190,5 +1190,72 @@ pub(crate) fn check_heldout_selected(
              committed selection entry first",
             heldout_selection_path().display()
         ))
+    }
+}
+
+fn unix_now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs())
+}
+
+/// A held-out run that is logged however it ends. Begun before the first
+/// request is sent: [`finish`](Self::finish) logs it with its models; if it
+/// is dropped unfinished, because the run panicked on a malformed answer or
+/// stopped on a transport error, [`Drop`] logs it anyway, with no models, and
+/// says so on stderr. Either way [`check_heldout_rerun`] sees it, so a rerun
+/// after a stopped held-out run is never treated as a first run (PR #623
+/// re-review L2). The answers already received are in the cassette, which
+/// MP-242 requires.
+#[derive(Debug)]
+pub(crate) struct HeldoutSpend {
+    log: PathBuf,
+    run: Option<HeldoutRun>,
+}
+
+impl HeldoutSpend {
+    /// Starts spending the held-out split. `run.models` and
+    /// `run.unix_seconds` are overwritten when the line is written.
+    pub(crate) const fn begin(log: PathBuf, run: HeldoutRun) -> Self {
+        Self {
+            log,
+            run: Some(run),
+        }
+    }
+
+    /// Logs the finished run with the models that answered it.
+    ///
+    /// # Errors
+    /// When the line cannot be written.
+    pub(crate) fn finish(mut self, models: BTreeMap<String, usize>) -> Result<(), String> {
+        let Some(mut run) = self.run.take() else {
+            return Ok(());
+        };
+        run.models = models;
+        run.unix_seconds = unix_now();
+        record_heldout_run(&self.log, &run)
+    }
+}
+
+impl Drop for HeldoutSpend {
+    fn drop(&mut self) {
+        let Some(mut run) = self.run.take() else {
+            return;
+        };
+        run.models = BTreeMap::new();
+        run.unix_seconds = unix_now();
+        match record_heldout_run(&self.log, &run) {
+            Ok(()) => eprintln!(
+                "held-out run of {:?} stopped before it finished; recorded in {} with no models, \
+                 so running it again needs {HELDOUT_RERUN_ENV}. Answers already received are in \
+                 the cassette.",
+                run.variants,
+                self.log.display()
+            ),
+            Err(error) => eprintln!(
+                "held-out run of {:?} stopped before it finished and could NOT be logged: {error}",
+                run.variants
+            ),
+        }
     }
 }

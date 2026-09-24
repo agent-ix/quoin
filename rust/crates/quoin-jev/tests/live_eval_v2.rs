@@ -48,16 +48,16 @@
 mod eval_v2_support;
 mod gap_semantic_support;
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use typesafe_sdk_client::Client;
 use typesafe_sdk_env::{Fixed, Process};
 use typesafe_sdk_http::Reqwest;
 
 use eval_v2_support::corpus::{
-    self, Excluded, HELDOUT_ENV, HELDOUT_RERUN_ENV, HeldoutRun, Row, Source, Split, combined_rows,
-    validate,
+    self, Excluded, HELDOUT_ENV, HELDOUT_RERUN_ENV, HeldoutRun, HeldoutSpend, Row, Source, Split,
+    combined_rows, validate,
 };
 use eval_v2_support::metrics::render_run;
 use eval_v2_support::preflight::{self, RunGate};
@@ -182,27 +182,40 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         .collect();
     assert!(!rows.is_empty(), "no {} rows to run", split.as_str());
 
+    eval_v2_support::variants::intent::require_cassette(
+        &variants,
+        env("QUOIN_JEV_CASSETTE").as_deref(),
+    )
+    .unwrap_or_else(|error| panic!("{error}"));
     let model = env("QUOIN_JEV_MODEL");
     let client = client(model.as_deref());
+
+    // The held-out split is spent the moment the first answer exists, so the
+    // spend is begun before any request is sent. A run that stops part way,
+    // on a malformed answer or a transport error, is still logged when the
+    // guard drops, so the rerun check fires on the next attempt.
+    let spend = (split == Split::Heldout).then(|| {
+        HeldoutSpend::begin(
+            corpus::heldout_log_path(),
+            HeldoutRun {
+                unix_seconds: 0,
+                variants: labels.clone(),
+                seals,
+                rows: rows.len(),
+                models: BTreeMap::new(),
+                rerun_reason,
+            },
+        )
+    });
     let output = variant::run(&client, &rows, &variants)
         .await
         .unwrap_or_else(|error| panic!("{error}"));
 
-    // The held-out split is spent the moment answers exist, so the log line
-    // is written before any number is printed and before any assertion that
+    // Logged before any number is printed and before any assertion that
     // could stop the run.
-    if split == Split::Heldout {
-        let run = HeldoutRun {
-            unix_seconds: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .map_or(0, |elapsed| elapsed.as_secs()),
-            variants: labels.clone(),
-            seals,
-            rows: rows.len(),
-            models: output.models.clone(),
-            rerun_reason,
-        };
-        corpus::record_heldout_run(&corpus::heldout_log_path(), &run)
+    if let Some(spend) = spend {
+        spend
+            .finish(output.models.clone())
             .unwrap_or_else(|error| panic!("{error}"));
         println!(
             "held-out run recorded in {}; commit it with the report",
@@ -218,6 +231,10 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     print!(
         "{}",
         eval_v2_support::variants::exceeds::render_diagnostics(&rows, &output)
+    );
+    println!(
+        "{}",
+        eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
 
     if let Some(model) = &model {

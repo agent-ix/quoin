@@ -7,4 +7,5 @@
 //! derive rules live here and are added to its `REGISTRY`.
 
 pub(crate) mod exceeds;
+pub(crate) mod intent;
 pub(crate) mod severity;
