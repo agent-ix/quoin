@@ -201,12 +201,20 @@ pub(crate) struct Bucket {
     pub(crate) count: usize,
     /// Of those, how many agreed with a recorded reading.
     pub(crate) correct: usize,
+    /// The sum of those rows' stated confidences, for the bucket mean.
+    pub(crate) confidence_sum: f64,
 }
 
 impl Bucket {
     /// Observed accuracy in this decile.
     pub(crate) fn accuracy(&self) -> Option<f64> {
         (self.count > 0).then(|| percent(self.correct, self.count))
+    }
+
+    /// The mean stated confidence of the rows in this decile.
+    pub(crate) fn mean_confidence(&self) -> Option<f64> {
+        (self.count > 0)
+            .then(|| self.confidence_sum / f64::from(u32::try_from(self.count).unwrap_or(u32::MAX)))
     }
 }
 
@@ -221,6 +229,7 @@ pub(crate) fn calibration(graded: &[Graded]) -> (Vec<Bucket>, usize) {
             floor: f64::from(decile) / 10.0,
             count: 0,
             correct: 0,
+            confidence_sum: 0.0,
         })
         .collect();
     let mut without = 0usize;
@@ -241,6 +250,7 @@ pub(crate) fn calibration(graded: &[Graded]) -> (Vec<Bucket>, usize) {
         )]
         let index = scaled as usize;
         buckets[index].count += 1;
+        buckets[index].confidence_sum += confidence;
         if row.verdict.agrees() {
             buckets[index].correct += 1;
         }
@@ -249,7 +259,13 @@ pub(crate) fn calibration(graded: &[Graded]) -> (Vec<Bucket>, usize) {
 }
 
 /// Expected calibration error: the count-weighted mean gap between a
-/// decile's stated confidence and its observed accuracy.
+/// decile's mean stated confidence and its observed accuracy, as MP-226's
+/// `jev.ece-v1` defines it.
+///
+/// Before PLAT-1027 this used each decile's midpoint (`floor + 0.05`) in
+/// place of the mean. The two agree only when a decile's confidences average
+/// to its midpoint, so ECEs published before that change (MP-229) were
+/// computed under the midpoint rule.
 ///
 /// Returns `None` when no row carried a confidence at all -- an ECE over
 /// nothing is not zero.
@@ -263,7 +279,7 @@ pub(crate) fn expected_calibration_error(graded: &[Graded]) -> Option<f64> {
         .iter()
         .filter(|bucket| bucket.count > 0)
         .map(|bucket| {
-            let stated = bucket.floor + 0.05;
+            let stated = bucket.mean_confidence().unwrap_or(bucket.floor + 0.05);
             let observed = f64::from(u32::try_from(bucket.correct).unwrap_or(u32::MAX))
                 / f64::from(u32::try_from(bucket.count).unwrap_or(u32::MAX));
             let weight = f64::from(u32::try_from(bucket.count).unwrap_or(u32::MAX))
@@ -377,8 +393,13 @@ pub(crate) fn defect_recall(graded: &[Graded], no_defect_label: &str) -> Option<
     if defects.is_empty() {
         return None;
     }
+    // An unanswered or unrecognized row found nothing. Before PLAT-1027 its
+    // placeholder class (`<unanswered>`) differed from the no-defect label and
+    // so counted as a defect found, inflating recall by every row the lens
+    // failed to answer.
     let found = defects
         .iter()
+        .filter(|row| !matches!(row.verdict, Verdict::Unanswered | Verdict::Unrecognized))
         .filter(|row| row.actual_class != no_defect_label)
         .count();
     Some(percent(found, defects.len()))

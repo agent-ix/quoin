@@ -222,3 +222,5 @@ bars in all three runs. `code_exceeds_requirement` and `divergence_kind` (asked)
 tie the constant predictor in the gated run, so Bar A fails. They are within one
 row of it in every run. `severity` fails Bar A by 31-35 pp in every run.
 MP-230's GO rests on `assertion_vacuous` and is not changed by this plan.
+
+**Note (PLAT-1027):** the defect recall figures above were computed under the old `defect_recall` rule, which counted an unanswered or unrecognized row as a defect found; they may count unanswered rows as found.

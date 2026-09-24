@@ -168,3 +168,5 @@ call to the service. They are reproduced here word for word.
 **GO** requires one variant to pass all three bars on the gate run *and*
 in at least 3 of 5 repeated runs (`JEV_RUNS=5`). Fifteen fixtures and one
 run can pass by luck; a variant that fails most repeats is not a result.
+
+**Note (PLAT-1027):** the defect recall figures above were computed under the old `defect_recall` rule, which counted an unanswered or unrecognized row as a defect found; they may count unanswered rows as found.
