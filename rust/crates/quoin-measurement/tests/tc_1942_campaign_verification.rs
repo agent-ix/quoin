@@ -370,4 +370,57 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         CampaignOutcome::Accept,
         "{receipt:?}"
     );
+
+    // Trace: FR-114-AC-3. Rehash both the collection and the run so an
+    // identity-only check would accept each altered context claim.
+    let first = &run.attempts.as_ref().expect("attempts")[0];
+    let collection_id = quoin_measurement::types::ids::CollectionId::parse(
+        first.collection_id.as_deref().expect("collection ID"),
+    )
+    .expect("valid collection ID");
+    let collection_path = quoin_measurement::store::measurement_path(repo.path(), &collection_id);
+    let original_collection = fs::read(&collection_path).expect("retained collection");
+    let run_file = run_path(repo.path(), "fixture-direct").expect("retained run path");
+    let original_run = fs::read(&run_file).expect("retained run");
+    for (pointer, replacement) in [
+        ("/subject", json!("wrong-subject")),
+        ("/scope/campaign", json!("wrong-campaign")),
+        ("/sourceRevision", json!("wrong-revision")),
+        ("/configDigest", json!(format!("sha256:{}", "0".repeat(64)))),
+        (
+            "/verificationStack/sources/fictional~1source/revision",
+            json!("wrong-revision"),
+        ),
+        (
+            "/verificationStack/artifacts/campaign~1procedure.json",
+            json!(format!("sha256:{}", "0".repeat(64))),
+        ),
+    ] {
+        let mut collection: serde_json::Value =
+            serde_json::from_slice(&original_collection).expect("typed collection");
+        *collection
+            .pointer_mut(pointer)
+            .expect("fixture context field") = replacement;
+        let altered = serde_json::to_vec(&collection).expect("encoded collection");
+        fs::write(&collection_path, &altered).expect("altered collection");
+        let mut run_value: serde_json::Value =
+            serde_json::from_slice(&original_run).expect("typed run");
+        run_value["attempts"][0]["collectionDigest"] =
+            json!(digest_bytes_sha256(&altered).as_hex());
+        fs::write(
+            &run_file,
+            serde_json::to_vec(&run_value).expect("encoded run"),
+        )
+        .expect("altered run");
+        let rejected =
+            verify_retained_campaign(repo.path(), digest.as_str(), "fixture-direct", &checkouts)
+                .expect("well-formed tampered run");
+        assert_eq!(
+            rejected.decision.verdict,
+            CampaignOutcome::Reject,
+            "tamper at {pointer}: {rejected:?}"
+        );
+        fs::write(&collection_path, &original_collection).expect("restore collection");
+        fs::write(&run_file, &original_run).expect("restore run");
+    }
 }

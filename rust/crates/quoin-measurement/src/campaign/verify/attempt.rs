@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Agent-IX
 //! Recompute one retained producer attempt from exact source and inputs.
 
+use super::collection::check_collection_context;
 use super::domain::check_domain_receipt;
 use super::{
     AttemptEvidence, BTreeMap, CampaignAttempt, CampaignDefinition, CampaignStoreError,
@@ -19,6 +20,7 @@ pub(super) fn check_attempt(
     repo: &Path,
     definition: &CampaignDefinition,
     definition_digest: &str,
+    run_id: &str,
     attempt: &CampaignAttempt,
     run_attempts: &[CampaignAttempt],
     plans: &[MeasurementPlan],
@@ -106,6 +108,17 @@ pub(super) fn check_attempt(
                 && plan.definition_version.as_str() == member.definition_version
         })
         .ok_or(EvidenceError::Contradiction)?;
+    check_collection_context(
+        &collection,
+        definition,
+        member,
+        run_id,
+        attempt,
+        plan,
+        &result,
+        result_digest,
+        source,
+    )?;
     let parsed_collection = crate::validate::stored_measurement_collection(
         &parse_strict_json(&collection_bytes).map_err(|_| EvidenceError::Contradiction)?,
     )

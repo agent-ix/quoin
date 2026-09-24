@@ -5,6 +5,8 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+mod collection;
+
 use engineering_assurance::campaign::{
     CampaignAttempt, CampaignAttemptStatus, CampaignDefinition, CampaignRun, CampaignVerdict,
     MeasurementProcedure, PlanRegistration, canonical_digest, validate_definition, validate_run,
@@ -184,6 +186,7 @@ pub fn verify_retained_campaign(
                     repo,
                     &definition,
                     definition_digest,
+                    run_id,
                     attempt,
                     run_attempts,
                     &plans,
@@ -277,6 +280,7 @@ fn assess_attempt(
     repo: &Path,
     definition: &CampaignDefinition,
     definition_digest: &str,
+    run_id: &str,
     attempt: &CampaignAttempt,
     run_attempts: &[CampaignAttempt],
     plans: &[MeasurementPlan],
@@ -287,6 +291,7 @@ fn assess_attempt(
         repo,
         definition,
         definition_digest,
+        run_id,
         attempt,
         run_attempts,
         plans,
