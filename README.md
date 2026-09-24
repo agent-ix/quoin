@@ -255,7 +255,10 @@ The definition may live outside the measured checkout, allowing it to pin an
 earlier source revision without a self-referential Git commit. The run config
 uses `quoin.campaign-run-config/v1` and selects exact clean source checkouts,
 producer and checker executables, and runtime bindings. Verification reopens
-the retained evidence and the same pinned source revisions.
+the retained evidence and the same pinned source revisions. Member dependencies
+require ordering and completion; selected producer input bytes are retained by
+digest. A domain checker must validate any stronger relation between a
+dependent input and an earlier member's output.
 
 ## Development
 
