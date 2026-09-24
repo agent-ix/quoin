@@ -242,7 +242,7 @@ fn tc_1942_missing_member_is_inconclusive_and_source_tampering_is_refused() {
     ));
 }
 
-/// Trace: FR-114-AC-1, FR-114-AC-2, FR-114-AC-4
+/// Trace: FR-114-AC-1, FR-114-AC-2, FR-114-AC-3, FR-114-AC-4
 /// Provenance: PLAT-1043
 #[cfg(target_os = "linux")]
 #[test]
@@ -371,7 +371,7 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         "{receipt:?}"
     );
 
-    // Trace: FR-114-AC-3. Rehash both the collection and the run so an
+    // TC-1943: Rehash both the collection and the run so an
     // identity-only check would accept each altered context claim.
     let first = &run.attempts.as_ref().expect("attempts")[0];
     let collection_id = quoin_measurement::types::ids::CollectionId::parse(
