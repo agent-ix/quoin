@@ -51,7 +51,7 @@ maths in `tests/support/grading.rs`. The variants are in
 | family | registry ids | how severity is obtained | ordinal graded for ordering |
 | --- | --- | --- | --- |
 | `S0` (baseline) | `S0` (RTC only) | `FullBatteryV1`'s severity `score`, rounded to the nearest level | the raw score |
-| `S1` | `S1` (RTC), `S1-RT`, `S1-RC` | fact `noul`s only, each rubric tier asked as its own fact: trace correct (no -> `high`); the test would still pass with the stated behaviour broken (`high`); the test would pass against a stub (`high`); the test checks only some stated clauses (`medium`); the code contradicts the requirement (`high`); the code misses or mishandles a stated case (`medium`). Only the present artifact's facts are asked. The level is the most probable level of the step-5 rule under the fact probabilities, treated as independent, with a tie going to the more severe level; its confidence is that level's mass | expected level under the same distribution |
+| `S1` | `S1` (RTC), `S1-RT`, `S1-RC` | fact `noul`s only, each rubric tier asked as its own fact: trace correct (no -> `high`); the test would still pass with the stated behaviour broken (`high`); the test would pass against a stub (`high`); the test checks only some stated clauses (`medium`); the code contradicts the requirement (`high`); the code misses or mishandles a stated case (`medium`). Only the present artifact's facts are asked. Each fact is thresholded at the `noul` decision threshold τ = 0.5 on its own (a fact whose defect answer has probability ≥ τ is a defect), and the level is the most severe tier with any defect; `none` when no fact reaches τ. Its confidence is that level's mass under the fact probabilities treated as independent | expected level under that independence distribution |
 | `S2` | `S2` (RTC), `S2-RT`, `S2-RC` | a severity `score` whose four levels are concrete situations, with invented worked examples in the instruction (three for `high`, two for each other level, per mode) | the expected score |
 | `S2M` | `S2M` (RTC), `S2M-RT`, `S2M-RC` | S2's identical request. `high` when the probability mass on `high` is at least 0.25 (a uniform prior's share); otherwise S2's answer | P(`high`) |
 | `S3` | `S3` (RT, RC, RTC) | a severity `score` whose levels are review actions (no action / backlog / fix before release / block merge), mapped to `none`/`low`/`medium`/`high` by position | the expected score |
@@ -75,9 +75,10 @@ Per variant, per mode slice, and per truth-kind group:
    accuracy on them. Reported only, not gated.
 
 5. **Paired mutant contrast** (pending `mutation.source_id`, PLAT-1025, and
-   the paired-contrast helper, PR #625). Over (source row, mutant) pairs
-   linked by `mutation.source_id`: successes, failures and ties under Bar D's rule
-   below, and the one-sided sign-test p-value over the non-tie pairs.
+   the shared `metrics::paired_contrast`, PR #625, PLAT-1029). Over
+   (source row, mutant) pairs linked by `mutation.source_id`: successes,
+   failures and ties under Bar D's rule below, and the one-sided sign-test
+   p-value over the non-tie pairs.
 
 ECE, no-defect recall and the per-class table are reported and not gated.
 
@@ -92,6 +93,12 @@ ECE, no-defect recall and the per-class table are reported and not gated.
 branch by branch, the S2/S2M distribution reading, S3's mapping, and the
 wording rule in every mode each variant claims.
 
+A malformed `score` answer (a key that is not a level, a level spelled twice,
+a negative or non-finite mass, masses not summing to 1 within 0.01, or no
+distribution) aborts the run with the row, the variant and the raw response
+in the error. With a recording cassette the response is already on file
+before the check runs, so a paid answer is never lost.
+
 ## Environment and Sampling
 
 The whole dev split, one pass per variant version. The live service picks the
@@ -100,17 +107,23 @@ replications: they are reported and not pooled.
 
 Phase 2 may revise variants on dev. Any change to wording or to a derive rule
 bumps the variant's `version`. Every `variant@version` carries a
-request-digest pin (`REQUEST_DIGEST_PINS` in `tc_1027_eval_harness.rs`,
-checked by `tc_1027_request_digest_is_pinned_per_variant_version`): the
-sha256 of the questions it sends, instructions and labels included, on a
-fixed canonical row per mode. A wording change without a version bump fails
-the gate, and a bumped version cannot run until it is pinned.
+request-digest pin (`REQUEST_DIGEST_PINS` in
+`tests/eval_v2_support/preflight.rs`): the sha256 of the questions it sends,
+instructions and labels included, on a fixed canonical row per mode. The
+runner's preflight (`preflight::authorize_run`, called by
+`live_eval_v2.rs` before its first request) refuses a `variant@version`
+whose wording does not match its pin, and a bumped version that has no pin
+yet. The offline gate `tc_1027_request_digest_is_pinned_per_variant_version`
+also holds the pin table equal to the registry's digests.
 
-**Dev iteration is capped at 5 versions per family** (v1 to v5). The report
-states how many versions of each family were tried on dev. A version past
-the cap may still be run, but it is itself reported, with the family's full
-version count, beside any result it produces, and it is named as past the
-cap wherever that result is quoted. The bars below do not move.
+**Dev iteration is capped at 5 versions per family** (v1 to v5), and the cap
+is hard: the preflight refuses to run any version past v5, on dev or
+held-out. The report states how many versions of each family were tried on
+dev. **Only a family's final version is eligible** for selection: the one
+registered when the selection is committed, which is the only version the
+runner can run, since the registry holds one version per id. Results of
+earlier versions are reported as dev history and never selected. The bars
+below do not move.
 
 ## Interpretation
 
@@ -144,9 +157,23 @@ Known properties of the variants, stated before any live call:
   (b). This is the rubric applied to what exists, not a claim about the
   missing artifact. S3's single wording tells the model that an artifact
   missing from the row is expected and is not itself a mismatch.
-- **S1's ordinal assumes the facts are independent.** They are not: a trace
-  mismatch makes every other defect likely. The ordinal is for ranking, not a
-  calibrated probability.
+- **S1's level thresholds each fact alone; its ordinal is biased toward
+  `high`.** The level is the rubric over each fact thresholded at τ = 0.5.
+  The ordinal, used for ordering (Bar C) and for the paired contrast
+  (Bar D), is the expected level when the facts are treated as independent.
+  They are not independent (a trace mismatch makes every other defect
+  likely), and the expectation is biased upward: `high` is the union of up
+  to four high-tier facts (the trace check and three high-tier defects in
+  `RTC`), so its mass grows with the number of facts asked even when each
+  is unlikely. On the probe row with trace correct at 0.9 and every defect
+  fact at 0.15, every fact reads "no", yet the distribution is none 0.399,
+  medium 0.153, high 0.447, and the expected level is 1.65. That is why the
+  level is not the distribution's most likely level (the rule first
+  registered, replaced before any live call, PR #620 re-review): it would
+  have answered `high` on that row. The ordinal keeps the bias; it ranks
+  rows with the same facts asked consistently, but an `RTC` ordinal sits
+  higher than an `RT` or `RC` one for the same evidence, so ordinals are
+  compared within a mode only, as every bar here already does.
 - **S2's worked examples are invented** (coupons, withdrawals, uploads,
   schedulers). None is a corpus row or one of this repository's requirements.
   They follow the corpus labels' reading of the rubric (MP-234 `rules.severity`):
@@ -177,32 +204,35 @@ family is gated per mode, on the dev split, pooled across truth kinds:
   whatever its concordance.
 
 - **Bar D, paired mutant contrast.** *Pending dependencies, not yet
-  present: the corpus field `mutation.source_id` (PLAT-1025) and the generic
-  paired-contrast helper in `metrics.rs` (PR #625). Neither exists on `main`
-  when this plan is registered. Bar D is computed only once both land, and is
-  reported as "not computable (pending dependency)" until then; it is never
-  approximated another way.* Pairs come only from `mutation.source_id`,
-  which is to name each mutant's unmutated source row, the two sharing a
-  split. Bar D uses every dev pair (source row, mutant) whose
-  mutant is a violating-code mutant, a test-weakening mutant or a
-  `trace_swap`, and whose source row is NOT labelled `high` (a rise from
-  `high` is impossible). On the variant's severity ordinal (the same one Bar
-  C ranks by), with δ = 0.5 levels:
-  - the pair **succeeds** iff the mutant's ordinal is at least the `medium`
-    level (2) AND it rose from the source's by at least δ;
-  - the pair **fails** iff the ordinal fell from the source's by at least δ;
-  - anything else is a **tie** and is excluded;
-  - a pair in which the variant leaves either row unanswered **fails**, so
-    abstaining cannot win Bar D.
+  present on `main` when this plan is registered: the corpus field
+  `mutation.source_id` (PLAT-1025) and the shared paired-contrast helper
+  `metrics::paired_contrast` (PR #625, PLAT-1029). Bar D is computed by that
+  helper and no other code: this plan carries no local Bar D
+  implementation, and until both land Bar D is reported as "not computable
+  (pending dependency)", never approximated another way. Wiring the helper
+  in is phase 2, before any live call.* The rule is the one shared by every
+  PLAT-1024 plan, with severity's δ:
+  - **Pairing.** Pairs come only from `mutation.source_id`, which names each
+    mutant's unmutated source row, the two sharing a split. One pair per
+    mutation id; where a mutation id has rows in more than one mode, the
+    `RTC` row is the one paired.
+  - **Exclusion.** A pair whose source row is already on the defect side is
+    excluded: here, every source whose primary severity truth label is at or
+    above `medium` (`medium` or `high`), as `paired_contrast` excludes on the
+    source's truth.
+  - **Success.** The mutant's ordinal crosses τ = 2.0 (`medium`) upward, that
+    is, it is at or above 2.0 while the source's is below it, AND it rose
+    from the source's by at least δ = 0.5 levels.
+  - **Fail.** The ordinal moved by at least δ the other way (fell by 0.5 or
+    more). A pair in which the variant leaves either row unanswered also
+    fails, so abstaining cannot win Bar D.
+  - **Tie.** Every other pair, excluded from the test.
 
   D passes on a one-sided sign test at α = 0.05 over the non-tie pairs
   (successes > failures, binomial p = 0.5). It is gateable only with at
   least 10 non-tie pairs; fewer is "not gateable (n too small)". D is
   computed per mode, and reported per mutant kind as a breakdown. Its truth
   is by-construction (the mutation made the row worse), so D is known truth.
-  This rule is shared with the sibling PLAT-1024 plans. It will be
-  implemented in phase 2 on the pending paired-contrast helper (PR #625),
-  before any live call.
 
 **Minimum slice.** A mode is gated only if its dev slice has at least 30
 severity rows, of which at least 10 are labelled `high`. A smaller slice is
@@ -236,9 +266,11 @@ same four bars are reported there once. The choice is committed first as
 this plan's single entry in `fixtures/eval-v2/heldout-selection.json`
 (`rust/crates/quoin-jev/tests/fixtures/eval-v2/heldout-selection.json`)
 (variant, version, the commit it was selected at, and the dev evidence), with
-`S0@v1` as its baseline. The runner refuses a held-out run of any variant
-version that file does not cover, and the file refuses a second entry for
-this plan.
+`S0@v1` as its baseline. The runner's preflight
+(`preflight::authorize_run`, exercised offline by
+`tc_1027_the_preflight_runs_heldout_only_for_the_committed_selection`)
+refuses a held-out run of any variant version that file does not cover, and
+the file refuses a second entry for this plan.
 
 If no family qualifies, nothing runs on held-out. What is reported then
 depends on why. If at least one family was gateable on RTC by either
