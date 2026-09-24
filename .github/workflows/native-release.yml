@@ -150,4 +150,10 @@ jobs:
         run: |
           set -euo pipefail
           # This job has no checkout, so gh cannot infer the repository.
-          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Quoin $TAG" release/*
+          # --generate-notes is not optional: gh writes no body at all unless a
+          # notes flag is passed, and every release cut here before PLAT-1055
+          # published with an empty one. GitHub builds the merged-PR list and
+          # the compare link server-side, so this works without a checkout. A
+          # hand-written changelog goes on afterwards with `gh release edit
+          # "$TAG" --notes-file …`; this guarantees the floor.
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes --title "Quoin $TAG" release/*
