@@ -114,6 +114,9 @@ pub fn verify_retained_campaign(
         .values()
         .find(|source| source.checkout.canonicalize().ok().as_ref() == Some(&own_root))
         .ok_or_else(|| SourceError::Missing("campaign plan repository".to_owned()))?;
+    let plan_source_inputs = source_inputs
+        .get(&own_source.repository)
+        .ok_or_else(|| SourceError::Missing(own_source.repository.clone()))?;
     let run_file = run_path(repo, run_id)?;
     let run: CampaignRun = read_typed(&run_file)?;
     if run.id != run_id {
@@ -193,6 +196,7 @@ pub fn verify_retained_campaign(
                     &plans,
                     &procedures,
                     &source_inputs,
+                    plan_source_inputs,
                 )
             } else {
                 AttemptEvidence::Inconclusive
@@ -287,6 +291,7 @@ fn assess_attempt(
     plans: &[MeasurementPlan],
     procedures: &BTreeMap<String, MeasurementProcedure>,
     source_inputs: &BTreeMap<String, Vec<InputBinding>>,
+    plan_source_inputs: &[InputBinding],
 ) -> AttemptEvidence {
     match check_attempt(
         repo,
@@ -298,6 +303,7 @@ fn assess_attempt(
         plans,
         procedures,
         source_inputs,
+        plan_source_inputs,
     ) {
         Ok(evidence) => evidence,
         Err(EvidenceError::Missing) => AttemptEvidence::Inconclusive,

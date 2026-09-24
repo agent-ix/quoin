@@ -27,6 +27,7 @@ pub(super) fn check_attempt(
     plans: &[MeasurementPlan],
     procedures: &BTreeMap<String, MeasurementProcedure>,
     source_inputs: &BTreeMap<String, Vec<InputBinding>>,
+    plan_source_inputs: &[InputBinding],
 ) -> Result<AttemptEvidence, EvidenceError> {
     let member = definition
         .members
@@ -137,7 +138,7 @@ pub(super) fn check_attempt(
         plan,
         &result,
         result_digest,
-        source,
+        plan_source_inputs,
     )?;
     let parsed_collection = crate::validate::stored_measurement_collection(
         &parse_strict_json(&collection_bytes).map_err(|_| EvidenceError::Contradiction)?,

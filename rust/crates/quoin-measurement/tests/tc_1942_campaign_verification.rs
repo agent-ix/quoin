@@ -254,11 +254,80 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
     };
     use quoin_measurement::campaign::run::{RunMemberBindings, run_campaign};
 
-    let (repo, revision, source_digest) = fixture();
+    let (repo, _, _) = fixture();
+    let procedure_path = repo.path().join("campaign/procedure.json");
+    let mut procedure: serde_json::Value =
+        serde_json::from_slice(&fs::read(&procedure_path).expect("procedure"))
+            .expect("procedure JSON");
+    procedure["sourceRepository"] = json!("fictional/producer");
+    fs::write(
+        &procedure_path,
+        serde_json::to_vec(&procedure).expect("procedure JSON"),
+    )
+    .expect("external producer procedure");
+    git(repo.path(), &["add", "campaign/procedure.json"]);
+    git(
+        repo.path(),
+        &[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "-q",
+            "-m",
+            "external producer procedure",
+        ],
+    );
+    let revision = String::from_utf8(git(repo.path(), &["rev-parse", "HEAD"]))
+        .expect("plan revision")
+        .trim()
+        .to_owned();
+    let source_digest = digest_bytes_sha256(&git(
+        repo.path(),
+        &["ls-tree", "-r", "-z", "--full-tree", &revision],
+    ))
+    .as_hex()
+    .to_owned();
+    let producer_repo = tempfile::tempdir().expect("producer repository");
+    git(producer_repo.path(), &["init", "-q"]);
+    fs::create_dir_all(producer_repo.path().join("campaign")).expect("producer directory");
+    fs::write(
+        producer_repo.path().join("campaign/producer.py"),
+        "import sys\nsys.stdout.write('ok')\n",
+    )
+    .expect("producer script");
+    git(producer_repo.path(), &["add", "campaign/producer.py"]);
+    git(
+        producer_repo.path(),
+        &[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "-q",
+            "-m",
+            "producer",
+        ],
+    );
+    let producer_revision = String::from_utf8(git(producer_repo.path(), &["rev-parse", "HEAD"]))
+        .expect("producer revision")
+        .trim()
+        .to_owned();
+    let producer_digest = digest_bytes_sha256(&git(
+        producer_repo.path(),
+        &["ls-tree", "-r", "-z", "--full-tree", &producer_revision],
+    ))
+    .as_hex()
+    .to_owned();
     let definition: CampaignDefinition = serde_json::from_value(json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-direct-campaign", "subjectName":"fictional-subject", "subjectVersion":"1",
-        "sourceGraph":[{"repository":"fictional/source","revision":revision,"digest":source_digest}],
+        "sourceGraph":[
+            {"repository":"fictional/source","revision":revision,"digest":source_digest},
+            {"repository":"fictional/producer","revision":producer_revision,"digest":producer_digest}
+        ],
         "members":[{
             "name":"one", "planId":"MP-FIXTURE", "definitionVersion":"v1", "required":true,
             "checkerProcedure":{
@@ -300,7 +369,11 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         producer: ProducerDescriptor {
             name: name.to_owned(),
             version: "1".to_owned(),
-            source_revision: revision.clone(),
+            source_revision: if checker {
+                revision.clone()
+            } else {
+                producer_revision.clone()
+            },
             executable: executable.clone(),
             executable_digest: executable_digest.clone(),
         },
@@ -345,13 +418,25 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         inputs: Vec::new(),
         timestamp: "2026-09-23T00:00:00Z".to_owned(),
         toolchains: BTreeMap::from([("python".to_owned(), "system-python3".to_owned())]),
-        source_remotes: BTreeMap::from([(
-            "fictional/source".to_owned(),
-            "https://example.invalid/fictional.git".to_owned(),
-        )]),
+        source_remotes: BTreeMap::from([
+            (
+                "fictional/source".to_owned(),
+                "https://example.invalid/fictional.git".to_owned(),
+            ),
+            (
+                "fictional/producer".to_owned(),
+                "https://example.invalid/producer.git".to_owned(),
+            ),
+        ]),
         environment_sources: BTreeMap::new(),
     };
-    let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);
+    let checkouts = BTreeMap::from([
+        ("fictional/source".to_owned(), repo.path().to_path_buf()),
+        (
+            "fictional/producer".to_owned(),
+            producer_repo.path().to_path_buf(),
+        ),
+    ]);
     let runs = BTreeMap::from([("one".to_owned(), runtime)]);
     let run = run_campaign(
         repo.path(),
