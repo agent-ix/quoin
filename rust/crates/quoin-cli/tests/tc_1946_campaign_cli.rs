@@ -184,15 +184,10 @@ fn fixture() -> (tempfile::TempDir, String) {
 /// Trace: FR-114-AC-5, TC-1946
 /// A fictional source exercises the native CLI document and exit.
 #[test]
-fn campaign_verify_preserves_document_for_inconclusive_and_reject() {
+fn tc_1946_campaign_verify_preserves_document_for_inconclusive_and_reject() {
     let (repo, definition_digest) = fixture();
-    let inventory_digest = canonical_digest(&json!([{
-        "member":"one", "index":1, "status":"invalid_request",
-        "reason":"fictional_preflight"
-    }]))
-    .expect("attempt inventory digest")
-    .as_str()
-    .to_owned();
+    // Independently fixed SHA-256 of the fixture's canonical attempt array.
+    let inventory_digest = "7fe0d5a085ce71d4b46650cff9e6cb242252f6e6615785e888fa74fa1694a286";
     for (run_id, verdict) in [
         ("missing-run", "inconclusive"),
         ("contradictory-run", "reject"),
