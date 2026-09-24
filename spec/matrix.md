@@ -320,7 +320,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-050 | FR-015-AC-3 covered by `props/fr-write.prop.test.ts` | Property | P1 | FR-015-AC-3 | ✅ |
 | TC-051 | FR-016-AC-1 covered by `index.test.ts` | Unit | P1 | FR-016-AC-1 | ✅ |
 | TC-052 | FR-016-AC-2 covered by `index.test.ts` | Unit | P1 | FR-016-AC-2 | ✅ |
-| TC-1929 | All three committed `engineering-assurance` pins name one revision: `default-modules.yaml`'s module entry `ref`/`version`, `rust/Cargo.toml`'s crate dependency `rev`/(`=`-normalised) `version`, and `quoin-cli`'s retained-catalog fixture registry `ref` — a drift between any of them is refused, not just documented (PLAT-1032) | Unit | P0 | FR-016-AC-2 | ✅ `quoin-modules` `tc_1032_pin_agreement.rs` :: `tc_1032_every_engineering_assurance_pin_is_the_same_commit` |
+| TC-1929 | All three committed `engineering-assurance` pins name one revision: `default-modules.yaml`'s module entry `ref`/`version`, `rust/Cargo.toml`'s crate dependency `rev`/(`=`-normalised) `version`, and `quoin-cli`'s retained-catalog fixture registry `ref` — a drift between any of them is refused, not just documented (PLAT-1032) | Unit | P0 | FR-016-AC-3 | ✅ `quoin-modules` `tc_1032_pin_agreement.rs` :: `tc_1032_every_engineering_assurance_pin_is_the_same_commit` |
 | TC-053 | FR-017-AC-1 covered by `index.test.ts` | Unit | P1 | FR-017-AC-1 | ✅ |
 | TC-054 | FR-017-AC-2 covered by `cli.test.ts` | Unit | P1 | FR-017-AC-2 | ✅ |
 | TC-055 | FR-017-AC-3 covered by `cli.test.ts` | Unit | P1 | FR-017-AC-3 | ✅ |

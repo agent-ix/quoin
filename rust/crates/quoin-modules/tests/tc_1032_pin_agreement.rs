@@ -56,14 +56,33 @@ const CARGO_MANIFEST: &str = include_str!("../../../Cargo.toml");
 const RETAINED_CATALOG_REGISTRY: &str =
     include_str!("../../quoin-cli/tests/fixtures/retained-catalog/ix-home/filament/registry.json");
 
+/// Whether `line` is the Cargo.toml dependency declaration for [`NAME`],
+/// rather than a same-prefixed sibling crate.
+///
+/// `starts_with(NAME)` alone also matches `engineering-assurance-testkit`,
+/// `-macros` and `-derive`: a manifest line for one of those elsewhere in
+/// `rust/Cargo.toml` would then be silently treated as this pin, so which
+/// crate the test asserts against would depend on line order rather than
+/// the name. The character after `NAME` must be whitespace or `=`, the same
+/// token-boundary discipline `field` already applies to a key inside the line.
+fn is_dependency_line(line: &str) -> bool {
+    line.strip_prefix(NAME)
+        .and_then(|rest| rest.chars().next())
+        .is_some_and(|next| next.is_whitespace() || next == '=')
+}
+
 /// The value of `key = "…"` inside one TOML inline-table line.
 ///
 /// Duplicated from `quoin-quire`'s `build_support/manifest_pin.rs` rather than
 /// shared or reached across the crate boundary with a relative `include!`:
 /// it is a small, private build-support helper, not a published dependency
-/// between crates, and the workspace has no `toml` (or serde YAML/TOML)
-/// crate available to either crate's dev-dependencies to parse this
-/// properly (checked: neither appears anywhere in `rust/Cargo.lock`).
+/// between crates, and the workspace has no `toml` (or `toml_edit`) crate
+/// available to either crate's dev-dependencies to parse this TOML line
+/// properly (checked: neither `toml` nor `toml_edit` appears anywhere in
+/// `rust/Cargo.lock`). The workspace does carry serde YAML support
+/// (`serde_yaml_ng`, `quoin-yaml`) — this test's YAML half already uses
+/// `MarketplaceManifest::from_yaml` — but that parses `default-modules.yaml`,
+/// not this TOML line, so it does not make this helper redundant.
 ///
 /// The key must begin at a TOML token boundary — start of line, whitespace,
 /// `{` or `,` — and be followed by `=`. A naive `line.find(key)` would match
@@ -87,7 +106,7 @@ fn field(line: &str, key: &str) -> Option<String> {
         })
 }
 
-/// Trace: FR-016-AC-2
+/// Trace: FR-016-AC-3
 /// Provenance: PLAT-1032
 #[test]
 fn tc_1032_every_engineering_assurance_pin_is_the_same_commit() {
@@ -108,7 +127,7 @@ fn tc_1032_every_engineering_assurance_pin_is_the_same_commit() {
     let crate_line = CARGO_MANIFEST
         .lines()
         .map(str::trim)
-        .find(|line| line.starts_with(NAME))
+        .find(|line| is_dependency_line(line))
         .expect("rust/Cargo.toml declares the engineering-assurance dependency");
     let crate_rev =
         field(crate_line, "rev").expect("the engineering-assurance dependency line declares a rev");
@@ -147,22 +166,68 @@ fn tc_1032_every_engineering_assurance_pin_is_the_same_commit() {
 
     let registry: serde_json::Value = serde_json::from_str(RETAINED_CATALOG_REGISTRY)
         .expect("the retained-catalog fixture registry is JSON");
-    let fixture_rev = registry
+    let fixture_plugins = registry
         .get("plugins")
         .and_then(serde_json::Value::as_array)
-        .expect("the retained-catalog registry lists plugins")
-        .iter()
-        .find(|plugin| plugin.get("name").and_then(serde_json::Value::as_str) == Some(NAME))
-        .and_then(|plugin| plugin.get("ref"))
-        .and_then(serde_json::Value::as_str)
-        .expect("the retained-catalog registry pins engineering-assurance at a ref");
+        .expect("the retained-catalog registry lists plugins");
 
-    assert_eq!(
-        module_rev, fixture_rev,
-        "default-modules.yaml's engineering-assurance module pins ref {module_rev:?} but \
-         quoin-cli's retained-catalog fixture registry pins ref {fixture_rev:?}. The fixture's \
-         contract is that `catalog list` resolves nothing from it, and reconciliation compares \
-         that registry's ref against the embedded default-modules.yaml, so leaving the fixture \
-         behind makes tc_1650 fail as though catalog discovery were broken (PLAT-1032)."
+    // `tc_1650`'s "fixture deliberately resolves no modules" contract holds
+    // only if EVERY plugin this fixture mirrors still matches the manifest
+    // entry it mirrors — the fixture was built to cover all ten default
+    // modules, not just engineering-assurance, so a bump anywhere in
+    // default-modules.yaml can desync the fixture the same way PLAT-1032 did.
+    // Every plugin in the fixture is checked, not just the ones already
+    // agreeing, so a second drift is named instead of silently tolerated.
+    for entry in &manifest.entries {
+        let Some(fixture_plugin) = fixture_plugins.iter().find(|plugin| {
+            plugin.get("name").and_then(serde_json::Value::as_str) == Some(entry.name.as_str())
+        }) else {
+            continue;
+        };
+        let entry_name = entry.name.as_str();
+        let fixture_ref = fixture_plugin
+            .get("ref")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_else(|| {
+                panic!(
+                    "quoin-cli's retained-catalog fixture registry's {entry_name:?} plugin has \
+                     no ref (rust/crates/quoin-cli/tests/fixtures/retained-catalog/ix-home/filament/registry.json)"
+                )
+            });
+        let entry_ref = entry.source.requested_ref().unwrap_or_else(|| {
+            panic!("default-modules.yaml's {entry_name:?} module entry pins no ref")
+        });
+
+        assert_eq!(
+            entry_ref, fixture_ref,
+            "default-modules.yaml's {entry_name:?} module pins ref {entry_ref:?} but \
+             quoin-cli's retained-catalog fixture registry pins ref {fixture_ref:?} \
+             (default-modules.yaml vs \
+             rust/crates/quoin-cli/tests/fixtures/retained-catalog/ix-home/filament/registry.json). \
+             The fixture's contract is that `catalog list` resolves nothing from it, and \
+             reconciliation compares that registry's ref against the embedded \
+             default-modules.yaml, so leaving the fixture behind makes tc_1650 fail as though \
+             catalog discovery were broken rather than naming the unbumped pin (PLAT-1032)."
+        );
+    }
+}
+
+/// Trace: FR-016-AC-3
+/// Provenance: PLAT-1032
+#[test]
+fn tc_1032_the_crate_line_selector_ignores_a_prefixed_crate_name() {
+    assert!(
+        !is_dependency_line(
+            "engineering-assurance-testkit = { version = \"=9.9.9\", rev = \"cafebabe\" }"
+        ),
+        "is_dependency_line must not select a same-prefixed sibling crate line — doing so lets \
+         file position decide which crate's rev this gate asserts, rather than the crate name \
+         (PLAT-1032)."
+    );
+    assert!(
+        is_dependency_line(
+            "engineering-assurance = { version = \"=0.4.0\", git = \"https://github.com/agent-ix/engineering-assurance\", rev = \"438b30fcd5d4df457fe0fca4682b322c72856c1c\" }"
+        ),
+        "is_dependency_line must still select the real engineering-assurance dependency line"
     );
 }
