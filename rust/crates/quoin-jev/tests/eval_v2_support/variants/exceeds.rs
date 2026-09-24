@@ -614,9 +614,11 @@ pub(crate) const NECESSARY_TAU: f64 = 0.5;
 
 /// Why E5 skips a unit before any call. E1's pre-filter ([`is_trivial`]) is
 /// the first reason; the other three are E5's, all read structurally off a
-/// [`UnitKind::Branch`] unit's condition and body statements, with comments
-/// and literals masked. A function or whole-body unit is never trivial
-/// beyond E1's rule.
+/// unit's condition and body statements, with comments and literals masked.
+/// A [`UnitKind::Branch`] unit has both; so does a [`UnitKind::Whole`]
+/// statement that is a lone Rust `if` with no `else` (E5 v4); any other
+/// whole unit has statements and no condition, so it is never a size cap. A
+/// function unit is never trivial beyond E1's rule.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum TrivialReason {
     /// E1's rule: empty, or a pass-through branch.
@@ -769,6 +771,15 @@ fn branch_shape(unit: &Unit, python: bool, masked: &str) -> (String, Vec<String>
     (condition, top_level_statements(&body, false))
 }
 
+/// Whether the masked Rust statement is one `if` block with no `else`: it
+/// opens with the word `if` and ends at a `}`.
+fn lone_rust_if(masked: &str) -> bool {
+    let text = masked.trim();
+    text.strip_prefix("if")
+        .is_some_and(|rest| rest.starts_with(|c: char| !(c.is_alphanumeric() || c == '_')))
+        && text.ends_with('}')
+}
+
 /// Why E5 skips `unit` of a body read as the language of `path`, or `None`
 /// when E5 asks about it. See [`TrivialReason`].
 pub(crate) fn trivial_reason(path: &str, unit: &Unit) -> Option<TrivialReason> {
@@ -782,15 +793,14 @@ pub(crate) fn trivial_reason(path: &str, unit: &Unit) -> Option<TrivialReason> {
         (&LOGGING_RUST, &PLUMBING_RUST, &REFUSAL_RUST)
     };
     let masked = String::from_utf8_lossy(&mask_for(path, &unit.text)).into_owned();
-    if unit.kind == UnitKind::Whole {
-        let statements = top_level_statements(&masked, python);
-        return (!statements.is_empty() && statements.iter().all(|s| logging.is_match(s)))
-            .then_some(TrivialReason::Logging);
-    }
-    if unit.kind != UnitKind::Branch {
-        return None;
-    }
-    let (condition, statements) = branch_shape(unit, python, &masked);
+    let (condition, statements) = match unit.kind {
+        UnitKind::Function => return None,
+        UnitKind::Branch => branch_shape(unit, python, &masked),
+        // A lone Rust `if` with no `else` is one statement unit (E5 v4): read
+        // it as the branch it is, so a size cap is skipped there too.
+        UnitKind::Whole if !python && lone_rust_if(&masked) => branch_shape(unit, false, &masked),
+        UnitKind::Whole => (String::new(), top_level_statements(&masked, python)),
+    };
     let rest: Vec<&String> = statements
         .iter()
         .filter(|statement| !logging.is_match(statement))
@@ -1009,7 +1019,7 @@ fn necessity_asks(row: &Row) -> Vec<Ask> {
 /// One asked unit's `P(necessary)`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct NecessityReading {
-    /// The unit's index in [`code_units`].
+    /// The unit's index in [`row_e5_units`], the ask's `unit`.
     pub(crate) unit: usize,
     /// `P(necessary)`.
     pub(crate) necessary: f64,
@@ -1029,8 +1039,9 @@ pub(crate) struct NecessityAssessment {
     pub(crate) trivial: BTreeMap<TrivialReason, usize>,
     /// One reading per asked unit.
     pub(crate) readings: Vec<NecessityReading>,
-    /// The row's outcome: always decided since v3, which has no breaker.
-    pub(crate) outcome: RelationOutcome,
+    /// The row's answer: every row is answered since v3, which has no
+    /// breaker.
+    pub(crate) outcome: Prediction,
 }
 
 /// E5's rule over the asked units: `yes` (exceeds) iff some unit is
@@ -1039,7 +1050,7 @@ pub(crate) struct NecessityAssessment {
 /// it for `no`. Every row is answered: v3 dropped v1's and v2's breaker
 /// (abstain when two or more units were asked and all were unnecessary),
 /// whose abstentions were 4 of E5@v2's 5 Bar D failures.
-pub(crate) fn necessity_outcome(readings: &[NecessityReading]) -> RelationOutcome {
+pub(crate) fn necessity_outcome(readings: &[NecessityReading]) -> Prediction {
     let unnecessary = readings.iter().filter(|r| r.unnecessary()).count();
     let ordinal = readings
         .iter()
@@ -1047,11 +1058,11 @@ pub(crate) fn necessity_outcome(readings: &[NecessityReading]) -> RelationOutcom
         .reduce(f64::max)
         .unwrap_or(0.0);
     let yes = unnecessary > 0;
-    RelationOutcome::Decided(Prediction {
+    Prediction {
         answer: if yes { YES } else { NO }.to_owned(),
         confidence: Some(if yes { ordinal } else { 1.0 - ordinal }),
         ordinal: Some(ordinal),
-    })
+    }
 }
 
 /// Reads a row's E5 answers.
@@ -1101,7 +1112,7 @@ pub(crate) fn assess_necessity(
 }
 
 fn e5_derive(row: &Row, answered: &[Answered]) -> Predictions {
-    prediction_of(loud(assess_necessity(row, answered)).outcome)
+    Predictions::from([(KEY, loud(assess_necessity(row, answered)).outcome)])
 }
 
 /// E5: per-unit "would deleting this lose stated behaviour"; `yes` when a
@@ -1113,10 +1124,12 @@ fn e5_derive(row: &Row, answered: &[Answered]) -> Predictions {
 /// function into its top-level statements ([`e5_units`]) and skipped a
 /// statement that only logs. v3 drops the breaker ([`necessity_outcome`]);
 /// its requests are v2's, so v3 is a derive-only change read off v2's
-/// answers.
+/// answers. v4 applies the triviality checks to statement units too
+/// ([`trivial_reason`]): a lone `if` size cap, which v2 and v3 asked about,
+/// is skipped, so v4 asks about fewer units than v3.
 pub(crate) const E5: Variant = Variant {
     id: "E5",
-    version: 3,
+    version: 4,
     summary: "per-statement outcome necessity noul (would deleting it lose stated behaviour); \
               yes if a non-trivial unit has P(necessary) < 0.5; no breaker",
     modes: RC_AND_RTC,
@@ -1486,10 +1499,6 @@ pub(crate) fn relation_counts(
 pub(crate) struct NecessityCounts {
     /// Rows E5 ran on.
     pub(crate) rows: usize,
-    /// Rows answered.
-    pub(crate) decided: usize,
-    /// Rows the breaker reported as trace-suspect.
-    pub(crate) trace_suspect: usize,
     /// Units skipped before any call, by reason.
     pub(crate) trivial_units: BTreeMap<TrivialReason, usize>,
     /// Units asked about and read.
@@ -1518,10 +1527,6 @@ pub(crate) fn necessity_counts(rows: &[Row], output: &RunOutput) -> NecessityCou
             .iter()
             .filter(|reading| reading.unnecessary())
             .count();
-        match assessment.outcome {
-            RelationOutcome::Decided(_) => counts.decided += 1,
-            RelationOutcome::TraceSuspect { .. } => counts.trace_suspect += 1,
-        }
     }
     counts
 }
@@ -1534,14 +1539,12 @@ fn render_necessity_counts(out: &mut String, counts: &NecessityCounts) {
         .collect();
     let _ = writeln!(
         out,
-        "\n#### {}: units and the circuit breaker\n\n\
-         | Rows | Answered | Trace-suspect (breaker) | Units trivial | Units asked | \
-         Units unnecessary |\n| --- | --- | --- | --- | --- | --- |\n\
-         | {} | {} | {} | {} | {} | {} |",
+        "\n#### {}: units\n\n\
+         | Rows | Units trivial | Units asked | Units unnecessary |\n\
+         | --- | --- | --- | --- |\n\
+         | {} | {} | {} | {} |",
         E5.label(),
         counts.rows,
-        counts.decided,
-        counts.trace_suspect,
         if trivial.is_empty() {
             "0".to_owned()
         } else {

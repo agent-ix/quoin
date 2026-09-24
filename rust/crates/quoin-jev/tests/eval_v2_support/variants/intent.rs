@@ -9,8 +9,8 @@
 //!
 //! Dev run 1 on jev-1.13.0: T0, T1 and T2 tied on every weakened-test pair
 //! (15 of 15, 22 of 22). T3 moves the reading into code: code lists the
-//! test's assertion statements ([`extract_assertions`]), and Jev only picks
-//! which one checks the stated behaviour, or `none` ([`T3`],
+//! test's assertion statements ([`extract_assertions`]), and Jev judges each
+//! one on its own: would it fail on a wrong outcome ([`T3`],
 //! [`derive_assertion_selection`]). A test with no assertion is `no` with no
 //! call.
 //!
@@ -548,20 +548,34 @@ pub(crate) const MAX_ASSERTIONS: usize = 20;
 
 /// A Rust assertion's opening: an assert-family macro (`assert!`,
 /// `assert_eq!`, `assert_ne!`, `assert_matches!`, `debug_assert*!`,
-/// `prop_assert*!`, so `assert!(matches!(..))` too), or a call that insists
-/// on an error (`.unwrap_err()`, `.expect_err(..)`). Adapted from jev-code's
-/// `ASSERTION` (`src/workflows/hunks.ts`), which reads diff lines; this reads
-/// whole statements.
+/// `prop_assert*!`, so `assert!(matches!(..))` too), a call that insists on
+/// an error (`.unwrap_err()`, `.expect_err(..)`), or a failure point: a
+/// `panic!(..)` or a proptest `Err(TestCaseError::fail(..))`, which
+/// [`failure_span`] widens to the arm, `let .. else` or `if` it fails in.
+/// Adapted from jev-code's `ASSERTION` (`src/workflows/hunks.ts`), which reads
+/// diff lines; this reads whole statements.
+///
+/// `.unwrap()` and `.expect(..)` are not assertions (T3 v3, MP-242): they
+/// check only that a call returned a success value, which T3's own
+/// instruction already answers `no` for. A test whose only check is one is
+/// `no` with no call. A `panic!` inside a closure (`.unwrap_or_else(|e|
+/// panic!(..))`) is the same check spelled out, and is not listed either.
 static RUST_ASSERTION: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\b(?:debug_)?(?:prop_)?assert\w*!\s*[(\[{]|\.(?:unwrap_err|expect_err)\s*\(")
-        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+    Regex::new(
+        r"\b(?:debug_)?(?:prop_)?assert\w*!\s*[(\[{]|\.(?:unwrap_err|expect_err)\s*\(|\bpanic!\s*[(\[{]|(?:\breturn\s+)?\bErr\s*\(\s*(?:\w+::)*TestCaseError::fail\s*\(",
+    )
+    .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
 });
 
-/// A Python assertion's opening: an `assert` statement, a unittest
-/// `self.assert*(..)`, or `pytest.raises(..)`.
+/// A Python assertion's opening: an `assert` statement at a line's start or
+/// after a `:` on the same line (`if x: assert y`), a unittest
+/// `self.assert*(..)`, `pytest.raises(..)`, or a dotted `assert_*(..)` call
+/// (`mock.assert_called_once_with(..)`, `np.testing.assert_allclose(..)`).
 static PYTHON_ASSERTION: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?m)^[ \t]*assert\b|\bself\.assert\w*\s*\(|\bpytest\.raises\s*\(")
-        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+    Regex::new(
+        r"(?m)^[ \t]*assert\b|:[ \t]*assert\b|\bself\.assert\w*\s*\(|\bpytest\.raises\s*\(|\.assert_\w+\s*\(",
+    )
+    .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
 });
 
 /// Where the statement holding an assertion that opens at `at` begins, in
@@ -598,9 +612,10 @@ fn statement_start(masked: &[u8], at: usize, python: bool) -> usize {
 /// Where the statement from `from` ends (exclusive), in masked bytes: after
 /// its `;` (Rust), at its line break (Python, outside brackets and not after
 /// a `\`), at a `,` outside brackets (a Rust match arm), or at the `}` that
-/// closes the block it is the tail of. A Rust assert macro (`macro`) ends at
-/// its own closing bracket, and its `;` when one follows, so two arms'
-/// assertions never merge.
+/// closes the block it is the tail of. With `macro_call` it ends at the
+/// closing bracket of the first group it opens, and the `;` when one follows:
+/// a brace-delimited macro statement needs no `;` (`assert_matches! { x, P }`
+/// on its own line), so without this it would run on into the next statement.
 fn statement_end(masked: &[u8], from: usize, python: bool, macro_call: bool) -> usize {
     let mut depth = 0usize;
     let mut at = from;
@@ -639,8 +654,143 @@ fn statement_end(masked: &[u8], from: usize, python: bool, macro_call: bool) -> 
     masked.len()
 }
 
-/// Every assertion statement in a test body, verbatim with whitespace
-/// collapsed, in source order. Comments and string literals are masked
+/// Where the Rust head ending just before `before` begins, in masked bytes:
+/// back to the previous `;`, `{`, `}` or `,` outside brackets, then past
+/// whitespace. A match arm's pattern, or a `let .. else` / `if` head.
+fn head_start(masked: &[u8], before: usize) -> usize {
+    let mut depth = 0usize;
+    let mut start = before;
+    while let Some(byte) = start.checked_sub(1).and_then(|at| masked.get(at)) {
+        match byte {
+            b')' | b']' => depth += 1,
+            b'(' | b'[' if depth == 0 => break,
+            b'(' | b'[' => depth -= 1,
+            b'{' | b'}' | b';' | b',' if depth == 0 => break,
+            _ => {}
+        }
+        start -= 1;
+    }
+    skip_whitespace(masked, start, before)
+}
+
+/// The first index at or after `at`, before `end`, that is not whitespace.
+fn skip_whitespace(masked: &[u8], at: usize, end: usize) -> usize {
+    (at..end)
+        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+        .unwrap_or(end)
+}
+
+/// The statement a Rust failure point (`panic!(..)`, `Err(TestCaseError::
+/// fail(..))`) opening at `at` asserts with, in masked bytes, or `None` when
+/// it is not one T3 lists:
+///
+/// - after `=>`: the match arm, pattern through the failure
+///   (`Err(e) => panic!("{e}")`);
+/// - first in a block whose head is a `let .. else`, an `if`, or a match arm:
+///   head through the block's `}` (and a `;` after it), so
+///   `let Some(x) = y else { panic!(..) };` is one statement;
+/// - after a `;`, a `}` or any other `{`, or first in the body: the failure
+///   statement alone;
+/// - anywhere else, inside a call or a closure: `None`. That is
+///   `.unwrap_or_else(|e| panic!(..))`, an `.expect(..)` spelled out.
+fn failure_span(masked: &[u8], at: usize) -> Option<(usize, usize)> {
+    let alone = || (at, statement_end(masked, at, false, true));
+    let Some(before) = (0..at)
+        .rev()
+        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+    else {
+        return Some(alone());
+    };
+    let arrow = before
+        .checked_sub(1)
+        .filter(|eq| masked.get(*eq..=before) == Some(b"=>".as_slice()));
+    if let Some(arrow) = arrow {
+        let start = head_start(masked, arrow);
+        return Some((start, statement_end(masked, at, false, true)));
+    }
+    match masked.get(before) {
+        Some(b'{') => {
+            let start = head_start(masked, before);
+            let head = String::from_utf8_lossy(masked.get(start..before).unwrap_or_default());
+            let mut words = head.split_whitespace();
+            let first = words.next();
+            let last = words.next_back().or(first);
+            let owned =
+                first == Some("if") || last == Some("else") || head.trim_end().ends_with("=>");
+            Some(if owned {
+                (start, statement_end(masked, before, false, true))
+            } else {
+                alone()
+            })
+        }
+        Some(b';' | b'}') => Some(alone()),
+        _ => None,
+    }
+}
+
+/// Which bytes of `body` lie inside a comment or a string or char literal,
+/// as [`mask_for`] reads them. Accurate for whitespace bytes, the only ones
+/// [`collapse_code_whitespace`] asks about: `body` is masked with every
+/// space and tab swapped for a control byte first, so a whitespace byte the
+/// mask leaves unchanged is code, and one it blanks is inside a literal.
+fn literal_bytes(path: &str, body: &str) -> Vec<bool> {
+    let marked: String = body
+        .chars()
+        .map(|ch| if ch == ' ' || ch == '\t' { '\u{1}' } else { ch })
+        .collect();
+    let masked = mask_for(path, &marked);
+    marked
+        .bytes()
+        .zip(masked)
+        .map(|(original, masked)| original != masked)
+        .collect()
+}
+
+/// `body[start..end]` with each run of whitespace outside comments and
+/// literals collapsed to one space and the ends trimmed. A comment's or a
+/// literal's own bytes stay verbatim, and a run ending a line comment keeps
+/// one line break, so the code after it is not read as part of the comment.
+fn collapse_code_whitespace(body: &str, literal: &[bool], start: usize, end: usize) -> String {
+    let in_literal = |index: usize| literal.get(index).copied().unwrap_or(false);
+    let mut out = String::new();
+    let mut pending: Option<char> = None;
+    // Where the literal just emitted began, while the byte before is in it.
+    let mut literal_from: Option<usize> = None;
+    for (offset, ch) in body.get(start..end).unwrap_or_default().char_indices() {
+        let index = start + offset;
+        if in_literal(index) {
+            if let Some(gap) = pending.take() {
+                out.push(gap);
+            }
+            literal_from.get_or_insert(index);
+            out.push(ch);
+            continue;
+        }
+        let after = literal_from.take();
+        if ch.is_whitespace() {
+            let ends_line_comment = ch == '\n'
+                && after.is_some_and(|from| {
+                    let rest = body.get(from..).unwrap_or_default();
+                    rest.starts_with("//") || rest.starts_with('#')
+                });
+            if ends_line_comment {
+                pending = Some('\n');
+            } else if !out.is_empty() && pending.is_none() {
+                pending = Some(' ');
+            }
+            continue;
+        }
+        if let Some(gap) = pending.take() {
+            out.push(gap);
+        }
+        out.push(ch);
+    }
+    out
+}
+
+/// Every assertion statement in a test body, in source order, verbatim with
+/// whitespace collapsed outside comments and string literals
+/// ([`collapse_code_whitespace`]). Comments and string literals are masked
 /// first ([`mask_for`]), so an `assert!` inside a string or a comment is not
 /// one; an assertion nested inside another (`assert_eq!(f().unwrap_err(),
 /// ..)`) is part of the outer one. The language is `path`'s: Python for
@@ -661,23 +811,33 @@ pub(crate) fn extract_assertions(path: &str, body: &str) -> Vec<String> {
         if found.start() < previous_end {
             continue;
         }
-        let start = statement_start(&masked, found.start(), python).max(previous_end);
-        let start = if python {
-            // `(?m)^[ \t]*assert` matches from the line start.
-            (start..found.end())
-                .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
-                .unwrap_or(start)
+        let text = found.as_str();
+        let failure = !python && (text.starts_with("panic") || text.contains("TestCaseError"));
+        let (start, end) = if failure {
+            let Some(span) = failure_span(&masked, found.start()) else {
+                continue;
+            };
+            span
         } else {
-            start
+            let start = statement_start(&masked, found.start(), python);
+            let start = if python {
+                // `(?m)^[ \t]*assert` matches from the line start.
+                skip_whitespace(&masked, start, found.end())
+            } else {
+                start
+            };
+            let macro_call = !python && text.contains('!');
+            (
+                start,
+                statement_end(&masked, found.start(), python, macro_call),
+            )
         };
-        let macro_call = !python && found.as_str().contains('!');
-        let end = statement_end(&masked, found.start(), python, macro_call);
-        spans.push((start, end.max(found.end())));
+        spans.push((start.max(previous_end), end.max(found.end())));
     }
+    let literal = literal_bytes(path, body);
     spans
         .into_iter()
-        .filter_map(|(start, end)| body.get(start..end))
-        .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
+        .map(|(start, end)| collapse_code_whitespace(body, &literal, start, end))
         .filter(|text| !text.is_empty())
         .collect()
 }
@@ -818,11 +978,14 @@ fn t3_derive(row: &Row, answered: &[Answered]) -> Predictions {
 /// `none`, `yes` iff `1 - P(none) >= 0.5`: weakened mutants fell but stayed
 /// above 0.5, the mass the remaining assertions shared keeping `P(any)` up.
 /// v2 asks one strict `noul` per assertion and takes the highest, and ends a
-/// macro assertion at its own closing bracket so match-arm assertions no
-/// longer merge.
+/// statement at a `,` outside brackets so two match arms' assertions no
+/// longer merge. v3 asks v2's question over a wider list: `panic!` and
+/// proptest `TestCaseError::fail` failure points, Python mock and
+/// `np.testing` `assert_*` calls and an `assert` after a `:`; and string
+/// literals and comments in a listed assertion stay verbatim.
 pub(crate) const T3: Variant = Variant {
     id: "T3",
-    version: 2,
+    version: 3,
     summary: "assertion check: code lists the test's assertions, one strict noul per \
               assertion (alone, would it fail on a wrong outcome); yes iff max P >= 0.5",
     modes: TEST_MODES,

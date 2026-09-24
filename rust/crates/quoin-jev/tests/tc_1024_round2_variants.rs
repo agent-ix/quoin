@@ -41,7 +41,7 @@ use eval_v2_support::variant::{
     self, Answered, Prediction, RawAnswer, RawAnswers, Variant, wording_violations,
 };
 use eval_v2_support::variants::exceeds::{
-    self, E5, NECESSARY_KEY, NecessityReading, RelationOutcome, TrivialReason, UNIT_TEXT_FIELD,
+    self, E5, NECESSARY_KEY, NecessityReading, TrivialReason, UNIT_TEXT_FIELD,
     assess_necessity, e5_units, necessity_outcome, trivial_reason,
 };
 use eval_v2_support::variants::intent::{
@@ -172,6 +172,103 @@ fn tc_1024_t3_extracts_every_rust_assertion_statement() {
             "let error = check(\"x\".repeat(5000)).unwrap_err();",
             "assert_eq!(error.code, Code::Refused);",
         ]
+    );
+}
+
+/// Provenance: PLAT-1024, MP-242 round 2 (PR #630 F1). A brace-delimited
+/// assert macro needs no `;`, so it ends at its own closing brace; it does
+/// not run on into the statement after it.
+#[test]
+fn tc_1024_t3_a_brace_macro_statement_ends_at_its_brace() {
+    let body = "fn t() {\n    assert_matches! { value, Some(_) }\n    let next = 1;\n    \
+                assert!(next == 1);\n}";
+    assert_eq!(
+        extract_assertions("tests/t.rs", body),
+        ["assert_matches! { value, Some(_) }", "assert!(next == 1);"]
+    );
+}
+
+/// Provenance: PLAT-1024, MP-242 round 2, T3 v3 (PR #630 F2). A `panic!` is
+/// an assertion where it is the failure a check leads to: a match arm, with
+/// or without a block, a `let .. else`, an `if` block, or a statement of its
+/// own. A proptest `return Err(TestCaseError::fail(..))` likewise. A `panic!`
+/// inside a closure is an `.expect(..)` spelled out, and neither it nor
+/// `.unwrap()` / `.expect(..)` is listed.
+#[test]
+fn tc_1024_t3_extracts_failure_points() {
+    let body = "fn t() {\n    let parsed = parse(\"x\").expect(\"parses\");\n    \
+                let n = count().unwrap();\n    \
+                let v = load().unwrap_or_else(|e| panic!(\"load: {e}\"));\n    \
+                match parsed {\n        Ok(Kind::A) => {}\n        \
+                Err(e) => panic!(\"unexpected {e}\"),\n        \
+                _ => { panic!(\"wrong kind\") }\n    }\n    \
+                let Some(first) = v.first() else { panic!(\"empty\") };\n    \
+                if n != 3 {\n        return Err(TestCaseError::fail(\"n\"));\n    }\n    \
+                panic!(\"always\");\n}";
+    assert_eq!(
+        extract_assertions("tests/t.rs", body),
+        [
+            "Err(e) => panic!(\"unexpected {e}\")",
+            "_ => { panic!(\"wrong kind\") }",
+            "let Some(first) = v.first() else { panic!(\"empty\") };",
+            "if n != 3 { return Err(TestCaseError::fail(\"n\")); }",
+            "panic!(\"always\");",
+        ]
+    );
+    // A test whose only check is `.expect(..)` has no assertion: `no`, no
+    // call.
+    let expect_only = "fn t() {\n    validator().expect(\"the schema compiles\");\n}";
+    assert!(extract_assertions("tests/t.rs", expect_only).is_empty());
+    let row = row_with("EV2-0013", Mode::ReqTest, Some(expect_only));
+    assert!((T3.asks)(&row).is_empty());
+    assert_eq!(
+        (T3.derive)(&row, &[])["test_asserts_intent"].answer,
+        "no"
+    );
+}
+
+/// Provenance: PLAT-1024, MP-242 round 2, T3 v3 (PR #630 F2). Python: a
+/// mock's `assert_called*` / `assert_not_called`, `np.testing.assert_*`,
+/// and an `assert` after a `:` on the same line are assertions; a dict
+/// value named `assert_x` is not.
+#[test]
+fn tc_1024_t3_extracts_python_mock_numpy_and_inline_asserts() {
+    let body = "def test_x(mock_send):\n    cfg = {\"k\": assert_x}\n    run()\n    \
+                mock_send.assert_called_once_with(\"a\", 1)\n    \
+                self.client.post.assert_not_called()\n    \
+                np.testing.assert_allclose(\n        got, want)\n    \
+                for item in items: assert item.ok\n";
+    assert_eq!(
+        extract_assertions("tests/test_x.py", body),
+        [
+            "mock_send.assert_called_once_with(\"a\", 1)",
+            "self.client.post.assert_not_called()",
+            "np.testing.assert_allclose( got, want)",
+            "for item in items: assert item.ok",
+        ]
+    );
+}
+
+/// Provenance: PLAT-1024, MP-242 round 2, T3 v3 (PR #630 F3). Whitespace is
+/// collapsed only in code: a string literal's spaces and line breaks stay
+/// verbatim, and a line comment keeps the line break that ends it.
+#[test]
+fn tc_1024_t3_keeps_literals_verbatim() {
+    let body = "fn t() {\n    assert_eq!(\n        render(),\n        \
+                \"a  b\\n    c\", // two spaces\n        \"\"\n    );\n}";
+    assert_eq!(
+        extract_assertions("tests/t.rs", body),
+        ["assert_eq!( render(), \"a  b\\n    c\", // two spaces\n\"\" );"]
+    );
+    let multiline = "fn t() {\n    assert_eq!(out, \"line one\n    line two\");\n}";
+    assert_eq!(
+        extract_assertions("tests/t.rs", multiline),
+        ["assert_eq!(out, \"line one\n    line two\");"]
+    );
+    let python = "def test_x():\n    assert out == \"a   b\"  # spaced\n";
+    assert_eq!(
+        extract_assertions("tests/test_x.py", python),
+        ["assert out == \"a   b\" # spaced"]
     );
 }
 
@@ -434,6 +531,50 @@ fn tc_1024_e5_skips_only_trivial_units() {
     );
 }
 
+/// Provenance: PLAT-1024, MP-241 round 2, E5 v4 (PR #630 F4). A lone `if`
+/// is one statement unit, and the triviality checks read it as the branch it
+/// is: MP-241's own size-cap example is skipped, and so is a lone `if` that
+/// only logs; a lone `if` that refuses without a bound, and one bounded that
+/// does something else, are asked about. A statement that passes on an
+/// error is skipped as a branch body would be.
+#[test]
+fn tc_1024_e5_skips_a_lone_if_size_cap() {
+    let body = "fn f(x: &[u8]) -> Result<(), Error> {\n    \
+                if x.len() > MAX { return Err(Error::too_big()) }\n    \
+                if x.is_empty() { return Err(Error::empty()); }\n    \
+                if x.len() >= 4096 { shrink(x); }\n    \
+                if verbose { tracing::debug!(\"parsed\"); }\n    \
+                let e = check(x);\n    \
+                return Err(e);\n}";
+    let units = e5_units("src/f.rs", body);
+    let texts: Vec<&str> = units.iter().map(|unit| unit.text.as_str()).collect();
+    assert_eq!(
+        texts,
+        [
+            "if x.len() > MAX { return Err(Error::too_big()) }",
+            "if x.is_empty() { return Err(Error::empty()); }",
+            "if x.len() >= 4096 { shrink(x); }",
+            "if verbose { tracing::debug!(\"parsed\"); }",
+            "let e = check(x);",
+            "return Err(e);",
+        ]
+    );
+    assert_eq!(
+        units
+            .iter()
+            .map(|unit| trivial_reason("src/f.rs", unit))
+            .collect::<Vec<_>>(),
+        [
+            Some(TrivialReason::SizeCap),
+            None,
+            None,
+            Some(TrivialReason::Logging),
+            None,
+            Some(TrivialReason::ErrorPlumbing),
+        ]
+    );
+}
+
 // ---------------------------------------------------------------------------
 // E5: the derive rule
 // ---------------------------------------------------------------------------
@@ -447,13 +588,6 @@ fn readings(necessary: &[f64]) -> Vec<NecessityReading> {
             necessary: *necessary,
         })
         .collect()
-}
-
-fn decided(outcome: &RelationOutcome) -> &Prediction {
-    match outcome {
-        RelationOutcome::Decided(prediction) => prediction,
-        other @ RelationOutcome::TraceSuspect { .. } => panic!("expected decided, got {other:?}"),
-    }
 }
 
 /// Provenance: PLAT-1024, MP-241 round 2. `yes` iff some asked unit has
@@ -471,8 +605,7 @@ fn tc_1024_e5_yes_when_a_unit_is_unnecessary() {
         (&[], "no", 1.0, 0.0),
     ];
     for (necessary, answer, confidence, ordinal) in cases {
-        let outcome = necessity_outcome(&readings(necessary));
-        let prediction = decided(&outcome);
+        let prediction = necessity_outcome(&readings(necessary));
         assert_eq!(prediction.answer, answer, "{necessary:?}");
         assert!(
             close(prediction.confidence, confidence),
@@ -484,8 +617,7 @@ fn tc_1024_e5_yes_when_a_unit_is_unnecessary() {
         );
     }
     // v3 has no breaker: every asked unit unnecessary is still `yes`.
-    let all_unnecessary = necessity_outcome(&readings(&[0.2, 0.4]));
-    let prediction = decided(&all_unnecessary);
+    let prediction = necessity_outcome(&readings(&[0.2, 0.4]));
     assert_eq!(prediction.answer, "yes");
     assert!(close(prediction.ordinal, 0.8), "{prediction:?}");
 }
@@ -650,10 +782,10 @@ async fn tc_1024_e5_runs_end_to_end() {
 
     let report = exceeds::render_diagnostics(&rows, &output);
     for needle in [
-        "#### E5@v3: units and the circuit breaker",
-        "| 1 | 1 | 0 | pass-through 1 | 2 | 1 |",
-        "#### E5@v3: on the rows it answered (bars A and B)",
-        "Bar D, E5@v3:",
+        "#### E5@v4: units",
+        "| 1 | pass-through 1 | 2 | 1 |",
+        "#### E5@v4: on the rows it answered (bars A and B)",
+        "Bar D, E5@v4:",
     ] {
         assert!(report.contains(needle), "missing {needle:?} in:\n{report}");
     }
