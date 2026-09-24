@@ -6,7 +6,7 @@
 //!
 //! No network and no key. T3's assertion extraction and derive rule, the
 //! empty-assertion case with no call, and T3's wording per mode; E5's
-//! structural triviality filter, its derive rule and breaker, its asks, its
+//! structural triviality filter and statement units, its derive rule, its asks, its
 //! wording per mode, and its report section end to end over a fake Jev.
 //!
 //! Provenance: PLAT-1024, MP-241, MP-242.
@@ -435,7 +435,7 @@ fn tc_1024_e5_skips_only_trivial_units() {
 }
 
 // ---------------------------------------------------------------------------
-// E5: the derive rule and the breaker
+// E5: the derive rule
 // ---------------------------------------------------------------------------
 
 fn readings(necessary: &[f64]) -> Vec<NecessityReading> {
@@ -459,9 +459,8 @@ fn decided(outcome: &RelationOutcome) -> &Prediction {
 /// Provenance: PLAT-1024, MP-241 round 2. `yes` iff some asked unit has
 /// `P(necessary) < 0.5` (0.5 itself is necessary); the ordinal is the
 /// highest `1 - P(necessary)`, the confidence that for `yes` and one minus
-/// it for `no`; nothing asked is `no` at ordinal 0. With two or more units
-/// asked and all unnecessary, the breaker abstains; one unnecessary unit
-/// alone is `yes`, not the breaker.
+/// it for `no`; nothing asked is `no` at ordinal 0. Every unit unnecessary
+/// is `yes` too: v3 has no breaker.
 #[test]
 fn tc_1024_e5_yes_when_a_unit_is_unnecessary() {
     let cases: [(&[f64], &str, f64, f64); 5] = [
@@ -484,13 +483,11 @@ fn tc_1024_e5_yes_when_a_unit_is_unnecessary() {
             "{necessary:?}: {prediction:?}"
         );
     }
-    assert_eq!(
-        necessity_outcome(&readings(&[0.2, 0.4])),
-        RelationOutcome::TraceSuspect {
-            unrelated: 2,
-            considered: 2,
-        }
-    );
+    // v3 has no breaker: every asked unit unnecessary is still `yes`.
+    let all_unnecessary = necessity_outcome(&readings(&[0.2, 0.4]));
+    let prediction = decided(&all_unnecessary);
+    assert_eq!(prediction.answer, "yes");
+    assert!(close(prediction.ordinal, 0.8), "{prediction:?}");
 }
 
 fn unit_noul(unit: usize, answer: RawAnswer) -> Answered {
@@ -653,10 +650,10 @@ async fn tc_1024_e5_runs_end_to_end() {
 
     let report = exceeds::render_diagnostics(&rows, &output);
     for needle in [
-        "#### E5@v2: units and the circuit breaker",
+        "#### E5@v3: units and the circuit breaker",
         "| 1 | 1 | 0 | pass-through 1 | 2 | 1 |",
-        "#### E5@v2: on the rows it answered (bars A and B)",
-        "Bar D, E5@v2:",
+        "#### E5@v3: on the rows it answered (bars A and B)",
+        "Bar D, E5@v3:",
     ] {
         assert!(report.contains(needle), "missing {needle:?} in:\n{report}");
     }

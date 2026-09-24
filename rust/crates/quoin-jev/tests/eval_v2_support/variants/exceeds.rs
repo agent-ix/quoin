@@ -15,7 +15,7 @@
 //! | `E4` | the same request as E1 (no extra call) | `yes` on `task_relation` alone |
 //! | `E2` | a choice: which requirement clause the unit serves, or `none` | `yes` when a unit's `P(none) >= TAU` |
 //! | `E0-RC` | E0's one `code_exceeds_requirement` question, whole body, RC only | `yes` at `p >= 0.5`: the as-asked RC baseline |
-//! | `E5` | a `noul`: if this unit were deleted, would the code fail to do something the requirement states (round 2) | `yes` when a unit's `P(necessary) < 0.5`; breaker when every asked unit is |
+//! | `E5` | a `noul`: if this statement were deleted, would the code fail to do something the requirement states (round 2) | `yes` when a unit's `P(necessary) < 0.5` |
 //!
 //! E5 (PLAT-1024 round 2, MP-241 "Round 2") answers dev run 1 on jev-1.13.0,
 //! where E1, E2 and E4 reached 19-35% recall on known additive mutants, below
@@ -1029,28 +1029,18 @@ pub(crate) struct NecessityAssessment {
     pub(crate) trivial: BTreeMap<TrivialReason, usize>,
     /// One reading per asked unit.
     pub(crate) readings: Vec<NecessityReading>,
-    /// The row's outcome. `TraceSuspect.unrelated` counts unnecessary units.
+    /// The row's outcome: always decided since v3, which has no breaker.
     pub(crate) outcome: RelationOutcome,
 }
 
-/// E5's rule over the asked units:
-///
-/// - **The breaker.** With two or more units asked and every one
-///   unnecessary, no part of the code does anything the requirement states:
-///   the requirement is not about this code. The row abstains as
-///   trace-suspect, as E1's breaker does.
-/// - Otherwise `yes` (exceeds) iff some unit is unnecessary. The ordinal is
-///   the highest `1 - P(necessary)`, 0 when nothing was asked; the
-///   confidence is the ordinal for `yes` and one minus it for `no`.
+/// E5's rule over the asked units: `yes` (exceeds) iff some unit is
+/// unnecessary. The ordinal is the highest `1 - P(necessary)`, 0 when
+/// nothing was asked; the confidence is the ordinal for `yes` and one minus
+/// it for `no`. Every row is answered: v3 dropped v1's and v2's breaker
+/// (abstain when two or more units were asked and all were unnecessary),
+/// whose abstentions were 4 of E5@v2's 5 Bar D failures.
 pub(crate) fn necessity_outcome(readings: &[NecessityReading]) -> RelationOutcome {
-    let considered = readings.len();
     let unnecessary = readings.iter().filter(|r| r.unnecessary()).count();
-    if considered >= 2 && unnecessary == considered {
-        return RelationOutcome::TraceSuspect {
-            unrelated: unnecessary,
-            considered,
-        };
-    }
     let ordinal = readings
         .iter()
         .map(|reading| 1.0 - reading.necessary)
@@ -1115,19 +1105,20 @@ fn e5_derive(row: &Row, answered: &[Answered]) -> Predictions {
 }
 
 /// E5: per-unit "would deleting this lose stated behaviour"; `yes` when a
-/// non-trivial unit is unnecessary; breaker when every asked unit is.
+/// non-trivial unit is unnecessary.
 ///
 /// v1 (dev round 2, run 1) used [`split_units`] as E1 does: an addition in a
 /// function with no top-level branches sat inside one whole-body unit that
-/// was necessary as a whole, so most additive pairs tied. v2 cuts each
-/// function into its top-level statements ([`e5_units`]) and skips a
-/// statement that only logs; the question and the rule are unchanged.
+/// was necessary as a whole, so most additive pairs tied. v2 cut each
+/// function into its top-level statements ([`e5_units`]) and skipped a
+/// statement that only logs. v3 drops the breaker ([`necessity_outcome`]);
+/// its requests are v2's, so v3 is a derive-only change read off v2's
+/// answers.
 pub(crate) const E5: Variant = Variant {
     id: "E5",
-    version: 2,
+    version: 3,
     summary: "per-statement outcome necessity noul (would deleting it lose stated behaviour); \
-              yes if a non-trivial unit has P(necessary) < 0.5; breaker when all asked units \
-              are unnecessary",
+              yes if a non-trivial unit has P(necessary) < 0.5; no breaker",
     modes: RC_AND_RTC,
     references: CODE_ONLY,
     grades: &[KEY],
