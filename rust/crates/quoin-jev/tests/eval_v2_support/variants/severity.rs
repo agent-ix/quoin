@@ -11,7 +11,7 @@
 //!
 //! | id | idea | modes |
 //! | --- | --- | --- |
-//! | `S1` | never ask severity: ask narrow fact `noul`s and compute it with [`rule`], a transcription of the step-5 rubric | `S1` RTC, `S1-RT`, `S1-RC` |
+//! | `S1` | never ask severity: ask narrow fact `noul`s, threshold each at τ = 0.5, and compute it with [`rule`], a transcription of the step-5 rubric | `S1` RTC, `S1-RT`, `S1-RC` |
 //! | `S2` | ask severity as a `score` whose levels are concrete situations, with worked examples per level (jev-code's shape) | `S2` RTC, `S2-RT`, `S2-RC` |
 //! | `S2M` | `S2`'s identical request, graded on the probability mass on `high` instead of the expected level | `S2M` RTC, `S2M-RT`, `S2M-RC` |
 //! | `S3` | ask severity as a `score` whose levels are review actions, mapped to the rubric in code | RT, RC, RTC |
@@ -378,8 +378,10 @@ pub(crate) fn rule(facts: &BTreeMap<Fact, bool>) -> Branch {
 /// enumerated (at most 2^6) and weighted by its probability.
 ///
 /// Independence is an assumption the facts do not satisfy (a trace mismatch
-/// makes every other defect likely). It is used to give S1 a level, an
-/// ordinal and a confidence, not to claim a calibrated probability.
+/// makes every other defect likely). It gives S1 an ordinal and a
+/// confidence, not a calibrated probability, and not S1's level: `high`
+/// collects every combination with any high-tier defect, so its mass is
+/// biased upward by the number of high-tier facts asked (MP-240).
 pub(crate) fn level_distribution(facts: &[(Fact, f64)]) -> Distribution {
     let mut distribution = [0.0; 4];
     for mask in 0..(1_usize << facts.len()) {
@@ -397,22 +399,46 @@ pub(crate) fn level_distribution(facts: &[(Fact, f64)]) -> Distribution {
     distribution
 }
 
-/// The most probable level under `distribution`, a tie going to the more
-/// severe level. `None` when the distribution carries no mass.
-pub(crate) fn most_probable_level(distribution: &Distribution) -> Option<Level> {
-    if distribution.iter().sum::<f64>() <= 0.0 {
-        return None;
+/// Noul's decision threshold τ: a fact counts as a defect when the
+/// probability of its defect answer is at least this.
+pub(crate) const FACT_THRESHOLD: f64 = 0.5;
+
+/// The probability that `fact` holds its defect answer, from its `noul`
+/// probability of `yes`.
+fn defect_probability(fact: Fact, p_yes: f64) -> f64 {
+    if fact.defect_answer() {
+        p_yes
+    } else {
+        1.0 - p_yes
     }
-    // Scanned highest first, replacing only on a strictly larger mass, so a
-    // tie keeps the more severe level.
-    let mut best: Option<(Level, f64)> = None;
-    for level in Level::ALL.into_iter().rev() {
-        let p = mass(distribution, level);
-        if best.is_none_or(|(_, top)| p > top) {
-            best = Some((level, p));
-        }
-    }
-    best.map(|(level, _)| level)
+}
+
+/// S1's level: each fact thresholded at [`FACT_THRESHOLD`] on its own, then
+/// [`rule`] over the thresholded answers, which takes the most severe tier
+/// with any fact at or above τ. `none` when no fact reaches τ. A fact
+/// exactly at τ counts as the defect.
+///
+/// This replaced the most probable level under [`level_distribution`]
+/// before any live call (PR #620 re-review, finding 1): `high` is the union
+/// of up to four independent high-tier facts, so its mass grows with the
+/// number of facts asked, and a row where trace correct is 0.9 and every
+/// defect fact is 0.15 came out `high` at 0.447 while every fact read "no".
+pub(crate) fn thresholded_branch(facts: &[(Fact, f64)]) -> Branch {
+    let answers: BTreeMap<Fact, bool> = facts
+        .iter()
+        .map(|(fact, p_yes)| {
+            let defect = defect_probability(*fact, *p_yes) >= FACT_THRESHOLD;
+            (
+                *fact,
+                if defect {
+                    fact.defect_answer()
+                } else {
+                    !fact.defect_answer()
+                },
+            )
+        })
+        .collect();
+    rule(&answers)
 }
 
 /// The answers of the single whole-row ask, or empty.
@@ -443,12 +469,13 @@ fn s1_asks(row: &Row) -> Vec<Ask> {
     }]
 }
 
-/// S1's level is the most probable level under [`level_distribution`] (a tie
-/// goes to the more severe), not the rule over each fact thresholded alone:
-/// three facts each just under 0.5 can make `high` the likeliest outcome
-/// while every single fact reads clean. The confidence is that level's mass;
-/// the ordinal is the expected level. Unanswered when any asked fact is
-/// missing, rather than guessing its branch.
+/// S1's level is [`thresholded_branch`]'s: each fact thresholded at τ on
+/// its own, the most severe tier with a fact at or above τ winning. The
+/// ordinal is the expected level under [`level_distribution`], used for
+/// ordering (Bar C) and the paired contrast (Bar D); it carries the union
+/// bias MP-240 records, and is not used to pick the level. The confidence
+/// is the chosen level's mass under that distribution. Unanswered when any
+/// asked fact is missing, rather than guessing its branch.
 fn s1_derive(row: &Row, answered: &[Answered]) -> Predictions {
     let answers = whole_row(answered);
     let mut probabilities = Vec::new();
@@ -458,10 +485,11 @@ fn s1_derive(row: &Row, answered: &[Answered]) -> Predictions {
         };
         probabilities.push((fact, *p));
     }
-    let distribution = level_distribution(&probabilities);
-    let Some(level) = most_probable_level(&distribution) else {
+    if probabilities.is_empty() {
         return Predictions::new();
-    };
+    }
+    let distribution = level_distribution(&probabilities);
+    let level = thresholded_branch(&probabilities).level();
     Predictions::from([(
         SEVERITY,
         Prediction {
@@ -826,22 +854,23 @@ pub(crate) fn distribution(probabilities: &BTreeMap<String, f64>) -> Option<Dist
 
 /// A severity `score` read as S2 grades it: the level nearest the expected
 /// score, the expected score as the ordinal, and the answered level's mass as
-/// the confidence when the service sent a distribution (its own confidence
-/// otherwise).
+/// the confidence. `None` without a readable distribution; the runner
+/// (`variant::check_score_levels`) refuses such an answer before any derive
+/// sees it, so that is not a path a run can take.
 pub(crate) fn expected_prediction(answer: &RawAnswer) -> Option<Prediction> {
     let RawAnswer::Score {
         score,
-        confidence,
         probabilities,
+        ..
     } = answer
     else {
         return None;
     };
     let level = Level::nearest(*score)?;
-    let confidence = distribution(probabilities).map_or(*confidence, |d| mass(&d, level));
+    let distribution = distribution(probabilities)?;
     Some(Prediction {
         answer: level.label().to_owned(),
-        confidence: Some(confidence),
+        confidence: Some(mass(&distribution, level)),
         ordinal: Some(*score),
     })
 }

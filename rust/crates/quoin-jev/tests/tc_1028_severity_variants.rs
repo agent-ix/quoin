@@ -29,17 +29,20 @@ use typesafe_sdk_env::Fixed;
 use typesafe_sdk_error::Result as SdkResult;
 use typesafe_sdk_headers::Headers;
 use typesafe_sdk_http::{RawResponse, Request, Transport};
+use typesafe_sdk_questions::{questions, score};
 
 use eval_v2_support::corpus::TruthKind;
 use eval_v2_support::corpus::{self, Row};
 use eval_v2_support::keys::Mode;
 use eval_v2_support::metrics::{Scored, concordance, paired_concordance, scored};
 use eval_v2_support::variant::{
-    self, Answered, Prediction, RawAnswer, RawAnswers, Variant, wording_violations,
+    self, Answered, Prediction, RawAnswer, RawAnswers, Variant, check_score_levels,
+    wording_violations,
 };
 use eval_v2_support::variants::severity::{
-    self, Branch, EXAMPLES, Fact, HIGH_MASS_FLOOR, Level, S3_LEVELS, SEVERITY, expected_level,
-    expected_prediction, high_mass_prediction, level_distribution, most_probable_level, rule,
+    self, Branch, EXAMPLES, FACT_THRESHOLD, Fact, HIGH_MASS_FLOOR, Level, S3_LEVELS, SEVERITY,
+    expected_level, expected_prediction, high_mass_prediction, level_distribution, rule,
+    thresholded_branch,
 };
 use gap_semantic_support::SEVERITY_RUBRIC;
 
@@ -331,17 +334,96 @@ fn s1_answer(variant: &Variant, mode: Mode, pairs: &[(Fact, f64)]) -> Prediction
     predictions[SEVERITY].clone()
 }
 
-/// Provenance: PLAT-1028, MP-240, PR #620 review finding 6. S1's level is the
-/// most probable level under the fact distribution, not the rule over each
-/// fact thresholded alone. By hand, RC: P(trace correct) = 0.55,
-/// P(contradicts) = 0.45, P(misses a case) = 0.45. Thresholded, every fact
-/// reads clean (`none`). The distribution: high = 0.45 + 0.55 x 0.45 =
-/// 0.6975; medium = 0.55 x 0.55 x 0.45 = 0.136125; none = 0.55 x 0.55 x
-/// 0.55 = 0.166375. So `high`, at 0.6975, with expected level
-/// 3 x 0.6975 + 2 x 0.136125 = 2.36475.
+/// The re-reviewer's probe row: trace correct at 0.9, every defect fact at
+/// 0.15, with `overrides` replacing single facts.
+fn probe(overrides: &[(Fact, f64)]) -> Vec<(Fact, f64)> {
+    CLEAN
+        .iter()
+        .map(|(fact, _)| {
+            let base = if *fact == Fact::TraceCorrect {
+                0.9
+            } else {
+                0.15
+            };
+            let p = overrides
+                .iter()
+                .find(|(overridden, _)| overridden == fact)
+                .map_or(base, |(_, p)| *p);
+            (*fact, p)
+        })
+        .collect()
+}
+
+/// Provenance: PLAT-1028, MP-240, PR #620 re-review finding 1. S1's level is
+/// each fact thresholded at τ = 0.5 alone, the most severe tier with a fact
+/// at or above τ winning; not the most probable level under the fact
+/// distribution, which the union of four high-tier facts biases toward
+/// `high`. The probe row, every fact reading "no": the distribution is
+/// none 0.9 x 0.85^5 = 0.399335, medium 0.9 x 0.85^3 x (1 - 0.85^2) =
+/// 0.153378, high 1 - 0.9 x 0.85^3 = 0.447288, so the old rule said `high`.
+/// Thresholded, it is `none`, with that level's mass as the confidence and
+/// the expected level 2 x 0.153378 + 3 x 0.447288 = 1.648618 as the ordinal.
 #[test]
-fn tc_1028_s1_level_is_the_most_probable_level() {
-    let prediction = s1_answer(
+fn tc_1028_s1_level_thresholds_each_fact_at_tau() {
+    assert!(close(FACT_THRESHOLD, 0.5));
+    let all_clean = probe(&[]);
+    let distribution = level_distribution(&all_clean);
+    assert!(close(distribution[Level::High.index()], 0.447_287_5));
+    assert!(close(distribution[Level::Medium.index()], 0.153_377_71875));
+    assert!(close(distribution[Level::None.index()], 0.399_334_781_25));
+    let prediction = s1_answer(&severity::S1, Mode::ReqTestCode, &all_clean);
+    assert_eq!(prediction.answer, "none");
+    assert!(
+        close(prediction.confidence.unwrap(), 0.399_334_781_25),
+        "{prediction:?}"
+    );
+    assert!(
+        close(prediction.ordinal.unwrap(), 1.648_617_937_5),
+        "{prediction:?}"
+    );
+
+    // Every defect fact at 0.15, the trace check's defect ("no") at 0.15 too.
+    let all_at_015 = probe(&[(Fact::TraceCorrect, 0.85)]);
+    assert_eq!(thresholded_branch(&all_at_015), Branch::Clean);
+
+    // One high-tier fact at 0.6 is `high`.
+    let one_high = probe(&[(Fact::CodeContradicts, 0.6)]);
+    assert_eq!(thresholded_branch(&one_high), Branch::CodeContradicts);
+    assert_eq!(
+        s1_answer(&severity::S1, Mode::ReqTestCode, &one_high).answer,
+        "high"
+    );
+
+    // One medium-tier fact at 0.6 and every high-tier fact at 0.4 is
+    // `medium`, although the union of the three high facts (0.9 x 0.6^3 =
+    // 0.1944 none of them, so 0.8056 high) is by far the likeliest level.
+    let medium_under_high = probe(&[
+        (Fact::TestChecksSomeClauses, 0.6),
+        (Fact::TestPassesWhenBroken, 0.4),
+        (Fact::AssertionVacuous, 0.4),
+        (Fact::CodeContradicts, 0.4),
+    ]);
+    assert_eq!(thresholded_branch(&medium_under_high), Branch::TestPartial);
+    let prediction = s1_answer(&severity::S1, Mode::ReqTestCode, &medium_under_high);
+    assert_eq!(prediction.answer, "medium");
+    assert!(
+        level_distribution(&medium_under_high)[Level::High.index()] > 0.8,
+        "{prediction:?}"
+    );
+
+    // A fact exactly at τ is the defect: a trace check at 0.5 is a mismatch.
+    assert_eq!(
+        thresholded_branch(&probe(&[(Fact::TraceCorrect, 0.5)])),
+        Branch::TraceMismatch
+    );
+    assert_eq!(
+        thresholded_branch(&probe(&[(Fact::CodeMissesStatedCase, 0.5)])),
+        Branch::CodeMissesCase
+    );
+
+    // RC, three facts each on the clean side of τ: `none`, although the old
+    // most-probable rule put `high` at 0.6975.
+    let rc = s1_answer(
         &severity::S1_RC,
         Mode::ReqCode,
         &[
@@ -350,33 +432,9 @@ fn tc_1028_s1_level_is_the_most_probable_level() {
             (Fact::CodeMissesStatedCase, 0.45),
         ],
     );
-    assert_eq!(prediction.answer, "high");
-    assert!(
-        close(prediction.confidence.unwrap(), 0.6975),
-        "{prediction:?}"
-    );
-    assert!(
-        close(prediction.ordinal.unwrap(), 2.36475),
-        "{prediction:?}"
-    );
-
-    // A tie goes to the more severe level: high 0.5, medium 0.5.
-    let tie = s1_answer(
-        &severity::S1_RC,
-        Mode::ReqCode,
-        &[
-            (Fact::TraceCorrect, 1.0),
-            (Fact::CodeContradicts, 0.5),
-            (Fact::CodeMissesStatedCase, 1.0),
-        ],
-    );
-    assert_eq!(tie.answer, "high");
-    assert!(close(tie.confidence.unwrap(), 0.5), "{tie:?}");
-    assert_eq!(
-        most_probable_level(&[0.25, 0.25, 0.25, 0.25]),
-        Some(Level::High)
-    );
-    assert_eq!(most_probable_level(&[0.0; 4]), None);
+    assert_eq!(rc.answer, "none");
+    assert!(close(rc.confidence.unwrap(), 0.166_375), "{rc:?}");
+    assert!(close(rc.ordinal.unwrap(), 2.364_75), "{rc:?}");
 
     // A fact left unanswered leaves the row unanswered, not guessed.
     let partial = nouls(&[(Fact::TraceCorrect, 1.0)]);
@@ -437,17 +495,11 @@ fn tc_1028_s2_and_s2m_read_the_score_distribution() {
     assert_eq!(mass.answer, "medium");
     assert!(close(mass.ordinal.unwrap(), 0.2));
 
-    // No distribution: S2 keeps the service's confidence; S2M has nothing to
-    // read. An out-of-range level makes the distribution unreadable.
+    // No distribution: neither has anything to read (the runner refuses such
+    // an answer before either sees it). An out-of-range level makes the
+    // distribution unreadable.
     let bare = score_answer(3.0, &[]);
-    assert_eq!(
-        expected_prediction(&bare),
-        Some(Prediction {
-            answer: "high".to_owned(),
-            confidence: Some(0.55),
-            ordinal: Some(3.0),
-        })
-    );
+    assert_eq!(expected_prediction(&bare), None);
     assert_eq!(high_mass_prediction(&bare), None);
     assert_eq!(
         high_mass_prediction(&score_answer(2.0, &[("4", 1.0)])),
@@ -469,7 +521,10 @@ fn tc_1028_s3_actions_map_to_the_rubric_by_position() {
     assert_eq!(question["criteria"], json!(S3_LEVELS));
     let answer = |score: f64| {
         let mut answers = RawAnswers::new();
-        answers.insert(SEVERITY.to_owned(), score_answer(score, &[]));
+        answers.insert(
+            SEVERITY.to_owned(),
+            score_answer(score, &[("0", 0.25), ("1", 0.25), ("2", 0.25), ("3", 0.25)]),
+        );
         (severity::S3.derive)(&row, &answered(answers))[SEVERITY]
             .answer
             .clone()
@@ -678,6 +733,11 @@ async fn tc_1028_score_probabilities_off_the_levels_fail_the_run() {
             .unwrap_err();
         assert!(error.contains("score `severity` has 4 levels"), "{error}");
         assert!(error.contains("EV2-0001 / S2M-RT@v1"), "{error}");
+        // The paid answer is not lost: the error carries the raw response.
+        assert!(
+            error.contains("raw response: {") && error.contains("\"model\":\"jev-fake\""),
+            "{error}"
+        );
         for key in probabilities.as_object().unwrap().keys() {
             assert!(error.contains(&format!("{key:?}")), "{error}");
         }
@@ -904,4 +964,72 @@ fn tc_1028_bar_c_compares_over_rows_both_answered() {
     let paired = paired_concordance(&answers_all, &s0, spec).unwrap();
     assert_eq!(paired.shared, 4);
     assert_eq!(paired.beats_baseline(), Some(true));
+}
+
+/// Provenance: PR #620 re-review finding 2, MP-240 Bar C. A variant that
+/// beats S0 on the rows both answered (1.0 against S0's 0.8 over the four
+/// shared rows, S0 misordering the hard row) but leaves one of its five rows
+/// unanswered (20%) fails Bar C on the abstention cap alone.
+#[test]
+fn tc_1028_bar_c_fails_a_winner_that_abstains_over_the_cap() {
+    let spec = eval_v2_support::keys::spec("severity").unwrap();
+    let variant = [
+        level_row("a", "none", Some(0.0)),
+        level_row("b", "medium", Some(2.0)),
+        level_row("c", "high", Some(3.0)),
+        level_row("d", "high", Some(2.9)),
+        level_row("e", "high", None),
+    ];
+    let s0 = [
+        level_row("a", "none", Some(0.0)),
+        level_row("b", "medium", Some(2.0)),
+        level_row("c", "high", Some(3.0)),
+        level_row("d", "high", Some(0.5)),
+        level_row("e", "high", Some(3.0)),
+    ];
+    let paired = paired_concordance(&variant, &s0, spec).unwrap();
+    assert_eq!(paired.shared, 4);
+    assert!(close(paired.variant.index().unwrap(), 1.0));
+    assert!(close(paired.baseline.index().unwrap(), 0.8));
+    assert!(close(paired.variant_abstention().unwrap(), 20.0));
+    assert_eq!(paired.beats_baseline(), Some(false));
+}
+
+fn severity_score(probabilities: &[(&str, f64)]) -> RawAnswers {
+    RawAnswers::from([(SEVERITY.to_owned(), score_answer(2.0, probabilities))])
+}
+
+/// Provenance: PR #620 re-review finding 7. `check_score_levels` accepts a
+/// distribution over the question's levels, and refuses a level spelled
+/// twice, a negative or NaN mass, and masses that do not sum to 1 within
+/// 0.01, each with the defect named.
+#[test]
+fn tc_1028_check_score_levels_refuses_malformed_distributions() {
+    let asked = questions([(SEVERITY, score("How severe?", S3_LEVELS))]);
+    let check =
+        |probabilities: &[(&str, f64)]| check_score_levels(&asked, &severity_score(probabilities));
+    check(&[("0", 0.1), ("1", 0.2), ("2.0", 0.3), ("3", 0.4)]).unwrap();
+    check(&[("3", 0.995)]).unwrap();
+
+    let twice = check(&[("2", 0.5), ("2.0", 0.5)]).unwrap_err();
+    assert!(twice.contains("spell level 2 more than once"), "{twice}");
+
+    let negative = check(&[("0", -0.2), ("3", 1.2)]).unwrap_err();
+    assert!(
+        negative.contains("give level 0 the mass -0.2"),
+        "{negative}"
+    );
+
+    let nan = check(&[("0", f64::NAN), ("3", 1.0)]).unwrap_err();
+    assert!(nan.contains("give level 0 the mass NaN"), "{nan}");
+
+    let short = check(&[("0", 0.5), ("3", 0.48)]).unwrap_err();
+    assert!(short.contains("sum to 0.98"), "{short}");
+    let long = check(&[("0", 0.5), ("3", 0.52)]).unwrap_err();
+    assert!(long.contains("sum to 1.02"), "{long}");
+
+    let empty = check(&[]).unwrap_err();
+    assert!(empty.contains("are empty"), "{empty}");
+    let off = check(&[("4", 1.0)]).unwrap_err();
+    assert!(off.contains("key \"4\" is not a level"), "{off}");
 }

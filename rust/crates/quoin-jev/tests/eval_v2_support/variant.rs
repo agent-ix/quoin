@@ -810,15 +810,26 @@ pub(crate) struct RunOutput {
     pub(crate) models: BTreeMap<String, usize>,
 }
 
-/// Refuses a `score` answer whose level probabilities are not keyed by the
-/// question's own levels (`"0"` up to one below the number of levels; a
-/// decimal spelling of the same whole number, such as `"2.0"`, is the same
-/// key). An empty distribution is refused too. A variant reading the
-/// distribution (PLAT-1028's S2M) would otherwise leave the row unanswered
-/// without saying why (PR #620 review).
+/// How far a `score`'s probabilities may sum from 1 before the answer is
+/// refused.
+pub(crate) const SCORE_MASS_TOLERANCE: f64 = 0.01;
+
+/// Refuses a `score` answer whose level probabilities are not a
+/// distribution over the question's own levels:
+///
+/// - every key must be a whole level, `"0"` up to one below the number of
+///   levels (a decimal spelling such as `"2.0"` names the same level);
+/// - no level may be spelled twice (`"2"` and `"2.0"` together);
+/// - every mass must be finite and non-negative;
+/// - the masses must sum to 1 within [`SCORE_MASS_TOLERANCE`];
+/// - the map must not be empty.
+///
+/// A variant reading the distribution (PLAT-1028's S2 and S2M) would
+/// otherwise grade a malformed answer silently (PR #620 review, findings 9
+/// and F7).
 ///
 /// # Errors
-/// Naming the question key and every key the service sent.
+/// Naming the question key and what is wrong with its probabilities.
 pub(crate) fn check_score_levels(
     questions: &Questions,
     answers: &RawAnswers,
@@ -831,20 +842,41 @@ pub(crate) fn check_score_levels(
             continue;
         };
         let levels = criteria.len();
-        let whole_level = |spelled: &str| {
-            spelled.trim().parse::<f64>().is_ok_and(|value| {
-                (0..levels).any(|level| {
-                    (f64::from(u32::try_from(level).unwrap_or(u32::MAX)) - value).abs() < 1e-9
-                })
+        let spelled_keys: Vec<&String> = probabilities.keys().collect();
+        let refuse = |why: String| {
+            Err(format!(
+                "score `{key}` has {levels} levels, but its probabilities {why} (keys \
+                 {spelled_keys:?}, masses {:?}); expected one mass per level \"0\"..\"{}\", \
+                 summing to 1",
+                probabilities.values().collect::<Vec<_>>(),
+                levels.saturating_sub(1)
+            ))
+        };
+        if probabilities.is_empty() {
+            return refuse("are empty".to_owned());
+        }
+        let whole_level = |spelled: &str| -> Option<usize> {
+            let value = spelled.trim().parse::<f64>().ok()?;
+            (0..levels).find(|level| {
+                (f64::from(u32::try_from(*level).unwrap_or(u32::MAX)) - value).abs() < 1e-9
             })
         };
-        if probabilities.is_empty() || !probabilities.keys().all(|spelled| whole_level(spelled)) {
-            let keys: Vec<&String> = probabilities.keys().collect();
-            return Err(format!(
-                "score `{key}` has {levels} levels, but its probabilities are keyed {keys:?}; \
-                 expected \"0\"..\"{}\"",
-                levels.saturating_sub(1)
-            ));
+        let mut seen = std::collections::BTreeSet::new();
+        let mut total = 0.0;
+        for (spelled, p) in probabilities {
+            let Some(level) = whole_level(spelled) else {
+                return refuse(format!("key {spelled:?} is not a level"));
+            };
+            if !seen.insert(level) {
+                return refuse(format!("spell level {level} more than once"));
+            }
+            if !p.is_finite() || *p < 0.0 {
+                return refuse(format!("give level {level} the mass {p}"));
+            }
+            total += p;
+        }
+        if (total - 1.0).abs() > SCORE_MASS_TOLERANCE {
+            return refuse(format!("sum to {total}"));
         }
     }
     Ok(())
@@ -889,8 +921,18 @@ pub(crate) async fn run(
                     output.requests_sent += 1;
                     *output.models.entry(response.model.clone()).or_default() += 1;
                     let answers = raw_answers(&response);
-                    check_score_levels(&questions, &answers)
-                        .map_err(|error| format!("{} / {}: {error}", row.id, variant.label()))?;
+                    // A malformed answer aborts the run, but it was paid
+                    // for: the error carries the raw response, and a
+                    // recording cassette has already written it.
+                    check_score_levels(&questions, &answers).map_err(|error| {
+                        let raw = serde_json::to_string(&response)
+                            .unwrap_or_else(|error| format!("<unserializable: {error}>"));
+                        format!(
+                            "{} / {}: {error}; raw response: {raw}",
+                            row.id,
+                            variant.label()
+                        )
+                    })?;
                     cache.insert(key, answers.clone());
                     answers
                 };
