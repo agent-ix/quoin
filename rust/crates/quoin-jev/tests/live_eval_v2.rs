@@ -62,6 +62,7 @@ use eval_v2_support::corpus::{
 use eval_v2_support::metrics::render_run;
 use eval_v2_support::preflight::{self, RunGate};
 use eval_v2_support::variant::{self, REGISTRY, Variant};
+use eval_v2_support::variants::soundness;
 use quoin_jev::{Cassette, JevErrorCode};
 
 fn env(name: &str) -> Option<String> {
@@ -236,6 +237,8 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         "{}",
         eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
+    // MP-243's bars (PLAT-1031); empty unless a K variant ran.
+    println!("{}", soundness::render_bars(&rows, &output, &variants));
 
     if let Some(model) = &model {
         let others: Vec<&String> = output.models.keys().filter(|seen| *seen != model).collect();
