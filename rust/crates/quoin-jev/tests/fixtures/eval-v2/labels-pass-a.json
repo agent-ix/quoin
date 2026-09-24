@@ -1,0 +1,4943 @@
+{
+ "pass": "A",
+ "provenance": "AGENT-LABELLED, not human ground truth. Label pass A: independent Claude (Opus) subagents, one per batch of at most 14 rows, each given only its batch, labeller-brief and the labelling rules in corpus.json's header; no pass saw the other's output. R rows (criterion_sound and the five checks): relabelled on 2026-09-24 by two further independent Claude (Opus) passes under eval_v2_support/criterion_defects.rs, each pass split over two subagents of 84 rows, rows blinded and shuffled together with every criterion mutant; these answers replace every earlier R-row answer.",
+ "brief": "# Labelling brief (corpus v2, natural rows)\n\nYou are one labeller for an evaluation corpus. Each row shows a software requirement\n(an FR/NFR/StR statement plus, usually, one acceptance criterion), and depending on its\n`mode` also a Rust test body (`test`) and/or a code body (`code`) from the same repository:\n\n- `R`: the requirement alone. Judge the CRITERION (`ac_text`); the `statement` is context.\n- `RT`: requirement + test (no code shown).\n- `RC`: requirement + code (no test shown).\n- `RTC`: requirement + test + code.\n\nFor every row, answer exactly the questions listed in that row's `questions` array, using\nthe rules in `labelling-rules.md` (same directory as this brief). Read that file first.\n\nRules of engagement:\n\n- Judge ONLY what the row shows. The unit is the row: sibling tests, other requirements and\n  other code are invisible and are not credited. Do not open the repository or any other file\n  besides this brief, `labelling-rules.md` and your one packet file. Do not read any other\n  labeller's output.\n- The pairing of test/code to requirement came from an automatic trace scan and may be wrong;\n  that is what `trace_correct` asks.\n- Answers: `yes` / `no` for every yes/no question; `divergence_kind` is one of `aligned`,\n  `test_weaker_than_requirement`, `test_stronger_than_requirement`, `code_short_of_requirement`,\n  `code_exceeds_requirement`, `requirement_ambiguous`; `severity` is one of `none`, `low`,\n  `medium`, `high`.\n- Give one short, specific reason per answer (quote the clause/assertion/line that decides it).\n- Be decisive: pick the single best answer. Do not hedge in the answer field.\n\nOutput: write ONE JSON file at the output path you are given, shaped exactly:\n\n```json\n{\"labels\": {\"N-001\": {\"trace_correct\": {\"answer\": \"yes\", \"why\": \"...\"}, \"...\": {}}, \"N-002\": {}}}\n```\n\nEvery row id in your packet must appear, with every question in its `questions` array.\nAfter writing, re-read your file and check it parses and is complete. Reply with only the\noutput path and the row count.\n",
+ "labels": {
+  "N-001": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Criterion is about refusing ambiguous spellings (uppercase hex, digest prefix, ordering); test feeds those to verify_change_record/seal_change_record and the code is the verifier."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Every assertion is `.is_err()`; a stub returning Ok(default) fails all of them."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Asserts `uppercase hex`, `a prefixed digest` and non-UTF-16 scope order `must be refused`; would fail if those refusals stopped."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected outcome (refusal) is independent of the inputs the test supplies; runs real verify/seal code."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "verify_change_record runs `read_sealed` (schema refusals) then recomputes the digest over canonical bytes, the natural owner of these refusals."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Only schema validation and digest comparison, both implied by an integrity-sealed record."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Criterion lists duplicate names, lone surrogates and a byte-order mark; the test never exercises those, and its 'revision' cases (1.5, 0, -1) are range checks, not non-I-JSON numbers."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: 3 of 7 listed refusal classes unchecked."
+   }
+  },
+  "N-002": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Requirement is publishing canonical audit data plus a human review with the same denominators; `advise` recommends verification methods for one obligation."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "Code ranks method recommendations and computes `mismatch`; it publishes no artifact."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Ranking by matched-rule count, `mismatch`/`uncatalogued`/`inconclusive` decisions are nowhere in the shown requirement."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Nothing in the shown code publishes machine-readable data or a human review."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Trace mismatch: code is about a different subsystem."
+   }
+  },
+  "N-003": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test guards how canonicalizers from quoin_store are used, matching CON-4's subject."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Scans real sources and asserts calls >= 2 and the calling module name; a default does not satisfy it."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Only checks that quoin_store::canonicalizer( calls come from one module; a local reimplementation that never calls quoin_store would pass."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Asserts against the crate's actual source contents and a fixed threshold (calls >= 2)."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Call-site locality is weaker than 'not reimplemented outside quoin-store'."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: reimplementation, the actual prohibited behaviour, goes undetected."
+   }
+  },
+  "N-004": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "requires one outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "prohibition holds at all times"
+   }
+  },
+  "N-005": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Code is `PackageIdentity::split` (org/repo halves), unrelated to fence recognition with source spans; only the test is near the criterion."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "Assertions read a fixture file and grep source text for forbidden names; no recogniser is invoked, so a stub recogniser would still pass."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Never checks line-level recognition or source spans; only checks the fixture's shape and that `parse_expression`/`evaluate(` are absent from source."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`!source.contains(forbidden)` checks the real classifier source against an independent expectation."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`split` returns `split_once('/')`; it has nothing to do with sysml fences."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Returning None on no '/' is a trivial accessor, not a substantive decision."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Shown code carries none of the fence-recognition behaviour."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Code unrelated to the criterion and the test does not exercise recognition code."
+   }
+  },
+  "N-006": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Criterion defines observations under `{metric}.constant-predictor-item` with item_id/family/expected/contested; code builds exactly those."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Writes item observations under `constant_predictor_item_metric(metric)` with plan_id/definition_version, and refuses empty ids/labels and duplicate `item_id`."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Adds an `actual` dimension and `value = agreed` (1.0/0.0) per item, outputs the criterion does not state (code admits the formula never reads it)."
+   },
+   "divergence_kind": {
+    "answer": "code_exceeds_requirement",
+    "why": "Extra `actual` dimension and per-item agreement value beyond what the baseline definition needs."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "Extra output is harmless and unread by the baseline; trivial drift."
+   }
+  },
+  "N-007": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test computes a ConstantPredictor baseline from item observations, the AC-10 subject."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts Verdict::Reject, RuleNotMet and baseline == Some(0.8)."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "decisions[0].baseline == Some(0.8) fails if the baseline stopped being computed from the run's item observations."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "0.8 is an independently derived expected baseline, not an input value."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "AC-10 also requires rows_absent/malformed/mismatch refusals, intake rules and compare exclusion; only the happy-path baseline is checked."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of a many-clause criterion."
+   }
+  },
+  "N-008": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'Every crate root declares `#![forbid(unsafe_code)]`, and a planted `unsafe` block fails the build': two separately checkable claims"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'a planted `unsafe` block' names the input; declaration holds at all times"
+   }
+  },
+  "N-009": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Criterion is Rust report bytes equal retained TypeScript output; test compares canonical JSON and rendered Markdown with a captured golden, code is the JSON renderer."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert_eq!` against the golden `json` and `rendered` text; a default empty string fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Would fail if canonical_graph_portfolio_json diverged from the retained capture: 'canonical governed graph portfolio JSON diverged from the capture'."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected values come from a golden captured from the retained implementation, independent of the Rust code."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Renders canonical JSON with trailing newline, citing `canonicalGraphPortfolioJson (graph-portfolio.ts:326-329)` as the parity target."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "`unwrap_or_default` on already-UTF-8 bytes is totality hygiene, not a decision."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Criterion covers 'each measurement collection and report'; test covers only the portfolio case and strips the ranking section via `without_ranking_section`."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "The core parity is asserted; only scope beyond one report and the documented ranking carve-out are unchecked."
+   }
+  },
+  "N-010": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The doc comment ties the split to NFR-011 ('walks the bundle once ... NFR-011-M-2 budgets at one pass per invocation')."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Projecting already-read documents avoids re-reading per declaration, which is the performance share a single symbol can carry."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "It decides to skip documents with no claims or excuses and to accept scalar-or-list fields, which NFR-011's time budget does not state."
+   },
+   "divergence_kind": {
+    "answer": "code_exceeds_requirement",
+    "why": "Most of the symbol's logic is functional claim projection beyond the shown performance requirement."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "Trivial drift: the extra behaviour belongs to another requirement, and nothing contradicts NFR-011."
+   }
+  },
+  "N-011": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test covers the 'no strength is refused by name' clause of AC-10."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Requires Err(Shape{Missing{field}}) with field == \"strength\"; anything else panics."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Fails if a missing strength were defaulted instead of refused."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "field == \"strength\" and the Missing variant are independent expectations."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Round-trip of all four strengths and refusal of out-of-set strengths are not checked here."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "One of three clauses validated."
+   }
+  },
+  "N-012": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "requires one outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'when no profile projection requests one' names the condition"
+   }
+  },
+  "N-013": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Criterion forbids invoking `git`; test is the control for a no-child-program audit and code reads git config from disk."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert_eq!(offences(..), vec![\"control: ChildProgram\"])`; a stub auditor returning an empty vec fails."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Self-described 'A control on the check, not evidence for the criterion': it audits a test-authored snippet, never the real resolver."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected `control: ChildProgram` is an independent value, not echoed from input."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Reads `git_dir.join(\"config\")` via `fs::read_to_string` and parses origin; no subprocess."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "`MAX_GIT_CONFIG_BYTES` ceiling is boundary hygiene."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test proves only that the auditor detects a git subprocess in a synthetic snippet, not that resolution spawns none."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test tagged to the criterion does not exercise the resolution code at all."
+   }
+  },
+  "N-014": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "ValidatorError::path is a path accessor on a validator error; FR-096 is about a versioned quoin-core subprocess boundary."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "Returns the path from RepoRootUnreadable/DirectoryUnreadable/FileUnreadable - nothing about a versioned request/result boundary."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "A plain accessor; no branch, refusal or side effect."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Code is unrelated to the boundary the requirement states (trace mismatch)."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Code is about something else entirely; it does not carry the requirement."
+   }
+  },
+  "N-015": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-037 is about vocabulary gap severities and justified exclusions; the test only checks the YAML parser (`from_str(\"id: [unclosed\")` errors, aliases resolve)."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts `Err(YamlError::Scan(_))` and `json!({\"a\": 1, \"b\": 1})`, which a default stub would not satisfy."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about unowned/unjustified-exclusion/undeclared-exclusion findings, severities or UNCHECKED is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The expected alias-resolved JSON `{\"a\":1,\"b\":1}` is an independent expected value."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The test covers only a YAML-reading prerequisite, not the verdict policy FR-037 states."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The test does not validate the requirement's intent (tagged to FR-037, asserts parser behaviour)."
+   }
+  },
+  "N-016": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "several sentences: reason-coded inconclusive, `no_prior`, and per-slice `no_current_value` rows are separate behaviours"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "names conditions: 'when the newest value is not usable evidence', 'when no earlier usable value exists'"
+   }
+  },
+  "N-017": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Criterion: absent retained inputs produce a distinct report state, never a healthy zero; test calls fan_out with an absent bindings store."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts `state == \"not_computed\"` and non-empty `gaps`; a default response fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Would fail if an absent store yielded a clean empty result: 'must be reported as a gap rather than as a clean empty result'."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`not_computed` and non-empty gaps are independent expectations."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "fan_out reads the request, `load`s inputs (refusing unreadable declared inputs) and renders the analysis, the natural entry point."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Request parsing and ceilings are boundary hygiene."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Covers only the absent-store state; invalid inputs, unreadable paths, rejected premises, audit mismatch, incomplete and empty states are unchecked."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of a compound criterion."
+   }
+  },
+  "N-018": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Criterion is about reverting a cutover with zero changed bytes in evidence trees; code is a generic `ok` serialise helper."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`serde_json::to_value` into `Response::ok` has nothing to do with reverts or tree comparison."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Only maps a serialisation error to Io; no substantive decision."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "None of the revert/restore behaviour is in the shown code."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Trace mismatch: code is about something else entirely."
+   }
+  },
+  "N-019": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test is tagged FR-041-AC-6 and checks `(\"sbom\",\"sbom\")` by name and `syft`/`cyclonedx-npm` by tool."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert_eq!(chosen, expected)` against named adapters fails for a stub that returns an empty/default adapter."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if `--adapter sbom` or the tool strings `syft 1.0.0` / `cyclonedx-npm 6.0.1` stopped selecting `sbom`."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The expected adapter per tool string is an independent mapping the registry must produce."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "It covers both halves of the criterion: selection by `--adapter` and by emitting tools."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No material finding for the shown criterion."
+   }
+  },
+  "N-020": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "one prohibition over a list of forbidden actions on the control"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'while recording or reporting evidence' names the situation"
+   }
+  },
+  "N-021": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Criterion reads a module name from `manifest.yaml`; test and code are about git revision resolution (`GitRevisionNotFound`)."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`expect_err` plus `assert_eq!(err.code(), GitRevisionNotFound)`; an Ok stub fails."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Asserts an unknown tag is reported, unrelated to manifest name reading."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected error code is an independent value."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`GitResolver::resolve` is a trait signature for fetching a git tree, not manifest parsing."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "A trait declaration makes no decision."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Neither code nor test touches manifest name reading or the empty-name error."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test tagged to the criterion asserts something unrelated."
+   }
+  },
+  "N-022": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Criterion is about sealing attestations and refusing missing/unknown `strength`; code is `seal_attestation`."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Validates via `UnsealedAttestation::from_json` (schema refusals) before digesting and re-verifying, so a bad/missing strength is refused at seal."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Strip digest, validate, digest, verify: all implied by sealing."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Seal path validates then reads back through `verify_attestation`, matching 'seals and reads back as itself'."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding visible in the shown symbol."
+   }
+  },
+  "N-023": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test compares Rust `parse_strict_json_str` acceptance/refusal with the TypeScript oracle, which is FR-098-AC-9's subject."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "A stub returning Ok for everything fails `parsed.is_ok() == case.accepted` on the at least 25 refused cases."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if Rust stopped refusing a document the oracle refuses."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The expected `case.accepted` comes from the oracle (the retained TS parser), not from the code under test."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "It checks only accept/refuse, not 'the same classification' (the error code is only printed) or 'before canonicalization runs'."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: classification parity and ordering are unchecked."
+   }
+  },
+  "N-024": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'Churn deduplicates one affirmation copied across several suite bindings by...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Churn deduplicates one affirmation copied across several suite bindings by...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Churn deduplicates one affirmation copied across several suite bindings by...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Churn deduplicates one affirmation copied across several suite bindings by...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'Churn deduplicates one affirmation copied across several suite bindings by...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Churn deduplicates one affirmation copied across several suite bindings by...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-025": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "FR-075 derives package manifests so uses 'share one identity graph'; test and code produce the `ix://<org>/<repo>/mapping/<name>` identities."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert_eq!` against golden `typeIdentity`/`mappingIdentity`; an empty string fails."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Checks identity string formatting only, not manifest derivation or per-export schema digests in the registry."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected identities come from an oracle golden, independent of the code."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Builds the mapping identity used in the derived manifest, the part a single identity helper can carry."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Pure string format."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Requirement's manifest derivation and registry digest pins are untested; only identity strings are."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of an incidental aspect."
+   }
+  },
+  "N-026": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Criterion is about each impacted binding carrying its FR-032 verdict separately from exposure; code only returns bindings when the input is Available."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`available()` says nothing about verdict fields or change exposure."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "A three-arm accessor match; no substantive decision."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Shown code carries no verdict/exposure separation."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Code does not address the criterion's behaviour."
+   }
+  },
+  "N-027": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test checks unsafe `verificationStack.artifacts` names being refused as `ArtifactNameUnsafe`, one clause of FR-044-AC-6."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts `expect_err`, a specific code and the named artifact path, which a default stub fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if an unsafe name stopped being refused as `QM-ARTIFACT-NAME-UNSAFE` naming the artifact, or if a refused write left a collection."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`MeasurementErrorCode::ArtifactNameUnsafe` and the empty stored-collections list are independent expected values."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "It covers only the unsafe-name clause; symlink components, digest mismatch, `unverifiedArtifacts` recording and report rendering are unchecked."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of a many-clause criterion."
+   }
+  },
+  "N-028": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'Quoin's first-party engine logic is reached through one versioned Rust...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Quoin's first-party engine logic is reached through one versioned Rust...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Quoin's first-party engine logic is reached through one versioned Rust...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Quoin's first-party engine logic is reached through one versioned Rust...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'Quoin's first-party engine logic is reached through one versioned Rust...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Quoin's first-party engine logic is reached through one versioned Rust...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-029": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "FR-102 preserves the retained command grammar; test checks the plugin alias stays hidden and code reproduces oclif's `    Error:` failure format."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert!(command().is_hide_set())`; a default command (not hidden) fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Would fail if the native command surface started advertising the alias, a change to the retained grammar."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Checks a real property of the built command, not a test-supplied value."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Emits `    Error: {message}` on stderr with EXIT_COMMAND_FAILURE, preserving oclif's retained failure surface."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Formatting follows the retained shell; no extra decision."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "One hidden-flag check does not show grammar preserved through native fixtures or oclif removed."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of a broad requirement."
+   }
+  },
+  "N-030": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-040 is the read-only assurance-case view over trace graph, obligations and audit verdicts; code parses a module-owned `AssuranceArgument` frontmatter contract the requirement never mentions."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "It validates AA-<n> ids, participants, challenges; it renders no claim tree, open nodes or unreached-requirements section."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Refusals like 'participants must not be empty' and 'challenge ... targets unknown argument node' are decisions the shown requirement does not state."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "The view's stated behaviour (gaps as open nodes, determinism, mermaid rules) is absent from the shown code."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Trace mismatch: code is about a different artifact."
+   }
+  },
+  "N-031": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Tests the project config layer path and that `with_project_config_enabled(false)` / the disable flag yields `None`, which is FR-027-AC-9's subject."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert_eq!(..., Some(PathBuf::from(\"/repo/.ix/config.d/quoin.yaml\")))` fails for a stub returning None."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Checks only path resolution and disable; never shows a project value overriding a user-level value."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The expected path `/repo/.ix/config.d/quoin.yaml` is an independent value, not an input."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The 'overrides the user-level one' half is unchecked; only 'ignored where disabled' is."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: the override precedence is untested."
+   }
+  },
+  "N-032": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Running the update command compares the installed version to the...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Running the update command compares the installed version to the...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Running the update command compares the installed version to the...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'compares ... and upgrades in place, while a check-only invocation reports availability ..., and an explicit registry can be selected' joins several behaviours"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Running the update command compares the installed version to the...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-033": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Requirement is apparatus_touched/diff_missing/negative_control_uncaught; the test checks diff_paths/plan size ceilings and the code is a generic `ok` serializer."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts outcome 'valid', field names and limit/observed counts ('65537', '4097')."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "No assertion about refusing credit when protected apparatus is touched, or diff_missing, or negative_control_uncaught."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`assert_eq!(MAX_DIFF_PATHS, 65_536)` and outcome 'valid' are independent expected values."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`ok` just serializes a payload to Response::ok; nothing about apparatus checks."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Serialization wrapper is boundary hygiene."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test checks input-size hygiene, not the stated refusal behaviour."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test tagged FR-111-CON-2 asserts ceilings unrelated to the apparatus rule."
+   }
+  },
+  "N-034": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "audit() is the auditor entry point; it builds the `healthy` list the criterion names."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "`clean = pass.completed && pass.findings.is_empty() && pass.unevaluated.is_empty()` then `healthy.push(obligation.id)`: no finding means reported healthy."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "The DemandTooLarge refusal is a size ceiling (boundary hygiene). Independence reporting is stated in the requirement ('Independent means a different suite')."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "The healthy classification matches AC-1. The per-check logic is delegated to ladder::run."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No drift between the healthy-path code and the criterion."
+   }
+  },
+  "N-035": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "AC-1 is about parsing strength/dimensions/values from the statement; the test is about `demanded_tuples` refusing past the ceiling (`QCB-DEMAND-TOO-LARGE`)."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert_eq!(error.code.as_str(), \"QCB-DEMAND-TOO-LARGE\")` fails for a default stub."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Only `parse_space(...).expect(...)` touches parsing; strength, dimensions and values of the parsed space are never asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The error code string is an independent expected value."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Parsing is exercised only as a precondition, not checked."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test tagged to the criterion asserts a different behaviour (demand ceiling)."
+   }
+  },
+  "N-036": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'An expired retention fails the enforcement report while the build...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'An expired retention fails the enforcement report while the build...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'An expired retention fails the enforcement report while the build...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'fails the enforcement report while the build lane still completes' joins two separately failable outcomes"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'An expired retention fails the enforcement report while the build...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-037": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Wire error codes are part of how the boundary 'distinguishes every non-success state'. This is a weak but plausible citation."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "A stub from_code returning None fails `assert_eq!(from_code(..), Some(*code))`."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "It only checks that the error codes round-trip. It asserts nothing about a versioned subprocess boundary, request/result documents, or the absence of Node types."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "The expected value `Some(*code)` is the same value the test fed in through as_str(). There is no independent expected value."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Parsing a wire code back to its variant is the part this symbol can carry for distinguishing non-success states."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "It is a plain lookup `find(|c| c.as_str() == code)` with no extra decision."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The round-trip covers a small incidental slice of FR-096's boundary contract."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: most of the boundary's stated properties are unchecked."
+   }
+  },
+  "N-038": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "AC-9 reads tamper facts from the store's git history, and `git` is the helper that runs those git queries (tamper.rs)."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "It runs `git -C repo <args>`, which is the only part of AC-9 a generic subprocess helper can carry."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "It only spawns git and maps the spawn error. That is error-context hygiene."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "The helper matches its narrow role in the git-history reads."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "There is no drift within the helper's scope."
+   }
+  },
+  "N-039": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "NFR-024-AC-1 is about emitting retained paths as retained-with-successor. The test exercises `config.resolve_org` precedence."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts concrete values: `org == \"agent-ix\"`, `source == \"flag\"`, `org == \"other-org\"`."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about retained paths, successor sub-issues or expiry dates is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`source` values ('flag', 'git') and `degraded: false` are independent expectations. 'other-org' is also derived by parsing, not echoed back."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Trace mismatch: the test validates none of the criterion."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The test is tagged to a criterion but asserts something unrelated."
+   }
+  },
+  "N-040": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'layers over a stored organization and is reported with source `env`': precedence and source reporting fail independently"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "names the situation: `QUOIN_ORG` set alongside a stored organization"
+   }
+  },
+  "N-041": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "AC-8 is about `config get/set/edit/doctor` delegating to ix-cli-core handlers. The test checks that a duplicate plugin-schema registration keeps the first entry."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts `RegistrationOutcome::Duplicate` and `registered_ids() == [\"quoin\"]`, which a default stub would not satisfy."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "No config command is invoked, and delegation is never observed."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`Duplicate` and `vec![\"quoin\"]` are independent expected values."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "register_quoin_schema only registers a schema, a prerequisite. It does not delegate any command to the shared handlers."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "It makes a policy decision the requirement does not state: 'a duplicate is a non-error that keeps the first entry'."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The test checks an incidental registry property instead of delegation."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The tagged test asserts something unrelated to the delegation criterion."
+   }
+  },
+  "N-042": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "StR-002 is about installing vocabulary modules from a path/GitHub; selected_corpus_edges filters impact-analysis graph edges."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "Nothing in the code installs or registers a module or its types."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Emits DanglingRelation gaps and skips non-requirement edges, decisions the shown StR never states."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Trace mismatch: the code does none of the module-installation behaviour the StR requires."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Code is about a different subsystem entirely."
+   }
+  },
+  "N-043": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test drives assess_independence with selected dimensions Actor/Technique, exactly FR-094-AC-3's 'differ on every selected dimension'."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "A default stub could not yield both status Satisfied with satisfied_by (SUITE-A, SUITE-B) and Insufficient for the shared-technique case."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Asserts that suites sharing technique 'unit' are Insufficient, the 'differ on every selected dimension' clause."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected IndependenceStatus::Satisfied / Insufficient are independent verdicts, not echoes of inputs."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The first clause, 'One evidence relationship cannot satisfy both sides' (same suite twice), is never exercised."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: the same-relationship edge case is unchecked."
+   }
+  },
+  "N-044": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "requires one outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'before every capability is Rust-native' names the condition"
+   }
+  },
+  "N-045": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-096 is the versioned subprocess boundary. The test compares completeness assess_bundle with assess_sources, and the code is an error-path accessor."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "Two stubs returning the same default satisfy `assert_eq!(by_path, by_content)`. The remaining asserts check only the fixture corpus (`cases >= 4`, non-empty sources)."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about a versioned boundary, request/result documents or non-success states is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "It compares two implementation outputs to each other and otherwise checks the corpus it loaded. No independent expected value about behaviour is stated."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "CompletenessError::path returns a path from an error variant, which is unrelated to the engine boundary."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "It is a trivial accessor with no substantive decision."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Trace mismatch: neither the test nor the code validates FR-096."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The test asserts something unrelated to the cited requirement."
+   }
+  },
+  "N-046": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "StR-005 is about offline, reproducible module resolution. The code strips markdown link targets from statement prose (advise/compound.rs); it only cites 'StR-005' in a doc example."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "It involves no network access and no pinned module resolution."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Removing link targets from prose is a substantive transformation that the shown requirement never states."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Nothing shown provides offline or reproducible resolution."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The trace is a mismatch: the StR ID appears only in a comment example."
+   }
+  },
+  "N-047": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test checks that retired Node/oclif shell paths are absent, which is exactly FR-102-AC-6."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts concrete absence of named paths, `oclif`/`bin` keys, and Node sources."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if the oclif shell returned: `!root.join(retired).exists()`, `manifest.get(\"oclif\").is_none()`."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "It checks the real repository tree against an independent retired-path list."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The second clause, 'the binary is named `quoin`', is never asserted. The generated-TypeScript check covers only src/ and tests/."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: one independent clause of the criterion is unchecked."
+   }
+  },
+  "N-048": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "one emitted classification described by its attributes (class, sub-issue, expiry)"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "holds for every retained path"
+   }
+  },
+  "N-049": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test asserts `diff_missing`/`incomplete` for a protecting plan with no diff, which is FR-111-AC-4. The code is a setup helper only."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts `outcome == \"incomplete\"`, `reasons == [\"diff_missing\"]` and exit code 1."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if diff_missing were not reported for a protecting plan with no diff."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "'incomplete' and ['diff_missing'] are independent expected values from the real binary."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "seal_record seals a change-assurance record. It has nothing to do with diff_missing detection."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Its only decisions are response parsing and error messages, which are boundary hygiene."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "The shown code does not carry the diff_missing behaviour. The test also omits the 'no plan linked adds nothing' half."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "The code trace is wrong and one clause of the criterion is unchecked, but the main behaviour is validated."
+   }
+  },
+  "N-050": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "The withdrawn FR-097 is about schema-sourced boundary types and vendored schema pins. Provenance::current reports the build's CLI/engine version and capabilities."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "It carries no schema source revision or SHA-256 pin, and the requirement is withdrawn."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "It is a plain constructor from constants with no branch or side effect."
+   },
+   "divergence_kind": {
+    "answer": "requirement_ambiguous",
+    "why": "The requirement is marked '⛔ Withdrawn', so there is no live intent to align with."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "A trace against a withdrawn requirement is trivial drift."
+   }
+  },
+  "N-051": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test censuses test files for process spawning of a TypeScript oracle, which is FR-101-AC-5."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It scans real files for forbidden spellings and has an anti-vacuity floor of 'checked >= 4'."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It fails if any test in the crate contains 'std::process::Command', 'ts-node' or 'node --'."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expectations (the forbidden strings, the floor of 4) are independent of the scanned inputs."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "It scans only this crate's tests/ (not 'no test in the repository'), does not detect imports, and does not check 'the expected fixtures are committed'."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of a repository-wide, three-part criterion."
+   }
+  },
+  "N-052": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'Reconcile SHALL NOT perform network access when the declared modules...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Reconcile SHALL NOT perform network access when the declared modules...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Reconcile SHALL NOT perform network access when the declared modules...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Reconcile SHALL NOT perform network access when the declared modules...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'Reconcile SHALL NOT perform network access when the declared modules...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Reconcile SHALL NOT perform network access when the declared modules...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-053": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test asserts that the vocabulary values come from the schema enum, which is exactly AC-1. The shown code, a bundle file walk, is a separate matter."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert_eq!(read, expected)` with moisture/spice/folding and tidal would fail for a default stub."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if values were minted rather than read, because it uses an enum 'no ISO list would ever produce'."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "The expected values are exactly the enum strings the test supplied in its schema fixtures."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`collect` walks markdown files in a bundle. It does not read vocabulary values from module data."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "It makes symlink-policy decisions ('A symlink is a document exactly when it RESOLVES to a file') that AC-1 does not state or imply."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "The shown code does not carry the vocabulary-read behaviour, while the test aligns."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "The test validates the criterion, but the code pairing is wrong."
+   }
+  },
+  "N-054": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "CON-2 requires the vendored schema to carry repository/revision/path/SHA-256 provenance. The code only computes a file path."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`schema_dir(..).join(\"module-manifest.schema.json\")` records and checks no provenance."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "It is a pure path join with no decision."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Nothing in the shown code carries the source repo, revision or SHA-256."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "The criterion is not evidenced by the traced code. It is a path helper, not a contradiction."
+   }
+  },
+  "N-055": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test concerns digest identity domains (`DigestDomain::ALL`, algorithm labels), which is what CON-1 governs."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "A stub returning the same label for every domain fails the dedup length check. The is_opaque_bytes asserts also have fixed expected values."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "It checks that labels are distinct now, not that cutover left existing domains unchanged. Renaming every label consistently would still pass."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`assert!(DigestDomain::RawBytes.is_opaque_bytes())` etc. state independent expectations."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Distinctness is a weaker property than 'does not change an existing identity domain'."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: stability across cutover is unchecked."
+   }
+  },
+  "N-056": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'The gate renders all three variants and reports which variant...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'The gate renders all three variants and reports which variant...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'The gate renders all three variants and reports which variant...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'renders all three variants and reports which variant and which surface failed when one does' joins rendering and failure reporting"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'The gate renders all three variants and reports which variant...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-057": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test and code are the audit-script adapter's rejection of output with no recognised line."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`unwrap_err()` on a stub returning Ok(default) panics, and the exact error string is asserted."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if 'all good' or compiler output were accepted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The exact error message string is an independent expected value."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "`if evaluated == 0 { return Err(EvidenceError::adapter(...)) }`"
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Counting OK and FAIL lines and extracting trace ids are both stated in the FR-036 statement."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "The test, code and criterion agree."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-058": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "AC-5 is about tests not spawning non-Rust oracles; `MeasurementSchema::document` parses a committed schema file."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "Parsing a vendored schema says nothing about test oracles or committed expected fixtures."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Just parse and wrap the error; error-context enrichment is hygiene."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "The code carries none of the stated behaviour."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Trace mismatch: the code does not exercise the criterion."
+   }
+  },
+  "N-059": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-003 is about CLI usage/help; the test checks that golden JSON records are sorted-key, two-space JSON in a cookiecutter template."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts a trailing newline and canonical formatting of real files, which non-canonical content would fail."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about root usage or `--help`/`-h` output is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "It checks the files against an independent canonical-form property, not against values the test supplied."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The test does not touch the help behaviour at all."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "A test tagged to the criterion asserts something unrelated."
+   }
+  },
+  "N-060": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "one prohibition over a list of things not executed"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'while recording or reporting evidence' names the situation"
+   }
+  },
+  "N-061": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test and rank_portfolio both exercise the half-life decay (`decay(objective.value_half_life(), age_days)`) that FR-113-AC-2 states."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts `ranked[0].plan_id == \"MP-fresh\"` and `decay_factor - 0.0625`; a default stub returns no ranked entries and fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "A stale large gap ranking behind a fresh small one with decay 0.5^4 = 0.0625 is exactly the AC's main clause; it fails if decay stops being applied."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "0.0625 is an independently computed expected value (0.5^(40/10)), not an echoed input."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Computes age_days against `newest_collection_timestamp` and multiplies the score by `decay(value_half_life, age_days)`."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Unranked reasons, weight, budget normalization and sort are all stated in the FR-113 statement; tie-break ordering is hygiene."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The AC's second clause, 'No value_half_life applies no discount regardless of age', is not checked by this test."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "Main behaviour validated; only the no-half-life clause is unchecked here."
+   }
+  },
+  "N-062": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "inspect_mock_injections is the inspector the AC's first clause names: it 'recognizes narrow explicit stand-in forms ... in test source'."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Walks source files, uses per-extension `test_markers`, and keeps only `looks_like_stand_in` calls without running anything, which covers the part one symbol can carry."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Merging by `path:line:symbol` and sorting are presentation, not substantive decisions."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "The recognition half of the AC matches; the audit/strict/Tier 1 clauses belong to other symbols."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding for the part this symbol owns."
+   }
+  },
+  "N-063": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test concerns the verdict capture used as the parity oracle for FR-099-AC-2 'same verdict as the retained src/quire adapter'."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "It only checks that provenance strings in the golden file are non-empty, and exercises no implementation, so a stubbed quire.validate would still pass."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "It never compares a quoin-core quire.validate verdict to the retained adapter's verdict."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "Every assertion inspects the fixture the test itself loads (goldens()['provenance'])."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "It checks capture metadata, not verdict equality."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "It does not exercise the code under test or validate the stated verdict parity."
+   }
+  },
+  "N-064": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "fields are named; 'positive deadline' is exact"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "standing-capability required fields, supported-clock required fields and unsupported-clock exclusions are separate schema rules that fail independently"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "names the records it applies to: 'A standing-capability record', 'supported clocks'"
+   }
+  },
+  "N-065": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-097 is withdrawn and describes a schema-sourced TypeScript type surface; the test and code check engine-revision provenance (`check_premise`, `EngineRevisionMismatch`)."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts `InstrumentId::Revision(found)` and `ErrorCode::EngineRevisionMismatch`; a default stub fails these."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about schema-sourced boundary types or hand-written duplicates is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`ErrorCode::EngineRevisionMismatch` is an independent expected value."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "check_premise is engine-version and revision gating, which is unrelated to the withdrawn schema-type requirement."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "It refuses payloads (`EnginePremise`, `EngineRevisionMismatch`), and the shown requirement states none of these refusals."
+   },
+   "divergence_kind": {
+    "answer": "code_exceeds_requirement",
+    "why": "Code and test make provenance decisions the shown (withdrawn) requirement never states."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The tagged test asserts something unrelated to the requirement."
+   }
+  },
+  "N-066": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "The AC is about reading a module name from `manifest.yaml`; parse_source_arg parses `path:`/`github:`/`package:` install arguments."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "It never reads manifest.yaml or a module name."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "It adds source-prefix parsing and `UnparsableSourceArg` refusals, which the shown requirement does not state."
+   },
+   "divergence_kind": {
+    "answer": "code_exceeds_requirement",
+    "why": "The code's decisions are about a different concern than the shown AC."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Trace mismatch: the code does not carry the requirement at all."
+   }
+  },
+  "N-067": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test builds a worktree whose `.git` is a `gitdir:` file and resolves the org through it, which is the AC's scenario."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts `resolved.source == OrgSource::Git` and org `Some(\"acme\")`; a default/unresolved stub fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It fails if resolution stops following the gitdir/commondir to the main checkout's config."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`OrgSource::Git` and the extracted `acme` (parsed out of a URL, not echoed) are independent expectations."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The AC says 'worktree or submodule'; only the worktree layout (commondir) is exercised, not a submodule gitdir."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "The submodule case has a different gitdir layout and is left unchecked."
+   }
+  },
+  "N-068": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'A required surface that a maintained module repository carries and...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'A required surface that a maintained module repository carries and...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'A required surface that a maintained module repository carries and...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'A required surface that a maintained module repository carries and...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'A required surface that a maintained module repository carries and...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'A required surface that a maintained module repository carries and...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-069": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "The AC is about reading a module name from manifest.yaml; the test checks that an option-like Github repo is refused, and the code validates a MarketplaceManifest's schemaVersion, entry count and sources."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`expect_err` plus `code() == InvalidSource` fails against an Ok(default) stub."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about a missing/empty module name or root/nested manifest.yaml is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`ModulesErrorCode::InvalidSource` is an independent expected value."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "It does not read a module name or check for an empty one; it validates marketplace entries."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "It refuses on schemaVersion mismatch and on more than MAX_MANIFEST_ENTRIES entries, and the shown requirement states neither."
+   },
+   "divergence_kind": {
+    "answer": "code_exceeds_requirement",
+    "why": "Code and test concern marketplace/source validation, which the shown AC does not state."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The tagged test asserts something unrelated to the criterion."
+   }
+  },
+  "N-070": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "NFR-010 is about pinning modules to immutable commit SHAs; requirement_of derives a requirement id from an obligation id."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "It performs no module resolution and records no SHA."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "It makes id-prefix parsing decisions (e.g. 'Non-matching input is returned unchanged') that the shown requirement never mentions."
+   },
+   "divergence_kind": {
+    "answer": "code_exceeds_requirement",
+    "why": "The code is about a different subsystem entirely."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Trace mismatch: the code does not carry the requirement."
+   }
+  },
+  "N-071": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test drives `update(...)` from a manifest URL and checks the binary is replaced - FR-022's update command."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts UpdateResult::Replaced{9.9.9} and file bytes == 'new executable'; a default stub fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Would fail if update stopped installing the manifest's archive: `fs::read(executable) == b\"new executable\"`."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "Expected bytes and version both come from the archive/manifest fixture the test built via FixtureTransport."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "`--check` mode (passed false) and the default GitHub manifest endpoint are not exercised."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Core install path checked; check mode and default-registry behaviour unchecked."
+   }
+  },
+  "N-072": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "one absence property over the census output"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "holds for every census output"
+   }
+  },
+  "N-073": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "The AC is about parsing strength, dimensions and values out of the statement; the test checks that excluded combinations are never demanded, and the code is an `exclusions()` accessor."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`prop_assert!(checked > 0)` and the prop_assume filters fail (all cases rejected) against empty-default stubs."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "It never asserts that strength, dimensions or values were parsed correctly from the statement."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "It checks an independent invariant: no demanded tuple contains every assignment of an exclusion."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "A getter returning `&self.exclusions` does no parsing of strength, dimensions or values."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "A plain accessor makes no substantive decision."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The test validates exclusion handling rather than the stated parse-back of the space."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The tagged test asserts something other than the criterion's behaviour."
+   }
+  },
+  "N-074": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "FR-037 requires an exclusion to carry 'a written reason, in the same document, in a table row naming the value', and written_reason_for implements exactly that."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "It scans only `|` table rows whose first cell equals the value and returns a cell passing `is_reason`, so a passing mention does not count."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Backtick trimming and case-insensitive matching are parsing hygiene."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Behaviour matches the stated table-row rationale rule."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-075": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test renders a producer-trust decision and checks claims unchanged - FR-093-AC-7."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts rendered text suffix, Supported status and producer_trust length 1."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "`assert_eq!(case.claims, plain.claims)` fails if trust altered claim status; rendered-section assertions fail if not rendered."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`NodeStatus::Supported` and the exact rendered section text are independent expected values."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Both halves of the AC (rendered as context, claims unaltered) are asserted."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-076": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'only by the emit command, never authored by hand' restates one provenance rule"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "holds for every `digest` value at all times"
+   }
+  },
+  "N-077": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "CON-3 forbids silently converting invalidated/unobserved reliance into accepted; the test and code validate a decision record's required triggers and evidence and compute no assessment."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`unwrap_err()` plus message checks fail against an Ok(()) stub."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "No assertion covers an invalidated or unobserved assessment staying non-accepted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected error fragments such as 'must include environment' are independent values."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "validate_trust_decision checks the shape of a record; it is not where the assessment conversion CON-3 constrains happens."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "It refuses a decision that lacks REQUIRED_TRIGGERS (e.g. environment) or has a non-`<algorithm>:<hex>` digest, and the shown requirement states neither refusal."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The test checks record validation, not the no-silent-acceptance constraint."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The tagged test asserts something unrelated to the constraint."
+   }
+  },
+  "N-078": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-020 here is workflow launchers/skill resolution; objective_from parses an engineering-assurance measurement-plan objective."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "Nothing about review/matrix/to-plan launchers or skill path resolution."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Refuses a negative `zero` objective bound - a substantive refusal the shown requirement never states."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Trace mismatch: code does not carry the launcher/skill-resolution requirement."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Code is about a different subsystem entirely."
+   }
+  },
+  "N-079": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test asserts payload[\"receipt\"][\"governing_plan_id\"] and [\"diff_paths_supplied\"], exactly the two fields AC-5 names."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "A default stub (null/false) fails assert_eq!(..governing_plan_id, json!(\"MP-1015-CORE\")) and diff_paths_supplied == true."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Checks both the linked case (plan id, true) and the unlinked case (null, false) that the AC requires recorded explicitly."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "diff_paths_supplied == json!(true)/json!(false) is a derived value, not an echo of an input the test supplied."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "AC says `true` when diff_paths was supplied 'even empty'; the test only supplies [\"src/lib.rs\"], never an empty array."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "The explicitly-called-out empty-diff_paths edge case is unchecked."
+   }
+  },
+  "N-080": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'A digest replay over every reachable store reports zero mismatches...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'A digest replay over every reachable store reports zero mismatches...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'A digest replay over every reachable store reports zero mismatches...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'A digest replay over every reachable store reports zero mismatches...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'A digest replay over every reachable store reports zero mismatches...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'A digest replay over every reachable store reports zero mismatches...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-081": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test and record_run both exercise direct-id vs target_ids (test-case) binding, which is AC-15's subject."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts `outcome.bound == [FR-001-AC-2]`; a default stub yields an empty vec and fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "If the indirect route won, FR-001-AC-1 would also bind and `bound` would differ; this is the 'direct obligation id wins' clause."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The expected set, which excludes the sibling FR-001-AC-1, is an independent expectation about precedence and not an echo of an input."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Builds `by_target` from target_ids, skips targets that are also obligation ids, prefers `by_id`, and reports unmatched ids."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Pass-only discharge and suspect detection are stated or implied by the FR-030 statement."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Only the precedence clause is tested; indirect binding and 'still reported unmatched' are not asserted here."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "The precedence clause is validated; the other compound clauses are unchecked in this test."
+   }
+  },
+  "N-082": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The helper locates the `filament-core-data` package-manifest schema, which is the document FR-075 derives."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "A path helper can only carry locating the package-manifest schema, and it does that without contradicting the requirement."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "It makes no branch, refusal or side effect."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "It neither derives the manifest nor records per-export digests; it is plumbing only."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "A trivial helper; the gap is expected of a single symbol."
+   }
+  },
+  "N-083": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "It verifies that oracle-written sealed records reproduce their digest and are named by it under the Rust implementation, i.e. identity preserved across cutover."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts `records.len() == 3` and that each filename stem equals the recomputed `digest.as_hex()`; a stub fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "If the Rust digest domain changed, the recomputed digests would not match the oracle-written filenames."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The expected digests come from oracle-produced fixture filenames, independent of the code under test."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "It covers only the change-assurance record identity domain, not every existing identity domain."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "Sound check with limited breadth."
+   }
+  },
+  "N-084": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'Existing evidence-audit and assurance reports SHALL remain readable and unchanged...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Existing evidence-audit and assurance reports SHALL remain readable and unchanged...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Existing evidence-audit and assurance reports SHALL remain readable and unchanged...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Existing evidence-audit and assurance reports SHALL remain readable and unchanged...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'Existing evidence-audit and assurance reports SHALL remain readable and unchanged...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Existing evidence-audit and assurance reports SHALL remain readable and unchanged...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-085": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test reconciles the default module set into a clean home, which is where default manifests get loaded (NFR-017-AC-1 is tagged)."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "status==0 and installed==[] are both met by a stub that returns an empty Ok report."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "No assertion about diagnostics. A new diagnostic emitted on load would not fail the test."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "status 0 and installed [] are independent expected values."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "The shown code is only a trait method signature (ensure_defaults), with nothing that loads manifests or checks diagnostics."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "A bare signature makes no substantive decision."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The AC is 'no new diagnostic'. The test checks only exit status and an empty install list."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The test does not validate the criterion's intent (diagnostics) and passes against a default stub."
+   }
+  },
+  "N-086": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "origin_org parses `[remote \"origin\"]` sections, and its doc states the same case rule the AC names."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "`to_ascii_lowercase().starts_with(\"[remote\")` matches the section case-insensitively, and the unlowered `squashed.get(..) == Some(\"\\\"origin\\\"]\")` matches the subsection case-sensitively."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "URL extraction is the parsing the org resolution already implies."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Both case rules are implemented as stated."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-087": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test compares `derive_package_manifest(&module).exports[].type_identity` against the loaded module's `type_identity`, exactly the AC-4 agreement."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert_eq!(loaded, vec![\"ix://agent-ix/spec-objects-fixture/type/entity\"])` plus `derived == loaded` fails for an empty/default derive."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "`assert_eq!(derived, loaded)` fails if the derived manifest's typeIdentity diverged from the loaded identity."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Asserts an independent literal identity `ix://agent-ix/spec-objects-fixture/type/entity`."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Test pins the two identity surfaces together, which is the criterion."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "Criterion asserted directly on a fixture module."
+   }
+  },
+  "N-088": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'Every inspected module records its content digest, manifest-declared name/version, source...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Every inspected module records its content digest, manifest-declared name/version, source...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Every inspected module records its content digest, manifest-declared name/version, source...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Every inspected module records its content digest, manifest-declared name/version, source...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'Every inspected module records its content digest, manifest-declared name/version, source...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Every inspected module records its content digest, manifest-declared name/version, source...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-089": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Code `parse_space` is the parser AC-1 describes, and the test calls `parse_space(\"2-way over constructor(1|2) b(3|4)\")`."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "Only assertion is `covered.is_empty()`; a stub `covered_by` returning an empty set passes."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Asserts `covered_by` emptiness for an inherited-property parity case, never the parsed strength/dimensions/values."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`covered.is_empty()` is an independent expected outcome, not a test-supplied value echoed back."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Parses strength via `Strength::parse_digits`, dimensions and `|`-split values from the statement header."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Also parses `excluding[...]` exclusions and refuses with `dimensions.len() < 2 => None`, neither stated in the shown requirement."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test tagged FR-035-AC-1 asserts coverage computation, not the parse result."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Tagged test asserts something unrelated to the parsing criterion."
+   }
+  },
+  "N-090": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "`SpanBallot::key` formats `<scope>::<ballot_id>`; FR-006 is about locating module roots via `manifest.yaml` (FR-006 appears only as an example string)."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "It is about something else entirely."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "It only formats a string and makes no decision."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "None of the manifest-lookup or skip behaviour is present."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Trace mismatch: the code does not carry the requirement."
+   }
+  },
+  "N-091": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test compares the schema's required arrays against the pre-CR-003 baseline, which is NFR-017-AC-4."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert_eq!(after.get(path), Some(required)) over 14 baseline pairs fails if required_arrays yields nothing."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Fails if any pre-existing required array changes."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The baseline PRE_CR003_REQUIRED_ARRAYS is an independent recorded expectation compared to the live schema."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "AC says required arrays are 'unchanged', but the test tolerates new required arrays under /properties/semantic, /data_schema/ and $defs/ConstructDeclaration."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "The tolerated additions are under optional nodes; drift from the literal AC is minor."
+   }
+  },
+  "N-092": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "separate counting and stating each count on its own describe one reporting outcome; middle sentence is rationale"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "holds for every report at all times"
+   }
+  },
+  "N-093": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-097 is a withdrawn schema-sourced-type/TypeScript boundary requirement; the test checks numeric version parsing of engine pins."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert!(ten > nine) and Some-vs-None comparisons fail for a None stub (e.g. parse_first(\"0.10.0\").expect)."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about schema-sourced types or refusing hand-written duplicates is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "assert_eq!(Version::parse_first(\"1.2\"), None) and ordering are independent expectations."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "Version::parse_first is about CLI version scanning, unrelated to the requirement's schema provenance."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Decides to tolerate '-123-g...' describe suffixes and take the first N.N.N, behaviour the shown requirement never states."
+   },
+   "divergence_kind": {
+    "answer": "code_exceeds_requirement",
+    "why": "Code and test concern version parsing entirely outside the withdrawn requirement."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test tagged to the requirement asserts something unrelated."
+   }
+  },
+  "N-094": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "`assess_bundle` walks a whole bundle and its comment cites `NFR-011-M-2 ... one pass per invocation`."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Does ONE `read_bundle_frontmatter` walk regardless of declaration count, the part of the time budget a symbol can carry."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Only composes read, load and assess; the zero-declaration reporting lives in `assess`, not shown here."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Single-pass design serves the budget; the 5s measurement is not a single-symbol concern."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No drift visible in the shown code."
+   }
+  },
+  "N-095": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test cites NFR-025 and exercises evidence payload read/encode, the store the requirement protects."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "`first == second` and `encoded == again` both hold if `from_slice` returns a default and `encode` a constant."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Comment says 'Not asserted against the *original* bytes'; the requirement is byte immutability, the test checks value round-trip."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "Every assertion compares outputs to each other; no independent expected value or byte digest."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Value equality and re-encode determinism are weaker than 'every stored byte unchanged, digest identity equal'."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: byte/digest identity across cutover, revert and deletion is unchecked."
+   }
+  },
+  "N-096": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'An author installs a module from a supported source, sees...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'An author installs a module from a supported source, sees...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'An author installs a module from a supported source, sees...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'installs a module ..., sees its types appear ..., requests those types ..., and validates files ... with the installed module treated identically' lists several separately failable behaviours"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'An author installs a module from a supported source, sees...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-097": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test and `verify_attestation` both concern the closed v1 attestation schema AC-1 states."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`verify_attestation(&without(...)).is_err()` fails for a stub returning Ok(default)."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Drops every member expecting refusal and adds `undeclared` expecting refusal: 'undeclared fields are refused'."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`is_err()` expectations and `dropped >= 40` are independent expected outcomes."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "`ProofAttestation::read_sealed(value)?` enforces the schema, then digest is checked against its own bytes."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Digest recomputation matches the AC's 'attestation identity/digest'."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Closed-schema behaviour is tested and implemented."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "Required members come from captured attestations, not checked against the AC's named field list."
+   }
+  },
+  "N-098": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Code is a generic `ok` serialiser in ops/semantic; nothing about legacy Properties forms or a pinned FR-006 copy."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`serde_json::to_value(payload)` into `Response::ok` is unrelated to legacy-form acceptance at warning severity."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Makes no substantive decision; only serialisation with error mapping."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Trace mismatch: the shown code carries none of FR-074's behaviour."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Code is about something else entirely."
+   }
+  },
+  "N-099": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Shown FR-052 statement is about inventorying modules/types/documents; the test checks PropertyShape serde spellings, and CON-3 text is absent."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert_eq!(PropertyShape::all().len(), 10) fails for an empty stub."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Serde round-trip of shape tokens says nothing about non-silent exclusion of malformed input."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The count 10 is an independent expected value."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Asserts an incidental enum-consistency property rather than the inventory requirement."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test tagged to the criterion asserts something unrelated to the shown requirement."
+   }
+  },
+  "N-100": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "baseline stated exactly: '15 of 496'"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "one dictionary entry described by its definition and baseline"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "a property of the dictionary holding at all times"
+   }
+  },
+  "N-101": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Test reads a fixture WITH a semantic block (`block.package == agent-ix/spec-objects-fixture`); code is a generic `ok` helper. AC is about default manifests with no block."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts concrete values such as `diagnostics[0][\"code\"] == \"semantic.inline-data-schema\"`."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Never loads an installed default manifest without a `semantic` block."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Schema-supplied defaults `compatibility_posture == \"additive\"` are independent expected values."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`ok` only serialises a payload; unrelated to loading manifests unchanged."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "No substantive decision in a serialise-and-wrap helper."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Tagged test asserts read_blocks behaviour on a block-bearing module, unrelated to AC-1."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test tagged to the criterion asserts something unrelated; code is a trace mismatch."
+   }
+  },
+  "N-102": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "`seal_change_record` computes `digest_canonical_value(&normalized)`, the canonical-bytes-to-digest path AC-5's vectors exercise."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Seals via the canonical digest and attaches `digest.as_hex()`; RFC 8785 canonicalisation itself is delegated to `digest_canonical_value`."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Normalize, validate against the v1 schema and self-verify are all implied by the statement's 'versioned JSON Schema' sealed record."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Sealing uses the canonical digest the criterion constrains."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "Conformance to RFC 8785 vectors and cross-runtime agreement is not visible in this symbol, which delegates it."
+   }
+  },
+  "N-103": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test checks 'bytes are read from the open handle ..., never from a second look at the path'."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert_eq!(digest.to_stored(), abc) pins a concrete SHA-256."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Swaps the path to a FIFO and symlink after open and asserts the digest is still the opened file's."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The sha256 of 'abc' is an independent known value; also asserts DigestSourceIsSymlink code."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Does not check O_NOFOLLOW/O_NONBLOCK FIFO-at-open refusal, nor the 100,000-directory / 200,000-file QM-APPARATUS-TOO-LARGE limits."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Core handle-not-path clause validated; other stated clauses unchecked."
+   }
+  },
+  "N-104": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'Every method ... comes from module data' restates the one prohibition; last clause is rationale"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "holds at all times"
+   }
+  },
+  "N-105": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test and `read_semantic_block` concern manifests without a `semantic` block reading clean."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "Asserts only empty diagnostics and `module.is_none()`, which `SemanticReadResult::nothing()`/default satisfies."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Would fail if a no-block manifest were refused or given diagnostics: `codes(...) == Vec::new()`."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expects an independent outcome (no codes, no module), not echoes of supplied values."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "`let Some(raw) = manifest_map.get(\"semantic\") else { return SemanticReadResult::nothing(); }`."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Refuses on UnknownExport, ExportWithoutSchema, SweepReportRequired and admits `artifact_types`, none stated in the shown requirement."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Uses one scratch fixture with the block removed, not 'every installed default module manifest'; assertions are default-satisfiable."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of 'every installed default' manifest."
+   }
+  },
+  "N-106": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "`receipt` is the receipt CLI command whose exit status and receipt emission AC-6 governs."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "No exit 0/1/2 mapping visible; it builds a request and delegates to `receipt_response(...)`."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Forwards `diff_paths` and `plan` (FR-111) inputs not stated in the shown requirement."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "The exit-status contract is absent from the shown symbol."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Relevant command, but the stated exit-code behaviour is not visible here."
+   }
+  },
+  "N-107": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test exercises the `change-assurance` subcommand grammar FR-068 says Quoin exposes."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "A bare stub `Command` would reject `[\"change-assurance\", \"schema\"]`, failing `is_ok()`."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Fails if `seal-attestation` or `receipt` stopped being exposed commands."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`is_ok()`/`is_err()` are independent expectations, e.g. `seal-record` without `--input` must error."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Does not check `intake`/`verify-receipt`, nor 'SHALL NOT become a producer, runner, or scheduler'."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial: parse-only checks, several commands and the no-runner clause unchecked."
+   }
+  },
+  "N-108": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'A run executed with networking disabled over the fixture corpus...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'A run executed with networking disabled over the fixture corpus...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'A run executed with networking disabled over the fixture corpus...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'A run executed with networking disabled over the fixture corpus...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'A run executed with networking disabled over the fixture corpus...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'A run executed with networking disabled over the fixture corpus...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-109": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "`command()` defines the `quoin change-assurance` subcommands FR-068 requires."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts `rendered == Some(DESCRIPTION)`; a default payload fails."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Checks only the parent command's description text, not that record/attestation/intake/receipt commands are exposed."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`DESCRIPTION` is an expected constant, not a value the test supplied as input."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Declares `seal-record`, `seal-attestation`, `intake`, `verify-receipt`, `receipt` with explicit `--input`/`--output` args."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "Adds `recover` ('Remove interrupted intake staging directories', a side effect) and `--plan`/`--diff-path`, not in the shown requirement."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test asserts description rendering, unrelated to exposing the contract commands."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Tagged test asserts something unrelated to the requirement's intent."
+   }
+  },
+  "N-110": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-050 is about disposition records for cited Quire decisions; code `compute` produces a coverage report."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "Computes traceability coverage; no preserved/clarified/superseded/deferred disposition."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Judged as a trace mismatch; its behaviour is not an extension of FR-050."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "The shown code carries none of FR-050's behaviour."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Code is about something else entirely."
+   }
+  },
+  "N-111": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "AC-2 is verdict parity of `quire.validate` against the `src/quire` adapter; test only compiles a vendored schema."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "Only `validator().expect(...)`; a stub returning Ok(default) passes."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "No verdict comparison over any corpus document."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "Makes no assertions beyond not panicking."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Schema compilation is far weaker than per-document verdict parity."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Tagged test does not validate the criterion's intent."
+   }
+  },
+  "N-112": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'non-zero' exit status is exact"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'only when it fails to run, never for what it measured' is one exit-status rule"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'when it fails to run' names the condition"
+   }
+  },
+  "N-113": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "is_sha256_digest validates the SHA-256 digest form that FR-073 requires in `data_schema`."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "The first assert expects true and the rest expect false, so no constant stub passes."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "It checks only the digest string form, not path+digest referencing or drift detection at install."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The expected booleans are independent judgements about each input."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "It enforces `sha256:` followed by 64 lowercase hex characters, the digest-form part a validator symbol owns."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Lowercase-hex form checking is ordinary validation of the stated SHA-256 digest."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Only the digest syntax is tested, not reference resolution or drift detection."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "It is a correct partial check of a helper, a small slice of the FR."
+   }
+  },
+  "N-114": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "NFR-004 is about runtime dependencies/standalone packaging; the test exercises a git fetch Deadline watchdog raising an interrupt flag."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert!(raised) and assert!(deadline.timed_out()) fail if the flag is never raised (a default false)."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing asserts which dependencies are linked or that ix-flow/quire are invoked as external processes."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "assert!(raised) checks an independent expected outcome (flag becomes true), not a test-supplied value."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test validates an unrelated watchdog property, nothing of the standalone-dependency requirement."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test tagged to NFR-004 asserts something unrelated to it."
+   }
+  },
+  "N-115": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "requires one outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'when none is named' names the condition"
+   }
+  },
+  "N-116": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Test is about root help, but the shown code is a JSON string-field helper `text` in validate.rs, unrelated to usage/help printing."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts success, empty stderr and specific stdout sections like \"USAGE\\n  $ quoin [COMMAND]\"; a stub would fail."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Would fail if root usage stopped printing on `--help` (stdout.contains(\"USAGE...\"))."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected strings like \"Spec-driven development for Claude Code\" are independent of the input `--help`."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "fn text(value, name) extracts a JSON string field; it has nothing to do with printing usage or help."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "The helper makes no substantive decision; it defaults to empty string."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "Shown code carries none of the help-printing behaviour (trace mismatch on code)."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Code is about something else entirely; also test covers only root --help, not no-command or command-scoped help."
+   }
+  },
+  "N-117": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test checks that an argument with an unknown prefix is treated as a bare path: path_of(&arg) == arg, matching 'a bare argument maps to a path source'."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "A stub returning an empty string would fail assert_eq!(path_of(&arg), arg)."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Would fail if unprefixed-by-known-scheme arguments stopped mapping to a path with the argument intact."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "The mapping assertion compares path_of(arg) to the test's own input `arg`; the count assertion checks only the test's own loop."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "No truly bare argument (no colon) is tried, and the source type (path source) is not checked, only path_of's string."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: the plain bare-argument case the criterion names is unchecked."
+   }
+  },
+  "N-118": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'A non-manifest child is skipped while a manifest sibling is found': skipping and finding fail independently"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "names the situation: a non-manifest child beside a manifest sibling"
+   }
+  },
+  "N-119": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test and code both handle a document that is neither CycloneDX nor SPDX being refused."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "parse_sbom(...).unwrap_err() would panic if a stub returned Ok(default)."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "unwrap_err() plus the exact 'neither a CycloneDX ... nor an SPDX' message fails if the document were read as empty."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Asserts an independent expected error string, not a value the test supplied."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "`None => return Err(unrecognised(&document))` refuses a document matching neither format."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Refusing non-JSON and scalar input is request-parsing hygiene."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Test, code and criterion agree on refusal rather than empty result."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-120": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test invokes an unknown command and checks the error and usage text, the behaviour FR-005 states."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert_eq!(output.status.code(), Some(2)) and an exact stderr string would fail on a default stub."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Fails if the unknown command stopped producing a non-zero exit or stopped including 'Usage: quoin <command> [options]'."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Exit code 2 and the full stderr catalogue are independent expected values."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Unknown `catalog` or `plugin` subcommands, also named by FR-005, are not exercised."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: the subcommand half of the requirement is unchecked."
+   }
+  },
+  "N-121": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: vague_term, compound"
+   },
+   "vague_term": {
+    "answer": "yes",
+    "why": "'a sensible default' has no fixed meaning"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "installs as a single package; runs surfaces on own deps; resolves configuration root: separate behaviours"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "installation/runtime property holding at all times"
+   }
+  },
+  "N-122": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test renders text and JSON portfolio and checks 'Priority ranking' section and `ranking.advisory`; code is the JSON renderer that carries the ranking."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "text.contains(\"## Priority ranking\") and parsed[\"ranking\"][\"advisory\"] checks fail on a default render."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Fails if either the text section or the JSON `ranking.advisory` member were dropped."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "\"## Priority ranking\" and reason \"no_objective\" are independent expected values."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "render_portfolio_report_json always computes rank_portfolio and passes it into the wire shape, so the JSON carries ranking."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Only renders; no extra branch or decision."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The 'even when nothing is ranked' case is not tested (a ranked plan is present), and the note is compared to the code's own RANKING_ADVISORY_NOTE rather than checking it says advisory/decides nothing/not a gate."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Unconditional-presence edge case and wording of the advisory statement are unchecked."
+   }
+  },
+  "N-123": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "NFR-009 is about a single skill tree consumed by every agent; the test checks characteristic minting parity over a golden corpus."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "A stub returning empty would fail assert_eq!(produced, case.characteristics) and matched >= 8."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about skills/<name>/SKILL.md or per-agent manifests is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Compares against the golden oracle's expected characteristics, an independent value."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test validates an unrelated behaviour; none of NFR-009 is checked."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Tagged test asserts something unrelated to the requirement."
+   }
+  },
+  "N-124": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "requires one outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "holds at all times for every shipped command"
+   }
+  },
+  "N-125": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test and assess_independence evaluate a selected Actor dimension with one side missing lineage, the subject of FR-094-AC-4."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert_eq!(assessment.status, IndependenceStatus::Insufficient) and missing_suites == [SUITE-B] fail on a default assessment."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Fails if the missing dimension were hidden (missing_suites, 'missing on SUITE-B') or produced a Satisfied result."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "IndependenceStatus::Insufficient and the summary text are independent expectations."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "`_ => false` in the separation match blocks satisfaction on missing values, and the dimension assessment records `values` and `missing_suites`."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Sorting bindings by suite for deterministic reporting is hygiene, not a new decision."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Only the missing-lineage half is tested; a genuinely shared value (both suites 'alice') is never exercised despite the test's name."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "The shared-value edge case of the criterion is unchecked."
+   }
+  },
+  "N-126": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "AC-2 covers a reworded statement producing a high-severity suspect-link finding. The test round-trips an IndependenceAssessment through serde."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts satisfied_by.is_some(), dimensions.len()==2 and exact round-trip equality, none of which a default satisfies."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "No statement is reworded, and no suspect-link finding or hash is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "Every assertion compares against the json! source the test built itself (a round trip)."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The test checks serialisability only. The suspect-link behaviour is never exercised."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "A test tagged to this criterion asserts something unrelated."
+   }
+  },
+  "N-127": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "one prohibition; second sentence is rationale"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "prohibition holds at all times"
+   }
+  },
+  "N-128": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Both the test and verify_receipt concern receipt digests over canonical bytes, which is the AC's subject."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`assert_eq!(receipt.digest.as_hex(), text(expected, \"digest\"))` together with the floor of at least 30 checked receipts would fail against a default stub."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "No input or selection permutation is generated, and it never compares the bytes of two receipts. It checks only that each oracle receipt's digest matches itself."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "The digest assertion compares the parsed digest with the `digest` field of the same input value the test passed in."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "It removes `digest`, recomputes `digest_canonical_value` and refuses on a mismatch, which is the 'digest matches procedure' part a verifier symbol owns."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Its refusals (schema, reason ordering, outcome precedence, digest mismatch) are stated or implied by the FR's precedence and digest rules."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The byte-identity across permutations that the AC names is not exercised."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Only partial validation: the permutation invariance goes unchecked."
+   }
+  },
+  "N-129": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "Criterion demands read-and-reserialize byte identity; the test scans source text for forbidden tokens and never touches a store."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "A stub implementation contains none of the forbidden tokens, so every !text.contains(...) assertion passes."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Would still pass if re-serializing changed bytes via the canonical serializer."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "Every assertion checks absence of test-supplied tokens; no independent expected value of a record."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "A proxy (no second serializer) replaces the round-trip byte-identity check."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test does not exercise code or validate byte-identical re-serialization."
+   }
+  },
+  "N-130": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'zero documents' is exact"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "failing with the validator named is one response to one event"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'With the validator absent' names the condition"
+   }
+  },
+  "N-131": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "classify_data_schema distinguishes inline vs {schema, digest} reference form of data_schema, the subject of FR-073."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert_eq!(text(case, \"form\"), form.as_str()) against golden cases fails on a stub."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Would fail if the reference form (schema path + digest) stopped being recognised or ambiguous mixes stopped being diagnosed."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected form and diagnostics come from a golden oracle corpus, independent of the code."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Recognises `schema`+`digest` as DataSchemaForm::Reference and errors on mixed forms, the part a classifier can carry."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Diagnosing a malformed/ambiguous data_schema is implied by requiring the reference form."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Only classification is checked; the 'instead of inline when semantic block declared' rule and drift detection at install are not."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of the requirement's intent."
+   }
+  },
+  "N-132": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test scans advisor sources for restated method-class literals, which is what FR-031-CON-1 prohibits."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "The anti-vacuity floor sources.len()>=4 plus a per-line literal census means it checks real source text."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Adding a quoted class literal to an advisor module fails `restated.is_empty()`."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "It asserts over the real crate sources against the independent expectation of no literals."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The CON covers every method, class and evidence kind. The test looks only for quoted VOCABULARY class literals, so method ids, evidence kinds and non-literal tables are not caught."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Only part of the constraint is enforced. Two of the three named vocabularies are unchecked."
+   }
+  },
+  "N-133": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "text 'Priority ranking' section, JSON `ranking` member, and verbatim advisory statement are separately failing outcomes"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'unconditionally (even when nothing is ranked)' - holds at all times"
+   }
+  },
+  "N-134": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-017 is about lazily reconciling default modules and `plugin ensure-defaults`; test/code are the deprecated `plugin` alias grammar."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "try_get_matches_from([\"plugin\", \"install\", \"path:custom\"]).is_ok() fails on a default empty Command."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "No assertion about installing defaults, idempotence, or reporting the registry."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "is_ok()/is_err() outcomes are independent expectations about the parser."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "command() only renames module::command() to a hidden deprecated alias; no reconciliation."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": ".about(\"Deprecated alias...\").hide(true) makes `plugin` a hidden deprecated alias, a decision FR-017 (which exposes `plugin ensure-defaults`) does not state."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "None of the reconcile behaviour is in the shown code."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test and code are about a different behaviour than the requirement."
+   }
+  },
+  "N-135": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "requirement_of(\"FR-001-AC-3\") == \"FR-001\" is exactly 'owner derived from its id'."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Specific strings are expected. A default empty string fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Any wrong derivation fails one of the three assert_eq calls."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected owners like \"NFR-010\" are independent expected values."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Three id shapes (AC, M, VC) map to their owners, as the criterion states."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-136": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Module manifests retain catalog/distribution concerns while package exports, generation targets,...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Module manifests retain catalog/distribution concerns while package exports, generation targets,...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Module manifests retain catalog/distribution concerns while package exports, generation targets,...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'Module manifests retain catalog/distribution concerns while package exports ... remain distinct declarative concerns' joins two separate claims"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Module manifests retain catalog/distribution concerns while package exports, generation targets,...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-137": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-073 is about data_schema referencing emitted schema by path and digest; the test checks that a non-string $ref is not collected by a generic ref walker."
+   },
+   "assertion_vacuous": {
+    "answer": "yes",
+    "why": "A no-op collect_refs leaves refs empty, so assert!(refs.is_empty()) passes."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about reference-by-path-and-digest or drift detection is asserted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The single assertion checks emptiness, not equality with a test-supplied value."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "collect_refs gathers $ref strings; it does not reference schema by path and SHA-256 digest."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "A pure collector with no refusal or side effect."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test checks a peripheral helper edge case, not the requirement."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test is vacuous and unrelated to the requirement's intent."
+   }
+  },
+  "N-138": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test adapts producer evidence and projects it to a portfolio, checking identity, partitions, availability and no aggregate verdict, as StR-007-VC-1 describes."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "current.partitions.len() > 1 and `.expect(\"the adapted evidence is a current reading\")` fail on defaults."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Fails if producer identity were lost, partitions collapsed, missing graph conjured, or 'aggregateScore'/'qualityVerdict' emitted."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "GapAvailability::Missing and partitions.len() > 1 are independent expectations."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Raw evidence retention and compatibility premises are unchecked; 'no producer executed' is only a 'child_process' string-absence check."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Compound criterion only partially validated."
+   }
+  },
+  "N-139": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'A rendered repository passes its own clean-checkout gate — spec...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'A rendered repository passes its own clean-checkout gate — spec...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'A rendered repository passes its own clean-checkout gate — spec...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'A rendered repository passes its own clean-checkout gate — spec...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'A rendered repository passes its own clean-checkout gate — spec...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'A rendered repository passes its own clean-checkout gate — spec...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-140": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test and parse_sarif handle a SARIF run with empty `results` as a clean scan with tool and rule count."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert_eq!(result.tool.as_deref(), Some(\"semgrep 1.2.3\")) and rules_evaluated == Some(0) fail on a default result (None)."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Fails if an empty-results run were refused or lost its tool name or rule count."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "\"semgrep 1.2.3\" combines two input fields and Some(0) is a derived count, independent expectations."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "Only an empty `runs` array is refused; a run with no results yields Ok with tool and rules_evaluated from `rules.len()`."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Refusing an empty `runs` log is stated in FR-034; the rest is parsing."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "Test, code and criterion agree."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-141": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test reads a legacy pre-experiment measurement collection and an empty intervention store without migration, which is CON-3."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "collections.len()==1, a non-empty current row and a present observation all fail against a default stub."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "If legacy collections stopped being readable, or the report refused an empty intervention store, the expect/asserts fail."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The report heading '# QA measurement report' and legacy row survival are independent expectations."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "It covers both halves: existing collections and pre-experiment evidence read as they stand."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-142": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'An unknown workflow name raises an error': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'An unknown workflow name raises an error': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'An unknown workflow name raises an error': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'An unknown workflow name raises an error': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'An unknown workflow name raises an error': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'An unknown workflow name raises an error': names its condition or input, or holds at all times"
+   }
+  },
+  "N-143": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test and code both handle verificationStack.artifacts labels and the computed unverifiedArtifacts member that FR-044-AC-6 specifies."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "The test asserts unverifiedArtifacts == [\"another-label\",\"no-such-file\"] and that the member is absent. A default stub would satisfy neither."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if labels were not recorded sorted, if the digested name `dist/quoin` appeared, or if an empty array were written."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The sorted order and the exclusion of `dist/quoin` are independent expectations about computed output, not echoed fixture values."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "`verify_local_artifacts(repo, &collection)?` feeds `with_computed_members(candidate, &unverified, ...)`, so it refuses on artifact errors and records the unverified names."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "`apparatus::resolve_protected` adds QM-APPARATUS-* refusals (PLAT-975) that FR-044-AC-6 does not state."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The test covers only the label/unverifiedArtifacts clause. The symlink and UNSAFE refusals, the digest mismatch, the `quoin report` rendering and the no-collection-on-refusal clause go unasserted."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Only part of a large criterion is validated, and several refusal edge cases are unchecked."
+   }
+  },
+  "N-144": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "scores_for selects the bound fault-detection scores that the unmeasured/failed findings depend on (FR-031-AC-18 is tagged)."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "The golden set has a case selecting exactly one score, so an empty stub fails."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "It asserts only the score filter. No `fault-detection-unmeasured`/`fault-detection-failed` finding minting is checked."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected scores come from the captured golden corpus, an independent expected value."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The criterion is about which findings are minted (unmeasured, below 1, no binding, not consulted). The test checks the upstream score selection only."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "It is partial validation of a prerequisite. The four minting cases are unchecked."
+   }
+  },
+  "N-145": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "one prohibition; second sentence is rationale"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "prohibition holds at all times"
+   }
+  },
+  "N-146": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test and `write_trust_decision` concern storing and reading trust decisions, which is what FR-093-AC-6 covers."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts decisions.len()==1, id \"ETD-1\" and skipped == [\"trust/ETD-2.json\"]. A default stub fails these."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if the invalid file were hidden (skipped empty) or if the valid decision were dropped."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "That exactly one decision survives and the invalid path is reported are independent expected outcomes."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "It runs `validate_trust_decision(decision)?` and then `canonical_bytes_of(...)` and write, which stores valid decisions canonically."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Validating before write is implied by \"stores valid decisions\"."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The test never checks that the stored bytes are canonical, and it covers only an invalid file, not an unreadable one."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: the canonical-storage clause is unchecked."
+   }
+  },
+  "N-147": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test guards that no crate source typechecks or evaluates a clause, which is FR-072-CON-1."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts that the declared module list equals the scanned list and that each forbidden token is absent, which is a real census."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "It greps for the names \"typecheck\"/\"eval_clause\"/... only. Clause evaluation under any other name would pass, so it checks a weaker, lexical property."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The module-list equality against lib.rs is an independent check."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Name-based absence is weaker than \"SHALL NOT typecheck or evaluate clause text\"."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "The requirement is only partially validated by a lexical proxy."
+   }
+  },
+  "N-148": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "every test carrying a resolving tag, and the gate failing an untagged test, are two separately failing claims"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'an untagged or unresolvable-tag test' names the input; tagging holds at all times"
+   }
+  },
+  "N-149": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "The code `RetainedDecisionEvent::text` is a generic JSON string accessor on decision events. It has nothing to do with impact truncation or forcing an incomplete result, and was matched only by the test helper name `text`."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts outcome \"incomplete\", reasons [\"impact_truncated\",\"unresolved_unknown\"] and one named unknown."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It checks that the impact check is \"incomplete\" with both reasons and that the unknown remains named, which is the criterion's core."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The asserted reason codes and outcome are independent expected values about the receipt."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "A member-string accessor does not name gaps or force an incomplete result. It is about something else (trace mismatch)."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "The accessor makes no substantive decision."
+   },
+   "divergence_kind": {
+    "answer": "code_short_of_requirement",
+    "why": "The shown code carries none of the criterion's behaviour."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The paired code is unrelated to the requirement."
+   }
+  },
+  "N-150": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "NFR-004 is about runtime dependencies; test checks the git resolver's `max_extracted_files` bound."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "`expect_err` and `ResourceBoundExceeded` code would fail under a default Ok stub."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about dependencies or invoking ix-flow/quire as external processes."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Asserts an independent error code `ModulesErrorCode::ResourceBoundExceeded` and 'file count' text."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test is unrelated and validates none of the requirement."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test asserts something unrelated to the tagged requirement."
+   }
+  },
+  "N-151": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "text table, attention items, JSON members and portfolio output are several separately failing behaviours"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "names situations: 'A `regressed` ratchet and a dropped slice', 'when a slice was dropped'"
+   }
+  },
+  "N-152": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test classifies legacy-form fixtures, including the FR-006 free-column replacement, via `classify_artifact`, which is FR-074's legacy-form warning."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts form, line and diagnostic against recorded expectations, plus floors of >=5 cases and >=3 forms."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if the free-column fixture were not classified to its recorded legacy form and warning diagnostic."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "legacy.expected.json is an independent oracle for the classifier's output."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "For a legacy form it attaches a diagnostic with severity \"warning\" and migration \"typed-table\"."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "It only builds the finding and the legacy warning."
+   },
+   "divergence_kind": {
+    "answer": "requirement_ambiguous",
+    "why": "ac_text is truncated (\"free-column table `Column \\\"), and the test notes the \"pinned copy\" it names was replaced by a fixture (PLAT-887)."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "The behaviour is covered. The drift is in the criterion's wording."
+   }
+  },
+  "N-153": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "`is_separator_row` markdown table-separator parsing is a low-level helper. FR-074 is about accepting legacy Properties forms at warning severity with a declared migration."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It mixes true and false assertions (`!is_separator_row(\"| id |\")`), so a constant stub fails."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "It asserts separator-row detection, not warning-severity acceptance with a migration."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The boolean expectations are independent."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "It checks only an incidental parsing helper."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "The test does not validate the requirement's intent."
+   }
+  },
+  "N-154": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'valid Quire export' is schema-defined; 'any graph record' exact"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "field-for-field exposure 'while' refusal of unknown inputs: two separately failing behaviours"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "names inputs: 'a valid Quire export', 'each unknown format...'"
+   }
+  },
+  "N-155": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test and code define the `evidence` command verbs (gc, record, affirm) that FR-030 says quoin SHALL expose."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts is_ok/is_err on specific argument vectors, including an expected error for `evidence trust` without `--decision`."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "It checks only CLI grammar parsing, not that anything is persisted, transcribed, affirmed or collected."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Parse success or failure is an independent expectation."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "It declares `record` (transcribe), `affirm` (re-affirm) and `gc` (collect), which are the verbs the statement names."
+   },
+   "code_exceeds_requirement": {
+    "answer": "yes",
+    "why": "It adds `trust`, `record-experiment`, `record-operational` and `inspect-mocks` subcommands that FR-030 does not state."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Grammar acceptance is far weaker than persisting what was verified."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation: only the command surface is checked."
+   }
+  },
+  "N-156": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-052 is about inventorying the default-module corpus; test checks `quire.properties` shape map keyed on obligation id."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts specific shape strings and a map length of 2."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Nothing about inventorying modules, types, surfaces or documents."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "yes",
+    "why": "Expected values ('round-trip', 'FR', 'spec/assets/logo.md') all echo what the FakeEngine was built with."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test is unrelated and validates none of the requirement."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test asserts behaviour unrelated to the tagged criterion."
+   }
+  },
+  "N-157": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Completion evidence identifies no unapproved first-party non-Rust engine, production, planning,...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Completion evidence identifies no unapproved first-party non-Rust engine, production, planning,...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Completion evidence identifies no unapproved first-party non-Rust engine, production, planning,...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'Completion evidence identifies no unapproved ... logic, and the check ... is demonstrated to fail on a planted violation' joins two separately failable outcomes"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Completion evidence identifies no unapproved first-party non-Rust engine, production, planning,...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-158": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test and `parse_agent_eval` implement refusal of an empty agent-eval report."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts exact error strings, which a default stub would not produce."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if `{\"results\":[]}` were accepted: `unwrap_err()` would panic."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The error messages are independent expected values."
+   },
+   "code_implements_intent": {
+    "answer": "yes",
+    "why": "`if entries.is_empty() { return Err(... \"no scenario results in the report\") }`."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "The outcome mapping from `ok` and the score are stated in the FR statement. The parse errors are boundary hygiene."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "The test and code both match \"A report with no scenario results is refused\"."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-159": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test seals records and compares canonical bytes and hex digest to an oracle, which is exactly AC-5's bytes-and-digest contract."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "assert_eq! of record.digest.as_hex() against the oracle's 'digest' string fails for any default stub."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Fails if canonical bytes or BLAKE3 hex digest diverge from the oracle ('the sealed digest disagrees with the oracle's')."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected digest and bytes come from the independent sealed oracle fixtures, not from values the test computes via the code."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "AC says 'across supported runtimes' and 'RFC 8785 conformance vectors'; the test runs one Rust runtime over record fixtures, not RFC 8785 vectors."
+   },
+   "severity": {
+    "answer": "low",
+    "why": "Core bytes/digest contract is checked; only the cross-runtime and conformance-vector scope is narrower."
+   }
+  },
+  "N-160": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'one ... finding' is an exact count"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'each yield one ... advisory finding, and neither is counted as a conformance failure': two separately failing outcomes"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "names inputs: 'A free-column table and a bullet list'"
+   }
+  },
+  "N-161": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test exercises FR-110-AC-3's UNDECLARED and INVALID refusals. The code is FR-110's cross-collection apparatus comparison, which the statement names."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts the ApparatusUndeclared code, the finding naming `labels/nested/.hidden`, CollectionInvalid, and stored_count == 0."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if an omitted protected file or a disagreeing digest were admitted, or if a collection were written."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The expected error codes and the `.hidden` path are independent expectations."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`findings` compares a candidate's recorded apparatus against its history (ApparatusEdit/Unrecorded). It does not own the intake refusals UNRESOLVED/SYMLINK/UNREADABLE/UNDECLARED that AC-3 lists."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "The cross-collection comparison is stated in the FR-110 statement."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The test covers 2 of about 10 enumerated cases. The unresolved, symlink, socket and case-only cases are untested."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of a heavily enumerated criterion."
+   }
+  },
+  "N-162": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test parses a `FAIL` audit line into a finding carrying its criterion id, which is FR-036-AC-2."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts findings[0].trace_ids == Some([\"TC-9\"]), which a default would not produce."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if the FAIL line produced no finding or lost the criterion."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The extracted \"TC-9\", stripped of trailing punctuation, is an independent expectation of the parse."
+   },
+   "divergence_kind": {
+    "answer": "aligned",
+    "why": "The FAIL line becomes a finding with the named criterion across punctuation variants."
+   },
+   "severity": {
+    "answer": "none",
+    "why": "No finding."
+   }
+  },
+  "N-163": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'quoin SHALL NOT run the eval suite. The consumer's CI...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'quoin SHALL NOT run the eval suite. The consumer's CI...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'quoin SHALL NOT run the eval suite. The consumer's CI...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'quoin SHALL NOT run the eval suite. The consumer's CI...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'quoin SHALL NOT run the eval suite. The consumer's CI...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'quoin SHALL NOT run the eval suite. The consumer's CI...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-164": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "FR-005 is rejecting unknown commands with usage text; test checks a generic ShellError envelope and code defines the `validate` command."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts specific exit code, stream and message string."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "No unknown command is dispatched; usage text and rejection are never checked."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "`\"    Error: write requires <repo_dir>\"` is an independent expected formatting."
+   },
+   "code_implements_intent": {
+    "answer": "no",
+    "why": "`Command::new(\"validate\")` arg definitions have nothing to do with unknown-command rejection."
+   },
+   "code_exceeds_requirement": {
+    "answer": "no",
+    "why": "Unrelated rather than exceeding; defines a known command's grammar."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Test asserts an unrelated error envelope instead of unknown-command rejection."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test does not validate the requirement's intent."
+   }
+  },
+  "N-165": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "Test asserts gate verdicts are inconclusive with EmptyPopulation/IncompletePopulation/NoCurrentValue, AC-8's first clause."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts Some(InconclusiveReason::EmptyPopulation) etc.; a default None fails."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "Would fail if an empty population with value 0.99 produced pass instead of inconclusive."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Expected reason codes are independent enum values, not inputs echoed back."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "Only the AC-2 usable-evidence clause is covered; no_decision_rule, no_prior, constant_predictor_unsupported, rule_not_evaluable, apparatus_* are not."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "Partial validation of a multi-reason criterion."
+   }
+  },
+  "N-166": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "requires one outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "holds for every printed figure at all times"
+   }
+  },
+  "N-167": {
+   "trace_correct": {
+    "answer": "no",
+    "why": "NFR-017-AC-1 needs default manifests to load with no new diagnostic; the test tampers a manifest and expects refusal (`status == 2`), the opposite case."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "Asserts status 2 and `QM020_SEMANTIC_CONTRACT_VIOLATION` in stderr; a default stub fails."
+   },
+   "test_asserts_intent": {
+    "answer": "no",
+    "why": "Never loads an untampered default manifest and checks for zero new diagnostics."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "The diagnostic code and rule name are independent expected values."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The non-disruption property is not exercised at all."
+   },
+   "severity": {
+    "answer": "high",
+    "why": "Test tagged to the criterion asserts a different behaviour."
+   }
+  },
+  "N-168": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "naming the missing analysis and refusing is one response to one event"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'When a selected analysis has no recorded review document' names the condition"
+   }
+  },
+  "N-169": {
+   "trace_correct": {
+    "answer": "yes",
+    "why": "The test exercises gc deletion rules and --dry-run, which FR-030-AC-8 covers."
+   },
+   "assertion_vacuous": {
+    "answer": "no",
+    "why": "It asserts the exact deleted list [\"runs/SUITE-001/cccccccccccc.json\"] and that the other two runs survive."
+   },
+   "test_asserts_intent": {
+    "answer": "yes",
+    "why": "It would fail if gc deleted the latest or the binding-referenced run, or if the dry run deleted anything."
+   },
+   "tests_only_its_own_mock": {
+    "answer": "no",
+    "why": "Which path is collected is an independent expected value."
+   },
+   "divergence_kind": {
+    "answer": "test_weaker_than_requirement",
+    "why": "The criterion's clauses that the command declares no `--module` and that its help says why are not asserted."
+   },
+   "severity": {
+    "answer": "medium",
+    "why": "The core behaviour is validated, but part of the compound criterion is unchecked."
+   }
+  },
+  "N-170": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'An unreadable repository, collection, raw attachment, or graph export is...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'An unreadable repository, collection, raw attachment, or graph export is...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'An unreadable repository, collection, raw attachment, or graph export is...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'is named locally while readable sibling repositories retain complete reports' joins two separately failable outcomes"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'An unreadable repository, collection, raw attachment, or graph export is...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-171": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'No type crossing the boundary is hand-written where `filament-core-data` or...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'No type crossing the boundary is hand-written where `filament-core-data` or...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'No type crossing the boundary is hand-written where `filament-core-data` or...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'No type ... is hand-written ..., and every generated type records its generator provenance' joins two separate requirements"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'No type crossing the boundary is hand-written where `filament-core-data` or...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-172": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'A causal-effect conclusion requires positive baseline and treatment samples, at...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'A causal-effect conclusion requires positive baseline and treatment samples, at...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'A causal-effect conclusion requires positive baseline and treatment samples, at...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'A causal-effect conclusion requires ...; a no-effect conclusion requires ...' states two separately failable rules"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'A causal-effect conclusion requires positive baseline and treatment samples, at...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-173": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'introduce no new record family and SHALL change no stored schema': two independently failing prohibitions"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "prohibitions hold for every adapter at all times"
+   }
+  },
+  "N-174": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Each crate boundary exposes exactly one `thiserror`-derived error type whose...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Each crate boundary exposes exactly one `thiserror`-derived error type whose...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Each crate boundary exposes exactly one `thiserror`-derived error type whose...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'exposes exactly one `thiserror`-derived error type ..., and a code absent from the catalog fails the gate' joins a structural property and a separate gate behaviour"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Each crate boundary exposes exactly one `thiserror`-derived error type whose...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-175": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "requires one outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'When no assurance profile applies and base is selected' names the condition"
+   }
+  },
+  "N-176": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "one field-level record value described by its attributes"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'while the toolchain record shows no semantic-extraction surface' names the condition"
+   }
+  },
+  "N-177": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'A repository rendered from the template with no hand editing...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'A repository rendered from the template with no hand editing...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'A repository rendered from the template with no hand editing...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'carries a complete `semantic` manifest block, real emitted JSON Schemas, typed authoring skeletons, and a verification suite' lists separately failable surfaces"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'A repository rendered from the template with no hand editing...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-178": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "'Fence lines `item x : Y;`, `part def X;`, and...': no check fires"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "'Fence lines `item x : Y;`, `part def X;`, and...': every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "'Fence lines `item x : Y;`, `part def X;`, and...': asserts presence/absence/equality or exact quantities, no unquantified level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "'Fence lines `item x : Y;`, `part def X;`, and...': names an observable outcome that could be falsified"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'Fence lines `item x : Y;`, `part def X;`, and...': requires a single outcome"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "'Fence lines `item x : Y;`, `part def X;`, and...': names its condition or input, or holds at all times"
+   }
+  },
+  "N-179": {
+   "criterion_sound": {
+    "answer": "yes",
+    "why": "all five checks are no"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "no",
+    "why": "'the one ... declares, not a superset' is one equality"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "holds for the rendered Test Matrix at all times"
+   }
+  },
+  "N-180": {
+   "criterion_sound": {
+    "answer": "no",
+    "why": "fails: compound"
+   },
+   "vague_term": {
+    "answer": "no",
+    "why": "every deciding word has one reading"
+   },
+   "no_measurable_threshold": {
+    "answer": "no",
+    "why": "asserts presence, refusal, equality or exact quantities; no unstated level"
+   },
+   "untestable": {
+    "answer": "no",
+    "why": "names an observable outcome that could be shown false"
+   },
+   "compound": {
+    "answer": "yes",
+    "why": "'No emitted collection depends on ... order; every collection carries a declared ordering key': two separately checkable claims"
+   },
+   "missing_trigger": {
+    "answer": "no",
+    "why": "holds for every emitted collection at all times"
+   }
+  }
+ }
+}

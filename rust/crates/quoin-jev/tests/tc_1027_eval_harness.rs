@@ -98,11 +98,9 @@ fn print_and_check(source: &Source) {
 
 /// Provenance: PLAT-1027. Whatever corpus is present validates against the
 /// shared schema, its held-out seal holds, and row ids are unique across
-/// sources. Ignored until PLAT-1025 lands the in-repo corpus, so the default
-/// gate does not report a pass over nothing; run it with `--ignored`. It
-/// fails when it finds no corpus at all.
+/// sources. PLAT-1025 landed the in-repo corpus, so this runs in the default
+/// gate. It fails when it finds no corpus at all.
 #[test]
-#[ignore = "PLAT-1025: in-repo corpus not landed"]
 fn tc_1027_the_committed_corpus_validates() {
     let mut sources = Vec::new();
     match corpus::load_in_repo().unwrap_or_else(|error| panic!("{error}")) {
@@ -125,6 +123,54 @@ fn tc_1027_the_committed_corpus_validates() {
     }
     corpus::combined_rows(&sources, corpus::Split::Dev).unwrap_or_else(|error| panic!("{error}"));
     println!("{} corpus file(s) validated", sources.len());
+}
+
+/// A mutant of `source` (an id in the same corpus, or none), in `split`.
+fn mutant(id: &str, split: &str, source: Option<&str>) -> Value {
+    let mut value = row(
+        id,
+        Mode::ReqTest,
+        split,
+        &json!({"test_asserts_intent": truth(&json!("no"), "by_construction", &[])}),
+    );
+    value["mutation"] = json!({"id": format!("M-{id}"), "target": "test", "kind": "test_weakening",
+                               "description": "drops the assertion", "patch": "-assert", "source_id": source});
+    value
+}
+
+/// Provenance: PLAT-1025. A mutant's `source_id` names an unmutated row of the
+/// same file in the same split; a dangling id, a mutant source, or a source in
+/// the other split is each refused, and a mutant with no source in the corpus
+/// (`null`) is allowed.
+#[test]
+fn tc_1025_a_mutant_names_an_unmutated_source_in_its_own_split() {
+    let source = row(
+        "EV2-0001",
+        Mode::ReqTest,
+        "dev",
+        &json!({"test_asserts_intent": truth(&json!("yes"), "agent_dual", &[])}),
+    );
+    let ok = [
+        source.clone(),
+        mutant("EV2-0002", "dev", Some("EV2-0001")),
+        mutant("EV2-0003", "heldout", None),
+    ];
+    assert_eq!(validate(&parse(&ok), Origin::InRepo), Vec::<String>::new());
+    let bad = [
+        source,
+        mutant("EV2-0002", "dev", Some("EV2-0999")),
+        mutant("EV2-0003", "dev", Some("EV2-0002")),
+        mutant("EV2-0004", "heldout", Some("EV2-0001")),
+    ];
+    let problems = validate(&parse(&bad), Origin::InRepo);
+    assert_eq!(
+        problems,
+        [
+            "EV2-0002: mutation.source_id EV2-0999 is not a row of this file",
+            "EV2-0003: mutation.source_id EV2-0002 is itself a mutant",
+            "EV2-0004: split heldout but its source EV2-0001 is dev",
+        ]
+    );
 }
 
 /// Provenance: PLAT-1027. A well-formed four-mode corpus has no problems, so
