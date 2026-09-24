@@ -379,6 +379,49 @@ judged the same way.
 Compare only like variant version, corpus seal and label revision. A change to
 the corpus labels is a new definition version of this plan.
 
+## Round 2: T3, assertion selection
+
+Pre-registered here, and committed, before any T3 call.
+
+**Why.** Dev run 1 on corpus v2 (`jev-1.13.0`): T0, T1 and T2 did not move on
+weakened-test mutants. Bar D was 15 of 15 pairs tied for T0 and 22 of 22 for
+T2; T1 had 1 success in 22. Jev does not notice when a test's decisive
+assertion is removed or loosened. What worked elsewhere in that run was small,
+concrete facts (K1, S1); worked examples (T2) added nothing.
+
+**What T3 asks.** T3 runs on RT and RTC. Code, not Jev, reads the test body
+and lists its assertion statements: `assert!`, `assert_eq!`, `assert_ne!`,
+`assert!(matches!(..))`, `debug_assert*!`, `prop_assert*!`, a statement that
+calls `.unwrap_err()` or `.expect_err(..)`, and in Python `assert`,
+`self.assert*(..)` and `pytest.raises(..)`. Comments and string literals are
+masked first. The list goes into the state as `test_assertions` (`A1` ..
+`An`, at most 20, the overflow joined into the last). Jev answers one
+`choice`: which listed assertion checks the behaviour the requirement states,
+or `none`. The question names the test and the requirement only, never the
+code, so the same wording runs in RT and RTC.
+
+**Derive rule.** `P(any) = 1 - P(none)`. `test_asserts_intent` is `yes` iff
+`P(any) >= 0.5`; the confidence is `P(any)` for `yes` and `1 - P(any)` for
+`no`; `P(any)` is the ordinal Bar D reads. A test with no assertion is `no`
+with `P(any) = 0`, derived in code with no call. A choice whose label or
+probabilities fall outside the offered labels, or do not total 1, stops the
+run.
+
+**Dev only.** The held-out split was spent in held-out run 1
+(`fixtures/eval-v2/heldout-runs.jsonl`). T3 has no held-out run and gets no
+entry in the held-out selection file; its dev result is its reported result.
+
+**Bars.** The bars above, unchanged, over T3's own population. The headline is
+**Bar D** on the known-truth pairs: `test_weakening` mutants paired with their
+source by `mutation.source_id`, one pair per mutation, RTC first; a success
+crosses 0.5 downward and falls by at least 0.10; an abstention on either row
+is a failure; one-sided sign test at alpha 0.05, gateable at 10 or more
+non-tie pairs. T0 is the comparator, on the rows both answered.
+
+**Versions.** `T3@v1` is pinned in `REQUEST_DIGEST_PINS`. T3 is its own family
+with the 5-version dev cap; this round runs at most 3 versions, and every
+version run is reported with its numbers.
+
 ## Measured outcome
 
 Not yet measured. The first dev run is PLAT-1030 phase 2, blocked on the two

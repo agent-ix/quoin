@@ -81,11 +81,11 @@ use crate::eval_v2_support::corpus::{KindGroup, Row, TruthKind};
 use crate::eval_v2_support::keys::{KEYS, Mode, NO, YES};
 use crate::eval_v2_support::metrics::{Scored, render, scored};
 use crate::eval_v2_support::units::{Language, mask_for};
-use crate::eval_v2_support::variants::exceeds::label_mass;
 use crate::eval_v2_support::variant::{
     Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, RunOutput, T0,
     Variant, noul_prediction, request, state, whole_row,
 };
+use crate::eval_v2_support::variants::exceeds::label_mass;
 use crate::gap_semantic_support::{Variant as BatteryShape, question_set as battery_questions};
 
 // ---------------------------------------------------------------------------
@@ -802,10 +802,7 @@ pub(crate) fn derive_assertion_selection(
 
 fn t3_derive(row: &Row, answered: &[Answered]) -> Predictions {
     let count = row_assertions(row).len();
-    let prediction = loudly(
-        row,
-        derive_assertion_selection(count, &whole_row(answered)),
-    );
+    let prediction = loudly(row, derive_assertion_selection(count, &whole_row(answered)));
     Predictions::from([(TEST_ASSERTS_INTENT, prediction)])
 }
 

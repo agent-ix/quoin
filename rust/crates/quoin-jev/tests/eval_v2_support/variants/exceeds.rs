@@ -683,7 +683,7 @@ static REFUSAL_PYTHON: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// An upper bound: `x > N`, `x >= LIMIT`, or `N < x`, against an integer
-/// literal or a SCREAMING_CASE constant. `->` and `=>` are not comparisons.
+/// literal or an upper-case constant. `->` and `=>` are not comparisons.
 static UPPER_BOUND: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
         r"(?:^|[^-=>])>=?\s*(?:\d[\d_]*|(?:[A-Za-z_]\w*::)*[A-Z][A-Z0-9_]+)\b|\b(?:\d[\d_]*|[A-Z][A-Z0-9_]+)\s*<=?[^<=]",
@@ -746,7 +746,10 @@ fn branch_shape(unit: &Unit, python: bool, masked: &str) -> (String, Vec<String>
             .map_or(masked.len(), |(at, _)| at);
         let condition = masked.get(keyword_end..colon).unwrap_or_default();
         let body = masked.get(colon + 1..).unwrap_or_default();
-        return (condition.trim().to_owned(), top_level_statements(body, true));
+        return (
+            condition.trim().to_owned(),
+            top_level_statements(body, true),
+        );
     }
     let condition = if unit.label.starts_with("match arm") {
         masked.find("=>").and_then(|arrow| masked.get(..arrow))

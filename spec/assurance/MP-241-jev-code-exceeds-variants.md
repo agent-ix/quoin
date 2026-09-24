@@ -288,6 +288,54 @@ reported as "no claim" or negative, whichever applies.
 Compare only like variant version, corpus revision and label revision. An
 edit to the corpus truth is a new definition version.
 
+## Round 2: E5, outcome necessity per unit
+
+Pre-registered here, and committed, before any E5 call.
+
+**Why.** Dev run 1 on corpus v2 (`jev-1.13.0`): on the known additive mutants
+(by construction, all `yes`), E1 and E4 reached 19.2% recall and E2 34.6%,
+below E0's 40.0%. The per-unit task relation and clause choice did not help.
+What worked elsewhere in that run was small, concrete facts (K1, S1).
+
+**What E5 asks.** E5 runs on RC and RTC. Code splits the code body into units
+with `units.rs`, exactly as E1 does. For each unit E5 does not skip, Jev
+answers one `noul`: if this part were deleted, would the code fail to do
+something the requirement states? The state carries the whole body in
+`symbol_body` and the unit in `code_unit_text`, so the deletion is judged
+against the code around it. An additive unit is unnecessary and should answer
+`no`.
+
+**Trivial units, skipped in code with no call.** E1's pre-filter (empty, or a
+pass-through branch), plus three structural rules on a branch unit's masked
+condition and body statements: every statement is a log or print call
+(logging); apart from logging, one statement that passes on an error it was
+given, such as `Err(e)`, `return Err(e.into())`, `raise`, `raise X from e`
+(error plumbing); an upper-bound condition against a literal or constant whose
+one statement refuses, such as `if x.len() > MAX { return Err(..) }` (a size
+cap). A refusal that builds a new error without such a bound is asked about.
+
+**Derive rule.** `code_exceeds_requirement` is `yes` iff some asked unit has
+`P(necessary) < 0.5`. The ordinal is the highest `1 - P(necessary)` (0 when
+nothing is asked); the confidence is the ordinal for `yes` and one minus it
+for `no`. **Breaker**, as E1's: with two or more units asked and every one
+unnecessary, no part of the code does anything the requirement states, so the
+row abstains as trace-suspect and counts against the abstention ceiling. A
+missing or out-of-range answer stops the run.
+
+**Dev only.** The held-out split was spent in held-out run 1
+(`fixtures/eval-v2/heldout-runs.jsonl`). E5 has no held-out run and gets no
+entry in the held-out selection file; its dev result is its reported result.
+
+**Bars.** The bars above, unchanged. The headline is **Bar D** on the
+known-truth pairs: `additive_code` mutants paired with their source, a
+success crosses 0.5 upward and rises by at least 0.10, an abstention is a
+failure, one-sided sign test at alpha 0.05, gateable at 10 or more non-tie
+pairs. E0 (RTC) and E0-RC (RC) are the comparators.
+
+**Versions.** `E5@v1` is pinned in `REQUEST_DIGEST_PINS`. E5 is its own family
+with the 5-version dev cap; this round runs at most 3 versions, and every
+version run is reported with its numbers.
+
 ## Measured outcome
 
 Not yet measured. Phase 1 (PLAT-1029) commits the variants, their offline
