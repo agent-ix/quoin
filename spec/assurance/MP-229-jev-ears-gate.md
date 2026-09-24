@@ -365,3 +365,5 @@ that decision is unaffected by this result, per **Interpretation** above.
 this round -- highest margin, highest defect recall, same request shape as
 `v3`/`v4`/`v5`. This is a recommendation for whoever wires PLAT-838 into the
 skill, not itself a wiring decision; this ticket is measurement-only.
+
+**Note (PLAT-1027):** the ECE figures above were computed with each confidence decile's midpoint in place of its mean stated confidence, which MP-226's `jev.ece-v1` names; `support/grading.rs` now uses the mean, so a rerun may report different ECEs. The recorded numbers are left as measured.

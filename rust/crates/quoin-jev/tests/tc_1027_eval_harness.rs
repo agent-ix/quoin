@@ -72,7 +72,10 @@ const CODE_BODY: &str = "pub fn check(input: String) -> Result<(), Error> {\n   
     _ => Ok(()),\n    }\n}";
 
 /// One synthetic row of `mode`, with `truth` as given.
+/// Its FR is `FR-` plus the id's last three digits, so distinct ids are
+/// distinct FRs and PLAT-1024's three-natural-rows-per-FR rule holds.
 fn row(id: &str, mode: Mode, split: &str, truth: &Value) -> Value {
+    let fr = format!("FR-{}", &id[id.len() - 3..]);
     let test = mode.has_test().then(|| {
         json!({"path": "tests/tc_001.rs", "fn_name": "tc_001_refuses_oversize", "body": TEST_BODY})
     });
@@ -83,9 +86,9 @@ fn row(id: &str, mode: Mode, split: &str, truth: &Value) -> Value {
         "id": id,
         "mode": mode.as_str(),
         "split": split,
-        "strata": {"fr_id": "FR-001", "req_kind": "functional", "test_kind": null,
+        "strata": {"fr_id": fr, "req_kind": "functional", "test_kind": null,
                    "crate": "quoin-core", "ears_pattern": null},
-        "requirement": {"fr_id": "FR-001", "ac_id": "FR-001-AC-1",
+        "requirement": {"fr_id": fr, "ac_id": format!("{fr}-AC-1"),
                         "statement": "The system shall refuse a request larger than 4096 bytes.",
                         "ac_text": "A 5000-byte request is refused with CORE_REFUSED.",
                         "context": null},
@@ -174,33 +177,34 @@ fn print_and_check(source: &Source) {
 }
 
 /// Provenance: PLAT-1027. Whatever corpus is present validates against the
-/// shared schema and its held-out seal holds. The in-repo corpus is PLAT-1025's
-/// and may not exist yet; the external one is read only when
-/// `QUOIN_JEV_EXTERNAL_CORPUS` is set.
+/// shared schema, its held-out seal holds, and row ids are unique across
+/// sources. Ignored until PLAT-1025 lands the in-repo corpus, so the default
+/// gate does not report a pass over nothing; run it with `--ignored`. It
+/// fails when it finds no corpus at all.
 #[test]
+#[ignore = "PLAT-1025: in-repo corpus not landed"]
 fn tc_1027_the_committed_corpus_validates() {
-    let mut checked = 0usize;
+    let mut sources = Vec::new();
     match corpus::load_in_repo().unwrap_or_else(|error| panic!("{error}")) {
-        Some(source) => {
-            print_and_check(&source);
-            checked += 1;
-        }
+        Some(source) => sources.push(source),
         None => println!(
-            "SKIPPED in-repo corpus: {} does not exist yet (PLAT-1025). Nothing was checked.",
+            "in-repo corpus: {} does not exist (PLAT-1025)",
             corpus::in_repo_corpus_path().display()
         ),
     }
     match corpus::load_external_from_env().unwrap_or_else(|error| panic!("{error}")) {
-        Some(source) => {
-            print_and_check(&source);
-            checked += 1;
-        }
-        None => println!(
-            "SKIPPED external corpus: {} is unset.",
-            corpus::EXTERNAL_CORPUS_ENV
-        ),
+        Some(source) => sources.push(source),
+        None => println!("external corpus: {} is unset", corpus::EXTERNAL_CORPUS_ENV),
     }
-    println!("{checked} corpus file(s) validated");
+    assert!(!sources.is_empty(), "no corpus found: nothing was checked");
+    for source in &sources {
+        print_and_check(source);
+        for excluded in &source.excluded {
+            println!("EXCLUDED {}: {}", excluded.id, excluded.reason);
+        }
+    }
+    corpus::combined_rows(&sources, corpus::Split::Dev).unwrap_or_else(|error| panic!("{error}"));
+    println!("{} corpus file(s) validated", sources.len());
 }
 
 /// Provenance: PLAT-1027. A well-formed four-mode corpus has no problems, so
@@ -393,6 +397,7 @@ fn tc_1027_a_heldout_run_is_logged_with_its_variants() {
                 seals: vec!["abc".to_owned()],
                 rows: 3,
                 models: std::collections::BTreeMap::new(),
+                rerun_reason: None,
             },
         )
         .unwrap();
@@ -414,9 +419,9 @@ const EXTERNAL_SOURCE: &str = "use std::fmt;\n\n/// Adds.\npub fn add(a: u32, b:
 
 const EXTERNAL_PATCH: &str = "--- a/src/lib.rs\n+++ b/src/lib.rs\n@@ -4,3 +4,3 @@\n pub fn add(a: u32, b: u32) -> u32 {\n-    a + b\n+    a * b\n }\n";
 
-fn external_corpus(dir: &std::path::Path, sha: &str, path: &str) -> std::path::PathBuf {
+fn external_row(id: &str, sha: &str, path: &str, repo: &str) -> Value {
     let mut value = row(
-        "EXT-0001",
+        id,
         Mode::ReqTestCode,
         "dev",
         &json!({"code_implements_intent": truth(&json!(false), "mechanical", &[])}),
@@ -424,7 +429,7 @@ fn external_corpus(dir: &std::path::Path, sha: &str, path: &str) -> std::path::P
     value["test"] = json!({"path": path, "fn_name": "adds"});
     value["code"] = json!({"path": path, "symbol": "Adder::add"});
     value["ref"] = json!({
-        "repo": "agent-ix/sibling", "commit": "deadbeef",
+        "repo": repo, "commit": "deadbeef",
         "paths": {"test": path, "code": path},
         "sha256": {"test": sha, "code": sha},
     });
@@ -432,9 +437,39 @@ fn external_corpus(dir: &std::path::Path, sha: &str, path: &str) -> std::path::P
         "id": "M1", "target": "code", "kind": "swap_operator",
         "description": "+ becomes *", "patch": EXTERNAL_PATCH,
     });
+    value
+}
+
+fn write_external(dir: &std::path::Path, rows: &[Value]) -> std::path::PathBuf {
     let corpus = dir.join("external.json");
-    std::fs::write(&corpus, corpus_text(&[value])).unwrap();
+    std::fs::write(&corpus, corpus_text(rows)).unwrap();
     corpus
+}
+
+fn external_corpus(dir: &std::path::Path, sha: &str, path: &str) -> std::path::PathBuf {
+    write_external(
+        dir,
+        &[external_row("EVX-0001", sha, path, "agent-ix/sibling")],
+    )
+}
+
+/// A checkout root holding `sibling/src/lib.rs` = [`EXTERNAL_SOURCE`], and
+/// that file's stored sha256.
+fn checkout() -> (tempfile::TempDir, String) {
+    let root = tempfile::tempdir().unwrap();
+    let dir = root.path().join("sibling/src");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("lib.rs"), EXTERNAL_SOURCE).unwrap();
+    let sha = quoin_store::digest_bytes_sha256(EXTERNAL_SOURCE.as_bytes()).to_stored();
+    (root, sha)
+}
+
+/// The one excluded row's reason, after loading `corpus` against `root`.
+fn only_exclusion(corpus: &std::path::Path, root: &std::path::Path) -> String {
+    let source = load_external(Some(corpus), Some(root)).unwrap().unwrap();
+    assert!(source.file.rows.is_empty(), "{:?}", source.file.rows);
+    assert_eq!(source.excluded.len(), 1, "{:?}", source.excluded);
+    source.excluded[0].reason.clone()
 }
 
 /// Provenance: PLAT-1027. An external row is read from the checkout, its
@@ -468,24 +503,157 @@ fn tc_1027_an_external_row_materializes_from_its_checkout() {
 }
 
 /// Provenance: PLAT-1027. A checkout whose bytes differ from the row's
-/// digest is refused, as are a missing root and a path that escapes the repo.
+/// digest, or a path that escapes the repo, excludes that row with its
+/// reason; a missing root fails the whole load (configuration, not data).
 #[test]
 fn tc_1027_an_external_row_is_refused_when_its_content_moved() {
-    let root = tempfile::tempdir().unwrap();
-    let checkout = root.path().join("sibling/src");
-    std::fs::create_dir_all(&checkout).unwrap();
-    std::fs::write(checkout.join("lib.rs"), EXTERNAL_SOURCE).unwrap();
-
+    let (root, _) = checkout();
     let stale = external_corpus(root.path(), &"a".repeat(64), "src/lib.rs");
-    let error = load_external(Some(&stale), Some(root.path())).unwrap_err();
-    assert!(error.contains("does not match the row's"), "{error}");
+    let reason = only_exclusion(&stale, root.path());
+    assert!(reason.contains("does not match the row's"), "{reason}");
 
     let no_root = load_external(Some(&stale), None).unwrap_err();
     assert!(no_root.contains(corpus::EXTERNAL_ROOT_ENV), "{no_root}");
 
     let escaping = external_corpus(root.path(), &"a".repeat(64), "../../etc/passwd");
-    let error = load_external(Some(&escaping), Some(root.path())).unwrap_err();
-    assert!(error.contains("not a plain repo-relative path"), "{error}");
+    let reason = only_exclusion(&escaping, root.path());
+    assert!(
+        reason.contains("not a plain repo-relative path"),
+        "{reason}"
+    );
+}
+
+/// Provenance: PLAT-1027 (review finding 1). `ref.repo` names a directory
+/// under the root and nothing else: `agent-ix/..` would make the checkout
+/// the root's parent.
+#[test]
+fn tc_1027_a_repo_name_cannot_escape_the_root() {
+    let (root, sha) = checkout();
+    for repo in ["agent-ix/..", "agent-ix/.", "..", "agent-ix/", "a\\..\\b"] {
+        let corpus = write_external(
+            root.path(),
+            &[external_row("EVX-0001", &sha, "src/lib.rs", repo)],
+        );
+        let reason = only_exclusion(&corpus, root.path());
+        assert!(reason.contains("plain repository name"), "{repo}: {reason}");
+    }
+}
+
+/// Provenance: PLAT-1027 (review finding 2). A symlink inside the checkout
+/// that points outside the root is refused before it is read.
+#[cfg(unix)]
+#[test]
+fn tc_1027_a_symlink_cannot_escape_the_root() {
+    let (root, sha) = checkout();
+    let outside = tempfile::tempdir().unwrap();
+    std::fs::write(outside.path().join("lib.rs"), EXTERNAL_SOURCE).unwrap();
+    std::os::unix::fs::symlink(
+        outside.path().join("lib.rs"),
+        root.path().join("sibling/src/link.rs"),
+    )
+    .unwrap();
+    let corpus = write_external(
+        root.path(),
+        &[external_row(
+            "EVX-0001",
+            &sha,
+            "src/link.rs",
+            "agent-ix/sibling",
+        )],
+    );
+    let reason = only_exclusion(&corpus, root.path());
+    assert!(reason.contains("outside"), "{reason}");
+}
+
+/// Provenance: PLAT-1027 (review finding 7). One bad external row is
+/// excluded with its reason and the good ones load; the report lists it.
+#[test]
+fn tc_1027_one_bad_external_row_is_excluded_and_reported() {
+    let (root, sha) = checkout();
+    let corpus = write_external(
+        root.path(),
+        &[
+            external_row("EVX-0001", &sha, "src/lib.rs", "agent-ix/sibling"),
+            external_row("EVX-0002", &sha, "src/missing.rs", "agent-ix/sibling"),
+        ],
+    );
+    let source = load_external(Some(&corpus), Some(root.path()))
+        .unwrap()
+        .unwrap();
+    assert_eq!(source.file.rows.len(), 1);
+    assert_eq!(source.excluded.len(), 1);
+    assert_eq!(source.excluded[0].id, "EVX-0002");
+    let report = render_run(
+        &source.file.rows,
+        &source.excluded,
+        &variant::RunOutput::default(),
+        &[],
+    );
+    assert!(report.contains("1 row(s) EXCLUDED at load"), "{report}");
+    assert!(report.contains("- EXCLUDED EVX-0002: "), "{report}");
+}
+
+const SPEC_FILE: &str = "# FR-002\n\nThe system shall refuse a request\nlarger than 4096 bytes.\n\n- AC-1: A 5000-byte request is refused.\n";
+
+const SPEC_PATCH: &str = "--- a/spec/FR-002.md\n+++ b/spec/FR-002.md\n@@ -3,2 +3,2 @@\n The system shall refuse a request\n-larger than 4096 bytes.\n+larger than 8192 bytes.\n";
+
+fn requirement_mutation_row(sha: &str, statement: &str, with_path: bool) -> Value {
+    let mut value = row(
+        "EVX-0002",
+        Mode::Req,
+        "dev",
+        &json!({"criterion_sound": truth(&json!(true), "by_construction", &[])}),
+    );
+    value["requirement"]["statement"] = json!(statement);
+    value["requirement"]["ac_text"] = json!("A 5000-byte request is refused.");
+    let paths = if with_path {
+        json!({"requirement": "spec/FR-002.md"})
+    } else {
+        json!({})
+    };
+    value["ref"] = json!({"repo": "agent-ix/sibling", "commit": "c",
+                          "paths": paths, "sha256": {"requirement": sha}});
+    value["mutation"] = json!({"id": "M2", "target": "requirement", "kind": "threshold",
+                               "description": "4096 becomes 8192", "patch": SPEC_PATCH});
+    value
+}
+
+/// Provenance: PLAT-1027 (review finding 14). A requirement mutation is
+/// applied to the spec file and checked: the patched file must carry the
+/// row's statement and AC text. Without a requirement path it is refused.
+#[test]
+fn tc_1027_a_requirement_mutation_is_checked_against_the_patched_spec() {
+    let (root, _) = checkout();
+    std::fs::create_dir_all(root.path().join("sibling/spec")).unwrap();
+    std::fs::write(root.path().join("sibling/spec/FR-002.md"), SPEC_FILE).unwrap();
+    let sha = quoin_store::digest_bytes_sha256(SPEC_FILE.as_bytes()).to_stored();
+
+    let good = "The system shall refuse a request larger than 8192 bytes.";
+    let corpus = write_external(root.path(), &[requirement_mutation_row(&sha, good, true)]);
+    let source = load_external(Some(&corpus), Some(root.path()))
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        (source.file.rows.len(), source.excluded.len()),
+        (1, 0),
+        "{:?}",
+        source.excluded
+    );
+
+    let stale = "The system shall refuse a request larger than 4096 bytes.";
+    let corpus = write_external(root.path(), &[requirement_mutation_row(&sha, stale, true)]);
+    let reason = only_exclusion(&corpus, root.path());
+    assert!(
+        reason.contains("does not contain the row's statement"),
+        "{reason}"
+    );
+
+    let corpus = write_external(root.path(), &[requirement_mutation_row(&sha, good, false)]);
+    let reason = only_exclusion(&corpus, root.path());
+    assert!(
+        reason.contains("targets requirement but ref.paths has no such file"),
+        "{reason}"
+    );
 }
 
 /// Provenance: PLAT-1027. A hunk applies at its stated line; one whose
@@ -642,14 +810,11 @@ fn tc_1027_the_wording_rule_catches_an_absent_artifact() {
         ..variant::B0
     };
     let rt = wording_violations(&misapplied, &file.rows[1]);
-    assert!(rt.iter().any(|v| v.contains("refers to code")), "{rt:#?}");
-    assert!(
-        !rt.iter().any(|v| v.contains("refers to a test")),
-        "{rt:#?}"
-    );
+    assert!(rt.iter().any(|v| v.contains("the code")), "{rt:#?}");
+    assert!(!rt.iter().any(|v| v.contains("the test")), "{rt:#?}");
     let r = wording_violations(&misapplied, &file.rows[0]);
-    assert!(r.iter().any(|v| v.contains("refers to a test")), "{r:#?}");
-    assert!(r.iter().any(|v| v.contains("refers to code")), "{r:#?}");
+    assert!(r.iter().any(|v| v.contains("the test")), "{r:#?}");
+    assert!(r.iter().any(|v| v.contains("the code")), "{r:#?}");
 }
 
 /// Provenance: PLAT-1027. The runtime state carries only the mode's
@@ -841,13 +1006,11 @@ async fn tc_1027_the_runner_grades_every_baseline_end_to_end() {
     let variants: Vec<&Variant> = REGISTRY.iter().collect();
     let output = variant::run(&client, &file.rows, &variants).await.unwrap();
 
-    // One battery request (the RTC row) and one criterion-strength request:
-    // the four rows share one requirement, so C0's request is identical on
-    // all four. S0, E0 and T0 reuse B0's answer; C0 reuses its own three
-    // times.
-    assert_eq!(fake.calls.load(Ordering::SeqCst), 2);
-    assert_eq!((output.requests_sent, output.requests_reused), (2, 6));
-    assert_eq!(output.models.get("jev-fake"), Some(&2));
+    // One battery request (the RTC row) and one criterion-strength request
+    // per row (four distinct requirements). S0, E0 and T0 reuse B0's answer.
+    assert_eq!(fake.calls.load(Ordering::SeqCst), 5);
+    assert_eq!((output.requests_sent, output.requests_reused), (5, 3));
+    assert_eq!(output.models.get("jev-fake"), Some(&5));
 
     let severity = scored(&file.rows, &output, "S0@v1", "severity");
     assert_eq!(severity.len(), 1);
@@ -868,7 +1031,7 @@ async fn tc_1027_the_runner_grades_every_baseline_end_to_end() {
             .all(|row| row.prediction.as_ref().unwrap().answer == "no")
     );
 
-    let report = render_run(&file.rows, &output, &variants);
+    let report = render_run(&file.rows, &[], &output, &variants);
     println!("{report}");
     assert!(report.contains("| AGENT-LABELLED | 1 |"), "{report}");
     assert!(report.contains("all [AGENT-LABELLED]"), "{report}");
@@ -902,6 +1065,7 @@ async fn tc_1027_per_unit_fan_out_asks_each_unit_and_rolls_up() {
         version: 1,
         summary: "mechanism check only",
         modes: &[Mode::ReqCode],
+        references: &[variant::Artifact::Code],
         grades: &["code_exceeds_requirement"],
         asks: unit_asks,
         derive: unit_derive,
@@ -933,4 +1097,373 @@ async fn tc_1027_per_unit_fan_out_asks_each_unit_and_rolls_up() {
     assert_eq!(prediction.answer, "no");
     assert!((prediction.confidence.unwrap() - 0.8).abs() < 1e-9);
     assert_eq!(rows[0].kind.group(), KindGroup::ByConstruction);
+}
+
+// ---------------------------------------------------------------------------
+// Review findings (PLAT-1027, PR #617)
+// ---------------------------------------------------------------------------
+
+/// A test-only variant whose single question's text is the row's
+/// `requirement.context`, so one fn pointer can carry any wording.
+fn phrase_asks(row: &eval_v2_support::corpus::Row) -> Vec<variant::Ask> {
+    let text = row.requirement.context.clone().unwrap_or_default();
+    vec![variant::Ask {
+        unit: None,
+        request: variant::request(variant::state(row), questions([("q", noul(text))])),
+    }]
+}
+
+/// As [`phrase_asks`], but its state also smuggles a code field.
+fn leaky_asks(row: &eval_v2_support::corpus::Row) -> Vec<variant::Ask> {
+    let mut state = variant::state(row);
+    state["symbol_body"] = json!("fn f() {}");
+    vec![variant::Ask {
+        unit: None,
+        request: variant::request(state, questions([("q", noul("Is the criterion clear?"))])),
+    }]
+}
+
+fn no_derive(_row: &eval_v2_support::corpus::Row, _answered: &[Answered]) -> Predictions {
+    Predictions::new()
+}
+
+const PHRASE: Variant = Variant {
+    id: "PHRASE",
+    version: 1,
+    summary: "wording-rule probe",
+    modes: &Mode::ALL,
+    references: &[],
+    grades: &[],
+    asks: phrase_asks,
+    derive: no_derive,
+};
+
+fn row_with_context(mode: Mode, context: &str) -> eval_v2_support::corpus::Row {
+    let mut value = row("EV2-0001", mode, "dev", &json!({}));
+    value["requirement"]["context"] = json!(context);
+    parse(&[value]).rows.remove(0)
+}
+
+/// Provenance: PLAT-1027 (review finding 3). Paraphrases of an absent
+/// artifact are caught in question text, and a state field of an absent
+/// artifact is caught by name.
+#[test]
+fn tc_1027_the_wording_rule_catches_paraphrases_and_leaky_state() {
+    for (phrase, artifact) in [
+        ("Does the covered code do what it says?", "the code"),
+        ("Is the implementation under test complete?", "the code"),
+        ("Does the function body return early?", "the code"),
+        ("Does the source code log?", "the code"),
+        ("Would a unit test catch this?", "the test"),
+    ] {
+        let found = wording_violations(&PHRASE, &row_with_context(Mode::Req, phrase));
+        assert!(
+            found
+                .iter()
+                .any(|v| v.contains(artifact) && v.contains("question text")),
+            "{phrase}: {found:#?}"
+        );
+    }
+    let leaky = Variant {
+        asks: leaky_asks,
+        ..PHRASE
+    };
+    let found = wording_violations(&leaky, &row_with_context(Mode::ReqTest, ""));
+    assert!(
+        found
+            .iter()
+            .any(|v| v.contains("state field \"symbol_body\"")),
+        "{found:#?}"
+    );
+    // Declared nothing, asks about code on a full triple: the declaration
+    // must not lie even where the mode has the artifact.
+    let found = wording_violations(
+        &PHRASE,
+        &row_with_context(Mode::ReqTestCode, "Does the code log?"),
+    );
+    assert!(
+        found.iter().any(|v| v.contains("does not declare")),
+        "{found:#?}"
+    );
+}
+
+/// Provenance: PLAT-1027 (review finding 4). The rule never reads the row's
+/// own text: a requirement that says "the test runner shall report the code
+/// of each failure" is not a question about a test or code.
+#[test]
+fn tc_1027_the_wording_rule_ignores_row_content() {
+    let mut value = row(
+        "EV2-0001",
+        Mode::Req,
+        "dev",
+        &json!({"criterion_sound": truth(&json!(true), "agent_dual", &[])}),
+    );
+    value["requirement"]["statement"] =
+        json!("The test runner shall report the code of each failure.");
+    value["requirement"]["ac_text"] = json!("Each failed test's exit code is printed.");
+    let file = parse(&[value]);
+    assert_eq!(
+        wording_violations(&variant::C0, &file.rows[0]),
+        Vec::<String>::new()
+    );
+}
+
+/// Provenance: PLAT-1027 (review finding 5). Row ids are unique across the
+/// in-repo and external corpora combined, and each source has its prefix.
+#[test]
+fn tc_1027_row_ids_are_unique_across_sources_and_prefixed() {
+    let dir = tempfile::tempdir().unwrap();
+    let in_repo = sealed_source(dir.path(), None);
+    let mut external = in_repo.clone();
+    external.origin = Origin::External;
+    let error = corpus::combined_rows(&[in_repo.clone(), external.clone()], corpus::Split::Dev)
+        .unwrap_err();
+    assert!(
+        error.contains("row id EV2-0001 appears more than once"),
+        "{error}"
+    );
+    assert_eq!(
+        corpus::combined_rows(&[in_repo], corpus::Split::Dev)
+            .unwrap()
+            .len(),
+        1
+    );
+
+    let problems = validate(&external.file, Origin::External);
+    assert!(
+        problems
+            .iter()
+            .any(|p| p == "EV2-0001: id lacks this source's prefix EVX-"),
+        "{problems:#?}"
+    );
+}
+
+/// Provenance: PLAT-1027 (review finding 5). The runner refuses rows with a
+/// duplicate id rather than letting one result overwrite another.
+#[tokio::test]
+async fn tc_1027_the_runner_refuses_duplicate_row_ids() {
+    let mut file = four_modes();
+    let twin = file.rows[0].clone();
+    file.rows.push(twin);
+    let (client, fake) = fake_client(0.9);
+    let error = variant::run(&client, &file.rows, &[&variant::C0])
+        .await
+        .unwrap_err();
+    assert!(error.contains("EV2-0001 appears more than once"), "{error}");
+    assert_eq!(fake.calls.load(Ordering::SeqCst), 0);
+}
+
+/// Provenance: PLAT-1027 (review finding 6). Extraction keeps a multi-line
+/// attribute and a plain comment interleaved with doc comments.
+#[test]
+fn tc_1027_extraction_keeps_multi_line_attributes_and_comments() {
+    let source = "use x;\n\n#[allow(\n    clippy::panic,\n    reason = \"a ] in a string\"\n)]\n/// Trace: FR-001\n// a plain note\n#[test]\nfn probe() {\n    panic!();\n}\n";
+    assert_eq!(
+        extract_rust_fn(source, "probe").unwrap(),
+        "#[allow(\n    clippy::panic,\n    reason = \"a ] in a string\"\n)]\n/// Trace: FR-001\n// a plain note\n#[test]\nfn probe() {\n    panic!();\n}"
+    );
+    let interleaved = "let v = x[0];\n/// doc\n// note\n/// more doc\nfn after() {}\n";
+    assert_eq!(
+        extract_rust_fn(interleaved, "after").unwrap(),
+        "/// doc\n// note\n/// more doc\nfn after() {}"
+    );
+}
+
+/// Provenance: PLAT-1027 (review finding 7). `Type::method` picks the method
+/// in `impl Type`; a `fn` nested in another `fn` is never the top-level
+/// match.
+#[test]
+fn tc_1027_a_qualified_symbol_picks_its_impl() {
+    let source =
+        "impl A { fn run() -> u8 { 1 } }\nimpl<T> Trait for B<T> { fn run() -> u8 { 2 } }\n";
+    assert_eq!(
+        extract_rust_fn(source, "run").unwrap_err(),
+        "`fn run` is ambiguous: 2 definitions in the source"
+    );
+    assert!(
+        extract_rust_fn(source, "B::run")
+            .unwrap()
+            .ends_with("{ 2 }")
+    );
+    assert!(
+        extract_rust_fn(source, "crate::a::A::run")
+            .unwrap()
+            .ends_with("{ 1 }")
+    );
+    let nested = "fn outer() {\n    fn helper() -> u8 { 1 }\n}\n\nfn helper() -> u8 { 2 }\n";
+    assert_eq!(
+        extract_rust_fn(nested, "helper").unwrap(),
+        "fn helper() -> u8 { 2 }"
+    );
+}
+
+/// Provenance: PLAT-1027 (review finding 8). C0's `criterion_sound`
+/// confidence is P(sound) for `yes` and 1 - P(sound) for `no`, not the
+/// confidence in whichever weakness label was chosen.
+#[test]
+fn tc_1027_c0_confidence_is_the_probability_of_its_answer() {
+    let file = four_modes();
+    let row = &file.rows[0];
+    let answer = |label: &str| {
+        let mut answers = variant::RawAnswers::new();
+        answers.insert(
+            "FR-001-AC-1::weakness_kind".to_owned(),
+            variant::RawAnswer::Choice {
+                label: label.to_owned(),
+                confidence: 0.5,
+                probabilities: [("sound".to_owned(), 0.2), ("unfalsifiable".to_owned(), 0.5)]
+                    .into_iter()
+                    .collect(),
+            },
+        );
+        let answered = [Answered {
+            unit: None,
+            answers,
+        }];
+        (variant::C0.derive)(row, &answered)["criterion_sound"].clone()
+    };
+    let no = answer("unfalsifiable");
+    assert_eq!(no.answer, "no");
+    assert!((no.confidence.unwrap() - 0.8).abs() < 1e-9, "{no:?}");
+    let yes = answer("sound");
+    assert_eq!(yes.answer, "yes");
+    assert!((yes.confidence.unwrap() - 0.2).abs() < 1e-9, "{yes:?}");
+}
+
+/// Provenance: PLAT-1027 (review finding 9). A variant version already on
+/// the held-out log is refused unless a rerun reason is given, which is
+/// logged.
+#[test]
+fn tc_1027_a_heldout_rerun_needs_a_reason() {
+    let dir = tempfile::tempdir().unwrap();
+    let log = dir.path().join("heldout-runs.jsonl");
+    let labels = vec!["S0@v1".to_owned()];
+    corpus::check_heldout_rerun(&log, &labels, None).unwrap();
+    corpus::record_heldout_run(
+        &log,
+        &corpus::HeldoutRun {
+            unix_seconds: 1,
+            variants: labels.clone(),
+            seals: Vec::new(),
+            rows: 1,
+            models: std::collections::BTreeMap::new(),
+            rerun_reason: None,
+        },
+    )
+    .unwrap();
+    let refused = corpus::check_heldout_rerun(&log, &labels, None).unwrap_err();
+    assert!(refused.contains(corpus::HELDOUT_RERUN_ENV), "{refused}");
+    corpus::check_heldout_rerun(&log, &["S1@v1".to_owned()], None).unwrap();
+    corpus::check_heldout_rerun(&log, &labels, Some("service outage mid-run")).unwrap();
+    corpus::record_heldout_run(
+        &log,
+        &corpus::HeldoutRun {
+            unix_seconds: 2,
+            variants: labels.clone(),
+            seals: Vec::new(),
+            rows: 1,
+            models: std::collections::BTreeMap::new(),
+            rerun_reason: Some("service outage mid-run".to_owned()),
+        },
+    )
+    .unwrap();
+    let text = std::fs::read_to_string(&log).unwrap();
+    assert!(
+        text.contains("\"rerun_reason\":\"service outage mid-run\""),
+        "{text}"
+    );
+}
+
+/// Provenance: PLAT-1027 (review finding 10). A source with no held-out rows
+/// needs no seal; one with held-out rows does.
+#[test]
+fn tc_1027_a_source_without_heldout_rows_needs_no_seal() {
+    let dir = tempfile::tempdir().unwrap();
+    let text = corpus_text(&[row(
+        "EV2-0001",
+        Mode::Req,
+        "dev",
+        &json!({"compound": truth(&json!(false), "agent_dual", &[])}),
+    )]);
+    let path = dir.path().join("corpus.json");
+    std::fs::write(&path, text).unwrap();
+    let source = corpus::read_source(&path, Origin::InRepo).unwrap();
+    assert_eq!(
+        verify_seal(&source).unwrap(),
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    );
+    let heldout = sealed_source(tempfile::tempdir().unwrap().path(), None);
+    assert!(verify_seal(&heldout).unwrap_err().contains("not sealed"));
+}
+
+/// Provenance: PLAT-1027 (review finding 11). A zero-context insertion
+/// `@@ -1,0 +2 @@` goes after line 1, not before it.
+#[test]
+fn tc_1027_a_pure_insertion_lands_after_its_line() {
+    let patched = apply_unified_patch("a\nb\n", "@@ -1,0 +2 @@\n+x\n").unwrap();
+    assert_eq!(patched, "a\nx\nb\n");
+    let at_top = apply_unified_patch("a\nb\n", "@@ -0,0 +1 @@\n+x\n").unwrap();
+    assert_eq!(at_top, "x\na\nb\n");
+}
+
+/// Provenance: PLAT-1027 (review finding 12), MP-226. ECE compares each
+/// decile's MEAN stated confidence with its accuracy: two rows at 0.91, one
+/// right, give |0.91 - 0.5| = 0.41 (the midpoint rule gave 0.45). The v2
+/// summary reports the rows ECE leaves out.
+#[test]
+fn tc_1027_ece_uses_the_mean_confidence_per_bucket() {
+    let spec = eval_v2_support::keys::spec("code_exceeds_requirement").unwrap();
+    let rows = [
+        scored_row("a", "yes", Some(("yes", 0.91, 0.91)), TruthKind::Mechanical),
+        scored_row("b", "no", Some(("yes", 0.91, 0.91)), TruthKind::Mechanical),
+        scored_row("c", "no", None, TruthKind::Mechanical),
+    ];
+    let summary = summarize(&rows, spec);
+    assert!(
+        (summary.ece.unwrap() - 0.41).abs() < 1e-9,
+        "{:?}",
+        summary.ece
+    );
+    assert_eq!(summary.without_confidence, 1);
+}
+
+/// Provenance: PLAT-1027 (review finding 15), PLAT-1024 corpus rule 1. At
+/// most three natural rows per FR; mutated rows do not count.
+#[test]
+fn tc_1027_at_most_three_natural_rows_per_fr() {
+    let same_fr = |id: &str, mutated: bool| {
+        let mut value = row(
+            id,
+            Mode::Req,
+            "dev",
+            &json!({"compound": truth(&json!(false), "agent_dual", &[])}),
+        );
+        value["strata"]["fr_id"] = json!("FR-900");
+        value["requirement"]["fr_id"] = json!("FR-900");
+        if mutated {
+            value["mutation"] = json!({"id": id, "target": "requirement", "kind": "k",
+                                       "description": "d", "patch": "p"});
+        }
+        value
+    };
+    let three_plus_mutant = parse(&[
+        same_fr("EV2-0001", false),
+        same_fr("EV2-0002", false),
+        same_fr("EV2-0003", false),
+        same_fr("EV2-0004", true),
+    ]);
+    assert_eq!(
+        validate(&three_plus_mutant, Origin::InRepo),
+        Vec::<String>::new()
+    );
+    let four = parse(&[
+        same_fr("EV2-0001", false),
+        same_fr("EV2-0002", false),
+        same_fr("EV2-0003", false),
+        same_fr("EV2-0004", false),
+    ]);
+    assert_eq!(
+        validate(&four, Origin::InRepo),
+        ["FR-900: 4 natural rows, at most 3 per FR"]
+    );
 }

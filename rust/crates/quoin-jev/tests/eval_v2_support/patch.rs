@@ -15,18 +15,35 @@
 //! the previous hunk, and must match in exactly one place. Anything else is an
 //! error, never a partial application.
 
-/// One parsed hunk: the old line it claims to start at (1-based), and its
-/// lines with their `' '`/`-`/`+` tag.
+/// One parsed hunk: the old range it claims (1-based start, line count), and
+/// its lines with their `' '`/`-`/`+` tag.
 struct Hunk {
     old_start: usize,
+    old_count: usize,
     lines: Vec<(char, String)>,
 }
 
-/// Parses `@@ -a,b +c,d @@` and returns `a`.
-fn old_start(header: &str) -> Option<usize> {
+impl Hunk {
+    /// The 0-based index the hunk's old lines start at. A hunk with an empty
+    /// old range (`-a,0`, a pure insertion with no context) inserts AFTER
+    /// line `a`, so its index is `a`, not `a - 1`.
+    const fn stated_index(&self) -> usize {
+        if self.old_count == 0 {
+            self.old_start
+        } else {
+            self.old_start.saturating_sub(1)
+        }
+    }
+}
+
+/// Parses `@@ -a,b +c,d @@` into `(a, b)`; `b` defaults to 1 when omitted.
+fn old_range(header: &str) -> Option<(usize, usize)> {
     let rest = header.strip_prefix("@@ -")?;
     let range = rest.split_whitespace().next()?;
-    range.split(',').next()?.parse().ok()
+    let mut parts = range.split(',');
+    let start = parts.next()?.parse().ok()?;
+    let count = parts.next().map_or(Some(1), |count| count.parse().ok())?;
+    Some((start, count))
 }
 
 fn parse(patch: &str) -> Result<Vec<Hunk>, String> {
@@ -52,9 +69,11 @@ fn parse(patch: &str) -> Result<Vec<Hunk>, String> {
             continue;
         }
         if line.starts_with("@@") {
-            let start = old_start(line).ok_or_else(|| format!("bad hunk header {line:?}"))?;
+            let (old_start, old_count) =
+                old_range(line).ok_or_else(|| format!("bad hunk header {line:?}"))?;
             hunks.push(Hunk {
-                old_start: start,
+                old_start,
+                old_count,
                 lines: Vec::new(),
             });
         }
@@ -86,7 +105,7 @@ pub(crate) fn apply_unified_patch(source: &str, patch: &str) -> Result<String, S
             .map(|(_, text)| text.as_str())
             .collect();
         let matches_at = |at: usize| lines.get(at..at + old.len()) == Some(old.as_slice());
-        let stated = hunk.old_start.saturating_sub(1);
+        let stated = hunk.stated_index();
         let at = if stated >= cursor && matches_at(stated) {
             stated
         } else {

@@ -324,6 +324,47 @@ pub(crate) enum Origin {
     External,
 }
 
+impl Origin {
+    /// The id prefix every row from this source carries, so ids from the two
+    /// sources can never collide.
+    pub(crate) const fn id_prefix(self) -> &'static str {
+        match self {
+            Self::InRepo => "EV2-",
+            Self::External => "EVX-",
+        }
+    }
+}
+
+/// PLAT-1024 corpus rule 1: at most this many natural (unmutated) rows per
+/// FR in one source.
+pub(crate) const MAX_NATURAL_ROWS_PER_FR: usize = 3;
+
+/// Every row of `split` across `sources`, refusing the lot if two rows share
+/// an id: every grade and report is keyed by row id, so a duplicate would
+/// silently overwrite one row's result with another's.
+///
+/// # Errors
+/// On a duplicate id, naming it.
+pub(crate) fn combined_rows(sources: &[Source], split: Split) -> Result<Vec<Row>, String> {
+    let mut seen = BTreeSet::new();
+    let mut rows = Vec::new();
+    for source in sources {
+        for row in &source.file.rows {
+            if !seen.insert(row.id.clone()) {
+                return Err(format!(
+                    "row id {} appears more than once across the loaded corpora ({})",
+                    row.id,
+                    source.path.display()
+                ));
+            }
+            if row.split == split {
+                rows.push(row.clone());
+            }
+        }
+    }
+    Ok(rows)
+}
+
 /// One loaded corpus: its path, its raw text (the seal is over the text, not
 /// over a re-serialization) and the parsed file.
 #[derive(Debug, Clone)]
@@ -334,8 +375,21 @@ pub(crate) struct Source {
     pub(crate) path: PathBuf,
     /// The file's text, as read.
     pub(crate) text: String,
-    /// The parsed file. External rows are materialized in place.
+    /// The parsed file. External rows are materialized in place; a row that
+    /// could not be materialized is moved to [`Self::excluded`].
     pub(crate) file: CorpusFile,
+    /// Rows left out of this load, each with its reason. Every report prints
+    /// them, so a row that failed never silently leaves the denominator.
+    pub(crate) excluded: Vec<Excluded>,
+}
+
+/// One row a load left out, and why.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Excluded {
+    /// The row's id.
+    pub(crate) id: String,
+    /// Why it could not be used.
+    pub(crate) reason: String,
 }
 
 /// `fixtures/eval-v2/corpus.json`.
@@ -369,6 +423,7 @@ pub(crate) fn read_source(path: &Path, origin: Origin) -> Result<Source, String>
         path: path.to_owned(),
         text,
         file,
+        excluded: Vec::new(),
     })
 }
 
@@ -387,11 +442,14 @@ pub(crate) fn load_in_repo() -> Result<Option<Source>, String> {
 /// The external corpus named by `corpus`, with every by-reference row
 /// materialized from `root`. `Ok(None)` when `corpus` is `None`.
 ///
+/// A row that cannot be materialized (missing file, digest mismatch, a path
+/// that escapes the root, patch or symbol failure) is moved to
+/// [`Source::excluded`] with its reason, and the rest load. The exclusion is
+/// printed with every report, never dropped silently.
+///
 /// # Errors
-/// When the file cannot be read or parsed, or any by-reference row cannot be
-/// materialized (no root, missing file, digest mismatch, patch or symbol
-/// failure). One bad row fails the whole load: a corpus that silently loses
-/// rows changes its own denominator.
+/// When the file cannot be read or parsed, or a by-reference row exists and
+/// `root` is `None` (a configuration error, not a row defect).
 pub(crate) fn load_external(
     corpus: Option<&Path>,
     root: Option<&Path>,
@@ -400,7 +458,8 @@ pub(crate) fn load_external(
         return Ok(None);
     };
     let mut source = read_source(corpus, Origin::External)?;
-    for row in &mut source.file.rows {
+    let rows = std::mem::take(&mut source.file.rows);
+    for mut row in rows {
         if row.reference.is_some() {
             let root = root.ok_or_else(|| {
                 format!(
@@ -409,8 +468,12 @@ pub(crate) fn load_external(
                     row.id
                 )
             })?;
-            materialize(row, root).map_err(|error| format!("row {}: {error}", row.id))?;
+            if let Err(reason) = materialize(&mut row, root) {
+                source.excluded.push(Excluded { id: row.id, reason });
+                continue;
+            }
         }
+        source.file.rows.push(row);
     }
     Ok(Some(source))
 }
@@ -439,27 +502,75 @@ fn contained(relative: &str) -> Result<&Path, String> {
     Ok(path)
 }
 
+/// `<root>/<repo name>`, where the repo name is `ref.repo`'s last segment
+/// and must be a plain directory name: non-empty, not starting with `.`
+/// (so neither `.` nor `..`), and only ASCII letters, digits, `-`, `_`, `.`.
+fn checkout_dir(root: &Path, repo: &str) -> Result<PathBuf, String> {
+    let name = repo.rsplit('/').next().unwrap_or_default();
+    let plain = !name.is_empty()
+        && !name.starts_with('.')
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
+    if !plain {
+        return Err(format!(
+            "ref.repo {repo:?} does not end in a plain repository name"
+        ));
+    }
+    Ok(root.join(contained(name)?))
+}
+
+/// Whitespace-collapsed, so text wrapped differently in a spec file still
+/// matches the row's single-line copy.
+fn collapse(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 /// Fills an external row's bodies from its checkout.
 ///
+/// Every file is resolved through symlinks and must still lie under the
+/// canonical `root`; its bytes must match the row's sha256; a mutation is
+/// applied to the file it targets, which `ref.paths` must name. A
+/// requirement mutation is checked: the patched requirement file must
+/// contain the row's `statement` (and `ac_text`, when set), whitespace
+/// collapsed.
+///
 /// # Errors
-/// As [`load_external`].
+/// The row's defect, as a sentence; [`load_external`] records it.
 pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
     let Some(reference) = row.reference.clone() else {
         return Ok(());
     };
-    let repo = reference
-        .repo
-        .rsplit('/')
-        .next()
-        .filter(|name| !name.is_empty())
-        .ok_or_else(|| format!("ref.repo {:?} names no repository", reference.repo))?;
-    let checkout = root.join(repo);
+    let checkout = checkout_dir(root, &reference.repo)?;
+    let root_real = root
+        .canonicalize()
+        .map_err(|error| format!("{}: {error}", root.display()))?;
+    if let Some(mutation) = &row.mutation
+        && !reference.paths.contains_key(mutation.target.role())
+    {
+        return Err(format!(
+            "mutation {} targets {} but ref.paths has no such file to patch",
+            mutation.id,
+            mutation.target.role()
+        ));
+    }
     for (role, relative) in &reference.paths {
         if !matches!(role.as_str(), "requirement" | "test" | "code") {
             return Err(format!("ref.paths has unknown role {role:?}"));
         }
         let path = checkout.join(contained(relative)?);
-        let bytes = std::fs::read(&path).map_err(|error| format!("{}: {error}", path.display()))?;
+        let real = path
+            .canonicalize()
+            .map_err(|error| format!("{}: {error}", path.display()))?;
+        if !real.starts_with(&root_real) {
+            return Err(format!(
+                "{} resolves to {}, outside {}",
+                path.display(),
+                real.display(),
+                root_real.display()
+            ));
+        }
+        let bytes = std::fs::read(&real).map_err(|error| format!("{}: {error}", real.display()))?;
         let expected = reference
             .sha256
             .get(role)
@@ -475,7 +586,8 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
         }
         let mut text = String::from_utf8(bytes)
             .map_err(|error| format!("{}: not UTF-8: {error}", path.display()))?;
-        if let Some(mutation) = row.mutation.as_ref().filter(|m| m.target.role() == role) {
+        let mutated = row.mutation.as_ref().filter(|m| m.target.role() == role);
+        if let Some(mutation) = mutated {
             text = apply_unified_patch(&text, &mutation.patch)
                 .map_err(|error| format!("mutation {}: {error}", mutation.id))?;
         }
@@ -494,20 +606,28 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
                     .ok_or("ref.paths names code but the row has none")?;
                 code.body = extract_rust_fn(&text, &code.symbol)?;
             }
-            // The requirement's text is carried in the row; its file is only
-            // digest-checked, so a spec that moved on is noticed.
-            _ => {}
+            // The requirement's text is carried in the row. Unmutated, its
+            // file is digest-checked only; mutated, the patched file must
+            // carry the row's (mutated) text.
+            _ => {
+                if mutated.is_some() {
+                    let patched = collapse(&text);
+                    let requirement = &row.requirement;
+                    for (field, wanted) in [
+                        ("statement", Some(&requirement.statement)),
+                        ("ac_text", requirement.ac_text.as_ref()),
+                    ] {
+                        if let Some(wanted) = wanted
+                            && !patched.contains(&collapse(wanted))
+                        {
+                            return Err(format!(
+                                "the patched requirement file does not contain the row's {field}"
+                            ));
+                        }
+                    }
+                }
+            }
         }
-    }
-    if let Some(mutation) = &row.mutation
-        && mutation.target != Target::Requirement
-        && !reference.paths.contains_key(mutation.target.role())
-    {
-        return Err(format!(
-            "mutation {} targets {} but ref.paths has no such file to patch",
-            mutation.id,
-            mutation.target.role()
-        ));
     }
     Ok(())
 }
@@ -519,17 +639,26 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
 /// every truth key is known, its answer and alternatives lie in the key's
 /// answer space, the row carries what the key needs, and the truth kind
 /// agrees with the alternatives; a mutation targets an artifact the row has;
-/// `strata.fr_id` agrees with `requirement.fr_id`.
+/// `strata.fr_id` agrees with `requirement.fr_id`; every id carries its
+/// source's prefix ([`Origin::id_prefix`]); and no FR has more than
+/// [`MAX_NATURAL_ROWS_PER_FR`] natural (unmutated) rows (PLAT-1024 rule 1).
 pub(crate) fn validate(file: &CorpusFile, origin: Origin) -> Vec<String> {
     let mut problems = Vec::new();
     if file.schema != SCHEMA {
         problems.push(format!("schema is {:?}, expected {SCHEMA:?}", file.schema));
     }
+    problems.extend(natural_row_problems(file));
     let mut seen = BTreeSet::new();
     for row in &file.rows {
         let mut say = |problem: String| problems.push(format!("{}: {problem}", row.id));
         if row.id.trim().is_empty() {
             say("empty id".to_owned());
+        }
+        if !row.id.starts_with(origin.id_prefix()) {
+            say(format!(
+                "id lacks this source's prefix {}",
+                origin.id_prefix()
+            ));
         }
         if !seen.insert(row.id.clone()) {
             say("duplicate id".to_owned());
@@ -608,6 +737,22 @@ pub(crate) fn validate(file: &CorpusFile, origin: Origin) -> Vec<String> {
     problems
 }
 
+/// PLAT-1024 rule 1: an FR with more than [`MAX_NATURAL_ROWS_PER_FR`]
+/// natural (unmutated) rows.
+fn natural_row_problems(file: &CorpusFile) -> Vec<String> {
+    let mut natural: BTreeMap<&str, usize> = BTreeMap::new();
+    for row in file.rows.iter().filter(|row| row.mutation.is_none()) {
+        *natural.entry(row.requirement.fr_id.as_str()).or_default() += 1;
+    }
+    natural
+        .into_iter()
+        .filter(|(_, count)| *count > MAX_NATURAL_ROWS_PER_FR)
+        .map(|(fr_id, count)| {
+            format!("{fr_id}: {count} natural rows, at most {MAX_NATURAL_ROWS_PER_FR} per FR")
+        })
+        .collect()
+}
+
 fn truth_problems(mode: Mode, key: &str, truth: &Truth) -> Vec<String> {
     let Some(spec) = spec(key) else {
         return vec![format!("unknown truth key {key:?}")];
@@ -678,11 +823,8 @@ pub(crate) fn census(file: &CorpusFile) -> String {
     out
 }
 
-/// The held-out seal of a corpus text: see this module's doc.
-///
-/// # Errors
-/// When the text is not strict JSON or has no `rows` array.
-pub(crate) fn heldout_digest(text: &str) -> Result<String, String> {
+/// The held-out row objects of a corpus text, in file order.
+fn heldout_rows(text: &str) -> Result<Vec<JsonValue>, String> {
     let value = parse_strict_json_str(text).map_err(|error| format!("strict parse: {error}"))?;
     let JsonValue::Object(object) = value else {
         return Err("the corpus is not a JSON object".to_owned());
@@ -698,21 +840,38 @@ pub(crate) fn heldout_digest(text: &str) -> Result<String, String> {
         })
         .cloned()
         .collect();
-    let bytes = canonical_bytes(&JsonValue::Array(heldout))
+    Ok(heldout)
+}
+
+/// The held-out seal of a corpus text: see this module's doc.
+///
+/// # Errors
+/// When the text is not strict JSON or has no `rows` array.
+pub(crate) fn heldout_digest(text: &str) -> Result<String, String> {
+    let bytes = canonical_bytes(&JsonValue::Array(heldout_rows(text)?))
         .map_err(|error| format!("canonicalize: {error}"))?;
     Ok(digest_bytes_sha256(&bytes).as_hex().to_owned())
 }
 
 /// Checks `source` against the seal beside it; returns the digest.
 ///
+/// The seal is [`SEAL_FILE`] in the corpus file's own directory, for the
+/// external corpus as for the in-repo one: an external corpus's seal lives
+/// next to it, outside quoin. A source with no held-out rows has nothing to
+/// seal and needs no seal file.
+///
 /// # Errors
-/// When the seal file is missing or does not match. The mismatch message
-/// prints both digests; resealing is a committed, reviewable diff.
+/// When the source has held-out rows and the seal file is missing, or the
+/// seal does not match. The mismatch message prints both digests; resealing
+/// is a committed, reviewable diff.
 pub(crate) fn verify_seal(source: &Source) -> Result<String, String> {
     let seal_path = source
         .path
         .parent()
         .map_or_else(|| PathBuf::from(SEAL_FILE), |dir| dir.join(SEAL_FILE));
+    if !seal_path.exists() && heldout_rows(&source.text)?.is_empty() {
+        return heldout_digest(&source.text);
+    }
     let committed = std::fs::read_to_string(&seal_path).map_err(|error| {
         format!(
             "{}: the held-out split is not sealed ({error})",
@@ -764,6 +923,49 @@ pub(crate) struct HeldoutRun {
     pub(crate) rows: usize,
     /// Answering model, by count of requests sent.
     pub(crate) models: BTreeMap<String, usize>,
+    /// Why a variant already on the log was run on held-out again, from
+    /// [`HELDOUT_RERUN_ENV`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) rerun_reason: Option<String>,
+}
+
+/// The env var that permits re-running a variant already on the held-out
+/// log; its value is the reason, and is logged.
+pub(crate) const HELDOUT_RERUN_ENV: &str = "QUOIN_JEV_HELDOUT_RERUN";
+
+/// Refuses a held-out run of any variant label (`id@vN`) already on `log`,
+/// unless `rerun_reason` is given. Checked before any call is spent.
+///
+/// # Errors
+/// Naming the variants already run, or an unreadable log.
+pub(crate) fn check_heldout_rerun(
+    log: &Path,
+    labels: &[String],
+    rerun_reason: Option<&str>,
+) -> Result<(), String> {
+    if !log.exists() {
+        return Ok(());
+    }
+    let text =
+        std::fs::read_to_string(log).map_err(|error| format!("{}: {error}", log.display()))?;
+    let mut already = BTreeSet::new();
+    for line in text.lines().filter(|line| !line.trim().is_empty()) {
+        let run: HeldoutRun = serde_json::from_str(line)
+            .map_err(|error| format!("{}: unreadable line: {error}", log.display()))?;
+        already.extend(
+            run.variants
+                .into_iter()
+                .filter(|label| labels.contains(label)),
+        );
+    }
+    if already.is_empty() || rerun_reason.is_some_and(|reason| !reason.trim().is_empty()) {
+        return Ok(());
+    }
+    Err(format!(
+        "{already:?} already ran on held-out (see {}); the held-out split is spent once per \
+         variant version. Set {HELDOUT_RERUN_ENV}=<reason> to run again; the reason is logged.",
+        log.display()
+    ))
 }
 
 /// Appends `run` as one JSON line to `log`, creating it if absent. The log is

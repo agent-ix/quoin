@@ -20,7 +20,8 @@
 //! | --- | --- |
 //! | `QUOIN_JEV_VARIANTS` | comma-separated variant ids; default every registered one |
 //! | `QUOIN_JEV_SPLIT` | `dev` (default) or `heldout` |
-//! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; the seal is verified and the run logged |
+//! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; the seal is verified and the run logged before any number prints |
+//! | `QUOIN_JEV_HELDOUT_RERUN` | a reason; required to run a variant version already on the held-out log |
 //! | `QUOIN_JEV_EXTERNAL_CORPUS` / `QUOIN_JEV_EXTERNAL_ROOT` | optional external corpus and its checkouts |
 //! | `QUOIN_JEV_CASSETTE` | a cassette file (PLAT-977): answers are recorded there, and re-grading replays them |
 //! | `QUOIN_JEV_CASSETTE_MODE` | `record` (default: replay what is on file, call live for the rest) or `replay` (no network, no key) |
@@ -55,7 +56,8 @@ use typesafe_sdk_env::{Fixed, Process};
 use typesafe_sdk_http::Reqwest;
 
 use eval_v2_support::corpus::{
-    self, HELDOUT_ENV, HeldoutRun, Row, Source, Split, authorize_heldout, validate,
+    self, Excluded, HELDOUT_ENV, HELDOUT_RERUN_ENV, HeldoutRun, Row, Source, Split,
+    authorize_heldout, check_heldout_rerun, combined_rows, validate,
 };
 use eval_v2_support::metrics::render_run;
 use eval_v2_support::variant::{self, REGISTRY, Variant};
@@ -154,18 +156,26 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         corpus::in_repo_corpus_path().display(),
         corpus::EXTERNAL_CORPUS_ENV
     );
+    let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
+    let rerun_reason = env(HELDOUT_RERUN_ENV);
     let seals = if split == Split::Heldout {
         let refs: Vec<&Source> = sources.iter().collect();
-        authorize_heldout(env(HELDOUT_ENV).as_deref(), &refs)
-            .unwrap_or_else(|error| panic!("{error}"))
+        let seals = authorize_heldout(env(HELDOUT_ENV).as_deref(), &refs)
+            .unwrap_or_else(|error| panic!("{error}"));
+        check_heldout_rerun(
+            &corpus::heldout_log_path(),
+            &labels,
+            rerun_reason.as_deref(),
+        )
+        .unwrap_or_else(|error| panic!("{error}"));
+        seals
     } else {
         Vec::new()
     };
-    let rows: Vec<Row> = sources
+    let rows: Vec<Row> = combined_rows(&sources, split).unwrap_or_else(|error| panic!("{error}"));
+    let excluded: Vec<Excluded> = sources
         .iter()
-        .flat_map(|source| source.file.rows.iter())
-        .filter(|row| row.split == split)
-        .cloned()
+        .flat_map(|source| source.excluded.iter().cloned())
         .collect();
     assert!(!rows.is_empty(), "no {} rows to run", split.as_str());
 
@@ -174,36 +184,40 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     let output = variant::run(&client, &rows, &variants)
         .await
         .unwrap_or_else(|error| panic!("{error}"));
-    let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
-    println!(
-        "split {}: {} rows; variants {labels:?}",
-        split.as_str(),
-        rows.len()
-    );
-    println!("{}", render_run(&rows, &output, &variants));
 
-    if let Some(model) = &model {
-        let others: Vec<&String> = output.models.keys().filter(|seen| *seen != model).collect();
-        assert!(
-            others.is_empty(),
-            "answers came from {others:?}, not the pinned {model}"
-        );
-    }
+    // The held-out split is spent the moment answers exist, so the log line
+    // is written before any number is printed and before any assertion that
+    // could stop the run.
     if split == Split::Heldout {
         let run = HeldoutRun {
             unix_seconds: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .map_or(0, |elapsed| elapsed.as_secs()),
-            variants: labels,
+            variants: labels.clone(),
             seals,
             rows: rows.len(),
             models: output.models.clone(),
+            rerun_reason,
         };
         corpus::record_heldout_run(&corpus::heldout_log_path(), &run)
             .unwrap_or_else(|error| panic!("{error}"));
         println!(
             "held-out run recorded in {}; commit it with the report",
             corpus::heldout_log_path().display()
+        );
+    }
+    println!(
+        "split {}: {} rows; variants {labels:?}",
+        split.as_str(),
+        rows.len()
+    );
+    println!("{}", render_run(&rows, &excluded, &output, &variants));
+
+    if let Some(model) = &model {
+        let others: Vec<&String> = output.models.keys().filter(|seen| *seen != model).collect();
+        assert!(
+            others.is_empty(),
+            "answers came from {others:?}, not the pinned {model}"
         );
     }
 }

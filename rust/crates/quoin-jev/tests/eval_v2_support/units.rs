@@ -277,58 +277,204 @@ fn fn_items(text: &str, masked: &[u8], from: usize, end: usize) -> Vec<FnItem> {
     items
 }
 
-/// The start of the line holding `at`, extended upward over contiguous
-/// attribute (`#[`) and doc-comment (`///`) lines, so an extracted test keeps
-/// its `#[test]` and its `/// Trace:` line.
-fn item_start(text: &str, at: usize) -> usize {
-    let line_start = |index: usize| {
-        text.get(..index)
-            .and_then(|head| head.rfind('\n'))
-            .map_or(0, |newline| newline + 1)
-    };
-    let mut start = line_start(at);
+/// The start of the line holding `at`.
+fn line_start(text: &str, at: usize) -> usize {
+    text.get(..at)
+        .and_then(|head| head.rfind('\n'))
+        .map_or(0, |newline| newline + 1)
+}
+
+/// The index of the delimiter opening the one that closes at `close`, in
+/// masked bytes.
+fn matching_back(masked: &[u8], close: usize) -> Option<usize> {
+    let mut depth = 0i64;
+    for index in (0..=close).rev() {
+        match masked.get(index)? {
+            b')' | b']' | b'}' => depth += 1,
+            b'(' | b'[' | b'{' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(index);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Where the item whose keyword line holds `at` really starts: that line,
+/// extended upward over everything directly attached to the item — whole
+/// attributes (`#[...]`, including ones spanning several lines) and comment
+/// lines (`///` doc comments and plain `//` comments interleaved with them).
+/// A blank line or any other code ends the walk, so an extracted test keeps
+/// its `#[test]`, its `#[allow(\n ...\n)]` and its `/// Trace:` line.
+fn item_start(text: &str, masked: &[u8], at: usize) -> usize {
+    let mut start = line_start(text, at);
     while start > 0 {
-        let previous = line_start(start - 1);
+        let previous = line_start(text, start - 1);
         let line = text.get(previous..start).unwrap_or_default().trim();
-        if line.starts_with("#[") || line.starts_with("///") {
-            start = previous;
-        } else {
+        if line.is_empty() || line.starts_with("//!") {
             break;
+        }
+        if line.starts_with("//") || (line.starts_with("#[") && line.ends_with(']')) {
+            start = previous;
+            continue;
+        }
+        // The line may END an attribute that began lines earlier: match its
+        // last `]` back to a `[` that follows `#` at the start of its line.
+        let attribute_head = masked
+            .get(previous..start)
+            .and_then(|bytes| bytes.iter().rposition(|byte| *byte == b']'))
+            .and_then(|offset| matching_back(masked, previous + offset))
+            .and_then(|open| open.checked_sub(1))
+            .filter(|hash| masked.get(*hash) == Some(&b'#'))
+            .filter(|hash| {
+                let head = line_start(text, *hash);
+                text.get(head..*hash)
+                    .is_some_and(|lead| lead.trim().is_empty())
+            });
+        match attribute_head {
+            Some(hash) if line.ends_with(']') => start = line_start(text, hash),
+            _ => break,
         }
     }
     start
 }
 
-/// The source of the one `fn` named `name` in `source`, from its attributes
-/// and doc comments through its closing brace. `name` may be a path
-/// (`Type::method`); only its last segment is matched.
-///
-/// # Errors
-/// When no `fn` has that name, or more than one does — an ambiguous symbol
-/// is refused rather than resolved to whichever came first.
-pub(crate) fn extract_rust_fn(source: &str, name: &str) -> Result<String, String> {
-    let short = name.rsplit("::").next().unwrap_or(name);
-    let masked = mask(source);
+/// One `fn` with a body, anywhere in a source file.
+struct FoundFn {
+    keyword: usize,
+    name: String,
+    open: usize,
+    close: usize,
+}
+
+/// Every `fn` with a body in `source`, nested or not, in source order.
+fn all_fns(source: &str, masked: &[u8]) -> Vec<FoundFn> {
     let mut found = Vec::new();
-    let mut at = 0usize;
-    // Every `fn`, nested or not: a method lives inside an `impl` block.
-    while at < masked.len() {
-        if word_at(&masked, at, "fn") {
-            let name_at = skip_ws(&masked, at + 2, masked.len());
-            if ident_at(source, &masked, name_at) == short
-                && let Some(open) = body_open(&masked, name_at, masked.len())
-                && let Some(close) = matching(&masked, open)
-            {
-                found.push((item_start(source, at), close));
+    for at in 0..masked.len() {
+        if !word_at(masked, at, "fn") {
+            continue;
+        }
+        let name_at = skip_ws(masked, at + 2, masked.len());
+        let name = ident_at(source, masked, name_at);
+        if let Some(open) = body_open(masked, name_at, masked.len())
+            && let Some(close) = matching(masked, open)
+            && !name.is_empty()
+        {
+            found.push(FoundFn {
+                keyword: at,
+                name,
+                open,
+                close,
+            });
+        }
+    }
+    found
+}
+
+/// Every `impl` block: the last path segment of its self type (`Foo` for
+/// `impl<T> Trait for crate::a::Foo<T>`), and its body's brace range.
+fn impl_blocks(source: &str, masked: &[u8]) -> Vec<(String, usize, usize)> {
+    let mut blocks = Vec::new();
+    for at in 0..masked.len() {
+        if !word_at(masked, at, "impl") {
+            continue;
+        }
+        let Some(open) = body_open(masked, at + 4, masked.len()) else {
+            continue;
+        };
+        let Some(close) = matching(masked, open) else {
+            continue;
+        };
+        let mut from = skip_ws(masked, at + 4, open);
+        if masked.get(from) == Some(&b'<') {
+            let mut depth = 0i64;
+            while from < open {
+                match masked.get(from) {
+                    Some(b'<') => depth += 1,
+                    Some(b'>') => depth -= 1,
+                    _ => {}
+                }
+                from += 1;
+                if depth == 0 {
+                    break;
+                }
             }
         }
-        at += 1;
+        if let Some(for_at) = (from..open)
+            .rev()
+            .find(|index| word_at(masked, *index, "for"))
+        {
+            from = for_at + 3;
+        }
+        let header = source.get(from..open).unwrap_or_default().trim_start();
+        let header = header.trim_start_matches('&').trim_start();
+        let header = header.strip_prefix("dyn ").unwrap_or(header);
+        let path: String = header
+            .chars()
+            .take_while(|c| c.is_alphanumeric() || *c == '_' || *c == ':')
+            .collect();
+        let name = path.rsplit("::").next().unwrap_or_default().to_owned();
+        if !name.is_empty() {
+            blocks.push((name, open, close));
+        }
     }
-    match found.as_slice() {
-        [(start, close)] => Ok(source.get(*start..=*close).unwrap_or_default().to_owned()),
-        [] => Err(format!("no `fn {short}` with a body in the source")),
+    blocks
+}
+
+/// The source of the one `fn` `name` names in `source`, from its attached
+/// attributes and comments through its closing brace.
+///
+/// `name` is `fn_name`, or a path. A `fn` nested inside another `fn`'s body
+/// is never a match. For a path, the segment before the name is the owning
+/// type: when `source` has an `impl` for that type, only `fn`s inside those
+/// `impl` blocks match; when it has none (the qualifier is a module), the
+/// path is matched on its last segment alone.
+///
+/// # Errors
+/// When no `fn` matches, or more than one does — an ambiguous symbol is
+/// refused rather than resolved to whichever came first.
+pub(crate) fn extract_rust_fn(source: &str, name: &str) -> Result<String, String> {
+    let segments: Vec<&str> = name.split("::").collect();
+    let short = segments.last().copied().unwrap_or(name);
+    let qualifier = segments
+        .len()
+        .checked_sub(2)
+        .and_then(|index| segments.get(index));
+    let masked = mask(source);
+    let fns = all_fns(source, &masked);
+    let nested = |item: &FoundFn| {
+        fns.iter()
+            .any(|outer| outer.open < item.keyword && item.keyword < outer.close)
+    };
+    let mut candidates: Vec<&FoundFn> = fns
+        .iter()
+        .filter(|item| item.name == short && !nested(item))
+        .collect();
+    if let Some(qualifier) = qualifier {
+        let owners: Vec<(usize, usize)> = impl_blocks(source, &masked)
+            .into_iter()
+            .filter(|(owner, _, _)| owner == qualifier)
+            .map(|(_, open, close)| (open, close))
+            .collect();
+        if !owners.is_empty() {
+            candidates.retain(|item| {
+                owners
+                    .iter()
+                    .any(|(open, close)| *open < item.keyword && item.keyword < *close)
+            });
+        }
+    }
+    match candidates.as_slice() {
+        [item] => Ok(source
+            .get(item_start(source, &masked, item.keyword)..=item.close)
+            .unwrap_or_default()
+            .to_owned()),
+        [] => Err(format!("no `fn {name}` with a body in the source")),
         many => Err(format!(
-            "`fn {short}` is ambiguous: {} definitions in the source",
+            "`fn {name}` is ambiguous: {} definitions in the source",
             many.len()
         )),
     }
@@ -345,7 +491,7 @@ pub(crate) fn split_rust_units(body: &str) -> Vec<Unit> {
                 kind: UnitKind::Function,
                 label: format!("fn {}", item.name),
                 text: body
-                    .get(item_start(body, item.keyword)..=item.close)
+                    .get(item_start(body, &masked, item.keyword)..=item.close)
                     .unwrap_or_default()
                     .to_owned(),
             })

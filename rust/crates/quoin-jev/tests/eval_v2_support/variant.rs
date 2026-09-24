@@ -21,7 +21,8 @@
 //!
 //! # Adding one
 //!
-//! Write its `asks` and `derive`, declare a `const` [`Variant`], and add it to
+//! Write its `asks` and `derive`, declare a `const` [`Variant`] (with the
+//! artifacts its questions refer to in `references`), and add it to
 //! [`REGISTRY`]. `tc_1027_every_registered_variant_respects_its_modes` then
 //! checks its wording against every mode it claims. Bump `version` whenever
 //! its wording or its derive rule changes, so two reports never share a
@@ -30,12 +31,14 @@
 //! # The wording rule
 //!
 //! A variant's questions must never refer to an artifact its row's mode does
-//! not carry. [`wording_violations`] enforces it lexically: with no test, no
-//! question may say "the/this/that test(s)" or name a `test_*` state field;
-//! with no code, none may say "the/this/that code" or name a `symbol_*` or
-//! `code_unit` field. "Implementation" in the abstract (criterion strength's
-//! "a property of the implementation") is not a reference to the code
-//! artifact and is allowed.
+//! not carry. Every variant declares the artifacts its questions refer to
+//! (`references`), and [`wording_violations`] checks, structurally first:
+//! the declaration against the mode; the state sent, by field name, for any
+//! field of an absent artifact; and, as a second net, the question text
+//! (never the row's own text) for test or code vocabulary that is absent from
+//! the mode or missing from the declaration. "Implementation" in the abstract
+//! (criterion strength's "a property of the implementation") is not a
+//! reference to the code artifact and is allowed.
 //!
 //! # Shipped baselines
 //!
@@ -169,6 +172,9 @@ pub(crate) struct Variant {
     pub(crate) summary: &'static str,
     /// The modes it may run on.
     pub(crate) modes: &'static [Mode],
+    /// The artifacts besides the requirement its questions refer to. Checked
+    /// against every mode in `modes` by [`wording_violations`].
+    pub(crate) references: &'static [Artifact],
     /// The question keys it is graded on.
     pub(crate) grades: &'static [&'static str],
     /// Builds its requests for one row.
@@ -406,43 +412,143 @@ pub(crate) fn rollup_max_level(
 // The wording rule
 // ---------------------------------------------------------------------------
 
-static TEST_REFERENCE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)\b(the|this|that|these|those)\s+tests?\b|\btest_(body|file|fn_name)\b")
+/// An artifact besides the requirement that a question may refer to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Artifact {
+    /// The row's test.
+    Test,
+    /// The row's code.
+    Code,
+}
+
+impl Artifact {
+    const fn name(self) -> &'static str {
+        match self {
+            Self::Test => "the test",
+            Self::Code => "the code",
+        }
+    }
+
+    const fn present_in(self, mode: Mode) -> bool {
+        match self {
+            Self::Test => mode.has_test(),
+            Self::Code => mode.has_code(),
+        }
+    }
+
+    /// Whether a state field name carries this artifact.
+    fn owns_field(self, field: &str) -> bool {
+        match self {
+            Self::Test => field.starts_with("test_"),
+            Self::Code => field.starts_with("symbol_") || field.starts_with("code_"),
+        }
+    }
+
+    /// Question-text vocabulary that refers to this artifact. The second
+    /// net, behind the declaration and the state check: it catches a
+    /// paraphrase the declaration forgot, and is never applied to row
+    /// content.
+    fn vocabulary(self) -> &'static Regex {
+        match self {
+            Self::Test => &TEST_VOCABULARY,
+            Self::Code => &CODE_VOCABULARY,
+        }
+    }
+}
+
+const ARTIFACTS: [Artifact; 2] = [Artifact::Test, Artifact::Code];
+
+static TEST_VOCABULARY: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?i)\btests?\b|\btesting\b|\bassertions?\b")
         .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
 });
 
-static CODE_REFERENCE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)\b(the|this|that)\s+code\b|\bsymbol_(body|file|name)\b|\bcode_unit\b")
-        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+static CODE_VOCABULARY: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"(?i)\bcode\b|\bsource code\b|\bimplementation under test\b|\b(function|method|symbol) bod(y|ies)\b|\bcovered (symbol|function|method)s?\b",
+    )
+    .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
 });
 
-/// Every place `variant`'s requests for `row` refer to an artifact `row`'s
-/// mode does not carry, in the question text or the state. Empty = clean.
+/// Every state field name in `value`, at any depth. Names only: the rule
+/// never reads a row's own text.
+fn field_names(value: &serde_json::Value, out: &mut Vec<String>) {
+    match value {
+        serde_json::Value::Object(fields) => {
+            for (name, inner) in fields {
+                out.push(name.clone());
+                field_names(inner, out);
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for inner in items {
+                field_names(inner, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Every way `variant`, run on `row`, refers to an artifact `row`'s mode does
+/// not carry. Empty = clean. Three checks, structural first:
+///
+/// 1. **The declaration.** Every artifact in `variant.references` must be in
+///    the row's mode.
+/// 2. **The state.** The state sent carries no field of an absent artifact
+///    (`test_*` without a test; `symbol_*`/`code_*` without code), by field
+///    NAME: a requirement that happens to say "test" is not a reference.
+/// 3. **The question text** (instructions and answer labels, never the
+///    state): no vocabulary of an absent artifact, and no vocabulary of an
+///    artifact the variant did not declare, so a declaration cannot lie.
 pub(crate) fn wording_violations(variant: &Variant, row: &Row) -> Vec<String> {
+    let label = variant.label();
+    let mode = row.mode.as_str();
     let mut violations = Vec::new();
+    for artifact in variant.references {
+        if !artifact.present_in(row.mode) {
+            violations.push(format!(
+                "{label} in mode {mode}: declares it refers to {}, which the mode lacks",
+                artifact.name()
+            ));
+        }
+    }
     for ask in (variant.asks)(row) {
-        let questions = serde_json::to_string(&ask.request.questions).unwrap_or_default();
-        let state = serde_json::to_string(&ask.request.state).unwrap_or_default();
-        for (text, part) in [(&questions, "questions"), (&state, "state")] {
-            if !row.mode.has_test()
-                && let Some(found) = TEST_REFERENCE.find(text)
-            {
+        let mut fields = Vec::new();
+        field_names(
+            &serde_json::to_value(&ask.request.state).unwrap_or_default(),
+            &mut fields,
+        );
+        let questions: Vec<String> = ask
+            .request
+            .questions
+            .values()
+            .map(|question| serde_json::to_string(question).unwrap_or_default())
+            .collect();
+        for artifact in ARTIFACTS {
+            let absent = !artifact.present_in(row.mode);
+            if absent && let Some(field) = fields.iter().find(|f| artifact.owns_field(f)) {
                 violations.push(format!(
-                    "{} in mode {}: {part} refers to a test: {:?}",
-                    variant.label(),
-                    row.mode.as_str(),
-                    found.as_str()
+                    "{label} in mode {mode}: state field {field:?} carries {}, which the mode lacks",
+                    artifact.name()
                 ));
             }
-            if !row.mode.has_code()
-                && let Some(found) = CODE_REFERENCE.find(text)
-            {
-                violations.push(format!(
-                    "{} in mode {}: {part} refers to code: {:?}",
-                    variant.label(),
-                    row.mode.as_str(),
-                    found.as_str()
-                ));
+            let undeclared = !variant.references.contains(&artifact);
+            if !(absent || undeclared) {
+                continue;
+            }
+            for text in &questions {
+                if let Some(found) = artifact.vocabulary().find(text) {
+                    violations.push(format!(
+                        "{label} in mode {mode}: question text refers to {} ({:?}){}",
+                        artifact.name(),
+                        found.as_str(),
+                        if absent {
+                            ", which the mode lacks"
+                        } else {
+                            ", which the variant does not declare"
+                        }
+                    ));
+                }
             }
         }
     }
@@ -487,6 +593,7 @@ fn battery_derive(_row: &Row, answered: &[Answered]) -> Predictions {
 }
 
 const RTC_ONLY: &[Mode] = &[Mode::ReqTestCode];
+const TEST_AND_CODE: &[Artifact] = &[Artifact::Test, Artifact::Code];
 
 /// The whole `FullBatteryV1` battery, every key graded.
 pub(crate) const B0: Variant = Variant {
@@ -494,6 +601,7 @@ pub(crate) const B0: Variant = Variant {
     version: 1,
     summary: "FullBatteryV1 as asked (PLAT-979 wording), all seven keys",
     modes: RTC_ONLY,
+    references: TEST_AND_CODE,
     grades: &[
         "test_asserts_intent",
         "assertion_vacuous",
@@ -513,6 +621,7 @@ pub(crate) const S0: Variant = Variant {
     version: 1,
     summary: "severity as asked in FullBatteryV1, rounded to the nearest rubric level",
     modes: RTC_ONLY,
+    references: TEST_AND_CODE,
     grades: &["severity"],
     asks: battery_asks,
     derive: battery_derive,
@@ -524,6 +633,7 @@ pub(crate) const E0: Variant = Variant {
     version: 1,
     summary: "code_exceeds_requirement as asked in FullBatteryV1",
     modes: RTC_ONLY,
+    references: TEST_AND_CODE,
     grades: &["code_exceeds_requirement"],
     asks: battery_asks,
     derive: battery_derive,
@@ -535,6 +645,7 @@ pub(crate) const T0: Variant = Variant {
     version: 1,
     summary: "test_asserts_intent as asked in FullBatteryV1 (RTC only)",
     modes: RTC_ONLY,
+    references: TEST_AND_CODE,
     grades: &["test_asserts_intent"],
     asks: battery_asks,
     derive: battery_derive,
@@ -595,12 +706,23 @@ fn criterion_derive(row: &Row, answered: &[Answered]) -> Predictions {
     }) = answers.get(&format!("{ac}::weakness_kind"))
     {
         let sound = label == "sound";
+        let p_sound = probabilities.get("sound").copied();
+        // The confidence of the graded answer: P(sound) for `yes`,
+        // 1 - P(sound) for `no`. The choice's own confidence is its
+        // confidence in the chosen weakness label, which for `no` is a
+        // different event from "not sound".
+        let answer_confidence = match (sound, p_sound) {
+            (true, Some(p)) => Some(p),
+            (false, Some(p)) => Some(1.0 - p),
+            (true, None) => Some(*confidence),
+            (false, None) => None,
+        };
         out.insert(
             "criterion_sound",
             Prediction {
                 answer: if sound { YES } else { NO }.to_owned(),
-                confidence: Some(*confidence),
-                ordinal: probabilities.get("sound").copied(),
+                confidence: answer_confidence,
+                ordinal: p_sound,
             },
         );
     }
@@ -621,6 +743,7 @@ pub(crate) const C0: Variant = Variant {
     version: 1,
     summary: "criterion-strength lens as shipped; criterion_sound from weakness_kind",
     modes: &Mode::ALL,
+    references: &[],
     grades: &["criterion_sound", "untestable", "no_measurable_threshold"],
     asks: criterion_asks,
     derive: criterion_derive,
@@ -666,6 +789,13 @@ pub(crate) async fn run(
     rows: &[Row],
     variants: &[&Variant],
 ) -> Result<RunOutput, String> {
+    let mut ids = std::collections::BTreeSet::new();
+    if let Some(duplicate) = rows.iter().find(|row| !ids.insert(row.id.as_str())) {
+        return Err(format!(
+            "row id {} appears more than once; results are keyed by row id",
+            duplicate.id
+        ));
+    }
     let mut output = RunOutput::default();
     let mut cache: HashMap<String, RawAnswers> = HashMap::new();
     for row in rows {

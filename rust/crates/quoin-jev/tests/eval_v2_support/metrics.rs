@@ -26,7 +26,7 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
-use super::corpus::{KindGroup, Row, TruthAnswer, TruthKind};
+use super::corpus::{Excluded, KindGroup, Row, TruthAnswer, TruthKind};
 use super::grading::{
     Graded, Tier, Verdict, class_stats, defect_recall, expected_calibration_error,
     no_defect_recall, percent, tally, trivial_baseline,
@@ -248,6 +248,8 @@ pub(crate) struct Summary {
     pub(crate) no_defect_recall: Option<f64>,
     /// Expected calibration error over the stated confidences.
     pub(crate) ece: Option<f64>,
+    /// Rows with no stated confidence, which ECE and the curve leave out.
+    pub(crate) without_confidence: usize,
     /// Ordering quality, for an ordinal key.
     pub(crate) concordance: Option<Concordance>,
 }
@@ -271,6 +273,7 @@ pub(crate) fn summarize(rows: &[Scored], spec: &KeySpec) -> Summary {
         defect_recall: defect_recall(&graded, spec.no_defect),
         no_defect_recall: no_defect_recall(&graded, spec.no_defect),
         ece: expected_calibration_error(&graded),
+        without_confidence: graded.iter().filter(|row| row.confidence.is_none()).count(),
         concordance: concordance(rows, spec),
     }
 }
@@ -314,7 +317,7 @@ fn summary_row(name: &str, summary: &Summary) -> String {
         },
     );
     format!(
-        "| {name} | {} | {} | `{}` {:.1}% | {} | {} | {} | {} | {ordering} |",
+        "| {name} | {} | {} | `{}` {:.1}% | {} | {} | {} | {} ({} w/o confidence) | {ordering} |",
         summary.rows,
         show_percent(summary.agreement),
         summary.baseline_label,
@@ -325,6 +328,7 @@ fn summary_row(name: &str, summary: &Summary) -> String {
         show_percent(summary.defect_recall),
         show_percent(summary.no_defect_recall),
         show_ratio(summary.ece),
+        summary.without_confidence,
     )
 }
 
@@ -421,13 +425,29 @@ pub(crate) fn render(variant: &str, key: &str, rows: &[Scored]) -> String {
 
 /// The report for a whole run: every variant, every key it grades that some
 /// row carries truth for, in [`KEYS`] order.
-pub(crate) fn render_run(rows: &[Row], output: &RunOutput, variants: &[&Variant]) -> String {
+/// `excluded` is every row a load left out; they are listed first, so a
+/// report can never be read without its exclusions.
+pub(crate) fn render_run(
+    rows: &[Row],
+    excluded: &[Excluded],
+    output: &RunOutput,
+    variants: &[&Variant],
+) -> String {
     let mut out = String::new();
     let _ = writeln!(
         out,
         "## Jev corpus-v2 run: {} requests sent, {} reused; models {:?}",
         output.requests_sent, output.requests_reused, output.models
     );
+    let _ = writeln!(
+        out,
+        "\n{} row(s) run; {} row(s) EXCLUDED at load:",
+        rows.len(),
+        excluded.len()
+    );
+    for row in excluded {
+        let _ = writeln!(out, "- EXCLUDED {}: {}", row.id, row.reason);
+    }
     let _ = writeln!(
         out,
         "\nRows labelled AGENT-LABELLED were graded against agent-written truth, \
