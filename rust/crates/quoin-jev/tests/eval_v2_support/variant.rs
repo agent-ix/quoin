@@ -70,6 +70,7 @@ use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
+use super::variants::intent::{T0_RT, T1, T2, TC_RC, TC_RT, TC_RTC};
 use super::variants::{exceeds, severity};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
@@ -229,6 +230,13 @@ pub(crate) const REGISTRY: &[Variant] = &[
     exceeds::E1,
     exceeds::E2,
     exceeds::E4,
+    // PLAT-1030 test_asserts_intent and trace variants; bars in spec/assurance/MP-242.
+    T0_RT,
+    TC_RT,
+    TC_RC,
+    TC_RTC,
+    T1,
+    T2,
 ];
 
 /// Resolves a comma-separated id list against [`REGISTRY`].
@@ -354,7 +362,7 @@ pub(crate) fn severity_prediction(answers: &RawAnswers, key: &str) -> Option<Pre
 }
 
 /// The answers of the single whole-row ask, or empty.
-fn whole_row(answered: &[Answered]) -> RawAnswers {
+pub(crate) fn whole_row(answered: &[Answered]) -> RawAnswers {
     answered
         .iter()
         .find(|answered| answered.unit.is_none())
