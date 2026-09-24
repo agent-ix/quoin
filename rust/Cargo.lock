@@ -11,7 +11,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 [[package]]
 name = "agent-ix-engineering-assurance-campaign"
 version = "0.0.0"
-source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=f11fa9406d541be19af5c48f61a6e9752f8daaa7#f11fa9406d541be19af5c48f61a6e9752f8daaa7"
+source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=c8e394891fffae60e9bd5d9f9cd8f6f03a5661ee#c8e394891fffae60e9bd5d9f9cd8f6f03a5661ee"
 dependencies = [
  "serde",
 ]
@@ -592,7 +592,7 @@ dependencies = [
 [[package]]
 name = "engineering-assurance"
 version = "0.4.1"
-source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=f11fa9406d541be19af5c48f61a6e9752f8daaa7#f11fa9406d541be19af5c48f61a6e9752f8daaa7"
+source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=c8e394891fffae60e9bd5d9f9cd8f6f03a5661ee#c8e394891fffae60e9bd5d9f9cd8f6f03a5661ee"
 dependencies = [
  "agent-ix-engineering-assurance-campaign",
  "rustix",

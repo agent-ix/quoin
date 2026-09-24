@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Agent-IX
 //! Recompute one retained producer attempt from exact source and inputs.
 
-use super::collection::check_collection_context;
+use super::checker_claim::check_partial_checker_claim;
+use super::collection::{CollectionObservationState, check_collection_context};
 use super::domain::check_domain_receipt;
 use super::origin::check_input_origins;
 use super::{
@@ -11,6 +12,8 @@ use super::{
     RawArtifactInput, TamperFacts, Value, canonical_digest, digest_bytes_sha256, parse_strict_json,
     read_bounded, read_digest_bytes, required, retained_json, verdict_json, verify,
 };
+use engineering_assurance::campaign::{ProcedureBindings, resolve_procedure};
+use engineering_assurance::producer_execution::ProducerExecutionRequest;
 
 #[allow(
     clippy::too_many_lines,
@@ -129,7 +132,7 @@ pub(super) fn check_attempt(
         source_inputs,
         procedure,
     )?;
-    check_collection_context(
+    let collection_state = check_collection_context(
         &collection,
         definition,
         member,
@@ -160,8 +163,37 @@ pub(super) fn check_attempt(
     if recomputed_digest.as_str() != verdict_digest || retained_digest.as_str() != verdict_digest {
         return Err(EvidenceError::Contradiction);
     }
-    let plan_accept = recomputed.verdict == crate::verify::Verdict::Accept;
     let raw_artifacts = checked_raw_artifacts(repo, attempt, &result)?;
+    if collection_state == CollectionObservationState::NotComputed {
+        if member.checker_procedure.is_some() {
+            if attempt.domain_verdict_digest.is_some() {
+                let domain = check_domain_receipt(
+                    repo,
+                    definition,
+                    definition_digest,
+                    attempt,
+                    run_attempts,
+                    &result,
+                    request_digest,
+                    result_digest,
+                    raw_artifacts,
+                    source_inputs,
+                )?;
+                if domain != AttemptEvidence::Inconclusive {
+                    return Err(EvidenceError::Contradiction);
+                }
+            } else {
+                check_partial_checker_claim(repo, definition, attempt, source_inputs)?;
+            }
+        } else if attempt.checker_request_digest.is_some()
+            || attempt.checker_result_digest.is_some()
+            || attempt.domain_verdict_digest.is_some()
+        {
+            return Err(EvidenceError::Contradiction);
+        }
+        return Ok(AttemptEvidence::Inconclusive);
+    }
+    let plan_accept = recomputed.verdict == crate::verify::Verdict::Accept;
     if member.checker_procedure.is_some() {
         check_domain_receipt(
             repo,
@@ -182,10 +214,11 @@ pub(super) fn check_attempt(
                 AttemptEvidence::Reject
             }
         })
-    } else if plan_accept {
-        Ok(AttemptEvidence::Accept)
     } else {
-        Ok(AttemptEvidence::Reject)
+        // The process-evidence adapter has no independent numeric observation.
+        // With no declared checker the producer may complete, but a computed
+        // score would claim evidence the adapter never supplied.
+        Err(EvidenceError::Contradiction)
     }
 }
 
@@ -255,91 +288,51 @@ pub(super) fn check_request_contract(
     definition: &CampaignDefinition,
     source_inputs: &[InputBinding],
 ) -> Result<(), EvidenceError> {
-    let source = definition
-        .source_graph
-        .iter()
-        .find(|source| source.repository == procedure.source_repository)
-        .ok_or(EvidenceError::Contradiction)?;
-    if request.pointer("/producer/name").and_then(Value::as_str) != Some(&procedure.producer_name)
-        || request.pointer("/producer/version").and_then(Value::as_str)
-            != Some(&procedure.producer_version)
-        || request
-            .pointer("/producer/sourceRevision")
-            .and_then(Value::as_str)
-            != Some(&source.revision)
-        || request
-            .pointer("/response/protocol/kind")
-            .and_then(Value::as_str)
-            != Some(&procedure.response_protocol)
-        || request
-            .pointer("/response/adapter/kind")
-            .and_then(Value::as_str)
-            != Some(&procedure.response_adapter)
-        || request
-            .pointer("/response/adapter/version")
-            .and_then(Value::as_str)
-            != Some(&procedure.response_adapter_version)
-        || request
-            .pointer("/budget/timeoutMillis")
-            .and_then(Value::as_i64)
-            != Some(procedure.timeout_millis)
-        || request.get("procedure").and_then(Value::as_str) != Some("direct")
-    {
-        return Err(EvidenceError::Contradiction);
-    }
-    let inputs = request
-        .get("inputs")
-        .and_then(Value::as_array)
-        .ok_or(EvidenceError::Contradiction)?;
-    let implicit = source_inputs
-        .iter()
-        .map(|binding| serde_json::to_value(binding).map_err(|_| EvidenceError::Contradiction))
-        .collect::<Result<Vec<_>, _>>()?;
-    let explicit: Vec<_> = inputs
-        .iter()
-        .filter(|input| !implicit.contains(input))
-        .map(|input| {
-            input
-                .get("role")
-                .and_then(Value::as_str)
-                .ok_or(EvidenceError::Contradiction)
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    for role in &explicit {
-        let exact = procedure
-            .inputs
-            .as_deref()
-            .unwrap_or(&[])
-            .iter()
-            .any(|declared| declared.role == *role);
-        let prefix = procedure
-            .input_role_prefixes
-            .as_deref()
-            .unwrap_or(&[])
-            .iter()
-            .any(|declared| role.starts_with(&declared.prefix));
-        if !exact && !prefix {
-            return Err(EvidenceError::Contradiction);
-        }
-    }
-    if procedure
+    let retained = ProducerExecutionRequest::from_retained_value(request)
+        .map_err(|_| EvidenceError::Contradiction)?;
+    let explicit: Vec<InputBinding> = retained
         .inputs
-        .as_deref()
-        .unwrap_or(&[])
         .iter()
-        .any(|declared| declared.required && !explicit.contains(&declared.role.as_str()))
-        || procedure
-            .input_role_prefixes
-            .as_deref()
-            .unwrap_or(&[])
+        .filter(|input| !source_inputs.contains(input))
+        .cloned()
+        .collect();
+    let input_origins = procedure.input_origins.as_ref().map(|declared| {
+        declared
             .iter()
-            .any(|declared| {
-                declared.required
-                    && !explicit
-                        .iter()
-                        .any(|role| role.starts_with(&declared.prefix))
-            })
-    {
+            .filter(|origin| explicit.iter().any(|input| input.role == origin.role))
+            .cloned()
+            .collect()
+    });
+    // The retained request is the only authority for runtime-selected paths,
+    // budgets and containment. The exact Git procedure remains the authority
+    // for arguments, environment declarations, roles, response and timeout.
+    // Resolving again checks the complete authored contract before any receipt
+    // derived from the request can count as evidence.
+    let bindings = ProcedureBindings {
+        producer: retained.producer.clone(),
+        caller: retained.caller.clone(),
+        capability_root: retained.capability_root.clone(),
+        environment: retained.environment.clone(),
+        inputs: explicit,
+        input_origins,
+        source_tree: None,
+        outputs: retained.outputs.clone(),
+        output_trees: retained.output_trees.clone(),
+        stdin: retained.stdin.clone(),
+        containment: retained.containment.clone(),
+        cancellation: retained.cancellation.clone(),
+        budget: retained.budget,
+        response_protocol: retained.response.protocol.clone(),
+        response_adapter: retained.response.adapter.clone(),
+        exit_codes: retained.response.exit_codes.clone(),
+    };
+    let mut resolved = resolve_procedure(procedure, &definition.source_graph, bindings)
+        .map_err(|_| EvidenceError::Contradiction)?
+        .request;
+    // EA appends verified Git source inputs after explicit selections. They
+    // are supplied by the independent Git inventory, never by the request.
+    resolved.inputs.extend_from_slice(source_inputs);
+    if resolved != retained {
         return Err(EvidenceError::Contradiction);
     }
     Ok(())

@@ -10,6 +10,12 @@ use serde_json::{Value, json};
 
 use super::{EvidenceError, MeasurementPlan, canonical_digest};
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum CollectionObservationState {
+    Measured(u64),
+    NotComputed,
+}
+
 #[allow(
     clippy::too_many_arguments,
     reason = "collection context binds separate definition, attempt, result, and source identities"
@@ -24,7 +30,7 @@ pub(super) fn check_collection_context(
     result: &Value,
     result_digest: &str,
     source_inputs: &[InputBinding],
-) -> Result<(), EvidenceError> {
+) -> Result<CollectionObservationState, EvidenceError> {
     let source_graph_digest =
         canonical_digest(&definition.source_graph).map_err(|_| EvidenceError::Contradiction)?;
     let scope = json!({
@@ -72,30 +78,50 @@ pub(super) fn check_collection_context(
         return Err(EvidenceError::Contradiction);
     }
     let observation = observations.first().ok_or(EvidenceError::Contradiction)?;
-    let value = observation
-        .get("value")
-        .and_then(Value::as_u64)
-        .filter(|value| *value <= 1)
-        .ok_or(EvidenceError::Contradiction)?;
+    let state = match observation.get("state").and_then(Value::as_str) {
+        Some("measured") => CollectionObservationState::Measured(
+            observation
+                .get("value")
+                .and_then(Value::as_u64)
+                .filter(|value| *value <= 1)
+                .ok_or(EvidenceError::Contradiction)?,
+        ),
+        Some("not_computed") if observation.get("value") == Some(&Value::Null) => {
+            CollectionObservationState::NotComputed
+        }
+        _ => return Err(EvidenceError::Contradiction),
+    };
+    let (matched, complete, reason) = match state {
+        CollectionObservationState::Measured(value) => {
+            (value, true, observation.get("reason").is_none())
+        }
+        CollectionObservationState::NotComputed => (
+            0,
+            false,
+            attempt.reason.as_deref().is_some_and(|expected| {
+                observation.get("reason").and_then(Value::as_str) == Some(expected)
+            }),
+        ),
+    };
     if observation.get("planId") != Some(&json!(member.plan_id))
         || observation.get("definitionVersion") != Some(&json!(member.definition_version))
         || observation.get("metric") != Some(&json!(plan.metric.as_str()))
         || observation.get("dimensions") != Some(&json!({"member":member.name}))
         || observation.get("shape") != Some(&json!("count"))
-        || observation.get("state") != Some(&json!("measured"))
+        || !reason
         || observation.get("unit") != Some(&json!("accepted checks"))
         || observation.get("population")
             != Some(&json!({
                 "examined":1,
-                "matched":value,
-                "complete":true,
+                "matched":matched,
+                "complete":complete,
                 "repetitions":1,
                 "identity":scope,
             }))
     {
         return Err(EvidenceError::Contradiction);
     }
-    Ok(())
+    Ok(state)
 }
 
 fn text<'a>(value: &'a Value, field: &str) -> Result<&'a str, EvidenceError> {

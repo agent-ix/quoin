@@ -4,15 +4,15 @@
 
 use super::collection::publish_collection;
 use super::{
-    BTreeMap, CHECKER_DEFINITION_PATH, CHECKER_INPUT_PATH, CHECKER_RAW_BUNDLE_PATH,
+    BTreeMap, BindingFailure, CHECKER_DEFINITION_PATH, CHECKER_INPUT_PATH, CHECKER_RAW_BUNDLE_PATH,
     CHECKER_REQUEST_PATH, CHECKER_RESULT_PATH, CampaignAttempt, CampaignDefinition,
-    CampaignRunError, CancellationToken, ContentDigest, DOMAIN_CHECK_INPUT_SCHEMA,
-    DependencyResultInput, DomainCheckInput, DomainVerdictReceipt, InputBinding, MeasurementPlan,
-    Path, ProcessEvidenceAdapter, ProcessEvidenceObservation, ProducerExecutionResult,
-    ProducerExecutionState, ProducerExecutor, RawArtifactInput, Read, RunMemberBindings,
-    SourceTreeBinding, VerifiedSource, assess_receipt, canonical_digest, raw_artifact_bundle,
-    read_digest_bytes, resolve_procedure, retain_bytes, retain_json_bytes, retain_value,
-    staged_dependency_path, staged_dependency_raw_path,
+    CampaignRunError, CampaignStoreError, CancellationToken, ContentDigest,
+    DOMAIN_CHECK_INPUT_SCHEMA, DependencyResultInput, DomainCheckInput, DomainVerdictReceipt,
+    InputBinding, MeasurementPlan, Path, ProcessEvidenceAdapter, ProcessEvidenceObservation,
+    ProducerExecutionResult, ProducerExecutionState, ProducerExecutor, RawArtifactInput, Read,
+    RunMemberBindings, SourceError, SourceTreeBinding, VerifiedSource, assess_receipt,
+    canonical_digest, raw_artifact_bundle, read_digest_bytes, resolve_procedure, retain_bytes,
+    retain_json_bytes, retain_value, staged_dependency_path, staged_dependency_raw_path,
 };
 
 #[allow(
@@ -37,14 +37,99 @@ pub(super) fn complete_attempt(
     result: &ProducerExecutionResult<ProcessEvidenceObservation>,
     attempt: &mut CampaignAttempt,
 ) -> Result<(), CampaignRunError> {
+    let verdict = match check_domain_attempt(
+        repo,
+        definition,
+        definition_digest,
+        member,
+        runtime,
+        sources,
+        prior,
+        executor,
+        result,
+        attempt,
+    ) {
+        Ok(verdict) => verdict,
+        Err(error) => {
+            let (reason, verdict) = classify_checker_failure(&error);
+            attempt.reason = Some(format!("{reason}:{error}"));
+            verdict
+        }
+    };
+    publish_collection(
+        repo,
+        definition,
+        run_id,
+        member,
+        plan,
+        runtime,
+        procedure,
+        producer_source,
+        plan_source,
+        result,
+        attempt,
+        verdict,
+    )
+    .map_err(|error| {
+        // `run_member` has a legacy handler for measurement and configuration
+        // refusals. A failed collection publication must still escape that
+        // handler: FR-114-AC-2 requires a retained collection per completion.
+        CampaignRunError::Store(CampaignStoreError::Store {
+            path: crate::store::measurements_root(repo),
+            message: error.to_string(),
+        })
+    })
+}
+
+fn classify_checker_failure(error: &CampaignRunError) -> (&'static str, super::AttemptEvidence) {
+    match error {
+        CampaignRunError::Binding(BindingFailure::IdentityMismatch(_))
+        | CampaignRunError::Store(
+            CampaignStoreError::Digest(_)
+            | CampaignStoreError::Json { .. }
+            | CampaignStoreError::File(_),
+        )
+        | CampaignRunError::Source(
+            SourceError::Dirty(_)
+            | SourceError::Revision(_)
+            | SourceError::Tree(_)
+            | SourceError::Path(_),
+        ) => (
+            "checker_stage_identity_unverified",
+            super::AttemptEvidence::Inconclusive,
+        ),
+        _ => (
+            "checker_stage_unavailable",
+            super::AttemptEvidence::Inconclusive,
+        ),
+    }
+}
+
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    reason = "the checker completion binds one immutable chain of selected identities"
+)]
+fn check_domain_attempt(
+    repo: &Path,
+    definition: &CampaignDefinition,
+    definition_digest: &str,
+    member: &engineering_assurance::campaign::CampaignMember,
+    runtime: &RunMemberBindings,
+    sources: &BTreeMap<String, VerifiedSource>,
+    prior: &[CampaignAttempt],
+    executor: &ProducerExecutor,
+    result: &ProducerExecutionResult<ProcessEvidenceObservation>,
+    attempt: &mut CampaignAttempt,
+) -> Result<super::AttemptEvidence, CampaignRunError> {
     let Some(checker_procedure) = &member.checker_procedure else {
         attempt.reason = Some("independent_checker_unavailable".to_owned());
-        return Ok(());
+        return Ok(super::AttemptEvidence::Inconclusive);
     };
-    let checker_runtime = runtime
-        .checker
-        .clone()
-        .ok_or_else(|| CampaignRunError::binding("checker runtime missing".to_owned()))?;
+    let Some(checker_runtime) = runtime.checker.clone() else {
+        attempt.reason = Some("independent_checker_unavailable".to_owned());
+        return Ok(super::AttemptEvidence::Inconclusive);
+    };
     let checker_source = sources
         .get(&checker_procedure.source_repository)
         .ok_or_else(|| CampaignRunError::binding("checker source missing".to_owned()))?;
@@ -115,7 +200,7 @@ pub(super) fn complete_attempt(
             .collect();
         if selected.is_empty() {
             attempt.reason = Some("dependency_result_missing".to_owned());
-            return Ok(());
+            return Ok(super::AttemptEvidence::Inconclusive);
         }
         for dependency in selected {
             let (Some(request_digest), Some(result_digest)) = (
@@ -123,7 +208,7 @@ pub(super) fn complete_attempt(
                 dependency.result_digest.as_deref(),
             ) else {
                 attempt.reason = Some("dependency_result_missing".to_owned());
-                return Ok(());
+                return Ok(super::AttemptEvidence::Inconclusive);
             };
             let bytes = read_digest_bytes(repo, "results", result_digest, "json")?;
             let path = staged_dependency_path(&dependency.member, dependency.index, result_digest);
@@ -223,7 +308,7 @@ pub(super) fn complete_attempt(
         Ok(request) => request,
         Err(error) => {
             attempt.reason = Some(format!("checker_invalid_request:{error}"));
-            return Ok(());
+            return Ok(super::AttemptEvidence::Inconclusive);
         }
     };
     let checker_adapter = match ProcessEvidenceAdapter::new(
@@ -233,7 +318,7 @@ pub(super) fn complete_attempt(
         Ok(adapter) => adapter,
         Err(error) => {
             attempt.reason = Some(format!("checker_adapter_unsupported:{error}"));
-            return Ok(());
+            return Ok(super::AttemptEvidence::Inconclusive);
         }
     };
     let request_digest = checker_request.identity.digest.as_str().to_owned();
@@ -252,7 +337,7 @@ pub(super) fn complete_attempt(
             Ok(result) => result,
             Err(error) => {
                 attempt.reason = Some(format!("checker_invalid_request:{error}"));
-                return Ok(());
+                return Ok(super::AttemptEvidence::Inconclusive);
             }
         };
     let result_digest = checker_result
@@ -275,7 +360,7 @@ pub(super) fn complete_attempt(
         ProducerExecutionState::Completed { .. }
     ) {
         attempt.reason = Some("independent_checker_incomplete".to_owned());
-        return Ok(());
+        return Ok(super::AttemptEvidence::Inconclusive);
     }
     let Some(verdict_artifact) = checker_result
         .artifacts
@@ -283,11 +368,11 @@ pub(super) fn complete_attempt(
         .find(|artifact| artifact.role == "verdict")
     else {
         attempt.reason = Some("checker_verdict_missing".to_owned());
-        return Ok(());
+        return Ok(super::AttemptEvidence::Inconclusive);
     };
     if checker_result.artifacts.len() != 1 {
         attempt.reason = Some("checker_artifact_inventory".to_owned());
-        return Ok(());
+        return Ok(super::AttemptEvidence::Inconclusive);
     }
     let mut reader = verdict_artifact
         .try_reader()
@@ -306,11 +391,11 @@ pub(super) fn complete_attempt(
     }
     if quoin_store::parse_strict_json(&receipt_bytes).is_err() {
         attempt.reason = Some("checker_verdict_malformed".to_owned());
-        return Ok(());
+        return Ok(super::AttemptEvidence::Inconclusive);
     }
     let Some(receipt) = serde_json::from_slice::<DomainVerdictReceipt>(&receipt_bytes).ok() else {
         attempt.reason = Some("checker_verdict_malformed".to_owned());
-        return Ok(());
+        return Ok(super::AttemptEvidence::Inconclusive);
     };
     let (receipt_digest, _) = retain_json_bytes(repo, "domain-verdicts", &receipt_bytes)?;
     attempt.domain_verdict_digest = Some(receipt_digest);
@@ -327,23 +412,9 @@ pub(super) fn complete_attempt(
             .map(|process| process.stderr.digest.as_str()),
     ) else {
         attempt.reason = Some("checker_verdict_identity".to_owned());
-        return Ok(());
+        return Ok(super::AttemptEvidence::Reject);
     };
-    publish_collection(
-        repo,
-        definition,
-        run_id,
-        member,
-        plan,
-        runtime,
-        procedure,
-        producer_source,
-        plan_source,
-        result,
-        attempt,
-        verdict,
-    )?;
-    Ok(())
+    Ok(verdict)
 }
 
 fn stage_checker_input(
@@ -371,4 +442,40 @@ fn stage_checker_input(
         digest: ContentDigest::of_bytes(bytes),
         executable: false,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::{CampaignRunError, CampaignStoreError, classify_checker_failure};
+    use crate::campaign::AttemptEvidence;
+
+    /// Trace: FR-114-AC-2, FR-114-AC-4
+    /// Provenance: PLAT-1043
+    #[test]
+    fn tc_1942_checker_stage_read_fault_is_inconclusive() {
+        let error = CampaignRunError::Store(CampaignStoreError::Io {
+            path: PathBuf::from("checker-input"),
+            source: std::io::Error::from(std::io::ErrorKind::PermissionDenied),
+        });
+        assert_eq!(
+            classify_checker_failure(&error),
+            ("checker_stage_unavailable", AttemptEvidence::Inconclusive)
+        );
+    }
+
+    /// Trace: FR-114-AC-2, FR-114-AC-4
+    /// Provenance: PLAT-1043
+    #[test]
+    fn tc_1942_checker_stage_identity_fault_has_no_unverified_reject() {
+        let error = CampaignRunError::identity("checker verdict raw digest".to_owned());
+        assert_eq!(
+            classify_checker_failure(&error),
+            (
+                "checker_stage_identity_unverified",
+                AttemptEvidence::Inconclusive
+            )
+        );
+    }
 }

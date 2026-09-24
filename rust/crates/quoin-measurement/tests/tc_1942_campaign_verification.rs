@@ -265,20 +265,20 @@ fn tc_1942_missing_member_is_inconclusive_and_source_tampering_is_refused() {
     ));
 }
 
-/// Trace: FR-114-AC-1, FR-114-AC-2, FR-114-AC-3, FR-114-AC-4
-/// Provenance: PLAT-1043
 #[cfg(target_os = "linux")]
-#[test]
-fn tc_1942_direct_process_and_checker_publish_protected_collection() {
-    use engineering_assurance::campaign::{CampaignDefinition, CampaignVerdict, canonical_digest};
+fn direct_fixture() -> (
+    tempfile::TempDir,
+    tempfile::TempDir,
+    engineering_assurance::campaign::CampaignDefinition,
+    BTreeMap<String, std::path::PathBuf>,
+    BTreeMap<String, quoin_measurement::campaign::run::RunMemberBindings>,
+) {
+    use engineering_assurance::campaign::CampaignDefinition;
     use engineering_assurance::producer_execution::{
         CancellationBinding, ContainmentBinding, ContentDigest, ContractBinding, ExecutionBudget,
         ExitCodeBinding, OutputBinding, ProducerDescriptor, StdinBinding,
     };
-    use quoin_measurement::campaign::run::{
-        BindingFailure, CampaignRunError, RunMemberBindings, run_campaign,
-    };
-    use quoin_measurement::campaign::store::digest_path;
+    use quoin_measurement::campaign::run::RunMemberBindings;
 
     let (repo, _, _) = fixture();
     let procedure_path = repo.path().join("campaign/procedure.json");
@@ -478,6 +478,236 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         ),
     ]);
     let runs = BTreeMap::from([("one".to_owned(), runtime)]);
+    (repo, producer_repo, definition, checkouts, runs)
+}
+
+#[cfg(target_os = "linux")]
+fn assert_retained_unchecked_attempts(
+    repo: &Path,
+    definition: &engineering_assurance::campaign::CampaignDefinition,
+    checkouts: &BTreeMap<String, std::path::PathBuf>,
+    run_id: &str,
+    run: &engineering_assurance::campaign::CampaignRun,
+    reason: &str,
+    checker_executed: bool,
+) {
+    use engineering_assurance::campaign::{
+        CampaignAttemptStatus, CampaignVerdict, canonical_digest,
+    };
+
+    assert_eq!(run.verdict, CampaignVerdict::Inconclusive, "{run:?}");
+    let attempts = run.attempts.as_ref().expect("retained attempts");
+    assert_eq!(attempts.len(), 2, "one collection per producer repetition");
+    let mut collection_ids = std::collections::BTreeSet::new();
+    for attempt in attempts {
+        assert_eq!(attempt.status, CampaignAttemptStatus::Completed);
+        assert_eq!(attempt.reason.as_deref(), Some(reason));
+        assert_eq!(attempt.checker_request_digest.is_some(), checker_executed);
+        assert_eq!(attempt.checker_result_digest.is_some(), checker_executed);
+        assert!(attempt.domain_verdict_digest.is_none());
+        assert!(attempt.verdict_digest.is_some());
+        let id = attempt.collection_id.as_deref().expect("collection ID");
+        assert!(collection_ids.insert(id));
+        let parsed_id =
+            quoin_measurement::types::ids::CollectionId::parse(id).expect("valid collection ID");
+        let path = quoin_measurement::store::measurement_path(repo, &parsed_id);
+        let bytes = fs::read(path).expect("retained collection");
+        assert_eq!(
+            attempt.collection_digest.as_deref(),
+            Some(digest_bytes_sha256(&bytes).as_hex())
+        );
+        let collection: serde_json::Value =
+            serde_json::from_slice(&bytes).expect("collection JSON");
+        assert_eq!(
+            collection["observations"][0]["state"],
+            json!("not_computed")
+        );
+        assert_eq!(
+            collection["observations"][0]["value"],
+            serde_json::Value::Null
+        );
+        assert_eq!(collection["observations"][0]["reason"], json!(reason));
+        assert_eq!(
+            collection["rawEvidence"]["resultDigest"],
+            json!(attempt.result_digest)
+        );
+        assert_eq!(
+            collection["rawEvidence"]["checkerResultDigest"].is_string(),
+            checker_executed
+        );
+        assert!(collection["rawEvidence"]["domainVerdictDigest"].is_null());
+    }
+    let digest = canonical_digest(definition).expect("definition identity");
+    let replay = verify_retained_campaign(repo, digest.as_str(), run_id, checkouts)
+        .expect("independent retained replay");
+    assert_eq!(
+        replay.decision.verdict,
+        CampaignOutcome::Inconclusive,
+        "{replay:?}"
+    );
+}
+
+/// Trace: FR-114-AC-2, FR-114-AC-3, FR-114-AC-4
+/// Provenance: PLAT-1043
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1942_completed_producer_without_checker_retains_each_collection() {
+    use quoin_measurement::campaign::run::run_campaign;
+
+    let (repo, _producer_repo, mut definition, checkouts, runs) = direct_fixture();
+    definition.members[0].checker_procedure = None;
+    let run_id = "fixture-no-checker";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("completed producer without checker");
+    assert_retained_unchecked_attempts(
+        repo.path(),
+        &definition,
+        &checkouts,
+        run_id,
+        &run,
+        "independent_checker_unavailable",
+        false,
+    );
+}
+
+/// Trace: FR-114-AC-2, FR-114-AC-3, FR-114-AC-4
+/// Provenance: PLAT-1043
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1942_unavailable_checker_retains_each_collection() {
+    use quoin_measurement::campaign::run::run_campaign;
+
+    let (repo, _producer_repo, definition, checkouts, mut runs) = direct_fixture();
+    runs.get_mut("one").expect("fixture member").checker = None;
+    let run_id = "fixture-checker-unavailable";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("completed producer with unavailable checker");
+    assert_retained_unchecked_attempts(
+        repo.path(),
+        &definition,
+        &checkouts,
+        run_id,
+        &run,
+        "independent_checker_unavailable",
+        false,
+    );
+}
+
+/// Trace: FR-114-AC-2, FR-114-AC-3, FR-114-AC-4
+/// Provenance: PLAT-1043
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1942_malformed_checker_receipt_retains_each_collection() {
+    use engineering_assurance::campaign::CampaignDefinition;
+    use quoin_measurement::campaign::run::run_campaign;
+    use quoin_measurement::campaign::store::digest_path;
+
+    let (repo, _producer_repo, definition, checkouts, runs) = direct_fixture();
+    let mut value = serde_json::to_value(definition).expect("definition JSON");
+    value["members"][0]["checkerProcedure"]["arguments"] = json!([
+        {"kind":"literal","value":"-c"},
+        {"kind":"literal","value":"import sys; open(sys.argv[sys.argv.index('--output')+1], 'wb').write(b'not-json')"},
+        {"kind":"literal","value":"--output"},
+        {"kind":"output_artifact","value":"verdict"}
+    ]);
+    let definition: CampaignDefinition =
+        serde_json::from_value(value).expect("malformed checker definition");
+    let run_id = "fixture-checker-malformed";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("completed producer with malformed checker receipt");
+    assert_retained_unchecked_attempts(
+        repo.path(),
+        &definition,
+        &checkouts,
+        run_id,
+        &run,
+        "checker_verdict_malformed",
+        true,
+    );
+    let definition_digest =
+        engineering_assurance::campaign::canonical_digest(&definition).expect("definition digest");
+    let first = &run.attempts.as_ref().expect("retained attempts")[0];
+    for (kind, digest) in [
+        (
+            "requests",
+            first
+                .checker_request_digest
+                .as_deref()
+                .expect("checker request digest"),
+        ),
+        (
+            "results",
+            first
+                .checker_result_digest
+                .as_deref()
+                .expect("checker result digest"),
+        ),
+    ] {
+        let path = digest_path(repo.path(), kind, digest, "json").expect("checker record path");
+        let original = fs::read(&path).expect("checker record bytes");
+        fs::write(&path, b"{}" as &[u8]).expect("tamper checker record");
+        let replay =
+            verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+                .expect("tampered checker replay assessment");
+        assert_eq!(replay.decision.verdict, CampaignOutcome::Reject, "{kind}");
+        fs::write(&path, original).expect("restore checker record");
+    }
+
+    // A coherent new hash chain must not turn a completed checker that
+    // produced malformed bytes into an unavailable checker while keeping the
+    // old `checker_verdict_malformed` reason.
+    let old_result_digest = first
+        .checker_result_digest
+        .as_deref()
+        .expect("checker result digest");
+    let old_result_path =
+        digest_path(repo.path(), "results", old_result_digest, "json").expect("result path");
+    let mut result: serde_json::Value =
+        serde_json::from_slice(&fs::read(old_result_path).expect("result bytes"))
+            .expect("result JSON");
+    result["state"] = json!({"kind":"unavailable"});
+    let (new_result_digest, _) =
+        quoin_measurement::campaign::store::retain_value(repo.path(), "results", &result)
+            .expect("retain substituted result");
+    let collection_id = quoin_measurement::types::ids::CollectionId::parse(
+        first.collection_id.as_deref().expect("collection ID"),
+    )
+    .expect("valid collection ID");
+    let collection_path = quoin_measurement::store::measurement_path(repo.path(), &collection_id);
+    let mut collection: serde_json::Value =
+        serde_json::from_slice(&fs::read(&collection_path).expect("collection bytes"))
+            .expect("collection JSON");
+    collection["rawEvidence"]["checkerResultDigest"] = json!(new_result_digest);
+    let collection_bytes = serde_json::to_vec(&collection).expect("collection JSON");
+    fs::write(collection_path, &collection_bytes).expect("substituted collection");
+    let mut run_value: serde_json::Value = serde_json::from_slice(
+        &fs::read(run_path(repo.path(), run_id).expect("run path")).expect("run bytes"),
+    )
+    .expect("run JSON");
+    run_value["attempts"][0]["checkerResultDigest"] = json!(new_result_digest);
+    run_value["attempts"][0]["collectionDigest"] =
+        json!(digest_bytes_sha256(&collection_bytes).as_hex());
+    fs::write(
+        run_path(repo.path(), run_id).expect("run path"),
+        serde_json::to_vec(&run_value).expect("run JSON"),
+    )
+    .expect("substituted run");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("rehashed checker replay assessment");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Reject);
+}
+
+/// Trace: FR-114-AC-1, FR-114-AC-2, FR-114-AC-3, FR-114-AC-4
+/// Provenance: PLAT-1043
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1942_direct_process_and_checker_publish_protected_collection() {
+    use engineering_assurance::campaign::{CampaignVerdict, canonical_digest};
+    use quoin_measurement::campaign::run::{BindingFailure, CampaignRunError, run_campaign};
+    use quoin_measurement::campaign::store::digest_path;
+
+    let (repo, _producer_repo, definition, checkouts, runs) = direct_fixture();
     let mut invalid_runs = runs.clone();
     invalid_runs
         .get_mut("one")
@@ -605,4 +835,88 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         fs::write(&collection_path, &original_collection).expect("restore collection");
         fs::write(&run_file, &original_run).expect("restore run");
     }
+}
+
+/// Trace: FR-114-AC-3, FR-114-AC-4
+/// Provenance: PLAT-1043
+/// A coherent new hash chain cannot substitute source-authored argv. The
+/// retained request is reconstructed from the exact Git procedure on replay.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1942_rehashed_producer_arguments_do_not_replay() {
+    use engineering_assurance::campaign::{CampaignDefinition, canonical_digest};
+    use quoin_measurement::campaign::run::run_campaign;
+    use quoin_measurement::campaign::store::digest_path;
+
+    let (repo, _producer_repo, mut definition, checkouts, runs) = direct_fixture();
+    definition.members[0].checker_procedure = None;
+    let definition: CampaignDefinition = definition;
+    let run_id = "fixture-rehashed-argv";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("direct bounded producer");
+    let first = &run.attempts.as_ref().expect("attempt inventory")[0];
+    let old_request_digest = first.request_digest.as_deref().expect("request digest");
+    let old_result_digest = first.result_digest.as_deref().expect("result digest");
+    let request_path =
+        digest_path(repo.path(), "requests", old_request_digest, "json").expect("request path");
+    let result_path =
+        digest_path(repo.path(), "results", old_result_digest, "json").expect("result path");
+    let mut request: serde_json::Value =
+        serde_json::from_slice(&fs::read(request_path).expect("request bytes"))
+            .expect("request JSON");
+    request["arguments"][0]["value"] = json!("campaign/other-producer.py");
+    let (new_request_digest, _) =
+        quoin_measurement::campaign::store::retain_value(repo.path(), "requests", &request)
+            .expect("rehash substituted request");
+    assert_ne!(new_request_digest, old_request_digest);
+
+    let mut result: serde_json::Value =
+        serde_json::from_slice(&fs::read(result_path).expect("result bytes")).expect("result JSON");
+    result["requestIdentity"]["digest"] = json!(new_request_digest);
+    let (new_result_digest, _) =
+        quoin_measurement::campaign::store::retain_value(repo.path(), "results", &result)
+            .expect("rehash dependent result");
+
+    let collection_id = quoin_measurement::types::ids::CollectionId::parse(
+        first.collection_id.as_deref().expect("collection ID"),
+    )
+    .expect("valid collection ID");
+    let collection_path = quoin_measurement::store::measurement_path(repo.path(), &collection_id);
+    let mut collection: serde_json::Value =
+        serde_json::from_slice(&fs::read(&collection_path).expect("collection bytes"))
+            .expect("collection JSON");
+    collection["rawEvidence"]["requestDigest"] = json!(new_request_digest);
+    collection["rawEvidence"]["resultDigest"] = json!(new_result_digest);
+    let artifacts = collection["verificationStack"]["artifacts"]
+        .as_object_mut()
+        .expect("attestation artifacts");
+    let old_result_key = format!("spec/evidence/campaigns/results/{old_result_digest}.json");
+    let new_result_key = format!("spec/evidence/campaigns/results/{new_result_digest}.json");
+    assert!(artifacts.remove(&old_result_key).is_some());
+    artifacts.insert(new_result_key, json!(format!("sha256:{new_result_digest}")));
+    let collection_bytes = serde_json::to_vec(&collection).expect("rehashed collection JSON");
+    let new_collection_digest = digest_bytes_sha256(&collection_bytes).as_hex().to_owned();
+    fs::write(collection_path, collection_bytes).expect("substituted collection");
+
+    let run_file = run_path(repo.path(), run_id).expect("run path");
+    let mut run_value: serde_json::Value =
+        serde_json::from_slice(&fs::read(&run_file).expect("run bytes")).expect("run JSON");
+    run_value["attempts"][0]["requestDigest"] = json!(new_request_digest);
+    run_value["attempts"][0]["resultDigest"] = json!(new_result_digest);
+    run_value["attempts"][0]["collectionDigest"] = json!(new_collection_digest);
+    fs::write(
+        run_file,
+        serde_json::to_vec(&run_value).expect("substituted run JSON"),
+    )
+    .expect("substituted run");
+
+    let definition_digest = canonical_digest(&definition).expect("definition digest");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("replay returns an assessment");
+    assert_eq!(
+        replay.decision.verdict,
+        CampaignOutcome::Reject,
+        "{replay:?}"
+    );
 }

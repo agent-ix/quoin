@@ -336,6 +336,7 @@ fn retained_json(repo: &Path, kind: &'static str, digest: &str) -> Result<Value,
 }
 
 mod attempt;
+mod checker_claim;
 mod domain;
 use attempt::check_attempt;
 #[cfg(test)]

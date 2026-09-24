@@ -75,7 +75,9 @@ struct CollectionObservation<'a> {
     dimensions: CollectionDimension<'a>,
     shape: &'static str,
     state: &'static str,
-    value: u8,
+    value: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reason: Option<&'a str>,
     unit: &'static str,
     population: CollectionPopulation<'a>,
 }
@@ -103,8 +105,8 @@ struct CollectionRawEvidence<'a> {
     request_digest: &'a str,
     result_digest: &'a str,
     checker_request_digest: Option<&'a str>,
-    checker_result_digest: &'a str,
-    domain_verdict_digest: &'a str,
+    checker_result_digest: Option<&'a str>,
+    domain_verdict_digest: Option<&'a str>,
     raw_artifacts: Option<&'a [CampaignRawArtifact]>,
     input_origins: InputOriginInventory,
 }
@@ -112,7 +114,7 @@ struct CollectionRawEvidence<'a> {
 #[allow(
     clippy::too_many_arguments,
     clippy::too_many_lines,
-    reason = "collection intake records one complete and independently checked invocation"
+    reason = "collection intake records one completed producer and its available checker evidence"
 )]
 pub(super) fn publish_collection(
     repo: &Path,
@@ -128,9 +130,8 @@ pub(super) fn publish_collection(
     attempt: &mut CampaignAttempt,
     verdict: super::AttemptEvidence,
 ) -> Result<(), CampaignRunError> {
-    if verdict == super::AttemptEvidence::Inconclusive {
+    if verdict == super::AttemptEvidence::Inconclusive && attempt.reason.is_none() {
         attempt.reason = Some("independent_checker_inconclusive".to_owned());
-        return Ok(());
     }
     let score = u8::from(verdict == super::AttemptEvidence::Accept);
     let identity_text = format!("{run_id}/{}#{}", member.name, attempt.index);
@@ -171,14 +172,6 @@ pub(super) fn publish_collection(
     let source_inventory = producer_source.input_inventory()?;
     let input_origins = from_runtime(runtime, &request_value, &source_inventory, procedure)
         .map_err(|error| CampaignRunError::binding(error.to_string()))?;
-    let checker_result_digest = attempt
-        .checker_result_digest
-        .as_deref()
-        .ok_or_else(|| CampaignRunError::binding("checker result missing".to_owned()))?;
-    let domain_verdict_digest = attempt
-        .domain_verdict_digest
-        .as_deref()
-        .ok_or_else(|| CampaignRunError::binding("domain verdict missing".to_owned()))?;
     let mut artifacts = BTreeMap::new();
     artifacts.insert(result_relative, format!("sha256:{result_digest}"));
     artifacts.extend(protected_artifacts(plan, plan_source)?);
@@ -219,13 +212,20 @@ pub(super) fn publish_collection(
                 member: &member.name,
             },
             shape: "count",
-            state: "measured",
-            value: score,
+            state: if verdict == super::AttemptEvidence::Inconclusive {
+                "not_computed"
+            } else {
+                "measured"
+            },
+            value: (verdict != super::AttemptEvidence::Inconclusive).then_some(score),
+            reason: (verdict == super::AttemptEvidence::Inconclusive)
+                .then_some(attempt.reason.as_deref())
+                .flatten(),
             unit: "accepted checks",
             population: CollectionPopulation {
                 examined: 1,
                 matched: score,
-                complete: true,
+                complete: verdict != super::AttemptEvidence::Inconclusive,
                 repetitions: 1,
                 identity: CollectionScope {
                     campaign: &definition.id,
@@ -242,8 +242,8 @@ pub(super) fn publish_collection(
             request_digest,
             result_digest,
             checker_request_digest: attempt.checker_request_digest.as_deref(),
-            checker_result_digest,
-            domain_verdict_digest,
+            checker_result_digest: attempt.checker_result_digest.as_deref(),
+            domain_verdict_digest: attempt.domain_verdict_digest.as_deref(),
             raw_artifacts: attempt.raw_artifacts.as_deref(),
             input_origins,
         },
