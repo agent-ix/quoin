@@ -8,4 +8,4 @@ jobs:
       security-events: write
       actions: read
       contents: read
-    uses: agent-ix/nodejs-actions/.github/workflows/security-scan.yml@5f1eb92b20aaac54dc8dff180e3d19adfd1a08ea
+    uses: agent-ix/nodejs-actions/.github/workflows/security-scan.yml@da5a07f2d7aaa0072a6771ad1a5a3b3b1943ef43
