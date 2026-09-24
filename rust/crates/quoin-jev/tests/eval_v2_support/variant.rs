@@ -69,7 +69,7 @@ use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 
 use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
-use super::units::{Unit, split_rust_units};
+use super::units::{Unit, split_units};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
 };
@@ -330,12 +330,12 @@ fn whole_row(answered: &[Answered]) -> RawAnswers {
 // Per-unit fan-out
 // ---------------------------------------------------------------------------
 
-/// The row's code split into units ([`split_rust_units`]), or empty when the
-/// row carries no code.
+/// The row's code split into units in its file's language ([`split_units`]),
+/// or empty when the row carries no code.
 pub(crate) fn code_units(row: &Row) -> Vec<Unit> {
     row.code
         .as_ref()
-        .map(|code| split_rust_units(&code.body))
+        .map(|code| split_units(&code.path, &code.body))
         .unwrap_or_default()
 }
 

@@ -1,8 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Splitting a Rust body into units for per-unit fan-out, and finding one
-//! named item in a Rust source file (PLAT-1027).
+//! Splitting a code body into units for per-unit fan-out, and finding one
+//! named item in a source file (PLAT-1027, Python in PLAT-1035).
+//!
+//! The language is chosen by file extension ([`Language::of_path`]):
+//! [`extract_item`] and [`split_units`] dispatch to the Rust half below or to
+//! the Python half in [`python`]. An item in a file of any other language is
+//! refused with a reason (the external loader then excludes that row), and a
+//! body of any other language is one [`UnitKind::Whole`] unit.
+//!
+//! # Rust
 //!
 //! Not a parser. A lexical mask blanks comments, string literals and char
 //! literals, so a brace inside `"{"` or `// }` cannot move the structure, and
@@ -19,13 +27,77 @@
 //!    that yields two or more.
 //! 3. Otherwise one [`UnitKind::Whole`] unit holding the whole body.
 
+use std::ffi::OsStr;
+use std::path::Path;
+
+mod python;
+
+pub(crate) use python::{extract_python_def, split_python_units};
+
+/// A language the harness reads units from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Language {
+    /// `.rs`.
+    Rust,
+    /// `.py`.
+    Python,
+}
+
+impl Language {
+    /// The language of `path`, by its extension; `None` for any other.
+    pub(crate) fn of_path(path: &str) -> Option<Self> {
+        match Path::new(path).extension().and_then(OsStr::to_str) {
+            Some("rs") => Some(Self::Rust),
+            Some("py") => Some(Self::Python),
+            _ => None,
+        }
+    }
+}
+
+/// The source of the one item `name` names in `source`, read as the language
+/// of `path`: [`extract_rust_fn`] or [`extract_python_def`].
+///
+/// # Errors
+/// When `path`'s language is neither, or as the language's extractor.
+pub(crate) fn extract_item(path: &str, source: &str, name: &str) -> Result<String, String> {
+    match Language::of_path(path) {
+        Some(Language::Rust) => extract_rust_fn(source, name),
+        Some(Language::Python) => extract_python_def(source, name),
+        None => Err(format!(
+            "{path}: the harness extracts items from .rs and .py files only"
+        )),
+    }
+}
+
+/// Splits `body`, read as the language of `path`, into units:
+/// [`split_rust_units`] or [`split_python_units`], and one
+/// [`UnitKind::Whole`] unit for any other language.
+pub(crate) fn split_units(path: &str, body: &str) -> Vec<Unit> {
+    match Language::of_path(path) {
+        Some(Language::Rust) => split_rust_units(body),
+        Some(Language::Python) => split_python_units(body),
+        None => vec![whole(body)],
+    }
+}
+
+/// One unit holding the whole body.
+fn whole(body: &str) -> Unit {
+    Unit {
+        kind: UnitKind::Whole,
+        label: "whole body".to_owned(),
+        text: body.to_owned(),
+    }
+}
+
 /// What a unit is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum UnitKind {
-    /// One `fn` item.
+    /// One function: a Rust `fn` item, a Python `def` or method.
     Function,
     /// One `match` arm or one `if`/`else` block.
     Branch,
+    /// One top-level statement of a function body (Python).
+    Statement,
     /// The whole body: nothing smaller applied.
     Whole,
 }
@@ -508,11 +580,7 @@ pub(crate) fn split_rust_units(body: &str) -> Vec<Unit> {
     if branches.len() >= 2 {
         return branches;
     }
-    vec![Unit {
-        kind: UnitKind::Whole,
-        label: "whole body".to_owned(),
-        text: body.to_owned(),
-    }]
+    vec![whole(body)]
 }
 
 /// A one-line label: whitespace collapsed, cut at 60 chars.

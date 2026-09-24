@@ -19,7 +19,8 @@
 //!   may set `ref` instead of embedding bodies: the harness reads the named
 //!   files under `QUOIN_JEV_EXTERNAL_ROOT/<repo name>`, checks each file's
 //!   sha256 against the row, applies the mutation patch, and cuts the named
-//!   `fn` out. `ref.commit` is informational: the digest over the bytes is
+//!   item out: a Rust `fn` or a Python `def`, chosen by the file's extension
+//!   ([`extract_item`]). `ref.commit` is informational: the digest over the bytes is
 //!   what is checked, so a checkout at another commit with identical bytes is
 //!   accepted, and one with different bytes is refused.
 //!
@@ -40,7 +41,7 @@ use serde::{Deserialize, Serialize};
 
 use super::keys::{Mode, NO, YES, spec};
 use super::patch::apply_unified_patch;
-use super::units::extract_rust_fn;
+use super::units::extract_item;
 
 /// The only schema id this harness reads.
 pub(crate) const SCHEMA: &str = "quoin-jev.eval-corpus/v2";
@@ -155,7 +156,8 @@ pub(crate) struct Requirement {
 pub(crate) struct TestArtifact {
     /// The test file.
     pub(crate) path: String,
-    /// The test function.
+    /// The test function: a Rust `fn` name, or a Python `def` name or
+    /// `Class.method`.
     pub(crate) fn_name: String,
     /// The test's source. Empty on an external row until materialized.
     #[serde(default)]
@@ -168,7 +170,9 @@ pub(crate) struct TestArtifact {
 pub(crate) struct CodeArtifact {
     /// The source file.
     pub(crate) path: String,
-    /// The covered symbol; `Type::method` is matched on its last segment.
+    /// The covered symbol: `fn_name`, or `Type::method` (Rust) /
+    /// `Class.method` (Python), resolved inside that type when the file has
+    /// it.
     pub(crate) symbol: String,
     /// The symbol's source. Empty on an external row until materialized.
     #[serde(default)]
@@ -597,14 +601,14 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
                     .test
                     .as_mut()
                     .ok_or("ref.paths names a test but the row has none")?;
-                artifact.body = extract_rust_fn(&text, &artifact.fn_name)?;
+                artifact.body = extract_item(relative, &text, &artifact.fn_name)?;
             }
             "code" => {
                 let code = row
                     .code
                     .as_mut()
                     .ok_or("ref.paths names code but the row has none")?;
-                code.body = extract_rust_fn(&text, &code.symbol)?;
+                code.body = extract_item(relative, &text, &code.symbol)?;
             }
             // The requirement's text is carried in the row. Unmutated, its
             // file is digest-checked only; mutated, the patched file must
