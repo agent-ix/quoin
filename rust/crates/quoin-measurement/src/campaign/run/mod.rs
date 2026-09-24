@@ -141,6 +141,12 @@ pub enum BindingFailure {
     /// Required configuration or source-bound selection was absent or invalid.
     #[error("invalid campaign binding: {0}")]
     InvalidConfiguration(String),
+    /// Collection intake requires at least one supported, nonempty toolchain identity.
+    #[error("campaign member {member} has invalid toolchain identities")]
+    InvalidToolchains {
+        /// Campaign member whose runtime toolchain inventory is invalid.
+        member: String,
+    },
     /// A retained request/result/artifact identity differed from the selected bytes.
     #[error("campaign identity mismatch: {0}")]
     IdentityMismatch(String),
@@ -255,6 +261,15 @@ pub fn run_campaign(
             "member binding inventory".to_owned(),
         ));
     }
+    for (member, runtime) in bindings {
+        if !valid_toolchains(&runtime.toolchains) {
+            return Err(CampaignRunError::Binding(
+                BindingFailure::InvalidToolchains {
+                    member: member.clone(),
+                },
+            ));
+        }
+    }
     let definition_value = serde_json::to_value(definition)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
     let definition_digest = canonical_digest(definition)?.as_str().to_owned();
@@ -362,6 +377,37 @@ pub fn run_campaign(
     quoin_store::store::write_content_addressed(&publication_path, &canonical)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
     Ok(run)
+}
+
+fn valid_toolchains(toolchains: &BTreeMap<String, String>) -> bool {
+    !toolchains.is_empty()
+        && toolchains.iter().all(|(name, identity)| {
+            matches!(name.as_str(), "node" | "rust" | "python") && !identity.trim().is_empty()
+        })
+}
+
+#[cfg(test)]
+mod toolchain_tests {
+    use super::valid_toolchains;
+    use std::collections::BTreeMap;
+
+    // TC-1942: reject configuration that would fail collection intake after execution.
+    #[test]
+    fn campaign_preflight_requires_supported_toolchain_identity() {
+        assert!(!valid_toolchains(&BTreeMap::new()));
+        assert!(!valid_toolchains(&BTreeMap::from([(
+            "container".to_owned(),
+            "image@sha256:abc".to_owned(),
+        )])));
+        assert!(!valid_toolchains(&BTreeMap::from([(
+            "rust".to_owned(),
+            "  ".to_owned(),
+        )])));
+        assert!(valid_toolchains(&BTreeMap::from([(
+            "rust".to_owned(),
+            "rustc 1.98.1 x86_64-unknown-linux-gnu".to_owned(),
+        )])));
+    }
 }
 
 fn evidence_of_attempt(repo: &Path, attempt: &CampaignAttempt) -> AttemptEvidence {

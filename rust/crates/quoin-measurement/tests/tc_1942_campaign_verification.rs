@@ -275,7 +275,9 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         CancellationBinding, ContainmentBinding, ContentDigest, ContractBinding, ExecutionBudget,
         ExitCodeBinding, OutputBinding, ProducerDescriptor, StdinBinding,
     };
-    use quoin_measurement::campaign::run::{RunMemberBindings, run_campaign};
+    use quoin_measurement::campaign::run::{
+        BindingFailure, CampaignRunError, RunMemberBindings, run_campaign,
+    };
     use quoin_measurement::campaign::store::digest_path;
 
     let (repo, _, _) = fixture();
@@ -476,6 +478,31 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         ),
     ]);
     let runs = BTreeMap::from([("one".to_owned(), runtime)]);
+    let mut invalid_runs = runs.clone();
+    invalid_runs
+        .get_mut("one")
+        .expect("fixture member")
+        .toolchains
+        .clear();
+    // TC-1942: a configuration collection intake would refuse must fail
+    // before the producer executes or any run is published.
+    let invalid_run_id = "fixture-empty-toolchains";
+    assert!(matches!(
+        run_campaign(
+            repo.path(),
+            &definition,
+            invalid_run_id,
+            &checkouts,
+            &invalid_runs,
+        ),
+        Err(CampaignRunError::Binding(BindingFailure::InvalidToolchains { member }))
+            if member == "one"
+    ));
+    assert!(
+        !run_path(repo.path(), invalid_run_id)
+            .expect("safe invalid run path")
+            .exists()
+    );
     let run = run_campaign(
         repo.path(),
         &definition,
