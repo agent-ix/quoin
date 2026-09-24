@@ -7,6 +7,7 @@ owner: quoin quality
 stage: gate
 metric: guidance.repair_success
 definition_version: guidance.repair-success-v2
+ground_truth_kind: mechanical
 protected_apparatus:
   - bench/guidance-evaluator-contract-v1.json
   - bench/guidance-independent-review-v1.json

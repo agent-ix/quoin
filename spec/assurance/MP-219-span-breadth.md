@@ -7,6 +7,7 @@ owner: quoin quality
 stage: gate
 metric: span_breadth_rate
 definition_version: property.span-breadth-v2
+ground_truth_kind: agent-labelled
 protected_apparatus:
   - bench/span-breadth-v1-labels.json
 negative_controls:
