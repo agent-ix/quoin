@@ -369,7 +369,7 @@ fn tc_1028_s1_level_thresholds_each_fact_at_tau() {
     let all_clean = probe(&[]);
     let distribution = level_distribution(&all_clean);
     assert!(close(distribution[Level::High.index()], 0.447_287_5));
-    assert!(close(distribution[Level::Medium.index()], 0.153_377_71875));
+    assert!(close(distribution[Level::Medium.index()], 0.153_377_718_75));
     assert!(close(distribution[Level::None.index()], 0.399_334_781_25));
     let prediction = s1_answer(&severity::S1, Mode::ReqTestCode, &all_clean);
     assert_eq!(prediction.answer, "none");
