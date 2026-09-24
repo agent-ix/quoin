@@ -3,7 +3,7 @@ id: SR-162
 title: "SOL re-review — campaign origin proof and collection replay"
 type: SpecReview
 analysis: gap-analysis
-scope: "Draft PR #627 at 2e2561e; FR-114; PLAT-1061 origin proof; EA f11fa94"
+scope: "Draft PR #627 through 3a3c754; FR-114; PLAT-1061 origin proof; EA f11fa94"
 review_set: subset
 relationships:
   - target: "ix://agent-ix/quoin/FR-114"
@@ -14,18 +14,18 @@ relationships:
 
 ## Summary
 
-The collection-context and rehashed-substitution checks address the high finding in SR-160/SR-161. The EA dependency is pinned to f11fa9406d541be19af5c48f61a6e9752f8daaa7 in both manifest and lock. The new origin replay binds declared source files and dependency artifacts to the retained request. The cross-repository source mix-up found at 2e2561e was corrected in 631b7e7 by passing the plan source inventory separately to collection-context replay.
+The collection-context and rehashed-substitution checks address the high finding in SR-160/SR-161. The EA dependency is pinned to f11fa9406d541be19af5c48f61a6e9752f8daaa7 in both manifest and lock. The new origin replay binds declared source files and dependency artifacts to the retained request. The cross-repository source mix-up found at 2e2561e was corrected in 631b7e7 by passing the plan source inventory separately to collection-context replay. TC-1947 at 3a3c754 now exercises authored source-file and dependency origins through full execution and retained replay.
 
 ## Verdict
 
-**CONDITIONAL** — the high severity cross-repository replay defect is closed by source inspection and a passing Linux two-repository run/replay fixture. FND-002 remains open. FR-114's matrix correctly remains partial; full CLI package auth and full TL Campaign execution are pending.
+**CONDITIONAL** — both SOL findings are closed by source inspection and passing Linux fixtures. FR-114's broader matrix remains partial; full CLI package auth and full TL Campaign execution are pending.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | low | Closed in 631b7e7: collection replay now derives protected apparatus from the plan repository, matching publication; revised Linux fixture passed | rust/crates/quoin-measurement/src/campaign/verify/attempt.rs:131 |
-| FND-002 | medium | Origin tests check helpers, while the direct producer/checker fixture still has no explicit inputs | rust/crates/quoin-measurement/src/campaign/verify/origin/tests.rs:79 |
+| FND-002 | low | Closed in 3a3c754: TC-1947 runs authored source-file and dependency inputs through EA, retained replay, and a rehashed role substitution | rust/crates/quoin-measurement/tests/tc_1947_campaign_input_origins.rs:366 |
 
 ## Finding detail
 
@@ -37,10 +37,10 @@ Focused source-object repro: `git cat-file -e af555f5:<protected path>` succeeds
 
 ### FND-002
 
-The three new origin tests directly call `check_input_origins` with synthetic request and prior-result records. The Linux direct-process fixture exercises complete retention and replay but selects zero explicit inputs. Add one complete source-file and one dependency-artifact path through `run_campaign` and `verify_retained_campaign`, including a rehashed substitution. This is a coverage gap, not evidence that the helper checks fail.
+At 2e2561e the three origin tests called `check_input_origins` with synthetic request and prior-result records, while the Linux direct-process fixture selected zero explicit inputs. TC-1947 now executes `prepare` and dependent `consume` members through `run_campaign`, with authored `inputOrigins` for a tracked source file and the prior member's output artifact. It independently replays an accepted run, checks that the retained declaration is `enforced` and both origin kinds are present, changes the dependency artifact role in the collection, rehashes the collection and run attempt, and requires `verify_retained_campaign` to reject. The matrix has a tagged TC-1947 row. The campaign owner reports its Linux Docker run passed (1 test). This closes the requested complete-path coverage gap; no separate rehashed source-file substitution is present in TC-1947, though the focused origin unit test covers that refusal.
 
 ## Coverage
 
-Rust 1.98.1 with `TMPDIR=/private/tmp`: `cargo fmt --all -- --check` passed; `cargo clippy --offline -p quoin-measurement --all-targets --features campaign -- -D warnings` passed on the revised candidate; three focused origin tests and the one macOS feature-gated non-TL fixture passed. The campaign owner's Linux Docker run passed both TC-1942 tests. The full crate test command in this macOS sandbox reached a permission failure in `tc_975_006_an_unreadable_protected_file_is_refused`; the campaign owner separately reports the full Quoin measurement suite passed with normal filesystem permissions. Full CLI package auth and TL `cave` Campaign execution remain pending.
+Rust 1.98.1 with `TMPDIR=/private/tmp`: `cargo fmt --all -- --check` passed; `cargo clippy --offline -p quoin-measurement --all-targets --features campaign -- -D warnings` passed at 3a3c754; three focused origin tests and the one macOS feature-gated non-TL fixture passed. TC-1947 is Linux-gated and yields zero tests on macOS. The campaign owner's offline Linux Docker runs passed TC-1942 (2 tests) and TC-1947 (1 test). The full crate test command in this macOS sandbox reached a permission failure in `tc_975_006_an_unreadable_protected_file_is_refused`; the campaign owner separately reports the full Quoin measurement suite passed with normal filesystem permissions. Full CLI package auth and TL `cave` Campaign execution remain pending.
 
 The source-file origin check deliberately compares path and byte digest; `executable` describes the chosen staging mode and is bound to the EA request. EA's authored `inputOrigins` schema does not declare Git mode, so a mode difference is not a source-origin contradiction under this contract. Dependency-artifact replay checks role, digest, retained bytes and `byteLength`; the common raw-artifact replay also checks the complete unique artifact population, including output-tree leaf roles. Optional formal semantic gap review was not invoked; the findings above arose from the requested code review.
