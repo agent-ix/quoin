@@ -32,7 +32,7 @@ use std::path::Path;
 
 mod python;
 
-pub(crate) use python::{extract_python_def, split_python_units};
+pub(crate) use python::{extract_python_def, mask as mask_python, split_python_units};
 
 /// A language the harness reads units from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -77,6 +77,16 @@ pub(crate) fn split_units(path: &str, body: &str) -> Vec<Unit> {
         Some(Language::Rust) => split_rust_units(body),
         Some(Language::Python) => split_python_units(body),
         None => vec![whole(body)],
+    }
+}
+
+/// `text` masked as the language of `path`: [`mask_python`] for a `.py`
+/// file, [`mask`] for any other (PLAT-1024 round 2's T3 and E5 read test
+/// and code bodies of both languages).
+pub(crate) fn mask_for(path: &str, text: &str) -> Vec<u8> {
+    match Language::of_path(path) {
+        Some(Language::Python) => mask_python(text),
+        Some(Language::Rust) | None => mask(text),
     }
 }
 

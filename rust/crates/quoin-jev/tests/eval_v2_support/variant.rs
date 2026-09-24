@@ -70,7 +70,7 @@ use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
-use super::variants::intent::{T0_RT, T1, T2, TC_RC, TC_RT, TC_RTC};
+use super::variants::intent::{T0_RT, T1, T2, T3, TC_RC, TC_RT, TC_RTC};
 use super::variants::{exceeds, severity, soundness};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
@@ -230,6 +230,8 @@ pub(crate) const REGISTRY: &[Variant] = &[
     exceeds::E1,
     exceeds::E2,
     exceeds::E4,
+    // PLAT-1024 round 2 (MP-241 "Round 2"): per-unit outcome necessity.
+    exceeds::E5,
     // PLAT-1030 test_asserts_intent and trace variants; bars in spec/assurance/MP-242.
     T0_RT,
     TC_RT,
@@ -237,6 +239,8 @@ pub(crate) const REGISTRY: &[Variant] = &[
     TC_RTC,
     T1,
     T2,
+    // PLAT-1024 round 2 (MP-242 "Round 2"): assertion selection.
+    T3,
     // PLAT-1031 criterion-soundness variants; bars in spec/assurance/MP-243.
     soundness::K1,
     soundness::K2,

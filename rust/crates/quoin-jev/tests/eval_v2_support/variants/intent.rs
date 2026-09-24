@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `test_asserts_intent` variants T1 and T2, and the trace check TC
-//! (PLAT-1030, parent PLAT-1024; pre-registered in MP-242).
+//! `test_asserts_intent` variants T1, T2 and T3, and the trace check TC
+//! (PLAT-1030, parent PLAT-1024; pre-registered in MP-242, T3 in its
+//! "Round 2" section).
+//!
+//! # T3, round 2
+//!
+//! Dev run 1 on jev-1.13.0: T0, T1 and T2 tied on every weakened-test pair
+//! (15 of 15, 22 of 22). T3 moves the reading into code: code lists the
+//! test's assertion statements ([`extract_assertions`]), and Jev only picks
+//! which one checks the stated behaviour, or `none` ([`T3`],
+//! [`derive_assertion_selection`]). A test with no assertion is `no` with no
+//! call.
 //!
 //! # Why these shapes
 //!
@@ -60,7 +70,9 @@
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
+use std::sync::LazyLock;
 
+use regex::Regex;
 use typesafe_sdk_questions::{
     NoulCriteria, Question, Questions, choice, noul, noul_with, questions,
 };
@@ -68,6 +80,8 @@ use typesafe_sdk_questions::{
 use crate::eval_v2_support::corpus::{KindGroup, Row, TruthKind};
 use crate::eval_v2_support::keys::{KEYS, Mode, NO, YES};
 use crate::eval_v2_support::metrics::{Scored, render, scored};
+use crate::eval_v2_support::units::{Language, mask_for};
+use crate::eval_v2_support::variants::exceeds::label_mass;
 use crate::eval_v2_support::variant::{
     Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, RunOutput, T0,
     Variant, noul_prediction, request, state, whole_row,
@@ -522,6 +536,294 @@ pub(crate) const T2: Variant = Variant {
 };
 
 // ---------------------------------------------------------------------------
+// T3: assertion selection (PLAT-1024 round 2, MP-242 "Round 2")
+// ---------------------------------------------------------------------------
+
+/// T3's wire key: which listed assertion checks the stated behaviour.
+pub(crate) const ASSERTION_CHOICE: &str = "checks_stated_behaviour";
+
+/// The state field T3 lists the test's assertions in, `A1` .. `An`. It is a
+/// `test_` field, so the wording rule reads it as the test's.
+pub(crate) const ASSERTIONS_FIELD: &str = "test_assertions";
+
+/// T3's "no listed assertion checks it" label.
+pub(crate) const NO_ASSERTION: &str = "none";
+
+/// T3 lists at most this many assertions; the overflow joins the last, so no
+/// assertion text is dropped.
+pub(crate) const MAX_ASSERTIONS: usize = 20;
+
+/// A Rust assertion's opening: an assert-family macro (`assert!`,
+/// `assert_eq!`, `assert_ne!`, `assert_matches!`, `debug_assert*!`,
+/// `prop_assert*!`, so `assert!(matches!(..))` too), or a call that insists
+/// on an error (`.unwrap_err()`, `.expect_err(..)`). Adapted from jev-code's
+/// `ASSERTION` (`src/workflows/hunks.ts`), which reads diff lines; this reads
+/// whole statements.
+static RUST_ASSERTION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\b(?:debug_)?(?:prop_)?assert\w*!\s*[(\[{]|\.(?:unwrap_err|expect_err)\s*\(")
+        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+/// A Python assertion's opening: an `assert` statement, a unittest
+/// `self.assert*(..)`, or `pytest.raises(..)`.
+static PYTHON_ASSERTION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?m)^[ \t]*assert\b|\bself\.assert\w*\s*\(|\bpytest\.raises\s*\(")
+        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+/// Where the statement holding an assertion that opens at `at` begins, in
+/// masked bytes. An assert macro or `self.assert*` begins where it matched.
+/// An `.unwrap_err()` / `.expect_err()` call, a Python `assert` and a
+/// `pytest.raises` begin at their statement's first token: back to the
+/// previous `;`, `{` or `}` (Rust) or line break (Python) outside brackets.
+fn statement_start(masked: &[u8], at: usize, python: bool) -> usize {
+    let opens_at_match = masked
+        .get(at..)
+        .is_some_and(|rest| rest.starts_with(b"self.") || !(python || rest.starts_with(b".")));
+    if opens_at_match {
+        return at;
+    }
+    let mut depth = 0usize;
+    let mut start = at;
+    while let Some(byte) = start.checked_sub(1).and_then(|before| masked.get(before)) {
+        match byte {
+            b')' | b']' => depth += 1,
+            b'(' | b'[' if depth == 0 => break,
+            b'(' | b'[' => depth -= 1,
+            b'{' | b'}' | b';' if depth == 0 && !python => break,
+            b'\n' | b';' if depth == 0 && python => break,
+            _ => {}
+        }
+        start -= 1;
+    }
+    while masked.get(start).is_some_and(u8::is_ascii_whitespace) && start < at {
+        start += 1;
+    }
+    start
+}
+
+/// Where the statement from `from` ends (exclusive), in masked bytes: after
+/// its `;` (Rust), at its line break (Python, outside brackets and not after
+/// a `\`), or at the `}` that closes the block it is the tail of.
+fn statement_end(masked: &[u8], from: usize, python: bool) -> usize {
+    let mut depth = 0usize;
+    let mut at = from;
+    while let Some(byte) = masked.get(at) {
+        match byte {
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' if depth == 0 => return at,
+            b')' | b']' | b'}' => depth -= 1,
+            b';' if depth == 0 => return if python { at } else { at + 1 },
+            b'\n' if depth == 0 && python => {
+                let continued = at
+                    .checked_sub(1)
+                    .and_then(|before| masked.get(before))
+                    .is_some_and(|before| *before == b'\\');
+                if !continued {
+                    return at;
+                }
+            }
+            _ => {}
+        }
+        at += 1;
+    }
+    masked.len()
+}
+
+/// Every assertion statement in a test body, verbatim with whitespace
+/// collapsed, in source order. Comments and string literals are masked
+/// first ([`mask_for`]), so an `assert!` inside a string or a comment is not
+/// one; an assertion nested inside another (`assert_eq!(f().unwrap_err(),
+/// ..)`) is part of the outer one. The language is `path`'s: Python for
+/// `.py`, Rust otherwise. Code, not Jev, does this: T3 asks Jev only to
+/// choose among the statements found.
+pub(crate) fn extract_assertions(path: &str, body: &str) -> Vec<String> {
+    let python = Language::of_path(path) == Some(Language::Python);
+    let masked = mask_for(path, body);
+    let masked_text = String::from_utf8_lossy(&masked);
+    let pattern: &Regex = if python {
+        &PYTHON_ASSERTION
+    } else {
+        &RUST_ASSERTION
+    };
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    for found in pattern.find_iter(&masked_text) {
+        let previous_end = spans.last().map_or(0, |(_, end)| *end);
+        if found.start() < previous_end {
+            continue;
+        }
+        let start = statement_start(&masked, found.start(), python).max(previous_end);
+        let start = if python {
+            // `(?m)^[ \t]*assert` matches from the line start.
+            (start..found.end())
+                .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+                .unwrap_or(start)
+        } else {
+            start
+        };
+        let end = statement_end(&masked, found.start(), python);
+        spans.push((start, end.max(found.end())));
+    }
+    spans
+        .into_iter()
+        .filter_map(|(start, end)| body.get(start..end))
+        .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
+        .filter(|text| !text.is_empty())
+        .collect()
+}
+
+/// The assertions T3 lists for `row`: [`extract_assertions`] over its test,
+/// the overflow past [`MAX_ASSERTIONS`] joined into the last. Empty when the
+/// row has no test or its test has no assertion.
+pub(crate) fn row_assertions(row: &Row) -> Vec<String> {
+    let Some(test) = &row.test else {
+        return Vec::new();
+    };
+    let mut found = extract_assertions(&test.path, &test.body);
+    if found.len() > MAX_ASSERTIONS {
+        let overflow = found.split_off(MAX_ASSERTIONS - 1).join(" ");
+        found.push(overflow);
+    }
+    found
+}
+
+/// The assertion labels: `A1` .. `An`.
+pub(crate) fn assertion_label(index: usize) -> String {
+    format!("A{}", index + 1)
+}
+
+/// T3's instruction. It names the test and the requirement only: in `RT`
+/// there is nothing else, and in `RTC` the rest of the state is context.
+const ASSERTION_INSTRUCTIONS: &str = "Judge exactly one claim. `test_assertions` lists, \
+     verbatim and numbered, every assertion statement in the test in `test_body`. The \
+     requirement is `fr_statement`, narrowed by `ac_text` when present. Which one of the listed \
+     assertions checks the behaviour the requirement states, so that it would fail if the \
+     system did not behave as the requirement states? Choose `none` when no listed assertion \
+     does: for example when each one checks only that a call completes or returns a success \
+     value, checks a different outcome or a different case, checks a value the test set up \
+     itself, or accepts values the requirement rules out.";
+
+/// T3's question for `count` assertions: one label per assertion, then
+/// `none`.
+pub(crate) fn assertion_questions(count: usize) -> Questions {
+    let mut options: Vec<(String, String)> = (0..count)
+        .map(|index| {
+            let label = assertion_label(index);
+            let text = format!(
+                "Assertion {label} in `{ASSERTIONS_FIELD}` checks the behaviour the requirement \
+                 states."
+            );
+            (label, text)
+        })
+        .collect();
+    options.push((
+        NO_ASSERTION.to_owned(),
+        "No listed assertion checks the behaviour the requirement states.".to_owned(),
+    ));
+    questions([(ASSERTION_CHOICE, choice(ASSERTION_INSTRUCTIONS, options))])
+}
+
+/// One ask carrying the row's assertions in [`ASSERTIONS_FIELD`], or none
+/// when the test has no assertion: that row's answer is derived in code.
+fn t3_asks(row: &Row) -> Vec<Ask> {
+    let assertions = row_assertions(row);
+    if assertions.is_empty() {
+        return Vec::new();
+    }
+    let listed: serde_json::Map<String, serde_json::Value> = assertions
+        .iter()
+        .enumerate()
+        .map(|(index, text)| (assertion_label(index), text.clone().into()))
+        .collect();
+    let mut row_state = state(row);
+    if let serde_json::Value::Object(fields) = &mut row_state {
+        fields.insert(
+            ASSERTIONS_FIELD.to_owned(),
+            serde_json::Value::Object(listed),
+        );
+    }
+    vec![Ask {
+        unit: None,
+        request: request(row_state, assertion_questions(assertions.len())),
+    }]
+}
+
+/// T3's derive rule over `count` listed assertions and the one response:
+/// `P(any) = 1 - P(none)`, `test_asserts_intent` is `yes` iff `P(any) >=
+/// TAU`, the confidence is `P(any)` for `yes` and `1 - P(any)` for `no`, and
+/// `P(any)` is the ordinal Bar D reads. With `count == 0` nothing was asked:
+/// a test with no assertion is `no`, `P(any) = 0`, confidence 1.
+///
+/// # Errors
+/// When the choice is missing or not a choice, its label is not one of the
+/// `count + 1` offered, or its probabilities do not cover exactly those
+/// labels and total 1 (`exceeds::label_mass`).
+pub(crate) fn derive_assertion_selection(
+    count: usize,
+    answers: &RawAnswers,
+) -> Result<Prediction, String> {
+    if count == 0 {
+        return Ok(Prediction {
+            answer: NO.to_owned(),
+            confidence: Some(1.0),
+            ordinal: Some(0.0),
+        });
+    }
+    let (label, probabilities) = match answers.get(ASSERTION_CHOICE) {
+        Some(RawAnswer::Choice {
+            label,
+            probabilities,
+            ..
+        }) => (label, probabilities),
+        Some(other) => {
+            return Err(format!(
+                "`{ASSERTION_CHOICE}`: expected a choice, got {other:?}"
+            ));
+        }
+        None => return Err(format!("`{ASSERTION_CHOICE}`: no answer in the response")),
+    };
+    let mut space: Vec<String> = (0..count).map(assertion_label).collect();
+    space.push(NO_ASSERTION.to_owned());
+    let space: Vec<&str> = space.iter().map(String::as_str).collect();
+    if !space.contains(&label.as_str()) {
+        return Err(format!("`{ASSERTION_CHOICE}`: unknown label {label:?}"));
+    }
+    let p_none = label_mass(probabilities, &[NO_ASSERTION], &space)
+        .map_err(|error| format!("`{ASSERTION_CHOICE}`: {error}"))
+        .and_then(|p| probability(ASSERTION_CHOICE, p))?;
+    let p_any = 1.0 - p_none;
+    let yes = p_any >= TAU;
+    Ok(Prediction {
+        answer: if yes { YES } else { NO }.to_owned(),
+        confidence: Some(if yes { p_any } else { 1.0 - p_any }),
+        ordinal: Some(p_any),
+    })
+}
+
+fn t3_derive(row: &Row, answered: &[Answered]) -> Predictions {
+    let count = row_assertions(row).len();
+    let prediction = loudly(
+        row,
+        derive_assertion_selection(count, &whole_row(answered)),
+    );
+    Predictions::from([(TEST_ASSERTS_INTENT, prediction)])
+}
+
+/// T3: code lists the test's assertion statements; Jev picks the one that
+/// checks the stated behaviour, or `none`. `yes` iff `P(any) >= 0.5`.
+pub(crate) const T3: Variant = Variant {
+    id: "T3",
+    version: 1,
+    summary: "assertion selection: code lists the test's assertions, Jev picks the one \
+              checking the stated behaviour or none; yes iff 1 - P(none) >= 0.5",
+    modes: TEST_MODES,
+    references: &[Artifact::Test],
+    grades: &[TEST_ASSERTS_INTENT],
+    asks: t3_asks,
+    derive: t3_derive,
+};
+
+// ---------------------------------------------------------------------------
 // T0-RT: the baseline on requirement-plus-test rows
 // ---------------------------------------------------------------------------
 
@@ -739,7 +1041,7 @@ fn is_trace_check(variant: &Variant) -> bool {
 /// cassette. T0 is not one of them. It is PLAT-1027's shared baseline, which
 /// other experiments run too, so a run of T0 without any of these needs no
 /// cassette (PR #623 re-review L3).
-pub(crate) const MP_242: [Variant; 6] = [TC_RT, TC_RC, TC_RTC, T0_RT, T1, T2];
+pub(crate) const MP_242: [Variant; 7] = [TC_RT, TC_RC, TC_RTC, T0_RT, T1, T2, T3];
 
 /// Refuses a live run of an MP-242 variant with no cassette. A malformed
 /// response stops the run (see [`loudly`]); with a recording cassette every
