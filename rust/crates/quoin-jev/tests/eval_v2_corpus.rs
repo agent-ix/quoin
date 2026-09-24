@@ -214,7 +214,6 @@ fn tc_1025_every_known_truth_label_is_backed_by_the_mutation_log() {
                         && entry["pair_outcome_weakened_test"] == "survived"
                         && pair.is_some_and(|p| p["failure"] == "assertion")
                 }
-                (_, _, true) => false,
                 (
                     "violating_code",
                     "code_implements_intent" | "divergence_kind" | "severity",
@@ -230,7 +229,6 @@ fn tc_1025_every_known_truth_label_is_backed_by_the_mutation_log() {
                     entry["all_assertions_removed"] == true
                         && entry["pair_outcome_weakened_test"] == "survived"
                 }
-                ("requirement_text", "trace_correct" | "divergence_kind", false) => true,
                 ("requirement_text", "test_asserts_intent" | "severity", false) => {
                     entry["requirement_effect"] == "demands_unchecked"
                 }
@@ -240,7 +238,8 @@ fn tc_1025_every_known_truth_label_is_backed_by_the_mutation_log() {
                             .iter()
                             .all(|p| entry["meets_definition"][p]["answer"] == "yes")
                 }
-                (
+                ("requirement_text", "trace_correct" | "divergence_kind", false)
+                | (
                     "trace_swap",
                     "trace_correct" | "test_asserts_intent" | "code_implements_intent" | "severity",
                     false,
