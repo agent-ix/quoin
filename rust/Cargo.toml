@@ -40,7 +40,7 @@ cast_sign_loss = "warn"
 cast_possible_wrap = "warn"
 
 [workspace.package]
-version = "0.24.1"
+version = "0.25.0"
 edition = "2024"
 rust-version = "1.98.1"
 license = "AGPL-3.0-or-later"
