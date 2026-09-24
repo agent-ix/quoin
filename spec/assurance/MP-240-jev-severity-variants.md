@@ -74,8 +74,9 @@ Per variant, per mode slice, and per truth-kind group:
    0.95: the share of rows answered at or above the threshold, and the
    accuracy on them. Reported only, not gated.
 
-5. **Paired mutant contrast.** Over (source row, mutant) pairs linked by
-   `mutation.source_id`: successes, failures and ties under Bar D's rule
+5. **Paired mutant contrast** (pending `mutation.source_id`, PLAT-1025, and
+   the paired-contrast helper, PR #625). Over (source row, mutant) pairs
+   linked by `mutation.source_id`: successes, failures and ties under Bar D's rule
    below, and the one-sided sign-test p-value over the non-tie pairs.
 
 ECE, no-defect recall and the per-class table are reported and not gated.
@@ -175,9 +176,14 @@ family is gated per mode, on the dev split, pooled across truth kinds:
   a variant that leaves more than 10% of its rows unanswered fails Bar C**,
   whatever its concordance.
 
-- **Bar D, paired mutant contrast.** Pairs come only from
-  `mutation.source_id`: each mutant names its unmutated source row, and the
-  two share a split. Bar D uses every dev pair (source row, mutant) whose
+- **Bar D, paired mutant contrast.** *Pending dependencies, not yet
+  present: the corpus field `mutation.source_id` (PLAT-1025) and the generic
+  paired-contrast helper in `metrics.rs` (PR #625). Neither exists on `main`
+  when this plan is registered. Bar D is computed only once both land, and is
+  reported as "not computable (pending dependency)" until then; it is never
+  approximated another way.* Pairs come only from `mutation.source_id`,
+  which is to name each mutant's unmutated source row, the two sharing a
+  split. Bar D uses every dev pair (source row, mutant) whose
   mutant is a violating-code mutant, a test-weakening mutant or a
   `trace_swap`, and whose source row is NOT labelled `high` (a rise from
   `high` is impossible). On the variant's severity ordinal (the same one Bar
@@ -194,9 +200,9 @@ family is gated per mode, on the dev split, pooled across truth kinds:
   least 10 non-tie pairs; fewer is "not gateable (n too small)". D is
   computed per mode, and reported per mutant kind as a breakdown. Its truth
   is by-construction (the mutation made the row worse), so D is known truth.
-  This rule is shared with the sibling PLAT-1024 plans. It is implemented in
-  phase 2 on the generic paired-contrast helper PLAT-1029 adds to
-  `metrics.rs`, before any live call.
+  This rule is shared with the sibling PLAT-1024 plans. It will be
+  implemented in phase 2 on the pending paired-contrast helper (PR #625),
+  before any live call.
 
 **Minimum slice.** A mode is gated only if its dev slice has at least 30
 severity rows, of which at least 10 are labelled `high`. A smaller slice is

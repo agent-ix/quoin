@@ -69,8 +69,8 @@ use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 
 use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
-use super::severity;
 use super::units::{Unit, split_units};
+use super::variants::severity;
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
 };

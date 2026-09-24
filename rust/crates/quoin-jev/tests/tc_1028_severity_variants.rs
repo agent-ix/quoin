@@ -34,12 +34,12 @@ use eval_v2_support::corpus::TruthKind;
 use eval_v2_support::corpus::{self, Row};
 use eval_v2_support::keys::Mode;
 use eval_v2_support::metrics::{Scored, concordance, paired_concordance, scored};
-use eval_v2_support::severity::{
-    self, Branch, EXAMPLES, Fact, HIGH_MASS_FLOOR, Level, S3_LEVELS, SEVERITY, expected_level,
-    expected_prediction, high_mass_prediction, level_distribution, most_probable_level, rule,
-};
 use eval_v2_support::variant::{
     self, Answered, Prediction, RawAnswer, RawAnswers, Variant, wording_violations,
+};
+use eval_v2_support::variants::severity::{
+    self, Branch, EXAMPLES, Fact, HIGH_MASS_FLOOR, Level, S3_LEVELS, SEVERITY, expected_level,
+    expected_prediction, high_mass_prediction, level_distribution, most_probable_level, rule,
 };
 use gap_semantic_support::SEVERITY_RUBRIC;
 

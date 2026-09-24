@@ -47,9 +47,9 @@ use std::fmt::Write as _;
 
 use typesafe_sdk_questions::{Questions, noul, questions, score};
 
-use super::corpus::Row;
-use super::keys::Mode;
-use super::variant::{
+use crate::eval_v2_support::corpus::Row;
+use crate::eval_v2_support::keys::Mode;
+use crate::eval_v2_support::variant::{
     Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, Variant, request,
     state,
 };
