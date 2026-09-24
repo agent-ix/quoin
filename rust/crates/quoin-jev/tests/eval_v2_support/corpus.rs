@@ -19,7 +19,8 @@
 //!   may set `ref` instead of embedding bodies: the harness reads the named
 //!   files under `QUOIN_JEV_EXTERNAL_ROOT/<repo name>`, checks each file's
 //!   sha256 against the row, applies the mutation patch, and cuts the named
-//!   `fn` out. `ref.commit` is informational: the digest over the bytes is
+//!   item out: a Rust `fn` or a Python `def`, chosen by the file's extension
+//!   ([`extract_item`]). `ref.commit` is informational: the digest over the bytes is
 //!   what is checked, so a checkout at another commit with identical bytes is
 //!   accepted, and one with different bytes is refused.
 //!
@@ -40,7 +41,7 @@ use serde::{Deserialize, Serialize};
 
 use super::keys::{Mode, NO, YES, spec};
 use super::patch::apply_unified_patch;
-use super::units::extract_rust_fn;
+use super::units::extract_item;
 
 /// The only schema id this harness reads.
 pub(crate) const SCHEMA: &str = "quoin-jev.eval-corpus/v2";
@@ -155,7 +156,8 @@ pub(crate) struct Requirement {
 pub(crate) struct TestArtifact {
     /// The test file.
     pub(crate) path: String,
-    /// The test function.
+    /// The test function: a Rust `fn` name, or a Python `def` name or
+    /// `Class.method`.
     pub(crate) fn_name: String,
     /// The test's source. Empty on an external row until materialized.
     #[serde(default)]
@@ -168,7 +170,9 @@ pub(crate) struct TestArtifact {
 pub(crate) struct CodeArtifact {
     /// The source file.
     pub(crate) path: String,
-    /// The covered symbol; `Type::method` is matched on its last segment.
+    /// The covered symbol: `fn_name`, or `Type::method` (Rust) /
+    /// `Class.method` (Python), resolved inside that type when the file has
+    /// it.
     pub(crate) symbol: String,
     /// The symbol's source. Empty on an external row until materialized.
     #[serde(default)]
@@ -336,7 +340,7 @@ impl Origin {
 }
 
 /// PLAT-1024 corpus rule 1: at most this many natural (unmutated) rows per
-/// FR in one source.
+/// FR, counted per (repo, FR id).
 pub(crate) const MAX_NATURAL_ROWS_PER_FR: usize = 3;
 
 /// Every row of `split` across `sources`, refusing the lot if two rows share
@@ -502,11 +506,16 @@ fn contained(relative: &str) -> Result<&Path, String> {
     Ok(path)
 }
 
+/// `ref.repo`'s last `/` segment: the checkout directory's name.
+fn checkout_name(repo: &str) -> &str {
+    repo.rsplit('/').next().unwrap_or_default()
+}
+
 /// `<root>/<repo name>`, where the repo name is `ref.repo`'s last segment
 /// and must be a plain directory name: non-empty, not starting with `.`
 /// (so neither `.` nor `..`), and only ASCII letters, digits, `-`, `_`, `.`.
 fn checkout_dir(root: &Path, repo: &str) -> Result<PathBuf, String> {
-    let name = repo.rsplit('/').next().unwrap_or_default();
+    let name = checkout_name(repo);
     let plain = !name.is_empty()
         && !name.starts_with('.')
         && name
@@ -597,14 +606,14 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
                     .test
                     .as_mut()
                     .ok_or("ref.paths names a test but the row has none")?;
-                artifact.body = extract_rust_fn(&text, &artifact.fn_name)?;
+                artifact.body = extract_item(relative, &text, &artifact.fn_name)?;
             }
             "code" => {
                 let code = row
                     .code
                     .as_mut()
                     .ok_or("ref.paths names code but the row has none")?;
-                code.body = extract_rust_fn(&text, &code.symbol)?;
+                code.body = extract_item(relative, &text, &code.symbol)?;
             }
             // The requirement's text is carried in the row. Unmutated, its
             // file is digest-checked only; mutated, the patched file must
@@ -640,8 +649,9 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
 /// answer space, the row carries what the key needs, and the truth kind
 /// agrees with the alternatives; a mutation targets an artifact the row has;
 /// `strata.fr_id` agrees with `requirement.fr_id`; every id carries its
-/// source's prefix ([`Origin::id_prefix`]); and no FR has more than
-/// [`MAX_NATURAL_ROWS_PER_FR`] natural (unmutated) rows (PLAT-1024 rule 1).
+/// source's prefix ([`Origin::id_prefix`]); and no FR of one repo has more
+/// than [`MAX_NATURAL_ROWS_PER_FR`] natural (unmutated) rows (PLAT-1024
+/// rule 1).
 pub(crate) fn validate(file: &CorpusFile, origin: Origin) -> Vec<String> {
     let mut problems = Vec::new();
     if file.schema != SCHEMA {
@@ -737,18 +747,44 @@ pub(crate) fn validate(file: &CorpusFile, origin: Origin) -> Vec<String> {
     problems
 }
 
+/// The checkout a row's FR belongs to: [`checkout_name`] of `ref.repo` for
+/// a by-reference row (the directory [`checkout_dir`] reads), and
+/// [`IN_REPO`] for a row that embeds its bodies.
+fn source_repo(row: &Row) -> &str {
+    row.reference
+        .as_ref()
+        .map_or(IN_REPO, |reference| checkout_name(&reference.repo))
+}
+
+/// The repo name an embedded (in-repo) row's FR ids belong to.
+const IN_REPO: &str = "quoin";
+
 /// PLAT-1024 rule 1: an FR with more than [`MAX_NATURAL_ROWS_PER_FR`]
-/// natural (unmutated) rows.
+/// natural (unmutated) rows. FR ids are per repo, so the count is keyed by
+/// (checkout name, FR id): FR-008 in quire-rs and FR-008 in
+/// engineering-assurance are different requirements, and counting them
+/// together failed the external corpus at FR-008 = 4 and NFR-001 = 10 with no
+/// single repo over 3. Keying on the checkout name, not the full `ref.repo`,
+/// counts `agent-ix/quire-rs` and `quire-rs` as the one checkout they both
+/// read. Each problem names its rows.
 fn natural_row_problems(file: &CorpusFile) -> Vec<String> {
-    let mut natural: BTreeMap<&str, usize> = BTreeMap::new();
+    let mut natural: BTreeMap<(&str, &str), Vec<&str>> = BTreeMap::new();
     for row in file.rows.iter().filter(|row| row.mutation.is_none()) {
-        *natural.entry(row.requirement.fr_id.as_str()).or_default() += 1;
+        natural
+            .entry((source_repo(row), row.requirement.fr_id.as_str()))
+            .or_default()
+            .push(row.id.as_str());
     }
     natural
         .into_iter()
-        .filter(|(_, count)| *count > MAX_NATURAL_ROWS_PER_FR)
-        .map(|(fr_id, count)| {
-            format!("{fr_id}: {count} natural rows, at most {MAX_NATURAL_ROWS_PER_FR} per FR")
+        .filter(|(_, ids)| ids.len() > MAX_NATURAL_ROWS_PER_FR)
+        .map(|((repo, fr_id), ids)| {
+            format!(
+                "{fr_id} in {repo}: {} natural rows ({}), at most {MAX_NATURAL_ROWS_PER_FR} \
+                 per FR per repo",
+                ids.len(),
+                ids.join(", ")
+            )
         })
         .collect()
 }
