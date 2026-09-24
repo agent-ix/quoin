@@ -663,9 +663,8 @@ fn head_start(masked: &[u8], before: usize) -> usize {
     while let Some(byte) = start.checked_sub(1).and_then(|at| masked.get(at)) {
         match byte {
             b')' | b']' => depth += 1,
-            b'(' | b'[' if depth == 0 => break,
+            b'(' | b'[' | b'{' | b'}' | b';' | b',' if depth == 0 => break,
             b'(' | b'[' => depth -= 1,
-            b'{' | b'}' | b';' | b',' if depth == 0 => break,
             _ => {}
         }
         start -= 1;
@@ -738,11 +737,11 @@ fn literal_bytes(path: &str, body: &str) -> Vec<bool> {
         .chars()
         .map(|ch| if ch == ' ' || ch == '\t' { '\u{1}' } else { ch })
         .collect();
-    let masked = mask_for(path, &marked);
+    let blanked = mask_for(path, &marked);
     marked
         .bytes()
-        .zip(masked)
-        .map(|(original, masked)| original != masked)
+        .zip(blanked)
+        .map(|(original, blank)| original != blank)
         .collect()
 }
 

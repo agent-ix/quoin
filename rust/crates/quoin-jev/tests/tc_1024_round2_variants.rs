@@ -41,8 +41,8 @@ use eval_v2_support::variant::{
     self, Answered, Prediction, RawAnswer, RawAnswers, Variant, wording_violations,
 };
 use eval_v2_support::variants::exceeds::{
-    self, E5, NECESSARY_KEY, NecessityReading, TrivialReason, UNIT_TEXT_FIELD,
-    assess_necessity, e5_units, necessity_outcome, trivial_reason,
+    self, E5, NECESSARY_KEY, NecessityReading, TrivialReason, UNIT_TEXT_FIELD, assess_necessity,
+    e5_units, necessity_outcome, trivial_reason,
 };
 use eval_v2_support::variants::intent::{
     ASSERTIONS_FIELD, T3, derive_assertion_selection, extract_assertions,
@@ -221,10 +221,7 @@ fn tc_1024_t3_extracts_failure_points() {
     assert!(extract_assertions("tests/t.rs", expect_only).is_empty());
     let row = row_with("EV2-0013", Mode::ReqTest, Some(expect_only));
     assert!((T3.asks)(&row).is_empty());
-    assert_eq!(
-        (T3.derive)(&row, &[])["test_asserts_intent"].answer,
-        "no"
-    );
+    assert_eq!((T3.derive)(&row, &[])["test_asserts_intent"].answer, "no");
 }
 
 /// Provenance: PLAT-1024, MP-242 round 2, T3 v3 (PR #630 F2). Python: a
