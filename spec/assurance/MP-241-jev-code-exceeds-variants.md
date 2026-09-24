@@ -336,6 +336,27 @@ pairs. E0 (RTC) and E0-RC (RC) are the comparators.
 with the 5-version dev cap; this round runs at most 3 versions, and every
 version run is reported with its numbers.
 
+### Round 2 dev results
+
+Dev split, `jev-1.13.0`, cassette-recorded. Bar D pairs are `additive_code`
+mutants. Agreement and margin are on the rows the variant answered.
+
+| Version | What changed | Bar D (succ / fail / tie, p) | Known truth: `yes` recall | All rows: agreement, constant, margin | Abstained |
+| --- | --- | --- | --- | --- | --- |
+| E0@v1 (RTC) | baseline | 4 / 0 / 10, p = 0.0625 | 40.0% (15) | 59.6%, 57.4%, +2.1pp (47) | 0 |
+| E0-RC@v1 (RC) | baseline | 2 / 0 / 9, p = 0.25 | 81.8% (11) | 72.7%, 68.2%, +4.5pp (22) | 0 |
+| E5@v1 | `units.rs` units, breaker | 4 / 0 / 20, p = 0.0625 | 38.5% (26) | 56.1%, 59.1%, -3.0pp (66) | 3 of 69 |
+| E5@v2 | statement-level units, statements that only log skipped | 9 / 5 / 10 (4 failures are abstentions), p = 0.2120 | 68.2% (22 answered of 26) | 66.1%, 57.6%, +8.5pp (59) | 10 of 69 |
+| E5@v3 | breaker dropped | 9 / 1 / 14, p = 0.0107 | 73.1% (26) | 68.1%, 60.9%, +7.2pp (69) | 0 |
+
+E5@v3 is the final version, and Bar D holds for it: 10 non-tie pairs, the
+minimum, with 9 successes. **Caveat:** v3 changes only the derive rule. Its
+requests are v2's, so its Bar D was read off answers that were already seen,
+and the breaker was dropped because v2's abstentions were 4 of its 5 Bar D
+failures. That is dev tuning inside the budget. The held-out split is spent,
+so there is no independent confirmation. Treat the pass as provisional until a
+fresh split exists.
+
 ## Measured outcome
 
 Not yet measured. Phase 1 (PLAT-1029) commits the variants, their offline

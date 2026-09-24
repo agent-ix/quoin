@@ -422,6 +422,25 @@ non-tie pairs. T0 is the comparator, on the rows both answered.
 with the 5-version dev cap; this round runs at most 3 versions, and every
 version run is reported with its numbers.
 
+### Round 2 dev results
+
+Dev split, `jev-1.13.0`, cassette-recorded. T0 is the comparator; T3's
+population is RT plus RTC, T0's is RTC only. Bar D pairs are `test_weakening`
+mutants.
+
+| Version | What changed | Bar D (succ / fail / tie, p) | Mechanical slice: agreement, constant, margin, `no` recall, `yes` recall | All rows margin |
+| --- | --- | --- | --- | --- |
+| T0@v1 | baseline | 0 / 0 / 15, p = 1.0 | 59.0%, 59.0%, +0.0pp, 12.5%, 91.3% (39 rows) | +17.9pp (67) |
+| T3@v1 | one `choice` over the listed assertions plus `none` | 3 / 1 / 18, p = 0.3125 | 55.4%, 55.4%, +0.0pp, 24.0%, 80.6% (56 rows) | +16.7pp (108) |
+| T3@v2 | one strict `noul` per assertion, highest wins; match-arm assertions no longer merge | 6 / 0 / 16, p = 0.0156 | 66.1%, 55.4%, +10.7pp, 56.0%, 74.2% (56 rows) | +17.6pp (108) |
+
+T3@v2 is the final version. Bar D is not gateable (6 non-tie pairs, fewer than
+10). On the mechanical slice (56 rows, both labels present, so gateable) Bars A
+and B hold: margin +10.7pp and both class recalls above 0%. T3@v2 abstained on
+no row. By MP-242's rule it qualifies on dev by path 1; there is no held-out
+run to confirm it. On the 52 RTC rows both answered, T3@v2 was right on 39 and
+T0 on 34.
+
 ## Measured outcome
 
 Not yet measured. The first dev run is PLAT-1030 phase 2, blocked on the two
