@@ -92,7 +92,9 @@ use crate::eval_v2_support::metrics::{
     self, ContrastSpec, Direction, PairedContrast, Scored, graded, paired_contrast, scored,
     slice_name, summarize,
 };
-use crate::eval_v2_support::units::{Language, Unit, UnitKind, mask, mask_for};
+use crate::eval_v2_support::units::{
+    Language, Unit, UnitKind, mask, mask_for, split_rust_units, split_units,
+};
 use crate::eval_v2_support::variant::{
     Answered, Artifact, Ask, E0, Prediction, Predictions, RawAnswer, RunOutput, Variant,
     code_units, noul_prediction, per_unit_asks, request, state,
@@ -773,17 +775,22 @@ pub(crate) fn trivial_reason(path: &str, unit: &Unit) -> Option<TrivialReason> {
     if is_trivial(unit) {
         return Some(TrivialReason::PassThrough);
     }
-    if unit.kind != UnitKind::Branch {
-        return None;
-    }
     let python = Language::of_path(path) == Some(Language::Python);
-    let masked = String::from_utf8_lossy(&mask_for(path, &unit.text)).into_owned();
-    let (condition, statements) = branch_shape(unit, python, &masked);
     let (logging, plumbing, refusal): (&Regex, &Regex, &Regex) = if python {
         (&LOGGING_PYTHON, &PLUMBING_PYTHON, &REFUSAL_PYTHON)
     } else {
         (&LOGGING_RUST, &PLUMBING_RUST, &REFUSAL_RUST)
     };
+    let masked = String::from_utf8_lossy(&mask_for(path, &unit.text)).into_owned();
+    if unit.kind == UnitKind::Whole {
+        let statements = top_level_statements(&masked, python);
+        return (!statements.is_empty() && statements.iter().all(|s| logging.is_match(s)))
+            .then_some(TrivialReason::Logging);
+    }
+    if unit.kind != UnitKind::Branch {
+        return None;
+    }
+    let (condition, statements) = branch_shape(unit, python, &masked);
     let rest: Vec<&String> = statements
         .iter()
         .filter(|statement| !logging.is_match(statement))
@@ -796,6 +803,150 @@ pub(crate) fn trivial_reason(path: &str, unit: &Unit) -> Option<TrivialReason> {
         }
         _ => None,
     }
+}
+
+/// Whether the masked byte at `at` starts the word `word`.
+fn starts_word(masked: &[u8], at: usize, word: &str) -> bool {
+    let is_ident =
+        |byte: Option<&u8>| byte.is_some_and(|b| b.is_ascii_alphanumeric() || *b == b'_');
+    masked
+        .get(at..)
+        .is_some_and(|rest| rest.starts_with(word.as_bytes()))
+        && !is_ident(masked.get(at + word.len()))
+        && !at
+            .checked_sub(1)
+            .is_some_and(|before| is_ident(masked.get(before)))
+}
+
+/// The first non-whitespace index at or after `at`, before `end`.
+fn skip_space(masked: &[u8], at: usize, end: usize) -> usize {
+    (at..end)
+        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+        .unwrap_or(end)
+}
+
+/// The top-level statements of the Rust text `masked[from..end]`, as byte
+/// ranges: each ends after its `;`, or at the `}` closing a block statement
+/// (`if`, `match`, `for`, `while`, `loop`, `unsafe`, a bare block) unless an
+/// `else`, `.` or `?` continues it; what is left is the tail expression.
+fn rust_statements(masked: &[u8], from: usize, end: usize) -> Vec<(usize, usize)> {
+    const BLOCK_WORDS: [&str; 6] = ["if", "match", "for", "while", "loop", "unsafe"];
+    let mut out = Vec::new();
+    let mut start = skip_space(masked, from, end);
+    let mut depth = 0usize;
+    let mut at = start;
+    while at < end {
+        let Some(byte) = masked.get(at) else { break };
+        match byte {
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' => depth = depth.saturating_sub(1),
+            b'}' => {
+                depth = depth.saturating_sub(1);
+                let block = masked.get(start) == Some(&b'{')
+                    || BLOCK_WORDS
+                        .iter()
+                        .any(|word| starts_word(masked, start, word));
+                if depth == 0 && block {
+                    let next = skip_space(masked, at + 1, end);
+                    let continues = starts_word(masked, next, "else")
+                        || matches!(masked.get(next), Some(b'.' | b'?' | b';'));
+                    if !continues {
+                        out.push((start, at + 1));
+                        start = next;
+                        at = next;
+                        continue;
+                    }
+                }
+            }
+            b';' if depth == 0 => {
+                out.push((start, at + 1));
+                start = skip_space(masked, at + 1, end);
+                at = start;
+                continue;
+            }
+            _ => {}
+        }
+        at += 1;
+    }
+    if start < end {
+        out.push((start, end));
+    }
+    out
+}
+
+/// The body of the Rust item in `masked`: inside the braces opening after
+/// its `fn` keyword, or the whole text when it has no `fn`.
+fn rust_fn_body(masked: &[u8]) -> (usize, usize) {
+    let text = String::from_utf8_lossy(masked);
+    let Some(keyword) = (0..masked.len()).find(|at| starts_word(masked, *at, "fn")) else {
+        return (0, masked.len());
+    };
+    let mut depth = 0usize;
+    let open = (keyword..masked.len()).find(|at| match masked.get(*at) {
+        Some(b'(' | b'[' | b'<') => {
+            depth += 1;
+            false
+        }
+        Some(b')' | b']' | b'>') if !text.get(..*at).is_some_and(|t| t.ends_with('-')) => {
+            depth = depth.saturating_sub(1);
+            false
+        }
+        Some(b'{') => depth == 0,
+        _ => false,
+    });
+    match (open, masked.iter().rposition(|byte| *byte == b'}')) {
+        (Some(open), Some(close)) if open < close => (open + 1, close),
+        _ => (0, masked.len()),
+    }
+}
+
+/// E5's units for a code body (v2). Python keeps [`split_units`]. Rust: each
+/// function (one per `fn` item when there are several, else the body) is cut
+/// into its top-level statements, so a line added to a function is its own
+/// unit; a statement that holds two or more top-level branches (a `match`,
+/// an `if`/`else` chain) is cut further into those branches, as
+/// [`split_rust_units`] cuts them.
+pub(crate) fn e5_units(path: &str, body: &str) -> Vec<Unit> {
+    if Language::of_path(path) != Some(Language::Rust) {
+        return split_units(path, body);
+    }
+    let items: Vec<String> = match split_rust_units(body).as_slice() {
+        units @ [first, ..] if first.kind == UnitKind::Function => {
+            units.iter().map(|unit| unit.text.clone()).collect()
+        }
+        _ => vec![body.to_owned()],
+    };
+    let mut out = Vec::new();
+    for item in items {
+        let masked = mask(&item);
+        let (from, end) = rust_fn_body(&masked);
+        for (start, stop) in rust_statements(&masked, from, end) {
+            let Some(statement) = item.get(start..stop).map(str::trim) else {
+                continue;
+            };
+            let branches = split_rust_units(statement);
+            if branches.len() >= 2 && branches.iter().all(|u| u.kind == UnitKind::Branch) {
+                out.extend(branches);
+            } else {
+                let collapsed: String = statement.split_whitespace().collect::<Vec<_>>().join(" ");
+                let label: String = collapsed.chars().take(60).collect();
+                out.push(Unit {
+                    kind: UnitKind::Whole,
+                    label: format!("statement {label}"),
+                    text: statement.to_owned(),
+                });
+            }
+        }
+    }
+    out
+}
+
+/// The row's E5 units ([`e5_units`]), or none without code.
+pub(crate) fn row_e5_units(row: &Row) -> Vec<Unit> {
+    row.code
+        .as_ref()
+        .map(|code| e5_units(&code.path, &code.body))
+        .unwrap_or_default()
 }
 
 /// E5's per-unit question. The unit is `code_unit_text`; the whole code is
@@ -837,7 +988,7 @@ fn necessity_asks(row: &Row) -> Vec<Ask> {
     let Some(code) = &row.code else {
         return Vec::new();
     };
-    code_units(row)
+    row_e5_units(row)
         .iter()
         .enumerate()
         .filter(|(_, unit)| trivial_reason(&code.path, unit).is_none())
@@ -924,7 +1075,7 @@ pub(crate) fn assess_necessity(
 ) -> Result<NecessityAssessment, String> {
     let mut trivial = BTreeMap::new();
     if let Some(code) = &row.code {
-        for reason in code_units(row)
+        for reason in row_e5_units(row)
             .iter()
             .filter_map(|unit| trivial_reason(&code.path, unit))
         {
@@ -965,12 +1116,18 @@ fn e5_derive(row: &Row, answered: &[Answered]) -> Predictions {
 
 /// E5: per-unit "would deleting this lose stated behaviour"; `yes` when a
 /// non-trivial unit is unnecessary; breaker when every asked unit is.
+///
+/// v1 (dev round 2, run 1) used [`split_units`] as E1 does: an addition in a
+/// function with no top-level branches sat inside one whole-body unit that
+/// was necessary as a whole, so most additive pairs tied. v2 cuts each
+/// function into its top-level statements ([`e5_units`]) and skips a
+/// statement that only logs; the question and the rule are unchanged.
 pub(crate) const E5: Variant = Variant {
     id: "E5",
-    version: 1,
-    summary: "per-unit outcome necessity noul (would deleting it lose stated behaviour); yes if \
-              a non-trivial unit has P(necessary) < 0.5; breaker when all asked units are \
-              unnecessary",
+    version: 2,
+    summary: "per-statement outcome necessity noul (would deleting it lose stated behaviour); \
+              yes if a non-trivial unit has P(necessary) < 0.5; breaker when all asked units \
+              are unnecessary",
     modes: RC_AND_RTC,
     references: CODE_ONLY,
     grades: &[KEY],

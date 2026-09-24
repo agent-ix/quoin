@@ -42,10 +42,10 @@ use eval_v2_support::variant::{
 };
 use eval_v2_support::variants::exceeds::{
     self, E5, NECESSARY_KEY, NecessityReading, RelationOutcome, TrivialReason, UNIT_TEXT_FIELD,
-    assess_necessity, necessity_outcome, trivial_reason,
+    assess_necessity, e5_units, necessity_outcome, trivial_reason,
 };
 use eval_v2_support::variants::intent::{
-    ASSERTION_CHOICE, ASSERTIONS_FIELD, T3, derive_assertion_selection, extract_assertions,
+    ASSERTIONS_FIELD, T3, derive_assertion_selection, extract_assertions,
 };
 
 // ---------------------------------------------------------------------------
@@ -73,11 +73,11 @@ fn close(actual: Option<f64>, expected: f64) -> bool {
     actual.is_some_and(|actual| (actual - expected).abs() < 1e-9)
 }
 
-/// A fake Jev. T3's choice gets `P(none) = none_p` spread evenly over the
-/// other labels; E5's noul is 0.2 for a unit whose text holds `4096` and 0.9
+/// A fake Jev. Each of T3's per-assertion nouls (`A1` ..) answers
+/// `assert_p`; E5's noul is 0.2 for a unit whose text holds `4096` and 0.9
 /// for any other. Every call is counted.
 struct FakeJev {
-    none_p: f64,
+    assert_p: f64,
     calls: AtomicUsize,
 }
 
@@ -87,35 +87,16 @@ impl Transport for FakeJev {
         self.calls.fetch_add(1, Ordering::SeqCst);
         let body: Value = serde_json::from_str(request.body.as_deref().unwrap()).unwrap();
         let mut answers = serde_json::Map::new();
-        for (key, question) in body["questions"].as_object().unwrap() {
-            let answer = if key == NECESSARY_KEY {
+        for key in body["questions"].as_object().unwrap().keys() {
+            let p = if key == NECESSARY_KEY {
                 let unit = body["state"][UNIT_TEXT_FIELD].as_str().unwrap();
-                json!({"type": "noul", "noul": if unit.contains("4096") { 0.2 } else { 0.9 }})
-            } else if key == ASSERTION_CHOICE {
-                let labels: Vec<String> = question["criteria"]
-                    .as_object()
-                    .unwrap()
-                    .keys()
-                    .cloned()
-                    .collect();
-                let others = f64::from(u32::try_from(labels.len() - 1).unwrap());
-                let probabilities: serde_json::Map<String, Value> = labels
-                    .iter()
-                    .map(|label| {
-                        let p = if label == "none" {
-                            self.none_p
-                        } else {
-                            (1.0 - self.none_p) / others
-                        };
-                        (label.clone(), json!(p))
-                    })
-                    .collect();
-                json!({"type": "choice", "choice": "none", "confidence": self.none_p,
-                       "probabilities": probabilities})
+                if unit.contains("4096") { 0.2 } else { 0.9 }
+            } else if key.starts_with('A') {
+                self.assert_p
             } else {
                 panic!("the fake has no answer for {key}")
             };
-            answers.insert(key.clone(), answer);
+            answers.insert(key.clone(), json!({"type": "noul", "noul": p}));
         }
         Ok(RawResponse {
             status: 200,
@@ -127,11 +108,11 @@ impl Transport for FakeJev {
     }
 }
 
-fn fake_client(none_p: f64) -> (typesafe_sdk_client::Client, Arc<FakeJev>) {
+fn fake_client(assert_p: f64) -> (typesafe_sdk_client::Client, Arc<FakeJev>) {
     let config =
         quoin_jev::config::resolve(&Fixed::new(&[("TYPESAFE_API_KEY", "sk_test_key")])).unwrap();
     let fake = Arc::new(FakeJev {
-        none_p,
+        assert_p,
         calls: AtomicUsize::new(0),
     });
     (
@@ -175,6 +156,16 @@ fn tc_1024_t3_extracts_every_rust_assertion_statement() {
             "debug_assert!(z)",
         ]
     );
+    // v2: two arms' assertions stay two statements.
+    let arms = "match found {\n    Some(d) => assert_eq!(&d, want, \"{f}\"),\n    \
+                None => assert_eq!(got, Value::Null),\n}";
+    assert_eq!(
+        extract_assertions("tests/t.rs", arms),
+        [
+            "assert_eq!(&d, want, \"{f}\")",
+            "assert_eq!(got, Value::Null)"
+        ]
+    );
     assert_eq!(
         extract_assertions("tests/tc_001.rs", TEST_BODY),
         [
@@ -209,82 +200,71 @@ fn tc_1024_t3_extracts_every_python_assertion_statement() {
 // T3: the derive rule and the empty case
 // ---------------------------------------------------------------------------
 
-fn selection(label: &str, probabilities: &[(&str, f64)]) -> RawAnswers {
-    RawAnswers::from([(
-        ASSERTION_CHOICE.to_owned(),
-        RawAnswer::Choice {
-            label: label.to_owned(),
-            confidence: 0.5,
-            probabilities: probabilities
-                .iter()
-                .map(|(label, p)| ((*label).to_owned(), *p))
-                .collect(),
-        },
-    )])
+fn nouls(answers: &[(&str, f64)]) -> RawAnswers {
+    answers
+        .iter()
+        .map(|(label, p)| ((*label).to_owned(), RawAnswer::Noul(*p)))
+        .collect()
 }
 
-/// `(label probabilities, expected answer, confidence, ordinal)`.
+/// `(per-assertion P, expected answer, confidence, ordinal)`.
 type SelectionCase = (&'static [(&'static str, f64)], &'static str, f64, f64);
 
-/// Provenance: PLAT-1024, MP-242 round 2. `P(any) = 1 - P(none)`; `yes` iff
-/// `P(any) >= 0.5`; confidence `P(any)` for `yes`, `1 - P(any)` for `no`;
-/// the ordinal is `P(any)`. Mass split across several assertions still
-/// counts: 0.3 + 0.2 is 0.5, `yes`.
+/// Provenance: PLAT-1024, MP-242 round 2 (T3 v2). `P(any)` is the highest
+/// per-assertion `P`; `yes` iff `P(any) >= 0.5`; confidence `P(any)` for
+/// `yes`, `1 - P(any)` for `no`; the ordinal is `P(any)`. Two middling
+/// assertions do not add up: 0.4 and 0.4 is `no`.
 #[test]
-fn tc_1024_t3_yes_is_one_minus_p_none() {
+fn tc_1024_t3_yes_is_the_strongest_assertion() {
     let cases: [SelectionCase; 4] = [
-        (&[("A1", 0.3), ("A2", 0.2), ("none", 0.5)], "yes", 0.5, 0.5),
-        (
-            &[("A1", 0.1), ("A2", 0.39), ("none", 0.51)],
-            "no",
-            0.51,
-            0.49,
-        ),
-        (&[("A1", 0.7), ("A2", 0.2), ("none", 0.1)], "yes", 0.9, 0.9),
-        (
-            &[("A1", 0.0), ("A2", 0.05), ("none", 0.95)],
-            "no",
-            0.95,
-            0.05,
-        ),
+        (&[("A1", 0.3), ("A2", 0.5)], "yes", 0.5, 0.5),
+        (&[("A1", 0.4), ("A2", 0.4)], "no", 0.6, 0.4),
+        (&[("A1", 0.9), ("A2", 0.2)], "yes", 0.9, 0.9),
+        (&[("A1", 0.49), ("A2", 0.05)], "no", 0.51, 0.49),
     ];
-    for (probabilities, answer, confidence, ordinal) in cases {
-        let prediction = derive_assertion_selection(2, &selection("A1", probabilities)).unwrap();
-        assert_eq!(prediction.answer, answer, "{probabilities:?}");
+    for (answers, answer, confidence, ordinal) in cases {
+        let prediction = derive_assertion_selection(2, &nouls(answers)).unwrap();
+        assert_eq!(prediction.answer, answer, "{answers:?}");
         assert!(
             close(prediction.confidence, confidence),
-            "{probabilities:?}: {prediction:?}"
+            "{answers:?}: {prediction:?}"
         );
         assert!(
             close(prediction.ordinal, ordinal),
-            "{probabilities:?}: {prediction:?}"
+            "{answers:?}: {prediction:?}"
         );
     }
 }
 
 /// Provenance: PLAT-1024, MP-242 rule 6 (malformed answers fail loudly). A
-/// missing choice, a noul in its place, a label outside the offered ones, a
-/// distribution missing `none`, and one that does not total 1 are errors.
+/// missing assertion answer, a choice in its place, a probability outside
+/// [0, 1], and an answer to an assertion that was not asked are errors.
 #[test]
 fn tc_1024_t3_a_malformed_answer_is_an_error() {
-    let fine = [("A1", 0.6), ("A2", 0.1), ("none", 0.3)];
-    let noul = RawAnswers::from([(ASSERTION_CHOICE.to_owned(), RawAnswer::Noul(0.4))]);
+    let mut as_choice = nouls(&[("A1", 0.6)]);
+    as_choice.insert(
+        "A2".to_owned(),
+        RawAnswer::Choice {
+            label: "yes".to_owned(),
+            confidence: 0.5,
+            probabilities: std::collections::BTreeMap::new(),
+        },
+    );
     let cases = [
-        (RawAnswers::new(), "no answer in the response"),
-        (noul, "expected a choice"),
-        (selection("A3", &fine), "unknown label \"A3\""),
+        (nouls(&[("A1", 0.6)]), "`A2`: no answer in the response"),
+        (as_choice, "`A2`: expected a noul"),
         (
-            selection("A1", &[("A1", 0.6), ("A2", 0.4)]),
-            "no probability for \"none\"",
+            nouls(&[("A1", 0.6), ("A2", 1.2)]),
+            "`A2`: probability 1.2 is outside [0, 1]",
         ),
         (
-            selection("A1", &[("A1", 0.2), ("A2", 0.1), ("none", 0.1)]),
-            "totals",
+            nouls(&[("A1", 0.6), ("A2", 0.1), ("A3", 0.9)]),
+            "`A3`: answered, but no such assertion was asked",
         ),
     ];
     for (answers, expected) in cases {
         let error = derive_assertion_selection(2, &answers).unwrap_err();
-        assert!(error.contains(expected), "{expected:?}: got {error:?}");
+        assert!(error.starts_with(expected), "{expected:?}: got {error:?}");
     }
 }
 
@@ -307,7 +287,7 @@ async fn tc_1024_t3_a_test_with_no_assertion_is_no_without_a_call() {
             ordinal: Some(0.0),
         })
     );
-    let (client, fake) = fake_client(0.1);
+    let (client, fake) = fake_client(0.9);
     let output = variant::run(&client, std::slice::from_ref(&row), &[&T3])
         .await
         .unwrap();
@@ -318,7 +298,7 @@ async fn tc_1024_t3_a_test_with_no_assertion_is_no_without_a_call() {
     );
 
     // Not vacuous: the fixture's test, with two assertions, is asked, and a
-    // low P(none) makes it `yes`.
+    // high per-assertion P makes it `yes`.
     let asserted = row_with("EV2-0012", Mode::ReqTest, None);
     let output = variant::run(&client, &[asserted], &[&T3]).await.unwrap();
     assert_eq!(fake.calls.load(Ordering::SeqCst), 1);
@@ -554,6 +534,60 @@ fn tc_1024_e5_a_malformed_answer_is_an_error() {
 // E5: asks, wording, and the report
 // ---------------------------------------------------------------------------
 
+/// Provenance: PLAT-1024, MP-241 round 2 (E5 v2). A Rust function is cut
+/// into its top-level statements: an added counter or `if` is its own unit,
+/// a statement holding a `match` or an `if`/`else` chain is cut into its
+/// branches, a lone `if` stays one unit, and a statement that only logs is
+/// skipped. Python keeps the v1 split.
+#[test]
+fn tc_1024_e5_cuts_a_function_into_statements() {
+    let body = "pub fn current() -> Self {\n    \
+                static CALLS: AtomicUsize = AtomicUsize::new(0);\n    \
+                CALLS.fetch_add(1, Ordering::Relaxed);\n    \
+                eprintln!(\"called\");\n    \
+                if name.len() > 64 {\n        return Some(\"long\");\n    }\n    \
+                let kind = match raw { 0 => Kind::A, _ => Kind::B };\n    \
+                if a { one() } else if b { two() } else { three() }\n    \
+                Self { kind }\n}";
+    let units = e5_units("src/engine.rs", body);
+    let texts: Vec<&str> = units.iter().map(|unit| unit.text.as_str()).collect();
+    assert_eq!(
+        texts,
+        [
+            "static CALLS: AtomicUsize = AtomicUsize::new(0);",
+            "CALLS.fetch_add(1, Ordering::Relaxed);",
+            "eprintln!(\"called\");",
+            "if name.len() > 64 {\n        return Some(\"long\");\n    }",
+            "0 => Kind::A",
+            "_ => Kind::B",
+            "if a { one() }",
+            "else if b { two() }",
+            "else { three() }",
+            "Self { kind }",
+        ]
+    );
+    let skipped: Vec<Option<TrivialReason>> = units
+        .iter()
+        .map(|unit| trivial_reason("src/engine.rs", unit))
+        .collect();
+    let logging = Some(TrivialReason::Logging);
+    let pass = Some(TrivialReason::PassThrough);
+    assert_eq!(
+        skipped,
+        [
+            None, None, logging, None, pass, pass, None, None, None, None
+        ]
+    );
+
+    let two_fns = e5_units("src/a.rs", "fn a() { x(); y() }\nfn b() { z(); }");
+    assert_eq!(
+        two_fns.iter().map(|u| u.text.as_str()).collect::<Vec<_>>(),
+        ["x();", "y()", "z();"]
+    );
+    let python = "def f(x):\n    if x:\n        return 1\n    else:\n        return 2\n";
+    assert_eq!(e5_units("src/f.py", python), split_python_units(python));
+}
+
 /// Provenance: PLAT-1024, MP-241 round 2. E5 asks one question per unit it
 /// does not skip, with the whole body in `symbol_body` and the unit in
 /// `code_unit_text`; it runs on RC and RTC, declares the code, and never
@@ -610,7 +644,7 @@ async fn tc_1024_e5_runs_end_to_end() {
         &json!({"code_exceeds_requirement": fixtures::truth(&json!(true), "by_construction", &[])}),
     );
     let rows = fixtures::parse(&[value]).unwrap().rows;
-    let (client, fake) = fake_client(0.5);
+    let (client, fake) = fake_client(0.9);
     let output = variant::run(&client, &rows, &[&E5]).await.unwrap();
     assert_eq!(fake.calls.load(Ordering::SeqCst), 2);
     let prediction = &output.results[0].predictions[exceeds::KEY];
@@ -619,10 +653,10 @@ async fn tc_1024_e5_runs_end_to_end() {
 
     let report = exceeds::render_diagnostics(&rows, &output);
     for needle in [
-        "#### E5@v1: units and the circuit breaker",
+        "#### E5@v2: units and the circuit breaker",
         "| 1 | 1 | 0 | pass-through 1 | 2 | 1 |",
-        "#### E5@v1: on the rows it answered (bars A and B)",
-        "Bar D, E5@v1:",
+        "#### E5@v2: on the rows it answered (bars A and B)",
+        "Bar D, E5@v2:",
     ] {
         assert!(report.contains(needle), "missing {needle:?} in:\n{report}");
     }

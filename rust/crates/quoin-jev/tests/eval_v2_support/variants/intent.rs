@@ -85,7 +85,6 @@ use crate::eval_v2_support::variant::{
     Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, RunOutput, T0,
     Variant, noul_prediction, request, state, whole_row,
 };
-use crate::eval_v2_support::variants::exceeds::label_mass;
 use crate::gap_semantic_support::{Variant as BatteryShape, question_set as battery_questions};
 
 // ---------------------------------------------------------------------------
@@ -539,15 +538,9 @@ pub(crate) const T2: Variant = Variant {
 // T3: assertion selection (PLAT-1024 round 2, MP-242 "Round 2")
 // ---------------------------------------------------------------------------
 
-/// T3's wire key: which listed assertion checks the stated behaviour.
-pub(crate) const ASSERTION_CHOICE: &str = "checks_stated_behaviour";
-
 /// The state field T3 lists the test's assertions in, `A1` .. `An`. It is a
 /// `test_` field, so the wording rule reads it as the test's.
 pub(crate) const ASSERTIONS_FIELD: &str = "test_assertions";
-
-/// T3's "no listed assertion checks it" label.
-pub(crate) const NO_ASSERTION: &str = "none";
 
 /// T3 lists at most this many assertions; the overflow joins the last, so no
 /// assertion text is dropped.
@@ -604,15 +597,31 @@ fn statement_start(masked: &[u8], at: usize, python: bool) -> usize {
 
 /// Where the statement from `from` ends (exclusive), in masked bytes: after
 /// its `;` (Rust), at its line break (Python, outside brackets and not after
-/// a `\`), or at the `}` that closes the block it is the tail of.
-fn statement_end(masked: &[u8], from: usize, python: bool) -> usize {
+/// a `\`), at a `,` outside brackets (a Rust match arm), or at the `}` that
+/// closes the block it is the tail of. A Rust assert macro (`macro`) ends at
+/// its own closing bracket, and its `;` when one follows, so two arms'
+/// assertions never merge.
+fn statement_end(masked: &[u8], from: usize, python: bool, macro_call: bool) -> usize {
     let mut depth = 0usize;
     let mut at = from;
     while let Some(byte) = masked.get(at) {
         match byte {
             b'(' | b'[' | b'{' => depth += 1,
             b')' | b']' | b'}' if depth == 0 => return at,
-            b')' | b']' | b'}' => depth -= 1,
+            b')' | b']' | b'}' => {
+                depth -= 1;
+                if depth == 0 && macro_call {
+                    let after = (at + 1..masked.len())
+                        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+                        .unwrap_or(masked.len());
+                    return if masked.get(after) == Some(&b';') {
+                        after + 1
+                    } else {
+                        at + 1
+                    };
+                }
+            }
+            b',' if depth == 0 && !python => return at,
             b';' if depth == 0 => return if python { at } else { at + 1 },
             b'\n' if depth == 0 && python => {
                 let continued = at
@@ -635,8 +644,8 @@ fn statement_end(masked: &[u8], from: usize, python: bool) -> usize {
 /// first ([`mask_for`]), so an `assert!` inside a string or a comment is not
 /// one; an assertion nested inside another (`assert_eq!(f().unwrap_err(),
 /// ..)`) is part of the outer one. The language is `path`'s: Python for
-/// `.py`, Rust otherwise. Code, not Jev, does this: T3 asks Jev only to
-/// choose among the statements found.
+/// `.py`, Rust otherwise. Code, not Jev, does this: T3 asks Jev only about
+/// the statements found.
 pub(crate) fn extract_assertions(path: &str, body: &str) -> Vec<String> {
     let python = Language::of_path(path) == Some(Language::Python);
     let masked = mask_for(path, body);
@@ -661,7 +670,8 @@ pub(crate) fn extract_assertions(path: &str, body: &str) -> Vec<String> {
         } else {
             start
         };
-        let end = statement_end(&masked, found.start(), python);
+        let macro_call = !python && found.as_str().contains('!');
+        let end = statement_end(&masked, found.start(), python, macro_call);
         spans.push((start, end.max(found.end())));
     }
     spans
@@ -692,35 +702,49 @@ pub(crate) fn assertion_label(index: usize) -> String {
     format!("A{}", index + 1)
 }
 
-/// T3's instruction. It names the test and the requirement only: in `RT`
-/// there is nothing else, and in `RTC` the rest of the state is context.
-const ASSERTION_INSTRUCTIONS: &str = "Judge exactly one claim. `test_assertions` lists, \
-     verbatim and numbered, every assertion statement in the test in `test_body`. The \
-     requirement is `fr_statement`, narrowed by `ac_text` when present. Which one of the listed \
-     assertions checks the behaviour the requirement states, so that it would fail if the \
-     system did not behave as the requirement states? Choose `none` when no listed assertion \
-     does: for example when each one checks only that a call completes or returns a success \
-     value, checks a different outcome or a different case, checks a value the test set up \
-     itself, or accepts values the requirement rules out.";
+/// T3's instruction for the assertion labelled `label`. It names the test
+/// and the requirement only: in `RT` there is nothing else, and in `RTC` the
+/// rest of the state is context.
+fn assertion_instruction(label: &str) -> String {
+    format!(
+        "Judge exactly one claim about assertion {label} in `{ASSERTIONS_FIELD}`, which lists, \
+         verbatim, the assertion statements of the test in `test_body`. The requirement is \
+         `fr_statement`, narrowed by `ac_text` when present. The claim: assertion {label}, on \
+         its own, checks the outcome the requirement states, strictly enough that it would fail \
+         if the system produced a different outcome from the one the requirement states. Answer \
+         no when it checks only that a call completes or returns a success value; checks a \
+         different outcome, field or case; checks a value the test set up itself; or would also \
+         pass for a wrong outcome, as a presence, non-empty, `is_some`, `contains` or bound \
+         check does where the requirement states an exact value."
+    )
+}
 
-/// T3's question for `count` assertions: one label per assertion, then
-/// `none`.
+/// T3's questions for `count` assertions: one `noul` per assertion, keyed by
+/// its label (`A1` .. `An`), each judged on its own.
 pub(crate) fn assertion_questions(count: usize) -> Questions {
-    let mut options: Vec<(String, String)> = (0..count)
-        .map(|index| {
-            let label = assertion_label(index);
-            let text = format!(
-                "Assertion {label} in `{ASSERTIONS_FIELD}` checks the behaviour the requirement \
-                 states."
-            );
-            (label, text)
-        })
-        .collect();
-    options.push((
-        NO_ASSERTION.to_owned(),
-        "No listed assertion checks the behaviour the requirement states.".to_owned(),
-    ));
-    questions([(ASSERTION_CHOICE, choice(ASSERTION_INSTRUCTIONS, options))])
+    questions((0..count).map(|index| {
+        let label = assertion_label(index);
+        let question = noul_with(
+            assertion_instruction(&label),
+            NoulCriteria {
+                yes: Some(
+                    format!(
+                        "Assertion {label} alone would fail if the outcome the requirement \
+                         states did not happen."
+                    )
+                    .into(),
+                ),
+                no: Some(
+                    format!(
+                        "Assertion {label} would still pass with a wrong outcome, or checks \
+                         something else."
+                    )
+                    .into(),
+                ),
+            },
+        );
+        (label, question)
+    }))
 }
 
 /// One ask carrying the row's assertions in [`ASSERTIONS_FIELD`], or none
@@ -749,50 +773,31 @@ fn t3_asks(row: &Row) -> Vec<Ask> {
 }
 
 /// T3's derive rule over `count` listed assertions and the one response:
-/// `P(any) = 1 - P(none)`, `test_asserts_intent` is `yes` iff `P(any) >=
-/// TAU`, the confidence is `P(any)` for `yes` and `1 - P(any)` for `no`, and
-/// `P(any)` is the ordinal Bar D reads. With `count == 0` nothing was asked:
-/// a test with no assertion is `no`, `P(any) = 0`, confidence 1.
+/// `P(any)` is the highest `P(An)` over the assertions, `test_asserts_intent`
+/// is `yes` iff `P(any) >= TAU`, the confidence is `P(any)` for `yes` and
+/// `1 - P(any)` for `no`, and `P(any)` is the ordinal Bar D reads. With
+/// `count == 0` nothing was asked: a test with no assertion is `no`,
+/// `P(any) = 0`, confidence 1.
 ///
 /// # Errors
-/// When the choice is missing or not a choice, its label is not one of the
-/// `count + 1` offered, or its probabilities do not cover exactly those
-/// labels and total 1 (`exceeds::label_mass`).
+/// When an assertion's answer is missing, not a `noul`, or not a
+/// probability in `[0, 1]`, or when the response answers a label that was
+/// not asked.
 pub(crate) fn derive_assertion_selection(
     count: usize,
     answers: &RawAnswers,
 ) -> Result<Prediction, String> {
-    if count == 0 {
-        return Ok(Prediction {
-            answer: NO.to_owned(),
-            confidence: Some(1.0),
-            ordinal: Some(0.0),
-        });
+    let labels: Vec<String> = (0..count).map(assertion_label).collect();
+    if let Some(stray) = answers.keys().find(|key| !labels.contains(key)) {
+        return Err(format!(
+            "`{stray}`: answered, but no such assertion was asked"
+        ));
     }
-    let (label, probabilities) = match answers.get(ASSERTION_CHOICE) {
-        Some(RawAnswer::Choice {
-            label,
-            probabilities,
-            ..
-        }) => (label, probabilities),
-        Some(other) => {
-            return Err(format!(
-                "`{ASSERTION_CHOICE}`: expected a choice, got {other:?}"
-            ));
-        }
-        None => return Err(format!("`{ASSERTION_CHOICE}`: no answer in the response")),
-    };
-    let mut space: Vec<String> = (0..count).map(assertion_label).collect();
-    space.push(NO_ASSERTION.to_owned());
-    let space: Vec<&str> = space.iter().map(String::as_str).collect();
-    if !space.contains(&label.as_str()) {
-        return Err(format!("`{ASSERTION_CHOICE}`: unknown label {label:?}"));
+    let mut p_any = 0.0f64;
+    for label in &labels {
+        p_any = p_any.max(noul_probability(answers, label)?);
     }
-    let p_none = label_mass(probabilities, &[NO_ASSERTION], &space)
-        .map_err(|error| format!("`{ASSERTION_CHOICE}`: {error}"))
-        .and_then(|p| probability(ASSERTION_CHOICE, p))?;
-    let p_any = 1.0 - p_none;
-    let yes = p_any >= TAU;
+    let yes = count > 0 && p_any >= TAU;
     Ok(Prediction {
         answer: if yes { YES } else { NO }.to_owned(),
         confidence: Some(if yes { p_any } else { 1.0 - p_any }),
@@ -806,13 +811,20 @@ fn t3_derive(row: &Row, answered: &[Answered]) -> Predictions {
     Predictions::from([(TEST_ASSERTS_INTENT, prediction)])
 }
 
-/// T3: code lists the test's assertion statements; Jev picks the one that
-/// checks the stated behaviour, or `none`. `yes` iff `P(any) >= 0.5`.
+/// T3: code lists the test's assertion statements; Jev judges each on its
+/// own. `yes` iff the highest `P(An) >= 0.5`.
+///
+/// v1 (dev round 2, run 1) asked one `choice` over the listed assertions plus
+/// `none`, `yes` iff `1 - P(none) >= 0.5`: weakened mutants fell but stayed
+/// above 0.5, the mass the remaining assertions shared keeping `P(any)` up.
+/// v2 asks one strict `noul` per assertion and takes the highest, and ends a
+/// macro assertion at its own closing bracket so match-arm assertions no
+/// longer merge.
 pub(crate) const T3: Variant = Variant {
     id: "T3",
-    version: 1,
-    summary: "assertion selection: code lists the test's assertions, Jev picks the one \
-              checking the stated behaviour or none; yes iff 1 - P(none) >= 0.5",
+    version: 2,
+    summary: "assertion check: code lists the test's assertions, one strict noul per \
+              assertion (alone, would it fail on a wrong outcome); yes iff max P >= 0.5",
     modes: TEST_MODES,
     references: &[Artifact::Test],
     grades: &[TEST_ASSERTS_INTENT],
