@@ -265,7 +265,21 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         serde_json::to_vec(&procedure).expect("procedure JSON"),
     )
     .expect("external producer procedure");
-    git(repo.path(), &["add", "campaign/procedure.json"]);
+    // The campaign selects MP-FIXTURE. An older, unrelated tracked plan may
+    // use vocabulary that the current measurement parser no longer accepts.
+    fs::write(
+        repo.path().join("spec/assurance/MP-LEGACY.md"),
+        "---\ntype: MeasurementPlan\nid: MP-LEGACY\ntitle: Legacy\nstatus: active\nstage: observe\nmetric: legacy\ndefinition_version: v1\nstatistical_design:\n  estimator: old prose estimator\n---\n",
+    )
+    .expect("unrelated tracked legacy plan");
+    git(
+        repo.path(),
+        &[
+            "add",
+            "campaign/procedure.json",
+            "spec/assurance/MP-LEGACY.md",
+        ],
+    );
     git(
         repo.path(),
         &[

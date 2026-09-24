@@ -2,16 +2,35 @@
 // Copyright (C) 2026 Agent-IX
 //! `MeasurementPlan` loader unit fixtures.
 
-use super::{PlanLoadOptions, load_measurement_plans};
+use super::{PlanLoadOptions, load_measurement_plans, load_selected_measurement_plans};
 use crate::error::MeasurementErrorCode;
 use crate::source::MemoryMeasurement;
 use crate::types::plan::{LifecycleStatus, MeasurementStage};
+use std::collections::BTreeSet;
 
 fn document(id: &str, metric: &str, stage: &str) -> String {
     format!(
         "---\ntype: MeasurementPlan\nid: {id}\ntitle: T\nstatus: active\nstage: \
              {stage}\nmetric: {metric}\ndefinition_version: v1\nowner: o\n---\n\n# {id}\n"
     )
+}
+
+#[test]
+fn campaign_scope_validates_selected_plan_and_ignores_unrelated_legacy_semantics() {
+    let legacy = "---\ntype: MeasurementPlan\nid: MP-OLD\ntitle: Legacy\nstatus: active\nstage: observe\nmetric: legacy\ndefinition_version: v1\nstatistical_design:\n  estimator: prose from an older schema\n---\n";
+    let selected = document("MP-NEW", "gate", "ratchet");
+    let source = MemoryMeasurement::new()
+        .with_document("spec/assurance/old.md", legacy)
+        .with_document("spec/assurance/new.md", selected);
+    let ids = BTreeSet::from(["MP-NEW"]);
+    let plans = load_selected_measurement_plans(&source, &ids).unwrap();
+    assert_eq!(plans.len(), 1);
+    assert_eq!(plans[0].id.as_str(), "MP-NEW");
+    assert!(load_measurement_plans(&source, PlanLoadOptions::default()).is_err());
+
+    let selected_invalid = BTreeSet::from(["MP-OLD"]);
+    let error = load_selected_measurement_plans(&source, &selected_invalid).unwrap_err();
+    assert_eq!(error.code(), MeasurementErrorCode::PlanInvalid);
 }
 
 #[test]

@@ -67,6 +67,7 @@ use crate::types::ids::NonEmptyText;
 use crate::types::plan::{
     BarDigest, LifecycleStatus, MeasurementPlan, MeasurementStage, PlanPreregistration,
 };
+use std::collections::BTreeSet;
 
 /// The code every refusal in this module carries.
 const CODE: MeasurementErrorCode = MeasurementErrorCode::PlanInvalid;
@@ -108,6 +109,34 @@ pub fn load_measurement_plans<S: MeasurementSource + ?Sized>(
     })?;
     // Stable, so documents that agree on metric and id keep the walk's own
     // path order, as `Array.prototype.sort` does in V8.
+    plans.sort_by(|a, b| a.sort_key().cmp(&b.sort_key()));
+    Ok(plans)
+}
+
+/// Load only plans named by an exact campaign definition. Other tracked plans
+/// do not participate in this campaign's semantic contract.
+///
+/// The document walk still parses frontmatter, while full plan validation is
+/// applied to every selected plan. Missing and duplicate registrations are
+/// rejected by the campaign definition validator.
+pub(crate) fn load_selected_measurement_plans<S: MeasurementSource + ?Sized>(
+    source: &S,
+    ids: &BTreeSet<&str>,
+) -> Result<Vec<MeasurementPlan>, MeasurementError> {
+    let mut plans = discovery::documents(source, "MeasurementPlan", |path, value, text| {
+        if value
+            .get("id")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|id| ids.contains(id))
+        {
+            plan_from(path, value, text, PlanLoadOptions::default()).map(Some)
+        } else {
+            Ok(None)
+        }
+    })?
+    .into_iter()
+    .flatten()
+    .collect::<Vec<_>>();
     plans.sort_by(|a, b| a.sort_key().cmp(&b.sort_key()));
     Ok(plans)
 }

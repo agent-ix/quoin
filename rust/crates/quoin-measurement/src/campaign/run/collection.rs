@@ -251,8 +251,12 @@ pub(super) fn publish_collection(
     .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
     let candidate = crate::json_bridge::from_serde(&collection_value)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
-    let path = crate::write_measurement_collection(repo, &candidate)
-        .map_err(|error| CampaignRunError::measurement(error.to_string()))?;
+    let path = crate::store::publish::write_measurement_collection_with_plans(
+        repo,
+        &candidate,
+        std::slice::from_ref(plan),
+    )
+    .map_err(|error| CampaignRunError::measurement(error.to_string()))?;
     let bytes = read_bounded(&path)?;
     let collection_digest = quoin_store::digest_bytes_sha256(&bytes).as_hex().to_owned();
     let parsed = crate::validate::stored_measurement_collection(

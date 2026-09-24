@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Agent-IX
 //! Independent checks over retained campaign identities and bytes (FR-114).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 mod collection;
@@ -32,7 +32,7 @@ use super::{
     Attempt, AttemptEvidence, CampaignDecision, CampaignOutcome, CampaignReason, Member,
     all_required,
 };
-use crate::plans::PlanLoadOptions;
+use crate::plans::load_selected_measurement_plans;
 use crate::source::DiskMeasurement;
 use crate::types::plan::MeasurementPlan;
 use crate::verify::{OrderSource, Ranked, TamperFacts, verdict_json, verify};
@@ -128,14 +128,17 @@ pub fn verify_retained_campaign(
         source,
     })?;
     own_source.stage_into(plan_root.path())?;
-    let plans = crate::load_measurement_plans(
-        &DiskMeasurement::new(plan_root.path()),
-        PlanLoadOptions::default(),
-    )
-    .map_err(|error| CampaignStoreError::Json {
-        path: repo.to_path_buf(),
-        message: error.to_string(),
-    })?;
+    let selected_ids = definition
+        .members
+        .iter()
+        .map(|member| member.plan_id.as_str())
+        .collect::<BTreeSet<_>>();
+    let plans =
+        load_selected_measurement_plans(&DiskMeasurement::new(plan_root.path()), &selected_ids)
+            .map_err(|error| CampaignStoreError::Json {
+                path: repo.to_path_buf(),
+                message: error.to_string(),
+            })?;
     if plans.iter().any(|plan| {
         !own_source.contains_path(&plan.path)
             || plan

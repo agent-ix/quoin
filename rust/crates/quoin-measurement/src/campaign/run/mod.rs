@@ -32,7 +32,7 @@ use super::store::{
     retain_json_bytes, retain_value, run_path,
 };
 use super::{Attempt, AttemptEvidence, CampaignOutcome, Member, all_required};
-use crate::plans::PlanLoadOptions;
+use crate::plans::load_selected_measurement_plans;
 use crate::source::DiskMeasurement;
 use crate::types::plan::MeasurementPlan;
 use crate::verify::{OrderSource, Ranked, TamperFacts, Verdict, verdict_json, verify};
@@ -215,11 +215,14 @@ pub fn run_campaign(
     let plan_root =
         tempfile::tempdir().map_err(|error| CampaignRunError::execution(error.to_string()))?;
     own_source.stage_into(plan_root.path())?;
-    let plans = crate::load_measurement_plans(
-        &DiskMeasurement::new(plan_root.path()),
-        PlanLoadOptions::default(),
-    )
-    .map_err(|error| CampaignRunError::measurement(error.to_string()))?;
+    let selected_ids = definition
+        .members
+        .iter()
+        .map(|member| member.plan_id.as_str())
+        .collect::<BTreeSet<_>>();
+    let plans =
+        load_selected_measurement_plans(&DiskMeasurement::new(plan_root.path()), &selected_ids)
+            .map_err(|error| CampaignRunError::measurement(error.to_string()))?;
     let procedures = load_procedures(plan_root.path(), &plans)?;
     for plan in &plans {
         if !own_source.contains_path(&plan.path)
