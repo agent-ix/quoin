@@ -179,12 +179,28 @@ fn tc_1032_every_engineering_assurance_pin_is_the_same_commit() {
     // Every plugin in the fixture is checked, not just the ones already
     // agreeing, so a second drift is named instead of silently tolerated.
     for entry in &manifest.entries {
-        let Some(fixture_plugin) = fixture_plugins.iter().find(|plugin| {
-            plugin.get("name").and_then(serde_json::Value::as_str) == Some(entry.name.as_str())
-        }) else {
-            continue;
-        };
         let entry_name = entry.name.as_str();
+        // An entry the fixture does not mirror at all fails tc_1650 the same
+        // way a mis-bumped one does: nothing is materialized for it, so
+        // reconcile installs it and the fixture resolves a module. Adding a
+        // module to default-modules.yaml therefore has to add it here too,
+        // and that is stated rather than skipped.
+        let fixture_plugin = fixture_plugins
+            .iter()
+            .find(|plugin| {
+                plugin.get("name").and_then(serde_json::Value::as_str) == Some(entry_name)
+            })
+            .unwrap_or_else(|| {
+                panic!(
+                    "default-modules.yaml declares the {entry_name:?} module but quoin-cli's \
+                     retained-catalog fixture registry does not mirror it \
+                     (rust/crates/quoin-cli/tests/fixtures/retained-catalog/ix-home/filament/registry.json). \
+                     The fixture's contract is that `catalog list` resolves nothing from it, so \
+                     every default module needs an entry there pinned at the manifest's own ref, \
+                     or reconcile installs the missing one and tc_1650 fails as though catalog \
+                     discovery were broken (PLAT-1032)."
+                )
+            });
         let fixture_ref = fixture_plugin
             .get("ref")
             .and_then(serde_json::Value::as_str)
