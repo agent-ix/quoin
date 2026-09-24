@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `test_asserts_intent` variants T1 and T2, and the trace check TC
-//! (PLAT-1030, parent PLAT-1024; pre-registered in MP-242).
+//! `test_asserts_intent` variants T1, T2 and T3, and the trace check TC
+//! (PLAT-1030, parent PLAT-1024; pre-registered in MP-242, T3 in its
+//! "Round 2" section).
+//!
+//! # T3, round 2
+//!
+//! Dev run 1 on jev-1.13.0: T0, T1 and T2 tied on every weakened-test pair
+//! (15 of 15, 22 of 22). T3 moves the reading into code: code lists the
+//! test's assertion statements ([`extract_assertions`]), and Jev judges each
+//! one on its own: would it fail on a wrong outcome ([`T3`],
+//! [`derive_assertion_selection`]). A test with no assertion is `no` with no
+//! call.
 //!
 //! # Why these shapes
 //!
@@ -60,7 +70,9 @@
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
+use std::sync::LazyLock;
 
+use regex::Regex;
 use typesafe_sdk_questions::{
     NoulCriteria, Question, Questions, choice, noul, noul_with, questions,
 };
@@ -68,6 +80,7 @@ use typesafe_sdk_questions::{
 use crate::eval_v2_support::corpus::{KindGroup, Row, TruthKind};
 use crate::eval_v2_support::keys::{KEYS, Mode, NO, YES};
 use crate::eval_v2_support::metrics::{Scored, render, scored};
+use crate::eval_v2_support::units::{Language, mask_for};
 use crate::eval_v2_support::variant::{
     Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, RunOutput, T0,
     Variant, noul_prediction, request, state, whole_row,
@@ -522,6 +535,466 @@ pub(crate) const T2: Variant = Variant {
 };
 
 // ---------------------------------------------------------------------------
+// T3: assertion selection (PLAT-1024 round 2, MP-242 "Round 2")
+// ---------------------------------------------------------------------------
+
+/// The state field T3 lists the test's assertions in, `A1` .. `An`. It is a
+/// `test_` field, so the wording rule reads it as the test's.
+pub(crate) const ASSERTIONS_FIELD: &str = "test_assertions";
+
+/// T3 lists at most this many assertions; the overflow joins the last, so no
+/// assertion text is dropped.
+pub(crate) const MAX_ASSERTIONS: usize = 20;
+
+/// A Rust assertion's opening: an assert-family macro (`assert!`,
+/// `assert_eq!`, `assert_ne!`, `assert_matches!`, `debug_assert*!`,
+/// `prop_assert*!`, so `assert!(matches!(..))` too), a call that insists on
+/// an error (`.unwrap_err()`, `.expect_err(..)`), or a failure point: a
+/// `panic!(..)` or a proptest `Err(TestCaseError::fail(..))`, which
+/// [`failure_span`] widens to the arm, `let .. else` or `if` it fails in.
+/// Adapted from jev-code's `ASSERTION` (`src/workflows/hunks.ts`), which reads
+/// diff lines; this reads whole statements.
+///
+/// `.unwrap()` and `.expect(..)` are not assertions (T3 v3, MP-242): they
+/// check only that a call returned a success value, which T3's own
+/// instruction already answers `no` for. A test whose only check is one is
+/// `no` with no call. A `panic!` inside a closure (`.unwrap_or_else(|e|
+/// panic!(..))`) is the same check spelled out, and is not listed either.
+static RUST_ASSERTION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"\b(?:debug_)?(?:prop_)?assert\w*!\s*[(\[{]|\.(?:unwrap_err|expect_err)\s*\(|\bpanic!\s*[(\[{]|(?:\breturn\s+)?\bErr\s*\(\s*(?:\w+::)*TestCaseError::fail\s*\(",
+    )
+    .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+/// A Python assertion's opening: an `assert` statement at a line's start or
+/// after a `:` on the same line (`if x: assert y`), a unittest
+/// `self.assert*(..)`, `pytest.raises(..)`, or a dotted `assert_*(..)` call
+/// (`mock.assert_called_once_with(..)`, `np.testing.assert_allclose(..)`).
+static PYTHON_ASSERTION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"(?m)^[ \t]*assert\b|:[ \t]*assert\b|\bself\.assert\w*\s*\(|\bpytest\.raises\s*\(|\.assert_\w+\s*\(",
+    )
+    .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+/// Where the statement holding an assertion that opens at `at` begins, in
+/// masked bytes. An assert macro or `self.assert*` begins where it matched.
+/// An `.unwrap_err()` / `.expect_err()` call, a Python `assert` and a
+/// `pytest.raises` begin at their statement's first token: back to the
+/// previous `;`, `{` or `}` (Rust) or line break (Python) outside brackets.
+fn statement_start(masked: &[u8], at: usize, python: bool) -> usize {
+    let opens_at_match = masked
+        .get(at..)
+        .is_some_and(|rest| rest.starts_with(b"self.") || !(python || rest.starts_with(b".")));
+    if opens_at_match {
+        return at;
+    }
+    let mut depth = 0usize;
+    let mut start = at;
+    while let Some(byte) = start.checked_sub(1).and_then(|before| masked.get(before)) {
+        match byte {
+            b')' | b']' => depth += 1,
+            b'(' | b'[' if depth == 0 => break,
+            b'(' | b'[' => depth -= 1,
+            b'{' | b'}' | b';' if depth == 0 && !python => break,
+            b'\n' | b';' if depth == 0 && python => break,
+            _ => {}
+        }
+        start -= 1;
+    }
+    while masked.get(start).is_some_and(u8::is_ascii_whitespace) && start < at {
+        start += 1;
+    }
+    start
+}
+
+/// Where the statement from `from` ends (exclusive), in masked bytes: after
+/// its `;` (Rust), at its line break (Python, outside brackets and not after
+/// a `\`), at a `,` outside brackets (a Rust match arm), or at the `}` that
+/// closes the block it is the tail of. With `macro_call` it ends at the
+/// closing bracket of the first group it opens, and the `;` when one follows:
+/// a brace-delimited macro statement needs no `;` (`assert_matches! { x, P }`
+/// on its own line), so without this it would run on into the next statement.
+fn statement_end(masked: &[u8], from: usize, python: bool, macro_call: bool) -> usize {
+    let mut depth = 0usize;
+    let mut at = from;
+    while let Some(byte) = masked.get(at) {
+        match byte {
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' if depth == 0 => return at,
+            b')' | b']' | b'}' => {
+                depth -= 1;
+                if depth == 0 && macro_call {
+                    let after = (at + 1..masked.len())
+                        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+                        .unwrap_or(masked.len());
+                    return if masked.get(after) == Some(&b';') {
+                        after + 1
+                    } else {
+                        at + 1
+                    };
+                }
+            }
+            b',' if depth == 0 && !python => return at,
+            b';' if depth == 0 => return if python { at } else { at + 1 },
+            b'\n' if depth == 0 && python => {
+                let continued = at
+                    .checked_sub(1)
+                    .and_then(|before| masked.get(before))
+                    .is_some_and(|before| *before == b'\\');
+                if !continued {
+                    return at;
+                }
+            }
+            _ => {}
+        }
+        at += 1;
+    }
+    masked.len()
+}
+
+/// Where the Rust head ending just before `before` begins, in masked bytes:
+/// back to the previous `;`, `{`, `}` or `,` outside brackets, then past
+/// whitespace. A match arm's pattern, or a `let .. else` / `if` head.
+fn head_start(masked: &[u8], before: usize) -> usize {
+    let mut depth = 0usize;
+    let mut start = before;
+    while let Some(byte) = start.checked_sub(1).and_then(|at| masked.get(at)) {
+        match byte {
+            b')' | b']' => depth += 1,
+            b'(' | b'[' | b'{' | b'}' | b';' | b',' if depth == 0 => break,
+            b'(' | b'[' => depth -= 1,
+            _ => {}
+        }
+        start -= 1;
+    }
+    skip_whitespace(masked, start, before)
+}
+
+/// The first index at or after `at`, before `end`, that is not whitespace.
+fn skip_whitespace(masked: &[u8], at: usize, end: usize) -> usize {
+    (at..end)
+        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+        .unwrap_or(end)
+}
+
+/// The statement a Rust failure point (`panic!(..)`, `Err(TestCaseError::
+/// fail(..))`) opening at `at` asserts with, in masked bytes, or `None` when
+/// it is not one T3 lists:
+///
+/// - after `=>`: the match arm, pattern through the failure
+///   (`Err(e) => panic!("{e}")`);
+/// - first in a block whose head is a `let .. else`, an `if`, or a match arm:
+///   head through the block's `}` (and a `;` after it), so
+///   `let Some(x) = y else { panic!(..) };` is one statement;
+/// - after a `;`, a `}` or any other `{`, or first in the body: the failure
+///   statement alone;
+/// - anywhere else, inside a call or a closure: `None`. That is
+///   `.unwrap_or_else(|e| panic!(..))`, an `.expect(..)` spelled out.
+fn failure_span(masked: &[u8], at: usize) -> Option<(usize, usize)> {
+    let alone = || (at, statement_end(masked, at, false, true));
+    let Some(before) = (0..at)
+        .rev()
+        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+    else {
+        return Some(alone());
+    };
+    let arrow = before
+        .checked_sub(1)
+        .filter(|eq| masked.get(*eq..=before) == Some(b"=>".as_slice()));
+    if let Some(arrow) = arrow {
+        let start = head_start(masked, arrow);
+        return Some((start, statement_end(masked, at, false, true)));
+    }
+    match masked.get(before) {
+        Some(b'{') => {
+            let start = head_start(masked, before);
+            let head = String::from_utf8_lossy(masked.get(start..before).unwrap_or_default());
+            let mut words = head.split_whitespace();
+            let first = words.next();
+            let last = words.next_back().or(first);
+            let owned =
+                first == Some("if") || last == Some("else") || head.trim_end().ends_with("=>");
+            Some(if owned {
+                (start, statement_end(masked, before, false, true))
+            } else {
+                alone()
+            })
+        }
+        Some(b';' | b'}') => Some(alone()),
+        _ => None,
+    }
+}
+
+/// Which bytes of `body` lie inside a comment or a string or char literal,
+/// as [`mask_for`] reads them. Accurate for whitespace bytes, the only ones
+/// [`collapse_code_whitespace`] asks about: `body` is masked with every
+/// space and tab swapped for a control byte first, so a whitespace byte the
+/// mask leaves unchanged is code, and one it blanks is inside a literal.
+fn literal_bytes(path: &str, body: &str) -> Vec<bool> {
+    let marked: String = body
+        .chars()
+        .map(|ch| if ch == ' ' || ch == '\t' { '\u{1}' } else { ch })
+        .collect();
+    let blanked = mask_for(path, &marked);
+    marked
+        .bytes()
+        .zip(blanked)
+        .map(|(original, blank)| original != blank)
+        .collect()
+}
+
+/// `body[start..end]` with each run of whitespace outside comments and
+/// literals collapsed to one space and the ends trimmed. A comment's or a
+/// literal's own bytes stay verbatim, and a run ending a line comment keeps
+/// one line break, so the code after it is not read as part of the comment.
+fn collapse_code_whitespace(body: &str, literal: &[bool], start: usize, end: usize) -> String {
+    let in_literal = |index: usize| literal.get(index).copied().unwrap_or(false);
+    let mut out = String::new();
+    let mut pending: Option<char> = None;
+    // Where the literal just emitted began, while the byte before is in it.
+    let mut literal_from: Option<usize> = None;
+    for (offset, ch) in body.get(start..end).unwrap_or_default().char_indices() {
+        let index = start + offset;
+        if in_literal(index) {
+            if let Some(gap) = pending.take() {
+                out.push(gap);
+            }
+            literal_from.get_or_insert(index);
+            out.push(ch);
+            continue;
+        }
+        let after = literal_from.take();
+        if ch.is_whitespace() {
+            let ends_line_comment = ch == '\n'
+                && after.is_some_and(|from| {
+                    let rest = body.get(from..).unwrap_or_default();
+                    rest.starts_with("//") || rest.starts_with('#')
+                });
+            if ends_line_comment {
+                pending = Some('\n');
+            } else if !out.is_empty() && pending.is_none() {
+                pending = Some(' ');
+            }
+            continue;
+        }
+        if let Some(gap) = pending.take() {
+            out.push(gap);
+        }
+        out.push(ch);
+    }
+    out
+}
+
+/// Every assertion statement in a test body, in source order, verbatim with
+/// whitespace collapsed outside comments and string literals
+/// ([`collapse_code_whitespace`]). Comments and string literals are masked
+/// first ([`mask_for`]), so an `assert!` inside a string or a comment is not
+/// one; an assertion nested inside another (`assert_eq!(f().unwrap_err(),
+/// ..)`) is part of the outer one. The language is `path`'s: Python for
+/// `.py`, Rust otherwise. Code, not Jev, does this: T3 asks Jev only about
+/// the statements found.
+pub(crate) fn extract_assertions(path: &str, body: &str) -> Vec<String> {
+    let python = Language::of_path(path) == Some(Language::Python);
+    let masked = mask_for(path, body);
+    let masked_text = String::from_utf8_lossy(&masked);
+    let pattern: &Regex = if python {
+        &PYTHON_ASSERTION
+    } else {
+        &RUST_ASSERTION
+    };
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    for found in pattern.find_iter(&masked_text) {
+        let previous_end = spans.last().map_or(0, |(_, end)| *end);
+        if found.start() < previous_end {
+            continue;
+        }
+        let text = found.as_str();
+        let failure = !python && (text.starts_with("panic") || text.contains("TestCaseError"));
+        let (start, end) = if failure {
+            let Some(span) = failure_span(&masked, found.start()) else {
+                continue;
+            };
+            span
+        } else {
+            let start = statement_start(&masked, found.start(), python);
+            let start = if python {
+                // `(?m)^[ \t]*assert` matches from the line start.
+                skip_whitespace(&masked, start, found.end())
+            } else {
+                start
+            };
+            let macro_call = !python && text.contains('!');
+            (
+                start,
+                statement_end(&masked, found.start(), python, macro_call),
+            )
+        };
+        spans.push((start.max(previous_end), end.max(found.end())));
+    }
+    let literal = literal_bytes(path, body);
+    spans
+        .into_iter()
+        .map(|(start, end)| collapse_code_whitespace(body, &literal, start, end))
+        .filter(|text| !text.is_empty())
+        .collect()
+}
+
+/// The assertions T3 lists for `row`: [`extract_assertions`] over its test,
+/// the overflow past [`MAX_ASSERTIONS`] joined into the last. Empty when the
+/// row has no test or its test has no assertion.
+pub(crate) fn row_assertions(row: &Row) -> Vec<String> {
+    let Some(test) = &row.test else {
+        return Vec::new();
+    };
+    let mut found = extract_assertions(&test.path, &test.body);
+    if found.len() > MAX_ASSERTIONS {
+        let overflow = found.split_off(MAX_ASSERTIONS - 1).join(" ");
+        found.push(overflow);
+    }
+    found
+}
+
+/// The assertion labels: `A1` .. `An`.
+pub(crate) fn assertion_label(index: usize) -> String {
+    format!("A{}", index + 1)
+}
+
+/// T3's instruction for the assertion labelled `label`. It names the test
+/// and the requirement only: in `RT` there is nothing else, and in `RTC` the
+/// rest of the state is context.
+fn assertion_instruction(label: &str) -> String {
+    format!(
+        "Judge exactly one claim about assertion {label} in `{ASSERTIONS_FIELD}`, which lists, \
+         verbatim, the assertion statements of the test in `test_body`. The requirement is \
+         `fr_statement`, narrowed by `ac_text` when present. The claim: assertion {label}, on \
+         its own, checks the outcome the requirement states, strictly enough that it would fail \
+         if the system produced a different outcome from the one the requirement states. Answer \
+         no when it checks only that a call completes or returns a success value; checks a \
+         different outcome, field or case; checks a value the test set up itself; or would also \
+         pass for a wrong outcome, as a presence, non-empty, `is_some`, `contains` or bound \
+         check does where the requirement states an exact value."
+    )
+}
+
+/// T3's questions for `count` assertions: one `noul` per assertion, keyed by
+/// its label (`A1` .. `An`), each judged on its own.
+pub(crate) fn assertion_questions(count: usize) -> Questions {
+    questions((0..count).map(|index| {
+        let label = assertion_label(index);
+        let question = noul_with(
+            assertion_instruction(&label),
+            NoulCriteria {
+                yes: Some(
+                    format!(
+                        "Assertion {label} alone would fail if the outcome the requirement \
+                         states did not happen."
+                    )
+                    .into(),
+                ),
+                no: Some(
+                    format!(
+                        "Assertion {label} would still pass with a wrong outcome, or checks \
+                         something else."
+                    )
+                    .into(),
+                ),
+            },
+        );
+        (label, question)
+    }))
+}
+
+/// One ask carrying the row's assertions in [`ASSERTIONS_FIELD`], or none
+/// when the test has no assertion: that row's answer is derived in code.
+fn t3_asks(row: &Row) -> Vec<Ask> {
+    let assertions = row_assertions(row);
+    if assertions.is_empty() {
+        return Vec::new();
+    }
+    let listed: serde_json::Map<String, serde_json::Value> = assertions
+        .iter()
+        .enumerate()
+        .map(|(index, text)| (assertion_label(index), text.clone().into()))
+        .collect();
+    let mut row_state = state(row);
+    if let serde_json::Value::Object(fields) = &mut row_state {
+        fields.insert(
+            ASSERTIONS_FIELD.to_owned(),
+            serde_json::Value::Object(listed),
+        );
+    }
+    vec![Ask {
+        unit: None,
+        request: request(row_state, assertion_questions(assertions.len())),
+    }]
+}
+
+/// T3's derive rule over `count` listed assertions and the one response:
+/// `P(any)` is the highest `P(An)` over the assertions, `test_asserts_intent`
+/// is `yes` iff `P(any) >= TAU`, the confidence is `P(any)` for `yes` and
+/// `1 - P(any)` for `no`, and `P(any)` is the ordinal Bar D reads. With
+/// `count == 0` nothing was asked: a test with no assertion is `no`,
+/// `P(any) = 0`, confidence 1.
+///
+/// # Errors
+/// When an assertion's answer is missing, not a `noul`, or not a
+/// probability in `[0, 1]`, or when the response answers a label that was
+/// not asked.
+pub(crate) fn derive_assertion_selection(
+    count: usize,
+    answers: &RawAnswers,
+) -> Result<Prediction, String> {
+    let labels: Vec<String> = (0..count).map(assertion_label).collect();
+    if let Some(stray) = answers.keys().find(|key| !labels.contains(key)) {
+        return Err(format!(
+            "`{stray}`: answered, but no such assertion was asked"
+        ));
+    }
+    let mut p_any = 0.0f64;
+    for label in &labels {
+        p_any = p_any.max(noul_probability(answers, label)?);
+    }
+    let yes = count > 0 && p_any >= TAU;
+    Ok(Prediction {
+        answer: if yes { YES } else { NO }.to_owned(),
+        confidence: Some(if yes { p_any } else { 1.0 - p_any }),
+        ordinal: Some(p_any),
+    })
+}
+
+fn t3_derive(row: &Row, answered: &[Answered]) -> Predictions {
+    let count = row_assertions(row).len();
+    let prediction = loudly(row, derive_assertion_selection(count, &whole_row(answered)));
+    Predictions::from([(TEST_ASSERTS_INTENT, prediction)])
+}
+
+/// T3: code lists the test's assertion statements; Jev judges each on its
+/// own. `yes` iff the highest `P(An) >= 0.5`.
+///
+/// v1 (dev round 2, run 1) asked one `choice` over the listed assertions plus
+/// `none`, `yes` iff `1 - P(none) >= 0.5`: weakened mutants fell but stayed
+/// above 0.5, the mass the remaining assertions shared keeping `P(any)` up.
+/// v2 asks one strict `noul` per assertion and takes the highest, and ends a
+/// statement at a `,` outside brackets so two match arms' assertions no
+/// longer merge. v3 asks v2's question over a wider list: `panic!` and
+/// proptest `TestCaseError::fail` failure points, Python mock and
+/// `np.testing` `assert_*` calls and an `assert` after a `:`; and string
+/// literals and comments in a listed assertion stay verbatim.
+pub(crate) const T3: Variant = Variant {
+    id: "T3",
+    version: 3,
+    summary: "assertion check: code lists the test's assertions, one strict noul per \
+              assertion (alone, would it fail on a wrong outcome); yes iff max P >= 0.5",
+    modes: TEST_MODES,
+    references: &[Artifact::Test],
+    grades: &[TEST_ASSERTS_INTENT],
+    asks: t3_asks,
+    derive: t3_derive,
+};
+
+// ---------------------------------------------------------------------------
 // T0-RT: the baseline on requirement-plus-test rows
 // ---------------------------------------------------------------------------
 
@@ -739,7 +1212,7 @@ fn is_trace_check(variant: &Variant) -> bool {
 /// cassette. T0 is not one of them. It is PLAT-1027's shared baseline, which
 /// other experiments run too, so a run of T0 without any of these needs no
 /// cassette (PR #623 re-review L3).
-pub(crate) const MP_242: [Variant; 6] = [TC_RT, TC_RC, TC_RTC, T0_RT, T1, T2];
+pub(crate) const MP_242: [Variant; 7] = [TC_RT, TC_RC, TC_RTC, T0_RT, T1, T2, T3];
 
 /// Refuses a live run of an MP-242 variant with no cassette. A malformed
 /// response stops the run (see [`loudly`]); with a recording cassette every

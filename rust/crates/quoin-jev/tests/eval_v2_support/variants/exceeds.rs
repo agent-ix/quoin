@@ -15,6 +15,12 @@
 //! | `E4` | the same request as E1 (no extra call) | `yes` on `task_relation` alone |
 //! | `E2` | a choice: which requirement clause the unit serves, or `none` | `yes` when a unit's `P(none) >= TAU` |
 //! | `E0-RC` | E0's one `code_exceeds_requirement` question, whole body, RC only | `yes` at `p >= 0.5`: the as-asked RC baseline |
+//! | `E5` | a `noul`: if this statement were deleted, would the code fail to do something the requirement states (round 2) | `yes` when a unit's `P(necessary) < 0.5` |
+//!
+//! E5 (PLAT-1024 round 2, MP-241 "Round 2") answers dev run 1 on jev-1.13.0,
+//! where E1, E2 and E4 reached 19-35% recall on known additive mutants, below
+//! E0's 40%. It asks one small concrete fact per unit, with the whole body in
+//! the state, and skips more units structurally ([`trivial_reason`]).
 //!
 //! E3 is not a registered variant. It is [`render_diagnostics`]'s
 //! confidence-gated curve over E0's, E1's, E2's and E4's stored answers: rows
@@ -78,7 +84,7 @@ use std::fmt::Write as _;
 use std::sync::LazyLock;
 
 use regex::Regex;
-use typesafe_sdk_questions::{Questions, choice, questions, score};
+use typesafe_sdk_questions::{NoulCriteria, Questions, choice, noul_with, questions, score};
 
 use crate::eval_v2_support::corpus::{KindGroup, Row};
 use crate::eval_v2_support::keys::{Mode, NO, YES, spec};
@@ -86,7 +92,9 @@ use crate::eval_v2_support::metrics::{
     self, ContrastSpec, Direction, PairedContrast, Scored, graded, paired_contrast, scored,
     slice_name, summarize,
 };
-use crate::eval_v2_support::units::{Unit, UnitKind, mask};
+use crate::eval_v2_support::units::{
+    Language, Unit, UnitKind, mask, mask_for, split_rust_units, split_units,
+};
 use crate::eval_v2_support::variant::{
     Answered, Artifact, Ask, E0, Prediction, Predictions, RawAnswer, RunOutput, Variant,
     code_units, noul_prediction, per_unit_asks, request, state,
@@ -590,6 +598,548 @@ pub(crate) const E4: Variant = Variant {
 };
 
 // ---------------------------------------------------------------------------
+// E5: per-unit outcome necessity (PLAT-1024 round 2, MP-241 "Round 2")
+// ---------------------------------------------------------------------------
+
+/// E5's per-unit `noul`: would deleting this part lose stated behaviour.
+pub(crate) const NECESSARY_KEY: &str = "unit_necessary";
+
+/// The state field E5 names the unit's text in. The whole body stays in
+/// `symbol_body`, so the deletion is judged against the code around it.
+pub(crate) const UNIT_TEXT_FIELD: &str = "code_unit_text";
+
+/// E5's threshold on a unit's `P(necessary)`: below it, the unit is
+/// unnecessary.
+pub(crate) const NECESSARY_TAU: f64 = 0.5;
+
+/// Why E5 skips a unit before any call. E1's pre-filter ([`is_trivial`]) is
+/// the first reason; the other three are E5's, all read structurally off a
+/// unit's condition and body statements, with comments and literals masked.
+/// A [`UnitKind::Branch`] unit has both; so does a [`UnitKind::Whole`]
+/// statement that is a lone Rust `if` with no `else` (E5 v4); any other
+/// whole unit has statements and no condition, so it is never a size cap. A
+/// function unit is never trivial beyond E1's rule.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum TrivialReason {
+    /// E1's rule: empty, or a pass-through branch.
+    PassThrough,
+    /// Every statement is a log or print call: `log::`/`tracing::` and the
+    /// print macros in Rust, a `logger`/`logging` call or `print(..)` in
+    /// Python.
+    Logging,
+    /// Apart from logging, one statement that passes on an error it was
+    /// given: `Err(e)`, `return Err(e.into())`, `Err(Error::from(e))`, a bare
+    /// `raise`, `raise e`, `raise X(..) from e`. A refusal that builds a new
+    /// error is not plumbing.
+    ErrorPlumbing,
+    /// The condition is an upper bound against a literal or a constant
+    /// (`> 4096`, `>= MAX_BYTES`), and, apart from logging, the one
+    /// statement refuses: `Err(..)`, `bail!(..)`, `raise ..`.
+    SizeCap,
+}
+
+impl TrivialReason {
+    /// The report's name for the reason.
+    pub(crate) const fn label(self) -> &'static str {
+        match self {
+            Self::PassThrough => "pass-through",
+            Self::Logging => "logging",
+            Self::ErrorPlumbing => "error plumbing",
+            Self::SizeCap => "size cap",
+        }
+    }
+}
+
+static LOGGING_RUST: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"^(?:(?:log|tracing)::)?(?:trace|debug|info|warn|error|println|eprintln|print|eprint|dbg)!\s*[(\[{].*[)\]}]$",
+    )
+    .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+static LOGGING_PYTHON: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"^(?:(?:self\.)?_?(?:logger|logging|log|LOG|LOGGER)\.\w+|print|warnings\.warn)\s*\(.*\)$",
+    )
+    .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+static PLUMBING_RUST: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"^(?:return\s+)?Err\s*\(\s*(?:[a-z_][a-z0-9_]*(?:\s*\.\s*into\s*\(\s*\))?|(?:[A-Za-z_]\w*::)+from\s*\(\s*[a-z_][a-z0-9_]*\s*\))\s*\)$",
+    )
+    .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+static PLUMBING_PYTHON: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^raise(?:\s+[a-z_]\w*)?$|^raise\b.*\bfrom\s+[a-z_]\w*$")
+        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+static REFUSAL_RUST: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(?:return\s+)?(?:Err\s*\(|(?:anyhow::)?bail!\s*[(\[{])")
+        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+static REFUSAL_PYTHON: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^raise\b")
+        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+/// An upper bound: `x > N`, `x >= LIMIT`, or `N < x`, against an integer
+/// literal or an upper-case constant. `->` and `=>` are not comparisons.
+static UPPER_BOUND: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"(?:^|[^-=>])>=?\s*(?:\d[\d_]*|(?:[A-Za-z_]\w*::)*[A-Z][A-Z0-9_]+)\b|\b(?:\d[\d_]*|[A-Z][A-Z0-9_]+)\s*<=?[^<=]",
+    )
+    .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+/// `text` split at `;` (and, in Python, line breaks) outside brackets; each
+/// piece trimmed, whitespace collapsed, empty ones dropped.
+fn top_level_statements(text: &str, python: bool) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut depth = 0usize;
+    let mut current = String::new();
+    let mut flush = |current: &mut String| {
+        let piece = current.split_whitespace().collect::<Vec<_>>().join(" ");
+        if !piece.is_empty() {
+            out.push(piece);
+        }
+        current.clear();
+    };
+    for ch in text.chars() {
+        match ch {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+        if depth == 0 && (ch == ';' || (python && ch == '\n')) {
+            flush(&mut current);
+        } else {
+            current.push(ch);
+        }
+    }
+    flush(&mut current);
+    out
+}
+
+/// A branch unit's condition and body statements, in masked text. Rust: an
+/// arm's pattern and what follows `=>`; an `if` block's condition and what
+/// is inside its braces. Python: the clause header's condition and every
+/// statement after its `:`.
+fn branch_shape(unit: &Unit, python: bool, masked: &str) -> (String, Vec<String>) {
+    if python {
+        let head = masked.len() - masked.trim_start().len();
+        let keyword_end = masked
+            .get(head..)
+            .and_then(|rest| rest.find(|c: char| !(c.is_alphanumeric() || c == '_')))
+            .map_or(masked.len(), |offset| head + offset);
+        let mut depth = 0usize;
+        let colon = masked
+            .char_indices()
+            .skip_while(|(at, _)| *at < keyword_end)
+            .find(|(_, ch)| {
+                match ch {
+                    '(' | '[' | '{' => depth += 1,
+                    ')' | ']' | '}' => depth = depth.saturating_sub(1),
+                    _ => {}
+                }
+                *ch == ':' && depth == 0
+            })
+            .map_or(masked.len(), |(at, _)| at);
+        let condition = masked.get(keyword_end..colon).unwrap_or_default();
+        let body = masked.get(colon + 1..).unwrap_or_default();
+        return (
+            condition.trim().to_owned(),
+            top_level_statements(body, true),
+        );
+    }
+    let condition = if unit.label.starts_with("match arm") {
+        masked.find("=>").and_then(|arrow| masked.get(..arrow))
+    } else {
+        masked.find('{').and_then(|open| masked.get(..open))
+    }
+    .unwrap_or_default()
+    .trim()
+    .trim_start_matches("else")
+    .trim()
+    .trim_start_matches("if")
+    .trim()
+    .to_owned();
+    let body = normalize(branch_body(unit, masked));
+    (condition, top_level_statements(&body, false))
+}
+
+/// Whether the masked Rust statement is one `if` block with no `else`: it
+/// opens with the word `if` and ends at a `}`.
+fn lone_rust_if(masked: &str) -> bool {
+    let text = masked.trim();
+    text.strip_prefix("if")
+        .is_some_and(|rest| rest.starts_with(|c: char| !(c.is_alphanumeric() || c == '_')))
+        && text.ends_with('}')
+}
+
+/// Why E5 skips `unit` of a body read as the language of `path`, or `None`
+/// when E5 asks about it. See [`TrivialReason`].
+pub(crate) fn trivial_reason(path: &str, unit: &Unit) -> Option<TrivialReason> {
+    if is_trivial(unit) {
+        return Some(TrivialReason::PassThrough);
+    }
+    let python = Language::of_path(path) == Some(Language::Python);
+    let (logging, plumbing, refusal): (&Regex, &Regex, &Regex) = if python {
+        (&LOGGING_PYTHON, &PLUMBING_PYTHON, &REFUSAL_PYTHON)
+    } else {
+        (&LOGGING_RUST, &PLUMBING_RUST, &REFUSAL_RUST)
+    };
+    let masked = String::from_utf8_lossy(&mask_for(path, &unit.text)).into_owned();
+    let (condition, statements) = match unit.kind {
+        UnitKind::Function => return None,
+        UnitKind::Branch => branch_shape(unit, python, &masked),
+        // A lone Rust `if` with no `else` is one statement unit (E5 v4): read
+        // it as the branch it is, so a size cap is skipped there too.
+        UnitKind::Whole if !python && lone_rust_if(&masked) => branch_shape(unit, false, &masked),
+        UnitKind::Whole => (String::new(), top_level_statements(&masked, python)),
+    };
+    let rest: Vec<&String> = statements
+        .iter()
+        .filter(|statement| !logging.is_match(statement))
+        .collect();
+    match rest.as_slice() {
+        [] if !statements.is_empty() => Some(TrivialReason::Logging),
+        [only] if plumbing.is_match(only) => Some(TrivialReason::ErrorPlumbing),
+        [only] if refusal.is_match(only) && UPPER_BOUND.is_match(&condition) => {
+            Some(TrivialReason::SizeCap)
+        }
+        _ => None,
+    }
+}
+
+/// Whether the masked byte at `at` starts the word `word`.
+fn starts_word(masked: &[u8], at: usize, word: &str) -> bool {
+    let is_ident =
+        |byte: Option<&u8>| byte.is_some_and(|b| b.is_ascii_alphanumeric() || *b == b'_');
+    masked
+        .get(at..)
+        .is_some_and(|rest| rest.starts_with(word.as_bytes()))
+        && !is_ident(masked.get(at + word.len()))
+        && !at
+            .checked_sub(1)
+            .is_some_and(|before| is_ident(masked.get(before)))
+}
+
+/// The first non-whitespace index at or after `at`, before `end`.
+fn skip_space(masked: &[u8], at: usize, end: usize) -> usize {
+    (at..end)
+        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+        .unwrap_or(end)
+}
+
+/// The top-level statements of the Rust text `masked[from..end]`, as byte
+/// ranges: each ends after its `;`, or at the `}` closing a block statement
+/// (`if`, `match`, `for`, `while`, `loop`, `unsafe`, a bare block) unless an
+/// `else`, `.` or `?` continues it; what is left is the tail expression.
+fn rust_statements(masked: &[u8], from: usize, end: usize) -> Vec<(usize, usize)> {
+    const BLOCK_WORDS: [&str; 6] = ["if", "match", "for", "while", "loop", "unsafe"];
+    let mut out = Vec::new();
+    let mut start = skip_space(masked, from, end);
+    let mut depth = 0usize;
+    let mut at = start;
+    while at < end {
+        let Some(byte) = masked.get(at) else { break };
+        match byte {
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' => depth = depth.saturating_sub(1),
+            b'}' => {
+                depth = depth.saturating_sub(1);
+                let block = masked.get(start) == Some(&b'{')
+                    || BLOCK_WORDS
+                        .iter()
+                        .any(|word| starts_word(masked, start, word));
+                if depth == 0 && block {
+                    let next = skip_space(masked, at + 1, end);
+                    let continues = starts_word(masked, next, "else")
+                        || matches!(masked.get(next), Some(b'.' | b'?' | b';'));
+                    if !continues {
+                        out.push((start, at + 1));
+                        start = next;
+                        at = next;
+                        continue;
+                    }
+                }
+            }
+            b';' if depth == 0 => {
+                out.push((start, at + 1));
+                start = skip_space(masked, at + 1, end);
+                at = start;
+                continue;
+            }
+            _ => {}
+        }
+        at += 1;
+    }
+    if start < end {
+        out.push((start, end));
+    }
+    out
+}
+
+/// The body of the Rust item in `masked`: inside the braces opening after
+/// its `fn` keyword, or the whole text when it has no `fn`.
+fn rust_fn_body(masked: &[u8]) -> (usize, usize) {
+    let text = String::from_utf8_lossy(masked);
+    let Some(keyword) = (0..masked.len()).find(|at| starts_word(masked, *at, "fn")) else {
+        return (0, masked.len());
+    };
+    let mut depth = 0usize;
+    let open = (keyword..masked.len()).find(|at| match masked.get(*at) {
+        Some(b'(' | b'[' | b'<') => {
+            depth += 1;
+            false
+        }
+        Some(b')' | b']' | b'>') if !text.get(..*at).is_some_and(|t| t.ends_with('-')) => {
+            depth = depth.saturating_sub(1);
+            false
+        }
+        Some(b'{') => depth == 0,
+        _ => false,
+    });
+    match (open, masked.iter().rposition(|byte| *byte == b'}')) {
+        (Some(open), Some(close)) if open < close => (open + 1, close),
+        _ => (0, masked.len()),
+    }
+}
+
+/// E5's units for a code body (v2). Python keeps [`split_units`]. Rust: each
+/// function (one per `fn` item when there are several, else the body) is cut
+/// into its top-level statements, so a line added to a function is its own
+/// unit; a statement that holds two or more top-level branches (a `match`,
+/// an `if`/`else` chain) is cut further into those branches, as
+/// [`split_rust_units`] cuts them.
+pub(crate) fn e5_units(path: &str, body: &str) -> Vec<Unit> {
+    if Language::of_path(path) != Some(Language::Rust) {
+        return split_units(path, body);
+    }
+    let items: Vec<String> = match split_rust_units(body).as_slice() {
+        units @ [first, ..] if first.kind == UnitKind::Function => {
+            units.iter().map(|unit| unit.text.clone()).collect()
+        }
+        _ => vec![body.to_owned()],
+    };
+    let mut out = Vec::new();
+    for item in items {
+        let masked = mask(&item);
+        let (from, end) = rust_fn_body(&masked);
+        for (start, stop) in rust_statements(&masked, from, end) {
+            let Some(statement) = item.get(start..stop).map(str::trim) else {
+                continue;
+            };
+            let branches = split_rust_units(statement);
+            if branches.len() >= 2 && branches.iter().all(|u| u.kind == UnitKind::Branch) {
+                out.extend(branches);
+            } else {
+                let collapsed: String = statement.split_whitespace().collect::<Vec<_>>().join(" ");
+                let label: String = collapsed.chars().take(60).collect();
+                out.push(Unit {
+                    kind: UnitKind::Whole,
+                    label: format!("statement {label}"),
+                    text: statement.to_owned(),
+                });
+            }
+        }
+    }
+    out
+}
+
+/// The row's E5 units ([`e5_units`]), or none without code.
+pub(crate) fn row_e5_units(row: &Row) -> Vec<Unit> {
+    row.code
+        .as_ref()
+        .map(|code| e5_units(&code.path, &code.body))
+        .unwrap_or_default()
+}
+
+/// E5's per-unit question. The unit is `code_unit_text`; the whole code is
+/// `symbol_body`, so "deleted" has something to be deleted from.
+pub(crate) fn necessity_questions() -> Questions {
+    questions([(
+        NECESSARY_KEY,
+        noul_with(
+            format!(
+                "Judge exactly one claim about the part of the code shown in \
+                 `{UNIT_TEXT_FIELD}` (named in `code_unit`), which is taken from the code in \
+                 `symbol_body`. The requirement is `fr_statement`, narrowed by `ac_text` when \
+                 present. If this part were deleted from the code, would the code fail to do \
+                 something the requirement states? Answer yes when deleting it would lose, \
+                 break or change behaviour the requirement states, or work that stated \
+                 behaviour depends on. Answer no when the code would still do everything the \
+                 requirement states without it."
+            ),
+            NoulCriteria {
+                yes: Some(
+                    "Deleting this part would make the code fail to do something the \
+                     requirement states."
+                        .into(),
+                ),
+                no: Some(
+                    "Without this part the code would still do everything the requirement \
+                     states."
+                        .into(),
+                ),
+            },
+        ),
+    )])
+}
+
+/// One ask per unit E5 does not skip: the row's [`state`] (whole body in
+/// `symbol_body`) plus the unit's label in `code_unit` and its text in
+/// [`UNIT_TEXT_FIELD`].
+fn necessity_asks(row: &Row) -> Vec<Ask> {
+    let Some(code) = &row.code else {
+        return Vec::new();
+    };
+    row_e5_units(row)
+        .iter()
+        .enumerate()
+        .filter(|(_, unit)| trivial_reason(&code.path, unit).is_none())
+        .map(|(index, unit)| {
+            let mut unit_state = state(row);
+            if let serde_json::Value::Object(fields) = &mut unit_state {
+                fields.insert("code_unit".to_owned(), unit.label.clone().into());
+                fields.insert(UNIT_TEXT_FIELD.to_owned(), unit.text.clone().into());
+            }
+            Ask {
+                unit: Some(index),
+                request: request(unit_state, necessity_questions()),
+            }
+        })
+        .collect()
+}
+
+/// One asked unit's `P(necessary)`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct NecessityReading {
+    /// The unit's index in [`row_e5_units`], the ask's `unit`.
+    pub(crate) unit: usize,
+    /// `P(necessary)`.
+    pub(crate) necessary: f64,
+}
+
+impl NecessityReading {
+    /// Below [`NECESSARY_TAU`]: deleting it loses nothing stated.
+    pub(crate) fn unnecessary(&self) -> bool {
+        self.necessary < NECESSARY_TAU
+    }
+}
+
+/// E5's full reading of a row.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct NecessityAssessment {
+    /// Units skipped before any call, by reason.
+    pub(crate) trivial: BTreeMap<TrivialReason, usize>,
+    /// One reading per asked unit.
+    pub(crate) readings: Vec<NecessityReading>,
+    /// The row's answer: every row is answered since v3, which has no
+    /// breaker.
+    pub(crate) outcome: Prediction,
+}
+
+/// E5's rule over the asked units: `yes` (exceeds) iff some unit is
+/// unnecessary. The ordinal is the highest `1 - P(necessary)`, 0 when
+/// nothing was asked; the confidence is the ordinal for `yes` and one minus
+/// it for `no`. Every row is answered: v3 dropped v1's and v2's breaker
+/// (abstain when two or more units were asked and all were unnecessary),
+/// whose abstentions were 4 of E5@v2's 5 Bar D failures.
+pub(crate) fn necessity_outcome(readings: &[NecessityReading]) -> Prediction {
+    let unnecessary = readings.iter().filter(|r| r.unnecessary()).count();
+    let ordinal = readings
+        .iter()
+        .map(|reading| 1.0 - reading.necessary)
+        .reduce(f64::max)
+        .unwrap_or(0.0);
+    let yes = unnecessary > 0;
+    Prediction {
+        answer: if yes { YES } else { NO }.to_owned(),
+        confidence: Some(if yes { ordinal } else { 1.0 - ordinal }),
+        ordinal: Some(ordinal),
+    }
+}
+
+/// Reads a row's E5 answers.
+///
+/// # Errors
+/// When a unit's answer is missing, not a `noul`, or not a probability in
+/// `[0, 1]`, naming the row and the unit.
+pub(crate) fn assess_necessity(
+    row: &Row,
+    answered: &[Answered],
+) -> Result<NecessityAssessment, String> {
+    let mut trivial = BTreeMap::new();
+    if let Some(code) = &row.code {
+        for reason in row_e5_units(row)
+            .iter()
+            .filter_map(|unit| trivial_reason(&code.path, unit))
+        {
+            *trivial.entry(reason).or_default() += 1;
+        }
+    }
+    let readings = answered
+        .iter()
+        .filter_map(|answer| answer.unit.map(|unit| (answer, unit)))
+        .map(|(answer, unit)| match answer.answers.get(NECESSARY_KEY) {
+            Some(RawAnswer::Noul(p)) if p.is_finite() && (0.0..=1.0).contains(p) => {
+                Ok(NecessityReading {
+                    unit,
+                    necessary: *p,
+                })
+            }
+            Some(other) => Err(format!(
+                "{} unit {unit}: `{NECESSARY_KEY}` came back as {other:?}, not a probability",
+                row.id
+            )),
+            None => Err(format!(
+                "{} unit {unit}: `{NECESSARY_KEY}` is missing from the answers",
+                row.id
+            )),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let outcome = necessity_outcome(&readings);
+    Ok(NecessityAssessment {
+        trivial,
+        readings,
+        outcome,
+    })
+}
+
+fn e5_derive(row: &Row, answered: &[Answered]) -> Predictions {
+    Predictions::from([(KEY, loud(assess_necessity(row, answered)).outcome)])
+}
+
+/// E5: per-unit "would deleting this lose stated behaviour"; `yes` when a
+/// non-trivial unit is unnecessary.
+///
+/// v1 (dev round 2, run 1) used [`split_units`] as E1 does: an addition in a
+/// function with no top-level branches sat inside one whole-body unit that
+/// was necessary as a whole, so most additive pairs tied. v2 cut each
+/// function into its top-level statements ([`e5_units`]) and skipped a
+/// statement that only logs. v3 drops the breaker ([`necessity_outcome`]);
+/// its requests are v2's, so v3 is a derive-only change read off v2's
+/// answers. v4 applies the triviality checks to statement units too
+/// ([`trivial_reason`]): a lone `if` size cap, which v2 and v3 asked about,
+/// is skipped, so v4 asks about fewer units than v3.
+pub(crate) const E5: Variant = Variant {
+    id: "E5",
+    version: 4,
+    summary: "per-statement outcome necessity noul (would deleting it lose stated behaviour); \
+              yes if a non-trivial unit has P(necessary) < 0.5; no breaker",
+    modes: RC_AND_RTC,
+    references: CODE_ONLY,
+    grades: &[KEY],
+    asks: necessity_asks,
+    derive: e5_derive,
+};
+
+// ---------------------------------------------------------------------------
 // E2: per-unit selection
 // ---------------------------------------------------------------------------
 
@@ -942,6 +1492,67 @@ pub(crate) fn relation_counts(
         }
     }
     counts
+}
+
+/// E5's counts over a run.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct NecessityCounts {
+    /// Rows E5 ran on.
+    pub(crate) rows: usize,
+    /// Units skipped before any call, by reason.
+    pub(crate) trivial_units: BTreeMap<TrivialReason, usize>,
+    /// Units asked about and read.
+    pub(crate) considered_units: usize,
+    /// Of those, units with `P(necessary) < 0.5`.
+    pub(crate) unnecessary_units: usize,
+}
+
+/// Tallies E5's assessments over `output`.
+pub(crate) fn necessity_counts(rows: &[Row], output: &RunOutput) -> NecessityCounts {
+    let label = E5.label();
+    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut counts = NecessityCounts::default();
+    for result in output.results.iter().filter(|r| r.variant == label) {
+        let Some(row) = by_id.get(result.row_id.as_str()) else {
+            continue;
+        };
+        let assessment = loud(assess_necessity(row, &result.answered));
+        counts.rows += 1;
+        for (reason, count) in assessment.trivial {
+            *counts.trivial_units.entry(reason).or_default() += count;
+        }
+        counts.considered_units += assessment.readings.len();
+        counts.unnecessary_units += assessment
+            .readings
+            .iter()
+            .filter(|reading| reading.unnecessary())
+            .count();
+    }
+    counts
+}
+
+fn render_necessity_counts(out: &mut String, counts: &NecessityCounts) {
+    let trivial: Vec<String> = counts
+        .trivial_units
+        .iter()
+        .map(|(reason, count)| format!("{} {count}", reason.label()))
+        .collect();
+    let _ = writeln!(
+        out,
+        "\n#### {}: units\n\n\
+         | Rows | Units trivial | Units asked | Units unnecessary |\n\
+         | --- | --- | --- | --- |\n\
+         | {} | {} | {} | {} |",
+        E5.label(),
+        counts.rows,
+        if trivial.is_empty() {
+            "0".to_owned()
+        } else {
+            trivial.join(", ")
+        },
+        counts.considered_units,
+        counts.unnecessary_units,
+    );
 }
 
 /// One `tau` of a threshold sweep.
@@ -1474,7 +2085,7 @@ pub(crate) fn render_diagnostics(rows: &[Row], output: &RunOutput) -> String {
         let label = variant.label();
         output.results.iter().any(|result| result.variant == label)
     };
-    let ran_any = [E0, E0_RC, E1, E2, E4].iter().any(ran);
+    let ran_any = [E0, E0_RC, E1, E2, E4, E5].iter().any(ran);
     if !ran_any {
         return String::new();
     }
@@ -1491,6 +2102,9 @@ pub(crate) fn render_diagnostics(rows: &[Row], output: &RunOutput) -> String {
             render_breaker_crosstab(&mut out, rows, output, &variant);
         }
     }
+    if ran(&E5) {
+        render_necessity_counts(&mut out, &necessity_counts(rows, output));
+    }
     if ran(&E2) {
         render_sweep(
             &mut out,
@@ -1502,7 +2116,7 @@ pub(crate) fn render_diagnostics(rows: &[Row], output: &RunOutput) -> String {
     // they are the as-asked baseline in both modes.
     let mut baseline = scored(rows, output, &E0.label(), KEY);
     baseline.extend(scored(rows, output, &E0_RC.label(), KEY));
-    for variant in [E0, E0_RC, E1, E2, E4] {
+    for variant in [E0, E0_RC, E1, E2, E4, E5] {
         if ran(&variant) {
             let label = variant.label();
             let graded = scored(rows, output, &label, KEY);

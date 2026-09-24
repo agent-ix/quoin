@@ -288,6 +288,99 @@ reported as "no claim" or negative, whichever applies.
 Compare only like variant version, corpus revision and label revision. An
 edit to the corpus truth is a new definition version.
 
+## Round 2: E5, outcome necessity per unit
+
+Pre-registered here, and committed, before any E5 call.
+
+**Why.** Dev run 1 on corpus v2 (`jev-1.13.0`): on the known additive mutants
+(by construction, all `yes`), E1 and E4 reached 19.2% recall and E2 34.6%,
+below E0's 40.0%. The per-unit task relation and clause choice did not help.
+What worked elsewhere in that run was small, concrete facts (K1, S1).
+
+**What E5 asks.** E5 runs on RC and RTC. Code splits the code body into units
+with `units.rs`, exactly as E1 does. For each unit E5 does not skip, Jev
+answers one `noul`: if this part were deleted, would the code fail to do
+something the requirement states? The state carries the whole body in
+`symbol_body` and the unit in `code_unit_text`, so the deletion is judged
+against the code around it. An additive unit is unnecessary and should answer
+`no`.
+
+**Trivial units, skipped in code with no call.** E1's pre-filter (empty, or a
+pass-through branch), plus three structural rules on a branch unit's masked
+condition and body statements: every statement is a log or print call
+(logging); apart from logging, one statement that passes on an error it was
+given, such as `Err(e)`, `return Err(e.into())`, `raise`, `raise X from e`
+(error plumbing); an upper-bound condition against a literal or constant whose
+one statement refuses, such as `if x.len() > MAX { return Err(..) }` (a size
+cap). A refusal that builds a new error without such a bound is asked about.
+
+**Derive rule.** `code_exceeds_requirement` is `yes` iff some asked unit has
+`P(necessary) < 0.5`. The ordinal is the highest `1 - P(necessary)` (0 when
+nothing is asked); the confidence is the ordinal for `yes` and one minus it
+for `no`. **Breaker**, as E1's: with two or more units asked and every one
+unnecessary, no part of the code does anything the requirement states, so the
+row abstains as trace-suspect and counts against the abstention ceiling. A
+missing or out-of-range answer stops the run.
+
+**Dev only.** The held-out split was spent in held-out run 1
+(`fixtures/eval-v2/heldout-runs.jsonl`). E5 has no held-out run and gets no
+entry in the held-out selection file; its dev result is its reported result.
+
+**Bars.** The bars above, unchanged. The headline is **Bar D** on the
+known-truth pairs: `additive_code` mutants paired with their source, a
+success crosses 0.5 upward and rises by at least 0.10, an abstention is a
+failure, one-sided sign test at alpha 0.05, gateable at 10 or more non-tie
+pairs. E0 (RTC) and E0-RC (RC) are the comparators.
+
+**Versions.** `REQUEST_DIGEST_PINS` holds the pin of E5's current version
+only, now `E5@v4`; each bump replaced the previous version's pin. The pin
+covers the question text on the canonical row, not the state or which units
+are asked, so v3 (a derive change) and v4 (fewer units asked) have v2's
+digest under new labels. E5 is its own family with the 5-version dev cap.
+This round was pre-registered at 3 versions; v4 is the one version past that,
+allowed by the cap and run after PR #630's review. Every version run is
+reported with its numbers.
+
+**Final rule (v4).** The rule above is v1's, as pre-registered. The final
+version differs in three ways, each made after the previous version's dev
+answers were seen. Units (v2): each Rust function is cut into its top-level
+statements, and a statement holding a `match` or an `if`/`else` chain into
+its branches; Python keeps `units.rs`. No breaker (v3): every row is
+answered. Triviality (v4): the three structural rules apply to a statement
+unit too, a lone `if` with no `else` read as the branch it is, so the size-cap
+example above is skipped rather than asked about.
+
+### Round 2 dev results
+
+Dev split, `jev-1.13.0`, cassette-recorded. Bar D pairs are `additive_code`
+mutants. Agreement and margin are on the rows the variant answered.
+
+| Version | What changed | Bar D (succ / fail / tie, p) | Known truth: `yes` recall | All rows: agreement, constant, margin | Abstained |
+| --- | --- | --- | --- | --- | --- |
+| E0@v1 (RTC) | baseline | 4 / 0 / 10, p = 0.0625 | 40.0% (15) | 59.6%, 57.4%, +2.1pp (47) | 0 |
+| E0-RC@v1 (RC) | baseline | 2 / 0 / 9, p = 0.25 | 81.8% (11) | 72.7%, 68.2%, +4.5pp (22) | 0 |
+| E5@v1 | `units.rs` units, breaker | 4 / 0 / 20, p = 0.0625 | 38.5% (26) | 56.1%, 59.1%, -3.0pp (66) | 3 of 69 |
+| E5@v2 | statement-level units, statements that only log skipped | 9 / 5 / 10 (4 failures are abstentions), p = 0.2120 | 68.2% (22 answered of 26) | 66.1%, 57.6%, +8.5pp (59) | 10 of 69 |
+| E5@v3 | breaker dropped | 9 / 1 / 14, p = 0.0107 | 73.1% (26) | 68.1%, 60.9%, +7.2pp (69) | 0 |
+| E5@v4 | triviality checks applied to statement units (a lone `if` size cap is skipped) | 9 / 1 / 14, p = 0.0107 | 73.1% (26) | 68.1%, 60.9%, +7.2pp (69) | 0 |
+
+E5@v4 is the final version, and Bar D holds for it: 10 non-tie pairs, the
+minimum, with 9 successes. v4 asked about 578 units where v3 asked about 581
+(2 size caps and 1 logging-only statement now skipped), and every number in
+its row equals v3's. **Caveat:** v3 changed only the
+derive rule. Its requests are v2's, so its Bar D was read off answers that
+were already seen, and the breaker was dropped because v2's abstentions were
+4 of its 5 Bar D failures. That is dev tuning inside the budget. The held-out
+split is spent, so there is no independent confirmation. Treat the pass as
+provisional until a fresh split exists.
+
+Two limits on what the pass shows. On RC rows alone E5@v4 (as E5@v3) agrees
+on 68.2% of the 22 rows, against E0-RC's 72.7% on the same rows, and its
+margin over the constant predictor there is +0.0pp: E5 adds nothing on RC.
+And the known-truth slice is the 26 by-construction `additive_code` rows,
+whose labels are all `yes`: it measures `yes` recall only, and says nothing
+about false alarms, which only the agent-labelled rows reach.
+
 ## Measured outcome
 
 Not yet measured. Phase 1 (PLAT-1029) commits the variants, their offline

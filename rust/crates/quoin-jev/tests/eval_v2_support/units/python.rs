@@ -63,7 +63,7 @@ const BOM: &str = "\u{feff}";
 /// Same length as `text`, so every index maps back unchanged; every `\n`
 /// left is a real line break; and every masked range is whole characters,
 /// so every index this module slices at is a char boundary.
-fn mask(text: &str) -> Vec<u8> {
+pub(crate) fn mask(text: &str) -> Vec<u8> {
     let bytes = text.as_bytes();
     let mut out = bytes.to_vec();
     let mut at = 0usize;
