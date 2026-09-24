@@ -6,4 +6,5 @@
 //! The baselines stay in `../variant.rs`; each experiment's own wordings and
 //! derive rules live here and are added to its `REGISTRY`.
 
+pub(crate) mod exceeds;
 pub(crate) mod severity;

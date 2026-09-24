@@ -70,7 +70,7 @@ use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
-use super::variants::severity;
+use super::variants::{exceeds, severity};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
 };
@@ -224,6 +224,11 @@ pub(crate) const REGISTRY: &[Variant] = &[
     severity::S2M_RT,
     severity::S2M_RC,
     severity::S3,
+    // PLAT-1029 code_exceeds_requirement variants; bars in spec/assurance/MP-241.
+    exceeds::E0_RC,
+    exceeds::E1,
+    exceeds::E2,
+    exceeds::E4,
 ];
 
 /// Resolves a comma-separated id list against [`REGISTRY`].
@@ -373,6 +378,10 @@ pub(crate) fn code_units(row: &Row) -> Vec<Unit> {
 /// One ask per code unit. Each unit's state is the row's [`state`] with
 /// `symbol_body` replaced by the unit's text and `code_unit` naming it; the
 /// questions come from `questions(unit)`.
+///
+/// On an RTC row the state keeps the row's test fields (`test_body` and
+/// its path and name), even for a code-only variant whose questions never
+/// refer to them.
 pub(crate) fn per_unit_asks(row: &Row, questions: fn(&Unit) -> Questions) -> Vec<Ask> {
     code_units(row)
         .iter()
@@ -795,6 +804,10 @@ pub(crate) struct RowResult {
     pub(crate) variant: String,
     /// Graded answers, filtered to the variant's `grades`.
     pub(crate) predictions: Predictions,
+    /// The raw answers `derive` read, kept so a variant's own diagnostics
+    /// (PLAT-1029's parked units and trace-suspect rows) can be reported
+    /// without asking again.
+    pub(crate) answered: Vec<Answered>,
 }
 
 /// Everything a run produced.
@@ -949,6 +962,7 @@ pub(crate) async fn run(
                 row_id: row.id.clone(),
                 variant: variant.label(),
                 predictions,
+                answered,
             });
         }
     }

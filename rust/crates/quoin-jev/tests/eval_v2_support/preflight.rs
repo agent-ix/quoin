@@ -136,6 +136,41 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "RTC",
         "sha256:2690765d45c33f7d8b3f49e8c475221a84c75936171288b0b070251fe15db896",
     ),
+    (
+        "E0-RC@v1",
+        "RC",
+        "sha256:9e632aa6cc9f0ea6cd547ccacb845dbed0f2e81c6cf2304e57d0ebaf6ed2543d",
+    ),
+    (
+        "E1@v1",
+        "RC",
+        "sha256:8a1fffbde7e0b0619a6ac4b1f46fff30d1e42653f8b29c4e277e671909798b94",
+    ),
+    (
+        "E1@v1",
+        "RTC",
+        "sha256:8a1fffbde7e0b0619a6ac4b1f46fff30d1e42653f8b29c4e277e671909798b94",
+    ),
+    (
+        "E2@v1",
+        "RC",
+        "sha256:452778542aa7637309a22a7cc416725db23a3e640b58608c1b131cdd4e23f469",
+    ),
+    (
+        "E2@v1",
+        "RTC",
+        "sha256:452778542aa7637309a22a7cc416725db23a3e640b58608c1b131cdd4e23f469",
+    ),
+    (
+        "E4@v1",
+        "RC",
+        "sha256:8a1fffbde7e0b0619a6ac4b1f46fff30d1e42653f8b29c4e277e671909798b94",
+    ),
+    (
+        "E4@v1",
+        "RTC",
+        "sha256:8a1fffbde7e0b0619a6ac4b1f46fff30d1e42653f8b29c4e277e671909798b94",
+    ),
 ];
 
 /// The digest of `variant`'s questions on `row`.

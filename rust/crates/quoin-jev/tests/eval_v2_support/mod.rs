@@ -23,6 +23,8 @@
 //!   request-digest pins share.
 //! - [`preflight`] is every check a run passes before its first request.
 //! - [`patch`] applies a mutation's unified diff to a by-reference file.
+//! - [`variants`] holds the experiment variants, one module per question:
+//!   [`variants::exceeds`] is PLAT-1029's `code_exceeds_requirement` (MP-241).
 //! - [`metrics`] grades, reusing `../support/grading.rs`, and renders the
 //!   report broken down by mode and by truth kind.
 //!
