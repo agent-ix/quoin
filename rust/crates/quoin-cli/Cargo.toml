@@ -31,7 +31,8 @@ quoin-graph-analysis = { workspace = true }
 # protected-apparatus digests to check them against git history — the same
 # frontmatter parse and types `quoin-measurement` itself uses, rather than a
 # second reader of the same documents here.
-quoin-measurement = { workspace = true }
+quoin-measurement = { workspace = true, features = ["campaign"] }
+engineering-assurance = { workspace = true, features = ["campaign"] }
 # `--digest-from-file` (PLAT-931) computes a `measurement.record` digest from a
 # local file with the store's own `digest_file_sha256`, rather than a caller
 # pasting a `sha256:<64 hex>` string by hand and this crate trusting its shape.
@@ -40,6 +41,7 @@ quoin-measurement = { workspace = true }
 quoin-store = { workspace = true }
 quoin-yaml = { workspace = true }
 serde_json = { workspace = true }
+serde = { workspace = true }
 semver = { workspace = true }
 time = { workspace = true }
 

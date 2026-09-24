@@ -298,6 +298,7 @@ mod tests {
             stage: MeasurementStage::Observe,
             metric: text("m"),
             definition_version: text(definition_version),
+            execution_procedure: None,
             path: "spec/assurance/a.md".to_owned(),
             owner: None,
             action: None,

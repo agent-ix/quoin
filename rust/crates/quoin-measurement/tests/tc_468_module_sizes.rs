@@ -44,12 +44,8 @@ const SOURCE_FLOOR: usize = 20;
 /// Modules permitted above [`SOFT_CEILING`], named so the next one to cross it
 /// is visible rather than quiet.
 ///
-/// `plans.rs` crossed it under PLAT-936: catching a `#`-prefixed comment
-/// inside a fenced code block from ending the "Comparison and Enforcement"
-/// section early (quoin#583's blocking review finding) needs fence-tracking
-/// state threaded through the heading walk, and the tests proving it holds
-/// live in the same file as the rest of this module's unit tests, per this
-/// crate's existing convention.
+/// `plans.rs` was split under PLAT-1043: its loader tests now live in
+/// `plans/tests.rs`, returning the production module below the soft ceiling.
 ///
 /// `store/apparatus/walk.rs` and `validate/stack.rs` crossed it under
 /// PLAT-985 (quoin#600 review): the walk's directory, per-plan and
@@ -66,7 +62,6 @@ const SOURCE_FLOOR: usize = 20;
 /// `pub(super)` across two files for one stage's sake; the file stays under
 /// the 700-line hard ceiling (quoin#464).
 const NAMED_OVER_SOFT_CEILING: &[&str] = &[
-    "plans.rs",
     "report/verdict.rs",
     "store/apparatus/walk.rs",
     "validate/stack.rs",

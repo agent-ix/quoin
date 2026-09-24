@@ -75,7 +75,8 @@ pub use digest::{
     AssuranceRecordId, CanonicalDigest, DigestDomain, MAX_DIGESTED_FILE_BYTES, RawBytesDigest,
     RawFileSha256Digest, RecordFileName, blake3_hex, digest_assurance_record, digest_bytes_sha256,
     digest_canonical_value, digest_file_sha256, digest_raw_bytes, digest_record,
-    digest_record_file_name, digest_record_pair_file_name, verify_record_digest,
+    digest_record_file_name, digest_record_pair_file_name, read_regular_file_bounded,
+    verify_record_digest,
 };
 pub use error::{StoreError, StoreErrorCode};
 pub use json::jcs::{canonical_bytes, canonicalize_jcs};

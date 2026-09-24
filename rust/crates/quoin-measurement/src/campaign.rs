@@ -11,6 +11,19 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Serialize;
 
+#[cfg(feature = "campaign")]
+pub mod adapter;
+#[cfg(feature = "campaign")]
+pub mod checker;
+#[cfg(feature = "campaign")]
+pub mod run;
+#[cfg(feature = "campaign")]
+pub mod source;
+#[cfg(feature = "campaign")]
+pub mod store;
+#[cfg(feature = "campaign")]
+pub mod verify;
+
 /// The version of Quoin's independent campaign-verdict document.
 pub const CAMPAIGN_VERDICT_SCHEMA: &str = "quoin.campaign-verdict/v1";
 

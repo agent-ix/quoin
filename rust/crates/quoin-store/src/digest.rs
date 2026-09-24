@@ -584,6 +584,18 @@ pub fn digest_file_sha256(path: &std::path::Path) -> Result<RawFileSha256Digest,
     digest_opened_file(&open_for_digest(path)?, path)
 }
 
+/// Read one regular file through the same no-follow, nonblocking descriptor
+/// used by [`digest_file_sha256`], with an additional caller-owned byte limit.
+///
+/// # Errors
+/// Refuses a linked, nonregular, oversized, changed, or unreadable file.
+pub fn read_regular_file_bounded(
+    path: &std::path::Path,
+    limit: u64,
+) -> Result<Vec<u8>, StoreError> {
+    read_opened_file_bounded(&open_for_digest(path)?, path, limit)
+}
+
 /// Open `path` for [`digest_file_sha256`], once, without following a symlink
 /// at the final component and without blocking on a FIFO.
 fn open_for_digest(path: &std::path::Path) -> Result<std::fs::File, StoreError> {
@@ -644,6 +656,18 @@ fn digest_opened_file(
     file: &std::fs::File,
     path: &std::path::Path,
 ) -> Result<RawFileSha256Digest, StoreError> {
+    Ok(RawFileSha256Digest(sha256_hex(&read_opened_file_bounded(
+        file,
+        path,
+        MAX_DIGESTED_FILE_BYTES,
+    )?)))
+}
+
+fn read_opened_file_bounded(
+    file: &std::fs::File,
+    path: &std::path::Path,
+    limit: u64,
+) -> Result<Vec<u8>, StoreError> {
     let metadata = file.metadata().map_err(|source| StoreError::Io {
         operation: "fstat",
         path: path.to_path_buf(),
@@ -668,11 +692,11 @@ fn digest_opened_file(
         });
     }
     let declared = metadata.len();
-    if declared > MAX_DIGESTED_FILE_BYTES {
+    if declared > limit {
         return Err(StoreError::DigestSourceTooLarge {
             path: path.to_path_buf(),
             size: declared,
-            limit: MAX_DIGESTED_FILE_BYTES,
+            limit,
         });
     }
     let mut bytes = Vec::new();
@@ -694,7 +718,7 @@ fn digest_opened_file(
             actual,
         });
     }
-    Ok(RawFileSha256Digest(sha256_hex(&bytes)))
+    Ok(bytes)
 }
 
 /// Hash bytes exactly as supplied, in the raw-file sha256 domain.

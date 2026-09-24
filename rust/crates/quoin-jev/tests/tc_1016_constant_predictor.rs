@@ -102,6 +102,7 @@ fn aggregate(matched: f64, examined: f64) -> MeasurementObservation {
         metric: text(METRIC),
         plan_id: text(PLAN_ID),
         definition_version: text(DEFINITION_VERSION),
+        execution_procedure: None,
         state: MeasurementState::Measured,
         value: Some(matched / examined),
         unit: text("fraction"),
