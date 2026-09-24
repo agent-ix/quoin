@@ -501,6 +501,336 @@ pub(crate) fn render(variant: &str, key: &str, rows: &[Scored]) -> String {
     out
 }
 
+// ---------------------------------------------------------------------------
+// Paired contrast (PLAT-1029 bar D; the rule PLAT-1028..1031 share)
+// ---------------------------------------------------------------------------
+
+/// Where a mutant row names its unmutated source row. PLAT-1025 adds it to
+/// the corpus schema; until then callers pass a pairing function.
+pub(crate) const SOURCE_ID_FIELD: &str = "mutation.source_id";
+
+/// The one-sided sign test's significance level.
+pub(crate) const SIGN_TEST_ALPHA: f64 = 0.05;
+
+/// The fewest non-tie pairs a paired contrast is gateable at.
+pub(crate) const MIN_DECIDED_PAIRS: usize = 10;
+
+/// Which way a mutation should move a variant's answer on its key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Direction {
+    /// The mutation injects a defect that raises the answer: a probability
+    /// of `yes`, or a severity level.
+    Up,
+    /// The mutation should lower the answer.
+    Down,
+}
+
+/// What a paired contrast measures: `variant`'s answer (the prediction's
+/// ordinal) on `key`, over mutants whose kind is in `kinds`.
+///
+/// `tau` and `delta` are in the ordinal's own units. For a probability key
+/// the ordinal is `P(yes)`: `tau = 0.5`, `delta = 0.10`. For `severity` it is
+/// the raw score in rubric levels (`none` 0 .. `high` 3): `tau = 2.0` makes
+/// "the mutant is at least `medium`" the crossing, and `delta = 0.5` is half
+/// a level.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct ContrastSpec<'a> {
+    /// The variant label, e.g. `E1@v1`.
+    pub(crate) variant: &'a str,
+    /// The modes the variant runs on ([`Variant::modes`]). Only a mutant row
+    /// in one of these is paired, and its source must be in one too.
+    pub(crate) modes: &'a [Mode],
+    /// The question key.
+    pub(crate) key: &'a str,
+    /// The mutation kinds paired.
+    pub(crate) kinds: &'a [&'a str],
+    /// The expected direction.
+    pub(crate) direction: Direction,
+    /// The pair must cross this in the expected direction: source `< tau`
+    /// and mutant `>= tau` for [`Direction::Up`], the reverse for
+    /// [`Direction::Down`].
+    pub(crate) tau: f64,
+    /// The smallest move that is not a tie.
+    pub(crate) delta: f64,
+    /// The truth labels on the defect side: a pair whose source's primary
+    /// truth on `key` is one of these is excluded, since the mutation
+    /// injected nothing new there. `["yes"]` for an Up probability key,
+    /// `["medium", "high"]` for severity.
+    pub(crate) defect_side: &'a [&'a str],
+}
+
+/// How one pair came out.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PairVerdict {
+    /// The pair crossed tau in the expected direction and moved at least
+    /// delta.
+    Success,
+    /// It moved at least delta the other way, or either row went unanswered
+    /// (an abstention never helps a variant).
+    Failure,
+    /// Anything else. Excluded from the test.
+    Tie,
+}
+
+/// One mutant/source pair.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct PairOutcome {
+    /// The mutant row.
+    pub(crate) mutant: String,
+    /// Its unmutated source row.
+    pub(crate) source: String,
+    /// Mutant ordinal minus source ordinal, in the ordinal's units, signed so
+    /// positive is the expected direction; `None` when either side has none.
+    pub(crate) shift: Option<f64>,
+    /// The verdict.
+    pub(crate) verdict: PairVerdict,
+}
+
+/// A paired contrast over every eligible mutant/source pair.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct PairedContrast {
+    /// Every eligible pair, in row order.
+    pub(crate) pairs: Vec<PairOutcome>,
+    /// Mutants left out because their source's truth is already on the
+    /// defect side ([`ContrastSpec::defect_side`]).
+    pub(crate) excluded_source_on_defect_side: usize,
+}
+
+impl PairedContrast {
+    fn count(&self, verdict: PairVerdict) -> usize {
+        self.pairs.iter().filter(|p| p.verdict == verdict).count()
+    }
+
+    /// Pairs that succeeded.
+    pub(crate) fn successes(&self) -> usize {
+        self.count(PairVerdict::Success)
+    }
+
+    /// Pairs that failed.
+    pub(crate) fn failures(&self) -> usize {
+        self.count(PairVerdict::Failure)
+    }
+
+    /// Ties, excluded from the test.
+    pub(crate) fn ties(&self) -> usize {
+        self.count(PairVerdict::Tie)
+    }
+
+    /// Failures that are abstentions (no probability on one side), reported
+    /// apart.
+    pub(crate) fn unanswered(&self) -> usize {
+        self.pairs.iter().filter(|p| p.shift.is_none()).count()
+    }
+
+    /// The non-tie pairs the sign test runs on.
+    pub(crate) fn decided(&self) -> usize {
+        self.successes() + self.failures()
+    }
+
+    /// The one-sided sign test's p-value: `P(X >= successes)` for
+    /// `X ~ Binomial(decided, 1/2)`. `None` with no decided pair.
+    pub(crate) fn p_value(&self) -> Option<f64> {
+        sign_test_p(self.successes(), self.decided())
+    }
+
+    /// Whether there are enough decided pairs to gate on.
+    pub(crate) fn gateable(&self) -> bool {
+        self.decided() >= MIN_DECIDED_PAIRS
+    }
+
+    /// Gateable, and the sign test rejects "no effect" at
+    /// [`SIGN_TEST_ALPHA`].
+    pub(crate) fn passes(&self) -> bool {
+        self.gateable() && self.p_value().is_some_and(|p| p <= SIGN_TEST_ALPHA)
+    }
+}
+
+/// `P(X >= successes)` for `X ~ Binomial(n, 1/2)`, summed over the pmf in
+/// log space, so a large `n` does not underflow `0.5^n` to zero; `None` when
+/// `n` is zero or does not fit in `u32`.
+pub(crate) fn sign_test_p(successes: usize, n: usize) -> Option<f64> {
+    let n = u32::try_from(n).ok().filter(|n| *n > 0)?;
+    let Ok(successes) = u32::try_from(successes) else {
+        return Some(0.0);
+    };
+    if successes > n {
+        return Some(0.0);
+    }
+    // ln pmf(k), walked down from k = n, where pmf(n) = 2^-n; the terms are
+    // summed with a running log-sum-exp.
+    let mut log_pmf = -f64::from(n) * std::f64::consts::LN_2;
+    let (mut peak, mut scaled) = (f64::NEG_INFINITY, 0.0f64);
+    for k in (successes..=n).rev() {
+        if log_pmf > peak {
+            scaled = scaled * (peak - log_pmf).exp() + 1.0;
+            peak = log_pmf;
+        } else {
+            scaled += (log_pmf - peak).exp();
+        }
+        // pmf(k - 1) = pmf(k) * k / (n - k + 1).
+        log_pmf += f64::from(k).ln() - (f64::from(n - k) + 1.0).ln();
+    }
+    Some((peak + scaled.ln()).exp().min(1.0))
+}
+
+/// How many artifacts a mode carries, then the mode itself: RTC is richest,
+/// then RC, then RT.
+fn richness(mode: Mode) -> (usize, Mode) {
+    (
+        usize::from(mode.has_test()) + usize::from(mode.has_code()),
+        mode,
+    )
+}
+
+/// Every eligible pair for `spec`, and its verdict.
+///
+/// One pair per mutation id: among the mutation's rows in the variant's
+/// modes (`spec.modes`), the richest is used: RTC, then RC, then RT. A row
+/// in a mode the variant does not run on is never paired, so a variant is
+/// never scored on a row it could not have answered. Its source is the row
+/// `source_of` names (the [`SOURCE_ID_FIELD`] reading). A pair whose
+/// source's primary truth on `spec.key` is already on the defect side is
+/// left out and counted.
+///
+/// A pair succeeds when it crosses `tau` in the expected direction and moved
+/// at least `delta` that way; it fails when it moved at least `delta` the
+/// other way, or when either row has no answer (an abstention never helps a
+/// variant). Anything else is a tie, excluded from the sign test.
+///
+/// # Errors
+/// When a listed mutant names no source, or a source that is not among
+/// `rows`, is itself a mutant, sits in another split, or is in a mode the
+/// variant does not run on: a pairing the corpus does not support is
+/// refused, never skipped. Also when either row's ordinal is not a finite
+/// number, which would otherwise read as a silent tie.
+pub(crate) fn paired_contrast(
+    rows: &[Row],
+    output: &RunOutput,
+    spec: &ContrastSpec<'_>,
+    source_of: &dyn Fn(&Row) -> Option<String>,
+) -> Result<PairedContrast, String> {
+    let ordinals: BTreeMap<&str, Option<f64>> = output
+        .results
+        .iter()
+        .filter(|result| result.variant == spec.variant)
+        .map(|result| {
+            (
+                result.row_id.as_str(),
+                result.predictions.get(spec.key).and_then(|p| p.ordinal),
+            )
+        })
+        .collect();
+    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut chosen: BTreeMap<&str, &Row> = BTreeMap::new();
+    for row in rows {
+        let Some(mutation) = row
+            .mutation
+            .as_ref()
+            .filter(|mutation| spec.kinds.contains(&mutation.kind.as_str()))
+            .filter(|_| spec.modes.contains(&row.mode))
+        else {
+            continue;
+        };
+        let slot = chosen.entry(mutation.id.as_str()).or_insert(row);
+        if richness(row.mode) > richness(slot.mode) {
+            *slot = row;
+        }
+    }
+    let chosen_ids: std::collections::BTreeSet<&str> =
+        chosen.values().map(|row| row.id.as_str()).collect();
+    let mut contrast = PairedContrast {
+        pairs: Vec::new(),
+        excluded_source_on_defect_side: 0,
+    };
+    // Row order, not mutation-id order, so a report reads like the corpus.
+    for row in rows
+        .iter()
+        .filter(|row| chosen_ids.contains(row.id.as_str()))
+    {
+        let kind = row.mutation.as_ref().map_or("", |m| m.kind.as_str());
+        let source_id = source_of(row)
+            .ok_or_else(|| format!("{}: {kind} mutant names no {SOURCE_ID_FIELD}", row.id))?;
+        let source = by_id.get(source_id.as_str()).ok_or_else(|| {
+            format!(
+                "{}: source {source_id} is not among the rows loaded",
+                row.id
+            )
+        })?;
+        if source.mutation.is_some() {
+            return Err(format!("{}: source {source_id} is itself a mutant", row.id));
+        }
+        if source.split != row.split {
+            return Err(format!(
+                "{}: source {source_id} is in split {}, the mutant in {}",
+                row.id,
+                source.split.as_str(),
+                row.split.as_str()
+            ));
+        }
+        if !spec.modes.contains(&source.mode) {
+            return Err(format!(
+                "{}: source {source_id} is in mode {}, which {} does not run on",
+                row.id,
+                source.mode.as_str(),
+                spec.variant
+            ));
+        }
+        if source
+            .truth
+            .get(spec.key)
+            .is_some_and(|truth| spec.defect_side.contains(&truth.answer.label().as_str()))
+        {
+            contrast.excluded_source_on_defect_side += 1;
+            continue;
+        }
+        let ordinal_of = |id: &str| -> Result<Option<f64>, String> {
+            match ordinals.get(id).copied().flatten() {
+                Some(value) if !value.is_finite() => Err(format!(
+                    "{id}: {} ordinal on {} is {value}, not a finite number",
+                    spec.variant, spec.key
+                )),
+                value => Ok(value),
+            }
+        };
+        let mutant_p = ordinal_of(&row.id)?;
+        let source_p = ordinal_of(&source_id)?;
+        let (shift, verdict) = match mutant_p.zip(source_p) {
+            None => (None, PairVerdict::Failure),
+            Some((mutant, source)) => {
+                let (shift, verdict) = pair_verdict(spec, mutant, source);
+                (Some(shift), verdict)
+            }
+        };
+        contrast.pairs.push(PairOutcome {
+            mutant: row.id.clone(),
+            source: source_id,
+            shift,
+            verdict,
+        });
+    }
+    Ok(contrast)
+}
+
+/// One answered pair's shift (signed so positive is `spec.direction`) and
+/// verdict.
+fn pair_verdict(spec: &ContrastSpec<'_>, mutant: f64, source: f64) -> (f64, PairVerdict) {
+    let tau = spec.tau;
+    let (shift, crossed) = match spec.direction {
+        Direction::Up => (mutant - source, source < tau && mutant >= tau),
+        Direction::Down => (source - mutant, source >= tau && mutant < tau),
+    };
+    // 1e-9 absorbs float error: 0.6 - 0.5 is 0.0999... in f64.
+    let delta = spec.delta - 1e-9;
+    let verdict = if shift >= delta && crossed {
+        PairVerdict::Success
+    } else if -shift >= delta {
+        PairVerdict::Failure
+    } else {
+        PairVerdict::Tie
+    };
+    (shift, verdict)
+}
+
 /// The report for a whole run: every variant, every key it grades that some
 /// row carries truth for, in [`KEYS`] order.
 /// `excluded` is every row a load left out; they are listed first, so a

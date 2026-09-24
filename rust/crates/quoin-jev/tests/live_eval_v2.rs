@@ -215,6 +215,10 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         rows.len()
     );
     println!("{}", render_run(&rows, &excluded, &output, &variants));
+    print!(
+        "{}",
+        eval_v2_support::variants::exceeds::render_diagnostics(&rows, &output)
+    );
 
     if let Some(model) = &model {
         let others: Vec<&String> = output.models.keys().filter(|seen| *seen != model).collect();
