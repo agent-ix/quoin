@@ -324,3 +324,60 @@ fn status_of(state: &ProducerExecutionState<ProcessEvidenceObservation>) -> Camp
         ProducerExecutionState::Cancelled => CampaignAttemptStatus::Cancelled,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use engineering_assurance::producer_execution::{ExecutionFailure, ExecutionRefusal};
+
+    /// Trace: FR-114-AC-2, TC-1941. Every EA terminal state maps to its
+    /// distinct retained campaign attempt status, including adapter refusal.
+    #[test]
+    fn tc_1941_typed_ea_terminal_states_map_to_attempt_statuses() {
+        let cases = [
+            (
+                ProducerExecutionState::Completed {
+                    observation: ProcessEvidenceObservation {
+                        schema_version: crate::campaign::adapter::PROCESS_EVIDENCE_PROTOCOL,
+                    },
+                },
+                CampaignAttemptStatus::Completed,
+            ),
+            (
+                ProducerExecutionState::Unavailable,
+                CampaignAttemptStatus::Unavailable,
+            ),
+            (
+                ProducerExecutionState::Refused {
+                    reason: ExecutionRefusal::ExecutableIdentity,
+                },
+                CampaignAttemptStatus::Refused,
+            ),
+            (
+                ProducerExecutionState::Failed {
+                    reason: ExecutionFailure::StdoutTooLarge,
+                },
+                CampaignAttemptStatus::Failed,
+            ),
+            (
+                ProducerExecutionState::TimedOut,
+                CampaignAttemptStatus::TimedOut,
+            ),
+            (
+                ProducerExecutionState::MalformedResponse,
+                CampaignAttemptStatus::MalformedResponse,
+            ),
+            (
+                ProducerExecutionState::ContainmentFailure,
+                CampaignAttemptStatus::ContainmentFailure,
+            ),
+            (
+                ProducerExecutionState::Cancelled,
+                CampaignAttemptStatus::Cancelled,
+            ),
+        ];
+        for (state, expected) in cases {
+            assert_eq!(status_of(&state), expected);
+        }
+    }
+}

@@ -1476,6 +1476,254 @@ fn tc_1941_timed_out_producer_is_retained() {
     assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
 }
 
+/// Trace: FR-114-AC-2, TC-1941. Provenance: PLAT-1043.
+/// An actual child that escapes EA's observed process group is retained as a
+/// containment failure, with no invented Collection, and replays the same way.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_escaped_descendant_containment_failure_is_retained() {
+    use engineering_assurance::campaign::{
+        CampaignAttemptStatus, CampaignVerdict, canonical_digest,
+    };
+    use quoin_measurement::campaign::run::run_campaign;
+
+    let (repo, producer_repo, mut definition, checkouts, mut runs) = direct_fixture();
+    fs::write(
+        producer_repo.path().join("campaign/producer.py"),
+        "import os\nimport subprocess\nimport sys\nimport time\nif sys.argv[1:] == ['escape-child']:\n    os.setsid()\n    time.sleep(10)\nelse:\n    child = subprocess.Popen([sys.executable, 'campaign/producer.py', 'escape-child'])\n    child.wait()\n",
+    )
+    .expect("escaping producer");
+    git(producer_repo.path(), &["add", "campaign/producer.py"]);
+    git(
+        producer_repo.path(),
+        &[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "-q",
+            "-m",
+            "escaping producer",
+        ],
+    );
+    let source = &mut definition.source_graph[1];
+    source.revision = String::from_utf8(git(producer_repo.path(), &["rev-parse", "HEAD"]))
+        .expect("producer revision")
+        .trim()
+        .to_owned();
+    source.digest = digest_bytes_sha256(&git(
+        producer_repo.path(),
+        &["ls-tree", "-r", "-z", "--full-tree", &source.revision],
+    ))
+    .as_hex()
+    .to_owned();
+    runs.get_mut("one")
+        .expect("member binding")
+        .producer
+        .producer
+        .source_revision = source.revision.clone();
+
+    let run_id = "fixture-escaped-descendant";
+    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &runs)
+        .expect("containment failure retained");
+    assert_eq!(run.verdict, CampaignVerdict::Inconclusive);
+    for attempt in run.attempts.as_ref().expect("attempts") {
+        assert_eq!(attempt.status, CampaignAttemptStatus::ContainmentFailure);
+        assert!(attempt.request_digest.is_some());
+        assert!(attempt.result_digest.is_some());
+        assert!(attempt.collection_id.is_none());
+    }
+    let definition_digest = canonical_digest(&definition).expect("definition identity");
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("independent containment replay");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
+}
+
+/// Trace: FR-114-AC-2, TC-1941. Provenance: PLAT-1043.
+/// EA can mint MalformedResponse for a different exact response adapter. Its
+/// typed terminal result survives Quoin's retained run intake and replay,
+/// without changing the generic process-evidence adapter's acceptance rule.
+#[cfg(target_os = "linux")]
+#[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one exact EA invocation, retained run, and independent replay form the boundary fixture"
+)]
+fn tc_1941_ea_malformed_response_result_is_retained_and_replayed() {
+    use engineering_assurance::campaign::{
+        CAMPAIGN_RUN_VERSION, CampaignAttempt, CampaignAttemptStatus, CampaignRun, CampaignVerdict,
+        MeasurementProcedure, SourceTreeBinding, canonical_digest, resolve_procedure,
+    };
+    use engineering_assurance::producer_execution::{
+        CancellationToken, ContentDigest, MalformedResponse, OutputArtifact, ProcessEvidence,
+        ProducerExecutionState, ProducerExecutor, ProducerResponseAdapter, ResponseBinding,
+    };
+    use quoin_measurement::campaign::adapter::ProcessEvidenceObservation;
+    use quoin_measurement::campaign::source::verify_source_graph;
+    use quoin_measurement::campaign::store::retain_value;
+
+    struct RejectingAdapter(ResponseBinding);
+    impl ProducerResponseAdapter for RejectingAdapter {
+        type Observation = ProcessEvidenceObservation;
+
+        fn binding(&self) -> &ResponseBinding {
+            &self.0
+        }
+
+        fn decode(
+            &self,
+            _process: &ProcessEvidence,
+            _artifacts: &[OutputArtifact],
+        ) -> Result<Self::Observation, MalformedResponse> {
+            Err(MalformedResponse)
+        }
+    }
+
+    let (repo, _producer_repo, mut definition, checkouts, runs) = direct_fixture();
+    let procedure_path = repo.path().join("campaign/procedure.json");
+    let mut procedure_json: serde_json::Value =
+        serde_json::from_slice(&fs::read(&procedure_path).expect("procedure bytes"))
+            .expect("procedure JSON");
+    procedure_json["responseAdapter"] = json!("fictional.rejecting-adapter");
+    procedure_json["repetitions"] = json!(1);
+    fs::write(
+        &procedure_path,
+        serde_json::to_vec(&procedure_json).expect("procedure JSON"),
+    )
+    .expect("authored rejecting procedure");
+    git(repo.path(), &["add", "campaign/procedure.json"]);
+    git(
+        repo.path(),
+        &[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "-q",
+            "-m",
+            "rejecting adapter procedure",
+        ],
+    );
+    let plan_source = &mut definition.source_graph[0];
+    plan_source.revision = String::from_utf8(git(repo.path(), &["rev-parse", "HEAD"]))
+        .expect("plan revision")
+        .trim()
+        .to_owned();
+    plan_source.digest = digest_bytes_sha256(&git(
+        repo.path(),
+        &["ls-tree", "-r", "-z", "--full-tree", &plan_source.revision],
+    ))
+    .as_hex()
+    .to_owned();
+    definition.members[0].checker_procedure = None;
+    let procedure: MeasurementProcedure =
+        serde_json::from_value(procedure_json).expect("typed procedure");
+    let sources = verify_source_graph(&definition, &checkouts).expect("exact source graph");
+    let producer_source = sources.get("fictional/producer").expect("producer source");
+    let staging = tempfile::tempdir().expect("invocation staging root");
+    producer_source
+        .stage_into(staging.path())
+        .expect("exact source projection");
+    let mut bindings = runs.get("one").expect("runtime").producer.clone();
+    bindings.capability_root = staging.path().to_string_lossy().into_owned();
+    bindings.source_tree = Some(SourceTreeBinding {
+        repository: producer_source.repository.clone(),
+        manifest: producer_source.manifest.clone(),
+    });
+    bindings.response_adapter.kind = "fictional.rejecting-adapter".to_owned();
+    bindings.response_adapter.digest = ContentDigest::of_bytes(b"fictional.rejecting-adapter");
+    let resolved = resolve_procedure(&procedure, &definition.source_graph, bindings)
+        .expect("source-bound EA request");
+    let adapter = RejectingAdapter(resolved.request.response.clone());
+    let executor = ProducerExecutor::new(1).expect("bounded EA executor");
+    let result = executor
+        .execute(
+            &resolved.request,
+            &CancellationToken::new(resolved.request.cancellation.clone()),
+            &adapter,
+        )
+        .expect("valid EA request");
+    assert!(matches!(
+        &result.state,
+        ProducerExecutionState::MalformedResponse
+    ));
+    let definition_digest = canonical_digest(&definition).expect("definition identity");
+    let source_graph_digest = canonical_digest(&definition.source_graph).expect("graph identity");
+    let (stored_definition, _) = retain_value(
+        repo.path(),
+        "definitions",
+        &serde_json::to_value(&definition).expect("definition value"),
+    )
+    .expect("retain definition");
+    assert_eq!(stored_definition, definition_digest.as_str());
+    let (request_digest, _) = retain_value(
+        repo.path(),
+        "requests",
+        &serde_json::to_value(&resolved.request).expect("request value"),
+    )
+    .expect("retain EA request");
+    assert_eq!(request_digest, resolved.identity.digest.as_str());
+    let (result_digest, _) = retain_value(
+        repo.path(),
+        "results",
+        &serde_json::to_value(&result).expect("result value"),
+    )
+    .expect("retain EA result");
+    assert_eq!(
+        result_digest,
+        result
+            .identity()
+            .expect("EA result identity")
+            .digest
+            .as_str()
+    );
+    let run_id = "fixture-ea-malformed-response";
+    let run = CampaignRun {
+        schema_version: CAMPAIGN_RUN_VERSION.to_owned(),
+        id: run_id.to_owned(),
+        definition_digest: definition_digest.as_str().to_owned(),
+        source_graph_digest: source_graph_digest.as_str().to_owned(),
+        attempts: Some(vec![CampaignAttempt {
+            member: "one".to_owned(),
+            index: 1,
+            status: CampaignAttemptStatus::MalformedResponse,
+            reason: None,
+            request_digest: Some(request_digest),
+            result_digest: Some(result_digest),
+            checker_request_digest: None,
+            checker_result_digest: None,
+            raw_artifacts: Some(Vec::new()),
+            collection_id: None,
+            collection_digest: None,
+            verdict_digest: None,
+            domain_verdict_digest: None,
+        }]),
+        verdict: CampaignVerdict::Inconclusive,
+    };
+    let run_json = serde_json::to_vec(&run).expect("typed run JSON");
+    let canonical = quoin_store::canonical_bytes(
+        &quoin_store::parse_strict_json(&run_json).expect("strict run JSON"),
+    )
+    .expect("canonical run bytes");
+    write_content_addressed(
+        &run_path(repo.path(), run_id).expect("run path"),
+        &canonical,
+    )
+    .expect("retain EA terminal run");
+
+    let replay =
+        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
+            .expect("independent malformed-result replay");
+    assert_eq!(replay.decision.verdict, CampaignOutcome::Inconclusive);
+    assert_eq!(
+        replay.decision.members[0].reasons,
+        vec![quoin_measurement::campaign::CampaignReason::ExecutionIncomplete]
+    );
+}
+
 /// Trace: FR-114-AC-2
 /// Provenance: PLAT-1043, TC-1941
 /// A caller cancels the currently registered EA Event-bound direct process;
