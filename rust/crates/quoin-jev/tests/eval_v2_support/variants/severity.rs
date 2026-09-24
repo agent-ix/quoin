@@ -211,6 +211,17 @@ impl Fact {
         !matches!(self, Self::TraceCorrect)
     }
 
+    /// The level [`rule`] assigns when this fact alone is the defect.
+    pub(crate) const fn tier(self) -> Level {
+        match self {
+            Self::TraceCorrect
+            | Self::TestPassesWhenBroken
+            | Self::AssertionVacuous
+            | Self::CodeContradicts => Level::High,
+            Self::TestChecksSomeClauses | Self::CodeMissesStatedCase => Level::Medium,
+        }
+    }
+
     /// The artifact the fact is about, besides the requirement. `None` for
     /// the trace check, which is worded for whatever the mode carries.
     const fn needs(self) -> Option<Artifact> {
@@ -378,10 +389,11 @@ pub(crate) fn rule(facts: &BTreeMap<Fact, bool>) -> Branch {
 /// enumerated (at most 2^6) and weighted by its probability.
 ///
 /// Independence is an assumption the facts do not satisfy (a trace mismatch
-/// makes every other defect likely). It gives S1 an ordinal and a
-/// confidence, not a calibrated probability, and not S1's level: `high`
-/// collects every combination with any high-tier defect, so its mass is
-/// biased upward by the number of high-tier facts asked (MP-240).
+/// makes every other defect likely). S1 reads nothing from it: not its
+/// level, its ordinal or its confidence. `high` collects every combination
+/// with any high-tier defect, so its mass is biased upward by the number of
+/// high-tier facts asked (MP-240 "Known properties"); it is kept only to
+/// state that bias in tests.
 pub(crate) fn level_distribution(facts: &[(Fact, f64)]) -> Distribution {
     let mut distribution = [0.0; 4];
     for mask in 0..(1_usize << facts.len()) {
@@ -469,13 +481,32 @@ fn s1_asks(row: &Row) -> Vec<Ask> {
     }]
 }
 
+/// S1's confidence in `level`, read off the thresholded facts rather than
+/// [`level_distribution`], so it agrees with the answer: for a finding, the
+/// largest defect probability among the facts of that tier (the fact that
+/// put the row there); for `none`, one minus the largest defect probability
+/// of any fact (the fact nearest to making it a finding).
+pub(crate) fn s1_confidence(facts: &[(Fact, f64)], level: Level) -> f64 {
+    let defect = facts
+        .iter()
+        .filter(|(fact, _)| level == Level::None || fact.tier() == level)
+        .map(|(fact, p_yes)| defect_probability(*fact, *p_yes))
+        .fold(0.0_f64, f64::max);
+    if level == Level::None {
+        1.0 - defect
+    } else {
+        defect
+    }
+}
+
 /// S1's level is [`thresholded_branch`]'s: each fact thresholded at τ on
 /// its own, the most severe tier with a fact at or above τ winning. The
-/// ordinal is the expected level under [`level_distribution`], used for
-/// ordering (Bar C) and the paired contrast (Bar D); it carries the union
-/// bias MP-240 records, and is not used to pick the level. The confidence
-/// is the chosen level's mass under that distribution. Unanswered when any
-/// asked fact is missing, rather than guessing its branch.
+/// ordinal every bar reads (Bar C's ordering, Bar D's contrast) is that
+/// level's index, never the expectation under [`level_distribution`]: the
+/// expectation carries the union bias MP-240 records, and a row S1 answers
+/// `none` could otherwise cross τ=2.0 in Bar D (PR #620 delta review, B2).
+/// The confidence is [`s1_confidence`]. Unanswered when any asked fact is
+/// missing, rather than guessing its branch.
 fn s1_derive(row: &Row, answered: &[Answered]) -> Predictions {
     let answers = whole_row(answered);
     let mut probabilities = Vec::new();
@@ -488,14 +519,13 @@ fn s1_derive(row: &Row, answered: &[Answered]) -> Predictions {
     if probabilities.is_empty() {
         return Predictions::new();
     }
-    let distribution = level_distribution(&probabilities);
     let level = thresholded_branch(&probabilities).level();
     Predictions::from([(
         SEVERITY,
         Prediction {
             answer: level.label().to_owned(),
-            confidence: Some(mass(&distribution, level)),
-            ordinal: expected_level(&distribution),
+            confidence: Some(s1_confidence(&probabilities, level)),
+            ordinal: Some(level.value()),
         },
     )])
 }

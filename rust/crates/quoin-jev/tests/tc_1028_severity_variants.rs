@@ -361,8 +361,9 @@ fn probe(overrides: &[(Fact, f64)]) -> Vec<(Fact, f64)> {
 /// `high`. The probe row, every fact reading "no": the distribution is
 /// none 0.9 x 0.85^5 = 0.399335, medium 0.9 x 0.85^3 x (1 - 0.85^2) =
 /// 0.153378, high 1 - 0.9 x 0.85^3 = 0.447288, so the old rule said `high`.
-/// Thresholded, it is `none`, with that level's mass as the confidence and
-/// the expected level 2 x 0.153378 + 3 x 0.447288 = 1.648618 as the ordinal.
+/// Thresholded, it is `none`: ordinal 0 (the level's index, PR #620 delta
+/// review B2) and confidence 1 - 0.15, the largest defect probability of any
+/// fact (L2).
 #[test]
 fn tc_1028_s1_level_thresholds_each_fact_at_tau() {
     assert!(close(FACT_THRESHOLD, 0.5));
@@ -374,13 +375,10 @@ fn tc_1028_s1_level_thresholds_each_fact_at_tau() {
     let prediction = s1_answer(&severity::S1, Mode::ReqTestCode, &all_clean);
     assert_eq!(prediction.answer, "none");
     assert!(
-        close(prediction.confidence.unwrap(), 0.399_334_781_25),
+        close(prediction.confidence.unwrap(), 0.85),
         "{prediction:?}"
     );
-    assert!(
-        close(prediction.ordinal.unwrap(), 1.648_617_937_5),
-        "{prediction:?}"
-    );
+    assert!(close(prediction.ordinal.unwrap(), 0.0), "{prediction:?}");
 
     // Every defect fact at 0.15, the trace check's defect ("no") at 0.15 too.
     let all_at_015 = probe(&[(Fact::TraceCorrect, 0.85)]);
@@ -389,10 +387,10 @@ fn tc_1028_s1_level_thresholds_each_fact_at_tau() {
     // One high-tier fact at 0.6 is `high`.
     let one_high = probe(&[(Fact::CodeContradicts, 0.6)]);
     assert_eq!(thresholded_branch(&one_high), Branch::CodeContradicts);
-    assert_eq!(
-        s1_answer(&severity::S1, Mode::ReqTestCode, &one_high).answer,
-        "high"
-    );
+    let prediction = s1_answer(&severity::S1, Mode::ReqTestCode, &one_high);
+    assert_eq!(prediction.answer, "high");
+    assert!(close(prediction.confidence.unwrap(), 0.6), "{prediction:?}");
+    assert!(close(prediction.ordinal.unwrap(), 3.0), "{prediction:?}");
 
     // One medium-tier fact at 0.6 and every high-tier fact at 0.4 is
     // `medium`, although the union of the three high facts (0.9 x 0.6^3 =
@@ -410,6 +408,10 @@ fn tc_1028_s1_level_thresholds_each_fact_at_tau() {
         level_distribution(&medium_under_high)[Level::High.index()] > 0.8,
         "{prediction:?}"
     );
+    // L2: the confidence is the medium fact that set the level (0.6), not
+    // `medium`'s mass under the distribution (about 0.19).
+    assert!(close(prediction.confidence.unwrap(), 0.6), "{prediction:?}");
+    assert!(close(prediction.ordinal.unwrap(), 2.0), "{prediction:?}");
 
     // A fact exactly at τ is the defect: a trace check at 0.5 is a mismatch.
     assert_eq!(
@@ -433,8 +435,29 @@ fn tc_1028_s1_level_thresholds_each_fact_at_tau() {
         ],
     );
     assert_eq!(rc.answer, "none");
-    assert!(close(rc.confidence.unwrap(), 0.166_375), "{rc:?}");
-    assert!(close(rc.ordinal.unwrap(), 2.364_75), "{rc:?}");
+    assert!(close(rc.confidence.unwrap(), 0.55), "{rc:?}");
+    assert!(close(rc.ordinal.unwrap(), 0.0), "{rc:?}");
+
+    // B2: trace correct at 0.51 and every defect fact at 0.49. Each fact
+    // reads "no", so S1 answers `none`, and the ordinal Bar D grades is 0,
+    // not the expectation of about 2.8 that would cross τ = 2.0.
+    let near_tau: Vec<(Fact, f64)> = CLEAN
+        .iter()
+        .map(|(fact, _)| {
+            (
+                *fact,
+                if *fact == Fact::TraceCorrect {
+                    0.51
+                } else {
+                    0.49
+                },
+            )
+        })
+        .collect();
+    assert!(expected_level(&level_distribution(&near_tau)).unwrap() > 2.0);
+    let prediction = s1_answer(&severity::S1, Mode::ReqTestCode, &near_tau);
+    assert_eq!(prediction.answer, "none");
+    assert!(close(prediction.ordinal.unwrap(), 0.0), "{prediction:?}");
 
     // A fact left unanswered leaves the row unanswered, not guessed.
     let partial = nouls(&[(Fact::TraceCorrect, 1.0)]);
@@ -445,7 +468,8 @@ fn tc_1028_s1_level_thresholds_each_fact_at_tau() {
 /// defect needs trace correct (0.6) and all three high facts `no` (0.4
 /// each): 0.6 x 0.4^3 = 0.0384, so high = 0.9616. Medium needs that and not
 /// both medium facts `no`: 0.0384 x (1 - 0.4^2) = 0.032256. None = 0.0384 x
-/// 0.16 = 0.006144. Expected level 3 x 0.9616 + 2 x 0.032256 = 2.949312.
+/// 0.16 = 0.006144. S1 reads none of that: three high-tier defect facts sit
+/// at 0.6, so it answers `high` with ordinal 3 and confidence 0.6.
 #[test]
 fn tc_1028_s1_all_facts_at_0_6() {
     let pairs: Vec<(Fact, f64)> = CLEAN.iter().map(|(fact, _)| (*fact, 0.6)).collect();
@@ -455,14 +479,8 @@ fn tc_1028_s1_all_facts_at_0_6() {
     assert!(close(distribution[Level::None.index()], 0.006_144));
     let prediction = s1_answer(&severity::S1, Mode::ReqTestCode, &pairs);
     assert_eq!(prediction.answer, "high");
-    assert!(
-        close(prediction.confidence.unwrap(), 0.9616),
-        "{prediction:?}"
-    );
-    assert!(
-        close(prediction.ordinal.unwrap(), 2.949_312),
-        "{prediction:?}"
-    );
+    assert!(close(prediction.confidence.unwrap(), 0.6), "{prediction:?}");
+    assert!(close(prediction.ordinal.unwrap(), 3.0), "{prediction:?}");
 }
 
 // ---------------------------------------------------------------------------
@@ -993,6 +1011,39 @@ fn tc_1028_bar_c_fails_a_winner_that_abstains_over_the_cap() {
     assert!(close(paired.baseline.index().unwrap(), 0.8));
     assert!(close(paired.variant_abstention().unwrap(), 20.0));
     assert_eq!(paired.beats_baseline(), Some(false));
+}
+
+/// A winner over `rows` rows that leaves the last one unanswered: on the
+/// shared rows it orders every expected level exactly, and the baseline
+/// swaps one pair.
+fn winner_abstaining_once(rows: usize) -> Option<bool> {
+    let spec = eval_v2_support::keys::spec("severity").unwrap();
+    let expected = |i: usize| ["none", "medium", "high"][i % 3];
+    let level = |i: usize| [0.0, 2.0, 3.0][i % 3];
+    let ids: Vec<String> = (0..rows).map(|i| format!("r{i:02}")).collect();
+    let variant: Vec<Scored> = ids
+        .iter()
+        .enumerate()
+        .map(|(i, id)| level_row(id, expected(i), (i + 1 < rows).then(|| level(i))))
+        .collect();
+    let baseline: Vec<Scored> = ids
+        .iter()
+        .enumerate()
+        .map(|(i, id)| level_row(id, expected(i), Some(if i == 0 { 2.5 } else { level(i) })))
+        .collect();
+    paired_concordance(&variant, &baseline, spec)
+        .unwrap()
+        .beats_baseline()
+}
+
+/// Provenance: PR #620 delta review M1. The cap is exactly 10%: one row
+/// unanswered in ten passes, one in nine (11.1%) fails. Raising
+/// `MAX_ABSTENTION_PERCENT` anywhere above 11.1, or making the comparison
+/// strict, fails this test.
+#[test]
+fn tc_1028_bar_c_abstention_cap_is_ten_percent() {
+    assert_eq!(winner_abstaining_once(10), Some(true));
+    assert_eq!(winner_abstaining_once(9), Some(false));
 }
 
 fn severity_score(probabilities: &[(&str, f64)]) -> RawAnswers {
