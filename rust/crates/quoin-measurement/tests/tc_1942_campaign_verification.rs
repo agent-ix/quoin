@@ -11,6 +11,7 @@ use std::path::Path;
 use std::process::Command;
 
 use quoin_measurement::campaign::CampaignOutcome;
+use quoin_measurement::campaign::checker::DomainVerdictReceipt;
 use quoin_measurement::campaign::source::SourceError;
 use quoin_measurement::campaign::store::{retain_json_bytes, run_path};
 use quoin_measurement::campaign::verify::{CampaignVerificationError, verify_retained_campaign};
@@ -63,6 +64,7 @@ receipt = {
     'stderrDigest':result['process']['stderr']['digest'],
     'verdict':'accept' if accepted else 'reject',
     'reasons':[] if accepted else ['fictional-output-mismatch'],
+    'details':{'observation':{'stdout':'ok' if accepted else 'unexpected'},'samples':[1,2]},
 }
 with open(output_path, 'w', encoding='utf-8') as stream:
     json.dump(receipt, stream, sort_keys=True, separators=(',', ':'))
@@ -182,6 +184,27 @@ fn fixture() -> (tempfile::TempDir, String, String) {
     (repo, revision, source_digest)
 }
 
+/// Trace: FR-114-AC-2
+/// Provenance: PLAT-1043
+#[test]
+fn tc_1942_legacy_domain_receipt_omits_optional_details() {
+    let legacy = json!({
+        "schema":"fictional.domain-verdict/v1", "member":"one", "planId":"MP-FIXTURE",
+        "definitionVersion":"v1", "definitionDigest":"definition",
+        "sourceGraphDigest":"source", "requestDigest":"request", "resultDigest":"result",
+        "rawArtifactsDigest":"artifacts", "rawBundleDigest":"bundle",
+        "dependenciesDigest":"dependencies", "stdoutDigest":null, "stderrDigest":null,
+        "verdict":"accept", "reasons":[]
+    });
+    let receipt: DomainVerdictReceipt =
+        serde_json::from_value(legacy.clone()).expect("legacy domain receipt");
+    assert!(receipt.details.is_none());
+    assert_eq!(
+        serde_json::to_value(receipt).expect("encoded legacy domain receipt"),
+        legacy
+    );
+}
+
 /// Trace: FR-114-AC-1, FR-114-AC-4
 /// Provenance: PLAT-1043
 #[test]
@@ -253,6 +276,7 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         ExitCodeBinding, OutputBinding, ProducerDescriptor, StdinBinding,
     };
     use quoin_measurement::campaign::run::{RunMemberBindings, run_campaign};
+    use quoin_measurement::campaign::store::digest_path;
 
     let (repo, _, _) = fixture();
     let procedure_path = repo.path().join("campaign/procedure.json");
@@ -470,6 +494,37 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         CampaignOutcome::Accept,
         "{receipt:?}"
     );
+
+    // Trace: FR-114-AC-2, FR-114-AC-4
+    // Provenance: PLAT-1043
+    // The domain's nested detail remains in the sole sealed verdict artifact.
+    let domain_digest = run.attempts.as_ref().expect("attempts")[0]
+        .domain_verdict_digest
+        .as_deref()
+        .expect("domain verdict digest");
+    let domain_path = digest_path(repo.path(), "domain-verdicts", domain_digest, "json")
+        .expect("domain verdict path");
+    let original_domain = fs::read(&domain_path).expect("retained domain verdict");
+    let domain: serde_json::Value =
+        serde_json::from_slice(&original_domain).expect("domain verdict JSON");
+    assert_eq!(
+        domain["details"],
+        json!({"observation":{"stdout":"ok"},"samples":[1,2]})
+    );
+    let mut altered_domain = domain;
+    altered_domain["details"]["samples"][0] = json!(9);
+    let altered_bytes = serde_json::to_vec(&altered_domain).expect("altered domain verdict JSON");
+    assert_ne!(digest_bytes_sha256(&altered_bytes).as_hex(), domain_digest);
+    fs::write(&domain_path, altered_bytes).expect("altered retained domain verdict");
+    let rejected =
+        verify_retained_campaign(repo.path(), digest.as_str(), "fixture-direct", &checkouts)
+            .expect("well-formed tampered run");
+    assert_eq!(rejected.decision.verdict, CampaignOutcome::Reject);
+    fs::write(&domain_path, &original_domain).expect("restore domain verdict");
+    let restored =
+        verify_retained_campaign(repo.path(), digest.as_str(), "fixture-direct", &checkouts)
+            .expect("restored retained replay");
+    assert_eq!(restored.decision.verdict, CampaignOutcome::Accept);
 
     // TC-1943: Rehash both the collection and the run so an
     // identity-only check would accept each altered context claim.

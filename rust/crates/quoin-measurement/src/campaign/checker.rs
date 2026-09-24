@@ -4,6 +4,7 @@
 
 use engineering_assurance::campaign::canonical_digest;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use thiserror::Error;
 
 use crate::campaign::AttemptEvidence;
@@ -241,6 +242,9 @@ pub struct DomainVerdictReceipt {
     pub verdict: DomainOutcome,
     /// Typed domain reason codes, interpreted only by the domain checker.
     pub reasons: Vec<String>,
+    /// Optional domain-owned evidence detail, sealed with this verdict receipt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<Value>,
 }
 
 /// Compare the receipt's complete identity envelope to the sealed checker
