@@ -7,6 +7,7 @@ owner: quoin quality
 stage: gate
 metric: guidance.correctness
 definition_version: guidance.correctness-v2
+ground_truth_kind: agent-labelled
 protected_apparatus:
   - bench/guidance-evaluator-contract-v1.json
   - bench/guidance-independent-review-v1.json

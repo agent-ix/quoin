@@ -10,11 +10,13 @@ description: "Chronological log of structural changes to this bundle."
 
 * **2026-09-23** — **FR-016 gains a compiled pin-agreement test for the
   `engineering-assurance` module and crate** (PLAT-1032). quoin pins
-  `engineering-assurance` in two places that must move together:
-  `rust/Cargo.toml`'s crate dependency, which decides measurement verdicts,
-  and `default-modules.yaml`'s module entry, which carries the schemas that
+  `engineering-assurance` in three committed places that must move together:
+  `rust/Cargo.toml`'s crate dependency, which decides measurement verdicts;
+  `default-modules.yaml`'s module entry, which carries the schemas that
   validate `AssuranceProfile`/`MeasurementPlan` frontmatter against those
-  verdicts. The two drifted apart and shipped that way — PR #618 bumped the
+  verdicts; and `quoin-cli`'s retained-catalog fixture registry, which
+  reconciliation compares against that module entry. They drifted apart and
+  shipped that way — PR #618 bumped the
   crate to `=0.4.0` and left the module at `0.2.0+4e6522f`, making this
   repo's own `spec/assurance/AP-201-finding-quality.md` and
   `AP-202-jev-lens-evaluation.md` unvalidatable against the module quoin
@@ -28,11 +30,36 @@ description: "Chronological log of structural changes to this bundle."
   `rust/Cargo.toml`'s dependency line with the same boundary-aware
   `key = "…"` extractor `quoin-quire`'s engine-pin test uses (duplicated
   rather than shared or added as a new `toml` dependency — the workspace has
-  none), and asserts the module's `ref`/`version` agree with the crate's
-  `rev`/(`=`-normalised) `version`. Demonstrated non-vacuous by reverting
-  `default-modules.yaml`'s `ref` to the old, pre-#618 commit and watching the
-  assertion fail with both values named before restoring it. FR-016-AC-2;
-  Matrix: TC-1929.
+  no TOML parser), and asserts that the module's `ref`/`version` agree with
+  the crate's `rev`/(`=`-normalised) `version` and that every module the
+  fixture registry lists names the revision the manifest pins. Demonstrated
+  non-vacuous by reverting each pin in turn to its old value and watching the
+  matching assertion fail with both values and both file names printed.
+
+  FR-016's Description is amended in the same change: it required a release
+  tag wherever one exists, which the `engineering-assurance` entry has not
+  satisfied since EA cut v0.4.0, and the entry's own comment had quietly
+  argued the opposite case. It now requires an immutable revision — the
+  release tag or the commit that tag names — and requires the commit id
+  specifically where the Rust workspace consumes the same module, which is
+  the only entry with a second half to agree with. AC-2's module count is
+  corrected from nine to ten: it went stale at `98fb09f0`, the commit that
+  added the `engineering-assurance` entry itself as the tenth.
+
+  Five gate-stage plans — `MP-216`, `MP-217`, `MP-218`, `MP-219`, `MP-221` —
+  gain the `ground_truth_kind` that EA requires of any plan at `stage: gate`,
+  which they have lacked since PLAT-975 (#600) added their
+  `negative_controls`/`protected_apparatus`. The value is read off each plan's
+  own apparatus rather than assumed: `MP-216`, `MP-218` and `MP-219` grade
+  against `bench/guidance-independent-review-v1.json` and
+  `bench/span-breadth-v1-labels.json`, both of which record
+  `reviewer: OpenAI Codex`, so they are `agent-labelled` and not
+  `human-labelled`; `MP-217` and `MP-221` are graded by deterministic replay
+  and by parsing retained workflow-run bytes, so they are `mechanical`. With
+  these, all 36 documents under `spec/assurance/` validate against the
+  module the manifest now pins, measured one file at a time; 13 failed under
+  the old pin and 5 under the new one before this change.
+  FR-016-AC-3; Matrix: TC-1929.
 * **2026-09-23** — **FR-107/FR-108 gain `external_reference_unsupplied`** for
   engineering-assurance v0.4.0's fourth `Baseline` variant, `ExternalReference`
   (PLAT-1032). EA v0.4.0 defines it as a per-dimension value the calling

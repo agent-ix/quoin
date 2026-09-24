@@ -7,6 +7,7 @@ owner: engineering assurance
 stage: gate
 metric: release_operational_evidence
 definition_version: github-actions.release-operational-v2
+ground_truth_kind: mechanical
 protected_apparatus:
   - spec/evidence/github-actions/quoin-271-release-v0.22.5-workflow.yml
   - spec/evidence/github-actions/quoin-271-release-v0.22.5-run.json
