@@ -949,3 +949,29 @@ fn tc_961_028_a_shallow_history_attests_no_order_and_says_where_the_order_came_f
         assert_eq!(OrderSource::from_wire(source.as_str()), Some(source));
     }
 }
+
+/// EA v0.4.0 added `Baseline::ExternalReference`: a per-dimension value the
+/// calling checker resolves from a source outside the plan at evaluation
+/// time. Quoin has no such source wired in, so the rule is `inconclusive`
+/// with its own reason — never `no_prior` (that means no earlier collection
+/// exists, a different and misleading claim here) and never silently
+/// swallowed by a wildcard match arm.
+///
+/// Trace: FR-108-AC-3
+/// Provenance: PLAT-1032
+#[test]
+fn tc_961_030_an_external_reference_baseline_is_inconclusive_with_its_own_reason() {
+    let mut gate = plan("MP-961");
+    gate.statistical_design.as_mut().unwrap().decision_rule = Some(
+        DecisionRule::against_baseline(
+            Comparator::Gt,
+            engineering_assurance::measurement::Baseline::ExternalReference,
+            Some(0.05),
+        )
+        .unwrap(),
+    );
+    let accepted = case("right/accept");
+    let verdict = checked(&gate, &in_order(&accepted), None);
+    assert_eq!(verdict.verdict, Verdict::Inconclusive);
+    assert_eq!(verdict.reasons, [Reason::ExternalReferenceUnsupplied]);
+}

@@ -555,8 +555,8 @@ dependencies = [
 
 [[package]]
 name = "engineering-assurance"
-version = "0.3.1"
-source = "git+https://github.com/agent-ix/engineering-assurance?rev=058f34e6ac8256374920616f154231023da08023#058f34e6ac8256374920616f154231023da08023"
+version = "0.4.0"
+source = "git+https://github.com/agent-ix/engineering-assurance?rev=438b30fcd5d4df457fe0fca4682b322c72856c1c#438b30fcd5d4df457fe0fca4682b322c72856c1c"
 dependencies = [
  "serde",
  "syn 3.0.5",

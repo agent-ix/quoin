@@ -4,7 +4,7 @@ title: Jev semantic lens evaluation profile
 type: AssuranceProfile
 status: active
 owner: quoin-maintainers
-profile_version: 0.2
+schema_version: 0.2
 profile_kind: general
 scope: live evaluation of Jev (typesafe.ai System One) semantic lenses before any lens is wired into a skill
 impact_assessments:

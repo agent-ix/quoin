@@ -416,11 +416,14 @@ impl Check<'_> {
 /// apparatus — are a baseline (PLAT-975); in a series where no run recorded
 /// one, every run's is `None` and all of them are.
 ///
-/// `constant-predictor` is different in kind from the other two: it is not a
-/// comparison against an earlier run at all, but a property of the
-/// population `observation`'s own run measured (MP-222/PLAT-932), so it reads
-/// `collection` — the run being decided, not `history` — through
-/// [`constant_predictor::baseline`].
+/// `constant-predictor` is different in kind from `prior-collection` and
+/// `best-seen`: it is not a comparison against an earlier run at all, but a
+/// property of the population `observation`'s own run measured
+/// (MP-222/PLAT-932), so it reads `collection` — the run being decided, not
+/// `history` — through [`constant_predictor::baseline`]. `external-reference`
+/// is a per-dimension value the calling checker must resolve from a source
+/// outside the plan at evaluation time (PLAT-1032); this checker has no such
+/// source wired in, so it is never computed here either.
 fn baseline(
     rule: DecisionRule,
     slice: &BTreeMap<String, JsonValue>,
@@ -450,6 +453,7 @@ fn baseline(
             let value = constant_predictor::baseline(collection, observation)?;
             return Ok((Some(value), None));
         }
+        Baseline::ExternalReference => return Err(Reason::ExternalReferenceUnsupplied),
         Baseline::PriorCollection => earlier.next_back(),
         Baseline::BestSeen => match rule.comparator() {
             Comparator::Gt | Comparator::Ge => {
