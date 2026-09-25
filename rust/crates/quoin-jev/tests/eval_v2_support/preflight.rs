@@ -302,24 +302,24 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "sha256:bf7ab48b5545c52e757fbbd0b27f804356f206efc8107bf265fd577964147c00",
     ),
     (
-        "R1@v1",
+        "R1@v2",
         "R",
-        "sha256:28abb8b92eb00e563cc3daa9e50bbe9f5550d09e1626cd86a2528f92b516f297",
+        "sha256:cbeda752162bb7a53fcf7d42fead9374f88ed45ee5f03191803f6cd1eeea1bac",
     ),
     (
-        "R1@v1",
+        "R1@v2",
         "RT",
-        "sha256:28abb8b92eb00e563cc3daa9e50bbe9f5550d09e1626cd86a2528f92b516f297",
+        "sha256:cbeda752162bb7a53fcf7d42fead9374f88ed45ee5f03191803f6cd1eeea1bac",
     ),
     (
-        "R1@v1",
+        "R1@v2",
         "RC",
-        "sha256:28abb8b92eb00e563cc3daa9e50bbe9f5550d09e1626cd86a2528f92b516f297",
+        "sha256:cbeda752162bb7a53fcf7d42fead9374f88ed45ee5f03191803f6cd1eeea1bac",
     ),
     (
-        "R1@v1",
+        "R1@v2",
         "RTC",
-        "sha256:28abb8b92eb00e563cc3daa9e50bbe9f5550d09e1626cd86a2528f92b516f297",
+        "sha256:cbeda752162bb7a53fcf7d42fead9374f88ed45ee5f03191803f6cd1eeea1bac",
     ),
 ];
 

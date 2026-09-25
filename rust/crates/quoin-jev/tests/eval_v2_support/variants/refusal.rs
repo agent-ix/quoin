@@ -224,13 +224,55 @@ fn noul(instruction: &str, yes: &str, no: &str) -> Question {
     )
 }
 
+/// R1 v2's `domain_unbounded` question (POST HOC, chosen after dev run 1).
+/// On dev, v1 fired on 19 of 37 criteria labelled groundable; of 10 read by
+/// hand, 8 named their inputs (a kind of thing with a condition, a list, or
+/// every member of a kind) and were flagged for having infinitely many
+/// members. The labelling rule already calls a described kind of input
+/// clear; v2 says in the question that an infinite domain is not an open
+/// one. The yes/no criteria are unchanged.
+pub(crate) const DOMAIN_UNBOUNDED_V2: &str = judge!(
+    "Does the criterion fail to say what its inputs or cases are, leaving them unstated or \
+     described only by a vague qualifier such as 'any input', 'edge cases' or 'unusual data'? A \
+     domain may be infinite: a described kind of input ('an invoice with a negative total', \
+     'every uploaded file', 'a request whose token has expired') says what a generator should \
+     draw even though it has many members, and a criterion that takes no inputs is not open."
+);
+
+/// R1 v2's `static_or_demonstration` question (POST HOC, chosen after dev
+/// run 1). On dev, v1 fired on 7 of 37 criteria labelled groundable; read by
+/// hand, 6 required a result of running the system (loading, discovering,
+/// selecting or reporting something) about a subject that lives in the
+/// repository (manifests, commands, suites). The labelling rule already
+/// judges what the criterion requires; v2 says in the question that the
+/// subject living in the repository does not make the requirement a fact
+/// about the source tree. The yes/no criteria are unchanged.
+pub(crate) const STATIC_V2: &str = judge!(
+    "Is what the criterion requires a fact about the source tree or repository (which files, \
+     modules, dependencies, names or checks exist, are absent or are structured a certain way), \
+     or an end-to-end narrative of someone performing several steps? Judge what must be observed \
+     for it to pass, not what it is about: a criterion whose subject lives in the repository (a \
+     file, a manifest, a command, a module) but which requires a result of running the system, \
+     such as loading, discovering, selecting, reporting or refusing something, is not a fact \
+     about the source tree."
+);
+
+/// R1's instruction for `check`: v1's, except the two POST HOC rewordings.
+fn r1_instruction(check: &Check) -> &'static str {
+    match check.key {
+        "domain_unbounded" => DOMAIN_UNBOUNDED_V2,
+        "static_or_demonstration" => STATIC_V2,
+        _ => check.instruction,
+    }
+}
+
 fn r1_questions() -> Questions {
     CHECKS
         .iter()
         .map(|check| {
             (
                 check.key.to_owned(),
-                noul(check.instruction, check.defect, check.clear),
+                noul(r1_instruction(check), check.defect, check.clear),
             )
         })
         .collect()
@@ -358,8 +400,11 @@ pub(crate) const R0: Variant = Variant {
 /// The battery: one noul per refusal reason, combined in code.
 pub(crate) const R1: Variant = Variant {
     id: "R1",
-    version: 1,
-    summary: "acceptance criterion: five refusal-reason nouls; criterion_groundable = no check at or above 0.5",
+    // v2 (POST HOC, after dev run 1): the `domain_unbounded` and
+    // `static_or_demonstration` questions are DOMAIN_UNBOUNDED_V2 and
+    // STATIC_V2.
+    version: 2,
+    summary: "acceptance criterion: five refusal-reason nouls (domain_unbounded allows infinite described domains; static_or_demonstration judges what must be observed); criterion_groundable = no check at or above 0.5",
     modes: &Mode::ALL,
     references: &[],
     grades: &GRADES,
