@@ -494,9 +494,10 @@ fn primary(row: &Row, key: &str) -> Option<String> {
 }
 
 /// One statement mutant paired with its source: the source id, and the
-/// pair's outcome, or `None` when the source is already on the defect side
+/// pair's outcome with whether it was an abstention (a failure because a side
+/// went unanswered), or `None` when the source is already on the defect side
 /// (dropped).
-type Paired<'a> = (&'a str, Option<PairOutcome>);
+type Paired<'a> = (&'a str, Option<(PairOutcome, bool)>);
 
 /// Every statement mutant whose injected check is in `checks`, paired with
 /// its source, in row order: the pair's scores, shifted so `tau` is the
@@ -554,21 +555,27 @@ fn paired<'a>(
             }
             let outcome = score(source)
                 .zip(score(mutant))
-                .map_or(PairOutcome::Failure, |(s, m)| pair_outcome(s, m));
+                .map_or((PairOutcome::Failure, true), |(s, m)| {
+                    (pair_outcome(s, m), false)
+                });
             (source_id, Some(outcome))
         })
         .collect()
 }
 
-fn tally(outcomes: impl Iterator<Item = Option<PairOutcome>>) -> BarD {
+fn tally(outcomes: impl Iterator<Item = Option<(PairOutcome, bool)>>) -> BarD {
     let mut tally = BarD::default();
     for outcome in outcomes {
         tally.pairs += 1;
+        let Some((outcome, abstained)) = outcome else {
+            tally.source_already_yes += 1;
+            continue;
+        };
+        tally.abstained += usize::from(abstained);
         match outcome {
-            None => tally.source_already_yes += 1,
-            Some(PairOutcome::Success) => tally.successes += 1,
-            Some(PairOutcome::Failure) => tally.failures += 1,
-            Some(PairOutcome::Tie) => tally.ties += 1,
+            PairOutcome::Success => tally.successes += 1,
+            PairOutcome::Failure => tally.failures += 1,
+            PairOutcome::Tie => tally.ties += 1,
         }
     }
     tally
@@ -607,21 +614,22 @@ pub(crate) fn bar_d_per_source(
     checks: &[&str],
     excluded_key: &str,
 ) -> BarD {
-    let mut by_source: BTreeMap<&str, Vec<Option<PairOutcome>>> = BTreeMap::new();
+    let mut by_source: BTreeMap<&str, Vec<Option<(PairOutcome, bool)>>> = BTreeMap::new();
     for (source, outcome) in paired(rows, scores, tau, checks, excluded_key) {
         by_source.entry(source).or_default().push(outcome);
     }
     tally(by_source.into_values().map(|outcomes| {
-        let kept: Vec<PairOutcome> = outcomes.into_iter().flatten().collect();
+        let kept: Vec<(PairOutcome, bool)> = outcomes.into_iter().flatten().collect();
         if kept.is_empty() {
             return None;
         }
-        let count = |wanted: PairOutcome| kept.iter().filter(|o| **o == wanted).count();
+        let count = |wanted: PairOutcome| kept.iter().filter(|(o, _)| *o == wanted).count();
         let (wins, losses) = (count(PairOutcome::Success), count(PairOutcome::Failure));
+        let all_abstained = kept.iter().all(|(_, abstained)| *abstained);
         Some(match wins.cmp(&losses) {
-            std::cmp::Ordering::Greater => PairOutcome::Success,
-            std::cmp::Ordering::Less => PairOutcome::Failure,
-            std::cmp::Ordering::Equal => PairOutcome::Tie,
+            std::cmp::Ordering::Greater => (PairOutcome::Success, false),
+            std::cmp::Ordering::Less => (PairOutcome::Failure, all_abstained),
+            std::cmp::Ordering::Equal => (PairOutcome::Tie, false),
         })
     }))
 }
