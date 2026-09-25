@@ -587,19 +587,21 @@ fn readings(necessary: &[f64]) -> Vec<NecessityReading> {
         .collect()
 }
 
-/// Provenance: PLAT-1024, MP-241 round 2. `yes` iff some asked unit has
-/// `P(necessary) < 0.5` (0.5 itself is necessary); the ordinal is the
-/// highest `1 - P(necessary)`, the confidence that for `yes` and one minus
-/// it for `no`; nothing asked is `no` at ordinal 0. Every unit unnecessary
-/// is `yes` too: v3 has no breaker.
+/// Provenance: PLAT-1024, MP-241 round 2, exp2. v5: `yes` iff some asked
+/// unit has `P(necessary) < 0.3` (0.3 itself is not); the ordinal is the
+/// highest `1 - P(necessary)` minus 0.2, so `yes` is `ordinal > 0.5`; the
+/// confidence is that highest value for `yes` and one minus it for `no`;
+/// nothing asked is `no` at ordinal -0.2. Every unit unnecessary is `yes`
+/// too: v3 has no breaker.
 #[test]
 fn tc_1024_e5_yes_when_a_unit_is_unnecessary() {
-    let cases: [(&[f64], &str, f64, f64); 5] = [
-        (&[0.9, 0.3], "yes", 0.7, 0.7),
-        (&[0.9, 0.6], "no", 0.6, 0.4),
-        (&[0.5, 0.8], "no", 0.5, 0.5),
-        (&[0.3], "yes", 0.7, 0.7),
-        (&[], "no", 1.0, 0.0),
+    let cases: [(&[f64], &str, f64, f64); 6] = [
+        (&[0.9, 0.2], "yes", 0.8, 0.6),
+        (&[0.9, 0.3], "no", 0.3, 0.5),
+        (&[0.9, 0.45], "no", 0.45, 0.35),
+        (&[0.5, 0.8], "no", 0.5, 0.3),
+        (&[0.1], "yes", 0.9, 0.7),
+        (&[], "no", 1.0, -0.2),
     ];
     for (necessary, answer, confidence, ordinal) in cases {
         let prediction = necessity_outcome(&readings(necessary));
@@ -614,9 +616,9 @@ fn tc_1024_e5_yes_when_a_unit_is_unnecessary() {
         );
     }
     // v3 has no breaker: every asked unit unnecessary is still `yes`.
-    let prediction = necessity_outcome(&readings(&[0.2, 0.4]));
+    let prediction = necessity_outcome(&readings(&[0.2, 0.1]));
     assert_eq!(prediction.answer, "yes");
-    assert!(close(prediction.ordinal, 0.8), "{prediction:?}");
+    assert!(close(prediction.ordinal, 0.7), "{prediction:?}");
 }
 
 fn unit_noul(unit: usize, answer: RawAnswer) -> Answered {
@@ -775,14 +777,14 @@ async fn tc_1024_e5_runs_end_to_end() {
     assert_eq!(fake.calls.load(Ordering::SeqCst), 2);
     let prediction = &output.results[0].predictions[exceeds::KEY];
     assert_eq!(prediction.answer, "yes");
-    assert!(close(prediction.ordinal, 0.8), "{prediction:?}");
+    assert!(close(prediction.ordinal, 0.6), "{prediction:?}");
 
     let report = exceeds::render_diagnostics(&rows, &output);
     for needle in [
-        "#### E5@v4: units",
+        "#### E5@v5: units",
         "| 1 | pass-through 1 | 2 | 1 |",
-        "#### E5@v4: on the rows it answered (bars A and B)",
-        "Bar D, E5@v4:",
+        "#### E5@v5: on the rows it answered (bars A and B)",
+        "Bar D, E5@v5:",
     ] {
         assert!(report.contains(needle), "missing {needle:?} in:\n{report}");
     }
