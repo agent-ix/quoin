@@ -346,7 +346,7 @@ pub(crate) const COMPOUND_V2: &str = judge!(
     "Does the criterion require two or more different behaviours, effects or outcomes, each of \
      which could be verified, and fail, on its own? Count required outcomes, not clauses: parts \
      that together describe one observed response to one event (a refusal and the message or \
-     identifier it gives, a status with its error code, one value or one artifact described by \
+     identifier it gives, a status with its error identifier, one value or one artifact described by \
      several of its own attributes) are one outcome; conditions on the trigger are not outcomes; \
      a list of inputs that must each get the same single outcome is one outcome."
 );

@@ -234,7 +234,7 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
     (
         "K1@v2",
         "R",
-        "sha256:6f63535069e779a9b98e2acc25d454f5bb724500d52d19c6673a599dab073af5",
+        "sha256:15b1cc25d8e21cb0683f1ad0982b2cae9f5eed0941856592d05e5cae48826b5e",
     ),
     (
         "K2@v1",
