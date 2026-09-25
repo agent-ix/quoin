@@ -432,6 +432,11 @@ fn stage_checker_input(
             "checker input path is not reserved".to_owned(),
         ));
     }
+    if source.has_link_ancestor(relative) {
+        return Err(CampaignRunError::binding(
+            "unsafe checker input path".to_owned(),
+        ));
+    }
     if source.contains_path(relative) {
         return Err(CampaignRunError::binding(
             "checker input collides with tracked source".to_owned(),
@@ -456,8 +461,74 @@ fn stage_checker_input(
 mod tests {
     use std::path::PathBuf;
 
-    use super::{CampaignRunError, CampaignStoreError, classify_checker_failure};
+    use super::{
+        CampaignRunError, CampaignStoreError, VerifiedSource, classify_checker_failure,
+        stage_checker_input,
+    };
     use crate::campaign::AttemptEvidence;
+
+    /// Trace: FR-114-AC-2
+    /// Provenance: PLAT-1071
+    /// A tracked `.quoin-campaign` link cannot carry checker input bytes out of
+    /// the checkout, and a tracked file at an input path is not overwritten.
+    #[cfg(unix)]
+    #[test]
+    fn tc_1942_checker_input_refuses_tracked_link_and_tracked_path() {
+        let root = tempfile::tempdir().expect("root");
+        let checkout = root.path().join("checkout");
+        let outside = root.path().join("outside");
+        std::fs::create_dir_all(&checkout).expect("checkout");
+        std::fs::create_dir_all(&outside).expect("outside");
+        std::fs::write(checkout.join("tracked.txt"), b"tracked").expect("tracked file");
+        std::os::unix::fs::symlink(&outside, checkout.join(".quoin-campaign")).expect("link");
+        let source = VerifiedSource {
+            repository: "fictional/source".to_owned(),
+            checkout,
+            manifest: b"120000 blob 0000000000000000000000000000000000000000\t.quoin-campaign\0"
+                .to_vec(),
+        };
+        let refused = stage_checker_input(
+            root.path(),
+            &source,
+            "definition",
+            ".quoin-campaign/definition.json",
+            b"bytes",
+        );
+        assert!(
+            matches!(refused, Err(CampaignRunError::Binding(_))),
+            "{refused:?}"
+        );
+        assert_eq!(std::fs::read_dir(&outside).expect("outside").count(), 0);
+
+        let tracked = VerifiedSource {
+            manifest: b"100644 blob 0000000000000000000000000000000000000000\t.quoin-campaign/definition.json\0"
+                .to_vec(),
+            ..source
+        };
+        std::fs::remove_file(tracked.checkout.join(".quoin-campaign")).expect("unlink");
+        std::fs::create_dir_all(tracked.checkout.join(".quoin-campaign")).expect("directory");
+        std::fs::write(
+            tracked.checkout.join(".quoin-campaign/definition.json"),
+            b"tracked bytes",
+        )
+        .expect("tracked definition");
+        let refused = stage_checker_input(
+            root.path(),
+            &tracked,
+            "definition",
+            ".quoin-campaign/definition.json",
+            b"bytes",
+        );
+        assert!(
+            matches!(refused, Err(CampaignRunError::Binding(_))),
+            "{refused:?}"
+        );
+        assert_eq!(
+            std::fs::read(tracked.checkout.join(".quoin-campaign/definition.json"))
+                .expect("tracked bytes"),
+            b"tracked bytes"
+        );
+    }
 
     /// Trace: FR-114-AC-2, FR-114-AC-4
     /// Provenance: PLAT-1043

@@ -10,6 +10,8 @@ use std::process::{Command, Stdio};
 use engineering_assurance::campaign::{CampaignDefinition, CampaignSource};
 use engineering_assurance::producer_execution::{ContentDigest, InputBinding};
 use quoin_store::digest_bytes_sha256;
+
+use crate::source::MemoryMeasurement;
 use thiserror::Error;
 
 /// A source checkout does not match the authored source graph.
@@ -204,6 +206,22 @@ impl VerifiedSource {
         Err(SourceError::Path(path.to_owned()))
     }
 
+    /// The assurance documents of the exact Git tree, read as Git blob bytes.
+    ///
+    /// # Errors
+    /// Refuses a malformed tree entry or an unreadable, non-UTF-8 blob.
+    pub fn assurance_documents(&self) -> Result<MemoryMeasurement, SourceError> {
+        let mut documents = MemoryMeasurement::new();
+        for path in self.tracked_regular_paths()? {
+            if path.starts_with("spec/assurance/") || path.starts_with("assurance/") {
+                let text = String::from_utf8(self.read_tracked_file(&path)?)
+                    .map_err(|_| SourceError::Path(path.clone()))?;
+                documents = documents.with_document(path, text);
+            }
+        }
+        Ok(documents)
+    }
+
     /// Whether a normal repository-relative file is in the exact Git tree.
     #[must_use]
     pub fn contains_path(&self, path: &str) -> bool {
@@ -332,6 +350,30 @@ fn git(
 }
 
 fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource, SourceError> {
+    // EA opens the capability root through a symlink-free absolute path.
+    let checkout = path.canonicalize().map_err(|error| SourceError::Git {
+        operation: "canonicalize",
+        path: path.to_path_buf(),
+        message: error.to_string(),
+    })?;
+    // Manifest paths are relative to the repository root, so the checkout is it.
+    let toplevel = git(
+        &checkout,
+        "show-toplevel",
+        &["rev-parse", "--show-toplevel"],
+        4096,
+    )?;
+    let toplevel = String::from_utf8_lossy(&toplevel);
+    let is_root = Path::new(toplevel.trim_end_matches('\n'))
+        .canonicalize()
+        .is_ok_and(|root| root == checkout);
+    if !is_root {
+        return Err(SourceError::Git {
+            operation: "show-toplevel",
+            path: checkout,
+            message: "checkout is not the repository root".to_owned(),
+        });
+    }
     let head = git(path, "rev-parse", &["rev-parse", "--verify", "HEAD"], 1024)?;
     if String::from_utf8_lossy(&head).trim() != source.revision {
         return Err(SourceError::Revision(source.repository.clone()));
@@ -354,15 +396,80 @@ fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource,
     if digest_bytes_sha256(&manifest).as_hex() != source.digest {
         return Err(SourceError::Tree(source.repository.clone()));
     }
-    // EA opens the capability root through a symlink-free absolute path.
-    let checkout = path.canonicalize().map_err(|error| SourceError::Git {
-        operation: "canonicalize",
-        path: path.to_path_buf(),
-        message: error.to_string(),
-    })?;
     Ok(VerifiedSource {
         repository: source.repository.clone(),
         checkout,
         manifest,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CampaignSource, SourceError, git, verify_source};
+
+    fn run(root: &std::path::Path, args: &[&str]) {
+        git(root, "test", args, 1 << 20).expect("Git runs");
+    }
+
+    /// Trace: FR-114-AC-2
+    /// Provenance: PLAT-1071
+    /// Manifest paths are repository-root relative, so a subdirectory of the
+    /// repository is not a checkout.
+    #[test]
+    fn tc_1942_source_checkout_must_be_the_repository_root() {
+        let repo = tempfile::tempdir().expect("repository");
+        std::fs::create_dir_all(repo.path().join("sub")).expect("subdirectory");
+        std::fs::write(repo.path().join("sub/x"), b"tracked").expect("tracked file");
+        run(repo.path(), &["init", "-q"]);
+        run(repo.path(), &["add", "sub"]);
+        run(
+            repo.path(),
+            &[
+                "-c",
+                "user.name=Fixture",
+                "-c",
+                "user.email=fixture@example.test",
+                "commit",
+                "-q",
+                "-m",
+                "source",
+            ],
+        );
+        let revision = String::from_utf8(
+            git(repo.path(), "rev-parse", &["rev-parse", "HEAD"], 1024).expect("revision"),
+        )
+        .expect("UTF-8")
+        .trim()
+        .to_owned();
+        let manifest = git(
+            repo.path(),
+            "ls-tree",
+            &["ls-tree", "-r", "-z", "--full-tree", &revision],
+            1 << 20,
+        )
+        .expect("manifest");
+        let source = CampaignSource {
+            repository: "fictional/source".to_owned(),
+            revision,
+            digest: quoin_store::digest_bytes_sha256(&manifest)
+                .as_hex()
+                .to_owned(),
+        };
+        let root = verify_source(&source, repo.path()).expect("repository root verifies");
+        assert_eq!(
+            root.checkout,
+            repo.path().canonicalize().expect("canonical")
+        );
+        let refused = verify_source(&source, &repo.path().join("sub"));
+        assert!(
+            matches!(
+                refused,
+                Err(SourceError::Git {
+                    operation: "show-toplevel",
+                    ..
+                })
+            ),
+            "{refused:?}"
+        );
+    }
 }

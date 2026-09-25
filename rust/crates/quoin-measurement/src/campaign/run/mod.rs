@@ -28,11 +28,10 @@ use super::checker::{
 use super::source::{SourceError, VerifiedSource, verify_source_graph};
 use super::store::{
     CampaignStoreError, read_bounded, read_digest_bytes, read_typed, retain_bytes,
-    retain_json_bytes, retain_value, run_path,
+    retain_json_bytes, retain_value, run_path, typed_from_bytes,
 };
 use super::{Attempt, AttemptEvidence, CampaignOutcome, Member, all_required};
 use crate::plans::load_selected_measurement_plans;
-use crate::source::DiskMeasurement;
 use crate::types::plan::MeasurementPlan;
 use crate::verify::{OrderSource, Ranked, TamperFacts, Verdict, verdict_json, verify};
 
@@ -260,12 +259,9 @@ pub fn run_campaign_with_cancellation(
         .iter()
         .map(|member| member.plan_id.as_str())
         .collect::<BTreeSet<_>>();
-    let plans = load_selected_measurement_plans(
-        &DiskMeasurement::new(own_source.checkout.as_path()),
-        &selected_ids,
-    )
-    .map_err(|error| CampaignRunError::measurement(error.to_string()))?;
-    let procedures = load_procedures(&own_source.checkout, &plans)?;
+    let plans = load_selected_measurement_plans(&own_source.assurance_documents()?, &selected_ids)
+        .map_err(|error| CampaignRunError::measurement(error.to_string()))?;
+    let procedures = load_procedures(own_source, &plans)?;
     for plan in &plans {
         if !own_source.contains_path(&plan.path)
             || plan
@@ -470,13 +466,14 @@ pub fn run_campaign_with_cancellation(
 }
 
 fn load_procedures(
-    repo: &Path,
+    source: &VerifiedSource,
     plans: &[MeasurementPlan],
 ) -> Result<BTreeMap<String, MeasurementProcedure>, CampaignRunError> {
     let mut found = BTreeMap::new();
     for plan in plans {
         if let Some(path) = &plan.execution_procedure {
-            let procedure: MeasurementProcedure = read_typed(&repo.join(path))?;
+            let procedure: MeasurementProcedure =
+                typed_from_bytes(&source.read_tracked_file(path)?, Path::new(path))?;
             found.insert(plan.id.as_str().to_owned(), procedure);
         }
     }

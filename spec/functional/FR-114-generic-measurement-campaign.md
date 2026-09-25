@@ -33,12 +33,12 @@ checker contains project names, milestone names or native tool result rules.
 A member's producer and its checker run with the checkout of the member's
 declared source repository as the EA capability root and working directory.
 Before any request is created, `run` and `verify` check that each source
-checkout is at its pinned revision, has no tracked edits or staged changes, and
+checkout is the repository root at its pinned revision, has no tracked edits or staged changes, and
 yields a raw `git ls-tree -r -z --full-tree` inventory whose SHA-256 equals the
 source-graph digest. The request records that repository and inventory as its
 source-tree binding, and EA checks every tracked file's bytes against it before
-launch. Selected inputs are written at their declared relative paths beneath the
-checkout, and a path that is tracked in the source tree is not one of them. The
+launch. Measurement plans and procedures are read from the Git blobs of that tree. Selected inputs are written at their declared relative paths beneath the
+checkout, and a path that is tracked in the source tree, or lies beneath a tracked link, is not one of them. The
 producer can see and write any file in the checkout.
 
 ## Acceptance Criteria

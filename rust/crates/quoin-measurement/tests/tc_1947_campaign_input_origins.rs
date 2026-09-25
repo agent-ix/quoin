@@ -469,6 +469,43 @@ fn tc_1947_two_member_authored_origins_replay_and_rehashed_substitution_rejects(
     );
 }
 
+/// Trace: FR-114-AC-2. Provenance: PLAT-1071, TC-1947.
+/// A selected input at a path tracked in the source tree is refused before
+/// launch and the tracked file keeps its bytes.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1947_selected_input_at_a_tracked_path_is_refused() {
+    let (repo, definition, revision) = fixture();
+    let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);
+    let mut consume = runtime(repo.path(), &revision, false);
+    consume.inputs[0].path = "source.txt".to_owned();
+    let selections = BTreeMap::from([
+        ("prepare".to_owned(), runtime(repo.path(), &revision, true)),
+        ("consume".to_owned(), consume),
+    ]);
+    let run = run_campaign(
+        repo.path(),
+        &definition,
+        "tracked-input",
+        &checkouts,
+        &selections,
+    )
+    .expect("campaign retains the refusal");
+    assert_ne!(run.verdict, CampaignVerdict::Accepted, "{run:?}");
+    let attempt = run
+        .attempts
+        .as_ref()
+        .expect("attempts")
+        .iter()
+        .find(|attempt| attempt.member == "consume")
+        .expect("consume attempt");
+    assert_eq!(attempt.reason.as_deref(), Some("invalid_input_binding"));
+    assert_eq!(
+        fs::read(repo.path().join("source.txt")).expect("tracked source"),
+        b"tracked source bytes\n"
+    );
+}
+
 /// Trace: FR-114-AC-2, FR-114-AC-3. Provenance: PLAT-1043, TC-1942.
 /// A dependent member cannot consume an artifact named by a rehashed but
 /// independently false checkpoint from a previous partial invocation.

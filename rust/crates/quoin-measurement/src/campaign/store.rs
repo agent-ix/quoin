@@ -192,8 +192,18 @@ pub fn read_digest_bytes(
 /// # Errors
 /// Refuses duplicate JSON keys and any invalid generated type field.
 pub fn read_typed<T: DeserializeOwned>(path: &Path) -> Result<T, CampaignStoreError> {
-    let bytes = read_bounded(path)?;
-    let strict = parse_strict_json(&bytes).map_err(|error| CampaignStoreError::Json {
+    typed_from_bytes(&read_bounded(path)?, path)
+}
+
+/// Parse strict canonical JSON bytes read from `path` into a typed record.
+///
+/// # Errors
+/// Refuses duplicate JSON keys and any invalid generated type field.
+pub fn typed_from_bytes<T: DeserializeOwned>(
+    bytes: &[u8],
+    path: &Path,
+) -> Result<T, CampaignStoreError> {
+    let strict = parse_strict_json(bytes).map_err(|error| CampaignStoreError::Json {
         path: path.to_path_buf(),
         message: error.to_string(),
     })?;

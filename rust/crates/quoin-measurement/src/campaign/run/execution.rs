@@ -171,10 +171,6 @@ pub(super) fn run_member(
     Ok(attempt)
 }
 
-#[allow(
-    clippy::too_many_arguments,
-    reason = "selected inputs bind exact member, source, and dependency identities"
-)]
 fn select_inputs(
     repo: &Path,
     member: &engineering_assurance::campaign::CampaignMember,
