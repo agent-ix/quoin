@@ -290,7 +290,13 @@ fn tc_1031_k2_puts_worked_examples_in_the_instruction() {
         assert!((3..=5).contains(&total), "{}: {total}", check.key);
         let (one, two) = (&k1["questions"][check.key], &k2["questions"][check.key]);
         assert_eq!(one["criteria"], two["criteria"], "{}", check.key);
-        assert_eq!(one["instructions"], check.instruction);
+        // K1@v2 asks `compound` in the canonical definition's words.
+        let k1_instruction = if check.key == "compound" {
+            soundness::COMPOUND_V2
+        } else {
+            check.instruction
+        };
+        assert_eq!(one["instructions"], k1_instruction);
         let text = two["instructions"].as_str().unwrap();
         assert!(text.starts_with(check.instruction), "{}", check.key);
         for example in check.defect_examples {
@@ -910,7 +916,7 @@ async fn tc_1031_the_variants_run_end_to_end() {
         let client = quoin_jev::client::with_transport(config, fake.clone());
         let output = variant::run(&client, &rows, &[&K1, &K2]).await.unwrap();
         assert_eq!(fake.calls.load(Ordering::SeqCst), 4);
-        for label in ["K1@v1", "K2@v1"] {
+        for label in ["K1@v2", "K2@v1"] {
             let sound: Vec<String> = scored(&rows, &output, label, SOUND)
                 .iter()
                 .map(|row| row.prediction.as_ref().unwrap().answer.clone())
@@ -918,7 +924,7 @@ async fn tc_1031_the_variants_run_end_to_end() {
             assert_eq!(sound, [expected, expected], "{label}");
         }
         let report = render_bars(&rows, &output, &[&K1, &K2]);
-        assert!(report.contains("## MP-243 bars: K1@v1 (2 natural R rows; one row = 50.0 pp)"));
+        assert!(report.contains("## MP-243 bars: K1@v2 (2 natural R rows; one row = 50.0 pp)"));
         assert!(
             report.contains("- D [by-construction pairs]: 0 pairs"),
             "{report}"
