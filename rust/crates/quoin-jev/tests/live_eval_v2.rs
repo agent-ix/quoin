@@ -138,6 +138,30 @@ fn sources() -> Vec<Source> {
     sources
 }
 
+/// Experiment 2's output directory (PLAT-1024), when requested. Dev only:
+/// diagnosing held-out rows would contaminate the seal, so this is checked
+/// before `authorize_run`, and a held-out run with the variable set stops
+/// before anything is spent.
+fn exp2_dir(split: Split) -> Option<String> {
+    let dir = env(eval_v2_support::exp2::OUT_ENV)?;
+    assert!(
+        split == Split::Dev,
+        "{} is dev-only; held-out rows are never diagnosed",
+        eval_v2_support::exp2::OUT_ENV
+    );
+    Some(dir)
+}
+
+/// Writes experiment 2's diagnostics (informational) to `dir`, when set.
+fn write_exp2(dir: Option<&str>, rows: &[Row], output: &variant::RunOutput) {
+    let Some(dir) = dir else {
+        return;
+    };
+    eval_v2_support::exp2::write(std::path::Path::new(dir), rows, output)
+        .unwrap_or_else(|error| panic!("{error}"));
+    println!("exp2 diagnostics written to {dir}");
+}
+
 /// Provenance: PLAT-1027. Runs the chosen variants over the chosen split and
 /// prints the report. Ungated: bars belong to each experiment's MP doc.
 #[tokio::test]
@@ -158,6 +182,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         corpus::in_repo_corpus_path().display(),
         corpus::EXTERNAL_CORPUS_ENV
     );
+    let exp2 = exp2_dir(split);
     let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
     let rerun_reason = env(HELDOUT_RERUN_ENV);
     let heldout_flag = env(HELDOUT_ENV);
@@ -237,6 +262,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         "{}",
         eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
+    write_exp2(exp2.as_deref(), &rows, &output);
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(

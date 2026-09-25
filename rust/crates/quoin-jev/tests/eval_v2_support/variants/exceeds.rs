@@ -15,7 +15,7 @@
 //! | `E4` | the same request as E1 (no extra call) | `yes` on `task_relation` alone |
 //! | `E2` | a choice: which requirement clause the unit serves, or `none` | `yes` when a unit's `P(none) >= TAU` |
 //! | `E0-RC` | E0's one `code_exceeds_requirement` question, whole body, RC only | `yes` at `p >= 0.5`: the as-asked RC baseline |
-//! | `E5` | a `noul`: if this statement were deleted, would the code fail to do something the requirement states (round 2) | `yes` when a unit's `P(necessary) < 0.5` |
+//! | `E5` | a `noul`: if this statement were deleted, would the code fail to do something the requirement states (round 2) | `yes` when a unit's `P(necessary) < 0.3` (v5; 0.5 to v4) |
 //!
 //! E5 (PLAT-1024 round 2, MP-241 "Round 2") answers dev run 1 on jev-1.13.0,
 //! where E1, E2 and E4 reached 19-35% recall on known additive mutants, below
@@ -1044,23 +1044,52 @@ pub(crate) struct NecessityAssessment {
     pub(crate) outcome: Prediction,
 }
 
-/// E5's rule over the asked units: `yes` (exceeds) iff some unit is
-/// unnecessary. The ordinal is the highest `1 - P(necessary)`, 0 when
-/// nothing was asked; the confidence is the ordinal for `yes` and one minus
-/// it for `no`. Every row is answered: v3 dropped v1's and v2's breaker
-/// (abstain when two or more units were asked and all were unnecessary),
-/// whose abstentions were 4 of E5@v2's 5 Bar D failures.
+/// E5's row threshold (v5): the row exceeds when some asked unit has
+/// `P(necessary)` below this. Per-unit "unnecessary" counts still use
+/// [`NECESSARY_TAU`]. v4 decided the row at 0.5 and cleared 18 of 28 sound
+/// dev rows; exp2 (PLAT-1024) read 10 flagged units on sound rows and found
+/// 6 were plumbing read as unnecessary (serialisation, returns, sorts), mostly
+/// between 0.3 and 0.5. Chosen after seeing dev: post hoc.
+pub(crate) const EXCEEDS_TAU: f64 = 0.3;
+
+/// How far v5's ordinal is shifted from the highest `1 - P(necessary)`, so
+/// the shared bar-D crossing ([`PAIRED_TAU`]) is v5's own row threshold:
+/// `1 - EXCEEDS_TAU - PAIRED_TAU` = 0.2. A shift keeps every difference, so
+/// bar D's delta test is unchanged.
+pub(crate) const ORDINAL_SHIFT: f64 = 1.0 - EXCEEDS_TAU - PAIRED_TAU;
+
+/// E5's rule over the asked units: `yes` (exceeds) iff some unit has
+/// `P(necessary) <` [`EXCEEDS_TAU`] (v5). The ordinal is the highest
+/// `1 - P(necessary)` (0 when nothing was asked) minus [`ORDINAL_SHIFT`], so
+/// `yes` is exactly `ordinal > 0.5`.
+///
+/// The confidence is read off that ordinal, so it is at least 0.5 on the side
+/// answered: the ordinal for `yes`, `1 - ordinal` for `no`, capped at 1 (the
+/// ordinal falls to -0.2 when nothing was asked or every unit is certain).
+///
+/// The boundary: at exactly `P(necessary) = 0.3` the ordinal is exactly 0.5
+/// and the answer is `no`, but bar D's shared crossing (`pair_verdict`,
+/// `mutant >= tau`) counts that mutant as crossing. v4 had the same tie at
+/// 0.5; the shared rule is left as it is.
+///
+/// Every row is answered: v3 dropped v1's and v2's breaker (abstain when two
+/// or more units were asked and all were unnecessary), whose abstentions were
+/// 4 of E5@v2's 5 Bar D failures.
 pub(crate) fn necessity_outcome(readings: &[NecessityReading]) -> Prediction {
-    let unnecessary = readings.iter().filter(|r| r.unnecessary()).count();
-    let ordinal = readings
+    let highest = readings
         .iter()
         .map(|reading| 1.0 - reading.necessary)
         .reduce(f64::max)
         .unwrap_or(0.0);
-    let yes = unnecessary > 0;
+    let ordinal = highest - ORDINAL_SHIFT;
+    let yes = readings.iter().any(|r| r.necessary < EXCEEDS_TAU);
     Prediction {
         answer: if yes { YES } else { NO }.to_owned(),
-        confidence: Some(if yes { ordinal } else { 1.0 - ordinal }),
+        confidence: Some(if yes {
+            ordinal
+        } else {
+            (1.0 - ordinal).min(1.0)
+        }),
         ordinal: Some(ordinal),
     }
 }
@@ -1126,12 +1155,14 @@ fn e5_derive(row: &Row, answered: &[Answered]) -> Predictions {
 /// its requests are v2's, so v3 is a derive-only change read off v2's
 /// answers. v4 applies the triviality checks to statement units too
 /// ([`trivial_reason`]): a lone `if` size cap, which v2 and v3 asked about,
-/// is skipped, so v4 asks about fewer units than v3.
+/// is skipped, so v4 asks about fewer units than v3. v5 (PLAT-1024 exp2)
+/// sends v4's requests and decides the row at [`EXCEEDS_TAU`] = 0.3 instead
+/// of 0.5: a derive-only change.
 pub(crate) const E5: Variant = Variant {
     id: "E5",
-    version: 4,
+    version: 5,
     summary: "per-statement outcome necessity noul (would deleting it lose stated behaviour); \
-              yes if a non-trivial unit has P(necessary) < 0.5; no breaker",
+              yes if a non-trivial unit has P(necessary) < 0.3; no breaker",
     modes: RC_AND_RTC,
     references: CODE_ONLY,
     grades: &[KEY],

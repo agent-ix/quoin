@@ -364,7 +364,11 @@ mutants. Agreement and margin are on the rows the variant answered.
 | E5@v3 | breaker dropped | 9 / 1 / 14, p = 0.0107 | 73.1% (26) | 68.1%, 60.9%, +7.2pp (69) | 0 |
 | E5@v4 | triviality checks applied to statement units (a lone `if` size cap is skipped) | 9 / 1 / 14, p = 0.0107 | 73.1% (26) | 68.1%, 60.9%, +7.2pp (69) | 0 |
 
-E5@v4 is the final version, and Bar D holds for it: 10 non-tie pairs, the
+E5@v5 (PLAT-1024 exp2) is now the final dev version: v4's requests with the
+row decided at `P(necessary) < 0.3`, a cutoff chosen after seeing dev (post
+hoc), and it is not on the held-out selection.
+
+E5@v4 was the final version before it, and Bar D holds for it: 10 non-tie pairs, the
 minimum, with 9 successes. v4 asked about 578 units where v3 asked about 581
 (2 size caps and 1 logging-only statement now skipped), and every number in
 its row equals v3's. **Caveat:** v3 changed only the

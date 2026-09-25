@@ -51,6 +51,7 @@ pub(crate) mod grading;
 pub(crate) mod assemble;
 pub(crate) mod corpus;
 pub(crate) mod criterion_defects;
+pub(crate) mod exp2;
 pub(crate) mod fixtures;
 pub(crate) mod keys;
 pub(crate) mod metrics;

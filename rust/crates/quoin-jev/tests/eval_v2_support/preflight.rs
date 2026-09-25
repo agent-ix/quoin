@@ -172,12 +172,12 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "sha256:8a1fffbde7e0b0619a6ac4b1f46fff30d1e42653f8b29c4e277e671909798b94",
     ),
     (
-        "E5@v4",
+        "E5@v5",
         "RC",
         "sha256:66516bc48bb989d74603a59d8176ca4c1d3cf57d160833b865bbd4b3c4e039e1",
     ),
     (
-        "E5@v4",
+        "E5@v5",
         "RTC",
         "sha256:66516bc48bb989d74603a59d8176ca4c1d3cf57d160833b865bbd4b3c4e039e1",
     ),
@@ -232,9 +232,9 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "sha256:e8359d1ab3e124f3ef9657628c9994410cd828d9d12182a974437798a4ffa958",
     ),
     (
-        "K1@v1",
+        "K1@v2",
         "R",
-        "sha256:fa2cb04d182096356a1eabec1f372892d988673f71f4599919c5a0225f579ed5",
+        "sha256:15b1cc25d8e21cb0683f1ad0982b2cae9f5eed0941856592d05e5cae48826b5e",
     ),
     (
         "K2@v1",

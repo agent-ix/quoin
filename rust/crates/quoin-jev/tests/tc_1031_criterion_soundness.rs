@@ -290,7 +290,13 @@ fn tc_1031_k2_puts_worked_examples_in_the_instruction() {
         assert!((3..=5).contains(&total), "{}: {total}", check.key);
         let (one, two) = (&k1["questions"][check.key], &k2["questions"][check.key]);
         assert_eq!(one["criteria"], two["criteria"], "{}", check.key);
-        assert_eq!(one["instructions"], check.instruction);
+        // K1@v2 asks `compound` in the canonical definition's words.
+        let k1_instruction = if check.key == "compound" {
+            soundness::COMPOUND_V2
+        } else {
+            check.instruction
+        };
+        assert_eq!(one["instructions"], k1_instruction);
         let text = two["instructions"].as_str().unwrap();
         assert!(text.starts_with(check.instruction), "{}", check.key);
         for example in check.defect_examples {
@@ -910,7 +916,7 @@ async fn tc_1031_the_variants_run_end_to_end() {
         let client = quoin_jev::client::with_transport(config, fake.clone());
         let output = variant::run(&client, &rows, &[&K1, &K2]).await.unwrap();
         assert_eq!(fake.calls.load(Ordering::SeqCst), 4);
-        for label in ["K1@v1", "K2@v1"] {
+        for label in ["K1@v2", "K2@v1"] {
             let sound: Vec<String> = scored(&rows, &output, label, SOUND)
                 .iter()
                 .map(|row| row.prediction.as_ref().unwrap().answer.clone())
@@ -918,11 +924,64 @@ async fn tc_1031_the_variants_run_end_to_end() {
             assert_eq!(sound, [expected, expected], "{label}");
         }
         let report = render_bars(&rows, &output, &[&K1, &K2]);
-        assert!(report.contains("## MP-243 bars: K1@v1 (2 natural R rows; one row = 50.0 pp)"));
+        assert!(report.contains("## MP-243 bars: K1@v2 (2 natural R rows; one row = 50.0 pp)"));
         assert!(
             report.contains("- D [by-construction pairs]: 0 pairs"),
             "{report}"
         );
         assert!(report.contains("not selectable"), "{report}");
     }
+}
+
+/// Provenance: PLAT-1024 exp2. The aggregate bar D reads the combiner's own
+/// score: a source already flagged by another check cannot cross (a tie), a
+/// source labelled `yes` on the injected check is dropped, a count rule
+/// needs a second check to fire, and a stricter threshold is read by the
+/// shifted crossing.
+#[test]
+fn tc_1024_exp2_k_aggregate_bar_d_reads_the_combiner_score() {
+    use eval_v2_support::exp2::{KRow, KRule, k_aggregate_d};
+    let rows = paired_rows(3);
+    // CHECKS order: vague_term, no_measurable_threshold, untestable,
+    // compound, missing_trigger. Mutants inject vague_term.
+    let p: [(&str, [f64; 5]); 6] = [
+        ("EV2-0100", [0.1, 0.1, 0.1, 0.1, 0.1]),
+        ("EV2-0200", [0.8, 0.1, 0.1, 0.1, 0.1]),
+        ("EV2-0101", [0.1, 0.1, 0.1, 0.1, 0.1]),
+        ("EV2-0201", [0.8, 0.1, 0.1, 0.1, 0.1]),
+        ("EV2-0102", [0.1, 0.1, 0.1, 0.7, 0.1]),
+        ("EV2-0202", [0.8, 0.1, 0.1, 0.7, 0.1]),
+    ];
+    let krows: Vec<KRow<'_>> = p
+        .iter()
+        .map(|(id, p)| KRow {
+            row: rows.iter().find(|row| row.id == *id).unwrap(),
+            p: p.to_vec(),
+        })
+        .collect();
+    let by_id: BTreeMap<&str, &KRow<'_>> = krows.iter().map(|k| (k.row.id.as_str(), k)).collect();
+    let rule = |at_least, tau| KRule {
+        name: String::new(),
+        dropped: None,
+        at_least,
+        tau,
+    };
+    let any = k_aggregate_d(&rows, &by_id, &rule(1, 0.5));
+    assert_eq!(
+        (
+            any.pairs,
+            any.source_already_yes,
+            any.successes,
+            any.failures,
+            any.ties
+        ),
+        (3, 1, 1, 0, 1)
+    );
+    // >= 2 checks: EV2-0201's second-highest stays 0.1 (tie); EV2-0202's
+    // rises from 0.1 to 0.7 and crosses (success).
+    let two = k_aggregate_d(&rows, &by_id, &rule(2, 0.5));
+    assert_eq!((two.successes, two.failures, two.ties), (1, 0, 1));
+    // At 0.75, EV2-0102's 0.7 is below the threshold, so both pairs cross.
+    let strict = k_aggregate_d(&rows, &by_id, &rule(1, 0.75));
+    assert_eq!((strict.successes, strict.failures, strict.ties), (2, 0, 0));
 }

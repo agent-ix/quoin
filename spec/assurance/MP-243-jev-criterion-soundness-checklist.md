@@ -172,7 +172,9 @@ committed. Each is a dependency, not a present fact:
     version bump fails a test.
 
 **Phase 2 of PLAT-1031 is blocked until these merge.** Phase 2 then pins
-K1@v1 and K2@v1.
+K1@v1 and K2@v1. K1's final dev version is now K1@v2 (PLAT-1024 exp2), which
+asks `compound` in the canonical definition's words; it is not on the
+held-out selection.
 
 ## Environment and Sampling
 
