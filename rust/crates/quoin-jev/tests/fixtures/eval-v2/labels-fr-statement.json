@@ -1,0 +1,832 @@
+{
+  "_provenance": "AGENT-LABELLED, single pass: written by one Claude agent from the extracted statement text only, before any live call, and not audited by a second pass. `alternatives` records the other defensible reading where the agent was unsure. One natural dev row per requirement (the first in corpus order) whose statement holds a SHALL sentence; StR/US rows and statements with no SHALL sentence are not labelled.",
+  "labels": {
+    "N-116": {
+      "fr_id": "FR-003",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "prints root usage with no command AND prints command help for --help/-h: two separately failing obligations"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-118": {
+      "fr_id": "FR-006",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "treats a path as a module root under two conditions AND skips non-existent/non-directory candidates"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-117": {
+      "fr_id": "FR-018",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one mapping obligation; the cases are inputs of the one mapping"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-069": {
+      "fr_id": "FR-019",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "maintains records, materializes modules, and install/list/remove each SHALL do something different"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-124": {
+      "fr_id": "FR-026",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "dispatch through oclif; each command a subclass; parsing provided by the runner"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "yes",
+        "why": "`BaseCommand` subclass is an implementation class, not observable behaviour"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-072": {
+      "fr_id": "FR-028",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "supply a skill; key tests on row_id; own the mapping; mark unsettled criteria; never derive a verdict"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-034": {
+      "fr_id": "FR-032",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "audit and report the ways evidence rotted read as one behaviour whose observable output is the report",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-140": {
+      "fr_id": "FR-034",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "carry a second record type AND keep the check silent when rules evaluated is unknown"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "`FindingRecord`/`RunRecord` name stored record types, part of the store's data shape",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-019": {
+      "fr_id": "FR-041",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: read two inventory formats through the registry; the 'so' clause is purpose"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-158": {
+      "fr_id": "FR-042",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: read the report through the registry; the rest is purpose"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-143": {
+      "fr_id": "FR-044",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "persist collections; resolve observations to plans; compare collections; render through quoin report"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-110": {
+      "fr_id": "FR-050",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: assign one of four dispositions naming the governing source"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-156": {
+      "fr_id": "FR-052",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: inventory a list of objects without excluding malformed input"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-060": {
+      "fr_id": "FR-057",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "three When-clauses with three different responses (validate, retain, render)"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-024": {
+      "fr_id": "FR-062",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "derive a report; expose three subcommands; require three flags; restrict --repo"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-102": {
+      "fr_id": "FR-063",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "the record preserves its content AND uses the versioned schema"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-011": {
+      "fr_id": "FR-064",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "transcribe and bind a result; carry a strength; never rank strengths"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "yes",
+        "why": "names Rust traits `Ord`/`PartialOrd`, though only in a rationale clause",
+        "alternatives": [
+          "no"
+        ]
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-149": {
+      "fr_id": "FR-065",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "join inputs into a receipt; run no producer; two dominance rules"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-154": {
+      "fr_id": "FR-066",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "register two adapters; each adapter has its own separately failing obligation"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-109": {
+      "fr_id": "FR-068",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "expose contracts through commands AND consume only explicit inputs / never become a producer"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-101": {
+      "fr_id": "FR-070",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: the manifest carries one block, described by its own attributes"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-147": {
+      "fr_id": "FR-072",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: publish the mapping as golden fixtures"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "`ClauseRef[]`/`OperationDecl[]` are semantic-core's published types, not this implementation's internals",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-152": {
+      "fr_id": "FR-074",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: accept legacy forms at warning with a migration"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "'with a declared migration' could be read as the artifact declaring it or Quire declaring it",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-082": {
+      "fr_id": "FR-075",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "derive the package-manifest document AND record per-export digests in the registry"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-056": {
+      "fr_id": "FR-083",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "render and exercise every variant AND fail when a required surface is missing"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-168": {
+      "fr_id": "FR-095",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "compose artifacts; preserve schemas and boundaries; refuse a mismatched intake selection"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-037": {
+      "fr_id": "FR-096",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one boundary described by its attributes (carries, distinguishes, admits)",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-083": {
+      "fr_id": "FR-098",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "preserve observable semantics AND produce byte-identical serializations and digests"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-063": {
+      "fr_id": "FR-099",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: implement the listed behaviour in Rust crates; 'preserving' describes the result",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-004": {
+      "fr_id": "FR-100",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: implement the listed behaviour in Rust crates; participles describe the result",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-051": {
+      "fr_id": "FR-101",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "retain until equivalent; cut over reversibly; only then delete: three separately failing steps"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-047": {
+      "fr_id": "FR-102",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "deliver the binary; preserve the grammar; remove the Node shell"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-016": {
+      "fr_id": "FR-107",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "three stage-specific statements, each separately failing"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-006": {
+      "fr_id": "FR-108",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "decide the verdict AND report it with typed reason codes and counts",
+        "alternatives": [
+          "no"
+        ]
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes",
+        "alternatives": [
+          "yes"
+        ]
+      }
+    },
+    "N-103": {
+      "fr_id": "FR-110",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "resolve and digest entries; record the set; refuse deltas across differing sets"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-033": {
+      "fr_id": "FR-111",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "three different refusals/reports under three conditions"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-150": {
+      "fr_id": "NFR-004",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "run standalone with only three deps AND invoke ix-flow/quire as processes"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-094": {
+      "fr_id": "NFR-011",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "complete within 5 s AND the figure comes from a measurement"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-091": {
+      "fr_id": "NFR-017",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: keep manifests and artifacts valid until promotion"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-130": {
+      "fr_id": "NFR-020",
+      "compound_obligation": {
+        "answer": "yes",
+        "why": "declare a minimum version AND fail naming it when absent or older"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "no",
+        "why": "no if any of the three checks is yes"
+      }
+    },
+    "N-108": {
+      "fr_id": "NFR-021",
+      "compound_obligation": {
+        "answer": "no",
+        "why": "one obligation: byte-identical results across repeated runs"
+      },
+      "multiple_readings": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "names_internal_symbol": {
+        "answer": "no",
+        "why": "none found in the statement"
+      },
+      "fr_statement_sound": {
+        "answer": "yes",
+        "why": "no if any of the three checks is yes"
+      }
+    }
+  }
+}

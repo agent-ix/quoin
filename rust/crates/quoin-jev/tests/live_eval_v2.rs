@@ -162,8 +162,48 @@ fn write_exp2(dir: Option<&str>, rows: &[Row], output: &variant::RunOutput) {
     println!("exp2 diagnostics written to {dir}");
 }
 
+/// Where the requirement-statement rows are dumped for reading by hand
+/// (dev only, informational).
+const STATEMENT_OUT_ENV: &str = "QUOIN_JEV_STATEMENT_OUT";
+
+/// The statement dump's output file, when requested. Dev only, for the same
+/// reason as [`exp2_dir`].
+fn statement_dir(split: Split) -> Option<String> {
+    let path = env(STATEMENT_OUT_ENV)?;
+    assert!(
+        split == Split::Dev,
+        "{STATEMENT_OUT_ENV} is dev-only; held-out rows are never diagnosed"
+    );
+    Some(path)
+}
+
+/// Prints the requirement-statement report (PLAT-1024 experiment 3; empty
+/// unless an F variant ran), and writes one JSON line per statement row to
+/// `path`, when set.
+fn report_statement(
+    path: Option<&str>,
+    rows: &[Row],
+    output: &variant::RunOutput,
+    variants: &[&Variant],
+) {
+    println!(
+        "{}",
+        eval_v2_support::variants::statement::render(rows, output, variants)
+    );
+    let Some(path) = path else {
+        return;
+    };
+    let lines = eval_v2_support::variants::statement::dump(rows, output, variants);
+    std::fs::write(path, lines.join("\n") + "\n").unwrap_or_else(|error| panic!("{path}: {error}"));
+    println!("statement rows written to {path}");
+}
+
 /// Provenance: PLAT-1027. Runs the chosen variants over the chosen split and
 /// prints the report. Ungated: bars belong to each experiment's MP doc.
+#[allow(
+    clippy::too_many_lines,
+    reason = "the runner is one linear sequence (preflight, spend, run, log, report); splitting it hides the order the held-out rules depend on"
+)]
 #[tokio::test]
 async fn tc_1027_run_variants_over_corpus_v2() {
     let variants: Vec<&Variant> = match env("QUOIN_JEV_VARIANTS") {
@@ -183,6 +223,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         corpus::EXTERNAL_CORPUS_ENV
     );
     let exp2 = exp2_dir(split);
+    let statement_dir = statement_dir(split);
     let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
     let rerun_reason = env(HELDOUT_RERUN_ENV);
     let heldout_flag = env(HELDOUT_ENV);
@@ -201,7 +242,10 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         &refs,
     )
     .unwrap_or_else(|error| panic!("{error}"));
-    let rows: Vec<Row> = combined_rows(&sources, split).unwrap_or_else(|error| panic!("{error}"));
+    let rows: Vec<Row> = variant::rows_for(
+        combined_rows(&sources, split).unwrap_or_else(|error| panic!("{error}")),
+        &variants,
+    );
     let excluded: Vec<Excluded> = sources
         .iter()
         .flat_map(|source| source.excluded.iter().cloned())
@@ -263,6 +307,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
     write_exp2(exp2.as_deref(), &rows, &output);
+    report_statement(statement_dir.as_deref(), &rows, &output, &variants);
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(

@@ -871,3 +871,327 @@ fn tc_1024_exp2_e_bar_d_reads_the_combiner_score() {
         .collect();
     assert_eq!(pairs, [("EV2-0011", false), ("EV2-0012", true)]);
 }
+
+// ---------------------------------------------------------------------------
+// Experiment 3: the requirement statement's own checks (F0, F1)
+// ---------------------------------------------------------------------------
+
+/// A requirement row whose statement section is `statement`.
+fn statement_row(id: &str, fr: &str, statement: &str) -> Row {
+    let mut value = fixtures::row(id, Mode::Req, "dev", &json!({}));
+    value["requirement"]["fr_id"] = json!(fr);
+    value["requirement"]["statement"] = json!(statement);
+    serde_json::from_value(value).unwrap()
+}
+
+/// Provenance: PLAT-1024 exp3. The unit is the statement section's SHALL
+/// sentences only, one per line: prose without SHALL, headings, tables,
+/// block quotes and fenced blocks are dropped; a paragraph wrapped over lines
+/// is one sentence; a list item is its own block.
+#[test]
+fn tc_1024_statement_unit_keeps_only_the_shall_sentences() {
+    use eval_v2_support::variants::statement::shall_sentences;
+    let section = "Some background with no obligation. The CLI SHALL print\n\
+                   the usage text, falling back to `help` for version 1.2.\n\
+                   \n\
+                   ### A heading that SHALL be ignored\n\
+                   \n\
+                   | Table | SHALL be ignored |\n\
+                   > A quote that SHALL be ignored.\n\
+                   \n\
+                   ```\n\
+                   fenced text SHALL be ignored\n\
+                   ```\n\
+                   - `valid`: a list item that shall hold.\n\
+                   - another item.\n\
+                   \n\
+                   Afterwards, `quoin` SHALL exit 0. Nothing else.";
+    assert_eq!(
+        shall_sentences(section).as_deref(),
+        Some(
+            "The CLI SHALL print the usage text, falling back to `help` for version 1.2.\n\
+             - `valid`: a list item that shall hold.\n\
+             Afterwards, `quoin` SHALL exit 0."
+        )
+    );
+    assert_eq!(shall_sentences("No obligation here. None at all."), None);
+}
+
+/// Provenance: PLAT-1024 exp3. A stakeholder need or a statement with no
+/// SHALL sentence has no unit, so F0 and F1 ask nothing about it; a
+/// requirement with one gets one request whose state is its unit.
+#[test]
+fn tc_1024_statement_variants_ask_only_about_a_unit() {
+    use eval_v2_support::variants::statement::{F0, F1, STATEMENT_FIELD, statement_unit};
+    let need = statement_row("EV2-0001", "StR-005", "Authors require that it shall run.");
+    let prose = statement_row("EV2-0002", "FR-036", "Specs and ADRs declare boundaries.");
+    let fr = statement_row("EV2-0003", "FR-041", "`quoin` SHALL read SBOMs.");
+    for row in [&need, &prose] {
+        assert_eq!(statement_unit(row), None);
+        assert!((F0.asks)(row).is_empty() && (F1.asks)(row).is_empty());
+    }
+    for variant in [&F0, &F1] {
+        let asks = (variant.asks)(&fr);
+        assert_eq!(asks.len(), 1);
+        let state = serde_json::to_value(&asks[0].request.state).unwrap();
+        assert_eq!(state[STATEMENT_FIELD], "`quoin` SHALL read SBOMs.");
+        assert!(wording_violations(variant, &fr).is_empty());
+    }
+}
+
+/// Provenance: PLAT-1024 exp3. The combiner: `any >= 0.5` flags on one
+/// check, `>= 2` needs a second, and `any >= 0.7` raises the bar; the sound
+/// prediction's ordinal is one minus the score.
+#[test]
+fn tc_1024_statement_combiners() {
+    use eval_v2_support::variants::statement::{COMBINERS, F1_COMBINER};
+    let [(_, any), (_, two), (_, strict)] = COMBINERS;
+    assert_eq!(any, F1_COMBINER);
+    let one = [0.6, 0.2, 0.1];
+    let both = [0.8, 0.55, 0.0];
+    let none = [0.4, 0.3, 0.49];
+    assert_eq!(
+        [one, both, none].map(|p| [any.flags(&p), two.flags(&p), strict.flags(&p)]),
+        [
+            [true, false, false],
+            [true, true, true],
+            [false, false, false]
+        ]
+    );
+    assert!((two.score(&both) - 0.55).abs() < 1e-12);
+    let sound = any.sound(&one);
+    assert_eq!(sound.answer, "no");
+    assert!((sound.ordinal.unwrap() - 0.4).abs() < 1e-12);
+    assert_eq!(any.sound(&none).answer, "yes");
+}
+
+/// Provenance: PLAT-1024 exp3. F1 grades each check at 0.5 and derives
+/// `fr_statement_sound` from them; F0 reads its one noul; a row with no unit
+/// gets no answer at all.
+#[test]
+fn tc_1024_statement_derive() {
+    use eval_v2_support::variants::statement::{F0, F1, SOUND, WELL_FORMED};
+    let fr = statement_row("EV2-0003", "FR-041", "`quoin` SHALL read SBOMs.");
+    let answered = |pairs: &[(&str, f64)]| {
+        vec![Answered {
+            unit: None,
+            answers: pairs
+                .iter()
+                .map(|(key, p)| ((*key).to_owned(), RawAnswer::Noul(*p)))
+                .collect::<RawAnswers>(),
+        }]
+    };
+    let f1 = (F1.derive)(
+        &fr,
+        &answered(&[
+            ("compound_obligation", 0.2),
+            ("multiple_readings", 0.7),
+            ("names_internal_symbol", 0.1),
+        ]),
+    );
+    let answer = |key: &str| f1[key].answer.clone();
+    assert_eq!(answer("multiple_readings"), "yes");
+    assert_eq!(answer("compound_obligation"), "no");
+    assert_eq!(answer(SOUND), "no");
+    let f0 = (F0.derive)(&fr, &answered(&[(WELL_FORMED, 0.8)]));
+    assert_eq!(f0[SOUND].answer, "yes");
+    assert!((F1.derive)(&fr, &[]).is_empty());
+}
+
+/// Provenance: PLAT-1024 exp3. Every row labelled `fr_statement_sound` has a
+/// unit, and every statement mutant changes its source's unit: an edit to a
+/// sentence without SHALL would be invisible to F0 and F1.
+#[test]
+fn tc_1024_every_statement_mutant_changes_the_unit() {
+    use eval_v2_support::variants::statement::{SOUND, injected, statement_unit};
+    let rows = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows;
+    let by_id: std::collections::BTreeMap<&str, &Row> =
+        rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut mutants = 0;
+    for row in rows.iter().filter(|row| row.truth.contains_key(SOUND)) {
+        let unit = statement_unit(row).unwrap_or_else(|| panic!("{}: no unit", row.id));
+        if injected(row).is_some() {
+            mutants += 1;
+            let source = by_id[row.mutation.as_ref().unwrap().source_id.as_deref().unwrap()];
+            assert_ne!(Some(unit), statement_unit(source), "{}", row.id);
+            assert_eq!(row.split, eval_v2_support::corpus::Split::Dev, "{}", row.id);
+        }
+    }
+    assert!(mutants >= 30, "{mutants} statement mutants");
+}
+
+/// Provenance: PLAT-1024 exp3. Bar D pairs each statement mutant with its
+/// source: a rise across the rule's threshold is a success, a source already
+/// labelled defective is dropped, and an unanswered side is a failure.
+#[test]
+fn tc_1024_statement_bar_d() {
+    use eval_v2_support::variants::statement::{CHECKS, SOUND, bar_d, injected};
+    let rows = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows;
+    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
+    let mutants: Vec<&Row> = rows.iter().filter(|row| injected(row).is_some()).collect();
+    let scores: std::collections::BTreeMap<&str, f64> = rows
+        .iter()
+        .filter(|row| row.truth.contains_key(SOUND))
+        .map(|row| {
+            (
+                row.id.as_str(),
+                if injected(row).is_some() { 0.9 } else { 0.1 },
+            )
+        })
+        .collect();
+    let d = bar_d(&rows, &scores, 0.5, &keys, SOUND);
+    assert_eq!(d.pairs, mutants.len());
+    assert_eq!(d.successes + d.source_already_yes, d.pairs);
+    // At a threshold above every score nothing crosses: all ties.
+    let high = bar_d(&rows, &scores, 0.95, &keys, SOUND);
+    assert_eq!(high.ties, high.pairs - high.source_already_yes);
+    // With no answers every kept pair is a failure.
+    let none = bar_d(&rows, &std::collections::BTreeMap::new(), 0.5, &keys, SOUND);
+    assert_eq!(none.failures, none.pairs - none.source_already_yes);
+    assert_eq!(none.abstained, none.failures);
+}
+
+/// Provenance: PLAT-1024 exp3, PR #633 review finding 1. The statement
+/// mutants run only on a variant graded on a statement key: K1 and E5 see
+/// exactly the dev rows they saw before those mutants existed (the counts
+/// measured on origin/main at 93112a22: 248 dev rows, 105 in R, 100 in RC or
+/// RTC), and a run without an F variant drops the mutants from its rows.
+#[test]
+fn tc_1024_statement_mutants_cost_other_variants_nothing() {
+    use eval_v2_support::corpus::Split;
+    use eval_v2_support::variant::rows_for;
+    use eval_v2_support::variants::soundness::K1;
+    use eval_v2_support::variants::statement::{F0, F1, is_statement_mutant};
+    let dev: Vec<Row> = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows
+        .into_iter()
+        .filter(|row| row.split == Split::Dev)
+        .collect();
+    let statement_mutants = dev.iter().filter(|row| is_statement_mutant(row)).count();
+    assert_eq!(statement_mutants, 40);
+    let count = |variant: &Variant| dev.iter().filter(|row| variant.applies_to(row)).count();
+    assert_eq!((count(&K1), count(&E5)), (105, 100));
+    assert_eq!(rows_for(dev.clone(), &[&K1, &E5]).len(), 248);
+    assert_eq!(rows_for(dev.clone(), &[&K1, &F0]).len(), 248 + 40);
+    assert!(
+        dev.iter()
+            .filter(|row| is_statement_mutant(row))
+            .all(|row| F1.applies_to(row) && F0.applies_to(row) && !K1.applies_to(row))
+    );
+}
+
+/// Provenance: PLAT-1024 exp3, PR #633 review finding 6. Every committed
+/// statement label carries all four keys with `fr_statement_sound` = `no`
+/// exactly when a check fires; a missing key, an inconsistent aggregate, an
+/// unknown id or a held-out id is refused, never silently dropped.
+#[test]
+fn tc_1024_statement_labels_are_complete_or_refused() {
+    use eval_v2_support::assemble::{fixture_dir, statement_labels, statement_truth};
+    let read = |name: &str| -> Value {
+        serde_json::from_str(&std::fs::read_to_string(fixture_dir().join(name)).unwrap()).unwrap()
+    };
+    let sample = read("sample.json");
+    let labels = read("labels-fr-statement.json")["labels"].clone();
+    let checked = statement_labels(&labels, &sample).unwrap();
+    assert_eq!(checked.len(), 41);
+    assert!(checked.values().all(|truth| truth.len() == 4));
+    let entry = |sound: &str, compound: &str| {
+        json!({
+            "fr_statement_sound": {"answer": sound, "why": "w"},
+            "compound_obligation": {"answer": compound, "why": "w"},
+            "multiple_readings": {"answer": "no", "why": "w"},
+            "names_internal_symbol": {"answer": "no", "why": "w"},
+        })
+    };
+    assert!(statement_truth("N-1", &entry("no", "yes")).is_ok());
+    assert!(statement_truth("N-1", &entry("yes", "no")).is_ok());
+    assert!(statement_truth("N-1", &entry("yes", "yes")).is_err());
+    assert!(statement_truth("N-1", &entry("no", "no")).is_err());
+    let mut missing = entry("yes", "no");
+    missing.as_object_mut().unwrap().remove("multiple_readings");
+    assert!(
+        statement_truth("N-1", &missing)
+            .unwrap_err()
+            .contains("multiple_readings")
+    );
+    let heldout = sample["split"]
+        .as_object()
+        .unwrap()
+        .iter()
+        .find(|(_, split)| *split == "heldout")
+        .map(|(id, _)| id.clone())
+        .unwrap();
+    for id in ["N-999", heldout.as_str()] {
+        let mut bad = labels.clone();
+        bad[id] = entry("yes", "no");
+        assert!(statement_labels(&bad, &sample).is_err(), "{id} accepted");
+    }
+}
+
+/// Provenance: PLAT-1024 exp3, PR #633 review finding 5. With one pair per
+/// source, a source's pairs count once, by their majority outcome.
+#[test]
+fn tc_1024_statement_bar_d_counts_each_source_once() {
+    use eval_v2_support::variants::statement::{CHECKS, SOUND, bar_d, bar_d_per_source, injected};
+    let rows = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows;
+    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
+    let mutants: Vec<&Row> = rows.iter().filter(|row| injected(row).is_some()).collect();
+    let sources: std::collections::BTreeSet<&str> = mutants
+        .iter()
+        .filter_map(|row| row.mutation.as_ref().unwrap().source_id.as_deref())
+        .collect();
+    // Every mutant rises from 0.1 to 0.9, except the compound ones, which fall.
+    let scores: std::collections::BTreeMap<&str, f64> = rows
+        .iter()
+        .filter(|row| row.truth.contains_key(SOUND))
+        .map(|row| {
+            let score = match injected(row) {
+                None => 0.3,
+                Some("compound_obligation") => 0.1,
+                Some(_) => 0.9,
+            };
+            (row.id.as_str(), score)
+        })
+        .collect();
+    let every = bar_d(&rows, &scores, 0.5, &keys, SOUND);
+    let once = bar_d_per_source(&rows, &scores, 0.5, &keys, SOUND);
+    assert_eq!(every.pairs, mutants.len());
+    assert_eq!(once.pairs, sources.len());
+    // A source with one compound and two other mutants: 2 wins beat 1 loss.
+    assert!(once.successes > 0 && once.successes + once.failures + once.ties <= sources.len());
+    assert!(once.decided() < every.decided());
+}
+
+/// Provenance: PLAT-1024 exp3, PR #633 review finding 3. A statement mutant
+/// whose source is missing stops the run rather than leaving bar D's
+/// denominator.
+#[test]
+#[should_panic(expected = "is not among this run's rows")]
+fn tc_1024_statement_bar_d_refuses_a_missing_source() {
+    use eval_v2_support::variants::statement::{CHECKS, SOUND, bar_d, injected};
+    let rows: Vec<Row> = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows
+        .into_iter()
+        .filter(|row| row.mutation.is_some() && injected(row).is_some())
+        .collect();
+    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
+    let _ = bar_d(&rows, &std::collections::BTreeMap::new(), 0.5, &keys, SOUND);
+}

@@ -71,7 +71,7 @@ use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
 use super::variants::intent::{T0_RT, T1, T2, T3, TC_RC, TC_RT, TC_RTC};
-use super::variants::{exceeds, severity, soundness};
+use super::variants::{exceeds, severity, soundness, statement};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
 };
@@ -201,10 +201,33 @@ impl Variant {
         format!("{}@v{}", self.id, self.version)
     }
 
-    /// Whether this variant runs on `row`.
+    /// Whether this variant runs on `row`: the row's mode is one of its
+    /// modes, and a requirement-statement mutant (which carries truth only
+    /// for the statement keys) runs only on a variant graded on one of them,
+    /// so no other variant pays for rows it cannot score.
     pub(crate) fn applies_to(&self, row: &Row) -> bool {
         self.modes.contains(&row.mode)
+            && (!statement::is_statement_mutant(row) || self.scores_statement())
     }
+
+    /// Whether this variant is graded on a requirement-statement key.
+    pub(crate) fn scores_statement(&self) -> bool {
+        self.grades
+            .iter()
+            .any(|key| statement::GRADES.contains(key))
+    }
+}
+
+/// `rows` without the requirement-statement mutants when none of `variants`
+/// scores a statement key, so a run of other variants reports the same rows
+/// it did before those mutants existed.
+pub(crate) fn rows_for(rows: Vec<Row>, variants: &[&Variant]) -> Vec<Row> {
+    if variants.iter().any(|variant| variant.scores_statement()) {
+        return rows;
+    }
+    rows.into_iter()
+        .filter(|row| !statement::is_statement_mutant(row))
+        .collect()
 }
 
 /// Every variant, in the order a default run uses.
@@ -244,6 +267,9 @@ pub(crate) const REGISTRY: &[Variant] = &[
     // PLAT-1031 criterion-soundness variants; bars in spec/assurance/MP-243.
     soundness::K1,
     soundness::K2,
+    // PLAT-1024 experiment 3: the requirement statement's own checks (dev only).
+    statement::F0,
+    statement::F1,
 ];
 
 /// Resolves a comma-separated id list against [`REGISTRY`].

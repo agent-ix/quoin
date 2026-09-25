@@ -10839,6 +10839,962 @@
       },
       "patch": "diff --git a/rust/crates/quoin-cli/src/validate.rs b/rust/crates/quoin-cli/src/validate.rs\nindex 5fbcae34..e55c7de6 100644\n--- a/rust/crates/quoin-cli/src/validate.rs\n+++ b/rust/crates/quoin-cli/src/validate.rs\n@@ -14,7 +14,7 @@ use crate::core_runtime::invoke;\n pub(crate) fn command() -> Command {\n     Command::new(\"validate\")\n         .about(\"Validate repository QA gates and report located defects\")\n-        .arg(Arg::new(\"repo\").long(\"repo\").default_value(\".\"))\n+        .arg(Arg::new(\"repo\").long(\"repo\").alias(\"path\").default_value(\".\"))\n         .arg(Arg::new(\"strict\").long(\"strict\").action(ArgAction::SetTrue))\n         .arg(Arg::new(\"json\").long(\"json\").action(ArgAction::SetTrue))\n }\n",
       "outcome": "survived"
+    },
+    {
+      "id": "M-FRS-01",
+      "slot": "FRS-01",
+      "kind": "fr_statement",
+      "source": "N-117",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-018-map-plugin-sources.md",
+      "find": "`package:<pkg>[@<ver>]` to an npm source; and a bare argument to a path source.",
+      "replace": "`package:<pkg>[@<ver>]` to an npm source; and a bare argument to a path source, and SHALL print the resolved source to standard error.",
+      "description": "FR-018 statement: Adds a second, independent obligation (print the resolved source to stderr) joined with 'and SHALL'.",
+      "owning_test": {
+        "filter": "tc_446_061_an_unknown_prefix_is_kept_rather_than_stripped",
+        "name": "tc_446_061_an_unknown_prefix_is_kept_rather_than_stripped",
+        "package": "quoin-modules",
+        "selector": [
+          "--test",
+          "tc_446_source_arg_properties"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-018-map-plugin-sources.md b/spec/functional/FR-018-map-plugin-sources.md\nindex 7ec1408e..3ec822ec 100644\n--- a/spec/functional/FR-018-map-plugin-sources.md\n+++ b/spec/functional/FR-018-map-plugin-sources.md\n@@ -16,7 +16,7 @@ relationships:\n The CLI SHALL map a plugin source argument to a typed `ts-plugin-kit` source:\n `path:<dir>` to a path source; `github:<owner>/<repo>[@<ref>]` to a GitHub\n source; `github:<owner>/<repo>//<subdir>[@<ref>]` to a git-subdir source;\n-`package:<pkg>[@<ver>]` to an npm source; and a bare argument to a path source.\n+`package:<pkg>[@<ver>]` to an npm source; and a bare argument to a path source, and SHALL print the resolved source to standard error.\n \n ## Inputs\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-02",
+      "slot": "FRS-02",
+      "kind": "fr_statement",
+      "source": "N-117",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-018-map-plugin-sources.md",
+      "find": "and a bare argument to a path source.",
+      "replace": "and a bare argument to a path or GitHub source.",
+      "description": "FR-018 statement: A bare argument now maps 'to a path or GitHub source': one reading lets the implementation pick either, the other requires some unstated rule choosing between them; two different behaviours.",
+      "owning_test": {
+        "filter": "tc_446_061_an_unknown_prefix_is_kept_rather_than_stripped",
+        "name": "tc_446_061_an_unknown_prefix_is_kept_rather_than_stripped",
+        "package": "quoin-modules",
+        "selector": [
+          "--test",
+          "tc_446_source_arg_properties"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-018-map-plugin-sources.md b/spec/functional/FR-018-map-plugin-sources.md\nindex 7ec1408e..6a6fd2e4 100644\n--- a/spec/functional/FR-018-map-plugin-sources.md\n+++ b/spec/functional/FR-018-map-plugin-sources.md\n@@ -16,7 +16,7 @@ relationships:\n The CLI SHALL map a plugin source argument to a typed `ts-plugin-kit` source:\n `path:<dir>` to a path source; `github:<owner>/<repo>[@<ref>]` to a GitHub\n source; `github:<owner>/<repo>//<subdir>[@<ref>]` to a git-subdir source;\n-`package:<pkg>[@<ver>]` to an npm source; and a bare argument to a path source.\n+`package:<pkg>[@<ver>]` to an npm source; and a bare argument to a path or GitHub source.\n \n ## Inputs\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-03",
+      "slot": "FRS-03",
+      "kind": "fr_statement",
+      "source": "N-117",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-018-map-plugin-sources.md",
+      "find": "The CLI SHALL map a plugin source argument to a typed `ts-plugin-kit` source:",
+      "replace": "`parse_source_arg` SHALL map a plugin source argument to a typed `Source` value:",
+      "description": "FR-018 statement: Replaces the observable subject (the CLI) and the result with internal identifiers `parse_source_arg` and `Source` from quoin-modules/src/source.rs.",
+      "owning_test": {
+        "filter": "tc_446_061_an_unknown_prefix_is_kept_rather_than_stripped",
+        "name": "tc_446_061_an_unknown_prefix_is_kept_rather_than_stripped",
+        "package": "quoin-modules",
+        "selector": [
+          "--test",
+          "tc_446_source_arg_properties"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-018-map-plugin-sources.md b/spec/functional/FR-018-map-plugin-sources.md\nindex 7ec1408e..c1a64ed7 100644\n--- a/spec/functional/FR-018-map-plugin-sources.md\n+++ b/spec/functional/FR-018-map-plugin-sources.md\n@@ -13,7 +13,7 @@ relationships:\n \n ## Description\n \n-The CLI SHALL map a plugin source argument to a typed `ts-plugin-kit` source:\n+`parse_source_arg` SHALL map a plugin source argument to a typed `Source` value:\n `path:<dir>` to a path source; `github:<owner>/<repo>[@<ref>]` to a GitHub\n source; `github:<owner>/<repo>//<subdir>[@<ref>]` to a git-subdir source;\n `package:<pkg>[@<ver>]` to an npm source; and a bare argument to a path source.\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-04",
+      "slot": "FRS-04",
+      "kind": "fr_statement",
+      "source": "N-034",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-032-evidence-auditor.md",
+      "find": "report the ways evidence has rotted, without running anything.",
+      "replace": "report the ways evidence has rotted, without running anything, and SHALL delete every binding it reports as stale.",
+      "description": "FR-032 statement: Adds an independent obligation (delete stale bindings) joined with 'and SHALL'.",
+      "owning_test": {
+        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "package": "quoin-auditor",
+        "selector": [
+          "--test",
+          "tc_383_parity"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\nindex d185336e..435f1e21 100644\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n `quoin` SHALL audit the evidence store against the obligations of the day and\n-report the ways evidence has rotted, without running anything.\n+report the ways evidence has rotted, without running anything, and SHALL delete every binding it reports as stale.\n \n A trace link is currently a string match that never expires. Evidence rots in\n three ways, none of them detected before this:\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-05",
+      "slot": "FRS-05",
+      "kind": "fr_statement",
+      "source": "N-034",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-032-evidence-auditor.md",
+      "find": "`quoin` SHALL audit the evidence store against the obligations of the day and",
+      "replace": "`quoin` SHALL only audit the evidence store against the obligations of the day and",
+      "description": "FR-032 statement: Scope-ambiguous 'only': either quoin may do nothing but audit (never modify), or it audits the evidence store and no other store; two different behaviours.",
+      "owning_test": {
+        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "package": "quoin-auditor",
+        "selector": [
+          "--test",
+          "tc_383_parity"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\nindex d185336e..d8a9dbcf 100644\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -15,7 +15,7 @@ relationships:\n \n ## Description\n \n-`quoin` SHALL audit the evidence store against the obligations of the day and\n+`quoin` SHALL only audit the evidence store against the obligations of the day and\n report the ways evidence has rotted, without running anything.\n \n A trace link is currently a string match that never expires. Evidence rots in\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-06",
+      "slot": "FRS-06",
+      "kind": "fr_statement",
+      "source": "N-034",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-032-evidence-auditor.md",
+      "find": "report the ways evidence has rotted, without running anything.",
+      "replace": "return an `AuditReport` from `audit(&AuditInput)`, without running anything.",
+      "description": "FR-032 statement: Replaces the observable report with internal identifiers `AuditReport`, `audit` and `AuditInput` (quoin-auditor/src/audit).",
+      "owning_test": {
+        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "package": "quoin-auditor",
+        "selector": [
+          "--test",
+          "tc_383_parity"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\nindex d185336e..6debefd5 100644\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n `quoin` SHALL audit the evidence store against the obligations of the day and\n-report the ways evidence has rotted, without running anything.\n+return an `AuditReport` from `audit(&AuditInput)`, without running anything.\n \n A trace link is currently a string match that never expires. Evidence rots in\n three ways, none of them detected before this:\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-07",
+      "slot": "FRS-07",
+      "kind": "fr_statement",
+      "source": "N-019",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-041-sbom-inventory-evidence.md",
+      "find": "CycloneDX and SPDX inventories through the FR-033 adapter registry,",
+      "replace": "CycloneDX and SPDX inventories through the FR-033 adapter registry and SHALL reject any inventory older than 30 days,",
+      "description": "FR-041 statement: Adds an independent obligation (reject inventories older than 30 days) joined with 'and SHALL'.",
+      "owning_test": {
+        "filter": "tc_458_240_each_adapter_is_reachable_by_name_and_by_declared_tool",
+        "name": "adapters::registry::tests::tc_458_240_each_adapter_is_reachable_by_name_and_by_declared_tool",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-041-sbom-inventory-evidence.md b/spec/functional/FR-041-sbom-inventory-evidence.md\nindex a8b0b3a2..0259ab1a 100644\n--- a/spec/functional/FR-041-sbom-inventory-evidence.md\n+++ b/spec/functional/FR-041-sbom-inventory-evidence.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n The verification catalog declares `sca-sbom` and nothing could discharge it. `quoin` SHALL read\n-CycloneDX and SPDX inventories through the FR-033 adapter registry, so a supply-chain obligation has a\n+CycloneDX and SPDX inventories through the FR-033 adapter registry and SHALL reject any inventory older than 30 days, so a supply-chain obligation has a\n discharge path.\n \n ### The record shape was a real question, and FR-040 answered it\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-08",
+      "slot": "FRS-08",
+      "kind": "fr_statement",
+      "source": "N-019",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-041-sbom-inventory-evidence.md",
+      "find": "CycloneDX and SPDX inventories through the FR-033 adapter registry,",
+      "replace": "CycloneDX or SPDX inventories through the FR-033 adapter registry,",
+      "description": "FR-041 statement: 'CycloneDX or SPDX inventories': one reading requires both formats to be readable, the other is satisfied by supporting either one; two different behaviours.",
+      "owning_test": {
+        "filter": "tc_458_240_each_adapter_is_reachable_by_name_and_by_declared_tool",
+        "name": "adapters::registry::tests::tc_458_240_each_adapter_is_reachable_by_name_and_by_declared_tool",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-041-sbom-inventory-evidence.md b/spec/functional/FR-041-sbom-inventory-evidence.md\nindex a8b0b3a2..b0420e1a 100644\n--- a/spec/functional/FR-041-sbom-inventory-evidence.md\n+++ b/spec/functional/FR-041-sbom-inventory-evidence.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n The verification catalog declares `sca-sbom` and nothing could discharge it. `quoin` SHALL read\n-CycloneDX and SPDX inventories through the FR-033 adapter registry, so a supply-chain obligation has a\n+CycloneDX or SPDX inventories through the FR-033 adapter registry, so a supply-chain obligation has a\n discharge path.\n \n ### The record shape was a real question, and FR-040 answered it\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-09",
+      "slot": "FRS-09",
+      "kind": "fr_statement",
+      "source": "N-019",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-041-sbom-inventory-evidence.md",
+      "find": "CycloneDX and SPDX inventories through the FR-033 adapter registry,",
+      "replace": "CycloneDX and SPDX inventories through `parse_sbom` and `select_adapter`,",
+      "description": "FR-041 statement: Replaces the registry behaviour with internal function names `parse_sbom` and `select_adapter` (quoin-evidence/src/adapters).",
+      "owning_test": {
+        "filter": "tc_458_240_each_adapter_is_reachable_by_name_and_by_declared_tool",
+        "name": "adapters::registry::tests::tc_458_240_each_adapter_is_reachable_by_name_and_by_declared_tool",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-041-sbom-inventory-evidence.md b/spec/functional/FR-041-sbom-inventory-evidence.md\nindex a8b0b3a2..e3b00255 100644\n--- a/spec/functional/FR-041-sbom-inventory-evidence.md\n+++ b/spec/functional/FR-041-sbom-inventory-evidence.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n The verification catalog declares `sca-sbom` and nothing could discharge it. `quoin` SHALL read\n-CycloneDX and SPDX inventories through the FR-033 adapter registry, so a supply-chain obligation has a\n+CycloneDX and SPDX inventories through `parse_sbom` and `select_adapter`, so a supply-chain obligation has a\n discharge path.\n \n ### The record shape was a real question, and FR-040 answered it\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-10",
+      "slot": "FRS-10",
+      "kind": "fr_statement",
+      "source": "N-158",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-042-agent-eval-evidence.md",
+      "find": "report through the FR-033 registry,",
+      "replace": "report through the FR-033 registry and SHALL rerun every scenario whose pass rate is below 1.0,",
+      "description": "FR-042 statement: Adds an independent obligation (rerun failing scenarios) joined with 'and SHALL'.",
+      "owning_test": {
+        "filter": "tc_458_221_refuses_a_report_with_no_results",
+        "name": "adapters::agent_eval::tests::tc_458_221_refuses_a_report_with_no_results",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-042-agent-eval-evidence.md b/spec/functional/FR-042-agent-eval-evidence.md\nindex 8e7dfec2..8de0d6cc 100644\n--- a/spec/functional/FR-042-agent-eval-evidence.md\n+++ b/spec/functional/FR-042-agent-eval-evidence.md\n@@ -26,7 +26,7 @@ rested on somebody having run the evals.\n For `FR-038` they had been run — four scenarios, 4/4, live, with two genuine failures found and fixed\n along the way. The harness wrote `evals/reports/latest.json` and the repository dropped it.\n \n-`quoin` SHALL read a `cli-agent-evals` report through the FR-033 registry, so an eval suite becomes a\n+`quoin` SHALL read a `cli-agent-evals` report through the FR-033 registry and SHALL rerun every scenario whose pass rate is below 1.0, so an eval suite becomes a\n run record subject to the same freshness, staleness and vacuity checks as any other.\n \n ### The harness's verdict, not a second opinion\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-11",
+      "slot": "FRS-11",
+      "kind": "fr_statement",
+      "source": "N-158",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-042-agent-eval-evidence.md",
+      "find": "report through the FR-033 registry,",
+      "replace": "report through the FR-033 registry only when it is complete,",
+      "description": "FR-042 statement: Unscoped 'it': the report must be complete, or the registry must be complete; two different conditions on reading.",
+      "owning_test": {
+        "filter": "tc_458_221_refuses_a_report_with_no_results",
+        "name": "adapters::agent_eval::tests::tc_458_221_refuses_a_report_with_no_results",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-042-agent-eval-evidence.md b/spec/functional/FR-042-agent-eval-evidence.md\nindex 8e7dfec2..e15ec7f8 100644\n--- a/spec/functional/FR-042-agent-eval-evidence.md\n+++ b/spec/functional/FR-042-agent-eval-evidence.md\n@@ -26,7 +26,7 @@ rested on somebody having run the evals.\n For `FR-038` they had been run — four scenarios, 4/4, live, with two genuine failures found and fixed\n along the way. The harness wrote `evals/reports/latest.json` and the repository dropped it.\n \n-`quoin` SHALL read a `cli-agent-evals` report through the FR-033 registry, so an eval suite becomes a\n+`quoin` SHALL read a `cli-agent-evals` report through the FR-033 registry only when it is complete, so an eval suite becomes a\n run record subject to the same freshness, staleness and vacuity checks as any other.\n \n ### The harness's verdict, not a second opinion\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-12",
+      "slot": "FRS-12",
+      "kind": "fr_statement",
+      "source": "N-158",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-042-agent-eval-evidence.md",
+      "find": "`quoin` SHALL read a `cli-agent-evals` report through the FR-033 registry,",
+      "replace": "`parse_agent_eval` SHALL be called on a `cli-agent-evals` report through `select_adapter`,",
+      "description": "FR-042 statement: Replaces the observable subject and mechanism with internal function names `parse_agent_eval` and `select_adapter` (quoin-evidence/src/adapters).",
+      "owning_test": {
+        "filter": "tc_458_221_refuses_a_report_with_no_results",
+        "name": "adapters::agent_eval::tests::tc_458_221_refuses_a_report_with_no_results",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-042-agent-eval-evidence.md b/spec/functional/FR-042-agent-eval-evidence.md\nindex 8e7dfec2..d35c1912 100644\n--- a/spec/functional/FR-042-agent-eval-evidence.md\n+++ b/spec/functional/FR-042-agent-eval-evidence.md\n@@ -26,7 +26,7 @@ rested on somebody having run the evals.\n For `FR-038` they had been run — four scenarios, 4/4, live, with two genuine failures found and fixed\n along the way. The harness wrote `evals/reports/latest.json` and the repository dropped it.\n \n-`quoin` SHALL read a `cli-agent-evals` report through the FR-033 registry, so an eval suite becomes a\n+`parse_agent_eval` SHALL be called on a `cli-agent-evals` report through `select_adapter`, so an eval suite becomes a\n run record subject to the same freshness, staleness and vacuity checks as any other.\n \n ### The harness's verdict, not a second opinion\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-13",
+      "slot": "FRS-13",
+      "kind": "fr_statement",
+      "source": "N-110",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-050-reconcile-quire-decisions.md",
+      "find": "When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a",
+      "replace": "When the semantic-module architecture cites an existing Quire decision, the record SHALL link the decision's ADR file and SHALL assign a",
+      "description": "FR-050 statement: Adds an independent obligation (link the ADR file) joined with 'and SHALL'.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-050-reconcile-quire-decisions.md b/spec/functional/FR-050-reconcile-quire-decisions.md\nindex 8ff1d174..22bab5b1 100644\n--- a/spec/functional/FR-050-reconcile-quire-decisions.md\n+++ b/spec/functional/FR-050-reconcile-quire-decisions.md\n@@ -15,7 +15,7 @@ relationships:\n \n ## Description\n \n-When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a\n+When the semantic-module architecture cites an existing Quire decision, the record SHALL link the decision's ADR file and SHALL assign a\n preserved, clarified, partially superseded, or deferred disposition that names the current governing\n source.\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-14",
+      "slot": "FRS-14",
+      "kind": "fr_statement",
+      "source": "N-110",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-050-reconcile-quire-decisions.md",
+      "find": "partially superseded, or deferred disposition",
+      "replace": "partially superseded, and/or deferred disposition",
+      "description": "FR-050 statement: 'and/or' makes it unclear whether a record carries exactly one disposition or may carry several at once; two different behaviours.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-050-reconcile-quire-decisions.md b/spec/functional/FR-050-reconcile-quire-decisions.md\nindex 8ff1d174..0a6a294a 100644\n--- a/spec/functional/FR-050-reconcile-quire-decisions.md\n+++ b/spec/functional/FR-050-reconcile-quire-decisions.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a\n-preserved, clarified, partially superseded, or deferred disposition that names the current governing\n+preserved, clarified, partially superseded, and/or deferred disposition that names the current governing\n source.\n \n ## Rationale\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-15",
+      "slot": "FRS-15",
+      "kind": "fr_statement",
+      "source": "N-110",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-050-reconcile-quire-decisions.md",
+      "find": "disposition that names the current governing",
+      "replace": "disposition returned by `coverage::compute` naming the current governing",
+      "description": "FR-050 statement: Replaces the observable naming with the internal function `coverage::compute` (quoin-quire/src/coverage.rs); \"current\" is kept, so only the identifier changes.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-050-reconcile-quire-decisions.md b/spec/functional/FR-050-reconcile-quire-decisions.md\nindex 8ff1d174..0eb89fa6 100644\n--- a/spec/functional/FR-050-reconcile-quire-decisions.md\n+++ b/spec/functional/FR-050-reconcile-quire-decisions.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a\n-preserved, clarified, partially superseded, or deferred disposition that names the current governing\n+preserved, clarified, partially superseded, or deferred disposition returned by `coverage::compute` naming the current governing\n source.\n \n ## Rationale\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-16",
+      "slot": "FRS-16",
+      "kind": "fr_statement",
+      "source": "N-156",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-052-inventory-default-module-corpus.md",
+      "find": "without silently excluding malformed or untyped input.",
+      "replace": "without silently excluding malformed or untyped input, and SHALL open an issue for every malformed module it finds.",
+      "description": "FR-052 statement: Adds an independent obligation (open an issue per malformed module) joined with 'and SHALL'.",
+      "owning_test": {
+        "filter": "properties_answers_with_the_shape_map_keyed_on_the_obligation_id",
+        "name": "ops::quire::tests::properties_answers_with_the_shape_map_keyed_on_the_obligation_id",
+        "package": "quoin-core",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-052-inventory-default-module-corpus.md b/spec/functional/FR-052-inventory-default-module-corpus.md\nindex 5f9b22b5..9b35e552 100644\n--- a/spec/functional/FR-052-inventory-default-module-corpus.md\n+++ b/spec/functional/FR-052-inventory-default-module-corpus.md\n@@ -14,7 +14,7 @@ relationships:\n ## Description\n \n Given the frozen audit snapshot, the audit SHALL inventory every default module, declared semantic\n-type, contract surface, and Markdown document without silently excluding malformed or untyped input.\n+type, contract surface, and Markdown document without silently excluding malformed or untyped input, and SHALL open an issue for every malformed module it finds.\n \n ## Rationale\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-17",
+      "slot": "FRS-17",
+      "kind": "fr_statement",
+      "source": "N-156",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-052-inventory-default-module-corpus.md",
+      "find": "without silently excluding malformed or untyped input.",
+      "replace": "without silently excluding malformed and untyped input.",
+      "description": "FR-052 statement: 'malformed and untyped input': one reading protects only input that is both malformed and untyped, the other protects each kind; two different behaviours for malformed but typed input.",
+      "owning_test": {
+        "filter": "properties_answers_with_the_shape_map_keyed_on_the_obligation_id",
+        "name": "ops::quire::tests::properties_answers_with_the_shape_map_keyed_on_the_obligation_id",
+        "package": "quoin-core",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-052-inventory-default-module-corpus.md b/spec/functional/FR-052-inventory-default-module-corpus.md\nindex 5f9b22b5..0bfa6520 100644\n--- a/spec/functional/FR-052-inventory-default-module-corpus.md\n+++ b/spec/functional/FR-052-inventory-default-module-corpus.md\n@@ -14,7 +14,7 @@ relationships:\n ## Description\n \n Given the frozen audit snapshot, the audit SHALL inventory every default module, declared semantic\n-type, contract surface, and Markdown document without silently excluding malformed or untyped input.\n+type, contract surface, and Markdown document without silently excluding malformed and untyped input.\n \n ## Rationale\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-18",
+      "slot": "FRS-18",
+      "kind": "fr_statement",
+      "source": "N-156",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-052-inventory-default-module-corpus.md",
+      "find": "Given the frozen audit snapshot, the audit SHALL inventory every default module, declared semantic",
+      "replace": "Given the frozen audit snapshot, `markdown_files` and `classify_artifact` SHALL inventory every default module, declared semantic",
+      "description": "FR-052 statement: Replaces the observable subject (the audit) with internal function names `markdown_files` and `classify_artifact` (quoin-semantic).",
+      "owning_test": {
+        "filter": "properties_answers_with_the_shape_map_keyed_on_the_obligation_id",
+        "name": "ops::quire::tests::properties_answers_with_the_shape_map_keyed_on_the_obligation_id",
+        "package": "quoin-core",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-052-inventory-default-module-corpus.md b/spec/functional/FR-052-inventory-default-module-corpus.md\nindex 5f9b22b5..3f64c93a 100644\n--- a/spec/functional/FR-052-inventory-default-module-corpus.md\n+++ b/spec/functional/FR-052-inventory-default-module-corpus.md\n@@ -13,7 +13,7 @@ relationships:\n \n ## Description\n \n-Given the frozen audit snapshot, the audit SHALL inventory every default module, declared semantic\n+Given the frozen audit snapshot, `markdown_files` and `classify_artifact` SHALL inventory every default module, declared semantic\n type, contract surface, and Markdown document without silently excluding malformed or untyped input.\n \n ## Rationale\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-19",
+      "slot": "FRS-19",
+      "kind": "fr_statement",
+      "source": "N-101",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-070-semantic-module-manifest-extension.md",
+      "find": "mappings it uses, so that Quire, Quoin, and the compiler read one boundary.",
+      "replace": "mappings it uses, and Quoin SHALL refuse to install a module whose block names an unknown semantic-core version, so that Quire, Quoin, and the compiler read one boundary.",
+      "description": "FR-070 statement: Adds an independent obligation (refuse installs naming an unknown version) joined with 'and ... SHALL'.",
+      "owning_test": {
+        "filter": "tc_452_601_read_blocks_reads_a_module_block_through_the_boundary",
+        "name": "tc_452_601_read_blocks_reads_a_module_block_through_the_boundary",
+        "package": "quoin-core",
+        "selector": [
+          "--test",
+          "tc_452_semantic_boundary"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-070-semantic-module-manifest-extension.md b/spec/functional/FR-070-semantic-module-manifest-extension.md\nindex a914718f..b5d2468e 100644\n--- a/spec/functional/FR-070-semantic-module-manifest-extension.md\n+++ b/spec/functional/FR-070-semantic-module-manifest-extension.md\n@@ -18,7 +18,7 @@ relationships:\n Where a module declares semantic types, its manifest SHALL carry one optional\n `semantic` block, versioned independently of `manifest_version`, that names the\n semantic-core version it imports, the package identity it exports, and the\n-mappings it uses, so that Quire, Quoin, and the compiler read one boundary.\n+mappings it uses, and Quoin SHALL refuse to install a module whose block names an unknown semantic-core version, so that Quire, Quoin, and the compiler read one boundary.\n \n ## Rationale\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-20",
+      "slot": "FRS-20",
+      "kind": "fr_statement",
+      "source": "N-101",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-070-semantic-module-manifest-extension.md",
+      "find": "Where a module declares semantic types, its manifest SHALL carry one optional",
+      "replace": "Only where a module declares semantic types, its manifest SHALL carry one optional",
+      "description": "FR-070 statement: Scope-ambiguous 'Only where': either other manifests must not carry the block, or the obligation simply does not apply to them; two different behaviours.",
+      "owning_test": {
+        "filter": "tc_452_601_read_blocks_reads_a_module_block_through_the_boundary",
+        "name": "tc_452_601_read_blocks_reads_a_module_block_through_the_boundary",
+        "package": "quoin-core",
+        "selector": [
+          "--test",
+          "tc_452_semantic_boundary"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-070-semantic-module-manifest-extension.md b/spec/functional/FR-070-semantic-module-manifest-extension.md\nindex a914718f..a770cf81 100644\n--- a/spec/functional/FR-070-semantic-module-manifest-extension.md\n+++ b/spec/functional/FR-070-semantic-module-manifest-extension.md\n@@ -15,7 +15,7 @@ relationships:\n \n ## Description\n \n-Where a module declares semantic types, its manifest SHALL carry one optional\n+Only where a module declares semantic types, its manifest SHALL carry one optional\n `semantic` block, versioned independently of `manifest_version`, that names the\n semantic-core version it imports, the package identity it exports, and the\n mappings it uses, so that Quire, Quoin, and the compiler read one boundary.\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-21",
+      "slot": "FRS-21",
+      "kind": "fr_statement",
+      "source": "N-101",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-070-semantic-module-manifest-extension.md",
+      "find": "`semantic` block, versioned independently of `manifest_version`, that names the",
+      "replace": "`semantic` block, read by `read_semantic_block` and `pin_semantic`, that names the",
+      "description": "FR-070 statement: Replaces the observable versioning property with internal function names `read_semantic_block` and `pin_semantic` (quoin-semantic, quoin-modules).",
+      "owning_test": {
+        "filter": "tc_452_601_read_blocks_reads_a_module_block_through_the_boundary",
+        "name": "tc_452_601_read_blocks_reads_a_module_block_through_the_boundary",
+        "package": "quoin-core",
+        "selector": [
+          "--test",
+          "tc_452_semantic_boundary"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-070-semantic-module-manifest-extension.md b/spec/functional/FR-070-semantic-module-manifest-extension.md\nindex a914718f..6fee1523 100644\n--- a/spec/functional/FR-070-semantic-module-manifest-extension.md\n+++ b/spec/functional/FR-070-semantic-module-manifest-extension.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n Where a module declares semantic types, its manifest SHALL carry one optional\n-`semantic` block, versioned independently of `manifest_version`, that names the\n+`semantic` block, read by `read_semantic_block` and `pin_semantic`, that names the\n semantic-core version it imports, the package identity it exports, and the\n mappings it uses, so that Quire, Quoin, and the compiler read one boundary.\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-22",
+      "slot": "FRS-22",
+      "kind": "fr_statement",
+      "source": "N-147",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-072-invariants-and-operations-mapping.md",
+      "find": "fixtures that Quire implements, so that one clause has one language and one",
+      "replace": "fixtures that Quire implements, and SHALL regenerate those fixtures on every release, so that one clause has one language and one",
+      "description": "FR-072 statement: Adds an independent obligation (regenerate fixtures each release) joined with 'and SHALL'.",
+      "owning_test": {
+        "filter": "tc_452_653_no_source_in_the_crate_typechecks_or_evaluates_a_clause",
+        "name": "tc_452_653_no_source_in_the_crate_typechecks_or_evaluates_a_clause",
+        "package": "quoin-semantic",
+        "selector": [
+          "--test",
+          "tc_452_sweep_criteria"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-072-invariants-and-operations-mapping.md b/spec/functional/FR-072-invariants-and-operations-mapping.md\nindex 1ac7f93f..989ed7be 100644\n--- a/spec/functional/FR-072-invariants-and-operations-mapping.md\n+++ b/spec/functional/FR-072-invariants-and-operations-mapping.md\n@@ -15,7 +15,7 @@ relationships:\n \n Quoin SHALL publish the mapping from `## Invariants` and `## Operations`\n sections to semantic-core `ClauseRef[]` and `OperationDecl[]` as golden\n-fixtures that Quire implements, so that one clause has one language and one\n+fixtures that Quire implements, and SHALL regenerate those fixtures on every release, so that one clause has one language and one\n editable authority.\n \n ## Rationale\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-23",
+      "slot": "FRS-23",
+      "kind": "fr_statement",
+      "source": "N-147",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-072-invariants-and-operations-mapping.md",
+      "find": "fixtures that Quire implements, so that one clause has one language and one",
+      "replace": "fixtures that it implements, so that one clause has one language and one",
+      "description": "FR-072 statement: Unscoped 'it': the fixtures are implemented by Quoin or by Quire; two different owners, two different behaviours.",
+      "owning_test": {
+        "filter": "tc_452_653_no_source_in_the_crate_typechecks_or_evaluates_a_clause",
+        "name": "tc_452_653_no_source_in_the_crate_typechecks_or_evaluates_a_clause",
+        "package": "quoin-semantic",
+        "selector": [
+          "--test",
+          "tc_452_sweep_criteria"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-072-invariants-and-operations-mapping.md b/spec/functional/FR-072-invariants-and-operations-mapping.md\nindex 1ac7f93f..c840f50e 100644\n--- a/spec/functional/FR-072-invariants-and-operations-mapping.md\n+++ b/spec/functional/FR-072-invariants-and-operations-mapping.md\n@@ -15,7 +15,7 @@ relationships:\n \n Quoin SHALL publish the mapping from `## Invariants` and `## Operations`\n sections to semantic-core `ClauseRef[]` and `OperationDecl[]` as golden\n-fixtures that Quire implements, so that one clause has one language and one\n+fixtures that it implements, so that one clause has one language and one\n editable authority.\n \n ## Rationale\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-24",
+      "slot": "FRS-24",
+      "kind": "fr_statement",
+      "source": "N-152",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-074-legacy-authoring-forms.md",
+      "find": "migration, so that no corpus repository is edited by this campaign and no",
+      "replace": "migration, and SHALL rewrite the section into the typed form when run with `--fix`, so that no corpus repository is edited by this campaign and no",
+      "description": "FR-074 statement: Adds an independent obligation (rewrite under --fix) joined with 'and SHALL'.",
+      "owning_test": {
+        "filter": "tc_452_654_the_classifier_answers_every_recorded_legacy_expectation",
+        "name": "tc_452_654_the_classifier_answers_every_recorded_legacy_expectation",
+        "package": "quoin-semantic",
+        "selector": [
+          "--test",
+          "tc_452_sweep_criteria"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-074-legacy-authoring-forms.md b/spec/functional/FR-074-legacy-authoring-forms.md\nindex 9398fe45..fb88f258 100644\n--- a/spec/functional/FR-074-legacy-authoring-forms.md\n+++ b/spec/functional/FR-074-legacy-authoring-forms.md\n@@ -15,7 +15,7 @@ relationships:\n \n When an artifact under a semantic module authors its Properties section in a\n legacy form, Quire SHALL accept it at `warning` severity with a declared\n-migration, so that no corpus repository is edited by this campaign and no\n+migration, and SHALL rewrite the section into the typed form when run with `--fix`, so that no corpus repository is edited by this campaign and no\n current artifact becomes invalid.\n \n ## Rationale\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-25",
+      "slot": "FRS-25",
+      "kind": "fr_statement",
+      "source": "N-152",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-074-legacy-authoring-forms.md",
+      "find": "legacy form, Quire SHALL accept it at `warning` severity with a declared",
+      "replace": "legacy form, `classify_artifact` SHALL return `PropertiesForm::FreeColumnTable` at `warning` severity with a declared",
+      "description": "FR-074 statement: Replaces the observable acceptance with internal identifiers `classify_artifact` and `PropertiesForm::FreeColumnTable` (quoin-semantic/src/sweep.rs).",
+      "owning_test": {
+        "filter": "tc_452_654_the_classifier_answers_every_recorded_legacy_expectation",
+        "name": "tc_452_654_the_classifier_answers_every_recorded_legacy_expectation",
+        "package": "quoin-semantic",
+        "selector": [
+          "--test",
+          "tc_452_sweep_criteria"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-074-legacy-authoring-forms.md b/spec/functional/FR-074-legacy-authoring-forms.md\nindex 9398fe45..5039ff7b 100644\n--- a/spec/functional/FR-074-legacy-authoring-forms.md\n+++ b/spec/functional/FR-074-legacy-authoring-forms.md\n@@ -14,7 +14,7 @@ relationships:\n ## Description\n \n When an artifact under a semantic module authors its Properties section in a\n-legacy form, Quire SHALL accept it at `warning` severity with a declared\n+legacy form, `classify_artifact` SHALL return `PropertiesForm::FreeColumnTable` at `warning` severity with a declared\n migration, so that no corpus repository is edited by this campaign and no\n current artifact becomes invalid.\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-26",
+      "slot": "FRS-26",
+      "kind": "fr_statement",
+      "source": "N-037",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-096-versioned-rust-engine-boundary.md",
+      "find": "distinguishes every non-success state, and admits no Node runtime type.",
+      "replace": "distinguishes every non-success state, and admits no Node runtime type, and Quoin SHALL log every boundary request to a rotating audit file.",
+      "description": "FR-096 statement: Adds an independent obligation (log every request) joined with 'and ... SHALL'.",
+      "owning_test": {
+        "filter": "tc_378_001_every_code_round_trips",
+        "name": "error::tests::tc_378_001_every_code_round_trips",
+        "package": "quoin-semantic",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-096-versioned-rust-engine-boundary.md b/spec/functional/FR-096-versioned-rust-engine-boundary.md\nindex 23c1729e..0e364b9b 100644\n--- a/spec/functional/FR-096-versioned-rust-engine-boundary.md\n+++ b/spec/functional/FR-096-versioned-rust-engine-boundary.md\n@@ -16,7 +16,7 @@ relationships:\n Quoin SHALL expose its first-party engine, production and qualification\n behaviour to the retained TypeScript through one versioned `quoin-core`\n subprocess boundary that carries structured request and result documents,\n-distinguishes every non-success state, and admits no Node runtime type.\n+distinguishes every non-success state, and admits no Node runtime type, and Quoin SHALL log every boundary request to a rotating audit file.\n \n ## Inputs\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-27",
+      "slot": "FRS-27",
+      "kind": "fr_statement",
+      "source": "N-037",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-096-versioned-rust-engine-boundary.md",
+      "find": "behaviour to the retained TypeScript through one versioned `quoin-core`",
+      "replace": "behaviour only to the retained TypeScript through one versioned `quoin-core`",
+      "description": "FR-096 statement: Scope-ambiguous 'only': either no consumer but the retained TypeScript may reach the behaviour, or the TypeScript may reach it only through the boundary; two different behaviours.",
+      "owning_test": {
+        "filter": "tc_378_001_every_code_round_trips",
+        "name": "error::tests::tc_378_001_every_code_round_trips",
+        "package": "quoin-semantic",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-096-versioned-rust-engine-boundary.md b/spec/functional/FR-096-versioned-rust-engine-boundary.md\nindex 23c1729e..02d96e4d 100644\n--- a/spec/functional/FR-096-versioned-rust-engine-boundary.md\n+++ b/spec/functional/FR-096-versioned-rust-engine-boundary.md\n@@ -14,7 +14,7 @@ relationships:\n ## Description\n \n Quoin SHALL expose its first-party engine, production and qualification\n-behaviour to the retained TypeScript through one versioned `quoin-core`\n+behaviour only to the retained TypeScript through one versioned `quoin-core`\n subprocess boundary that carries structured request and result documents,\n distinguishes every non-success state, and admits no Node runtime type.\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-28",
+      "slot": "FRS-28",
+      "kind": "fr_statement",
+      "source": "N-037",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-096-versioned-rust-engine-boundary.md",
+      "find": "distinguishes every non-success state, and admits no Node runtime type.",
+      "replace": "maps every non-success state through `SemanticErrorCode::from_code`, and admits no Node runtime type.",
+      "description": "FR-096 statement: Replaces the observable distinction with the internal identifier `SemanticErrorCode::from_code` (quoin-semantic/src/error.rs).",
+      "owning_test": {
+        "filter": "tc_378_001_every_code_round_trips",
+        "name": "error::tests::tc_378_001_every_code_round_trips",
+        "package": "quoin-semantic",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-096-versioned-rust-engine-boundary.md b/spec/functional/FR-096-versioned-rust-engine-boundary.md\nindex 23c1729e..cda64339 100644\n--- a/spec/functional/FR-096-versioned-rust-engine-boundary.md\n+++ b/spec/functional/FR-096-versioned-rust-engine-boundary.md\n@@ -16,7 +16,7 @@ relationships:\n Quoin SHALL expose its first-party engine, production and qualification\n behaviour to the retained TypeScript through one versioned `quoin-core`\n subprocess boundary that carries structured request and result documents,\n-distinguishes every non-success state, and admits no Node runtime type.\n+maps every non-success state through `SemanticErrorCode::from_code`, and admits no Node runtime type.\n \n ## Inputs\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-29",
+      "slot": "FRS-29",
+      "kind": "fr_statement",
+      "source": "N-063",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
+      "find": "reached through the `quoin-core` boundary, preserving one catalog and one module",
+      "replace": "reached through the `quoin-core` boundary, and SHALL publish each crate to crates.io, preserving one catalog and one module",
+      "description": "FR-099 statement: Adds an independent obligation (publish each crate) joined with 'and SHALL'.",
+      "owning_test": {
+        "filter": "tc_474_023_the_verdict_capture_records_its_provenance",
+        "name": "tc_474_023_the_verdict_capture_records_its_provenance",
+        "package": "quoin-quire",
+        "selector": [
+          "--test",
+          "tc_474_assurance_parity"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-099-rust-catalog-and-validation-capability.md b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\nindex ef0551dd..ef63a312 100644\n--- a/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n+++ b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n@@ -23,7 +23,7 @@ relationships:\n \n Quoin SHALL implement its Quire adapter, validators, semantic and completeness\n analysis, configuration, plugin, module and catalog behaviour in Rust crates\n-reached through the `quoin-core` boundary, preserving one catalog and one module\n+reached through the `quoin-core` boundary, and SHALL publish each crate to crates.io, preserving one catalog and one module\n store.\n \n ## Inputs\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-30",
+      "slot": "FRS-30",
+      "kind": "fr_statement",
+      "source": "N-063",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
+      "find": "configuration, plugin, module and catalog behaviour in Rust crates",
+      "replace": "configuration, plugin, module and/or catalog behaviour in Rust crates",
+      "description": "FR-099 statement: 'and/or' makes it unclear whether all the listed behaviour must be in Rust or any subset suffices; two different behaviours.",
+      "owning_test": {
+        "filter": "tc_474_023_the_verdict_capture_records_its_provenance",
+        "name": "tc_474_023_the_verdict_capture_records_its_provenance",
+        "package": "quoin-quire",
+        "selector": [
+          "--test",
+          "tc_474_assurance_parity"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-099-rust-catalog-and-validation-capability.md b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\nindex ef0551dd..522e8279 100644\n--- a/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n+++ b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n@@ -22,7 +22,7 @@ relationships:\n ## Description\n \n Quoin SHALL implement its Quire adapter, validators, semantic and completeness\n-analysis, configuration, plugin, module and catalog behaviour in Rust crates\n+analysis, configuration, plugin, module and/or catalog behaviour in Rust crates\n reached through the `quoin-core` boundary, preserving one catalog and one module\n store.\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-31",
+      "slot": "FRS-31",
+      "kind": "fr_statement",
+      "source": "N-063",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
+      "find": "Quoin SHALL implement its Quire adapter, validators, semantic and completeness",
+      "replace": "Quoin SHALL implement `Provenance::current`, `check_premise`, validators, semantic and completeness",
+      "description": "FR-099 statement: Replaces the observable 'Quire adapter' with internal identifiers `Provenance::current` and `check_premise` (quoin-quire/src/engine.rs).",
+      "owning_test": {
+        "filter": "tc_474_023_the_verdict_capture_records_its_provenance",
+        "name": "tc_474_023_the_verdict_capture_records_its_provenance",
+        "package": "quoin-quire",
+        "selector": [
+          "--test",
+          "tc_474_assurance_parity"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-099-rust-catalog-and-validation-capability.md b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\nindex ef0551dd..136d946c 100644\n--- a/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n+++ b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n@@ -21,7 +21,7 @@ relationships:\n \n ## Description\n \n-Quoin SHALL implement its Quire adapter, validators, semantic and completeness\n+Quoin SHALL implement `Provenance::current`, `check_premise`, validators, semantic and completeness\n analysis, configuration, plugin, module and catalog behaviour in Rust crates\n reached through the `quoin-core` boundary, preserving one catalog and one module\n store.\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-32",
+      "slot": "FRS-32",
+      "kind": "fr_statement",
+      "source": "N-004",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/functional/FR-100-rust-evidence-measurement-change-assurance.md",
+      "find": "measurement model and consuming shared assurance capability from",
+      "replace": "measurement model, and SHALL delete the TypeScript evidence store, consuming shared assurance capability from",
+      "description": "FR-100 statement: Adds an independent obligation (delete the TypeScript store) joined with 'and SHALL'.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md b/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\nindex 8d1555b6..9bf7105f 100644\n--- a/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\n+++ b/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\n@@ -24,7 +24,7 @@ relationships:\n Quoin SHALL implement its evidence store, change-assurance, audit, advisory,\n assurance, graph-analysis and measurement behaviour in Rust crates reached\n through the `quoin-core` boundary, keeping one evidence store and one\n-measurement model and consuming shared assurance capability from\n+measurement model, and SHALL delete the TypeScript evidence store, consuming shared assurance capability from\n `engineering-assurance`.\n \n ## Inputs\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-33",
+      "slot": "FRS-33",
+      "kind": "fr_statement",
+      "source": "N-004",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/functional/FR-100-rust-evidence-measurement-change-assurance.md",
+      "find": "Quoin SHALL implement its evidence store, change-assurance, audit, advisory,",
+      "replace": "Quoin SHALL only implement its evidence store, change-assurance, audit, advisory,",
+      "description": "FR-100 statement: Scope-ambiguous 'only': either Quoin implements nothing beyond these, or it implements them only in Rust crates; two different behaviours.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md b/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\nindex 8d1555b6..04e801e1 100644\n--- a/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\n+++ b/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\n@@ -21,7 +21,7 @@ relationships:\n \n ## Description\n \n-Quoin SHALL implement its evidence store, change-assurance, audit, advisory,\n+Quoin SHALL only implement its evidence store, change-assurance, audit, advisory,\n assurance, graph-analysis and measurement behaviour in Rust crates reached\n through the `quoin-core` boundary, keeping one evidence store and one\n measurement model and consuming shared assurance capability from\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-34",
+      "slot": "FRS-34",
+      "kind": "fr_statement",
+      "source": "N-004",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/functional/FR-100-rust-evidence-measurement-change-assurance.md",
+      "find": "through the `quoin-core` boundary, keeping one evidence store and one",
+      "replace": "through the `quoin-core` boundary, keeping one `EvidenceSource` implementation and one",
+      "description": "FR-100 statement: Replaces the observable 'one evidence store' with the internal trait name `EvidenceSource` (quoin-evidence).",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md b/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\nindex 8d1555b6..8fa8dc9c 100644\n--- a/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\n+++ b/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\n@@ -23,7 +23,7 @@ relationships:\n \n Quoin SHALL implement its evidence store, change-assurance, audit, advisory,\n assurance, graph-analysis and measurement behaviour in Rust crates reached\n-through the `quoin-core` boundary, keeping one evidence store and one\n+through the `quoin-core` boundary, keeping one `EvidenceSource` implementation and one\n measurement model and consuming shared assurance capability from\n `engineering-assurance`.\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-35",
+      "slot": "FRS-35",
+      "kind": "fr_statement",
+      "source": "N-091",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md",
+      "find": "advisory sweep report exists and a human promotes an enforcing module release.",
+      "replace": "advisory sweep report exists and a human promotes an enforcing module release, and SHALL email the module owner whenever a severity is promoted.",
+      "description": "NFR-017 statement: Adds an independent obligation (email the owner) joined with 'and SHALL'.",
+      "owning_test": {
+        "filter": "tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003",
+        "name": "tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003",
+        "package": "quoin-semantic",
+        "selector": [
+          "--test",
+          "tc_452_contract_criteria"
+        ]
+      },
+      "patch": "diff --git a/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md b/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md\nindex 2d217703..6168f790 100644\n--- a/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md\n+++ b/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md\n@@ -24,7 +24,7 @@ relationships:\n \n The semantic-module contract SHALL keep every currently installed manifest and\n every current corpus artifact valid at their current severity until the\n-advisory sweep report exists and a human promotes an enforcing module release.\n+advisory sweep report exists and a human promotes an enforcing module release, and SHALL email the module owner whenever a severity is promoted.\n \n ## Scope\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-36",
+      "slot": "FRS-36",
+      "kind": "fr_statement",
+      "source": "N-091",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md",
+      "find": "every current corpus artifact valid at their current severity until the",
+      "replace": "every current corpus artifact valid at its current severity until the",
+      "description": "NFR-017 statement: Unscoped 'its': the contract's current severity or each artifact's current severity; two different behaviours.",
+      "owning_test": {
+        "filter": "tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003",
+        "name": "tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003",
+        "package": "quoin-semantic",
+        "selector": [
+          "--test",
+          "tc_452_contract_criteria"
+        ]
+      },
+      "patch": "diff --git a/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md b/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md\nindex 2d217703..843b48d4 100644\n--- a/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md\n+++ b/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md\n@@ -23,7 +23,7 @@ relationships:\n ## Statement\n \n The semantic-module contract SHALL keep every currently installed manifest and\n-every current corpus artifact valid at their current severity until the\n+every current corpus artifact valid at its current severity until the\n advisory sweep report exists and a human promotes an enforcing module release.\n \n ## Scope\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-37",
+      "slot": "FRS-37",
+      "kind": "fr_statement",
+      "source": "N-091",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md",
+      "find": "The semantic-module contract SHALL keep every currently installed manifest and",
+      "replace": "`ContractGate::validate_installed` SHALL keep every currently installed manifest and",
+      "description": "NFR-017 statement: Replaces the observable subject with the internal method `ContractGate::validate_installed` (quoin-modules/src/contract_gate.rs).",
+      "owning_test": {
+        "filter": "tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003",
+        "name": "tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003",
+        "package": "quoin-semantic",
+        "selector": [
+          "--test",
+          "tc_452_contract_criteria"
+        ]
+      },
+      "patch": "diff --git a/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md b/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md\nindex 2d217703..5f4e0af8 100644\n--- a/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md\n+++ b/spec/non-functional/NFR-017-non-disruptive-manifest-evolution.md\n@@ -22,7 +22,7 @@ relationships:\n \n ## Statement\n \n-The semantic-module contract SHALL keep every currently installed manifest and\n+`ContractGate::validate_installed` SHALL keep every currently installed manifest and\n every current corpus artifact valid at their current severity until the\n advisory sweep report exists and a human promotes an enforcing module release.\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-38",
+      "slot": "FRS-38",
+      "kind": "fr_statement",
+      "source": "N-108",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "compound_obligation",
+      "file": "spec/non-functional/NFR-021-reproducible-corpus-measurement.md",
+      "find": "same recorded corpus and module revisions.",
+      "replace": "same recorded corpus and module revisions, and SHALL upload each result artifact to the release page.",
+      "description": "NFR-021 statement: Adds an independent obligation (upload artifacts) joined with 'and SHALL'.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\nindex 318e34d2..43706adb 100644\n--- a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n+++ b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n@@ -38,7 +38,7 @@ relationships:\n ## Statement\n \n The corpus measurement SHALL produce byte-identical result artifacts across repeated runs over the\n-same recorded corpus and module revisions.\n+same recorded corpus and module revisions, and SHALL upload each result artifact to the release page.\n \n ## Scope\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-39",
+      "slot": "FRS-39",
+      "kind": "fr_statement",
+      "source": "N-108",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "multiple_readings",
+      "file": "spec/non-functional/NFR-021-reproducible-corpus-measurement.md",
+      "find": "same recorded corpus and module revisions.",
+      "replace": "same recorded corpus and module revisions when it is sealed.",
+      "description": "NFR-021 statement: Unscoped 'it': the corpus or the measurement must be sealed; two different conditions.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\nindex 318e34d2..c4ccfbcf 100644\n--- a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n+++ b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n@@ -38,7 +38,7 @@ relationships:\n ## Statement\n \n The corpus measurement SHALL produce byte-identical result artifacts across repeated runs over the\n-same recorded corpus and module revisions.\n+same recorded corpus and module revisions when it is sealed.\n \n ## Scope\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-FRS-40",
+      "slot": "FRS-40",
+      "kind": "fr_statement",
+      "source": "N-108",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "names_internal_symbol",
+      "file": "spec/non-functional/NFR-021-reproducible-corpus-measurement.md",
+      "find": "The corpus measurement SHALL produce byte-identical result artifacts across repeated runs over the",
+      "replace": "`SweepIdentity` and `classify_artifact` SHALL produce byte-identical result artifacts across repeated runs over the",
+      "description": "NFR-021 statement: Replaces the observable subject with internal identifiers `SweepIdentity` and `classify_artifact` (quoin-semantic/src/sweep.rs).",
+      "owning_test": null,
+      "patch": "diff --git a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\nindex 318e34d2..ab5ec764 100644\n--- a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n+++ b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n@@ -37,7 +37,7 @@ relationships:\n \n ## Statement\n \n-The corpus measurement SHALL produce byte-identical result artifacts across repeated runs over the\n+`SweepIdentity` and `classify_artifact` SHALL produce byte-identical result artifacts across repeated runs over the\n same recorded corpus and module revisions.\n \n ## Scope\n",
+      "outcome": "n/a"
     }
   ]
 }
