@@ -139,11 +139,7 @@ fn k_aggregate_d(rows: &[Row], by_id: &BTreeMap<&str, &KRow<'_>>, rule: &KRule) 
             tally.source_already_yes += 1;
             continue;
         }
-        let score = |row: &Row| {
-            by_id
-                .get(row.id.as_str())
-                .map(|k| rule.score(&k.p) + shift)
-        };
+        let score = |row: &Row| by_id.get(row.id.as_str()).map(|k| rule.score(&k.p) + shift);
         match score(pair.source).zip(score(pair.mutant)) {
             None => {
                 tally.abstained += 1;
@@ -185,10 +181,8 @@ fn k_check_d(rows: &[Row], by_id: &BTreeMap<&str, &KRow<'_>>, rule: &KRule) -> B
             ((*id).to_owned(), out)
         })
         .collect();
-    let map: BTreeMap<&str, &Predictions> = predictions
-        .iter()
-        .map(|(id, p)| (id.as_str(), p))
-        .collect();
+    let map: BTreeMap<&str, &Predictions> =
+        predictions.iter().map(|(id, p)| (id.as_str(), p)).collect();
     soundness::bar_d(&pairs(rows), &map)
 }
 
@@ -217,7 +211,10 @@ fn k_report(out: &mut String, rows: &[Row], output: &RunOutput, label: &str) -> 
         .iter()
         .filter(|k| primary(k.row, SOUND).as_deref() == Some(NO))
         .collect();
-    let mutants = defective.iter().filter(|k| k.row.mutation.is_some()).count();
+    let mutants = defective
+        .iter()
+        .filter(|k| k.row.mutation.is_some())
+        .count();
     let _ = writeln!(
         out,
         "\n## {label}: per-check fire rates (P >= 0.5)\n\n{} rows; `{SOUND}` = yes on {} \
@@ -429,7 +426,11 @@ impl ERule {
     }
 }
 
-fn e_bar_d(rows: &[Row], erows: &[ERow<'_>], rule: &ERule) -> Result<metrics::PairedContrast, String> {
+fn e_bar_d(
+    rows: &[Row],
+    erows: &[ERow<'_>],
+    rule: &ERule,
+) -> Result<metrics::PairedContrast, String> {
     let label = format!("exp2 {}", rule.name);
     let shift = exceeds::PAIRED_TAU - rule.tau;
     let output = RunOutput {
@@ -471,7 +472,12 @@ fn e_bar_d(rows: &[Row], erows: &[ERow<'_>], rule: &ERule) -> Result<metrics::Pa
     )
 }
 
-fn e_report(out: &mut String, rows: &[Row], output: &RunOutput, label: &str) -> Result<Vec<String>, String> {
+fn e_report(
+    out: &mut String,
+    rows: &[Row],
+    output: &RunOutput,
+    label: &str,
+) -> Result<Vec<String>, String> {
     let erows = e_rows(rows, output, label)?;
     let key = exceeds::KEY;
     let sound: Vec<&ERow<'_>> = erows
@@ -491,7 +497,10 @@ fn e_report(out: &mut String, rows: &[Row], output: &RunOutput, label: &str) -> 
         erows.len(),
         sound.len(),
         defective.len(),
-        defective.iter().filter(|e| e.row.mutation.is_some()).count(),
+        defective
+            .iter()
+            .filter(|e| e.row.mutation.is_some())
+            .count(),
         erows.len() - sound.len() - defective.len(),
     );
     for n in 0..=5 {
@@ -615,9 +624,8 @@ pub(crate) fn write(dir: &Path, rows: &[Row], output: &RunOutput) -> Result<(), 
     std::fs::create_dir_all(dir).map_err(|error| format!("{}: {error}", dir.display()))?;
     let labels: std::collections::BTreeSet<&str> =
         output.results.iter().map(|r| r.variant.as_str()).collect();
-    let mut report = String::from(
-        "# Experiment 2: K1 / E5 false alarms (dev only; informational)\n",
-    );
+    let mut report =
+        String::from("# Experiment 2: K1 / E5 false alarms (dev only; informational)\n");
     let put = |name: String, lines: &[String]| {
         let path = dir.join(name);
         std::fs::write(&path, lines.join("\n") + "\n")
