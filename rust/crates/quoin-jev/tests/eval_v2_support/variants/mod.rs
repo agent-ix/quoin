@@ -8,6 +8,7 @@
 
 pub(crate) mod exceeds;
 pub(crate) mod intent;
+pub(crate) mod refusal;
 pub(crate) mod severity;
 pub(crate) mod soundness;
 pub(crate) mod statement;

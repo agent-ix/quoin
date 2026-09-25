@@ -11795,6 +11795,884 @@
       "owning_test": null,
       "patch": "diff --git a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\nindex 318e34d2..ab5ec764 100644\n--- a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n+++ b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n@@ -37,7 +37,7 @@ relationships:\n \n ## Statement\n \n-The corpus measurement SHALL produce byte-identical result artifacts across repeated runs over the\n+`SweepIdentity` and `classify_artifact` SHALL produce byte-identical result artifacts across repeated runs over the\n same recorded corpus and module revisions.\n \n ## Scope\n",
       "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-01",
+      "slot": "ACR-01",
+      "kind": "ac_refusal",
+      "source": "N-158",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "oracle_is_adjectival",
+      "file": "spec/functional/FR-042-agent-eval-evidence.md",
+      "find": "is refused.",
+      "replace": "is handled appropriately.",
+      "description": "FR-042-AC-4: The refusal becomes 'handled appropriately': a quality word with no observable result.",
+      "owning_test": {
+        "filter": "tc_458_221_refuses_a_report_with_no_results",
+        "name": "adapters::agent_eval::tests::tc_458_221_refuses_a_report_with_no_results",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-042-agent-eval-evidence.md b/spec/functional/FR-042-agent-eval-evidence.md\n--- a/spec/functional/FR-042-agent-eval-evidence.md\n+++ b/spec/functional/FR-042-agent-eval-evidence.md\n@@ -67,7 +67,7 @@\n | FR-042-AC-1 | A real report yields one entry per scenario, keyed on the scenario id. | Test (TC-240) |\n | FR-042-AC-2 | The scenario id is its own trace id; no second identity is invented. | Test (TC-241) |\n | FR-042-AC-3 | The outcome is the harness's `ok`, and `passRate` is kept so flaky is distinguishable from failing. | Test (TC-242) |\n-| FR-042-AC-4 | A report with no scenario results is refused. | Test (TC-243) |\n+| FR-042-AC-4 | A report with no scenario results is handled appropriately. | Test (TC-243) |\n | FR-042-AC-5 | The adapter is selected by `--adapter agent-eval` and by the harness name. | Test (TC-244) |\n \n ## Constraints\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-02",
+      "slot": "ACR-02",
+      "kind": "ac_refusal",
+      "source": "N-119",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "oracle_is_adjectival",
+      "file": "spec/functional/FR-041-sbom-inventory-evidence.md",
+      "find": "is refused, not read as empty.",
+      "replace": "is handled gracefully.",
+      "description": "FR-041-AC-4: The refusal (and 'not read as empty') becomes 'handled gracefully': a quality word with no observable result.",
+      "owning_test": {
+        "filter": "tc_458_233_an_unrecognised_document_names_its_first_six_keys",
+        "name": "adapters::sbom::tests::tc_458_233_an_unrecognised_document_names_its_first_six_keys",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-041-sbom-inventory-evidence.md b/spec/functional/FR-041-sbom-inventory-evidence.md\n--- a/spec/functional/FR-041-sbom-inventory-evidence.md\n+++ b/spec/functional/FR-041-sbom-inventory-evidence.md\n@@ -79,7 +79,7 @@\n | FR-041-AC-1 | A CycloneDX document yields one passing entry per component, identified by purl. | Test (TC-231) |\n | FR-041-AC-2 | An SPDX document is read through its purl external refs, not its package names. | Test (TC-232) |\n | FR-041-AC-3 | An inventory listing nothing yields no entries, so the existing vacuity check names it. | Test (TC-233) |\n-| FR-041-AC-4 | A document that is neither format is refused, not read as empty. | Test (TC-234) |\n+| FR-041-AC-4 | A document that is neither format is handled gracefully. | Test (TC-234) |\n | FR-041-AC-5 | A component with neither purl nor name is dropped rather than given an invented identity. | Test (TC-235) |\n | FR-041-AC-6 | The adapter is selected by `--adapter sbom` and by the tools that emit these formats. | Test (TC-236) |\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-03",
+      "slot": "ACR-03",
+      "kind": "ac_refusal",
+      "source": "N-162",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "oracle_is_adjectival",
+      "file": "spec/functional/FR-036-architecture-conformance.md",
+      "find": "becomes a finding carrying the acceptance criterion the script names.",
+      "replace": "is reported in a clear and actionable way.",
+      "description": "FR-036-AC-2: The finding carrying the named criterion becomes 'reported in a clear and actionable way': quality words with no observable result.",
+      "owning_test": {
+        "filter": "tc_458_211_reads_a_criterion_through_trailing_punctuation",
+        "name": "adapters::audit_script::tests::tc_458_211_reads_a_criterion_through_trailing_punctuation",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-036-architecture-conformance.md b/spec/functional/FR-036-architecture-conformance.md\n--- a/spec/functional/FR-036-architecture-conformance.md\n+++ b/spec/functional/FR-036-architecture-conformance.md\n@@ -108,7 +108,7 @@\n | ID | Criteria | Verification |\n |----|----------|--------------|\n | FR-036-AC-1 | A real all-passing audit run reads as rules that ran and found nothing, not as an absent scan. | Test (TC-197) |\n-| FR-036-AC-2 | A `FAIL` line becomes a finding carrying the acceptance criterion the script names. | Test (TC-198) |\n+| FR-036-AC-2 | A `FAIL` line is reported in a clear and actionable way. | Test (TC-198) |\n | FR-036-AC-3 | `OK` lines count toward rules evaluated, so a clean run is not vacuous. | Test (TC-199) |\n | FR-036-AC-4 | Output containing no recognised audit line is rejected. | Test (TC-200) |\n | FR-036-AC-5 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape. | Test (TC-201) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-04",
+      "slot": "ACR-04",
+      "kind": "ac_refusal",
+      "source": "N-168",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "oracle_is_adjectival",
+      "file": "spec/functional/FR-095-assurance-aware-spec-workflows.md",
+      "find": "the final gate names it and refuses acceptance.",
+      "replace": "the final gate responds appropriately.",
+      "description": "FR-095-AC-6: Naming the analysis and refusing acceptance becomes 'responds appropriately': a quality word with no observable result.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-095-assurance-aware-spec-workflows.md b/spec/functional/FR-095-assurance-aware-spec-workflows.md\n--- a/spec/functional/FR-095-assurance-aware-spec-workflows.md\n+++ b/spec/functional/FR-095-assurance-aware-spec-workflows.md\n@@ -37,7 +37,7 @@\n | FR-095-AC-3 | When an applicable profile recommends analyses, the review workflow records the recommendation while preserving the user's base, all, or subset choice. | Test (TC-279) |\n | FR-095-AC-4 | When an applicable profile requires analyses, the intake gate refuses a selected set that differs from the profile set or omits the profile path. | Test (TC-280) |\n | FR-095-AC-5 | When the all set is selected, the workflow derives the complete declared analysis vocabulary and cannot accept a truncated caller-supplied list. | Test (TC-281) |\n-| FR-095-AC-6 | When a selected analysis has no recorded review document, the final gate names it and refuses acceptance. | Test (TC-282) |\n+| FR-095-AC-6 | When a selected analysis has no recorded review document, the final gate responds appropriately. | Test (TC-282) |\n | FR-095-AC-7 | When a profile selects an analysis absent from the installed review contract, intake reports it as unsupported instead of authoring an invalid document. | Test (TC-283) |\n | FR-095-AC-8 | When no assurance profile applies and base is selected, the existing zero-analysis review path remains accepted. | Test (TC-284) |\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-05",
+      "slot": "ACR-05",
+      "kind": "ac_refusal",
+      "source": "N-140",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "oracle_is_adjectival",
+      "file": "spec/functional/FR-034-finding-shaped-evidence.md",
+      "find": "is read as a scan that executed, reporting the tool and how many rules it evaluated.",
+      "replace": "is interpreted sensibly.",
+      "description": "FR-034-AC-1: The stated reading (a scan that executed, with tool and rule count) becomes 'interpreted sensibly': a quality word with no observable result.",
+      "owning_test": {
+        "filter": "tc_458_200_a_run_with_no_results_is_a_clean_scan_and_not_a_refusal",
+        "name": "adapters::sarif::tests::tc_458_200_a_run_with_no_results_is_a_clean_scan_and_not_a_refusal",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-034-finding-shaped-evidence.md b/spec/functional/FR-034-finding-shaped-evidence.md\n--- a/spec/functional/FR-034-finding-shaped-evidence.md\n+++ b/spec/functional/FR-034-finding-shaped-evidence.md\n@@ -82,7 +82,7 @@\n \n | ID | Criteria | Verification |\n |----|----------|--------------|\n-| FR-034-AC-1 | A SARIF run with an empty `results` array is read as a scan that executed, reporting the tool and how many rules it evaluated. | Test (TC-165) |\n+| FR-034-AC-1 | A SARIF run with an empty `results` array is interpreted sensibly. | Test (TC-165) |\n | FR-034-AC-2 | A SARIF log whose `runs` array is empty is **rejected** — it proves no scan executed. | Test (TC-166) |\n | FR-034-AC-3 | The SARIF adapter reads rule id, level, message and first location. | Test (TC-167) |\n | FR-034-AC-4 | The nested `rule.id` form is accepted; a result naming no rule at all is skipped. | Test (TC-168) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-06",
+      "slot": "ACR-06",
+      "kind": "ac_refusal",
+      "source": "N-072",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "oracle_is_adjectival",
+      "file": "spec/functional/FR-028-generate-property-tests-from-criteria.md",
+      "find": "carries no threshold, no verdict, and no rewording suggestion",
+      "replace": "is neutral and unopinionated",
+      "description": "FR-028-AC-9: Three observable absences become 'neutral and unopinionated': quality words with no observable result.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-028-generate-property-tests-from-criteria.md b/spec/functional/FR-028-generate-property-tests-from-criteria.md\n--- a/spec/functional/FR-028-generate-property-tests-from-criteria.md\n+++ b/spec/functional/FR-028-generate-property-tests-from-criteria.md\n@@ -135,7 +135,7 @@\n | FR-028-AC-6  | Every test the skill emits runs in the repository's runner — no skip, ignore, or disabled marker is written             | agent-behaviour-eval (TC-EV-051)   |\n | FR-028-AC-7  | The run writes exactly one `SpecReview` at `reviews/YY-MM-DD-<slug>.md` with `analysis: spec-correctness`, and it passes `quire validate` | agent-behaviour-eval (TC-EV-051)   |\n | FR-028-AC-8  | A criterion whose domain, precondition, or oracle cannot be cited yields a recorded reason and no test                  | agent-behaviour-eval (TC-EV-053)   |\n-| FR-028-AC-9  | The census output carries no threshold, no verdict, and no rewording suggestion                                         | agent-behaviour-eval (TC-EV-053)   |\n+| FR-028-AC-9  | The census output is neutral and unopinionated                                         | agent-behaviour-eval (TC-EV-053)   |\n | FR-028-AC-10 | No specification artifact the skill writes names a test framework, harness, or generator library                        | Inspection      |\n | FR-028-AC-11 | A repository whose manifest names no generator library yields findings naming it and a reported remedy, not an install and not a test | agent-behaviour-eval (TC-EV-053)   |\n | FR-028-AC-12 | Strategy selection reads `property` and is unchanged by any `shape` value                                               | Inspection      |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-07",
+      "slot": "ACR-07",
+      "kind": "ac_refusal",
+      "source": "N-108",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "oracle_is_adjectival",
+      "file": "spec/non-functional/NFR-021-reproducible-corpus-measurement.md",
+      "find": "produces the same artifact digests as a run with networking available.",
+      "replace": "behaves acceptably.",
+      "description": "NFR-021-AC-3: Digest equality with a networked run becomes 'behaves acceptably': a quality word with no observable result.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n--- a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n+++ b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n@@ -77,7 +77,7 @@\n | --- | --- | --- |\n | NFR-021-AC-1 | Two runs over the same recorded corpus and module revisions produce artifacts whose SHA-256 digests are equal, excluding the run manifest's timestamp field. | Test (TC-1557) |\n | NFR-021-AC-2 | No emitted collection depends on filesystem enumeration order; every collection carries a declared ordering key. | Test (TC-1558) |\n-| NFR-021-AC-3 | A run executed with networking disabled over the fixture corpus produces the same artifact digests as a run with networking available. | Test (TC-1559) |\n+| NFR-021-AC-3 | A run executed with networking disabled over the fixture corpus behaves acceptably. | Test (TC-1559) |\n | NFR-021-AC-4 | Every repository outside the reproducibility claim is marked `clean: false` or `stable: false` in the corpus record. | Test (TC-1584) |\n \n ## Dependencies\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-08",
+      "slot": "ACR-08",
+      "kind": "ac_refusal",
+      "source": "N-175",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "oracle_is_adjectival",
+      "file": "spec/functional/FR-095-assurance-aware-spec-workflows.md",
+      "find": "remains accepted.",
+      "replace": "behaves reasonably.",
+      "description": "FR-095-AC-8: 'remains accepted' becomes 'behaves reasonably': a quality word with no observable result.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-095-assurance-aware-spec-workflows.md b/spec/functional/FR-095-assurance-aware-spec-workflows.md\n--- a/spec/functional/FR-095-assurance-aware-spec-workflows.md\n+++ b/spec/functional/FR-095-assurance-aware-spec-workflows.md\n@@ -39,7 +39,7 @@\n | FR-095-AC-5 | When the all set is selected, the workflow derives the complete declared analysis vocabulary and cannot accept a truncated caller-supplied list. | Test (TC-281) |\n | FR-095-AC-6 | When a selected analysis has no recorded review document, the final gate names it and refuses acceptance. | Test (TC-282) |\n | FR-095-AC-7 | When a profile selects an analysis absent from the installed review contract, intake reports it as unsupported instead of authoring an invalid document. | Test (TC-283) |\n-| FR-095-AC-8 | When no assurance profile applies and base is selected, the existing zero-analysis review path remains accepted. | Test (TC-284) |\n+| FR-095-AC-8 | When no assurance profile applies and base is selected, the existing zero-analysis review path behaves reasonably. | Test (TC-284) |\n \n ## Constraints\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-09",
+      "slot": "ACR-09",
+      "kind": "ac_refusal",
+      "source": "N-158",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "domain_unbounded",
+      "file": "spec/functional/FR-042-agent-eval-evidence.md",
+      "find": "A report with no scenario results",
+      "replace": "A problematic report",
+      "description": "FR-042-AC-4: The stated input (a report with no scenario results) becomes 'a problematic report': a vague qualifier with no condition or example.",
+      "owning_test": {
+        "filter": "tc_458_221_refuses_a_report_with_no_results",
+        "name": "adapters::agent_eval::tests::tc_458_221_refuses_a_report_with_no_results",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-042-agent-eval-evidence.md b/spec/functional/FR-042-agent-eval-evidence.md\n--- a/spec/functional/FR-042-agent-eval-evidence.md\n+++ b/spec/functional/FR-042-agent-eval-evidence.md\n@@ -67,7 +67,7 @@\n | FR-042-AC-1 | A real report yields one entry per scenario, keyed on the scenario id. | Test (TC-240) |\n | FR-042-AC-2 | The scenario id is its own trace id; no second identity is invented. | Test (TC-241) |\n | FR-042-AC-3 | The outcome is the harness's `ok`, and `passRate` is kept so flaky is distinguishable from failing. | Test (TC-242) |\n-| FR-042-AC-4 | A report with no scenario results is refused. | Test (TC-243) |\n+| FR-042-AC-4 | A problematic report is refused. | Test (TC-243) |\n | FR-042-AC-5 | The adapter is selected by `--adapter agent-eval` and by the harness name. | Test (TC-244) |\n \n ## Constraints\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-10",
+      "slot": "ACR-10",
+      "kind": "ac_refusal",
+      "source": "N-119",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "domain_unbounded",
+      "file": "spec/functional/FR-041-sbom-inventory-evidence.md",
+      "find": "A document that is neither format",
+      "replace": "An unexpected document",
+      "description": "FR-041-AC-4: The stated input (a document in neither format) becomes 'an unexpected document': a vague qualifier with no condition or example.",
+      "owning_test": {
+        "filter": "tc_458_233_an_unrecognised_document_names_its_first_six_keys",
+        "name": "adapters::sbom::tests::tc_458_233_an_unrecognised_document_names_its_first_six_keys",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-041-sbom-inventory-evidence.md b/spec/functional/FR-041-sbom-inventory-evidence.md\n--- a/spec/functional/FR-041-sbom-inventory-evidence.md\n+++ b/spec/functional/FR-041-sbom-inventory-evidence.md\n@@ -79,7 +79,7 @@\n | FR-041-AC-1 | A CycloneDX document yields one passing entry per component, identified by purl. | Test (TC-231) |\n | FR-041-AC-2 | An SPDX document is read through its purl external refs, not its package names. | Test (TC-232) |\n | FR-041-AC-3 | An inventory listing nothing yields no entries, so the existing vacuity check names it. | Test (TC-233) |\n-| FR-041-AC-4 | A document that is neither format is refused, not read as empty. | Test (TC-234) |\n+| FR-041-AC-4 | An unexpected document is refused, not read as empty. | Test (TC-234) |\n | FR-041-AC-5 | A component with neither purl nor name is dropped rather than given an invented identity. | Test (TC-235) |\n | FR-041-AC-6 | The adapter is selected by `--adapter sbom` and by the tools that emit these formats. | Test (TC-236) |\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-11",
+      "slot": "ACR-11",
+      "kind": "ac_refusal",
+      "source": "N-140",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "domain_unbounded",
+      "file": "spec/functional/FR-034-finding-shaped-evidence.md",
+      "find": "A SARIF run with an empty `results` array",
+      "replace": "A SARIF run with unusual contents",
+      "description": "FR-034-AC-1: The stated condition (an empty `results` array) becomes 'unusual contents': a vague qualifier with no condition or example.",
+      "owning_test": {
+        "filter": "tc_458_200_a_run_with_no_results_is_a_clean_scan_and_not_a_refusal",
+        "name": "adapters::sarif::tests::tc_458_200_a_run_with_no_results_is_a_clean_scan_and_not_a_refusal",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-034-finding-shaped-evidence.md b/spec/functional/FR-034-finding-shaped-evidence.md\n--- a/spec/functional/FR-034-finding-shaped-evidence.md\n+++ b/spec/functional/FR-034-finding-shaped-evidence.md\n@@ -82,7 +82,7 @@\n \n | ID | Criteria | Verification |\n |----|----------|--------------|\n-| FR-034-AC-1 | A SARIF run with an empty `results` array is read as a scan that executed, reporting the tool and how many rules it evaluated. | Test (TC-165) |\n+| FR-034-AC-1 | A SARIF run with unusual contents is read as a scan that executed, reporting the tool and how many rules it evaluated. | Test (TC-165) |\n | FR-034-AC-2 | A SARIF log whose `runs` array is empty is **rejected** — it proves no scan executed. | Test (TC-166) |\n | FR-034-AC-3 | The SARIF adapter reads rule id, level, message and first location. | Test (TC-167) |\n | FR-034-AC-4 | The nested `rule.id` form is accepted; a result naming no rule at all is skipped. | Test (TC-168) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-12",
+      "slot": "ACR-12",
+      "kind": "ac_refusal",
+      "source": "N-034",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "domain_unbounded",
+      "file": "spec/functional/FR-032-evidence-auditor.md",
+      "find": "An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed",
+      "replace": "An obligation in a good state",
+      "description": "FR-032-AC-1: Three stated conditions on the obligation become 'in a good state': a vague qualifier with no condition or example.",
+      "owning_test": {
+        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "package": "quoin-auditor",
+        "selector": [
+          "--test",
+          "tc_383_parity"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -106,7 +106,7 @@\n \n | ID | Criteria | Verification |\n |----|----------|--------------|\n-| FR-032-AC-1 | An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed produces no finding and is reported healthy. | Test (TC-137) |\n+| FR-032-AC-1 | An obligation in a good state produces no finding and is reported healthy. | Test (TC-137) |\n | FR-032-AC-2 | A statement reworded after binding produces a high-severity suspect-link finding naming both hashes. | Test (TC-138) |\n | FR-032-AC-3 | A binding naming a suite with no recorded run is high severity, while a run merely behind HEAD is medium. | Test (TC-139) |\n | FR-032-AC-4 | Vacuity fires when every bound symbol was skipped or absent from the run, and does not fire when at least one passed. | Test (TC-140) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-13",
+      "slot": "ACR-13",
+      "kind": "ac_refusal",
+      "source": "N-069",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "domain_unbounded",
+      "file": "spec/functional/FR-019-manage-plugin-registry.md",
+      "find": "a missing or empty name raises an error",
+      "replace": "a bad name raises an error",
+      "description": "FR-019-AC-2: The error clause's stated cases (missing or empty name) become 'a bad name': a vague qualifier with no condition or example.",
+      "owning_test": {
+        "filter": "tc_381_210_option_like_fields_are_refused",
+        "name": "source::tests::tc_381_210_option_like_fields_are_refused",
+        "package": "quoin-modules",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-019-manage-plugin-registry.md b/spec/functional/FR-019-manage-plugin-registry.md\n--- a/spec/functional/FR-019-manage-plugin-registry.md\n+++ b/spec/functional/FR-019-manage-plugin-registry.md\n@@ -45,7 +45,7 @@\n | ID          | Criteria                                                                                                         | Verification                                       |\n | ----------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |\n | FR-019-AC-1 | `plugin install <path-source>` materializes the module, records it, and reports it                               | Test (install_reconcile.rs, core-modules.test.ts, cli.test.ts, index.test.ts) |\n-| FR-019-AC-2 | A module name is read from a root or single-nested `manifest.yaml`; a missing or empty name raises an error      | Test (ts_oracle.rs, install_reconcile.rs)          |\n+| FR-019-AC-2 | A module name is read from a root or single-nested `manifest.yaml`; a bad name raises an error      | Test (ts_oracle.rs, install_reconcile.rs)          |\n | FR-019-AC-3 | `plugin list` prints the registry's plugins                                                                      | Test (cli.test.ts)                                 |\n | FR-019-AC-4 | `plugin remove <name>` deletes the module directory and drops its registry entry; a missing name raises an error | Test (install_reconcile.rs, cli.test.ts)           |\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-14",
+      "slot": "ACR-14",
+      "kind": "ac_refusal",
+      "source": "N-012",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "domain_unbounded",
+      "file": "spec/functional/FR-094-profile-selected-evidence-independence.md",
+      "find": "when no profile projection requests one.",
+      "replace": "in edge cases.",
+      "description": "FR-094-CON-2: The stated condition (no profile projection requests one) becomes 'in edge cases': open cases with no condition or example.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-094-profile-selected-evidence-independence.md b/spec/functional/FR-094-profile-selected-evidence-independence.md\n--- a/spec/functional/FR-094-profile-selected-evidence-independence.md\n+++ b/spec/functional/FR-094-profile-selected-evidence-independence.md\n@@ -56,7 +56,7 @@\n | ID | Constraint | Type | Validation |\n |----|-----------|------|------------|\n | FR-094-CON-1 | Quoin SHALL NOT infer independence from an organizational role, tool name, vendor, or the presence of two symbols. | Design | Inspection |\n-| FR-094-CON-2 | Quoin SHALL NOT apply an independence requirement when no profile projection requests one. | Design | Test (TC-306) |\n+| FR-094-CON-2 | Quoin SHALL NOT apply an independence requirement in edge cases. | Design | Test (TC-306) |\n | FR-094-CON-3 | Quoin SHALL NOT collapse the five dimensions into a score or a generic independent/not-independent badge detached from an obligation and policy. | Design | Inspection |\n | FR-094-CON-4 | Quoin SHALL NOT parse AssuranceProfile Markdown; Quire or the authoring workflow owns projection into the normalized policy boundary. | Design | Inspection |\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-15",
+      "slot": "ACR-15",
+      "kind": "ac_refusal",
+      "source": "N-154",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "domain_unbounded",
+      "file": "spec/functional/FR-066-graph-producer-adapters.md",
+      "find": "each unknown format, module version, or schema digest",
+      "replace": "any odd input",
+      "description": "FR-066-AC-2: The refusal clause's enumerated cases become 'any odd input': a vague qualifier with no condition or example.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-066-graph-producer-adapters.md b/spec/functional/FR-066-graph-producer-adapters.md\n--- a/spec/functional/FR-066-graph-producer-adapters.md\n+++ b/spec/functional/FR-066-graph-producer-adapters.md\n@@ -122,7 +122,7 @@\n | ID | Criteria | Verification |\n |----|----------|--------------|\n | FR-066-AC-1 | The registry exposes exactly versioned Quire-assurance and quire-code graph-quality adapters, and an unknown name fails with the available names before reading records. | Test (TC-1293) |\n-| FR-066-AC-2 | A valid Quire export is exposed field-for-field with its source/module premises, while each unknown format, module version, or schema digest is refused before any graph record. | Test (TC-1294) |\n+| FR-066-AC-2 | A valid Quire export is exposed field-for-field with its source/module premises, while any odd input is refused before any graph record. | Test (TC-1294) |\n | FR-066-AC-3 | FR-062 receives the adapter's artifacts, obligations, symbols, relations, observations, and availability states without a frontmatter read or relation-kind translation. | Integration (TC-1295) |\n | FR-066-AC-4 | Graph-quality intake validates schema version 1, recomputes the canonical observation id, and refuses changed or unknown fields before constructing a collection. | Test (TC-1296) |\n | FR-066-AC-5 | The exact scorer bytes reproduce the declared digest and are retained with media type and base64 bytes; a missing or mismatched attachment leaves no collection. | Test (TC-1297) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-16",
+      "slot": "ACR-16",
+      "kind": "ac_refusal",
+      "source": "N-145",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "domain_unbounded",
+      "file": "spec/functional/FR-034-finding-shaped-evidence.md",
+      "find": "normalize a scanner's severity strings.",
+      "replace": "normalize unusual scanner output.",
+      "description": "FR-034-CON-2: The stated input (a scanner's severity strings) becomes 'unusual scanner output': a vague qualifier with no condition or example.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-034-finding-shaped-evidence.md b/spec/functional/FR-034-finding-shaped-evidence.md\n--- a/spec/functional/FR-034-finding-shaped-evidence.md\n+++ b/spec/functional/FR-034-finding-shaped-evidence.md\n@@ -136,7 +136,7 @@\n | ID | Constraint | Type | Validation |\n |----|-----------|------|------------|\n | FR-034-CON-1 | A `FindingRecord` SHALL be written only for a report envelope an adapter actually read. Writing one for an absent scan destroys the single distinction this record type exists to make. | Design | Inspection |\n-| FR-034-CON-2 | quoin SHALL NOT normalize a scanner's severity strings. Scanners disagree about what \"high\" means; translating would invent a comparison the tools never made. | Design | Test (TC-171) |\n+| FR-034-CON-2 | quoin SHALL NOT normalize unusual scanner output. Scanners disagree about what \"high\" means; translating would invent a comparison the tools never made. | Design | Test (TC-171) |\n | FR-034-CON-3 | Judging whether a reported finding is *acceptable* stays with the consumer's gate policy. | Design | Inspection |\n | FR-034-CON-4 | Scan ordering SHALL be by timestamp, never by commit prefix (`agent-ix/quoin#104`). | Design | Inspection |\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-17",
+      "slot": "ACR-17",
+      "kind": "ac_refusal",
+      "source": "N-162",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "names_single_witness",
+      "file": "spec/functional/FR-036-architecture-conformance.md",
+      "find": "A `FAIL` line becomes",
+      "replace": "The `FAIL` line in `fixtures/smoke/verify.log` becomes",
+      "description": "FR-036-AC-2: Any `FAIL` line becomes the one `FAIL` line in one named fixture: a single case.",
+      "owning_test": {
+        "filter": "tc_458_211_reads_a_criterion_through_trailing_punctuation",
+        "name": "adapters::audit_script::tests::tc_458_211_reads_a_criterion_through_trailing_punctuation",
+        "package": "quoin-evidence",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-036-architecture-conformance.md b/spec/functional/FR-036-architecture-conformance.md\n--- a/spec/functional/FR-036-architecture-conformance.md\n+++ b/spec/functional/FR-036-architecture-conformance.md\n@@ -108,7 +108,7 @@\n | ID | Criteria | Verification |\n |----|----------|--------------|\n | FR-036-AC-1 | A real all-passing audit run reads as rules that ran and found nothing, not as an absent scan. | Test (TC-197) |\n-| FR-036-AC-2 | A `FAIL` line becomes a finding carrying the acceptance criterion the script names. | Test (TC-198) |\n+| FR-036-AC-2 | The `FAIL` line in `fixtures/smoke/verify.log` becomes a finding carrying the acceptance criterion the script names. | Test (TC-198) |\n | FR-036-AC-3 | `OK` lines count toward rules evaluated, so a clean run is not vacuous. | Test (TC-199) |\n | FR-036-AC-4 | Output containing no recognised audit line is rejected. | Test (TC-200) |\n | FR-036-AC-5 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape. | Test (TC-201) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-18",
+      "slot": "ACR-18",
+      "kind": "ac_refusal",
+      "source": "N-101",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "names_single_witness",
+      "file": "spec/functional/FR-070-semantic-module-manifest-extension.md",
+      "find": "Every installed default module manifest loads",
+      "replace": "The installed `core` module manifest loads",
+      "description": "FR-070-AC-1: Every installed default manifest becomes the one `core` manifest: a single case.",
+      "owning_test": {
+        "filter": "tc_452_601_read_blocks_reads_a_module_block_through_the_boundary",
+        "name": "tc_452_601_read_blocks_reads_a_module_block_through_the_boundary",
+        "package": "quoin-core",
+        "selector": [
+          "--test",
+          "tc_452_semantic_boundary"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-070-semantic-module-manifest-extension.md b/spec/functional/FR-070-semantic-module-manifest-extension.md\n--- a/spec/functional/FR-070-semantic-module-manifest-extension.md\n+++ b/spec/functional/FR-070-semantic-module-manifest-extension.md\n@@ -56,7 +56,7 @@\n \n | ID | Criteria | Verification |\n |---|---|---|\n-| FR-070-AC-1 | Every installed default module manifest loads unchanged with no `semantic` block. | Test |\n+| FR-070-AC-1 | The installed `core` module manifest loads unchanged with no `semantic` block. | Test |\n | FR-070-AC-2 | A manifest with `semantic: { contract_version: \"1.0.0\", semantic_core: \"0.1.0\", package: \"agent-ix/spec-objects-business\" }` loads and the pack reports those values. | Test |\n | FR-070-AC-3 | A `semantic` block with an unknown key `foo` is rejected naming `foo`; every key in the admitted list is accepted. | Test |\n | FR-070-AC-4 | `exports: [endpoint]` on a module without an `endpoint` object type is rejected naming `endpoint`. | Test |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-19",
+      "slot": "ACR-19",
+      "kind": "ac_refusal",
+      "source": "N-118",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "names_single_witness",
+      "file": "spec/functional/FR-006-locate-module-roots.md",
+      "find": "A non-manifest child is skipped while a manifest sibling is found",
+      "replace": "The `README.md` child of `modules/core/` is skipped while its `manifest.yaml` sibling is found",
+      "description": "FR-006-AC-3: Any non-manifest child becomes one named file in one named directory: a single case.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-006-locate-module-roots.md b/spec/functional/FR-006-locate-module-roots.md\n--- a/spec/functional/FR-006-locate-module-roots.md\n+++ b/spec/functional/FR-006-locate-module-roots.md\n@@ -42,7 +42,7 @@\n | ----------- | -------------------------------------------------------------------- | ---------------------- |\n | FR-006-AC-1 | A directory containing `manifest.yaml` resolves as a module root     | Test (catalog.test.ts) |\n | FR-006-AC-2 | A manifest one level deep under a candidate is discovered            | Test (catalog.test.ts) |\n-| FR-006-AC-3 | A non-manifest child is skipped while a manifest sibling is found    | Test (catalog.test.ts) |\n+| FR-006-AC-3 | The `README.md` child of `modules/core/` is skipped while its `manifest.yaml` sibling is found    | Test (catalog.test.ts) |\n | FR-006-AC-4 | A missing path, an empty directory, and a file candidate are skipped | Test (catalog.test.ts) |\n \n ## Dependencies\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-20",
+      "slot": "ACR-20",
+      "kind": "ac_refusal",
+      "source": "N-124",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "names_single_witness",
+      "file": "spec/functional/FR-026-dispatch-through-oclif-runner.md",
+      "find": "discovers every command quoin ships",
+      "replace": "discovers the `quoin validate` command",
+      "description": "FR-026-AC-1: Every shipped command becomes the one `quoin validate` command: a single case.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-026-dispatch-through-oclif-runner.md b/spec/functional/FR-026-dispatch-through-oclif-runner.md\n--- a/spec/functional/FR-026-dispatch-through-oclif-runner.md\n+++ b/spec/functional/FR-026-dispatch-through-oclif-runner.md\n@@ -58,7 +58,7 @@\n \n | ID          | Criteria                                                                                     | Verification         |\n | ----------- | ---------------------------------------------------------------------------------------------- | -------------------- |\n-| FR-026-AC-1 | The runner discovers every command quoin ships                                                 | Test (cli.test.ts)   |\n+| FR-026-AC-1 | The runner discovers the `quoin validate` command                                                 | Test (cli.test.ts)   |\n | FR-026-AC-2 | Subcommands are addressed space-separated                                                      | Test (cli.test.ts)   |\n | FR-026-AC-3 | No hand-rolled argument dispatcher remains in `src/cli.ts`                                     | Test (cli.test.ts)   |\n | FR-026-AC-4 | An unknown command, and an unknown subcommand, are each rejected by the runner                 | Test (cli.test.ts)   |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-21",
+      "slot": "ACR-21",
+      "kind": "ac_refusal",
+      "source": "N-011",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "names_single_witness",
+      "file": "spec/functional/FR-064-proof-attestation.md",
+      "find": "Each of Engineering Assurance's four claim strengths (FR-022) seals",
+      "replace": "The `verified` claim strength seals",
+      "description": "FR-064-AC-10: Each of the four claim strengths becomes one named strength: a single case in the first clause.",
+      "owning_test": {
+        "filter": "tc_455_an_attestation_with_no_strength_is_refused_not_defaulted",
+        "name": "tc_455_an_attestation_with_no_strength_is_refused_not_defaulted",
+        "package": "quoin-change-assurance",
+        "selector": [
+          "--test",
+          "tc_455_attestations"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-064-proof-attestation.md b/spec/functional/FR-064-proof-attestation.md\n--- a/spec/functional/FR-064-proof-attestation.md\n+++ b/spec/functional/FR-064-proof-attestation.md\n@@ -179,7 +179,7 @@\n | FR-064-AC-7 | An unavailable or not-computed producer result retains its diagnostic output, while entirely missing evidence creates no synthetic attestation. | Test (TC-1278) |\n | FR-064-AC-8 | Existing FR-030 run evidence remains readable and unchanged; proof attestations occupy a distinct versioned store family. | Integration (TC-1279) |\n | FR-064-AC-9 | Static boundaries and golden terminology prove intake runs nothing and reports only producer facts, never an audit, approval, identity, authorization, or non-repudiation conclusion (CON-1, CON-3). | Analysis (TC-1280) |\n-| FR-064-AC-10 | Each of Engineering Assurance's four claim strengths (FR-022) seals and reads back as itself; an attestation with no `strength` is refused by name rather than defaulted, and a `strength` outside the four wire names is refused as malformed. | Test (TC-1884) |\n+| FR-064-AC-10 | The `verified` claim strength seals and reads back as itself; an attestation with no `strength` is refused by name rather than defaulted, and a `strength` outside the four wire names is refused as malformed. | Test (TC-1884) |\n \n ## Dependencies\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-22",
+      "slot": "ACR-22",
+      "kind": "ac_refusal",
+      "source": "N-043",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "names_single_witness",
+      "file": "spec/functional/FR-094-profile-selected-evidence-independence.md",
+      "find": "One evidence relationship cannot satisfy both sides of an independence requirement;",
+      "replace": "The evidence relationship between `suite-a` and `suite-b` cannot satisfy both sides of the independence requirement in `fixtures/independence.yaml`;",
+      "description": "FR-094-AC-3: Any evidence relationship and independence requirement become one named pair and one named fixture: a single case in the first clause.",
+      "owning_test": {
+        "filter": "tc_456_282_independence_needs_two_lines_differing_on_every_selected_dimension",
+        "name": "tc_456_282_independence_needs_two_lines_differing_on_every_selected_dimension",
+        "package": "quoin-evidence",
+        "selector": [
+          "--test",
+          "store_behaviour"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-094-profile-selected-evidence-independence.md b/spec/functional/FR-094-profile-selected-evidence-independence.md\n--- a/spec/functional/FR-094-profile-selected-evidence-independence.md\n+++ b/spec/functional/FR-094-profile-selected-evidence-independence.md\n@@ -44,7 +44,7 @@\n |----|----------|--------------|\n | FR-094-AC-1 | Quoin validates the five optional lineage dimensions strictly and requires at least one stated dimension when lineage is supplied. | Test (TC-303) |\n | FR-094-AC-2 | Quoin validates a normalized policy with one profile, unique requirement ids, exact obligation ids, non-empty unique dimensions, and rationale; the commands refuse policy obligations absent from the current Quire payload. | Test (TC-303) |\n-| FR-094-AC-3 | One evidence relationship cannot satisfy both sides of an independence requirement; two distinct suites must differ on every selected dimension. | Test (TC-304) |\n+| FR-094-AC-3 | The evidence relationship between `suite-a` and `suite-b` cannot satisfy both sides of the independence requirement in `fixtures/independence.yaml`; two distinct suites must differ on every selected dimension. | Test (TC-304) |\n | FR-094-AC-4 | Shared and missing lineage values remain visible and prevent a false independent result when their dimension is selected. | Test (TC-305) |\n | FR-094-AC-5 | With no independence policy, the auditor preserves its existing output and behavior. | Test (TC-306) |\n | FR-094-AC-6 | A selected obligation receives an `insufficient-independence` finding until two qualifying evidence relationships exist, after which the finding clears. | Test (TC-307) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-23",
+      "slot": "ACR-23",
+      "kind": "ac_refusal",
+      "source": "N-149",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "names_single_witness",
+      "file": "spec/functional/FR-065-change-assurance-verification.md",
+      "find": "Incomplete/truncated impact evidence and every non-resolved unknown remain named and force",
+      "replace": "The truncated impact evidence in `fixtures/impact-partial.json` remains named and forces",
+      "description": "FR-065-AC-8: Any incomplete evidence and every unresolved unknown become the evidence in one named fixture: a single case.",
+      "owning_test": {
+        "filter": "tc_455_impact_gaps_and_open_unknowns_are_named_and_force_incomplete",
+        "name": "tc_455_impact_gaps_and_open_unknowns_are_named_and_force_incomplete",
+        "package": "quoin-change-assurance",
+        "selector": [
+          "--test",
+          "tc_455_verify"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-065-change-assurance-verification.md b/spec/functional/FR-065-change-assurance-verification.md\n--- a/spec/functional/FR-065-change-assurance-verification.md\n+++ b/spec/functional/FR-065-change-assurance-verification.md\n@@ -335,7 +335,7 @@\n | FR-065-AC-5 | Passed evidence can discharge only when its exact retained bytes verify and all owning obligations are healthy; failed, stale, suspect, vacuous, unrelated, output-mismatched, or other defect evidence is invalid. | Property (TC-1285) |\n | FR-065-AC-6 | A missing attestation or output, unavailable or not-computed result, or audit not-evaluated state is incomplete and never valid or numeric zero. | Test (TC-1286) |\n | FR-065-AC-7 | Exactly one intact matching human `approved` event permits review validity; missing history/event is incomplete; duplicate matching decisions, broken chain, mismatched event, rejection, or revise request are invalid. | Integration (TC-1287) |\n-| FR-065-AC-8 | Incomplete/truncated impact evidence and every non-resolved unknown remain named and force incomplete verification while preserving an advisory workflow's ability to continue. | Test (TC-1288) |\n+| FR-065-AC-8 | The truncated impact evidence in `fixtures/impact-partial.json` remains named and forces incomplete verification while preserving an advisory workflow's ability to continue. | Test (TC-1288) |\n | FR-065-AC-9 | The receipt retains each FR-032 finding kind and obligation id byte-for-byte beside its mapped reason without changing the source auditor result (CON-2). | Integration (TC-1289) |\n | FR-065-AC-10 | Input and selection permutations emit byte-identical canonical receipts whose digest matches the pinned RFC 8785/BLAKE3 procedure. | Property (TC-1290) |\n | FR-065-AC-11 | Existing audit/assurance goldens stay byte-identical without change-assurance selection, and static boundaries prove verification runs and writes nothing (CON-1, CON-4). | Integration (TC-1291) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-24",
+      "slot": "ACR-24",
+      "kind": "ac_refusal",
+      "source": "N-168",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "names_single_witness",
+      "file": "spec/functional/FR-095-assurance-aware-spec-workflows.md",
+      "find": "When a selected analysis has no recorded review document",
+      "replace": "When the `security` analysis is selected and has no recorded review document",
+      "description": "FR-095-AC-6: Any selected analysis becomes the one `security` analysis: a single case.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-095-assurance-aware-spec-workflows.md b/spec/functional/FR-095-assurance-aware-spec-workflows.md\n--- a/spec/functional/FR-095-assurance-aware-spec-workflows.md\n+++ b/spec/functional/FR-095-assurance-aware-spec-workflows.md\n@@ -37,7 +37,7 @@\n | FR-095-AC-3 | When an applicable profile recommends analyses, the review workflow records the recommendation while preserving the user's base, all, or subset choice. | Test (TC-279) |\n | FR-095-AC-4 | When an applicable profile requires analyses, the intake gate refuses a selected set that differs from the profile set or omits the profile path. | Test (TC-280) |\n | FR-095-AC-5 | When the all set is selected, the workflow derives the complete declared analysis vocabulary and cannot accept a truncated caller-supplied list. | Test (TC-281) |\n-| FR-095-AC-6 | When a selected analysis has no recorded review document, the final gate names it and refuses acceptance. | Test (TC-282) |\n+| FR-095-AC-6 | When the `security` analysis is selected and has no recorded review document, the final gate names it and refuses acceptance. | Test (TC-282) |\n | FR-095-AC-7 | When a profile selects an analysis absent from the installed review contract, intake reports it as unsupported instead of authoring an invalid document. | Test (TC-283) |\n | FR-095-AC-8 | When no assurance profile applies and base is selected, the existing zero-analysis review path remains accepted. | Test (TC-284) |\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-25",
+      "slot": "ACR-25",
+      "kind": "ac_refusal",
+      "source": "N-026",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "describes_its_own_test",
+      "file": "spec/functional/FR-062-read-only-evidence-graph-analysis.md",
+      "find": "Each impacted binding carries",
+      "replace": "A proptest over generated impact graphs confirms that each impacted binding carries",
+      "description": "FR-062-AC-5: The criterion is rewritten as the proptest that verifies it.",
+      "owning_test": {
+        "filter": "tc_500_041_the_auditor_verdict_is_copied_and_never_re_decided",
+        "name": "tc_500_041_the_auditor_verdict_is_copied_and_never_re_decided",
+        "package": "quoin-graph-analysis",
+        "selector": [
+          "--test",
+          "tc_500_restated_criteria"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-062-read-only-evidence-graph-analysis.md b/spec/functional/FR-062-read-only-evidence-graph-analysis.md\n--- a/spec/functional/FR-062-read-only-evidence-graph-analysis.md\n+++ b/spec/functional/FR-062-read-only-evidence-graph-analysis.md\n@@ -158,7 +158,7 @@\n | FR-062-AC-2 | A binding to an obligation absent from the accepted export is named under its suite and in report gaps, and is excluded from the live count rather than dropped or treated as live. | Test (TC-1250) |\n | FR-062-AC-3 | Change impact records its default or replacement relationship-kind selection, computes the reverse transitive dependency closure from every requested requirement, terminates on cycles, retains shared dependents, and selects the lexicographically first shortest path deterministically. | Test (TC-1251) |\n | FR-062-AC-4 | Every reached StR, US, FR, or NFR requirement is joined to all of its live obligations and bound suites with depth and path, while an unknown or non-requirement requested id is reported and returns no partial closure for that seed. | Test (TC-1252) |\n-| FR-062-AC-5 | Each impacted binding carries its unchanged FR-032 verdict in a field distinct from change exposure; reachability alone never changes the verdict (CON-3). | Test (TC-1253) |\n+| FR-062-AC-5 | A proptest over generated impact graphs confirms that each impacted binding carries its unchanged FR-032 verdict in a field distinct from change exposure; reachability alone never changes the verdict (CON-3). | Test (TC-1253) |\n | FR-062-AC-6 | Churn deduplicates one affirmation copied across several suite bindings by `(obligation, who, commit, note-or-empty)` while retaining every affected suite on the row. | Test (TC-1254) |\n | FR-062-AC-7 | Churn includes live obligations with zero events and sorts rows by descending event count then obligation id; affirmation history for an absent obligation is reported as a gap. | Test (TC-1255) |\n | FR-062-AC-8 | Every view carries the exact accepted source revision and export/module premises; repeated analysis over identical accepted inputs preserves those fields byte-for-byte. | Test (TC-1256) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-26",
+      "slot": "ACR-26",
+      "kind": "ac_refusal",
+      "source": "N-006",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "describes_its_own_test",
+      "file": "spec/functional/FR-108-measurement-verdict-checker.md",
+      "find": "A `constant-predictor` baseline is computed from the run being decided:",
+      "replace": "A unit test builds a run and confirms that a `constant-predictor` baseline is computed from the run being decided:",
+      "description": "FR-108-AC-10: The criterion is rewritten as the unit test that verifies it.",
+      "owning_test": {
+        "filter": "tc_1016_102_a_margin_not_cleared_over_the_real_baseline_rejects",
+        "name": "tc_1016_102_a_margin_not_cleared_over_the_real_baseline_rejects",
+        "package": "quoin-jev",
+        "selector": [
+          "--test",
+          "tc_1016_constant_predictor"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-108-measurement-verdict-checker.md b/spec/functional/FR-108-measurement-verdict-checker.md\n--- a/spec/functional/FR-108-measurement-verdict-checker.md\n+++ b/spec/functional/FR-108-measurement-verdict-checker.md\n@@ -176,7 +176,7 @@\n | FR-108-AC-7 | `quoin measurement verify` exits 0 on `accept`, and 1 with the complete document on `reject` (`CORE_REJECTED`) or `inconclusive` (`CORE_INCONCLUSIVE`). An unknown plan id, and a collection filed under a name that is not its `collectionId`, are refused (exit 2); an unknown claimed verdict or order source is a bad request (exit 3); each with no verdict. A plan recorded through `quoin measurement record` and verified is accepted; the same store with one observation's stored value edited is rejected with `value_disagrees_with_rows`. | Test (TC-1796, TC-1797, TC-1806) |\n | FR-108-AC-8 | `quoin measurement verify` takes the intake order from `git log --first-parent --diff-filter=A` over the store and reports `orderSource: git-first-parent-add`. Outside a git work tree it reports `none` and says why on stderr; in a shallow clone it reports `git-shallow` and `order_unattested` and says so on stderr; any other git failure fails the command rather than yielding an empty order. | Test (TC-1797, TC-1805) |\n | FR-108-AC-9 | `quoin measurement verify` reads four tamper facts from the store's git history (PLAT-985): a collection this plan governed that was added and later removed (committed, or in the work tree) is `collection_deleted`; a collection's stored file changed after intake added it (a later commit, a delete and re-add under the same id, or an uncommitted edit) is `collection_edited`; each is attributed by the plan ids in its first-added and last-seen content; a run's recorded protected-apparatus digest for this plan disagreeing with `git show <sourceRevision>:<path>` is `apparatus_forged`, and a `sourceRevision` spelled as a git option is never read as one; and the plan's own document changing its `objective`, `estimator`, `decision_rule` or `protected_apparatus` between two revisions sharing a `definition_version` — across a rename, and from the last commit to the work tree — is `definition_changed_without_version_bump`. Each is `false`/empty, not a false positive, when git cannot answer or the history is honest. | Test (TC-1892..TC-1903) |\n-| FR-108-AC-10 | A `constant-predictor` baseline is computed from the run being decided: every one of its own observations under `{metric}.constant-predictor-item` (`quoin_measurement::constant_predictor_item_metric`) carrying the same `planId`/`definitionVersion`, grouped by their `dimensions.family`. For each family, the best constant's hit count is the maximum, over every label recorded as some item's `dimensions.expected` or a member of its `dimensions.contested`, of the items whose `expected` equals that label or whose `contested` contains it. The baseline is the sum of each family's best-constant hits over the total item count across every family (MP-222/PLAT-932's size-weighted mean of per-family agreement — see the worked example in `engineering_assurance/skeletons/MeasurementPlan.md`). A run with no such observations is `constant_predictor_rows_absent`; one where any such observation lacks a non-empty string `item_id`, `family` or `expected`, states a `contested` that is not an array of strings, or repeats an `item_id` is `constant_predictor_rows_malformed`; one whose item count is not the governed observation's own `population.examined` is `constant_predictor_rows_mismatch` — no baseline is computed from a partial set. Intake admits an item observation under its governed metric's plan (same id, definition and lifecycle checks, no population minimum); a plan whose own `metric` ends in `.constant-predictor-item` is refused as `QM-PLAN-INVALID`; `compare` leaves item observations out. | Test (TC-1915..TC-1924) |\n+| FR-108-AC-10 | A unit test builds a run and confirms that a `constant-predictor` baseline is computed from the run being decided: every one of its own observations under `{metric}.constant-predictor-item` (`quoin_measurement::constant_predictor_item_metric`) carrying the same `planId`/`definitionVersion`, grouped by their `dimensions.family`. For each family, the best constant's hit count is the maximum, over every label recorded as some item's `dimensions.expected` or a member of its `dimensions.contested`, of the items whose `expected` equals that label or whose `contested` contains it. The baseline is the sum of each family's best-constant hits over the total item count across every family (MP-222/PLAT-932's size-weighted mean of per-family agreement — see the worked example in `engineering_assurance/skeletons/MeasurementPlan.md`). A run with no such observations is `constant_predictor_rows_absent`; one where any such observation lacks a non-empty string `item_id`, `family` or `expected`, states a `contested` that is not an array of strings, or repeats an `item_id` is `constant_predictor_rows_malformed`; one whose item count is not the governed observation's own `population.examined` is `constant_predictor_rows_mismatch` — no baseline is computed from a partial set. Intake admits an item observation under its governed metric's plan (same id, definition and lifecycle checks, no population minimum); a plan whose own `metric` ends in `.constant-predictor-item` is refused as `QM-PLAN-INVALID`; `compare` leaves item observations out. | Test (TC-1915..TC-1924) |\n \n ## Leaf re-scoring and the asserted-only share (PLAT-961, PLAT-985)\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-27",
+      "slot": "ACR-27",
+      "kind": "ac_refusal",
+      "source": "N-009",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "describes_its_own_test",
+      "file": "spec/functional/FR-100-rust-evidence-measurement-change-assurance.md",
+      "find": "Each measurement collection and report produced by the Rust crates carries",
+      "replace": "A differential test runs both implementations over the fixture inputs and asserts that each measurement collection and report produced by the Rust crates carries",
+      "description": "FR-100-AC-4: The criterion is rewritten as the differential test that verifies it.",
+      "owning_test": {
+        "filter": "tc_476_001_governed_portfolio_is_byte_identical",
+        "name": "tc_476_001_governed_portfolio_is_byte_identical",
+        "package": "quoin-measurement-graph",
+        "selector": [
+          "--test",
+          "tc_476_graph_portfolio"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md b/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\n--- a/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\n+++ b/spec/functional/FR-100-rust-evidence-measurement-change-assurance.md\n@@ -126,7 +126,7 @@\n | FR-100-AC-1 | `cargo tree --manifest-path rust/Cargo.toml` shows no dependency cycle, and the two named TypeScript cycles are absent from the tree before the first domain crate is added. | Test (TC-1633) |\n | FR-100-AC-2 | Reading and re-serializing every store reachable in the ecosystem through `quoin-store` returns byte-identical records, and `STORE_SCHEMA_VERSION` is unchanged. | Test (TC-1634) |\n | FR-100-AC-3 | Each change-assurance refusal for a stale, tampered or mismatched record returns the same classification from the Rust implementation as from the retained one. | Property (TC-1635) |\n-| FR-100-AC-4 | Each measurement collection and report produced by the Rust crates carries the same record envelope, plan binding, comparison verdict and rendered figures as the retained TypeScript produces for the same inputs. The comparison is against a report the retained implementation can still generate; it is not stated over the corpus-measurement report, whose generator #388 disposed of. | Test (TC-1636) |\n+| FR-100-AC-4 | A differential test runs both implementations over the fixture inputs and asserts that each measurement collection and report produced by the Rust crates carries the same record envelope, plan binding, comparison verdict and rendered figures as the retained TypeScript produces for the same inputs. The comparison is against a report the retained implementation can still generate; it is not stated over the corpus-measurement report, whose generator #388 disposed of. | Test (TC-1636) |\n | FR-100-AC-5 | A measurement run over a read-only governed corpus completes and the corpus working tree is unchanged afterwards. | Test (TC-1637) |\n | FR-100-AC-6 | Every locally retained assurance capability carries a recorded three-part retention answer, and a capability with no recorded answer fails the gate. | Test (TC-1638) |\n | FR-100-AC-7 | Each enforcement run writes the three classification counts into the existing evidence store as one measurement collection with its unit and population, and the record names LR08 as the producing check. | Test (TC-1639) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-28",
+      "slot": "ACR-28",
+      "kind": "ac_refusal",
+      "source": "N-056",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "describes_its_own_test",
+      "file": "spec/functional/FR-083-template-render-self-tests.md",
+      "find": "The gate renders all three variants and reports",
+      "replace": "An integration test runs the gate over all three variants and asserts that it reports",
+      "description": "FR-083-AC-1: The criterion is rewritten as the integration test that verifies it.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-083-template-render-self-tests.md b/spec/functional/FR-083-template-render-self-tests.md\n--- a/spec/functional/FR-083-template-render-self-tests.md\n+++ b/spec/functional/FR-083-template-render-self-tests.md\n@@ -66,7 +66,7 @@\n \n | ID | Criteria | Verification |\n |----|----------|--------------|\n-| FR-083-AC-1 | The gate renders all three variants and reports which variant and which surface failed when one does. | Test (TC-1444) |\n+| FR-083-AC-1 | An integration test runs the gate over all three variants and asserts that it reports which variant and which surface failed when one does. | Test (TC-1444) |\n | FR-083-AC-2 | Every rendered directory is removed after the run, including after a failure. | Test (TC-1445) |\n | FR-083-AC-3 | An injected unresolved token, placeholder organization, absolute path, credential, or private-registry default in the template fails the gate naming the file. | Test (TC-1446) |\n | FR-083-AC-4 | Removing a surface the conformance contract names fails the gate naming that surface. | Test (TC-1447) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-29",
+      "slot": "ACR-29",
+      "kind": "ac_refusal",
+      "source": "N-068",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "describes_its_own_test",
+      "file": "spec/stakeholder/StR-008-conforming-module-repositories-by-construction.md",
+      "find": "A required surface that a maintained module repository carries and the template omits is reported by a conformance gate",
+      "replace": "A snapshot test that removes a required surface from the template checks that the conformance gate reports it",
+      "description": "StR-008-VC-3: The criterion is rewritten as the snapshot test that verifies it.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/stakeholder/StR-008-conforming-module-repositories-by-construction.md b/spec/stakeholder/StR-008-conforming-module-repositories-by-construction.md\n--- a/spec/stakeholder/StR-008-conforming-module-repositories-by-construction.md\n+++ b/spec/stakeholder/StR-008-conforming-module-repositories-by-construction.md\n@@ -45,7 +45,7 @@\n | --- | --- | --- |\n | StR-008-VC-1 | A repository rendered from the template with no hand editing carries a complete `semantic` manifest block, real emitted JSON Schemas, typed authoring skeletons, and a verification suite that fails rather than skips without the engine. | Demonstration |\n | StR-008-VC-2 | A rendered repository passes its own clean-checkout gate — spec validation, lint, schema-drift check, and unit tests — before any module vocabulary is authored. | Test (TC-1410) |\n-| StR-008-VC-3 | A required surface that a maintained module repository carries and the template omits is reported by a conformance gate rather than discovered during the next migration. | Test (TC-1418) |\n+| StR-008-VC-3 | A snapshot test that removes a required surface from the template checks that the conformance gate reports it rather than discovered during the next migration. | Test (TC-1418) |\n \n ## Stakeholders\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-30",
+      "slot": "ACR-30",
+      "kind": "ac_refusal",
+      "source": "N-103",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "describes_its_own_test",
+      "file": "spec/functional/FR-110-protected-apparatus.md",
+      "find": "A protected file is opened exactly once,",
+      "replace": "An strace-based test confirms that a protected file is opened exactly once,",
+      "description": "FR-110-AC-10: The first clause is rewritten as the strace-based test that verifies it.",
+      "owning_test": {
+        "filter": "tc_985_the_digest_reads_the_opened_handle_not_the_path",
+        "name": "digest::tests::tc_985_the_digest_reads_the_opened_handle_not_the_path",
+        "package": "quoin-store",
+        "selector": [
+          "--lib"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-110-protected-apparatus.md b/spec/functional/FR-110-protected-apparatus.md\n--- a/spec/functional/FR-110-protected-apparatus.md\n+++ b/spec/functional/FR-110-protected-apparatus.md\n@@ -183,7 +183,7 @@\n | FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_edit` (reject) with or without an `apparatus-edit` control, and `apparatus_unrecorded` (inconclusive) when it recorded no set; removing the list from the plan still rejects the changed series; an uncommitted answer-key edit between a regressed run and a pass is `rerun_until_pass`; the same runs over one set are accepted. | Test (TC-1822..TC-1824, TC-1828, TC-1829) |\n | FR-110-AC-8 | A stored `protectedApparatus` that is not an object, holds an empty plan entry, or holds a value that is not a sha256 digest is refused on read as `QM-COLLECTION-INVALID` naming the member. An empty plan-id key, and a path key that is not a valid single-file `ApparatusPath` (a `<directory>/**` entry, an absolute path, or a `..` segment among them), are refused the same way, and intake refuses to resolve a protected file whose path such a key could not hold as `QM-APPARATUS-UNREADABLE`. | Test (TC-1826, TC-1833, TC-1838) |\n | FR-110-AC-9 | One plan's resolved set past its limit (50,000 files) is `QM-APPARATUS-TOO-LARGE`; each path segment is matched exactly against the directory listing, so a case-only difference names no file on any filesystem. | Test (TC-1831, TC-1832) |\n-| FR-110-AC-10 | A protected file is opened exactly once, with `O_NOFOLLOW` and `O_NONBLOCK`, and its type and bytes are read from the open handle (`fstat`), never from a second look at the path: swapping what the path names after the open changes nothing the digest reads, and a FIFO is refused as not a regular file promptly rather than blocking the resolver waiting for a writer. One write's directory walks, summed across every plan it governs, are refused as `QM-APPARATUS-TOO-LARGE` past 100,000 directories visited, counting empty ones, even when they resolve to no file; the files every plan one write governs resolve to, summed, are refused the same way past 200,000. | Test (TC-1834..TC-1837) |\n+| FR-110-AC-10 | An strace-based test confirms that a protected file is opened exactly once, with `O_NOFOLLOW` and `O_NONBLOCK`, and its type and bytes are read from the open handle (`fstat`), never from a second look at the path: swapping what the path names after the open changes nothing the digest reads, and a FIFO is refused as not a regular file promptly rather than blocking the resolver waiting for a writer. One write's directory walks, summed across every plan it governs, are refused as `QM-APPARATUS-TOO-LARGE` past 100,000 directories visited, counting empty ones, even when they resolve to no file; the files every plan one write governs resolve to, summed, are refused the same way past 200,000. | Test (TC-1834..TC-1837) |\n \n ## Constraints\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-31",
+      "slot": "ACR-31",
+      "kind": "ac_refusal",
+      "source": "N-079",
+      "modes": [
+        "RT"
+      ],
+      "target": "requirement",
+      "defect": "describes_its_own_test",
+      "file": "spec/functional/FR-111-change-assurance-protected-apparatus.md",
+      "find": "The sealed receipt records",
+      "replace": "A round-trip test seals a receipt and checks that it records",
+      "description": "FR-111-AC-5: The criterion is rewritten as the round-trip test that verifies it.",
+      "owning_test": {
+        "filter": "tc_1015_614_receipt_records_governing_plan_id_and_diff_paths_supplied",
+        "name": "tc_1015_614_receipt_records_governing_plan_id_and_diff_paths_supplied",
+        "package": "quoin-core",
+        "selector": [
+          "--test",
+          "tc_457_change_assurance_boundary"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-111-change-assurance-protected-apparatus.md b/spec/functional/FR-111-change-assurance-protected-apparatus.md\n--- a/spec/functional/FR-111-change-assurance-protected-apparatus.md\n+++ b/spec/functional/FR-111-change-assurance-protected-apparatus.md\n@@ -118,7 +118,7 @@\n | FR-111-AC-2 | A diff naming no path inside `protected_apparatus` adds neither reason; the receipt is unchanged from an unlinked verification. | Test (TC-1869) |\n | FR-111-AC-3 | A declared `negative_controls` entry whose kind is not `apparatus-edit`, or an `apparatus-edit` entry with no protected list, is `negative_control_uncaught`, and this alone leaves the outcome `incomplete` rather than `invalid`; a declared `apparatus-edit` entry over an untouched diff adds nothing. | Test (TC-1870) |\n | FR-111-AC-4 | A plan that protects apparatus, verified with no diff retained, is `diff_missing` and the receipt is `incomplete`; with no plan linked, a missing diff adds nothing. | Test (TC-1871) |\n-| FR-111-AC-5 | The sealed receipt records `governing_plan_id` (the linked plan's id, or `null` when none was asked) and `diff_paths_supplied` (`true` when `diff_paths` was supplied at all, even empty, `false` when it was not) as explicit fields, distinguishable from a caller's omission producing the same silence in `reasons`. | Test (TC-1915) |\n+| FR-111-AC-5 | A round-trip test seals a receipt and checks that it records `governing_plan_id` (the linked plan's id, or `null` when none was asked) and `diff_paths_supplied` (`true` when `diff_paths` was supplied at all, even empty, `false` when it was not) as explicit fields, distinguishable from a caller's omission producing the same silence in `reasons`. | Test (TC-1915) |\n \n ## Constraints\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-32",
+      "slot": "ACR-32",
+      "kind": "ac_refusal",
+      "source": "N-143",
+      "modes": [
+        "RTC"
+      ],
+      "target": "requirement",
+      "defect": "describes_its_own_test",
+      "file": "spec/functional/FR-044-plan-governed-measurements.md",
+      "find": "When a collection is written, each",
+      "replace": "A fixture test writes a collection and confirms that each",
+      "description": "FR-044-AC-6: The first clause is rewritten as the fixture test that verifies it.",
+      "owning_test": {
+        "filter": "tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not",
+        "name": "tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not",
+        "package": "quoin-measurement",
+        "selector": [
+          "--test",
+          "tc_479_fr044_fr045_criteria"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-044-plan-governed-measurements.md b/spec/functional/FR-044-plan-governed-measurements.md\n--- a/spec/functional/FR-044-plan-governed-measurements.md\n+++ b/spec/functional/FR-044-plan-governed-measurements.md\n@@ -39,7 +39,7 @@\n | FR-044-AC-3 | Comparison refuses changed definitions, changed producer configuration, and incomplete populations with actionable reasons; surfaces tool and population movement; reports a missing metric as `not_computed`; and emits no quality verdict or severity. | Test (TC-1005..TC-1007) |\n | FR-044-AC-4 | `quoin report` is a deterministic store view. It shows every active plan, a plan without a record as `not_computed`, all dimensional observations, corpus gap count, full producer provenance, and factual attention items. JSON, series, and since-revision views read the same store and accept no typed value. | Test (TC-1008) |\n | FR-044-AC-5 | Tier-1 updates write generic collections first and only then refresh the derived ratchet baseline. Pre-plan JSONL observations remain explicitly legacy and are excluded from active reports and gates. | Test (TC-997, TC-998, TC-1000) |\n-| FR-044-AC-6 | When a collection is written, each `verificationStack.artifacts` name is resolved as a repository-relative path: artifact names must be safe relative paths, labels included. Every path component leading to the name is checked against the filesystem, left to right; a symlink at any component before the last refuses the write as `QM-ARTIFACT-UNREADABLE`, naming the artifact and the component. A name that is not a safe relative path refuses the write as `QM-ARTIFACT-NAME-UNSAFE`. Past those checks, a name that resolves to a regular file is digested, and a digest that disagrees with the submitted one refuses the write naming the artifact; a name that resolves to an entry that cannot itself be digested (a directory, a symlink, an unreadable or oversized file) also refuses it as `QM-ARTIFACT-UNREADABLE`. A name with no filesystem entry anywhere along its path is an artifact label, and it stays admitted on its digest's shape — the owner's ruling is that quoin does not require every declared artifact to be locally reachable — but admission is never silent: every such name is recorded, sorted, as the collection's `verificationStack.unverifiedArtifacts`, a digested name never appears there, and a collection with nothing unverified states no such member at all. `quoin report`, in both its text and JSON views, states each unverified artifact beside the collection's provenance. Both refusal codes name the artifact, and a refused write leaves no collection. | Test (TC-1731..TC-1734) |\n+| FR-044-AC-6 | A fixture test writes a collection and confirms that each `verificationStack.artifacts` name is resolved as a repository-relative path: artifact names must be safe relative paths, labels included. Every path component leading to the name is checked against the filesystem, left to right; a symlink at any component before the last refuses the write as `QM-ARTIFACT-UNREADABLE`, naming the artifact and the component. A name that is not a safe relative path refuses the write as `QM-ARTIFACT-NAME-UNSAFE`. Past those checks, a name that resolves to a regular file is digested, and a digest that disagrees with the submitted one refuses the write naming the artifact; a name that resolves to an entry that cannot itself be digested (a directory, a symlink, an unreadable or oversized file) also refuses it as `QM-ARTIFACT-UNREADABLE`. A name with no filesystem entry anywhere along its path is an artifact label, and it stays admitted on its digest's shape — the owner's ruling is that quoin does not require every declared artifact to be locally reachable — but admission is never silent: every such name is recorded, sorted, as the collection's `verificationStack.unverifiedArtifacts`, a digested name never appears there, and a collection with nothing unverified states no such member at all. `quoin report`, in both its text and JSON views, states each unverified artifact beside the collection's provenance. Both refusal codes name the artifact, and a refused write leaves no collection. | Test (TC-1731..TC-1734) |\n | FR-044-AC-7 | A `MeasurementPlan`'s `ground_truth_kind`, `statistical_design.minimum_population` and `statistical_design.repetitions` are read when present; a kind other than `human-labelled`, `agent-labelled` or `mechanical`, a count that is not a whole number from 1 to 4,294,967,295, or a `statistical_design` that is not an object refuses the plan load as `QM-PLAN-INVALID`, naming the member. When the governing plan declares `minimum_population`, intake of a new collection refuses each `measured` observation whose `population.examined` is below it as `QM-POPULATION-BELOW-MINIMUM`, and each `measured` observation stating no `population.examined` as `QM-POPULATION-UNSTATED`; a population equal to the minimum is admitted. Under such a plan, a stated `population.examined` must be a whole number of at least 0 and a stated `population` must be an object; any other stated value is refused as `QM-POPULATION-MALFORMED`, naming the member and the value, and a negative count is malformed rather than below the minimum. Each finding names the metric with its dimensions, the plan, and the minimum. Population findings accumulate with every other intake finding: the refusal carries the population code when every finding shares it, and `QM-COLLECTION-INVALID` otherwise, with each population finding leading with its own code. A plan stating none of these members loads and admits exactly as before. | Test (TC-1740..TC-1744, TC-1746, TC-1753, TC-1755) |\n | FR-044-AC-8 | `quoin report` states a plan's `ground_truth_kind` beside the plan: the text view's and the portfolio view's Plan cell read `<id> (<path>; ground truth: <kind>)`, and the JSON views carry it as the plan's `groundTruthKind` member. A plan that states no kind renders the same bytes as before, with no such clause and no such member. | Test (TC-1744, TC-1745) |\n | FR-044-AC-9 | An observation's `population` may state `repetitions`, the number of repeated runs that produced it. A stated `population.repetitions` must be a whole number of at least 1, whatever the governing plan declares; any other stated value — a quoted number, a fraction, a negative, an object — is refused as `QM-POPULATION-MALFORMED`, naming the member and the value. When the governing plan declares `statistical_design.repetitions`, intake of a new collection refuses each `measured` observation whose stated `population.repetitions` is below it as `QM-REPETITIONS-SHORT`, naming the metric with its dimensions, the plan, the runs performed and the runs required; a count equal to the requirement is admitted. When the plan requires more than one repetition, a `measured` observation stating no `population.repetitions` is refused as `QM-POPULATION-UNSTATED`, naming that member; when it requires one, or declares no `statistical_design`, an unstated count is admitted. These findings accumulate as FR-044-AC-7 states. The JSON report carries a stored `repetitions` inside the observation's `population` exactly as stored, a non-numeric value included; a population without it states no such member. | Test (TC-1747..TC-1752, TC-1754, TC-1755) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-33",
+      "slot": "ACR-33",
+      "kind": "ac_refusal",
+      "source": "N-145",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "static_or_demonstration",
+      "file": "spec/functional/FR-034-finding-shaped-evidence.md",
+      "find": "quoin SHALL NOT normalize a scanner's severity strings.",
+      "replace": "quoin's source SHALL NOT contain a severity-normalisation table.",
+      "description": "FR-034-CON-2: The runtime prohibition becomes a fact about the source tree.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-034-finding-shaped-evidence.md b/spec/functional/FR-034-finding-shaped-evidence.md\n--- a/spec/functional/FR-034-finding-shaped-evidence.md\n+++ b/spec/functional/FR-034-finding-shaped-evidence.md\n@@ -136,7 +136,7 @@\n | ID | Constraint | Type | Validation |\n |----|-----------|------|------------|\n | FR-034-CON-1 | A `FindingRecord` SHALL be written only for a report envelope an adapter actually read. Writing one for an absent scan destroys the single distinction this record type exists to make. | Design | Inspection |\n-| FR-034-CON-2 | quoin SHALL NOT normalize a scanner's severity strings. Scanners disagree about what \"high\" means; translating would invent a comparison the tools never made. | Design | Test (TC-171) |\n+| FR-034-CON-2 | quoin's source SHALL NOT contain a severity-normalisation table. Scanners disagree about what \"high\" means; translating would invent a comparison the tools never made. | Design | Test (TC-171) |\n | FR-034-CON-3 | Judging whether a reported finding is *acceptable* stays with the consumer's gate policy. | Design | Inspection |\n | FR-034-CON-4 | Scan ordering SHALL be by timestamp, never by commit prefix (`agent-ix/quoin#104`). | Design | Inspection |\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-34",
+      "slot": "ACR-34",
+      "kind": "ac_refusal",
+      "source": "N-012",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "static_or_demonstration",
+      "file": "spec/functional/FR-094-profile-selected-evidence-independence.md",
+      "find": "Quoin SHALL NOT apply an independence requirement",
+      "replace": "Quoin's source SHALL NOT contain a code path that applies an independence requirement",
+      "description": "FR-094-CON-2: The runtime prohibition becomes a fact about the source tree.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-094-profile-selected-evidence-independence.md b/spec/functional/FR-094-profile-selected-evidence-independence.md\n--- a/spec/functional/FR-094-profile-selected-evidence-independence.md\n+++ b/spec/functional/FR-094-profile-selected-evidence-independence.md\n@@ -56,7 +56,7 @@\n | ID | Constraint | Type | Validation |\n |----|-----------|------|------------|\n | FR-094-CON-1 | Quoin SHALL NOT infer independence from an organizational role, tool name, vendor, or the presence of two symbols. | Design | Inspection |\n-| FR-094-CON-2 | Quoin SHALL NOT apply an independence requirement when no profile projection requests one. | Design | Test (TC-306) |\n+| FR-094-CON-2 | Quoin's source SHALL NOT contain a code path that applies an independence requirement when no profile projection requests one. | Design | Test (TC-306) |\n | FR-094-CON-3 | Quoin SHALL NOT collapse the five dimensions into a score or a generic independent/not-independent badge detached from an obligation and policy. | Design | Inspection |\n | FR-094-CON-4 | Quoin SHALL NOT parse AssuranceProfile Markdown; Quire or the authoring workflow owns projection into the normalized policy boundary. | Design | Inspection |\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-35",
+      "slot": "ACR-35",
+      "kind": "ac_refusal",
+      "source": "N-072",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "static_or_demonstration",
+      "file": "spec/functional/FR-028-generate-property-tests-from-criteria.md",
+      "find": "The census output carries no threshold, no verdict, and no rewording suggestion",
+      "replace": "The census module imports no threshold, verdict or rewording module",
+      "description": "FR-028-AC-9: A property of the output becomes a fact about the source tree's imports.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-028-generate-property-tests-from-criteria.md b/spec/functional/FR-028-generate-property-tests-from-criteria.md\n--- a/spec/functional/FR-028-generate-property-tests-from-criteria.md\n+++ b/spec/functional/FR-028-generate-property-tests-from-criteria.md\n@@ -135,7 +135,7 @@\n | FR-028-AC-6  | Every test the skill emits runs in the repository's runner — no skip, ignore, or disabled marker is written             | agent-behaviour-eval (TC-EV-051)   |\n | FR-028-AC-7  | The run writes exactly one `SpecReview` at `reviews/YY-MM-DD-<slug>.md` with `analysis: spec-correctness`, and it passes `quire validate` | agent-behaviour-eval (TC-EV-051)   |\n | FR-028-AC-8  | A criterion whose domain, precondition, or oracle cannot be cited yields a recorded reason and no test                  | agent-behaviour-eval (TC-EV-053)   |\n-| FR-028-AC-9  | The census output carries no threshold, no verdict, and no rewording suggestion                                         | agent-behaviour-eval (TC-EV-053)   |\n+| FR-028-AC-9  | The census module imports no threshold, verdict or rewording module                                         | agent-behaviour-eval (TC-EV-053)   |\n | FR-028-AC-10 | No specification artifact the skill writes names a test framework, harness, or generator library                        | Inspection      |\n | FR-028-AC-11 | A repository whose manifest names no generator library yields findings naming it and a reported remedy, not an install and not a test | agent-behaviour-eval (TC-EV-053)   |\n | FR-028-AC-12 | Strategy selection reads `property` and is unchanged by any `shape` value                                               | Inspection      |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-36",
+      "slot": "ACR-36",
+      "kind": "ac_refusal",
+      "source": "N-175",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "static_or_demonstration",
+      "file": "spec/functional/FR-095-assurance-aware-spec-workflows.md",
+      "find": "When no assurance profile applies and base is selected, the existing zero-analysis review path remains accepted.",
+      "replace": "A maintainer selects base with no assurance profile, runs a review with zero analyses, opens the report and sees it accepted.",
+      "description": "FR-095-AC-8: The conditional behaviour becomes an end-to-end narrative of a maintainer's steps.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-095-assurance-aware-spec-workflows.md b/spec/functional/FR-095-assurance-aware-spec-workflows.md\n--- a/spec/functional/FR-095-assurance-aware-spec-workflows.md\n+++ b/spec/functional/FR-095-assurance-aware-spec-workflows.md\n@@ -39,7 +39,7 @@\n | FR-095-AC-5 | When the all set is selected, the workflow derives the complete declared analysis vocabulary and cannot accept a truncated caller-supplied list. | Test (TC-281) |\n | FR-095-AC-6 | When a selected analysis has no recorded review document, the final gate names it and refuses acceptance. | Test (TC-282) |\n | FR-095-AC-7 | When a profile selects an analysis absent from the installed review contract, intake reports it as unsupported instead of authoring an invalid document. | Test (TC-283) |\n-| FR-095-AC-8 | When no assurance profile applies and base is selected, the existing zero-analysis review path remains accepted. | Test (TC-284) |\n+| FR-095-AC-8 | A maintainer selects base with no assurance profile, runs a review with zero analyses, opens the report and sees it accepted. | Test (TC-284) |\n \n ## Constraints\n \n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-37",
+      "slot": "ACR-37",
+      "kind": "ac_refusal",
+      "source": "N-124",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "static_or_demonstration",
+      "file": "spec/functional/FR-026-dispatch-through-oclif-runner.md",
+      "find": "The runner discovers every command quoin ships",
+      "replace": "Every command quoin ships has its own file under the runner's `commands/` directory",
+      "description": "FR-026-AC-1: The runner's discovery becomes a fact about the source tree's layout.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-026-dispatch-through-oclif-runner.md b/spec/functional/FR-026-dispatch-through-oclif-runner.md\n--- a/spec/functional/FR-026-dispatch-through-oclif-runner.md\n+++ b/spec/functional/FR-026-dispatch-through-oclif-runner.md\n@@ -58,7 +58,7 @@\n \n | ID          | Criteria                                                                                     | Verification         |\n | ----------- | ---------------------------------------------------------------------------------------------- | -------------------- |\n-| FR-026-AC-1 | The runner discovers every command quoin ships                                                 | Test (cli.test.ts)   |\n+| FR-026-AC-1 | Every command quoin ships has its own file under the runner's `commands/` directory                                                 | Test (cli.test.ts)   |\n | FR-026-AC-2 | Subcommands are addressed space-separated                                                      | Test (cli.test.ts)   |\n | FR-026-AC-3 | No hand-rolled argument dispatcher remains in `src/cli.ts`                                     | Test (cli.test.ts)   |\n | FR-026-AC-4 | An unknown command, and an unknown subcommand, are each rejected by the runner                 | Test (cli.test.ts)   |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-38",
+      "slot": "ACR-38",
+      "kind": "ac_refusal",
+      "source": "N-024",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "static_or_demonstration",
+      "file": "spec/functional/FR-062-read-only-evidence-graph-analysis.md",
+      "find": "Churn deduplicates one affirmation copied across several suite bindings by",
+      "replace": "Churn's deduplication lives in one module of `quoin-graph`, which keys an affirmation copied across several suite bindings on",
+      "description": "FR-062-AC-6: The deduplication behaviour gains a clause that is a fact about the source tree (which module holds it).",
+      "owning_test": null,
+      "patch": "diff --git a/spec/functional/FR-062-read-only-evidence-graph-analysis.md b/spec/functional/FR-062-read-only-evidence-graph-analysis.md\n--- a/spec/functional/FR-062-read-only-evidence-graph-analysis.md\n+++ b/spec/functional/FR-062-read-only-evidence-graph-analysis.md\n@@ -159,7 +159,7 @@\n | FR-062-AC-3 | Change impact records its default or replacement relationship-kind selection, computes the reverse transitive dependency closure from every requested requirement, terminates on cycles, retains shared dependents, and selects the lexicographically first shortest path deterministically. | Test (TC-1251) |\n | FR-062-AC-4 | Every reached StR, US, FR, or NFR requirement is joined to all of its live obligations and bound suites with depth and path, while an unknown or non-requirement requested id is reported and returns no partial closure for that seed. | Test (TC-1252) |\n | FR-062-AC-5 | Each impacted binding carries its unchanged FR-032 verdict in a field distinct from change exposure; reachability alone never changes the verdict (CON-3). | Test (TC-1253) |\n-| FR-062-AC-6 | Churn deduplicates one affirmation copied across several suite bindings by `(obligation, who, commit, note-or-empty)` while retaining every affected suite on the row. | Test (TC-1254) |\n+| FR-062-AC-6 | Churn's deduplication lives in one module of `quoin-graph`, which keys an affirmation copied across several suite bindings on `(obligation, who, commit, note-or-empty)` while retaining every affected suite on the row. | Test (TC-1254) |\n | FR-062-AC-7 | Churn includes live obligations with zero events and sorts rows by descending event count then obligation id; affirmation history for an absent obligation is reported as a gap. | Test (TC-1255) |\n | FR-062-AC-8 | Every view carries the exact accepted source revision and export/module premises; repeated analysis over identical accepted inputs preserves those fields byte-for-byte. | Test (TC-1256) |\n | FR-062-AC-9 | Invalid inputs, absent or unreadable required `--export`/`--premises`/`--audit` paths, rejected premises, and mismatched audit identity fail before rows; absent, unreadable, incomplete, and empty retained inputs produce distinct report states and reasons, never an invented healthy zero. | Test (TC-1257) |\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-39",
+      "slot": "ACR-39",
+      "kind": "ac_refusal",
+      "source": "N-108",
+      "modes": [
+        "R"
+      ],
+      "target": "requirement",
+      "defect": "static_or_demonstration",
+      "file": "spec/non-functional/NFR-021-reproducible-corpus-measurement.md",
+      "find": "A run executed with networking disabled over the fixture corpus produces the same artifact digests as a run with networking available.",
+      "replace": "The crate graph carries no networking dependency, so no run over the fixture corpus reaches the network.",
+      "description": "NFR-021-AC-3: Digest equality between two runs becomes a fact about the dependency graph.",
+      "owning_test": null,
+      "patch": "diff --git a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n--- a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n+++ b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n@@ -77,7 +77,7 @@\n | --- | --- | --- |\n | NFR-021-AC-1 | Two runs over the same recorded corpus and module revisions produce artifacts whose SHA-256 digests are equal, excluding the run manifest's timestamp field. | Test (TC-1557) |\n | NFR-021-AC-2 | No emitted collection depends on filesystem enumeration order; every collection carries a declared ordering key. | Test (TC-1558) |\n-| NFR-021-AC-3 | A run executed with networking disabled over the fixture corpus produces the same artifact digests as a run with networking available. | Test (TC-1559) |\n+| NFR-021-AC-3 | The crate graph carries no networking dependency, so no run over the fixture corpus reaches the network. | Test (TC-1559) |\n | NFR-021-AC-4 | Every repository outside the reproducibility claim is marked `clean: false` or `stable: false` in the corpus record. | Test (TC-1584) |\n \n ## Dependencies\n",
+      "outcome": "n/a"
+    },
+    {
+      "id": "M-ACR-40",
+      "slot": "ACR-40",
+      "kind": "ac_refusal",
+      "source": "N-034",
+      "modes": [
+        "RC"
+      ],
+      "target": "requirement",
+      "defect": "static_or_demonstration",
+      "file": "spec/functional/FR-032-evidence-auditor.md",
+      "find": "An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed produces no finding and is reported healthy.",
+      "replace": "An operator runs the auditor on a repository whose obligations all pass, opens the report, sees no findings, and marks each obligation healthy.",
+      "description": "FR-032-AC-1: The input/output behaviour becomes an end-to-end narrative of an operator's steps.",
+      "owning_test": {
+        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
+        "package": "quoin-auditor",
+        "selector": [
+          "--test",
+          "tc_383_parity"
+        ]
+      },
+      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -106,7 +106,7 @@\n \n | ID | Criteria | Verification |\n |----|----------|--------------|\n-| FR-032-AC-1 | An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed produces no finding and is reported healthy. | Test (TC-137) |\n+| FR-032-AC-1 | An operator runs the auditor on a repository whose obligations all pass, opens the report, sees no findings, and marks each obligation healthy. | Test (TC-137) |\n | FR-032-AC-2 | A statement reworded after binding produces a high-severity suspect-link finding naming both hashes. | Test (TC-138) |\n | FR-032-AC-3 | A binding naming a suite with no recorded run is high severity, while a run merely behind HEAD is medium. | Test (TC-139) |\n | FR-032-AC-4 | Vacuity fires when every bound symbol was skipped or absent from the run, and does not fire when at least one passed. | Test (TC-140) |\n",
+      "outcome": "n/a"
     }
   ]
 }

@@ -261,7 +261,7 @@ process() {
       revert_all
       set_field "$id" .outcome '"survived"'
       ;;
-    requirement_text | criterion | trace_swap | fr_statement)
+    requirement_text | criterion | trace_swap | fr_statement | ac_refusal)
       revert_all
       set_field "$id" .outcome '"n/a"'
       ;;

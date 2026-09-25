@@ -467,101 +467,79 @@ pub(crate) const F1: Variant = Variant {
 // ---------------------------------------------------------------------------
 
 /// Each answered row's defect score under one rule; an unanswered row is absent.
-type Scores<'a> = BTreeMap<&'a str, f64>;
+pub(crate) type Scores<'a> = BTreeMap<&'a str, f64>;
+
+/// One battery of named defect checks: its aggregate key (`yes` when no
+/// check fires), its checks, and the mutation kind whose dev-only rows each
+/// inject one check's defect. The requirement statement's is [`STATEMENT`];
+/// `variants::refusal` holds another. Bar D and the report tables read a
+/// battery, so a second battery reuses them rather than copying them.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Battery {
+    /// The aggregate key.
+    pub(crate) sound: &'static str,
+    /// The named checks, in report order.
+    pub(crate) checks: &'static [Check],
+    /// The mutation kind whose rows carry truth for this battery only.
+    pub(crate) mutation_kind: &'static str,
+}
+
+/// The requirement statement's battery.
+pub(crate) const STATEMENT: Battery = Battery {
+    sound: SOUND,
+    checks: &CHECKS,
+    mutation_kind: MUTATION_KIND,
+};
 
 /// Whether `row` is a requirement-statement mutant: it carries truth for the
 /// statement keys only.
 pub(crate) fn is_statement_mutant(row: &Row) -> bool {
-    row.mutation
-        .as_ref()
-        .is_some_and(|mutation| mutation.kind == MUTATION_KIND)
+    STATEMENT.is_mutant(row)
 }
 
 /// The check a statement mutant injected: its one by-construction `yes`.
 pub(crate) fn injected(row: &Row) -> Option<&'static str> {
-    row.mutation
-        .as_ref()
-        .filter(|mutation| mutation.kind == MUTATION_KIND)?;
-    CHECKS.iter().map(|check| check.key).find(|key| {
-        row.truth.get(*key).is_some_and(|truth| {
-            truth.kind == TruthKind::ByConstruction && truth.answer.label() == YES
-        })
-    })
+    STATEMENT.injected(row)
+}
+
+/// Bar D over every statement pair ([`Battery::bar_d`] on [`STATEMENT`]).
+///
+/// # Panics
+/// As [`Battery::bar_d`].
+pub(crate) fn bar_d(
+    rows: &[Row],
+    scores: &Scores<'_>,
+    tau: f64,
+    checks: &[&str],
+    excluded_key: &str,
+) -> BarD {
+    STATEMENT.bar_d(rows, scores, tau, checks, excluded_key)
+}
+
+/// Bar D with one pair per statement source ([`Battery::bar_d_per_source`]
+/// on [`STATEMENT`]).
+///
+/// # Panics
+/// As [`Battery::bar_d`].
+pub(crate) fn bar_d_per_source(
+    rows: &[Row],
+    scores: &Scores<'_>,
+    tau: f64,
+    checks: &[&str],
+    excluded_key: &str,
+) -> BarD {
+    STATEMENT.bar_d_per_source(rows, scores, tau, checks, excluded_key)
 }
 
 fn primary(row: &Row, key: &str) -> Option<String> {
     row.truth.get(key).map(|truth| truth.answer.label())
 }
 
-/// One statement mutant paired with its source: the source id, and the
-/// pair's outcome with whether it was an abstention (a failure because a side
-/// went unanswered), or `None` when the source is already on the defect side
+/// One mutant paired with its source: the source id, and the pair's outcome
+/// with whether it was an abstention (a failure because a side went
+/// unanswered), or `None` when the source is already on the defect side
 /// (dropped).
 type Paired<'a> = (&'a str, Option<(PairOutcome, bool)>);
-
-/// Every statement mutant whose injected check is in `checks`, paired with
-/// its source, in row order: the pair's scores, shifted so `tau` is the
-/// shared 0.5 crossing, through the shared pair rule. `excluded_key` names
-/// the truth whose `yes` (for a check) or `no` (for [`SOUND`]) on the source
-/// already puts it on the defect side, so the pair is dropped. An unanswered
-/// side is a failure.
-///
-/// # Panics
-/// When a mutant names no source, or one missing from `rows`, a mutant
-/// itself, or in another split or mode: a broken pair link must stop the
-/// run, not shrink bar D's denominator (as `soundness::pairs`, MP-243).
-#[allow(
-    clippy::panic,
-    reason = "a broken pair link must stop the run, not shrink bar D's denominator (MP-243)"
-)]
-fn paired<'a>(
-    rows: &'a [Row],
-    scores: &Scores<'_>,
-    tau: f64,
-    checks: &[&str],
-    excluded_key: &str,
-) -> Vec<Paired<'a>> {
-    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
-    let defect_label = if excluded_key == SOUND { NO } else { YES };
-    let shift = TAU - tau;
-    let score = |row: &Row| scores.get(row.id.as_str()).map(|s| s + shift);
-    rows.iter()
-        .filter(|mutant| injected(mutant).is_some_and(|key| checks.contains(&key)))
-        .map(|mutant| {
-            let id = &mutant.id;
-            let source_id = mutant
-                .mutation
-                .as_ref()
-                .and_then(|m| m.source_id.as_deref())
-                .unwrap_or_else(|| panic!("{id}: statement mutant has no mutation.source_id"));
-            let source = by_id
-                .get(source_id)
-                .copied()
-                .unwrap_or_else(|| panic!("{id}: source {source_id} is not among this run's rows"));
-            assert!(
-                source.mutation.is_none(),
-                "{id}: source {source_id} is itself a mutant"
-            );
-            assert!(
-                source.split == mutant.split && source.mode == mutant.mode,
-                "{id}: source {source_id} is {}/{}, the mutant {}/{}",
-                source.split.as_str(),
-                source.mode.as_str(),
-                mutant.split.as_str(),
-                mutant.mode.as_str()
-            );
-            if primary(source, excluded_key).as_deref() == Some(defect_label) {
-                return (source_id, None);
-            }
-            let outcome = score(source)
-                .zip(score(mutant))
-                .map_or((PairOutcome::Failure, true), |(s, m)| {
-                    (pair_outcome(s, m), false)
-                });
-            (source_id, Some(outcome))
-        })
-        .collect()
-}
 
 fn tally(outcomes: impl Iterator<Item = Option<(PairOutcome, bool)>>) -> BarD {
     let mut tally = BarD::default();
@@ -581,60 +559,8 @@ fn tally(outcomes: impl Iterator<Item = Option<(PairOutcome, bool)>>) -> BarD {
     tally
 }
 
-/// Bar D over every pair ([`paired`]). Pairs sharing a source are not
-/// independent, so this line is descriptive; [`bar_d_per_source`] gates.
-///
-/// # Panics
-/// As [`paired`].
-pub(crate) fn bar_d(
-    rows: &[Row],
-    scores: &Scores<'_>,
-    tau: f64,
-    checks: &[&str],
-    excluded_key: &str,
-) -> BarD {
-    tally(
-        paired(rows, scores, tau, checks, excluded_key)
-            .into_iter()
-            .map(|(_, outcome)| outcome),
-    )
-}
-
-/// Bar D with one pair per source: each source's majority outcome over its
-/// kept pairs (success when successes outnumber failures, failure when
-/// failures outnumber successes, else a tie); a source whose every pair was
-/// dropped counts as dropped. Sources are independent, so this line gates.
-///
-/// # Panics
-/// As [`paired`].
-pub(crate) fn bar_d_per_source(
-    rows: &[Row],
-    scores: &Scores<'_>,
-    tau: f64,
-    checks: &[&str],
-    excluded_key: &str,
-) -> BarD {
-    let mut by_source: BTreeMap<&str, Vec<Option<(PairOutcome, bool)>>> = BTreeMap::new();
-    for (source, outcome) in paired(rows, scores, tau, checks, excluded_key) {
-        by_source.entry(source).or_default().push(outcome);
-    }
-    tally(by_source.into_values().map(|outcomes| {
-        let kept: Vec<(PairOutcome, bool)> = outcomes.into_iter().flatten().collect();
-        if kept.is_empty() {
-            return None;
-        }
-        let count = |wanted: PairOutcome| kept.iter().filter(|(o, _)| *o == wanted).count();
-        let (wins, losses) = (count(PairOutcome::Success), count(PairOutcome::Failure));
-        let all_abstained = kept.iter().all(|(_, abstained)| *abstained);
-        Some(match wins.cmp(&losses) {
-            std::cmp::Ordering::Greater => (PairOutcome::Success, false),
-            std::cmp::Ordering::Less => (PairOutcome::Failure, all_abstained),
-            std::cmp::Ordering::Equal => (PairOutcome::Tie, false),
-        })
-    }))
-}
-
-fn pct(n: usize, d: usize) -> String {
+/// `n/d` with its percentage, or `n/a` for an empty denominator.
+pub(crate) fn pct(n: usize, d: usize) -> String {
     if d == 0 {
         "n/a".to_owned()
     } else {
@@ -646,7 +572,8 @@ fn pct(n: usize, d: usize) -> String {
     }
 }
 
-fn show_d(d: &BarD) -> String {
+/// A bar D tally as one report cell.
+pub(crate) fn show_d(d: &BarD) -> String {
     format!(
         "{}-{}-{} (p = {:.4}; {}; {} dropped, source already defective{})",
         d.successes,
@@ -668,182 +595,440 @@ fn show_d(d: &BarD) -> String {
 }
 
 /// One rule's row over the report's rows.
-struct RuleLine<'a> {
-    name: String,
-    scores: Scores<'a>,
-    tau: f64,
-}
-
-/// The rows the report reads: labelled with [`SOUND`].
-fn labelled(rows: &[Row]) -> Vec<&Row> {
-    rows.iter()
-        .filter(|row| row.truth.contains_key(SOUND))
-        .collect()
+pub(crate) struct RuleLine<'a> {
+    /// The rule's name in the report.
+    pub(crate) name: String,
+    /// Each answered row's defect score.
+    pub(crate) scores: Scores<'a>,
+    /// The score at which the row is flagged.
+    pub(crate) tau: f64,
 }
 
 fn flagged(line: &RuleLine<'_>, row: &Row) -> Option<bool> {
     line.scores.get(row.id.as_str()).map(|s| *s >= line.tau)
 }
 
-/// `(credit, best constant credit, rows)` for [`SOUND`] over `rows`.
-fn accuracy(line: &RuleLine<'_>, rows: &[&Row]) -> (f64, f64, usize) {
-    let answer = |row: &Row| flagged(line, row).map(|flag| if flag { NO } else { YES });
-    let truths: Vec<(&Row, &Truth)> = rows
+/// Each row's check probabilities for the variant labelled `label`, read by
+/// `probabilities`.
+pub(crate) fn probability_table<'a>(
+    rows: &'a [Row],
+    output: &RunOutput,
+    label: &str,
+    probabilities: impl Fn(&Row, &[Answered]) -> Option<Vec<f64>>,
+) -> BTreeMap<&'a str, Vec<f64>> {
+    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    output
+        .results
         .iter()
-        .filter_map(|row| row.truth.get(SOUND).map(|truth| (*row, truth)))
-        .collect();
-    let ours = truths
-        .iter()
-        .map(|(row, truth)| credit(truth, answer(row)))
-        .sum();
-    let constant = |label: &str| -> f64 {
-        truths
-            .iter()
-            .map(|(_, truth)| credit(truth, Some(label)))
-            .sum()
-    };
-    (ours, constant(YES).max(constant(NO)), truths.len())
+        .filter(|result| result.variant == label)
+        .filter_map(|result| {
+            let row = by_id.get(result.row_id.as_str())?;
+            probabilities(row, &result.answered).map(|p| (row.id.as_str(), p))
+        })
+        .collect()
 }
 
-fn render_rule(out: &mut String, rows: &[Row], line: &RuleLine<'_>) {
-    let all = labelled(rows);
-    let natural: Vec<&Row> = all
+/// Each row's defect score `1 - P(sound)` for the holistic variant labelled
+/// `label`, read by `p_sound`.
+pub(crate) fn holistic_scores<'a>(
+    rows: &'a [Row],
+    output: &RunOutput,
+    label: &str,
+    p_sound: fn(&Row, &[Answered]) -> Option<f64>,
+) -> Scores<'a> {
+    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    output
+        .results
         .iter()
-        .copied()
-        .filter(|row| row.mutation.is_none())
-        .collect();
-    let sound: Vec<&Row> = natural
-        .iter()
-        .copied()
-        .filter(|row| primary(row, SOUND).as_deref() == Some(YES))
-        .collect();
-    let defective: Vec<&Row> = natural
-        .iter()
-        .copied()
-        .filter(|row| primary(row, SOUND).as_deref() == Some(NO))
-        .collect();
-    let cleared = sound
-        .iter()
-        .filter(|row| flagged(line, row) == Some(false))
-        .count();
-    let caught = |rows: &[&Row]| {
-        rows.iter()
-            .filter(|row| flagged(line, row) == Some(true))
-            .count()
-    };
-    let mut per_kind = String::new();
-    for check in &CHECKS {
-        let mutants: Vec<&Row> = all
-            .iter()
-            .copied()
-            .filter(|row| injected(row) == Some(check.key))
-            .collect();
-        let _ = write!(per_kind, " {} | ", pct(caught(&mutants), mutants.len()));
+        .filter(|result| result.variant == label)
+        .filter_map(|result| {
+            let row = by_id.get(result.row_id.as_str())?;
+            p_sound(row, &result.answered).map(|p| (row.id.as_str(), 1.0 - p))
+        })
+        .collect()
+}
+
+impl Battery {
+    /// Whether `row` is one of this battery's mutants.
+    pub(crate) fn is_mutant(&self, row: &Row) -> bool {
+        row.mutation
+            .as_ref()
+            .is_some_and(|mutation| mutation.kind == self.mutation_kind)
     }
-    let (ours_n, constant_n, n_n) = accuracy(line, &natural);
-    let (ours_a, constant_a, n_a) = accuracy(line, &all);
-    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
-    let d = bar_d(rows, &line.scores, line.tau, &keys, SOUND);
-    let per_source = bar_d_per_source(rows, &line.scores, line.tau, &keys, SOUND);
-    let _ = writeln!(
-        out,
-        "| {} | {} | {} |{per_kind} {ours_n:.1} vs {constant_n:.1} of {n_n} | {ours_a:.1} vs \
-         {constant_a:.1} of {n_a} | {} | {} |",
-        line.name,
-        pct(cleared, sound.len()),
-        pct(caught(&defective), defective.len()),
-        show_d(&per_source),
-        show_d(&d),
-    );
-}
 
-const RULE_HEADER: &str = "| Rule | Sound-row recall (natural) | Defect recall (natural) | \
-    compound_obligation mutants | multiple_readings mutants | names_internal_symbol mutants | \
-    Credit vs best constant (natural) | Credit vs best constant (natural + mutants) | Bar D \
-    aggregate, one pair per source (W-L-T; GATES) | Bar D aggregate, every pair (W-L-T; \
-    descriptive, pairs share sources) |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | \
-    --- |";
+    /// Whether `key` is this battery's aggregate or one of its checks.
+    pub(crate) fn grades(&self, key: &str) -> bool {
+        key == self.sound || self.checks.iter().any(|check| check.key == key)
+    }
 
-/// Each row's check probabilities for F1 labelled `label`.
-fn f1_table<'a>(rows: &'a [Row], output: &RunOutput, label: &str) -> BTreeMap<&'a str, Vec<f64>> {
-    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
-    output
-        .results
-        .iter()
-        .filter(|result| result.variant == label)
-        .filter_map(|result| {
-            let row = by_id.get(result.row_id.as_str())?;
-            f1_probabilities(row, &result.answered).map(|p| (row.id.as_str(), p.to_vec()))
+    /// The check one of this battery's mutants injected: its one
+    /// by-construction `yes`.
+    pub(crate) fn injected(&self, row: &Row) -> Option<&'static str> {
+        if !self.is_mutant(row) {
+            return None;
+        }
+        self.checks.iter().map(|check| check.key).find(|key| {
+            row.truth.get(*key).is_some_and(|truth| {
+                truth.kind == TruthKind::ByConstruction && truth.answer.label() == YES
+            })
         })
-        .collect()
-}
+    }
 
-fn f0_scores<'a>(rows: &'a [Row], output: &RunOutput, label: &str) -> Scores<'a> {
-    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
-    output
-        .results
-        .iter()
-        .filter(|result| result.variant == label)
-        .filter_map(|result| {
-            let row = by_id.get(result.row_id.as_str())?;
-            f0_probability(row, &result.answered).map(|p| (row.id.as_str(), 1.0 - p))
-        })
-        .collect()
-}
-
-fn render_checks(out: &mut String, rows: &[Row], table: &BTreeMap<&str, Vec<f64>>) {
-    let all = labelled(rows);
-    let natural = |label: &str| -> Vec<&Row> {
-        all.iter()
-            .copied()
-            .filter(|row| row.mutation.is_none() && primary(row, SOUND).as_deref() == Some(label))
+    /// Every mutant whose injected check is in `checks`, paired with its
+    /// source, in row order: the pair's scores, shifted so `tau` is the
+    /// shared 0.5 crossing, through the shared pair rule. `excluded_key`
+    /// names the truth whose `yes` (for a check) or `no` (for the aggregate)
+    /// on the source already puts it on the defect side, so the pair is
+    /// dropped. An unanswered side is a failure.
+    ///
+    /// # Panics
+    /// When a mutant names no source, or one missing from `rows`, a mutant
+    /// itself, or in another split or mode: a broken pair link must stop the
+    /// run, not shrink bar D's denominator (as `soundness::pairs`, MP-243).
+    #[allow(
+        clippy::panic,
+        reason = "a broken pair link must stop the run, not shrink bar D's denominator (MP-243)"
+    )]
+    fn paired<'a>(
+        &self,
+        rows: &'a [Row],
+        scores: &Scores<'_>,
+        tau: f64,
+        checks: &[&str],
+        excluded_key: &str,
+    ) -> Vec<Paired<'a>> {
+        let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
+        let defect_label = if excluded_key == self.sound { NO } else { YES };
+        let shift = TAU - tau;
+        let score = |row: &Row| scores.get(row.id.as_str()).map(|s| s + shift);
+        let kind = self.mutation_kind;
+        rows.iter()
+            .filter(|mutant| {
+                self.injected(mutant)
+                    .is_some_and(|key| checks.contains(&key))
+            })
+            .map(|mutant| {
+                let id = &mutant.id;
+                let source_id = mutant
+                    .mutation
+                    .as_ref()
+                    .and_then(|m| m.source_id.as_deref())
+                    .unwrap_or_else(|| panic!("{id}: {kind} mutant has no mutation.source_id"));
+                let source = by_id.get(source_id).copied().unwrap_or_else(|| {
+                    panic!("{id}: source {source_id} is not among this run's rows")
+                });
+                assert!(
+                    source.mutation.is_none(),
+                    "{id}: source {source_id} is itself a mutant"
+                );
+                assert!(
+                    source.split == mutant.split && source.mode == mutant.mode,
+                    "{id}: source {source_id} is {}/{}, the mutant {}/{}",
+                    source.split.as_str(),
+                    source.mode.as_str(),
+                    mutant.split.as_str(),
+                    mutant.mode.as_str()
+                );
+                if primary(source, excluded_key).as_deref() == Some(defect_label) {
+                    return (source_id, None);
+                }
+                let outcome = score(source)
+                    .zip(score(mutant))
+                    .map_or((PairOutcome::Failure, true), |(s, m)| {
+                        (pair_outcome(s, m), false)
+                    });
+                (source_id, Some(outcome))
+            })
             .collect()
-    };
-    let (sound, defective) = (natural(YES), natural(NO));
-    let _ = writeln!(
-        out,
-        "\n| Check | Fires on sound (natural) | Fires on defective (natural) | Natural labelled \
-         yes on it | Fires on its own mutants | Fires on other mutants | Bar D (its own \
-         mutants, W-L-T) |\n| --- | --- | --- | --- | --- | --- | --- |"
-    );
-    for (index, check) in CHECKS.iter().enumerate() {
-        let fires = |row: &Row| {
-            table
-                .get(row.id.as_str())
-                .and_then(|p| p.get(index))
-                .is_some_and(|p| *p >= TAU)
+    }
+
+    /// Bar D over every pair. Pairs sharing a source are not independent,
+    /// so this line is descriptive; [`Battery::bar_d_per_source`] gates.
+    ///
+    /// # Panics
+    /// When a mutant's pair link is broken (see `paired`).
+    pub(crate) fn bar_d(
+        &self,
+        rows: &[Row],
+        scores: &Scores<'_>,
+        tau: f64,
+        checks: &[&str],
+        excluded_key: &str,
+    ) -> BarD {
+        tally(
+            self.paired(rows, scores, tau, checks, excluded_key)
+                .into_iter()
+                .map(|(_, outcome)| outcome),
+        )
+    }
+
+    /// Bar D with one pair per source: each source's majority outcome over
+    /// its kept pairs (success when successes outnumber failures, failure
+    /// when failures outnumber successes, else a tie); a source whose every
+    /// pair was dropped counts as dropped. Sources are independent, so this
+    /// line gates.
+    ///
+    /// # Panics
+    /// As [`Battery::bar_d`].
+    pub(crate) fn bar_d_per_source(
+        &self,
+        rows: &[Row],
+        scores: &Scores<'_>,
+        tau: f64,
+        checks: &[&str],
+        excluded_key: &str,
+    ) -> BarD {
+        let mut by_source: BTreeMap<&str, Vec<Option<(PairOutcome, bool)>>> = BTreeMap::new();
+        for (source, outcome) in self.paired(rows, scores, tau, checks, excluded_key) {
+            by_source.entry(source).or_default().push(outcome);
+        }
+        tally(by_source.into_values().map(|outcomes| {
+            let kept: Vec<(PairOutcome, bool)> = outcomes.into_iter().flatten().collect();
+            if kept.is_empty() {
+                return None;
+            }
+            let count = |wanted: PairOutcome| kept.iter().filter(|(o, _)| *o == wanted).count();
+            let (wins, losses) = (count(PairOutcome::Success), count(PairOutcome::Failure));
+            let all_abstained = kept.iter().all(|(_, abstained)| *abstained);
+            Some(match wins.cmp(&losses) {
+                std::cmp::Ordering::Greater => (PairOutcome::Success, false),
+                std::cmp::Ordering::Less => (PairOutcome::Failure, all_abstained),
+                std::cmp::Ordering::Equal => (PairOutcome::Tie, false),
+            })
+        }))
+    }
+
+    /// The rows a report reads: labelled with the aggregate.
+    pub(crate) fn labelled<'a>(&self, rows: &'a [Row]) -> Vec<&'a Row> {
+        rows.iter()
+            .filter(|row| row.truth.contains_key(self.sound))
+            .collect()
+    }
+
+    /// `(credit, best constant credit, rows)` for the aggregate over `rows`.
+    fn accuracy(&self, line: &RuleLine<'_>, rows: &[&Row]) -> (f64, f64, usize) {
+        let answer = |row: &Row| flagged(line, row).map(|flag| if flag { NO } else { YES });
+        let truths: Vec<(&Row, &Truth)> = rows
+            .iter()
+            .filter_map(|row| row.truth.get(self.sound).map(|truth| (*row, truth)))
+            .collect();
+        let ours = truths
+            .iter()
+            .map(|(row, truth)| credit(truth, answer(row)))
+            .sum();
+        let constant = |label: &str| -> f64 {
+            truths
+                .iter()
+                .map(|(_, truth)| credit(truth, Some(label)))
+                .sum()
         };
-        let count = |rows: &[&Row]| rows.iter().filter(|row| fires(row)).count();
-        let own: Vec<&Row> = all
+        (ours, constant(YES).max(constant(NO)), truths.len())
+    }
+
+    /// The rule table's header: one mutant column per check.
+    pub(crate) fn rule_header(&self) -> String {
+        let mut header =
+            "| Rule | Sound-row recall (natural) | Defect recall (natural) |".to_owned();
+        for check in self.checks {
+            let _ = write!(header, " {} mutants |", check.key);
+        }
+        header.push_str(
+            " Credit vs best constant (natural) | Credit vs best constant (natural + mutants) | \
+             Bar D aggregate, one pair per source (W-L-T; GATES) | Bar D aggregate, every pair \
+             (W-L-T; descriptive, pairs share sources) |\n|",
+        );
+        for _ in 0..self.checks.len() + 7 {
+            header.push_str(" --- |");
+        }
+        header
+    }
+
+    /// One rule's line in the rule table.
+    ///
+    /// # Panics
+    /// As [`Battery::bar_d`].
+    pub(crate) fn render_rule(&self, out: &mut String, rows: &[Row], line: &RuleLine<'_>) {
+        let all = self.labelled(rows);
+        let natural: Vec<&Row> = all
             .iter()
             .copied()
-            .filter(|row| injected(row) == Some(check.key))
+            .filter(|row| row.mutation.is_none())
             .collect();
-        let other: Vec<&Row> = all
+        let side = |label: &str| -> Vec<&Row> {
+            natural
+                .iter()
+                .copied()
+                .filter(|row| primary(row, self.sound).as_deref() == Some(label))
+                .collect()
+        };
+        let (sound, defective) = (side(YES), side(NO));
+        let cleared = sound
             .iter()
-            .copied()
-            .filter(|row| injected(row).is_some_and(|key| key != check.key))
-            .collect();
-        let labelled_yes = all
-            .iter()
-            .filter(|row| row.mutation.is_none() && primary(row, check.key).as_deref() == Some(YES))
+            .filter(|row| flagged(line, row) == Some(false))
             .count();
-        let scores: Scores<'_> = table
-            .iter()
-            .filter_map(|(id, p)| p.get(index).map(|p| (*id, *p)))
-            .collect();
-        let d = bar_d(rows, &scores, TAU, &[check.key], check.key);
+        let caught = |rows: &[&Row]| {
+            rows.iter()
+                .filter(|row| flagged(line, row) == Some(true))
+                .count()
+        };
+        let mut per_kind = String::new();
+        for check in self.checks {
+            let mutants: Vec<&Row> = all
+                .iter()
+                .copied()
+                .filter(|row| self.injected(row) == Some(check.key))
+                .collect();
+            let _ = write!(per_kind, " {} | ", pct(caught(&mutants), mutants.len()));
+        }
+        let (ours_n, constant_n, n_n) = self.accuracy(line, &natural);
+        let (ours_a, constant_a, n_a) = self.accuracy(line, &all);
+        let keys: Vec<&str> = self.checks.iter().map(|check| check.key).collect();
+        let d = self.bar_d(rows, &line.scores, line.tau, &keys, self.sound);
+        let per_source = self.bar_d_per_source(rows, &line.scores, line.tau, &keys, self.sound);
         let _ = writeln!(
             out,
-            "| {} | {} | {} | {labelled_yes} | {} | {} | {} |",
-            check.key,
-            pct(count(&sound), sound.len()),
-            pct(count(&defective), defective.len()),
-            pct(count(&own), own.len()),
-            pct(count(&other), other.len()),
+            "| {} | {} | {} |{per_kind} {ours_n:.1} vs {constant_n:.1} of {n_n} | {ours_a:.1} vs \
+             {constant_a:.1} of {n_a} | {} | {} |",
+            line.name,
+            pct(cleared, sound.len()),
+            pct(caught(&defective), defective.len()),
+            show_d(&per_source),
             show_d(&d),
         );
     }
+
+    /// The per-check table: each check's fire rate on sound and defective
+    /// natural rows and on mutants, from one probability per check per row
+    /// (in [`Battery::checks`] order).
+    ///
+    /// # Panics
+    /// As [`Battery::bar_d`].
+    pub(crate) fn render_checks(
+        &self,
+        out: &mut String,
+        rows: &[Row],
+        table: &BTreeMap<&str, Vec<f64>>,
+        tau: f64,
+    ) {
+        let all = self.labelled(rows);
+        let natural = |label: &str| -> Vec<&Row> {
+            all.iter()
+                .copied()
+                .filter(|row| {
+                    row.mutation.is_none() && primary(row, self.sound).as_deref() == Some(label)
+                })
+                .collect()
+        };
+        let (sound, defective) = (natural(YES), natural(NO));
+        let _ = writeln!(
+            out,
+            "\n| Check (fires at {tau}) | Fires on sound (natural) | Fires on defective (natural) | \
+             Natural labelled yes on it | Fires on its own mutants | Fires on other mutants | Bar \
+             D (its own mutants, W-L-T) |\n| --- | --- | --- | --- | --- | --- | --- |"
+        );
+        for (index, check) in self.checks.iter().enumerate() {
+            let fires = |row: &Row| {
+                table
+                    .get(row.id.as_str())
+                    .and_then(|p| p.get(index))
+                    .is_some_and(|p| *p >= tau)
+            };
+            let count = |rows: &[&Row]| rows.iter().filter(|row| fires(row)).count();
+            let own: Vec<&Row> = all
+                .iter()
+                .copied()
+                .filter(|row| self.injected(row) == Some(check.key))
+                .collect();
+            let other: Vec<&Row> = all
+                .iter()
+                .copied()
+                .filter(|row| self.injected(row).is_some_and(|key| key != check.key))
+                .collect();
+            let labelled_yes = all
+                .iter()
+                .filter(|row| {
+                    row.mutation.is_none() && primary(row, check.key).as_deref() == Some(YES)
+                })
+                .count();
+            let scores: Scores<'_> = table
+                .iter()
+                .filter_map(|(id, p)| p.get(index).map(|p| (*id, *p)))
+                .collect();
+            let d = self.bar_d(rows, &scores, tau, &[check.key], check.key);
+            let _ = writeln!(
+                out,
+                "| {} | {} | {} | {labelled_yes} | {} | {} | {} |",
+                check.key,
+                pct(count(&sound), sound.len()),
+                pct(count(&defective), defective.len()),
+                pct(count(&own), own.len()),
+                pct(count(&other), other.len()),
+                show_d(&d),
+            );
+        }
+    }
+
+    /// One JSON object per labelled row: its truth, the battery's check
+    /// probabilities from `table`, the holistic defect score from
+    /// `holistic`, and `unit`, for reading flagged rows by hand.
+    pub(crate) fn dump(
+        &self,
+        rows: &[Row],
+        table: &BTreeMap<&str, Vec<f64>>,
+        holistic: &Scores<'_>,
+        unit: fn(&Row) -> Option<String>,
+    ) -> Vec<String> {
+        self.labelled(rows)
+            .into_iter()
+            .map(|row| {
+                let truth: BTreeMap<&str, Value> = row
+                    .truth
+                    .iter()
+                    .map(|(key, truth)| {
+                        (
+                            key.as_str(),
+                            json!({
+                                "answer": truth.answer.label(),
+                                "alternatives": truth.alternatives.iter().map(crate::eval_v2_support::corpus::TruthAnswer::label).collect::<Vec<_>>(),
+                                "rationale": truth.rationale,
+                            }),
+                        )
+                    })
+                    .collect();
+                let p: BTreeMap<&str, f64> = table
+                    .get(row.id.as_str())
+                    .map(|p| {
+                        self.checks
+                            .iter()
+                            .zip(p)
+                            .map(|(check, p)| (check.key, *p))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                json!({
+                    "id": row.id,
+                    "mode": row.mode.as_str(),
+                    "fr_id": row.requirement.fr_id,
+                    "natural": row.mutation.is_none(),
+                    "mutation": row.mutation.as_ref().map(|m| json!({"id": m.id, "source_id": m.source_id, "description": m.description})),
+                    "injected": self.injected(row),
+                    "sound": primary(row, self.sound),
+                    "checks": p,
+                    "holistic_p_defect": holistic.get(row.id.as_str()),
+                    "unit": unit(row),
+                    "truth": truth,
+                })
+                .to_string()
+            })
+            .collect()
+    }
+}
+
+/// Each row's F1 check probabilities for the variant labelled `label`.
+fn f1_table<'a>(rows: &'a [Row], output: &RunOutput, label: &str) -> BTreeMap<&'a str, Vec<f64>> {
+    probability_table(rows, output, label, |row, answered| {
+        f1_probabilities(row, answered).map(|p| p.to_vec())
+    })
 }
 
 /// The report for every F variant in `variants`: F0 and F1's pre-registered
@@ -855,25 +1040,26 @@ pub(crate) fn render(rows: &[Row], output: &RunOutput, variants: &[&Variant]) ->
     if ran("F0").is_none() && ran("F1").is_none() {
         return out;
     }
-    let all = labelled(rows);
+    let all = STATEMENT.labelled(rows);
     let _ = writeln!(
         out,
         "\n## Requirement statement ({SOUND}; dev only, informational)\n\n{} labelled rows: {} \
          natural (AGENT-LABELLED, single pass), {} statement mutants (by construction). Credit \
          counts an alternative reading as half. Bar D: {MUTATION_KIND} mutant vs its source, the \
-         shared pair rule (cross the rule's threshold, move at least 0.10).\n\n{RULE_HEADER}",
+         shared pair rule (cross the rule's threshold, move at least 0.10).\n\n{}",
         all.len(),
         all.iter().filter(|row| row.mutation.is_none()).count(),
         all.iter().filter(|row| row.mutation.is_some()).count(),
+        STATEMENT.rule_header(),
     );
     if let Some(f0) = ran("F0") {
         let label = f0.label();
-        render_rule(
+        STATEMENT.render_rule(
             &mut out,
             rows,
             &RuleLine {
                 name: format!("{label} holistic P(no) >= 0.5"),
-                scores: f0_scores(rows, output, &label),
+                scores: holistic_scores(rows, output, &label, f0_probability),
                 tau: TAU,
             },
         );
@@ -891,7 +1077,7 @@ pub(crate) fn render(rows: &[Row], output: &RunOutput, variants: &[&Variant]) ->
             }
             (false, _) => " (POST HOC)".to_owned(),
         };
-        render_rule(
+        STATEMENT.render_rule(
             &mut out,
             rows,
             &RuleLine {
@@ -904,7 +1090,7 @@ pub(crate) fn render(rows: &[Row], output: &RunOutput, variants: &[&Variant]) ->
             },
         );
     }
-    render_checks(&mut out, rows, &table);
+    STATEMENT.render_checks(&mut out, rows, &table, TAU);
     out
 }
 
@@ -914,53 +1100,11 @@ pub(crate) fn dump(rows: &[Row], output: &RunOutput, variants: &[&Variant]) -> V
     let f0 = variants
         .iter()
         .find(|variant| variant.id == "F0")
-        .map(|variant| f0_scores(rows, output, &variant.label()))
+        .map(|variant| holistic_scores(rows, output, &variant.label(), f0_probability))
         .unwrap_or_default();
     let Some(f1) = variants.iter().find(|variant| variant.id == "F1") else {
         return Vec::new();
     };
     let table = f1_table(rows, output, &f1.label());
-    labelled(rows)
-        .into_iter()
-        .map(|row| {
-            let truth: BTreeMap<&str, Value> = row
-                .truth
-                .iter()
-                .map(|(key, truth)| {
-                    (
-                        key.as_str(),
-                        json!({
-                            "answer": truth.answer.label(),
-                            "alternatives": truth.alternatives.iter().map(crate::eval_v2_support::corpus::TruthAnswer::label).collect::<Vec<_>>(),
-                            "rationale": truth.rationale,
-                        }),
-                    )
-                })
-                .collect();
-            let p: BTreeMap<&str, f64> = table
-                .get(row.id.as_str())
-                .map(|p| {
-                    CHECKS
-                        .iter()
-                        .zip(p)
-                        .map(|(check, p)| (check.key, *p))
-                        .collect()
-                })
-                .unwrap_or_default();
-            json!({
-                "id": row.id,
-                "mode": row.mode.as_str(),
-                "fr_id": row.requirement.fr_id,
-                "natural": row.mutation.is_none(),
-                "mutation": row.mutation.as_ref().map(|m| json!({"id": m.id, "source_id": m.source_id, "description": m.description})),
-                "injected": injected(row),
-                "sound": primary(row, SOUND),
-                "f1": p,
-                "f0_p_defect": f0.get(row.id.as_str()),
-                "unit": statement_unit(row),
-                "truth": truth,
-            })
-            .to_string()
-        })
-        .collect()
+    STATEMENT.dump(rows, &table, &f0, statement_unit)
 }

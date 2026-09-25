@@ -58,7 +58,7 @@ const fn binary(key: &'static str, no_defect: &'static str, needs: Needs) -> Key
 }
 
 /// Every key PLAT-1024 names. Order is report order.
-pub(crate) const KEYS: [KeySpec; 18] = [
+pub(crate) const KEYS: [KeySpec; 24] = [
     binary("trace_correct", YES, Needs::TestOrCode),
     binary("assertion_vacuous", NO, Needs::Test),
     binary("test_asserts_intent", YES, Needs::Test),
@@ -91,6 +91,13 @@ pub(crate) const KEYS: [KeySpec; 18] = [
     binary("compound_obligation", NO, Needs::Requirement),
     binary("multiple_readings", NO, Needs::Requirement),
     binary("names_internal_symbol", NO, Needs::Requirement),
+    // The acceptance criterion's refusal reasons (`variants::refusal`).
+    binary("criterion_groundable", YES, Needs::Requirement),
+    binary("oracle_is_adjectival", NO, Needs::Requirement),
+    binary("domain_unbounded", NO, Needs::Requirement),
+    binary("names_single_witness", NO, Needs::Requirement),
+    binary("describes_its_own_test", NO, Needs::Requirement),
+    binary("static_or_demonstration", NO, Needs::Requirement),
 ];
 
 /// The spec for `key`, or `None` for a key no row may carry.
