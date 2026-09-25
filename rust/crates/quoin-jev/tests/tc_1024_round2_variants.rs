@@ -1058,3 +1058,140 @@ fn tc_1024_statement_bar_d() {
     assert_eq!(none.failures, none.pairs - none.source_already_yes);
     assert_eq!(none.abstained, none.failures);
 }
+
+/// Provenance: PLAT-1024 exp3, PR #633 review finding 1. The statement
+/// mutants run only on a variant graded on a statement key: K1 and E5 see
+/// exactly the dev rows they saw before those mutants existed (the counts
+/// measured on origin/main at 93112a22: 248 dev rows, 105 in R, 100 in RC or
+/// RTC), and a run without an F variant drops the mutants from its rows.
+#[test]
+fn tc_1024_statement_mutants_cost_other_variants_nothing() {
+    use eval_v2_support::corpus::Split;
+    use eval_v2_support::variant::rows_for;
+    use eval_v2_support::variants::soundness::K1;
+    use eval_v2_support::variants::statement::{F0, F1, is_statement_mutant};
+    let dev: Vec<Row> = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows
+        .into_iter()
+        .filter(|row| row.split == Split::Dev)
+        .collect();
+    let statement_mutants = dev.iter().filter(|row| is_statement_mutant(row)).count();
+    assert_eq!(statement_mutants, 40);
+    let count = |variant: &Variant| dev.iter().filter(|row| variant.applies_to(row)).count();
+    assert_eq!((count(&K1), count(&E5)), (105, 100));
+    assert_eq!(rows_for(dev.clone(), &[&K1, &E5]).len(), 248);
+    assert_eq!(rows_for(dev.clone(), &[&K1, &F0]).len(), 248 + 40);
+    assert!(
+        dev.iter()
+            .filter(|row| is_statement_mutant(row))
+            .all(|row| F1.applies_to(row) && F0.applies_to(row) && !K1.applies_to(row))
+    );
+}
+
+/// Provenance: PLAT-1024 exp3, PR #633 review finding 6. Every committed
+/// statement label carries all four keys with `fr_statement_sound` = `no`
+/// exactly when a check fires; a missing key, an inconsistent aggregate, an
+/// unknown id or a held-out id is refused, never silently dropped.
+#[test]
+fn tc_1024_statement_labels_are_complete_or_refused() {
+    use eval_v2_support::assemble::{fixture_dir, statement_labels, statement_truth};
+    let read = |name: &str| -> Value {
+        serde_json::from_str(&std::fs::read_to_string(fixture_dir().join(name)).unwrap()).unwrap()
+    };
+    let sample = read("sample.json");
+    let labels = read("labels-fr-statement.json")["labels"].clone();
+    let checked = statement_labels(&labels, &sample).unwrap();
+    assert_eq!(checked.len(), 41);
+    assert!(checked.values().all(|truth| truth.len() == 4));
+    let entry = |sound: &str, compound: &str| {
+        json!({
+            "fr_statement_sound": {"answer": sound, "why": "w"},
+            "compound_obligation": {"answer": compound, "why": "w"},
+            "multiple_readings": {"answer": "no", "why": "w"},
+            "names_internal_symbol": {"answer": "no", "why": "w"},
+        })
+    };
+    assert!(statement_truth("N-1", &entry("no", "yes")).is_ok());
+    assert!(statement_truth("N-1", &entry("yes", "no")).is_ok());
+    assert!(statement_truth("N-1", &entry("yes", "yes")).is_err());
+    assert!(statement_truth("N-1", &entry("no", "no")).is_err());
+    let mut missing = entry("yes", "no");
+    missing.as_object_mut().unwrap().remove("multiple_readings");
+    assert!(
+        statement_truth("N-1", &missing)
+            .unwrap_err()
+            .contains("multiple_readings")
+    );
+    let heldout = sample["split"]
+        .as_object()
+        .unwrap()
+        .iter()
+        .find(|(_, split)| *split == "heldout")
+        .map(|(id, _)| id.clone())
+        .unwrap();
+    for id in ["N-999", heldout.as_str()] {
+        let mut bad = labels.clone();
+        bad[id] = entry("yes", "no");
+        assert!(statement_labels(&bad, &sample).is_err(), "{id} accepted");
+    }
+}
+
+/// Provenance: PLAT-1024 exp3, PR #633 review finding 5. With one pair per
+/// source, a source's pairs count once, by their majority outcome.
+#[test]
+fn tc_1024_statement_bar_d_counts_each_source_once() {
+    use eval_v2_support::variants::statement::{CHECKS, SOUND, bar_d, bar_d_per_source, injected};
+    let rows = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows;
+    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
+    let mutants: Vec<&Row> = rows.iter().filter(|row| injected(row).is_some()).collect();
+    let sources: std::collections::BTreeSet<&str> = mutants
+        .iter()
+        .filter_map(|row| row.mutation.as_ref().unwrap().source_id.as_deref())
+        .collect();
+    // Every mutant rises from 0.1 to 0.9, except the compound ones, which fall.
+    let scores: std::collections::BTreeMap<&str, f64> = rows
+        .iter()
+        .filter(|row| row.truth.contains_key(SOUND))
+        .map(|row| {
+            let score = match injected(row) {
+                None => 0.3,
+                Some("compound_obligation") => 0.1,
+                Some(_) => 0.9,
+            };
+            (row.id.as_str(), score)
+        })
+        .collect();
+    let every = bar_d(&rows, &scores, 0.5, &keys, SOUND);
+    let once = bar_d_per_source(&rows, &scores, 0.5, &keys, SOUND);
+    assert_eq!(every.pairs, mutants.len());
+    assert_eq!(once.pairs, sources.len());
+    // A source with one compound and two other mutants: 2 wins beat 1 loss.
+    assert!(once.successes > 0 && once.successes + once.failures + once.ties <= sources.len());
+    assert!(once.decided() < every.decided());
+}
+
+/// Provenance: PLAT-1024 exp3, PR #633 review finding 3. A statement mutant
+/// whose source is missing stops the run rather than leaving bar D's
+/// denominator.
+#[test]
+#[should_panic(expected = "is not among this run's rows")]
+fn tc_1024_statement_bar_d_refuses_a_missing_source() {
+    use eval_v2_support::variants::statement::{CHECKS, SOUND, bar_d, injected};
+    let rows: Vec<Row> = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows
+        .into_iter()
+        .filter(|row| row.mutation.is_some() && injected(row).is_some())
+        .collect();
+    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
+    let _ = bar_d(&rows, &std::collections::BTreeMap::new(), 0.5, &keys, SOUND);
+}

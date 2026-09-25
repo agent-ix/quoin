@@ -11194,10 +11194,10 @@
       "defect": "names_internal_symbol",
       "file": "spec/functional/FR-050-reconcile-quire-decisions.md",
       "find": "disposition that names the current governing",
-      "replace": "disposition returned by `coverage::compute` naming the governing",
-      "description": "FR-050 statement: Replaces the observable naming with the internal function `coverage::compute` (quoin-quire/src/coverage.rs).",
+      "replace": "disposition returned by `coverage::compute` naming the current governing",
+      "description": "FR-050 statement: Replaces the observable naming with the internal function `coverage::compute` (quoin-quire/src/coverage.rs); \"current\" is kept, so only the identifier changes.",
       "owning_test": null,
-      "patch": "diff --git a/spec/functional/FR-050-reconcile-quire-decisions.md b/spec/functional/FR-050-reconcile-quire-decisions.md\nindex 8ff1d174..9704531d 100644\n--- a/spec/functional/FR-050-reconcile-quire-decisions.md\n+++ b/spec/functional/FR-050-reconcile-quire-decisions.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a\n-preserved, clarified, partially superseded, or deferred disposition that names the current governing\n+preserved, clarified, partially superseded, or deferred disposition returned by `coverage::compute` naming the governing\n source.\n \n ## Rationale\n",
+      "patch": "diff --git a/spec/functional/FR-050-reconcile-quire-decisions.md b/spec/functional/FR-050-reconcile-quire-decisions.md\nindex 8ff1d174..0eb89fa6 100644\n--- a/spec/functional/FR-050-reconcile-quire-decisions.md\n+++ b/spec/functional/FR-050-reconcile-quire-decisions.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a\n-preserved, clarified, partially superseded, or deferred disposition that names the current governing\n+preserved, clarified, partially superseded, or deferred disposition returned by `coverage::compute` naming the current governing\n source.\n \n ## Rationale\n",
       "outcome": "n/a"
     },
     {

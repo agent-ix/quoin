@@ -592,34 +592,87 @@ fn natural_truth(a: &Value, b: &Value, id: &str, key: &str) -> Option<Value> {
     })
 }
 
-/// The requirement-statement truths one natural row's entry in
-/// `labels-fr-statement.json` gives (none when it has no entry): kind
-/// `agent_single`, with the labeller's other defensible reading, if any, as
-/// the alternative.
-fn statement_truth(entry: &Value) -> BTreeMap<String, Value> {
-    STATEMENT_KEYS
+/// The requirement-statement truths for one entry of
+/// `labels-fr-statement.json`: kind `agent_single`, with the labeller's other
+/// defensible reading, if any, as the alternative.
+///
+/// # Errors
+/// When any of the four keys is missing or not `yes`/`no`, or
+/// `fr_statement_sound` is not `no` exactly when some check is `yes`: a
+/// malformed entry is refused, never silently dropped.
+pub(crate) fn statement_truth(id: &str, entry: &Value) -> Result<BTreeMap<String, Value>, String> {
+    let mut out = BTreeMap::new();
+    for key in STATEMENT_KEYS {
+        let label = &entry[key];
+        let answer = label["answer"]
+            .as_str()
+            .filter(|answer| ["yes", "no"].contains(answer))
+            .ok_or_else(|| format!("{id}: {key} has no yes/no answer"))?;
+        let alternatives: Vec<String> = label["alternatives"]
+            .as_array()
+            .map(|alts| {
+                alts.iter()
+                    .filter_map(|a| a.as_str().map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let why = label["why"].as_str().unwrap_or("");
+        out.insert(
+            key.to_owned(),
+            truth(
+                answer,
+                "agent_single",
+                &alternatives,
+                &format!("AGENT-LABELLED, single pass, not audited. {why}"),
+            ),
+        );
+    }
+    let fires = statement::CHECKS
         .iter()
-        .filter_map(|key| {
-            let label = &entry[*key];
-            let answer = label["answer"].as_str()?;
-            let alternatives: Vec<String> = label["alternatives"]
-                .as_array()
-                .map(|alts| {
-                    alts.iter()
-                        .filter_map(|a| a.as_str().map(str::to_owned))
-                        .collect()
-                })
-                .unwrap_or_default();
-            let why = label["why"].as_str().unwrap_or("");
-            Some((
-                (*key).to_owned(),
-                truth(
-                    answer,
-                    "agent_single",
-                    &alternatives,
-                    &format!("AGENT-LABELLED, single pass, not audited. {why}"),
-                ),
-            ))
+        .any(|check| out[check.key]["answer"] == "yes");
+    let sound = out[statement::SOUND]["answer"] == "yes";
+    if sound == fires {
+        return Err(format!(
+            "{id}: {} is {} but {} check says yes",
+            statement::SOUND,
+            if sound { "yes" } else { "no" },
+            if fires { "a" } else { "no" }
+        ));
+    }
+    Ok(out)
+}
+
+/// Every entry of `labels-fr-statement.json`'s `labels`, checked against
+/// `sample.json`: each id must be a dev natural row, and each entry must
+/// pass [`statement_truth`].
+///
+/// # Errors
+/// Naming the first unknown or held-out id, or malformed entry.
+pub(crate) fn statement_labels(
+    labels: &Value,
+    sample: &Value,
+) -> Result<BTreeMap<String, BTreeMap<String, Value>>, String> {
+    let labels = labels
+        .as_object()
+        .ok_or("labels-fr-statement.json: `labels` is not an object")?;
+    let natural: Vec<&str> = sample["natural"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|n| n["id"].as_str())
+        .collect();
+    labels
+        .iter()
+        .map(|(id, entry)| {
+            if !natural.contains(&id.as_str()) {
+                return Err(format!("{id}: not a natural row of sample.json"));
+            }
+            if sample["split"][id] != "dev" {
+                return Err(format!(
+                    "{id}: not a dev row; statement labels are dev only"
+                ));
+            }
+            Ok((id.clone(), statement_truth(id, entry)?))
         })
         .collect()
 }
@@ -1117,6 +1170,8 @@ fn body_block(content: &dyn Content, r: &Value, name_key: &str) -> Value {
 pub(crate) fn draft_rows(inputs: &Inputs, content: &dyn Content) -> Draft {
     let (docs, _) = load_docs(content);
     let natural = inputs.sample["natural"].as_array().unwrap();
+    let statement_labels = statement_labels(&inputs.labels_statement, &inputs.sample)
+        .unwrap_or_else(|error| panic!("{error}"));
     let split = &inputs.sample["split"];
     let all: Vec<&Value> = inputs.mutations["mutations"]
         .as_array()
@@ -1159,7 +1214,7 @@ pub(crate) fn draft_rows(inputs: &Inputs, content: &dyn Content) -> Draft {
             }
         }
         let mut t = agent.clone();
-        t.extend(statement_truth(&inputs.labels_statement[&id]));
+        t.extend(statement_labels.get(&id).cloned().unwrap_or_default());
         if mode.contains('T') {
             let trace_dual_yes = agent
                 .get("trace_correct")

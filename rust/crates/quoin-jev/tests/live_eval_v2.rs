@@ -242,7 +242,10 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         &refs,
     )
     .unwrap_or_else(|error| panic!("{error}"));
-    let rows: Vec<Row> = combined_rows(&sources, split).unwrap_or_else(|error| panic!("{error}"));
+    let rows: Vec<Row> = variant::rows_for(
+        combined_rows(&sources, split).unwrap_or_else(|error| panic!("{error}")),
+        &variants,
+    );
     let excluded: Vec<Excluded> = sources
         .iter()
         .flat_map(|source| source.excluded.iter().cloned())

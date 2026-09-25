@@ -34343,10 +34343,10 @@
       "id": "EV2-0531",
       "mode": "RC",
       "mutation": {
-        "description": "FR-050 statement: Replaces the observable naming with the internal function `coverage::compute` (quoin-quire/src/coverage.rs).",
+        "description": "FR-050 statement: Replaces the observable naming with the internal function `coverage::compute` (quoin-quire/src/coverage.rs); \"current\" is kept, so only the identifier changes.",
         "id": "M-FRS-15",
         "kind": "fr_statement",
-        "patch": "diff --git a/spec/functional/FR-050-reconcile-quire-decisions.md b/spec/functional/FR-050-reconcile-quire-decisions.md\nindex 8ff1d174..9704531d 100644\n--- a/spec/functional/FR-050-reconcile-quire-decisions.md\n+++ b/spec/functional/FR-050-reconcile-quire-decisions.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a\n-preserved, clarified, partially superseded, or deferred disposition that names the current governing\n+preserved, clarified, partially superseded, or deferred disposition returned by `coverage::compute` naming the governing\n source.\n \n ## Rationale\n",
+        "patch": "diff --git a/spec/functional/FR-050-reconcile-quire-decisions.md b/spec/functional/FR-050-reconcile-quire-decisions.md\nindex 8ff1d174..0eb89fa6 100644\n--- a/spec/functional/FR-050-reconcile-quire-decisions.md\n+++ b/spec/functional/FR-050-reconcile-quire-decisions.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a\n-preserved, clarified, partially superseded, or deferred disposition that names the current governing\n+preserved, clarified, partially superseded, or deferred disposition returned by `coverage::compute` naming the current governing\n source.\n \n ## Rationale\n",
         "source_id": "EV2-0110",
         "target": "requirement"
       },
@@ -34356,7 +34356,7 @@
         "ac_text": null,
         "context": "FR-050: Reconcile the semantic architecture with Quire decisions (spec/functional/FR-050-reconcile-quire-decisions.md)",
         "fr_id": "FR-050",
-        "statement": "When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a\npreserved, clarified, partially superseded, or deferred disposition returned by `coverage::compute` naming the governing\nsource."
+        "statement": "When the semantic-module architecture cites an existing Quire decision, the record SHALL assign a\npreserved, clarified, partially superseded, or deferred disposition returned by `coverage::compute` naming the current governing\nsource."
       },
       "split": "dev",
       "strata": {
@@ -34378,7 +34378,7 @@
           "alternatives": [],
           "answer": "yes",
           "kind": "by_construction",
-          "rationale": "M-FRS-15 injects it into the requirement statement: FR-050 statement: Replaces the observable naming with the internal function `coverage::compute` (quoin-quire/src/coverage.rs)."
+          "rationale": "M-FRS-15 injects it into the requirement statement: FR-050 statement: Replaces the observable naming with the internal function `coverage::compute` (quoin-quire/src/coverage.rs); \"current\" is kept, so only the identifier changes."
         }
       }
     },

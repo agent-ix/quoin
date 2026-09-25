@@ -469,6 +469,14 @@ pub(crate) const F1: Variant = Variant {
 /// Each answered row's defect score under one rule; an unanswered row is absent.
 type Scores<'a> = BTreeMap<&'a str, f64>;
 
+/// Whether `row` is a requirement-statement mutant: it carries truth for the
+/// statement keys only.
+pub(crate) fn is_statement_mutant(row: &Row) -> bool {
+    row.mutation
+        .as_ref()
+        .is_some_and(|mutation| mutation.kind == MUTATION_KIND)
+}
+
 /// The check a statement mutant injected: its one by-construction `yes`.
 pub(crate) fn injected(row: &Row) -> Option<&'static str> {
     row.mutation
@@ -485,11 +493,92 @@ fn primary(row: &Row, key: &str) -> Option<String> {
     row.truth.get(key).map(|truth| truth.answer.label())
 }
 
-/// Bar D over every statement mutant whose injected check is in `checks`:
-/// the pair's scores, shifted so `tau` is the shared 0.5 crossing, through
-/// the shared pair rule. `excluded_key` names the truth whose `yes` (for a
-/// check) or `no` (for [`SOUND`]) on the source already puts it on the
-/// defect side, so the pair is dropped. An unanswered side is a failure.
+/// One statement mutant paired with its source: the source id, and the
+/// pair's outcome, or `None` when the source is already on the defect side
+/// (dropped).
+type Paired<'a> = (&'a str, Option<PairOutcome>);
+
+/// Every statement mutant whose injected check is in `checks`, paired with
+/// its source, in row order: the pair's scores, shifted so `tau` is the
+/// shared 0.5 crossing, through the shared pair rule. `excluded_key` names
+/// the truth whose `yes` (for a check) or `no` (for [`SOUND`]) on the source
+/// already puts it on the defect side, so the pair is dropped. An unanswered
+/// side is a failure.
+///
+/// # Panics
+/// When a mutant names no source, or one missing from `rows`, a mutant
+/// itself, or in another split or mode: a broken pair link must stop the
+/// run, not shrink bar D's denominator (as `soundness::pairs`, MP-243).
+#[allow(
+    clippy::panic,
+    reason = "a broken pair link must stop the run, not shrink bar D's denominator (MP-243)"
+)]
+fn paired<'a>(
+    rows: &'a [Row],
+    scores: &Scores<'_>,
+    tau: f64,
+    checks: &[&str],
+    excluded_key: &str,
+) -> Vec<Paired<'a>> {
+    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let defect_label = if excluded_key == SOUND { NO } else { YES };
+    let shift = TAU - tau;
+    let score = |row: &Row| scores.get(row.id.as_str()).map(|s| s + shift);
+    rows.iter()
+        .filter(|mutant| injected(mutant).is_some_and(|key| checks.contains(&key)))
+        .map(|mutant| {
+            let id = &mutant.id;
+            let source_id = mutant
+                .mutation
+                .as_ref()
+                .and_then(|m| m.source_id.as_deref())
+                .unwrap_or_else(|| panic!("{id}: statement mutant has no mutation.source_id"));
+            let source = by_id
+                .get(source_id)
+                .copied()
+                .unwrap_or_else(|| panic!("{id}: source {source_id} is not among this run's rows"));
+            assert!(
+                source.mutation.is_none(),
+                "{id}: source {source_id} is itself a mutant"
+            );
+            assert!(
+                source.split == mutant.split && source.mode == mutant.mode,
+                "{id}: source {source_id} is {}/{}, the mutant {}/{}",
+                source.split.as_str(),
+                source.mode.as_str(),
+                mutant.split.as_str(),
+                mutant.mode.as_str()
+            );
+            if primary(source, excluded_key).as_deref() == Some(defect_label) {
+                return (source_id, None);
+            }
+            let outcome = score(source)
+                .zip(score(mutant))
+                .map_or(PairOutcome::Failure, |(s, m)| pair_outcome(s, m));
+            (source_id, Some(outcome))
+        })
+        .collect()
+}
+
+fn tally(outcomes: impl Iterator<Item = Option<PairOutcome>>) -> BarD {
+    let mut tally = BarD::default();
+    for outcome in outcomes {
+        tally.pairs += 1;
+        match outcome {
+            None => tally.source_already_yes += 1,
+            Some(PairOutcome::Success) => tally.successes += 1,
+            Some(PairOutcome::Failure) => tally.failures += 1,
+            Some(PairOutcome::Tie) => tally.ties += 1,
+        }
+    }
+    tally
+}
+
+/// Bar D over every pair ([`paired`]). Pairs sharing a source are not
+/// independent, so this line is descriptive; [`bar_d_per_source`] gates.
+///
+/// # Panics
+/// As [`paired`].
 pub(crate) fn bar_d(
     rows: &[Row],
     scores: &Scores<'_>,
@@ -497,41 +586,44 @@ pub(crate) fn bar_d(
     checks: &[&str],
     excluded_key: &str,
 ) -> BarD {
-    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
-    let defect_label = if excluded_key == SOUND { NO } else { YES };
-    let shift = TAU - tau;
-    let mut tally = BarD::default();
-    for mutant in rows {
-        if !injected(mutant).is_some_and(|key| checks.contains(&key)) {
-            continue;
-        }
-        let Some(source) = mutant
-            .mutation
-            .as_ref()
-            .and_then(|m| m.source_id.as_deref())
-            .and_then(|id| by_id.get(id))
-        else {
-            continue;
-        };
-        tally.pairs += 1;
-        if primary(source, excluded_key).as_deref() == Some(defect_label) {
-            tally.source_already_yes += 1;
-            continue;
-        }
-        let score = |row: &Row| scores.get(row.id.as_str()).map(|s| s + shift);
-        match score(source).zip(score(mutant)) {
-            None => {
-                tally.abstained += 1;
-                tally.failures += 1;
-            }
-            Some((s, m)) => match pair_outcome(s, m) {
-                PairOutcome::Success => tally.successes += 1,
-                PairOutcome::Failure => tally.failures += 1,
-                PairOutcome::Tie => tally.ties += 1,
-            },
-        }
+    tally(
+        paired(rows, scores, tau, checks, excluded_key)
+            .into_iter()
+            .map(|(_, outcome)| outcome),
+    )
+}
+
+/// Bar D with one pair per source: each source's majority outcome over its
+/// kept pairs (success when successes outnumber failures, failure when
+/// failures outnumber successes, else a tie); a source whose every pair was
+/// dropped counts as dropped. Sources are independent, so this line gates.
+///
+/// # Panics
+/// As [`paired`].
+pub(crate) fn bar_d_per_source(
+    rows: &[Row],
+    scores: &Scores<'_>,
+    tau: f64,
+    checks: &[&str],
+    excluded_key: &str,
+) -> BarD {
+    let mut by_source: BTreeMap<&str, Vec<Option<PairOutcome>>> = BTreeMap::new();
+    for (source, outcome) in paired(rows, scores, tau, checks, excluded_key) {
+        by_source.entry(source).or_default().push(outcome);
     }
-    tally
+    tally(by_source.into_values().map(|outcomes| {
+        let kept: Vec<PairOutcome> = outcomes.into_iter().flatten().collect();
+        if kept.is_empty() {
+            return None;
+        }
+        let count = |wanted: PairOutcome| kept.iter().filter(|o| **o == wanted).count();
+        let (wins, losses) = (count(PairOutcome::Success), count(PairOutcome::Failure));
+        Some(match wins.cmp(&losses) {
+            std::cmp::Ordering::Greater => PairOutcome::Success,
+            std::cmp::Ordering::Less => PairOutcome::Failure,
+            std::cmp::Ordering::Equal => PairOutcome::Tie,
+        })
+    }))
 }
 
 fn pct(n: usize, d: usize) -> String {
@@ -644,13 +736,15 @@ fn render_rule(out: &mut String, rows: &[Row], line: &RuleLine<'_>) {
     let (ours_a, constant_a, n_a) = accuracy(line, &all);
     let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
     let d = bar_d(rows, &line.scores, line.tau, &keys, SOUND);
+    let per_source = bar_d_per_source(rows, &line.scores, line.tau, &keys, SOUND);
     let _ = writeln!(
         out,
         "| {} | {} | {} |{per_kind} {ours_n:.1} vs {constant_n:.1} of {n_n} | {ours_a:.1} vs \
-         {constant_a:.1} of {n_a} | {} |",
+         {constant_a:.1} of {n_a} | {} | {} |",
         line.name,
         pct(cleared, sound.len()),
         pct(caught(&defective), defective.len()),
+        show_d(&per_source),
         show_d(&d),
     );
 }
@@ -658,7 +752,9 @@ fn render_rule(out: &mut String, rows: &[Row], line: &RuleLine<'_>) {
 const RULE_HEADER: &str = "| Rule | Sound-row recall (natural) | Defect recall (natural) | \
     compound_obligation mutants | multiple_readings mutants | names_internal_symbol mutants | \
     Credit vs best constant (natural) | Credit vs best constant (natural + mutants) | Bar D \
-    aggregate (W-L-T) |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |";
+    aggregate, one pair per source (W-L-T; GATES) | Bar D aggregate, every pair (W-L-T; \
+    descriptive, pairs share sources) |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | \
+    --- |";
 
 /// Each row's check probabilities for F1 labelled `label`.
 fn f1_table<'a>(rows: &'a [Row], output: &RunOutput, label: &str) -> BTreeMap<&'a str, Vec<f64>> {
@@ -780,10 +876,12 @@ pub(crate) fn render(rows: &[Row], output: &RunOutput, variants: &[&Variant]) ->
     let label = f1.label();
     let table = f1_table(rows, output, &label);
     for (name, combiner) in COMBINERS {
-        let post_hoc = if combiner == F1_COMBINER {
-            " (pre-registered)"
-        } else {
-            " (POST HOC)"
+        let post_hoc = match (combiner == F1_COMBINER, f1.version) {
+            (true, 1) => " (pre-registered)".to_owned(),
+            (true, version) => {
+                format!(" (pre-registered combiner; POST HOC wording, v{version})")
+            }
+            (false, _) => " (POST HOC)".to_owned(),
         };
         render_rule(
             &mut out,

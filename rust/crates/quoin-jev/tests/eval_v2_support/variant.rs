@@ -201,10 +201,33 @@ impl Variant {
         format!("{}@v{}", self.id, self.version)
     }
 
-    /// Whether this variant runs on `row`.
+    /// Whether this variant runs on `row`: the row's mode is one of its
+    /// modes, and a requirement-statement mutant (which carries truth only
+    /// for the statement keys) runs only on a variant graded on one of them,
+    /// so no other variant pays for rows it cannot score.
     pub(crate) fn applies_to(&self, row: &Row) -> bool {
         self.modes.contains(&row.mode)
+            && (!statement::is_statement_mutant(row) || self.scores_statement())
     }
+
+    /// Whether this variant is graded on a requirement-statement key.
+    pub(crate) fn scores_statement(&self) -> bool {
+        self.grades
+            .iter()
+            .any(|key| statement::GRADES.contains(key))
+    }
+}
+
+/// `rows` without the requirement-statement mutants when none of `variants`
+/// scores a statement key, so a run of other variants reports the same rows
+/// it did before those mutants existed.
+pub(crate) fn rows_for(rows: Vec<Row>, variants: &[&Variant]) -> Vec<Row> {
+    if variants.iter().any(|variant| variant.scores_statement()) {
+        return rows;
+    }
+    rows.into_iter()
+        .filter(|row| !statement::is_statement_mutant(row))
+        .collect()
 }
 
 /// Every variant, in the order a default run uses.
