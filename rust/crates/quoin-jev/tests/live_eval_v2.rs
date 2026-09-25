@@ -152,8 +152,11 @@ fn exp2_dir(split: Split) -> Option<String> {
     Some(dir)
 }
 
-/// Writes experiment 2's diagnostics (informational) to `dir`.
-fn write_exp2(dir: &str, rows: &[Row], output: &variant::RunOutput) {
+/// Writes experiment 2's diagnostics (informational) to `dir`, when set.
+fn write_exp2(dir: Option<&str>, rows: &[Row], output: &variant::RunOutput) {
+    let Some(dir) = dir else {
+        return;
+    };
     eval_v2_support::exp2::write(std::path::Path::new(dir), rows, output)
         .unwrap_or_else(|error| panic!("{error}"));
     println!("exp2 diagnostics written to {dir}");
@@ -259,9 +262,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         "{}",
         eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
-    if let Some(dir) = &exp2 {
-        write_exp2(dir, &rows, &output);
-    }
+    write_exp2(exp2.as_deref(), &rows, &output);
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(
