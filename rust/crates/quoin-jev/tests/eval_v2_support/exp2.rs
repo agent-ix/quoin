@@ -71,10 +71,12 @@ fn kth_highest(values: &[f64], k: usize) -> f64 {
 // K: one row's check probabilities
 // ---------------------------------------------------------------------------
 
-struct KRow<'a> {
-    row: &'a Row,
+/// One K row and its check probabilities.
+pub(crate) struct KRow<'a> {
+    /// The row.
+    pub(crate) row: &'a Row,
     /// `P(defect)` per check, in [`CHECKS`] order.
-    p: Vec<f64>,
+    pub(crate) p: Vec<f64>,
 }
 
 fn k_rows<'a>(rows: &'a [Row], output: &RunOutput, label: &str) -> Vec<KRow<'a>> {
@@ -96,11 +98,15 @@ fn k_rows<'a>(rows: &'a [Row], output: &RunOutput, label: &str) -> Vec<KRow<'a>>
 }
 
 /// A K combiner: which checks count, how many must fire, at what threshold.
-struct KRule {
-    name: String,
-    dropped: Option<usize>,
-    at_least: usize,
-    tau: f64,
+pub(crate) struct KRule {
+    /// The report's name for it.
+    pub(crate) name: String,
+    /// A check index left out, if any.
+    pub(crate) dropped: Option<usize>,
+    /// How many kept checks must be at or above `tau`.
+    pub(crate) at_least: usize,
+    /// The threshold.
+    pub(crate) tau: f64,
 }
 
 impl KRule {
@@ -127,7 +133,7 @@ fn check_index(key: &str) -> Option<usize> {
 /// Bar D on the aggregate verdict: over MP-243's pairs, the rule's score on
 /// the source against the mutant, shifted so the rule's threshold is the
 /// harness's `TAU`.
-fn k_aggregate_d(rows: &[Row], by_id: &BTreeMap<&str, &KRow<'_>>, rule: &KRule) -> BarD {
+pub(crate) fn k_aggregate_d(rows: &[Row], by_id: &BTreeMap<&str, &KRow<'_>>, rule: &KRule) -> BarD {
     let shift = soundness::TAU - rule.tau;
     let all = pairs(rows);
     let mut tally = BarD {
@@ -232,7 +238,7 @@ fn k_report(out: &mut String, rows: &[Row], output: &RunOutput, label: &str) -> 
         mutants,
         defective.len() - mutants,
     );
-    let fires = |k: &KRow<'_>, index: usize| k.p.get(index).is_some_and(|p| *p >= 0.5);
+    let fires = |k: &KRow<'_>, index: usize| k.p.get(index).is_some_and(|p| *p >= soundness::TAU);
     let only = |k: &KRow<'_>, index: usize| {
         fires(k, index) && (0..CHECKS.len()).filter(|i| fires(k, *i)).count() == 1
     };
@@ -378,10 +384,12 @@ fn k_report(out: &mut String, rows: &[Row], output: &RunOutput, label: &str) -> 
 // E5
 // ---------------------------------------------------------------------------
 
-struct ERow<'a> {
-    row: &'a Row,
+/// One E5 row and its asked units' answers.
+pub(crate) struct ERow<'a> {
+    /// The row.
+    pub(crate) row: &'a Row,
     /// `(unit index, P(necessary))` per asked unit.
-    units: Vec<(usize, f64)>,
+    pub(crate) units: Vec<(usize, f64)>,
 }
 
 impl ERow<'_> {
@@ -412,11 +420,14 @@ fn e_rows<'a>(rows: &'a [Row], output: &RunOutput, label: &str) -> Result<Vec<ER
         .collect()
 }
 
-struct ERule {
-    name: String,
-    at_least: usize,
+/// An E5 combiner.
+pub(crate) struct ERule {
+    /// The report's name for it.
+    pub(crate) name: String,
+    /// How many units must be unnecessary.
+    pub(crate) at_least: usize,
     /// A unit is unnecessary when `P(necessary) < 1 - tau`, i.e. `u > tau`.
-    tau: f64,
+    pub(crate) tau: f64,
 }
 
 impl ERule {
@@ -430,7 +441,7 @@ impl ERule {
     }
 }
 
-fn e_bar_d(
+pub(crate) fn e_bar_d(
     rows: &[Row],
     erows: &[ERow<'_>],
     rule: &ERule,
@@ -496,7 +507,12 @@ fn e_report(
         .iter()
         .filter(|e| primary(e.row, key).as_deref() == Some(YES))
         .collect();
-    let unnecessary = |e: &ERow<'_>| e.units.iter().filter(|(_, p)| *p < 0.5).count();
+    let unnecessary = |e: &ERow<'_>| {
+        e.units
+            .iter()
+            .filter(|(_, p)| *p < exceeds::NECESSARY_TAU)
+            .count()
+    };
     let _ = writeln!(
         out,
         "\n## {label}: unnecessary units (P(necessary) < 0.5) per row\n\n{} rows ran; `{key}` = no \

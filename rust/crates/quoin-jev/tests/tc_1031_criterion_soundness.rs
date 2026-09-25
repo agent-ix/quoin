@@ -932,3 +932,56 @@ async fn tc_1031_the_variants_run_end_to_end() {
         assert!(report.contains("not selectable"), "{report}");
     }
 }
+
+/// Provenance: PLAT-1024 exp2. The aggregate bar D reads the combiner's own
+/// score: a source already flagged by another check cannot cross (a tie), a
+/// source labelled `yes` on the injected check is dropped, a count rule
+/// needs a second check to fire, and a stricter threshold is read by the
+/// shifted crossing.
+#[test]
+fn tc_1024_exp2_k_aggregate_bar_d_reads_the_combiner_score() {
+    use eval_v2_support::exp2::{KRow, KRule, k_aggregate_d};
+    let rows = paired_rows(3);
+    // CHECKS order: vague_term, no_measurable_threshold, untestable,
+    // compound, missing_trigger. Mutants inject vague_term.
+    let p: [(&str, [f64; 5]); 6] = [
+        ("EV2-0100", [0.1, 0.1, 0.1, 0.1, 0.1]),
+        ("EV2-0200", [0.8, 0.1, 0.1, 0.1, 0.1]),
+        ("EV2-0101", [0.1, 0.1, 0.1, 0.1, 0.1]),
+        ("EV2-0201", [0.8, 0.1, 0.1, 0.1, 0.1]),
+        ("EV2-0102", [0.1, 0.1, 0.1, 0.7, 0.1]),
+        ("EV2-0202", [0.8, 0.1, 0.1, 0.7, 0.1]),
+    ];
+    let krows: Vec<KRow<'_>> = p
+        .iter()
+        .map(|(id, p)| KRow {
+            row: rows.iter().find(|row| row.id == *id).unwrap(),
+            p: p.to_vec(),
+        })
+        .collect();
+    let by_id: BTreeMap<&str, &KRow<'_>> = krows.iter().map(|k| (k.row.id.as_str(), k)).collect();
+    let rule = |at_least, tau| KRule {
+        name: String::new(),
+        dropped: None,
+        at_least,
+        tau,
+    };
+    let any = k_aggregate_d(&rows, &by_id, &rule(1, 0.5));
+    assert_eq!(
+        (
+            any.pairs,
+            any.source_already_yes,
+            any.successes,
+            any.failures,
+            any.ties
+        ),
+        (3, 1, 1, 0, 1)
+    );
+    // >= 2 checks: EV2-0201's second-highest stays 0.1 (tie); EV2-0202's
+    // rises from 0.1 to 0.7 and crosses (success).
+    let two = k_aggregate_d(&rows, &by_id, &rule(2, 0.5));
+    assert_eq!((two.successes, two.failures, two.ties), (1, 0, 1));
+    // At 0.75, EV2-0102's 0.7 is below the threshold, so both pairs cross.
+    let strict = k_aggregate_d(&rows, &by_id, &rule(1, 0.75));
+    assert_eq!((strict.successes, strict.failures, strict.ties), (2, 0, 0));
+}

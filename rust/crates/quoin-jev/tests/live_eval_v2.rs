@@ -138,18 +138,23 @@ fn sources() -> Vec<Source> {
     sources
 }
 
-/// Experiment 2 diagnostics (PLAT-1024); informational, written only when
-/// requested, and dev only: diagnosing held-out rows would contaminate the seal.
-fn write_exp2(split: Split, rows: &[Row], output: &variant::RunOutput) {
-    let Some(dir) = env(eval_v2_support::exp2::OUT_ENV) else {
-        return;
-    };
+/// Experiment 2's output directory (PLAT-1024), when requested. Dev only:
+/// diagnosing held-out rows would contaminate the seal, so this is checked
+/// before `authorize_run`, and a held-out run with the variable set stops
+/// before anything is spent.
+fn exp2_dir(split: Split) -> Option<String> {
+    let dir = env(eval_v2_support::exp2::OUT_ENV)?;
     assert!(
         split == Split::Dev,
         "{} is dev-only; held-out rows are never diagnosed",
         eval_v2_support::exp2::OUT_ENV
     );
-    eval_v2_support::exp2::write(std::path::Path::new(&dir), rows, output)
+    Some(dir)
+}
+
+/// Writes experiment 2's diagnostics (informational) to `dir`.
+fn write_exp2(dir: &str, rows: &[Row], output: &variant::RunOutput) {
+    eval_v2_support::exp2::write(std::path::Path::new(dir), rows, output)
         .unwrap_or_else(|error| panic!("{error}"));
     println!("exp2 diagnostics written to {dir}");
 }
@@ -174,6 +179,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         corpus::in_repo_corpus_path().display(),
         corpus::EXTERNAL_CORPUS_ENV
     );
+    let exp2 = exp2_dir(split);
     let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
     let rerun_reason = env(HELDOUT_RERUN_ENV);
     let heldout_flag = env(HELDOUT_ENV);
@@ -253,7 +259,9 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         "{}",
         eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
-    write_exp2(split, &rows, &output);
+    if let Some(dir) = &exp2 {
+        write_exp2(dir, &rows, &output);
+    }
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(

@@ -590,17 +590,18 @@ fn readings(necessary: &[f64]) -> Vec<NecessityReading> {
 /// Provenance: PLAT-1024, MP-241 round 2, exp2. v5: `yes` iff some asked
 /// unit has `P(necessary) < 0.3` (0.3 itself is not); the ordinal is the
 /// highest `1 - P(necessary)` minus 0.2, so `yes` is `ordinal > 0.5`; the
-/// confidence is that highest value for `yes` and one minus it for `no`;
-/// nothing asked is `no` at ordinal -0.2. Every unit unnecessary is `yes`
+/// confidence is the ordinal for `yes` and `1 - ordinal` (capped at 1) for
+/// `no`, so never below 0.5 on the side answered, even for a unit in
+/// [0.3, 0.5); nothing asked is `no` at ordinal -0.2, confidence 1. Every unit unnecessary is `yes`
 /// too: v3 has no breaker.
 #[test]
 fn tc_1024_e5_yes_when_a_unit_is_unnecessary() {
     let cases: [(&[f64], &str, f64, f64); 6] = [
-        (&[0.9, 0.2], "yes", 0.8, 0.6),
-        (&[0.9, 0.3], "no", 0.3, 0.5),
-        (&[0.9, 0.45], "no", 0.45, 0.35),
-        (&[0.5, 0.8], "no", 0.5, 0.3),
-        (&[0.1], "yes", 0.9, 0.7),
+        (&[0.9, 0.2], "yes", 0.6, 0.6),
+        (&[0.9, 0.3], "no", 0.5, 0.5),
+        (&[0.9, 0.45], "no", 0.65, 0.35),
+        (&[0.5, 0.8], "no", 0.7, 0.3),
+        (&[0.1], "yes", 0.7, 0.7),
         (&[], "no", 1.0, -0.2),
     ];
     for (necessary, answer, confidence, ordinal) in cases {
@@ -612,6 +613,12 @@ fn tc_1024_e5_yes_when_a_unit_is_unnecessary() {
         );
         assert!(
             close(prediction.ordinal, ordinal),
+            "{necessary:?}: {prediction:?}"
+        );
+        assert!(
+            prediction
+                .confidence
+                .is_some_and(|c| (0.5..=1.0).contains(&c)),
             "{necessary:?}: {prediction:?}"
         );
     }
@@ -788,4 +795,79 @@ async fn tc_1024_e5_runs_end_to_end() {
     ] {
         assert!(report.contains(needle), "missing {needle:?} in:\n{report}");
     }
+}
+
+/// Provenance: PLAT-1024 exp2. `e_bar_d` scores each additive pair on the
+/// combiner's own score: at `any unit P < 0.5` a source already holding an
+/// unnecessary unit cannot cross (a tie), while at `>= 2 units` the added
+/// unit makes that same pair cross; a source labelled `yes` is excluded.
+#[test]
+fn tc_1024_exp2_e_bar_d_reads_the_combiner_score() {
+    use eval_v2_support::exp2::{ERow, ERule, e_bar_d};
+    let natural = |id: &str, exceeds: bool| {
+        fixtures::row(
+            id,
+            Mode::ReqCode,
+            "dev",
+            &json!({"code_exceeds_requirement": fixtures::truth(&json!(exceeds), "agent_dual", &[])}),
+        )
+    };
+    let mutant = |id: &str, source: &str| {
+        let mut value = fixtures::row(
+            id,
+            Mode::ReqCode,
+            "dev",
+            &json!({"code_exceeds_requirement": fixtures::truth(&json!(true), "by_construction", &[])}),
+        );
+        value["mutation"] = json!({"id": format!("M-{id}"), "target": "code",
+            "kind": "additive_code", "description": "adds a branch", "patch": "p",
+            "source_id": source});
+        value
+    };
+    let rows = fixtures::parse(&[
+        natural("EV2-0001", false),
+        natural("EV2-0002", false),
+        natural("EV2-0003", true),
+        mutant("EV2-0011", "EV2-0001"),
+        mutant("EV2-0012", "EV2-0002"),
+        mutant("EV2-0013", "EV2-0003"),
+    ])
+    .unwrap()
+    .rows;
+    let units: [(&str, &[f64]); 6] = [
+        ("EV2-0001", &[0.9, 0.9]),
+        ("EV2-0011", &[0.9, 0.9, 0.2]),
+        ("EV2-0002", &[0.9, 0.2]),
+        ("EV2-0012", &[0.9, 0.2, 0.2]),
+        ("EV2-0003", &[0.9]),
+        ("EV2-0013", &[0.9, 0.2]),
+    ];
+    let erows: Vec<ERow<'_>> = units
+        .iter()
+        .map(|(id, p)| ERow {
+            row: rows.iter().find(|row| row.id == *id).unwrap(),
+            units: p.iter().copied().enumerate().collect(),
+        })
+        .collect();
+    let rule = |at_least, tau| ERule {
+        name: format!("{at_least}@{tau}"),
+        at_least,
+        tau,
+    };
+    let any = e_bar_d(&rows, &erows, &rule(1, 0.5)).unwrap();
+    assert_eq!(any.excluded_source_on_defect_side, 1);
+    assert_eq!((any.successes(), any.failures(), any.ties()), (1, 0, 1));
+    let two = e_bar_d(&rows, &erows, &rule(2, 0.5)).unwrap();
+    assert_eq!((two.successes(), two.failures(), two.ties()), (1, 0, 1));
+    let pairs: Vec<(&str, bool)> = two
+        .pairs
+        .iter()
+        .map(|pair| {
+            (
+                pair.mutant.as_str(),
+                pair.verdict == eval_v2_support::metrics::PairVerdict::Success,
+            )
+        })
+        .collect();
+    assert_eq!(pairs, [("EV2-0011", false), ("EV2-0012", true)]);
 }

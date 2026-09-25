@@ -1061,21 +1061,36 @@ pub(crate) const ORDINAL_SHIFT: f64 = 1.0 - EXCEEDS_TAU - PAIRED_TAU;
 /// E5's rule over the asked units: `yes` (exceeds) iff some unit has
 /// `P(necessary) <` [`EXCEEDS_TAU`] (v5). The ordinal is the highest
 /// `1 - P(necessary)` (0 when nothing was asked) minus [`ORDINAL_SHIFT`], so
-/// `yes` is exactly `ordinal > 0.5`; the confidence is that highest value for
-/// `yes` and one minus it for `no`. Every row is answered: v3 dropped v1's
-/// and v2's breaker (abstain when two or more units were asked and all were
-/// unnecessary), whose abstentions were 4 of E5@v2's 5 Bar D failures.
+/// `yes` is exactly `ordinal > 0.5`.
+///
+/// The confidence is read off that ordinal, so it is at least 0.5 on the side
+/// answered: the ordinal for `yes`, `1 - ordinal` for `no`, capped at 1 (the
+/// ordinal falls to -0.2 when nothing was asked or every unit is certain).
+///
+/// The boundary: at exactly `P(necessary) = 0.3` the ordinal is exactly 0.5
+/// and the answer is `no`, but bar D's shared crossing (`pair_verdict`,
+/// `mutant >= tau`) counts that mutant as crossing. v4 had the same tie at
+/// 0.5; the shared rule is left as it is.
+///
+/// Every row is answered: v3 dropped v1's and v2's breaker (abstain when two
+/// or more units were asked and all were unnecessary), whose abstentions were
+/// 4 of E5@v2's 5 Bar D failures.
 pub(crate) fn necessity_outcome(readings: &[NecessityReading]) -> Prediction {
     let highest = readings
         .iter()
         .map(|reading| 1.0 - reading.necessary)
         .reduce(f64::max)
         .unwrap_or(0.0);
+    let ordinal = highest - ORDINAL_SHIFT;
     let yes = readings.iter().any(|r| r.necessary < EXCEEDS_TAU);
     Prediction {
         answer: if yes { YES } else { NO }.to_owned(),
-        confidence: Some(if yes { highest } else { 1.0 - highest }),
-        ordinal: Some(highest - ORDINAL_SHIFT),
+        confidence: Some(if yes {
+            ordinal
+        } else {
+            (1.0 - ordinal).min(1.0)
+        }),
+        ordinal: Some(ordinal),
     }
 }
 
