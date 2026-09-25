@@ -177,13 +177,19 @@ fn statement_dir(split: Split) -> Option<String> {
     Some(path)
 }
 
-/// Writes one JSON line per statement row to `path`, when set.
-fn write_statement_dump(
+/// Prints the requirement-statement report (PLAT-1024 experiment 3; empty
+/// unless an F variant ran), and writes one JSON line per statement row to
+/// `path`, when set.
+fn report_statement(
     path: Option<&str>,
     rows: &[Row],
     output: &variant::RunOutput,
     variants: &[&Variant],
 ) {
+    println!(
+        "{}",
+        eval_v2_support::variants::statement::render(rows, output, variants)
+    );
     let Some(path) = path else {
         return;
     };
@@ -194,6 +200,10 @@ fn write_statement_dump(
 
 /// Provenance: PLAT-1027. Runs the chosen variants over the chosen split and
 /// prints the report. Ungated: bars belong to each experiment's MP doc.
+#[allow(
+    clippy::too_many_lines,
+    reason = "the runner is one linear sequence (preflight, spend, run, log, report); splitting it hides the order the held-out rules depend on"
+)]
 #[tokio::test]
 async fn tc_1027_run_variants_over_corpus_v2() {
     let variants: Vec<&Variant> = match env("QUOIN_JEV_VARIANTS") {
@@ -294,13 +304,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
     write_exp2(exp2.as_deref(), &rows, &output);
-    // The requirement-statement report (PLAT-1024 experiment 3); empty
-    // unless an F variant ran.
-    println!(
-        "{}",
-        eval_v2_support::variants::statement::render(&rows, &output, &variants)
-    );
-    write_statement_dump(statement_dir.as_deref(), &rows, &output, &variants);
+    report_statement(statement_dir.as_deref(), &rows, &output, &variants);
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(

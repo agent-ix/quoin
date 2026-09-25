@@ -825,7 +825,7 @@ pub(crate) fn dump(rows: &[Row], output: &RunOutput, variants: &[&Variant]) -> V
                         key.as_str(),
                         json!({
                             "answer": truth.answer.label(),
-                            "alternatives": truth.alternatives.iter().map(|a| a.label()).collect::<Vec<_>>(),
+                            "alternatives": truth.alternatives.iter().map(crate::eval_v2_support::corpus::TruthAnswer::label).collect::<Vec<_>>(),
                             "rationale": truth.rationale,
                         }),
                     )
