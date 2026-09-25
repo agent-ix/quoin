@@ -62,6 +62,10 @@ const SOURCE_FLOOR: usize = 20;
 /// `pub(super)` across two files for one stage's sake; the file stays under
 /// the 700-line hard ceiling (quoin#464).
 const NAMED_OVER_SOFT_CEILING: &[&str] = &[
+    // PLAT-1071: the tracked-link refusal in `stage_checker_input` and its
+    // test grew the file past the soft ceiling; it stays under the 700-line
+    // hard ceiling.
+    "campaign/run/domain.rs",
     "report/verdict.rs",
     "store/apparatus/walk.rs",
     "validate/stack.rs",
