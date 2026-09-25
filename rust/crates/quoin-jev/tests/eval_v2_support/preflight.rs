@@ -232,9 +232,9 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "sha256:e8359d1ab3e124f3ef9657628c9994410cd828d9d12182a974437798a4ffa958",
     ),
     (
-        "K1@v1",
+        "K1@v2",
         "R",
-        "sha256:fa2cb04d182096356a1eabec1f372892d988673f71f4599919c5a0225f579ed5",
+        "sha256:6f63535069e779a9b98e2acc25d454f5bb724500d52d19c6673a599dab073af5",
     ),
     (
         "K2@v1",

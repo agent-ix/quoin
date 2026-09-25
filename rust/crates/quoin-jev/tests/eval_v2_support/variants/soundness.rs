@@ -335,10 +335,46 @@ fn checklist(with_examples: bool) -> Questions {
         .collect()
 }
 
+/// K1 v2's `compound` question (PLAT-1024 experiment 2). v1 asked about
+/// "outcomes or conditions", which the canonical clear text contradicts
+/// ("several conditions on the trigger do not make it compound"). On dev, v1's
+/// `compound` fired on 6 of 15 sound criteria, 3 of them one response read as
+/// several ("names it and refuses acceptance"; a gate described by its legs;
+/// one prohibition over a list). v2 asks the canonical definition's question:
+/// it drops "or conditions" and names the definition's own one-outcome cases.
+pub(crate) const COMPOUND_V2: &str = judge!(
+    "Does the criterion require two or more different behaviours, effects or outcomes, each of \
+     which could be verified, and fail, on its own? Count required outcomes, not clauses: parts \
+     that together describe one observed response to one event (a refusal and the message or \
+     identifier it gives, a status with its error code, one value or one artifact described by \
+     several of its own attributes) are one outcome; conditions on the trigger are not outcomes; \
+     a list of inputs that must each get the same single outcome is one outcome."
+);
+
+fn k1_checklist() -> Questions {
+    CHECKS
+        .iter()
+        .map(|check| {
+            let question = if check.key == "compound" {
+                noul_with(
+                    COMPOUND_V2,
+                    NoulCriteria {
+                        yes: Some(Entry::from(check.defect)),
+                        no: Some(Entry::from(check.clear)),
+                    },
+                )
+            } else {
+                check_question(check, false)
+            };
+            (check.key.to_owned(), question)
+        })
+        .collect()
+}
+
 fn k1_asks(row: &Row) -> Vec<Ask> {
     vec![Ask {
         unit: None,
-        request: request(criterion_state(row), checklist(false)),
+        request: request(criterion_state(row), k1_checklist()),
     }]
 }
 
@@ -424,8 +460,9 @@ const R_ONLY: &[Mode] = &[Mode::Req];
 /// The checklist: one `noul` per named defect, `criterion_sound` derived.
 pub(crate) const K1: Variant = Variant {
     id: "K1",
-    version: 1,
-    summary: "criterion soundness as five named defect nouls; criterion_sound = no defect at or above 0.5",
+    // v2 (PLAT-1024 experiment 2): the `compound` question is COMPOUND_V2.
+    version: 2,
+    summary: "criterion soundness as five named defect nouls (compound asked per the canonical definition); criterion_sound = no defect at or above 0.5",
     modes: R_ONLY,
     references: &[],
     grades: &GRADES,
