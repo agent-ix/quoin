@@ -201,6 +201,10 @@ fn show_d(d: &BarD) -> String {
     )
 }
 
+#[allow(
+    clippy::too_many_lines,
+    reason = "a diagnostic report, read top to bottom; splitting it scatters one table across helpers"
+)]
 fn k_report(out: &mut String, rows: &[Row], output: &RunOutput, label: &str) -> Vec<String> {
     let krows = k_rows(rows, output, label);
     let sound: Vec<&KRow<'_>> = krows
@@ -472,6 +476,10 @@ fn e_bar_d(
     )
 }
 
+#[allow(
+    clippy::too_many_lines,
+    reason = "a diagnostic report, read top to bottom; splitting it scatters one table across helpers"
+)]
 fn e_report(
     out: &mut String,
     rows: &[Row],

@@ -138,6 +138,22 @@ fn sources() -> Vec<Source> {
     sources
 }
 
+/// Experiment 2 diagnostics (PLAT-1024); informational, written only when
+/// requested, and dev only: diagnosing held-out rows would contaminate the seal.
+fn write_exp2(split: Split, rows: &[Row], output: &variant::RunOutput) {
+    let Some(dir) = env(eval_v2_support::exp2::OUT_ENV) else {
+        return;
+    };
+    assert!(
+        split == Split::Dev,
+        "{} is dev-only; held-out rows are never diagnosed",
+        eval_v2_support::exp2::OUT_ENV
+    );
+    eval_v2_support::exp2::write(std::path::Path::new(&dir), rows, output)
+        .unwrap_or_else(|error| panic!("{error}"));
+    println!("exp2 diagnostics written to {dir}");
+}
+
 /// Provenance: PLAT-1027. Runs the chosen variants over the chosen split and
 /// prints the report. Ungated: bars belong to each experiment's MP doc.
 #[tokio::test]
@@ -237,18 +253,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         "{}",
         eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
-    // Experiment 2 diagnostics (PLAT-1024); informational, written only on request.
-    // Dev only: diagnosing on held-out rows would contaminate the seal.
-    if let Some(dir) = env(eval_v2_support::exp2::OUT_ENV) {
-        assert!(
-            split == Split::Dev,
-            "{} is dev-only; held-out rows are never diagnosed",
-            eval_v2_support::exp2::OUT_ENV
-        );
-        eval_v2_support::exp2::write(std::path::Path::new(&dir), &rows, &output)
-            .unwrap_or_else(|error| panic!("{error}"));
-        println!("exp2 diagnostics written to {dir}");
-    }
+    write_exp2(split, &rows, &output);
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(
