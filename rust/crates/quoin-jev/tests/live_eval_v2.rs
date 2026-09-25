@@ -162,6 +162,36 @@ fn write_exp2(dir: Option<&str>, rows: &[Row], output: &variant::RunOutput) {
     println!("exp2 diagnostics written to {dir}");
 }
 
+/// Where the requirement-statement rows are dumped for reading by hand
+/// (dev only, informational).
+const STATEMENT_OUT_ENV: &str = "QUOIN_JEV_STATEMENT_OUT";
+
+/// The statement dump's output file, when requested. Dev only, for the same
+/// reason as [`exp2_dir`].
+fn statement_dir(split: Split) -> Option<String> {
+    let path = env(STATEMENT_OUT_ENV)?;
+    assert!(
+        split == Split::Dev,
+        "{STATEMENT_OUT_ENV} is dev-only; held-out rows are never diagnosed"
+    );
+    Some(path)
+}
+
+/// Writes one JSON line per statement row to `path`, when set.
+fn write_statement_dump(
+    path: Option<&str>,
+    rows: &[Row],
+    output: &variant::RunOutput,
+    variants: &[&Variant],
+) {
+    let Some(path) = path else {
+        return;
+    };
+    let lines = eval_v2_support::variants::statement::dump(rows, output, variants);
+    std::fs::write(path, lines.join("\n") + "\n").unwrap_or_else(|error| panic!("{path}: {error}"));
+    println!("statement rows written to {path}");
+}
+
 /// Provenance: PLAT-1027. Runs the chosen variants over the chosen split and
 /// prints the report. Ungated: bars belong to each experiment's MP doc.
 #[tokio::test]
@@ -183,6 +213,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         corpus::EXTERNAL_CORPUS_ENV
     );
     let exp2 = exp2_dir(split);
+    let statement_dir = statement_dir(split);
     let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
     let rerun_reason = env(HELDOUT_RERUN_ENV);
     let heldout_flag = env(HELDOUT_ENV);
@@ -263,6 +294,13 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
     write_exp2(exp2.as_deref(), &rows, &output);
+    // The requirement-statement report (PLAT-1024 experiment 3); empty
+    // unless an F variant ran.
+    println!(
+        "{}",
+        eval_v2_support::variants::statement::render(&rows, &output, &variants)
+    );
+    write_statement_dump(statement_dir.as_deref(), &rows, &output, &variants);
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(

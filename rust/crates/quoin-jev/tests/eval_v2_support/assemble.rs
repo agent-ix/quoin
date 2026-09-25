@@ -37,6 +37,7 @@ use serde_json::{Value, json};
 
 use super::corpus::{MAX_NATURAL_ROWS_PER_FR, SCHEMA};
 use super::criterion_defects::CRITERION_DEFECTS;
+use super::variants::statement;
 
 /// The sampling seed (restated in [`SAMPLING_RULE`]).
 pub(crate) const SEED: u64 = 20_260_923;
@@ -128,7 +129,21 @@ toward the per-FR cap of 3; where the cap is full, the mutant is not shown in th
 RESEAL. The held-out split was re-drawn into and resealed on 2026-09-24, before any variant \
 had made a live call on either split (no request had been sent, so no held-out row had been \
 seen by a variant): the PR #628 review changed the truth rules and the per-row mutant rule, \
-and the soundness labels were redone under the shared criterion_defects definitions.";
+and the soundness labels were redone under the shared criterion_defects definitions. \
+REQUIREMENT STATEMENT (dev only, added after the reseal; no held-out row changed). One natural \
+dev row per requirement (the first in corpus order) whose statement section holds a SHALL \
+sentence, stakeholder needs excluded, is labelled on fr_statement_sound and its three checks \
+(labels-fr-statement.json, one agent pass). Statement mutants (kind fr_statement, slots FRS-*) \
+were written only on dev rows, each injecting one check's defect into the statement section, and \
+are shown in their source's mode.";
+
+/// The requirement-statement keys, labelled on dev rows of every mode.
+pub(crate) const STATEMENT_KEYS: [&str; 4] = [
+    statement::SOUND,
+    "compound_obligation",
+    "multiple_readings",
+    "names_internal_symbol",
+];
 
 /// The criterion-soundness checklist keys, `criterion_sound` first.
 pub(crate) const CRITERION_KEYS: [&str; 6] = [
@@ -146,7 +161,18 @@ pub(crate) const CRITERION_KEYS: [&str; 6] = [
 /// on rows that carry a test or code.
 pub(crate) fn keys_for_mode(mode: &str) -> &'static [&'static str] {
     match mode {
-        "R" => &CRITERION_KEYS,
+        "R" => &[
+            "criterion_sound",
+            "vague_term",
+            "no_measurable_threshold",
+            "untestable",
+            "compound",
+            "missing_trigger",
+            "fr_statement_sound",
+            "compound_obligation",
+            "multiple_readings",
+            "names_internal_symbol",
+        ],
         "RT" => &[
             "trace_correct",
             "assertion_vacuous",
@@ -154,6 +180,10 @@ pub(crate) fn keys_for_mode(mode: &str) -> &'static [&'static str] {
             "tests_only_its_own_mock",
             "divergence_kind",
             "severity",
+            "fr_statement_sound",
+            "compound_obligation",
+            "multiple_readings",
+            "names_internal_symbol",
         ],
         "RC" => &[
             "trace_correct",
@@ -161,6 +191,10 @@ pub(crate) fn keys_for_mode(mode: &str) -> &'static [&'static str] {
             "code_exceeds_requirement",
             "divergence_kind",
             "severity",
+            "fr_statement_sound",
+            "compound_obligation",
+            "multiple_readings",
+            "names_internal_symbol",
         ],
         "RTC" => &[
             "trace_correct",
@@ -171,6 +205,10 @@ pub(crate) fn keys_for_mode(mode: &str) -> &'static [&'static str] {
             "code_exceeds_requirement",
             "divergence_kind",
             "severity",
+            "fr_statement_sound",
+            "compound_obligation",
+            "multiple_readings",
+            "names_internal_symbol",
         ],
         _ => &[],
     }
@@ -464,7 +502,10 @@ pub(crate) fn labelling_rules() -> Value {
             may change is left unlabelled on the mutant. A natural row's test_asserts_intent is \
             mechanical only where a violating mutant of its code settles it: both passes say \
             trace_correct is yes, the mutant breaks the behaviour the shown requirement states, \
-            and the owning test either failed on its own assertion or still passed.",
+            and the owning test either failed on its own assertion or still passed. The four \
+            requirement-statement keys (fr_statement_sound and its three checks) are a single \
+            AGENT-LABELLED pass on dev rows only (kind agent_single, other defensible readings \
+            in alternatives), not audited by a second pass.",
         "trace_correct": "yes when the shown requirement (statement + criterion) is about the \
             behaviour the shown test and/or code exercise: a reader would expect this test or \
             code to be cited for it. no when the requirement describes a different subsystem, \
@@ -507,6 +548,14 @@ pub(crate) fn labelling_rules() -> Value {
     for check in &CRITERION_DEFECTS {
         rules[check.key] = Value::String(check.rule());
     }
+    rules[statement::SOUND] = Value::String(
+        "yes when the requirement's SHALL sentence(s) state a single, unambiguous, \
+         behaviour-level obligation; no when any of the three statement checks says yes."
+            .to_owned(),
+    );
+    for check in &statement::CHECKS {
+        rules[check.key] = Value::String(check.rule());
+    }
     rules
 }
 
@@ -541,6 +590,38 @@ fn natural_truth(a: &Value, b: &Value, id: &str, key: &str) -> Option<Value> {
             ),
         )
     })
+}
+
+/// The requirement-statement truths one natural row's entry in
+/// `labels-fr-statement.json` gives (none when it has no entry): kind
+/// `agent_single`, with the labeller's other defensible reading, if any, as
+/// the alternative.
+fn statement_truth(entry: &Value) -> BTreeMap<String, Value> {
+    STATEMENT_KEYS
+        .iter()
+        .filter_map(|key| {
+            let label = &entry[*key];
+            let answer = label["answer"].as_str()?;
+            let alternatives: Vec<String> = label["alternatives"]
+                .as_array()
+                .map(|alts| {
+                    alts.iter()
+                        .filter_map(|a| a.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let why = label["why"].as_str().unwrap_or("");
+            Some((
+                (*key).to_owned(),
+                truth(
+                    answer,
+                    "agent_single",
+                    &alternatives,
+                    &format!("AGENT-LABELLED, single pass, not audited. {why}"),
+                ),
+            ))
+        })
+        .collect()
 }
 
 /// Replace the single occurrence of `find` in `text`, or `None` when it does
@@ -901,6 +982,30 @@ pub(crate) fn mutation_truth(
                 Vec::new(),
             )
         }
+        "fr_statement" => {
+            let defect = statement::CHECKS
+                .iter()
+                .find(|c| m["defect"] == c.key)
+                .unwrap_or_else(|| panic!("{id}: unknown statement defect {}", m["defect"]))
+                .key;
+            (
+                vec![
+                    det(
+                        defect,
+                        "yes",
+                        "by_construction",
+                        format!("{id} injects it into the requirement statement: {what}"),
+                    ),
+                    det(
+                        statement::SOUND,
+                        "no",
+                        "by_construction",
+                        format!("{id} injects a {defect} defect into the statement."),
+                    ),
+                ],
+                Vec::new(),
+            )
+        }
         "trace_swap" => (
             vec![
                 det(
@@ -955,6 +1060,8 @@ pub(crate) struct Inputs {
     pub(crate) labels_a: Value,
     /// `labels-pass-b.json`'s `labels`.
     pub(crate) labels_b: Value,
+    /// `labels-fr-statement.json`'s `labels`: the requirement-statement keys.
+    pub(crate) labels_statement: Value,
 }
 
 fn load_json(path: &Path) -> Value {
@@ -970,6 +1077,7 @@ impl Inputs {
             mutations: load_json(&dir.join("mutations.json")),
             labels_a: load_json(&dir.join("labels-pass-a.json"))["labels"].clone(),
             labels_b: load_json(&dir.join("labels-pass-b.json"))["labels"].clone(),
+            labels_statement: load_json(&dir.join("labels-fr-statement.json"))["labels"].clone(),
         }
     }
 }
@@ -1051,6 +1159,7 @@ pub(crate) fn draft_rows(inputs: &Inputs, content: &dyn Content) -> Draft {
             }
         }
         let mut t = agent.clone();
+        t.extend(statement_truth(&inputs.labels_statement[&id]));
         if mode.contains('T') {
             let trace_dual_yes = agent
                 .get("trace_correct")
@@ -1194,6 +1303,10 @@ pub(crate) fn draft_rows(inputs: &Inputs, content: &dyn Content) -> Draft {
                         let body = s(&row["test"], "body");
                         row["test"]["body"] = json!(edit(&body, "test body"));
                     }
+                }
+                "requirement" if m["kind"] == statement::MUTATION_KIND => {
+                    let text = s(&row["requirement"], "statement");
+                    row["requirement"]["statement"] = json!(edit(&text, "statement"));
                 }
                 "requirement" => {
                     let ac = row["requirement"]["ac_text"]

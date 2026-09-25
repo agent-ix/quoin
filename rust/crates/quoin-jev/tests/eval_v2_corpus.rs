@@ -238,6 +238,7 @@ fn tc_1025_every_known_truth_label_is_backed_by_the_mutation_log() {
                             .iter()
                             .all(|p| entry["meets_definition"][p]["answer"] == "yes")
                 }
+                ("fr_statement", k, false) => k == "fr_statement_sound" || entry["defect"] == k,
                 ("requirement_text", "trace_correct" | "divergence_kind", false)
                 | (
                     "trace_swap",
@@ -296,7 +297,10 @@ fn tc_1025_agent_labels_say_they_are_agent_labels() {
     );
     for row in &source.file.rows {
         for (key, truth) in &row.truth {
-            if matches!(truth.kind, TruthKind::AgentDual | TruthKind::AgentContested) {
+            if matches!(
+                truth.kind,
+                TruthKind::AgentDual | TruthKind::AgentContested | TruthKind::AgentSingle
+            ) {
                 assert!(
                     truth.rationale.contains("AGENT-LABELLED"),
                     "{} {key}: agent truth without the label",

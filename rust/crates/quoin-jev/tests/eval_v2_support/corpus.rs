@@ -275,6 +275,9 @@ pub(crate) enum TruthKind {
     AgentDual,
     /// Two agent labels that disagree; both readings kept.
     AgentContested,
+    /// One agent label, not audited by a second pass. Any other defensible
+    /// reading the labeller saw is kept in `alternatives`.
+    AgentSingle,
 }
 
 /// The coarse truth-kind groups every report is broken down by.
@@ -308,7 +311,7 @@ impl TruthKind {
         match self {
             Self::Mechanical => KindGroup::Mechanical,
             Self::ByConstruction => KindGroup::ByConstruction,
-            Self::AgentDual | Self::AgentContested => KindGroup::Agent,
+            Self::AgentDual | Self::AgentContested | Self::AgentSingle => KindGroup::Agent,
         }
     }
 }

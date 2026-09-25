@@ -871,3 +871,190 @@ fn tc_1024_exp2_e_bar_d_reads_the_combiner_score() {
         .collect();
     assert_eq!(pairs, [("EV2-0011", false), ("EV2-0012", true)]);
 }
+
+// ---------------------------------------------------------------------------
+// Experiment 3: the requirement statement's own checks (F0, F1)
+// ---------------------------------------------------------------------------
+
+/// A requirement row whose statement section is `statement`.
+fn statement_row(id: &str, fr: &str, statement: &str) -> Row {
+    let mut value = fixtures::row(id, Mode::Req, "dev", &json!({}));
+    value["requirement"]["fr_id"] = json!(fr);
+    value["requirement"]["statement"] = json!(statement);
+    serde_json::from_value(value).unwrap()
+}
+
+/// Provenance: PLAT-1024 exp3. The unit is the statement section's SHALL
+/// sentences only, one per line: prose without SHALL, headings, tables,
+/// block quotes and fenced blocks are dropped; a paragraph wrapped over lines
+/// is one sentence; a list item is its own block.
+#[test]
+fn tc_1024_statement_unit_keeps_only_the_shall_sentences() {
+    use eval_v2_support::variants::statement::shall_sentences;
+    let section = "Some background with no obligation. The CLI SHALL print\n\
+                   the usage text, falling back to `help` for version 1.2.\n\
+                   \n\
+                   ### A heading that SHALL be ignored\n\
+                   \n\
+                   | Table | SHALL be ignored |\n\
+                   > A quote that SHALL be ignored.\n\
+                   \n\
+                   ```\n\
+                   fenced text SHALL be ignored\n\
+                   ```\n\
+                   - `valid`: a list item that shall hold.\n\
+                   - another item.\n\
+                   \n\
+                   Afterwards, `quoin` SHALL exit 0. Nothing else.";
+    assert_eq!(
+        shall_sentences(section).as_deref(),
+        Some(
+            "The CLI SHALL print the usage text, falling back to `help` for version 1.2.\n\
+             - `valid`: a list item that shall hold.\n\
+             Afterwards, `quoin` SHALL exit 0."
+        )
+    );
+    assert_eq!(shall_sentences("No obligation here. None at all."), None);
+}
+
+/// Provenance: PLAT-1024 exp3. A stakeholder need or a statement with no
+/// SHALL sentence has no unit, so F0 and F1 ask nothing about it; a
+/// requirement with one gets one request whose state is its unit.
+#[test]
+fn tc_1024_statement_variants_ask_only_about_a_unit() {
+    use eval_v2_support::variants::statement::{F0, F1, STATEMENT_FIELD, statement_unit};
+    let need = statement_row("EV2-0001", "StR-005", "Authors require that it shall run.");
+    let prose = statement_row("EV2-0002", "FR-036", "Specs and ADRs declare boundaries.");
+    let fr = statement_row("EV2-0003", "FR-041", "`quoin` SHALL read SBOMs.");
+    for row in [&need, &prose] {
+        assert_eq!(statement_unit(row), None);
+        assert!((F0.asks)(row).is_empty() && (F1.asks)(row).is_empty());
+    }
+    for variant in [&F0, &F1] {
+        let asks = (variant.asks)(&fr);
+        assert_eq!(asks.len(), 1);
+        let state = serde_json::to_value(&asks[0].request.state).unwrap();
+        assert_eq!(state[STATEMENT_FIELD], "`quoin` SHALL read SBOMs.");
+        assert!(wording_violations(variant, &fr).is_empty());
+    }
+}
+
+/// Provenance: PLAT-1024 exp3. The combiner: `any >= 0.5` flags on one
+/// check, `>= 2` needs a second, and `any >= 0.7` raises the bar; the sound
+/// prediction's ordinal is one minus the score.
+#[test]
+fn tc_1024_statement_combiners() {
+    use eval_v2_support::variants::statement::{COMBINERS, F1_COMBINER};
+    let [(_, any), (_, two), (_, strict)] = COMBINERS;
+    assert_eq!(any, F1_COMBINER);
+    let one = [0.6, 0.2, 0.1];
+    let both = [0.8, 0.55, 0.0];
+    let none = [0.4, 0.3, 0.49];
+    assert_eq!(
+        [one, both, none].map(|p| [any.flags(&p), two.flags(&p), strict.flags(&p)]),
+        [
+            [true, false, false],
+            [true, true, true],
+            [false, false, false]
+        ]
+    );
+    assert!((two.score(&both) - 0.55).abs() < 1e-12);
+    let sound = any.sound(&one);
+    assert_eq!(sound.answer, "no");
+    assert!((sound.ordinal.unwrap() - 0.4).abs() < 1e-12);
+    assert_eq!(any.sound(&none).answer, "yes");
+}
+
+/// Provenance: PLAT-1024 exp3. F1 grades each check at 0.5 and derives
+/// `fr_statement_sound` from them; F0 reads its one noul; a row with no unit
+/// gets no answer at all.
+#[test]
+fn tc_1024_statement_derive() {
+    use eval_v2_support::variants::statement::{F0, F1, SOUND, WELL_FORMED};
+    let fr = statement_row("EV2-0003", "FR-041", "`quoin` SHALL read SBOMs.");
+    let answered = |pairs: &[(&str, f64)]| {
+        vec![Answered {
+            unit: None,
+            answers: pairs
+                .iter()
+                .map(|(key, p)| ((*key).to_owned(), RawAnswer::Noul(*p)))
+                .collect::<RawAnswers>(),
+        }]
+    };
+    let f1 = (F1.derive)(
+        &fr,
+        &answered(&[
+            ("compound_obligation", 0.2),
+            ("multiple_readings", 0.7),
+            ("names_internal_symbol", 0.1),
+        ]),
+    );
+    let answer = |key: &str| f1[key].answer.clone();
+    assert_eq!(answer("multiple_readings"), "yes");
+    assert_eq!(answer("compound_obligation"), "no");
+    assert_eq!(answer(SOUND), "no");
+    let f0 = (F0.derive)(&fr, &answered(&[(WELL_FORMED, 0.8)]));
+    assert_eq!(f0[SOUND].answer, "yes");
+    assert!((F1.derive)(&fr, &[]).is_empty());
+}
+
+/// Provenance: PLAT-1024 exp3. Every row labelled `fr_statement_sound` has a
+/// unit, and every statement mutant changes its source's unit: an edit to a
+/// sentence without SHALL would be invisible to F0 and F1.
+#[test]
+fn tc_1024_every_statement_mutant_changes_the_unit() {
+    use eval_v2_support::variants::statement::{SOUND, injected, statement_unit};
+    let rows = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows;
+    let by_id: std::collections::BTreeMap<&str, &Row> =
+        rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut mutants = 0;
+    for row in rows.iter().filter(|row| row.truth.contains_key(SOUND)) {
+        let unit = statement_unit(row).unwrap_or_else(|| panic!("{}: no unit", row.id));
+        if injected(row).is_some() {
+            mutants += 1;
+            let source = by_id[row.mutation.as_ref().unwrap().source_id.as_deref().unwrap()];
+            assert_ne!(Some(unit), statement_unit(source), "{}", row.id);
+            assert_eq!(row.split, eval_v2_support::corpus::Split::Dev, "{}", row.id);
+        }
+    }
+    assert!(mutants >= 30, "{mutants} statement mutants");
+}
+
+/// Provenance: PLAT-1024 exp3. Bar D pairs each statement mutant with its
+/// source: a rise across the rule's threshold is a success, a source already
+/// labelled defective is dropped, and an unanswered side is a failure.
+#[test]
+fn tc_1024_statement_bar_d() {
+    use eval_v2_support::variants::statement::{CHECKS, SOUND, bar_d, injected};
+    let rows = eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows;
+    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
+    let mutants: Vec<&Row> = rows.iter().filter(|row| injected(row).is_some()).collect();
+    let scores: std::collections::BTreeMap<&str, f64> = rows
+        .iter()
+        .filter(|row| row.truth.contains_key(SOUND))
+        .map(|row| {
+            (
+                row.id.as_str(),
+                if injected(row).is_some() { 0.9 } else { 0.1 },
+            )
+        })
+        .collect();
+    let d = bar_d(&rows, &scores, 0.5, &keys, SOUND);
+    assert_eq!(d.pairs, mutants.len());
+    assert_eq!(d.successes + d.source_already_yes, d.pairs);
+    // At a threshold above every score nothing crosses: all ties.
+    let high = bar_d(&rows, &scores, 0.95, &keys, SOUND);
+    assert_eq!(high.ties, high.pairs - high.source_already_yes);
+    // With no answers every kept pair is a failure.
+    let none = bar_d(&rows, &std::collections::BTreeMap::new(), 0.5, &keys, SOUND);
+    assert_eq!(none.failures, none.pairs - none.source_already_yes);
+    assert_eq!(none.abstained, none.failures);
+}

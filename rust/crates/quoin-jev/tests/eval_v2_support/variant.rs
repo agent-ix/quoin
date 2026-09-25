@@ -71,7 +71,7 @@ use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
 use super::variants::intent::{T0_RT, T1, T2, T3, TC_RC, TC_RT, TC_RTC};
-use super::variants::{exceeds, severity, soundness};
+use super::variants::{exceeds, severity, soundness, statement};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
 };
@@ -244,6 +244,9 @@ pub(crate) const REGISTRY: &[Variant] = &[
     // PLAT-1031 criterion-soundness variants; bars in spec/assurance/MP-243.
     soundness::K1,
     soundness::K2,
+    // PLAT-1024 experiment 3: the requirement statement's own checks (dev only).
+    statement::F0,
+    statement::F1,
 ];
 
 /// Resolves a comma-separated id list against [`REGISTRY`].
