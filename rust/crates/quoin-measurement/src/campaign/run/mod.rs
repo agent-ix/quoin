@@ -255,18 +255,17 @@ pub fn run_campaign_with_cancellation(
         .ok_or_else(|| {
             CampaignRunError::binding("campaign plan repository is not in sourceGraph".to_owned())
         })?;
-    let plan_root =
-        tempfile::tempdir().map_err(|error| CampaignRunError::execution(error.to_string()))?;
-    own_source.stage_into(plan_root.path())?;
     let selected_ids = definition
         .members
         .iter()
         .map(|member| member.plan_id.as_str())
         .collect::<BTreeSet<_>>();
-    let plans =
-        load_selected_measurement_plans(&DiskMeasurement::new(plan_root.path()), &selected_ids)
-            .map_err(|error| CampaignRunError::measurement(error.to_string()))?;
-    let procedures = load_procedures(plan_root.path(), &plans)?;
+    let plans = load_selected_measurement_plans(
+        &DiskMeasurement::new(own_source.checkout.as_path()),
+        &selected_ids,
+    )
+    .map_err(|error| CampaignRunError::measurement(error.to_string()))?;
+    let procedures = load_procedures(&own_source.checkout, &plans)?;
     for plan in &plans {
         if !own_source.contains_path(&plan.path)
             || plan

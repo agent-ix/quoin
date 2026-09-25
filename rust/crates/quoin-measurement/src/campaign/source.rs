@@ -3,7 +3,6 @@
 //! Exact clean Git source graph for a generic EA campaign.
 
 use std::collections::BTreeMap;
-use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -38,17 +37,9 @@ pub enum SourceError {
     /// The raw NUL-terminated Git tree inventory has another digest.
     #[error("campaign source tree digest mismatch for {0}")]
     Tree(String),
-    /// A tracked path cannot be projected into an isolated root.
+    /// A tracked path or Git tree entry is malformed or unsupported.
     #[error("campaign source path is unsafe: {0}")]
     Path(String),
-    /// A source file could not be copied to the invocation root.
-    #[error("campaign source projection failed at {path}: {message}")]
-    Projection {
-        /// Selected source or staging path.
-        path: PathBuf,
-        /// I/O detail.
-        message: String,
-    },
 }
 
 /// One selected clean checkout and its exact raw `git ls-tree` inventory.
@@ -56,7 +47,7 @@ pub enum SourceError {
 pub struct VerifiedSource {
     /// Repository name from the campaign definition.
     pub repository: String,
-    /// Selected clean checkout root.
+    /// Selected clean checkout root, canonical; the EA capability root.
     pub checkout: PathBuf,
     /// Raw NUL-delimited Git tree inventory, bound to `CampaignSource.digest`.
     pub manifest: Vec<u8>,
@@ -225,129 +216,11 @@ impl VerifiedSource {
                 == Some(path)
         })
     }
-
-    /// Materialize only Git-tracked regular files into an invocation-owned root.
-    /// EA rechecks each staged file's Git blob OID before bounded execution.
-    ///
-    /// # Errors
-    /// Refuses a nonportable or reserved path and any failed bounded copy.
-    #[allow(
-        clippy::too_many_lines,
-        reason = "one Git tree entry must be checked before either safe link or regular staging"
-    )]
-    pub fn stage_into(&self, root: &Path) -> Result<(), SourceError> {
-        let records = self
-            .manifest
-            .strip_suffix(&[0])
-            .ok_or_else(|| SourceError::Path("unterminated Git tree inventory".to_owned()))?;
-        let mut total = 0_u64;
-        for (number, record) in records.split(|byte| *byte == 0).enumerate() {
-            if number >= engineering_assurance::producer_execution::MAX_ARTIFACTS {
-                return Err(SourceError::Path(
-                    "source file population exceeds EA ceiling".to_owned(),
-                ));
-            }
-            let tab = record
-                .iter()
-                .position(|byte| *byte == b'\t')
-                .ok_or_else(|| SourceError::Path("missing Git tree separator".to_owned()))?;
-            let header = std::str::from_utf8(record.get(..tab).unwrap_or_default())
-                .map_err(|_| SourceError::Path("invalid Git header".to_owned()))?;
-            let mut tokens = header.split(' ');
-            let (Some(mode), Some("blob"), Some(oid), None) =
-                (tokens.next(), tokens.next(), tokens.next(), tokens.next())
-            else {
-                return Err(SourceError::Path("unsupported Git tree entry".to_owned()));
-            };
-            if !matches!(mode, "100644" | "100755" | "120000") {
-                return Err(SourceError::Path("unsupported Git mode".to_owned()));
-            }
-            let path_bytes = record
-                .get(tab.saturating_add(1)..)
-                .ok_or_else(|| SourceError::Path("invalid Git tree separator".to_owned()))?;
-            let relative = std::str::from_utf8(path_bytes)
-                .map_err(|_| SourceError::Path("non-UTF-8 Git path".to_owned()))?;
-            let path = Path::new(relative);
-            if relative.is_empty()
-                || relative == ".quoin-campaign"
-                || relative.starts_with(".quoin-campaign/")
-                || path.is_absolute()
-                || path
-                    .components()
-                    .any(|part| !matches!(part, std::path::Component::Normal(_)))
-            {
-                return Err(SourceError::Path(relative.to_owned()));
-            }
-            if mode == "120000" {
-                let target_bytes = git(
-                    &self.checkout,
-                    "cat-file",
-                    &["cat-file", "blob", oid],
-                    MAX_SOURCE_FILE_BYTES,
-                )?;
-                let target = std::str::from_utf8(&target_bytes).map_err(|_| {
-                    SourceError::Path(format!("non-UTF-8 Git link target: {relative}"))
-                })?;
-                let destination = root.join(path);
-                if let Some(parent) = destination.parent() {
-                    fs::create_dir_all(parent).map_err(|error| SourceError::Projection {
-                        path: parent.to_path_buf(),
-                        message: error.to_string(),
-                    })?;
-                }
-                #[cfg(unix)]
-                std::os::unix::fs::symlink(target, &destination).map_err(|error| {
-                    SourceError::Projection {
-                        path: destination,
-                        message: error.to_string(),
-                    }
-                })?;
-                #[cfg(not(unix))]
-                return Err(SourceError::Path(format!(
-                    "source link unsupported on this host: {relative}"
-                )));
-                continue;
-            }
-            let bytes = self.read_tracked_file(relative)?;
-            total = total
-                .checked_add(u64::try_from(bytes.len()).unwrap_or(u64::MAX))
-                .ok_or_else(|| SourceError::Path("source bytes exceed EA ceiling".to_owned()))?;
-            if total > engineering_assurance::producer_execution::MAX_INPUT_BYTES {
-                return Err(SourceError::Path(
-                    "source bytes exceed EA ceiling".to_owned(),
-                ));
-            }
-            let destination = root.join(path);
-            if let Some(parent) = destination.parent() {
-                fs::create_dir_all(parent).map_err(|error| SourceError::Projection {
-                    path: parent.to_path_buf(),
-                    message: error.to_string(),
-                })?;
-            }
-            fs::write(&destination, &bytes).map_err(|error| SourceError::Projection {
-                path: destination.clone(),
-                message: error.to_string(),
-            })?;
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                let permissions =
-                    fs::Permissions::from_mode(if mode == "100755" { 0o755 } else { 0o644 });
-                fs::set_permissions(&destination, permissions).map_err(|error| {
-                    SourceError::Projection {
-                        path: destination.clone(),
-                        message: error.to_string(),
-                    }
-                })?;
-            }
-        }
-        Ok(())
-    }
 }
 
 /// Verify every source against a selected checkout before execution or replay.
 ///
-/// Untracked evidence files are not part of the source tree that EA stages;
+/// Untracked evidence files are not part of the source tree;
 /// tracked edits and staged changes always refuse. The manifest digest uses
 /// the raw `git ls-tree -r -z --full-tree` bytes, not a text rendering.
 ///
@@ -481,9 +354,15 @@ fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource,
     if digest_bytes_sha256(&manifest).as_hex() != source.digest {
         return Err(SourceError::Tree(source.repository.clone()));
     }
+    // EA opens the capability root through a symlink-free absolute path.
+    let checkout = path.canonicalize().map_err(|error| SourceError::Git {
+        operation: "canonicalize",
+        path: path.to_path_buf(),
+        message: error.to_string(),
+    })?;
     Ok(VerifiedSource {
         repository: source.repository.clone(),
-        checkout: path.to_path_buf(),
+        checkout,
         manifest,
     })
 }

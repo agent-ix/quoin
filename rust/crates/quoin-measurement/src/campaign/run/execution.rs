@@ -51,18 +51,7 @@ pub(super) fn run_member(
         status: CampaignAttemptStatus::InvalidRequest,
         verdict_digest: None,
     };
-    let staging =
-        tempfile::tempdir().map_err(|error| CampaignRunError::execution(error.to_string()))?;
-    source.stage_into(staging.path())?;
-    let inputs = match select_inputs(
-        repo,
-        member,
-        runtime,
-        source,
-        sources,
-        prior,
-        staging.path(),
-    ) {
+    let inputs = match select_inputs(repo, member, runtime, source, sources, prior) {
         Ok(inputs) => inputs,
         Err(CampaignRunError::Binding(_)) => {
             attempt.reason = Some("invalid_input_binding".to_owned());
@@ -71,7 +60,7 @@ pub(super) fn run_member(
         Err(error) => return Err(error),
     };
     let mut bindings = runtime.producer.clone();
-    bindings.capability_root = staging.path().to_string_lossy().into_owned();
+    bindings.capability_root = source.checkout.to_string_lossy().into_owned();
     bindings.inputs = inputs;
     bindings.input_origins = selected_declarations(&runtime.inputs, procedure);
     bindings.source_tree = Some(SourceTreeBinding {
@@ -184,7 +173,7 @@ pub(super) fn run_member(
 
 #[allow(
     clippy::too_many_arguments,
-    reason = "selected inputs bind exact member, source, dependency, and staging identities"
+    reason = "selected inputs bind exact member, source, and dependency identities"
 )]
 fn select_inputs(
     repo: &Path,
@@ -193,7 +182,6 @@ fn select_inputs(
     source: &VerifiedSource,
     sources: &BTreeMap<String, VerifiedSource>,
     prior: &[CampaignAttempt],
-    root: &Path,
 ) -> Result<Vec<InputBinding>, CampaignRunError> {
     let mut paths = BTreeSet::new();
     let mut roles = BTreeSet::new();
@@ -258,8 +246,8 @@ fn select_inputs(
                     read_digest_bytes(repo, "raw", &artifact.digest, "bin")?
                 }
             };
-            let path = root.join(&selected.path);
-            if path.exists() {
+            let path = source.checkout.join(&selected.path);
+            if source.contains_path(&selected.path) {
                 return Err(CampaignRunError::binding(
                     "producer input collides with tracked source".to_owned(),
                 ));

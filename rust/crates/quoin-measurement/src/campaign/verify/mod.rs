@@ -124,22 +124,19 @@ pub fn verify_retained_campaign(
         return Err(CampaignVerificationError::RunId);
     }
     validate_run(&run, &definition)?;
-    let plan_root = tempfile::tempdir().map_err(|source| CampaignStoreError::Io {
-        path: repo.to_path_buf(),
-        source,
-    })?;
-    own_source.stage_into(plan_root.path())?;
     let selected_ids = definition
         .members
         .iter()
         .map(|member| member.plan_id.as_str())
         .collect::<BTreeSet<_>>();
-    let plans =
-        load_selected_measurement_plans(&DiskMeasurement::new(plan_root.path()), &selected_ids)
-            .map_err(|error| CampaignStoreError::Json {
-                path: repo.to_path_buf(),
-                message: error.to_string(),
-            })?;
+    let plans = load_selected_measurement_plans(
+        &DiskMeasurement::new(own_source.checkout.as_path()),
+        &selected_ids,
+    )
+    .map_err(|error| CampaignStoreError::Json {
+        path: repo.to_path_buf(),
+        message: error.to_string(),
+    })?;
     if plans.iter().any(|plan| {
         !own_source.contains_path(&plan.path)
             || plan
@@ -154,7 +151,7 @@ pub fn verify_retained_campaign(
     let mut procedures = BTreeMap::new();
     for plan in &plans {
         if let Some(path) = &plan.execution_procedure {
-            let procedure: MeasurementProcedure = read_typed(&plan_root.path().join(path))?;
+            let procedure: MeasurementProcedure = read_typed(&own_source.checkout.join(path))?;
             procedures.insert(plan.id.as_str().to_owned(), procedure);
         }
     }

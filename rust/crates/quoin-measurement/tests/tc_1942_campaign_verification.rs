@@ -1623,12 +1623,8 @@ fn tc_1941_ea_malformed_response_result_is_retained_and_replayed() {
         serde_json::from_value(procedure_json).expect("typed procedure");
     let sources = verify_source_graph(&definition, &checkouts).expect("exact source graph");
     let producer_source = sources.get("fictional/producer").expect("producer source");
-    let staging = tempfile::tempdir().expect("invocation staging root");
-    producer_source
-        .stage_into(staging.path())
-        .expect("exact source projection");
     let mut bindings = runs.get("one").expect("runtime").producer.clone();
-    bindings.capability_root = staging.path().to_string_lossy().into_owned();
+    bindings.capability_root = producer_source.checkout.to_string_lossy().into_owned();
     bindings.source_tree = Some(SourceTreeBinding {
         repository: producer_source.repository.clone(),
         manifest: producer_source.manifest.clone(),

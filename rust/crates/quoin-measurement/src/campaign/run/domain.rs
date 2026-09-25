@@ -137,9 +137,6 @@ fn check_domain_attempt(
     let checker_source = sources
         .get(&checker_procedure.source_repository)
         .ok_or_else(|| CampaignRunError::binding("checker source missing".to_owned()))?;
-    let checker_root =
-        tempfile::tempdir().map_err(|error| CampaignRunError::execution(error.to_string()))?;
-    checker_source.stage_into(checker_root.path())?;
     let definition_bytes = read_digest_bytes(repo, "definitions", definition_digest, "json")?;
     let producer_digest = attempt
         .result_digest
@@ -155,21 +152,21 @@ fn check_domain_attempt(
     let mut selected_inputs = Vec::new();
     selected_inputs.push(stage_checker_input(
         repo,
-        checker_root.path(),
+        checker_source,
         "definition",
         CHECKER_DEFINITION_PATH,
         &definition_bytes,
     )?);
     selected_inputs.push(stage_checker_input(
         repo,
-        checker_root.path(),
+        checker_source,
         "result",
         CHECKER_RESULT_PATH,
         &producer_bytes,
     )?);
     selected_inputs.push(stage_checker_input(
         repo,
-        checker_root.path(),
+        checker_source,
         "request",
         CHECKER_REQUEST_PATH,
         &producer_request_bytes,
@@ -182,7 +179,7 @@ fn check_domain_attempt(
     let raw_bundle_bytes = read_digest_bytes(repo, "bundles", &raw_bundle_digest, "json")?;
     selected_inputs.push(stage_checker_input(
         repo,
-        checker_root.path(),
+        checker_source,
         "rawBundle",
         CHECKER_RAW_BUNDLE_PATH,
         &raw_bundle_bytes,
@@ -218,7 +215,7 @@ fn check_domain_attempt(
             let path = staged_dependency_path(&dependency.member, dependency.index, result_digest);
             selected_inputs.push(stage_checker_input(
                 repo,
-                checker_root.path(),
+                checker_source,
                 &format!("dependency/{}/{}", dependency.member, dependency.index),
                 &path,
                 &bytes,
@@ -228,7 +225,7 @@ fn check_domain_attempt(
                 staged_dependency_path(&dependency.member, dependency.index, request_digest);
             selected_inputs.push(stage_checker_input(
                 repo,
-                checker_root.path(),
+                checker_source,
                 &format!(
                     "dependency-request/{}/{}",
                     dependency.member, dependency.index
@@ -249,7 +246,7 @@ fn check_domain_attempt(
             );
             selected_inputs.push(stage_checker_input(
                 repo,
-                checker_root.path(),
+                checker_source,
                 &format!("dependencyRaw/{}/{}", dependency.member, dependency.index),
                 &raw_bundle_path,
                 &raw_bundle_bytes,
@@ -292,13 +289,13 @@ fn check_domain_attempt(
     let bundle_bytes = read_digest_bytes(repo, "bundles", &bundle_digest, "json")?;
     selected_inputs.push(stage_checker_input(
         repo,
-        checker_root.path(),
+        checker_source,
         "bundle",
         CHECKER_INPUT_PATH,
         &bundle_bytes,
     )?);
     let mut checker_bindings = checker_runtime;
-    checker_bindings.capability_root = checker_root.path().to_string_lossy().into_owned();
+    checker_bindings.capability_root = checker_source.checkout.to_string_lossy().into_owned();
     checker_bindings.inputs = selected_inputs;
     checker_bindings.source_tree = Some(SourceTreeBinding {
         repository: checker_source.repository.clone(),
@@ -425,7 +422,7 @@ fn check_domain_attempt(
 
 fn stage_checker_input(
     repo: &Path,
-    root: &Path,
+    source: &VerifiedSource,
     role: &str,
     relative: &str,
     bytes: &[u8],
@@ -435,7 +432,12 @@ fn stage_checker_input(
             "checker input path is not reserved".to_owned(),
         ));
     }
-    let path = root.join(relative);
+    if source.contains_path(relative) {
+        return Err(CampaignRunError::binding(
+            "checker input collides with tracked source".to_owned(),
+        ));
+    }
+    let path = source.checkout.join(relative);
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)
             .map_err(|error| CampaignRunError::execution(error.to_string()))?;
