@@ -33,14 +33,16 @@ use regex::Regex;
 use serde_json::{Value, json};
 use typesafe_sdk_questions::{Entry, NoulCriteria, Questions, noul_with};
 
-use crate::eval_v2_support::corpus::{Row, Truth, TruthKind};
-use crate::eval_v2_support::keys::{Mode, NO, YES};
+use crate::eval_v2_support::corpus::Row;
+use crate::eval_v2_support::keys::Mode;
 use crate::eval_v2_support::variant::{
-    Answered, Ask, Prediction, Predictions, RunOutput, Variant, request, whole_row,
+    Answered, Ask, Predictions, RunOutput, Variant, request, whole_row,
 };
-use crate::eval_v2_support::variants::soundness::{
-    BarD, PairOutcome, TAU, credit, defect_prediction, pair_outcome, required_noul,
+use crate::eval_v2_support::variants::battery::{
+    Battery, Check, Combiner, RuleLine, Scores, holistic_predictions, holistic_scores,
+    probability_table,
 };
+use crate::eval_v2_support::variants::soundness::{BarD, TAU, defect_prediction, required_noul};
 
 /// The aggregate key: `yes` when the statement has none of the defects.
 pub(crate) const SOUND: &str = "fr_statement_sound";
@@ -50,26 +52,6 @@ pub(crate) const MUTATION_KIND: &str = "fr_statement";
 pub(crate) const WELL_FORMED: &str = "well_formed";
 /// The state field carrying the unit.
 pub(crate) const STATEMENT_FIELD: &str = "statement";
-
-/// One named statement defect.
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Check {
-    /// The corpus key, also the wire key. `yes` is the defect.
-    pub(crate) key: &'static str,
-    /// The question.
-    pub(crate) instruction: &'static str,
-    /// What `yes` (the defect) means.
-    pub(crate) defect: &'static str,
-    /// What `no` (clear) means.
-    pub(crate) clear: &'static str,
-}
-
-impl Check {
-    /// The labelling rule the corpus header states for this key.
-    pub(crate) fn rule(&self) -> String {
-        format!("yes: {} no: {}", self.defect, self.clear)
-    }
-}
 
 /// Every instruction opens with this sentence.
 macro_rules! judge {
@@ -321,16 +303,6 @@ fn f0_asks(row: &Row) -> Vec<Ask> {
     asks_with(row, f0_questions)
 }
 
-/// How F1's checks combine into [`SOUND`]: the statement is flagged when at
-/// least `at_least` checks are at or above `tau`.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct Combiner {
-    /// How many checks must fire.
-    pub(crate) at_least: usize,
-    /// The threshold a check fires at.
-    pub(crate) tau: f64,
-}
-
 /// F1's combiner, fixed before the first live call: any check at 0.5.
 pub(crate) const F1_COMBINER: Combiner = Combiner {
     at_least: 1,
@@ -355,38 +327,6 @@ pub(crate) const COMBINERS: [(&str, Combiner); 3] = [
         },
     ),
 ];
-
-impl Combiner {
-    /// The row's defect score: the `at_least`-th highest check probability,
-    /// or 0 when there are fewer checks.
-    pub(crate) fn score(&self, probabilities: &[f64]) -> f64 {
-        let mut sorted = probabilities.to_vec();
-        sorted.sort_by(|a, b| b.total_cmp(a));
-        self.at_least
-            .checked_sub(1)
-            .and_then(|index| sorted.get(index))
-            .copied()
-            .unwrap_or(0.0)
-    }
-
-    /// Whether the statement is flagged.
-    pub(crate) fn flags(&self, probabilities: &[f64]) -> bool {
-        self.score(probabilities) >= self.tau
-    }
-
-    /// [`SOUND`] as a graded answer: `no` when flagged. The ordinal is
-    /// `1 - score`, higher meaning more likely sound; the confidence is the
-    /// score for `no` and `1 - score` for `yes`.
-    pub(crate) fn sound(&self, probabilities: &[f64]) -> Prediction {
-        let score = self.score(probabilities);
-        let flagged = score >= self.tau;
-        Prediction {
-            answer: if flagged { NO } else { YES }.to_owned(),
-            confidence: Some(if flagged { score } else { 1.0 - score }),
-            ordinal: Some(1.0 - score),
-        }
-    }
-}
 
 /// F1's graded answers from one defect probability per check, in [`CHECKS`]
 /// order.
@@ -422,24 +362,17 @@ pub(crate) fn f0_probability(row: &Row, answered: &[Answered]) -> Option<f64> {
 
 fn f0_derive(row: &Row, answered: &[Answered]) -> Predictions {
     f0_probability(row, answered)
-        .map(|p| {
-            let sound = p >= TAU;
-            Predictions::from([(
-                SOUND,
-                Prediction {
-                    answer: if sound { YES } else { NO }.to_owned(),
-                    confidence: Some(if sound { p } else { 1.0 - p }),
-                    ordinal: Some(p),
-                },
-            )])
-        })
+        .map(|p| holistic_predictions(SOUND, p))
         .unwrap_or_default()
 }
 
 /// The holistic baseline.
 pub(crate) const F0: Variant = Variant {
     id: "F0",
-    version: 1,
+    // v2 (derive only, PR #634 review): the graded answer is
+    // `battery::holistic_predictions`, which flags `P(well-formed) = 0.5`
+    // as the report always did; v1 graded it well-formed. Same questions.
+    version: 2,
     summary: "requirement statement: one holistic noul (single, unambiguous, behaviour-level obligation?)",
     modes: &Mode::ALL,
     references: &[],
@@ -466,126 +399,29 @@ pub(crate) const F1: Variant = Variant {
 // The report (informational; every combiner past `any >= 0.5` is post hoc)
 // ---------------------------------------------------------------------------
 
-/// Each answered row's defect score under one rule; an unanswered row is absent.
-type Scores<'a> = BTreeMap<&'a str, f64>;
+/// The requirement statement's battery.
+pub(crate) const STATEMENT: Battery = Battery {
+    sound: SOUND,
+    checks: &CHECKS,
+    mutation_kind: MUTATION_KIND,
+    labelled_only: false,
+};
 
 /// Whether `row` is a requirement-statement mutant: it carries truth for the
 /// statement keys only.
 pub(crate) fn is_statement_mutant(row: &Row) -> bool {
-    row.mutation
-        .as_ref()
-        .is_some_and(|mutation| mutation.kind == MUTATION_KIND)
+    STATEMENT.is_mutant(row)
 }
 
 /// The check a statement mutant injected: its one by-construction `yes`.
 pub(crate) fn injected(row: &Row) -> Option<&'static str> {
-    row.mutation
-        .as_ref()
-        .filter(|mutation| mutation.kind == MUTATION_KIND)?;
-    CHECKS.iter().map(|check| check.key).find(|key| {
-        row.truth.get(*key).is_some_and(|truth| {
-            truth.kind == TruthKind::ByConstruction && truth.answer.label() == YES
-        })
-    })
+    STATEMENT.injected(row)
 }
 
-fn primary(row: &Row, key: &str) -> Option<String> {
-    row.truth.get(key).map(|truth| truth.answer.label())
-}
-
-/// One statement mutant paired with its source: the source id, and the
-/// pair's outcome with whether it was an abstention (a failure because a side
-/// went unanswered), or `None` when the source is already on the defect side
-/// (dropped).
-type Paired<'a> = (&'a str, Option<(PairOutcome, bool)>);
-
-/// Every statement mutant whose injected check is in `checks`, paired with
-/// its source, in row order: the pair's scores, shifted so `tau` is the
-/// shared 0.5 crossing, through the shared pair rule. `excluded_key` names
-/// the truth whose `yes` (for a check) or `no` (for [`SOUND`]) on the source
-/// already puts it on the defect side, so the pair is dropped. An unanswered
-/// side is a failure.
+/// Bar D over every statement pair ([`Battery::bar_d`] on [`STATEMENT`]).
 ///
 /// # Panics
-/// When a mutant names no source, or one missing from `rows`, a mutant
-/// itself, or in another split or mode: a broken pair link must stop the
-/// run, not shrink bar D's denominator (as `soundness::pairs`, MP-243).
-#[allow(
-    clippy::panic,
-    reason = "a broken pair link must stop the run, not shrink bar D's denominator (MP-243)"
-)]
-fn paired<'a>(
-    rows: &'a [Row],
-    scores: &Scores<'_>,
-    tau: f64,
-    checks: &[&str],
-    excluded_key: &str,
-) -> Vec<Paired<'a>> {
-    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
-    let defect_label = if excluded_key == SOUND { NO } else { YES };
-    let shift = TAU - tau;
-    let score = |row: &Row| scores.get(row.id.as_str()).map(|s| s + shift);
-    rows.iter()
-        .filter(|mutant| injected(mutant).is_some_and(|key| checks.contains(&key)))
-        .map(|mutant| {
-            let id = &mutant.id;
-            let source_id = mutant
-                .mutation
-                .as_ref()
-                .and_then(|m| m.source_id.as_deref())
-                .unwrap_or_else(|| panic!("{id}: statement mutant has no mutation.source_id"));
-            let source = by_id
-                .get(source_id)
-                .copied()
-                .unwrap_or_else(|| panic!("{id}: source {source_id} is not among this run's rows"));
-            assert!(
-                source.mutation.is_none(),
-                "{id}: source {source_id} is itself a mutant"
-            );
-            assert!(
-                source.split == mutant.split && source.mode == mutant.mode,
-                "{id}: source {source_id} is {}/{}, the mutant {}/{}",
-                source.split.as_str(),
-                source.mode.as_str(),
-                mutant.split.as_str(),
-                mutant.mode.as_str()
-            );
-            if primary(source, excluded_key).as_deref() == Some(defect_label) {
-                return (source_id, None);
-            }
-            let outcome = score(source)
-                .zip(score(mutant))
-                .map_or((PairOutcome::Failure, true), |(s, m)| {
-                    (pair_outcome(s, m), false)
-                });
-            (source_id, Some(outcome))
-        })
-        .collect()
-}
-
-fn tally(outcomes: impl Iterator<Item = Option<(PairOutcome, bool)>>) -> BarD {
-    let mut tally = BarD::default();
-    for outcome in outcomes {
-        tally.pairs += 1;
-        let Some((outcome, abstained)) = outcome else {
-            tally.source_already_yes += 1;
-            continue;
-        };
-        tally.abstained += usize::from(abstained);
-        match outcome {
-            PairOutcome::Success => tally.successes += 1,
-            PairOutcome::Failure => tally.failures += 1,
-            PairOutcome::Tie => tally.ties += 1,
-        }
-    }
-    tally
-}
-
-/// Bar D over every pair ([`paired`]). Pairs sharing a source are not
-/// independent, so this line is descriptive; [`bar_d_per_source`] gates.
-///
-/// # Panics
-/// As [`paired`].
+/// As [`Battery::bar_d`].
 pub(crate) fn bar_d(
     rows: &[Row],
     scores: &Scores<'_>,
@@ -593,20 +429,14 @@ pub(crate) fn bar_d(
     checks: &[&str],
     excluded_key: &str,
 ) -> BarD {
-    tally(
-        paired(rows, scores, tau, checks, excluded_key)
-            .into_iter()
-            .map(|(_, outcome)| outcome),
-    )
+    STATEMENT.bar_d(rows, scores, tau, checks, excluded_key)
 }
 
-/// Bar D with one pair per source: each source's majority outcome over its
-/// kept pairs (success when successes outnumber failures, failure when
-/// failures outnumber successes, else a tie); a source whose every pair was
-/// dropped counts as dropped. Sources are independent, so this line gates.
+/// Bar D with one pair per statement source ([`Battery::bar_d_per_source`]
+/// on [`STATEMENT`]).
 ///
 /// # Panics
-/// As [`paired`].
+/// As [`Battery::bar_d`].
 pub(crate) fn bar_d_per_source(
     rows: &[Row],
     scores: &Scores<'_>,
@@ -614,236 +444,14 @@ pub(crate) fn bar_d_per_source(
     checks: &[&str],
     excluded_key: &str,
 ) -> BarD {
-    let mut by_source: BTreeMap<&str, Vec<Option<(PairOutcome, bool)>>> = BTreeMap::new();
-    for (source, outcome) in paired(rows, scores, tau, checks, excluded_key) {
-        by_source.entry(source).or_default().push(outcome);
-    }
-    tally(by_source.into_values().map(|outcomes| {
-        let kept: Vec<(PairOutcome, bool)> = outcomes.into_iter().flatten().collect();
-        if kept.is_empty() {
-            return None;
-        }
-        let count = |wanted: PairOutcome| kept.iter().filter(|(o, _)| *o == wanted).count();
-        let (wins, losses) = (count(PairOutcome::Success), count(PairOutcome::Failure));
-        let all_abstained = kept.iter().all(|(_, abstained)| *abstained);
-        Some(match wins.cmp(&losses) {
-            std::cmp::Ordering::Greater => (PairOutcome::Success, false),
-            std::cmp::Ordering::Less => (PairOutcome::Failure, all_abstained),
-            std::cmp::Ordering::Equal => (PairOutcome::Tie, false),
-        })
-    }))
+    STATEMENT.bar_d_per_source(rows, scores, tau, checks, excluded_key)
 }
 
-fn pct(n: usize, d: usize) -> String {
-    if d == 0 {
-        "n/a".to_owned()
-    } else {
-        let (n, d) = (
-            f64::from(u32::try_from(n).unwrap_or(u32::MAX)),
-            f64::from(u32::try_from(d).unwrap_or(u32::MAX)),
-        );
-        format!("{n:.0}/{d:.0} {:.0}%", 100.0 * n / d)
-    }
-}
-
-fn show_d(d: &BarD) -> String {
-    format!(
-        "{}-{}-{} (p = {:.4}; {}; {} dropped, source already defective{})",
-        d.successes,
-        d.failures,
-        d.ties,
-        d.p_value(),
-        if d.gateable() {
-            "gateable"
-        } else {
-            "NOT gateable"
-        },
-        d.source_already_yes,
-        if d.abstained > 0 {
-            format!("; {} abstained", d.abstained)
-        } else {
-            String::new()
-        }
-    )
-}
-
-/// One rule's row over the report's rows.
-struct RuleLine<'a> {
-    name: String,
-    scores: Scores<'a>,
-    tau: f64,
-}
-
-/// The rows the report reads: labelled with [`SOUND`].
-fn labelled(rows: &[Row]) -> Vec<&Row> {
-    rows.iter()
-        .filter(|row| row.truth.contains_key(SOUND))
-        .collect()
-}
-
-fn flagged(line: &RuleLine<'_>, row: &Row) -> Option<bool> {
-    line.scores.get(row.id.as_str()).map(|s| *s >= line.tau)
-}
-
-/// `(credit, best constant credit, rows)` for [`SOUND`] over `rows`.
-fn accuracy(line: &RuleLine<'_>, rows: &[&Row]) -> (f64, f64, usize) {
-    let answer = |row: &Row| flagged(line, row).map(|flag| if flag { NO } else { YES });
-    let truths: Vec<(&Row, &Truth)> = rows
-        .iter()
-        .filter_map(|row| row.truth.get(SOUND).map(|truth| (*row, truth)))
-        .collect();
-    let ours = truths
-        .iter()
-        .map(|(row, truth)| credit(truth, answer(row)))
-        .sum();
-    let constant = |label: &str| -> f64 {
-        truths
-            .iter()
-            .map(|(_, truth)| credit(truth, Some(label)))
-            .sum()
-    };
-    (ours, constant(YES).max(constant(NO)), truths.len())
-}
-
-fn render_rule(out: &mut String, rows: &[Row], line: &RuleLine<'_>) {
-    let all = labelled(rows);
-    let natural: Vec<&Row> = all
-        .iter()
-        .copied()
-        .filter(|row| row.mutation.is_none())
-        .collect();
-    let sound: Vec<&Row> = natural
-        .iter()
-        .copied()
-        .filter(|row| primary(row, SOUND).as_deref() == Some(YES))
-        .collect();
-    let defective: Vec<&Row> = natural
-        .iter()
-        .copied()
-        .filter(|row| primary(row, SOUND).as_deref() == Some(NO))
-        .collect();
-    let cleared = sound
-        .iter()
-        .filter(|row| flagged(line, row) == Some(false))
-        .count();
-    let caught = |rows: &[&Row]| {
-        rows.iter()
-            .filter(|row| flagged(line, row) == Some(true))
-            .count()
-    };
-    let mut per_kind = String::new();
-    for check in &CHECKS {
-        let mutants: Vec<&Row> = all
-            .iter()
-            .copied()
-            .filter(|row| injected(row) == Some(check.key))
-            .collect();
-        let _ = write!(per_kind, " {} | ", pct(caught(&mutants), mutants.len()));
-    }
-    let (ours_n, constant_n, n_n) = accuracy(line, &natural);
-    let (ours_a, constant_a, n_a) = accuracy(line, &all);
-    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
-    let d = bar_d(rows, &line.scores, line.tau, &keys, SOUND);
-    let per_source = bar_d_per_source(rows, &line.scores, line.tau, &keys, SOUND);
-    let _ = writeln!(
-        out,
-        "| {} | {} | {} |{per_kind} {ours_n:.1} vs {constant_n:.1} of {n_n} | {ours_a:.1} vs \
-         {constant_a:.1} of {n_a} | {} | {} |",
-        line.name,
-        pct(cleared, sound.len()),
-        pct(caught(&defective), defective.len()),
-        show_d(&per_source),
-        show_d(&d),
-    );
-}
-
-const RULE_HEADER: &str = "| Rule | Sound-row recall (natural) | Defect recall (natural) | \
-    compound_obligation mutants | multiple_readings mutants | names_internal_symbol mutants | \
-    Credit vs best constant (natural) | Credit vs best constant (natural + mutants) | Bar D \
-    aggregate, one pair per source (W-L-T; GATES) | Bar D aggregate, every pair (W-L-T; \
-    descriptive, pairs share sources) |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | \
-    --- |";
-
-/// Each row's check probabilities for F1 labelled `label`.
+/// Each row's F1 check probabilities for the variant labelled `label`.
 fn f1_table<'a>(rows: &'a [Row], output: &RunOutput, label: &str) -> BTreeMap<&'a str, Vec<f64>> {
-    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
-    output
-        .results
-        .iter()
-        .filter(|result| result.variant == label)
-        .filter_map(|result| {
-            let row = by_id.get(result.row_id.as_str())?;
-            f1_probabilities(row, &result.answered).map(|p| (row.id.as_str(), p.to_vec()))
-        })
-        .collect()
-}
-
-fn f0_scores<'a>(rows: &'a [Row], output: &RunOutput, label: &str) -> Scores<'a> {
-    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
-    output
-        .results
-        .iter()
-        .filter(|result| result.variant == label)
-        .filter_map(|result| {
-            let row = by_id.get(result.row_id.as_str())?;
-            f0_probability(row, &result.answered).map(|p| (row.id.as_str(), 1.0 - p))
-        })
-        .collect()
-}
-
-fn render_checks(out: &mut String, rows: &[Row], table: &BTreeMap<&str, Vec<f64>>) {
-    let all = labelled(rows);
-    let natural = |label: &str| -> Vec<&Row> {
-        all.iter()
-            .copied()
-            .filter(|row| row.mutation.is_none() && primary(row, SOUND).as_deref() == Some(label))
-            .collect()
-    };
-    let (sound, defective) = (natural(YES), natural(NO));
-    let _ = writeln!(
-        out,
-        "\n| Check | Fires on sound (natural) | Fires on defective (natural) | Natural labelled \
-         yes on it | Fires on its own mutants | Fires on other mutants | Bar D (its own \
-         mutants, W-L-T) |\n| --- | --- | --- | --- | --- | --- | --- |"
-    );
-    for (index, check) in CHECKS.iter().enumerate() {
-        let fires = |row: &Row| {
-            table
-                .get(row.id.as_str())
-                .and_then(|p| p.get(index))
-                .is_some_and(|p| *p >= TAU)
-        };
-        let count = |rows: &[&Row]| rows.iter().filter(|row| fires(row)).count();
-        let own: Vec<&Row> = all
-            .iter()
-            .copied()
-            .filter(|row| injected(row) == Some(check.key))
-            .collect();
-        let other: Vec<&Row> = all
-            .iter()
-            .copied()
-            .filter(|row| injected(row).is_some_and(|key| key != check.key))
-            .collect();
-        let labelled_yes = all
-            .iter()
-            .filter(|row| row.mutation.is_none() && primary(row, check.key).as_deref() == Some(YES))
-            .count();
-        let scores: Scores<'_> = table
-            .iter()
-            .filter_map(|(id, p)| p.get(index).map(|p| (*id, *p)))
-            .collect();
-        let d = bar_d(rows, &scores, TAU, &[check.key], check.key);
-        let _ = writeln!(
-            out,
-            "| {} | {} | {} | {labelled_yes} | {} | {} | {} |",
-            check.key,
-            pct(count(&sound), sound.len()),
-            pct(count(&defective), defective.len()),
-            pct(count(&own), own.len()),
-            pct(count(&other), other.len()),
-            show_d(&d),
-        );
-    }
+    probability_table(rows, output, label, |row, answered| {
+        f1_probabilities(row, answered).map(|p| p.to_vec())
+    })
 }
 
 /// The report for every F variant in `variants`: F0 and F1's pre-registered
@@ -855,25 +463,26 @@ pub(crate) fn render(rows: &[Row], output: &RunOutput, variants: &[&Variant]) ->
     if ran("F0").is_none() && ran("F1").is_none() {
         return out;
     }
-    let all = labelled(rows);
+    let all = STATEMENT.labelled(rows);
     let _ = writeln!(
         out,
         "\n## Requirement statement ({SOUND}; dev only, informational)\n\n{} labelled rows: {} \
          natural (AGENT-LABELLED, single pass), {} statement mutants (by construction). Credit \
          counts an alternative reading as half. Bar D: {MUTATION_KIND} mutant vs its source, the \
-         shared pair rule (cross the rule's threshold, move at least 0.10).\n\n{RULE_HEADER}",
+         shared pair rule (cross the rule's threshold, move at least 0.10).\n\n{}",
         all.len(),
         all.iter().filter(|row| row.mutation.is_none()).count(),
         all.iter().filter(|row| row.mutation.is_some()).count(),
+        STATEMENT.rule_header(),
     );
     if let Some(f0) = ran("F0") {
         let label = f0.label();
-        render_rule(
+        STATEMENT.render_rule(
             &mut out,
             rows,
             &RuleLine {
                 name: format!("{label} holistic P(no) >= 0.5"),
-                scores: f0_scores(rows, output, &label),
+                scores: holistic_scores(rows, output, &label, f0_probability),
                 tau: TAU,
             },
         );
@@ -891,7 +500,7 @@ pub(crate) fn render(rows: &[Row], output: &RunOutput, variants: &[&Variant]) ->
             }
             (false, _) => " (POST HOC)".to_owned(),
         };
-        render_rule(
+        STATEMENT.render_rule(
             &mut out,
             rows,
             &RuleLine {
@@ -904,7 +513,12 @@ pub(crate) fn render(rows: &[Row], output: &RunOutput, variants: &[&Variant]) ->
             },
         );
     }
-    render_checks(&mut out, rows, &table);
+    let wording = if f1.version == 1 {
+        String::new()
+    } else {
+        format!(", POST HOC wording (v{})", f1.version)
+    };
+    STATEMENT.render_checks(&mut out, rows, &table, TAU, &format!("{label}{wording}"));
     out
 }
 
@@ -914,53 +528,11 @@ pub(crate) fn dump(rows: &[Row], output: &RunOutput, variants: &[&Variant]) -> V
     let f0 = variants
         .iter()
         .find(|variant| variant.id == "F0")
-        .map(|variant| f0_scores(rows, output, &variant.label()))
+        .map(|variant| holistic_scores(rows, output, &variant.label(), f0_probability))
         .unwrap_or_default();
     let Some(f1) = variants.iter().find(|variant| variant.id == "F1") else {
         return Vec::new();
     };
     let table = f1_table(rows, output, &f1.label());
-    labelled(rows)
-        .into_iter()
-        .map(|row| {
-            let truth: BTreeMap<&str, Value> = row
-                .truth
-                .iter()
-                .map(|(key, truth)| {
-                    (
-                        key.as_str(),
-                        json!({
-                            "answer": truth.answer.label(),
-                            "alternatives": truth.alternatives.iter().map(crate::eval_v2_support::corpus::TruthAnswer::label).collect::<Vec<_>>(),
-                            "rationale": truth.rationale,
-                        }),
-                    )
-                })
-                .collect();
-            let p: BTreeMap<&str, f64> = table
-                .get(row.id.as_str())
-                .map(|p| {
-                    CHECKS
-                        .iter()
-                        .zip(p)
-                        .map(|(check, p)| (check.key, *p))
-                        .collect()
-                })
-                .unwrap_or_default();
-            json!({
-                "id": row.id,
-                "mode": row.mode.as_str(),
-                "fr_id": row.requirement.fr_id,
-                "natural": row.mutation.is_none(),
-                "mutation": row.mutation.as_ref().map(|m| json!({"id": m.id, "source_id": m.source_id, "description": m.description})),
-                "injected": injected(row),
-                "sound": primary(row, SOUND),
-                "f1": p,
-                "f0_p_defect": f0.get(row.id.as_str()),
-                "unit": statement_unit(row),
-                "truth": truth,
-            })
-            .to_string()
-        })
-        .collect()
+    STATEMENT.dump(rows, &table, &f0, statement_unit)
 }

@@ -155,6 +155,10 @@ fn qualifying_violator(m: &Value) -> bool {
 /// mutant of its own code that qualifies. Relabelling a row's agent answer as
 /// mechanical, or a dropped mutant's row left in, fails here.
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one match over every mutation kind; splitting it hides which kind backs which key"
+)]
 fn tc_1025_every_known_truth_label_is_backed_by_the_mutation_log() {
     let rows = corpus().file.rows;
     let log = mutation_log();
@@ -239,6 +243,7 @@ fn tc_1025_every_known_truth_label_is_backed_by_the_mutation_log() {
                             .all(|p| entry["meets_definition"][p]["answer"] == "yes")
                 }
                 ("fr_statement", k, false) => k == "fr_statement_sound" || entry["defect"] == k,
+                ("ac_refusal", k, false) => k == "criterion_groundable" || entry["defect"] == k,
                 ("requirement_text", "trace_correct" | "divergence_kind", false)
                 | (
                     "trace_swap",

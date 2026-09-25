@@ -37,6 +37,8 @@ use serde_json::{Value, json};
 
 use super::corpus::{MAX_NATURAL_ROWS_PER_FR, SCHEMA};
 use super::criterion_defects::CRITERION_DEFECTS;
+use super::variants::battery::Battery;
+use super::variants::refusal;
 use super::variants::statement;
 
 /// The sampling seed (restated in [`SAMPLING_RULE`]).
@@ -135,15 +137,13 @@ dev row per requirement (the first in corpus order) whose statement section hold
 sentence, stakeholder needs excluded, is labelled on fr_statement_sound and its three checks \
 (labels-fr-statement.json, one agent pass). Statement mutants (kind fr_statement, slots FRS-*) \
 were written only on dev rows, each injecting one check's defect into the statement section, and \
-are shown in their source's mode.";
-
-/// The requirement-statement keys, labelled on dev rows of every mode.
-pub(crate) const STATEMENT_KEYS: [&str; 4] = [
-    statement::SOUND,
-    "compound_obligation",
-    "multiple_readings",
-    "names_internal_symbol",
-];
+are shown in their source's mode. \
+ACCEPTANCE-CRITERION REFUSAL REASONS (dev only, added after the reseal; no held-out row changed). \
+Every natural dev row whose criterion text is present (except N-152, whose text the table parser \
+cut off) is labelled on criterion_groundable and its five refusal checks \
+(labels-ac-refusal.json, one agent pass). Refusal mutants (kind ac_refusal, slots ACR-*) were \
+written only on dev rows, each injecting one refusal reason into the criterion text, and are \
+shown in their source's mode only.";
 
 /// The criterion-soundness checklist keys, `criterion_sound` first.
 pub(crate) const CRITERION_KEYS: [&str; 6] = [
@@ -172,6 +172,12 @@ pub(crate) fn keys_for_mode(mode: &str) -> &'static [&'static str] {
             "compound_obligation",
             "multiple_readings",
             "names_internal_symbol",
+            "criterion_groundable",
+            "oracle_is_adjectival",
+            "domain_unbounded",
+            "names_single_witness",
+            "describes_its_own_test",
+            "static_or_demonstration",
         ],
         "RT" => &[
             "trace_correct",
@@ -184,6 +190,12 @@ pub(crate) fn keys_for_mode(mode: &str) -> &'static [&'static str] {
             "compound_obligation",
             "multiple_readings",
             "names_internal_symbol",
+            "criterion_groundable",
+            "oracle_is_adjectival",
+            "domain_unbounded",
+            "names_single_witness",
+            "describes_its_own_test",
+            "static_or_demonstration",
         ],
         "RC" => &[
             "trace_correct",
@@ -195,6 +207,12 @@ pub(crate) fn keys_for_mode(mode: &str) -> &'static [&'static str] {
             "compound_obligation",
             "multiple_readings",
             "names_internal_symbol",
+            "criterion_groundable",
+            "oracle_is_adjectival",
+            "domain_unbounded",
+            "names_single_witness",
+            "describes_its_own_test",
+            "static_or_demonstration",
         ],
         "RTC" => &[
             "trace_correct",
@@ -209,6 +227,12 @@ pub(crate) fn keys_for_mode(mode: &str) -> &'static [&'static str] {
             "compound_obligation",
             "multiple_readings",
             "names_internal_symbol",
+            "criterion_groundable",
+            "oracle_is_adjectival",
+            "domain_unbounded",
+            "names_single_witness",
+            "describes_its_own_test",
+            "static_or_demonstration",
         ],
         _ => &[],
     }
@@ -505,7 +529,8 @@ pub(crate) fn labelling_rules() -> Value {
             and the owning test either failed on its own assertion or still passed. The four \
             requirement-statement keys (fr_statement_sound and its three checks) are a single \
             AGENT-LABELLED pass on dev rows only (kind agent_single, other defensible readings \
-            in alternatives), not audited by a second pass.",
+            in alternatives), not audited by a second pass. So are the six acceptance-criterion \
+            refusal keys (criterion_groundable and its five checks).",
         "trace_correct": "yes when the shown requirement (statement + criterion) is about the \
             behaviour the shown test and/or code exercise: a reader would expect this test or \
             code to be cited for it. no when the requirement describes a different subsystem, \
@@ -556,6 +581,10 @@ pub(crate) fn labelling_rules() -> Value {
     for check in &statement::CHECKS {
         rules[check.key] = Value::String(check.rule());
     }
+    rules[refusal::SOUND] = Value::String(refusal::SOUND_RULE.to_owned());
+    for check in &refusal::CHECKS {
+        rules[check.key] = Value::String(check.rule());
+    }
     rules
 }
 
@@ -592,17 +621,22 @@ fn natural_truth(a: &Value, b: &Value, id: &str, key: &str) -> Option<Value> {
     })
 }
 
-/// The requirement-statement truths for one entry of
-/// `labels-fr-statement.json`: kind `agent_single`, with the labeller's other
-/// defensible reading, if any, as the alternative.
+/// One entry of a single-pass label file for `battery`: its aggregate and
+/// every check, kind `agent_single`, with the labeller's other defensible
+/// reading, if any, as the alternative.
 ///
 /// # Errors
-/// When any of the four keys is missing or not `yes`/`no`, or
-/// `fr_statement_sound` is not `no` exactly when some check is `yes`: a
-/// malformed entry is refused, never silently dropped.
-pub(crate) fn statement_truth(id: &str, entry: &Value) -> Result<BTreeMap<String, Value>, String> {
+/// When any of the battery's keys is missing or not `yes`/`no`, or the
+/// aggregate is not `no` exactly when some check is `yes`: a malformed entry
+/// is refused, never silently dropped.
+fn single_pass_truth(
+    battery: &Battery,
+    id: &str,
+    entry: &Value,
+) -> Result<BTreeMap<String, Value>, String> {
     let mut out = BTreeMap::new();
-    for key in STATEMENT_KEYS {
+    let keys = std::iter::once(battery.sound).chain(battery.checks.iter().map(|check| check.key));
+    for key in keys {
         let label = &entry[key];
         let answer = label["answer"]
             .as_str()
@@ -627,14 +661,15 @@ pub(crate) fn statement_truth(id: &str, entry: &Value) -> Result<BTreeMap<String
             ),
         );
     }
-    let fires = statement::CHECKS
+    let fires = battery
+        .checks
         .iter()
         .any(|check| out[check.key]["answer"] == "yes");
-    let sound = out[statement::SOUND]["answer"] == "yes";
+    let sound = out[battery.sound]["answer"] == "yes";
     if sound == fires {
         return Err(format!(
             "{id}: {} is {} but {} check says yes",
-            statement::SOUND,
+            battery.sound,
             if sound { "yes" } else { "no" },
             if fires { "a" } else { "no" }
         ));
@@ -642,19 +677,43 @@ pub(crate) fn statement_truth(id: &str, entry: &Value) -> Result<BTreeMap<String
     Ok(out)
 }
 
-/// Every entry of `labels-fr-statement.json`'s `labels`, checked against
+/// The requirement-statement truths for one entry of
+/// `labels-fr-statement.json` ([`single_pass_truth`] on the statement
+/// battery).
+///
+/// # Errors
+/// As [`single_pass_truth`].
+pub(crate) fn statement_truth(id: &str, entry: &Value) -> Result<BTreeMap<String, Value>, String> {
+    single_pass_truth(&statement::STATEMENT, id, entry)
+}
+
+/// The refusal truths for one entry of `labels-ac-refusal.json`
+/// ([`single_pass_truth`] on the refusal battery).
+///
+/// # Errors
+/// As [`single_pass_truth`].
+pub(crate) fn refusal_truth(id: &str, entry: &Value) -> Result<BTreeMap<String, Value>, String> {
+    single_pass_truth(&refusal::REFUSAL, id, entry)
+}
+
+/// One single-pass label entry's truths by key, or why it is refused.
+type TruthFn = fn(&str, &Value) -> Result<BTreeMap<String, Value>, String>;
+
+/// Every entry of a single-pass label file's `labels`, checked against
 /// `sample.json`: each id must be a dev natural row, and each entry must
-/// pass [`statement_truth`].
+/// pass `truth`.
 ///
 /// # Errors
 /// Naming the first unknown or held-out id, or malformed entry.
-pub(crate) fn statement_labels(
+fn single_pass_labels(
+    file: &str,
     labels: &Value,
     sample: &Value,
+    truth: TruthFn,
 ) -> Result<BTreeMap<String, BTreeMap<String, Value>>, String> {
     let labels = labels
         .as_object()
-        .ok_or("labels-fr-statement.json: `labels` is not an object")?;
+        .ok_or_else(|| format!("{file}: `labels` is not an object"))?;
     let natural: Vec<&str> = sample["natural"]
         .as_array()
         .into_iter()
@@ -668,13 +727,35 @@ pub(crate) fn statement_labels(
                 return Err(format!("{id}: not a natural row of sample.json"));
             }
             if sample["split"][id] != "dev" {
-                return Err(format!(
-                    "{id}: not a dev row; statement labels are dev only"
-                ));
+                return Err(format!("{id}: not a dev row; {file} labels are dev only"));
             }
-            Ok((id.clone(), statement_truth(id, entry)?))
+            Ok((id.clone(), truth(id, entry)?))
         })
         .collect()
+}
+
+/// Every entry of `labels-fr-statement.json`'s `labels`, checked by
+/// [`single_pass_labels`] and [`statement_truth`].
+///
+/// # Errors
+/// As [`single_pass_labels`].
+pub(crate) fn statement_labels(
+    labels: &Value,
+    sample: &Value,
+) -> Result<BTreeMap<String, BTreeMap<String, Value>>, String> {
+    single_pass_labels("labels-fr-statement.json", labels, sample, statement_truth)
+}
+
+/// Every entry of `labels-ac-refusal.json`'s `labels`, checked by
+/// [`single_pass_labels`] and [`refusal_truth`].
+///
+/// # Errors
+/// As [`single_pass_labels`].
+pub(crate) fn refusal_labels(
+    labels: &Value,
+    sample: &Value,
+) -> Result<BTreeMap<String, BTreeMap<String, Value>>, String> {
+    single_pass_labels("labels-ac-refusal.json", labels, sample, refusal_truth)
 }
 
 /// Replace the single occurrence of `find` in `text`, or `None` when it does
@@ -1035,6 +1116,30 @@ pub(crate) fn mutation_truth(
                 Vec::new(),
             )
         }
+        "ac_refusal" => {
+            let defect = refusal::CHECKS
+                .iter()
+                .find(|c| m["defect"] == c.key)
+                .unwrap_or_else(|| panic!("{id}: unknown refusal reason {}", m["defect"]))
+                .key;
+            (
+                vec![
+                    det(
+                        defect,
+                        "yes",
+                        "by_construction",
+                        format!("{id} injects it into the acceptance criterion: {what}"),
+                    ),
+                    det(
+                        refusal::SOUND,
+                        "no",
+                        "by_construction",
+                        format!("{id} injects a {defect} refusal reason into the criterion."),
+                    ),
+                ],
+                Vec::new(),
+            )
+        }
         "fr_statement" => {
             let defect = statement::CHECKS
                 .iter()
@@ -1115,6 +1220,8 @@ pub(crate) struct Inputs {
     pub(crate) labels_b: Value,
     /// `labels-fr-statement.json`'s `labels`: the requirement-statement keys.
     pub(crate) labels_statement: Value,
+    /// `labels-ac-refusal.json`'s `labels`: the acceptance-criterion refusal keys.
+    pub(crate) labels_refusal: Value,
 }
 
 fn load_json(path: &Path) -> Value {
@@ -1131,6 +1238,7 @@ impl Inputs {
             labels_a: load_json(&dir.join("labels-pass-a.json"))["labels"].clone(),
             labels_b: load_json(&dir.join("labels-pass-b.json"))["labels"].clone(),
             labels_statement: load_json(&dir.join("labels-fr-statement.json"))["labels"].clone(),
+            labels_refusal: load_json(&dir.join("labels-ac-refusal.json"))["labels"].clone(),
         }
     }
 }
@@ -1171,6 +1279,8 @@ pub(crate) fn draft_rows(inputs: &Inputs, content: &dyn Content) -> Draft {
     let (docs, _) = load_docs(content);
     let natural = inputs.sample["natural"].as_array().unwrap();
     let statement_labels = statement_labels(&inputs.labels_statement, &inputs.sample)
+        .unwrap_or_else(|error| panic!("{error}"));
+    let refusal_labels = refusal_labels(&inputs.labels_refusal, &inputs.sample)
         .unwrap_or_else(|error| panic!("{error}"));
     let split = &inputs.sample["split"];
     let all: Vec<&Value> = inputs.mutations["mutations"]
@@ -1215,6 +1325,7 @@ pub(crate) fn draft_rows(inputs: &Inputs, content: &dyn Content) -> Draft {
         }
         let mut t = agent.clone();
         t.extend(statement_labels.get(&id).cloned().unwrap_or_default());
+        t.extend(refusal_labels.get(&id).cloned().unwrap_or_default());
         if mode.contains('T') {
             let trace_dual_yes = agent
                 .get("trace_correct")
@@ -1358,6 +1469,10 @@ pub(crate) fn draft_rows(inputs: &Inputs, content: &dyn Content) -> Draft {
                         let body = s(&row["test"], "body");
                         row["test"]["body"] = json!(edit(&body, "test body"));
                     }
+                }
+                "requirement" if m["kind"] == refusal::MUTATION_KIND => {
+                    let ac = s(&row["requirement"], "ac_text");
+                    row["requirement"]["ac_text"] = json!(edit(&ac, "criterion"));
                 }
                 "requirement" if m["kind"] == statement::MUTATION_KIND => {
                     let text = s(&row["requirement"], "statement");

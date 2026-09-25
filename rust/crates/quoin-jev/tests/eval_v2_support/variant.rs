@@ -70,8 +70,9 @@ use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
+use super::variants::battery::Battery;
 use super::variants::intent::{T0_RT, T1, T2, T3, TC_RC, TC_RT, TC_RTC};
-use super::variants::{exceeds, severity, soundness, statement};
+use super::variants::{exceeds, refusal, severity, soundness, statement};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
 };
@@ -202,31 +203,39 @@ impl Variant {
     }
 
     /// Whether this variant runs on `row`: the row's mode is one of its
-    /// modes, and a requirement-statement mutant (which carries truth only
-    /// for the statement keys) runs only on a variant graded on one of them,
-    /// so no other variant pays for rows it cannot score.
+    /// modes, and a battery's mutant (a requirement-statement or refusal
+    /// mutant, which carries truth only for its battery's keys) runs only on
+    /// a variant graded on one of them, so no other variant pays for rows it
+    /// cannot score. A variant graded on a `labelled_only` battery runs only
+    /// on rows labelled with that battery's aggregate.
     pub(crate) fn applies_to(&self, row: &Row) -> bool {
         self.modes.contains(&row.mode)
-            && (!statement::is_statement_mutant(row) || self.scores_statement())
+            && BATTERIES.iter().all(|battery| {
+                let scored = self.scores(battery);
+                (!battery.is_mutant(row) || scored)
+                    && (!scored || !battery.labelled_only || row.truth.contains_key(battery.sound))
+            })
     }
 
-    /// Whether this variant is graded on a requirement-statement key.
-    pub(crate) fn scores_statement(&self) -> bool {
-        self.grades
-            .iter()
-            .any(|key| statement::GRADES.contains(key))
+    /// Whether this variant is graded on one of `battery`'s keys.
+    pub(crate) fn scores(&self, battery: &Battery) -> bool {
+        self.grades.iter().any(|key| battery.grades(key))
     }
 }
 
-/// `rows` without the requirement-statement mutants when none of `variants`
-/// scores a statement key, so a run of other variants reports the same rows
-/// it did before those mutants existed.
+/// The batteries whose mutants carry truth for their own keys only.
+pub(crate) const BATTERIES: [Battery; 2] = [statement::STATEMENT, refusal::REFUSAL];
+
+/// `rows` without each battery's mutants when none of `variants` scores
+/// that battery, so a run of other variants reports the same rows it did
+/// before those mutants existed.
 pub(crate) fn rows_for(rows: Vec<Row>, variants: &[&Variant]) -> Vec<Row> {
-    if variants.iter().any(|variant| variant.scores_statement()) {
-        return rows;
-    }
     rows.into_iter()
-        .filter(|row| !statement::is_statement_mutant(row))
+        .filter(|row| {
+            BATTERIES.iter().all(|battery| {
+                !battery.is_mutant(row) || variants.iter().any(|variant| variant.scores(battery))
+            })
+        })
         .collect()
 }
 
@@ -270,6 +279,9 @@ pub(crate) const REGISTRY: &[Variant] = &[
     // PLAT-1024 experiment 3: the requirement statement's own checks (dev only).
     statement::F0,
     statement::F1,
+    // PLAT-1024 experiment 4: acceptance-criterion refusal reasons (dev only).
+    refusal::R0,
+    refusal::R1,
 ];
 
 /// Resolves a comma-separated id list against [`REGISTRY`].

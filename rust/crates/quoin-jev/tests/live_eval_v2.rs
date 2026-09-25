@@ -198,6 +198,42 @@ fn report_statement(
     println!("statement rows written to {path}");
 }
 
+/// Where the refusal rows are dumped for reading by hand (dev only,
+/// informational).
+const REFUSAL_OUT_ENV: &str = "QUOIN_JEV_REFUSAL_OUT";
+
+/// The refusal dump's output file, when requested. Dev only, as
+/// [`statement_dir`].
+fn refusal_dir(split: Split) -> Option<String> {
+    let path = env(REFUSAL_OUT_ENV)?;
+    assert!(
+        split == Split::Dev,
+        "{REFUSAL_OUT_ENV} is dev-only; held-out rows are never diagnosed"
+    );
+    Some(path)
+}
+
+/// Prints the acceptance-criterion refusal report (PLAT-1024 experiment 4;
+/// empty unless an R variant ran), and writes one JSON line per refusal row
+/// to `path`, when set.
+fn report_refusal(
+    path: Option<&str>,
+    rows: &[Row],
+    output: &variant::RunOutput,
+    variants: &[&Variant],
+) {
+    println!(
+        "{}",
+        eval_v2_support::variants::refusal::render(rows, output, variants)
+    );
+    let Some(path) = path else {
+        return;
+    };
+    let lines = eval_v2_support::variants::refusal::dump(rows, output, variants);
+    std::fs::write(path, lines.join("\n") + "\n").unwrap_or_else(|error| panic!("{path}: {error}"));
+    println!("refusal rows written to {path}");
+}
+
 /// Provenance: PLAT-1027. Runs the chosen variants over the chosen split and
 /// prints the report. Ungated: bars belong to each experiment's MP doc.
 #[allow(
@@ -224,6 +260,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     );
     let exp2 = exp2_dir(split);
     let statement_dir = statement_dir(split);
+    let refusal_dir = refusal_dir(split);
     let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
     let rerun_reason = env(HELDOUT_RERUN_ENV);
     let heldout_flag = env(HELDOUT_ENV);
@@ -308,6 +345,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     );
     write_exp2(exp2.as_deref(), &rows, &output);
     report_statement(statement_dir.as_deref(), &rows, &output, &variants);
+    report_refusal(refusal_dir.as_deref(), &rows, &output, &variants);
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(

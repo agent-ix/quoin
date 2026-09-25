@@ -1195,3 +1195,355 @@ fn tc_1024_statement_bar_d_refuses_a_missing_source() {
     let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
     let _ = bar_d(&rows, &std::collections::BTreeMap::new(), 0.5, &keys, SOUND);
 }
+
+// ---------------------------------------------------------------------------
+// Experiment 4: acceptance-criterion refusal reasons (R0, R1)
+// ---------------------------------------------------------------------------
+
+/// A row in `mode` whose criterion text is `ac` (`None` for no criterion).
+fn criterion_row(id: &str, mode: Mode, ac: Option<&str>) -> Row {
+    let mut value = fixtures::row(id, mode, "dev", &json!({}));
+    value["requirement"]["ac_text"] = json!(ac);
+    serde_json::from_value(value).unwrap()
+}
+
+/// The in-repo dev rows.
+fn dev_rows() -> Vec<Row> {
+    eval_v2_support::corpus::load_in_repo()
+        .unwrap()
+        .unwrap()
+        .file
+        .rows
+        .into_iter()
+        .filter(|row| row.split == eval_v2_support::corpus::Split::Dev)
+        .collect()
+}
+
+/// Provenance: PLAT-1024 exp4. The unit is the criterion's own text: a row
+/// with no criterion text is not asked; a row with one gets one request whose
+/// state is the criterion and its id only, in every mode, with no test or
+/// code vocabulary in the questions.
+#[test]
+fn tc_1024_refusal_variants_ask_only_about_a_criterion() {
+    use eval_v2_support::variants::refusal::{CRITERION_FIELD, R0, R1};
+    for mode in Mode::ALL {
+        let none = criterion_row("EV2-0001", mode, None);
+        let blank = criterion_row("EV2-0002", mode, Some("  "));
+        for row in [&none, &blank] {
+            assert!((R0.asks)(row).is_empty() && (R1.asks)(row).is_empty());
+        }
+        let row = criterion_row("EV2-0003", mode, Some("A 5000-byte request is refused."));
+        for variant in [&R0, &R1] {
+            let asks = (variant.asks)(&row);
+            assert_eq!(asks.len(), 1);
+            let state = serde_json::to_value(&asks[0].request.state).unwrap();
+            assert_eq!(state[CRITERION_FIELD], "A 5000-byte request is refused.");
+            assert_eq!(state["criterion_id"], "FR-003-AC-1");
+            assert_eq!(state.as_object().unwrap().len(), 2);
+            assert!(wording_violations(variant, &row).is_empty(), "{mode:?}");
+        }
+    }
+}
+
+/// Provenance: PLAT-1024 exp4. Both combiners fixed before the first live
+/// call are pre-registered: any check at 0.5 (R1's graded answer) and any
+/// check at 0.7; `>= 2` is post hoc.
+#[test]
+fn tc_1024_refusal_pre_registered_combiners() {
+    use eval_v2_support::variants::refusal::{POST_HOC, PRE_REGISTERED, R1_COMBINER};
+    let [(any_name, any), (strict_name, strict)] = PRE_REGISTERED;
+    assert_eq!((any_name, strict_name), ("any >= 0.5", "any >= 0.7"));
+    assert_eq!(any, R1_COMBINER);
+    let [(_, two)] = POST_HOC;
+    let one = [0.6, 0.2, 0.1, 0.0, 0.0];
+    let high = [0.75, 0.55, 0.0, 0.0, 0.0];
+    let none = [0.4, 0.3, 0.49, 0.1, 0.0];
+    assert_eq!(
+        [one, high, none].map(|p| [any.flags(&p), strict.flags(&p), two.flags(&p)]),
+        [
+            [true, false, false],
+            [true, true, true],
+            [false, false, false]
+        ]
+    );
+}
+
+/// Provenance: PLAT-1024 exp4. R1 grades each check at 0.5 and derives
+/// `criterion_groundable` from them; R0 reads its one noul; a row with no
+/// unit gets no answer.
+#[test]
+fn tc_1024_refusal_derive() {
+    use eval_v2_support::variants::refusal::{CHECKABLE, CHECKS, R0, R1, SOUND};
+    let row = criterion_row(
+        "EV2-0003",
+        Mode::Req,
+        Some("A 5000-byte request is refused."),
+    );
+    let answered = |pairs: &[(&str, f64)]| {
+        vec![Answered {
+            unit: None,
+            answers: pairs
+                .iter()
+                .map(|(key, p)| ((*key).to_owned(), RawAnswer::Noul(*p)))
+                .collect::<RawAnswers>(),
+        }]
+    };
+    let mut pairs: Vec<(&str, f64)> = CHECKS.iter().map(|check| (check.key, 0.1)).collect();
+    let r1 = (R1.derive)(&row, &answered(&pairs));
+    assert_eq!(r1[SOUND].answer, "yes");
+    pairs[2].1 = 0.6;
+    let r1 = (R1.derive)(&row, &answered(&pairs));
+    assert_eq!(r1["names_single_witness"].answer, "yes");
+    assert_eq!(r1["oracle_is_adjectival"].answer, "no");
+    assert_eq!(r1[SOUND].answer, "no");
+    assert!((r1[SOUND].ordinal.unwrap() - 0.4).abs() < 1e-12);
+    let r0 = (R0.derive)(&row, &answered(&[(CHECKABLE, 0.3)]));
+    assert_eq!(r0[SOUND].answer, "no");
+    assert!((R1.derive)(&row, &[]).is_empty());
+}
+
+/// Provenance: PLAT-1024 exp4. The refusal mutants: 40, eight per reason,
+/// all dev, each shown in its source's mode, each changing the source's
+/// criterion text, over at least 20 distinct sources (so per-source bar D
+/// can gate) with at most two mutants per source, every source labelled
+/// groundable.
+#[test]
+fn tc_1024_refusal_mutants_are_dev_and_change_the_criterion() {
+    use eval_v2_support::variants::refusal::{CHECKS, REFUSAL, SOUND, criterion_unit};
+    let rows = dev_rows();
+    let by_id: std::collections::BTreeMap<&str, &Row> =
+        rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut per_reason: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
+    let mut per_source: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
+    for mutant in rows.iter().filter(|row| REFUSAL.is_mutant(row)) {
+        let injected = REFUSAL.injected(mutant).unwrap();
+        *per_reason.entry(injected).or_default() += 1;
+        let source_id = mutant
+            .mutation
+            .as_ref()
+            .unwrap()
+            .source_id
+            .as_deref()
+            .unwrap();
+        *per_source.entry(source_id).or_default() += 1;
+        let source = by_id[source_id];
+        assert_eq!(source.mode, mutant.mode, "{}", mutant.id);
+        assert!(source.mutation.is_none(), "{}", mutant.id);
+        assert_eq!(source.truth[SOUND].answer.label(), "yes", "{}", mutant.id);
+        assert_ne!(
+            criterion_unit(mutant),
+            criterion_unit(source),
+            "{}",
+            mutant.id
+        );
+        assert_eq!(mutant.requirement.statement, source.requirement.statement);
+    }
+    assert_eq!(per_reason.len(), CHECKS.len());
+    assert!(per_reason.values().all(|n| *n == 8), "{per_reason:?}");
+    assert!(per_source.len() >= 20, "{} sources", per_source.len());
+    assert!(per_source.values().all(|n| *n <= 2), "{per_source:?}");
+}
+
+/// Provenance: PLAT-1024 exp4. Every committed refusal label carries all six
+/// keys with `criterion_groundable` = `no` exactly when a check fires; a
+/// missing key, an inconsistent aggregate, an unknown id or a held-out id is
+/// refused, never silently dropped.
+#[test]
+fn tc_1024_refusal_labels_are_complete_or_refused() {
+    use eval_v2_support::assemble::{fixture_dir, refusal_labels, refusal_truth};
+    let read = |name: &str| -> Value {
+        serde_json::from_str(&std::fs::read_to_string(fixture_dir().join(name)).unwrap()).unwrap()
+    };
+    let sample = read("sample.json");
+    let labels = read("labels-ac-refusal.json")["labels"].clone();
+    let checked = refusal_labels(&labels, &sample).unwrap();
+    assert_eq!(checked.len(), 48);
+    assert!(checked.values().all(|truth| truth.len() == 6));
+    let entry = |sound: &str, adjectival: &str| {
+        json!({
+            "criterion_groundable": {"answer": sound, "why": "w"},
+            "oracle_is_adjectival": {"answer": adjectival, "why": "w"},
+            "domain_unbounded": {"answer": "no", "why": "w"},
+            "names_single_witness": {"answer": "no", "why": "w"},
+            "describes_its_own_test": {"answer": "no", "why": "w"},
+            "static_or_demonstration": {"answer": "no", "why": "w"},
+        })
+    };
+    assert!(refusal_truth("N-1", &entry("no", "yes")).is_ok());
+    assert!(refusal_truth("N-1", &entry("yes", "no")).is_ok());
+    assert!(refusal_truth("N-1", &entry("yes", "yes")).is_err());
+    assert!(refusal_truth("N-1", &entry("no", "no")).is_err());
+    let mut missing = entry("yes", "no");
+    missing.as_object_mut().unwrap().remove("domain_unbounded");
+    assert!(
+        refusal_truth("N-1", &missing)
+            .unwrap_err()
+            .contains("domain_unbounded")
+    );
+    let heldout = sample["split"]
+        .as_object()
+        .unwrap()
+        .iter()
+        .find(|(_, split)| *split == "heldout")
+        .map(|(id, _)| id.clone())
+        .unwrap();
+    for id in ["N-999", heldout.as_str()] {
+        let mut bad = labels.clone();
+        bad[id] = entry("yes", "no");
+        assert!(refusal_labels(&bad, &sample).is_err(), "{id} accepted");
+    }
+}
+
+/// Provenance: PLAT-1024 exp4. The refusal mutants run only on R0 and R1:
+/// K1, E5, F0 and F1 see exactly the dev rows they saw before (the counts
+/// measured on origin/main at 0e274484: 248 dev rows plus 40 statement
+/// mutants, 105 in R for K1, 100 in RC or RTC for E5), and a run without an
+/// R variant drops them from its rows.
+#[test]
+fn tc_1024_refusal_mutants_cost_other_variants_nothing() {
+    use eval_v2_support::variant::rows_for;
+    use eval_v2_support::variants::refusal::{R0, R1, is_refusal_mutant};
+    use eval_v2_support::variants::soundness::K1;
+    use eval_v2_support::variants::statement::{F0, F1, is_statement_mutant};
+    let dev = dev_rows();
+    assert_eq!(dev.iter().filter(|row| is_refusal_mutant(row)).count(), 40);
+    let count = |variant: &Variant| dev.iter().filter(|row| variant.applies_to(row)).count();
+    assert_eq!((count(&K1), count(&E5)), (105, 100));
+    assert_eq!((count(&F0), count(&F1)), (288, 288));
+    // R0 and R1 ask only the 48 labelled natural rows and the 40 mutants:
+    // not the two unlabelled projections, nor the row whose criterion text
+    // the table parser cut off (PR #634 review).
+    assert_eq!((count(&R0), count(&R1)), (88, 88));
+    for id in ["EV2-0181", "EV2-0182", "EV2-0152"] {
+        let row = dev.iter().find(|row| row.id == id).unwrap();
+        assert!(!(R1.asks)(row).is_empty(), "{id} has a criterion");
+        assert!(!R0.applies_to(row) && !R1.applies_to(row), "{id}");
+    }
+    assert_eq!(rows_for(dev.clone(), &[&K1, &E5]).len(), 248);
+    assert_eq!(rows_for(dev.clone(), &[&K1, &F0]).len(), 248 + 40);
+    assert_eq!(rows_for(dev.clone(), &[&R1]).len(), 248 + 40);
+    assert_eq!(rows_for(dev.clone(), &[&F1, &R0]).len(), 248 + 80);
+    for row in &dev {
+        if is_refusal_mutant(row) {
+            assert!(R0.applies_to(row) && R1.applies_to(row));
+            assert!(!F0.applies_to(row) && !F1.applies_to(row) && !K1.applies_to(row));
+        }
+        if is_statement_mutant(row) {
+            assert!(!R0.applies_to(row) && !R1.applies_to(row));
+        }
+    }
+}
+
+/// Provenance: PLAT-1024 exp4. Refusal bar D pairs each mutant with its
+/// source; with one pair per source a source counts once, and a perfect rule
+/// decides one pair per source, enough to gate.
+#[test]
+fn tc_1024_refusal_bar_d_counts_each_source_once() {
+    use eval_v2_support::variants::refusal::{CHECKS, REFUSAL, SOUND};
+    let rows = dev_rows();
+    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
+    let mutants = rows.iter().filter(|row| REFUSAL.is_mutant(row)).count();
+    let perfect: std::collections::BTreeMap<&str, f64> = REFUSAL
+        .labelled(&rows)
+        .into_iter()
+        .map(|row| {
+            let defect = REFUSAL.injected(row).is_some();
+            (row.id.as_str(), if defect { 0.9 } else { 0.1 })
+        })
+        .collect();
+    let every = REFUSAL.bar_d(&rows, &perfect, 0.5, &keys, SOUND);
+    let once = REFUSAL.bar_d_per_source(&rows, &perfect, 0.5, &keys, SOUND);
+    assert_eq!((every.pairs, every.successes), (mutants, mutants));
+    assert_eq!(once.successes, once.pairs);
+    assert!(once.pairs >= 20 && once.gateable() && once.passes());
+}
+
+/// Provenance: PLAT-1024 exp4, PR #634 review. At exactly `P = 0.5` the
+/// holistic baselines' graded answer and the report's flag agree: both use
+/// `battery::flags` on the defect score `1 - P`, so 0.5 is flagged; just
+/// above it is not.
+#[test]
+fn tc_1024_holistic_answer_and_report_flag_agree_at_one_half() {
+    use eval_v2_support::variants::battery::{flags, holistic_predictions};
+    use eval_v2_support::variants::refusal::{CHECKABLE, R0, SOUND};
+    use eval_v2_support::variants::soundness::TAU;
+    use eval_v2_support::variants::statement::{self, F0, WELL_FORMED};
+    let row = criterion_row(
+        "EV2-0003",
+        Mode::Req,
+        Some("A 5000-byte request is refused."),
+    );
+    let answered = |key: &str, p: f64| {
+        vec![Answered {
+            unit: None,
+            answers: [(key.to_owned(), RawAnswer::Noul(p))]
+                .into_iter()
+                .collect::<RawAnswers>(),
+        }]
+    };
+    for (p, expected) in [(0.5, "no"), (0.51, "yes"), (0.49, "no")] {
+        let report_flags = flags(1.0 - p, TAU);
+        assert_eq!(report_flags, expected == "no", "report at {p}");
+        assert_eq!(holistic_predictions(SOUND, p)[SOUND].answer, expected);
+        assert_eq!(
+            (R0.derive)(&row, &answered(CHECKABLE, p))[SOUND].answer,
+            expected
+        );
+        assert_eq!(
+            (F0.derive)(&row, &answered(WELL_FORMED, p))[statement::SOUND].answer,
+            expected
+        );
+    }
+}
+
+/// Provenance: PLAT-1024 exp4, PR #634 review. A refusal mutant whose source
+/// is missing stops the run rather than leaving bar D's denominator.
+#[test]
+#[should_panic(expected = "is not among this run's rows")]
+fn tc_1024_refusal_bar_d_refuses_a_missing_source() {
+    use eval_v2_support::variants::refusal::{CHECKS, REFUSAL, SOUND};
+    let rows: Vec<Row> = dev_rows()
+        .into_iter()
+        .filter(|row| REFUSAL.is_mutant(row))
+        .collect();
+    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
+    let _ = REFUSAL.bar_d(&rows, &std::collections::BTreeMap::new(), 0.5, &keys, SOUND);
+}
+
+/// Provenance: PLAT-1024 exp4, PR #634 review. A refusal mutant edits only
+/// its criterion: its test and code bodies, and every other requirement
+/// field, are its source's.
+#[test]
+fn tc_1024_refusal_mutant_leaves_test_and_code_unchanged() {
+    use eval_v2_support::variants::refusal::REFUSAL;
+    let rows = dev_rows();
+    let by_id: std::collections::BTreeMap<&str, &Row> =
+        rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut seen = 0;
+    for mutant in rows.iter().filter(|row| REFUSAL.is_mutant(row)) {
+        let source = by_id[mutant
+            .mutation
+            .as_ref()
+            .unwrap()
+            .source_id
+            .as_deref()
+            .unwrap()];
+        let body = |row: &Row| {
+            (
+                row.test
+                    .as_ref()
+                    .map(|t| (t.path.clone(), t.fn_name.clone(), t.body.clone())),
+                row.code
+                    .as_ref()
+                    .map(|c| (c.path.clone(), c.symbol.clone(), c.body.clone())),
+            )
+        };
+        assert_eq!(body(mutant), body(source), "{}", mutant.id);
+        assert_eq!(mutant.requirement.fr_id, source.requirement.fr_id);
+        assert_eq!(mutant.requirement.ac_id, source.requirement.ac_id);
+        assert_eq!(mutant.requirement.context, source.requirement.context);
+        assert_ne!(mutant.requirement.ac_text, source.requirement.ac_text);
+        seen += usize::from(mutant.test.is_some() || mutant.code.is_some());
+    }
+    assert!(seen > 0, "no refusal mutant shows a test or code body");
+}

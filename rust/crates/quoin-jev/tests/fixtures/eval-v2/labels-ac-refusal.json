@@ -1,0 +1,1436 @@
+{
+  "_provenance": "AGENT-LABELLED, single pass: written by one Claude agent from the criterion text only, before any live call, and not audited by a second pass. `alternatives` records the other defensible reading where the agent was unsure. Every dev natural row whose criterion text is present is labelled, except N-152, whose criterion text is cut off mid-cell by the table parser and states no outcome.",
+  "labels": {
+    "N-004": {
+      "fr_id": "FR-100",
+      "ac_id": "FR-100-CON-2",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "'SHALL NOT reimplement a capability' another package publishes is a fact about the source tree"
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes"
+      }
+    },
+    "N-006": {
+      "fr_id": "FR-108",
+      "ac_id": "FR-108-AC-10",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-009": {
+      "fr_id": "FR-100",
+      "ac_id": "FR-100-AC-4",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-011": {
+      "fr_id": "FR-064",
+      "ac_id": "FR-064-AC-10",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-012": {
+      "fr_id": "FR-094",
+      "ac_id": "FR-094-CON-2",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-016": {
+      "fr_id": "FR-107",
+      "ac_id": "FR-107-AC-3",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-019": {
+      "fr_id": "FR-041",
+      "ac_id": "FR-041-AC-6",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "'the tools that emit these formats' is a named class, but 'these formats' is only defined outside the criterion",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-024": {
+      "fr_id": "FR-062",
+      "ac_id": "FR-062-AC-6",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-026": {
+      "fr_id": "FR-062",
+      "ac_id": "FR-062-AC-5",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-028": {
+      "fr_id": "StR-009",
+      "ac_id": "StR-009-VC-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "the subject is the one repository's engine logic; read as one instance it is a single case",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "describes_its_own_test": {
+        "answer": "yes",
+        "why": "'demonstrated by building and invoking `quoin-core` from a clean checkout' names how it is verified"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "'reached through one versioned Rust boundary hosted in this repository; no additional repository owns the port' is a fact about the repository"
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes"
+      }
+    },
+    "N-034": {
+      "fr_id": "FR-032",
+      "ac_id": "FR-032-AC-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-043": {
+      "fr_id": "FR-094",
+      "ac_id": "FR-094-AC-3",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-047": {
+      "fr_id": "FR-102",
+      "ac_id": "FR-102-AC-6",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "yes",
+        "why": "'the binary is named `quoin`' is about one instance"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "the repository containing no Node/oclif shell and the binary's name are facts about the repository"
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes"
+      }
+    },
+    "N-051": {
+      "fr_id": "FR-101",
+      "ac_id": "FR-101-AC-5",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "which tests the repository contains and that fixtures are committed are facts about the repository"
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes"
+      }
+    },
+    "N-053": {
+      "fr_id": "FR-037",
+      "ac_id": "FR-037-AC-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "'read from module data, not minted' can be observed as the vocabulary equalling the module data; read as where the values come from in the source it is a fact about the source tree",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-056": {
+      "fr_id": "FR-083",
+      "ac_id": "FR-083-AC-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-060": {
+      "fr_id": "FR-057",
+      "ac_id": "FR-057-CON-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "not executing a producer while recording shows in no output for an input; read as a design constraint it is a fact about the source tree",
+        "alternatives": [
+          "no"
+        ]
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes",
+        "alternatives": [
+          "yes"
+        ]
+      }
+    },
+    "N-063": {
+      "fr_id": "FR-099",
+      "ac_id": "FR-099-AC-2",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "the clause 'with `quire-rs` consumed as a Cargo dependency' is a fact about the dependency graph; the verdict equality is a result",
+        "alternatives": [
+          "no"
+        ]
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes",
+        "alternatives": [
+          "yes"
+        ]
+      }
+    },
+    "N-068": {
+      "fr_id": "StR-008",
+      "ac_id": "StR-008-VC-3",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-069": {
+      "fr_id": "FR-019",
+      "ac_id": "FR-019-AC-2",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-072": {
+      "fr_id": "FR-028",
+      "ac_id": "FR-028-AC-9",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-079": {
+      "fr_id": "FR-111",
+      "ac_id": "FR-111-AC-5",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-083": {
+      "fr_id": "FR-098",
+      "ac_id": "FR-098-CON-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "the identity domain is observable as the identities produced before and after; read as the change leaving a definition unchanged it is a fact about the source tree",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-091": {
+      "fr_id": "NFR-017",
+      "ac_id": "NFR-017-AC-4",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "yes",
+        "why": "'the manifest schema' is one file"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "a schema file's arrays being unchanged is a fact about the source tree"
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes"
+      }
+    },
+    "N-101": {
+      "fr_id": "FR-070",
+      "ac_id": "FR-070-AC-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-102": {
+      "fr_id": "FR-063",
+      "ac_id": "FR-063-AC-5",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "the conformance vectors are the inputs and their expected bytes the oracle; read as naming a vector run it names its verification",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-103": {
+      "fr_id": "FR-110",
+      "ac_id": "FR-110-AC-10",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-105": {
+      "fr_id": "FR-070",
+      "ac_id": "FR-070-AC-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-108": {
+      "fr_id": "NFR-021",
+      "ac_id": "NFR-021-AC-3",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-117": {
+      "fr_id": "FR-018",
+      "ac_id": "FR-018-AC-5",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "'a bare argument' is a class introduced by 'a'; read as one parsing case it is a single witness",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-118": {
+      "fr_id": "FR-006",
+      "ac_id": "FR-006-AC-3",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-119": {
+      "fr_id": "FR-041",
+      "ac_id": "FR-041-AC-4",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-124": {
+      "fr_id": "FR-026",
+      "ac_id": "FR-026-AC-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-127": {
+      "fr_id": "FR-039",
+      "ac_id": "FR-039-CON-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "'quoin SHALL NOT execute a mutation run. The consumer's CI does' is a responsibility boundary, a fact about what the tool contains, not a result for an input",
+        "alternatives": [
+          "no"
+        ]
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes",
+        "alternatives": [
+          "yes"
+        ]
+      }
+    },
+    "N-130": {
+      "fr_id": "NFR-020",
+      "ac_id": "NFR-020-AC-4",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "'with the validator absent' is a condition over rendered gates; read as the one rendered gate it is a single case",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-138": {
+      "fr_id": "StR-007",
+      "ac_id": "StR-007-VC-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "'complete producer identity' sits beside observable retention; read as 'complete' deciding it, it is a quality word",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes",
+        "alternatives": [
+          "no"
+        ]
+      }
+    },
+    "N-139": {
+      "fr_id": "StR-008",
+      "ac_id": "StR-008-VC-2",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "the gate is the subject, which can read as naming the verification",
+        "alternatives": [
+          "yes"
+        ]
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "render a repository, then run its gate before any authoring: an end-to-end narrative of steps",
+        "alternatives": [
+          "no"
+        ]
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes",
+        "alternatives": [
+          "yes"
+        ]
+      }
+    },
+    "N-140": {
+      "fr_id": "FR-034",
+      "ac_id": "FR-034-AC-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-143": {
+      "fr_id": "FR-044",
+      "ac_id": "FR-044-AC-6",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-145": {
+      "fr_id": "FR-034",
+      "ac_id": "FR-034-CON-2",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-147": {
+      "fr_id": "FR-072",
+      "ac_id": "FR-072-CON-1",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "what the extraction does not do and where checking belongs is a responsibility boundary, a fact about the source tree",
+        "alternatives": [
+          "no"
+        ]
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes",
+        "alternatives": [
+          "yes"
+        ]
+      }
+    },
+    "N-149": {
+      "fr_id": "FR-065",
+      "ac_id": "FR-065-AC-8",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-154": {
+      "fr_id": "FR-066",
+      "ac_id": "FR-066-AC-2",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-158": {
+      "fr_id": "FR-042",
+      "ac_id": "FR-042-AC-4",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-162": {
+      "fr_id": "FR-036",
+      "ac_id": "FR-036-AC-2",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-168": {
+      "fr_id": "FR-095",
+      "ac_id": "FR-095-AC-6",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-175": {
+      "fr_id": "FR-095",
+      "ac_id": "FR-095-AC-8",
+      "oracle_is_adjectival": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "criterion_groundable": {
+        "answer": "yes",
+        "why": "yes when none of the five checks is yes"
+      }
+    },
+    "N-177": {
+      "fr_id": "StR-008",
+      "ac_id": "StR-008-VC-1",
+      "oracle_is_adjectival": {
+        "answer": "yes",
+        "why": "'a complete `semantic` manifest block' and 'real emitted JSON Schemas' are decided by quality words",
+        "alternatives": [
+          "no"
+        ]
+      },
+      "domain_unbounded": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "names_single_witness": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "describes_its_own_test": {
+        "answer": "no",
+        "why": "none found in the criterion"
+      },
+      "static_or_demonstration": {
+        "answer": "yes",
+        "why": "what files a rendered repository carries is a fact about a repository tree",
+        "alternatives": [
+          "no"
+        ]
+      },
+      "criterion_groundable": {
+        "answer": "no",
+        "why": "no if any of the five checks is yes",
+        "alternatives": [
+          "yes"
+        ]
+      }
+    }
+  }
+}
