@@ -37,8 +37,9 @@ use serde_json::{Value, json};
 
 use super::corpus::{MAX_NATURAL_ROWS_PER_FR, SCHEMA};
 use super::criterion_defects::CRITERION_DEFECTS;
+use super::variants::battery::Battery;
 use super::variants::refusal;
-use super::variants::statement::{self, Battery};
+use super::variants::statement;
 
 /// The sampling seed (restated in [`SAMPLING_RULE`]).
 pub(crate) const SEED: u64 = 20_260_923;

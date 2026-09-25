@@ -242,22 +242,22 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "sha256:940c88bc56caf193eee00dcc56e22b9077f62dd558a5ff9da7e6ac23cfaf0b71",
     ),
     (
-        "F0@v1",
+        "F0@v2",
         "R",
         "sha256:82d6007b0b98f6357e8a114409863c8116d8225c10b9b80173254481071bd144",
     ),
     (
-        "F0@v1",
+        "F0@v2",
         "RT",
         "sha256:82d6007b0b98f6357e8a114409863c8116d8225c10b9b80173254481071bd144",
     ),
     (
-        "F0@v1",
+        "F0@v2",
         "RC",
         "sha256:82d6007b0b98f6357e8a114409863c8116d8225c10b9b80173254481071bd144",
     ),
     (
-        "F0@v1",
+        "F0@v2",
         "RTC",
         "sha256:82d6007b0b98f6357e8a114409863c8116d8225c10b9b80173254481071bd144",
     ),
@@ -282,22 +282,22 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "sha256:272bd229df489f0d228ff204f87234a9b10354889652c4cdda62d2f7881e7024",
     ),
     (
-        "R0@v1",
+        "R0@v2",
         "R",
         "sha256:bf7ab48b5545c52e757fbbd0b27f804356f206efc8107bf265fd577964147c00",
     ),
     (
-        "R0@v1",
+        "R0@v2",
         "RT",
         "sha256:bf7ab48b5545c52e757fbbd0b27f804356f206efc8107bf265fd577964147c00",
     ),
     (
-        "R0@v1",
+        "R0@v2",
         "RC",
         "sha256:bf7ab48b5545c52e757fbbd0b27f804356f206efc8107bf265fd577964147c00",
     ),
     (
-        "R0@v1",
+        "R0@v2",
         "RTC",
         "sha256:bf7ab48b5545c52e757fbbd0b27f804356f206efc8107bf265fd577964147c00",
     ),
@@ -349,7 +349,14 @@ pub(crate) fn request_digests(
     let canonical = fixtures::four_modes()?;
     let mut digests = Vec::new();
     for variant in variants {
-        for row in canonical.rows.iter().filter(|row| variant.applies_to(row)) {
+        // By mode, not `applies_to`: the wording does not depend on a row's
+        // labels, and a `labelled_only` battery's variants apply to no
+        // unlabelled canonical row (PR #634 review).
+        for row in canonical
+            .rows
+            .iter()
+            .filter(|row| variant.modes.contains(&row.mode))
+        {
             digests.push((
                 variant.label(),
                 row.mode.as_str(),

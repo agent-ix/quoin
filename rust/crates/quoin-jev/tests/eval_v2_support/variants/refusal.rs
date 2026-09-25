@@ -45,14 +45,14 @@ use serde_json::{Value, json};
 use typesafe_sdk_questions::{Entry, NoulCriteria, Question, Questions, noul_with};
 
 use crate::eval_v2_support::corpus::Row;
-use crate::eval_v2_support::keys::{Mode, NO, YES};
+use crate::eval_v2_support::keys::Mode;
 use crate::eval_v2_support::variant::{
-    Answered, Ask, Prediction, Predictions, RunOutput, Variant, request, whole_row,
+    Answered, Ask, Predictions, RunOutput, Variant, request, whole_row,
+};
+use crate::eval_v2_support::variants::battery::{
+    Battery, Check, Combiner, RuleLine, holistic_predictions, holistic_scores, probability_table,
 };
 use crate::eval_v2_support::variants::soundness::{TAU, defect_prediction, required_noul};
-use crate::eval_v2_support::variants::statement::{
-    Battery, Check, Combiner, RuleLine, holistic_scores, probability_table,
-};
 
 /// The aggregate key: `yes` when no refusal reason applies.
 pub(crate) const SOUND: &str = "criterion_groundable";
@@ -183,6 +183,10 @@ pub(crate) const REFUSAL: Battery = Battery {
     sound: SOUND,
     checks: &CHECKS,
     mutation_kind: MUTATION_KIND,
+    // PR #634 review: two projections (EV2-0181, EV2-0182) and one row whose
+    // criterion text the table parser cut off (EV2-0152) carry criterion
+    // text but no refusal label; R0 and R1 do not ask them.
+    labelled_only: true,
 };
 
 /// R0's holistic question.
@@ -371,24 +375,17 @@ pub(crate) fn r0_probability(row: &Row, answered: &[Answered]) -> Option<f64> {
 
 fn r0_derive(row: &Row, answered: &[Answered]) -> Predictions {
     r0_probability(row, answered)
-        .map(|p| {
-            let sound = p >= TAU;
-            Predictions::from([(
-                SOUND,
-                Prediction {
-                    answer: if sound { YES } else { NO }.to_owned(),
-                    confidence: Some(if sound { p } else { 1.0 - p }),
-                    ordinal: Some(p),
-                },
-            )])
-        })
+        .map(|p| holistic_predictions(SOUND, p))
         .unwrap_or_default()
 }
 
 /// The holistic baseline.
 pub(crate) const R0: Variant = Variant {
     id: "R0",
-    version: 1,
+    // v2 (derive only, PR #634 review): the graded answer is
+    // `battery::holistic_predictions`, which flags `P(checkable) = 0.5` as
+    // the report always did; v1 graded it groundable. Same questions.
+    version: 2,
     summary: "acceptance criterion: one holistic noul (checkable as a property: a stated domain and a concrete oracle?)",
     modes: &Mode::ALL,
     references: &[],
@@ -493,8 +490,13 @@ pub(crate) fn render(rows: &[Row], output: &RunOutput, variants: &[&Variant]) ->
             },
         );
     }
+    let wording = if r1.version == 1 {
+        String::new()
+    } else {
+        format!(", POST HOC wording (v{})", r1.version)
+    };
     for tau in [TAU, 0.7] {
-        REFUSAL.render_checks(&mut out, rows, &table, tau);
+        REFUSAL.render_checks(&mut out, rows, &table, tau, &format!("{label}{wording}"));
     }
     out
 }

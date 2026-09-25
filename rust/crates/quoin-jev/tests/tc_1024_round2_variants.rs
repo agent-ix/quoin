@@ -1410,7 +1410,15 @@ fn tc_1024_refusal_mutants_cost_other_variants_nothing() {
     let count = |variant: &Variant| dev.iter().filter(|row| variant.applies_to(row)).count();
     assert_eq!((count(&K1), count(&E5)), (105, 100));
     assert_eq!((count(&F0), count(&F1)), (288, 288));
-    assert_eq!((count(&R0), count(&R1)), (288, 288));
+    // R0 and R1 ask only the 48 labelled natural rows and the 40 mutants:
+    // not the two unlabelled projections, nor the row whose criterion text
+    // the table parser cut off (PR #634 review).
+    assert_eq!((count(&R0), count(&R1)), (88, 88));
+    for id in ["EV2-0181", "EV2-0182", "EV2-0152"] {
+        let row = dev.iter().find(|row| row.id == id).unwrap();
+        assert!(!(R1.asks)(row).is_empty(), "{id} has a criterion");
+        assert!(!R0.applies_to(row) && !R1.applies_to(row), "{id}");
+    }
     assert_eq!(rows_for(dev.clone(), &[&K1, &E5]).len(), 248);
     assert_eq!(rows_for(dev.clone(), &[&K1, &F0]).len(), 248 + 40);
     assert_eq!(rows_for(dev.clone(), &[&R1]).len(), 248 + 40);
@@ -1448,4 +1456,94 @@ fn tc_1024_refusal_bar_d_counts_each_source_once() {
     assert_eq!((every.pairs, every.successes), (mutants, mutants));
     assert_eq!(once.successes, once.pairs);
     assert!(once.pairs >= 20 && once.gateable() && once.passes());
+}
+
+/// Provenance: PLAT-1024 exp4, PR #634 review. At exactly `P = 0.5` the
+/// holistic baselines' graded answer and the report's flag agree: both use
+/// `battery::flags` on the defect score `1 - P`, so 0.5 is flagged; just
+/// above it is not.
+#[test]
+fn tc_1024_holistic_answer_and_report_flag_agree_at_one_half() {
+    use eval_v2_support::variants::battery::{flags, holistic_predictions};
+    use eval_v2_support::variants::refusal::{CHECKABLE, R0, SOUND};
+    use eval_v2_support::variants::soundness::TAU;
+    use eval_v2_support::variants::statement::{self, F0, WELL_FORMED};
+    let row = criterion_row(
+        "EV2-0003",
+        Mode::Req,
+        Some("A 5000-byte request is refused."),
+    );
+    let answered = |key: &str, p: f64| {
+        vec![Answered {
+            unit: None,
+            answers: [(key.to_owned(), RawAnswer::Noul(p))]
+                .into_iter()
+                .collect::<RawAnswers>(),
+        }]
+    };
+    for (p, expected) in [(0.5, "no"), (0.51, "yes"), (0.49, "no")] {
+        let report_flags = flags(1.0 - p, TAU);
+        assert_eq!(report_flags, expected == "no", "report at {p}");
+        assert_eq!(holistic_predictions(SOUND, p)[SOUND].answer, expected);
+        assert_eq!(
+            (R0.derive)(&row, &answered(CHECKABLE, p))[SOUND].answer,
+            expected
+        );
+        assert_eq!(
+            (F0.derive)(&row, &answered(WELL_FORMED, p))[statement::SOUND].answer,
+            expected
+        );
+    }
+}
+
+/// Provenance: PLAT-1024 exp4, PR #634 review. A refusal mutant whose source
+/// is missing stops the run rather than leaving bar D's denominator.
+#[test]
+#[should_panic(expected = "is not among this run's rows")]
+fn tc_1024_refusal_bar_d_refuses_a_missing_source() {
+    use eval_v2_support::variants::refusal::{CHECKS, REFUSAL, SOUND};
+    let rows: Vec<Row> = dev_rows()
+        .into_iter()
+        .filter(|row| REFUSAL.is_mutant(row))
+        .collect();
+    let keys: Vec<&str> = CHECKS.iter().map(|check| check.key).collect();
+    let _ = REFUSAL.bar_d(&rows, &std::collections::BTreeMap::new(), 0.5, &keys, SOUND);
+}
+
+/// Provenance: PLAT-1024 exp4, PR #634 review. A refusal mutant edits only
+/// its criterion: its test and code bodies, and every other requirement
+/// field, are its source's.
+#[test]
+fn tc_1024_refusal_mutant_leaves_test_and_code_unchanged() {
+    use eval_v2_support::variants::refusal::REFUSAL;
+    let rows = dev_rows();
+    let by_id: std::collections::BTreeMap<&str, &Row> =
+        rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut seen = 0;
+    for mutant in rows.iter().filter(|row| REFUSAL.is_mutant(row)) {
+        let source = by_id[mutant
+            .mutation
+            .as_ref()
+            .unwrap()
+            .source_id
+            .as_deref()
+            .unwrap()];
+        let body = |row: &Row| {
+            (
+                row.test
+                    .as_ref()
+                    .map(|t| (t.path.clone(), t.fn_name.clone(), t.body.clone())),
+                row.code
+                    .as_ref()
+                    .map(|c| (c.path.clone(), c.symbol.clone(), c.body.clone())),
+            )
+        };
+        assert_eq!(body(mutant), body(source), "{}", mutant.id);
+        assert_eq!(mutant.requirement.fr_id, source.requirement.fr_id);
+        assert_eq!(mutant.requirement.ac_id, source.requirement.ac_id);
+        assert_eq!(mutant.requirement.context, source.requirement.context);
+        assert_ne!(mutant.requirement.ac_text, source.requirement.ac_text);
+        seen += usize::from(mutant.test.is_some() || mutant.code.is_some());
+    }
+    assert!(seen > 0, "no refusal mutant shows a test or code body");
 }

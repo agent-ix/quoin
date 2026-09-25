@@ -70,6 +70,7 @@ use quoin_jev::{AcRow, ContextPolicy, FrContext, QuestionSet};
 use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
+use super::variants::battery::Battery;
 use super::variants::intent::{T0_RT, T1, T2, T3, TC_RC, TC_RT, TC_RTC};
 use super::variants::{exceeds, refusal, severity, soundness, statement};
 use crate::gap_semantic_support::{
@@ -205,27 +206,25 @@ impl Variant {
     /// modes, and a battery's mutant (a requirement-statement or refusal
     /// mutant, which carries truth only for its battery's keys) runs only on
     /// a variant graded on one of them, so no other variant pays for rows it
-    /// cannot score.
+    /// cannot score. A variant graded on a `labelled_only` battery runs only
+    /// on rows labelled with that battery's aggregate.
     pub(crate) fn applies_to(&self, row: &Row) -> bool {
         self.modes.contains(&row.mode)
-            && BATTERIES
-                .iter()
-                .all(|battery| !battery.is_mutant(row) || self.scores(battery))
-    }
-
-    /// Whether this variant is graded on a requirement-statement key.
-    pub(crate) fn scores_statement(&self) -> bool {
-        self.scores(&statement::STATEMENT)
+            && BATTERIES.iter().all(|battery| {
+                let scored = self.scores(battery);
+                (!battery.is_mutant(row) || scored)
+                    && (!scored || !battery.labelled_only || row.truth.contains_key(battery.sound))
+            })
     }
 
     /// Whether this variant is graded on one of `battery`'s keys.
-    pub(crate) fn scores(&self, battery: &statement::Battery) -> bool {
+    pub(crate) fn scores(&self, battery: &Battery) -> bool {
         self.grades.iter().any(|key| battery.grades(key))
     }
 }
 
 /// The batteries whose mutants carry truth for their own keys only.
-pub(crate) const BATTERIES: [statement::Battery; 2] = [statement::STATEMENT, refusal::REFUSAL];
+pub(crate) const BATTERIES: [Battery; 2] = [statement::STATEMENT, refusal::REFUSAL];
 
 /// `rows` without each battery's mutants when none of `variants` scores
 /// that battery, so a run of other variants reports the same rows it did
