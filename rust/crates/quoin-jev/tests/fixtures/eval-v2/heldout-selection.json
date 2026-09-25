@@ -16,6 +16,22 @@
       "selected_at_commit": "5f71aace46f552fb8c918d7bfd287240139b95ed",
       "dev_evidence": "dev run 1: no family qualified (Bar D not gateable on dev: 18 of 36 RTC sources already >= medium). S2 had the strongest Bar D (9 success / 0 failure, p = 0.0020) and RTC concordance 0.798 (S0 0.792). Run as a declared confirmation outside MP-240's rule.",
       "baselines": ["S0@v1", "S1@v1", "S1-RT@v1", "S1-RC@v1"]
+    },
+    {
+      "mp": "MP-241",
+      "variant": "E5",
+      "version": 4,
+      "selected_at_commit": "4df40399",
+      "dev_evidence": "PR #630 dev run (jev-1.13.0): Bar D 9 success / 1 failure / 14 tie, p = 0.0107, holds. RTC 68.1% vs E0 59.6%; RC 68.2% vs E0-RC 72.7%.",
+      "baselines": ["E0@v1", "E0-RC@v1"]
+    },
+    {
+      "mp": "MP-242",
+      "variant": "T3",
+      "version": 3,
+      "selected_at_commit": "4df40399",
+      "dev_evidence": "PR #630 dev run (jev-1.13.0): Bar D 6 success / 0 failure / 16 tie, p = 0.0156, not gateable (under 10 decided pairs). 39 vs T0 34 of 52.",
+      "baselines": ["T0@v1"]
     }
   ]
 }
