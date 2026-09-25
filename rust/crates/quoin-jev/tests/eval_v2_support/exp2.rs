@@ -495,7 +495,7 @@ fn e_report(out: &mut String, rows: &[Row], output: &RunOutput, label: &str) -> 
         erows.len() - sound.len() - defective.len(),
     );
     for n in 0..=5 {
-        let bucket = |e: &&ERow<'_>| {
+        let bucket = |e: &&&ERow<'_>| {
             let count = unnecessary(e);
             if n == 5 { count >= 5 } else { count == n }
         };
