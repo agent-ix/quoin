@@ -237,6 +237,18 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         "{}",
         eval_v2_support::variants::intent::render_gated_run(&rows, &output, &variants)
     );
+    // Experiment 2 diagnostics (PLAT-1024); informational, written only on request.
+    // Dev only: diagnosing on held-out rows would contaminate the seal.
+    if let Some(dir) = env(eval_v2_support::exp2::OUT_ENV) {
+        assert!(
+            split == Split::Dev,
+            "{} is dev-only; held-out rows are never diagnosed",
+            eval_v2_support::exp2::OUT_ENV
+        );
+        eval_v2_support::exp2::write(std::path::Path::new(&dir), &rows, &output)
+            .unwrap_or_else(|error| panic!("{error}"));
+        println!("exp2 diagnostics written to {dir}");
+    }
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(
