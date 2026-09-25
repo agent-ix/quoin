@@ -258,13 +258,34 @@ fn noul(instruction: &str, yes: &str, no: &str) -> typesafe_sdk_questions::Quest
     )
 }
 
+/// F1 v2's `names_internal_symbol` question (POST HOC, chosen after dev run
+/// 1). On dev, v1 fired on 6 of 14 statements labelled sound, and in all six
+/// the only candidates were names a caller sees: package and crate names
+/// (`ts-plugin-kit`, `quoin-core`, `engineering-assurance`), a report format
+/// (`cli-agent-evals`) and a requirement id (FR-033). The labelling rule
+/// already lists those as clear; v2 moves that list into the question. The
+/// yes/no criteria are unchanged.
+pub(crate) const INTERNAL_SYMBOL_V2: &str = judge!(
+    "Does the statement name an identifier from inside the implementation's source (a function \
+     or method name, a struct, class, enum or trait name, a module path, or a private field) as \
+     what the obligation is about, in place of the observable behaviour it requires? Names a \
+     user or caller sees are not such identifiers: packages, crates, binaries and tools; \
+     commands and flags; files, paths and formats; published schema record types and report \
+     fields; and requirement or document ids such as FR-033."
+);
+
 fn f1_questions() -> Questions {
     CHECKS
         .iter()
         .map(|check| {
+            let instruction = if check.key == "names_internal_symbol" {
+                INTERNAL_SYMBOL_V2
+            } else {
+                check.instruction
+            };
             (
                 check.key.to_owned(),
-                noul(check.instruction, check.defect, check.clear),
+                noul(instruction, check.defect, check.clear),
             )
         })
         .collect()
@@ -430,8 +451,10 @@ pub(crate) const F0: Variant = Variant {
 /// The battery: one noul per named defect, combined in code.
 pub(crate) const F1: Variant = Variant {
     id: "F1",
-    version: 1,
-    summary: "requirement statement: three named defect nouls; fr_statement_sound = no check at or above 0.5",
+    // v2 (post hoc, after dev run 1): the `names_internal_symbol` question is
+    // INTERNAL_SYMBOL_V2.
+    version: 2,
+    summary: "requirement statement: three named defect nouls (names_internal_symbol excludes caller-visible names); fr_statement_sound = no check at or above 0.5",
     modes: &Mode::ALL,
     references: &[],
     grades: &GRADES,

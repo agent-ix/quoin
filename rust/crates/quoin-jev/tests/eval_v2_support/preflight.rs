@@ -262,24 +262,24 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "sha256:82d6007b0b98f6357e8a114409863c8116d8225c10b9b80173254481071bd144",
     ),
     (
-        "F1@v1",
+        "F1@v2",
         "R",
-        "sha256:c12f1e5b1e256b89e9549365e50d43fa67afb053e994b1c7c4c063c3d44ab001",
+        "sha256:272bd229df489f0d228ff204f87234a9b10354889652c4cdda62d2f7881e7024",
     ),
     (
-        "F1@v1",
+        "F1@v2",
         "RT",
-        "sha256:c12f1e5b1e256b89e9549365e50d43fa67afb053e994b1c7c4c063c3d44ab001",
+        "sha256:272bd229df489f0d228ff204f87234a9b10354889652c4cdda62d2f7881e7024",
     ),
     (
-        "F1@v1",
+        "F1@v2",
         "RC",
-        "sha256:c12f1e5b1e256b89e9549365e50d43fa67afb053e994b1c7c4c063c3d44ab001",
+        "sha256:272bd229df489f0d228ff204f87234a9b10354889652c4cdda62d2f7881e7024",
     ),
     (
-        "F1@v1",
+        "F1@v2",
         "RTC",
-        "sha256:c12f1e5b1e256b89e9549365e50d43fa67afb053e994b1c7c4c063c3d44ab001",
+        "sha256:272bd229df489f0d228ff204f87234a9b10354889652c4cdda62d2f7881e7024",
     ),
 ];
 
