@@ -23,6 +23,20 @@ description: "Chronological log of structural changes to this bundle."
   stage-verdict gate onto the same call; FR-108-AC-14 covers `margin_mode`.
   TC-1948..TC-1962 are spec-ahead-of-code; nothing is implemented by this
   change.
+* **2026-09-25** — **EA-26 implemented in `quoin-measurement`** (TC-1948..TC-1962
+  are now real). An observation's optional `interval` is read exactly as
+  stored, validated at intake as engineering-assurance's `Interval` plus
+  quoin's `lower <= value <= upper` and not-on-`not_computed` checks, and
+  required and level-checked under a plan whose rule declares `interval_level`
+  (`QM-INTERVAL-MALFORMED`, `-UNSTATED`, `-LEVEL-SHORT`); the JSON report and
+  series view carry it additively. `quoin measurement verify` and the FR-107
+  `gate` decide such a rule through `holds_on_interval`, verify judging every
+  run, earlier ones included, on its own interval; `decisions` and the gate row
+  gain `intervalBound`, `intervalBoundValue` and `intervalLevel`, absent
+  otherwise. `engineering-assurance` moves `=0.4.1` to `=0.5.0` at
+  `469cf48b043f04167b14f877435084d3ec37519f` in all three pin copies, with no
+  new `deny.toml` skip. The gate has no `interval_malformed` of its own: a
+  malformed interval reads as `interval_unstated` there, and `verify` rejects.
 * **2026-09-23** — **FR-016 gains a compiled pin-agreement test for the
   `engineering-assurance` module and crate** (PLAT-1032). quoin pins
   `engineering-assurance` in three committed places that must move together:
