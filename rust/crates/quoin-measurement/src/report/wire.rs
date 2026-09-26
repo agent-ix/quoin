@@ -168,6 +168,11 @@ pub(crate) struct ObservationWire {
     dimensions: Option<BTreeMap<String, Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     reason: Option<String>,
+    /// The stored `interval` exactly as stored, a malformed one included
+    /// (FR-044-AC-12); absent when not stated, so an observation without it
+    /// serialises to the same bytes it did before EA-26.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    interval: Option<Value>,
 }
 
 impl ObservationWire {
@@ -196,6 +201,7 @@ impl ObservationWire {
                 .map(analysis_map)
                 .transpose()?,
             reason: observation.reason.clone(),
+            interval: observation.interval.as_ref().map(to_serde).transpose()?,
         })
     }
 }

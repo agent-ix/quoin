@@ -172,6 +172,7 @@ pub fn item_observations(
                 population: None,
                 dimensions: Dimensions::stated(dimensions),
                 reason: None,
+                interval: None,
             })
         })
         .collect()

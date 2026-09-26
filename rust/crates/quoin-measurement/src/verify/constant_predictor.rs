@@ -220,6 +220,7 @@ mod tests {
             population: None,
             dimensions: Dimensions::stated(dimensions),
             reason: None,
+            interval: None,
         }
     }
 

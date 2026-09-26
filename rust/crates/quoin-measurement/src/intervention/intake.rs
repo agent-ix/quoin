@@ -139,6 +139,11 @@ impl From<MeasurementError> for InterventionIntakeError {
             | MeasurementErrorCode::PopulationUnstated
             | MeasurementErrorCode::RepetitionsShort
             | MeasurementErrorCode::PopulationMalformed
+            // Likewise raised only by `validate::measurement_collection`
+            // (EA-26).
+            | MeasurementErrorCode::IntervalMalformed
+            | MeasurementErrorCode::IntervalUnstated
+            | MeasurementErrorCode::IntervalLevelShort
             // Raised only by `store::apparatus` when a measurement collection
             // is written (PLAT-975); kept for the same exhaustiveness reason.
             | MeasurementErrorCode::ApparatusUnresolved

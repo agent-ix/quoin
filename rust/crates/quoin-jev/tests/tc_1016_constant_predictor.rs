@@ -116,6 +116,7 @@ fn aggregate(matched: f64, examined: f64) -> MeasurementObservation {
         }),
         dimensions: Dimensions::ABSENT,
         reason: None,
+        interval: None,
     }
 }
 

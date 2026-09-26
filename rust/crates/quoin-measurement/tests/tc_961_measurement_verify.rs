@@ -140,6 +140,7 @@ fn observation(value: f64, population: Option<MeasurementPopulation>) -> Measure
         population,
         dimensions: Dimensions::ABSENT,
         reason: None,
+        interval: None,
     }
 }
 

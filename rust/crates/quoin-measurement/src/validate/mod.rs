@@ -25,6 +25,7 @@
 //! of the parsed value (`store.ts:40` canonicalizes `candidate`). Nothing here
 //! is a lossy round trip, because nothing here round-trips.
 
+mod interval;
 mod plan;
 mod population;
 pub(crate) mod read;
@@ -196,13 +197,16 @@ fn parse_stored_measurement_collection(
 ///
 /// Every finding is accumulated into one refusal. Its code is
 /// [`MeasurementErrorCode::CollectionInvalid`], except when every finding is
-/// one population refusal kind (PLAT-960), in which case the refusal carries
-/// that kind's own code — [`MeasurementErrorCode::PopulationBelowMinimum`],
+/// one population or interval refusal kind (PLAT-960, EA-26), in which case
+/// the refusal carries that kind's own code — [`MeasurementErrorCode::PopulationBelowMinimum`],
 /// [`MeasurementErrorCode::PopulationUnstated`],
 /// [`MeasurementErrorCode::RepetitionsShort`] or
-/// [`MeasurementErrorCode::PopulationMalformed`]. A population finding inside a
-/// mixed refusal still names its code as the finding's first word, so the
-/// typed reason survives the accumulation.
+/// [`MeasurementErrorCode::PopulationMalformed`], or one interval refusal
+/// kind (EA-26) — [`MeasurementErrorCode::IntervalMalformed`],
+/// [`MeasurementErrorCode::IntervalUnstated`] or
+/// [`MeasurementErrorCode::IntervalLevelShort`]. A population or interval
+/// finding inside a mixed refusal still names its code as the finding's first
+/// word, so the typed reason survives the accumulation.
 pub fn measurement_collection(
     value: &JsonValue,
     plans: &[MeasurementPlan],
@@ -286,6 +290,10 @@ pub fn measurement_collection(
             .and_then(|raw| raw.as_object().ok())
             .and_then(|raw| raw.get("population"));
         for (code, finding) in population::findings(observation, raw_population, population_plan) {
+            typed.push(code);
+            findings.push(format!("{code}: {finding}"));
+        }
+        for (code, finding) in interval::findings(observation, population_plan) {
             typed.push(code);
             findings.push(format!("{code}: {finding}"));
         }
@@ -416,6 +424,7 @@ fn observation(value: &JsonValue) -> Result<MeasurementObservation, MeasurementE
         population: population(object),
         dimensions: dimensions(object),
         reason: read::string(object, "reason").map(str::to_owned),
+        interval: object.get("interval").cloned(),
     })
 }
 

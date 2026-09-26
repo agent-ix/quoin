@@ -137,7 +137,9 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         // version no active plan governs, an unsafe raw-evidence reference or
         // artifact name, a value that is not a date-time, or an observation
         // whose population is below, or does not state, its plan's minimum or
-        // repetition count, or states either malformed, or an artifacts map
+        // repetition count, or states either malformed, or an observation
+        // whose interval is malformed, unstated or at too low a level for its
+        // plan's `interval_level` (EA-26), or an artifacts map
         // that omits a file the plan protects (PLAT-975).
         Code::CollectionInvalid
         | Code::CollectionIdUnsafe
@@ -149,6 +151,9 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         | Code::PopulationUnstated
         | Code::RepetitionsShort
         | Code::PopulationMalformed
+        | Code::IntervalMalformed
+        | Code::IntervalUnstated
+        | Code::IntervalLevelShort
         | Code::ApparatusUndeclared => CoreErrorCode::BadRequest,
 
         // The repository declined: retained bytes that differ, a document that
@@ -262,7 +267,7 @@ mod tests {
     fn the_measurement_mapping_covers_every_code() {
         assert_eq!(
             MeasurementErrorCode::ALL.len(),
-            27,
+            30,
             "quoin-measurement gained or lost an error code; map it deliberately"
         );
 
@@ -277,6 +282,9 @@ mod tests {
             Code::PopulationUnstated,
             Code::RepetitionsShort,
             Code::PopulationMalformed,
+            Code::IntervalMalformed,
+            Code::IntervalUnstated,
+            Code::IntervalLevelShort,
             Code::ApparatusUndeclared,
         ];
         let refused = [
