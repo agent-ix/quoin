@@ -223,8 +223,9 @@ pub fn measurement_collection(
     // named in the same refusal (review finding #5(a) on quoin#580).
     let mut findings = Vec::new();
     // The code of each finding that has one of its own, pushed alongside it.
-    // Only the population checks (PLAT-960) are typed today; see this
-    // function's `# Errors` for how the refusal's own code is chosen.
+    // The population (PLAT-960) and interval (EA-26) checks are typed; either
+    // kind can be the refusal's own code. See this function's `# Errors` for
+    // how it is chosen.
     let mut typed: Vec<MeasurementErrorCode> = Vec::new();
 
     if collection.schema_version != MEASUREMENT_SCHEMA_VERSION {

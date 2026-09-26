@@ -119,7 +119,7 @@ reads:
 | `reasons` | string[] | every distinct reason code, in the declaration order of the table below; empty exactly when `accept` |
 | `claimed` | string \| null | the claimed verdict, when one was given |
 | `candidate` | string \| null | the collection id decided: the last run in intake order |
-| `decisions` | object[] | one per slice of the candidate: `dimensions`, `estimate`, `estimateBasis` (`recomputed` \| `asserted`), `baseline` (number \| null), `holds` (boolean \| null); when the rule states `interval_level` and an interval decided the slice, also `intervalBound` (`lower` \| `upper`), `intervalBoundValue` and `intervalLevel` (FR-108-AC-11), otherwise absent |
+| `decisions` | object[] | one per slice of the candidate: `dimensions`, `estimate`, `estimateBasis` (`recomputed` \| `asserted`), `baseline` (number \| null), `holds` (boolean \| null); when the rule states `interval_level` and an interval decided the slice, also `intervalBound` (`lower` \| `upper`), `intervalBoundValue` and `intervalLevel` (the level the deciding interval states, not the plan's required level, which is in the plan; FR-108-AC-11), otherwise absent |
 | `findings` | object[] | every reason with where it was found: `reason`, `collectionId` (null for a plan-level reason), `dimensions` (null for a collection- or plan-level reason) |
 | `regressedRuns` | string[] | the runs the rule does not hold for against their own history, in intake order |
 | `orderSource` | string | where the intake order came from, one of the sources above |

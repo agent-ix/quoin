@@ -23,6 +23,10 @@ description: "Chronological log of structural changes to this bundle."
   stage-verdict gate onto the same call; FR-108-AC-14 covers `margin_mode`.
   TC-1948..TC-1962 are spec-ahead-of-code; nothing is implemented by this
   change.
+* **2026-09-25** — **EA-26 clarifications** (review of quoin#639). `intervalLevel`
+  in a verify decision and in a gate row is the deciding interval's stated
+  level; FR-044-AC-12 names its views and states that the graph
+  `GraphPartitionRow` projection carries no `interval`.
 * **2026-09-25** — **EA-26 implemented in `quoin-measurement`** (TC-1948..TC-1962
   are now real). An observation's optional `interval` is read exactly as
   stored, validated at intake as engineering-assurance's `Interval` plus
