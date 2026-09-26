@@ -8,6 +8,21 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-25** — **FR-044 and FR-108 gain an optional observation `interval`
+  and interval-aware verify** (EA-26, originally PLAT-1053). FR-044-AC-10..AC-12
+  specify the observation's `interval` (`lower`, `upper`, `level`, `method`),
+  its intake findings (`QM-INTERVAL-MALFORMED`, `QM-INTERVAL-UNSTATED`,
+  `QM-INTERVAL-LEVEL-SHORT`) and its additive place in the JSON report;
+  FR-108-AC-11..AC-13 specify verify judging a plan whose rule declares
+  `interval_level` at the unfavourable interval bound through
+  engineering-assurance's `holds_on_interval` (FR-021-AC-13/AC-14), the
+  `interval_unstated`, `interval_malformed` and `interval_level_short` reasons, and the
+  engineering-assurance repin. Review revisions: every run, earlier ones
+  included, is judged on its own interval so rerun-until-pass still rejects; a
+  malformed interval and a short level reject; FR-107-AC-10..AC-11 bring the
+  stage-verdict gate onto the same call; FR-108-AC-14 covers `margin_mode`.
+  TC-1948..TC-1962 are spec-ahead-of-code; nothing is implemented by this
+  change.
 * **2026-09-23** — **FR-016 gains a compiled pin-agreement test for the
   `engineering-assurance` module and crate** (PLAT-1032). quoin pins
   `engineering-assurance` in three committed places that must move together:
