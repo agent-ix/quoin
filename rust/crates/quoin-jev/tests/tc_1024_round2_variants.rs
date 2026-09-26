@@ -45,7 +45,7 @@ use eval_v2_support::variants::exceeds::{
     e5_units, necessity_outcome, trivial_reason,
 };
 use eval_v2_support::variants::intent::{
-    ASSERTIONS_FIELD, T3, derive_assertion_selection, extract_assertions,
+    self, ASSERTIONS_FIELD, T3, derive_assertion_selection, extract_assertions,
 };
 
 // ---------------------------------------------------------------------------
@@ -287,6 +287,111 @@ fn tc_1024_t3_extracts_every_python_assertion_statement() {
             "with pytest.raises(ValueError):",
             "assert ok, \\ \"message\"",
         ]
+    );
+}
+
+/// Provenance: PLAT-1024, MP-242 round 2, T3 v4 (RES-31). TypeScript and
+/// JavaScript: an `expect(..)` chain ending in a matcher is one statement,
+/// on one line or continued on the next with no `;`, with the `await`
+/// before it; each `node:assert` form is one statement; an assertion inside
+/// a callback is listed on its own, and one nested in another is part of
+/// it. A bare `expect(x)`, a member `.expect(..)`, and `expect(` inside a
+/// string, a template literal or a comment are not assertions.
+#[test]
+fn tc_1024_t3_extracts_script_assertions() {
+    let body = "it('reads the config', async () => {\n  \
+                // expect(commented).toBe(1);\n  \
+                const s = \"expect(in_a_string).toBe(1)\";\n  \
+                const t = `assert(${name}) expect(x)`;\n  \
+                expect(parse('a b')).toEqual({ a: 1 });\n  \
+                await expect(load('x')).rejects.toThrow('missing');\n  \
+                expect(result)\n    .not.toBeNull()\n  \
+                expect(flag).to.be.true;\n  \
+                expect(bare);\n  \
+                request(app).expect(200);\n  \
+                assert(ok);\n  \
+                assert.equal(a, 1);\n  \
+                assert.strictEqual(b, 'two');\n  \
+                assert.deepStrictEqual(c, [1, 2]);\n  \
+                assert.throws(() => parse(''), /empty/);\n  \
+                items.forEach((item) => {\n    assert.ok(item.valid);\n  });\n  \
+                [1, 2].map((n) => expect(n).toBeGreaterThan(0));\n  \
+                expect(() => { assert.fail('inner'); }).toThrow();\n\
+                });";
+    let expected = [
+        "expect(parse('a b')).toEqual({ a: 1 });",
+        "await expect(load('x')).rejects.toThrow('missing');",
+        "expect(result) .not.toBeNull()",
+        "expect(flag).to.be.true;",
+        "assert(ok);",
+        "assert.equal(a, 1);",
+        "assert.strictEqual(b, 'two');",
+        "assert.deepStrictEqual(c, [1, 2]);",
+        "assert.throws(() => parse(''), /empty/);",
+        "assert.ok(item.valid);",
+        "expect(n).toBeGreaterThan(0)",
+        "expect(() => { assert.fail('inner'); }).toThrow();",
+    ];
+    for path in [
+        "src/config.test.ts",
+        "ui/App.test.tsx",
+        "test/config.test.js",
+        "test/config.test.mjs",
+        "test/config.test.cjs",
+    ] {
+        assert_eq!(extract_assertions(path, body), expected, "{path}");
+    }
+    let sample = "expect(run().problems).toEqual([]); assert.equal(a, 1);";
+    assert_eq!(
+        extract_assertions("src/x.test.ts", sample),
+        ["expect(run().problems).toEqual([]);", "assert.equal(a, 1);"]
+    );
+    // A string holding `expect(` lists nothing, so the row is `no` with no
+    // call.
+    let in_string = "test('x', () => {\n  log(\"expect(a).toBe(1)\");\n});";
+    assert!(extract_assertions("src/x.test.ts", in_string).is_empty());
+}
+
+/// Provenance: PLAT-1024, MP-242 round 2, T3 v4 (RES-31). A TypeScript row
+/// is asked about its listed assertions, and `QUOIN_JEV_INTENT_OUT`'s dump
+/// writes one line per row: the variant, the row, each listed assertion
+/// with its `P`, the derived prediction and the truth label.
+#[tokio::test]
+async fn tc_1024_t3_script_row_is_asked_and_dumped() {
+    let mut value = fixtures::row(
+        "EV2-0021",
+        Mode::ReqTest,
+        "dev",
+        &json!({"test_asserts_intent": fixtures::truth(&json!("yes"), "mechanical", &[])}),
+    );
+    value["test"] = json!({
+        "path": "src/check.test.ts",
+        "fn_name": "refuses oversize",
+        "body": "it('refuses oversize', () => {\n  const r = check('x'.repeat(5000));\n  \
+                 expect(r.code).toBe('CORE_REFUSED');\n  assert.ok(r);\n});",
+    });
+    let row = fixtures::parse(&[value]).unwrap().rows.remove(0);
+    let (client, fake) = fake_client(0.8);
+    let output = variant::run(&client, std::slice::from_ref(&row), &[&T3])
+        .await
+        .unwrap();
+    assert_eq!(fake.calls.load(Ordering::SeqCst), 1);
+    let lines = intent::dump(std::slice::from_ref(&row), &output, &[&T3]);
+    assert_eq!(lines.len(), 1);
+    let line: Value = serde_json::from_str(&lines[0]).unwrap();
+    assert_eq!(
+        line,
+        json!({
+            "variant": "T3@v4",
+            "row_id": "EV2-0021",
+            "mode": "RT",
+            "assertions": [
+                {"label": "A1", "text": "expect(r.code).toBe('CORE_REFUSED');", "p": 0.8},
+                {"label": "A2", "text": "assert.ok(r);", "p": 0.8},
+            ],
+            "prediction": {"answer": "yes", "confidence": 0.8, "p_yes": 0.8},
+            "truth": {"answer": "yes", "kind": "mechanical", "alternatives": []},
+        })
     );
 }
 

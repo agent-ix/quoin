@@ -222,12 +222,12 @@ pub(crate) const REQUEST_DIGEST_PINS: &[(&str, &str, &str)] = &[
         "sha256:e14cf165e3a719e91a719102124f0ccce25bb6110dfdde764c9feb9b02eafdd5",
     ),
     (
-        "T3@v3",
+        "T3@v4",
         "RT",
         "sha256:e8359d1ab3e124f3ef9657628c9994410cd828d9d12182a974437798a4ffa958",
     ),
     (
-        "T3@v3",
+        "T3@v4",
         "RTC",
         "sha256:e8359d1ab3e124f3ef9657628c9994410cd828d9d12182a974437798a4ffa958",
     ),

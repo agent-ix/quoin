@@ -27,6 +27,7 @@
 //! | `QUOIN_JEV_CASSETTE` | a cassette file (PLAT-977): answers are recorded there, and re-grading replays them |
 //! | `QUOIN_JEV_CASSETTE_MODE` | `record` (default: replay what is on file, call live for the rest) or `replay` (no network, no key) |
 //! | `QUOIN_JEV_MODEL` | the pinned model; required with a cassette, and when set every answer must come from it |
+//! | `QUOIN_JEV_INTENT_OUT` | dev only: a file to write one JSON line per row per T variant (every variant grading `test_asserts_intent`): `variant@version`, row id, the assertions T3 listed with each one's `P`, the derived prediction and confidence, and the truth label |
 //!
 //! With no cassette the run goes through `quoin_jev::client::production`,
 //! exactly like the sibling live files. A cassette in record mode wraps the
@@ -246,6 +247,37 @@ fn report_refusal(
     println!("refusal rows written to {path}");
 }
 
+/// Where the `test_asserts_intent` rows are dumped for reading by hand (dev
+/// only, informational).
+const INTENT_OUT_ENV: &str = "QUOIN_JEV_INTENT_OUT";
+
+/// The intent dump's output file, when requested. Dev only, as
+/// [`statement_dir`].
+fn intent_dir(split: Split) -> Option<String> {
+    let path = env(INTENT_OUT_ENV)?;
+    assert!(
+        split == Split::Dev,
+        "{INTENT_OUT_ENV} is dev-only; held-out rows are never diagnosed"
+    );
+    Some(path)
+}
+
+/// Writes one JSON line per row per T variant to `path`, when set. The
+/// report itself is `render_gated_run`'s.
+fn report_intent(
+    path: Option<&str>,
+    rows: &[Row],
+    output: &variant::RunOutput,
+    variants: &[&Variant],
+) {
+    let Some(path) = path else {
+        return;
+    };
+    let lines = eval_v2_support::variants::intent::dump(rows, output, variants);
+    std::fs::write(path, lines.join("\n") + "\n").unwrap_or_else(|error| panic!("{path}: {error}"));
+    println!("intent rows written to {path}");
+}
+
 /// Provenance: PLAT-1027. Runs the chosen variants over the chosen split and
 /// prints the report. Ungated: bars belong to each experiment's MP doc.
 #[allow(
@@ -273,6 +305,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     let exp2 = exp2_dir(split);
     let statement_dir = statement_dir(split);
     let refusal_dir = refusal_dir(split);
+    let intent_dir = intent_dir(split);
     let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
     let rerun_reason = env(HELDOUT_RERUN_ENV);
     let heldout_flag = env(HELDOUT_ENV);
@@ -358,6 +391,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     write_exp2(exp2.as_deref(), &rows, &output);
     report_statement(statement_dir.as_deref(), &rows, &output, &variants);
     report_refusal(refusal_dir.as_deref(), &rows, &output, &variants);
+    report_intent(intent_dir.as_deref(), &rows, &output, &variants);
     // MP-243's bars (PLAT-1031); empty unless a K variant ran.
     println!("{}", soundness::render_bars(&rows, &output, &variants));
     println!(

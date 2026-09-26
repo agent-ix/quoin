@@ -90,6 +90,106 @@ pub(crate) fn mask_for(path: &str, text: &str) -> Vec<u8> {
     }
 }
 
+/// Whether `path` is a TypeScript or JavaScript file (`.ts`, `.tsx`, `.js`,
+/// `.mjs`, `.cjs`). Only T3 (v4) reads these: [`mask_for`] and the unit
+/// splitters stay as they are, so E5's reading of a code body is unchanged.
+pub(crate) fn is_script_path(path: &str) -> bool {
+    matches!(
+        Path::new(path).extension().and_then(OsStr::to_str),
+        Some("ts" | "tsx" | "js" | "mjs" | "cjs")
+    )
+}
+
+/// `text`'s bytes with TypeScript/JavaScript comments (`//`, `/* */`) and
+/// string literals (`'…'`, `"…"`, and template literals `` `…` `` with any
+/// `${…}` in them) replaced by spaces. Same length as `text`, as [`mask`].
+/// Regex literals are not recognised: a quote or a `//` inside one is read
+/// as code.
+pub(crate) fn mask_script(text: &str) -> Vec<u8> {
+    let bytes = text.as_bytes();
+    let mut out = bytes.to_vec();
+    let mut at = 0usize;
+    while at < bytes.len() {
+        let rest = bytes.get(at..).unwrap_or_default();
+        let end = if rest.starts_with(b"//") {
+            rest.iter()
+                .position(|byte| *byte == b'\n')
+                .map_or(bytes.len(), |offset| at + offset)
+        } else if rest.starts_with(b"/*") {
+            rest.windows(2)
+                .skip(2)
+                .position(|pair| pair == b"*/")
+                .map_or(bytes.len(), |offset| at + 2 + offset + 2)
+        } else {
+            match rest.first() {
+                Some(b'\'' | b'"') => script_string_end(bytes, at),
+                Some(b'`') => template_end(bytes, at),
+                _ => {
+                    at += 1;
+                    continue;
+                }
+            }
+        };
+        for byte in out.iter_mut().take(end).skip(at) {
+            *byte = b' ';
+        }
+        at = end;
+    }
+    out
+}
+
+/// The index just past a `'…'` or `"…"` literal opening at `at`: its closing
+/// quote, or the line break an unterminated one stops at.
+fn script_string_end(bytes: &[u8], at: usize) -> usize {
+    let quote = bytes.get(at).copied();
+    let mut cursor = at + 1;
+    while let Some(byte) = bytes.get(cursor) {
+        match byte {
+            b'\\' => cursor += 2,
+            b'\n' => return cursor,
+            _ if Some(*byte) == quote => return cursor + 1,
+            _ => cursor += 1,
+        }
+    }
+    bytes.len()
+}
+
+/// The index just past a template literal opening at `at`, reading through
+/// each `${…}` (and the strings and templates inside it) to its `}`.
+fn template_end(bytes: &[u8], at: usize) -> usize {
+    let mut cursor = at + 1;
+    while let Some(byte) = bytes.get(cursor) {
+        match byte {
+            b'\\' => cursor += 2,
+            b'`' => return cursor + 1,
+            b'$' if bytes.get(cursor + 1) == Some(&b'{') => {
+                cursor += 2;
+                let mut depth = 0usize;
+                while let Some(inner) = bytes.get(cursor) {
+                    match inner {
+                        b'{' => depth += 1,
+                        b'}' if depth == 0 => break,
+                        b'}' => depth -= 1,
+                        b'\'' | b'"' => {
+                            cursor = script_string_end(bytes, cursor);
+                            continue;
+                        }
+                        b'`' => {
+                            cursor = template_end(bytes, cursor);
+                            continue;
+                        }
+                        _ => {}
+                    }
+                    cursor += 1;
+                }
+                cursor += 1;
+            }
+            _ => cursor += 1,
+        }
+    }
+    bytes.len()
+}
+
 /// One unit holding the whole body.
 fn whole(body: &str) -> Unit {
     Unit {

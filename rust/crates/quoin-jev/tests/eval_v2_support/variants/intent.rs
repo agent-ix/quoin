@@ -73,17 +73,18 @@ use std::fmt::Write as _;
 use std::sync::LazyLock;
 
 use regex::Regex;
+use serde_json::{Value, json};
 use typesafe_sdk_questions::{
     NoulCriteria, Question, Questions, choice, noul, noul_with, questions,
 };
 
-use crate::eval_v2_support::corpus::{KindGroup, Row, TruthKind};
+use crate::eval_v2_support::corpus::{KindGroup, Row, TruthAnswer, TruthKind};
 use crate::eval_v2_support::keys::{KEYS, Mode, NO, YES};
 use crate::eval_v2_support::metrics::{Scored, render, scored};
-use crate::eval_v2_support::units::{Language, mask_for};
+use crate::eval_v2_support::units::{Language, is_script_path, mask_for, mask_script};
 use crate::eval_v2_support::variant::{
-    Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, RunOutput, T0,
-    Variant, noul_prediction, request, state, whole_row,
+    Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, RowResult, RunOutput,
+    T0, Variant, noul_prediction, request, state, whole_row,
 };
 use crate::gap_semantic_support::{Variant as BatteryShape, question_set as battery_questions};
 
@@ -727,8 +728,143 @@ fn failure_span(masked: &[u8], at: usize) -> Option<(usize, usize)> {
     }
 }
 
+/// A TypeScript/JavaScript assertion's opening (T3 v4): an `expect(..)`
+/// chain (Jest, Vitest, chai) or a `node:assert` call: `assert(..)`,
+/// `assert.equal(..)`, `assert.strictEqual(..)`, `assert.deepStrictEqual(..)`,
+/// `assert.throws(..)`, `assert.strict.equal(..)`. A member call
+/// (`x.expect(..)`, `x.assert(..)`) is not one; [`script_spans`] drops it.
+static SCRIPT_ASSERTION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\b(?:expect|assert(?:\s*\.\s*\w+)*)\s*\(")
+        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+/// `text` masked as the test at `path` is read: [`mask_script`] for a
+/// TypeScript or JavaScript file, [`mask_for`] otherwise.
+fn mask_test(path: &str, text: &str) -> Vec<u8> {
+    if is_script_path(path) {
+        mask_script(text)
+    } else {
+        mask_for(path, text)
+    }
+}
+
+/// Whether the masked byte `byte` can continue a JavaScript identifier.
+const fn is_script_ident(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'$'
+}
+
+/// The last index before `at` that is not whitespace, in masked bytes.
+fn previous_token(masked: &[u8], at: usize) -> Option<usize> {
+    (0..at)
+        .rev()
+        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+}
+
+/// Where a script assertion opening at `at` begins: at the match, or at an
+/// `await`, `return` or `void` directly before it.
+fn script_statement_start(masked: &[u8], at: usize) -> usize {
+    let Some(last) = previous_token(masked, at) else {
+        return at;
+    };
+    let head = masked.get(..=last).unwrap_or_default();
+    for keyword in [b"await".as_slice(), b"return", b"void"] {
+        if head.ends_with(keyword) {
+            let start = head.len() - keyword.len();
+            let standalone = !start
+                .checked_sub(1)
+                .and_then(|before| masked.get(before))
+                .copied()
+                .is_some_and(is_script_ident);
+            if standalone {
+                return start;
+            }
+        }
+    }
+    at
+}
+
+/// Where the script statement from `from` ends (exclusive), in masked
+/// bytes: after its `;`, at a `,` outside brackets (an argument list), at
+/// the `)`, `]` or `}` that closes what holds it (an arrow callback's body),
+/// or at a line break outside brackets unless the next line continues the
+/// chain with a `.` (a statement with no `;`).
+fn script_statement_end(masked: &[u8], from: usize) -> usize {
+    let mut depth = 0usize;
+    let mut at = from;
+    while let Some(byte) = masked.get(at) {
+        match byte {
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' if depth == 0 => return at,
+            b')' | b']' | b'}' => depth -= 1,
+            b',' if depth == 0 => return at,
+            b';' if depth == 0 => return at + 1,
+            b'\n' if depth == 0 => {
+                let next = skip_whitespace(masked, at, masked.len());
+                if masked.get(next) != Some(&b'.') {
+                    return at;
+                }
+            }
+            _ => {}
+        }
+        at += 1;
+    }
+    masked.len()
+}
+
+/// Whether the `expect(` whose `(` is at `open` is followed, before `end`,
+/// by a member chain (`.toBe(..)`, `.rejects.toThrow(..)`, chai's
+/// `.to.be.true`). A bare `expect(x)` checks nothing.
+fn has_matcher(masked: &[u8], open: usize, end: usize) -> bool {
+    let mut depth = 0usize;
+    let close = (open..end).find(|index| match masked.get(*index) {
+        Some(b'(' | b'[' | b'{') => {
+            depth += 1;
+            false
+        }
+        Some(b')' | b']' | b'}') => {
+            depth = depth.saturating_sub(1);
+            depth == 0
+        }
+        _ => false,
+    });
+    close.is_some_and(|close| {
+        let next = skip_whitespace(masked, close + 1, end);
+        masked.get(next) == Some(&b'.')
+    })
+}
+
+/// The assertion statements of a TypeScript or JavaScript test, as masked
+/// byte spans in source order (T3 v4). An `expect(..)` chain ending in a
+/// matcher is one statement, and so is a `node:assert` call, each with an
+/// `await`, `return` or `void` before it; one nested inside another is part
+/// of it.
+fn script_spans(masked: &[u8]) -> Vec<(usize, usize)> {
+    let masked_text = String::from_utf8_lossy(masked);
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    for found in SCRIPT_ASSERTION.find_iter(&masked_text) {
+        let previous_end = spans.last().map_or(0, |(_, end)| *end);
+        if found.start() < previous_end {
+            continue;
+        }
+        let member = previous_token(masked, found.start())
+            .and_then(|before| masked.get(before))
+            .is_some_and(|byte| *byte == b'.' || *byte == b'$');
+        if member {
+            continue;
+        }
+        let end = script_statement_end(masked, found.start()).max(found.end());
+        let open = found.end() - 1;
+        if found.as_str().starts_with("expect") && !has_matcher(masked, open, end) {
+            continue;
+        }
+        let start = script_statement_start(masked, found.start());
+        spans.push((start.max(previous_end), end));
+    }
+    spans
+}
+
 /// Which bytes of `body` lie inside a comment or a string or char literal,
-/// as [`mask_for`] reads them. Accurate for whitespace bytes, the only ones
+/// as [`mask_test`] reads them. Accurate for whitespace bytes, the only ones
 /// [`collapse_code_whitespace`] asks about: `body` is masked with every
 /// space and tab swapped for a control byte first, so a whitespace byte the
 /// mask leaves unchanged is code, and one it blanks is inside a literal.
@@ -737,7 +873,7 @@ fn literal_bytes(path: &str, body: &str) -> Vec<bool> {
         .chars()
         .map(|ch| if ch == ' ' || ch == '\t' { '\u{1}' } else { ch })
         .collect();
-    let blanked = mask_for(path, &marked);
+    let blanked = mask_test(path, &marked);
     marked
         .bytes()
         .zip(blanked)
@@ -793,9 +929,26 @@ fn collapse_code_whitespace(body: &str, literal: &[bool], start: usize, end: usi
 /// first ([`mask_for`]), so an `assert!` inside a string or a comment is not
 /// one; an assertion nested inside another (`assert_eq!(f().unwrap_err(),
 /// ..)`) is part of the outer one. The language is `path`'s: Python for
-/// `.py`, Rust otherwise. Code, not Jev, does this: T3 asks Jev only about
-/// the statements found.
+/// `.py`, TypeScript/JavaScript for `.ts`, `.tsx`, `.js`, `.mjs` and `.cjs`
+/// ([`script_spans`], T3 v4), Rust otherwise. Code, not Jev, does this: T3
+/// asks Jev only about the statements found.
 pub(crate) fn extract_assertions(path: &str, body: &str) -> Vec<String> {
+    let spans = if is_script_path(path) {
+        script_spans(&mask_script(body))
+    } else {
+        native_spans(path, body)
+    };
+    let literal = literal_bytes(path, body);
+    spans
+        .into_iter()
+        .map(|(start, end)| collapse_code_whitespace(body, &literal, start, end))
+        .filter(|text| !text.is_empty())
+        .collect()
+}
+
+/// The assertion statements of a Rust or Python test, as masked byte spans
+/// in source order: see [`RUST_ASSERTION`] and [`PYTHON_ASSERTION`].
+fn native_spans(path: &str, body: &str) -> Vec<(usize, usize)> {
     let python = Language::of_path(path) == Some(Language::Python);
     let masked = mask_for(path, body);
     let masked_text = String::from_utf8_lossy(&masked);
@@ -833,12 +986,7 @@ pub(crate) fn extract_assertions(path: &str, body: &str) -> Vec<String> {
         };
         spans.push((start.max(previous_end), end.max(found.end())));
     }
-    let literal = literal_bytes(path, body);
     spans
-        .into_iter()
-        .map(|(start, end)| collapse_code_whitespace(body, &literal, start, end))
-        .filter(|text| !text.is_empty())
-        .collect()
 }
 
 /// The assertions T3 lists for `row`: [`extract_assertions`] over its test,
@@ -981,10 +1129,14 @@ fn t3_derive(row: &Row, answered: &[Answered]) -> Predictions {
 /// longer merge. v3 asks v2's question over a wider list: `panic!` and
 /// proptest `TestCaseError::fail` failure points, Python mock and
 /// `np.testing` `assert_*` calls and an `assert` after a `:`; and string
-/// literals and comments in a listed assertion stay verbatim.
+/// literals and comments in a listed assertion stay verbatim. v4 asks v3's
+/// question and lists TypeScript and JavaScript assertions too
+/// ([`script_spans`]): before it, a `.ts` or `.js` test was read as Rust,
+/// listed nothing, and was `no` with no call. Rust and Python listings are
+/// unchanged.
 pub(crate) const T3: Variant = Variant {
     id: "T3",
-    version: 3,
+    version: 4,
     summary: "assertion check: code lists the test's assertions, one strict noul per \
               assertion (alone, would it fail on a wrong outcome); yes iff max P >= 0.5",
     modes: TEST_MODES,
@@ -1704,4 +1856,73 @@ fn render_tc(out: &mut String, rows: &[Row], output: &RunOutput, tc: &[&Variant]
     );
     let d = bar_d(rows, output, tc, TRACE_CORRECT).unwrap_or_else(|error| panic!("Bar D: {error}"));
     render_bar_d(out, &names, TRACE_CORRECT, &d);
+}
+
+// ---------------------------------------------------------------------------
+// Per-row dump (QUOIN_JEV_INTENT_OUT)
+// ---------------------------------------------------------------------------
+
+/// One JSON line per row per variant in `variants` that grades
+/// `test_asserts_intent` (the T variants), for reading rows by hand: the
+/// variant's label, the row's id and mode, the assertions T3 listed with each
+/// one's `P` (empty for a variant that lists none, and `p` null for an
+/// assertion that was not answered), the derived prediction (`answer`,
+/// `confidence`, `p_yes`; null for an abstention), and the row's truth label
+/// (null when it has none).
+pub(crate) fn dump(rows: &[Row], output: &RunOutput, variants: &[&Variant]) -> Vec<String> {
+    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut lines = Vec::new();
+    for variant in variants
+        .iter()
+        .filter(|variant| variant.grades.contains(&TEST_ASSERTS_INTENT))
+    {
+        let label = variant.label();
+        for result in output.results.iter().filter(|r| r.variant == label) {
+            let Some(row) = by_id.get(result.row_id.as_str()) else {
+                continue;
+            };
+            lines.push(intent_line(variant, row, result).to_string());
+        }
+    }
+    lines
+}
+
+/// One row's line for [`dump`].
+fn intent_line(variant: &Variant, row: &Row, result: &RowResult) -> Value {
+    let answers = whole_row(&result.answered);
+    let assertions: Vec<Value> = if variant.id == T3.id {
+        row_assertions(row)
+            .into_iter()
+            .enumerate()
+            .map(|(index, text)| {
+                let label = assertion_label(index);
+                let p = match answers.get(&label) {
+                    Some(RawAnswer::Noul(p)) => Some(*p),
+                    _ => None,
+                };
+                json!({"label": label, "text": text, "p": p})
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    let prediction = result
+        .predictions
+        .get(TEST_ASSERTS_INTENT)
+        .map(|p| json!({"answer": p.answer, "confidence": p.confidence, "p_yes": p.ordinal}));
+    let truth = row.truth.get(TEST_ASSERTS_INTENT).map(|truth| {
+        json!({
+            "answer": truth.answer.label(),
+            "kind": truth.kind,
+            "alternatives": truth.alternatives.iter().map(TruthAnswer::label).collect::<Vec<_>>(),
+        })
+    });
+    json!({
+        "variant": variant.label(),
+        "row_id": row.id,
+        "mode": row.mode.as_str(),
+        "assertions": assertions,
+        "prediction": prediction,
+        "truth": truth,
+    })
 }
