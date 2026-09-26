@@ -87,6 +87,18 @@ pub(crate) struct GateWire {
     /// The baseline value the rule was evaluated against, `null` for a
     /// `threshold` rule or an inconclusive verdict.
     baseline: Option<f64>,
+    /// `lower` or `upper`: the interval bound that decided the row. Absent,
+    /// with the two members below, unless the rule states an `interval_level`
+    /// and an interval decided it (FR-107-AC-10), so a row for any other
+    /// plan serialises to the bytes it did before EA-26.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    interval_bound: Option<&'static str>,
+    /// That bound's value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    interval_bound_value: Option<f64>,
+    /// The confidence level the deciding interval states.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    interval_level: Option<f64>,
 }
 
 impl<'a> StageVerdictWire<'a> {
@@ -145,10 +157,18 @@ impl<'a> StageVerdictWire<'a> {
                 })
             }
             StageVerdict::Gate { objective, outcome } => {
-                let (current, baseline) = match *outcome {
-                    GateOutcome::Pass { current, baseline }
-                    | GateOutcome::Fail { current, baseline } => (Some(current), baseline),
-                    GateOutcome::Inconclusive(_) => (None, None),
+                let (current, baseline, interval) = match *outcome {
+                    GateOutcome::Pass {
+                        current,
+                        baseline,
+                        interval,
+                    }
+                    | GateOutcome::Fail {
+                        current,
+                        baseline,
+                        interval,
+                    } => (Some(current), baseline, interval),
+                    GateOutcome::Inconclusive(_) => (None, None, None),
                 };
                 Self::Gate(GateWire {
                     stage,
@@ -157,6 +177,9 @@ impl<'a> StageVerdictWire<'a> {
                     reason,
                     current,
                     baseline,
+                    interval_bound: interval.map(|decided| decided.bound.as_str()),
+                    interval_bound_value: interval.map(|decided| decided.bound_value),
+                    interval_level: interval.map(|decided| decided.level),
                 })
             }
         }

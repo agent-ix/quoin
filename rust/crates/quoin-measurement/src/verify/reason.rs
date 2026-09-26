@@ -94,6 +94,9 @@ pub enum Reason {
     /// In a protected series, a run — the candidate or an earlier one —
     /// recorded no protected apparatus (PLAT-975).
     ApparatusUnrecorded,
+    /// The plan's rule states an `interval_level` and the candidate's
+    /// observation states no `interval` (EA-26, FR-108-AC-12).
+    IntervalUnstated,
     /// The rule does not hold for the candidate's estimate.
     RuleNotMet,
     /// A stored `value` disagrees with the estimate recomputed from its
@@ -106,6 +109,13 @@ pub enum Reason {
     /// `examined`, `matched` or `repetitions` is not a whole number, or
     /// `matched` exceeds `examined`.
     PopulationMalformed,
+    /// Under a plan whose rule states an `interval_level`, a run — the
+    /// candidate or an earlier one — states an `interval` that does not
+    /// satisfy FR-044-AC-10 (EA-26, FR-108-AC-12).
+    IntervalMalformed,
+    /// The candidate's `interval` level is below the rule's `interval_level`
+    /// (EA-26, FR-108-AC-12).
+    IntervalLevelShort,
     /// A regressed run with the candidate's own apparatus preceded it.
     RerunUntilPass,
     /// An earlier run under this definition recorded a different protected
@@ -144,7 +154,7 @@ impl Reason {
     /// [`Ord`], and `verify` sorts a verdict's `reasons` by it, so declaration
     /// order is the wire order. Place a new reason beside the ones it belongs
     /// with rather than at the end.
-    pub const ALL: [Self; 30] = [
+    pub const ALL: [Self; 33] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
         Self::NoCollections,
@@ -175,6 +185,9 @@ impl Reason {
         Self::ConstantPredictorRowsMalformed,
         Self::ConstantPredictorRowsMismatch,
         Self::ExternalReferenceUnsupplied,
+        Self::IntervalUnstated,
+        Self::IntervalMalformed,
+        Self::IntervalLevelShort,
     ];
 
     /// The stable wire spelling.
@@ -196,11 +209,14 @@ impl Reason {
             Self::SliceMissing => "slice_missing",
             Self::ObservationMissing => "observation_missing",
             Self::ApparatusUnrecorded => "apparatus_unrecorded",
+            Self::IntervalUnstated => "interval_unstated",
             Self::RuleNotMet => "rule_not_met",
             Self::ValueDisagreesWithRows => "value_disagrees_with_rows",
             Self::PopulationBelowMinimum => "population_below_minimum",
             Self::RepetitionsShort => "repetitions_short",
             Self::PopulationMalformed => "population_malformed",
+            Self::IntervalMalformed => "interval_malformed",
+            Self::IntervalLevelShort => "interval_level_short",
             Self::RerunUntilPass => "rerun_until_pass",
             Self::ApparatusEdit => "apparatus_edit",
             Self::ClaimedVerdictDisagrees => "claimed_verdict_disagrees",
@@ -228,7 +244,7 @@ impl Reason {
     pub const fn carries_from_history(self) -> bool {
         matches!(
             self,
-            Self::ValueDisagreesWithRows | Self::PopulationMalformed
+            Self::ValueDisagreesWithRows | Self::PopulationMalformed | Self::IntervalMalformed
         )
     }
 
@@ -254,12 +270,15 @@ impl Reason {
             | Self::UnitUnsupported
             | Self::SliceMissing
             | Self::ObservationMissing
-            | Self::ApparatusUnrecorded => Verdict::Inconclusive,
+            | Self::ApparatusUnrecorded
+            | Self::IntervalUnstated => Verdict::Inconclusive,
             Self::RuleNotMet
             | Self::ValueDisagreesWithRows
             | Self::PopulationBelowMinimum
             | Self::RepetitionsShort
             | Self::PopulationMalformed
+            | Self::IntervalMalformed
+            | Self::IntervalLevelShort
             | Self::RerunUntilPass
             | Self::ApparatusEdit
             | Self::ClaimedVerdictDisagrees

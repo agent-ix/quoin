@@ -16,7 +16,10 @@
 //! computes is [`rows::recompute`], over the population the collection
 //! states. The decision rule's meaning — comparators, margins, which way a
 //! margin moves — is engineering-assurance's (FR-021) and is applied through
-//! EA's own [`DecisionRule::holds`], never restated here.
+//! EA's own [`DecisionRule::holds`] — or, when the rule states an
+//! `interval_level`, [`DecisionRule::holds_on_interval`] at the unfavourable
+//! bound of each run's own interval (EA-26, FR-108-AC-11; see
+//! [`crate::interval`]) — never restated here.
 //!
 //! # Order
 //!
@@ -63,6 +66,7 @@ use std::collections::BTreeMap;
 use engineering_assurance::measurement::{Baseline, Comparator, DecisionRule, RuleReference};
 use quoin_store::JsonValue;
 
+use crate::interval::{self, IntervalReading, Refusal};
 use crate::types::collection::{MeasurementCollection, ResolvedApparatus};
 use crate::types::observation::MeasurementObservation;
 use crate::types::plan::{MeasurementPlan, StatisticalDesign};
@@ -291,6 +295,16 @@ impl Check<'_> {
                     });
                 }
             };
+            if rule.interval_level().is_some()
+                && matches!(
+                    interval::reading(observation),
+                    IntervalReading::Malformed(_)
+                )
+            {
+                // Judged on any run, whatever else is wrong with it: a
+                // malformed interval is evidence of a bad record.
+                record(Reason::IntervalMalformed);
+            }
             let estimate = match assessed {
                 Ok(estimate) => *estimate,
                 Err(reason) => {
@@ -298,27 +312,60 @@ impl Check<'_> {
                     continue;
                 }
             };
-            let (baseline, holds) = match baseline(
+            let resolved = baseline(
                 rule,
                 dimensions,
                 observation,
                 run.collection,
                 history,
                 run.apparatus,
-            ) {
-                Ok((value, prior)) => {
-                    outcome.priors.extend(prior);
-                    let holds = rule.holds(estimate.value, value).ok();
+            );
+            if let Ok((_, prior)) = &resolved {
+                outcome.priors.extend(*prior);
+            }
+            if let Err(reason) = &resolved
+                && is_candidate
+            {
+                record(*reason);
+            }
+            let baseline_value = resolved.as_ref().ok().and_then(|(value, _)| *value);
+            let mut decided = None;
+            let holds = match interval::judge(&rule, estimate.value, observation, baseline_value) {
+                // The rule states no `interval_level`: the point estimate, as
+                // ever.
+                None => resolved.as_ref().ok().and_then(|(value, _)| {
+                    let holds = rule.holds(estimate.value, *value).ok();
                     if holds.is_none() && is_candidate {
                         record(Reason::RuleNotEvaluable);
                     }
-                    (value, holds)
+                    holds
+                }),
+                Some(Ok(on_interval)) => {
+                    decided = Some(on_interval);
+                    Some(on_interval.holds)
                 }
-                Err(reason) => {
+                // An unresolved baseline is its own reason, recorded above;
+                // it is the only thing that leaves `Unevaluable` here.
+                Some(Err(Refusal::Unevaluable)) if resolved.is_err() => None,
+                Some(Err(refusal)) => {
                     if is_candidate {
-                        record(reason);
+                        match refusal {
+                            Refusal::Unstated => record(Reason::IntervalUnstated),
+                            Refusal::LevelShort => record(Reason::IntervalLevelShort),
+                            // Recorded above, once per run.
+                            Refusal::Malformed => {}
+                            Refusal::EstimateOutside | Refusal::Unevaluable => {
+                                record(Reason::RuleNotEvaluable);
+                            }
+                        }
+                    } else {
+                        // An earlier run the interval cannot answer for is
+                        // regressed, the conservative direction: a missing or
+                        // weakened interval cannot let a rerun-until-pass
+                        // through (FR-108-AC-11).
+                        outcome.regressed = true;
                     }
-                    (None, None)
+                    None
                 }
             };
             if holds == Some(false) {
@@ -331,8 +378,9 @@ impl Check<'_> {
                 outcome.decisions.push(SliceDecision {
                     dimensions: dimensions.clone(),
                     estimate,
-                    baseline,
+                    baseline: baseline_value,
                     holds,
+                    interval: decided,
                 });
             }
         }

@@ -45,9 +45,12 @@
 //! `objective.bound` is informational and is never evaluated (epic-wide
 //! ruling on PLAT-956). A `gate` plan's verdict comes entirely from
 //! `statistical_design.decision_rule`, evaluated through
-//! engineering-assurance's own [`DecisionRule::holds`] exactly as
-//! [`crate::verify`] evaluates it — this module computes no rule logic of its
-//! own, only the baseline value the rule asks for. A `threshold` rule needs
+//! engineering-assurance's own `DecisionRule::holds` — or, for a rule that
+//! states an `interval_level`, `DecisionRule::holds_on_interval` on the newest
+//! observation's own `interval` (EA-26, FR-107-AC-10) — exactly as
+//! [`crate::verify`] evaluates it; the gate itself lives in
+//! [`super::gate`]. This module computes no rule logic of its own, only the
+//! baseline value the rule asks for. A `threshold` rule needs
 //! none; a `baseline` rule reads `prior-collection` (the nearest earlier
 //! usable value) or `best-seen` (the maximum for `gt`/`ge`, the minimum for
 //! `lt`/`le`/`eq`) from the same usable-evidence pool [`ratchet`] draws from,
@@ -62,12 +65,12 @@
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
-use engineering_assurance::measurement::{
-    Baseline, Comparator, DecisionRule, Direction, Objective, RuleReference,
-};
+use engineering_assurance::measurement::{Direction, Objective};
 use quoin_store::JsonValue;
 
 use crate::compare::incomplete;
+pub use crate::report::gate::GateOutcome;
+use crate::report::gate::gate;
 use crate::types::collection::MeasurementCollection;
 use crate::types::observation::{MeasurementObservation, MeasurementState};
 use crate::types::plan::{MeasurementPlan, MeasurementStage};
@@ -117,14 +120,23 @@ pub enum InconclusiveReason {
     /// resolved from a source outside the plan, which the report layer, like
     /// `quoin measurement verify`, has none of (PLAT-1032).
     ExternalReferenceUnsupplied,
+    /// The rule states an `interval_level` and the newest observation states
+    /// no valid `interval` (EA-26, FR-107-AC-10). A malformed interval is
+    /// reported the same way here; `quoin measurement verify` is what
+    /// rejects it.
+    IntervalUnstated,
+    /// The newest observation's `interval` level is below the rule's
+    /// `interval_level` (EA-26, FR-107-AC-10).
+    IntervalLevelShort,
     /// Engineering-assurance could not evaluate the rule on these numbers —
-    /// a non-finite estimate or reference (PLAT-958 part 2).
+    /// a non-finite estimate or reference, or an estimate outside its stated
+    /// interval (PLAT-958 part 2, EA-26).
     RuleNotEvaluable,
 }
 
 impl InconclusiveReason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 14] = [
+    pub const ALL: [Self; 16] = [
         Self::NoCurrentValue,
         Self::PlanMismatch,
         Self::DefinitionMismatch,
@@ -138,6 +150,8 @@ impl InconclusiveReason {
         Self::NoDecisionRule,
         Self::ConstantPredictorUnsupported,
         Self::ExternalReferenceUnsupplied,
+        Self::IntervalUnstated,
+        Self::IntervalLevelShort,
         Self::RuleNotEvaluable,
     ];
 
@@ -158,6 +172,8 @@ impl InconclusiveReason {
             Self::NoDecisionRule => "no_decision_rule",
             Self::ConstantPredictorUnsupported => "constant_predictor_unsupported",
             Self::ExternalReferenceUnsupplied => "external_reference_unsupplied",
+            Self::IntervalUnstated => "interval_unstated",
+            Self::IntervalLevelShort => "interval_level_short",
             Self::RuleNotEvaluable => "rule_not_evaluable",
         }
     }
@@ -195,6 +211,12 @@ impl InconclusiveReason {
             }
             Self::ExternalReferenceUnsupplied => {
                 "the rule's external-reference baseline has no source quoin can read it from"
+            }
+            Self::IntervalUnstated => {
+                "the plan's rule needs an interval and the newest value states none"
+            }
+            Self::IntervalLevelShort => {
+                "the newest value's interval is at a level below the rule's interval_level"
             }
             Self::RuleNotEvaluable => "the decision rule could not be evaluated on these numbers",
         }
@@ -268,44 +290,6 @@ impl TargetOutcome {
         match *self {
             Self::Measured { reached: true, .. } => "reached",
             Self::Measured { reached: false, .. } => "not_reached",
-            Self::Inconclusive(_) => "inconclusive",
-        }
-    }
-}
-
-/// A `gate` plan's pass/fail verdict on its newest value (PLAT-958 part 2).
-///
-/// Unlike [`RatchetOutcome`] and [`TargetOutcome`], this is the one outcome
-/// this module decides that is a real pass/fail verdict, not information —
-/// see the module header.
-#[derive(Clone, Debug, PartialEq)]
-pub enum GateOutcome {
-    /// The decision rule holds for the newest value.
-    Pass {
-        /// The newest value.
-        current: f64,
-        /// The baseline value the rule was evaluated against, when its
-        /// reference is a `baseline`; `None` for a `threshold` rule.
-        baseline: Option<f64>,
-    },
-    /// The decision rule does not hold for the newest value.
-    Fail {
-        /// The newest value.
-        current: f64,
-        /// As [`Self::Pass`]'s.
-        baseline: Option<f64>,
-    },
-    /// No verdict, for this reason.
-    Inconclusive(InconclusiveReason),
-}
-
-impl GateOutcome {
-    /// The stable wire spelling of the verdict.
-    #[must_use]
-    pub const fn as_str(&self) -> &'static str {
-        match *self {
-            Self::Pass { .. } => "pass",
-            Self::Fail { .. } => "fail",
             Self::Inconclusive(_) => "inconclusive",
         }
     }
@@ -486,7 +470,7 @@ pub(crate) fn usable<'a>(
 
 /// Every usable earlier value of `plan`'s slice `slice`, oldest first, with
 /// the collection that measured it.
-fn earlier_values<'a>(
+pub(super) fn earlier_values<'a>(
     plan: &'a MeasurementPlan,
     slice: &'a BTreeMap<String, JsonValue>,
     earlier: &'a [MeasurementCollection],
@@ -557,7 +541,7 @@ fn ratchet(
 /// (engineering-assurance FR-024): a set that differs under the plan's own
 /// definition is `apparatus_changed`, and a missing one `apparatus_unrecorded`,
 /// for as long as the series lasts.
-fn same_apparatus(
+pub(super) fn same_apparatus(
     plan: &MeasurementPlan,
     observation: &MeasurementObservation,
     collection: Option<&MeasurementCollection>,
@@ -614,86 +598,4 @@ fn target_progress(
         distance: if reached { 0.0 } else { shortfall },
         reached,
     }
-}
-
-/// A `gate` plan's verdict on `observation`: entirely from
-/// `statistical_design.decision_rule`, never from `objective.bound`. A
-/// `baseline` rule refuses a baseline across a changed protected apparatus
-/// exactly as a ratchet refuses a floor (`same_apparatus`).
-fn gate(
-    plan: &MeasurementPlan,
-    observation: Option<&MeasurementObservation>,
-    collection: Option<&MeasurementCollection>,
-    earlier: &[MeasurementCollection],
-) -> GateOutcome {
-    let (observation, current) = match usable(plan, observation) {
-        Ok(found) => found,
-        Err(reason) => return GateOutcome::Inconclusive(reason),
-    };
-    let Some(rule) = plan
-        .statistical_design
-        .and_then(|design| design.decision_rule)
-    else {
-        return GateOutcome::Inconclusive(InconclusiveReason::NoDecisionRule);
-    };
-    let baseline_value = match rule.reference() {
-        RuleReference::Threshold(_) => None,
-        RuleReference::Baseline { baseline, .. } => {
-            let slice = observation.dimensions.entries();
-            match same_apparatus(plan, observation, collection, earlier)
-                .and_then(|()| gate_baseline(plan, rule, baseline, slice, earlier))
-            {
-                Ok(value) => Some(value),
-                Err(reason) => return GateOutcome::Inconclusive(reason),
-            }
-        }
-    };
-    match rule.holds(current, baseline_value) {
-        Ok(true) => GateOutcome::Pass {
-            current,
-            baseline: baseline_value,
-        },
-        Ok(false) => GateOutcome::Fail {
-            current,
-            baseline: baseline_value,
-        },
-        Err(_) => GateOutcome::Inconclusive(InconclusiveReason::RuleNotEvaluable),
-    }
-}
-
-/// The baseline value `rule`'s reference asks for, over `earlier`'s usable
-/// values of `slice`: the nearest earlier usable value for
-/// `prior-collection`, and the maximum (`gt`/`ge`) or minimum
-/// (`lt`/`le`/`eq`) for `best-seen` — the same pool and the same rule
-/// [`crate::verify`]'s own `baseline` applies, restated here because the
-/// report layer sees one row's `earlier` collections, not the checker's
-/// full, order-attested history. `constant-predictor` and `external-reference`
-/// are not resolvable from `earlier` at all, so both return their own reason
-/// instead of a value (PLAT-1032).
-fn gate_baseline(
-    plan: &MeasurementPlan,
-    rule: DecisionRule,
-    baseline: Baseline,
-    slice: &BTreeMap<String, JsonValue>,
-    earlier: &[MeasurementCollection],
-) -> Result<f64, InconclusiveReason> {
-    let found = match baseline {
-        Baseline::ConstantPredictor => {
-            return Err(InconclusiveReason::ConstantPredictorUnsupported);
-        }
-        Baseline::ExternalReference => return Err(InconclusiveReason::ExternalReferenceUnsupplied),
-        Baseline::PriorCollection => earlier_values(plan, slice, earlier).last(),
-        Baseline::BestSeen => {
-            let values = earlier_values(plan, slice, earlier);
-            match rule.comparator() {
-                Comparator::Gt | Comparator::Ge => values.max_by(|l, r| l.0.total_cmp(&r.0)),
-                Comparator::Lt | Comparator::Le | Comparator::Eq => {
-                    values.min_by(|l, r| l.0.total_cmp(&r.0))
-                }
-            }
-        }
-    };
-    found
-        .map(|(value, _)| value)
-        .ok_or(InconclusiveReason::NoPrior)
 }
