@@ -23,7 +23,8 @@ intake position, and an optional claimed verdict, and reads no file, clock,
 network or environment. It computes no estimate with producer code: it
 recomputes `proportion` and `count` from each observation's `population`, and
 applies the plan's decision rule through engineering-assurance's own
-`DecisionRule::holds` (engineering-assurance FR-021).
+`DecisionRule::holds`, or `DecisionRule::holds_on_interval` when the rule
+states an `interval_level` (engineering-assurance FR-021).
 
 ## Rationale
 
@@ -118,7 +119,7 @@ reads:
 | `reasons` | string[] | every distinct reason code, in the declaration order of the table below; empty exactly when `accept` |
 | `claimed` | string \| null | the claimed verdict, when one was given |
 | `candidate` | string \| null | the collection id decided: the last run in intake order |
-| `decisions` | object[] | one per slice of the candidate: `dimensions`, `estimate`, `estimateBasis` (`recomputed` \| `asserted`), `baseline` (number \| null), `holds` (boolean \| null) |
+| `decisions` | object[] | one per slice of the candidate: `dimensions`, `estimate`, `estimateBasis` (`recomputed` \| `asserted`), `baseline` (number \| null), `holds` (boolean \| null); when the rule states `interval_level` and an interval decided the slice, also `bound`, `boundValue` and `intervalLevel` (FR-108-AC-11), otherwise absent |
 | `findings` | object[] | every reason with where it was found: `reason`, `collectionId` (null for a plan-level reason), `dimensions` (null for a collection- or plan-level reason) |
 | `regressedRuns` | string[] | the runs the rule does not hold for against their own history, in intake order |
 | `orderSource` | string | where the intake order came from, one of the sources above |
@@ -145,6 +146,8 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `constant_predictor_rows_malformed` | inconclusive | one of the run's constant-predictor item observations lacks a non-empty string `item_id`, `family` or `expected`, states a `contested` that is not an array of strings, or repeats another's `item_id` (PLAT-1016) |
 | `constant_predictor_rows_mismatch` | inconclusive | the run's constant-predictor item observations do not number the governed observation's own `population.examined` (PLAT-1016) |
 | `external_reference_unsupplied` | inconclusive | a baseline rule reads `external-reference`, a per-dimension value the checker resolves from a source outside the plan at evaluation time, and the checker has no such source (PLAT-1032) |
+| `interval_unstated` | inconclusive | the plan's rule states `interval_level` and the candidate's observation states no valid `interval` (EA-26) |
+| `interval_level_short` | inconclusive | the candidate's `interval` level is below the rule's `interval_level` (EA-26) |
 | `rule_not_evaluable` | inconclusive | engineering-assurance could not evaluate the rule on these numbers |
 | `unit_unsupported` | inconclusive | a `proportion` observation's unit is not `fraction` or `fraction of …` |
 | `slice_missing` | inconclusive | a slice an earlier run measured under this definition is absent from the candidate |
@@ -177,6 +180,9 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | FR-108-AC-8 | `quoin measurement verify` takes the intake order from `git log --first-parent --diff-filter=A` over the store and reports `orderSource: git-first-parent-add`. Outside a git work tree it reports `none` and says why on stderr; in a shallow clone it reports `git-shallow` and `order_unattested` and says so on stderr; any other git failure fails the command rather than yielding an empty order. | Test (TC-1797, TC-1805) |
 | FR-108-AC-9 | `quoin measurement verify` reads four tamper facts from the store's git history (PLAT-985): a collection this plan governed that was added and later removed (committed, or in the work tree) is `collection_deleted`; a collection's stored file changed after intake added it (a later commit, a delete and re-add under the same id, or an uncommitted edit) is `collection_edited`; each is attributed by the plan ids in its first-added and last-seen content; a run's recorded protected-apparatus digest for this plan disagreeing with `git show <sourceRevision>:<path>` is `apparatus_forged`, and a `sourceRevision` spelled as a git option is never read as one; and the plan's own document changing its `objective`, `estimator`, `decision_rule` or `protected_apparatus` between two revisions sharing a `definition_version` — across a rename, and from the last commit to the work tree — is `definition_changed_without_version_bump`. Each is `false`/empty, not a false positive, when git cannot answer or the history is honest. | Test (TC-1892..TC-1903) |
 | FR-108-AC-10 | A `constant-predictor` baseline is computed from the run being decided: every one of its own observations under `{metric}.constant-predictor-item` (`quoin_measurement::constant_predictor_item_metric`) carrying the same `planId`/`definitionVersion`, grouped by their `dimensions.family`. For each family, the best constant's hit count is the maximum, over every label recorded as some item's `dimensions.expected` or a member of its `dimensions.contested`, of the items whose `expected` equals that label or whose `contested` contains it. The baseline is the sum of each family's best-constant hits over the total item count across every family (MP-222/PLAT-932's size-weighted mean of per-family agreement — see the worked example in `engineering_assurance/skeletons/MeasurementPlan.md`). A run with no such observations is `constant_predictor_rows_absent`; one where any such observation lacks a non-empty string `item_id`, `family` or `expected`, states a `contested` that is not an array of strings, or repeats an `item_id` is `constant_predictor_rows_malformed`; one whose item count is not the governed observation's own `population.examined` is `constant_predictor_rows_mismatch` — no baseline is computed from a partial set. Intake admits an item observation under its governed metric's plan (same id, definition and lifecycle checks, no population minimum); a plan whose own `metric` ends in `.constant-predictor-item` is refused as `QM-PLAN-INVALID`; `compare` leaves item observations out. | Test (TC-1915..TC-1924) |
+| FR-108-AC-11 | When the plan's `decision_rule` declares `interval_level`, each slice of the candidate is decided by engineering-assurance's `DecisionRule::holds_on_interval` (engineering-assurance FR-021-AC-14) with the candidate observation's own `interval` (FR-044-AC-10), never by `DecisionRule::holds` on the point estimate: the rule is judged at the interval's lower bound for `gt` and `ge` and at its upper bound for `lt` and `le`, so a point estimate that passes but whose unfavourable bound fails is `rule_not_met`. A baseline rule's baseline value is still the point estimate of the earlier runs; only the candidate's interval is used, and an earlier run's interval is never read. `method` is never read. Each such slice's entry in `decisions` carries, additively, `bound` (`lower` or `upper`), `boundValue` (the number judged) and `intervalLevel` (the observation's stated level); a slice decided on a point estimate carries none of the three, and the verdict document for a plan with no `interval_level` is byte-identical to the one before this criterion. | Test (TC-1954, TC-1955, TC-1956) |
+| FR-108-AC-12 | Under a plan declaring `interval_level`, a candidate observation with no `interval`, or with one that does not satisfy FR-044-AC-10's shape, is `inconclusive` with `interval_unstated`, and the rule is never judged on the point estimate instead; an `interval` whose `level` is below the plan's is `inconclusive` with `interval_level_short`; an estimate outside its interval (engineering-assurance's `EstimateOutsideInterval`, reachable when a recomputed `proportion` or `count` estimate falls outside the stored interval) is `inconclusive` with `rule_not_evaluable`. A plan whose rule states `interval_level` with an `eq` comparator, or an `interval_level` outside 0 and 1 exclusive, refuses the plan load as `QM-PLAN-INVALID` under FR-108-AC-1, naming the member. | Test (TC-1957, TC-1958) |
+| FR-108-AC-13 | The `engineering-assurance` dependency is repinned by git `rev` to a commit on that repository's main that carries `decision_rule.interval_level`, `Interval` and `DecisionRule::holds_on_interval`; it is not pinned by tag, and no tag is required. The pin moves as FR-016-AC-3 states, in `rust/Cargo.toml`, `default-modules.yaml` and `quoin-cli`'s retained-catalog fixture registry together. The repin also brings that release's `margin_mode`, its per-capability Cargo features (`default = []`) and its `exact-numbers` feature; each quoin crate names the engineering-assurance features it uses explicitly and enables neither implicitly, and a plan's `margin_mode` is read only through engineering-assurance's own types. `cargo deny check bans` passes under `multiple-versions = "deny"`: the repin adds no `skip` entry to `rust/deny.toml`, and removes any entry it makes unneeded. | Test (TC-1959) |
 
 ## Leaf re-scoring and the asserted-only share (PLAT-961, PLAT-985)
 
@@ -325,8 +331,9 @@ not supported.
   command's I/O is the store read and the `git` calls for the intake order
   and the tamper facts (PLAT-985).
 - **FR-108-CON-2**: The decision rule's comparator and margin semantics are
-  engineering-assurance's; the checker calls `DecisionRule::holds` and states
-  no comparison of its own.
+  engineering-assurance's; the checker calls `DecisionRule::holds`, or
+  `DecisionRule::holds_on_interval` when the rule states `interval_level`, and
+  states no comparison of its own.
 - **FR-108-CON-3**: `rawEvidence` is not read: no schema says what its
   members mean.
 
