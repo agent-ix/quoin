@@ -1,9 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `test_asserts_intent` variants T1, T2 and T3, and the trace check TC
+//! `test_asserts_intent` variants T1, T2, T3 and T4, and the trace check TC
 //! (PLAT-1030, parent PLAT-1024; pre-registered in MP-242, T3 in its
-//! "Round 2" section).
+//! "Round 2" section; T4 in RES-31).
+//!
+//! # T4, clause coverage
+//!
+//! T3 asks whether any one assertion checks the whole criterion. On a
+//! criterion with several clauses that misses a test covering one clause
+//! and flags a test covering each clause with its own assertion. T4 cuts the
+//! criterion into clauses in code ([`criterion_clauses`]) and asks, per
+//! clause, whether the listed assertions together check it ([`T4`],
+//! [`derive_clause_coverage`]); `yes` needs every clause covered.
 //!
 //! # T3, round 2
 //!
@@ -73,17 +82,18 @@ use std::fmt::Write as _;
 use std::sync::LazyLock;
 
 use regex::Regex;
+use serde_json::{Value, json};
 use typesafe_sdk_questions::{
     NoulCriteria, Question, Questions, choice, noul, noul_with, questions,
 };
 
-use crate::eval_v2_support::corpus::{KindGroup, Row, TruthKind};
+use crate::eval_v2_support::corpus::{KindGroup, Row, TruthAnswer, TruthKind};
 use crate::eval_v2_support::keys::{KEYS, Mode, NO, YES};
 use crate::eval_v2_support::metrics::{Scored, render, scored};
-use crate::eval_v2_support::units::{Language, mask_for};
+use crate::eval_v2_support::units::{Language, is_script_path, mask_for, mask_script};
 use crate::eval_v2_support::variant::{
-    Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, RunOutput, T0,
-    Variant, noul_prediction, request, state, whole_row,
+    Answered, Artifact, Ask, Prediction, Predictions, RawAnswer, RawAnswers, RowResult, RunOutput,
+    T0, Variant, noul_prediction, request, state, whole_row,
 };
 use crate::gap_semantic_support::{Variant as BatteryShape, question_set as battery_questions};
 
@@ -727,8 +737,142 @@ fn failure_span(masked: &[u8], at: usize) -> Option<(usize, usize)> {
     }
 }
 
+/// A TypeScript/JavaScript assertion's opening (T3 v4): an `expect(..)`
+/// chain (Jest, Vitest, chai) or a `node:assert` call: `assert(..)`,
+/// `assert.equal(..)`, `assert.strictEqual(..)`, `assert.deepStrictEqual(..)`,
+/// `assert.throws(..)`, `assert.strict.equal(..)`. A member call
+/// (`x.expect(..)`, `x.assert(..)`) is not one; [`script_spans`] drops it.
+static SCRIPT_ASSERTION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\b(?:expect|assert(?:\s*\.\s*\w+)*)\s*\(")
+        .unwrap_or_else(|error| unreachable!("a literal regex compiles: {error}"))
+});
+
+/// `text` masked as the test at `path` is read: [`mask_script`] for a
+/// TypeScript or JavaScript file, [`mask_for`] otherwise.
+fn mask_test(path: &str, text: &str) -> Vec<u8> {
+    if is_script_path(path) {
+        mask_script(text)
+    } else {
+        mask_for(path, text)
+    }
+}
+
+/// Whether the masked byte `byte` can continue a JavaScript identifier.
+const fn is_script_ident(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'$'
+}
+
+/// The last index before `at` that is not whitespace, in masked bytes.
+fn previous_token(masked: &[u8], at: usize) -> Option<usize> {
+    (0..at)
+        .rev()
+        .find(|index| !masked.get(*index).is_some_and(u8::is_ascii_whitespace))
+}
+
+/// Where a script assertion opening at `at` begins: at the match, or at an
+/// `await`, `return` or `void` directly before it.
+fn script_statement_start(masked: &[u8], at: usize) -> usize {
+    let Some(last) = previous_token(masked, at) else {
+        return at;
+    };
+    let head = masked.get(..=last).unwrap_or_default();
+    for keyword in [b"await".as_slice(), b"return", b"void"] {
+        if head.ends_with(keyword) {
+            let start = head.len() - keyword.len();
+            let standalone = !start
+                .checked_sub(1)
+                .and_then(|before| masked.get(before))
+                .copied()
+                .is_some_and(is_script_ident);
+            if standalone {
+                return start;
+            }
+        }
+    }
+    at
+}
+
+/// Where the script statement from `from` ends (exclusive), in masked
+/// bytes: after its `;`, at a `,` outside brackets (an argument list), at
+/// the `)`, `]` or `}` that closes what holds it (an arrow callback's body),
+/// or at a line break outside brackets unless the next line continues the
+/// chain with a `.` (a statement with no `;`).
+fn script_statement_end(masked: &[u8], from: usize) -> usize {
+    let mut depth = 0usize;
+    let mut at = from;
+    while let Some(byte) = masked.get(at) {
+        match byte {
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' | b',' if depth == 0 => return at,
+            b')' | b']' | b'}' => depth -= 1,
+            b';' if depth == 0 => return at + 1,
+            b'\n' if depth == 0 => {
+                let next = skip_whitespace(masked, at, masked.len());
+                if masked.get(next) != Some(&b'.') {
+                    return at;
+                }
+            }
+            _ => {}
+        }
+        at += 1;
+    }
+    masked.len()
+}
+
+/// Whether the `expect(` whose `(` is at `open` is followed, before `end`,
+/// by a member chain (`.toBe(..)`, `.rejects.toThrow(..)`, chai's
+/// `.to.be.true`). A bare `expect(x)` checks nothing.
+fn has_matcher(masked: &[u8], open: usize, end: usize) -> bool {
+    let mut depth = 0usize;
+    let close = (open..end).find(|index| match masked.get(*index) {
+        Some(b'(' | b'[' | b'{') => {
+            depth += 1;
+            false
+        }
+        Some(b')' | b']' | b'}') => {
+            depth = depth.saturating_sub(1);
+            depth == 0
+        }
+        _ => false,
+    });
+    close.is_some_and(|close| {
+        let next = skip_whitespace(masked, close + 1, end);
+        masked.get(next) == Some(&b'.')
+    })
+}
+
+/// The assertion statements of a TypeScript or JavaScript test, as masked
+/// byte spans in source order (T3 v4). An `expect(..)` chain ending in a
+/// matcher is one statement, and so is a `node:assert` call, each with an
+/// `await`, `return` or `void` before it; one nested inside another is part
+/// of it.
+fn script_spans(masked: &[u8]) -> Vec<(usize, usize)> {
+    let masked_text = String::from_utf8_lossy(masked);
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    for found in SCRIPT_ASSERTION.find_iter(&masked_text) {
+        let previous_end = spans.last().map_or(0, |(_, end)| *end);
+        if found.start() < previous_end {
+            continue;
+        }
+        let member = previous_token(masked, found.start())
+            .and_then(|before| masked.get(before))
+            .is_some_and(|byte| *byte == b'.' || *byte == b'$');
+        if member {
+            continue;
+        }
+        let end = script_statement_end(masked, found.start()).max(found.end());
+        let open = found.end() - 1;
+        if found.as_str().starts_with("expect") && !has_matcher(masked, open, end) {
+            continue;
+        }
+        let start = script_statement_start(masked, found.start());
+        spans.push((start.max(previous_end), end));
+    }
+    spans
+}
+
 /// Which bytes of `body` lie inside a comment or a string or char literal,
-/// as [`mask_for`] reads them. Accurate for whitespace bytes, the only ones
+/// as [`mask_test`] reads them. Accurate for whitespace bytes, the only ones
 /// [`collapse_code_whitespace`] asks about: `body` is masked with every
 /// space and tab swapped for a control byte first, so a whitespace byte the
 /// mask leaves unchanged is code, and one it blanks is inside a literal.
@@ -737,7 +881,7 @@ fn literal_bytes(path: &str, body: &str) -> Vec<bool> {
         .chars()
         .map(|ch| if ch == ' ' || ch == '\t' { '\u{1}' } else { ch })
         .collect();
-    let blanked = mask_for(path, &marked);
+    let blanked = mask_test(path, &marked);
     marked
         .bytes()
         .zip(blanked)
@@ -793,9 +937,26 @@ fn collapse_code_whitespace(body: &str, literal: &[bool], start: usize, end: usi
 /// first ([`mask_for`]), so an `assert!` inside a string or a comment is not
 /// one; an assertion nested inside another (`assert_eq!(f().unwrap_err(),
 /// ..)`) is part of the outer one. The language is `path`'s: Python for
-/// `.py`, Rust otherwise. Code, not Jev, does this: T3 asks Jev only about
-/// the statements found.
+/// `.py`, TypeScript/JavaScript for `.ts`, `.tsx`, `.js`, `.mjs` and `.cjs`
+/// ([`script_spans`], T3 v4), Rust otherwise. Code, not Jev, does this: T3
+/// asks Jev only about the statements found.
 pub(crate) fn extract_assertions(path: &str, body: &str) -> Vec<String> {
+    let spans = if is_script_path(path) {
+        script_spans(&mask_script(body))
+    } else {
+        native_spans(path, body)
+    };
+    let literal = literal_bytes(path, body);
+    spans
+        .into_iter()
+        .map(|(start, end)| collapse_code_whitespace(body, &literal, start, end))
+        .filter(|text| !text.is_empty())
+        .collect()
+}
+
+/// The assertion statements of a Rust or Python test, as masked byte spans
+/// in source order: see [`RUST_ASSERTION`] and [`PYTHON_ASSERTION`].
+fn native_spans(path: &str, body: &str) -> Vec<(usize, usize)> {
     let python = Language::of_path(path) == Some(Language::Python);
     let masked = mask_for(path, body);
     let masked_text = String::from_utf8_lossy(&masked);
@@ -833,12 +994,7 @@ pub(crate) fn extract_assertions(path: &str, body: &str) -> Vec<String> {
         };
         spans.push((start.max(previous_end), end.max(found.end())));
     }
-    let literal = literal_bytes(path, body);
     spans
-        .into_iter()
-        .map(|(start, end)| collapse_code_whitespace(body, &literal, start, end))
-        .filter(|text| !text.is_empty())
-        .collect()
 }
 
 /// The assertions T3 lists for `row`: [`extract_assertions`] over its test,
@@ -981,10 +1137,14 @@ fn t3_derive(row: &Row, answered: &[Answered]) -> Predictions {
 /// longer merge. v3 asks v2's question over a wider list: `panic!` and
 /// proptest `TestCaseError::fail` failure points, Python mock and
 /// `np.testing` `assert_*` calls and an `assert` after a `:`; and string
-/// literals and comments in a listed assertion stay verbatim.
+/// literals and comments in a listed assertion stay verbatim. v4 asks v3's
+/// question and lists TypeScript and JavaScript assertions too
+/// ([`script_spans`]): before it, a `.ts` or `.js` test was read as Rust,
+/// listed nothing, and was `no` with no call. Rust and Python listings are
+/// unchanged.
 pub(crate) const T3: Variant = Variant {
     id: "T3",
-    version: 3,
+    version: 4,
     summary: "assertion check: code lists the test's assertions, one strict noul per \
               assertion (alone, would it fail on a wrong outcome); yes iff max P >= 0.5",
     modes: TEST_MODES,
@@ -992,6 +1152,302 @@ pub(crate) const T3: Variant = Variant {
     grades: &[TEST_ASSERTS_INTENT],
     asks: t3_asks,
     derive: t3_derive,
+};
+
+// ---------------------------------------------------------------------------
+// T4: clause coverage (RES-31)
+// ---------------------------------------------------------------------------
+
+/// The state field T4 lists the criterion's clauses in, `C1` .. `Cn`.
+pub(crate) const CLAUSES_FIELD: &str = "criterion_clauses";
+
+/// T4 lists at most this many clauses; the overflow joins the last, so no
+/// clause text is dropped.
+pub(crate) const MAX_CLAUSES: usize = 8;
+
+/// `text` cut at every top-level point `separator` names, outside backticks
+/// and parentheses. `separator(text, at)` is the length of the separator
+/// starting at byte `at`, or `None`; every separator starts with an ASCII
+/// byte and spans ASCII bytes, so each cut is on a char boundary.
+fn split_top_level(text: &str, separator: impl Fn(&str, usize) -> Option<usize>) -> Vec<&str> {
+    let bytes = text.as_bytes();
+    let mut pieces = Vec::new();
+    let (mut start, mut at, mut depth, mut code) = (0usize, 0usize, 0usize, false);
+    while let Some(byte) = bytes.get(at) {
+        match byte {
+            b'`' => code = !code,
+            b'(' if !code => depth += 1,
+            b')' if !code => depth = depth.saturating_sub(1),
+            _ if !code && depth == 0 => {
+                if let Some(len) = separator(text, at) {
+                    pieces.push(text.get(start..at).unwrap_or_default());
+                    at += len;
+                    start = at;
+                    continue;
+                }
+            }
+            _ => {}
+        }
+        at += 1;
+    }
+    pieces.push(text.get(start..).unwrap_or_default());
+    pieces
+}
+
+/// A sentence end at `at`: a `.`, whitespace, then an uppercase letter or a
+/// backtick. The length covers the `.` and the whitespace.
+fn sentence_end(text: &str, at: usize) -> Option<usize> {
+    let rest = text.get(at..)?.strip_prefix('.')?;
+    let next = rest.trim_start();
+    let gap = rest.len() - next.len();
+    let opens = next
+        .chars()
+        .next()
+        .is_some_and(|ch| ch.is_uppercase() || ch == '`');
+    (gap > 0 && opens).then_some(1 + gap)
+}
+
+/// A `;` at `at`.
+fn semicolon(text: &str, at: usize) -> Option<usize> {
+    text.get(at..)?.starts_with(';').then_some(1)
+}
+
+/// A serial list's last `, and ` at `at`.
+fn and_conjunct(text: &str, at: usize) -> Option<usize> {
+    const SEPARATOR: &str = ", and ";
+    text.get(at..)?
+        .starts_with(SEPARATOR)
+        .then_some(SEPARATOR.len())
+}
+
+/// A list comma, `, `, at `at`. A comma with no space after it (`1,000`) is
+/// not one.
+fn list_comma(text: &str, at: usize) -> Option<usize> {
+    text.get(at..)?.starts_with(", ").then_some(2)
+}
+
+/// `piece` cut into its conjuncts: at each top-level `, and `, with the
+/// comma-separated items before it, which are the same serial list. A piece
+/// with no `, and ` is one conjunct.
+fn conjuncts(piece: &str) -> Vec<&str> {
+    let segments = split_top_level(piece, and_conjunct);
+    let Some((last, items)) = segments.split_last() else {
+        return Vec::new();
+    };
+    if items.is_empty() {
+        return vec![*last];
+    }
+    items
+        .iter()
+        .flat_map(|segment| split_top_level(segment, list_comma))
+        .chain(std::iter::once(*last))
+        .collect()
+}
+
+/// A clause as listed: trimmed, without the `.` that ended its sentence.
+fn tidy(clause: &str) -> String {
+    let clause = clause.trim();
+    clause.strip_suffix('.').unwrap_or(clause).trim().to_owned()
+}
+
+/// The clauses of an acceptance criterion, in order, for T4. Deterministic
+/// code, no Jev.
+///
+/// The text is cut at every `;` and every sentence end (`. ` before an
+/// uppercase letter or a backtick), then each piece at a top-level `, and `
+/// into its conjuncts, together with the comma-separated items before it in
+/// the same serial list; a `; and` joins the piece before it the same way.
+/// Nothing inside backticks or parentheses is a cut point. Pieces are
+/// trimmed and empty ones dropped; past [`MAX_CLAUSES`] the overflow joins
+/// the last. A criterion with no cut point is one clause.
+///
+/// Known limitation of v1, kept because T4@v1 was measured with it: every
+/// `, ` before a top-level `, and ` is a cut, so a leading condition or an
+/// aside becomes its own clause ("When the file is missing, the CLI exits 2,
+/// and prints an error" yields "When the file is missing" as a clause). A
+/// clause that states no outcome can pull `min P` below [`TAU`] and turn a
+/// row into a false `no`. Abbreviations ("e.g. X") also end a sentence.
+/// Changing either changes T4's requests, so it is a new version.
+pub(crate) fn criterion_clauses(text: &str) -> Vec<String> {
+    let mut clauses: Vec<String> = Vec::new();
+    for sentence in split_top_level(text, sentence_end) {
+        let mut pieces: Vec<Vec<&str>> = Vec::new();
+        for piece in split_top_level(sentence, semicolon) {
+            let piece = piece.trim();
+            if let Some(rest) = piece.strip_prefix("and ") {
+                // `A, B; and C`: the piece before is the list's other items.
+                if let Some(before) = pieces.last_mut()
+                    && let [whole] = before.as_slice()
+                {
+                    *before = split_top_level(whole, list_comma);
+                }
+                pieces.push(conjuncts(rest));
+            } else {
+                pieces.push(conjuncts(piece));
+            }
+        }
+        clauses.extend(
+            pieces
+                .into_iter()
+                .flatten()
+                .map(tidy)
+                .filter(|clause| !clause.is_empty()),
+        );
+    }
+    if clauses.len() > MAX_CLAUSES {
+        let overflow = clauses.split_off(MAX_CLAUSES - 1).join("; ");
+        clauses.push(overflow);
+    }
+    clauses
+}
+
+/// The clauses T4 lists for `row`: [`criterion_clauses`] over its
+/// acceptance criterion, or its statement when it has none.
+pub(crate) fn row_clauses(row: &Row) -> Vec<String> {
+    let requirement = &row.requirement;
+    let text = requirement
+        .ac_text
+        .as_deref()
+        .filter(|text| !text.trim().is_empty())
+        .unwrap_or(&requirement.statement);
+    criterion_clauses(text)
+}
+
+/// The clause labels: `C1` .. `Cn`.
+pub(crate) fn clause_label(index: usize) -> String {
+    format!("C{}", index + 1)
+}
+
+/// T4's questions for `count` clauses: one `noul` per clause, keyed by its
+/// label (`C1` .. `Cn`).
+pub(crate) fn clause_questions(count: usize) -> Questions {
+    questions((0..count).map(|index| {
+        let label = clause_label(index);
+        let question = noul_with(
+            format!(
+                "Judge exactly one claim about clause {label} in `{CLAUSES_FIELD}`, a part of \
+                 the acceptance criterion in `ac_text`. The claim: at least one assertion in \
+                 `{ASSERTIONS_FIELD}`, alone or together with the others, checks the outcome \
+                 clause {label} states, strictly enough that the test would fail if the system \
+                 did not produce that outcome. Answer no when no assertion addresses this \
+                 clause; when the assertions that address it check only that a call completes, \
+                 a presence, non-empty or bound where the clause states an exact value, or a \
+                 value the test set up itself; or when they check a different case than the \
+                 clause names."
+            ),
+            NoulCriteria {
+                yes: Some(
+                    format!(
+                        "Some assertion would fail if clause {label}'s outcome did not happen."
+                    )
+                    .into(),
+                ),
+                no: Some(
+                    format!("No assertion would fail if clause {label}'s outcome did not happen.")
+                        .into(),
+                ),
+            },
+        );
+        (label, question)
+    }))
+}
+
+/// `(label, text)` pairs as a JSON object, `{label: text, ..}`.
+fn labelled(items: &[String], label: fn(usize) -> String) -> serde_json::Value {
+    serde_json::Value::Object(
+        items
+            .iter()
+            .enumerate()
+            .map(|(index, text)| (label(index), text.clone().into()))
+            .collect(),
+    )
+}
+
+/// One ask carrying T3's state (the assertions in [`ASSERTIONS_FIELD`]) and
+/// the clauses in [`CLAUSES_FIELD`], or none when the test has no assertion:
+/// that row is `no` in code, as in T3.
+fn t4_asks(row: &Row) -> Vec<Ask> {
+    let assertions = row_assertions(row);
+    let clauses = row_clauses(row);
+    if assertions.is_empty() || clauses.is_empty() {
+        return Vec::new();
+    }
+    let mut row_state = state(row);
+    if let serde_json::Value::Object(fields) = &mut row_state {
+        fields.insert(
+            ASSERTIONS_FIELD.to_owned(),
+            labelled(&assertions, assertion_label),
+        );
+        fields.insert(CLAUSES_FIELD.to_owned(), labelled(&clauses, clause_label));
+    }
+    vec![Ask {
+        unit: None,
+        request: request(row_state, clause_questions(clauses.len())),
+    }]
+}
+
+/// T4's derive rule over `count` asked clauses and the one response:
+/// `P(yes)` is the lowest `P(Ck)` over the clauses, `test_asserts_intent`
+/// is `yes` iff `P(yes) >= TAU`, the confidence is `P(yes)` for `yes` and
+/// `1 - P(yes)` for `no`, and `P(yes)` is the ordinal Bar D reads. With
+/// `count == 0` nothing was asked: `no`, `P(yes) = 0`, confidence 1.
+///
+/// # Errors
+/// When a clause's answer is missing, not a `noul`, or not a probability in
+/// `[0, 1]`, or when the response answers a label that was not asked.
+pub(crate) fn derive_clause_coverage(
+    count: usize,
+    answers: &RawAnswers,
+) -> Result<Prediction, String> {
+    let labels: Vec<String> = (0..count).map(clause_label).collect();
+    if let Some(stray) = answers.keys().find(|key| !labels.contains(key)) {
+        return Err(format!("`{stray}`: answered, but no such clause was asked"));
+    }
+    let mut p_all = if count == 0 { 0.0f64 } else { 1.0f64 };
+    for label in &labels {
+        p_all = p_all.min(noul_probability(answers, label)?);
+    }
+    let yes = count > 0 && p_all >= TAU;
+    Ok(Prediction {
+        answer: if yes { YES } else { NO }.to_owned(),
+        confidence: Some(if yes { p_all } else { 1.0 - p_all }),
+        ordinal: Some(p_all),
+    })
+}
+
+/// How many clauses T4 asked about for `row`: none when its test has no
+/// assertion.
+fn t4_count(row: &Row) -> usize {
+    if row_assertions(row).is_empty() {
+        0
+    } else {
+        row_clauses(row).len()
+    }
+}
+
+fn t4_derive(row: &Row, answered: &[Answered]) -> Predictions {
+    let prediction = loudly(
+        row,
+        derive_clause_coverage(t4_count(row), &whole_row(answered)),
+    );
+    Predictions::from([(TEST_ASSERTS_INTENT, prediction)])
+}
+
+/// T4: code cuts the criterion into clauses ([`criterion_clauses`]) and
+/// lists the test's assertions as T3 does; Jev judges, per clause, whether
+/// some assertion, alone or with the others, would fail if that clause's
+/// outcome did not happen. `yes` iff the lowest `P(Ck) >= 0.5`, so every
+/// clause must be covered, and a clause may be covered by any assertion.
+pub(crate) const T4: Variant = Variant {
+    id: "T4",
+    version: 1,
+    summary: "clause coverage: code cuts the criterion into clauses, one noul per clause (would \
+              some assertion fail without its outcome); yes iff min P >= 0.5",
+    modes: TEST_MODES,
+    references: &[Artifact::Test],
+    grades: &[TEST_ASSERTS_INTENT],
+    asks: t4_asks,
+    derive: t4_derive,
 };
 
 // ---------------------------------------------------------------------------
@@ -1212,7 +1668,7 @@ fn is_trace_check(variant: &Variant) -> bool {
 /// cassette. T0 is not one of them. It is PLAT-1027's shared baseline, which
 /// other experiments run too, so a run of T0 without any of these needs no
 /// cassette (PR #623 re-review L3).
-pub(crate) const MP_242: [Variant; 7] = [TC_RT, TC_RC, TC_RTC, T0_RT, T1, T2, T3];
+pub(crate) const MP_242: [Variant; 8] = [TC_RT, TC_RC, TC_RTC, T0_RT, T1, T2, T3, T4];
 
 /// Refuses a live run of an MP-242 variant with no cassette. A malformed
 /// response stops the run (see [`loudly`]); with a recording cassette every
@@ -1704,4 +2160,84 @@ fn render_tc(out: &mut String, rows: &[Row], output: &RunOutput, tc: &[&Variant]
     );
     let d = bar_d(rows, output, tc, TRACE_CORRECT).unwrap_or_else(|error| panic!("Bar D: {error}"));
     render_bar_d(out, &names, TRACE_CORRECT, &d);
+}
+
+// ---------------------------------------------------------------------------
+// Per-row dump (QUOIN_JEV_INTENT_OUT)
+// ---------------------------------------------------------------------------
+
+/// One JSON line per row per variant in `variants` that grades
+/// `test_asserts_intent` (the T variants), for reading rows by hand: the
+/// variant's label, the row's id and mode, the assertions T3 or T4 listed
+/// with each one's `P` (empty for a variant that lists none, and `p` null
+/// for an assertion that was not answered, as every T4 one is), the clauses
+/// T4 asked about with each one's `P` (empty for every other variant, and
+/// for a T4 row asked nothing), the derived prediction (`answer`,
+/// `confidence`, `p_yes`; null for an abstention), and the row's truth label
+/// (null when it has none).
+pub(crate) fn dump(rows: &[Row], output: &RunOutput, variants: &[&Variant]) -> Vec<String> {
+    let by_id: BTreeMap<&str, &Row> = rows.iter().map(|row| (row.id.as_str(), row)).collect();
+    let mut lines = Vec::new();
+    for variant in variants
+        .iter()
+        .filter(|variant| variant.grades.contains(&TEST_ASSERTS_INTENT))
+    {
+        let label = variant.label();
+        for result in output.results.iter().filter(|r| r.variant == label) {
+            let Some(row) = by_id.get(result.row_id.as_str()) else {
+                continue;
+            };
+            lines.push(intent_line(variant, row, result).to_string());
+        }
+    }
+    lines
+}
+
+/// One row's line for [`dump`].
+fn intent_line(variant: &Variant, row: &Row, result: &RowResult) -> Value {
+    let answers = whole_row(&result.answered);
+    let listed = |items: Vec<String>, label: fn(usize) -> String| -> Vec<Value> {
+        items
+            .into_iter()
+            .enumerate()
+            .map(|(index, text)| {
+                let label = label(index);
+                let p = match answers.get(&label) {
+                    Some(RawAnswer::Noul(p)) => Some(*p),
+                    _ => None,
+                };
+                json!({"label": label, "text": text, "p": p})
+            })
+            .collect()
+    };
+    let assertions = if variant.id == T3.id || variant.id == T4.id {
+        listed(row_assertions(row), assertion_label)
+    } else {
+        Vec::new()
+    };
+    let clauses = if variant.id == T4.id && t4_count(row) > 0 {
+        listed(row_clauses(row), clause_label)
+    } else {
+        Vec::new()
+    };
+    let prediction = result
+        .predictions
+        .get(TEST_ASSERTS_INTENT)
+        .map(|p| json!({"answer": p.answer, "confidence": p.confidence, "p_yes": p.ordinal}));
+    let truth = row.truth.get(TEST_ASSERTS_INTENT).map(|truth| {
+        json!({
+            "answer": truth.answer.label(),
+            "kind": truth.kind,
+            "alternatives": truth.alternatives.iter().map(TruthAnswer::label).collect::<Vec<_>>(),
+        })
+    });
+    json!({
+        "variant": variant.label(),
+        "row_id": row.id,
+        "mode": row.mode.as_str(),
+        "assertions": assertions,
+        "clauses": clauses,
+        "prediction": prediction,
+        "truth": truth,
+    })
 }
