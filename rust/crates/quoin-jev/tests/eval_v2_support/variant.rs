@@ -71,7 +71,7 @@ use super::corpus::Row;
 use super::keys::{Mode, NO, YES};
 use super::units::{Unit, split_units};
 use super::variants::battery::Battery;
-use super::variants::intent::{T0_RT, T1, T2, T3, TC_RC, TC_RT, TC_RTC};
+use super::variants::intent::{T0_RT, T1, T2, T3, T4, TC_RC, TC_RT, TC_RTC};
 use super::variants::{exceeds, refusal, severity, soundness, statement};
 use crate::gap_semantic_support::{
     Variant as BatteryShape, nearest_rubric_label, question_set as battery_questions,
@@ -273,6 +273,8 @@ pub(crate) const REGISTRY: &[Variant] = &[
     T2,
     // PLAT-1024 round 2 (MP-242 "Round 2"): assertion selection.
     T3,
+    // RES-31: clause coverage.
+    T4,
     // PLAT-1031 criterion-soundness variants; bars in spec/assurance/MP-243.
     soundness::K1,
     soundness::K2,

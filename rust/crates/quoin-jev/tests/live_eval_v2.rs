@@ -27,7 +27,7 @@
 //! | `QUOIN_JEV_CASSETTE` | a cassette file (PLAT-977): answers are recorded there, and re-grading replays them |
 //! | `QUOIN_JEV_CASSETTE_MODE` | `record` (default: replay what is on file, call live for the rest) or `replay` (no network, no key) |
 //! | `QUOIN_JEV_MODEL` | the pinned model; required with a cassette, and when set every answer must come from it |
-//! | `QUOIN_JEV_INTENT_OUT` | dev only: a file to write one JSON line per row per T variant (every variant grading `test_asserts_intent`): `variant@version`, row id, the assertions T3 listed with each one's `P`, the derived prediction and confidence, and the truth label |
+//! | `QUOIN_JEV_INTENT_OUT` | dev only: a file to write one JSON line per row per T variant (every variant grading `test_asserts_intent`): `variant@version`, row id, the assertions T3 or T4 listed with each one's `P`, the clauses T4 asked about with each one's `P`, the derived prediction and confidence, and the truth label |
 //!
 //! With no cassette the run goes through `quoin_jev::client::production`,
 //! exactly like the sibling live files. A cassette in record mode wraps the

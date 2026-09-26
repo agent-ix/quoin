@@ -45,7 +45,8 @@ use eval_v2_support::variants::exceeds::{
     e5_units, necessity_outcome, trivial_reason,
 };
 use eval_v2_support::variants::intent::{
-    self, ASSERTIONS_FIELD, T3, derive_assertion_selection, extract_assertions,
+    self, ASSERTIONS_FIELD, CLAUSES_FIELD, T3, T4, criterion_clauses, derive_assertion_selection,
+    derive_clause_coverage, extract_assertions,
 };
 
 // ---------------------------------------------------------------------------
@@ -389,6 +390,7 @@ async fn tc_1024_t3_script_row_is_asked_and_dumped() {
                 {"label": "A1", "text": "expect(r.code).toBe('CORE_REFUSED');", "p": 0.8},
                 {"label": "A2", "text": "assert.ok(r);", "p": 0.8},
             ],
+            "clauses": [],
             "prediction": {"answer": "yes", "confidence": 0.8, "p_yes": 0.8},
             "truth": {"answer": "yes", "kind": "mechanical", "alternatives": []},
         })
@@ -551,6 +553,243 @@ fn tc_1024_t3_never_mentions_code() {
     };
     let found = wording_violations(&misapplied, rc);
     assert!(found.iter().any(|v| v.contains("the test")), "{found:#?}");
+}
+
+// ---------------------------------------------------------------------------
+// T4: clause coverage (RES-31)
+// ---------------------------------------------------------------------------
+
+/// Provenance: RES-31. A criterion is cut at `;`, at sentence ends, and at a
+/// serial list's `, and ` with the list's earlier items; nothing inside
+/// backticks or parentheses is a cut point; a criterion with no cut point is
+/// one clause; past eight the overflow joins the last.
+#[test]
+fn tc_1024_t4_cuts_a_criterion_into_clauses() {
+    assert_eq!(
+        criterion_clauses(
+            "Cargo publication is disabled, both license texts are present, and CI has no \
+             automatic trigger."
+        ),
+        [
+            "Cargo publication is disabled",
+            "both license texts are present",
+            "CI has no automatic trigger",
+        ]
+    );
+    assert_eq!(
+        criterion_clauses("Library source contains no `unsafe` block."),
+        ["Library source contains no `unsafe` block"]
+    );
+    assert_eq!(criterion_clauses("A; B. C"), ["A", "B", "C"]);
+    // Backticks and parentheses hide every cut point; a sentence may open
+    // with a backtick.
+    assert_eq!(
+        criterion_clauses(
+            "`quoin check` prints `a; b. C, and d` (one line; no colour, and no bell). `quoin` \
+             exits 0."
+        ),
+        [
+            "`quoin check` prints `a; b. C, and d` (one line; no colour, and no bell)",
+            "`quoin` exits 0",
+        ]
+    );
+    // `; and` closes a serial list too; a lowercase word after `. ` and a
+    // comma with no `, and ` are not cut points.
+    assert_eq!(
+        criterion_clauses("The file is read, parsed; and cached. e.g. twice, once."),
+        ["The file is read", "parsed", "cached. e.g. twice, once"]
+    );
+    let many = (1..=10)
+        .map(|n| format!("P{n}"))
+        .collect::<Vec<_>>()
+        .join("; ");
+    assert_eq!(
+        criterion_clauses(&many),
+        ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8; P9; P10"]
+    );
+    assert!(criterion_clauses(" ; . ").is_empty());
+}
+
+/// `(per-clause P, expected answer, confidence, ordinal)`.
+type CoverageCase = (&'static [(&'static str, f64)], &'static str, f64, f64);
+
+/// Provenance: RES-31. `P(yes)` is the lowest per-clause `P`: every clause
+/// must be covered, and one uncovered clause makes the row `no`. Nothing
+/// asked is `no` at confidence 1; a missing, stray or out-of-range answer is
+/// an error.
+#[test]
+fn tc_1024_t4_yes_needs_every_clause() {
+    let cases: [CoverageCase; 3] = [
+        (&[("C1", 0.9), ("C2", 0.6), ("C3", 0.8)], "yes", 0.6, 0.6),
+        (&[("C1", 0.95), ("C2", 0.1), ("C3", 0.9)], "no", 0.9, 0.1),
+        (&[("C1", 0.5), ("C2", 0.5), ("C3", 0.5)], "yes", 0.5, 0.5),
+    ];
+    for (answers, answer, confidence, ordinal) in cases {
+        let prediction = derive_clause_coverage(3, &nouls(answers)).unwrap();
+        assert_eq!(prediction.answer, answer, "{answers:?}");
+        assert!(close(prediction.confidence, confidence), "{prediction:?}");
+        assert!(close(prediction.ordinal, ordinal), "{prediction:?}");
+    }
+    let nothing = derive_clause_coverage(0, &RawAnswers::new()).unwrap();
+    assert_eq!(
+        nothing,
+        Prediction {
+            answer: "no".to_owned(),
+            confidence: Some(1.0),
+            ordinal: Some(0.0),
+        }
+    );
+    for (answers, expected) in [
+        (nouls(&[("C1", 0.6)]), "`C2`: no answer in the response"),
+        (
+            nouls(&[("C1", 0.6), ("C2", -0.1)]),
+            "`C2`: probability -0.1 is outside [0, 1]",
+        ),
+        (
+            nouls(&[("C1", 0.6), ("C2", 0.7), ("A1", 0.9)]),
+            "`A1`: answered, but no such clause was asked",
+        ),
+    ] {
+        let error = derive_clause_coverage(2, &answers).unwrap_err();
+        assert!(error.starts_with(expected), "{expected:?}: got {error:?}");
+    }
+}
+
+/// A fake Jev for T4: clause `Ck` answers the k-th of `clause_p`.
+struct ClauseJev {
+    clause_p: Vec<f64>,
+    calls: AtomicUsize,
+}
+
+#[async_trait]
+impl Transport for ClauseJev {
+    async fn send(&self, request: Request) -> SdkResult<RawResponse> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        let body: Value = serde_json::from_str(request.body.as_deref().unwrap()).unwrap();
+        let mut answers = serde_json::Map::new();
+        for key in body["questions"].as_object().unwrap().keys() {
+            let k: usize = key.strip_prefix('C').unwrap().parse().unwrap();
+            answers.insert(
+                key.clone(),
+                json!({"type": "noul", "noul": self.clause_p[k - 1]}),
+            );
+        }
+        Ok(RawResponse {
+            status: 200,
+            headers: Headers::new(),
+            body: json!({"model": "jev-fake", "answers": answers,
+                         "usage": {"input_tokens": 1, "output_tokens": 1}})
+            .to_string(),
+        })
+    }
+}
+
+/// Provenance: RES-31. A T4 row is asked once, one `noul` per clause, with
+/// the assertions and the clauses in its state; one clause left uncovered
+/// makes it `no`; `QUOIN_JEV_INTENT_OUT`'s dump lists the assertions and
+/// each clause with its `P`. A test with no assertion is `no` with no call,
+/// and the statement stands in for a missing criterion.
+#[tokio::test]
+async fn tc_1024_t4_row_is_asked_per_clause_and_dumped() {
+    let mut value = fixtures::row(
+        "EV2-0041",
+        Mode::ReqTest,
+        "dev",
+        &json!({"test_asserts_intent": fixtures::truth(&json!("no"), "mechanical", &[])}),
+    );
+    value["requirement"]["ac_text"] = json!(
+        "Cargo publication is disabled, both license texts are present, and CI has no \
+         automatic trigger."
+    );
+    value["test"] = json!({
+        "path": "src/release.test.ts",
+        "fn_name": "release settings",
+        "body": "it('release settings', () => {\n  expect(manifest.publish).toBe(false);\n  \
+                 expect(exists('LICENSE-AGPL')).toBe(true);\n});",
+    });
+    let row = fixtures::parse(&[value]).unwrap().rows.remove(0);
+
+    let asks = (T4.asks)(&row);
+    assert_eq!(asks.len(), 1);
+    let state = serde_json::to_value(&asks[0].request.state).unwrap();
+    assert_eq!(
+        state[CLAUSES_FIELD],
+        json!({"C1": "Cargo publication is disabled",
+               "C2": "both license texts are present",
+               "C3": "CI has no automatic trigger"})
+    );
+    assert_eq!(
+        state[ASSERTIONS_FIELD],
+        json!({"A1": "expect(manifest.publish).toBe(false);",
+               "A2": "expect(exists('LICENSE-AGPL')).toBe(true);"})
+    );
+    let keys: Vec<&String> = asks[0].request.questions.keys().collect();
+    assert_eq!(keys, ["C1", "C2", "C3"]);
+    assert!(wording_violations(&T4, &row).is_empty());
+
+    let config =
+        quoin_jev::config::resolve(&Fixed::new(&[("TYPESAFE_API_KEY", "sk_test_key")])).unwrap();
+    let fake = Arc::new(ClauseJev {
+        clause_p: vec![0.9, 0.7, 0.2],
+        calls: AtomicUsize::new(0),
+    });
+    let client = quoin_jev::client::with_transport(config, fake.clone());
+    let output = variant::run(&client, std::slice::from_ref(&row), &[&T4])
+        .await
+        .unwrap();
+    assert_eq!(fake.calls.load(Ordering::SeqCst), 1);
+    let lines = intent::dump(std::slice::from_ref(&row), &output, &[&T4]);
+    assert_eq!(lines.len(), 1);
+    let line: Value = serde_json::from_str(&lines[0]).unwrap();
+    assert_eq!(
+        line,
+        json!({
+            "variant": "T4@v1",
+            "row_id": "EV2-0041",
+            "mode": "RT",
+            "assertions": [
+                {"label": "A1", "text": "expect(manifest.publish).toBe(false);", "p": null},
+                {"label": "A2", "text": "expect(exists('LICENSE-AGPL')).toBe(true);", "p": null},
+            ],
+            "clauses": [
+                {"label": "C1", "text": "Cargo publication is disabled", "p": 0.9},
+                {"label": "C2", "text": "both license texts are present", "p": 0.7},
+                {"label": "C3", "text": "CI has no automatic trigger", "p": 0.2},
+            ],
+            "prediction": {"answer": "no", "confidence": 0.8, "p_yes": 0.2},
+            "truth": {"answer": "no", "kind": "mechanical", "alternatives": []},
+        })
+    );
+
+    // No assertion: `no`, no call, no clauses dumped.
+    let bare = row_with(
+        "EV2-0042",
+        Mode::ReqTest,
+        Some("#[test]\nfn t() {\n    run();\n}"),
+    );
+    assert!((T4.asks)(&bare).is_empty());
+    let output = variant::run(&client, std::slice::from_ref(&bare), &[&T4])
+        .await
+        .unwrap();
+    assert_eq!(fake.calls.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        output.results[0].predictions["test_asserts_intent"].answer,
+        "no"
+    );
+    let line: Value =
+        serde_json::from_str(&intent::dump(std::slice::from_ref(&bare), &output, &[&T4])[0])
+            .unwrap();
+    assert_eq!(line["clauses"], json!([]));
+
+    // No criterion: the statement's clauses are asked about.
+    let mut value = fixtures::row("EV2-0043", Mode::ReqTestCode, "dev", &json!({}));
+    value["requirement"]["ac_text"] = Value::Null;
+    let no_ac = fixtures::parse(&[value]).unwrap().rows.remove(0);
+    let state = serde_json::to_value(&(T4.asks)(&no_ac)[0].request.state).unwrap();
+    assert_eq!(
+        state[CLAUSES_FIELD],
+        json!({"C1": "The system shall refuse a request larger than 4096 bytes"})
+    );
 }
 
 // ---------------------------------------------------------------------------
