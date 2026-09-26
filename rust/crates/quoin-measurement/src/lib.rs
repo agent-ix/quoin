@@ -78,6 +78,7 @@ pub mod compare;
 pub mod date_time;
 pub mod discovery;
 pub mod error;
+pub mod interval;
 pub mod intervention;
 pub mod json_bridge;
 pub mod operational;

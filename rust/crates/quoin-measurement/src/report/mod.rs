@@ -33,6 +33,7 @@
 
 pub mod build;
 pub mod comparison;
+mod gate;
 pub mod render;
 pub mod render_json;
 pub mod series;

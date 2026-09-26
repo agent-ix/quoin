@@ -251,6 +251,11 @@ pub struct MeasurementObservation {
     pub dimensions: Dimensions,
     /// Why no value was produced.
     pub reason: Option<String>,
+    /// The stated uncertainty `interval` (EA-26), exactly as stored, a
+    /// malformed value included: intake refuses a malformed one, but a
+    /// retained collection that carries one is still shown as it was stored.
+    /// Read it through [`crate::interval::reading`], never by hand.
+    pub interval: Option<JsonValue>,
 }
 
 impl MeasurementObservation {

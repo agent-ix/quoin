@@ -86,6 +86,7 @@ fn observation(plan_id: &str, value: f64) -> MeasurementObservation {
         }),
         dimensions: Dimensions::ABSENT,
         reason: None,
+        interval: None,
     }
 }
 

@@ -3,8 +3,13 @@
 //! The JSON wire shape of a [`MeasurementVerdict`] (quoin FR-108-AC-6).
 //!
 //! This is the document engineering-assurance's promotion invariant
-//! (PLAT-962) reads. Every member is always present, `null` where there is no
-//! value, so a consumer never has to tell an absent member from a null one.
+//! (PLAT-962) reads. Every top-level member is always present, `null` where
+//! there is no value, so a consumer never has to tell an absent member from a
+//! null one. The one exception is inside `decisions`: the three interval
+//! members (EA-26, FR-108-AC-11) are absent, not `null`, on a slice no
+//! interval decided, so a verdict for a plan without an `interval_level` is
+//! byte-identical to what it was. Nothing is added at the top level, which
+//! engineering-assurance's reader closes.
 //! `schema` names the shape; a change to any member's meaning is a new
 //! `schema` value, never an edit in place.
 
@@ -46,6 +51,15 @@ struct DecisionWire {
     estimate_basis: &'static str,
     baseline: Option<f64>,
     holds: Option<bool>,
+    /// `lower` or `upper`: the interval bound that decided the slice.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    interval_bound: Option<&'static str>,
+    /// That bound's value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    interval_bound_value: Option<f64>,
+    /// The confidence level the deciding interval states.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    interval_level: Option<f64>,
 }
 
 #[derive(Serialize)]
@@ -111,6 +125,9 @@ fn decision(decision: &SliceDecision) -> Result<DecisionWire, MeasurementError> 
         estimate_basis: decision.estimate.basis.as_str(),
         baseline: decision.baseline,
         holds: decision.holds,
+        interval_bound: decision.interval.map(|decided| decided.bound.as_str()),
+        interval_bound_value: decision.interval.map(|decided| decided.bound_value),
+        interval_level: decision.interval.map(|decided| decided.level),
     })
 }
 

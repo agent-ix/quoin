@@ -93,6 +93,16 @@ pub enum MeasurementErrorCode {
     /// or a stated `population.examined` under a plan with a minimum is not a
     /// non-negative whole number (PLAT-960).
     PopulationMalformed,
+    /// A stated observation `interval` does not deserialize as
+    /// engineering-assurance's `Interval`, has a `value` outside its bounds,
+    /// or is on a `not_computed` observation (EA-26, FR-044-AC-10).
+    IntervalMalformed,
+    /// A `measured` observation states no `interval` under a plan whose
+    /// `decision_rule` states an `interval_level` (EA-26, FR-044-AC-11).
+    IntervalUnstated,
+    /// A `measured` observation's `interval` level is below its plan's
+    /// `interval_level` (EA-26, FR-044-AC-11).
+    IntervalLevelShort,
     /// A governing plan's `protected_apparatus` entry names no file: nothing
     /// exists at a file entry, it names a directory, or a `<directory>/**`
     /// entry's directory is absent or holds no file (PLAT-975).
@@ -115,7 +125,7 @@ pub enum MeasurementErrorCode {
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 27] = [
+    pub const ALL: [Self; 30] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
@@ -138,6 +148,9 @@ impl MeasurementErrorCode {
         Self::PopulationUnstated,
         Self::RepetitionsShort,
         Self::PopulationMalformed,
+        Self::IntervalMalformed,
+        Self::IntervalUnstated,
+        Self::IntervalLevelShort,
         Self::ApparatusUnresolved,
         Self::ApparatusSymlink,
         Self::ApparatusUnreadable,
@@ -171,6 +184,9 @@ impl MeasurementErrorCode {
             Self::PopulationUnstated => "QM-POPULATION-UNSTATED",
             Self::RepetitionsShort => "QM-REPETITIONS-SHORT",
             Self::PopulationMalformed => "QM-POPULATION-MALFORMED",
+            Self::IntervalMalformed => "QM-INTERVAL-MALFORMED",
+            Self::IntervalUnstated => "QM-INTERVAL-UNSTATED",
+            Self::IntervalLevelShort => "QM-INTERVAL-LEVEL-SHORT",
             Self::ApparatusUnresolved => "QM-APPARATUS-UNRESOLVED",
             Self::ApparatusSymlink => "QM-APPARATUS-SYMLINK",
             Self::ApparatusUnreadable => "QM-APPARATUS-UNREADABLE",

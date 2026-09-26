@@ -112,10 +112,12 @@ fn verdict_detail(verdict: &StageVerdict) -> String {
                 GateOutcome::Pass {
                     current,
                     baseline: Some(baseline),
+                    ..
                 }
                 | GateOutcome::Fail {
                     current,
                     baseline: Some(baseline),
+                    ..
                 },
             ..
         } => format!(
@@ -128,10 +130,12 @@ fn verdict_detail(verdict: &StageVerdict) -> String {
                 GateOutcome::Pass {
                     current,
                     baseline: None,
+                    ..
                 }
                 | GateOutcome::Fail {
                     current,
                     baseline: None,
+                    ..
                 },
             ..
         } => format!("current {}", js_f64_string(*current)),

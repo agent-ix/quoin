@@ -11,8 +11,8 @@ name: quoin-default-modules
 entries:
   # Assurance artifacts are available by default but remain opt-in: installing
   # their vocabulary does not require a repository to author any assurance
-  # document. `ref` names the merged commit that retains the released v0.4.1
-  # module; the v0.5.0 campaign candidate is separately overridden until release.
+  # document. `ref` names the merged commit that carries the 0.5.0 module
+  # (interval-aware decision rules, EA-26); it has no release tag yet.
   # FR-016 requires an exact commit for a module this repository's
   # Rust workspace also consumes: `git-subdir` resolves `ref` at install time,
   # and `rust/Cargo.toml` pins the crate by commit, so naming the same commit
@@ -33,13 +33,13 @@ entries:
   # AP-202 unvalidatable against the module quoin ships, because v0.4.0 renamed
   # `profile_version` to `schema_version` under `additionalProperties: false`.
   - name: engineering-assurance
-    version: "0.4.1"
+    version: "0.5.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/engineering-assurance
       path: engineering_assurance
-      ref: aaf7474b8753397ba8402581a94823cb5e8b8b04
+      ref: 469cf48b043f04167b14f877435084d3ec37519f
 
   - name: spec-artifacts-iso
     version: "0.19.0"

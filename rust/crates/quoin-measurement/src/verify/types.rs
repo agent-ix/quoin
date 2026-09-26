@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 
 use quoin_store::JsonValue;
 
+use crate::interval::Decided;
 use crate::types::collection::MeasurementCollection;
 use crate::verify::{Estimate, Reason, Verdict};
 
@@ -139,6 +140,10 @@ pub struct SliceDecision {
     pub baseline: Option<f64>,
     /// Whether the rule holds; `None` when it could not be evaluated.
     pub holds: Option<bool>,
+    /// The interval bound that decided the slice, when the rule states an
+    /// `interval_level` and the candidate's interval decided it (FR-108-AC-11);
+    /// `None` otherwise.
+    pub interval: Option<Decided>,
 }
 
 /// What the checker counted.

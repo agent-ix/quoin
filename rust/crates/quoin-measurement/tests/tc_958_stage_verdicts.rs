@@ -1136,14 +1136,16 @@ fn tc_958_019_a_threshold_gate_passes_or_fails_by_the_rule_alone_in_both_directi
         gate_over(&higher, &[0.9]),
         GateOutcome::Pass {
             current: 0.9,
-            baseline: None
+            baseline: None,
+            interval: None
         }
     );
     assert_eq!(
         gate_over(&higher, &[0.5]),
         GateOutcome::Fail {
             current: 0.5,
-            baseline: None
+            baseline: None,
+            interval: None
         }
     );
     // Exactly the threshold passes: `ge`.
@@ -1151,7 +1153,8 @@ fn tc_958_019_a_threshold_gate_passes_or_fails_by_the_rule_alone_in_both_directi
         gate_over(&higher, &[0.8]),
         GateOutcome::Pass {
             current: 0.8,
-            baseline: None
+            baseline: None,
+            interval: None
         }
     );
 
@@ -1173,7 +1176,8 @@ fn tc_958_019_a_threshold_gate_passes_or_fails_by_the_rule_alone_in_both_directi
         gate_over(&unreachable, &[0.9]),
         GateOutcome::Pass {
             current: 0.9,
-            baseline: None
+            baseline: None,
+            interval: None
         }
     );
     let already_met = bounded("0.1");
@@ -1181,7 +1185,8 @@ fn tc_958_019_a_threshold_gate_passes_or_fails_by_the_rule_alone_in_both_directi
         gate_over(&already_met, &[0.5]),
         GateOutcome::Fail {
             current: 0.5,
-            baseline: None
+            baseline: None,
+            interval: None
         }
     );
 
@@ -1194,14 +1199,16 @@ fn tc_958_019_a_threshold_gate_passes_or_fails_by_the_rule_alone_in_both_directi
         gate_over(&lower, &[0.1]),
         GateOutcome::Pass {
             current: 0.1,
-            baseline: None
+            baseline: None,
+            interval: None
         }
     );
     assert_eq!(
         gate_over(&lower, &[0.5]),
         GateOutcome::Fail {
             current: 0.5,
-            baseline: None
+            baseline: None,
+            interval: None
         }
     );
 }
@@ -1225,7 +1232,8 @@ fn tc_958_020_a_baseline_gate_reads_prior_collection_or_best_seen() {
         gate_over(&prior, &[0.5, 0.6]),
         GateOutcome::Pass {
             current: 0.6,
-            baseline: Some(0.5)
+            baseline: Some(0.5),
+            interval: None
         }
     );
     // 0.4 > prior (0.6): fail — `prior-collection` is the nearest earlier
@@ -1234,7 +1242,8 @@ fn tc_958_020_a_baseline_gate_reads_prior_collection_or_best_seen() {
         gate_over(&prior, &[0.5, 0.6, 0.4]),
         GateOutcome::Fail {
             current: 0.4,
-            baseline: Some(0.6)
+            baseline: Some(0.6),
+            interval: None
         }
     );
 
@@ -1248,14 +1257,16 @@ fn tc_958_020_a_baseline_gate_reads_prior_collection_or_best_seen() {
         gate_over(&best_seen, &[0.5, 0.6, 0.55]),
         GateOutcome::Fail {
             current: 0.55,
-            baseline: Some(0.6)
+            baseline: Some(0.6),
+            interval: None
         }
     );
     assert_eq!(
         gate_over(&best_seen, &[0.5, 0.6, 0.6]),
         GateOutcome::Pass {
             current: 0.6,
-            baseline: Some(0.6)
+            baseline: Some(0.6),
+            interval: None
         }
     );
 
@@ -1269,14 +1280,16 @@ fn tc_958_020_a_baseline_gate_reads_prior_collection_or_best_seen() {
         gate_over(&best_seen_lower, &[5.0, 3.0, 4.0]),
         GateOutcome::Fail {
             current: 4.0,
-            baseline: Some(3.0)
+            baseline: Some(3.0),
+            interval: None
         }
     );
     assert_eq!(
         gate_over(&best_seen_lower, &[5.0, 3.0, 2.0]),
         GateOutcome::Pass {
             current: 2.0,
-            baseline: Some(3.0)
+            baseline: Some(3.0),
+            interval: None
         }
     );
 }
@@ -1473,7 +1486,8 @@ fn tc_958_024_no_unusable_or_foreign_earlier_value_becomes_a_gate_baseline() {
         gate_of(&plans, &collections),
         GateOutcome::Fail {
             current: 0.5,
-            baseline: Some(0.8)
+            baseline: Some(0.8),
+            interval: None
         }
     );
 
@@ -1531,7 +1545,8 @@ fn tc_958_024_no_unusable_or_foreign_earlier_value_becomes_a_gate_baseline() {
             objective,
             outcome: GateOutcome::Fail {
                 current: 0.5,
-                baseline: Some(0.9)
+                baseline: Some(0.9),
+                interval: None
             }
         })
     );
@@ -1541,7 +1556,8 @@ fn tc_958_024_no_unusable_or_foreign_earlier_value_becomes_a_gate_baseline() {
             objective,
             outcome: GateOutcome::Pass {
                 current: 0.5,
-                baseline: Some(0.1)
+                baseline: Some(0.1),
+                interval: None
             }
         })
     );
@@ -1587,7 +1603,8 @@ fn tc_958_025_a_baseline_gate_does_not_compare_across_another_apparatus() {
         gate_of(&plans, &[run(0, 0.1, Some('0')), run(1, 0.5, Some('0'))]),
         GateOutcome::Pass {
             current: 0.5,
-            baseline: Some(0.1)
+            baseline: Some(0.1),
+            interval: None
         }
     );
 
@@ -1604,7 +1621,8 @@ fn tc_958_025_a_baseline_gate_does_not_compare_across_another_apparatus() {
         gate_of(&threshold, &changed),
         GateOutcome::Pass {
             current: 0.5,
-            baseline: None
+            baseline: None,
+            interval: None
         }
     );
 }
