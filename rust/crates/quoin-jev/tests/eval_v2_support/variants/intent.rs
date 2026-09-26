@@ -1260,6 +1260,14 @@ fn tidy(clause: &str) -> String {
 /// Nothing inside backticks or parentheses is a cut point. Pieces are
 /// trimmed and empty ones dropped; past [`MAX_CLAUSES`] the overflow joins
 /// the last. A criterion with no cut point is one clause.
+///
+/// Known limitation of v1, kept because T4@v1 was measured with it: every
+/// `, ` before a top-level `, and ` is a cut, so a leading condition or an
+/// aside becomes its own clause ("When the file is missing, the CLI exits 2,
+/// and prints an error" yields "When the file is missing" as a clause). A
+/// clause that states no outcome can pull `min P` below [`TAU`] and turn a
+/// row into a false `no`. Abbreviations ("e.g. X") also end a sentence.
+/// Changing either changes T4's requests, so it is a new version.
 pub(crate) fn criterion_clauses(text: &str) -> Vec<String> {
     let mut clauses: Vec<String> = Vec::new();
     for sentence in split_top_level(text, sentence_end) {
