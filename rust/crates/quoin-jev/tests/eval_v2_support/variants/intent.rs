@@ -1231,13 +1231,14 @@ fn list_comma(text: &str, at: usize) -> Option<usize> {
 /// with no `, and ` is one conjunct.
 fn conjuncts(piece: &str) -> Vec<&str> {
     let segments = split_top_level(piece, and_conjunct);
-    let Some((last, list)) = segments.split_last() else {
+    let Some((last, items)) = segments.split_last() else {
         return Vec::new();
     };
-    if list.is_empty() {
+    if items.is_empty() {
         return vec![*last];
     }
-    list.iter()
+    items
+        .iter()
         .flat_map(|segment| split_top_level(segment, list_comma))
         .chain(std::iter::once(*last))
         .collect()
