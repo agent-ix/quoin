@@ -794,9 +794,8 @@ fn script_statement_end(masked: &[u8], from: usize) -> usize {
     while let Some(byte) = masked.get(at) {
         match byte {
             b'(' | b'[' | b'{' => depth += 1,
-            b')' | b']' | b'}' if depth == 0 => return at,
+            b')' | b']' | b'}' | b',' if depth == 0 => return at,
             b')' | b']' | b'}' => depth -= 1,
-            b',' if depth == 0 => return at,
             b';' if depth == 0 => return at + 1,
             b'\n' if depth == 0 => {
                 let next = skip_whitespace(masked, at, masked.len());
