@@ -23,6 +23,7 @@
 //! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; the seal is verified, every variant must be covered by `fixtures/eval-v2/heldout-selection.json`, and the run is logged before any number prints |
 //! | `QUOIN_JEV_HELDOUT_RERUN` | a reason; required to run a variant version already on the held-out log |
 //! | `QUOIN_JEV_EXTERNAL_CORPUS` / `QUOIN_JEV_EXTERNAL_ROOT` | optional external corpus and its checkouts |
+//! | `QUOIN_JEV_EXTERNAL_ONLY` | `1` skips the in-repo corpus, so the report covers the external rows alone; needs `QUOIN_JEV_EXTERNAL_CORPUS` |
 //! | `QUOIN_JEV_CASSETTE` | a cassette file (PLAT-977): answers are recorded there, and re-grading replays them |
 //! | `QUOIN_JEV_CASSETTE_MODE` | `record` (default: replay what is on file, call live for the rest) or `replay` (no network, no key) |
 //! | `QUOIN_JEV_MODEL` | the pinned model; required with a cassette, and when set every answer must come from it |
@@ -118,8 +119,19 @@ fn client(model: Option<&str>) -> Client {
 }
 
 fn sources() -> Vec<Source> {
+    let external_only = env("QUOIN_JEV_EXTERNAL_ONLY").as_deref() == Some("1");
+    assert!(
+        !external_only || env(corpus::EXTERNAL_CORPUS_ENV).is_some(),
+        "QUOIN_JEV_EXTERNAL_ONLY=1 needs {}: with no corpus there is nothing to run",
+        corpus::EXTERNAL_CORPUS_ENV
+    );
+    let in_repo = if external_only {
+        None
+    } else {
+        corpus::load_in_repo().unwrap_or_else(|error| panic!("{error}"))
+    };
     let sources: Vec<Source> = [
-        corpus::load_in_repo().unwrap_or_else(|error| panic!("{error}")),
+        in_repo,
         corpus::load_external_from_env().unwrap_or_else(|error| panic!("{error}")),
     ]
     .into_iter()
