@@ -40,7 +40,8 @@ that could re-run a suite could also make a finding disappear by re-running it.
 
 - **High** is evidence that *claims to exist and does not hold*: a suspect link,
   a binding naming a run that is not in the store, a binding every one of whose
-  symbols was skipped.
+  symbols was skipped, a binding whose newest recorded run failed or errored
+  the bound symbol.
 - **Medium** is ordinary work in progress: an obligation with no evidence yet, a
   run behind HEAD, a method mismatch, insufficient multiplicity.
 
@@ -123,7 +124,7 @@ violations. The per-PR delta names what a change added and resolved.
 | FR-032-AC-15 | A `mocked-confirmation` finding reports an obligation discharged **only** by bound test symbols injecting a stand-in whose identifier overlaps the obligation's own statement subject. The join is exact or terminally module-qualified; suite identity alone is insufficient. Reported at `medium`, with source path, line, test symbol and injected identifier, and only when EVERY binding is mocked — one real suite alongside a mocked one is ordinary test design. The finding ratchets through the existing `<kind>:<obligation>` key like any other. | Test (TC-936..TC-940, TC-1065, TC-1075, TC-1076) |
 | FR-032-AC-16 | `quoin evidence inspect-mocks` recognizes narrow explicit stand-in forms in Rust, Python and TypeScript test source and records the completed inspection without running a suite or assigning a verdict. `audit`, `baseline` and `assurance` consume only exact-HEAD inspection records. A missing current inspection is reported as `not-evaluated`, excluded from the healthy count, and prevents `--strict` from passing; it is never converted into a clean result or a baselinable defect. Tier 1 executes this store-backed command path for `audit.findings`, binds the symbols observed by the production inspector rather than a suite-wide placeholder, and preserves the finding's locus. | Test (TC-939, TC-1062..TC-1066, TC-1075, TC-1076) |
 | FR-032-AC-8 | `ratchet` reports only violations absent from the baseline, and `delta` names what a change added and resolved. | Test (TC-144) |
-| FR-032-AC-17 | A binding whose suite's newest recorded run at or before HEAD reports `fail` or `error` for a bound symbol is `stale-evidence` at high severity, naming the failing suite, symbol and commit. This fires independently of AC-3's behind-HEAD check: a run at HEAD that failed the tagged test is stale evidence in its own right, not merely old evidence. | Test (TC-1963) |
+| FR-032-AC-17 | A binding whose suite's newest recorded run — the same run the store's `latest_runs` selects (FR-030, newest by timestamp) — reports `fail` or `error` for a bound symbol is `stale-evidence` at high severity, naming the failing suite, symbol and commit. This fires independently of AC-3's behind-HEAD check and takes precedence over it: a failing run that is also behind HEAD reports only the high failed-run finding, not the medium behind-HEAD one, since both are `stale-evidence` and share one ratchet key. A run at HEAD that failed the tagged test is stale evidence in its own right, not merely old evidence. | Test (TC-1963) |
 
 ## Dependencies
 

@@ -85,20 +85,17 @@ otherwise populated store, has no test." Until [Quoin#413](https://github.com/ag
 feeds the evidence store from real CI runs, every criterion in every repository
 reads `no run evidence`. **That is correct**, not a defect to work around.
 
-### `bound`'s "passing" promise depends on an upstream auditor gap (CR-002)
+### `bound`'s "passing" promise depends on the auditor's failed-run check (CR-002)
 
-`AuditReport.healthy` is not, today, a guarantee that the bound run passed.
-`quoin-auditor`'s ladder checks `Outcome::Skip` (vacuity) but never
-`Outcome::Fail`/`Outcome::Error`: a binding minted by an earlier passing run
-survives even when the *latest* run of that suite, at HEAD, reports the bound
-symbol failing. That obligation completes the ladder with no finding and
-lands in `healthy` — a red build renders `bound`. This is a real,
-pre-existing gap in [FR-032](./FR-032-evidence-auditor.md), now tracked as
-**PLAT-1086** (a Linear ticket, no GitHub attachment), and it
-**blocks this FR's implementation**: `matrix.build` keeps the word "passing"
-in `bound`'s definition above, and CON-2 still forbids `matrix.build` from
-adding the check itself — the fix belongs to the auditor's own ladder, not to
-this join.
+`quoin-auditor`'s ladder ([FR-032](./FR-032-evidence-auditor.md)-AC-17,
+**PLAT-1086**, agent-ix/quoin#647) raises `stale-evidence` when the newest
+recorded run of a bound suite reports `Outcome::Fail`/`Outcome::Error` for the
+bound symbol, alongside its existing `Outcome::Skip` vacuity check. A binding
+minted by an earlier passing run no longer survives a later failing run of
+that suite: the obligation leaves `healthy`. `AuditReport.healthy` is
+therefore a guarantee that the bound run passed, and `matrix.build` keeps the
+word "passing" in `bound`'s definition above with no change to this FR's
+text.
 
 ### Mapping precedence
 
@@ -167,8 +164,7 @@ coverage`, read the store, run the auditor) to produce this call's arguments.
 `matrix.build` adds no second commit comparison of its own: whether a binding
 counts as fresh at HEAD was already decided by the auditor, before
 `matrix.build` ever sees the result (see "Assembling the auditor's inputs",
-above, and CR-002 for the one respect in which that upstream decision is
-still incomplete).
+above, and CR-002 for the failed/errored-run check that decision now includes).
 
 ## Inputs
 
@@ -262,7 +258,7 @@ still incomplete).
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-115-CON-1 | `matrix.build` SHALL perform no file, network, or subprocess I/O; every input is supplied on stdin. | Architecture | Test |
-| FR-115-CON-2 | `matrix.build` SHALL NOT re-derive or override any `AuditReport` finding; it maps existing `Finding.kind` values to an evidence status and invents no new evidence-of-rot check ([FR-032](./FR-032-evidence-auditor.md) owns that, including the PLAT-1086 gap CR-002 names). | Architecture | Inspection |
+| FR-115-CON-2 | `matrix.build` SHALL NOT re-derive or override any `AuditReport` finding; it maps existing `Finding.kind` values to an evidence status and invents no new evidence-of-rot check ([FR-032](./FR-032-evidence-auditor.md) owns that, including the failed-run check PLAT-1086/CR-002 added). | Architecture | Inspection |
 | FR-115-CON-3 | `quoin matrix` SHALL write nothing under `spec/`. | Architecture | Test |
 | FR-115-CON-4 | `matrix.build` SHALL refuse a contradictory `AuditReport` (an id in both `healthy` and `findings`/`unevaluated`) rather than resolve it by precedence. | Architecture | Test |
 
@@ -289,9 +285,8 @@ still incomplete).
 ## Dependencies
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) (the binding graph),
-  [FR-032](./FR-032-evidence-auditor.md) (the audit report, and
-  PLAT-1086's failed/errored latest-run gap, which blocks this FR's
-  implementation per CR-002),
+  [FR-032](./FR-032-evidence-auditor.md) (the audit report, including the
+  failed/errored latest-run check PLAT-1086/CR-002 added),
   [FR-040](./FR-040-assurance-case-view.md) (`requirement_of`, the grouping
   and `reason`-on-empty conventions this FR reuses), quire-rs
   [FR-050](ix://agent-ix/quire-rs/FR-050)-AC-47..51 (`coverage_matrix`, and
@@ -319,11 +314,9 @@ still incomplete).
 > avoid building twice.
 >
 > **CR-002 (2026-09-27, PLAT-1080):** `bound`'s "passing run" promise
-> currently outruns what `AuditReport.healthy` guarantees — see "`bound`'s
-> 'passing' promise depends on an upstream auditor gap" above. The gap is
-> `quoin-auditor`'s, tracked as **PLAT-1086** (a Linear ticket, no GitHub
-> attachment), and blocks this FR's implementation without changing anything
-> this FR itself specifies:
-> `matrix.build` still reads `healthy` verbatim (CON-2), and once PLAT-1086
-> closes, `bound` becomes true of every criterion it is reported for with no
-> change to this FR's text.
+> outran what `AuditReport.healthy` guaranteed — see "`bound`'s 'passing'
+> promise depends on the auditor's failed-run check" above. The gap was
+> `quoin-auditor`'s. **Resolved by PLAT-1086 (agent-ix/quoin#647):** the
+> ladder now raises `stale-evidence` on a failed or errored latest run, with
+> no change to this FR's own text — `matrix.build` still reads `healthy`
+> verbatim (CON-2).

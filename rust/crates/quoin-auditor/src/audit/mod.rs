@@ -25,6 +25,7 @@ pub mod ratchet;
 pub mod scores;
 
 mod ladder;
+mod stale;
 
 use std::collections::BTreeMap;
 
