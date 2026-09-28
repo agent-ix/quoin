@@ -95,6 +95,10 @@ pub(super) fn run(
         pass.findings.push(finding);
         return Ok(pass);
     }
+    if let Some(finding) = failed_run(indexed, obligation, bindings) {
+        pass.findings.push(finding);
+        return Ok(pass);
+    }
 
     // ── Mocked confirmation (#204) ──
     if let Some(check) = uninspected_suites(indexed, obligation, bindings) {
@@ -255,6 +259,62 @@ fn unrecorded_evidence(
             id = obligation.id,
             suites = join_suites(&unrecorded),
             verb = if unrecorded.len() == 1 { "has" } else { "have" }
+        ),
+    ))
+}
+
+/// ── 2. Stale evidence (failed run) ──
+///
+/// A run that recorded a `fail` or `error` outcome for a bound symbol is not
+/// freshness rot, it is a claim that does not hold: the binding says this test
+/// discharges the obligation, and the newest run of that test says it did not
+/// pass. FR-032 line 28 lists this beside a missing run and a run behind
+/// HEAD, and `#[cfg(test)]`-only inspection had checked `Outcome::Skip` alone
+/// (the vacuity rung below), so a suite that ran and *failed* the tagged test
+/// read as healthy on a red build.
+fn failed_run(
+    indexed: &Indexed<'_>,
+    obligation: &Obligation,
+    bindings: &[&Binding],
+) -> Option<Finding> {
+    let mut failed: Vec<String> = Vec::new();
+    for binding in bindings {
+        let Some(run) = indexed.runs_by_suite.get(binding.suite.as_str()) else {
+            continue;
+        };
+        for symbol in &binding.symbols {
+            let Some(entry) = run
+                .entries
+                .iter()
+                .find(|entry| entry.symbol.as_str() == symbol.as_str())
+            else {
+                continue;
+            };
+            if !matches!(entry.outcome, Outcome::Fail | Outcome::Error) {
+                continue;
+            }
+            failed.push(format!(
+                "{suite}:{symbol} {outcome} in a run at {commit}",
+                suite = binding.suite,
+                symbol = symbol.as_str(),
+                outcome = entry.outcome.as_str(),
+                commit = slice_utf16(run.commit.as_str(), 12)
+            ));
+        }
+    }
+    if failed.is_empty() {
+        return None;
+    }
+    failed.sort_by(|left, right| js::compare(left, right));
+    Some(Finding::new(
+        FindingKind::STALE_EVIDENCE,
+        &obligation.id,
+        Severity::high(),
+        format!(
+            "{id} is bound to a failing run: {list}. The binding claims evidence that does \
+             not hold.",
+            id = obligation.id,
+            list = failed.join("; ")
         ),
     ))
 }

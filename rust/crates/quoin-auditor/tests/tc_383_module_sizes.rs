@@ -44,13 +44,14 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
 
 /// The modules currently over [`SOFT_CEILING`].
 ///
-/// Empty. The retained `src/auditor/` and `src/advisor/` are 1,806 lines
-/// after the combinatorial extraction, and this crate is their port split by
-/// responsibility: the catalog reader and its filesystem seam, the advisor's
-/// regex table, compound guard, characteristics and verdict, and the auditor's
-/// index, ladder, per-check helpers and ratchet. Adding a name here is a
-/// deliberate act that has to be argued for.
-const OVER_SOFT_CEILING: &[&str] = &[];
+/// `audit/ladder.rs` crossed it with the failed-run stale-evidence rung
+/// (PLAT-1086): a `Fail`/`Error` outcome on a bound symbol was previously
+/// indistinguishable from a passing one everywhere except the vacuity check,
+/// which only asks about `Skip`. The new rung reuses the ladder's own
+/// `runs_by_suite` index and finding shape, so splitting it into a second
+/// module would separate the rung from the fixed rung order the module's own
+/// header says to keep readable in one screen of `run`.
+const OVER_SOFT_CEILING: &[&str] = &["audit/ladder.rs"];
 
 /// The count below which this census is not measuring the crate at all.
 const SOURCE_FLOOR: usize = 18;
