@@ -94,3 +94,20 @@ scope. The fix is to add `#[cfg(feature = "campaign")]` on the fn and its test.
   exit 0 at d6d3d60.
 - Gap analysis was not run because the change has no behaviour. No source
   edits were made.
+
+## Dispositions
+
+Round 1, reviewed at 0a25d44bfdc111347a4056e9dadab27cfd77065a (fix commit
+0a25d44). Gates re-run by the reviewer at this head: `make rust-lint` finished
+clean (fmt --check exit 0, workspace all-features clippy -D warnings
+finished with no warnings). `cargo clippy -p quoin-measurement --lib -- -D
+warnings` (default features) is clean, as are `--lib --tests` with default
+features and with `--features campaign`. The gated test
+`plans::tests::campaign_scope_validates_selected_plan_and_ignores_unrelated_legacy_semantics`
+still runs and passes under `--features campaign`. No regressions were found
+in the fix diff.
+
+| FND | Outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 0a25d44 |
+| FND-002 | fixed | 0a25d44 |
