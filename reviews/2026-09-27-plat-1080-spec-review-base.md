@@ -58,3 +58,25 @@ Not mergeable as is. FND-001 and FND-002 are HIGH. FND-003 and FND-004 are
 MEDIUM and are fixable in the same round. The leader-accepted design (pure
 mapping, the `suspect` fold, precedence) is sound. These findings are about
 what the spec promises and the output schema, not the design.
+
+## New findings (disposition pass 1)
+
+Reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
+
+| ID      | Severity | Summary | Refs | Escape Cause |
+| ------- | -------- | ------- | ---- | ------------ |
+| FND-008 | low | The fix removed the dead PLAT-1077 link but added four more of the same kind. PLAT-1086 is linked as `https://github.com/agent-ix/quoin/issues/1086`, which does not exist: `gh issue view 1086 -R agent-ix/quoin` cannot resolve it, and the Linear ticket has no GitHub attachment. PLAT-1086 exists only in Linear, where it correctly blocks PLAT-1080. Use the bare id or the Linear URL. | spec/functional/FR-115-evidence-backed-test-matrix.md:97, spec/functional/FR-115-evidence-backed-test-matrix.md:258, spec/functional/FR-115-evidence-backed-test-matrix.md:286, spec/functional/FR-115-evidence-backed-test-matrix.md:318 | wrong-requirement |
+
+## Dispositions
+
+Round 1, reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | e609508 |
+| FND-002 | fixed | e609508 |
+| FND-003 | fixed | e609508 |
+| FND-004 | fixed | e609508 |
+| FND-005 | fixed | e609508 |
+| FND-006 | fixed | e609508 |
+| FND-007 | fixed | e609508 |

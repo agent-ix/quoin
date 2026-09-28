@@ -32,3 +32,11 @@ atomic ACs (AC-2, AC-11).
 ## Verdict
 
 Clean.
+
+## Dispositions
+
+Round 1, reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | rejected | Placeholder row: the review pass found no EARS defect. Re-checked at e609508: `quire validate` reports no EARS diagnostic for FR-115, and the FR-021 warnings (lines 18, 22) are still on untouched text. |

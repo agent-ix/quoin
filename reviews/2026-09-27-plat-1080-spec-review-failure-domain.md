@@ -47,3 +47,22 @@ shapes the spec leaves undefined.
 One MEDIUM and three LOW findings. None blocks on its own, but FND-001 should
 be fixed in the same round as base FND-002, because both concern
 `evidence_detail`.
+
+## New findings (disposition pass 1)
+
+Reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
+
+| ID      | Severity | Summary | Refs | Escape Cause |
+| ------- | -------- | ------- | ---- | ------------ |
+| FND-005 | low | AC-11 introduces a new `quoin matrix --strict` flag (non-zero exit on an empty population) that appears nowhere in Behavior or Inputs. The Behavior section, which enumerates the CLI surface, therefore under-states it. Neither the HEAD-unresolved refusal (Behavior, AC-14) nor the `ContradictoryAudit` refusal (AC-5) names its exit class. An implementer can pass AC-14 with any non-zero exit and any message. | spec/functional/FR-115-evidence-backed-test-matrix.md:276, spec/functional/FR-115-evidence-backed-test-matrix.md:236-242, spec/functional/FR-115-evidence-backed-test-matrix.md:279 | missing-requirement |
+
+## Dispositions
+
+Round 1, reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | e609508 |
+| FND-002 | fixed | e609508 |
+| FND-003 | fixed | e609508 |
+| FND-004 | fixed | e609508 |

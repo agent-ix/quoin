@@ -94,7 +94,7 @@ survives even when the *latest* run of that suite, at HEAD, reports the bound
 symbol failing. That obligation completes the ladder with no finding and
 lands in `healthy` — a red build renders `bound`. This is a real,
 pre-existing gap in [FR-032](./FR-032-evidence-auditor.md), now tracked as
-**[PLAT-1086](https://github.com/agent-ix/quoin/issues/1086)**, and it
+**PLAT-1086** (a Linear ticket, no GitHub attachment), and it
 **blocks this FR's implementation**: `matrix.build` keeps the word "passing"
 in `bound`'s definition above, and CON-2 still forbids `matrix.build` from
 adding the check itself — the fix belongs to the auditor's own ladder, not to
@@ -226,10 +226,14 @@ still incomplete).
   `limit_bytes`, `observed_bytes`), and SHALL reject an unrecognized field via
   `#[serde(deny_unknown_fields)]` on every request type. `coverage` is
   optional; `bindings` and `audit` are required.
-- `matrix.build` SHALL refuse the whole request, with a named error code
-  (`CoreErrorCode::ContradictoryAudit`, naming the offending obligation id in
-  `context`) rather than compute a status, when the supplied `audit` names
-  one id in both `healthy` and a `Finding`/`UnevaluatedCheck`.
+- `matrix.build` SHALL refuse the whole request — `CoreErrorCode::Refused`
+  (exit 2, `Outcome::Refused`), the existing code for "the request was
+  understood and refused by a stated rule of the operation" — with `context`
+  naming `reason: "contradictory-audit"` and the offending obligation id,
+  rather than compute a status, when the supplied `audit` names one id in
+  both `healthy` and a `Finding`/`UnevaluatedCheck`. This is not a new code:
+  it is the same `Refused` a caller already gets from
+  `MAX_MATRIX_BUILD_BYTES`, distinguished only by `context.reason`.
 - `matrix.build` SHALL emit canonical JSON (`protocol::canonical_json`): two
   calls over byte-identical input SHALL emit byte-identical output, including
   every field of the payload, not only its exit class.
@@ -239,7 +243,10 @@ still incomplete).
   assembly path `quoin evidence audit` uses (`head_commit`, mock-inspection,
   catalog, and independence inputs identical for the same working tree).
 - `quoin matrix` SHALL refuse rather than proceed when `head_commit` cannot be
-  resolved.
+  resolved, exiting with `Outcome::Refused.code()` (exit 2) — the same
+  process-exit reuse of `quoin-core`'s own `Refused` class `quoin-cli`
+  already uses for `EXIT_UNKNOWN_COMMAND`/`EXIT_DOCUMENT_REFUSED`
+  (`main.rs`), not a CLI-specific exit number invented for this command.
 - `quoin matrix` SHALL no longer launch `ix-flow` ([FR-021](./FR-021-launch-ix-flow-runs.md)).
   `quoin-cli`'s `flow::FLOWS` table SHALL drop its `("matrix", "matrix")` entry,
   and the CLI's flow-dispatch match SHALL route only `"review"` and
@@ -255,7 +262,7 @@ still incomplete).
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-115-CON-1 | `matrix.build` SHALL perform no file, network, or subprocess I/O; every input is supplied on stdin. | Architecture | Test |
-| FR-115-CON-2 | `matrix.build` SHALL NOT re-derive or override any `AuditReport` finding; it maps existing `Finding.kind` values to an evidence status and invents no new evidence-of-rot check ([FR-032](./FR-032-evidence-auditor.md) owns that, including the [PLAT-1086](https://github.com/agent-ix/quoin/issues/1086) gap CR-002 names). | Architecture | Inspection |
+| FR-115-CON-2 | `matrix.build` SHALL NOT re-derive or override any `AuditReport` finding; it maps existing `Finding.kind` values to an evidence status and invents no new evidence-of-rot check ([FR-032](./FR-032-evidence-auditor.md) owns that, including the PLAT-1086 gap CR-002 names). | Architecture | Inspection |
 | FR-115-CON-3 | `quoin matrix` SHALL write nothing under `spec/`. | Architecture | Test |
 | FR-115-CON-4 | `matrix.build` SHALL refuse a contradictory `AuditReport` (an id in both `healthy` and `findings`/`unevaluated`) rather than resolve it by precedence. | Architecture | Test |
 
@@ -267,24 +274,24 @@ still incomplete).
 | FR-115-AC-2 | The request is a `#[serde(deny_unknown_fields)]` struct carrying an optional `coverage`, and required `bindings` (the persisted `BindingsFile` shape) and `audit`; a request missing `bindings` or `audit`, or carrying an unrecognized field, is refused with `CoreErrorCode::BadRequest` naming `op`; a request over `MAX_MATRIX_BUILD_BYTES` is refused with `CoreErrorCode::Refused` naming `op`, `limit_bytes`, `observed_bytes`. | Test |
 | FR-115-AC-3 | When `bindings.bindings` is empty, every criterion's `evidence_status` is `no run evidence`, regardless of what `audit` contains; `evidence_detail` is still computed per AC-9 and is not suppressed by this override. | Test |
 | FR-115-AC-4 | When `bindings.bindings` is non-empty: a criterion whose id is in `audit.healthy` is `bound`; else a criterion with a `suspect-link`, `mocked-confirmation`, `insufficient-independence`, or `vacuous-evidence` finding is `suspect`; else a criterion with a `stale-evidence` finding is `stale`; else (any other finding kind, an `unevaluated` entry, or absence from `healthy`/`findings`/`unevaluated`) is `undischarged`. | Test |
-| FR-115-AC-5 | An `audit` naming one obligation id in both `healthy` and a `Finding` or `UnevaluatedCheck` refuses the whole `matrix.build` call with `CoreErrorCode::ContradictoryAudit` naming that id in `context`; no partial `MatrixOutput` is emitted. | Test |
+| FR-115-AC-5 | An `audit` naming one obligation id in both `healthy` and a `Finding` or `UnevaluatedCheck` refuses the whole `matrix.build` call with `CoreErrorCode::Refused` (exit 2), `context` carrying `reason: "contradictory-audit"` and the offending id; no partial `MatrixOutput` is emitted. | Test |
 | FR-115-AC-6 | A fixture evidence store holding one passing binding **with a mock inspection recorded at HEAD** (so its obligation reaches `healthy` rather than an `unevaluated` entry), one binding whose run is behind the audited HEAD (`stale-evidence`/`behind_head`), and one criterion with zero bindings (while the store holds the other two) yields three distinct `evidence_status` values (`bound`, `stale`, `undischarged`) in one `matrix.build` call. | Test |
 | FR-115-AC-7 | Each criterion's `static_status` and `binders` are copied verbatim from the supplied `coverage_matrix` criterion, unmodified by evidence computation; a criterion's `evidence_status` never influences its `static_status` or vice versa. A criterion whose upstream obligation record omits `method` renders with `method` omitted, never `null`. | Test |
 | FR-115-AC-8 | `requirements[]` groups criteria by `quoin_assurance::requirement_of(criterion.id)`, not by `coverage_matrix`'s own document grouping; a fixture document holding obligations from two requirement-id prefixes yields two `requirements[]` entries, not one. Requirements are ordered by requirement id (ASCII byte order); criteria within a requirement retain `coverage_matrix`'s own relative order. | Test |
 | FR-115-AC-9 | `evidence_detail` is total: for every criterion it carries `findings` (every `Finding` for that id, ordered suspect-class-then-`stale-evidence`-then-remaining-undischarged-class kinds, alphabetically by kind name within each group), `bindings` (every `Binding` for that id as `{suite, commit}`, ordered by `(suite, commit)`), and `unevaluated` (every matching `UnevaluatedCheck.check` name, ordered lexically) — each an empty list, never an absent key, when nothing applies. A fixture exercising all three non-empty, and a criterion appearing in none of `healthy`/`findings`/`unevaluated`/`bindings` (all three lists empty), are both covered by one test. | Test |
 | FR-115-AC-10 | Two `matrix.build` calls over byte-identical canonical JSON input emit byte-identical canonical JSON **output** (the full payload, compared byte for byte — not only exit class or diagnostic code), covered by a `quoin-core` protocol test (`tc_NNN_matrix_boundary.rs`) built on the same fixture-corpus pattern as `tc_447_assurance_boundary.rs`. | Test |
-| FR-115-AC-11 | `quoin matrix` renders `MatrixOutput` as a markdown table (`Requirement`/`Criterion`/`Method`/`Static Status`/`Evidence Status`/`Detail`, grouped under a `##` heading per requirement in requirement-id order) by default, and as the canonical `MatrixOutput` JSON under `--json`; a `coverage` that is absent or carries no criteria renders the `reason` string (never an empty table) and `quoin matrix` exits 0 unless invoked with `--strict`, which exits non-zero on that empty population — the same convention `quire coverage --strict` already uses for a zero-population report (quire-rs FR-050-AC-14). | Test |
+| FR-115-AC-11 | `quoin matrix` renders `MatrixOutput` as a markdown table (`Requirement`/`Criterion`/`Method`/`Static Status`/`Evidence Status`/`Detail`, grouped under a `##` heading per requirement in requirement-id order) by default, and as the canonical `MatrixOutput` JSON under `--json`; a `coverage` that is absent or carries no criteria renders the `reason` string (never an empty table), and `quoin matrix` exits 0 on that empty population. `quoin matrix` has no `--strict` flag: it is a read-only view, and the gates over the same data are `quire coverage --strict` (the static axis) and `quoin evidence audit --ratchet` (the evidence axis) — this command adds no third one. | Test |
 | FR-115-AC-12 | Running `quoin matrix` against a fixture repository leaves the fixture's `spec/` directory byte-for-byte unchanged (directory listing and every file's bytes diffed before/after). | Test |
 | FR-115-AC-13 | `quoin-cli`'s `flow::FLOWS` no longer maps `"matrix"`; the CLI's flow-dispatch match routes only `"review"` and `"to-plan"` through `flow::run`; invoking `quoin matrix` never spawns `ix-flow`. | Test |
-| FR-115-AC-14 | `quoin matrix` resolves `head_commit` and the mock-inspection/catalog/independence inputs through the identical assembly path `quoin evidence audit` uses for the same working tree; when HEAD cannot be resolved, `quoin matrix` refuses rather than invoking the auditor with `head_commit: None`. | Test |
+| FR-115-AC-14 | `quoin matrix` resolves `head_commit` and the mock-inspection/catalog/independence inputs through the identical assembly path `quoin evidence audit` uses for the same working tree; when HEAD cannot be resolved, `quoin matrix` refuses (exit 2, `Outcome::Refused`) rather than invoking the auditor with `head_commit: None`. | Test |
 | FR-115-AC-15 | `quoin matrix --help` (and the retained CLI help surface, `help.rs`) describes the deterministic evidence-backed render, not the retired "Build or update a requirements test matrix" agent-workflow summary. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) (the binding graph),
   [FR-032](./FR-032-evidence-auditor.md) (the audit report, and
-  [PLAT-1086](https://github.com/agent-ix/quoin/issues/1086)'s failed/errored
-  latest-run gap, which blocks this FR's implementation per CR-002),
+  PLAT-1086's failed/errored latest-run gap, which blocks this FR's
+  implementation per CR-002),
   [FR-040](./FR-040-assurance-case-view.md) (`requirement_of`, the grouping
   and `reason`-on-empty conventions this FR reuses), quire-rs
   [FR-050](ix://agent-ix/quire-rs/FR-050)-AC-47..51 (`coverage_matrix`, and
@@ -314,9 +321,9 @@ still incomplete).
 > **CR-002 (2026-09-27, PLAT-1080):** `bound`'s "passing run" promise
 > currently outruns what `AuditReport.healthy` guarantees — see "`bound`'s
 > 'passing' promise depends on an upstream auditor gap" above. The gap is
-> `quoin-auditor`'s, tracked as
-> [PLAT-1086](https://github.com/agent-ix/quoin/issues/1086), and blocks this
-> FR's implementation without changing anything this FR itself specifies:
+> `quoin-auditor`'s, tracked as **PLAT-1086** (a Linear ticket, no GitHub
+> attachment), and blocks this FR's implementation without changing anything
+> this FR itself specifies:
 > `matrix.build` still reads `healthy` verbatim (CON-2), and once PLAT-1086
 > closes, `bound` becomes true of every criterion it is reported for with no
 > change to this FR's text.

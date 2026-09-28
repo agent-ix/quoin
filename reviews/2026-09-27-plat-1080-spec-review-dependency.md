@@ -30,3 +30,11 @@ enablement gap, the auditor failed-run check, is recorded as base FND-001.
 ## Verdict
 
 One LOW finding. It is not blocking.
+
+## Dispositions
+
+Round 1, reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | e609508 |
