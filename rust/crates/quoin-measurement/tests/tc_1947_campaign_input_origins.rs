@@ -4,7 +4,11 @@
 
 #![cfg(feature = "campaign")]
 #![cfg_attr(not(target_os = "linux"), allow(dead_code, unused_imports))]
-#![allow(clippy::expect_used, reason = "fixture setup must fail the test")]
+#![allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -364,6 +368,10 @@ fn runtime(repo: &Path, revision: &str, prepare: bool) -> RunMemberBindings {
 /// Trace: FR-114-AC-2, FR-114-AC-3. Provenance: PLAT-1061, TC-1947.
 #[cfg(target_os = "linux")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one authored two-member replay and its rehashed-substitution rejection form one scenario"
+)]
 fn tc_1947_two_member_authored_origins_replay_and_rehashed_substitution_rejects() {
     let (repo, definition, revision) = fixture();
     let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);

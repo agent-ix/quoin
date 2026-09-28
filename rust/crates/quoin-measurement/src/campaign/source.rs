@@ -404,6 +404,12 @@ fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource,
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
 mod tests {
     use super::{CampaignSource, SourceError, git, verify_source};
 

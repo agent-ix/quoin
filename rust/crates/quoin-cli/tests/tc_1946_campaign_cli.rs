@@ -5,6 +5,7 @@
 #![allow(
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "fixture setup and response assertions must fail the test"
 )]
 
@@ -245,6 +246,10 @@ fn tc_1946_campaign_verify_preserves_document_for_inconclusive_and_reject() {
 /// non-success verdict document after the bounded process is cancelled.
 #[cfg(target_os = "linux")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one sleeping producer, its cancellation and its retained verdict form one scenario"
+)]
 fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
     let (repo, _) = fixture();
     fs::write(
@@ -326,7 +331,7 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
                 "cancellation":{"kind":"event","authority":"fictional-campaign","event_id":"sigint"},
                 "budget":{
                     "timeoutMillis":10000,"maxStdoutBytes":4096,"maxStderrBytes":4096,
-                    "maxInputBytes":8388608,"maxOutputArtifacts":8,"maxOutputBytes":1048576,
+                    "maxInputBytes":8_388_608,"maxOutputArtifacts":8,"maxOutputBytes":1_048_576,
                     "maxDescendants":8,"maxConcurrency":1
                 },
                 "responseProtocol":contract("quoin.process-evidence/v1"),
