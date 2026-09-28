@@ -56,6 +56,14 @@ Reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
 | ------- | -------- | ------- | ---- | ------------ |
 | FND-005 | low | AC-11 introduces a new `quoin matrix --strict` flag (non-zero exit on an empty population) that appears nowhere in Behavior or Inputs. The Behavior section, which enumerates the CLI surface, therefore under-states it. Neither the HEAD-unresolved refusal (Behavior, AC-14) nor the `ContradictoryAudit` refusal (AC-5) names its exit class. An implementer can pass AC-14 with any non-zero exit and any message. | spec/functional/FR-115-evidence-backed-test-matrix.md:276, spec/functional/FR-115-evidence-backed-test-matrix.md:236-242, spec/functional/FR-115-evidence-backed-test-matrix.md:279 | missing-requirement |
 
+## New findings (disposition pass 2)
+
+Reviewed at agent-ix/quoin@3d058f9af6c53cc47f7c3b8363852046e17f1e59.
+
+| ID      | Severity | Summary | Refs | Escape Cause |
+| ------- | -------- | ------- | ---- | ------------ |
+| FND-006 | medium | The FND-005 fix names the wrong gate on both axes. AC-11 says "the gates over the same data are `quire coverage --strict` (the static axis) and `quoin evidence audit --ratchet` (the evidence axis)". The static gate over the computed `coverage_matrix` is `quire matrix --strict` (quire-cli FR-026 §G and AC-10, merged in quire-cli#103), which exits 1 on any `untagged` or `tagged-by-ignored-test` criterion and on the zero-population state. `quire coverage --strict` gates the older unbacked-row and zero-trace-target report (FR-050-AC-14), not criterion statuses. On the evidence axis, `--ratchet` alone never exits non-zero: `quoin-cli/src/evidence/audit.rs:121` sets a non-zero outcome only under `--strict`, and `--ratchet` merely narrows the report to findings not in the baseline (FR-032:73, 81). An operator who wires up the two named commands gets two gates that gate nothing. Name `quire matrix --strict` and `quoin evidence audit --strict` (optionally with `--ratchet`). The evidence half matches the team leader's ruling as relayed, so the leader should correct the ruling too. | spec/functional/FR-115-evidence-backed-test-matrix.md:283, rust/crates/quoin-cli/src/evidence/audit.rs:121, spec/functional/FR-032-evidence-auditor.md:73-81 | wrong-requirement |
+
 ## Dispositions
 
 Round 1, reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
@@ -66,3 +74,9 @@ Round 1, reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
 | FND-002 | fixed | e609508 |
 | FND-003 | fixed | e609508 |
 | FND-004 | fixed | e609508 |
+
+Round 2, reviewed at agent-ix/quoin@3d058f9af6c53cc47f7c3b8363852046e17f1e59.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-005 | fixed | 3d058f9 |
