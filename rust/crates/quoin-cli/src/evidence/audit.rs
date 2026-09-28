@@ -13,7 +13,7 @@ pub(super) fn command() -> Command {
     Command::new("audit")
         .about("Audit the evidence store: suspect links, staleness, vacuity")
         .arg(repo_arg())
-        .arg(Arg::new("module").long("module").action(ArgAction::Append))
+        .arg(module_arg())
         .arg(
             Arg::new("ratchet")
                 .long("ratchet")
@@ -21,40 +21,73 @@ pub(super) fn command() -> Command {
         )
         .arg(Arg::new("strict").long("strict").action(ArgAction::SetTrue))
         .arg(json_arg())
-        .arg(
-            Arg::new("multiplicity-requires")
-                .long("multiplicity-requires")
-                .action(ArgAction::Append),
-        )
-        .arg(
-            Arg::new("mutation-floor")
-                .long("mutation-floor")
-                .action(ArgAction::Append),
-        )
-        .arg(Arg::new("independence-policy").long("independence-policy"))
+        .args(policy_args())
 }
 
-pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
-    let repo = required(arguments, "repo")?;
+/// `--module`: the traceability model's roots, shared with `quoin matrix`.
+pub(crate) fn module_arg() -> Arg {
+    Arg::new("module").long("module").action(ArgAction::Append)
+}
+
+/// The auditor's policy inputs, shared with `quoin matrix` so both commands
+/// read one flag grammar into one [`assemble`].
+pub(crate) fn policy_args() -> [Arg; 3] {
+    [
+        Arg::new("multiplicity-requires")
+            .long("multiplicity-requires")
+            .action(ArgAction::Append),
+        Arg::new("mutation-floor")
+            .long("mutation-floor")
+            .action(ArgAction::Append),
+        Arg::new("independence-policy").long("independence-policy"),
+    ]
+}
+
+/// An audit, with the two inputs a caller joins it against.
+pub(crate) struct Audited {
+    /// The `quire.coverage` payload the audit's obligations came from.
+    pub(crate) coverage: serde_json::Value,
+    /// The binding graph the audit read, as `evidence.audit_inputs` served it.
+    pub(crate) bindings: serde_json::Value,
+    /// The `auditor.audit` response, whose payload carries `report`.
+    pub(crate) response: Response,
+}
+
+/// What [`assemble`] produced.
+pub(crate) enum Assembly {
+    /// Every step answered.
+    Audited(Audited),
+    /// A step declined; its response is the command's answer.
+    Declined(Response),
+}
+
+/// Assemble and run the audit: coverage, the store, the catalog, the policy.
+///
+/// The one assembly `quoin evidence audit` and `quoin matrix` share, so the
+/// two commands cannot audit the same working tree differently.
+pub(crate) fn assemble(
+    arguments: &ArgMatches,
+    repo: &str,
+    head: Option<&str>,
+    accepted: Option<&serde_json::Value>,
+) -> Result<Assembly, String> {
     let modules = values(arguments, "module");
     let coverage = invoke(
         "quire.coverage",
         &serde_json::json!({ "scope": repo, "modules": modules }),
     )?;
     if !coverage.outcome.carries_payload() {
-        return Ok(coverage);
+        return Ok(Assembly::Declined(coverage));
     }
     let obligations = field(&coverage.payload, "obligations")?;
     let policy = policy(arguments, &obligations)?;
-    let head = revision(&repo);
     let store = invoke(
         "evidence.audit_inputs",
-        &serde_json::json!({ "repo": repo, "head_commit": if head.is_empty() { None } else { Some(head.as_str()) }, "independence_policy": policy }),
+        &serde_json::json!({ "repo": repo, "head_commit": head, "independence_policy": policy }),
     )?;
     if !store.outcome.carries_payload() {
-        return Ok(store);
+        return Ok(Assembly::Declined(store));
     }
-    let (accepted, missing_baseline) = baseline(arguments, &repo)?;
     let catalog_request = if modules.is_empty() {
         serde_json::json!({})
     } else {
@@ -62,11 +95,12 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     };
     let catalog = invoke("catalog.methods", &catalog_request)?;
     if !catalog.outcome.carries_payload() {
-        return Ok(catalog);
+        return Ok(Assembly::Declined(catalog));
     }
+    let bindings = field(&store.payload, "bindings")?;
     let input = serde_json::json!({
         "obligations": obligations,
-        "bindings": field(&store.payload, "bindings")?,
+        "bindings": bindings,
         "runs": field(&store.payload, "runs")?,
         "scans": field(&store.payload, "scans")?,
         "injections": field(&store.payload, "injections")?,
@@ -74,7 +108,7 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         "vacuousScanSuites": field(&store.payload, "vacuous_scan_suites")?,
         "independence": field(&store.payload, "independence")?,
         "catalog": catalog.payload,
-        "headCommit": if head.is_empty() { None } else { Some(head.as_str()) },
+        "headCommit": head,
         "multiplicityRequires": values(arguments, "multiplicity-requires"),
         "mutationFloor": mutation_floor(&values(arguments, "mutation-floor"))?,
         "independencePolicy": policy,
@@ -82,8 +116,24 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let request = serde_json::json!({ "input": input, "accepted": accepted });
     let audited = invoke("auditor.audit", &request)?;
     if !audited.outcome.carries_payload() {
-        return Ok(audited);
+        return Ok(Assembly::Declined(audited));
     }
+    Ok(Assembly::Audited(Audited {
+        coverage: coverage.payload,
+        bindings,
+        response: audited,
+    }))
+}
+
+pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
+    let repo = required(arguments, "repo")?;
+    let head = revision(&repo);
+    let head = (!head.is_empty()).then_some(head.as_str());
+    let (accepted, missing_baseline) = baseline(arguments, &repo)?;
+    let audited = match assemble(arguments, &repo, head, accepted.as_ref())? {
+        Assembly::Audited(audited) => audited.response,
+        Assembly::Declined(response) => return Ok(response),
+    };
     let report = audited
         .payload
         .get("report")

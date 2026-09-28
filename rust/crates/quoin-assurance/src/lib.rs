@@ -38,6 +38,7 @@ pub mod argument;
 pub mod authored;
 pub mod case;
 pub mod discharge;
+pub mod matrix;
 pub mod render;
 
 pub use argument::{

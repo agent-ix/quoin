@@ -16,11 +16,7 @@ use quoin_core::protocol::Response;
 use crate::invocation;
 
 /// `(quoin subcommand, @agent-ix/ix-spec-workflows `spec/` directory name)`.
-const FLOWS: [(&str, &str); 3] = [
-    ("review", "review"),
-    ("matrix", "matrix"),
-    ("to-plan", "to-plan"),
-];
+const FLOWS: [(&str, &str); 2] = [("review", "review"), ("to-plan", "to-plan")];
 
 pub(crate) fn run(name: &str, arguments: &ArgMatches) -> Result<Response, String> {
     let (_, runtime_skill) = FLOWS
@@ -131,7 +127,24 @@ fn ix_home() -> PathBuf {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
-    use super::command;
+    use super::{FLOWS, command, run};
+
+    /// `matrix` is a computed view now, not a workflow: the flow table no
+    /// longer names it, and the launcher refuses it before any process starts.
+    ///
+    /// Trace: FR-115-AC-13, FR-020-AC-1, TC-1976, TC-065
+    #[test]
+    fn tc_1080_300_matrix_is_not_a_flow() {
+        let names: Vec<&str> = FLOWS.iter().map(|(name, _)| *name).collect();
+        assert_eq!(names, ["review", "to-plan"]);
+        let matches = command("matrix")
+            .try_get_matches_from(["matrix"])
+            .expect("grammar parses");
+        assert_eq!(
+            run("matrix", &matches).err().as_deref(),
+            Some("an unknown flow command reached dispatch")
+        );
+    }
 
     /// Trace: FR-062
     #[test]

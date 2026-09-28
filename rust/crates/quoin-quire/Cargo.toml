@@ -26,9 +26,9 @@ workspace = true
 #
 # `rev`, never a tag or branch: a moving ref makes the gate a claim about
 # whatever resolved that morning. `version = "="` alongside it because the
-# rev's manifest says 0.46.0 while `git describe` says v0.45.0-123 — the two
-# disagree, and a build that resolved a different 0.46.0 would be a silent
-# substitution. Both must match or the resolution fails.
+# rev's manifest version and `git describe` have disagreed before (0.46.0 vs
+# v0.45.0-123), and a build that resolved a different same-numbered release
+# would be a silent substitution. Both must match or the resolution fails.
 #
 # Declared here rather than in `[workspace.dependencies]` because this crate is
 # the only consumer of the quire engine and the pin is the crate's own subject
@@ -39,7 +39,7 @@ workspace = true
 # declaration of it here is how a workspace ends up with two validators that
 # agree by version number rather than by construction.
 quoin-jsonschema = { workspace = true }
-quire-rs = { version = "=0.46.0", git = "https://github.com/agent-ix/quire-rs", rev = "523e47f61ca5532c3c86064ed4872a1c5de3ed02" }
+quire-rs = { version = "=0.48.0", git = "https://github.com/agent-ix/quire-rs", rev = "a4f3a7065a33d67f5ce70a9ae6a55c9ca6f69688" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

@@ -8,6 +8,16 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-28** — **FR-115 implemented** (PLAT-1080). `matrix.build` in
+  `quoin-core` (domain in `quoin_assurance::matrix`) and `quoin matrix`
+  rendering it in place of the `ix-flow` launch; `quire.coverage` now carries
+  quire-rs's `coverage_matrix`. quoin's quire-rs pin moves from `=0.46.0` to
+  `=0.48.0` (tag v0.48.0), the first revision carrying `coverage_matrix`
+  (CR-001 closed). CR-003 corrects FR-115's description of the `coverage`
+  wire shape to the engine's measured one: a bare array, omitted when empty.
+  Matrix: FR-115 → ✅ Covered, TC-1964..TC-1979. FR-020 and US-005 are
+  narrowed to the `review`/`to-plan` launchers by a CR note, matching FR-021.
+
 * **2026-09-27** — **FR-115** (new FR): the **evidence-backed test matrix**
   (`matrix.build`, PLAT-1080, epic PLAT-1076). The hand-maintained Test Matrix
   is being replaced by one computed in memory in two layers: quire-rs's

@@ -21,8 +21,9 @@ relationships:
 
 ## Context
 
-A user or agent starts review, matrix, or planning workflow runs from the spec
-CLI and continues execution through `ix-flow`.
+A user or agent starts review or planning workflow runs from the spec CLI and
+continues execution through `ix-flow`. (`quoin matrix` is not a workflow: it
+renders the evidence-backed matrix in-process, per FR-115.)
 
 The expected command shape is:
 

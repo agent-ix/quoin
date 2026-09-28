@@ -12,7 +12,7 @@ use time::format_description::well_known::Rfc3339;
 
 use crate::core_runtime::invoke;
 
-mod audit;
+pub(crate) mod audit;
 mod baseline;
 
 const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> hash-at-binding -> evidence\n  baseline.json    the accepted violation set the ratchet compares against\n  runs/<SUITE-N>/<commit12>.json   one file = one run of one suite\n  experiments/sha256-<digest>.json content-addressed experiment records\n  operational/sha256-<digest>.json content-addressed operational evidence\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence affirm     re-affirm a binding after its statement changed\n  quoin evidence audit      read the store and report\n  quoin evidence baseline   accept the current findings as the ratchet baseline\n  quoin evidence gc         drop run records nothing references";
@@ -253,7 +253,7 @@ fn affirm(arguments: &ArgMatches) -> Result<Response, String> {
     })
 }
 
-pub(super) fn revision(repo: &str) -> String {
+pub(crate) fn revision(repo: &str) -> String {
     std::process::Command::new("git")
         .args(["-C", repo, "rev-parse", "HEAD"])
         .output()
@@ -422,13 +422,13 @@ fn record(arguments: &ArgMatches, operation: &str) -> Result<Response, String> {
     })
 }
 
-pub(super) fn repo_arg() -> Arg {
+pub(crate) fn repo_arg() -> Arg {
     Arg::new("repo").long("repo").default_value(".")
 }
-pub(super) fn json_arg() -> Arg {
+pub(crate) fn json_arg() -> Arg {
     Arg::new("json").long("json").action(ArgAction::SetTrue)
 }
-pub(super) fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
+pub(crate) fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
     arguments
         .get_one::<String>(name)
         .cloned()

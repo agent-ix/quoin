@@ -23,10 +23,16 @@ fn tc_379_026_the_pin_parses_out_of_this_crates_own_manifest() {
         .find(|line| line.starts_with("quire-rs"))
         .expect("the manifest declares the engine pin");
 
-    assert_eq!(field(line, "version").as_deref(), Some("=0.46.0"));
-    assert_eq!(
-        field(line, "rev").as_deref(),
-        Some("523e47f61ca5532c3c86064ed4872a1c5de3ed02")
+    // The shape is asserted, not the literal pin: the manifest line IS the
+    // pin, and a second copy of its value here only has to be re-typed on
+    // every engine bump without guarding anything the parse does not.
+    let version = field(line, "version").expect("the pin declares a version");
+    assert!(version.starts_with('='), "an exact pin, got {version:?}");
+    let rev = field(line, "rev").expect("the pin declares a rev");
+    assert_eq!(rev.len(), 40, "a full commit id, got {rev:?}");
+    assert!(
+        rev.bytes().all(|b| b.is_ascii_hexdigit()),
+        "hex, got {rev:?}"
     );
 }
 

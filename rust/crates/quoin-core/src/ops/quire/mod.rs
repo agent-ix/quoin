@@ -60,7 +60,10 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use quoin_auditor::advise::PropertyShape;
-use quoin_quire_types::{CoverageDiagnostic, Obligation};
+use quoin_quire_types::{
+    CoverageDiagnostic, CoverageMatrixBinder, CoverageMatrixCriterion, CoverageMatrixRequirement,
+    Obligation,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::capabilities::{Capabilities, QuireHost};
@@ -105,6 +108,12 @@ pub fn coverage(
     ok(&CoveragePayload {
         obligations: outcome.report.obligations.iter().map(obligation).collect(),
         diagnostics: outcome.report.diagnostics.iter().map(diagnostic).collect(),
+        coverage_matrix: outcome
+            .report
+            .coverage_matrix
+            .iter()
+            .map(matrix_requirement)
+            .collect(),
     })
 }
 
@@ -187,6 +196,50 @@ fn diagnostic(source: &quoin_quire::model::CoverageDiagnostic) -> CoverageDiagno
     CoverageDiagnostic {
         reason: source.reason.clone(),
         value: source.value.clone(),
+    }
+}
+
+/// Project one engine `coverage_matrix` entry onto the reader quoin carries.
+fn matrix_requirement(
+    source: &quoin_quire::model::CoverageMatrixRequirement,
+) -> CoverageMatrixRequirement {
+    CoverageMatrixRequirement {
+        document: source.document.clone(),
+        criteria: source.criteria.iter().map(matrix_criterion).collect(),
+    }
+}
+
+fn matrix_criterion(
+    source: &quoin_quire::model::CoverageMatrixCriterion,
+) -> CoverageMatrixCriterion {
+    CoverageMatrixCriterion {
+        id: source.id.clone(),
+        method: source.method.clone(),
+        binders: source.binders.iter().map(matrix_binder).collect(),
+        status: matrix_status(source.status).to_owned(),
+    }
+}
+
+fn matrix_binder(source: &quoin_quire::model::CoverageMatrixBinder) -> CoverageMatrixBinder {
+    CoverageMatrixBinder {
+        path: source.path.clone(),
+        line: u64::try_from(source.line).unwrap_or(u64::MAX),
+        column: u64::try_from(source.column).unwrap_or(u64::MAX),
+        qualified_name: source.qualified_name.clone(),
+        kind: source.kind.clone(),
+        ignored: source.ignored,
+    }
+}
+
+/// The engine's static status in its own wire spelling. `tests.rs` holds this
+/// table to the engine's `Serialize`, so a renamed variant fails there.
+fn matrix_status(status: quoin_quire::model::CoverageMatrixStatus) -> &'static str {
+    use quoin_quire::model::CoverageMatrixStatus as Status;
+    match status {
+        Status::Tagged => "tagged",
+        Status::Untagged => "untagged",
+        Status::TaggedByIgnoredTest => "tagged-by-ignored-test",
+        Status::MethodWithoutSymbol => "method-without-symbol",
     }
 }
 

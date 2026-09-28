@@ -25,7 +25,8 @@ relationships:
 `quoin` provides a standalone, installable CLI that gives a spec-authoring agent
 everything it needs to start spec work: a catalog-driven authoring contract, a
 user-extensible spec-module store, and launch points for governed
-  review/matrix/planning workflows; and read-only assurance and trace-graph
+  review/planning workflows; a computed, evidence-backed test matrix; and
+  read-only assurance and trace-graph
   analyses. It runs on its own, so adopting spec-driven
 development requires only this one tool on `PATH`.
 
@@ -43,8 +44,8 @@ This specification governs:
 
 - The `quoin` command surface: argument parsing; `version` and help; `catalog`
   list/show/validate; `write` authoring packs; `plugin`
-  install/list/remove/ensure-defaults; the `review`/`matrix`/`to-plan` workflow
-  launchers; and the `update` self-update command.
+  install/list/remove/ensure-defaults; the `review`/`to-plan` workflow
+  launchers; the `matrix` evidence-backed matrix render; and the `update` self-update command.
 - Assembly of a Filament catalog from module roots (`QUOIN_MODULE_PATHS` and the
   installed module store) and the authoring contract it exposes — skeletons,
   schemas, and module roots.
@@ -92,7 +93,7 @@ catalog, authoring, plugin, workflow, or self-update surface.
 It assembles a Filament catalog from module roots and returns the local
 skeletons, schemas, and a scoped `quire validate` command that the calling agent
 uses as its authoring contract. It installs user and community modules through
-`@agent-ix/ts-plugin-kit`, and it launches review/matrix/planning workflows and
+`@agent-ix/ts-plugin-kit`, and it launches review/planning workflows and
 hands their lifecycle to `ix-flow`.
 
 `quoin` declares its default module set in the committed `default-modules.yaml` as
@@ -114,7 +115,7 @@ index; the files are authoritative.
 - [StR-001](./stakeholder/StR-001-standalone-cli.md) — run spec work from a standalone CLI.
 - [StR-002](./stakeholder/StR-002-extensible-vocabulary.md) — extend the vocabulary with community modules.
 - [StR-003](./stakeholder/StR-003-shared-catalog.md) — authoring and validation share one catalog.
-- [StR-004](./stakeholder/StR-004-governed-workflows.md) — review/matrix/planning run as governed workflows.
+- [StR-004](./stakeholder/StR-004-governed-workflows.md) — review and planning run as governed workflows.
 - [StR-005](./stakeholder/StR-005-offline-reproducible.md) — authoring stays offline-safe and reproducible.
 - [StR-006](./stakeholder/StR-006-current-via-self-update.md) — keep quoin current with one command.
 - [StR-008](./stakeholder/StR-008-conforming-module-repositories-by-construction.md) — new semantic-module repositories conform by construction.

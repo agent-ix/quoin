@@ -19,6 +19,8 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
+# The persisted binding graph (`BindingsFile`) `matrix::build` joins on.
+quoin-evidence = { workspace = true }
 quoin-evidence-types = { workspace = true }
 quoin-finding-types = { workspace = true }
 quoin-quire-types = { workspace = true }
@@ -30,6 +32,11 @@ serde_json = { workspace = true }
 # on the boundary's own execution path needs them, so the shipped binary does
 # not carry the generator's dependency tree.
 schemars = { workspace = true, optional = true }
+
+[dev-dependencies]
+# FR-115-CON-1: `matrix` must stay free of host capability, audited by the
+# shared Engineering Assurance source auditor as `quoin-core` audits itself.
+engineering-assurance = { workspace = true, features = ["source-audit"] }
 
 [features]
 # FR-097. `quoin-schemas` turns this on to read the wire shapes off the types

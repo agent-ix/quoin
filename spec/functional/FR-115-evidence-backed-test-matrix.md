@@ -146,7 +146,7 @@ ago as fresh rather than `stale`.
 
 ### Grouping diverges deliberately from quire's own grouping
 
-`coverage_matrix.requirements[]` groups criteria by their **owning document**
+`coverage_matrix`'s entries group criteria by their **owning document**
 (a file path — FR-050-AC-48). `matrix.build` flattens every criterion across
 every document into one list and re-groups by
 **`quoin_assurance::requirement_of(criterion.id)`** — the same requirement-id
@@ -168,10 +168,12 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 
 ## Inputs
 
-- `coverage`: the quire-rs `coverage_matrix` payload (`requirements[].document`,
-  `criteria[].id`/`method`/`binders`/`status`) as published by
-  FR-050-AC-47..51, or **absent** when the module declares no `obligations:`
-  source and the field is omitted entirely (FR-050-AC-51).
+- `coverage`: the quire-rs `coverage_matrix` payload as published by
+  FR-050-AC-47..51 — a **bare array** of `{document, criteria[]}` entries
+  (`criteria[].id`/`method`/`binders`/`status`), with no wrapping object — or
+  **absent** when the module declares no `obligations:` source and the field
+  is omitted entirely (FR-050-AC-51). Absent is the only zero-criteria form
+  the engine emits (CR-003).
 - `bindings`: the evidence store's binding graph **exactly as persisted** —
   `quoin-evidence`'s `BindingsFile` shape (`{schema_version, bindings:
   Vec<Binding>}`, [FR-030](./FR-030-evidence-store.md)), not a bare array.
@@ -320,3 +322,17 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 > ladder now raises `stale-evidence` on a failed or errored latest run, with
 > no change to this FR's own text — `matrix.build` still reads `healthy`
 > verbatim (CON-2).
+>
+> **CR-003 (2026-09-28, PLAT-1080):** the wire shape of `coverage`, measured
+> at the pinned quire-rs `=0.48.0` rather than assumed. `CoverageReport.
+> coverage_matrix` is `Vec<CoverageMatrixRequirement>` with
+> `skip_serializing_if = "Vec::is_empty"`: it serializes as a bare array of
+> `{document, criteria[]}` entries and is omitted entirely when empty. There
+> is no `{requirements: [...]}` wrapper and no present-but-empty form, so the
+> earlier "`coverage_matrix.requirements[]`" spelling in this FR described a
+> shape the engine never emits; the Inputs and grouping text now name the
+> real one. `quoin-core`'s `quire.coverage` carries the field under the same
+> rule (omitted when empty), and `quoin matrix` forwards the absence to
+> `matrix.build`, which renders `reason`. AC-11's "absent or carries no
+> criteria" is unchanged: `matrix.build` renders `reason` whenever the
+> flattened criterion population is empty, which the absent form always is.

@@ -160,3 +160,74 @@ pub struct CoverageDiagnostic {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+
+/// One `coverage_matrix` entry, as quoin reads it off `quire coverage --json`
+/// (quire-rs FR-050-AC-47..51).
+///
+/// quire groups the matrix by the obligations' **stating document**; quoin's
+/// evidence-backed matrix regroups by requirement id, so `document` is read
+/// only to be carried, never to group.
+///
+/// On the wire `coverage_matrix` is a bare array of these, omitted entirely
+/// when the module declares no `obligations:` source — there is no wrapping
+/// object and no present-but-empty form.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct CoverageMatrixRequirement {
+    /// The obligation group's stating document, scope-relative.
+    pub document: String,
+    /// The document's criteria, in the engine's derivation order.
+    pub criteria: Vec<CoverageMatrixCriterion>,
+}
+
+/// One `coverage_matrix` criterion: the static axis of a matrix row.
+///
+/// `statement` is emitted by quire and not declared here: nothing in quoin
+/// renders it from this record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct CoverageMatrixCriterion {
+    /// The obligation id, the join key into the evidence store and the audit.
+    pub id: String,
+    /// The declared verification method, omitted when the row states none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    /// Every binding test symbol, empty (never absent) when there is none.
+    pub binders: Vec<CoverageMatrixBinder>,
+    /// The computed static status (`tagged`, `untagged`,
+    /// `tagged-by-ignored-test`, `method-without-symbol`).
+    ///
+    /// A `String` rather than an enum for the same reason as
+    /// [`CoverageDiagnostic::reason`]: quire owns the vocabulary, and a value
+    /// it adds must be carried verbatim rather than refused.
+    pub status: String,
+}
+
+/// One binding test symbol of a [`CoverageMatrixCriterion`], field for field
+/// as quire emits it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct CoverageMatrixBinder {
+    /// Repo-relative, `/`-separated.
+    pub path: String,
+    /// 1-based declaration line.
+    pub line: u64,
+    /// 1-based UTF-8 byte declaration column.
+    pub column: u64,
+    /// The symbol's qualified name.
+    pub qualified_name: String,
+    /// The engine's symbol-kind label.
+    pub kind: String,
+    /// Whether the binder is an ignored test; serialized only when `true`,
+    /// as quire does.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub ignored: bool,
+}
+
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde's skip_serializing_if hands the predicate a reference"
+)]
+fn is_false(value: &bool) -> bool {
+    !*value
+}

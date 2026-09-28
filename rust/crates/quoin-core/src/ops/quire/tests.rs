@@ -51,6 +51,7 @@ const HASH: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 struct FakeEngine {
     obligations: Vec<quoin_quire::model::Obligation>,
     diagnostics: Vec<quoin_quire::model::CoverageDiagnostic>,
+    matrix: Vec<quoin_quire::model::CoverageMatrixRequirement>,
     documents: Vec<Document>,
     unresolved: Vec<Unresolved>,
     failure: Option<quoin_quire::ErrorCode>,
@@ -94,6 +95,7 @@ impl QuireHost for FakeEngine {
         let mut report = quire_report();
         report.obligations.clone_from(&self.obligations);
         report.diagnostics.clone_from(&self.diagnostics);
+        report.coverage_matrix.clone_from(&self.matrix);
         Ok(quoin_quire::coverage::Outcome {
             report,
             // Notices are produced and deliberately not carried; see the
@@ -239,6 +241,99 @@ fn coverage_projects_the_obligations_the_engine_derived() {
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0]["reason"], "uncatalogued-verification-method");
     assert_eq!(diagnostics[0]["value"], "Inspection");
+}
+
+/// One engine `coverage_matrix` entry covering every status and an ignored
+/// and a non-ignored binder.
+fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
+    use quoin_quire::model::{
+        CoverageMatrixBinder, CoverageMatrixCriterion, CoverageMatrixRequirement,
+        CoverageMatrixStatus,
+    };
+    let binder = |ignored| CoverageMatrixBinder {
+        path: "tests/a.rs".to_owned(),
+        line: 7,
+        column: 4,
+        qualified_name: "tc_1_a".to_owned(),
+        kind: "function".to_owned(),
+        ignored,
+    };
+    let criterion = |id: &str, method: Option<&str>, binders, status| CoverageMatrixCriterion {
+        id: id.to_owned(),
+        statement: "The command reports coverage.".to_owned(),
+        method: method.map(str::to_owned),
+        binders,
+        status,
+    };
+    vec![CoverageMatrixRequirement {
+        document: "spec/FR-001.md".to_owned(),
+        criteria: vec![
+            criterion(
+                "FR-001-AC-1",
+                Some("Test"),
+                vec![binder(false)],
+                CoverageMatrixStatus::Tagged,
+            ),
+            criterion(
+                "FR-001-AC-2",
+                None,
+                Vec::new(),
+                CoverageMatrixStatus::Untagged,
+            ),
+            criterion(
+                "FR-001-AC-3",
+                Some("Test"),
+                vec![binder(true)],
+                CoverageMatrixStatus::TaggedByIgnoredTest,
+            ),
+            criterion(
+                "FR-001-AC-4",
+                Some("Inspection"),
+                Vec::new(),
+                CoverageMatrixStatus::MethodWithoutSymbol,
+            ),
+        ],
+    }]
+}
+
+/// `quire.coverage` carries `coverage_matrix` in the engine's own spelling:
+/// the projection equals the engine's `Serialize` output minus `statement`,
+/// so a renamed field or status in quire-rs fails here rather than reading
+/// as an empty or wrong column downstream. An empty matrix stays absent.
+///
+/// Trace: FR-115-AC-7, TC-1970
+#[test]
+fn coverage_projects_the_engine_matrix_in_its_own_spelling() {
+    let engine = FakeEngine {
+        matrix: engine_matrix(),
+        ..FakeEngine::default()
+    };
+    let response = coverage(
+        &json!({ "scope": "/repo" }),
+        &Capabilities::with_quire(&engine),
+    )
+    .unwrap();
+
+    let mut expected = serde_json::to_value(engine_matrix()).unwrap();
+    for criterion in expected[0]["criteria"].as_array_mut().unwrap() {
+        criterion.as_object_mut().unwrap().remove("statement");
+    }
+    assert_eq!(payload(&response)["coverage_matrix"], expected);
+    assert_eq!(
+        expected[0]["criteria"][2]["status"],
+        "tagged-by-ignored-test"
+    );
+
+    let empty = FakeEngine::default();
+    let response = coverage(
+        &json!({ "scope": "/repo" }),
+        &Capabilities::with_quire(&empty),
+    )
+    .unwrap();
+    assert!(
+        payload(&response).get("coverage_matrix").is_none(),
+        "an empty matrix is omitted, as quire omits it"
+    );
 }
 
 /// The scope and module roots reach the engine as the caller spelled them.

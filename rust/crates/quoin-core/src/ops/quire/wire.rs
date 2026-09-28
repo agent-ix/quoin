@@ -21,7 +21,7 @@
 use std::collections::BTreeMap;
 
 use quoin_auditor::advise::PropertyShape;
-use quoin_quire_types::{CoverageDiagnostic, Obligation};
+use quoin_quire_types::{CoverageDiagnostic, CoverageMatrixRequirement, Obligation};
 use serde::{Deserialize, Serialize};
 
 /// The largest `quire.coverage` or `quire.properties` request, in bytes.
@@ -54,9 +54,9 @@ pub struct CoverageRequest {
 
 /// The payload `quire.coverage` writes to stdout.
 ///
-/// Two fields of the engine's report, and that is the whole of what the
-/// retained TypeScript read: six commands parsed `quire coverage --json` and
-/// between them touched `obligations` and `diagnostics` and nothing else. The
+/// Three fields of the engine's report. Six retained commands touched
+/// `obligations` and `diagnostics` and nothing else; `quoin matrix` adds
+/// `coverage_matrix`, the static axis `matrix.build` joins evidence onto. The
 /// rest of `CoverageReport` — totals, rows, symbols, the status census — is
 /// rendered by `quire` itself and was never quoin's to carry.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -66,6 +66,11 @@ pub struct CoveragePayload {
     pub obligations: Vec<Obligation>,
     /// The run's diagnostics, in the engine's order.
     pub diagnostics: Vec<CoverageDiagnostic>,
+    /// The engine's per-criterion static matrix, omitted when empty exactly
+    /// as quire omits it — so a caller forwarding this field to
+    /// `matrix.build` forwards the absence too.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub coverage_matrix: Vec<CoverageMatrixRequirement>,
 }
 
 /// The request accepted by `quire.properties`.
