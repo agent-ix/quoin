@@ -42,13 +42,13 @@ entries:
       ref: 469cf48b043f04167b14f877435084d3ec37519f
 
   - name: spec-artifacts-iso
-    version: "0.19.0"
+    version: "0.20.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-artifacts-iso
       path: spec_artifacts_iso
-      ref: v0.19.0
+      ref: v0.20.0
 
   - name: spec-artifacts-app
     version: "0.6.0"
@@ -60,13 +60,13 @@ entries:
       ref: v0.6.0
 
   - name: spec-artifacts-process
-    version: "0.26.0"
+    version: "0.27.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
-      ref: v0.26.0
+      ref: v0.27.0
 
   - name: spec-objects-business
     version: "0.7.0"
