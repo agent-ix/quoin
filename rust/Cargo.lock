@@ -2944,6 +2944,7 @@ dependencies = [
 name = "quoin-assurance"
 version = "0.25.0"
 dependencies = [
+ "engineering-assurance",
  "quoin-evidence",
  "quoin-evidence-types",
  "quoin-finding-types",

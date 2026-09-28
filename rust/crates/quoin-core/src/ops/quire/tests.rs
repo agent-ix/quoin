@@ -301,7 +301,7 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
 /// so a renamed field or status in quire-rs fails here rather than reading
 /// as an empty or wrong column downstream. An empty matrix stays absent.
 ///
-/// Trace: FR-115-AC-7
+/// Trace: FR-115-AC-7, TC-1970
 #[test]
 fn coverage_projects_the_engine_matrix_in_its_own_spelling() {
     let engine = FakeEngine {

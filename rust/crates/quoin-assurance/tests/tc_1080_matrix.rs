@@ -85,7 +85,7 @@ fn status_with(findings: &[&str], healthy: bool, checks: &[&str]) -> EvidenceSta
 /// An empty binding graph reads `no run evidence` for every criterion,
 /// whatever the audit says — and the detail is still computed.
 ///
-/// Trace: FR-115-AC-3
+/// Trace: FR-115-AC-3, TC-1966
 #[test]
 fn tc_1080_001_an_empty_store_is_no_run_evidence_and_still_carries_detail() {
     let output = build(&input(
@@ -119,9 +119,9 @@ fn tc_1080_001_an_empty_store_is_no_run_evidence_and_still_carries_detail() {
     );
 }
 
-/// Each finding kind lands in the bucket FR-115 assigns it, alone.
+/// Each finding kind lands in the bucket the requirement assigns it, alone.
 ///
-/// Trace: FR-115-AC-4
+/// Trace: FR-115-AC-4, TC-1967
 #[test]
 fn tc_1080_002_every_finding_kind_maps_to_its_status() {
     for kind in [
@@ -161,7 +161,7 @@ fn tc_1080_002_every_finding_kind_maps_to_its_status() {
 /// Precedence: bound > suspect > stale > undischarged, and an unevaluated
 /// entry or a total absence is undischarged.
 ///
-/// Trace: FR-115-AC-4
+/// Trace: FR-115-AC-4, TC-1967
 #[test]
 fn tc_1080_003_precedence_is_bound_then_suspect_then_stale_then_undischarged() {
     assert_eq!(status_with(&[], true, &[]), EvidenceStatus::Bound);
@@ -201,7 +201,7 @@ fn tc_1080_003_precedence_is_bound_then_suspect_then_stale_then_undischarged() {
 /// An id both healthy and in a finding, or in an unevaluated check, refuses
 /// the whole build and names the first such id.
 ///
-/// Trace: FR-115-AC-5, FR-115-CON-4
+/// Trace: FR-115-AC-5, FR-115-CON-4, TC-1968
 #[test]
 fn tc_1080_004_a_contradictory_audit_is_refused_not_resolved() {
     let with_finding = build(&input(
@@ -238,7 +238,7 @@ fn tc_1080_004_a_contradictory_audit_is_refused_not_resolved() {
 /// `static_status` and `binders` are copied verbatim and never move with the
 /// evidence axis; an absent `method` stays absent rather than `null`.
 ///
-/// Trace: FR-115-AC-7
+/// Trace: FR-115-AC-7, TC-1970
 #[test]
 fn tc_1080_005_the_static_axis_is_verbatim_and_method_is_omitted_not_null() {
     let binder = json!({
@@ -268,7 +268,7 @@ fn tc_1080_005_the_static_axis_is_verbatim_and_method_is_omitted_not_null() {
 /// two requirements' criteria yields two entries, in requirement-id byte
 /// order, each keeping the matrix's own relative criterion order.
 ///
-/// Trace: FR-115-AC-8
+/// Trace: FR-115-AC-8, TC-1971
 #[test]
 fn tc_1080_006_criteria_group_by_requirement_not_by_document() {
     let request: MatrixInput = serde_json::from_value(json!({
@@ -309,7 +309,7 @@ fn tc_1080_006_criteria_group_by_requirement_not_by_document() {
 /// The detail is total and ordered: all three lists non-empty for one
 /// criterion, all three empty for one reported nowhere.
 ///
-/// Trace: FR-115-AC-9
+/// Trace: FR-115-AC-9, TC-1972
 #[test]
 fn tc_1080_007_evidence_detail_is_total_and_ordered() {
     let id = "FR-001-AC-1";
@@ -385,7 +385,7 @@ fn tc_1080_007_evidence_detail_is_total_and_ordered() {
 
 /// An absent coverage matrix renders the reason, never an empty table.
 ///
-/// Trace: FR-115-AC-11
+/// Trace: FR-115-AC-11, TC-1974
 #[test]
 fn tc_1080_008_an_absent_matrix_renders_its_reason() {
     let request: MatrixInput = serde_json::from_value(json!({
@@ -404,7 +404,7 @@ fn tc_1080_008_an_absent_matrix_renders_its_reason() {
 /// The markdown render: one `##` section per requirement, the six columns,
 /// and a detail cell a `|` inside a summary cannot break.
 ///
-/// Trace: FR-115-AC-11
+/// Trace: FR-115-AC-11, TC-1974
 #[test]
 fn tc_1080_009_markdown_renders_one_table_per_requirement() {
     let output = build(&input(
@@ -428,4 +428,29 @@ fn tc_1080_009_markdown_renders_one_table_per_requirement() {
          | FR-001 | FR-001-AC-1 | Test | untagged | stale | stale-evidence: a\\|b; bound by unit@abc |\n\
          | FR-001 | FR-001-AC-2 | Test | untagged | undischarged | — |\n"
     );
+}
+
+/// `matrix` performs no file, network or subprocess I/O: the shared source
+/// auditor finds no host capability in the module, so every input can only
+/// have arrived as an argument. `quoin-core`'s `ops/matrix.rs` shell is held to
+/// the same rule by `tc_373_the_library_half_names_no_host_capability`.
+///
+/// Trace: FR-115-CON-1, TC-1979
+#[test]
+fn tc_1080_010_the_matrix_module_holds_no_host_capability() {
+    use engineering_assurance::source_audit::{
+        RustSourceAuditRole, RustSourceFindingCategory, audit_rust_source,
+    };
+    let source = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/src/matrix.rs")).unwrap();
+    assert!(
+        String::from_utf8_lossy(&source).contains("pub fn build("),
+        "the audit must read the module that builds the matrix"
+    );
+    let findings = audit_rust_source(&source, RustSourceAuditRole::ReusableLibrary).unwrap();
+    let capabilities: Vec<String> = findings
+        .iter()
+        .filter(|finding| finding.category() == RustSourceFindingCategory::ForbiddenCapability)
+        .map(|finding| format!("{:?}", finding.capability()))
+        .collect();
+    assert_eq!(capabilities, Vec::<String>::new());
 }

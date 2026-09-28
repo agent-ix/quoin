@@ -15,7 +15,8 @@ description: "Chronological log of structural changes to this bundle."
   `=0.48.0` (tag v0.48.0), the first revision carrying `coverage_matrix`
   (CR-001 closed). CR-003 corrects FR-115's description of the `coverage`
   wire shape to the engine's measured one: a bare array, omitted when empty.
-  Matrix: FR-115 → ✅ Covered, TC-1964..TC-1978.
+  Matrix: FR-115 → ✅ Covered, TC-1964..TC-1979. FR-020 and US-005 are
+  narrowed to the `review`/`to-plan` launchers by a CR note, matching FR-021.
 
 * **2026-09-27** — **FR-115** (new FR): the **evidence-backed test matrix**
   (`matrix.build`, PLAT-1080, epic PLAT-1076). The hand-maintained Test Matrix

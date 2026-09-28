@@ -68,7 +68,7 @@ fn request() -> Value {
 
 /// The whole payload, as bytes, twice.
 ///
-/// Trace: FR-115-AC-1, FR-115-AC-10
+/// Trace: FR-115-AC-1, FR-115-AC-10, TC-1964, TC-1973
 #[test]
 fn tc_1080_100_two_runs_over_one_input_emit_identical_canonical_bytes() {
     let stdin = request().to_string();
@@ -96,7 +96,7 @@ fn tc_1080_100_two_runs_over_one_input_emit_identical_canonical_bytes() {
 /// A missing required field or an unknown one is a bad request naming the
 /// operation; a request over the ceiling is refused with its size.
 ///
-/// Trace: FR-115-AC-2
+/// Trace: FR-115-AC-2, TC-1965
 #[test]
 fn tc_1080_101_the_request_shape_is_enforced() {
     for broken in [
@@ -138,7 +138,7 @@ fn tc_1080_101_the_request_shape_is_enforced() {
 /// A contradictory audit exits 2 with `reason: contradictory-audit` and the
 /// offending id, and emits no partial matrix.
 ///
-/// Trace: FR-115-AC-5, FR-115-CON-4
+/// Trace: FR-115-AC-5, FR-115-CON-4, TC-1968
 #[test]
 fn tc_1080_102_a_contradictory_audit_is_refused_with_its_reason() {
     for contradiction in [

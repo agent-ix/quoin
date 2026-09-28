@@ -132,7 +132,7 @@ mod tests {
     /// `matrix` is a computed view now, not a workflow: the flow table no
     /// longer names it, and the launcher refuses it before any process starts.
     ///
-    /// Trace: FR-115-AC-13
+    /// Trace: FR-115-AC-13, FR-020-AC-1, TC-1976, TC-065
     #[test]
     fn tc_1080_300_matrix_is_not_a_flow() {
         let names: Vec<&str> = FLOWS.iter().map(|(name, _)| *name).collect();

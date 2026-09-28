@@ -33,6 +33,11 @@ serde_json = { workspace = true }
 # not carry the generator's dependency tree.
 schemars = { workspace = true, optional = true }
 
+[dev-dependencies]
+# FR-115-CON-1: `matrix` must stay free of host capability, audited by the
+# shared Engineering Assurance source auditor as `quoin-core` audits itself.
+engineering-assurance = { workspace = true, features = ["source-audit"] }
+
 [features]
 # FR-097. `quoin-schemas` turns this on to read the wire shapes off the types
 # that actually serialise them, rather than off a second declaration of the
