@@ -458,6 +458,12 @@ fn stage_checker_input(
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
 mod tests {
     use std::path::PathBuf;
 

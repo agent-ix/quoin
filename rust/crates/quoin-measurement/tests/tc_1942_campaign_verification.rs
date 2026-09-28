@@ -3,7 +3,11 @@
 //! Generic campaign verification with a non-TL Git source fixture.
 
 #![cfg(feature = "campaign")]
-#![allow(clippy::expect_used, reason = "fixture setup must fail the test")]
+#![allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -266,6 +270,10 @@ fn tc_1942_missing_member_is_inconclusive_and_source_tampering_is_refused() {
 }
 
 #[cfg(target_os = "linux")]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one process member, one checker member and their two source checkouts form one fixture"
+)]
 fn direct_fixture() -> (
     tempfile::TempDir,
     tempfile::TempDir,
@@ -578,6 +586,10 @@ fn tc_1940_typed_definition_and_run_refusal_matrix() {
 }
 
 #[cfg(target_os = "linux")]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "one retained run assertion checked against its own definition, checkouts and expected reason"
+)]
 fn assert_retained_unchecked_attempts(
     repo: &Path,
     definition: &engineering_assurance::campaign::CampaignDefinition,
@@ -798,6 +810,10 @@ fn tc_1942_malformed_checker_receipt_retains_each_collection() {
 /// Provenance: PLAT-1043
 #[cfg(target_os = "linux")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one process member and one checker member, each asserted through its own protected-collection substitution, form one scenario"
+)]
 fn tc_1942_direct_process_and_checker_publish_protected_collection() {
     use engineering_assurance::campaign::{CampaignVerdict, canonical_digest};
     use quoin_measurement::campaign::run::{BindingFailure, CampaignRunError, run_campaign};
@@ -1112,7 +1128,7 @@ fn tc_1942_resume_keeps_prior_attempts_and_completes_the_missing_suffix() {
 }
 
 /// Trace: FR-114-AC-2, TC-1942. Provenance: PLAT-1043.
-/// A same-run-ID checkpoint claiming InvalidRequest without an EA result has
+/// A same-run-ID checkpoint claiming `InvalidRequest` without an EA result has
 /// no replayable preflight authority and cannot suppress that invocation.
 #[cfg(target_os = "linux")]
 #[test]
@@ -1542,7 +1558,7 @@ fn tc_1941_escaped_descendant_containment_failure_is_retained() {
 }
 
 /// Trace: FR-114-AC-2, TC-1941. Provenance: PLAT-1043.
-/// EA can mint MalformedResponse for a different exact response adapter. Its
+/// EA can mint `MalformedResponse` for a different exact response adapter. Its
 /// typed terminal result survives Quoin's retained run intake and replay,
 /// without changing the generic process-evidence adapter's acceptance rule.
 #[cfg(target_os = "linux")]
