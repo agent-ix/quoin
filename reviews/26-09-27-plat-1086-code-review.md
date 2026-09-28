@@ -115,3 +115,4 @@ Round 1, reviewed at `f72ec1cb765737ff6996c80f794cb795a0db81a1`, after a rebase 
 | FND-006 | fixed | f72ec1c: the doc comment in stale.rs:53-61 is corrected. |
 | FND-007 | fixed | f72ec1c: `unrecorded_evidence`, `failed_run` and `behind_head` move to `audit/stale.rs` (152 lines), leaving ladder.rs at 420 lines. `OVER_SOFT_CEILING` is empty again, and the rationale it states is restored. |
 | FND-008 | fixed | f72ec1c: DIVERGENCE.md gets a new §6, and the "What is NOT divergent" ladder-order bullet now names the exception. |
+| FND-009 | fixed | 258981a: the test module header now attributes the vacuity check to `ladder.rs`, and the DIVERGENCE.md intro counts four divergences, covering §6. Round 2 reviewed `258981a4076b1d851f640c1319841791c0a97245`, rebased onto `fe52d51`. `git range-diff e15f317..f72ec1c fe52d51..258981a` shows the three prior commits unchanged (=) and one new commit that touches only these two lines and the `reviews/` copies of SR-168/SR-169. |

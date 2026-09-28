@@ -61,3 +61,5 @@ Round 1, reviewed at `f72ec1cb765737ff6996c80f794cb795a0db81a1`.
 | FND-003 | fixed | f72ec1c: AC-17 now reads "newest recorded run — the same run the store's `latest_runs` selects (FR-030, newest by timestamp)". |
 | FND-004 | fixed | f72ec1c: FR-032's Severity section lists a failed or errored newest run under High. |
 | FND-005 | fixed | f72ec1c: after the rebase onto e15f317, FR-115's CR-002 section, CON-2, Dependencies and the FR-115 matrix row all describe PLAT-1086 as resolving the gap. |
+
+Round 2, reviewed at `258981a4076b1d851f640c1319841791c0a97245`: no rows. Every finding's latest outcome was already `fixed` in round 1, and the rebase changed no spec or matrix content (`git range-diff` shows the three prior commits unchanged).
