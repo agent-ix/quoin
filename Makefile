@@ -13,7 +13,7 @@ CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
 
 build: rust-build
 
-# `quoin review`, `quoin matrix` and `quoin to-plan` (rust/crates/quoin-cli/src/flow.rs)
+# `quoin review` and `quoin to-plan` (rust/crates/quoin-cli/src/flow.rs)
 # launch the workflows @agent-ix/ix-spec-workflows publishes; nothing here vendors a
 # copy of that package (PLAT-157). `--frozen-lockfile` fails loud on a lockfile that
 # does not match package.json rather than silently re-resolving.

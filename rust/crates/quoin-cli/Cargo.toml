@@ -24,6 +24,10 @@ workspace = true
 [dependencies]
 clap = { workspace = true }
 quoin-core = { workspace = true }
+# `quoin matrix` renders `matrix.build`'s payload with the domain's own
+# renderer, and wraps the served bindings in the persisted store version.
+quoin-assurance = { workspace = true }
+quoin-evidence = { workspace = true }
 quoin-config = { workspace = true }
 quoin-delivery = { workspace = true }
 quoin-graph-analysis = { workspace = true }

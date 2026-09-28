@@ -83,7 +83,7 @@ const COMMANDS: &[(&str, &str)] = &[
         "The evidence store — what actually ran, and against which\n                    statement.",
     ),
     ("graph", "Read-only evidence-graph analysis views."),
-    ("matrix", "Build or update a requirements test matrix."),
+    ("matrix", crate::matrix::ABOUT),
     (
         "measurement",
         "Record and inspect versioned QA measurements.",

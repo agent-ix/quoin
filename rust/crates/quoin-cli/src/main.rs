@@ -21,6 +21,7 @@ mod evidence;
 mod flow;
 mod help;
 mod invocation;
+mod matrix;
 mod measurement;
 mod module;
 mod plugin;
@@ -240,9 +241,12 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
         return update::run(update);
     }
     if let Some((name, flow_arguments)) = matches.subcommand()
-        && matches!(name, "review" | "matrix" | "to-plan")
+        && matches!(name, "review" | "to-plan")
     {
         return flow::run(name, flow_arguments);
+    }
+    if let Some(("matrix", arguments)) = matches.subcommand() {
+        return matrix::run(arguments);
     }
     if let Some(("module", module)) = matches.subcommand() {
         return module::run(module);
@@ -354,7 +358,7 @@ fn command() -> Command {
         .subcommand(write::command())
         .subcommand(update::command())
         .subcommand(flow::command("review"))
-        .subcommand(flow::command("matrix"))
+        .subcommand(matrix::command())
         .subcommand(flow::command("to-plan"))
         .subcommand(
             Command::new("graph")
