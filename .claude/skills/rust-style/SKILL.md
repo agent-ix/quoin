@@ -120,16 +120,27 @@ A test module carries, and only ever carries, this:
 ```rust
 #[allow(
     clippy::unwrap_used,
+    clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests { … }
 ```
 
+`expect_used` is in the base set because `.expect("msg")` names what failed,
+which a bare `.unwrap()` does not, and roughly 40 test sites across this
+workspace already rely on it. `clippy::panic` is in the base set for the rarer
+case of a direct `panic!(...)` — typically inside a polling loop or a manual
+status check — where the failure text needs a runtime-computed detail no
+`assert!`/`expect` message can carry.
+
 The `reason =` is required — a bare `#[allow]` with no reason is a finding
-(rust-review §5). Never widen this to `expect_used` or `panic` without adding
-the reason here too, and never put an `#[allow]` at a crate root to silence one
-site.
+(rust-review §5). Never widen this set further without adding the reason here
+too, and never put an `#[allow]` at a crate root to silence one site — an
+integration test file, where the whole file **is** the test module, is the one
+place a file-level `#![allow(...)]` carrying this same set is that module, not
+an exception to it.
 
 ## Untrusted input
 

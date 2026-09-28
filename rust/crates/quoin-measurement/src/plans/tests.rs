@@ -2,10 +2,13 @@
 // Copyright (C) 2026 Agent-IX
 //! `MeasurementPlan` loader unit fixtures.
 
-use super::{PlanLoadOptions, load_measurement_plans, load_selected_measurement_plans};
+#[cfg(feature = "campaign")]
+use super::load_selected_measurement_plans;
+use super::{PlanLoadOptions, load_measurement_plans};
 use crate::error::MeasurementErrorCode;
 use crate::source::MemoryMeasurement;
 use crate::types::plan::{LifecycleStatus, MeasurementStage};
+#[cfg(feature = "campaign")]
 use std::collections::BTreeSet;
 
 fn document(id: &str, metric: &str, stage: &str) -> String {
@@ -15,6 +18,7 @@ fn document(id: &str, metric: &str, stage: &str) -> String {
     )
 }
 
+#[cfg(feature = "campaign")]
 #[test]
 fn campaign_scope_validates_selected_plan_and_ignores_unrelated_legacy_semantics() {
     let legacy = "---\ntype: MeasurementPlan\nid: MP-OLD\ntitle: Legacy\nstatus: active\nstage: observe\nmetric: legacy\ndefinition_version: v1\nstatistical_design:\n  estimator: prose from an older schema\n---\n";

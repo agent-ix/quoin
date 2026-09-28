@@ -67,6 +67,7 @@ use crate::types::ids::NonEmptyText;
 use crate::types::plan::{
     BarDigest, LifecycleStatus, MeasurementPlan, MeasurementStage, PlanPreregistration,
 };
+#[cfg(feature = "campaign")]
 use std::collections::BTreeSet;
 
 /// The code every refusal in this module carries.
@@ -119,6 +120,7 @@ pub fn load_measurement_plans<S: MeasurementSource + ?Sized>(
 /// The document walk still parses frontmatter, while full plan validation is
 /// applied to every selected plan. Missing and duplicate registrations are
 /// rejected by the campaign definition validator.
+#[cfg(feature = "campaign")]
 pub(crate) fn load_selected_measurement_plans<S: MeasurementSource + ?Sized>(
     source: &S,
     ids: &BTreeSet<&str>,
