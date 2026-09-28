@@ -16,6 +16,7 @@ pub mod config;
 pub mod core;
 pub mod evidence;
 pub mod graph;
+pub mod matrix;
 pub mod measurement;
 pub mod modules;
 pub mod quire;

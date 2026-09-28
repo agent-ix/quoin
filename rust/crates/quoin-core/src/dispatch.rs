@@ -64,6 +64,7 @@ pub const OPERATIONS: &[&str] = &[
     "graph.change_impact",
     "graph.churn",
     "graph.fan_out",
+    "matrix.build",
     "measurement.build_comparison",
     "measurement.build_graph_portfolio",
     "measurement.build_portfolio",
@@ -113,6 +114,7 @@ pub fn dispatch(
     match op {
         "assurance.requirement_of" => crate::ops::assurance::requirement_of(request),
         "assurance.build_case" => crate::ops::assurance::build_case(request),
+        "matrix.build" => crate::ops::matrix::build(request),
         "assurance.render_case" => crate::ops::assurance::render_case(request),
         "assurance.parse_argument" => crate::ops::assurance::parse_argument(request),
         "config.resolve_org" => crate::ops::config::resolve_org(request),

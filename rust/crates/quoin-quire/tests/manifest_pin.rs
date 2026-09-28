@@ -30,7 +30,10 @@ fn tc_379_026_the_pin_parses_out_of_this_crates_own_manifest() {
     assert!(version.starts_with('='), "an exact pin, got {version:?}");
     let rev = field(line, "rev").expect("the pin declares a rev");
     assert_eq!(rev.len(), 40, "a full commit id, got {rev:?}");
-    assert!(rev.bytes().all(|b| b.is_ascii_hexdigit()), "hex, got {rev:?}");
+    assert!(
+        rev.bytes().all(|b| b.is_ascii_hexdigit()),
+        "hex, got {rev:?}"
+    );
 }
 
 /// Trace: FR-097

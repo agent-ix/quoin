@@ -94,9 +94,11 @@ pub mod model {
         RelationAvailability, RelationKindAvailability, RelationKindSource,
     };
     pub use quire_rs::coverage::{
-        CoverageDiagnostic, CoverageTotals, CriteriaCounts, GroupCounts, GroupCounts as Group,
-        ImplementsRecord, MintedTargetRecord, NoSymbolRow, SharedTraceId, StatusLie, UnbackedRow,
-        UndeclaredStatus, UntrackedSymbol, VocabularyValueRecord,
+        CoverageDiagnostic, CoverageMatrixBinder, CoverageMatrixCriterion,
+        CoverageMatrixRequirement, CoverageMatrixStatus, CoverageTotals, CriteriaCounts,
+        GroupCounts, GroupCounts as Group, ImplementsRecord, MintedTargetRecord, NoSymbolRow,
+        SharedTraceId, StatusLie, UnbackedRow, UndeclaredStatus, UntrackedSymbol,
+        VocabularyValueRecord,
     };
     pub use quire_rs::metric::{Metric, MetricShape};
     pub use quire_rs::obligation::{CriterionObligation, Obligation};
