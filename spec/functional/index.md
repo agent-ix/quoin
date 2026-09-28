@@ -122,3 +122,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-111: Change-assurance refuses credit for a diff that touches protected measurement apparatus](./FR-111-change-assurance-protected-apparatus.md)
 - [FR-112: Distribute the native quoin binary through npm from GitHub Release assets](./FR-112-npm-distribution-from-release-assets.md)
 - [FR-113: Advisory portfolio priority ranking by weighted, time-discounted, budget-normalized gap to bound](./FR-113-portfolio-priority-ranking.md)
+- [FR-115: Evidence-backed test matrix (`matrix.build`)](./FR-115-evidence-backed-test-matrix.md)

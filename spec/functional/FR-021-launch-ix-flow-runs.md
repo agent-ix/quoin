@@ -58,3 +58,14 @@ hand all subsequent lifecycle control to `ix-flow`.
   [NFR-007](../non-functional/NFR-007-external-tool-invocation.md). The launch
   boundary is exercised at the agent-eval layer (`spec/evals.md`, TC-EV-005/TC-EV-013);
   post-launch lifecycle is owned by `ix-flow`.
+
+> **CR note (2026-09-27, PLAT-1080):** `matrix` is retired from the set of
+> flows this FR launches. `quoin matrix` computed nothing itself — it shelled
+> out to the published `@agent-ix/ix-spec-workflows` "matrix" agent workflow
+> via `ix-flow run matrix`, the same launcher `review` and `to-plan` still
+> use. [FR-115](./FR-115-evidence-backed-test-matrix.md) replaces it with a
+> deterministic `matrix.build` operation and an in-process render, because the
+> agent-driven workflow could only ever recompute a hand-authored matrix from
+> scratch, with no join against the evidence store or the auditor's verdict.
+> `review` and `to-plan` are unaffected: this FR's launcher, its ACs, and its
+> test coverage remain exactly as stated for those two.

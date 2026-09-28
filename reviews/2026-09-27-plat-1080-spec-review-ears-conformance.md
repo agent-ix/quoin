@@ -1,0 +1,50 @@
+---
+id: SR-166
+title: "EARS-conformance review of FR-115 (quoin#646)"
+type: SpecReview
+analysis: ears-conformance
+scope: "agent-ix/quoin@b2b8df657fda0fd86caf75aff45436174223fdac; spec/functional/FR-115-evidence-backed-test-matrix.md, spec/functional/FR-021-launch-ix-flow-runs.md, spec/matrix.md, spec/log.md, spec/functional/index.md"
+review_set: subset
+relationships:
+  - target: "ix://agent-ix/quoin/FR-115"
+    type: "reviews"
+---
+
+# EARS-conformance review: FR-115 (PR quoin#646)
+
+## Summary
+
+Ticket: PLAT-1080. FR-115's Description statement is a single ubiquitous
+EARS clause: "`quoin-core` SHALL expose `matrix.build` ...". quire's EARS
+grammar pass reports nothing for FR-115. The two EARS warnings on FR-021
+(line 18 non-canonical trigger "On", line 22 multiple SHALLs) sit on
+pre-existing text this PR does not touch; the PR adds only a CR note block.
+The Behavior bullets carry compound SHALLs, for example lines 147-150 and
+155-160. Behavior bullets are outside EARS scope here, and each is split into
+atomic ACs (AC-2, AC-11).
+
+## Findings
+
+| ID      | Severity | Summary | Refs |
+| ------- | -------- | ------- | ---- |
+| FND-001 | low | No findings (placeholder) | - |
+
+## Verdict
+
+Clean.
+
+## Dispositions
+
+Round 1, reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | rejected | Placeholder row: the review pass found no EARS defect. Re-checked at e609508: `quire validate` reports no EARS diagnostic for FR-115, and the FR-021 warnings (lines 18, 22) are still on untouched text. |
+
+Round 2, reviewed at agent-ix/quoin@3d058f9af6c53cc47f7c3b8363852046e17f1e59.
+
+No finding in this file was open at round 2, so no rows are added. The round-2 diff does not touch anything this analysis covers; it was re-checked for regressions and none was found.
+
+Round 3, reviewed at agent-ix/quoin@6c0b5d0ece17df9659fcca18bc2139d9a9131efa.
+
+No finding in this file was open at round 3, so no rows are added. The round-3 diff (AC-11 only, plus SR copies) was re-checked for regressions and none was found.
