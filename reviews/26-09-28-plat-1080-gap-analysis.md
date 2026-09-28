@@ -54,3 +54,15 @@ It is a small text fix and should land in this PR. The two low findings are trac
 - Semantic review: the mutation run and the main-vs-branch byte comparison stood in for it. No
   subagent fan-out.
 - Plan completion: not assessed
+
+## Dispositions
+
+Round 1, reviewed at `5d5cbd9c1a22224415e36f7d934d7356129be4d8`.
+
+| FND | Outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | dabb8e7 and 5d5cbd9: the fixes span FR-020, TC-065, US-005, spec.md and StR-004.<br>- FR-020's Description, Inputs, Behavior and AC-1 now name only `review` and `to-plan`, with a PLAT-1080 CR note.<br>- TC-065 and the FR-020 row cite `tc_1080_300_matrix_is_not_a_flow`, which now traces FR-020-AC-1 and TC-065.<br>- US-005 Context, spec.md lines 28, 46, 95 and 117, and StR-004 (title, Need, Rationale and VC-1, with a CR note) no longer call matrix a governed workflow.<br>- `quire coverage` no longer lists the FR-020 row or TC-065 as unbacked.<br>- FR-020-AC-2 and AC-3 (TC-066, TC-067) were already unbacked on main, and the leader has left them for the sweep. |
+| FND-002 | fixed | dabb8e7: every tc_1080 test and the quire projection test now carry their TC id on the `Trace:` line. The doc sentence at tc_1080_matrix.rs:122 no longer names FR-115. `quire coverage` shows the FR-115 row backed and no unmatched FR-115 tag. |
+| FND-003 | fixed | dabb8e7: TC-1979 and `tc_1080_010_the_matrix_module_holds_no_host_capability` trace FR-115-CON-1, and CON-1 has been added to the FR-115 functional-coverage row. All five I/O mutants were killed (SR-174 Dispositions). |
+
+`quire validate` on spec/matrix.md reports the same error set as at 1cb9159. FR-020, StR-004, US-005, FR-115, spec.md and the stakeholder index validate with exit 0. The one warning is the old `ears:non-singular` warning on FR-020 line 33.

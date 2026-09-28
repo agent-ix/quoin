@@ -79,3 +79,14 @@ that back it are strong under mutation.
 | --- | --- | --- | --- |
 | FND-001 | low | The repin moves errno, rustix, tempfile, quinn-udp, winapi-util and equivalent onto windows-sys 0.52.0 (cargo's own resolution, reproduced from main). deny.toml's windows-sys@0.52.0 skip reason and the path comment above it still say 0.52.0 is "reachable only via ring" and 0.61.2 "via errno/rustix". Both statements are now false, so the stated removal condition misleads whoever next retires the ring edge. | rust/deny.toml:286-306, rust/Cargo.lock |
 | FND-002 | low | The `assemble` extraction moved the `--ratchet` baseline read ahead of coverage, the independence policy and the store read. With a broken baseline.json AND a broken bindings.json, main reports `evidence.audit_inputs` CORE_REFUSED (bindings) and the branch reports `evidence.read_baseline` CORE_REFUSED (baseline). The exit code is the same (1). Every single-fault and success case is byte-identical. | rust/crates/quoin-cli/src/evidence/audit.rs:128-136 |
+
+## Dispositions
+
+Round 1, reviewed at `5d5cbd9c1a22224415e36f7d934d7356129be4d8`. `make test` exited 0 at this head: fmt, clippy, and deny with advisories, bans, licenses and sources all ok, plus 211 test binaries ok.
+
+| FND | Outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | dabb8e7: the deny.toml path comment, skip reason and REMOVAL CONDITION now list errno, rustix, tempfile, winapi-util and rustls-platform-verifier as reaching windows-sys 0.52.0 since the quire-rs 0.48.0 re-resolve. They also give a `cargo tree -i` retirement test for 0.52.0 that is separate from reqwest 0.12. |
+| FND-002 | accepted-no-change | The leader accepted the baseline read reorder as intended. The only observable difference is which of two simultaneous input errors (a broken baseline.json and a broken bindings.json under --ratchet) is reported. The exit code is unchanged, and every single-fault and success case is byte-identical to main. |
+
+New in this round, and clean: `tc_1080_010` (FR-115-CON-1, TC-1979) runs engineering-assurance `source_audit` over `src/matrix.rs`. Five mutants were injected into `build` and all five were killed: `std::fs::read`, `std::process::Command`, `std::net::TcpStream::connect`, a `use std::fs::File` import, and `std::env::var`. The new dev-dependency is `engineering-assurance = { workspace = true, features = ["source-audit"] }`. It uses the workspace's exact `=0.5.0` rev pin, and its git source is already in `allow-git`. This is the same declaration quoin-core and quoin-config use. The Cargo.lock delta is one dependency edge, and the gate's `cargo deny` passes.
