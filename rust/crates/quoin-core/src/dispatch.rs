@@ -474,6 +474,7 @@ mod tests {
             include_str!("ops/graph/tests.rs"),
         ),
         ("graph", "graph/wire.rs", include_str!("ops/graph/wire.rs")),
+        ("matrix", "matrix.rs", include_str!("ops/matrix.rs")),
         (
             "measurement",
             "measurement/mod.rs",
@@ -874,6 +875,10 @@ mod tests {
         (
             "ops::graph::MAX_GRAPH_REQUEST_BYTES",
             crate::ops::graph::MAX_GRAPH_REQUEST_BYTES,
+        ),
+        (
+            "ops::matrix::MAX_MATRIX_BUILD_BYTES",
+            crate::ops::matrix::MAX_MATRIX_BUILD_BYTES,
         ),
         (
             "ops::graph::MAX_SCALAR_BYTES",
