@@ -44,3 +44,7 @@ Round 1, reviewed at agent-ix/quoin@e609508fcf96f3b97d5ec817c5ff051e56653c34.
 Round 2, reviewed at agent-ix/quoin@3d058f9af6c53cc47f7c3b8363852046e17f1e59.
 
 No finding in this file was open at round 2, so no rows are added. The round-2 diff does not touch anything this analysis covers; it was re-checked for regressions and none was found.
+
+Round 3, reviewed at agent-ix/quoin@6c0b5d0ece17df9659fcca18bc2139d9a9131efa.
+
+No finding in this file was open at round 3, so no rows are added. The round-3 diff (AC-11 only, plus SR copies) was re-checked for regressions and none was found.

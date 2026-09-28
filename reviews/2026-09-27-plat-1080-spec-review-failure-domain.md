@@ -80,3 +80,9 @@ Round 2, reviewed at agent-ix/quoin@3d058f9af6c53cc47f7c3b8363852046e17f1e59.
 | FND | outcome | sha/reason |
 | --- | --- | --- |
 | FND-005 | fixed | 3d058f9 |
+
+Round 3, reviewed at agent-ix/quoin@6c0b5d0ece17df9659fcca18bc2139d9a9131efa.
+
+| FND | outcome | sha/reason |
+| --- | --- | --- |
+| FND-006 | fixed | 6c0b5d0 |
