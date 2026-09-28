@@ -17,6 +17,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "agent-ix-semantic-schema"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-core-data?tag=semantic-schema-v0.1.0#dc6e85b1df6972e7203b3560781c26b67b0a678e"
+
+[[package]]
 name = "ahash"
 version = "0.8.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -618,7 +623,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2889,7 +2894,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2906,9 +2911,10 @@ dependencies = [
 
 [[package]]
 name = "quire-rs"
-version = "0.46.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=523e47f61ca5532c3c86064ed4872a1c5de3ed02#523e47f61ca5532c3c86064ed4872a1c5de3ed02"
+version = "0.48.0"
+source = "git+https://github.com/agent-ix/quire-rs?rev=a4f3a7065a33d67f5ce70a9ae6a55c9ca6f69688#a4f3a7065a33d67f5ce70a9ae6a55c9ca6f69688"
 dependencies = [
+ "agent-ix-semantic-schema",
  "globset",
  "ignore",
  "indexmap",
@@ -2929,7 +2935,7 @@ dependencies = [
 [[package]]
 name = "quire-rust-extraction"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=523e47f61ca5532c3c86064ed4872a1c5de3ed02#523e47f61ca5532c3c86064ed4872a1c5de3ed02"
+source = "git+https://github.com/agent-ix/quire-rs?rev=a4f3a7065a33d67f5ce70a9ae6a55c9ca6f69688#a4f3a7065a33d67f5ce70a9ae6a55c9ca6f69688"
 dependencies = [
  "quire-code-parse",
 ]
@@ -3589,7 +3595,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3647,7 +3653,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4107,7 +4113,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4807,7 +4813,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

@@ -128,7 +128,7 @@ time = { version = "=0.3.55", features = ["formatting"] }
 # The digest under the FR-097 hash assertion. Exact pin like everything else.
 #
 # 0.10.9 AND NOT 0.11.0, and the reason is an upstream requirement rather than
-# taste: `quire-rs 0.46.0` — linked by quoin-quire — depends on sha2 0.10.9,
+# taste: `quire-rs` — linked by quoin-quire — depends on sha2 0.10.9,
 # and `multiple-versions = "deny"` forbids carrying both majors. quoin#380
 # (quoin-store) arrived pinning sha2 at =0.11.0 in its own manifest, which is
 # a duplicate git does not mark because the two pins live in different files;

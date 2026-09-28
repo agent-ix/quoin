@@ -39,7 +39,7 @@ allow = [
     # Zlib reaches the workspace by three independent paths, and all three are
     # recorded so that removing one crate does not read as licence to drop the
     # line: foldhash 0.2.0 <- hashbrown 0.17.1 <- referencing <- jsonschema
-    # (quoin-semantic); the same hashbrown pulled by `quire-rs 0.46.0` as a
+    # (quoin-semantic); the same hashbrown pulled by `quire-rs` as a
     # NORMAL dependency of quoin-quire via `indexmap`/`serde_yaml`; and
     # foldhash/zlib-rs under `gix` (quoin#381).
     "Zlib",
@@ -79,7 +79,7 @@ allow = ["MPL-2.0"]
 # `quire-code-parse` (agent-ix/quire-code-rs) is AGPL-3.0-or-later, the same
 # licence quoin and quire-rs itself carry. Reached transitively for the first
 # time by PLAT-850's bump: quire-rs 456f73f (PLAT-843, an ancestor of the
-# pinned 523e47f) ports rust.rs symbol extraction onto tree-sitter via
+# current pin) ports rust.rs symbol extraction onto tree-sitter via
 # `quire-rust-extraction`, which depends on this crate. Named per crate for
 # the same reason as the `quire-rs` exception above: the `allow` list stays
 # permissive-only.
@@ -110,7 +110,7 @@ allow-wildcard-paths = true
 # resolved, not conceded": neither side of the `jsonschema` pair is ours to
 # move.
 #
-#   * `jsonschema 0.18.3` is pulled by `quoin-quire -> quire-rs 0.46.0`, which
+#   * `jsonschema 0.18.3` is pulled by `quoin-quire -> quire-rs`, which
 #     declares `jsonschema = "~0.18"`. No revision of quire-rs resolves it.
 #   * `jsonschema 0.56.0` is pulled by `quoin-semantic`, and that pin is load
 #     bearing: `quoin-semantic/DIVERGENCE.md` §1 records that 0.18.3 is NOT
@@ -209,7 +209,7 @@ skip = [
     #
     # Same class as the five entries below, and conceded for the same reason:
     # neither side is ours by choice. `cpufeatures 0.2.17` is forced by
-    # `quire-rs 0.46.0` pinning `sha2 = "^0.10"`, where sha2 0.10.9 declares
+    # `quire-rs` pinning `sha2 = "^0.10"`, where sha2 0.10.9 declares
     # `cpufeatures = "0.2"` as a hard target-gated dependency rather than an
     # optional one. `cpufeatures 0.3.1` is forced by `blake3`'s own
     # target-gated, non-optional edge. No pin we control converges them:
@@ -220,9 +220,9 @@ skip = [
     #
     # 0.2.17 is skipped and 0.3.1 is NOT: 0.2.17 is the side that disappears
     # when quire-rs moves, and 0.3.1 is the side we keep.
-    { crate = "cpufeatures@0.2.17", reason = "quoin#438: 0.2.17 via sha2 0.10.9 <- quire-rs 0.46.0 <- quoin-quire (and the workspace sha2 pin held at 0.10 by that requirement); 0.3.1 via blake3 1.8.6 <- quoin-store, which stays checked" },
+    { crate = "cpufeatures@0.2.17", reason = "quoin#438: 0.2.17 via sha2 0.10.9 <- quire-rs <- quoin-quire (and the workspace sha2 pin held at 0.10 by that requirement); 0.3.1 via blake3 1.8.6 <- quoin-store, which stays checked" },
     # --- The five quoin#434 / quire-rs#429 entries. Remove together. ---
-    { crate = "jsonschema@0.18.3", reason = "quoin#434: 0.18.3 via quoin-quire -> quire-rs 0.46.0 (jsonschema = \"~0.18\"); 0.56.0 via quoin-semantic, which stays checked" },
+    { crate = "jsonschema@0.18.3", reason = "quoin#434: 0.18.3 via quoin-quire -> quire-rs (jsonschema = \"~0.18\"); 0.56.0 via quoin-semantic, which stays checked" },
     { crate = "bit-set@0.5.3", reason = "quoin#434: 0.5.3 via fancy-regex 0.13.0 -> jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.8.0 via fancy-regex 0.19.1 -> jsonschema 0.56.0 -> quoin-semantic" },
     { crate = "bit-vec@0.6.3", reason = "quoin#434: 0.6.3 via bit-set 0.5.3 -> fancy-regex 0.13.0 -> jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.8.0 via bit-set 0.8.0 -> fancy-regex 0.19.1 -> jsonschema 0.56.0 -> quoin-semantic" },
     { crate = "fancy-regex@0.13.0", reason = "quoin#434: 0.13.0 via jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.19.1 via jsonschema 0.56.0 -> quoin-semantic" },
@@ -314,25 +314,28 @@ unknown-registry = "deny"
 unknown-git = "deny"
 # quoin#373: "no crates.io, no public npmjs" governs where quoin PUBLISHES;
 # dependencies are consumed from crates.io exactly as quire-corpus and quire-rs
-# consume theirs. Three git sources are admitted, each named by REPOSITORY:
+# consume theirs. Four git sources are admitted, each named by REPOSITORY:
 #
 #   * quire-rs — the engine quoin-quire links (quoin#379).
 #   * engineering-assurance — library containment (quoin#416), the pattern
 #     quire-cli already proves against quire-rs.
 #   * quire-code-rs — the source of `quire-code-parse` (PLAT-850), pulled in
 #     transitively through the quire-rs pin above: quire-rs 456f73f (PLAT-843,
-#     an ancestor of the pin's current `523e47f`) ports rust.rs symbol
-#     extraction onto tree-sitter via this crate.
+#     an ancestor of the current pin) ports rust.rs symbol extraction onto
+#     tree-sitter via this crate.
+#   * filament-core-data — the source of `agent-ix-semantic-schema`, pulled in
+#     transitively by quire-rs 0.48.0 at the tag its own manifest names.
 #
 # quire-rs and engineering-assurance are each pinned by an exact `rev` in
 # rust/Cargo.toml. quire-code-rs is pinned by an exact `rev` in quire-rs's own
-# manifest, not one this repository states directly. Allowing a repository
-# here does not weaken any of these pins: `unknown-git = "deny"` still refuses
-# every other git source, and any other revision of these three still fails
-# resolution. A fourth git dependency is listed here in the commit that adds
-# it, or this check refuses it.
+# manifest, and filament-core-data by the tag quire-rs's manifest names; this
+# repository states neither directly. Allowing a repository here does not
+# weaken any of these pins: `unknown-git = "deny"` still refuses every other
+# git source. A fifth git dependency is listed here in the commit that adds it,
+# or this check refuses it.
 allow-git = [
     "https://github.com/agent-ix/quire-rs",
     "https://github.com/agent-ix/engineering-assurance",
     "https://github.com/agent-ix/quire-code-rs",
+    "https://github.com/agent-ix/filament-core-data",
 ]
