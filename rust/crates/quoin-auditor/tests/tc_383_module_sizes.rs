@@ -47,9 +47,14 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
 /// Empty. The retained `src/auditor/` and `src/advisor/` are 1,806 lines
 /// after the combinatorial extraction, and this crate is their port split by
 /// responsibility: the catalog reader and its filesystem seam, the advisor's
-/// regex table, compound guard, characteristics and verdict, and the auditor's
-/// index, ladder, per-check helpers and ratchet. Adding a name here is a
-/// deliberate act that has to be argued for.
+/// regex table, compound guard, characteristics and verdict, and the
+/// auditor's index, ladder, stale-evidence rungs, per-check helpers and
+/// ratchet. `audit/ladder.rs` briefly crossed the ceiling when the
+/// failed-run stale-evidence rung (PLAT-1086) landed beside two existing
+/// rungs answering the same question — is the evidence this binding claims
+/// still there and still good — so all three moved to `audit/stale.rs`,
+/// following the `method.rs`/`mocks.rs`/`scores.rs` split. Adding a name here
+/// is a deliberate act that has to be argued for.
 const OVER_SOFT_CEILING: &[&str] = &[];
 
 /// The count below which this census is not measuring the crate at all.

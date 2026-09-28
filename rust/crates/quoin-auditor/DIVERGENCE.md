@@ -14,7 +14,7 @@ the implementation it is replacing (FR-018). **In particular, the defect in §1
 was not fixed in the TypeScript.** It is reported on quoin#383 so it can be
 noted against the ticket that shipped it.
 
-There are **three** divergences, **one** non-divergence that would look like one
+There are **four** divergences, **one** non-divergence that would look like one
 in a diff, and **one** inherited refusal. Each is named below with the assertion
 that would fail if it stopped being true.
 
@@ -160,12 +160,32 @@ that started firing on ordinary input would fail there.
 
 ---
 
+## §6 — A rung the retained ladder never had: failed/errored latest run
+
+`audit/stale.rs`'s `failed_run` rung (FR-032-AC-17, PLAT-1086) has no
+retained-source counterpart. The retained ladder's only outcome-aware check
+was vacuity, which asks `entry.outcome === "skip"` and nothing else; a bound
+symbol whose newest run recorded `fail`/`error` passed through unflagged in
+both trees until this rung was added here. This is a fix to a real gap in
+FR-032, not a behavioural difference this port introduced by translating the
+retained source wrongly — there is no retained behaviour to diverge from,
+because the retained side never asked the question.
+
+**Must-have-fired:** none of the golden corpus's `audit_cases` binds a symbol
+with a `fail`/`error` outcome (checked directly against
+`tests/goldens/auditor.json`), so `tc_383_001`'s TypeScript-parity comparison
+cannot exercise this rung either way. `tests/tc_1963_failed_run_stale_evidence.rs`
+is the coverage for it.
+
+---
+
 ## What is NOT divergent
 
 - **The ladder order**, including the two checks that deliberately do not stop
   it: the pre-guard `unknown-method` check and the `headCommit` staleness check.
   An unbound obligation with an uncatalogued method is BOTH undischarged AND
   unknown-method (quoin#165), and the corpus asserts both findings appear.
+  Excepting §6's `failed_run` rung, which the retained ladder never had.
 - **`healthy`.** The retained source pushes it as the last statement of the loop
   body, so the one silent `continue` — `runBindings.length === 0` at
   `audit.ts:413` — leaves an obligation neither healthy nor found. `Pass` here
