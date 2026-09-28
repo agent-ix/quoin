@@ -8,6 +8,29 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-27** — **FR-115** (new FR): the **evidence-backed test matrix**
+  (`matrix.build`, PLAT-1080, epic PLAT-1076). The hand-maintained Test Matrix
+  is being replaced by one computed in memory in two layers: quire-rs's
+  static `coverage_matrix` (whether a criterion is tagged) and, new here,
+  quoin's own join against the evidence store and the auditor's verdict
+  (whether a tagged criterion was actually discharged by a passing run).
+  Every evidence-status finding this FR reports is read from
+  [FR-030](./functional/FR-030-evidence-store.md)'s binding graph and
+  [FR-032](./functional/FR-032-evidence-auditor.md)'s `AuditReport` — no new
+  rot-detection logic is added, only the mapping from an existing `Finding`
+  kind to one of five evidence statuses (`bound`/`stale`/`suspect`/
+  `undischarged`/`no run evidence`), and the `requirement_of` regrouping
+  [FR-040](./functional/FR-040-assurance-case-view.md) already established.
+  `quoin matrix` is rewired from an `ix-flow` agent-workflow launch
+  ([FR-021](./functional/FR-021-launch-ix-flow-runs.md), narrowed by a CR note
+  to `review`/`to-plan` only) to a deterministic render that writes nothing
+  under `spec/`. **Blocked on quire-rs vendoring**: quoin currently pins
+  quire-rs `=0.46.0` (`523e47f`), which does not yet carry `coverage_matrix`
+  (quire-rs FR-050-AC-47..51) — that repin is PLAT-1077, in progress. This FR
+  is written against the target contract FR-050-AC-47..51 states, not against
+  an interim shape. Matrix: none yet (spec-ahead-of-code by design, matching
+  FR-100/FR-103's convention). Closes agent-ix/quoin PLAT-1080.
+
 * **2026-09-25** — **FR-044 and FR-108 gain an optional observation `interval`
   and interval-aware verify** (EA-26, originally PLAT-1053). FR-044-AC-10..AC-12
   specify the observation's `interval` (`lower`, `upper`, `level`, `method`),
