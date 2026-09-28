@@ -14,7 +14,7 @@ the implementation it is replacing (FR-018). **In particular, the defect in §1
 was not fixed in the TypeScript.** It is reported on quoin#383 so it can be
 noted against the ticket that shipped it.
 
-There are **three** divergences, **one** non-divergence that would look like one
+There are **four** divergences, **one** non-divergence that would look like one
 in a diff, and **one** inherited refusal. Each is named below with the assertion
 that would fail if it stopped being true.
 

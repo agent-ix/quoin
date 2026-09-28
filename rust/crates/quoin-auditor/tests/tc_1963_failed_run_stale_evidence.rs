@@ -4,12 +4,11 @@
 //! A run that failed the tagged test is stale evidence, not a clean bill.
 //!
 //! FR-032 line 28 named a failed run beside a missing run and a run behind
-//! HEAD as one of the three ways evidence rots, but
-//! `rust/crates/quoin-auditor/src/audit/stale.rs`'s only outcome-aware rung
-//! was vacuity, which asks only `Outcome::Skip`. A suite that ran the tagged
-//! test and reported `fail` or `error` at HEAD read as healthy on a red
-//! build, and the upcoming computed matrix maps `healthy` to "bound by a
-//! passing run" (PLAT-1086).
+//! HEAD as one of the three ways evidence rots, but the ladder's only
+//! outcome-aware rung was `ladder.rs`'s vacuity check, which asks only
+//! `Outcome::Skip`. A suite that ran the tagged test and reported `fail` or
+//! `error` at HEAD read as healthy on a red build, and the upcoming computed
+//! matrix maps `healthy` to "bound by a passing run" (PLAT-1086).
 //!
 //! Trace: FR-032-AC-17
 //! Provenance: PLAT-1086
