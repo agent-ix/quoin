@@ -1,6 +1,6 @@
 ---
 id: StR-004
-title: "Review, matrix, and planning run as governed workflows"
+title: "Review and planning run as governed workflows"
 type: StR
 relationships:
   - target: "ix://agent-ix/quoin/FR-020"
@@ -9,19 +9,19 @@ relationships:
     type: "satisfied_by"
 ---
 
-# StR-004: Review, matrix, and planning run as governed workflows
+# StR-004: Review and planning run as governed workflows
 
 ## Stakeholder Need
 
-Teams running the spec lifecycle require that `quoin` shall start the review,
-matrix, and planning workflows as governed runs whose phase progression and human
+Teams running the spec lifecycle require that `quoin` shall start the review
+and planning workflows as governed runs whose phase progression and human
 approval gates are managed by a dedicated workflow engine, so that these
 multi-step, human-in-the-loop processes are tracked and resumable rather than
 ad hoc.
 
 ## Rationale
 
-Review, test-matrix construction, and planning are staged processes that pause for
+Review and planning are staged processes that pause for
 human judgement and may span multiple sessions. Running them as untracked
 one-shot commands would lose progress and skip the approval gates that make the
 outputs trustworthy. Delegating lifecycle control to a workflow engine (`ix-flow`)
@@ -33,7 +33,7 @@ remains the single launch point an author already knows.
 
 | ID | Criteria | Validation |
 |----|----------|------------|
-| StR-004-VC-1 | An author starts a review, matrix, or planning workflow through `quoin` and then drives its progression — resume, advance, acknowledge gates, inspect status — through the workflow engine, with the run's state persisted across invocations. | Inspection |
+| StR-004-VC-1 | An author starts a review or planning workflow through `quoin` and then drives its progression — resume, advance, acknowledge gates, inspect status — through the workflow engine, with the run's state persisted across invocations. | Inspection |
 
 Satisfaction is demonstrated by launching a workflow and continuing it to completion through the engine.
 
@@ -49,3 +49,14 @@ control.
 ([FR-020](../functional/FR-020-resolve-workflow-skills.md),
 [FR-021](../functional/FR-021-launch-ix-flow-runs.md)). Post-launch lifecycle is
 owned by `ix-flow`.
+
+> **CR note (2026-09-28, PLAT-1080):** the test matrix is retired from the
+> workflows this StR governs, as the CR notes on
+> [FR-020](../functional/FR-020-resolve-workflow-skills.md) and
+> [FR-021](../functional/FR-021-launch-ix-flow-runs.md) retire `matrix` from
+> the launchers they specify. [FR-115](../functional/FR-115-evidence-backed-test-matrix.md)
+> makes the matrix a computed view — a deterministic join of quire's static
+> coverage with the evidence store and the auditor's verdict — rather than a
+> staged, human-gated agent workflow, so it has no run, phase or gate for
+> `ix-flow` to govern. Only review and planning remain governed workflows;
+> the title, Stakeholder Need, Rationale and VC-1 now say so.

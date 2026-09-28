@@ -115,7 +115,7 @@ index; the files are authoritative.
 - [StR-001](./stakeholder/StR-001-standalone-cli.md) — run spec work from a standalone CLI.
 - [StR-002](./stakeholder/StR-002-extensible-vocabulary.md) — extend the vocabulary with community modules.
 - [StR-003](./stakeholder/StR-003-shared-catalog.md) — authoring and validation share one catalog.
-- [StR-004](./stakeholder/StR-004-governed-workflows.md) — review/matrix/planning run as governed workflows (matrix is now a computed render, FR-115).
+- [StR-004](./stakeholder/StR-004-governed-workflows.md) — review and planning run as governed workflows.
 - [StR-005](./stakeholder/StR-005-offline-reproducible.md) — authoring stays offline-safe and reproducible.
 - [StR-006](./stakeholder/StR-006-current-via-self-update.md) — keep quoin current with one command.
 - [StR-008](./stakeholder/StR-008-conforming-module-repositories-by-construction.md) — new semantic-module repositories conform by construction.
