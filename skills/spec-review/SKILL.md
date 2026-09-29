@@ -52,6 +52,9 @@ The seven analyses:
     -   Read each artifact.
     -   Verify against the **Checklist**.
     -   Verify Test Coverage (6 Rules).
+    -   Flag every hash / digest / pin / tracking-record use as a `high` finding (see the
+        **Hash / Digest / Pin Antipattern** section of the Checklist). The fix is removal;
+        do not accept an existing use as a reason to keep it.
 3.  Selected Analyses:
     -   Run each analysis the user chose. Prefer running them **in parallel**.
     -   **Fetch the template from quoin** once with `quoin write --types SpecReview` — use its
