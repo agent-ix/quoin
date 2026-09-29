@@ -91,23 +91,7 @@ them. Check what you are actually running — `quoin --version` reports the
 build-time `git describe`, so a `-<n>-g<sha>` suffix means the binary is ahead
 of its tag.
 
-**Version provenance is load-bearing.** Every SpecReview records the tool
-version it measured with, and three reviews in `agent-ix/filament-ide-rs` cite
-numbers from a binary whose self-reported version was wrong. Check
-`--version`/`--help` agreement and a clean tag reporting itself before tagging.
-
-**`verificationStack.buildProfile: "release"` in a measurement record is a
-self-declared attestation, not something quoin checks about its own binary.**
-`quoin-measurement`'s intake validator (`rust/crates/quoin-measurement/src/validate/stack.rs`,
-`src/validate/mod.rs`) only checks that the field, if present, is the string
-`"debug"` or `"release"` (and requires `"release"` for a new collection) — it
-never inspects how the `quoin` binary that produced the record was itself
-compiled. Running a debug build of quoin does not stop you from writing
-`buildProfile: "release"` into a record, and running a release build does not
-set the field for you. This is why one evaluation lane got through cleanly and
-another concluded "release" was unreachable from a debug-built test run: both
-readings were about the *content* of a JSON field, never about the *build
-profile of the tool measuring it*.
+Every SpecReview records the tool version it measured with.
 
 ## Rust
 
