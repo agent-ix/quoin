@@ -528,13 +528,13 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-965 | A recognised reason still loads and carries its family, its `expect_reason` and the language the case declares, so the guard refuses only the hole (#236) | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-966 | The score is cut by the language each case declares, partitioning the same findings and labels the headline used — a `held` verdict over a single-language corpus is not "verified in every language" (#236) | Unit | P0 | FR-043-AC-9 | ✅ |
 | TC-967 | A collateral declaration on one case cannot absorb a finding from another: pairing is scoped to the declaring case, so one case's consequence does not consume a second case's seeded true positive (#238) | Unit | P0 | FR-043-AC-7 | ✅ |
-| TC-968 | The report records WHICH declaration it scored against — a content digest over the module tree, a digest per bound module, and the upstream SHA the corpus vendored — and the digest moves on one byte of one manifest and holds on identical bytes (#240) | Unit | P0 | FR-043-AC-12 | ✅ |
-| TC-969 | A `VENDORED.md` present and unparseable FAILS the run rather than reporting no source, and a declaration root carrying none records `sources: null` — a provenance file that has silently stopped parsing is worse than none (#240) | Unit | P0 | FR-043-AC-12 | ✅ |
-| TC-970 | Cases resolve their module under an overridden declaration root, so the same corpus can be scored with the engine held fixed and the declaration moved; a module id resolving to no manifest fails the run rather than reading as a detection collapse (#240) | Unit | P0 | FR-043-AC-12 | ✅ |
+| TC-968 | Withdrawn with FR-043-AC-12 (FR-043 CR note, #654): the tier-1 runner no longer exists. | Unit | P0 | FR-043-AC-12 | ⛔ |
+| TC-969 | Withdrawn with FR-043-AC-12 (FR-043 CR note, #654): the tier-1 runner no longer exists. | Unit | P0 | FR-043-AC-12 | ⛔ |
+| TC-970 | Withdrawn with FR-043-AC-12 (FR-043 CR note, #654): the tier-1 runner no longer exists. | Unit | P0 | FR-043-AC-12 | ⛔ |
 | TC-971 | The ENGINE may move and still be compared; the corpus revision, the declaration digest and the scored population — count and per-language mix — may not (#240, #231) | Unit | P0 | FR-043-AC-13 | ✅ |
 | TC-972 | An incomparable run withdraws the CLAIM and keeps both numbers: neither `improved` nor `regressed`, because a change was not observed — and the same run without the guard reads `regressed` (#240, #231) | Unit | P0 | FR-043-AC-13 | ✅ |
 | TC-973 | A baseline recording nothing for one of those fields is reported as UNKNOWN rather than assumed to match, so a legacy baseline is neither refused nor silently trusted (#240) | Unit | P0 | FR-043-AC-13 | ✅ |
-| TC-981 | An unreadable SHA on ONE row of a provenance table fails the run rather than being dropped once another row parses, and an annotated SHA is read from its first token (#240 reopened, found by #242) | Unit | P0 | FR-043-AC-12 | ✅ |
+| TC-981 | Withdrawn with FR-043-AC-12 (FR-043 CR note, #654): the tier-1 runner no longer exists. | Unit | P0 | FR-043-AC-12 | ⛔ |
 | TC-974 | Canonically resolved language-set entries become one scorable case per language with distinct ids and input trees (#246) | Unit | P0 | FR-043-AC-14 | ✅ |
 | TC-975 | The real runner population and bounds equal qa-corpus's canonical envelope, with no unknown language produced by a third metadata interpretation (#246) | Integration | P0 | FR-043-AC-14 | ✅ |
 | TC-976 | A canonical envelope missing its case list, numeric bounds or required case fields fails instead of becoming an empty population (#246) | Unit | P0 | FR-043-AC-14 | ✅ |
@@ -696,9 +696,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-994 | An absent cost is `null` and never 0 — tier 1 calls no model, so its token cost is unmeasured rather than free — and the half it does know, its exact subprocess count, is still reported (#243) | Unit | P0 | FR-043-AC-5 | ✅ |
 | TC-936 | An obligation discharged only by a mocked stand-in for its own subject is a `medium` `mocked-confirmation` finding naming the injected identifier (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-937 | A mock unrelated to the statement's subject (`FakeClock`) is not reported — tests legitimately mock clocks, filesystems and networks (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
-| TC-961 | Every answer-key finding records HOW STRONGLY it is detected — located, aggregate or none — and the strength agrees with `now_detectable`, so "a number moved" is not counted as "here is the file" (#200) | Unit | P0 | FR-043-AC-8 | ✅ |
-| TC-962 | A finding recorded as not detectable claims no `detectable_since` and no `fixed_by`: a capability nothing can reach has no date it arrived and no PR that delivered it (#200) | Unit | P0 | FR-043-AC-8 | ✅ |
-| TC-963 | Each undetectable finding names its OWN tracking ticket, so closing one family's work cannot silently close another's (#200) | Unit | P0 | FR-043-AC-8 | ✅ |
+| TC-961 | Withdrawn with FR-043-AC-8 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-8 | ⛔ |
+| TC-962 | Withdrawn with FR-043-AC-8 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-8 | ⛔ |
+| TC-963 | Withdrawn with FR-043-AC-8 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-8 | ⛔ |
 | TC-938 | One real suite alongside a mocked one is not reported: standing in a dependency while another suite exercises the real path is ordinary test design (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-939 | Absent injection data yields silence, never a clean bill — "nobody looked" is not "nothing was mocked" (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-940 | The finding ratchets through the existing `<kind>:<obligation>` key, so it is acceptable in a baseline like every other kind (#204) | Unit | P1 | FR-032-AC-15 | ✅ |
@@ -749,7 +749,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1152 | Every local architecture-index link resolves | Static | P0 | NFR-013 | ✅ |
 | TC-1153 | Provisional and unresolved claims cannot appear as normative | Static | P0 | NFR-013 | ✅ |
 | TC-1154 | Changed-path guard rejects behavior, manifest, schema, generated-package, and migration changes; the unchanged 763-test suite passes | Static | P0 | NFR-014 | ✅ |
-| TC-1155 | Merge requires named Quoin/Quire maintainer review | Inspection | P0 | NFR-014 | ✅ |
+| TC-1155 | Withdrawn (#654): a record of who reviewed and merged a PR is not a check of behaviour. | Inspection | P0 | NFR-014 | ⛔ |
 | TC-1156 | Withdrawn with FR-051 (#654): the semantic type-fit audit and its test are gone. | Static | P0 | FR-051-AC-1 | ⛔ |
 | TC-1157 | Withdrawn with FR-051 (#654): the semantic type-fit audit and its test are gone. | Static | P0 | FR-051-AC-2 | ⛔ |
 | TC-1158 | Withdrawn with FR-051 (#654): the semantic type-fit audit and its test are gone. | Static | P0 | FR-051-AC-3 | ⛔ |
@@ -1034,19 +1034,19 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1098 | An exact content-addressed ruling applies only to the compatible normalized finding; an unruled sibling remains outside the TP/FP denominator and named unadjudicated (#258) | Unit | P0 | FR-043-AC-28 | ✅ |
 | TC-1099 | The retained 108-row population validates every finding digest and row-level disposition, reviewer, rationale, rubric version, disagreements, defect owner, and follow-up (#258) | Unit | P0 | FR-043-AC-28 | ✅ |
 | TC-1100 | Changed finding bytes, incomplete review records, and incompatible metric versions are refused rather than consumed by a report (#258) | Unit | P0 | FR-043-AC-28 | ✅ |
-| TC-1101 | The retained Tier-2 record content-addresses raw and normalized output for Quire coverage, Quoin validation, and Quoin evidence audit, including explicit unavailable output (#259) | Unit | P0 | FR-043-AC-29 | ✅ |
-| TC-1102 | Repeating a candidate with the same inputs and expected unavailable premise produces no source change or regression, and comparison leaves the baseline object unchanged (#259) | Unit | P0 | FR-043-AC-29 | ✅ |
-| TC-1103 | An evaluated source becoming unavailable loses its detected finding and is a named source regression without rewriting the retained baseline (#259) | Unit | P0 | FR-043-AC-29 | ✅ |
-| TC-1104 | Tier-2 finding detection consumes the retained `finding-envelope-v2` view: changing only raw producer arrays cannot change a score, while removing the normalized finding does (#255, #259) | Unit | P0 | FR-043-AC-23, FR-043-AC-29 | ✅ |
+| TC-1101 | Withdrawn with FR-043-AC-29 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-29 | ⛔ |
+| TC-1102 | Withdrawn with FR-043-AC-29 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-29 | ⛔ |
+| TC-1103 | Withdrawn with FR-043-AC-29 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-29 | ⛔ |
+| TC-1104 | Tier-2 finding detection consumes the retained `finding-envelope-v2` view: changing only raw producer arrays cannot change a score, while removing the normalized finding does (#255, #259) | Unit | P0 | FR-043-AC-23 | ✅ |
 | TC-1110 | Labeled span v2 independently accepts exact boundaries and an explicit no-domain safe refusal without inventing a missing precondition; all outcome classes remain separately counted (#261) | Unit | P0 | FR-043-AC-30 | ✅ |
 | TC-1111 | A changed labeled-population multiplicity is malformed and cannot silently shrink the denominator (#261) | Unit | P0 | FR-043-AC-30 | ✅ |
-| TC-1116 | Tier-2 detection requires the exact defect locus and absence on the pinned healthy-control cohort (#261) | Unit | P0 | FR-043-AC-29 | ✅ |
-| TC-1117 | Tier-2 scoring keeps unavailable, invalid-answer-key, and healthy-control-failure states distinct from misses and detections (#261) | Unit | P0 | FR-043-AC-29 | ✅ |
-| TC-1118 | Every valid Tier-2 answer-key finding binds a full-SHA cohort, a non-empty uniquely-routed declaration set, evidence-sidecar state, production source, reproduction command, locus state, and healthy-control state (#261, #263) | Unit | P0 | FR-043-AC-29, FR-043-AC-31 | ✅ |
-| TC-1119 | The committed Tier-2 v2 baseline retains the exact cohort/source states, the five detected historical findings with no miss, and distinct unavailable/invalid states, and compares byte-identically against itself (#261, #263) | Unit | P0 | FR-043-AC-29 | ✅ |
+| TC-1116 | Withdrawn with FR-043-AC-29 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-29 | ⛔ |
+| TC-1117 | Withdrawn with FR-043-AC-29 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-29 | ⛔ |
+| TC-1118 | Withdrawn with FR-043-AC-29 and FR-043-AC-31 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-29, FR-043-AC-31 | ⛔ |
+| TC-1119 | Withdrawn with FR-043-AC-29 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-29 | ⛔ |
 | TC-1120 | `span_grounding_v2_rate` maps to its own active `property.span-grounding-v2` MeasurementPlan while historical span-grounding v1 keeps MP-204 (#261) | Unit | P0 | FR-043-AC-30 | ✅ |
-| TC-1121 | Every declaration checkout route must identify the named repository and every pinned historical declaration commit must remain reachable from a remote-tracking ref; deleting that reachability fails validation (#263) | Unit | P0 | FR-043-AC-31 | ✅ |
-| TC-1122 | The retained historical pass-2 cohort names both exact process and ISO declaration revisions, records clean current declaration checkouts, and canonicalizes coverage with `IX_FILAMENT_MODULES_PATH` and no `--module` override (#263) | Unit | P0 | FR-043-AC-31 | ✅ |
+| TC-1121 | Withdrawn with FR-043-AC-31 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-31 | ⛔ |
+| TC-1122 | Withdrawn with FR-043-AC-31 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-31 | ⛔ |
 | TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | ✅ |
 | TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | ✅ |
@@ -1054,7 +1054,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-930 | `cost_per_confirmed_insight` is declared in tokens AND tool calls per true positive, extending FR-042's eval metrics rather than opening a second accounting | Unit | P1 | FR-043-AC-5 | ✅ |
 | TC-931 | The silent-zero sentinel is a gate, not a score: expected exactly 0, no tolerance, and a metric with `matched = 0` over a non-zero population and no diagnostic fails the run | Unit | P0 | FR-043-AC-6 | ✅ |
 | TC-932 | A tier-1 entry's `labels.json` carries each seeded defect's family, location and whether it is expected to be found — so a scored miss is distinguishable from a defect nobody claimed was findable | Unit | P0 | FR-043-AC-7 | ✅ |
-| TC-933 | A tier-2 entry declares a pinned SHA; a run against a different SHA is refused with a diagnostic naming both, and is never scored against the key | Unit | P0 | FR-043-AC-8 | ✅ |
+| TC-933 | Withdrawn with FR-043-AC-8 (FR-043 CR note, #654): the tier-2 runner no longer exists. | Unit | P0 | FR-043-AC-8 | ⛔ |
 | TC-934 | The score report carries, per metric, the enveloped value and the baseline compared against, and per corpus its tier and identity; two runs over identical inputs are byte-identical | Unit | P0 | FR-043-AC-9 | ✅ |
 | TC-935 | Ratchet: better rewrites the baseline and passes, worse fails naming metric/values/corpus, equal passes and rewrites nothing; regeneration is deliberate and reviewable | Unit | P0 | FR-043-AC-10 | ✅ |
 | TC-240 | A real `cli-agent-evals` report yields one entry per scenario, keyed on the scenario id | Unit | P0 | FR-042-AC-1 | ✅ |
@@ -1500,7 +1500,7 @@ found the stakeholder layer had no rows here at all.
 | US-010   | ✅ Covered | `quoin-config`'s org suites (precedence, both url forms, worktrees, owner-less remotes) in `ts_oracle.rs`, `tc_446_org_parity.rs` and `tc_446_org_url_properties.rs`; `write.test.ts` "authoring pack organization" suite; `cli.test.ts` `--org` text/JSON/unresolved trio; `org-one-subprocess.test.ts` one-subprocess proof — see FR-025 |
 | US-011   | ✅ Covered | TC-EV-050…TC-EV-053 in `evals/scenarios/index.mjs` — the settled lane, the review artifact, the gap-analysis handoff, and the refusals; see FR-028. The skill's own run on this repo is `tests/props/` (17 criteria) + a `SpecReview` under `reviews/` |
 | US-012   | ✅ Covered | TC-EV-054…TC-EV-057 in `evals/scenarios/index.mjs` — the generation lane, the two refusals, idempotent re-runs and harness selection, and the undischarged report; see FR-038. |
-| US-013   | ✅ Covered | TC-1125..TC-1154 inspect the architecture record, decision ledger, and non-disruption scope; TC-1155 records named active maintainer `kreneskyp`'s review and admin merge of PR #311 as merge commit `4a82644ad3cf75770cc53ef3812e3b13e80b516d`. |
+| US-013   | ✅ Covered | TC-1125..TC-1154 inspect the architecture record, decision ledger, and non-disruption scope. |
 | US-014   | ⛔ Withdrawn | Withdrawn 2026-09-29 under [#654](https://github.com/agent-ix/quoin/pull/654), with every requirement it drove (FR-051..FR-055) and the NFRs constraining them (NFR-015, NFR-016). The audit ran once under [#288](https://github.com/agent-ix/quoin/issues/288); its generator and test were removed by [#524](https://github.com/agent-ix/quoin/pull/524) and its retained output is deleted by #654. |
 | US-015   | ✅ Covered | `quoin-measurement` `tc_479_fr056_criteria.rs`, `tc_479_fr057_criteria.rs`, `tc_479_fr058_criteria.rs` — TC-1195..TC-1216 and TC-1217..TC-1221 cover record fidelity, negative outcomes, uncertainty, raw-evidence integrity, claim-centered reporting, the real producer, governance, and non-scoring. |
 | US-016   | ✅ Covered | `quoin-measurement` `tc_479_fr059_criteria.rs`, `tc_479_fr060_criteria.rs`, `tc_479_fr061_criteria.rs` — TC-1223..TC-1243 and TC-1244..TC-1248 cover both operational shapes, the full control vocabulary, verified clocked discharge, raw-evidence integrity, adverse outcomes, claim-centered rendering, non-scoring, and the real GitHub Actions release producer. |

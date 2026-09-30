@@ -54,6 +54,18 @@ description: "Chronological log of structural changes to this bundle."
   repin", and the reviewer name and merge commit recorded in NFR-014's matrix
   row.
 
+  **FR-043-AC-8, AC-12, AC-29, AC-31 and CON-3 are withdrawn** (same CR note).
+  They pinned corpus and declaration SHAs, declaration digests and
+  content-addressed baselines for the tier-1 and tier-2 benchmark runners, and
+  those runners went with `scripts/`. TC-933, TC-961..TC-963, TC-968..TC-970,
+  TC-981, TC-1101..TC-1103, TC-1116..TC-1119, TC-1121 and TC-1122 are withdrawn;
+  TC-1104 keeps only its FR-043-AC-23 trace.
+
+  **TC-1155 is withdrawn.** It recorded who reviewed and merged a PR rather than
+  checking behaviour. NFR-014 loses the metric row and the verification sentence
+  that rested on it, and the US-013 matrix row loses its reviewer and merge
+  commit.
+
 * **2026-09-29** — **Agents stop hand-writing the Test Matrix** (PLAT-1083,
   epic PLAT-1076). The matrix is computed: `quire matrix` from criteria and
   trace tags, `quoin matrix` adding run evidence (FR-115). The skills and the
