@@ -227,11 +227,8 @@ is a licence by another route.
 
 ## §8 — what the W9 golden is, and what it is not
 
-`tests/goldens/graph-portfolio-oracle.json` (96 KB) was produced **once** by
-`oracle/capture-graph-portfolio-oracle.mjs` from the retained TypeScript, and
-records `produced_by`, `produced_by_digest`, `produced_from_revision`,
-`produced_by_node`, `capture_script`, `fixture_tree` and `tree_token`
-(FR-101-AC-11).
+`tests/goldens/graph-portfolio-oracle.json` (96 KB) was produced **once** from
+the retained TypeScript.
 
 The capture deliberately does **not** call `graph-portfolio-load.ts`: that
 loader reaches into `graph-analysis/` (FR-062), which is a different wave's

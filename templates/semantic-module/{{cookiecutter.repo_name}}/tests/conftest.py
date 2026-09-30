@@ -17,7 +17,6 @@ record test validates against the real bytes rather than against a stub.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import pathlib
 import re
@@ -107,10 +106,6 @@ def frontmatter(markdown: str) -> dict[str, Any]:
     match = re.match(r"---\n(.*?)\n---\n", markdown, re.DOTALL)
     assert match, "document has no frontmatter"
     return yaml.safe_load(match.group(1))
-
-
-def sha256_of(path: pathlib.Path) -> str:
-    return f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
 
 
 def _version_tuple(value: str) -> tuple[int, ...]:
@@ -208,7 +203,6 @@ def helpers():
     class Helpers:
         declared_types = staticmethod(declared_types)
         frontmatter = staticmethod(frontmatter)
-        sha256_of = staticmethod(sha256_of)
 
     return Helpers
 

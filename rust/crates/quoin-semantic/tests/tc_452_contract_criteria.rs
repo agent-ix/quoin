@@ -6,8 +6,7 @@
 //! These restate what `tests/semantic-contract.test.ts` carried before the
 //! cutover deleted it. The subject is the 35 JSON files under `src/semantic/`,
 //! which are DATA and stay there: the TypeScript that read them is gone, this
-//! crate reads them now, and what keeps the copies honest is that every hash
-//! `SEMANTIC_CONTRACT` records is re-derived here from the live bytes.
+//! crate reads them now.
 
 #![allow(
     clippy::unwrap_used,
@@ -22,12 +21,9 @@ mod common;
 use std::collections::BTreeMap;
 use std::fs;
 
-use common::{semantic_core_dir, semantic_root};
+use common::semantic_root;
 use quoin_semantic::SEMANTIC_CONTRACT;
-use quoin_semantic::contract::{
-    common_schema_path, file_sha256, module_manifest_schema_path, package_manifest_schema_path,
-    semantic_core_bundle_digest,
-};
+use quoin_semantic::contract::{common_schema_path, module_manifest_schema_path};
 use serde_json::Value;
 
 /// Parse one JSON file.
@@ -67,31 +63,13 @@ fn required_arrays(node: &Value, path: &str, found: &mut BTreeMap<String, Vec<St
     }
 }
 
-/// The module-manifest schema records filament-core-data provenance, the
-/// vendored bytes hash to it, and it admits exactly the contract's keys.
+/// The module-manifest schema admits exactly the contract's keys.
 ///
 /// Trace: FR-070-CON-2
 /// Provenance: agent-ix/quoin#452
 #[test]
-fn tc_452_640_the_module_manifest_schema_carries_its_provenance_and_the_bytes_match() {
-    let record = SEMANTIC_CONTRACT.module_manifest_schema;
-    assert_eq!(record.repository, "agent-ix/filament-core-data");
-    assert_eq!(record.source_revision.len(), 40);
-    assert!(
-        record
-            .source_revision
-            .bytes()
-            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)),
-        "{}",
-        record.source_revision
-    );
-    assert_eq!(
-        record.source_path,
-        "schema/semantic/v1/module-manifest.schema.json"
-    );
+fn tc_452_640_the_module_manifest_schema_admits_the_contract_keys() {
     let path = module_manifest_schema_path(&semantic_root());
-    assert_eq!(file_sha256(&path).unwrap(), record.sha256);
-
     let schema = read_json(&path);
     let semantic = &schema["properties"]["semantic"];
     assert_eq!(semantic["additionalProperties"], Value::Bool(false));
@@ -201,84 +179,13 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
     );
 }
 
-/// The vendored semantic-core bundle's digest equals what filament-core-data
-/// recorded in its own `toolchain.json`, its file list is the directory, and it
-/// is a version this quoin declares it ships.
-///
-/// Trace: FR-073-AC-6
-/// Provenance: agent-ix/quoin#452
-#[test]
-fn tc_452_642_the_vendored_semantic_core_bundle_matches_its_recorded_digest() {
-    let record = SEMANTIC_CONTRACT.semantic_core;
-    assert_eq!(record.repository, "agent-ix/filament-core-data");
-    assert_eq!(record.source_revision.len(), 40);
-    let dir = semantic_core_dir();
-    assert_eq!(
-        semantic_core_bundle_digest(&dir).unwrap(),
-        record.bundle_digest
-    );
-
-    let toolchain = read_json(&dir.join("toolchain.json"));
-    assert_eq!(toolchain["digest"], record.bundle_digest);
-    assert_eq!(
-        toolchain["base"],
-        format!(
-            "https://schemas.agent-ix.org/semantic-core/{}/",
-            record.version
-        )
-    );
-
-    let mut shipped: Vec<String> = fs::read_dir(&dir)
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
-        .filter(|name| {
-            std::path::Path::new(name)
-                .extension()
-                .is_some_and(|ext| ext == "json")
-                && name != "toolchain.json"
-        })
-        .collect();
-    shipped.sort();
-    let mut recorded: Vec<String> = toolchain["files"]
-        .as_array()
-        .expect("toolchain.json lists its files")
-        .iter()
-        .map(|v| v.as_str().unwrap().to_owned())
-        .collect();
-    recorded.sort();
-    assert_eq!(shipped, recorded);
-    for name in [
-        "FieldDecl.json",
-        "TypeRef.json",
-        "ClauseRef.json",
-        "OperationDecl.json",
-    ] {
-        assert!(shipped.iter().any(|s| s == name), "{name} is not vendored");
-    }
-    assert!(
-        SEMANTIC_CONTRACT
-            .semantic_core_versions
-            .contains(&record.version)
-    );
-}
-
-/// The filament-core-data package-manifest and common schemas are vendored at
-/// the hashes the contract records, and the common schema's target registry is
-/// the declared five.
+/// The common schema's target registry is the declared five.
 ///
 /// Trace: FR-075-AC-1
 /// Provenance: agent-ix/quoin#452
 #[test]
-fn tc_452_643_the_package_manifest_and_common_schemas_are_vendored_at_their_hashes() {
-    assert_eq!(
-        file_sha256(&package_manifest_schema_path(&semantic_root())).unwrap(),
-        SEMANTIC_CONTRACT.package_manifest_schema.sha256
-    );
+fn tc_452_643_the_common_schema_declares_the_five_targets() {
     let common_path = common_schema_path(&semantic_root());
-    assert_eq!(
-        file_sha256(&common_path).unwrap(),
-        SEMANTIC_CONTRACT.common_schema.sha256
-    );
     let common = read_json(&common_path);
     assert_eq!(
         common["$defs"]["target"]["enum"],

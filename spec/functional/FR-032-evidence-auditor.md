@@ -62,17 +62,11 @@ checked against it rather than by name matching. **Without a catalog the check
 is skipped**: an absent catalog means the question cannot be asked, which is
 different from the answer being yes.
 
-### Ratchet, because a gate that fails on the backlog gets disabled
-
-`--ratchet` compares against the accepted baseline and reports only new
-violations. The per-PR delta names what a change added and resolved.
-
 ## Inputs
 
 - Obligations from a validated `quire coverage --json` payload
 - The binding graph and the newest run per suite from the store
 - The merged verification-method catalog
-- The accepted baseline, under `--ratchet`
 
 ## Outputs
 
@@ -101,7 +95,7 @@ violations. The per-PR delta names what a change added and resolved.
 |----|------------|------|------------|
 | FR-032-CON-1 | The auditor SHALL run nothing and write nothing. It reads and reports; the consumer's CI refreshes (ADR-0011 invariant 1). | Architecture | Inspection |
 | FR-032-CON-2 | Every check SHALL be a pure function of its inputs — no clock, no filesystem walk, no subprocess inside the audit itself. The caller assembles the inputs, which is what makes the whole thing testable without a repository. | Architecture | Test |
-| FR-032-CON-3 | The auditor SHALL skip a check it cannot perform rather than guessing at it. An absent catalog, an absent HEAD, an absent baseline each remove a question rather than answering it. | Architecture | Test |
+| FR-032-CON-3 | The auditor SHALL skip a check it cannot perform rather than guessing at it. An absent catalog and an absent HEAD each remove a question rather than answering it. | Architecture | Test |
 
 ## Acceptance Criteria
 
@@ -117,20 +111,27 @@ violations. The per-PR delta names what a change added and resolved.
 | FR-032-AC-8 | Every check folds over **all** of an obligation's bindings: a suspect link is reported when any binding predates the current statement, evidence is vacuous only when every symbol in every suite was skipped or absent, and multiplicity counts the distinct suites actually bound. | Test (TC-145) |
 | FR-032-AC-9 | Method conformance compares the run's declared `evidenceKind` against the kinds the catalog gives the declared method. A run declaring no kind is not judged: an undeclared kind means the question cannot be asked, which is different from the answer being yes. | Test (TC-146) |
 | FR-032-AC-10 | A declared method matching neither a catalog method id nor a catalog class is reported as `unknown-method`, never skipped in silence. | Test (TC-146) |
-| FR-032-AC-11 | The ratchet baseline is a flat set of `<kind>:<obligation>` keys, so **every** finding kind can be accepted into it; `quoin evidence baseline` writes it from the current audit. | Test (TC-147) |
 | FR-032-AC-12 | The auditor reads the verification catalog from the **same ordered module set** the obligations were derived from. Repeatable `--module` arguments are forwarded individually, in supplied order, to native Quire coverage and the identical array supplies catalog loading; ambient installed modules and module-path settings cannot extend an explicit set. Omitted and single-module selection retain their existing behavior. Missing or malformed explicit modules and an unsupported producer invocation remain errors, without retrying through discovery or dropping arguments. | Inspection (TC-148), Test (TC-1598..TC-1600) |
-| FR-032-AC-13 | The `(new violations only)` label and the JSON `ratchet` field are keyed on whether a baseline was actually found and applied, never on the `--ratchet` flag alone. When `--ratchet` finds no baseline, the run says so, names the missing file, and names the command that writes it. | Test (TC-258, TC-259, TC-260) |
 | FR-032-AC-14 | `unknown-method` is evaluated **before** the binding guard — it is a pure statement-vs-catalog comparison needing no evidence — so it fires whatever the evidence state. Precedence: it neither suppresses nor is suppressed by evidence findings; an unbound obligation with an uncatalogued method is reported as **both** `undischarged` and `unknown-method`, while the evidence ladder itself stays one-finding-per-obligation. | Test (TC-264, TC-265) |
-| FR-032-AC-15 | A `mocked-confirmation` finding reports an obligation discharged **only** by bound test symbols injecting a stand-in whose identifier overlaps the obligation's own statement subject. The join is exact or terminally module-qualified; suite identity alone is insufficient. Reported at `medium`, with source path, line, test symbol and injected identifier, and only when EVERY binding is mocked — one real suite alongside a mocked one is ordinary test design. The finding ratchets through the existing `<kind>:<obligation>` key like any other. | Test (TC-936..TC-940, TC-1065, TC-1075, TC-1076) |
-| FR-032-AC-16 | `quoin evidence inspect-mocks` recognizes narrow explicit stand-in forms in Rust, Python and TypeScript test source and records the completed inspection without running a suite or assigning a verdict. `audit`, `baseline` and `assurance` consume only exact-HEAD inspection records. A missing current inspection is reported as `not-evaluated`, excluded from the healthy count, and prevents `--strict` from passing; it is never converted into a clean result or a baselinable defect. Tier 1 executes this store-backed command path for `audit.findings`, binds the symbols observed by the production inspector rather than a suite-wide placeholder, and preserves the finding's locus. | Test (TC-939, TC-1062..TC-1066, TC-1075, TC-1076) |
-| FR-032-AC-8 | `ratchet` reports only violations absent from the baseline, and `delta` names what a change added and resolved. | Test (TC-144) |
-| FR-032-AC-17 | A binding whose suite's newest recorded run — the same run the store's `latest_runs` selects (FR-030, newest by timestamp) — reports `fail` or `error` for a bound symbol is `stale-evidence` at high severity, naming the failing suite, symbol and commit. This fires independently of AC-3's behind-HEAD check and takes precedence over it: a failing run that is also behind HEAD reports only the high failed-run finding, not the medium behind-HEAD one, since both are `stale-evidence` and share one ratchet key. A run at HEAD that failed the tagged test is stale evidence in its own right, not merely old evidence. | Test (TC-1963) |
+| FR-032-AC-15 | A `mocked-confirmation` finding reports an obligation discharged **only** by bound test symbols injecting a stand-in whose identifier overlaps the obligation's own statement subject. The join is exact or terminally module-qualified; suite identity alone is insufficient. Reported at `medium`, with source path, line, test symbol and injected identifier, and only when EVERY binding is mocked — one real suite alongside a mocked one is ordinary test design. | Test (TC-936..TC-940, TC-1065, TC-1075, TC-1076) |
+| FR-032-AC-16 | `quoin evidence inspect-mocks` recognizes narrow explicit stand-in forms in Rust, Python and TypeScript test source and records the completed inspection without running a suite or assigning a verdict. `audit` and `assurance` consume only exact-HEAD inspection records. A missing current inspection is reported as `not-evaluated`, excluded from the healthy count, and prevents `--strict` from passing; it is never converted into a clean result. Tier 1 executes this store-backed command path for `audit.findings`, binds the symbols observed by the production inspector rather than a suite-wide placeholder, and preserves the finding's locus. | Test (TC-939, TC-1062..TC-1066, TC-1075, TC-1076) |
+| FR-032-AC-17 | A binding whose suite's newest recorded run — the same run the store's `latest_runs` selects (FR-030, newest by timestamp) — reports `fail` or `error` for a bound symbol is `stale-evidence` at high severity, naming the failing suite, symbol and commit. This fires independently of AC-3's behind-HEAD check and takes precedence over it: a failing run that is also behind HEAD reports only the high failed-run finding, not the medium behind-HEAD one, since both are `stale-evidence`. A run at HEAD that failed the tagged test is stale evidence in its own right, not merely old evidence. | Test (TC-1963) |
 
 ## Dependencies
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) (the store it reads), [FR-031](./FR-031-catalog-driven-advisor.md) (the catalog method conformance is checked against), quire-rs [FR-053](ix://agent-ix/quire-rs/FR-053) (the obligations and hashes it compares)
 - **Downstream**: the consuming workflow decides whether a finding blocks; this command reports and, under `--strict`, exits non-zero
 
+> **CR note (2026-09-30, agent-ix/quoin#658):** The ratchet is removed: `quoin evidence audit
+> --ratchet`, `quoin evidence baseline` and the `baseline.json` they read and
+> wrote. Nothing in this repository used it. FR-032-AC-11 and FR-032-AC-13 are
+> withdrawn, and so is the `ratchet`/`delta` row that shared the id
+> FR-032-AC-8; the other FR-032-AC-8 row (every check folds over all
+> bindings) stands. TC-144, TC-147 and TC-258..TC-260 are withdrawn with them.
+> The Ratchet section, the baseline input, the absent-baseline clause of CON-3
+> and AC-15's ratchet-key sentence are removed, and so are the baseline
+> clauses of AC-16 and AC-17. The ids are not reused.
+>
 > **CR note (PLAT-1086, 2026-09-27):** AC-17 is new. Line 28 already named a
 > failed run as one of the three ways evidence rots, but no AC was precise
 > enough to test it: AC-3 covers a missing run and a run behind HEAD, and

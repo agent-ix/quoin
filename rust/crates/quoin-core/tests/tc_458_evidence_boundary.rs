@@ -532,28 +532,6 @@ fn tc_458_120_audit_inputs_answers_everything_the_pure_auditor_reads() {
     assert_eq!(payload["independence"], json!([]));
 }
 
-/// Trace: FR-101-AC-4
-///
-/// `write_baseline` is the only operation that answers a bare `path`, and
-/// `read_baseline` the only one that answers `baseline`. Driven together
-/// because the round trip is the property: what one writes the other reads.
-#[test]
-fn tc_458_130_the_baseline_round_trips_through_the_store() {
-    let dir = repo();
-    let payload = ok(&run(
-        "evidence.write_baseline",
-        &json!({"repo": dir.path(), "commit": commit('a'), "accepted": ["b", "a"]}),
-    ));
-    assert_eq!(
-        payload["path"].as_str().unwrap(),
-        store_path(dir.path(), "baseline.json").to_string_lossy()
-    );
-
-    let payload = ok(&run("evidence.read_baseline", &json!({"repo": dir.path()})));
-    assert_eq!(payload["baseline"]["accepted"], json!(["a", "b"]));
-    assert_eq!(payload["baseline"]["commit"], commit('a'));
-}
-
 /// Trace: FR-101-AC-3
 ///
 /// The exit taxonomy, through the binary: a caller mistake is 3, a refusal is

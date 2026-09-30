@@ -114,7 +114,6 @@ fn store_facts_serves_the_constants_the_command_layer_would_otherwise_restate() 
     assert_eq!(payload["mutation_score_metric"], "mutation-score");
     assert_eq!(payload["store_schema_version"], 1);
     assert_eq!(payload["bindings_path"], "bindings.json");
-    assert_eq!(payload["baseline_path"], "baseline.json");
     assert_eq!(payload["suites_path"], "suites.md");
     assert_eq!(payload["inspections_path"], "inspections.md");
     let families = payload["collected_families"].as_array().unwrap();
@@ -327,14 +326,6 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
             audit_inputs(&json!({"repo": "/r"}), &none),
         ),
         (
-            "evidence.read_baseline",
-            read_baseline(&json!({"repo": "/r"}), &none),
-        ),
-        (
-            "evidence.write_baseline",
-            write_baseline(&json!({"repo": "/r", "commit": "c", "accepted": []}), &none),
-        ),
-        (
             "evidence.record_experiment",
             record_experiment(&json!({"repo": "/r", "document": {}}), &none),
         ),
@@ -343,7 +334,7 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
             record_operational(&json!({"repo": "/r", "document": {}}), &none),
         ),
     ];
-    assert!(cases.len() >= 10, "the census shrank: {}", cases.len());
+    assert!(cases.len() >= 8, "the census shrank: {}", cases.len());
     for (op, outcome) in cases {
         let error = outcome.unwrap_err();
         assert_eq!(error.code, CoreErrorCode::Io, "{op}");
@@ -366,14 +357,6 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
             "evidence.gc",
             MAX_GC_BYTES,
             gc(&json!({"repo": filler(MAX_GC_BYTES)}), &capabilities),
-        ),
-        (
-            "evidence.read_baseline",
-            MAX_READ_BASELINE_BYTES,
-            read_baseline(
-                &json!({"repo": filler(MAX_READ_BASELINE_BYTES)}),
-                &capabilities,
-            ),
         ),
         (
             "evidence.trust_assessments",
@@ -405,7 +388,7 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
             ),
         ),
     ];
-    assert!(cases.len() >= 6, "the census shrank: {}", cases.len());
+    assert!(cases.len() >= 5, "the census shrank: {}", cases.len());
     for (op, limit, outcome) in cases {
         let error = outcome.unwrap_err();
         assert_eq!(error.code, CoreErrorCode::Refused, "{op}");
@@ -510,26 +493,6 @@ fn a_run_shaped_record_writes_a_run_and_a_finding_shaped_one_writes_a_scan() {
         "a finding-shaped adapter fell through to the run path: {:?}",
         response.payload
     );
-}
-
-/// Trace: FR-101-AC-4
-#[test]
-fn write_baseline_reports_an_absolute_path() {
-    let host = TestHost::empty();
-    let capabilities = Capabilities::with_evidence(&host);
-    let response = write_baseline(
-        &json!({"repo": "/somewhere", "commit": "a".repeat(40), "accepted": ["b", "a"]}),
-        &capabilities,
-    )
-    .unwrap();
-    assert_eq!(
-        response.payload["path"],
-        "/somewhere/spec/evidence/baseline.json"
-    );
-
-    let response = read_baseline(&json!({"repo": "/somewhere"}), &capabilities).unwrap();
-    // Sorted by the store, not by the caller.
-    assert_eq!(response.payload["baseline"]["accepted"], json!(["a", "b"]));
 }
 
 /// Trace: FR-101-AC-3

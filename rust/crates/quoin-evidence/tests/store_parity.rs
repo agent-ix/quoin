@@ -7,7 +7,7 @@
 //! `tests/golden/store-cases.json` is hand-authored input;
 //! `tests/golden/store-expected.json` was captured once from `src/evidence/` and
 //! is the only oracle consulted here. No Node process runs in this lane
-//! (FR-101-AC-5). See `tests/golden/STORE-PROVENANCE.md`.
+//! (FR-101-AC-5).
 //!
 //! The `canonical` cases compare the **bytes the writers put on disk**, which is
 //! what NFR-025 is a statement about, rather than a re-canonicalisation of a
@@ -31,13 +31,13 @@ use quoin_evidence::assurance_records::{
 use quoin_evidence::independence::assess_independence;
 use quoin_evidence::mock_inspection::inspect_mock_injections;
 use quoin_evidence::store::{
-    affirm, bind, scan_is_vacuous, write_baseline, write_bindings, write_mock_inspection,
-    write_run, write_scan, write_trust_decision,
+    affirm, bind, scan_is_vacuous, write_bindings, write_mock_inspection, write_run, write_scan,
+    write_trust_decision,
 };
 use quoin_evidence::trust::assess_trust;
 use quoin_evidence::types::{
-    Affirmation, BaselineFile, Binding, FindingRecord, IndependenceRequirement,
-    MockInspectionRecord, RunRecord, TrustDecision,
+    Affirmation, Binding, FindingRecord, IndependenceRequirement, MockInspectionRecord, RunRecord,
+    TrustDecision,
 };
 use quoin_evidence::{
     Commit, DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, StatementHash,
@@ -51,7 +51,7 @@ use serde_json::{Map, Value, json};
 /// The retained boundary is a zod schema, so a plain type or length failure
 /// carries a dependency's prose. Reproducing it would be porting zod. Where one
 /// of these appears, only the clause's **path** — quoin's own word for the field
-/// — is compared, and the divergence is recorded in `STORE-PROVENANCE.md`.
+/// — is compared.
 const ZOD_PROSE: [&str; 3] = ["Too small", "Invalid input", "Invalid string"];
 
 #[derive(Debug, Deserialize)]
@@ -189,11 +189,6 @@ fn canonical_case(input: &Value) -> Result<Value, String> {
         "bindings" => {
             let bindings: Vec<Binding> = from_value(&value["bindings"])?;
             write_bindings(&mut store, &bindings).map_err(|error| error.to_string())?;
-        }
-        "baseline" => {
-            let file: BaselineFile = from_value(value)?;
-            write_baseline(&mut store, &file.commit, &file.accepted)
-                .map_err(|error| error.to_string())?;
         }
         "trustDecision" => {
             write_trust_decision(&mut store, &from_value::<TrustDecision>(value)?)

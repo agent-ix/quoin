@@ -44,7 +44,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             .with_context("repo", repo),
         ));
     }
-    let audited = match assemble(arguments, &repo, Some(&head), None)? {
+    let audited = match assemble(arguments, &repo, Some(&head))? {
         Assembly::Audited(audited) => audited,
         Assembly::Declined(response) => return Ok(response),
     };

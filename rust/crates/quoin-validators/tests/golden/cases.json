@@ -1,5 +1,5 @@
 {
-  "note": "Input corpus for the TS->Rust parity oracle. Each case is materialised into a fresh temp directory; every file body is `lines.join(\"\\n\")`. Expected verdicts live in expected.json and are produced by generate-oracle.mts running the TypeScript implementation. See PROVENANCE.md.",
+  "note": "Input corpus for the TS->Rust parity oracle. Each case is materialised into a fresh temp directory; every file body is `lines.join(\"\\n\")`. Expected verdicts live in expected.json.",
   "cases": [
     {
       "name": "baseline-bad-gate",

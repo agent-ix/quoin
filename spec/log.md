@@ -8,6 +8,85 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-30** — **Tracking leftovers after #654 are deleted, and FR-043's
+  untested criteria are withdrawn.**
+
+  **`docs/rust-burndown/executable-path-matrix.md` is deleted.** It was an
+  inventory snapshot taken at one commit, and 27 of its rows pointed at the
+  deleted `scripts/` directory. NFR-024's Statement clause requiring each
+  retained path as a row of that file, and its two Verification sentences naming
+  the file, are withdrawn (NFR-024 CR note). FR-101's Input naming it is
+  withdrawn, and so is FR-101-AC-9, which asserted the path inventory's counts
+  at a pinned baseline revision; TC-1690 is withdrawn with it (FR-101 CR note).
+  `.language-allowances.yaml` no longer points at the file.
+
+  **FR-043-AC-1..AC-7, AC-9..AC-11, AC-13..AC-19, AC-21..AC-28, AC-30 and
+  AC-36 are withdrawn** (FR-043 CR note). No test stands behind any of them,
+  and none was re-homed under another requirement. FR-043-AC-20 has a real test
+  and stays. Their TC rows move to `⛔`; TC-1066 keeps only its FR-032-AC-16
+  trace. The tier-2 row's pinned SHA, the sentence on pinning it and the CR-099
+  note (commit revisions behind the withdrawn AC-12 and AC-13) are removed.
+
+  **`spec/evidence/baseline.json` is deleted.** It was a hand-kept allowlist of
+  `undischarged:<criterion>` entries; nothing in this repository's gate reads
+  it, and `spec/evidence/suites.md` no longer describes it as a ratchet floor.
+
+  **Withdrawal marks brought to the newer form.** `spec.md` marks US-022,
+  FR-084..FR-092, NFR-021 and NFR-022 `⛔ **Withdrawn**` (#388), and the #388
+  TC rows (TC-1500..TC-1562, TC-1566..TC-1577, TC-1579..TC-1584) read
+  "Withdrawn with …" and `⛔`. TC-1578 drops its FR-090-AC-8 trace and keeps
+  NFR-023-AC-1. US-022's banner no longer says its text is retained for
+  provenance.
+
+  Also removed: commit hashes and a version repin from the FR-097, FR-102 and
+  FR-115 matrix rows, NFR-012's pointer to the deleted `scripts/release-drift.js
+  pins`, the capability census and the stale dev-dependency and
+  duplicate-version prose in `docs/engineering-assurance-adoption.md`, the
+  catalog-entry template's schema-digest check, published-version log line and
+  invalid `source: npm:…` example, and the `default-modules.yaml` comment tying
+  the EA ref to the crate rev.
+
+  **NFR-024-AC-1, AC-2, AC-7, AC-10, AC-11 and AC-13 are withdrawn** (NFR-024
+  CR note). Five required retention rows in the deleted matrix; AC-7 required
+  a `generated` entry to declare a source-schema digest. The Verification,
+  Measurement and Rationale text that only they used goes with them, and
+  TC-1660, TC-1661, TC-1687, TC-1705, TC-1706 and TC-1708 are withdrawn.
+  `.language-allowances.yaml` loses `source_digest`, its digest prose and the
+  notes calling `skills/**/workflow-assets/**` a retained matrix row.
+  **FR-101-AC-11** and its two Behavior bullets (fixture implementation
+  revision and request digest) are withdrawn with TC-1701. **FR-104-CON-2** and
+  TC-1726 (pinned module revisions recorded in the goldens) are withdrawn; the
+  `revision` fields leave quoin's copies of the relationship goldens, and the
+  quire-rs commit citations leave FR-104 and its matrix rows.
+  `docs/engineering-assurance-adoption.md` loses the stale "one real consumer
+  call" section and retention sections 2–5, which described deleted
+  TypeScript paths.
+
+  **The ratchet is removed.** `quoin evidence baseline`, `quoin evidence audit
+  --ratchet`, the `baseline.json` store file and the `ratchet`/`delta`
+  functions go; nothing in this repository used them. FR-032-AC-11, AC-13 and
+  the ratchet row of FR-032-AC-8 are withdrawn with TC-144, TC-147 and
+  TC-258..TC-260 (FR-032 CR note), and FR-030 no longer lists `baseline.json`.
+
+  **The `data_schema` digest and versioned `$id` are no longer enforced**
+  (FR-073 CR note). The `semantic.data-schema-digest`,
+  `semantic.data-schema-digest-mismatch` and `semantic.data-schema-id` codes
+  are removed; a `digest` member is accepted and ignored, and the `$id` need
+  not be absolute. FR-073-AC-6 and
+  TC-1385 are withdrawn, and `SEMANTIC_CONTRACT` no longer records hashes or
+  revisions of the npm-installed schemas. The semantic-module template no
+  longer writes or checks manifest digests.
+
+  **FR-101-AC-12** (retention rows surviving a rename) is withdrawn with
+  TC-1702. FR-043's description and CR-098 note are cut to what AC-20 covers.
+  Provenance ledgers under crate test fixtures (`PROVENANCE.md`,
+  `STORE-PROVENANCE.md`, `*.captured.provenance.json`, `provenance.json`) and
+  the tests that only asserted recorded revisions or digests are deleted.
+  `bench/metrics.json` and `bench/tier1-mapping.json` are deleted, and MP-207,
+  whose protected apparatus they were, is retired. The unread `provenance`
+  blocks and recorded hashes in the crate goldens are deleted, and so is
+  `Finding::key()`, the ratchet baseline key.
+
 * **2026-09-29** — **The semantic type-fit audit is withdrawn, and three
   version-tracking criteria with it** (agent-ix/quoin#654).
 
@@ -20,9 +99,8 @@ description: "Chronological log of structural changes to this bundle."
   FR-084..FR-092 were. Matrix rows move to `⛔ Withdrawn`, TC-1156..TC-1194 are
   withdrawn with them, and their rows leave the generated coverage table. The
   scope bullet in `spec.md` is removed. US-022's informative note pointing at
-  US-014 is removed, and so are the census row for the deleted generator in
-  `docs/rust-burndown/executable-path-matrix.md` and PLAN-003's pointer to the
-  deleted output directory.
+  US-014 is removed, and so is PLAN-003's pointer to the deleted output
+  directory.
 
   **FR-108-AC-13 is withdrawn** (FR-108 CR note). It required the
   engineering-assurance crate `version` to move to a stated value in several
@@ -599,8 +677,8 @@ description: "Chronological log of structural changes to this bundle."
   under the module's package; a shape error wins (cases `no-bundle-package`,
   `no-bundle-package-second-table`, case field `withoutBundlePackage`). Adds
   FR-104-AC-11, AC-12 and TC-1729, TC-1730. TC-1717..TC-1728 now point at the
-  agent-ix/quire-rs `tests/semantic_relations.rs` tests that execute them at
-  `44df254`. The quoin-quire caller is agent-ix/quoin#557.
+  agent-ix/quire-rs `tests/semantic_relations.rs` tests that execute them. The
+  quoin-quire caller is agent-ix/quoin#557.
 
 * **2026-09-16** — **FR-104 rulings R1..R4** (agent-ix/quoin#554, from the
   agent-ix/quire-rs#436 review). A surface with no relation vocabulary reports

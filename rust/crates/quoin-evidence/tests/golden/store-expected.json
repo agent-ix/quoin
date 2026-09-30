@@ -968,19 +968,6 @@
       }
     },
     {
-      "name": "canonical-baseline-file",
-      "kind": "canonical",
-      "ok": {
-        "record": "baseline",
-        "files": [
-          {
-            "path": "baseline.json",
-            "text": "{\n  \"accepted\": [\n    \"stale-evidence:FR-003-AC-1\",\n    \"suspect:FR-002-AC-1\",\n    \"undischarged:FR-001-AC-1\"\n  ],\n  \"commit\": \"dddddddddddddddddddddddddddddddddddddddd\",\n  \"schemaVersion\": 1\n}\n"
-          }
-        ]
-      }
-    },
-    {
       "name": "canonical-trust-decision",
       "kind": "canonical",
       "ok": {

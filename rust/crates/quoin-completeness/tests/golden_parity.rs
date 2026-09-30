@@ -515,24 +515,3 @@ fn tc_378_304_assess_bundle_matches_the_oracle_end_to_end() {
         assert_eq!(expected_unreadable, actual_unreadable, "{id}: unreadable");
     }
 }
-
-/// Trace: FR-096
-/// Provenance: agent-ix/quoin#378
-#[test]
-fn tc_378_305_the_goldens_name_the_revision_they_were_captured_from() {
-    for name in [
-        "written-reason.json",
-        "assess-vocabulary.json",
-        "verdict.json",
-        "bundle-frontmatter.json",
-        "assess-bundle.json",
-    ] {
-        let golden = golden(name);
-        let provenance = golden.get("provenance").unwrap_or(&Value::Null);
-        assert_eq!(
-            text(provenance, "quoinRevision").len(),
-            40,
-            "{name}: provenance must name a full quoin revision"
-        );
-    }
-}

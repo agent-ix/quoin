@@ -112,8 +112,8 @@ pub enum EvidenceError {
     },
     /// A store file exists and is not readable JSON.
     ///
-    /// `bindings.json` and `baseline.json` are **checked into git**, so a merge
-    /// conflict leaves `<<<<<<< HEAD` in one of them. The retained
+    /// `bindings.json` is **checked into git**, so a merge
+    /// conflict leaves `<<<<<<< HEAD` in it. The retained
     /// `StoreReadError` exists because every store read used to throw a bare
     /// `SyntaxError` naming no file (agent-ix/quoin#106); the sentence is
     /// reproduced here for the same reason.

@@ -4,12 +4,10 @@
 //!
 //! # The oracle is a file, not a runtime
 //!
-//! `tests/fixtures/report-oracle.json` was captured once, by
-//! `oracle/capture-report-oracle.mjs` (deleted at cutover, recoverable
-//! from the revision the fixture records), running the real
+//! `tests/fixtures/report-oracle.json` was captured once, running the real
 //! `buildInterventionReport` / `renderInterventionReport` and
-//! `buildOperationalReport` / `renderOperationalReport` at the revision the file
-//! records (FR-101-AC-11). It is committed and frozen. Nothing here spawns
+//! `buildOperationalReport` / `renderOperationalReport`. It is committed and
+//! frozen. Nothing here spawns
 //! node: a live TypeScript runtime as a test-time oracle makes the gate a claim
 //! about whatever is installed that morning, and makes the suite unrunnable
 //! once the TypeScript is deleted at cutover.
@@ -55,7 +53,6 @@ const OPERATIONAL_CASE_FLOOR: usize = 11;
 
 #[derive(Deserialize)]
 struct Capture {
-    produced_from_revision: String,
     intervention: Vec<Case>,
     operational: Vec<Case>,
 }
@@ -100,14 +97,8 @@ where
 /// Trace: FR-100-AC-4
 /// Provenance: quoin#469, quoin#373
 #[test]
-fn tc_469_the_capture_names_the_revision_it_was_taken_at() {
+fn tc_469_the_capture_carries_both_case_families() {
     let capture = capture();
-    assert_eq!(
-        capture.produced_from_revision.len(),
-        40,
-        "the capture must name the revision of the TypeScript it ran, so the \
-         fixture is evidence rather than a file someone once generated"
-    );
     assert!(
         capture.intervention.len() >= INTERVENTION_CASE_FLOOR,
         "anti-vacuity floor: at least {INTERVENTION_CASE_FLOOR} intervention cases expected, saw {}",

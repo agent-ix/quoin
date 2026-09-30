@@ -153,8 +153,8 @@ fn tc_452_632_one_digest_per_export_moves_when_the_shipped_schema_moves() {
         "the pin is over the shipped file's own bytes"
     );
 
-    let changed = scratch.module_copy("pins-changed", |manifest, module_root| {
-        common::rewrite_entity_schema(manifest, module_root, |schema| {
+    let changed = scratch.module_copy("pins-changed", |_, module_root| {
+        common::rewrite_entity_schema(module_root, |schema| {
             schema["description"] = json!("changed");
         });
     });
@@ -198,7 +198,7 @@ fn tc_452_633_an_unresolved_import_names_the_installed_versions_and_a_cycle_name
     // The same import, with the package installed at a DIFFERENT version: the
     // refusal stands and reports what is there.
     let provider_root = scratch.module_copy("provider", |manifest, module_root| {
-        common::rewrite_entity_schema(manifest, module_root, |schema| {
+        common::rewrite_entity_schema(module_root, |schema| {
             schema["$id"] =
                 json!("https://schemas.agent-ix.org/agent-ix/spec-objects-other/0.1.0/Entity.json");
         });

@@ -74,11 +74,11 @@ help = "Run the module's verification suite"
 
 [tool.poe.tasks.schemas]
 cmd = "node scripts/generate-schemas.mjs"
-help = "Emit {{ cookiecutter.package_name }}/schemas/ from typespec/main.tsp and rewrite the manifest digests"
+help = "Emit {{ cookiecutter.package_name }}/schemas/ from typespec/main.tsp"
 
 [tool.poe.tasks.schemas-check]
 cmd = "node scripts/generate-schemas.mjs --check"
-help = "Fail when the committed schemas, toolchain, or manifest digests differ from the source"
+help = "Fail when the committed schemas or toolchain differ from the source"
 
 [tool.poe.tasks.lint]
 sequence = ["ruff-check", "black-check", "schemas-check"]

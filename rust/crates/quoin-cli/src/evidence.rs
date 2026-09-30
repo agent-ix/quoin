@@ -13,9 +13,8 @@ use time::format_description::well_known::Rfc3339;
 use crate::core_runtime::invoke;
 
 pub(crate) mod audit;
-mod baseline;
 
-const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> hash-at-binding -> evidence\n  baseline.json    the accepted violation set the ratchet compares against\n  runs/<SUITE-N>/<commit12>.json   one file = one run of one suite\n  experiments/sha256-<digest>.json content-addressed experiment records\n  operational/sha256-<digest>.json content-addressed operational evidence\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence affirm     re-affirm a binding after its statement changed\n  quoin evidence audit      read the store and report\n  quoin evidence baseline   accept the current findings as the ratchet baseline\n  quoin evidence gc         drop run records nothing references";
+const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> hash-at-binding -> evidence\n  runs/<SUITE-N>/<commit12>.json   one file = one run of one suite\n  experiments/sha256-<digest>.json content-addressed experiment records\n  operational/sha256-<digest>.json content-addressed operational evidence\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence affirm     re-affirm a binding after its statement changed\n  quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records nothing references";
 
 /// The evidence commands whose inputs need no Quire-derived obligation set.
 pub(crate) fn command() -> Command {
@@ -88,7 +87,6 @@ pub(crate) fn command() -> Command {
                 .arg(Arg::new("timestamp").long("timestamp"))
                 .arg(json_arg()),
         )
-        .subcommand(baseline::command())
         .subcommand(audit::command())
 }
 
@@ -113,7 +111,6 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "inspect-mocks" => inspect_mocks(arguments),
         "affirm" => affirm(arguments),
         "record" => record_run(arguments),
-        "baseline" => baseline::run(arguments),
         "audit" => audit::run(arguments),
         _ => Err("an unknown evidence command reached dispatch".to_owned()),
     }
@@ -506,20 +503,8 @@ mod tests {
         );
         assert!(
             command()
-                .try_get_matches_from(["evidence", "baseline", "--dry-run"])
-                .is_ok()
-        );
-        assert!(
-            command()
                 .try_get_matches_from([
-                    "evidence",
-                    "audit",
-                    "--module",
-                    "first",
-                    "--module",
-                    "second",
-                    "--ratchet",
-                    "--strict",
+                    "evidence", "audit", "--module", "first", "--module", "second", "--strict",
                 ])
                 .is_ok()
         );

@@ -14,17 +14,7 @@ through OIDC Trusted Publishing. No token is stored here.
 be the module root — `manifest.yaml` at the top, with `schemas/` and
 `skeletons/` beside it — because that is how a Filament tool discovers a module.
 
-## 2. Add the catalog entry
-
-In the `agent-ix/quoin` repository, `default-modules.yaml` lists the modules
-Quoin reconciles into `~/.ix/filament/modules`. Add an entry:
-
-```yaml
-- name: {{ cookiecutter.module_name }}
-  source: npm:@{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
-```
-
-## 3. Verify the install resolves
+## 2. Verify the install resolves
 
 From a clean environment:
 
@@ -33,12 +23,9 @@ quoin plugin install npm:@{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
 quoin catalog list
 ```
 
-Every type this module exports must appear, and `quoin catalog show <type>` must
-report the schema path and digest this repository's manifest declares. If it
-reports something else, the published tarball and this repository disagree — stop
-and reconcile them rather than editing either to match.
+Every type this module exports must appear.
 
-## 4. Add it to the tracking project
+## 3. Add it to the tracking project
 
 Add the repository to the organization's module tracking project (GitHub
 Project 18, "Quoin work") so its schema-completion and contract-migration work is
@@ -46,8 +33,6 @@ visible beside the rest of the fleet. Give it a `Track` and a board state; a
 repository nobody can see on the board is a repository whose drift nobody
 notices.
 
-## 5. Record the decision
+## 4. Record the decision
 
-Add a line to `spec/log.md` here naming the published version, the catalog pull
-request, and the date. The catalog entry and this repository are two halves of
-one fact, and the log is what lets a later reader tell whether they still agree.
+Add a line to `spec/log.md` here naming the catalog pull request and the date.

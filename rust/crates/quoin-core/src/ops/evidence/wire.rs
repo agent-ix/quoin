@@ -29,8 +29,8 @@
 use serde::{Deserialize, Serialize};
 
 use quoin_evidence::types::{
-    BaselineFile, Binding, EvidenceLineage, Finding, FindingRecord, IndependenceAssessment,
-    IndependencePolicy, MockInjection, RunEntry, RunRecord, TrustAssessment, TrustTrigger,
+    Binding, EvidenceLineage, Finding, FindingRecord, IndependenceAssessment, IndependencePolicy,
+    MockInjection, RunEntry, RunRecord, TrustAssessment, TrustTrigger,
 };
 use quoin_evidence::{ObligationId, SuiteId};
 
@@ -44,9 +44,6 @@ pub const MAX_STORE_FACTS_BYTES: usize = 4 * 1024;
 ///
 /// A repository path and a boolean.
 pub const MAX_GC_BYTES: usize = 8 * 1024;
-
-/// The largest `evidence.read_baseline` request, in bytes.
-pub const MAX_READ_BASELINE_BYTES: usize = 8 * 1024;
 
 /// The largest `evidence.trust_assessments` request, in bytes.
 pub const MAX_TRUST_ASSESSMENTS_BYTES: usize = 8 * 1024;
@@ -64,12 +61,6 @@ pub const MAX_AFFIRM_BYTES: usize = 64 * 1024;
 ///
 /// Five optional short strings as a JSON document the caller read off disk.
 pub const MAX_PARSE_LINEAGE_BYTES: usize = 64 * 1024;
-
-/// The largest `evidence.write_baseline` request, in bytes.
-///
-/// One `<kind>:<obligation>` key per accepted finding. A corpus-wide backlog is
-/// tens of thousands of short keys, not a document.
-pub const MAX_WRITE_BASELINE_BYTES: usize = 4 * 1024 * 1024;
 
 /// The largest `evidence.parse_policy` request, in bytes.
 ///
@@ -154,8 +145,6 @@ pub struct StoreFactsPayload {
     pub store_root_path: String,
     /// Store-relative path of the binding graph.
     pub bindings_path: String,
-    /// Store-relative path of the ratchet baseline.
-    pub baseline_path: String,
     /// Store-relative path of the authored suite registry.
     pub suites_path: String,
     /// Store-relative path of the authored inspection register.
@@ -565,39 +554,4 @@ pub struct AuditInputsPayload {
     pub independence: Vec<IndependenceAssessment>,
     /// Store paths that would not parse, named rather than counted.
     pub skipped: Vec<String>,
-}
-
-/// The payload `evidence.read_baseline` writes to stdout.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct ReadBaselinePayload {
-    /// The baseline, or `null` when none has been accepted.
-    ///
-    /// `null` is the fact `--ratchet` turns on: a missing baseline degrades the
-    /// run to a full report, and labelling that full report "new violations
-    /// only" told a day-one reader their whole backlog was new (#169).
-    pub baseline: Option<BaselineFile>,
-    /// Where it would be, as an **absolute** path, for the notice that names it.
-    pub path: String,
-}
-
-/// The request accepted by `evidence.write_baseline`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct WriteBaselineRequest {
-    /// The repository root.
-    pub repo: String,
-    /// The commit the baseline is accepted at.
-    pub commit: String,
-    /// The accepted findings as `<kind>:<obligation>`.
-    pub accepted: Vec<String>,
-}
-
-/// The payload `evidence.write_baseline` writes to stdout.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct WriteBaselinePayload {
-    /// Where it was written, as an **absolute** path.
-    pub path: String,
 }

@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The three `auditor.*` routes, each driven through the production runtime.
+//! The `auditor.*` routes, each driven through the production runtime.
 //!
 //! # Why by name, through the runtime
 //!
-//! `auditor.audit` and `auditor.baseline` run the SAME audit over the SAME
-//! `input` member and differ only in what they answer with, so a swapped match
-//! arm in `dispatch` would return a well-formed payload of the wrong shape and
-//! leave every unit test in `src/ops/auditor/tests.rs` green — the condition
-//! `tc_447_operation_census.rs` exists to make impossible. Each route is run by
-//! its own name here and asserted on a member only its own handler produces.
+//! A swapped match arm in `dispatch` would return a well-formed payload of the
+//! wrong shape and leave every unit test in `src/ops/auditor/tests.rs` green —
+//! the condition `tc_447_operation_census.rs` exists to make impossible. Each
+//! route is run by its own name here and asserted on a member only its own
+//! handler produces.
 //!
 //! # The store rides on stdin
 //!
@@ -85,7 +84,7 @@ fn input() -> Value {
     })
 }
 
-/// `auditor.audit` reports the unbound obligation, and says no ratchet applied.
+/// `auditor.audit` reports the unbound obligation.
 ///
 /// Trace: FR-096-AC-1, FR-101-AC-2
 /// Provenance: agent-ix/quoin#501
@@ -97,36 +96,6 @@ fn tc_501_600_audit_reports_an_unbound_obligation_through_the_binary() {
     assert_eq!(findings.len(), 1, "{payload}");
     assert_eq!(findings[0]["kind"], "undischarged");
     assert_eq!(findings[0]["obligation"], "FR-001-AC-1");
-    // Absent, not `[]`. No baseline was sent, so the caller must be able to
-    // tell "the whole backlog" from "nothing was new" (agent-ix/quoin#169).
-    assert!(payload.get("reported").is_none(), "{payload}");
-}
-
-/// A baseline naming that finding suppresses it, and an empty one does not.
-///
-/// Trace: FR-096-AC-1
-/// Provenance: agent-ix/quoin#169, agent-ix/quoin#501
-#[test]
-fn tc_501_601_a_baseline_suppresses_exactly_the_keys_it_names() {
-    let accepted = run("auditor.baseline", &json!({ "input": input() }).to_string());
-    let keys: Vec<String> = serde_json::from_value(payload(&accepted)["accepted"].clone()).unwrap();
-    assert_eq!(keys, vec!["undischarged:FR-001-AC-1".to_owned()]);
-
-    let suppressed = run(
-        "auditor.audit",
-        &json!({ "input": input(), "accepted": keys }).to_string(),
-    );
-    assert_eq!(
-        payload(&suppressed)["reported"].as_array().unwrap().len(),
-        0
-    );
-
-    // An empty baseline WAS read and accepted nothing, so the finding is new.
-    let empty = run(
-        "auditor.audit",
-        &json!({ "input": input(), "accepted": [] }).to_string(),
-    );
-    assert_eq!(payload(&empty)["reported"].as_array().unwrap().len(), 1);
 }
 
 /// `auditor.advise` answers one row per obligation, in the order they arrived.

@@ -52,8 +52,7 @@ thiserror = { workspace = true }
 # `json_bridge` is the one `serde_json::Value` <-> `quoin_store::JsonValue`
 # crossing in the workspace, and the parity test compares canonical bytes.
 quoin-measurement = { workspace = true }
-# The ratchet's one-way property and the advisor's compound guard are
-# statements about ALL inputs, which no fixture of any size makes.
+# The advisor's compound guard is a statement about ALL inputs, which no fixture of any size makes.
 proptest = { workspace = true }
 # Pinned to match `quoin-completeness`: `multiple-versions = "deny"` forbids
 # two majors, and this workspace already carries =3.27.0.

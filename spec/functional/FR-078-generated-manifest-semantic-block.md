@@ -16,7 +16,7 @@ relationships:
 ## Description
 
 The rendered module manifest SHALL carry a complete `semantic` block that
-references every exported type's emitted schema by path and digest, so that a
+references every exported type's emitted schema by path, so that a
 rendered repository declares the contract from its first commit rather than
 acquiring it in a later migration.
 

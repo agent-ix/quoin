@@ -15251,12 +15251,5 @@
       "origin": "spec/evidence/operational/pairs/c1b30a188d4d03bbe316e0fdb7582eff3fa314c55268a5f71f81f99f8ea2acf8.json#/records/1",
       "schema": "operational_evidence_v1"
     }
-  ],
-  "provenance": {
-    "ajv_version": "8.20.0",
-    "intervention_config": "src/measurement/intervention.ts:22-27",
-    "operational_config": "src/measurement/operational.ts:30-35",
-    "producer": "eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-jsonschema/oracle/capture-ajv-verdicts.mjs",
-    "quoin_revision": "055f5b3d6bdf2488f9669d4bd810f1b258f7a73b"
-  }
+  ]
 }

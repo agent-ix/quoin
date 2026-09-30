@@ -21,7 +21,6 @@
 pub mod input;
 pub mod method;
 pub mod mocks;
-pub mod ratchet;
 pub mod scores;
 
 mod ladder;
@@ -38,7 +37,6 @@ use quoin_finding_types::{AuditReport, Finding, UnevaluatedCheck};
 pub use input::AuditInput;
 pub use method::{catalog_methods_matching, method_conformance, unknown_method_finding};
 pub use mocks::{MOCK_SUBJECT_FLOOR, mocked_bindings, same_test_symbol, words};
-pub use ratchet::{Delta, delta, finding_key, ratchet};
 pub use scores::{multiplicity_finding, mutation_finding, scores_for};
 
 use crate::error::AuditorError;

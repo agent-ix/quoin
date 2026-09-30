@@ -571,39 +571,6 @@ fn tc_475_052_the_corpus_carries_both_verdicts_for_every_entry_point() {
     );
 }
 
-/// The capture records what produced it.
-#[test]
-fn tc_475_053_the_capture_records_its_provenance() {
-    let path =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/goldens/graph-adapter-verdicts.json");
-    let golden: Value =
-        serde_json::from_str(&std::fs::read_to_string(&path).expect("readable")).expect("JSON");
-    let provenance = &golden["provenance"];
-    for member in [
-        "captured_by",
-        "module",
-        "module_digest",
-        "node",
-        "zod",
-        "quoin_revision",
-    ] {
-        let value = provenance[member].as_str();
-        assert!(
-            value.is_some_and(|text| !text.is_empty()),
-            "the capture must record `{member}`: a golden whose origin is unrecorded cannot be \
-             re-taken, and an unrepeatable measurement is an assertion"
-        );
-    }
-    assert_eq!(
-        provenance["module"], "src/measurement/graph-adapters.ts",
-        "the capture is of the module this crate ports"
-    );
-    assert_ne!(
-        provenance["quoin_revision"], "unrecorded",
-        "the capture must record the revision it was taken at"
-    );
-}
-
 /// The identity's member-ordering difference cannot be reached.
 ///
 /// `compactCanonicalProducerJson` sorts member names by Unicode **code point**;

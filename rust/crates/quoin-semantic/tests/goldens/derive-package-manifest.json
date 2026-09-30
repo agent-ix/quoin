@@ -1,11 +1,4 @@
 {
-  "provenance": {
-    "producer": "scripts/capture-semantic-goldens.mjs",
-    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
-    "quoinRevision": "dc834a22f45cea52275595ebc2857baa17484229",
-    "ajvVersion": "8.20.0",
-    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
-  },
   "source": "src/semantic/package-manifest.ts derivePackageManifest()",
   "counts": {
     "total": 7

@@ -14,9 +14,7 @@
 //! `tests/golden/expected.json` holds the verdicts CAPTURED from the retained
 //! TypeScript by a generator that was deleted along with its subject.
 //! Nothing in this file executes Node: it reads two files and calls the
-//! port. `tests/golden/PROVENANCE.md` records what produced the bytes,
-//! when, from which revision, and the hashes that let a reader re-derive
-//! them at that revision.
+//! port.
 //!
 //! This test runs the corpus through the crate's own functions.
 //! `quoin-core`'s `tc_447_assurance_boundary` runs the same corpus through the
@@ -51,8 +49,8 @@ struct Case {
     name: String,
     op: String,
     /// Marks an input the REQUEST SCHEMA refuses before the ported logic runs.
-    /// The retained TypeScript's answer to it is still captured — see
-    /// `PROVENANCE.md` — so the divergence is recorded, not hidden.
+    /// The retained TypeScript's answer to it is still captured, so the
+    /// divergence is visible, not hidden.
     #[serde(default)]
     boundary: Option<String>,
     #[serde(default)]

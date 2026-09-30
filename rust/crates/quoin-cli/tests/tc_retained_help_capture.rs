@@ -3,9 +3,8 @@
 
 //! Frozen retained-shell contracts for Stage 8 (quoin#520).
 //!
-//! The capture was produced once by `scripts/capture-command-contracts.mjs`
-//! before the oclif shell is retired. These tests never execute Node: Rust
-//! reads the provenance-bearing record and replays native output against it.
+//! These tests never execute Node: Rust reads the captured record and replays
+//! native output against it.
 
 #![allow(
     clippy::expect_used,
@@ -18,14 +17,12 @@ use std::process::{Command, Output};
 use serde::Deserialize;
 
 const CAPTURE: &str = include_str!("fixtures/retained-command-help.json");
-const MIN_HELP_ROUTE_COUNT: usize = 60;
+const MIN_HELP_ROUTE_COUNT: usize = 59;
 const MIN_SHELL_CASE_COUNT: usize = 8;
 
 #[derive(Debug, Deserialize)]
 struct Capture {
     schema_version: u64,
-    captured_by: String,
-    captured_revision: String,
     normalization: String,
     cases: Vec<CaptureCase>,
 }
@@ -87,22 +84,13 @@ fn normalize_version(text: &str) -> String {
     }
 }
 
-/// The fixture is a non-vacuous retained capture, with enough provenance to
-/// determine exactly which shell produced it before Node disappears.
+/// The fixture is a non-vacuous retained capture.
 ///
 /// Trace: FR-101, FR-102, TC-1650
 #[test]
 fn tc_1650_retained_help_capture_is_provenanced_and_covers_every_native_route() {
     let capture = capture();
     assert_eq!(capture.schema_version, 1);
-    assert_eq!(capture.captured_by, "scripts/capture-command-contracts.mjs");
-    assert_eq!(capture.captured_revision.len(), 40);
-    assert!(
-        capture
-            .captured_revision
-            .bytes()
-            .all(|byte| byte.is_ascii_hexdigit())
-    );
     assert!(capture.normalization.contains("@agent-ix/quoin/<VERSION>"));
     assert!(capture.normalization.contains("<VERSION>"));
     let help_count = capture

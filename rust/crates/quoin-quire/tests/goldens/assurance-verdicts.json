@@ -17110,15 +17110,5 @@
       "mutation": "set/symbols.0.capabilities=string",
       "oracle_valid": false
     }
-  ],
-  "provenance": {
-    "ajv_version": "8.20.0",
-    "bases": "rust/crates/quoin-quire/tests/goldens/assurance-bases.json",
-    "bases_producer": "rust/crates/quoin-quire/oracle/capture-assurance-bases.rs",
-    "engine": "quire-rs = { version = \"=0.46.0\", git = \"https://github.com/agent-ix/quire-rs\", rev = \"85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f\" }",
-    "node_version": "v22.15.0",
-    "oracle": "src/quire/validate.ts:99 validateAssurance",
-    "producer": "rust/crates/quoin-quire/oracle/capture-assurance-verdicts.mjs",
-    "quoin_revision": "f1c2bd9983bba14f0d87f7a8da4a84703ca13f3d"
-  }
+  ]
 }

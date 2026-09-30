@@ -147,7 +147,14 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 | ID | Constraint | Type | Validation |
 |---|---|---|---|
 | FR-104-CON-1 | Quire SHALL NOT read relationship category or composition from a verb's spelling, a target's name, or the object type's roles; only the registry entry decides them. | Correctness | Fixture inspection |
-| FR-104-CON-2 | Quoin SHALL publish the golden fixtures (`relationships.md`, `relationships.expected.json`, `relationships-cases.json`) under `tests/fixtures/semantic-module/mapping/`, each recording the semantic-core version (`0.2.0`), the registry and bundle context it assumes, and the `agent-ix/spec-artifacts-iso` and `agent-ix/spec-objects-business` revisions that context comes from, for `agent-ix/quire-rs#418` to consume unchanged. | Integrity | Fixture provenance |
+
+> **CR note (2026-09-30, agent-ix/quoin#658):** FR-104-CON-2 is withdrawn. It required the golden
+> fixtures to record the `agent-ix/spec-artifacts-iso` and
+> `agent-ix/spec-objects-business` revisions their context comes from, which is
+> a record of pinned revisions, not behaviour; the `revision` fields are removed
+> from quoin's copies of the goldens. TC-1726 is withdrawn with it. The
+> matrix and Dependencies no longer cite the quire-rs commit the delegated tests
+> ran at. The id is not reused.
 
 ## Acceptance Criteria
 
@@ -169,4 +176,4 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 ## Dependencies
 
 - **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md), [FR-071](./FR-071-typed-properties-mapping.md) (multiplicity grammar), [FR-072](./FR-072-invariants-and-operations-mapping.md) (`SourceLocus`, availability, inline-plus-external refusal), semantic-core `RelationDecl`/`Multiplicity`/`SourceLocus` `0.2.0` (`agent-ix/filament-core-data` FR-028, FR-031), `agent-ix/filament-core-data#155` (`RelationDecl` `name`, `sourceSpan`, default multiplicity), the FR-040 edge registry and `target_satisfies` (`ix://agent-ix/quire-rs/FR-040`), authorable inverse edges (`ix://agent-ix/quire-rs/FR-041`, quire-rs ADR-0008), quire-rs FR-075 diagnostic shape, refusal rule, and `generalization` mapping
-- **Downstream**: `agent-ix/quire-rs#418` (PR agent-ix/quire-rs#436, merged at `44df254`; quire-rs FR-076), `agent-ix/quoin#557` (quoin-quire passes the bundle package to `validate_document_in_bundle`), `agent-ix/filament-core-data` FR-094 (`RelationDecl` from extraction, `agent-ix/filament-core-data#156`)
+- **Downstream**: `agent-ix/quire-rs#418` (PR agent-ix/quire-rs#436; quire-rs FR-076), `agent-ix/quoin#557` (quoin-quire passes the bundle package to `validate_document_in_bundle`), `agent-ix/filament-core-data` FR-094 (`RelationDecl` from extraction, `agent-ix/filament-core-data#156`)

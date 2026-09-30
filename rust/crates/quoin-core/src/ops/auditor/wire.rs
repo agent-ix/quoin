@@ -19,7 +19,7 @@ use std::collections::BTreeMap;
 use quoin_auditor::advise::PropertyShape;
 use quoin_auditor::{Advice, AuditInput, MethodCatalog};
 use quoin_evidence::types::{Binding, IndependenceAssessment, RunRecord};
-use quoin_finding_types::{AuditReport, Finding};
+use quoin_finding_types::AuditReport;
 use quoin_quire_types::{CoverageDiagnostic, Obligation};
 use serde::{Deserialize, Serialize};
 
@@ -40,15 +40,6 @@ pub const MAX_AUDITOR_REQUEST_BYTES: usize = 32 * 1024 * 1024;
 pub struct AuditRequest {
     /// Everything the audit reads, assembled by the caller.
     pub input: AuditInput,
-    /// The accepted-finding keys a `--ratchet` run was given.
-    ///
-    /// `None` is not `Some([])`. Absent means no baseline was read and the
-    /// full report is the answer; an empty baseline means one was read and
-    /// accepted nothing, so every finding is new. Labelling the first case
-    /// "new violations only" told a day-one reader their whole backlog was new
-    /// (agent-ix/quoin#169), so the two stay distinguishable on the wire.
-    #[serde(default)]
-    pub accepted: Option<Vec<String>>,
 }
 
 /// What an audit answered.
@@ -74,30 +65,6 @@ pub struct AuditPayload {
     /// would reach TypeScript as an undeclared key no generated type carries.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub independence: Option<Vec<IndependenceAssessment>>,
-    /// The findings that survived the ratchet, when one was applied.
-    ///
-    /// `None` when the request carried no baseline — the caller then reports
-    /// `report.findings`. Present-and-equal would be the same list encoded
-    /// twice, which is the shape FR-097 forbids.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reported: Option<Vec<Finding>>,
-}
-
-/// What `quoin evidence baseline` sends: the same audit, a different question.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(deny_unknown_fields)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct BaselineRequest {
-    /// Everything the audit reads, assembled by the caller.
-    pub input: AuditInput,
-}
-
-/// The keys a baseline would accept.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct BaselinePayload {
-    /// Every finding's key, sorted, as the baseline file records them.
-    pub accepted: Vec<String>,
 }
 
 /// What `quoin advise` sends: one request for every obligation, not one each.

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The binding graph, the ratchet baseline, and the two operations over them.
+//! The binding graph and the two operations over it.
 
 use crate::error::EvidenceError;
-use crate::ids::{Commit, ObligationId, StatementHash, SuiteId};
-use crate::paths::{baseline_path, bindings_path};
+use crate::ids::{ObligationId, StatementHash, SuiteId};
+use crate::paths::bindings_path;
 use crate::source::EvidenceSource;
 use crate::store::codec::{canonical_bytes_of, decode};
-use crate::types::{Affirmation, BaselineFile, Binding, BindingsFile, STORE_SCHEMA_VERSION};
+use crate::types::{Affirmation, Binding, BindingsFile, STORE_SCHEMA_VERSION};
 
 /// The binding graph. An absent file reads as an empty graph, not an error.
 ///
@@ -63,42 +63,6 @@ pub fn write_bindings<S: EvidenceSource + ?Sized>(
     };
     let bytes = canonical_bytes_of("binding graph", &file)?;
     source.write(&bindings_path(), &bytes)
-}
-
-/// The ratchet baseline, or `None` when none has been accepted.
-///
-/// # Errors
-///
-/// As [`read_bindings`].
-pub fn read_baseline<S: EvidenceSource + ?Sized>(
-    source: &S,
-) -> Result<Option<BaselineFile>, EvidenceError> {
-    let path = baseline_path();
-    match source.read(&path)? {
-        None => Ok(None),
-        Some(text) => decode(&path, &text).map(Some),
-    }
-}
-
-/// Write the ratchet baseline with its accepted set sorted.
-///
-/// # Errors
-///
-/// [`EvidenceError::Canonicalization`] or [`EvidenceError::StoreIo`].
-pub fn write_baseline<S: EvidenceSource + ?Sized>(
-    source: &mut S,
-    commit: &Commit,
-    accepted: &[String],
-) -> Result<(), EvidenceError> {
-    let mut sorted = accepted.to_vec();
-    sorted.sort();
-    let file = BaselineFile {
-        schema_version: STORE_SCHEMA_VERSION,
-        commit: commit.clone(),
-        accepted: sorted,
-    };
-    let bytes = canonical_bytes_of("ratchet baseline", &file)?;
-    source.write(&baseline_path(), &bytes)
 }
 
 /// What [`bind`] did.

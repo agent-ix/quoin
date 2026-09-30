@@ -34,15 +34,6 @@
 //! * [`audit::audit`] — the report.
 //! * [`advise::advise`] — the recommendation.
 //! * [`catalog::load_method_catalog`] — the merged catalog both read.
-//! * [`audit::ratchet`] / [`audit::delta`] — the gate and the per-PR change.
-//!
-//! # Where the cited TypeScript went
-//!
-//! Every `src/auditor/...` and `src/advisor/...` path this crate cites names
-//! the retained TypeScript it replaced, deleted at the quoin#501 cutover. The
-//! last revision carrying it is `cef9b208b926c076ef626c9d5c9c97c9e5122c68`,
-//! so a citation reads back with
-//! `git show cef9b208b926c076ef626c9d5c9c97c9e5122c68:src/auditor/audit.ts`.
 
 #![forbid(unsafe_code)]
 
@@ -59,9 +50,7 @@ pub use advise::{
     characteristics_of, evidence_for, facts_for, mintable_characteristics,
     uncatalogued_authored_methods,
 };
-pub use audit::{
-    AuditInput, Delta, MOCK_SUBJECT_FLOOR, audit, delta, finding_key, ratchet, scores_for,
-};
+pub use audit::{AuditInput, MOCK_SUBJECT_FLOOR, audit, scores_for};
 pub use catalog::{
     DiskModuleCatalogSource, MemoryModuleCatalogSource, MethodCatalog, ModuleCatalogSource,
     ModuleRoot, VerificationMethod, load_method_catalog, method_classes,

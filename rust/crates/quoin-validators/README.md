@@ -52,11 +52,8 @@ TypeScript could not state because it let raw `fs` exceptions escape.
 
 ## The oracle
 
-`tests/golden/expected.json` was captured **once** from the retained TypeScript at
-quoin `4d27dcf` and is the only oracle these tests consult. No test here executes
-Node. See [`tests/golden/PROVENANCE.md`](tests/golden/PROVENANCE.md) for the
-revision, the source hashes, the corpus census, the two recorded
-TypeScript↔Rust divergences, and how to re-derive the bytes.
+`tests/golden/expected.json` was captured **once** from the retained TypeScript
+and is the only oracle these tests consult. No test here executes Node.
 
 `tools/generate-oracle.mts` is that capture. It is a **script, not a test**: it
 is off the `*.test.ts` suffix, `vite.config.ts` excludes `rust/**`, and it

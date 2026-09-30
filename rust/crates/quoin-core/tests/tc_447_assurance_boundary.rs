@@ -52,8 +52,7 @@ struct Case {
     op: String,
     /// Marks an input the Rust REQUEST SCHEMA refuses. The retained
     /// TypeScript's answer to it is captured all the same, so the divergence
-    /// is recorded rather than hidden; `tests/golden/PROVENANCE.md` counts
-    /// them.
+    /// is visible rather than hidden.
     #[serde(default)]
     boundary: Option<String>,
     #[serde(default)]
@@ -329,7 +328,6 @@ fn tc_447_512_a_built_case_is_a_renderable_case_unless_its_assessments_are_untyp
         refused, 2,
         "the recorded renderer divergence is 2 cases; it is now {refused}. \
          Read the new one: either the renderer's request schema has narrowed \
-         past the assessments, or the corpus gained a case that needs its own \
-         entry in tests/golden/PROVENANCE.md"
+         past the assessments, or the corpus gained a case"
     );
 }

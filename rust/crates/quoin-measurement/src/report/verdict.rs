@@ -28,9 +28,7 @@
 //! measured that the newest one drops is reported too — see
 //! [`crate::report::vanished::VanishedSlice`] — so a slice cannot regress by being left out. So does a ratchet with nothing earlier to hold against: the first
 //! collection a ratchet ever sees has no floor yet, and calling that `held`
-//! would be a green verdict with no comparison behind it — the failure quoin's
-//! `--ratchet` with no baseline once had (CR-029, agent-ix/quoin#169). The
-//! same rule decides which earlier values may *set* the best: an earlier value
+//! would be a green verdict with no comparison behind it. The same rule decides which earlier values may *set* the best: an earlier value
 //! that is incomplete, empty or under another definition is not one.
 //!
 //! In a protected series (PLAT-975), an earlier value measured with a

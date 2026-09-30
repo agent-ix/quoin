@@ -19,7 +19,7 @@ relationships:
 
 The module's structural source is `typespec/main.tsp`. Everything under
 `{{ cookiecutter.package_name }}/schemas/` is produced from it, and the manifest
-references those bytes by digest. The authoring skeletons show the Markdown forms
+references those files by path. The authoring skeletons show the Markdown forms
 that populate a declaration, and the fixtures show what is refused.
 
 ## Acceptance Examples (Illustrative)
@@ -28,7 +28,7 @@ that populate a declaration, and the fixtures show what is refused.
 
 - **Given** a type declared in `typespec/main.tsp`
 - **When** `make schemas` runs
-- **Then** one JSON Schema is written for it and the manifest's digest for that type is rewritten to match the bytes
+- **Then** one JSON Schema is written for it
 
 ### US-001-EX-2: The two authoring forms agree
 
@@ -44,7 +44,7 @@ that populate a declaration, and the fixtures show what is refused.
 
 ## Constraints (Contextual)
 
-The emitted schemas are never hand-edited and the digests are never typed. The
+The emitted schemas are never hand-edited. The
 suite fails rather than skips when a tool it needs is absent.
 
 ## Priority and Risk (Informative)

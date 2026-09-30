@@ -28,9 +28,6 @@ and only afterwards delete the replaced path together with its tests.
 
 ## Inputs
 
-- The executable-path disposition matrix at
-  `docs/rust-burndown/executable-path-matrix.md`, whose dispositions follow
-  [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md).
 - The allowance manifest `.language-allowances.yaml` at the repository root.
 - The capability-gap matrix owned by quire-research LR03.
 - The reviewed Rust crates and the `quoin-core` boundary.
@@ -63,12 +60,6 @@ and only afterwards delete the replaced path together with its tests.
   from the retained implementation and committed to this repository, so that no
   non-Rust implementation is executed as a test oracle after its capability's
   cutover.
-- Each committed expected fixture SHALL record the implementation that produced
-  it, that implementation's revision, and the digest of the request that
-  produced it.
-- A fixture recorded as produced by the Rust implementation SHALL NOT satisfy a
-  parity criterion, because a fixture captured from the implementation under
-  test is the self-written-fixture failure raised one level.
 - While a criterion a retained path carried is backed only by a test that
   asserts against a fixture that test, its setup helper or its own generation
   step wrote, or by a check that passes over an empty population, Quoin SHALL NOT
@@ -122,10 +113,25 @@ and an unresolved path disposition each block removal.
 | FR-101-AC-6 | `quoin-core lint.removal` refuses a removal justified by a check whose reported population is zero, or by a test whose asserted fixture was written by that test, its setup helper or its own generation step. | Test (TC-1646) |
 | FR-101-AC-7 | `make lint` and `make test` pass at the candidate revision with no observable behaviour change recorded by the command-surface snapshot. | Test (TC-1647) |
 | FR-101-AC-8 | The final inventory and `quoin-core lint.language` report no unapproved first-party non-Rust engine, production, planning, validation, canonicalization, digest, oracle or assertion logic, exclude manifest-declared inert samples from executable debt, and fail on a planted violation. | Test (TC-1648) |
-| FR-101-AC-9 | Run against the baseline revision `e718d45`, the path inventory reports 105,814 physical lines across 364 in-repository files, including `skills/` and `bin/`, and excludes every path inside the `corpus/` submodule; the figures are asserted of that revision, not of the revision under test. | Test (TC-1690) |
 | FR-101-AC-10 | The inventory population includes executable paths with no governed extension — Makefile recipes and `run:` blocks under `.github/workflows/**` — and a planted non-Rust assertion in one of them is reported. | Test (TC-1700) |
-| FR-101-AC-11 | Each committed expected fixture records its producing implementation, that implementation's revision and the request digest, and a fixture recorded as produced by the Rust implementation fails the parity gate. | Test (TC-1701) |
-| FR-101-AC-12 | A retained path is identified by a stable identity that survives a rename, so moving a file does not silently drop its retention row, its successor reference or its expiry. | Test (TC-1702) |
+
+> **CR note (2026-09-30, agent-ix/quoin#658):** The Input naming
+> `docs/rust-burndown/executable-path-matrix.md` is withdrawn; that file was an
+> inventory snapshot taken at one commit and is deleted. FR-101-AC-9 is
+> withdrawn with it: it asserted the path inventory's line and file counts at a
+> pinned baseline revision, and no test stands behind it. TC-1690 is withdrawn
+> with it. The id is not reused.
+>
+> FR-101-AC-11 is withdrawn with the two Behavior bullets it verified: that each
+> committed expected fixture records its producing implementation, that
+> implementation's revision and the request digest, and that a fixture recorded
+> as produced by the Rust implementation fails parity. No test stands behind
+> it. TC-1701 is withdrawn with it. The id is not reused.
+>
+> FR-101-AC-12 is withdrawn: it required a retained path's retention row,
+> successor reference and expiry to survive a rename, and those rows lived in
+> the deleted burn-down matrix. TC-1702 is withdrawn with it. The id is not
+> reused.
 
 ## Dependencies
 

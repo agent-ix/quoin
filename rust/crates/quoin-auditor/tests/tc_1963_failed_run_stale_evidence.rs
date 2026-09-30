@@ -362,7 +362,7 @@ fn tc_1963_two_runs_fail_then_newer_pass_stays_healthy() {
 
 /// A run that is both behind HEAD and failing reports only the high
 /// failed-run finding, not a second medium behind-HEAD one: both are
-/// `stale-evidence` and share one ratchet key, and the failed-run rung's
+/// `stale-evidence`, and the failed-run rung's
 /// early return means the ladder never reaches the behind-HEAD rung for this
 /// obligation.
 ///

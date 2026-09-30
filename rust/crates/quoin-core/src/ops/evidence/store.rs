@@ -3,18 +3,17 @@
 
 //! The `evidence` operations that READ or MAINTAIN the store.
 //!
-//! Collecting superseded records, re-affirming a binding, and the three bulk
-//! reads the command layer makes one call each for — the trust assessments, the
-//! pure auditor's whole input, and the ratchet baseline.
+//! Collecting superseded records, re-affirming a binding, and the two bulk
+//! reads the command layer makes one call each for — the trust assessments and
+//! the pure auditor's whole input.
 
 use std::path::Path;
 
 use quoin_evidence::independence::assess_independence;
 use quoin_evidence::mock_inspection::mock_inspection_input;
-use quoin_evidence::paths::baseline_path;
 use quoin_evidence::store::{
-    affirm, latest_runs, latest_scans, read_baseline as store_read_baseline, read_bindings,
-    read_trust_decisions, scan_is_vacuous, write_baseline as store_write_baseline, write_bindings,
+    affirm, latest_runs, latest_scans, read_bindings, read_trust_decisions, scan_is_vacuous,
+    write_bindings,
 };
 use quoin_evidence::trust::assess_trust;
 use quoin_evidence::types::{Affirmation, Binding};
@@ -27,9 +26,8 @@ use crate::protocol::Response;
 use super::taxonomy::map_error;
 use super::wire::{
     AffirmPayload, AffirmRequest, AuditInputsPayload, AuditInputsRequest, GcPayload, GcRequest,
-    MAX_AFFIRM_BYTES, MAX_AUDIT_INPUTS_BYTES, MAX_GC_BYTES, MAX_READ_BASELINE_BYTES,
-    MAX_TRUST_ASSESSMENTS_BYTES, MAX_WRITE_BASELINE_BYTES, ReadBaselinePayload, RepoRequest,
-    TrustAssessmentsPayload, WriteBaselinePayload, WriteBaselineRequest,
+    MAX_AFFIRM_BYTES, MAX_AUDIT_INPUTS_BYTES, MAX_GC_BYTES, MAX_TRUST_ASSESSMENTS_BYTES,
+    RepoRequest, TrustAssessmentsPayload,
 };
 use super::{absolute, bound, check_scalar, host, parse, value};
 
@@ -241,68 +239,6 @@ pub fn audit_inputs(
             vacuous_scan_suites,
             independence,
             skipped,
-        })
-    })?;
-    Ok(Response::ok(payload))
-}
-
-/// Answer an `evidence.read_baseline`.
-///
-/// # Errors
-///
-/// - [`CoreErrorCode::Refused`] when the request exceeds
-///   [`MAX_READ_BASELINE_BYTES`], or when `baseline.json` is present and
-///   unreadable.
-/// - [`CoreErrorCode::Io`] when no evidence host was granted.
-pub fn read_baseline(
-    request: &serde_json::Value,
-    capabilities: &Capabilities<'_>,
-) -> Result<Response, CoreError> {
-    let op = "evidence.read_baseline";
-    bound(request, op, MAX_READ_BASELINE_BYTES)?;
-    let request: RepoRequest = parse(request, op)?;
-    check_scalar(op, "repo", &request.repo)?;
-
-    let host = host(capabilities, op)?;
-    let path = host
-        .store_root(Path::new(&request.repo))
-        .join(baseline_path())
-        .to_string_lossy()
-        .into_owned();
-    let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let baseline = store_read_baseline(source).map_err(|e| map_error(&e, op))?;
-        value(&ReadBaselinePayload {
-            baseline,
-            path: path.clone(),
-        })
-    })?;
-    Ok(Response::ok(payload))
-}
-
-/// Answer an `evidence.write_baseline`.
-///
-/// # Errors
-///
-/// - [`CoreErrorCode::Refused`] when the request exceeds
-///   [`MAX_WRITE_BASELINE_BYTES`], or when the store cannot be written.
-/// - [`CoreErrorCode::Io`] when no evidence host was granted.
-pub fn write_baseline(
-    request: &serde_json::Value,
-    capabilities: &Capabilities<'_>,
-) -> Result<Response, CoreError> {
-    let op = "evidence.write_baseline";
-    bound(request, op, MAX_WRITE_BASELINE_BYTES)?;
-    let request: WriteBaselineRequest = parse(request, op)?;
-    check_scalar(op, "repo", &request.repo)?;
-    check_scalar(op, "commit", &request.commit)?;
-
-    let host = host(capabilities, op)?;
-    let root = host.store_root(Path::new(&request.repo));
-    let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        store_write_baseline(source, &Commit::new(&request.commit), &request.accepted)
-            .map_err(|e| map_error(&e, op))?;
-        value(&WriteBaselinePayload {
-            path: absolute(&root, baseline_path()),
         })
     })?;
     Ok(Response::ok(payload))

@@ -71,22 +71,18 @@ pub use self::wire::{
     AuditInputsPayload, AuditInputsRequest, GcPayload, GcRequest, InspectMocksPayload,
     InspectMocksRequest, MAX_AFFIRM_BYTES, MAX_ASSURANCE_RECORD_BYTES, MAX_AUDIT_INPUTS_BYTES,
     MAX_GC_BYTES, MAX_INSPECT_MOCKS_BYTES, MAX_PARSE_LINEAGE_BYTES, MAX_PARSE_POLICY_BYTES,
-    MAX_PARSE_RESULTS_BYTES, MAX_READ_BASELINE_BYTES, MAX_RECORD_BYTES, MAX_SCALAR_BYTES,
-    MAX_STORE_FACTS_BYTES, MAX_TRUST_ASSESSMENTS_BYTES, MAX_TRUST_DECISION_BYTES,
-    MAX_WRITE_BASELINE_BYTES, ParseLineagePayload, ParseLineageRequest, ParsePolicyPayload,
-    ParsePolicyRequest, ParseResultsPayload, ParseResultsRequest, ReadBaselinePayload,
-    RecordPayload, RecordRequest, RepoRequest, StoreFactsPayload, TrustAssessmentsPayload,
-    TrustDecisionPayload, TrustDecisionRequest, UnrepresentedView, WriteBaselinePayload,
-    WriteBaselineRequest,
+    MAX_PARSE_RESULTS_BYTES, MAX_RECORD_BYTES, MAX_SCALAR_BYTES, MAX_STORE_FACTS_BYTES,
+    MAX_TRUST_ASSESSMENTS_BYTES, MAX_TRUST_DECISION_BYTES, ParseLineagePayload,
+    ParseLineageRequest, ParsePolicyPayload, ParsePolicyRequest, ParseResultsPayload,
+    ParseResultsRequest, RecordPayload, RecordRequest, RepoRequest, StoreFactsPayload,
+    TrustAssessmentsPayload, TrustDecisionPayload, TrustDecisionRequest, UnrepresentedView,
 };
 
 pub use self::documents::{parse_lineage, parse_policy, parse_results, store_facts};
 pub use self::records::{
     inspect_mocks, record, record_experiment, record_operational, trust_decision,
 };
-pub use self::store::{
-    affirm_binding, audit_inputs, gc, read_baseline, trust_assessments, write_baseline,
-};
+pub use self::store::{affirm_binding, audit_inputs, gc, trust_assessments};
 
 /// One store-relative path as the caller must see it: absolute.
 ///

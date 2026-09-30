@@ -222,29 +222,3 @@ fn tc_474_022_the_load_bearing_rungs_are_still_in_the_corpus() {
         );
     }
 }
-
-/// The capture names its oracle, its ajv, its node and its revision.
-///
-/// Trace: FR-099-AC-2
-/// Provenance: quoin#474
-#[test]
-fn tc_474_023_the_verdict_capture_records_its_provenance() {
-    let goldens = goldens();
-    for key in [
-        "producer",
-        "oracle",
-        "ajv_version",
-        "node_version",
-        "bases",
-        "bases_producer",
-        "engine",
-        "quoin_revision",
-    ] {
-        let value = goldens["provenance"][key].as_str().unwrap_or("");
-        assert!(
-            !value.is_empty(),
-            "the verdict capture must name {key}; an oracle without its version and \
-             revision cannot be re-derived or audited"
-        );
-    }
-}

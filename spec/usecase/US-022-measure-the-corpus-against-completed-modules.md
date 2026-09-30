@@ -29,9 +29,6 @@ relationships:
 > [engineering-assurance#98](https://github.com/agent-ix/engineering-assurance/issues/98)
 > is open and unanswered, and a story written against a surface that does not yet
 > exist is owned by nobody.
->
-> The text below is retained unchanged for provenance. It describes what was
-> wanted, not what is wanted.
 
 
 ## Story

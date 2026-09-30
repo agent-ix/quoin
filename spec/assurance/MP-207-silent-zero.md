@@ -2,7 +2,7 @@
 id: MP-207
 title: Benchmark silent-zero sentinel
 type: MeasurementPlan
-status: active
+status: retired
 owner: quoin-maintainers
 stage: gate
 metric: sentinel.silent_zero
@@ -33,6 +33,11 @@ relationships: []
 ---
 
 # Benchmark silent-zero sentinel
+
+> **⛔ Withdrawn — 2026-09-30** (agent-ix/quoin#658). This plan is retired. Its
+> protected apparatus, `bench/metrics.json` and `bench/tier1-mapping.json`, is
+> deleted, and no producer for it exists: the tier-1 benchmark runner went with
+> `scripts/`. The text below describes what was measured, not what is.
 
 ## Decision Use
 

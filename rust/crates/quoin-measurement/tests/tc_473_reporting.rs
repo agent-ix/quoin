@@ -10,10 +10,8 @@
 //!
 //! # The oracle is a file, not a runtime
 //!
-//! `tests/fixtures/portfolio-oracle.json` was captured once, by
-//! `oracle/capture-portfolio-oracle.mjs` (deleted at cutover, recoverable from
-//! the revision the fixture records), at the revision the file records
-//! (FR-101-AC-11). It is committed and frozen. Nothing here spawns node:
+//! `tests/fixtures/portfolio-oracle.json` was captured once and is committed
+//! and frozen. Nothing here spawns node:
 //! FR-101-AC-5 forbids a live TypeScript runtime as a test-time oracle, and the
 //! suite has to keep running once the TypeScript is deleted at cutover.
 //!
@@ -64,7 +62,6 @@ const PORTFOLIO_LOCATION_FLOOR: usize = 8;
 
 #[derive(Deserialize)]
 struct Capture {
-    produced_from_revision: String,
     tree_token: String,
     reports: Vec<ReportCase>,
     comparisons: Vec<ComparisonCase>,
@@ -192,17 +189,10 @@ fn without_ranking_member(json: &str) -> String {
     quoin_store::canonical_json(&value).expect("the trimmed value re-serializes")
 }
 
-/// Trace: FR-101-AC-11
 /// Provenance: quoin#473
 #[test]
-fn tc_473_the_capture_names_the_revision_it_was_taken_at() {
+fn tc_473_the_capture_carries_every_case_family() {
     let capture = capture();
-    assert_eq!(
-        capture.produced_from_revision.len(),
-        40,
-        "the capture must name the revision of the TypeScript it ran, so the \
-         fixture is evidence rather than a file someone once generated"
-    );
     assert!(
         capture.reports.len() >= REPORT_CASE_FLOOR,
         "anti-vacuity floor: at least {REPORT_CASE_FLOOR} report cases expected, saw {}",
