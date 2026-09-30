@@ -62,6 +62,27 @@ description: "Chronological log of structural changes to this bundle."
   call" section and retention sections 2–5, which described deleted
   TypeScript paths.
 
+  **The ratchet is removed.** `quoin evidence baseline`, `quoin evidence audit
+  --ratchet`, the `baseline.json` store file and the `ratchet`/`delta`
+  functions go; nothing in this repository used them. FR-032-AC-11, AC-13 and
+  the ratchet row of FR-032-AC-8 are withdrawn with TC-144, TC-147 and
+  TC-258..TC-260 (FR-032 CR note), and FR-030 no longer lists `baseline.json`.
+
+  **The `data_schema` digest and versioned `$id` are no longer enforced**
+  (FR-073 CR note). The `semantic.data-schema-digest`,
+  `semantic.data-schema-digest-mismatch` and `semantic.data-schema-id` codes
+  are removed; a `digest` member is accepted and ignored. FR-073-AC-6 and
+  TC-1385 are withdrawn, and `SEMANTIC_CONTRACT` no longer records hashes or
+  revisions of the npm-installed schemas. The semantic-module template no
+  longer writes or checks manifest digests.
+
+  **FR-101-AC-12** (retention rows surviving a rename) is withdrawn with
+  TC-1702. FR-043's description and CR-098 note are cut to what AC-20 covers.
+  Provenance ledgers under crate test fixtures (`PROVENANCE.md`,
+  `STORE-PROVENANCE.md`, `*.captured.provenance.json`, `provenance.json`) and
+  the tests that only asserted recorded revisions or digests are deleted.
+  `bench/metrics.json` and `bench/tier1-mapping.json` are deleted.
+
 * **2026-09-29** — **The semantic type-fit audit is withdrawn, and three
   version-tracking criteria with it** (agent-ix/quoin#654).
 
@@ -652,8 +673,8 @@ description: "Chronological log of structural changes to this bundle."
   under the module's package; a shape error wins (cases `no-bundle-package`,
   `no-bundle-package-second-table`, case field `withoutBundlePackage`). Adds
   FR-104-AC-11, AC-12 and TC-1729, TC-1730. TC-1717..TC-1728 now point at the
-  agent-ix/quire-rs `tests/semantic_relations.rs` tests that execute them at
-  `44df254`. The quoin-quire caller is agent-ix/quoin#557.
+  agent-ix/quire-rs `tests/semantic_relations.rs` tests that execute them. The
+  quoin-quire caller is agent-ix/quoin#557.
 
 * **2026-09-16** — **FR-104 rulings R1..R4** (agent-ix/quoin#554, from the
   agent-ix/quire-rs#436 review). A surface with no relation vocabulary reports

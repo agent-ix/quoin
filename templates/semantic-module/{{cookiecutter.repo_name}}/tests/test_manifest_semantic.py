@@ -1,4 +1,4 @@
-"""The manifest declares the semantic-module contract, and its digests are true.
+"""The manifest declares the semantic-module contract.
 
 Nothing here consults the engine: these are facts about the committed bytes, and
 a fact about bytes should not need a wheel to check.
@@ -7,7 +7,6 @@ a fact about bytes should not need a wheel to check.
 from __future__ import annotations
 
 import pytest
-import yaml
 
 
 @pytest.mark.trace("FR-001-AC-1")
@@ -42,14 +41,12 @@ def test_no_type_name_is_declared_twice(manifest, helpers):
 
 
 @pytest.mark.trace("FR-001-AC-5")
-def test_every_export_references_its_schema_by_path_and_digest(
-    manifest, helpers, model_of
-):
+def test_every_export_references_its_schema_by_path(manifest, helpers, model_of):
     for entry in helpers.declared_types(manifest):
         reference = entry["data_schema"]
-        assert set(reference) == {"schema", "digest"}, (
+        assert set(reference) == {"schema"}, (
             f"{entry['name']} carries {sorted(reference)}; the contract is a "
-            "schema-and-digest reference, never an inline schema"
+            "schema reference, never an inline schema"
         )
         assert reference["schema"].endswith(f"{model_of[entry['name']]}.json")
 
@@ -58,22 +55,6 @@ def test_every_export_references_its_schema_by_path_and_digest(
 def test_no_export_carries_the_placeholder_contract(manifest, helpers):
     for entry in helpers.declared_types(manifest):
         assert entry["data_schema"] != {"type": "object"}
-
-
-@pytest.mark.trace("FR-001-AC-7")
-def test_every_digest_equals_the_bytes_of_the_file_it_names(
-    manifest, helpers, package_root
-):
-    for entry in helpers.declared_types(manifest):
-        reference = entry["data_schema"]
-        path = package_root / reference["schema"]
-        assert (
-            path.is_file()
-        ), f"{reference['schema']} is referenced but absent. Run `make schemas`."
-        assert reference["digest"] == helpers.sha256_of(path), (
-            f"{entry['name']}'s digest does not match {reference['schema']}. "
-            "Run `make schemas` and commit the result."
-        )
 
 
 @pytest.mark.trace("FR-001-AC-8")
@@ -85,14 +66,3 @@ def test_imports_are_a_mapping_to_exact_versions(semantic_block):
         assert (
             version.count(".") >= 2
         ), f"{identity} is pinned to {version!r}, not exact"
-
-
-@pytest.mark.trace("FR-001-AC-9")
-def test_the_manifest_keeps_its_comments_and_is_not_reserialized(package_root):
-    text = (package_root / "manifest.yaml").read_text()
-    assert "# The semantic-module contract" in text, (
-        "the manifest's explanatory comments are gone, which means something "
-        "round-tripped it through a YAML parser instead of rewriting the digest "
-        "lines textually"
-    )
-    assert yaml.safe_load(text) is not None

@@ -11,7 +11,7 @@ POE = $(POETRY) run poe
 .PHONY: help
 help:
 	@echo "Setup"
-	@echo "  make bootstrap        - install the toolchain and emit schemas/ + manifest digests"
+	@echo "  make bootstrap        - install the toolchain and emit schemas/"
 	@echo "  make install          - install Python and Node dependencies"
 	@echo "  make semantic-install - npm ci for the pinned TypeSpec toolchain and semantic-core"
 	@echo ""
@@ -23,7 +23,7 @@ help:
 	@echo ""
 	@echo "Schemas"
 	@echo "  make schemas        - emit {{ cookiecutter.package_name }}/schemas/ from typespec/main.tsp"
-	@echo "  make schemas-check  - fail on schema, toolchain, or digest drift"
+	@echo "  make schemas-check  - fail on schema or toolchain drift"
 	@echo ""
 	@echo "Build"
 	@echo "  make build          - build the Python distribution"

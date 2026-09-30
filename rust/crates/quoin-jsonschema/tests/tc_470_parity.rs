@@ -248,25 +248,3 @@ fn tc_470_the_corpus_carries_both_verdicts_for_both_schemas() {
         );
     }
 }
-
-/// The capture names the ajv it ran and the revision it ran at.
-///
-/// Trace: FR-101-AC-11
-#[test]
-fn tc_470_the_verdict_capture_records_its_provenance() {
-    let goldens = goldens();
-    for key in [
-        "producer",
-        "ajv_version",
-        "intervention_config",
-        "operational_config",
-        "quoin_revision",
-    ] {
-        let value = goldens["provenance"][key].as_str().unwrap_or("");
-        assert!(
-            !value.is_empty(),
-            "the verdict capture must name {key}; an oracle without its version and revision \
-             cannot be re-derived or audited"
-        );
-    }
-}

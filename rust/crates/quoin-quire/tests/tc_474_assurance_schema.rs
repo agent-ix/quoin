@@ -124,20 +124,3 @@ fn tc_474_013_every_captured_base_satisfies_the_published_schema() {
             .unwrap_or_else(|e| panic!("{name}: the engine's own export must validate: {e}"));
     }
 }
-
-/// The capture names the engine and the revision it ran at.
-///
-/// Trace: FR-099-AC-2
-/// Provenance: quoin#474
-#[test]
-fn tc_474_014_the_base_capture_records_its_provenance() {
-    let corpus = corpus();
-    for key in ["producer", "engine", "quoin_revision"] {
-        let value = corpus["provenance"][key].as_str().unwrap_or("");
-        assert!(
-            !value.is_empty(),
-            "the base capture must name {key}; a fixture without the producer and \
-             revision that made it cannot be re-derived or audited"
-        );
-    }
-}

@@ -17,14 +17,6 @@ inverted here.
 This document is the record required by that policy: the
 retention test for everything quoin keeps local, and the gaps filed against EA.
 
-## How the dependency is consumed
-
-A **git rev pin**, which is the pattern `agent-ix/quire-cli` already proves
-against `quire-rs` (`quire-cli/Cargo.toml:20`), not an invented one. EA is
-`publish = false` and quoin#373 rules out crates.io, so a registry version is
-not available to either repository. `rust/deny.toml` names the URL under
-`allow-git`; `unknown-git = "deny"` refuses anything else.
-
 ## Retention test
 
 Recorded for everything quoin keeps local that EA also offers. Three parts,
@@ -38,20 +30,16 @@ each answered, with reasons — including where the answer is "no".
 - **Is it Rust?** Yes, and so is EA's.
 - **Should it be common?** **Yes.** Every repository in the ecosystem asserts
   its own SPDX header the same way, and each has written the check again.
-- **Disposition: retire in favour of EA.** Not done in this change because the
-  `full`-feature blocker (below) makes the import cost disproportionate to a
-  two-line check. Tracked, not conceded.
+- **Disposition: retire in favour of EA.**
 
 ## Known blockers, filed against EA
 
-These are why adoption is one test and not ten. Each is an EA ticket, never a
-local copy.
+Each is an EA ticket, never a local copy.
 
 | #   | EA issue                           |
 | --- | ---------------------------------- |
 | 1   | agent-ix/engineering-assurance#99  |
 | 2   | agent-ix/engineering-assurance#100 |
-| 4   | agent-ix/engineering-assurance#102 |
 | 5   | agent-ix/engineering-assurance#103 |
 
 1. **17 of 19 public modules sit behind a single `full` feature**, and `full`
@@ -64,13 +52,7 @@ local copy.
 producer-execution` do not compile**. `pub mod evaluation;` is
    unconditional in `src/lib.rs` while `src/evaluation.rs` imports `time`,
    `serde`, `serde_json` and `thiserror`, all `full`-only optionals. `full` is
-   the only feature set that builds. This is the defect EA#78 closed; it stands
-   again at `origin/main`.
-
-4. **Exact `=` pins make EA and every consumer mutually unsatisfiable** until
-   one side moves. quoin moved up, which is
-   the right direction, but it is a manual step for every consumer on every EA
-   bump.
+   the only feature set that builds.
 
 5. **`source_audit`'s `RequirementTests` role assumes `ix-trace-rs`
    `#[trace(...)]` attributes.** quoin's convention, stated in

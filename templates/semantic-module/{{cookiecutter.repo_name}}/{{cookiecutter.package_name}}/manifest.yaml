@@ -6,10 +6,6 @@ description: "{{ cookiecutter.description }}"
 # The semantic-module contract (agent-ix/quoin FR-070). Nine of the ten admitted
 # keys: `sweep_report` is absent by design, because FR-074 requires it only when
 # `legacy_forms` is promoted from `warning` to `error`.
-#
-# `data_schema` below references each emitted schema by path AND digest. Both
-# values are written by `make schemas` from the emitted bytes — never by hand.
-# A hand-written digest is a claim nobody checked.
 semantic:
   contract_version: 1.0.0
   semantic_core: {{ cookiecutter.semantic_core_version }}
@@ -50,7 +46,6 @@ artifact_types:
 - name: note
   data_schema:
     schema: schemas/Note.json
-    digest: pending
   body_extraction:
     yield_pattern:
       match:
@@ -86,7 +81,6 @@ object_types:
     references: [element]
   data_schema:
     schema: schemas/Element.json
-    digest: pending
   body_extraction:
     yield_pattern:
       match:

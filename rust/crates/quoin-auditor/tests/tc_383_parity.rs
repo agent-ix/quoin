@@ -34,11 +34,10 @@ use quoin_auditor::catalog::{
     DiskModuleCatalogSource, MethodCatalog, ModuleRoot, load_method_catalog_from, method_classes,
 };
 use quoin_auditor::{
-    MOCK_SUBJECT_FLOOR, advise, audit, characteristics_of, delta, mintable_characteristics,
-    ratchet, scores_for, uncatalogued_authored_methods,
+    MOCK_SUBJECT_FLOOR, advise, audit, characteristics_of, mintable_characteristics, scores_for,
+    uncatalogued_authored_methods,
 };
 use quoin_evidence::types::{Binding, RunRecord};
-use quoin_finding_types::AuditReport;
 use quoin_quire_types::CoverageDiagnostic;
 use serde::Deserialize;
 use serde_json::Value;
@@ -55,8 +54,6 @@ struct Golden {
     advise_catalog: MethodCatalog,
     advise_cases: Vec<AdviseCase>,
     characteristic_cases: Vec<CharacteristicCase>,
-    ratchet_cases: Vec<RatchetCase>,
-    delta: DeltaCase,
     uncatalogued_cases: Vec<UncataloguedCase>,
     scores_cases: Vec<ScoresCase>,
 }
@@ -93,22 +90,6 @@ struct CharacteristicCase {
     evidence: Option<ObligationEvidence>,
     parameters: Option<BTreeMap<String, String>>,
     characteristics: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RatchetCase {
-    name: String,
-    report: AuditReport,
-    accepted: Vec<String>,
-    remaining: Value,
-}
-
-#[derive(Debug, Deserialize)]
-struct DeltaCase {
-    before: AuditReport,
-    after: AuditReport,
-    added: Value,
-    resolved: Value,
 }
 
 #[derive(Debug, Deserialize)]
@@ -530,57 +511,7 @@ fn tc_383_007_the_unreadable_reason_is_a_declared_divergence_that_fires() {
     );
 }
 
-// ── the ratchet, the delta and the leaves ──────────────────────────────────
-
-/// The ratchet, replayed over the captured corpus.
-///
-/// Trace: FR-032-AC-8
-/// Provenance: quoin#383, quoin#501
-#[test]
-fn tc_383_008_every_ratchet_case_matches() {
-    let golden = golden();
-    assert_eq!(
-        golden.ratchet_cases.len(),
-        4,
-        "anti-vacuity floor: the ratchet corpus is four cases"
-    );
-    let mut filtered = 0usize;
-    for case in &golden.ratchet_cases {
-        let produced = ratchet(&case.report, &case.accepted);
-        assert_eq!(
-            canonical_of(&produced),
-            canonical(&case.remaining),
-            "`{}` must leave exactly what the retained ratchet leaves",
-            case.name
-        );
-        if produced.len() < case.report.findings.len() {
-            filtered += 1;
-        }
-    }
-    assert!(
-        filtered >= 2,
-        "a corpus where the baseline never filters anything would pass without \
-         exercising the ratchet at all"
-    );
-}
-
-#[test]
-fn tc_383_009_the_delta_matches() {
-    let golden = golden();
-    let produced = delta(&golden.delta.before, &golden.delta.after);
-    assert_eq!(
-        canonical_of(&produced.added),
-        canonical(&golden.delta.added)
-    );
-    assert_eq!(
-        canonical_of(&produced.resolved),
-        canonical(&golden.delta.resolved)
-    );
-    assert!(
-        !produced.added.is_empty() && !produced.resolved.is_empty(),
-        "the delta corpus must exercise both directions"
-    );
-}
+// ── the leaves ─────────────────────────────────────────────────────────────
 
 /// The uncatalogued-method join, replayed over the captured corpus.
 ///

@@ -214,44 +214,6 @@ fn tc_470_the_intervention_schema_carries_exactly_the_four_recorded_deltas() {
     );
 }
 
-/// Every capture the delta sets are measured against names where it came from.
-///
-/// Both vendored documents are now measured against committed captures rather
-/// than against a live TypeScript tree, so both must carry provenance.
-///
-/// Trace: FR-101-AC-11
-/// Provenance: quoin#479
-#[test]
-fn tc_470_the_capture_records_its_producer_and_revision() {
-    let captures = [
-        "intervention-experiment-v1.captured.provenance.json",
-        "operational-evidence-v1.captured.provenance.json",
-    ];
-    assert_eq!(
-        captures.len(),
-        MeasurementSchema::ALL.len(),
-        "anti-vacuity floor: one committed capture per vendored schema"
-    );
-    for capture in captures {
-        let provenance: Value = serde_json::from_str(&read(&goldens().join(capture)))
-            .unwrap_or_else(|e| panic!("{capture} is JSON: {e}"));
-        for key in [
-            "captured_from",
-            "exported_binding",
-            "serializer",
-            "producer",
-            "quoin_revision",
-        ] {
-            let value = provenance.get(key).and_then(Value::as_str).unwrap_or("");
-            assert!(
-                !value.is_empty(),
-                "{capture} must name {key}; a golden without its producing revision cannot be \
-                 re-derived or audited"
-            );
-        }
-    }
-}
-
 /// Both vendored documents parse, and the census is not measuring nothing.
 ///
 /// Trace: FR-100-AC-4

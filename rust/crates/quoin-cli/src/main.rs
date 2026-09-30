@@ -577,7 +577,6 @@ mod tests {
         "quoin evidence",
         "quoin evidence affirm",
         "quoin evidence audit",
-        "quoin evidence baseline",
         "quoin evidence gc",
         "quoin evidence inspect-mocks",
         "quoin evidence record",

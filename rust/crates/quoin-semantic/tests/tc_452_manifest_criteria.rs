@@ -28,12 +28,11 @@ mod common;
 use std::fs;
 
 use common::{
-    Scratch, codes, digest_of, errors, message_for, read, rewrite_entity_schema, semantic_root,
-    validators,
+    Scratch, codes, errors, message_for, read, rewrite_entity_schema, semantic_root, validators,
 };
 use quoin_semantic::data_schema::DataSchemaForm;
 use quoin_semantic::{CompatibilityPosture, LegacyForms, SEMANTIC_CONTRACT, read_semantic_block};
-use serde_json::{Value, json};
+use serde_json::json;
 
 /// A module with no `semantic` block is read clean, and reports no module.
 ///
@@ -150,7 +149,7 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
 }
 
 /// An export no `object_types` entry declares is refused, and so is an export
-/// whose `data_schema` is not a `{ schema, digest }` reference.
+/// whose `data_schema` is not a `{ schema }` reference.
 ///
 /// Trace: FR-070-AC-4
 /// Provenance: agent-ix/quoin#452
@@ -196,13 +195,12 @@ fn tc_452_613_an_export_must_name_a_declared_type_that_ships_a_referenced_schema
 fn tc_537_001_an_export_may_name_an_artifact_type_with_a_pinned_schema() {
     let validators = validators();
     let scratch = Scratch::new();
-    let artifact = scratch.module_copy("artifact-export", |manifest, root| {
+    let artifact = scratch.module_copy("artifact-export", |manifest, _| {
         manifest["object_types"] = json!([]);
         manifest["artifact_types"] = json!([{
             "name": "SpecReview",
             "data_schema": {
                 "schema": "schemas/Entity.json",
-                "digest": digest_of(&root.join("schemas/Entity.json")),
             },
         }]);
         manifest["semantic"]["exports"] = json!(["SpecReview"]);
@@ -316,12 +314,12 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
     assert!(SEMANTIC_CONTRACT.ships_semantic_core(&module.block.semantic_core));
 }
 
-/// A shipped schema file that does not hash, does not exist, is not JSON, or
-/// is not a JSON Schema is refused, naming the path and the reason.
+/// A shipped schema file that does not exist, is not JSON, or is not a JSON
+/// Schema is refused, naming the path and the reason.
 ///
-/// Four cases and not one: each is a distinct code, and a resolver that
+/// Three cases and not one: each is a distinct code, and a resolver that
 /// collapsed them into one generic refusal would tell an author nothing about
-/// which of the four happened.
+/// which of the three happened.
 ///
 /// Trace: FR-073-AC-2
 /// Provenance: agent-ix/quoin#452
@@ -329,27 +327,6 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
 fn tc_452_617_an_unhashable_missing_unparsable_or_non_schema_file_is_refused() {
     let validators = validators();
     let scratch = Scratch::new();
-
-    let mismatch = scratch.module_copy("mismatch", |_, root| {
-        let file = root.join("schemas").join("Entity.json");
-        let text = fs::read_to_string(&file).unwrap();
-        fs::write(&file, text + "\n").unwrap();
-    });
-    assert!(
-        codes(&mismatch, &validators).contains(
-            &"error:semantic.data-schema-digest-mismatch@object_types[entity].data_schema.digest"
-                .to_owned()
-        ),
-        "{:?}",
-        codes(&mismatch, &validators)
-    );
-    let detail = message_for(
-        &mismatch,
-        &validators,
-        "semantic.data-schema-digest-mismatch",
-    );
-    assert!(detail.contains("schemas/Entity.json"), "{detail}");
-    assert!(detail.contains("sha256:"), "{detail}");
 
     let missing = scratch.module_copy("missing", |_, root| {
         fs::remove_file(root.join("schemas").join("Entity.json")).unwrap();
@@ -363,10 +340,9 @@ fn tc_452_617_an_unhashable_missing_unparsable_or_non_schema_file_is_refused() {
         codes(&missing, &validators)
     );
 
-    let not_json = scratch.module_copy("not-json", |manifest, root| {
+    let not_json = scratch.module_copy("not-json", |_, root| {
         let file = root.join("schemas").join("Entity.json");
         fs::write(&file, "{ nope").unwrap();
-        manifest["object_types"][0]["data_schema"]["digest"] = Value::String(digest_of(&file));
     });
     assert!(
         codes(&not_json, &validators).contains(
@@ -377,10 +353,9 @@ fn tc_452_617_an_unhashable_missing_unparsable_or_non_schema_file_is_refused() {
         codes(&not_json, &validators)
     );
 
-    let no_id = scratch.module_copy("no-id", |manifest, root| {
+    let no_id = scratch.module_copy("no-id", |_, root| {
         let file = root.join("schemas").join("Entity.json");
         fs::write(&file, r#"{"type":"object"}"#).unwrap();
-        manifest["object_types"][0]["data_schema"]["digest"] = Value::String(digest_of(&file));
     });
     assert!(
         codes(&no_id, &validators).contains(

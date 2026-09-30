@@ -11,10 +11,9 @@
 //! `Makefile` target called `gate` is a gate that passes while the forbidden
 //! text is present.
 //!
-//! Ported from `src/validators/gates.ts` at quoin `4d27dcf`. Every regex below
-//! is the JavaScript source literal, translated only where the `regex` crate
-//! spells a construct differently; the divergences that remain are recorded in
-//! `tests/golden/PROVENANCE.md`.
+//! Ported from `src/validators/gates.ts`. Every regex below is the JavaScript
+//! source literal, translated only where the `regex` crate spells a construct
+//! differently.
 
 use std::path::Path;
 use std::sync::LazyLock;

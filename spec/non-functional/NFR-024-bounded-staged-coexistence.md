@@ -19,8 +19,9 @@ relationships:
 ## Statement
 
 While a capability's replaced implementation is retained, Quoin SHALL declare
-every non-retention allowance in one checked-in allowance manifest, and SHALL report a retained path as retained-with-successor rather
-than as remediated or allowed.
+every non-retention allowance in one checked-in allowance manifest, and SHALL
+report a retained path as retained-with-successor rather than as remediated or
+allowed.
 
 ## Scope
 
@@ -38,8 +39,7 @@ than as remediated or allowed.
 Amendment 1 says coexistence during a staged cutover is not a policy violation.
 That sentence is load-bearing in one direction and dangerous in the other: it
 makes a long retention safe to have, and it makes an unbounded retention easy to
-hide. A retention with no successor is indistinguishable from a decision never to
-port, and a retention with no expiry never produces the pressure that closes it.
+hide.
 
 The metric depends on the distinction. Violations is a level held at zero;
 retained-with-successor is a slope and is the programme's only honest measure of
@@ -48,21 +48,6 @@ reporting the existence of a burn-down ticket as remediation — makes the slope
 unreadable. Containment and burn-down are separate programmes for the same
 reason: containment may not report a capability remediated because a burn-down
 ticket exists for it.
-
-Two facts make the definitional half of this requirement necessary rather than
-pedantic. First, the delivery stage tickets 0 through 9 do not exist: the epic
-carries the stages in prose only. Read strictly, a retention with no successor
-ticket is a violation, so on the day the enforcement lands the whole retained
-surface — the large majority of 105,814 lines — reads as violations rather than
-as retentions. What counts as a valid successor reference therefore decides the
-metric's opening value, and must be written down rather than inferred.
-
-Second, the allow-set and the retention list are two artefacts, not one, and the
-split has to be stated or a path can hold both at once. The named exceptions —
-user interface, generated, inert, thin host dispatch, dated owner disposition —
-are declarations, so they belong in a checked-in manifest. Naming each file and its required fields is what makes the generated
-exception provenance-based rather than directory-name-based, and the thin-host
-exception a ceiling rather than an opinion.
 
 ## Measurement and Evaluation
 
@@ -82,12 +67,13 @@ repository is not valid.
 
 The allowance manifest is `.language-allowances.yaml` at the repository root.
 Each entry declares its category — `ui`, `generated`, `inert`, `thin-host` or
-`owner-disposition` — the path or glob it covers, and the owner recording it. A `thin-host` entry additionally declares the line
-ceiling and the branch ceiling that host dispatch may not exceed. An
-`owner-disposition` entry additionally declares the date and the deciding owner.
-An entry missing a required field, a classification that no entry backs, and an
-entry declaring a category this requirement does not admit each fail the run. The second and
-third are different directions of the same check and both are needed: without
+`owner-disposition` — the path or glob it covers, and the owner recording it. A
+`thin-host` entry additionally declares the line ceiling and the branch ceiling
+that host dispatch may not exceed. An `owner-disposition` entry additionally
+declares the date and the deciding owner. An entry missing a required field, a
+classification that no entry backs, and an entry declaring a category this
+requirement does not admit each fail the run. The second and third are
+different directions of the same check and both are needed: without
 the third, a sixth category can be invented in the manifest and every path
 under it becomes allowed with no requirement admitting it.
 Where two path globs overlap, the more specific glob wins, and two entries of
@@ -126,7 +112,8 @@ classifies nothing is reported as inconclusive rather than as clean.
 > retention rows in that matrix, which no longer exists, and no test stands
 > behind them. NFR-024-AC-7 is withdrawn with the Verification sentence
 > requiring a `generated` entry to declare a source-schema digest, and so is the
-> Rationale sentence placing staged-port retention in the burn-down matrix.
+> Rationale text on successor and expiry per retention, the delivery-stage
+> tickets and their line count, and the allow-set versus the retention list.
 > The Measurement rows and Verification text that only those criteria checked
 > (successor and expiry per retention row, provisional references, a path with
 > both a manifest entry and a retention row, expired retentions, planted

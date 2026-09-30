@@ -7,14 +7,13 @@ skeletons, extraction mappings. There is no runtime here.
 
 `make help` lists everything. The ones that matter:
 
-- `make bootstrap` — install the toolchain and emit `schemas/` plus the manifest digests.
+- `make bootstrap` — install the toolchain and emit `schemas/`.
 - `make gate` — the green bar: spec validation, lint, schema drift check, tests.
 - `make semantic-install` — npm ci for the pinned TypeSpec toolchain and semantic-core.
 
 ## Rules a change here must not break
 
 - **Never hand-edit `{{ cookiecutter.package_name }}/schemas/`.** It is emitted from `typespec/main.tsp`. Fix the `.tsp` and run `make schemas`.
-- **Never type a digest.** `make schemas` writes every `data_schema.digest`.
 - **Never make a test skip.** If a tool is missing, the suite fails naming the install command. A skipped row is not coverage. Do not reach for `pytest.importorskip`.
 - **Never add an `.npmrc`.** `@agent-ix` resolves from the user-level npm configuration.
 - **Bump `manifest.yaml` `version` and the `@jsonSchema` base in `main.tsp` together.** `make schemas` fails when they disagree.

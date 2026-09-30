@@ -217,15 +217,12 @@ pub fn digest_of(path: &Path) -> String {
     quoin_semantic::contract::file_sha256(path).expect("the schema file is readable")
 }
 
-/// Rewrite the fixture's `schemas/Entity.json` through `edit` and re-record
-/// its digest in the manifest, so a case about one rule is not failed by the
-/// digest rule it did not mean to trip.
-pub fn rewrite_entity_schema(manifest: &mut Value, root: &Path, edit: impl FnOnce(&mut Value)) {
+/// Rewrite the fixture's `schemas/Entity.json` through `edit`.
+pub fn rewrite_entity_schema(_manifest: &mut Value, root: &Path, edit: impl FnOnce(&mut Value)) {
     let file = root.join("schemas").join("Entity.json");
     let mut schema: Value = serde_json::from_str(&fs::read_to_string(&file).unwrap()).unwrap();
     edit(&mut schema);
     fs::write(&file, serde_json::to_string(&schema).unwrap()).unwrap();
-    manifest["object_types"][0]["data_schema"]["digest"] = Value::String(digest_of(&file));
 }
 
 /// One fixture file's text, from `tests/fixtures/semantic-module/mapping`.

@@ -31,8 +31,7 @@ contract version `1.0.0`: the exact `@agent-ix/semantic-core` version it imports
 the package identity it exports under, its exports and imports, its generated
 targets, its mappings, `compatibility_posture: additive` and
 `legacy_forms: warning`. Every exported type references its emitted schema by
-path **and** digest — never an inline `{type: object}` placeholder, and never a
-digest anybody typed.
+path — never an inline `{type: object}` placeholder.
 
 ### Generated targets
 
@@ -48,7 +47,7 @@ will not pretend otherwise.
 ## Getting started
 
 ```bash
-make bootstrap    # install the pinned toolchain, emit schemas/ and the manifest digests
+make bootstrap    # install the pinned toolchain and emit schemas/
 make gate         # spec validation, lint, schema drift check, tests
 ```
 
@@ -71,13 +70,13 @@ version it must be at or above.
 
 | Command | Does |
 | --- | --- |
-| `make bootstrap` | Install dependencies, then emit schemas and digests |
+| `make bootstrap` | Install dependencies, then emit schemas |
 | `make install` | Python and Node dependencies |
 | `make semantic-install` | npm ci for the pinned TypeSpec toolchain and semantic-core |
 | `make gate` | Validate, lint, schema drift check, tests |
 | `make validate` | `quire validate` over `spec/` |
 | `make schemas` | Emit `{{ cookiecutter.package_name }}/schemas/` from `typespec/main.tsp` |
-| `make schemas-check` | Fail on schema, toolchain or digest drift |
+| `make schemas-check` | Fail on schema or toolchain drift |
 | `make test` | The verification suite |
 | `make build` / `make pack` | Python distribution / npm tarball |
 

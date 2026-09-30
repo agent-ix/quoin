@@ -108,9 +108,8 @@ port does not touch them.
 
 ## 2. The corpus
 
-Captured once from the TypeScript by `scripts/capture-semantic-goldens.mjs`
-(both deleted at the quoin#452 cutover, per FR-101-AC-5) at
-**quoin@4d27dcf1621d8c28da0961a5521a5be7b6d1cd28**, ajv **8.20.0**.
+Captured once from the TypeScript (deleted at the quoin#452 cutover, per
+FR-101-AC-5).
 
 | Schema                                                                | Documents |  Valid | Invalid | Call site                                                      |
 | --------------------------------------------------------------------- | --------: | -----: | ------: | -------------------------------------------------------------- |

@@ -2,11 +2,8 @@
 // Copyright (C) 2026 Agent-IX
 //! The agent-ix/quoin#164 payload, read through the Cargo edge.
 //!
-//! `tests/fixtures/coverage-volume/PROVENANCE.md` records where the bytes came
-//! from, what the TypeScript oracle said about them once, and why the file is
-//! checked in rather than regenerated. Nothing here runs `node`, `quire`, or
-//! any other process: the oracle ran once, its answer is in that note, and
-//! these assertions stand on their own against the same bytes.
+//! Nothing here runs `node`, `quire`, or any other process: these assertions
+//! stand on their own against the checked-in bytes.
 
 #![allow(
     clippy::expect_used,
@@ -47,8 +44,7 @@ fn tc_379_100_the_incident_payload_is_read_whole() {
     )
     .expect("the payload reads");
 
-    // The figures the TypeScript oracle reported once, in PROVENANCE.md.
-    // Asserted against the engine's own struct here: if the Cargo edge read
+    // The figures the TypeScript oracle reported once. Asserted against the engine's own struct here: if the Cargo edge read
     // this payload differently from the way ajv-plus-hand-written-interfaces
     // read it, these numbers move.
     assert_eq!(parsed.report.totals.backed, 1555);

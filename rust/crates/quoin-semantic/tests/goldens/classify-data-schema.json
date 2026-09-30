@@ -8,7 +8,7 @@
   },
   "source": "src/semantic/data-schema.ts classifyDataSchema()",
   "counts": {
-    "total": 10
+    "total": 9
   },
   "cases": [
     {
@@ -33,21 +33,6 @@
       },
       "form": "reference",
       "diagnostics": []
-    },
-    {
-      "id": "reference-missing-digest",
-      "value": {
-        "schema": "a.json"
-      },
-      "form": "invalid",
-      "diagnostics": [
-        {
-          "code": "semantic.data-schema-ambiguous",
-          "severity": "error",
-          "path": "object_types[x].data_schema",
-          "message": "data_schema mixes the reference form with other keys (missing schema or digest)"
-        }
-      ]
     },
     {
       "id": "reference-missing-schema",

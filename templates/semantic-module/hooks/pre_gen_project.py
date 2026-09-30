@@ -140,7 +140,7 @@ def main():
         fail(
             "generated_targets must include 'json-schema': it is the only target "
             "with an emitter today, and the module manifest references the "
-            "emitted schemas by digest."
+            "emitted schemas by path."
         )
 
     imported = split_list(IMPORTED_MODULES)

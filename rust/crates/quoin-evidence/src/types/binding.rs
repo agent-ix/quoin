@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The binding graph and the ratchet baseline.
+//! The binding graph.
 
 use serde::{Deserialize, Serialize};
 
@@ -104,23 +104,4 @@ pub struct BindingsFile {
     pub schema_version: u32,
     /// Sorted by obligation, then by suite.
     pub bindings: Vec<Binding>,
-}
-
-/// The accepted violation set a ratchet compares against.
-///
-/// [`BaselineFile::accepted`] holds `<kind>:<obligation>` keys for *every*
-/// finding kind. The original shape carried two named buckets, so five other
-/// kinds could never appear in a baseline and `--ratchet` reported the whole
-/// existing backlog for them — the outcome the mode exists to prevent
-/// (agent-ix/quoin#105).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct BaselineFile {
-    /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
-    pub schema_version: u32,
-    /// The commit the baseline was accepted at.
-    pub commit: Commit,
-    /// Accepted findings as `<kind>:<obligation>`, sorted.
-    pub accepted: Vec<String>,
 }

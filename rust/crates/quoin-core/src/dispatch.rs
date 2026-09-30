@@ -29,7 +29,6 @@ pub const OPERATIONS: &[&str] = &[
     "assurance.requirement_of",
     "auditor.advise",
     "auditor.audit",
-    "auditor.baseline",
     "auditor.vocabulary",
     "catalog.load",
     "catalog.methods",
@@ -53,14 +52,12 @@ pub const OPERATIONS: &[&str] = &[
     "evidence.parse_lineage",
     "evidence.parse_policy",
     "evidence.parse_results",
-    "evidence.read_baseline",
     "evidence.record",
     "evidence.record_experiment",
     "evidence.record_operational",
     "evidence.store_facts",
     "evidence.trust_assessments",
     "evidence.trust_decision",
-    "evidence.write_baseline",
     "graph.change_impact",
     "graph.churn",
     "graph.fan_out",
@@ -163,8 +160,6 @@ pub fn dispatch(
             crate::ops::evidence::record_operational(request, capabilities)
         }
         "evidence.audit_inputs" => crate::ops::evidence::audit_inputs(request, capabilities),
-        "evidence.read_baseline" => crate::ops::evidence::read_baseline(request, capabilities),
-        "evidence.write_baseline" => crate::ops::evidence::write_baseline(request, capabilities),
         "measurement.record" => crate::ops::measurement::record(request),
         "measurement.verify" => crate::ops::measurement::verify(request),
         "measurement.produce_agent_eval_intervention" => {
@@ -181,7 +176,6 @@ pub fn dispatch(
         "measurement.build_portfolio" => crate::ops::measurement::build_portfolio(request),
         "measurement.render_portfolio" => crate::ops::measurement::render_portfolio(request),
         "auditor.audit" => crate::ops::auditor::audit(request),
-        "auditor.baseline" => crate::ops::auditor::baseline(request),
         "auditor.advise" => crate::ops::auditor::advise(request),
         "auditor.vocabulary" => crate::ops::auditor::vocabulary(request),
         "catalog.load" => crate::ops::catalog::load(request, capabilities),
@@ -1009,10 +1003,6 @@ mod tests {
                 crate::ops::evidence::MAX_PARSE_RESULTS_BYTES,
             ),
             (
-                "ops::evidence::MAX_READ_BASELINE_BYTES",
-                crate::ops::evidence::MAX_READ_BASELINE_BYTES,
-            ),
-            (
                 "ops::evidence::MAX_RECORD_BYTES",
                 crate::ops::evidence::MAX_RECORD_BYTES,
             ),
@@ -1031,10 +1021,6 @@ mod tests {
             (
                 "ops::evidence::MAX_TRUST_DECISION_BYTES",
                 crate::ops::evidence::MAX_TRUST_DECISION_BYTES,
-            ),
-            (
-                "ops::evidence::MAX_WRITE_BASELINE_BYTES",
-                crate::ops::evidence::MAX_WRITE_BASELINE_BYTES,
             ),
         ]
     }

@@ -68,9 +68,8 @@ def test_every_reference_is_absolute(schemas_dir):
 @pytest.mark.trace("FR-002-AC-4")
 def test_the_toolchain_records_what_produced_the_bytes(schemas_dir):
     toolchain = json.loads((schemas_dir / "toolchain.json").read_text())
-    for key in ("compiler", "emitter", "semanticCore", "base", "files", "digest"):
+    for key in ("compiler", "emitter", "semanticCore", "base", "files"):
         assert key in toolchain, f"toolchain.json declares no {key}"
-    assert toolchain["digest"].startswith("sha256:")
 
 
 @pytest.mark.trace("FR-002-AC-5")

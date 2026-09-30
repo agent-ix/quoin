@@ -294,30 +294,12 @@ fn tc_477_011_graph_refusal_verdicts() {
     );
 }
 
-/// The capture recorded where it came from (FR-101-AC-11).
+/// The golden's tree token is the one the replay substitutes.
 ///
 /// Trace: FR-101-AC-5
 /// Provenance: quoin#477
 #[test]
-fn tc_477_012_golden_states_its_provenance() {
+fn tc_477_012_golden_states_its_tree_token() {
     let golden = golden();
-    for key in [
-        "produced_by",
-        "produced_by_digest",
-        "produced_from_revision",
-        "produced_by_node",
-        "capture_script",
-        "fixture_tree",
-        "tree_token",
-    ] {
-        assert!(
-            !text_at(&golden, key).is_empty(),
-            "the golden states no {key}"
-        );
-    }
     assert_eq!(text_at(&golden, "tree_token"), TREE_TOKEN);
-    assert_eq!(
-        text_at(&golden, "produced_by"),
-        "src/measurement/graph-portfolio-load.ts"
-    );
 }

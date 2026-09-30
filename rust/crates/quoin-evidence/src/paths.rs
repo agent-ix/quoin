@@ -55,12 +55,6 @@ pub fn bindings_path() -> String {
     "bindings.json".to_owned()
 }
 
-/// The ratchet baseline.
-#[must_use]
-pub fn baseline_path() -> String {
-    "baseline.json".to_owned()
-}
-
 /// One trust decision, named by its id.
 #[must_use]
 pub fn trust_decision_path(id: &TrustDecisionId) -> String {

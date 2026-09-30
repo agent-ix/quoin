@@ -22,21 +22,12 @@
 //! own directory layout.
 //!
 //! Every embed here is required: a missing file fails the build rather than
-//! producing a binary that is silently missing a schema. Both packages are
-//! pinned to an exact version rather than a range: a compatible-looking
-//! `^x.y.z` resolving to a version whose content differs would otherwise fail
-//! [`crate::contract::SEMANTIC_CONTRACT`]'s digest assertions with a
-//! confusing red. That digest, not the version string, is the real gate --
-//! the pin just avoids a predictable, unhelpful failure at resolve time
-//! instead of at the digest check.
+//! producing a binary that is silently missing a schema.
 //!
 //! Explicit files, not a recursive walk: a walk over `node_modules/@agent-ix`
 //! would embed unrelated packages into the quoin binary. The semantic-core
 //! bundle's member files are the one exception, discovered by directory
-//! listing rather than named one by one, because that list is exactly what
-//! [`crate::contract::semantic_core_bundle_digest`] already computes the same
-//! way -- listing it a second time here, by hand, would be the two sources of
-//! truth this workspace's own idiom doc warns against.
+//! listing rather than named one by one.
 
 use std::env;
 use std::fmt::Write as _;

@@ -15,7 +15,7 @@ use quoin_evidence::adapters::{AdapterSelection, select_adapter, select_finding_
 use quoin_evidence::independence::{
     require_known_policy_obligations, validate_evidence_lineage, validate_independence_policy,
 };
-use quoin_evidence::paths::{baseline_path, bindings_path, inspections_path, suites_path};
+use quoin_evidence::paths::{bindings_path, inspections_path, suites_path};
 use quoin_evidence::store::COLLECTED_FAMILIES;
 use quoin_evidence::trust::REQUIRED_TRIGGERS;
 use quoin_evidence::types::{EvidenceLineage, IndependencePolicy, STORE_SCHEMA_VERSION};
@@ -67,7 +67,6 @@ pub fn store_facts(request: &serde_json::Value) -> Result<Response, CoreError> {
             .display()
             .to_string(),
         bindings_path: bindings_path(),
-        baseline_path: baseline_path(),
         suites_path: suites_path(),
         inspections_path: inspections_path(),
         collected_families: COLLECTED_FAMILIES

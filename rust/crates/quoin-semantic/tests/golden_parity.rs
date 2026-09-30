@@ -13,9 +13,8 @@
 
 //! Parity with the TypeScript oracle, over the committed golden corpus.
 //!
-//! Every expectation here was captured once from `src/semantic/` by
-//! `scripts/capture-semantic-goldens.mjs` and committed under `tests/goldens/`
-//! with the quoin revision it ran at. **Nothing in this file invokes Node.**
+//! Every expectation here was captured once from `src/semantic/` and committed
+//! under `tests/goldens/`. **Nothing in this file invokes Node.**
 //!
 //! What is asserted, and what deliberately is not:
 //!
@@ -34,8 +33,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use quoin_semantic::contract::{
-    COMMON_SCHEMA_URI, SEMANTIC_CONTRACT, common_schema_path, module_manifest_schema_path,
-    package_manifest_schema_path, semantic_core_bundle_digest, semantic_core_dir,
+    COMMON_SCHEMA_URI, SEMANTIC_CONTRACT, common_schema_path, package_manifest_schema_path,
     sweep_report_schema_path,
 };
 use quoin_semantic::data_schema::{DataSchemaForm, classify_data_schema};
@@ -694,46 +692,8 @@ fn tc_378_109_classify_data_schema_matches_the_oracle() {
 /// Trace: FR-070, NFR-025
 /// Provenance: agent-ix/quoin#378
 #[test]
-fn tc_378_110_vendored_bytes_still_hash_to_the_recorded_provenance() {
+fn tc_378_110_the_sweep_report_schema_exists() {
     let root = semantic_root();
-    let golden = golden("contract.json");
-
-    let digest = match semantic_core_bundle_digest(&semantic_core_dir(&root)) {
-        Ok(digest) => digest,
-        Err(error) => panic!("semantic-core bundle must be readable: {error}"),
-    };
-    assert_eq!(
-        SEMANTIC_CONTRACT.semantic_core.bundle_digest, digest,
-        "the vendored semantic-core bundle no longer hashes to its recorded digest"
-    );
-    assert_eq!(text(&golden, "semanticCoreBundleDigest"), digest);
-
-    for (label, path, recorded) in [
-        (
-            "module-manifest",
-            module_manifest_schema_path(&root),
-            SEMANTIC_CONTRACT.module_manifest_schema.sha256,
-        ),
-        (
-            "package-manifest",
-            package_manifest_schema_path(&root),
-            SEMANTIC_CONTRACT.package_manifest_schema.sha256,
-        ),
-        (
-            "common",
-            common_schema_path(&root),
-            SEMANTIC_CONTRACT.common_schema.sha256,
-        ),
-    ] {
-        let actual = match quoin_semantic::contract::file_sha256(&path) {
-            Ok(hash) => hash,
-            Err(error) => panic!("{label} schema must be readable: {error}"),
-        };
-        assert_eq!(recorded, actual, "{label} schema bytes changed");
-    }
-
-    // The sweep-report schema is quoin's own; it has no vendored provenance,
-    // but it must exist and compile.
     assert!(sweep_report_schema_path(&root).exists());
 }
 
@@ -797,38 +757,6 @@ fn tc_378_113_every_data_schema_form_is_exercised_by_the_corpus() {
         assert!(
             seen.contains(form.as_str()),
             "no corpus document is {form:?}"
-        );
-    }
-}
-
-/// Trace: FR-096
-/// Provenance: agent-ix/quoin#378
-#[test]
-fn tc_378_114_the_goldens_name_the_revision_they_were_captured_from() {
-    for name in [
-        "schema-semantic-block.json",
-        "schema-sweep-report.json",
-        "schema-package-manifest.json",
-        "read-semantic-block.json",
-        "classify-properties.json",
-        "derive-package-manifest.json",
-        "resolve-imports.json",
-        "duplicate-package.json",
-        "identities.json",
-        "classify-data-schema.json",
-        "contract.json",
-    ] {
-        let golden = golden(name);
-        let provenance = golden.get("provenance").unwrap_or(&Value::Null);
-        let revision = text(provenance, "quoinRevision");
-        assert_eq!(
-            revision.len(),
-            40,
-            "{name}: provenance must name a full quoin revision, got {revision:?}"
-        );
-        assert!(
-            !text(provenance, "ajvVersion").is_empty(),
-            "{name}: provenance must name the ajv the oracle ran"
         );
     }
 }

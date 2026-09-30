@@ -10,8 +10,7 @@
 //!
 //! What the audit and the advice DECIDE is `quoin-auditor`'s and is pinned
 //! there against the captured oracle corpus. What is pinned here is the
-//! boundary: that a request reaches those functions unchanged, that the
-//! baseline-absent and baseline-empty cases stay distinguishable, and that a
+//! boundary: that a request reaches those functions unchanged, and that a
 //! refusal reaches the caller as the status the retained commands exited with.
 //!
 //! Provenance: quoin#501
@@ -29,7 +28,7 @@ use serde_json::{Value, json};
 use crate::error::{CoreError, CoreErrorCode};
 use crate::protocol::{Outcome, Response};
 
-use super::{MAX_AUDITOR_REQUEST_BYTES, advise, audit, baseline};
+use super::{MAX_AUDITOR_REQUEST_BYTES, advise, audit};
 
 /// An obligation nothing is bound to, which the audit reports as unbound.
 fn unbound(id: &str) -> Value {
@@ -57,89 +56,13 @@ fn payload(response: Response) -> Value {
 /// Trace: FR-101-AC-1
 /// Provenance: quoin#501
 #[test]
-fn an_audit_reports_an_unbound_obligation_without_a_baseline() {
+fn an_audit_reports_an_unbound_obligation() {
     let answer =
         payload(audit(&json!({ "input": { "obligations": [unbound("FR-001-AC-1")] } })).unwrap());
     assert!(
         !answer["report"]["findings"].as_array().unwrap().is_empty(),
         "an obligation with no binding is a finding"
     );
-    assert!(
-        answer.get("reported").is_none(),
-        "no baseline was read, so there is no ratcheted list to carry; the \
-         caller reports `report.findings` rather than the same list twice"
-    );
-}
-
-/// An empty baseline is not an absent one (agent-ix/quoin#169).
-///
-/// Trace: FR-101-AC-1
-/// Provenance: quoin#501
-#[test]
-fn an_empty_baseline_is_read_and_accepts_nothing() {
-    let answer = payload(
-        audit(&json!({
-            "input": { "obligations": [unbound("FR-001-AC-1")] },
-            "accepted": [],
-        }))
-        .unwrap(),
-    );
-    let reported = answer["reported"].as_array().unwrap();
-    let all = answer["report"]["findings"].as_array().unwrap();
-    assert_eq!(
-        reported.len(),
-        all.len(),
-        "a baseline that accepted nothing suppresses nothing"
-    );
-    assert!(
-        !reported.is_empty(),
-        "the empty-baseline case must not be mistaken for the absent one, \
-         which carries no `reported` at all"
-    );
-}
-
-/// Trace: FR-101-AC-1
-/// Provenance: quoin#501
-#[test]
-fn a_baseline_suppresses_exactly_the_keys_it_accepted() {
-    let input = json!({ "obligations": [unbound("FR-001-AC-1")] });
-    let keys = payload(baseline(&json!({ "input": input.clone() })).unwrap());
-    let accepted = keys["accepted"].as_array().unwrap().clone();
-    assert!(!accepted.is_empty(), "the baseline accepted the finding");
-
-    let answer =
-        payload(audit(&json!({ "input": input, "accepted": Value::Array(accepted) })).unwrap());
-    assert!(
-        answer["reported"].as_array().unwrap().is_empty(),
-        "every finding was in the baseline, so a ratcheted run reports none"
-    );
-}
-
-/// Trace: FR-101-AC-1
-/// Provenance: quoin#501
-#[test]
-fn baseline_keys_come_back_sorted() {
-    let answer = payload(
-        baseline(&json!({
-            "input": {
-                "obligations": [
-                    unbound("FR-003-AC-1"),
-                    unbound("FR-001-AC-1"),
-                    unbound("FR-002-AC-1"),
-                ],
-            },
-        }))
-        .unwrap(),
-    );
-    let keys: Vec<&str> = answer["accepted"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|key| key.as_str().unwrap())
-        .collect();
-    let mut sorted = keys.clone();
-    sorted.sort_unstable();
-    assert_eq!(keys, sorted, "the baseline file records keys in order");
 }
 
 /// Trace: FR-101-AC-1
@@ -212,11 +135,7 @@ fn every_operation_names_itself_on_a_bad_request() {
     /// One route: its wire spelling and the handler `dispatch` sends it to.
     type Route = (&'static str, fn(&Value) -> Result<Response, CoreError>);
 
-    let cases: [Route; 3] = [
-        ("auditor.audit", audit),
-        ("auditor.baseline", baseline),
-        ("auditor.advise", advise),
-    ];
+    let cases: [Route; 2] = [("auditor.audit", audit), ("auditor.advise", advise)];
     for (op, operation) in cases {
         let error = operation(&json!("not an object")).unwrap_err();
         assert_eq!(error.code, CoreErrorCode::BadRequest);

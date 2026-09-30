@@ -7,10 +7,6 @@ is produced from `typespec/main.tsp` by `make schemas`. A wrong schema is a wron
 `.tsp`; fix it there and regenerate. `make lint` fails on any drift between the
 source and the committed bytes.
 
-**Digests are never typed.** Every `data_schema.digest` in `manifest.yaml` is
-written by `make schemas` from the emitted bytes. A hand-written digest is a
-claim nobody checked.
-
 **Tests fail; they do not skip.** If a tool the suite needs is absent, the suite
 fails and names the command that installs it. A skipped row reports green for a
 check that did not run, which is the one failure mode this module's verification
@@ -24,7 +20,7 @@ fields, never two blocks in one document.
 
 1. Edit `typespec/main.tsp`.
 2. Add or edit the type's entry in `{{ cookiecutter.package_name }}/manifest.yaml`
-   — `data_schema` with `schema:` and a `digest:` placeholder, plus the
+   — `data_schema` with `schema:`, plus the
    `body_extraction` locators — and add it to `semantic.exports`.
 3. Add the skeleton pair under `{{ cookiecutter.package_name }}/skeletons/`.
 4. Add one negative fixture per failure mode the schema refuses, each with a

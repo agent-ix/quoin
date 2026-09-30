@@ -490,7 +490,7 @@ pub fn read_semantic_block(
                 format!("semantic.exports.{name}"),
                 format!(
                     "semantic.exports names {name}, whose data_schema is not a \
-                     {{ schema, digest }} reference; nothing can be pinned for it"
+                     {{ schema }} reference; nothing can be pinned for it"
                 ),
             ));
         }

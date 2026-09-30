@@ -3,7 +3,7 @@
 
 //! The committed measurement schema documents, and parsing against them.
 //!
-//! # Two documents, two provenances
+//! # Two documents
 //!
 //! | schema | retained source (deleted in quoin#479) | how it got here |
 //! |---|---|---|
@@ -12,9 +12,7 @@
 //!
 //! The retained TypeScript no longer exists: quoin#479 deleted `src/measurement/`
 //! after this port took over its routes. Both documents are therefore measured
-//! against **committed captures** under `tests/goldens/`, each with a
-//! `.provenance.json` naming the file, binding, serializer, producer and
-//! revision it came from. FR-101-AC-5 forbids a live non-Rust runtime oracle
+//! against **committed captures** under `tests/goldens/`. FR-101-AC-5 forbids a live non-Rust runtime oracle
 //! after cutover; a committed byte sequence is not one.
 //!
 //! The operational schema was already a JSON document, so it is carried over
@@ -25,8 +23,7 @@
 //! was a *program* that built an object out of shared fragments. It was run
 //! once, serialized with the repository's own `canonicalJson`, and the capture
 //! is committed beside the retained document as
-//! `tests/goldens/intervention-experiment-v1.captured.json` with its producing
-//! revision. The retained document then differs from that capture by **exactly
+//! `tests/goldens/intervention-experiment-v1.captured.json`. The retained document then differs from that capture by **exactly
 //! two deltas**, both rulings recorded in `DIVERGENCE.md`, and the test
 //! enumerates the difference set rather than asserting that one exists.
 //!

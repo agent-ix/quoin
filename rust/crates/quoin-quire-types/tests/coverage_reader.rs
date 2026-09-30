@@ -12,21 +12,9 @@
 //! first field quire renamed would read as an empty string in a passing suite.
 //!
 //! `tests/fixtures/coverage-obligations.json` is therefore output from
-//! `quire coverage --scope . --json` run over this repository, and
-//! `tests/fixtures/provenance.json` records which quire produced it: version
-//! string, resolved path and sha256 of the bytes at that path.
+//! `quire coverage --scope . --json` run over this repository.
 //!
-//! # Why the digest is recorded but not compared against a live quire
-//!
-//! It would be better if this test resolved quire and compared. It cannot, and
-//! the reason is worth writing down rather than rediscovering: CI's `rust` job
-//! installs no quire at all, and the job that does have one **builds it from
-//! source** (`.ci/quire-cli`), so its bytes are not the npm-installed shim's
-//! bytes and never will be. A digest assertion here would fail in CI for a
-//! reason unrelated to drift, which is the fastest way to get a gate disabled.
-//!
-//! So provenance is recorded for a human, and the two checks below are what
-//! actually run. The second is the one that carries the weight: it verifies a
+//! The second check below is the one that carries the weight: it verifies a
 //! property of the captured bytes that a person writing a fixture by hand
 //! could not produce, which is a machine-checkable answer to "did this really
 //! come from the engine".

@@ -1999,22 +1999,6 @@
       }
     },
     {
-      "name": "canonical-baseline-file",
-      "kind": "canonical",
-      "input": {
-        "record": "baseline",
-        "value": {
-          "schemaVersion": 1,
-          "commit": "dddddddddddddddddddddddddddddddddddddddd",
-          "accepted": [
-            "suspect:FR-002-AC-1",
-            "undischarged:FR-001-AC-1",
-            "stale-evidence:FR-003-AC-1"
-          ]
-        }
-      }
-    },
-    {
       "name": "canonical-trust-decision",
       "kind": "canonical",
       "input": {

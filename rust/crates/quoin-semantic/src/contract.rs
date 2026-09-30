@@ -17,13 +17,7 @@
 //!
 //! [`schema_dir`] and its siblings locate the *embedded* tree, materialized
 //! at runtime by [`crate::materialize_embedded_contract`] -- not a directory
-//! this crate reads off disk directly. `SEMANTIC_CONTRACT`'s `sha256` and
-//! `bundle_digest` fields are compiled assertions: every test in this crate
-//! that reads a schema re-derives its digest from the live embedded bytes and
-//! compares it here -- that is the actual gate. `source_revision` is not
-//! re-derived the same way -- it names the published npm tarball's shasum the
-//! bytes were embedded from, for humans reading a diagnostic, and the tests
-//! only check its shape.
+//! this crate reads off disk directly.
 
 use std::path::{Path, PathBuf};
 
@@ -32,37 +26,24 @@ use sha2::{Digest, Sha256};
 use crate::error::SemanticError;
 use crate::ids::{ContractVersion, SemanticCoreVersion};
 
-/// A vendored file's origin: repository, identifying revision, path there,
-/// and bytes.
+/// A vendored file's origin: repository and path there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VendoredSource {
     /// Owning repository, `<org>/<repo>`.
     pub repository: &'static str,
-    /// Informational only -- the compiled assertion is `sha256`. A 40-hex
-    /// identifier for the source the bytes came from: the published npm
-    /// tarball's SHA-1 shasum where one exists, or 40 zeros as an explicit
-    /// placeholder while the source is not yet published (see `build.rs`).
-    pub source_revision: &'static str,
     /// The path within that repository.
     pub source_path: &'static str,
-    /// `sha256:<hex>` over the raw bytes.
-    pub sha256: &'static str,
 }
 
-/// The semantic-core bundle's origin and recorded digest.
+/// The semantic-core bundle's origin and version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VendoredBundle {
     /// Owning repository, `<org>/<repo>`.
     pub repository: &'static str,
-    /// Informational only -- the compiled assertion is `bundle_digest`. The
-    /// published npm tarball's SHA-1 shasum.
-    pub source_revision: &'static str,
     /// The path within that repository.
     pub source_path: &'static str,
     /// The bundle version.
     pub version: &'static str,
-    /// `sha256:<hex>` over name + newline + bytes, in sorted file order.
-    pub bundle_digest: &'static str,
 }
 
 /// The contract this quoin implements.
@@ -98,7 +79,7 @@ impl SemanticContract {
     }
 }
 
-/// The pinned contract. Every hash is asserted by the crate's tests.
+/// The contract.
 pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
     contract_version: "1.0.0",
     semantic_core_versions: &["0.3.0"],
@@ -115,32 +96,23 @@ pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
         "sweep_report",
     ],
     // Published by `agent-ix/filament-core-data` as `@agent-ix/semantic-schema`
-    // (PLAT-887 de-vendoring). `source_revision` is that npm tarball's SHA-1
-    // shasum, informational only -- `sha256` is the compiled assertion.
+    // (PLAT-887 de-vendoring).
     module_manifest_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "ede0d3d815c5d43c8b516362c9245365421291ae",
         source_path: "schema/semantic/v1/module-manifest.schema.json",
-        sha256: "sha256:1a00f32afd03b53caafc90cb2db388b65bc36b6a4fe3faab16560d1afaffd6c5",
     },
     semantic_core: VendoredBundle {
         repository: "agent-ix/filament-core-data",
-        source_revision: "bfeb9ba3a7381d08f02f96b2745859f5acdb3506",
         source_path: "packages/semantic-core/generated/json-schema",
         version: "0.3.0",
-        bundle_digest: "sha256:65b4e8d4c71a343e270618c9a8ca7e33687f10324ef5e9fe68d150056101c627",
     },
     package_manifest_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "ede0d3d815c5d43c8b516362c9245365421291ae",
         source_path: "schema/semantic/v1/package-manifest.schema.json",
-        sha256: "sha256:d6e696577f58abd59c36588803c019ad3a43f9a7078c873ad41a0aec41031ffd",
     },
     common_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "ede0d3d815c5d43c8b516362c9245365421291ae",
         source_path: "schema/semantic/v1/common.schema.json",
-        sha256: "sha256:1de370f344b099b511960c32ddc98d512218183c13b03350201627bdcba7710a",
     },
 };
 
@@ -208,57 +180,6 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
     format!("sha256:{}", hex::encode(hasher.finalize()))
-}
-
-/// The semantic-core bundle digest, computed exactly as filament-core-data does:
-/// `name + "\n" + bytes`, in sorted file order, over every `*.json` except
-/// `toolchain.json`.
-///
-/// # Errors
-///
-/// [`SemanticError::VendoredSchemaUnreadable`] when the directory or one of its
-/// files cannot be read.
-pub fn semantic_core_bundle_digest(dir: &Path) -> Result<String, SemanticError> {
-    let mut names: Vec<String> = Vec::new();
-    let entries =
-        std::fs::read_dir(dir).map_err(|source| SemanticError::VendoredSchemaUnreadable {
-            path: dir.to_path_buf(),
-            source,
-        })?;
-    for entry in entries {
-        let entry = entry.map_err(|source| SemanticError::VendoredSchemaUnreadable {
-            path: dir.to_path_buf(),
-            source,
-        })?;
-        let name = entry.file_name().to_string_lossy().into_owned();
-        // Case-sensitive on purpose. filament-core-data computes the bundle
-        // digest over `name.endsWith(".json")`, and a case-insensitive match
-        // here would admit a `FieldDecl.JSON` the upstream digest excluded —
-        // i.e. a different digest for the same bytes.
-        #[allow(clippy::case_sensitive_file_extension_comparisons)]
-        let is_bundle_member = name.ends_with(".json") && name != "toolchain.json";
-        if is_bundle_member {
-            names.push(name);
-        }
-    }
-    // `readdirSync(...).sort()` in the TypeScript: JavaScript's default sort is
-    // by UTF-16 code unit, which agrees with Rust's byte order for the ASCII
-    // file names this bundle uses.
-    names.sort();
-
-    let mut hasher = Sha256::new();
-    for name in &names {
-        let path = dir.join(name);
-        let bytes =
-            std::fs::read(&path).map_err(|source| SemanticError::VendoredSchemaUnreadable {
-                path: path.clone(),
-                source,
-            })?;
-        hasher.update(name.as_bytes());
-        hasher.update(b"\n");
-        hasher.update(&bytes);
-    }
-    Ok(format!("sha256:{}", hex::encode(hasher.finalize())))
 }
 
 #[cfg(test)]

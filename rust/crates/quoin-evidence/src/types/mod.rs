@@ -27,7 +27,7 @@ pub use assurance::{
     OperationalEvidenceRecordInput, OperationalOutcome, ProducerProvenance, ProvenanceArtifact,
     SourceState, StoredAssuranceRecord,
 };
-pub use binding::{Affirmation, BaselineFile, Binding, BindingsFile, EvidenceLineage};
+pub use binding::{Affirmation, Binding, BindingsFile, EvidenceLineage};
 pub use independence::{
     IndependenceAssessment, IndependenceDimension, IndependenceDimensionAssessment,
     IndependencePolicy, IndependenceRequirement, IndependenceStatus,

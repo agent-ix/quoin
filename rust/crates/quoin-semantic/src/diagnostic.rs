@@ -121,22 +121,16 @@ diagnostic_codes! {
     InlineDataSchema => "semantic.inline-data-schema",
     /// `data_schema.schema` is not a module-relative path.
     DataSchemaPath => "semantic.data-schema-path",
-    /// `data_schema.digest` is not `sha256:<64 hex>`.
-    DataSchemaDigest => "semantic.data-schema-digest",
     /// `data_schema.schema` leaves the module root.
     DataSchemaEscape => "semantic.data-schema-escape",
     /// `data_schema.schema` names a file the module does not ship.
     DataSchemaMissing => "semantic.data-schema-missing",
     /// `data_schema.schema` names a file that could not be read.
     DataSchemaUnreadable => "semantic.data-schema-unreadable",
-    /// The shipped schema's bytes do not hash to the recorded digest.
-    DataSchemaDigestMismatch => "semantic.data-schema-digest-mismatch",
     /// The shipped schema's bytes are not JSON.
     DataSchemaNotJson => "semantic.data-schema-not-json",
     /// The shipped schema is not a JSON Schema 2020-12 document.
     DataSchemaNotSchema => "semantic.data-schema-not-schema",
-    /// The shipped schema's `$id` is not the one its path implies.
-    DataSchemaId => "semantic.data-schema-id",
     /// A `$ref` chain inside the shipped bundle is cyclic.
     SchemaRefCycle => "semantic.schema-ref-cycle",
     /// A `$ref` names a file neither bundle ships.
@@ -259,7 +253,7 @@ mod tests {
             );
             assert!(seen.insert(code.as_str()), "duplicate code {code}");
         }
-        assert_eq!(seen.len(), 29);
+        assert_eq!(seen.len(), 26);
     }
 
     /// Trace: FR-070

@@ -92,7 +92,7 @@ def main():
         "Rendered %s (%s module).\n"
         "\n"
         "Next, in that directory:\n"
-        "  make bootstrap   # install the pinned toolchain and emit schemas/ + digests\n"
+        "  make bootstrap   # install the pinned toolchain and emit schemas/\n"
         "  make gate        # spec validation, lint, schema drift check, tests\n"
         "\n"
         "`make gate` fails, rather than skipping, when a required tool is\n"

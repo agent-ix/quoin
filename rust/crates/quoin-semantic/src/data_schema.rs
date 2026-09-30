@@ -1,24 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `data_schema` by emitted-schema path and digest (FR-073, issue #293).
+//! `data_schema` by emitted-schema path (FR-073, issue #293).
 //!
 //! Port of `src/semantic/data-schema.ts`. An object type under a module with a
 //! `semantic` block references its emitted JSON Schema as
-//! `{ schema: <module-relative .json>, digest: sha256:… }`. Quoin resolves the
-//! reference at `quoin module install`: the file must sit inside the module root
-//! (no `..`, no symlink escape), hash to the recorded digest over its raw bytes,
-//! be a JSON Schema 2020-12 document with an absolute `$id` under the module's
-//! semantic package base, and every `$ref` it carries must resolve inside the
-//! shipped bundle or the vendored semantic-core bundle at the version the
-//! manifest records. **No network read, ever.**
+//! `{ schema: <module-relative .json> }`. Quoin resolves the reference at
+//! `quoin module install`: the file must sit inside the module root (no `..`,
+//! no symlink escape), be a JSON Schema 2020-12 document with an `$id`, and
+//! every `$ref` it carries must resolve inside the shipped bundle or the
+//! vendored semantic-core bundle at the version the manifest records. **No
+//! network read, ever.** A `digest` member is accepted and ignored.
 
 use std::collections::BTreeSet;
 use std::path::{Component, Path, PathBuf};
 
 use serde_json::Value;
 
-use crate::contract::{SEMANTIC_CONTRACT, sha256_hex};
+use crate::contract::SEMANTIC_CONTRACT;
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic};
 use crate::ids::{ObjectTypeName, PackageIdentity, SemanticCoreVersion};
 
@@ -31,7 +30,7 @@ const DIALECT_2020_12: &str = "https://json-schema.org/draft/2020-12/schema";
 pub enum DataSchemaForm {
     /// A JSON Schema written into the manifest.
     Inline,
-    /// A `{ schema, digest }` pointer at a shipped file.
+    /// A `{ schema }` pointer at a shipped file.
     Reference,
     /// Neither — the value is refused.
     Invalid,
@@ -132,9 +131,9 @@ pub fn classify_data_schema(
         .filter(|k| k.as_str() != "schema" && k.as_str() != "digest")
         .map(String::as_str)
         .collect();
-    if !extra.is_empty() || !has_schema || !has_digest {
+    if !extra.is_empty() || !has_schema {
         let detail = if extra.is_empty() {
-            "missing schema or digest".to_owned()
+            "missing schema".to_owned()
         } else {
             extra.join(", ")
         };
@@ -206,19 +205,6 @@ fn has_parent_segment(path: &str) -> bool {
     path.split(['\\', '/']).any(|segment| segment == "..")
 }
 
-/// `sha256:<64 lowercase hex>`.
-fn is_sha256_digest(value: &str) -> bool {
-    match value.strip_prefix("sha256:") {
-        Some(hex) => {
-            hex.len() == 64
-                && hex
-                    .bytes()
-                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
-        }
-        None => false,
-    }
-}
-
 /// Resolve one object type's `data_schema` per FR-073.
 ///
 /// `semantic_block_present` gates the FR-073 migration warning: an inline
@@ -249,7 +235,7 @@ pub fn resolve_data_schema(
                     &locus,
                     format!(
                         "object type {} still carries an inline data_schema; migrate to \
-                         {{ schema, digest }} referencing the module's emitted schema \
+                         {{ schema }} referencing the module's emitted schema \
                          (FR-073, FR-074)",
                         ctx.object_type
                     ),
@@ -293,19 +279,6 @@ pub fn resolve_data_schema(
         return fail(diagnostics);
     }
 
-    let digest_value = reference.get("digest").cloned().unwrap_or(Value::Null);
-    let digest_text = digest_value
-        .as_str()
-        .map_or_else(|| stringify_like_js(&digest_value), str::to_owned);
-    if !is_sha256_digest(&digest_text) {
-        diagnostics.push(SemanticDiagnostic::error(
-            DiagnosticCode::DataSchemaDigest,
-            format!("{locus}.digest"),
-            format!("digest must be sha256:<64 hex>, got {digest_text}"),
-        ));
-        return fail(diagnostics);
-    }
-
     if Path::new(schema_path).is_absolute() || has_parent_segment(schema_path) {
         diagnostics.push(SemanticDiagnostic::error(
             DiagnosticCode::DataSchemaEscape,
@@ -345,16 +318,6 @@ pub fn resolve_data_schema(
         }
     };
 
-    let actual = sha256_hex(&bytes);
-    if actual != digest_text {
-        diagnostics.push(SemanticDiagnostic::error(
-            DiagnosticCode::DataSchemaDigestMismatch,
-            format!("{locus}.digest"),
-            format!("schema {schema_path} hashes to {actual}, manifest records {digest_text}"),
-        ));
-        return fail(diagnostics);
-    }
-
     let Ok(parsed) = serde_json::from_slice::<Value>(&bytes) else {
         diagnostics.push(SemanticDiagnostic::error(
             DiagnosticCode::DataSchemaNotJson,
@@ -365,7 +328,7 @@ pub fn resolve_data_schema(
     };
 
     let declared_id = parsed.as_object().and_then(|m| m.get("$id"));
-    let Some(Value::String(id)) = declared_id else {
+    let Some(Value::String(_)) = declared_id else {
         diagnostics.push(SemanticDiagnostic::error(
             DiagnosticCode::DataSchemaNotSchema,
             format!("{locus}.schema"),
@@ -378,15 +341,6 @@ pub fn resolve_data_schema(
 
     let base = ctx.package_base();
     let leaf = schema_path.rsplit('/').next().unwrap_or(schema_path);
-    let expected_id = format!("{base}{leaf}");
-    if id != &expected_id {
-        diagnostics.push(SemanticDiagnostic::error(
-            DiagnosticCode::DataSchemaId,
-            format!("{locus}.schema"),
-            format!("schema $id is {id}, expected {expected_id}"),
-        ));
-        return fail(diagnostics);
-    }
 
     let dialect = parsed.as_object().and_then(|m| m.get("$schema"));
     if dialect.and_then(Value::as_str) != Some(DIALECT_2020_12) {
@@ -416,16 +370,6 @@ pub fn resolve_data_schema(
         schema: Some(parsed),
         file: Some(file),
         diagnostics,
-    }
-}
-
-/// `String(value)` for the values `digest` can hold, so the refusal message
-/// reads the way the TypeScript's does.
-fn stringify_like_js(value: &Value) -> String {
-    match value {
-        Value::Null => "null".to_owned(),
-        Value::String(s) => s.clone(),
-        other => other.to_string(),
     }
 }
 
@@ -570,16 +514,6 @@ pub fn shipped_semantic_core_versions() -> &'static [&'static str] {
 mod tests {
     use super::*;
     use serde_json::json;
-
-    /// Trace: FR-073
-    #[test]
-    fn tc_378_050_digest_form_is_exactly_sha256_64_lowercase_hex() {
-        assert!(is_sha256_digest(&format!("sha256:{}", "a".repeat(64))));
-        assert!(!is_sha256_digest(&format!("sha256:{}", "A".repeat(64))));
-        assert!(!is_sha256_digest(&format!("sha256:{}", "a".repeat(63))));
-        assert!(!is_sha256_digest(&format!("sha1:{}", "a".repeat(64))));
-        assert!(!is_sha256_digest(&format!("sha256:{}", "g".repeat(64))));
-    }
 
     /// Trace: FR-073
     #[test]

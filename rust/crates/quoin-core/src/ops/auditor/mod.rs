@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Domain `auditor`: the FR-032 audit, the baseline it accepts, and the
-//! FR-054 advice (quoin#501).
+//! Domain `auditor`: the FR-032 audit and the FR-054 advice (quoin#501).
 //!
 //! Replaces `src/auditor/` (1,160 lines) and `src/advisor/` (712), which
-//! `src/commands/{advise,assurance}.ts` and `src/commands/evidence/{audit,
-//! baseline}.ts` reached directly. What they computed is `quoin-auditor`'s;
+//! `src/commands/{advise,assurance}.ts` and `src/commands/evidence/audit.ts`
+//! reached directly. What they computed is `quoin-auditor`'s;
 //! what this module does is read a request, call one crate function, and hand
 //! back its answer.
 //!
@@ -20,14 +19,11 @@
 //! — an advisor that could reach the filesystem could also disagree with the
 //! auditor about what it found (ADR-0011).
 //!
-//! # Three operations, not six functions
+//! # Operations, not functions
 //!
-//! The retained commands imported six symbols: `audit`, `ratchet`,
-//! `findingKey`, `scoresFor`, `advise` and `uncataloguedAuthoredMethods`. Only
-//! three questions are asked of them, one per command, and the unit of IPC is a
-//! command-shaped operation rather than a function (quoin#373). So `ratchet`
-//! rides inside [`audit`], `findingKey` inside [`baseline`], and `scoresFor`
-//! and `uncataloguedAuthoredMethods` inside [`advise`] — where
+//! The unit of IPC is a command-shaped operation rather than a function
+//! (quoin#373). So `scoresFor` and `uncataloguedAuthoredMethods` ride inside
+//! [`advise`] — where
 //! `quoin_auditor::advise_all` keeps the advisor and the auditor sharing one
 //! definition of a fault-detection score.
 //!
@@ -42,8 +38,7 @@ mod tests;
 use serde::{Deserialize, Serialize};
 
 use quoin_auditor::{
-    advise_all, audit as run_audit, finding_key, mintable_characteristics, ratchet,
-    uncatalogued_authored_methods,
+    advise_all, audit as run_audit, mintable_characteristics, uncatalogued_authored_methods,
 };
 use quoin_evidence::types::IndependenceAssessment;
 
@@ -53,12 +48,11 @@ use crate::protocol::Response;
 
 use self::taxonomy::map_error;
 pub use self::wire::{
-    AdvisePayload, AdviseRequest, AuditPayload, AuditRequest, BaselinePayload, BaselineRequest,
-    MAX_AUDITOR_REQUEST_BYTES, VocabularyPayload,
+    AdvisePayload, AdviseRequest, AuditPayload, AuditRequest, MAX_AUDITOR_REQUEST_BYTES,
+    VocabularyPayload,
 };
 
-/// Answer an `auditor.audit`: every FR-032 finding over the store, ratcheted
-/// against an accepted baseline when the caller read one.
+/// Answer an `auditor.audit`: every FR-032 finding over the store.
 ///
 /// # Errors
 ///
@@ -88,32 +82,10 @@ pub fn audit(request: &serde_json::Value) -> Result<Response, CoreError> {
             .with_context("operation", op)
             .with_context("detail", error.to_string())
         })?;
-    // `Some([])` and `None` are different answers: an empty baseline accepted
-    // nothing, so every finding is new; no baseline means none was read.
-    let reported = request
-        .accepted
-        .as_ref()
-        .map(|accepted| ratchet(&report, accepted).into_iter().cloned().collect());
     ok(&AuditPayload {
         report,
         independence,
-        reported,
     })
-}
-
-/// Answer an `auditor.baseline`: the key of every finding the store shows
-/// today, sorted, as `quoin evidence baseline` writes them.
-///
-/// # Errors
-///
-/// As [`audit`], for a [`BaselineRequest`].
-pub fn baseline(request: &serde_json::Value) -> Result<Response, CoreError> {
-    let op = "auditor.baseline";
-    let request: BaselineRequest = read(request, op)?;
-    let report = run_audit(&request.input).map_err(|error| map_error(&error, op))?;
-    let mut accepted: Vec<String> = report.findings.iter().map(finding_key).collect();
-    accepted.sort();
-    ok(&BaselinePayload { accepted })
 }
 
 /// Answer an `auditor.vocabulary`: what the fact set can ever mint.

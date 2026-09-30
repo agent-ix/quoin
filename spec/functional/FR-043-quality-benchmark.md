@@ -28,55 +28,6 @@ The metric-integrity half of that is fixed (quire-rs FR-063, CR-093..CR-097). Wh
 that **nothing measures whether the toolchain is getting better at finding real defects.** A check
 can be added, fire a thousand times, and nobody can say whether any of them were true.
 
-quoin SHALL carry a **scored benchmark**: corpora with known answers, metrics that declare what they
-count, and a ratchet that fails when a score regresses.
-
-### This spec is the enforcement, not a description of one
-
-The metric dictionary below is normative. A benchmark metric that does not declare its **unit**,
-**population** and **method** is not a metric this benchmark emits — which is the same rule
-quire-rs FR-063 applies to the engine's own numbers, applied one layer up to the thing that scores
-the engine.
-
-That ordering is deliberate. The failure being closed is a *number nobody could interrogate*;
-building the harness first and describing it afterwards would reproduce it.
-
-### Two corpus tiers, and why both
-
-| tier | corpus | ground truth | answers |
-|---|---|---|---|
-| **1** | synthetic seeded-defect mini-repos | `labels.json`, hand-written alongside the defect | *does the tool find a defect we know is there* |
-| **2** | `filament-ide-rs` | adjudicated answer key from pass 2 | *does it find the defects a human found in the wild* |
-
-Tier 1 alone overfits: a seeded defect is one somebody already knew how to describe, so a tool tuned
-to it scores well and finds nothing new. Tier 2 alone cannot isolate: a real corpus changes under
-you, and a score that moves says nothing about which change moved it.
-
-### The silent-zero sentinel is a hard failure, not a score
-
-Every other metric here is a number to improve. This one is a **gate**: a metric emitted with
-`matched = 0` over a non-zero population and **no accompanying diagnostic** must be zero, always.
-
-That is the exact shape of `555/2389 (23%)` — arithmetic over a corpus the binder could not read,
-published with nothing saying so. It is not a quality to trade off against precision; it is the
-class of defect that made three reviews wrong, and a benchmark that let it score 0.98 and pass would
-be measuring the wrong thing.
-
-### Ratchet, not threshold
-
-Scores are compared against **checked-in baselines**, not against invented targets. An improvement
-tightens the baseline automatically; a regression fails. A hand-picked threshold invites the
-number to be tuned to it, which is how `ac:unclassifiable` came to pass 99.2% of corpus cells
-(quire-rs CR-019).
-
-The ratchet reuses the existing `quoin evidence audit --ratchet` conventions rather than inventing a
-second set.
-
-### CI stays `workflow_dispatch`-only; the gate is local `make`
-
-Unchanged from this repository's standing posture. The benchmark is expensive — tier 2 walks a
-24-crate repository — and a gate that runs on every push would be disabled within a week.
-
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
@@ -120,7 +71,10 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 > them. TC-1066 drops its trace to FR-043-AC-19 and keeps FR-032-AC-16. The
 > tier-2 row's pinned SHA and the sentence on pinning it are removed from the
 > description, and so is the CR-099 note, which recorded the commit
-> revisions behind the withdrawn AC-12 and AC-13. The ids are not reused.
+> revisions behind the withdrawn AC-12 and AC-13. The ids are not reused. The
+> description's scored-benchmark, tier, sentinel, ratchet and CI sections and
+> the CR-098 note (the metric dictionary and its loader) are removed; they
+> described only the withdrawn criteria.
 
 ## Dependencies
 
@@ -133,65 +87,3 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 |----|------------|------|------------|
 | FR-043-CON-1 | The benchmark scores the toolchain; it never edits it. No corpus fixture is repaired, and no check is retuned, as part of a benchmark run. | Design | Inspection of the runner: no write path into `~/dev` outside the report and baseline directories |
 | FR-043-CON-2 | CI runs the benchmark on `workflow_dispatch` only. The enforcing gate is local `make`. | Process | Inspection of `.github/workflows/` — no `push` or `pull_request` trigger on the benchmark job |
-
-> **CR-098 note (2026-08-22):** `agent-ix/quoin#198`, `#201`, reopened. Three
-> corrections to criteria that shipped, each found by review rather than by a
-> failing test (SR-014, SR-015).
->
-> **AC-6 was green by accident.** It excuses a metric with `matched = 0` when a
-> diagnostic accompanies it — and the diagnostic doing the excusing was
-> `quire`'s own false-positive `hollow-denominator`, which fired on every
-> **count**-shaped metric reading an honest zero. Two defects cancelling:
-> `sentinel.silent_zero` read `0` because both were wrong. AC-6 now exempts
-> counts by shape, and ships with `agent-ix/quire-rs#229`. Neither half is safe
-> alone.
->
-> **AC-7 declared a field the score never read.** It required `labels.json` to
-> carry a `location` per defect *"so a scored miss is distinguishable from a
-> defect nobody claimed was findable"*, and then no criterion required the
-> scorer to consume it. `scoreFindings` paired on family alone, so two findings
-> of one family both scored true even when one pointed where no defect was
-> seeded: **precision 1.00 where the truth is 0.50**. A test validating AC-7 as
-> written passed over a location-blind scorer, because the criterion stopped one
-> step short of its own stated intent.
->
-> A positioned finding that matches no label at that place is now a false
-> positive, and may fall back to family-only *only* against labels that name no
-> place — otherwise the second pass hands it the label the first refused it,
-> which is the laundering the fix exists to stop. The count of positional
-> pairings is reported, because a precision figure built entirely from
-> family-only matches is weaker evidence than the same figure built from
-> findings that named where.
->
-> **The dictionary itself did not exist.** AC-1 through AC-6 each say the
-> dictionary *declares* or *defines* something, and there was no dictionary:
-> `span_grounding_rate`, `actionability_rate` and `cost_per_confirmed_insight`
-> appeared only in this document's prose. All ten of FR-043's criteria shipped
-> with no tagged test, which is what SR-015 FND-002 recorded — the deeper truth
-> being that half of them were unimplemented.
->
-> `bench/metrics.json` and `evals/lib/dictionary.mjs` are that dictionary and
-> its loader. An entry missing unit, population, method or direction is refused
-> **at load**, not reported as a gap downstream where it would be one warning
-> among many; a `gate-zero` metric carrying tolerance is refused too, because a
-> gate with tolerance is a score wearing a gate's name; and a `per_family`
-> metric over no labelled families is refused, which is AC-2's "cannot be
-> reported over an unlabelled population" made mechanical.
->
-> `span_grounding_rate` is declared with its measured 0-of-65 baseline and is
-> **not computed** — no runner reads `quire properties --json` for it. Declared
-> anyway, because a metric nobody declared is a metric nobody can ask for, and
-> the gap is tracked as `agent-ix/quoin#219` rather than left implicit.
->
-> AC-7 through AC-10 were already implemented in `scripts/battletest.mjs` and
-> the corpora builder, and needed tests rather than code. TC-934 asserts the
-> report carries no time-varying field rather than calling a pure function
-> twice, and TC-935 pins the property a scalar recall cannot express: gained
-> and LOST are named per finding, so a regression that leaves recall unchanged
-> still reports which detector rotted.
->
-> **AC-11 is new.** An entry declaring `expect_metric` with no `expect_value`
-> scored **missed forever**: `Number(undefined)` is `NaN` and every comparison
-> against it is false. `AK-003` shipped in that state and was caught only
-> because a test happened to assert its detection. Malformed keys now fail the
-> run.

@@ -114,7 +114,6 @@ and an unresolved path disposition each block removal.
 | FR-101-AC-7 | `make lint` and `make test` pass at the candidate revision with no observable behaviour change recorded by the command-surface snapshot. | Test (TC-1647) |
 | FR-101-AC-8 | The final inventory and `quoin-core lint.language` report no unapproved first-party non-Rust engine, production, planning, validation, canonicalization, digest, oracle or assertion logic, exclude manifest-declared inert samples from executable debt, and fail on a planted violation. | Test (TC-1648) |
 | FR-101-AC-10 | The inventory population includes executable paths with no governed extension — Makefile recipes and `run:` blocks under `.github/workflows/**` — and a planted non-Rust assertion in one of them is reported. | Test (TC-1700) |
-| FR-101-AC-12 | A retained path is identified by a stable identity that survives a rename, so moving a file does not silently drop its retention row, its successor reference or its expiry. | Test (TC-1702) |
 
 > **CR note (2026-09-30):** The Input naming
 > `docs/rust-burndown/executable-path-matrix.md` is withdrawn; that file was an
@@ -128,6 +127,11 @@ and an unresolved path disposition each block removal.
 > implementation's revision and the request digest, and that a fixture recorded
 > as produced by the Rust implementation fails parity. No test stands behind
 > it. TC-1701 is withdrawn with it. The id is not reused.
+>
+> FR-101-AC-12 is withdrawn: it required a retained path's retention row,
+> successor reference and expiry to survive a rename, and those rows lived in
+> the deleted burn-down matrix. TC-1702 is withdrawn with it. The id is not
+> reused.
 
 ## Dependencies
 

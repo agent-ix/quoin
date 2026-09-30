@@ -4,8 +4,8 @@
 //! Verdict parity with the retained TypeScript (quoin#377).
 //!
 //! `tests/golden/cases.json` is hand-authored input; `tests/golden/expected.json`
-//! was captured once from `src/validators/` at quoin `4d27dcf` and is the only
-//! oracle consulted here. See `tests/golden/PROVENANCE.md`.
+//! was captured once from `src/validators/` and is the only oracle consulted
+//! here.
 
 #![allow(
     clippy::unwrap_used,

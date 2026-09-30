@@ -14,11 +14,6 @@ pub(super) fn command() -> Command {
         .about("Audit the evidence store: suspect links, staleness, vacuity")
         .arg(repo_arg())
         .arg(module_arg())
-        .arg(
-            Arg::new("ratchet")
-                .long("ratchet")
-                .action(ArgAction::SetTrue),
-        )
         .arg(Arg::new("strict").long("strict").action(ArgAction::SetTrue))
         .arg(json_arg())
         .args(policy_args())
@@ -69,7 +64,6 @@ pub(crate) fn assemble(
     arguments: &ArgMatches,
     repo: &str,
     head: Option<&str>,
-    accepted: Option<&serde_json::Value>,
 ) -> Result<Assembly, String> {
     let modules = values(arguments, "module");
     let coverage = invoke(
@@ -113,7 +107,7 @@ pub(crate) fn assemble(
         "mutationFloor": mutation_floor(&values(arguments, "mutation-floor"))?,
         "independencePolicy": policy,
     });
-    let request = serde_json::json!({ "input": input, "accepted": accepted });
+    let request = serde_json::json!({ "input": input });
     let audited = invoke("auditor.audit", &request)?;
     if !audited.outcome.carries_payload() {
         return Ok(Assembly::Declined(audited));
@@ -129,8 +123,7 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
     let head = revision(&repo);
     let head = (!head.is_empty()).then_some(head.as_str());
-    let (accepted, missing_baseline) = baseline(arguments, &repo)?;
-    let audited = match assemble(arguments, &repo, head, accepted.as_ref())? {
+    let audited = match assemble(arguments, &repo, head)? {
         Assembly::Audited(audited) => audited.response,
         Assembly::Declined(response) => return Ok(response),
     };
@@ -138,10 +131,8 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         .payload
         .get("report")
         .ok_or_else(|| "auditor.audit did not return report".to_owned())?;
-    let reported = audited
-        .payload
-        .get("reported")
-        .or_else(|| report.get("findings"))
+    let reported = report
+        .get("findings")
         .ok_or_else(|| "auditor.audit did not return findings".to_owned())?;
     let unevaluated = report
         .get("unevaluated")
@@ -153,17 +144,11 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             "findings": reported,
             "healthy": report.get("healthy"),
             "unevaluated": report.get("unevaluated"),
-            "ratchet": audited.payload.get("reported").is_some(),
             "independence": audited.payload.get("independence"),
         }))
         .map_err(|error| error.to_string())?
     } else {
-        render_text(
-            report,
-            reported,
-            audited.payload.get("reported").is_some(),
-            missing_baseline,
-        )?
+        render_text(report, reported)?
     };
     Ok(Response {
         payload: serde_json::json!({ "rendered": rendered }),
@@ -201,30 +186,6 @@ fn policy(
     field(&parsed.payload, "policy")
 }
 
-fn baseline(
-    arguments: &ArgMatches,
-    repo: &str,
-) -> Result<(Option<serde_json::Value>, bool), String> {
-    if !arguments.get_flag("ratchet") {
-        return Ok((None, false));
-    }
-    let response = invoke(
-        "evidence.read_baseline",
-        &serde_json::json!({ "repo": repo }),
-    )?;
-    if !response.outcome.carries_payload() {
-        return Ok((None, false));
-    }
-    let Some(file) = response
-        .payload
-        .get("baseline")
-        .filter(|value| !value.is_null())
-    else {
-        return Ok((None, true));
-    };
-    Ok((Some(field(file, "accepted")?), false))
-}
-
 fn mutation_floor(entries: &[String]) -> Result<serde_json::Value, String> {
     if entries.is_empty() {
         return Ok(serde_json::Value::Null);
@@ -260,16 +221,8 @@ fn field(value: &serde_json::Value, name: &str) -> Result<serde_json::Value, Str
         .ok_or_else(|| format!("core response did not return {name}"))
 }
 
-fn render_text(
-    report: &serde_json::Value,
-    reported: &serde_json::Value,
-    ratcheted: bool,
-    missing_baseline: bool,
-) -> Result<String, String> {
+fn render_text(report: &serde_json::Value, reported: &serde_json::Value) -> Result<String, String> {
     let mut lines = Vec::new();
-    if missing_baseline {
-        lines.push("--ratchet requested but no baseline exists; reporting the full backlog, not new violations. Write the baseline with: quoin evidence baseline".to_owned());
-    }
     let findings = reported
         .as_array()
         .ok_or_else(|| "auditor.audit did not return findings".to_owned())?;
@@ -322,18 +275,13 @@ fn render_text(
         }
         lines.push(String::new());
         lines.push(format!(
-            "{} finding(s), {} check(s) not evaluated, {} healthy{}",
+            "{} finding(s), {} check(s) not evaluated, {} healthy",
             findings.len(),
             unevaluated.len(),
             report
                 .get("healthy")
                 .and_then(serde_json::Value::as_array)
                 .map_or(0, Vec::len),
-            if ratcheted {
-                " (new violations only)"
-            } else {
-                ""
-            }
         ));
     }
     Ok(lines.join("\n"))

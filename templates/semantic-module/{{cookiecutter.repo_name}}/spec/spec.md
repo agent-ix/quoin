@@ -31,7 +31,7 @@ three must be able to read one declaration rather than three descriptions of it.
 
 ### In Scope
 
-- The `semantic` manifest block and the `{schema, digest}` reference for every exported type.
+- The `semantic` manifest block and the `{schema}` reference for every exported type.
 - The TypeSpec source and the deterministic emit pipeline that produces the schemas.
 - One authoring skeleton per exported type in the typed-table form, its `sysml` alternate, and its `ocl` invariants.
 - One negative fixture per failure mode the schemas refuse, and a legacy-form fixture.
@@ -51,13 +51,13 @@ three must be able to read one declaration rather than three descriptions of it.
 
 A Filament module is data, not a program. This repository holds a TypeSpec source
 describing each exported type's declaration record, the JSON Schemas emitted from
-it, a manifest binding each type to its schema by path and digest, and the
+it, a manifest binding each type to its schema by path, and the
 Markdown skeletons that show how an artifact populates one. Nothing here runs at
 a consumer's request; everything here is read.
 
 The one moving part is the emit pipeline: `make schemas` compiles the TypeSpec
 source with the official emitter, keeps this module's namespace, writes absolute
-references, and rewrites the manifest's digests from the emitted bytes. That
+references. That
 pipeline is the reason a schema URL names exactly one immutable byte sequence.
 
 ### Intended Users
@@ -89,7 +89,7 @@ verification exists to prevent.
 
 ### Functional Requirements
 
-- [FR-001](./functional/FR-001-declare-the-semantic-contract.md) — the manifest declares the contract and references each schema by path and digest.
+- [FR-001](./functional/FR-001-declare-the-semantic-contract.md) — the manifest declares the contract and references each schema by path.
 - [FR-002](./functional/FR-002-emit-schemas-deterministically.md) — schemas are emitted from the TypeSpec source, reproducibly.
 - [FR-003](./functional/FR-003-authoring-forms-and-fixtures.md) — the authoring forms are demonstrated and their refusals are exercised.
 
