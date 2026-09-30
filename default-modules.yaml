@@ -18,7 +18,7 @@ entries:
       type: git-subdir
       url: agent-ix/engineering-assurance
       path: engineering_assurance
-      ref: 7b4bf7810dc6f42ea3f06c6a2d1361233e21ffe4
+      ref: 2e4923a1555892dfdd744e8d5c61d6c12f574296
 
   - name: spec-artifacts-iso
     defaultEnabled: true
