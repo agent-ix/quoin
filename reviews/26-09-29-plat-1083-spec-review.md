@@ -54,3 +54,5 @@ Round 1, reviewed at `86f7c36cf8b592c59c106074f42f82b283f1eaf5`.
 | FND-002 | fixed | 86f7c36: the FR-076-AC-10 Verification cell is now a bare `Test`. |
 
 Round 2, reviewed at `a50fd540ad9285ef00bff1513076f98827ab8c8e`: no finding in this file was open, so no row was added. There is no regression in this file's scope. `quire validate` 0.34.0 on FR-082 exits 0. The only `spec/evals.md` error, at line 79, is identical on `origin/main`.
+
+Round 3, reviewed at `4f3bf41daf14a41c0f75fcbf000d32d13dba2d2f`: no finding in this file was open, so no row was added. No regression: `quire validate` 0.34.0 exits 0 on FR-082.

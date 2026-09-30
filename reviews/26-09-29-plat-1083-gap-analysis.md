@@ -74,3 +74,9 @@ Round 2, reviewed at `a50fd540ad9285ef00bff1513076f98827ab8c8e`.
 | --- | --- | --- |
 | FND-002 | accepted-no-change | agent-ix/ix-spec-workflows is archived and read-only by the owner's choice (`gh repo view` reports `isArchived: true`). Its matrix workflow has been unreachable since quoin#650 removed the only launcher: `quoin-cli/src/flow.rs` `tc_1080_300_matrix_is_not_a_flow` asserts the flows are exactly `["review", "to-plan"]` and that `matrix` is refused. No change is possible or needed. |
 | FND-003 | fixed | a50fd54: NFR-001's Verification text and FR-082 CR-001 now name all three absent-tool loci: `tests/conftest.py` (engine, grammar package), `tests/test_schema_emission.py` (schema toolchain) and `scripts/generate-schemas.mjs`. AC-1's method changed to `Manual`, and that change introduces FND-004. |
+
+Round 3, reviewed at `4f3bf41daf14a41c0f75fcbf000d32d13dba2d2f`.
+
+| FND | Outcome | sha/reason |
+| --- | --- | --- |
+| FND-004 | fixed | 4f3bf41: rendered NFR-001-AC-1, the M-1 metric and the FR-082 CR-001 sentence now read `Inspection`, and no `Manual` remains. `quire lint` against the exported spec-artifacts-process v0.27.0 module emits no warning on NFR-001. It warned on `Manual` at a50fd54, which serves as the positive control. `quire matrix` 0.34.0 over the template reports NFR-001-AC-1 and AC-2 as `method-without-symbol`, and no criterion as `untagged`. |

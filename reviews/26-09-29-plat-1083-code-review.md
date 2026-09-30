@@ -59,3 +59,5 @@ Round 1, reviewed at `86f7c36cf8b592c59c106074f42f82b283f1eaf5`.
 | FND-003 | fixed | 86f7c36: the Rust example is now `use ix_trace_rs::trace;` plus `#[trace("FR-012-AC-3")]`, with a dev-dependency note. That matches quire-rs usage: `ix-trace-rs` under `[dev-dependencies]`, and `tests/assurance_boundary.rs` imports `ix_trace_rs::trace`. The multi-id form `#[trace("A", "B")]` matches the manifest `rust-trace-attribute` pattern, and `Trace:` is described as the legacy form. The extra `no_source_symbol` list `[Eval, Manual, Inspection, Analysis]` matches spec-artifacts-process v0.27.0 `manifest.yaml:1432` exactly. |
 
 Round 2, reviewed at `a50fd540ad9285ef00bff1513076f98827ab8c8e`: no finding in this file was open, so no row was added. There is no regression in this file's scope. `quire validate` 0.34.0 on FR-082 exits 0. The only `spec/evals.md` error, at line 79, is identical on `origin/main`.
+
+Round 3, reviewed at `4f3bf41daf14a41c0f75fcbf000d32d13dba2d2f`: no finding in this file was open, so no row was added. No regression: `quire validate` 0.34.0 exits 0 on FR-082.
