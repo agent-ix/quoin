@@ -25,7 +25,7 @@ that instead — a record can be `extraction: extractable` and still not be a pr
 | `singleton-domain` | emit as a `Unit` **witness** and record a finding — it is not property coverage |
 | `label-from-mention` | re-derive the strategy from the grounded oracle; lane unchanged |
 | `criterion-describes-its-test` | find the existing test; record *already covered*, emit nothing |
-| `static-or-demonstration` | refuse; no matrix row |
+| `static-or-demonstration` | refuse; no test |
 | any other refusal | no test; the reason becomes a finding, or goes to step 5 |
 
 `singleton-domain` is the common one. On a real run it moved 31 of 52 `universal` criteria

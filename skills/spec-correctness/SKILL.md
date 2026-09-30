@@ -39,10 +39,10 @@ Two more, inherited:
 ## When to use
 
 - After acceptance criteria are written and validated, to give them verification.
-- Before `gap-analysis`, so the matrix rows it reconciles have real backing tests.
+- Before `gap-analysis`, so the criteria its computed matrix reads have real backing tests.
 - On an existing repo, to find which criteria have no test and why.
 
-Not for: authoring criteria (`specify`), building the matrix (`spec-matrix`), or judging
+Not for: authoring criteria (`specify`), tagging existing tests to criteria (`spec-matrix`), or judging
 whether existing tests are good (`gap-analysis`).
 
 ## Inputs
@@ -69,8 +69,8 @@ whether existing tests are good (`gap-analysis`).
    `unclassified`, and anything step 2 refused to ground.
 6. **[Review artifact](references/step-6-review-artifact.md)**: the `SpecReview` at
    `reviews/YY-MM-DD-<slug>.md` recording what could not be grounded, and why.
-7. **[Report and handoff](references/step-7-report-and-handoff.md)**: the run report, the
-   `Property` rows for `spec-matrix`, and the reconciliation check against `gap-analysis`.
+7. **[Report and handoff](references/step-7-report-and-handoff.md)**: the run report and
+   the binding check that every emitted tag reaches its criterion in `quire matrix`.
 
 Steps 0–4 and 6–7 always run. Step 5 is an expensive LLM pass — **ask before running it**
 when the residue is large (say, more than 30 records).

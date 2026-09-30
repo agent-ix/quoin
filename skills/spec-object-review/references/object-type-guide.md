@@ -112,7 +112,8 @@ When linking specs, you must use one of the following strict semantic primitives
 ## Acceptance-Criteria Verification Vocabulary
 
 AC table `Verification` cells use the ISO 29148 methods — `Inspection`,
-`Analysis`, `Demonstration`, `Test` — optionally annotated with test-case
-references, e.g. `Test (TC-035)`. Checked by the `ac-verification-method`
-lint rule (`quire lint`); spec-only artifacts legitimately carry
-`Inspection`/`Analysis` until implementation upgrades them to `Test (TC-xxx)`.
+`Analysis`, `Demonstration`, `Test` — and name the method only, with no
+test-case id. Checked by the `ac-verification-method` lint rule (`quire lint`);
+spec-only artifacts legitimately carry `Inspection`/`Analysis` until
+implementation upgrades them to `Test`. A test binds to the criterion by
+carrying the criterion's own id as a trace tag.

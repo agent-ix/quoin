@@ -1,7 +1,7 @@
 # Step 7: Report and Handoff
 
-**Goal**: close the loop — the matrix knows about the new tests, and `gap-analysis` can
-reconcile every tag this run emitted.
+**Goal**: close the loop — every emitted tag binds, so the computed matrix (`quire matrix`)
+shows each covered criterion as `tagged` and `gap-analysis` reads the same result.
 
 ## The run report
 
@@ -24,21 +24,11 @@ records with a `row_id`. If it does not, a record was dropped — find it before
 
 No thresholds, no grades, no rewording suggestions. Same rule as step 1.
 
-## Handoff to `spec-matrix`
+## No matrix to write
 
-Emit rows for the `spec-matrix` Test Case Summary — do not write them yourself if the repo
-already runs the matrix workflow; hand them over.
-
-`Test ID | Title | Type | Priority | Traces To | Status`
-
-- `Type` — `Property` for the 8 generatable families; `Unit` for witnesses, whether they
-  came from the second pass or from a `singleton-domain` grounding result.
-  The vocabulary is owned by `spec_artifacts_process/manifest.yaml`, not by this skill; if
-  it disagrees with what you write, the manifest wins.
-- `Traces To` — the `row_id`, exactly (`FR-027-AC-1`). Never a range you invented, never
-  another TC.
-- `Status` — `✅` only for a test that actually passed in this run. A criterion with no
-  test gets **no row**; it is a finding in the review artifact, not a claim in the matrix.
+The Test Matrix is computed from the criteria and the tags this run emitted. Write no
+matrix rows, no `tests.md` and no `TC-` ids. A criterion with no test is a finding in the
+review artifact, and `quire matrix` shows it as `untagged`.
 
 ## Binding check
 
@@ -51,10 +41,11 @@ quire coverage --scope <repo> --json
 `--scope` is the repository root. Since quire-cli v0.16.0 (quire-rs CR-045) the command
 derives two roots from it: documents from `<repo>/spec` only, trace tags from the source
 tree excluding `spec/`. A repo with no `spec/` directory exits with a diagnostic naming
-the missing document root, and a matrix outside `spec/` mints nothing.
+the missing document root, and a document outside `spec/` mints nothing.
 
-For each `row_id` this run emitted, confirm the id appears among the backed ids: its
-minting document's group must count it, and it must not appear in `untracked_symbols`.
+For each `row_id` this run emitted, confirm `quire matrix --scope <repo> --format json`
+reports the criterion `tagged` with this run's test among its `binders`, and that the id
+does not appear in `untracked_symbols`.
 
 ```
 quire coverage --scope <repo> --json \
@@ -72,7 +63,7 @@ consumes the tags can tell you a tag works.
 
 Then confirm, as before:
 
-- no matrix row this run added is `✅` while its test is skipped;
+- no criterion this run tagged reads `tagged-by-ignored-test`;
 - no emitted tag names a `row_id` absent from the `quire properties` output.
 
 Check `quire --version` ≥ 0.16.0 first: the two-root semantics this step assumes are

@@ -42,12 +42,12 @@ Catch these anti-patterns while authoring, not in review:
 
 ## Acceptance criteria: cover the unhappy paths, be concrete
 
-ACs are authored *here*, with the US/FR — don't defer coverage thinking to
-`spec-matrix`. Front-load it:
+ACs are authored *here*, with the US/FR — there is no later matrix-writing step to
+catch what they miss. The computed test matrix has one row per criterion, so a case with
+no criterion has no row at all. Front-load it:
 
-- **Happy / error / edge from the start.** Walk the same ground the Six Coverage Rules
-  (`spec-matrix`) will later check — error paths, constraint boundaries, state
-  transitions, edge cases — while the behavior is fresh.
+- **Happy / error / edge from the start.** Cover error paths, constraint boundaries,
+  state transitions and edge cases while the behavior is fresh.
 - **Negative cases.** State what must *not* happen, not just what should: rejects,
   refuses, never persists, leaves state unchanged.
 - **Concrete and measurable.** "Returns HTTP 422 within 200ms", not "handles errors

@@ -101,8 +101,8 @@ verdict on the spec (FR-052-CON-1), and none of it recommends rewording a criter
 
 Every test this skill writes **runs**. No `describe.skip`, no `#[ignore]`, no
 `@pytest.mark.skip`, no `_review/` directory. A disabled test in a repo is a dead test, and
-whether a matrix row reads `✅` is the `spec-matrix` skill's status column to set from a
-real run — not this skill's to pre-empt with a marker.
+whether a criterion is backed by a passing run is computed by `quoin matrix` from a real
+run — not this skill's to pre-empt with a marker.
 
 ## Validate
 
@@ -115,7 +115,7 @@ quire validate --scope <project_root> "reviews/**/*.md"
 > interchanges them: spec documents are read from `<repo>/spec` only, trace tags from
 > the source tree at `<repo>` excluding `spec/`. A repo with no `spec/` exits with a
 > diagnostic naming the missing document root rather than scanning the whole tree, and a
-> matrix outside `spec/` (a fixture, a `plan/` copy) mints nothing. A relative glob
+> document outside `spec/` (a fixture, a `plan/` copy) mints nothing. A relative glob
 > resolves under `--scope` only in scoped mode (no `--module`); with `--module` it
 > resolves against the process working directory, and an omitted `--scope` defaults to
 > `.` — so a run launched from a parent directory validates the **wrong tree** and exits

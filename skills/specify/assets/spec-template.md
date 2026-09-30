@@ -85,8 +85,6 @@ spec/
 ├── usecase/ # User intent and usage scenarios (US-XXX)
 ├── functional/ # System / functional requirements (FR-XXX)
 ├── non-functional/ # Non-functional requirements (NFR-XXX)
-├── tests.md # Bidirectional requirements ↔ tests mapping
-├── test_cases/ # Verification artifacts (TC-XXX)
 ├── assets/
 ├── diagrams/ # State diagrams, sequence diagrams
 ├── models/ # Formal state and data models
@@ -167,7 +165,6 @@ Acceptance criteria define **verifiable outcomes** for functional requirements.
 | Functional Requirement | `FR-XXX` | `FR-014` |
 | Non-Functional Requirement | `NFR-XXX` | `NFR-003` |
 | Acceptance Criteria | `{FR}-AC-N` | `FR-014-AC-1` |
-| Test Case | `TC-XXX` | `TC-021` |
 | Change Request | `CR-XXX` | `CR-009` |
 
 Identifiers are immutable once assigned.
@@ -242,9 +239,11 @@ Bidirectional traceability SHALL be maintained between:
 - Stakeholder Requirements → User Stories / Functional Requirements
 - User Requirements → Functional Requirements
 - Functional Requirements → Acceptance Criteria
-- Acceptance Criteria → Test Cases
+- Acceptance Criteria → Tests
 
-Traceability is recorded in `traceability_matrix.md`.
+Requirement traceability is recorded in frontmatter `relationships:`. A test traces to the
+acceptance criterion it asserts by carrying that criterion's id as a trace tag; the test
+matrix is computed from those tags by `quire matrix` and is never maintained by hand.
 
 ---
 
@@ -256,7 +255,8 @@ Functional requirements SHALL be verified using one or more of:
 - Analysis
 - Inspection
 
-Verification evidence SHALL reference test cases in `test_cases/`.
+Each acceptance criterion's `Verification` cell SHALL name its method only, with no
+test-case id. Verification evidence is the tagged test and its recorded run.
 
 ---
 

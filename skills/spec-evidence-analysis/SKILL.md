@@ -19,8 +19,8 @@ declared catalog**, and flags where the authored choice disagrees.
 
 ## When to use
 
-- At **Spec Review**, to confirm each obligation's method before the matrix is built.
-- At **Matrix** time, to plan which suites the chosen methods imply.
+- At **Spec Review**, to confirm each obligation's method before tests are written.
+- Before tagging tests to criteria, to plan which suites the chosen methods imply.
 - Whenever a new NFR is added — NFRs are the ones most prone to a defaulted method.
 
 ## Run the advisor, do not recall the table

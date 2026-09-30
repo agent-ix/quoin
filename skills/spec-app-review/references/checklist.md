@@ -170,22 +170,20 @@ For each artifact file (StR, US, FR, NFR):
 - [ ] AC use H3 headings with IDs: `### US-001-AC-1: Title`
 - [ ] `From:` traces to StR, `Drives:` traces to FR
 
-**Severity**: INFO for most. WARN if AC IDs missing (test matrix can't trace).
+**Severity**: INFO for most. WARN if AC IDs missing (no test can trace to the criterion).
 
 ---
 
-## 8. Test Matrix (tests.md)
+## 8. Test Traceability (computed)
 
-- [ ] File `spec/tests.md` exists
-- [ ] Coverage table maps every AC to at least one TC
-- [ ] TC entries include Type and Priority, each a single value from the
-      enforced vocabularies (see `spec-matrix/SKILL.md` § Test Case Summary —
-      `Security` is not one of them; a security test takes the Type that
-      describes how it runs)
-- [ ] Component ownership note explains which repo runs each TC
-- [ ] Constraint boundary tests section maps CON IDs to TCs
+The Test Matrix is computed by `quire matrix` from the criteria and the tests' trace tags;
+do not require or review a hand-written `spec/tests.md`.
 
-**Severity**: WARN if missing (no test traceability)
+- [ ] `quire matrix --scope . --format json` reports no `untagged` criterion
+- [ ] No criterion is `tagged-by-ignored-test`
+- [ ] Every AC `Verification` cell names a method only, with no `TC-` id
+
+**Severity**: WARN for each untagged criterion (no test traceability)
 
 ---
 

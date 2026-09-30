@@ -95,8 +95,8 @@ No skip marker, no `#[ignore]`, no `_review/` directory. A disabled test checked
 repo is a dead test, and the review it was waiting for already happens in the pull request
 the test arrives in.
 
-Whether a matrix row reads `✅` is decided by a real run and set by `spec-matrix` — not
-pre-empted here with a marker. A criterion that is not ready to be tested is not a disabled
+Whether a criterion is backed by a passing run is computed by `quoin matrix` from the
+evidence of a real run — not pre-empted here with a marker. A criterion that is not ready to be tested is not a disabled
 test; it is a finding (step 6).
 
 ## Generator hygiene

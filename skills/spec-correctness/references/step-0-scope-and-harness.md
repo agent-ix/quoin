@@ -36,7 +36,8 @@ Requires quire-cli ≥ 0.12.0 (`quire --version`). Output shape:
 
 Field notes that matter:
 
-- `row_id` — the only identifier shared with the matrix and with `gap-analysis`. Never
+- `row_id` — the criterion id, and the only identifier shared with the computed matrix
+  and with `gap-analysis`. Never
   synthesize one, never alter one. A record with `row_id: null` cannot be tagged, so it
   yields no test and one finding with reason `no-row-id`.
 - `line` is 1-based and **file**-relative. Span `start`/`end` are **statement**-relative
@@ -76,13 +77,12 @@ Rules:
 
 ## 4. Detect the existing tag style
 
-Grep the existing test tree for the four forms `gap-analysis` accepts
-(`skills/gap-analysis/references/step-3-matrix-verification.md`):
+Grep the existing test tree for the trace-tag forms already in use:
 
 ```
 Trace: FR-
+@pytest.mark.trace(
 FR-[0-9]{3}-AC-
-TC-[0-9]{3}
 Tests for FR-
 ```
 
