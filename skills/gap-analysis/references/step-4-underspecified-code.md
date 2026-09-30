@@ -19,7 +19,7 @@ detection heuristics below.
 1. **Inventory the surface.** List the component's real behaviors — public
    functions/methods, CLI commands/flags, HTTP endpoints, events, config knobs.
 2. **Trace each to a requirement.** A behavior is *traced* if it maps to an StR/US/FR/NFR
-   (via the matrix `Traces To`, a requirement that describes it, or a Task `references`
+   (via a test's trace tag, a requirement that describes it, or a Task `references`
    edge that owns it).
 3. **Flag the untraced.** Behavior with no owning requirement → finding:
    - `high` if it is user-visible or security/data-affecting (an endpoint, a CLI command, a
@@ -44,7 +44,7 @@ Each unstated-but-implemented constraint → `medium` finding.
 
 ## C. Stubs masquerading as complete
 
-Scan **source** (not just tests) for hollow implementations the plan/matrix may report as
+Scan **source** (not just tests) for hollow implementations a plan or a tagged criterion may present as
 done:
 
 | Stub | Detect | Severity |
@@ -55,7 +55,7 @@ done:
 | Re-export-only module | structure | medium (may be intentional) |
 | Trivially-covered stub (≤5 lines @ 100% cov) | coverage + size | medium |
 
-A stub behind a ✅ matrix row is a `high` finding (false completion) — and likewise behind a
+A stub behind a tagged criterion is a `high` finding (false completion) — and likewise behind a
 `done` task, when a plan was supplied.
 
 Inspect test files as well as source. A passing test can still be a stub:
@@ -83,7 +83,7 @@ Treat coverage as evidence only after checking what the covered lines do:
 - A threshold dominated by imports, declarations, or re-exports does not establish that
   the promised behavior exists.
 
-Record these as `high` when they support a ✅ matrix claim (or, in plan-assisted mode, a
+Record these as `high` when they back a tagged criterion (or, in plan-assisted mode, a
 `done` task), otherwise `medium`. Cite both the hollow source and the test or coverage artifact.
 
 ## Output of this step

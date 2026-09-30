@@ -20,7 +20,7 @@ only add findings. It must never:
 - suppress, downgrade, or omit a repository finding because it falls outside the plan;
 - supply the scope, the requirement set, or the code surface for any other step;
 - stand in for repository assurance — a plan whose tasks are all `done` says nothing about
-  whether the matrix is backed or the code is traced.
+  whether the criteria are tagged or the code is traced.
 
 Nor does it author: do not create or edit a plan, a `Task`, a requirement, or an acceptance
 criterion, and do not fix a status you believe is stale.

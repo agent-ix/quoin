@@ -30,10 +30,10 @@ id: SR-001                      # ^[A-Z]{2,4}-[0-9]+$ — SR- default is fine; b
 title: "Gap analysis — <component> repository audit"
 type: SpecReview
 analysis: gap-analysis          # the dedicated analysis value
-scope: "spec/, src/, tests/, spec/matrix.md"
+scope: "spec/, src/, tests/"
 review_set: subset
 relationships:
-  - { target: "ix://<org>/<component>/<TestMatrix-id>", type: references }
+  - { target: "ix://<org>/<component>/<SPEC-id>", type: references }
 ---
 ```
 
@@ -45,16 +45,16 @@ id: SR-001
 title: "Gap analysis — <component> repository audit (with <Plan-id>)"
 type: SpecReview
 analysis: gap-analysis
-scope: "spec/, src/, tests/, spec/matrix.md, plan/<Plan-id>-<slug>/"
+scope: "spec/, src/, tests/, plan/<Plan-id>-<slug>/"
 review_set: subset
 relationships:
-  - { target: "ix://<org>/<component>/<Plan-id>",       type: reviews }
-  - { target: "ix://<org>/<component>/<TestMatrix-id>", type: references }
+  - { target: "ix://<org>/<component>/<Plan-id>", type: reviews }
+  - { target: "ix://<org>/<component>/<SPEC-id>", type: references }
 ---
 ```
 
-`<org>`/`<component>` come from `spec/spec.md` (`org`, `name`); the `<TestMatrix-id>` and
-the optional `<Plan-id>` from target selection. Never emit a `reviews` edge to a plan in a
+`<org>`/`<component>` and `<SPEC-id>` come from `spec/spec.md` (`org`, `name`, `id`); the
+optional `<Plan-id>` from target selection. Never emit a `reviews` edge to a plan in a
 planless run — a relationship to a plan nobody audited is a fabricated claim.
 
 ## Body
@@ -65,7 +65,7 @@ are extra sections (allowed).
 ```markdown
 ## Summary
 
-<1–2 sentences: which repository's spec, matrix, tests and code were audited, and the
+<1–2 sentences: which repository's spec, tests and code were audited, and the
 headline result. In planless mode, say the audit was repository-driven and that plan
 completion was not assessed. Do not describe the result as work being "complete" or
 "delivered as planned".>
@@ -78,15 +78,16 @@ completion was not assessed. Do not describe the result as work being "complete"
 
 | ID      | Severity | Summary                                          | Refs               |
 | ------- | -------- | ------------------------------------------------ | ------------------ |
-| FND-001 | high     | Matrix TC-012 has no backing tagged test         | TC-012, FR-006     |
+| FND-001 | high     | FR-006-AC-2 has no test tagged with its id       | FR-006-AC-2        |
 | FND-002 | medium   | `cli.ts::--force` flag has no owning requirement | cli.ts::--force    |
 | FND-003 | high     | Task-007 still in_progress (P0) — plan-assisted  | Task-007, FR-004   |
 
 ## Coverage
 
-- Reconciliation: quire coverage (module <name> <version>) | grep fallback — no active module declares a traceability model
+- Reconciliation: quoin matrix (quoin <version>, quire <version>) | quire matrix (quire <version>) — no run evidence read | grep fallback — no active module declares a traceability model
 - Plan completion: not assessed
-- Rows backed by a tagged test: X / Y   (from `totals`; `0 / 0` means the model matched nothing, not full coverage)
+- Criteria: tagged X · untagged Y · tagged-by-ignored-test Z · method-without-symbol W   (zero criteria means the model matched nothing, not full coverage)
+- Evidence: bound A · stale B · suspect C · undischarged D | no run evidence   (only when `quoin matrix` ran)
 - Untraced behaviors / stubs: N
 - Semantic review: ran over N requirements | skipped
 ```
@@ -117,15 +118,15 @@ will not bind it — and a reader cannot tell which they are looking at unless i
 
 ## Verdict rule
 
-- **FAIL** — any unbacked matrix Test Case, any `high` finding, or (plan-assisted only) any
+- **FAIL** — any untagged criterion, any `high` finding, or (plan-assisted only) any
   incomplete/blocked task.
 - **CONDITIONAL** — only `medium`/`low` findings.
 - **PASS** — no gaps (single `No gaps found` row).
 
 ### What a planless PASS means
 
-A planless PASS asserts **repository assurance only**: the matrix rows are backed by tagged
-tests, no meaningful code lacks an owning requirement, and no stub or inflated coverage
+A planless PASS asserts **repository assurance only**: every criterion is backed by a tagged
+test, no meaningful code lacks an owning requirement, and no stub or inflated coverage
 stands behind a claim. It asserts nothing about whether the work was planned, tracked, or
 completed against a plan — that question was not asked. Keep the Summary and Verdict lines
 consistent with that, and leave `Plan completion: not assessed` visible in `## Coverage` as

@@ -1,7 +1,7 @@
 # Target Selection
 
-**Goal**: Resolve exactly what this run audits — one **repository**, its spec, its Test
-Matrix, its source and test trees — and the `ix://` identity used in the output artifact.
+**Goal**: Resolve exactly what this run audits — one **repository**, its spec, its source
+and test trees — and the `ix://` identity used in the output artifact.
 Record whether the caller explicitly supplied a plan.
 
 The target of gap-analysis is a repository, not a plan. A plan is an optional extra input.
@@ -15,14 +15,13 @@ The target of gap-analysis is a repository, not a plan. A plan is an optional ex
    names another.
 2. **Spec root.** Single-repo: `spec/`. Multi-repo: `specs/<category>/<component>/spec/`.
 3. **`org` / `component`.** Read from `spec/spec.md` frontmatter (`org`, `name`). These build
-   the `ix://<org>/<component>/<id>` URIs used in the SpecReview `relationships:`.
-4. **Test Matrix.** Look for `spec/matrix.md` first, then `spec/tests.md` (both names are in
-   use across the ecosystem). Note its frontmatter `id` (e.g. `TestMatrix-001` / `TM-001`)
-   for the `references` edge.
-5. **Requirements.** Note the requirement files under `spec/functional/`,
+   the `ix://<org>/<component>/<id>` URIs used in the SpecReview `relationships:`. Note the
+   same document's `id` (e.g. `SPEC-001`) for the `references` edge.
+4. **Requirements.** Note the requirement files under `spec/functional/`,
    `spec/non-functional/`, `spec/usecase/`, `spec/stakeholder/` — the matrix and reverse-gap
-   steps trace against these ids.
-6. **Source / test trees.** Identify where implementation and tests live (e.g. `src/` +
+   steps trace against their criterion ids. The Test Matrix is computed from them in the
+   next step; there is no matrix file to locate.
+5. **Source / test trees.** Identify where implementation and tests live (e.g. `src/` +
    `tests/`, or language-specific layout).
 
 ### 2. Determine the mode
@@ -45,7 +44,7 @@ When a plan *is* supplied:
 
 State explicitly, so later steps and the artifact agree:
 
-- repository root, spec root, matrix path + id
+- repository root, spec root, spec root id
 - `ix://<org>/<component>` prefix
 - where source and tests live
 - **mode**: `planless` or `plan-assisted (<Plan-id>)`
@@ -56,5 +55,5 @@ State explicitly, so later steps and the artifact agree:
   will record `Plan completion: not assessed`. Never tell the user to run `spec-to-plan`
   first, and never author a retrospective plan to make the audit possible — that reverses
   the assurance order the skill exists to enforce.
-- If there is **no** Test Matrix, the remaining steps still run, but record a `high` finding
-  that the matrix is missing and that coverage cannot be verified. Do not create a matrix.
+- A hand-written `spec/matrix.md` or `spec/tests.md` is neither required nor read. Its
+  absence is not a finding, and this skill never creates one.
