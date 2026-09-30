@@ -11,6 +11,17 @@ relationships:
 
 # FR-054: Publish canonical semantic audit artifacts
 
+> **⛔ Withdrawn — 2026-09-29.** This requirement is withdrawn and is not
+> implemented, with the rest of the semantic type-fit audit (US-014, FR-051..FR-055,
+> NFR-015, NFR-016) under [quoin#654](https://github.com/agent-ix/quoin/pull/654).
+> The audit ran once under [quoin#288](https://github.com/agent-ix/quoin/issues/288);
+> its generator and test were removed by the native cutover
+> ([quoin#524](https://github.com/agent-ix/quoin/pull/524)), and its retained output
+> is deleted by quoin#654. Nothing in quoin produces or reads the audit any more.
+>
+> The text below is retained unchanged. It describes what was required, not what
+> is required.
+
 ## Description
 
 When inventory and scoring complete, the audit SHALL publish machine-readable canonical data and a generated

@@ -8,6 +8,42 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-29** — **The semantic type-fit audit is withdrawn, and three
+  version-tracking criteria with it** (agent-ix/quoin#654).
+
+  **US-014, FR-051..FR-055, NFR-015 and NFR-016 are withdrawn.** They specified
+  a one-off audit of the default-module corpus (#288). Its generator and its test
+  were removed by the native cutover (#524), and #654 deletes its retained output
+  under `analysis/semantic-module-type-fit/`. Nothing in quoin produces or reads
+  the audit, so the requirements describe results that no longer exist and code
+  that no longer runs. The documents are retained with a withdrawal banner, as
+  FR-084..FR-092 were. Matrix rows move to `⛔ Withdrawn`, TC-1156..TC-1194 are
+  withdrawn with them, and their rows leave the generated coverage table. The
+  scope bullet in `spec.md` is removed. US-022's informative note pointing at
+  US-014 is removed, and so are the census row for the deleted generator in
+  `docs/rust-burndown/executable-path-matrix.md` and PLAN-003's pointer to the
+  deleted output directory.
+
+  **FR-108-AC-13 is withdrawn** (FR-108 CR note). It required the
+  engineering-assurance crate `version` to move to a stated value in several
+  files together. That is a version bump, not behaviour. `quoin-measurement`
+  calls `holds_on_interval` in its own code and TC-1954 covers what it decides.
+  TC-1959 and `tc_1959_engineering_assurance_pin.rs` are withdrawn and deleted.
+
+  **FR-016-AC-3 is withdrawn** (FR-016 CR note). It required every committed
+  copy of a module pin to agree and the manifest's `version` to equal the
+  crate's. The `version` field is gone from the manifest, `MarketplaceEntry` and
+  FR-016's schema. TC-1929 and `tc_1032_pin_agreement.rs` are withdrawn and
+  deleted. `quoin-cli`'s retained-catalog fixture stays, because `tc_1650` reads
+  it.
+
+  **FR-043-AC-32 and FR-043-AC-33 are withdrawn** (FR-043 CR note). They
+  specified `make verification-relock`, which does not exist. The
+  verification-stack lock it relocked is deleted by #654, and
+  `tests/verification-relock.test.ts`, which the matrix cited, does not exist.
+  TC-1589..TC-1592 are withdrawn. MP-216, MP-217 and MP-219 stop citing the
+  deleted lock.
+
 * **2026-09-29** — **Agents stop hand-writing the Test Matrix** (PLAT-1083,
   epic PLAT-1076). The matrix is computed: `quire matrix` from criteria and
   trace tags, `quoin matrix` adding run evidence (FR-115). The skills and the

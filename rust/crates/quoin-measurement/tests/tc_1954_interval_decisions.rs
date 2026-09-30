@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 //! EA-26: an observation's `interval` decides a plan's rule at its
-//! unfavourable bound, in `quoin measurement verify` (FR-108-AC-11..AC-14)
+//! unfavourable bound, in `quoin measurement verify` (FR-108-AC-11, AC-12, AC-14)
 //! and in a `gate` plan's report verdict (FR-107-AC-10, FR-107-AC-11).
 //!
 //! Plans are real assurance documents loaded through `load_measurement_plans`

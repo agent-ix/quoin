@@ -35,7 +35,7 @@ Passing independent reviews divided by selected applicable records. The target i
 
 ## Collection Procedure
 
-The evaluator contract, review evidence, stack lock, producer records, and their digests are retained together.
+The evaluator contract, review evidence, and producer records are retained together.
 
 ## Environment and Sampling
 

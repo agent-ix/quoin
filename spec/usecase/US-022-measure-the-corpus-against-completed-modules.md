@@ -126,8 +126,3 @@ badly is worse than not doing it — a measurement believed to be sound and quie
 Open question raised in discovery and deliberately left open: whether repositories outside the
 workspace should be pulled in for the census. Captured for the later campaign; it introduces no
 requirement here.
-
-## Traceability (Informative)
-
-This story sits beside US-014, which drove the earlier default-module type-fit audit. The two share a
-subject and not a population: US-014 inventoried the modules, this story measures the corpus.

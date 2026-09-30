@@ -37,10 +37,6 @@ Remedies whose failure fixture reports the family, repaired control does not, an
 
 The exact failure/control identities and producer stack are retained in review evidence and measurement v2.
 
-## Environment and Sampling
-
-The canonical QA and Tier-1 replays use the immutable verification-stack lock.
-
 ## Interpretation
 
 The proof establishes the banked repair, not every possible user edit.

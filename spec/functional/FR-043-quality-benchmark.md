@@ -81,15 +81,6 @@ Unchanged from this repository's standing posture. The benchmark is expensive â€
 
 ## Acceptance Criteria
 
-For AC-32, Cargo selection is read from parsed manifest and lock fields, never
-comments, unrelated dependencies or ambiguous overrides. Schema metadata is
-read from one exported literal `QUIRE_CONTRACT` declaration without executing
-source. Relocked artifacts must match selected commit blobs (including the
-selected corpus gitlink); clean Git status alone cannot establish byte identity.
-All tracked source file bytes, modes and symlink targets must agree with Git
-objects despite index visibility flags. The native QA inventory reader runs
-over the complete committed snapshot, with no working-tree ignored inputs;
-non-regular snapshot entries are refused rather than resolved outside the pin.
 For AC-35, literal Git reads ignore replacement refs without modifying them.
 Git paths must decode as valid UTF-8; invalid byte sequences are refused rather
 than renamed through replacement characters, while valid Unicode is preserved.
@@ -98,8 +89,6 @@ independently of the invoking process's umask.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-043-AC-32 | `make verification-relock` prepares a candidate lock from seven explicitly routed, clean, remotely reachable source checkouts. It records full revisions, verifies the CLI's declared and resolved engine pin and the vendored schemas against both their recorded source and the selected engine git objects, derives the QA case partition and artifact digests, and preserves historical producer cohorts, capabilities, toolchains and timeout policy. Missing, dirty, mismatched or incompatible inputs fail before output. | Test (TC-1589, TC-1590) |
-| FR-043-AC-33 | Relocking creates only a new, explicitly named candidate file; it never overwrites an existing lock, edits producer expectations, regenerates evidence or promotes a baseline. Source-drift refusals name `make verification-relock` and its runbook. The exact-source, rollback and merge-before-promotion checks remain enforced. The maintainer integrating a producer change owns relocking and the subsequent canonical replay; a candidate alone is not accepted evidence. | Test (TC-1591, TC-1592), Inspection |
 | FR-043-AC-34 | Explicit lock-v2 policy names exactly the seven v1 sources plus engineering-assurance and the ordered Quoin validation set: process, ISO, engineering-assurance. Each declaration names its source repository and module subdirectory, exact committed tree and complete sorted path/mode/SHA-256 file inventory, including its manifest. Missing, duplicate, unknown, escaping, partial or malformed declarations fail. V1 remains a historical seven-source mode and is neither silently upgraded nor evidence of v2 isolation. | Test (TC-1593, TC-1594) |
 | FR-043-AC-35 | V2 relocking and replay derive and materialize declaration files from literal selected Git objects, refusing non-regular entries and inventory drift. Canonical Quoin validation passes exactly the declared ordered roots through repeated native Quire `--module` arguments, with no ambient module discovery or default installation. Poisoned installed catalogs and module environment variables cannot add inputs; native validation failures remain failures. Ordinary validation without an explicit set remains compatible. This slice does not change historical Tier-1/Tier-2 declaration or producer policy. | Test (TC-1595, TC-1596) |
 | FR-043-AC-1 | The metric dictionary declares, for every benchmark metric, its `unit` (what one of the value is), `population` (what the denominator is drawn from), and `method` (how it was arrived at, and what a partial read means). A metric missing any of the three is rejected at load, not reported with a gap. | Test (TC-926) |
@@ -134,6 +123,13 @@ independently of the invoking process's umask.
 | FR-043-AC-30 | `property.span-grounding-v2` scores an exact labeled statement/property population with pinned multiplicity. Each criterion passes only through exact expected boundaries or the label's explicit justified-refusal signal with no emitted spans. Exact spans, safe refusals, wrong spans, unexpected or unjustified refusals, unsafe emissions, exclusions, malformed population changes, and named misses remain distinct; historical `property.span-grounding-v1` is retained unchanged. The metric maps to its own active MeasurementPlan and is a one-way ratchet. | Test (TC-1110, TC-1111, TC-1120) |
 | FR-043-AC-31 | Each Tier-2 cohort pins its complete declaration set as repository/full-SHA pairs. The runner routes every named repository explicitly, verifies the checkout is clean and correctly identified, requires every historical commit to be reachable from a remote-tracking ref, and materializes each revision in an isolated detached worktree. Production commands receive only those worktree roots through `IX_FILAMENT_MODULES_PATH`; they do not use a single `--module` override or ambient declaration checkout. The retained baseline binds the exact set and canonical environment. A defect signal may additionally require an exact diagnostic value and locus, and a pinned healthy declaration cohort must remain free of that same signal. | Test (TC-1074, TC-1116, TC-1118, TC-1121, TC-1122) |
 | FR-043-AC-36 | A standing advisory ruling and a per-case ruling are counted as separate evidence, never summed into one figure. A standing entry in `corpus.yaml` governs many firings from one sentence, while a per-case `expect.yaml` entry governs one; a single precision published over both asserts a breadth of adjudication that nobody performed. The report states each count on its own, so a figure resting on one standing sentence cannot read as a figure resting on hundreds of independent rulings. | Test |
+
+> **CR note (2026-09-29, agent-ix/quoin#654):** FR-043-AC-32 and FR-043-AC-33
+> are withdrawn. They specified `make verification-relock` preparing a candidate
+> verification-stack lock. That lock and its relock procedure are deleted by
+> quoin#654, the `make` target does not exist, and the test the matrix cited,
+> `tests/verification-relock.test.ts`, does not exist either. TC-1589..TC-1592
+> are withdrawn with them. The ids are not reused.
 
 ## Dependencies
 
