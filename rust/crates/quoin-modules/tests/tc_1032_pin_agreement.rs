@@ -142,28 +142,6 @@ fn tc_1032_every_engineering_assurance_pin_is_the_same_commit() {
          together (PLAT-1032)."
     );
 
-    // The declared `version` label is informational (ref/rev governs what is
-    // actually installed and built), but it is meant to be legible at a
-    // glance, so it is worth catching the two labels themselves drifting
-    // apart even when the (checked above) revisions still agree.
-    let module_version = entry
-        .version
-        .as_deref()
-        .expect("the engineering-assurance module entry declares a version");
-    let crate_version = field(crate_line, "version")
-        .expect("the engineering-assurance dependency line declares a version")
-        .trim_start_matches('=')
-        .to_string();
-
-    assert_eq!(
-        module_version, crate_version,
-        "default-modules.yaml's engineering-assurance module declares version {module_version:?} \
-         but rust/Cargo.toml's engineering-assurance crate dependency declares version \
-         {crate_version:?} (after normalising the exact-pin `=`). The crate pin and the module \
-         pin are two halves of one engineering-assurance version and must be bumped together \
-         (PLAT-1032)."
-    );
-
     let registry: serde_json::Value = serde_json::from_str(RETAINED_CATALOG_REGISTRY)
         .expect("the retained-catalog fixture registry is JSON");
     let fixture_plugins = registry

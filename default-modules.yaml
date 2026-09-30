@@ -13,7 +13,6 @@ entries:
   # crate that decides measurement verdicts come from one tree. Move both
   # together.
   - name: engineering-assurance
-    version: "0.5.0"
     defaultEnabled: true
     source:
       type: git-subdir
@@ -22,7 +21,6 @@ entries:
       ref: 7b4bf7810dc6f42ea3f06c6a2d1361233e21ffe4
 
   - name: spec-artifacts-iso
-    version: "0.20.0"
     defaultEnabled: true
     source:
       type: git-subdir
@@ -31,7 +29,6 @@ entries:
       ref: v0.20.0
 
   - name: spec-artifacts-app
-    version: "0.6.0"
     defaultEnabled: true
     source:
       type: git-subdir
@@ -40,7 +37,6 @@ entries:
       ref: v0.6.0
 
   - name: spec-artifacts-process
-    version: "0.27.0"
     defaultEnabled: true
     source:
       type: git-subdir
@@ -49,7 +45,6 @@ entries:
       ref: v0.27.0
 
   - name: spec-objects-business
-    version: "0.7.0"
     defaultEnabled: true
     source:
       type: git-subdir
@@ -58,7 +53,6 @@ entries:
       ref: v0.7.0
 
   - name: spec-objects-architecture
-    version: "0.8.0"
     defaultEnabled: true
     source:
       type: git-subdir
@@ -67,7 +61,6 @@ entries:
       ref: v0.8.0
 
   - name: spec-objects-enterprise
-    version: "0.6.0"
     defaultEnabled: true
     source:
       type: git-subdir
@@ -76,7 +69,6 @@ entries:
       ref: v0.6.0
 
   - name: spec-objects-operational
-    version: "0.7.0"
     defaultEnabled: true
     source:
       type: git-subdir
@@ -85,7 +77,6 @@ entries:
       ref: v0.7.0
 
   - name: spec-objects-security
-    version: "0.8.0"
     defaultEnabled: true
     source:
       type: git-subdir
@@ -94,7 +85,6 @@ entries:
       ref: v0.8.0
 
   - name: spec-objects-safety
-    version: "0.5.0"
     defaultEnabled: true
     source:
       type: git-subdir

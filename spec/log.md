@@ -656,8 +656,8 @@ description: "Chronological log of structural changes to this bundle."
   reached only by its own unit test. Eleven source files, 2,117 lines, fully
   tested and unreachable from any shipped entrypoint.
 
-  **The results outlive the code.** `analysis/corpus-measurement/` retains nine
-  digest-pinned artifacts from that run: 251 repositories enumerated, 7,501
+  **The results outlive the code.** `analysis/corpus-measurement/` retains that
+  run's results: 251 repositories enumerated, 7,501
   documents measured, structural conformance 7,370/7,501 (98.25%, method
   `engine-structural-v1`), Properties-form census 1/155, 86 documents
   out-of-model, zero unreadable, zero contested. Deleting the code that produced

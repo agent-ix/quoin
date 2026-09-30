@@ -146,7 +146,6 @@ mod tests {
         MarketplaceEntry {
             name: ModuleName::new(name).expect("test name is legal"),
             source,
-            version: None,
             default_enabled: None,
             path: None,
         }

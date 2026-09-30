@@ -35,9 +35,6 @@ pub struct MarketplaceEntry {
     pub name: ModuleName,
     /// Where the content comes from.
     pub source: Source,
-    /// Informational pin label (e.g. the git tag); not used for resolution.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
     /// `false` makes reconcile skip the entry. Absent means enabled.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default_enabled: Option<bool>,

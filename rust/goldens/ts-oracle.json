@@ -393,7 +393,6 @@
       "entries": [
         {
           "name": "engineering-assurance",
-          "version": "0.2.0+4e6522f",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
@@ -404,7 +403,6 @@
         },
         {
           "name": "spec-artifacts-iso",
-          "version": "0.18.0",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
@@ -415,7 +413,6 @@
         },
         {
           "name": "spec-artifacts-app",
-          "version": "0.5.0",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
@@ -426,7 +423,6 @@
         },
         {
           "name": "spec-artifacts-process",
-          "version": "0.24.0+d605caa",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
@@ -437,7 +433,6 @@
         },
         {
           "name": "spec-objects-business",
-          "version": "0.6.0",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
@@ -448,7 +443,6 @@
         },
         {
           "name": "spec-objects-architecture",
-          "version": "0.6.0",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
@@ -459,7 +453,6 @@
         },
         {
           "name": "spec-objects-enterprise",
-          "version": "0.5.0",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
@@ -470,7 +463,6 @@
         },
         {
           "name": "spec-objects-operational",
-          "version": "0.6.0",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
@@ -481,7 +473,6 @@
         },
         {
           "name": "spec-objects-security",
-          "version": "0.7.0",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
@@ -492,7 +483,6 @@
         },
         {
           "name": "spec-objects-safety",
-          "version": "0.4.0",
           "defaultEnabled": true,
           "source": {
             "type": "git-subdir",
