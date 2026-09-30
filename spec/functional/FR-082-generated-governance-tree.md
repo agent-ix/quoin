@@ -81,6 +81,8 @@ the rendered repository ships the two inputs and no copy of the output.
 >
 > The rendered NFR-001-AC-1 (zero skipped tests) and NFR-001-AC-2 (an absent
 > tool fails naming its install command) were recorded in the deleted matrix as
-> `🚧` rows, and no rendered test asserts either. Their `Verification` cells now
-> state `Inspection`, which the computed matrix reports as
+> `🚧` rows, and no rendered test asserts either. AC-1 is now verified `Manual`
+> (the skip count read from a run's summary) and AC-2 `Inspection` (of the
+> absent-tool paths in `tests/conftest.py`, `tests/test_schema_emission.py` and
+> `scripts/generate-schemas.mjs`). Both methods compute as
 > `method-without-symbol`, so a fresh render carries no untagged criterion.

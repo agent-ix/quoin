@@ -43,3 +43,12 @@ document.
 | --- | --- | --- | --- |
 | FND-001 | medium | FR-076 still states "The template SHALL report the same declared-not-emitted target set in all three places." The PR reduced the preceding behaviour line, AC-10 and CR-001 to two records (the README and `semantic.targets`), and CR-001 says explicitly that "AC-10 now compares two records rather than three". The requirement now contradicts itself, and the "three" has no referent. | spec/functional/FR-076-semantic-module-template-variants.md:61 |
 | FND-002 | low | The restated FR-076-AC-10 keeps `Test (TC-1451)` in its Verification cell. The same PR teaches method-only cells (specify, spec-object-review, spec-review) and writes FR-082's restated ACs as a bare `Test`. The edited row should follow the convention the PR introduces. Untouched rows are out of scope. | spec/functional/FR-076-semantic-module-template-variants.md:96 |
+
+## Dispositions
+
+Round 1, reviewed at `86f7c36cf8b592c59c106074f42f82b283f1eaf5`.
+
+| FND | Outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 86f7c36: FR-076 line 61 now reads "in the rendered README and in `semantic.targets`", which agrees with AC-10 and CR-001. |
+| FND-002 | fixed | 86f7c36: the FR-076-AC-10 Verification cell is now a bare `Test`. |

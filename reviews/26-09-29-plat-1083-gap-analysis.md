@@ -46,3 +46,18 @@ There are no high findings.
 - Untraced behaviors / stubs: 0 (docs-only PR)
 - Semantic review: skipped (docs-only)
 - Plan completion: not assessed
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-003 | low | The fix's new NFR-001 Verification paragraph says `tests/conftest.py` "is inspected to confirm every absent-tool path fails naming its install command". conftest holds only the engine and grammar-package paths (`pytest.fail(QUIRE_MISSING)`, `SEMANTIC_CORE_MISSING`). The schema-toolchain path is in `tests/test_schema_emission.py:28-31` (and `scripts/generate-schemas.mjs:75-78`), so an inspector following the text misses one of AC-2's three tools. Separately, AC-1 is verified by reading a run's skip summary, which is closer to `Manual` than `Inspection`. Both methods compute `method-without-symbol`, so this is precision only. | templates/semantic-module/{{cookiecutter.repo_name}}/spec/non-functional/NFR-001-verification-without-skips.md:49-52 |
+
+## Dispositions
+
+Round 1, reviewed at `86f7c36cf8b592c59c106074f42f82b283f1eaf5`.
+
+| FND | Outcome | sha/reason |
+| --- | --- | --- |
+| FND-001 | fixed | 86f7c36: rendered NFR-001-AC-1 and AC-2 (and the M-1/M-2 metrics) are now `Inspection`, with the reason stated in NFR-001 and in FR-082 CR-001. Measured: `quire matrix` (0.34.0) over the template tree reports both as `method-without-symbol`, and no criterion reads `untagged` (StR VC ids do not mint). This is honest. No test asserts either criterion. AC-2's absent-tool paths are real `pytest.fail` calls you can read in the source, and AC-1 is a read of the run's summary. See FND-003 for the precision of the new text. |
+| FND-002 | deferred | ix-spec-workflows PR (tracked under PLAT-1083). The in-repo part is fixed in 86f7c36: the `package.json` description no longer says quoin-cli launches a `quoin matrix` workflow. |

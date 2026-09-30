@@ -71,7 +71,7 @@ coverage; the metric-capture requirement for this matrix is
 | Type source           | bundled artifact, bundled object, installed local plugin, installed GitHub/plugin package, sibling dev module |
 | Type lookup           | canonical casing, lowercase input, mixed artifact/object request, unknown type                                |
 | Validation scope      | exact module scope, repo search scope, multiple glob arguments, changed-file subset, invalid document         |
-| Workflow lifecycle    | review launch, matrix launch, to-plan launch, status inspection, human gate handoff                           |
+| Workflow lifecycle    | review launch, to-plan launch, status inspection, human gate handoff                                          |
 | Config state          | clean isolated `~/.ix`, existing plugin registry, plugin removal/reinstall                                    |
 | Agent efficiency      | one authoring pack reused across multiple files, no repeated template fetch for same type                     |
 | Artifact completeness | request → required artifact set: new project, add US only, edit FR only, add US+FR, backport → FR artifacts   |
