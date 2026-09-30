@@ -16,9 +16,10 @@ use std::path::Path;
 use std::process::Command;
 
 use engineering_assurance::campaign::{CampaignDefinition, CampaignVerdict, canonical_digest};
+use engineering_assurance::content_digest::ContentDigest;
 use engineering_assurance::producer_execution::{
-    CancellationBinding, ContainmentBinding, ContentDigest, ContractBinding, ExecutionBudget,
-    ExitCodeBinding, OutputBinding, ProducerDescriptor, StdinBinding,
+    CancellationBinding, ContainmentBinding, ContractBinding, ExecutionBudget, ExitCodeBinding,
+    OutputBinding, ProducerDescriptor, StdinBinding,
 };
 use quoin_measurement::campaign::CampaignOutcome;
 use quoin_measurement::campaign::run::{

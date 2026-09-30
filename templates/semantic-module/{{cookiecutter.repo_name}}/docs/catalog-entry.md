@@ -17,22 +17,12 @@ be the module root — `manifest.yaml` at the top, with `schemas/` and
 ## 2. Add the catalog entry
 
 In the `agent-ix/quoin` repository, `default-modules.yaml` lists the modules
-Quoin reconciles into `~/.ix/filament/modules`. Add an entry pinned to the exact
-version you published:
+Quoin reconciles into `~/.ix/filament/modules`. Add an entry:
 
 ```yaml
 - name: {{ cookiecutter.module_name }}
   source: npm:@{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
-  version: "X.Y.Z"
 ```
-
-Pin the exact version. A moving reference makes two machines resolve different
-schemas under the same module name, and the digests in this module's manifest
-then describe bytes one of them never read.
-
-Open that change as its own pull request against `agent-ix/quoin`, and say in the
-description which types the module contributes and which schema digests they
-reference.
 
 ## 3. Verify the install resolves
 

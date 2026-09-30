@@ -45,8 +45,7 @@ publication, enforcement, retirement, database, API, UI, or conflicting feature-
 
 ### In scope
 
-- A pure audit library under `scripts/semantic-module-type-fit/`, a thin runner, fixture-first tests,
-  and retained results under `analysis/semantic-module-type-fit/`.
+- A pure audit library under `scripts/semantic-module-type-fit/`, a thin runner, and fixture-first tests.
 - The exact `.prettierignore` entry that keeps generated, content-addressed audit bytes out of source formatting.
 - Exact module-source and tool identity, complete declaration and Markdown enumeration, explicit
   parse failures, semantic heuristics with confidence/evidence, canonical serialization, ledgers,

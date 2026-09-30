@@ -284,11 +284,7 @@ skip = [
     #                          quoin-modules; and quoin-delivery directly.
     #                          Stays checked.
     #   windows-sys 0.52.0  <- ring 0.17.14 (via rustls/hyper-rustls, which
-    #                          typesafe-sdk-http's reqwest 0.12 forces in), and
-    #                          since the quire-rs 0.48.0 re-resolve ALSO <-
-    #                          errno 0.3.14, rustix 1.1.4, tempfile 3.27.0,
-    #                          winapi-util 0.1.11 and rustls-platform-verifier
-    #                          0.7.0, whose `windows-sys` ranges admit 0.52.
+    #                          typesafe-sdk-http's reqwest 0.12 forces in).
     #   windows-sys 0.61.2  <- gix-sec, gix-status, tokio, mio, socket2,
     #                          schannel and nu-ansi-term. Stays checked.
     # (windows-sys 0.59.0 and 0.60.2 are reachable only through dev
@@ -298,14 +294,13 @@ skip = [
     #
     # REMOVAL CONDITION: `reqwest@0.12.28` goes the moment typesafe-sdk-http
     # advances past `reqwest = "0.12"` to a requirement that resolves the same
-    # major as the workspace's own `reqwest = "=0.13.5"` pin. That alone no
-    # longer retires `windows-sys@0.52.0`: it goes when
+    # major as the workspace's own `reqwest = "=0.13.5"` pin.
+    # `windows-sys@0.52.0` goes when ring no longer resolves it, i.e. when
     # `cargo tree --target all -e normal,build -i windows-sys@0.52.0` prints
-    # nothing, i.e. ring AND errno/rustix/tempfile/winapi-util/
-    # rustls-platform-verifier all resolve 0.61. `cargo deny check bans` MUST
+    # nothing. `cargo deny check bans` MUST
     # pass with an entry removed -- RUN IT rather than assuming it.
     { crate = "reqwest@0.12.28", reason = "PLAT-837: typesafe-sdk-http 0.6.2 (an exact-pinned, already-approved dependency) declares reqwest = \"0.12\"; reqwest@0.13.5, the workspace's own root pin used by quoin-delivery and (via gix-transport) quoin-modules, stays checked" },
-    { crate = "windows-sys@0.52.0", reason = "PLAT-837: reachable via ring 0.17.14 (typesafe-sdk-http's reqwest 0.12 rustls stack) and, since the quire-rs 0.48.0 re-resolve, via errno, rustix, tempfile, winapi-util and rustls-platform-verifier; windows-sys@0.61.2, reached via gix, tokio, mio, socket2 and schannel, stays checked" },
+    { crate = "windows-sys@0.52.0", reason = "PLAT-837: reachable only via ring 0.17.14 (typesafe-sdk-http's reqwest 0.12 rustls stack); windows-sys@0.61.2, reached via gix, tokio, mio, socket2 and schannel, stays checked" },
 ]
 
 [advisories]

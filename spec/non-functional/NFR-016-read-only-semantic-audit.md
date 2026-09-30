@@ -14,6 +14,17 @@ relationships:
 
 # NFR-016: The semantic audit is read-only and non-disruptive
 
+> **⛔ Withdrawn — 2026-09-29.** This requirement constrained the semantic
+> type-fit audit, which is withdrawn with US-014 and FR-051..FR-055 under
+> [quoin#654](https://github.com/agent-ix/quoin/pull/654). The audit's generator
+> and test were removed by the native cutover
+> ([quoin#524](https://github.com/agent-ix/quoin/pull/524)) and its retained
+> output is deleted by quoin#654, so the thing it constrained no longer exists
+> and nothing surviving inherits the obligation.
+>
+> The text below is retained unchanged. It describes what was required, not what
+> is required.
+
 ## Statement
 
 The semantic type-fit audit SHALL inspect and report without changing module sources, installed

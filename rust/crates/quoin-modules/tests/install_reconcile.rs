@@ -275,7 +275,6 @@ fn git_manifest(name: &str, r#ref: &str, sha: Option<&str>) -> MarketplaceManife
                 r#ref: Some(r#ref.to_owned()),
                 sha: sha.map(ToOwned::to_owned),
             },
-            version: None,
             default_enabled: None,
             path: None,
         }],

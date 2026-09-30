@@ -4,8 +4,7 @@
 //! Parity with the TypeScript oracle (quoin#381, FR-101).
 //!
 //! Expectations are read from `rust/goldens/ts-oracle.json`, captured once from
-//! the TypeScript implementation and committed. See `rust/goldens/PROVENANCE.md`
-//! for the revision and the capture command. Nothing here runs Node.
+//! the TypeScript implementation and committed. Nothing here runs Node.
 
 #![allow(
     clippy::unwrap_used,
@@ -121,7 +120,6 @@ fn tc_381_233_the_committed_default_module_set_parses_to_the_same_entries() {
             actual.name.as_str(),
             expected["name"].as_str().expect("name")
         );
-        assert_eq!(actual.version.as_deref(), expected["version"].as_str());
         assert_eq!(
             actual.is_enabled(),
             expected["defaultEnabled"].as_bool().unwrap_or(true)

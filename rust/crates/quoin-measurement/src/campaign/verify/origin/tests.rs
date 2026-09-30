@@ -10,7 +10,8 @@
 use engineering_assurance::campaign::{
     CampaignAttempt, CampaignMember, MeasurementProcedure, canonical_digest,
 };
-use engineering_assurance::producer_execution::{ContentDigest, InputBinding};
+use engineering_assurance::content_digest::ContentDigest;
+use engineering_assurance::producer_execution::InputBinding;
 use serde_json::json;
 
 use crate::campaign::input_origin::{

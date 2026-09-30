@@ -13,8 +13,9 @@ use engineering_assurance::campaign::{
     ProcedureBindings, SourceTreeBinding, canonical_digest, resolve_procedure, validate_definition,
     validate_run,
 };
+use engineering_assurance::content_digest::ContentDigest;
 use engineering_assurance::producer_execution::{
-    ContentDigest, InputBinding, ProducerExecutionResult, ProducerExecutionState, ProducerExecutor,
+    InputBinding, ProducerExecutionResult, ProducerExecutionState, ProducerExecutor,
 };
 use thiserror::Error;
 

@@ -4,7 +4,7 @@
 
 ```bash
 make build                      # build library
-make test                       # exact-source canonical verification stack
+make test                       # fmt check, clippy, cargo deny, cargo test
 make test-with-quire QUIRE=/absolute/path/to/quire  # explicit inner test gate
 make lint                       # eslint + prettier check
 make format                     # prettier format

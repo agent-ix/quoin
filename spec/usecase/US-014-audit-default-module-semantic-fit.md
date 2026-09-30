@@ -21,6 +21,21 @@ relationships:
 
 # US-014: Audit the semantic fit of the complete default-module corpus
 
+> **⛔ Withdrawn — 2026-09-29.** This use case is withdrawn. Every requirement it
+> drove — FR-051 through FR-055, constrained by NFR-015 and NFR-016 — is
+> withdrawn under [quoin#654](https://github.com/agent-ix/quoin/pull/654),
+> leaving it driving nothing.
+>
+> The audit it asked for ran once, under
+> [quoin#288](https://github.com/agent-ix/quoin/issues/288). Its generator and
+> its test were removed by the native cutover
+> ([quoin#524](https://github.com/agent-ix/quoin/pull/524)), and its retained
+> output is deleted by quoin#654. Nothing in quoin produces or reads the audit
+> any more, so a story asking for it is answered by no code.
+>
+> The text below is retained unchanged. It describes what was asked for, not
+> what is asked for.
+
 ## Story
 
 **As a** maintainer planning the semantic-data program

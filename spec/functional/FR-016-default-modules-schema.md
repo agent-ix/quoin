@@ -16,13 +16,8 @@ relationships:
 
 The committed default module set SHALL be expressed as a `ts-plugin-kit`
 marketplace manifest stored at `default-modules.yaml`, declaring each default
-module with a typed source pinned to an immutable revision: the release tag its
-package is built from, or the commit id that tag names. An entry whose module is
-also consumed by this repository's Rust workspace SHALL pin the commit id, so
-that the two halves resolve to one tree at every install.
-The authoritative shape is `ts-plugin-kit`'s `validateMarketplaceManifest`;
-the schema below documents that contract and is kept in step with it. This
-document defines the structural schema of that file; its behavioral installation
+module with a typed source pinned to an immutable revision: a release tag or a
+commit id. This document defines the structural schema of that file; its behavioral installation
 is specified by
 [FR-017](./FR-017-reconcile-default-modules.md).
 
@@ -44,7 +39,6 @@ is specified by
         "required": ["name", "source"],
         "properties": {
           "name": { "type": "string" },
-          "version": { "type": "string" },
           "defaultEnabled": { "type": "boolean" },
           "source": {
             "type": "object",
@@ -74,7 +68,14 @@ is specified by
 | ----------- | -------------------------------------------------------------------------------------- | -------------------- |
 | FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest             | Test (index.test.ts) |
 | FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed pinned source, and excludes private opt-in modules | Test (index.test.ts) |
-| FR-016-AC-3 | Every committed copy of a default module's pin names one revision — the manifest entry, the corresponding `rust/Cargo.toml` crate dependency, and `quoin-cli`'s retained-catalog fixture registry — and the manifest's declared version equals that crate dependency's | Test (tc_1032_pin_agreement.rs) |
+
+> **CR note (2026-09-29, agent-ix/quoin#654):** FR-016-AC-3 is withdrawn. It
+> required every committed copy of a module's pin to agree and the manifest's
+> declared `version` to equal the crate dependency's. That is a check over
+> recorded versions, not behaviour: the `version` field is removed from the
+> manifest and from `MarketplaceEntry`, and its test, `tc_1032_pin_agreement.rs`,
+> is deleted. The `version` property is removed from the schema above.
+> TC-1929 is withdrawn with it. The id is not reused.
 
 ## Dependencies
 

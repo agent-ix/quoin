@@ -36,13 +36,11 @@ Recording the target model must not make the target model operational by implica
 | --- | --- | --- | --- |
 | Production source, manifest, schema, generated package, or migration files changed | 0 | 0 | Test (TC-1154) |
 | Existing tests regressed | 0 | 0 | Test (TC-1154) |
-| Architecture PR merged without named Quoin/Quire maintainer review | 0 | 0 | Inspection (TC-1155) |
 
 ## Verification
 
 A changed-path guard rejects production, manifest, schema, generated-package, and migration changes.
-The full existing quality gates run unchanged. The pull request stops for named maintainer review
-before merge because this record becomes normative guidance for later work.
+The full existing quality gates run unchanged.
 
 ## Dependencies
 

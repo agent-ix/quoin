@@ -18,8 +18,8 @@ relationships:
 > ("[GATE] Measure the full corpus against completed module schemas — advisory,
 > report only"), is **closed**. The measurement ran once, on 2026-09-05, and its
 > results are retained at
-> [`analysis/corpus-measurement/`](../../analysis/corpus-measurement/) — nine
-> digest-pinned artifacts covering 251 repositories and 7,501 measured documents.
+> [`analysis/corpus-measurement/`](../../analysis/corpus-measurement/),
+> covering 251 repositories and 7,501 measured documents.
 > The implementing code was disposed of under
 > [quoin#388](https://github.com/agent-ix/quoin/issues/388) rather than ported to
 > Rust, because its capability class is **corpus accounting**, which the

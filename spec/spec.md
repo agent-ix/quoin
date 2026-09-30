@@ -57,8 +57,6 @@ This specification governs:
 - The durable semantic-module architecture record that allocates authority and
   ownership across Quire, Quoin, `filament-core-data`, module repositories, and
   consumers without activating compiler, publication, or migration work.
-- The read-only, denominator-closed semantic type-fit audit of the pinned default-module
-  corpus and its canonical machine-readable findings and human report projection.
 - Read-only fan-out, change-impact, and reaffirmation-churn views that consume a
   validated, source-grounded Quire assurance export and join it to Quoin's retained
   evidence and existing auditor verdicts without collecting evidence or defining policy.
@@ -135,7 +133,7 @@ index; the files are authoritative.
 - [US-011](./usecase/US-011-generate-property-tests-from-criteria.md) — generate property tests from acceptance criteria.
 - [US-012](./usecase/US-012-generate-fuzz-harnesses.md) — generate fuzz harnesses for specified input surfaces.
 - [US-013](./usecase/US-013-reason-about-semantic-module-boundaries.md) — reason about semantic modules without confusing definitions and projections.
-- [US-014](./usecase/US-014-audit-default-module-semantic-fit.md) — audit the semantic fit of the complete default-module corpus.
+- [US-014](./usecase/US-014-audit-default-module-semantic-fit.md) — audit the semantic fit of the complete default-module corpus. ⛔ **Withdrawn** (#654)
 - [US-015](./usecase/US-015-assess-intervention-experiments.md) — assess intervention experiments without overstating causality.
 - [US-020](./usecase/US-020-declare-a-semantic-module-contract-once.md) — declare a module's semantic contract once against the shared grammar.
 - [US-021](./usecase/US-021-generate-a-conforming-semantic-module-repository.md) — generate a semantic-module repository that already conforms to the contract.
@@ -220,7 +218,7 @@ index; the files are authoritative.
 - [FR-049](./functional/FR-049-preserve-dynamic-and-generated-modules.md) — preserve dynamic modules and finite generated packages.
 - [FR-050](./functional/FR-050-reconcile-quire-decisions.md) — reconcile the architecture with Quire decisions.
 
-**Semantic-module type-fit audit**
+**Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)
 
 - [FR-051](./functional/FR-051-snapshot-semantic-audit-scope.md) — snapshot audit scope and provenance.
 - [FR-052](./functional/FR-052-inventory-default-module-corpus.md) — inventory the complete default-module corpus.
@@ -283,8 +281,8 @@ index; the files are authoritative.
 - [NFR-008](./non-functional/NFR-008-strict-manifest-parsing.md) — corrupt manifests abort assembly rather than drop silently.
 - [NFR-013](./non-functional/NFR-013-traceable-semantic-architecture.md) — decisions remain traceable and standalone-readable.
 - [NFR-014](./non-functional/NFR-014-non-disruptive-architecture-record.md) — architecture recording remains non-disruptive.
-- [NFR-015](./non-functional/NFR-015-complete-reproducible-semantic-audit.md) — audit completeness and reproducibility.
-- [NFR-016](./non-functional/NFR-016-read-only-semantic-audit.md) — read-only, non-disruptive auditing.
+- [NFR-015](./non-functional/NFR-015-complete-reproducible-semantic-audit.md) — audit completeness and reproducibility. ⛔ **Withdrawn** (#654)
+- [NFR-016](./non-functional/NFR-016-read-only-semantic-audit.md) — read-only, non-disruptive auditing. ⛔ **Withdrawn** (#654)
 - [NFR-017](./non-functional/NFR-017-non-disruptive-manifest-evolution.md) — semantic manifest evolution invalidates no current manifest or artifact.
 - [NFR-018](./non-functional/NFR-018-rendered-output-hygiene.md) — rendered module repositories carry no generation residue.
 - [NFR-019](./non-functional/NFR-019-deterministic-rendering.md) — rendering and schema regeneration are byte-deterministic.
