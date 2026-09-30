@@ -17,12 +17,7 @@ be the module root — `manifest.yaml` at the top, with `schemas/` and
 ## 2. Add the catalog entry
 
 In the `agent-ix/quoin` repository, `default-modules.yaml` lists the modules
-Quoin reconciles into `~/.ix/filament/modules`. Add an entry:
-
-```yaml
-- name: {{ cookiecutter.module_name }}
-  source: npm:@{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
-```
+Quoin reconciles into `~/.ix/filament/modules`.
 
 ## 3. Verify the install resolves
 
@@ -33,10 +28,7 @@ quoin plugin install npm:@{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
 quoin catalog list
 ```
 
-Every type this module exports must appear, and `quoin catalog show <type>` must
-report the schema path and digest this repository's manifest declares. If it
-reports something else, the published tarball and this repository disagree — stop
-and reconcile them rather than editing either to match.
+Every type this module exports must appear.
 
 ## 4. Add it to the tracking project
 
@@ -48,6 +40,4 @@ notices.
 
 ## 5. Record the decision
 
-Add a line to `spec/log.md` here naming the published version, the catalog pull
-request, and the date. The catalog entry and this repository are two halves of
-one fact, and the log is what lets a later reader tell whether they still agree.
+Add a line to `spec/log.md` here naming the catalog pull request and the date.

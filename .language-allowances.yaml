@@ -18,10 +18,7 @@
 # lines that left the population without any requirement admitting them.
 #
 # STAGED-PORT RETENTION IS DELIBERATELY ABSENT. It is not a sixth category and
-# must not be added as one. A retained path is a tracked row in the burn-down
-# matrix at docs/rust-burndown/executable-path-matrix.md, carrying a successor
-# ticket and an expiry, because retention is a debt being counted down rather
-# than an exception being granted. NFR-024 states this; it is repeated here
+# must not be added as one. NFR-024 states this; it is repeated here
 # because the absence otherwise reads as an omission and invites a sixth entry.
 #
 # THIS FILE IS MEANT TO BE COPIED. The categories are NFR-024's and hold in any

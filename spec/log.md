@@ -8,6 +8,41 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-30** — **Tracking leftovers after #654 are deleted, and FR-043's
+  untested criteria are withdrawn.**
+
+  **`docs/rust-burndown/executable-path-matrix.md` is deleted.** It was an
+  inventory snapshot taken at one commit, and 27 of its rows pointed at the
+  deleted `scripts/` directory. NFR-024's Statement clause requiring each
+  retained path as a row of that file, and its two Verification sentences naming
+  the file, are withdrawn (NFR-024 CR note). FR-101's Input naming it is
+  withdrawn, and so is FR-101-AC-9, which asserted the path inventory's counts
+  at a pinned baseline revision; TC-1690 is withdrawn with it (FR-101 CR note).
+  `.language-allowances.yaml` no longer points at the file.
+
+  **FR-043-AC-1..AC-7, AC-9..AC-11, AC-13..AC-19, AC-21..AC-28, AC-30 and
+  AC-36 are withdrawn** (FR-043 CR note). No test stands behind any of them,
+  and none was re-homed under another requirement. FR-043-AC-20 has a real test
+  and stays. Their TC rows move to `⛔`; TC-1066 keeps only its FR-032-AC-16
+  trace. The tier-2 row's pinned SHA, the sentence on pinning it and the CR-099
+  note (commit revisions behind the withdrawn AC-12 and AC-13) are removed, and
+  `spec/evidence/baseline.json` drops the withdrawn FR-043 entries.
+
+  **Withdrawal marks brought to the newer form.** `spec.md` marks US-022,
+  FR-084..FR-092, NFR-021 and NFR-022 `⛔ **Withdrawn**` (#388), and the #388
+  TC rows (TC-1500..TC-1562, TC-1566..TC-1577, TC-1579..TC-1584) read
+  "Withdrawn with …" and `⛔`. TC-1578 drops its FR-090-AC-8 trace and keeps
+  NFR-023-AC-1. US-022's banner no longer says its text is retained for
+  provenance.
+
+  Also removed: commit hashes and a version repin from the FR-097, FR-102 and
+  FR-115 matrix rows, NFR-012's pointer to the deleted `scripts/release-drift.js
+  pins`, the capability census and the stale dev-dependency and
+  duplicate-version prose in `docs/engineering-assurance-adoption.md`, the
+  catalog-entry template's schema-digest check, published-version log line and
+  invalid `source: npm:…` example, and the `default-modules.yaml` comment tying
+  the EA ref to the crate rev.
+
 * **2026-09-29** — **The semantic type-fit audit is withdrawn, and three
   version-tracking criteria with it** (agent-ix/quoin#654).
 
@@ -20,9 +55,8 @@ description: "Chronological log of structural changes to this bundle."
   FR-084..FR-092 were. Matrix rows move to `⛔ Withdrawn`, TC-1156..TC-1194 are
   withdrawn with them, and their rows leave the generated coverage table. The
   scope bullet in `spec.md` is removed. US-022's informative note pointing at
-  US-014 is removed, and so are the census row for the deleted generator in
-  `docs/rust-burndown/executable-path-matrix.md` and PLAN-003's pointer to the
-  deleted output directory.
+  US-014 is removed, and so is PLAN-003's pointer to the deleted output
+  directory.
 
   **FR-108-AC-13 is withdrawn** (FR-108 CR note). It required the
   engineering-assurance crate `version` to move to a stated value in several

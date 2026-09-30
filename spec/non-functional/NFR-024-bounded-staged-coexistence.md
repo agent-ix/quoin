@@ -18,10 +18,8 @@ relationships:
 
 ## Statement
 
-While a capability's replaced implementation is retained, Quoin SHALL carry that
-path as an open matrix row naming a valid successor reference and an expiry
-date, SHALL declare every non-retention allowance in one checked-in allowance
-manifest, and SHALL report a retained path as retained-with-successor rather
+While a capability's replaced implementation is retained, Quoin SHALL declare
+every non-retention allowance in one checked-in allowance manifest, and SHALL report a retained path as retained-with-successor rather
 than as remediated or allowed.
 
 ## Scope
@@ -87,9 +85,7 @@ A valid successor reference is an open issue in `agent-ix/quoin` that is a
 sub-issue of the burn-down epic, names the delivery stage it discharges, and
 names the path or path glob it retires. A reference to the epic itself, to a
 prose stage in the epic body, to a closed issue, or to an issue in another
-repository is not valid. The delivery-stage issues were created on 2026-09-12
-and the matrix at `docs/rust-burndown/executable-path-matrix.md` now names them
-(for example issue #380 for stage 4 and #381 for stage 7). A row that names the
+repository is not valid. A row that names the
 epic itself, or a prose stage such as `quoin#373 Stage N`, is reported as
 **provisional**, distinctly from both valid and invalid, and satisfies nothing in
 this requirement; that class exists so a regression to an epic-level reference is
@@ -103,9 +99,7 @@ source-schema digest, so generated status is decided by provenance and a hand
 edit loses the exception. A `thin-host` entry additionally declares the line
 ceiling and the branch ceiling that host dispatch may not exceed. An
 `owner-disposition` entry additionally declares the date and the deciding owner.
-Staged-port retention is deliberately not a manifest category: it lives in the
-burn-down matrix at `docs/rust-burndown/executable-path-matrix.md`, where it is
-counted. An entry missing a required field, a classification that no entry backs, an
+An entry missing a required field, a classification that no entry backs, an
 entry declaring a category this requirement does not admit, and a path carrying
 both a manifest entry and a retention row each fail the run. The second and
 third are different directions of the same check and both are needed: without
@@ -148,6 +142,14 @@ classifies nothing is reported as inconclusive rather than as clean.
 | NFR-024-AC-12 | The classified population includes executable paths with no governed extension, and a planted non-Rust assertion in a Makefile recipe or a workflow `run:` block is classified rather than skipped. | Test (TC-1707) |
 | NFR-024-AC-13 | An expired retention fails the enforcement report while the build lane still completes, so a calendar boundary does not break every branch at once. | Test (TC-1708) |
 | NFR-024-AC-14 | A manifest entry declaring a category this requirement does not admit fails the run, naming the entry and the category. | Test (TC-1710) |
+
+> **CR note (2026-09-30):** The clauses that required each retained path to be
+> carried as a row of `docs/rust-burndown/executable-path-matrix.md` are
+> withdrawn: the Statement's matrix-row clause, the Verification sentence naming
+> that file as the place the stage issues are listed, and the Verification
+> sentence placing staged-port retention in that file. The file was an inventory
+> snapshot taken at one commit, and 27 of its rows pointed at the deleted
+> `scripts/` directory. It is deleted.
 
 ## Dependencies
 

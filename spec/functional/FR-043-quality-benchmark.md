@@ -46,13 +46,11 @@ building the harness first and describing it afterwards would reproduce it.
 | tier | corpus | ground truth | answers |
 |---|---|---|---|
 | **1** | synthetic seeded-defect mini-repos | `labels.json`, hand-written alongside the defect | *does the tool find a defect we know is there* |
-| **2** | `filament-ide-rs` at a **pinned SHA** | adjudicated answer key from pass 2 | *does it find the defects a human found in the wild* |
+| **2** | `filament-ide-rs` | adjudicated answer key from pass 2 | *does it find the defects a human found in the wild* |
 
 Tier 1 alone overfits: a seeded defect is one somebody already knew how to describe, so a tool tuned
 to it scores well and finds nothing new. Tier 2 alone cannot isolate: a real corpus changes under
-you, and a score that moves says nothing about which change moved it. **Pinning the SHA is what
-makes tier 2 a measurement rather than an observation** — the same discipline that made the pass-2
-findings reproducible.
+you, and a score that moves says nothing about which change moved it.
 
 ### The silent-zero sentinel is a hard failure, not a score
 
@@ -83,34 +81,7 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-043-AC-1 | The metric dictionary declares, for every benchmark metric, its `unit` (what one of the value is), `population` (what the denominator is drawn from), and `method` (how it was arrived at, and what a partial read means). A metric missing any of the three is rejected at load, not reported with a gap. | Test (TC-926) |
-| FR-043-AC-2 | The dictionary defines `finding_precision` and `finding_recall` **per defect family**, each keyed on a family the corpora label, so a score cannot be reported over an unlabelled population. | Test (TC-927) |
-| FR-043-AC-3 | The dictionary defines `span_grounding_rate` — of the criteria carrying a specific property shape, the fraction whose `domain`, `precondition` and `oracle` are all present — with the pass-2 figure (0 of 65) recorded as the baseline it starts from. | Test (TC-928) |
-| FR-043-AC-4 | The dictionary defines `actionability_rate` — of emitted findings, the fraction carrying a row id — with the pass-2 figure (15 of 496) recorded as its baseline. | Test (TC-929) |
-| FR-043-AC-5 | The dictionary defines `cost_per_confirmed_insight` in tokens **and** tool calls per true-positive finding, extending the FR-042 eval report metrics rather than introducing a second accounting. | Test (TC-930) |
-| FR-043-AC-6 | The **silent-zero sentinel** is declared as a gate rather than a score: a **ratio-shaped** metric emitted with `matched = 0` over a non-zero population and no accompanying diagnostic fails the run, and the declared expected value is exactly `0` with no tolerance. A **count-shaped** metric is exempt — `matched` and its value are the same fact, so a zero reports that none was found, not that none was read. | Test (TC-931) |
-| FR-043-AC-7 | A tier-1 corpus entry declares its seeded defects in a `labels.json` carrying, per defect, its family, its location, and whether the toolchain is expected to find it — so a scored miss is distinguishable from a defect nobody claimed was findable. The score **pairs a finding to a label by that location** where both carry one, so a right-family wrong-place finding scores as a false positive; a finding naming no place may still pair on family alone, and the report states how many pairings were positional. | Test (TC-932, TC-946) |
-| FR-043-AC-9 | The score report is a declared schema carrying, per metric, the enveloped value and the baseline it was compared against, and per corpus the tier and the identity it was run at. Two runs over identical inputs produce byte-identical reports. | Test (TC-934) |
-| FR-043-AC-10 | Ratchet semantics: a score better than its baseline rewrites the baseline and passes; a score worse fails, naming the metric, both values, and the corpus; a score equal passes and rewrites nothing. Baseline regeneration is a deliberate act with a reviewable diff, never a side effect of a run. | Test (TC-935) |
-| FR-043-AC-11 | An answer-key entry declaring `expect_metric` without a usable `expect_value` **fails the run as malformed**, never scores as a miss: `Number(undefined)` is `NaN`, so every comparison is false and the finding would read as a permanent toolchain regression rather than a typo. | Test (TC-947) |
-| FR-043-AC-14 | The runner consumes the validated `cases` and `bounds` envelope from qa-corpus's canonical `bounds.py --json` reader. It does not merge `case.yaml` variants or interpret either on-disk layout itself, leaving exactly the intentional Python and Rust metadata readers. The envelope must carry numeric bounds and, for every case, a non-empty id, language, module, directory and expectation path; unresolved paths fail by case id. | Test (TC-974, TC-975, TC-976, TC-977, TC-978) |
-| FR-043-AC-15 | A `pending:` marker's expiry signal is read from **`expect-pending.yaml`**, never from the live block — the live block states what is true today, and for a case whose defect is silence the future reason appears there only as `absent_diagnostic_reasons`, indistinguishable from reasons that must stay absent after the fix. Staleness is evaluated against the **raw payload**, so a token no family scores is still seen. A pending case with **no** forward block fails the run; a forward block this runner cannot evaluate — one stating a payload change rather than a diagnostic — is **deferred to the corpus's own graders and named on stderr**, never silently passed. | Test (TC-979, TC-980) |
-| FR-043-AC-18 | A benchmark update **appends a `MeasurementRecord` to a series** and prior records survive; the single-snapshot baseline becomes a derived convenience file the ratchet reads, not the source of truth. One producer invocation is **one atomic record**, written whole and only after the run completed, so a partial run does not land. Each record carries the fields a delta needs to be honest — definition version, subject, scope including the scored population and its per-language census, tool identity, **tool version and configuration digest read from the payload envelope and never from an operator-supplied string**, corpus revision, scorer revision, units, timestamp — and retains the raw report as **attached evidence** rather than transcribed figures. The ratchet's pass/fail behaviour is unchanged. | Test (TC-997, TC-998, TC-1000) |
-| FR-043-AC-17 | The benchmark is reachable from **one local `make` target** that also runs lint and the unit suite, so a human running the gate cannot skip a leg of it; CI remains `workflow_dispatch`-only and is not that target. The target names the **engine binary** it measured with, because `quire --version` reports the CLI crate version and a current CLI can link a stale engine. Separately, the **committed baseline is held to the committed scorer** by the unit suite: comparing the baseline against itself must yield `held` on every verdict and never `new`, and every family the baseline scores must be one the mapping still claims. Generated baseline JSON already satisfies the repository format gate, so the supported update workflow cannot make the next gate red without a metric change. | Test (TC-995, TC-996, TC-1077) |
-| FR-043-AC-16 | An **advisory** family's precision is scored only over the corpus cases that have **ruled** on it — its reason named in a case's `diagnostic_reasons` (must fire) or `absent_diagnostic_reasons` (must stay silent) — and a ruling **scoped to one declaration** (`test-case/…`) governs only findings that declaration raised. Multiple standing entries resolving to the same advisory family are unioned by declaration; a later narrow ruling cannot erase an earlier one. Every other firing is counted as **`unadjudicated`** and published beside the rate, never folded into it: a `null` precision must state how many findings nobody has ruled on. The rate cannot fall independently of the corpus's own differential gate, so it is the `unadjudicated` **count** that is ratcheted, `lower-is-better`. A family the baseline measured that now reports a `null` precision is **`regressed`**, naming the family — reclassifying a family to `advisory` may not delete its number in silence. A family that never had one is skipped, so a detector that does not exist cannot hold the gate permanently red. | Test (TC-982, TC-983, TC-984, TC-985, TC-986, TC-987, TC-1078) |
-| FR-043-AC-13 | The ratchet **refuses a delta across unlike inputs**. Two reports differing in corpus revision, declaration digest, or scored population — count or per-language mix — are `incomparable`: both values are reported, neither `improved` nor `regressed` is claimed, and the run exits non-zero so moving an input is a deliberate, reviewable re-baseline. The **engine** is deliberately not such a field — varying it and comparing is what the benchmark is for. A baseline recording nothing for one of those fields is reported as **unknown** rather than assumed to match. | Test (TC-971, TC-972, TC-973) |
-| FR-043-AC-19 | Corpus loading, execution, scoring, comparison, persistence and rendering are separate acyclic modules behind the runner. Execution preserves structured diagnostic locations; human and JSON views consume the same report object; module behavior is directly tested rather than reachable only through the command. | Test (TC-1009, TC-1010) |
 | FR-043-AC-20 | `quoin validate` reports a `gate-that-gates-nothing` finding only when an explicit negative requirement claim, actual build/CI wiring and an incapable assertion identify the same shell gate. Each finding names the obligation, script, line, wiring file, failure mechanism and remedy. An unwired report, an unclaimed counter and a working gate remain silent. Findings are advisory by default and fail only under `--strict`; human and canonical JSON output describe the same findings. | Test (TC-1067..TC-1071) |
-| FR-043-AC-21 | Every Tier-2 answer-key entry names one production source and one signal. The battletest executes the source registry against the pinned tree. An evaluated source returning no matching signal is a miss; an unavailable premise is a source-specific `not evaluated` state naming the missing input and excluded from recall. A failed producer invocation is distinct from expected premise unavailability and is forbidden in a baseline update. Family-level Tier-1 detection never substitutes for evaluation of the adjudicated Tier-2 finding. | Test (TC-1072..TC-1074) |
-| FR-043-AC-22 | Tier 1 scores `untracked-id-has-minted-children` as its own located `unminted-id-guidance` family. It is not folded into `untracked-id-near-miss`: the former gives model-grounded guidance for a direct parent or nested undeclared class without backing the authored id, while the latter repairs two spellings of one id. | Test (TC-1079) |
-| FR-043-AC-23 | Quire findings, Quoin findings, and retained external observations normalize into `finding-envelope-v2` without inferred evidence. Every envelope retains producer attribution and the raw producer record, and represents subject, locus, causal evidence, change target, and next move as `available`, `unavailable`, or `not_applicable`. Malformed states and unknown versions are refused. | Test (TC-1080, TC-1081) |
-| FR-043-AC-24 | `finding.actionability-v1` remains the historical row-id-or-line score. `finding.actionability-v2` separately counts applicable normalized findings carrying subject/locus, causal evidence, a change target, and a remedy or safe diagnostic step. It reports numerator, denominator, named unavailable misses, and named not-applicable exclusions overall and by producer/channel/family partition, and has its own retained ratchet. | Test (TC-1082, TC-1083) |
-| FR-043-AC-25 | Tier 1 invokes structured `quire properties --json` for every scored corpus entry and computes `property.span-grounding-v1` over specific property shapes. The report retains producer version and denominator; distinguishes present, missing, unavailable, malformed, and not-applicable span states; names every denominator miss by case/criterion; and ratchets the accepted rate without claiming span correctness. | Test (TC-1084..TC-1086) |
-| FR-043-AC-26 | Tier 1 evaluates controlled exact-positive, boundary-error, wrong-subject, and justified-refusal criteria under three independent definitions and denominators: span presence remains `property.span-grounding-v1`, exact expected-locus equality is `property.span-correctness-v1`, and explicit no-span refusal is `property.safe-refusal-v1`. Presence alone earns no correctness; overall and per-family ratchets retain named expected-versus-observed misses; and the report displays wrong spans, unexpected refusals, safe refusals, and unsafe emissions together. | Test (TC-1092..TC-1095) |
-| FR-043-AC-27 | Controlled L1/L2/L3 recall is partitioned by mode, language, **and finding family**, so one family cannot hide another family's regression. Every current L2/L3 miss is retained in `locality_miss_inventory` with case, family, producer, expected and observed locus, structural root cause, and an explicit repair disposition. Aggregate rendering names that inventory, and measurement records retain family plus exact missed case ids. A new producer reason is scored only after both the mapping and metric dictionary declare its family. | Test (TC-1096, TC-1097) |
-| FR-043-AC-28 | A retained advisory adjudication content-addresses its complete source population and every normalized finding; records one compatible metric version and rubric version; and retains per row its disposition, rationale, reviewer, disagreements, defect owner, and follow-up. Exact compatible rulings may enter advisory TP/FP counts. Ambiguous, unresolved, missing, changed, or version-incompatible rows remain explicit and outside that denominator. | Test (TC-1098..TC-1100) |
-| FR-043-AC-30 | `property.span-grounding-v2` scores an exact labeled statement/property population with pinned multiplicity. Each criterion passes only through exact expected boundaries or the label's explicit justified-refusal signal with no emitted spans. Exact spans, safe refusals, wrong spans, unexpected or unjustified refusals, unsafe emissions, exclusions, malformed population changes, and named misses remain distinct; historical `property.span-grounding-v1` is retained unchanged. The metric maps to its own active MeasurementPlan and is a one-way ratchet. | Test (TC-1110, TC-1111, TC-1120) |
-| FR-043-AC-36 | A standing advisory ruling and a per-case ruling are counted as separate evidence, never summed into one figure. A standing entry in `corpus.yaml` governs many firings from one sentence, while a per-case `expect.yaml` entry governs one; a single precision published over both asserts a breadth of adjudication that nobody performed. The report states each count on its own, so a figure resting on one standing sentence cannot read as a figure resting on hundreds of independent rulings. | Test |
 
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-043-AC-32 and FR-043-AC-33
 > are withdrawn. They specified `make verification-relock` preparing a candidate
@@ -136,6 +107,20 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 > its trace to FR-043-AC-29. FR-043-CON-3 (a tier-2 corpus read at its pinned
 > SHA), whose only validation was TC-933, is withdrawn with FR-043-AC-8. The ids
 > are not reused.
+
+> **CR note (2026-09-30):** FR-043-AC-1..AC-7, AC-9..AC-11, AC-13..AC-19,
+> AC-21..AC-28, AC-30 and AC-36 are withdrawn. No test stands behind any of
+> them: the tier-1 and tier-2 runners, the metric-dictionary loader and their
+> TypeScript tests went with `scripts/`, `evals/` and the TypeScript test tree,
+> and no Rust test carries these criteria. None was re-homed under another
+> requirement. FR-043-AC-20 has a real test and stays. TC-926..TC-932, TC-934,
+> TC-935, TC-941..TC-960, TC-964..TC-967, TC-971..TC-980, TC-982..TC-998,
+> TC-1000, TC-1009, TC-1010, TC-1072..TC-1074, TC-1077..TC-1086,
+> TC-1092..TC-1100, TC-1104, TC-1110, TC-1111 and TC-1120 are withdrawn with
+> them. TC-1066 drops its trace to FR-043-AC-19 and keeps FR-032-AC-16. The
+> tier-2 row's pinned SHA and the sentence on pinning it are removed from the
+> description, and so is the CR-099 note, which recorded the commit
+> revisions behind the withdrawn AC-12 and AC-13. The ids are not reused.
 
 ## Dependencies
 
@@ -210,34 +195,3 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 > against it is false. `AK-003` shipped in that state and was caught only
 > because a test happened to assert its detection. Malformed keys now fail the
 > run.
-
-> **CR-099 note (2026-08-24):** `agent-ix/quoin#240`. **AC-12 and AC-13 are
-> new**, and they close the last of the three inputs this benchmark varies
-> without saying so.
->
-> **The runner varied one thing: the binary.** The traceability declaration
-> every case binds was whatever the corpus vendored at its pinned SHA, and it is
-> an input the toolchain's behaviour depends on as directly as the engine's:
-> `spec-artifacts-process#68` is **five non-comment lines** of manifest
-> (`git diff fa56ced 2ed3bb9 -- spec_artifacts_process/manifest.yaml` is +101
-> −0, of which 96 are comment or blank), and those five lines decide whether a
-> TypeScript test's own title can bind at all. Two of EPIC
-> `agent-ix/quire-rs#264`'s six Wave 3 fixes live there, so an engine-only
-> before/after reported them `held` **by construction**, in the same word the
-> runner prints for a family that genuinely did not move.
->
-> Measured, engine held fixed and the declaration moved between
-> `spec-artifacts-process` `fa56ced` (pre-#68) and `c197b1c` (the vendored pin),
-> over the same 34 cases: `hollow-denominator` precision **1.00 → 0.33** and
-> `marker-form-mismatch` precision **1.00 → 0.71**, identically on engine
-> `84740d4` and engine `816e187`. Exactly two of 34 cases move and both are
-> TypeScript; the other 32 are byte-identical, which is the half of the result
-> that says the declaration change is TypeScript-only rather than a general
-> perturbation.
->
-> **AC-13 is the refusal the last pass needed and did not have.** The `84740d4`
-> leg of the previous before/after read `regressed` on every family because the
-> scored population had gone 21 → 34, and nothing in the output said so. That is
-> EPIC exit criterion 6's *"refuses deltas across unlike definitions or
-> populations"* and `agent-ix/quoin#231`'s unimplemented clause. The engine is
-> deliberately excluded — varying it and comparing is what the benchmark is for.
