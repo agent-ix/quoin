@@ -41,7 +41,7 @@ three must be able to read one declaration rather than three descriptions of it.
 ### Out of Scope
 
 - **This module's domain vocabulary.** The generated repository ships worked examples of the SHAPE. Which types this module declares, what fields they carry and what their invariants say is its maintainer's specification to write; the template supplies none of it and this document does not pre-empt it.
-- **Emitters for targets other than JSON Schema.** `semantic.targets` may declare `rust`, `typescript`, `python-pydantic-v2` or `python-dataclass`; no emitter produces them today, and the Test Matrix records that as a `🚧` row rather than claiming coverage.
+- **Emitters for targets other than JSON Schema.** `semantic.targets` may declare `rust`, `typescript`, `python-pydantic-v2` or `python-dataclass`; no emitter produces them today, and the README records them as declared and not emitted rather than claiming coverage.
 - **Publication.** Tagging, publishing and adding the catalog entry are decisions documented in `docs/catalog-entry.md`, not obligations of this specification.
 - **The Quire engine's behaviour.** This module declares a contract; `agent-ix/quire-rs` implements the extraction that reads it.
 

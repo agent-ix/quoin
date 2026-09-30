@@ -173,8 +173,8 @@ def main():
     if declared_only:
         sys.stderr.write(
             "cookiecutter(semantic-module): declared-not-emitted targets: %s. "
-            "The rendered README and Test Matrix record them as declared; no "
-            "emitter produces them today.\n" % ", ".join(declared_only)
+            "The rendered README records them as declared; no emitter "
+            "produces them today.\n" % ", ".join(declared_only)
         )
 
 

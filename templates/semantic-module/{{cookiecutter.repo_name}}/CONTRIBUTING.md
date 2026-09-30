@@ -39,9 +39,10 @@ fields, never two blocks in one document.
 make gate
 ```
 
-`quire validate --scope . "spec/**/*.md"` must be structurally clean, and the
-Test Matrix in `spec/matrix.md` must be honest: a row that is not covered is
-`🚧` with the reason, never `✅`. `⚠️` is not a valid `Status` marker.
+`quire validate --scope . "spec/**/*.md"` must be structurally clean. Every
+new test carries the acceptance-criterion ids it asserts as a trace tag
+(`@pytest.mark.trace("FR-001-AC-1")`); the Test Matrix is computed from those
+tags by `quire matrix` and is never written by hand.
 
 ## Releasing
 

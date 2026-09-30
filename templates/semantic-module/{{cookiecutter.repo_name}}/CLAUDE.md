@@ -18,7 +18,7 @@ skeletons, extraction mappings. There is no runtime here.
 - **Never make a test skip.** If a tool is missing, the suite fails naming the install command. A skipped row is not coverage. Do not reach for `pytest.importorskip`.
 - **Never add an `.npmrc`.** `@agent-ix` resolves from the user-level npm configuration.
 - **Bump `manifest.yaml` `version` and the `@jsonSchema` base in `main.tsp` together.** `make schemas` fails when they disagree.
-- **`⚠️` is not a Test Matrix `Status` marker.** The vocabulary is `✅ ❌ 🚧 ⛔`; a partially-covered row is `🚧` with the reason after it.
+- **Never hand-write a Test Matrix.** Tag each test with the acceptance-criterion ids it asserts (`@pytest.mark.trace("FR-001-AC-1")`); `quire matrix` computes the matrix from those tags.
 
 ## Where things live
 
@@ -30,4 +30,4 @@ skeletons, extraction mappings. There is no runtime here.
 | `tests/fixtures/negative/` | One fixture per failure mode, each with a distinct `expect`. |
 | `tests/fixtures/legacy/` | The pre-contract authoring form, accepted at `warning`. |
 | `toolchain.yaml` | Every external command and its minimum version. |
-| `spec/` | This repository's own requirements and Test Matrix. |
+| `spec/` | This repository's own requirements and acceptance criteria. |
