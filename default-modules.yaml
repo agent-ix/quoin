@@ -1,11 +1,7 @@
 # Default Filament module set shipped with quoin.
 #
-# Lazily installed into ~/.ix/filament/modules on first catalog access (see
-# src/modules.ts). Each entry sparse-checks out one module's data subdir from its
-# canonical repo at a pinned tag — the same git tag the Python wheel is built
-# from. This file is the canonical-ready source of truth for the module set +
-# pins (a future generator can derive the backend pyproject pins / activation
-# list from it).
+# Lazily installed into ~/.ix/filament/modules on first catalog access. Each
+# entry checks out one module's data subdirectory from its repository at `ref`.
 schemaVersion: 1
 name: quoin-default-modules
 entries:
