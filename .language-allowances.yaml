@@ -38,24 +38,11 @@ categories:
 
   - id: generated
     rule: >
-      Code emitted by a generator, identified by generator provenance — the
-      generator's identity and the digest of the source it was generated from.
+      Code emitted by a generator, identified by generator provenance.
     owner: quoin-maintainers
-    requires: [generator_identity, source_digest]
     forfeits_if: >
       Hand-edited. A hand-edit makes the file source, and source is governed.
-      This is why the category keys on provenance and not on a directory named
-      "generated" — a directory name is a claim, a digest is a check.
     paths: []
-    note: >
-      Nothing in quoin can claim this today, and one path is waiting on it:
-      skills/**/workflow-assets/** is a RETAINED ROW in the burn-down matrix,
-      not an entry here, until #374 records its generator identity and source
-      digest. FR-099 states the rule — the bundle claims the generated
-      allowance only once provenance is recorded, and is treated as first-party
-      source until then. tests/props/*.prop.test.ts names a generator but
-      records no source digest and is hand-maintainable, so it is governed as
-      ordinary source.
 
   - id: inert
     rule: >
@@ -87,8 +74,7 @@ categories:
           so the skills tree is not silently half-covered. The EXECUTABLES
           under skills/**/workflow-assets/** are NOT covered by this entry —
           their specInvariants decide whether a review, matrix or plan flow
-          passes, which is an assertion, so the inert test refuses them. They
-          are a retained matrix row.
+          passes, which is an assertion, so the inert test refuses them.
 
   - id: thin-host
     rule: >
@@ -120,7 +106,7 @@ categories:
           owner rules the two-hop chain does not count.
 
 # --------------------------------------------------------------------------
-# Enforcement requirements (quire-research LR08, #64; NFR-024-AC-5/7/8/12/14)
+# Enforcement requirements (quire-research LR08, #64; NFR-024-AC-5/8/12/14)
 #
 #   - Walk paths with no governed extension: Makefile recipes and
 #     .github/workflows/** `run:` blocks. quoin has 36 such executable paths.
@@ -130,8 +116,5 @@ categories:
 #     population, which is not evidence.
 #   - A run classifying an empty population is INCONCLUSIVE, never zero
 #     violations.
-#   - Fail on a manifest entry whose category NFR-024 does not admit, and on a
-#     path carrying both a manifest entry and a retention row.
-#   - Emit the burn-down matrix as a byproduct of the check, not as a separate
-#     script.
+#   - Fail on a manifest entry whose category NFR-024 does not admit.
 # --------------------------------------------------------------------------

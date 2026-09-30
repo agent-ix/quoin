@@ -40,7 +40,6 @@ Each case in `cases[]` has these fields:
 | `relations`, `relationSources` | Expected outputs; `relations: null` means neither is emitted. |
 | `availability` | Expected `availability`; `{}` means no `availability.relations` key. |
 
-`context.sources` records the repository, revision, and manifest path the registry and object-type facts come from.
+`context.sources` records the repository and manifest path the registry and object-type facts come from.
 
-`../corpus/config-service/FR-006-config-version-entity.md` is a verbatim copy
-pinned by `PROVENANCE.json`; it is never edited.
+`../corpus/config-service/FR-006-config-version-entity.md` is a verbatim copy; it is never edited.

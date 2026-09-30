@@ -43,6 +43,22 @@ description: "Chronological log of structural changes to this bundle."
   invalid `source: npm:…` example, and the `default-modules.yaml` comment tying
   the EA ref to the crate rev.
 
+  **NFR-024-AC-1, AC-2, AC-7, AC-10, AC-11 and AC-13 are withdrawn** (NFR-024
+  CR note). Five required retention rows in the deleted matrix; AC-7 required
+  a `generated` entry to declare a source-schema digest. The Verification,
+  Measurement and Rationale text that only they used goes with them, and
+  TC-1660, TC-1661, TC-1687, TC-1705, TC-1706 and TC-1708 are withdrawn.
+  `.language-allowances.yaml` loses `source_digest`, its digest prose and the
+  notes calling `skills/**/workflow-assets/**` a retained matrix row.
+  **FR-101-AC-11** and its two Behavior bullets (fixture implementation
+  revision and request digest) are withdrawn with TC-1701. **FR-104-CON-2** and
+  TC-1726 (pinned module revisions recorded in the goldens) are withdrawn; the
+  `revision` fields leave quoin's copies of the relationship goldens, and the
+  quire-rs commit citations leave FR-104 and its matrix rows.
+  `docs/engineering-assurance-adoption.md` loses the stale "one real consumer
+  call" section and retention sections 2–5, which described deleted
+  TypeScript paths.
+
 * **2026-09-29** — **The semantic type-fit audit is withdrawn, and three
   version-tracking criteria with it** (agent-ix/quoin#654).
 

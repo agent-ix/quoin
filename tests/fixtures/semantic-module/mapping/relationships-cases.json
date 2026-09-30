@@ -6,13 +6,11 @@
     "sources": {
       "edgeTypes": {
         "repository": "agent-ix/spec-artifacts-iso",
-        "revision": "8a7d9ef84a650d286107b55d0dfde9b978107ac3",
         "path": "spec_artifacts_iso/manifest.yaml",
         "note": "contains, composes, depends_on, owns, references"
       },
       "objectTypes": {
         "repository": "agent-ix/spec-objects-business",
-        "revision": "f7fdfda39293654424969ced57590b7a1a17c652",
         "path": "spec_objects_business/manifest.yaml",
         "note": "edge_types.specializes; entity and nested_entity roles and allowed_links"
       }
