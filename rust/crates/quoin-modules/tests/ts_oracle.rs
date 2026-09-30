@@ -4,8 +4,7 @@
 //! Parity with the TypeScript oracle (quoin#381, FR-101).
 //!
 //! Expectations are read from `rust/goldens/ts-oracle.json`, captured once from
-//! the TypeScript implementation and committed. See `rust/goldens/PROVENANCE.md`
-//! for the revision and the capture command. Nothing here runs Node.
+//! the TypeScript implementation and committed. Nothing here runs Node.
 
 #![allow(
     clippy::unwrap_used,

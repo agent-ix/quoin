@@ -16,11 +16,8 @@ relationships:
 
 The committed default module set SHALL be expressed as a `ts-plugin-kit`
 marketplace manifest stored at `default-modules.yaml`, declaring each default
-module with a typed source pinned to an immutable revision: the release tag its
-package is built from, or the commit id that tag names.
-The authoritative shape is `ts-plugin-kit`'s `validateMarketplaceManifest`;
-the schema below documents that contract and is kept in step with it. This
-document defines the structural schema of that file; its behavioral installation
+module with a typed source pinned to an immutable revision: a release tag or a
+commit id. This document defines the structural schema of that file; its behavioral installation
 is specified by
 [FR-017](./FR-017-reconcile-default-modules.md).
 

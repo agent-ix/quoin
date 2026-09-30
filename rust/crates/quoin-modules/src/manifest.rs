@@ -5,9 +5,7 @@
 //!
 //! `default-modules.yaml` is the canonical source of truth for which modules
 //! quoin ships and which revision each is pinned to. This module parses and
-//! validates it, reproducing `@agent-ix/ts-plugin-kit`'s
-//! `validateMarketplaceManifest` refusals so a manifest the TypeScript accepted
-//! is accepted here and nothing else is.
+//! validates it.
 
 use serde::{Deserialize, Serialize};
 

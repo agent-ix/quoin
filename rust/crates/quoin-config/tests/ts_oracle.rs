@@ -4,8 +4,7 @@
 //! Parity with the TypeScript oracle (quoin#381, FR-101).
 //!
 //! Every expectation here is read from `rust/goldens/ts-oracle.json`, captured
-//! once from the TypeScript implementation and committed. See
-//! `rust/goldens/PROVENANCE.md` for the revision and the capture command. No
+//! once from the TypeScript implementation and committed. No
 //! test in this file shells out to Node: TypeScript is the oracle exactly once,
 //! at capture time.
 

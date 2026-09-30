@@ -66,6 +66,16 @@ description: "Chronological log of structural changes to this bundle."
   that rested on it, and the US-013 matrix row loses its reviewer and merge
   commit.
 
+  **FR-016** no longer claims `ts-plugin-kit`'s `validateMarketplaceManifest` as
+  the authoritative shape kept in step with this schema; quoin's Rust parser is
+  the only reader, and it now refuses the removed `version` field that the
+  TypeScript validator accepted. An entry's immutable revision is a release tag
+  or a commit id. **FR-108-AC-14** states that a plan with `absolute` or no
+  `margin_mode` decides with the margin applied as an absolute offset, which is
+  what TC-1960 asserts. The NFR-014 matrix row drops "SR-058 preserves the
+  promotion evidence", and `spec/evidence/baseline.json` drops the withdrawn
+  FR-043-AC-8.
+
 * **2026-09-29** — **Agents stop hand-writing the Test Matrix** (PLAT-1083,
   epic PLAT-1076). The matrix is computed: `quire matrix` from criteria and
   trace tags, `quoin matrix` adding run evidence (FR-115). The skills and the
