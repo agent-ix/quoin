@@ -135,7 +135,6 @@ jobs:
           description: "Quoin: author validated, traceable ISO/IEC/IEEE 29148-aligned specs, then plan and build against them (native binary)."
           self-update-command: update
           publish: ${{ inputs.publish }}
-          npm-token: ${{ secrets.NPM_TOKEN }}
 
       - name: Smoke the published npm packages
         if: inputs.publish
