@@ -282,9 +282,10 @@ fn direct_fixture() -> (
     BTreeMap<String, quoin_measurement::campaign::run::RunMemberBindings>,
 ) {
     use engineering_assurance::campaign::CampaignDefinition;
+    use engineering_assurance::content_digest::ContentDigest;
     use engineering_assurance::producer_execution::{
-        CancellationBinding, ContainmentBinding, ContentDigest, ContractBinding, ExecutionBudget,
-        ExitCodeBinding, OutputBinding, ProducerDescriptor, StdinBinding,
+        CancellationBinding, ContainmentBinding, ContractBinding, ExecutionBudget, ExitCodeBinding,
+        OutputBinding, ProducerDescriptor, StdinBinding,
     };
     use quoin_measurement::campaign::run::RunMemberBindings;
 
@@ -1224,7 +1225,7 @@ fn tc_1941_unavailable_producer_is_retained_and_replayed() {
     use engineering_assurance::campaign::{
         CampaignAttemptStatus, CampaignVerdict, canonical_digest,
     };
-    use engineering_assurance::producer_execution::ContentDigest;
+    use engineering_assurance::content_digest::ContentDigest;
     use quoin_measurement::campaign::run::run_campaign;
 
     let (repo, _producer_repo, definition, checkouts, mut runs) = direct_fixture();
@@ -1333,7 +1334,7 @@ fn tc_1941_invalid_request_has_no_minted_identity() {
 #[test]
 fn tc_1941_executable_identity_refusal_is_retained() {
     use engineering_assurance::campaign::{CampaignAttemptStatus, canonical_digest};
-    use engineering_assurance::producer_execution::ContentDigest;
+    use engineering_assurance::content_digest::ContentDigest;
     use quoin_measurement::campaign::run::run_campaign;
 
     let (repo, _producer_repo, definition, checkouts, mut runs) = direct_fixture();
@@ -1572,8 +1573,9 @@ fn tc_1941_ea_malformed_response_result_is_retained_and_replayed() {
         CAMPAIGN_RUN_VERSION, CampaignAttempt, CampaignAttemptStatus, CampaignRun, CampaignVerdict,
         MeasurementProcedure, SourceTreeBinding, canonical_digest, resolve_procedure,
     };
+    use engineering_assurance::content_digest::ContentDigest;
     use engineering_assurance::producer_execution::{
-        CancellationToken, ContentDigest, MalformedResponse, OutputArtifact, ProcessEvidence,
+        CancellationToken, MalformedResponse, OutputArtifact, ProcessEvidence,
         ProducerExecutionState, ProducerExecutor, ProducerResponseAdapter, ResponseBinding,
     };
     use quoin_measurement::campaign::adapter::ProcessEvidenceObservation;

@@ -103,8 +103,9 @@ impl ProducerResponseAdapter for ProcessEvidenceAdapter {
     reason = "a failed test binding must fail the test"
 )]
 mod tests {
+    use engineering_assurance::content_digest::ContentDigest;
     use engineering_assurance::producer_execution::{
-        CapturedStream, ContentDigest, ProcessEvidence, ProducerResponseAdapter, TerminalStatus,
+        CapturedStream, ProcessEvidence, ProducerResponseAdapter, TerminalStatus,
     };
 
     use super::{

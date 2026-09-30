@@ -6,9 +6,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 use engineering_assurance::campaign::ProcedureBindings;
+use engineering_assurance::content_digest::ContentDigest;
 use engineering_assurance::producer_execution::{
-    CancellationBinding, ContainmentBinding, ContentDigest, ContractBinding, ExecutionBudget,
-    ExitCodeBinding, OutputBinding, OutputTreeBinding, ProducerDescriptor, StdinBinding,
+    CancellationBinding, ContainmentBinding, ContractBinding, ExecutionBudget, ExitCodeBinding,
+    OutputBinding, OutputTreeBinding, ProducerDescriptor, StdinBinding,
 };
 use quoin_measurement::campaign::run::{
     EnvironmentSource, InputSource, RunMemberBindings, SelectedInput,

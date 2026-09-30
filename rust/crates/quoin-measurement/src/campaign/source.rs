@@ -8,7 +8,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use engineering_assurance::campaign::{CampaignDefinition, CampaignSource};
-use engineering_assurance::producer_execution::{ContentDigest, InputBinding};
+use engineering_assurance::content_digest::ContentDigest;
+use engineering_assurance::producer_execution::InputBinding;
 use quoin_store::digest_bytes_sha256;
 
 use crate::source::MemoryMeasurement;
