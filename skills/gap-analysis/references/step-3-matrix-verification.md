@@ -1,152 +1,153 @@
 # Test-Matrix Verification
 
-**Goal**: Prove the Test Matrix is *real* — every Test Case it claims is backed by an actual
-test in the suite, identified by a matching **tracking tag** in the test code. This is the
-heart of gap-analysis: a matrix row marked ✅ means nothing unless a tagged test exists.
+**Goal**: Prove every acceptance criterion is backed by an actual test in the suite,
+identified by a **trace tag** carrying the criterion's id. This is the heart of
+gap-analysis: a criterion is covered when a test says so in code, not when a document does.
+
+**The Test Matrix is computed, not read.** `quire matrix` derives it on every run from the
+spec's criteria and the trace tags in the source tree; `quoin matrix` adds the run evidence
+on top. Neither writes anything. A hand-written `spec/matrix.md` or `spec/tests.md`, where a
+repository still has one, is not an input to this step: do not reconcile its rows or its
+`Status` cells, and do not raise a finding because a repository has none.
 
 **Scope: the whole repository, always.** This step runs identically in planless and
-plan-assisted mode. `--scope` is the repository root and the row set is whatever the matrix
-declares — never the subset a plan's tasks happen to touch. A supplied plan neither selects
-rows nor excuses an unbacked one.
+plan-assisted mode. `--scope` is the repository root and the criterion set is every
+criterion the spec declares — never the subset a plan's tasks happen to touch. A supplied
+plan neither selects criteria nor excuses an untagged one.
 
-**This step no longer greps.** `quire coverage` computes the reconciliation deterministically
-and reports it; this skill interprets the report and owns the judgement. Severity and verdict
-stay here — the command reports and does not judge (quire-rs FR-050-CON-1).
+**This step does not grep.** The engine computes the matrix and this skill interprets it.
+Severity and verdict stay here — the commands report and do not judge (quire-rs
+FR-050-CON-1).
 
-## The matrix shape
+## Run the matrix
 
-Built by `spec-matrix` (`quoin/skills/spec-matrix/SKILL.md`). Key tables:
-
-- **Test Case Summary** — `Test ID | Title | Type | Priority | Traces To | Status`, where
-  `Test ID` = `TC-xxx`, `Traces To` = `FR-XXX-AC-X` etc., `Status` ∈ `✅ ❌ 🚧 ⛔` (`⚠️` retired — partial work is `🚧`).
-- **Per-requirement coverage** — StR/US/FR/NFR → AC → TC → Status tables.
-
-What each column *means* is not this skill's knowledge either: the active module declares it
-under `traceability:`, and `quire coverage` reads the same declaration the matrix contract is
-validated against, so the two cannot drift.
-
-## Run the rollup
-
-```
-quire coverage --scope <project_root> --json
-```
-
-`--scope` is the repository root, and stays so. Since quire-cli v0.16.0 (quire-rs CR-045)
-the command derives **two roots** from it and never interchanges them: spec documents are
-read from `<project_root>/spec` only, and trace tags from the source tree at
-`<project_root>` excluding `spec/`. This invocation needs no second flag — but a project
-whose `spec/` directory is missing now exits with a diagnostic naming the missing document
-root instead of silently scanning the whole repository, and a matrix outside `spec/` (a
-fixture, a `plan/` copy) mints nothing.
-
-**Check the version before relying on any of that.** The "since v0.16.0" premise is not
-enforced anywhere — nothing probes it, and a user on ≤ 0.15.0 silently gets the pre-split
-traversal semantics, where the walk covers the whole repository and a matrix outside
-`spec/` mints. One line, before the first invocation:
+Check the version first. `quire matrix` ships in quire-cli 0.34.0; an older build has no
+such subcommand.
 
 ```bash
-quire --version    # expect >= 0.16.0; on an older build the roots are not split
+quire --version    # expect >= 0.34.0
 ```
 
-If it is older, say so in `## Coverage` rather than reading the report as if the split
-applied.
+The evidence-backed matrix is the preferred input, because it carries the static axis
+verbatim and adds whether a passing run backs each criterion. It needs the first quoin
+release after 0.25.0 that includes FR-115; on 0.25.0 and earlier, `quoin matrix` is the
+retired workflow launcher and has no `--repo` flag:
+
+```bash
+quoin matrix --repo <project_root> --json
+```
+
+When `quoin matrix` is unavailable or refuses (for example, the repository's HEAD cannot be
+resolved), read the static axis alone and say so in `## Coverage`:
+
+```bash
+quire matrix --scope <project_root> --format json
+```
+
+`--scope` is the repository root. The command derives **two roots** from it and never
+interchanges them: spec documents are read from `<project_root>/spec` only, and trace tags
+from the source tree at `<project_root>` excluding `spec/`.
 
 Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (see the
 [SpecReview artifact](step-6-specreview-artifact.md) step), not the command's exit code.
 
-The report carries exactly the findings this step produces:
+### What each criterion carries
 
-| Report field | What it is |
-| --- | --- |
-| `unbacked_rows` | A declared reference row whose trace targets have no backing `verifies` relation. Each carries `reference`, `document`, `row_id`, `target_ids`. |
-| `status_lies` | A row whose status classes as `complete` while nothing backs it. Adds the authored `status` string. |
-| `untracked_symbols` | A test carrying a trace tag that resolves to no declared row. Carries `path`, `symbol`, `trace_id`. |
-| `no_symbol_rows` | An unbacked row whose **declared verification method mints no source symbol** — an eval, an inspection, a demonstration (quire-rs FR-050-AC-16 / CR-041). Carries `reference`, `document`, `row_id`, `test_type`, `target_ids`. **Read this before triaging `unbacked_rows`**: a row listed here is exempt from `status_lies` by its own method, and reporting it as an unbacked-row finding asserts something impossible. Absent from the JSON entirely when the module declares no `no_source_symbol` vocabulary. |
-| `criteria` | Per-document acceptance-criteria property counts (quire-rs FR-050-AC-13 / CR-028): `document`, `archetype`, `criteria`, `property_shaped`, `by_property`. Data for the `spec-correctness` handoff, never a verdict — a low property-shaped share describes a corpus, it does not fail one. Absent when the corpus binds no criteria. |
-| `groups` | Per minting document: `document`, `target`, `backed`, `total`. |
-| `diagnostics` | Declarations that selected nothing and why (quire-rs FR-050-AC-19 / CR-054): an unreadable declared `document:`, an archetype no document has when the model minted nothing, or a model with no trace targets. Absent when every declaration selected. A non-empty list means the numbers below it are measuring less than you think. |
-| `totals` | `backed` / `total` across the bundle, plus `criteria` / `property_shaped` when the corpus binds criteria. |
+| Field | Source | Values |
+| --- | --- | --- |
+| `static_status` (`status` under `quire matrix`) | trace tags | `tagged` · `untagged` · `tagged-by-ignored-test` · `method-without-symbol` |
+| `binders` | trace tags | one `{path, line, column, qualified_name, kind}` per test bound to the criterion |
+| `method` | the criterion's Verification cell | omitted when the criterion names none |
+| `evidence_status` (`quoin matrix` only) | evidence store + auditor | `bound` · `stale` · `suspect` · `undischarged` · `no run evidence` |
+| `evidence_detail` (`quoin matrix` only) | auditor | `findings`, `bindings`, `unevaluated` for that criterion |
+
+`method-without-symbol` means the criterion's declared method is one the active module
+declares mints no source symbol (`Inspection`, `Analysis`, `Manual`, `Eval` under
+`spec-artifacts-process`), so no test tag is expected. It is neither a
+gap nor coverage — count it separately.
+
+## Stale tags
+
+A test tagged with an id no criterion declares binds to nothing, and the matrix cannot show
+it. Read those from the coverage report:
+
+```bash
+quire coverage --scope <project_root> --json
+```
+
+Use only `untracked_symbols` (`path`, `symbol`, `trace_id`) and `diagnostics` from it. Its
+reference-row fields (`unbacked_rows`, `status_lies`) describe hand-written matrix rows, which
+this step does not audit.
 
 ## Reconcile, producing findings
 
-| Report field | Finding | Severity |
+| Signal | Finding | Severity |
 | --- | --- | --- |
-| `unbacked_rows` | Matrix overclaims coverage — the row names a criterion or test id nothing backs | `high` |
-| `status_lies` | The row asserts `✅` over nothing. A subset of the above, and the worse half | `high` |
-| `untracked_symbols` | A tagged test pointing at a row that does not exist — a stale tag, or a matrix that dropped a row | `medium` |
-| Marker drift | Matrix `Status` inconsistent with a real run (`🚧` on a passing tagged test) | `low` |
+| `untagged` | The criterion has no test carrying its id | `high` |
+| `tagged-by-ignored-test` | Every test carrying its id is ignored or skipped, so nothing runs for it | `high` |
+| `evidence_status: suspect` | The auditor distrusts the evidence (a changed statement, a mocked confirmation, vacuous or non-independent evidence) | `high` |
+| `evidence_status: stale` | The bound run is behind HEAD, or its latest run failed | `medium` |
+| `untracked_symbols` | A test tag naming an id no criterion declares — a typo, or a criterion that was renumbered | `medium` |
 
-`Refs` for each finding is the `row_id` and `document` the report gives, or `path::symbol`
-for an untracked symbol. Do not re-derive them.
+`Refs` for each finding is the criterion id, plus `path::qualified_name` from `binders` where
+there is one, or `path::symbol` for an untracked symbol. Do not re-derive them.
 
-Marker drift is the one judgement the report cannot make — it needs the suite to have
-actually run (see "Optionally run the suite" below).
+`no run evidence` on every criterion means the evidence store has never been fed. Report it
+once in `## Coverage`; it is not a per-criterion finding. `undischarged` on a `tagged`
+criterion in a populated store means the tag exists and no passing run is recorded for it;
+report it in `## Coverage` with its count, and raise it as a finding only when the user asked
+for execution evidence.
 
-## Two ways the report can mislead, and how to read it
+## Two ways the matrix can mislead
 
-- **`totals.total == 0` is not full coverage.** It means the declared model matched nothing
-  in this scope — no minting document was found. Recent `quire` prints `no rows matched`
-  rather than a percentage and fails `--strict` (quire-rs FR-050-AC-14); an older build
-  printed `0/0 rows backed (100%)` and exited 0. Treat a zero denominator as **no data**,
-  say so in `## Coverage`, and fall back (below). It is not a `PASS`.
-- **An empty `unbacked_rows` proves nothing on its own.** It lists *reference rows* — cells
-  that point at trace ids. A repo whose module declares no such references has an empty list
-  regardless of how many tests are tagged. Read `groups` / `totals` alongside it.
+- **Zero criteria is not full coverage.** Under `--format json`, `quire matrix` omits the
+  `coverage_matrix` key entirely (the `No obligations matched this scope.` line appears only
+  in markdown output), and `quoin matrix --json` returns a `reason` with no requirements,
+  when the declared model matched nothing. Treat that as **no data**, say so in `## Coverage`, and fall back (below).
+  It is not a `PASS`.
+- **A non-empty `diagnostics` list** from `quire coverage` means a declaration selected
+  nothing — an unreadable document, or a model with no trace targets. The matrix is then
+  measuring less than it appears to.
 
 ## Fallback: a repo on an older module set
 
-`quire coverage` exits non-zero with a distinct diagnostic when no active module declares a
-`traceability:` model (FR-050-AC-9). That is a real repo state, not an error to swallow —
-`spec-artifacts-process` only began declaring the model at the release carrying FR-004.
+`quire matrix` and `quire coverage` exit non-zero with a distinct diagnostic when no active
+module declares a `traceability:` model (FR-050-AC-9). That is a real repo state, not an
+error to swallow.
 
-When the command refuses, or reports a zero denominator, fall back to the grep index below
-and **say which path ran** in the SpecReview's `## Coverage` section:
+When the commands refuse, or report zero criteria, fall back to a grep index of trace tags
+across the test tree (`.py` / `.ts` / `.rs`: `Trace: FR-001-AC-2` doc lines,
+`@pytest.mark.trace("FR-001-AC-2")`, criterion ids in test docstrings), reconcile it against
+the criteria ids in `spec/` by hand, and **say which path ran** in `## Coverage`:
 
 ```
-Reconciliation: quire coverage (module spec-artifacts-process 0.11.0)
+Reconciliation: quoin matrix (quoin <version>, quire <version>)
+Reconciliation: quire matrix (quire <version>) — no run evidence read
 Reconciliation: grep fallback — no active module declares a traceability model
 ```
 
-A finding derived from the fallback is weaker and should be read as such: grep matches a tag
-wherever it sits in a file, including places the engine will not bind it. In quoin, ~15 tags
-sat above a `describe(` block, which registers no symbol — greppable, and invisible to the
-engine (agent-ix/quoin#61). **Never present a grep count as a coverage figure** without
-naming it as a fallback.
-
-### The fallback index
-
-Grep the test tree across `.py` / `.ts` / `.rs` for every form:
-
-| Form | Example |
-| --- | --- |
-| Docstring AC trace | `FR-007-AC-01` inside a test docstring `Description:` block |
-| Docstring `Trace:` | `Trace: FR-001` |
-| Module docstring | `"""Tests for FR-017: Context Management."""` |
-| Test-case id comment / name | `# TC-041`, or a test whose name maps to `TC-041` |
-
-Build `{tag → [test file :: test name]}`, then reconcile against the matrix by hand for the
-same four finding kinds.
-
-## Optionally run the suite
-
-If the user wants execution evidence rather than static reconciliation, run `make test` and
-note failures and skips against matrix rows. This is what turns marker drift from a guess
-into a finding. Don't block on it if the environment can't run tests; say so.
+A grep finding is weaker: grep matches a tag wherever it sits in a file, including places
+the engine will not bind it (for example above a `describe(` block, which registers no
+symbol). **Never present a grep count as a coverage figure** without naming it as a
+fallback.
 
 ## Rollup
 
-`totals.backed` / `totals.total` feeds `## Coverage`, with the per-document breakdown from
-`groups` where it helps. Report the numbers the tool produced — do not recompute them, and
-do not quote a figure from an earlier run whose provenance you cannot state.
+For `## Coverage`, count criteria by static status (`tagged` / `untagged` /
+`tagged-by-ignored-test` / `method-without-symbol`) and, when `quoin matrix` ran, by evidence
+status. Report the numbers the tool produced — do not recompute them, and do not quote a
+figure from an earlier run whose provenance you cannot state.
 
 ## Output of this step
 
-Findings (unbacked rows, status lies, untracked tests, marker drift) with `Refs` from the
-report, the backed/total count, and which reconciliation path ran.
+Findings (untagged criteria, ignored-only criteria, suspect or stale evidence, stale tags)
+with `Refs` from the matrix, the per-status counts, and which reconciliation path ran.
 
 ## Notes
 
-- A backed row proves *traceability*, not *correctness* — whether the test is a good test is
-  the [reverse-gap step](step-4-underspecified-code.md) and the [semantic review](step-5-semantic-review.md). Keep this step about presence + trace.
-- The command performs no network or service I/O and executes none of the code it reads
-  (FR-050-CON-2, FR-051-CON-1), so it is safe to run in any repo.
+- A tagged criterion proves *traceability*, not *correctness* — whether the test is a good
+  test is the [reverse-gap step](step-4-underspecified-code.md) and the
+  [semantic review](step-5-semantic-review.md). Keep this step about presence and trace.
+- `quire matrix` and `quire coverage` perform no network or service I/O and execute none of
+  the code they read (FR-050-CON-2, FR-051-CON-1). `quoin matrix` reads the evidence store
+  and writes nothing. All three are safe to run in any repo.

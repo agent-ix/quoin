@@ -1,9 +1,9 @@
 ---
 name: gap-analysis
 description: >-
-  Audit a repository end to end — spec requirements, Test Matrix, tagged tests, and source
-  code. Planless by default; it verifies the matrix is backed by real tracking tags, finds
-  code with no owning requirement, and catches stubs and coverage inflation, reporting
+  Audit a repository end to end — spec requirements, the computed Test Matrix, tagged
+  tests, and source code. Planless by default; it reads `quoin matrix` / `quire matrix` to
+  find criteria no test is tagged with, finds code with no owning requirement, and catches stubs and coverage inflation, reporting
   "Plan completion: not assessed". An explicitly supplied plan adds optional
   plan-completeness bookkeeping only. Optional semantic review checks whether intent, test
   and code agree. Emits a quire-validated SpecReview artifact to reviews/YY-MM-DD-<slug>.md.
@@ -15,18 +15,20 @@ Use this skill as a **repository assurance audit**. The chain it verifies is alw
 same, with or without a plan:
 
 ```
-spec requirements  ↔  Test Matrix  ↔  tagged tests  ↔  source code
+spec criteria  ↔  computed Test Matrix  ↔  tagged tests  ↔  source code
 ```
 
 It answers three questions by default, a fourth on request, and a fifth only when the
 caller explicitly hands it a plan:
 
-1. **Is the Test Matrix real?** Every Test Case in the matrix is backed by an actual test
-   carrying a matching **tracking tag** (`TC-xxx`, `FR-xxx-AC-x`) in the test code.
+1. **Is every criterion tested?** Every acceptance criterion is backed by an actual test
+   carrying its id as a **trace tag** (`FR-xxx-AC-x`) in the test code. The Test Matrix
+   that answers this is computed by `quire matrix` (and `quoin matrix`, which adds run
+   evidence); nobody writes it by hand.
 2. **Is anything unspecified?** Code/behavior exists with **no owning** StR/US/FR/NFR
    (the reverse, code→spec gap).
 3. **Is the evidence hollow?** Source or test stubs, and coverage inflation, standing
-   behind a ✅ row.
+   behind a tagged criterion.
 4. **(optional, opt-in) Does intent match reality?** For each requirement↔test↔code triple —
    does the test validate the requirement's *intent*, does the test actually exercise the
    code, and does the code match the requirement's intent.
@@ -64,8 +66,9 @@ finding for sitting outside its tasks.
   case, not a blocker. Do not offer to run `spec-to-plan` first as a precondition.
 - **Never auto-select a plan.** A `plan/` directory containing bundles does not make this a
   plan-assisted run. Only an explicit caller instruction does.
-- **A missing Test Matrix stays a `high` finding.** Do not invent one, and do not downgrade
-  it because the repository never had a plan either.
+- **Never write a Test Matrix.** The matrix is computed from criteria and trace tags. A
+  hand-written `spec/matrix.md` or `spec/tests.md`, where one still exists, is not audited,
+  and its absence is not a finding.
 - **A planless PASS is a repository claim only.** It means traceability, reverse-gap, and
   stub checks passed. It never means the work was planned, tracked, or completed against a
   plan. Do not let the Summary or Verdict imply otherwise.
@@ -79,13 +82,12 @@ finding for sitting outside its tasks.
   genuinely complete.
 
 This skill is **read-only over the codebase** — it inspects and reports; it does not fix
-code, edit the plan, or change the matrix.
+code, edit the plan, or add trace tags.
 
 ## Inputs
 
 - The **repository** under audit (required): its spec root, source tree, and test tree.
-- The component **spec** (`spec/spec.md` for `org`/`name`) and **Test Matrix**
-  (`spec/matrix.md` or `spec/tests.md`).
+- The component **spec** (`spec/spec.md` for `org`/`name`, and its criteria).
 - *Optional:* a **plan bundle** `plan/<Plan-id>-<slug>/`, only when the caller names one.
 
 ## Steps
@@ -94,14 +96,15 @@ Each step says when it runs. Nothing here is numbered, because the plan step is 
 rather than a position in a sequence, and a number would imply the audit waits on it.
 
 **Always — [Target selection](references/step-1-target-selection.md).** Resolve the
-repository root, spec root, Test Matrix, and `org`/`component` for `ix://` URIs. Record
+repository root, spec root, and `org`/`component` for `ix://` URIs. Record
 whether a plan was explicitly supplied.
 
 **Always — [Matrix verification](references/step-3-matrix-verification.md).** Run
-`quire coverage --scope <root> --json` and interpret the report — unbacked rows, status
-lies, untracked tests, and the backed/total rollup. The reconciliation is the engine's;
-the severity and the verdict stay here. A repo whose module set declares no
-`traceability:` model falls back to a grep index, declared as such.
+`quoin matrix --repo <root> --json` (or `quire matrix --scope <root> --format json` when
+there is no evidence to read) and interpret the computed matrix — untagged criteria,
+criteria tagged only by ignored tests, suspect or stale evidence, and stale tags. The
+computation is the engine's; the severity and the verdict stay here. A repo whose module
+set declares no `traceability:` model falls back to a grep index, declared as such.
 
 **Always — [Underspecified code](references/step-4-underspecified-code.md).** Find
 code/behavior with no owning requirement (reverse gap), plus stubs and coverage inflation
@@ -124,7 +127,7 @@ validate the `SpecReview` to `reviews/YY-MM-DD-<slug>.md`.
 > interchanges them: spec documents are read from `<repo>/spec` only, trace tags from
 > the source tree at `<repo>` excluding `spec/`. A repo with no `spec/` exits with a
 > diagnostic naming the missing document root rather than scanning the whole tree, and a
-> matrix outside `spec/` (a fixture, a `plan/` copy) mints nothing. A relative glob
+> document outside `spec/` (a fixture, a `plan/` copy) mints nothing. A relative glob
 > resolves under `--scope` only in scoped mode (no `--module`); with `--module` it
 > resolves against the process working directory, and an omitted `--scope` defaults to
 > `.` — so a run launched from a parent directory validates the **wrong tree** and exits
@@ -148,8 +151,8 @@ the SpecReview's Coverage section that semantic review was skipped.
 A `SpecReview` (`spec-artifacts-process` archetype) at `<project_root>/reviews/YY-MM-DD-<slug>.md`:
 
 - Frontmatter `type: SpecReview`, `analysis: gap-analysis`, `id: SR-NNN`, `scope`,
-  `review_set: subset`, and `relationships:` (`references` → the matrix; plus `reviews` →
-  the plan **only** in plan-assisted mode).
+  `review_set: subset`, and `relationships:` (`references` → the spec root; plus `reviews`
+  → the plan **only** in plan-assisted mode).
 - Body: `## Summary`, `## Verdict` (PASS/CONDITIONAL/FAIL), `## Findings`
   (validated table `ID | Severity | Summary | Refs`), `## Coverage` (rollup, including the
   plan-completion line).
@@ -165,12 +168,12 @@ quire validate --scope <project_root> "reviews/**/*.md"
 
 ## Verdict rule
 
-- **FAIL** — any matrix Test Case with no backing tagged test, any `high`-severity finding,
+- **FAIL** — any untagged criterion, any `high`-severity finding,
   or (plan-assisted only) any incomplete/blocked task.
 - **CONDITIONAL** — only `medium`/`low` findings (e.g. untracked tests, minor drift).
 - **PASS** — no gaps; record the single `FND-001 | low | No gaps found | -` row.
 
-A planless run can reach PASS. That PASS asserts repository assurance — matrix traceability,
+A planless run can reach PASS. That PASS asserts repository assurance — criterion traceability,
 reverse-gap, and stub checks — and nothing about whether the work was ever planned. The
 `Plan completion: not assessed` line in `## Coverage` is what keeps the two apart, and it is
 mandatory.

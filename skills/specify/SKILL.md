@@ -108,14 +108,19 @@ Run only the steps the request needs; stop after the requested artifact set.
    clickable link as a fallback). Use the main artifact you created — the
    new/edited `FR-XXX.md`, or `spec/spec.md` when starting a spec. Skip silently if
    the `filament` command is not installed.
-7. **Stop after the requested artifacts.** Then ask the user whether to build the test
-   matrix (`spec-matrix`) and run review (`spec-review`) — unless they already
-   requested them. Only run those on confirmation.
+7. **Stop after the requested artifacts.** Then ask the user whether to run review
+   (`spec-review`) — unless they already requested it. Only run it on confirmation.
+   Do not write a test matrix or a `tests.md`: the matrix is computed by
+   `quire matrix` from the criteria and the tests' trace tags.
 
 ## Functional requirements
 
 FRs are normative (`SHALL` / `SHALL NOT`), atomic, and independently verifiable,
 each with an Acceptance Criteria table (the `fr.md` skeleton enforces the shape).
+
+The `Verification` cell names a **method only** — `Test`, `Inspection`, `Analysis`,
+`Demonstration` — never a `TC-` id; `spec-artifacts-process` lints for one. A test binds
+to a criterion by carrying the criterion's own id (`FR-012-AC-3`) as a trace tag.
 
 - Derive FRs from the driving user story — see
   [references/us-to-fr.md](references/us-to-fr.md).
@@ -168,6 +173,5 @@ spec/
 ├── non-functional/   # NFR-XXX
 ├── integration/      # IT-XXX
 ├── assurance/        # requested AP/AD/MP artifacts (when their module is installed)
-├── matrix/
 └── analysis/
 ```

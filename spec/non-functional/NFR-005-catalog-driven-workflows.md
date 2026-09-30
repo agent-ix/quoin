@@ -45,10 +45,17 @@ catalog-defined types and do not redefine the document or object vocabulary.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| NFR-005-AC-1 | The Status vocabulary that `skills/spec-matrix/SKILL.md` and both of its asset templates teach equals the classed status set the installed `spec-artifacts-process` manifest declares (`traceability.status`), and every taught marker is admitted by the manifest's Status column pattern; divergence in either direction fails the suite. A marker the manifest admits but classes as nothing is deliberately not required to be taught. | Test (TC-271) |
+| NFR-005-AC-1 | No skill under `skills/` teaches a Test Matrix `Status` vocabulary or ships a Test Matrix template; the only statement of that vocabulary is the installed `spec-artifacts-process` manifest's (`traceability.status`). | Inspection |
 
 ## Dependencies
 
 - **Upstream**: [FR-020](../functional/FR-020-resolve-workflow-skills.md), whose
   workflow launchers this constrains.
 - **Downstream**: none.
+
+> **CR-001 (2026-09-29, PLAT-1083):** AC-1 is restated. It coupled the `Status`
+> vocabulary `skills/spec-matrix/SKILL.md` and its two asset templates taught to
+> the module manifest. The skill no longer teaches agents to write a matrix and
+> its templates are deleted, so the single-vocabulary claim now holds by
+> absence: no skill restates the vocabulary at all. The test that compared the
+> two copies retired with the Node harness and is not replaced.

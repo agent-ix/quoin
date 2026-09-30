@@ -53,7 +53,6 @@ repository rather than a discovery in the next migration.
 - Where a maintained repository is not available at its pinned revision, Quoin's gate SHALL fail naming the repository and the revision, rather than reporting no drift.
 - The conformance contract SHALL record, for every surface a maintained repository carries and the contract deliberately does not require, the reason it is exempt.
 - If a maintained semantic-module repository carries a surface the conformance contract omits, then Quoin's gate SHALL fail naming that surface.
-- Quoin's gate SHALL fail when a rendered variant's Test Matrix carries a `Status` cell outside the archetype's vocabulary.
 
 ## Constraints
 
@@ -73,10 +72,15 @@ repository rather than a discovery in the next migration.
 | FR-083-AC-5 | A surface carried by the maintained module repositories at their pinned revisions, absent from the conformance contract and absent from its exemptions, fails the drift check naming it. | Test (TC-1418) |
 | FR-083-AC-8 | A maintained repository that cannot be read at its pinned revision fails the drift check naming the repository and the revision. | Test (TC-1462) |
 | FR-083-AC-6 | With the schema toolchain absent, the gate fails naming the install command and reports no skipped emission check. | Test (TC-1448) |
-| FR-083-AC-7 | A `Status` cell of `⚠️` injected into a rendered Test Matrix fails the gate. | Test (TC-1440) |
 | FR-083-AC-9 | Quoin explicitly declares only its root package as its pnpm workspace, matching the one-importer lock. Unrendered template package files remain generation input, not installable workspace packages. Normal frozen installation, script execution and command execution retain dependency verification; all three rendered variants remain independently exercised outside the workspace. | Test (TC-1597) |
 
 ## Dependencies
 
 - **Upstream**: [FR-076](./FR-076-semantic-module-template-variants.md), [FR-080](./FR-080-generated-verification-suite.md), [FR-082](./FR-082-generated-governance-tree.md)
 - **Downstream**: [NFR-018](../non-functional/NFR-018-rendered-output-hygiene.md), [NFR-019](../non-functional/NFR-019-deterministic-rendering.md)
+
+> **CR-001 (2026-09-29, PLAT-1083):** FR-083-AC-7 and the behaviour that the
+> gate fails on a rendered Test Matrix `Status` cell outside the archetype's
+> vocabulary are withdrawn. The rendered repository no longer carries a Test
+> Matrix ([FR-082](./FR-082-generated-governance-tree.md) CR-001), so there is no
+> rendered `Status` cell for the gate to check. The id is not reused.

@@ -7,7 +7,7 @@ description: Judge whether each acceptance criterion can actually fail, using Je
 
 Specified by PLAT-837. Use this skill to judge whether an acceptance criterion
 **can actually fail**, as distinct from whether it is backed by a passing test.
-A spec can reach 100% matrix coverage and mean nothing, because the ACs were
+A spec can have every criterion tagged by a passing test and mean nothing, because the ACs were
 written to be satisfiable by whatever got built — `spec-review`'s Common Issues
 already names "Vague Criteria" as something to notice by eye, but nothing in
 the pipeline measures it. This lens does.
@@ -102,8 +102,8 @@ adopts the mapping every sibling analysis skill in this repository uses —
 severity reflects how much the weakness degrades what the AC can prove, not
 how it happens to sort in the enum:
 
-- `unfalsifiable` -> **high** (the AC cannot fail; the matrix row it backs
-  proves nothing).
+- `unfalsifiable` -> **high** (the AC cannot fail; the tests tagged with it
+  prove nothing).
 - `implementation_coupled` -> **medium** (the AC over-specifies; it will pass
   forever once written and survive a refactor that should have broken it).
 - `unmeasurable_threshold` -> **medium** (asserts a quantity it never states).
@@ -222,7 +222,7 @@ Not yet — see **Status**. Once both dependencies land: on an FR whose ACs are
 about to be trusted as a merge gate, the same way `spec-ears-analysis` and
 `spec-correctness` are used before or alongside `gap-analysis`.
 
-Not for: authoring or rewording criteria (`specify`), building the matrix
+Not for: authoring or rewording criteria (`specify`), tagging tests to criteria
 (`spec-matrix`), or judging whether a test that backs a criterion is vacuous
 (`gap-analysis`'s `assertion_vacuous`, PLAT-839 — a different pairing, a
 different lens).

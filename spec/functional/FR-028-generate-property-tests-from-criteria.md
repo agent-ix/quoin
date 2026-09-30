@@ -82,8 +82,8 @@ Nothing else is written to the tree.
   tracking tag can never name a criterion that does not exist.
 - A test the skill emits SHALL run in the repository's runner like any other test.
   A generated test arrives in a pull request, which is what places it under review;
-  a test disabled in the tree is a dead test, and a Test Matrix row it would satisfy
-  is the `spec-matrix` skill's status column to set, not this skill's to pre-empt.
+  a test disabled in the tree is a dead test, and whether a passing run backs the
+  criterion it tags is computed by `quoin matrix`, not pre-empted by this skill.
 - The review artifact SHALL name, per finding, the criterion and the reason it
   could not be settled, so the reviewer reads why rather than re-deriving it.
 - The skill SHALL derive a criterion's generator domain, precondition and oracle
@@ -170,6 +170,10 @@ wrong, so the second pass can afford recall the deterministic pass cannot.
   [US-011](../usecase/US-011-generate-property-tests-from-criteria.md). Consumes
   the classification of [quire-rs FR-052](ix://agent-ix/quire-rs/FR-052) as
   exposed by `quire properties --json`.
-- **Downstream**: supplies `Property` rows to the Test Matrix built by the
-  `spec-matrix` skill, and tracking tags to the coverage reconciliation of the
-  `gap-analysis` skill.
+- **Downstream**: supplies criterion trace tags to the Test Matrix computed by
+  `quire matrix` / `quoin matrix`, and so to the `gap-analysis` skill that reads it.
+
+> **CR-002 (2026-09-29, PLAT-1083):** the Test Matrix is computed, not
+> hand-maintained. This skill hands no `Property` rows to `spec-matrix` and sets
+> no row status; the trace tags it emits are the whole of its contribution, and
+> `quire matrix` / `quoin matrix` derive the matrix from them.

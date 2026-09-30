@@ -1,6 +1,6 @@
 ---
 name: rust-style
-description: The Rust idioms quoin's `rust/` workspace is built on — the boundary contract (exit taxonomy, canonical JSON, stream discipline), error envelopes with stable codes, the workspace lint policy, untrusted-input hardening on stdin, the tc_NNN/Trace test convention, and the gates that must actually be run. Use whenever writing or reviewing Rust in this repository, adding an operation to `quoin-core`, touching the error catalogue, or changing anything under `rust/`.
+description: The Rust idioms quoin's `rust/` workspace is built on — the boundary contract (exit taxonomy, canonical JSON, stream discipline), error envelopes with stable codes, the workspace lint policy, untrusted-input hardening on stdin, the `/// Trace:` criterion-tag test convention, and the gates that must actually be run. Use whenever writing or reviewing Rust in this repository, adding an operation to `quoin-core`, touching the error catalogue, or changing anything under `rust/`.
 ---
 
 # quoin Rust Style
@@ -182,26 +182,32 @@ is unit-testable without spawning a process.
   boundary, a real subprocess with real pipes — the stream and exit-status
   properties a library test cannot see are exactly the ones `src/core/exec.ts`
   depends on.
-- **Integration test functions are named `tc_NNN_<description>`** and carry a
-  `/// Trace:` doc line with the requirement criteria they cover, comma
-  separated.
+- **Integration test functions carry a `/// Trace:` doc line** naming the
+  acceptance criteria they assert, by the criterion's own id, comma separated.
+  That line is what binds the test into the computed Test Matrix
+  (`quire matrix`); there is no hand-written matrix row and no `TC-` id to
+  mint. A `tc_NNN_<description>` function name is allowed, and existing tests
+  keep theirs, but it is not required and does not bind the test to a
+  criterion.
 
   **The keyword is `Trace:` and the separator is a comma.** A `Tracing:` line,
-  or a `;`-separated one, binds nothing and the matrix row it names stays
-  unbacked. filament-ide-rs wrote `Tracing:` 643 times before this was
-  measured, which is why 51% of its matrix rows read as untested while the
+  or a `;`-separated one, binds nothing and the criterion it names stays
+  untagged. filament-ide-rs wrote `Tracing:` 643 times before this was
+  measured, which is why 51% of its criteria read as untested while the
   tests existed.
 
   Only requirement criteria belong on that line — `FR-`, `NFR-`, `StR-`, `US-`,
-  `IT-`, `TC-` and their `-AC-`/`-EX-`/`-SC-` forms. Issue numbers, `Task-`,
-  `Plan-` and `REV-` go on a sibling `/// Provenance:` line: they are real
-  artifacts, but on the trace line they only mint untracked symbols.
+  `IT-` and their `-AC-`/`-EX-`/`-SC-` forms. Tag the criterion
+  (`FR-096-AC-3`) rather than the bare requirement where the test asserts one
+  criterion. Issue numbers, `Task-`, `Plan-` and `REV-` go on a sibling
+  `/// Provenance:` line: they are real artifacts, but on the trace line they
+  only mint untracked symbols.
 
   ```rust
-  /// Trace: FR-096
+  /// Trace: FR-096-AC-3
   /// Provenance: quoin#375, agent-ix/quoin#103
   #[test]
-  fn tc_375_exit_1_still_carries_a_complete_payload() { … }
+  fn exit_1_still_carries_a_complete_payload() { … }
   ```
 
 - **Assert the literal, not the re-derivation.** `tc_375_stdout_is_canonical_json_one_line`

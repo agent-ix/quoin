@@ -36,8 +36,8 @@ the gate exists to catch.
 
 | Metric | Target | Threshold | Method |
 |--------|--------|-----------|--------|
-| Skipped tests in a suite run | 0 | 0 | Test |
-| Absent tools producing a named diagnostic | all | all | Test |
+| Skipped tests in a suite run | 0 | 0 | Inspection |
+| Absent tools producing a named diagnostic | all | all | Inspection |
 | Gate legs that report success without running | 0 | 0 | Inspection |
 
 ## Verification
@@ -46,12 +46,19 @@ the gate exists to catch.
 grammar package or the schema toolchain must each turn the suite red with a
 message naming the command that restores it.
 
+No test in the suite asserts either criterion, so neither carries a trace tag.
+AC-1 is verified by inspection, reading the skip count from a run's own summary.
+AC-2 is verified by inspecting each absent-tool path: `tests/conftest.py` for
+the engine and the grammar package, `tests/test_schema_emission.py` for the
+schema toolchain, and `scripts/generate-schemas.mjs`, each of which must fail
+naming its install command.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| NFR-001-AC-1 | A run of `make test` reports zero skipped tests. | Test |
-| NFR-001-AC-2 | With the engine, the grammar package or the schema toolchain absent, the suite fails with a message naming the command that installs it. | Test |
+| NFR-001-AC-1 | A run of `make test` reports zero skipped tests. | Inspection |
+| NFR-001-AC-2 | With the engine, the grammar package or the schema toolchain absent, the suite fails with a message naming the command that installs it. | Inspection |
 
 ## Dependencies
 

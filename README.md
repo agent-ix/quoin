@@ -41,11 +41,12 @@ with `Findings` and suggested fixes.
 
 #### 3. Convert to plans
 
-Build the test `traceability matrix` and `plan`. These skills will break the work down into a `plan`
-with multiple `tasks`.
+Build the `plan`. This skill breaks the work down into a `plan` with multiple `tasks`. There is
+no test matrix to write: `quire matrix` computes it from the acceptance criteria and the trace
+tags on the tests, and `quoin matrix` adds the run evidence.
 
 ```
-> /spec-matrix /spec-to-plan prep the spice tracking app for coding
+> /spec-to-plan prep the spice tracking app for coding
 ```
 
 #### 4. Implement!
@@ -59,8 +60,8 @@ Call `/implement-plan` to trigger your coding agent to begin work on the plan.
 #### 5. Gap review
 
 `/gap-analysis` audits the repository: `UserStory` and `Functional Requirements` implemented and tested,
-using the `traceability matrix` as the guide, plus the reverse gap — code with no owning requirement — and
-stubs standing behind a covered row. It is **planless by default**, so a repository whose work predates
+using the computed test matrix (`quoin matrix`) as the guide, plus the reverse gap — code with no owning
+requirement — and stubs standing behind a tagged criterion. It is **planless by default**, so a repository whose work predates
 planning can still be audited; the review it emits records `Plan completion: not assessed`.
 `/gap-analysis` will optionally perform a _semantic_ comparison of `spec`, `code`, and `tests`.
 
@@ -102,7 +103,7 @@ The default module set defines the spec archetypes and domain-object vocabulary.
 
 - **`specify`** — create or edit spec files using catalog authoring packs + Quire validation
 - **`spec-review`** — review specification for quality, consistency, and completeness
-- **`spec-matrix`** — build/maintain the requirements Test Matrix at 100% coverage
+- **`spec-matrix`** — read the computed Test Matrix and tag tests with the criteria they assert
 - **`spec-to-plan`** — convert StR/FR/NFR into a TDD project plan
 - **`spec-ideation`** — loose, exploratory drafting before formal authoring
 - **`spec-app-review`** / **`spec-object-review`** — application-spec and domain-object audits

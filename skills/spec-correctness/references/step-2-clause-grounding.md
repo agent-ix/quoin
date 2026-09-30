@@ -141,7 +141,7 @@ generating anything.
 Two shapes turn up regularly and are neither properties nor witnesses:
 
 - **Static** — an assertion about the source tree ("No hand-rolled argument dispatcher
-  remains in `src/cli.ts`"). Verified by `Static` in the matrix vocabulary, not by a
+  remains in `src/cli.ts`"). Verified by static analysis over the source, not by a
   generated test.
 - **Demonstration** — an end-to-end narrative, common in StR validation criteria ("An
   author installs a module, sees its types appear, requests them, and validates files

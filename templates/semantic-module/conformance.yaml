@@ -45,7 +45,6 @@ all:
     - spec/spec.md
     - spec/index.md
     - spec/log.md
-    - spec/matrix.md
     - spec/stakeholder/index.md
     - spec/usecase/index.md
     - spec/functional/index.md
@@ -148,7 +147,9 @@ drift_exemptions:
   - path: tests/test_basic.py
     reason: "a placeholder smoke test both maintained repositories inherited from the generic Python cookiecutter; the rendered suite has real rows instead"
   - path: spec/tests.md
-    reason: "one maintained repository names its Test Matrix `tests.md` and the other `matrix.md`; the template requires `spec/matrix.md` and does not need both spellings"
+    reason: "a hand-written Test Matrix; the template renders none, because `quire matrix` computes the matrix from criteria and trace tags"
+  - path: spec/matrix.md
+    reason: "a hand-written Test Matrix, as above"
   - path: spec/reviews/
     reason: "review artifacts, as above"
   - path: spec/integration/

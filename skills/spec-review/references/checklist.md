@@ -3,7 +3,6 @@
 ## ID Format and Uniqueness
 - [ ] All user stories use `US-XXX` format (3-digit).
 - [ ] All functional requirements use `FR-XXX` format.
-- [ ] All test cases use `TC-XXX` format.
 - [ ] Acceptance criteria use `{PARENT}-AC-N`.
 - [ ] Options use `{PARENT}-OPT-{LETTER}`.
 - [ ] Constraints use `{PARENT}-CON-N`.
@@ -33,14 +32,14 @@
 - [ ] Criteria verifiable.
 - [ ] Dependencies documented.
 
-## Test Coverage Quality (Six Rules)
-- [ ] Coverage: Every AC has >= 1 TC.
-- [ ] Option Permutation: All valid combinations tested.
-- [ ] Constraint Boundary: All boundaries tested (min, max, over, under).
-- [ ] Error Path: All error conditions tested.
-- [ ] State Transition: All transitions tested (if applicable).
-- [ ] Edge Case: Edge cases identified/tested.
-- [ ] TC fields complete (Type, Priority, Trace).
+## Criterion Coverage Quality
+- [ ] Coverage: `quire matrix` shows no `untagged` criterion — every AC is carried by >= 1 test's trace tag.
+- [ ] Option Permutation: All valid combinations have a criterion.
+- [ ] Constraint Boundary: All boundaries have a criterion (min, max, over, under).
+- [ ] Error Path: All error conditions have a criterion.
+- [ ] State Transition: All transitions have a criterion (if applicable).
+- [ ] Edge Case: Edge cases identified and stated as criteria.
+- [ ] `Verification` cells name a method only, with no `TC-` id.
 
 ## Hash / Digest / Pin Antipattern (any hit is a `high` finding)
 - [ ] No requirement, criterion, test case, ADR or instruction creates, keeps or checks a hash, digest, SHA, checksum, pin, checksum catalog, manifest, ledger, inventory, provenance record, attestation, receipt, relocation map, ID-block table or recorded/reviewed revision.
@@ -51,7 +50,7 @@
 
 ## Cross-Referencing
 - [ ] FR links to US.
-- [ ] TC links to AC.
+- [ ] Test trace tags name AC ids, not `TC-` ids.
 - [ ] Full IDs used.
 - [ ] Links valid.
 - [ ] Terminology consistent.

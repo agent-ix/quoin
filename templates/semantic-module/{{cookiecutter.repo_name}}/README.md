@@ -41,9 +41,9 @@ digest anybody typed.
 **Only `json-schema` is emitted today.** Every other declared target is recorded
 as declared and not emitted: the emitters for `rust`, `typescript`,
 `python-pydantic-v2` and `python-dataclass` belong to
-`agent-ix/filament-core-data#11` and do not exist yet. The Test Matrix in
-`spec/matrix.md` carries a `🚧` row saying so. A declared target is not an
-emitted one, and this file will not pretend otherwise.
+`agent-ix/filament-core-data#11` and do not exist yet. `spec/spec.md` lists
+them as out of scope. A declared target is not an emitted one, and this file
+will not pretend otherwise.
 
 ## Getting started
 
