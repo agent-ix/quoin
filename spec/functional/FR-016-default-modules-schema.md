@@ -17,9 +17,7 @@ relationships:
 The committed default module set SHALL be expressed as a `ts-plugin-kit`
 marketplace manifest stored at `default-modules.yaml`, declaring each default
 module with a typed source pinned to an immutable revision: the release tag its
-package is built from, or the commit id that tag names. An entry whose module is
-also consumed by this repository's Rust workspace SHALL pin the commit id, so
-that the two halves resolve to one tree at every install.
+package is built from, or the commit id that tag names.
 The authoritative shape is `ts-plugin-kit`'s `validateMarketplaceManifest`;
 the schema below documents that contract and is kept in step with it. This
 document defines the structural schema of that file; its behavioral installation

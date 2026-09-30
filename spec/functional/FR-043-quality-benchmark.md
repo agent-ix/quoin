@@ -81,16 +81,8 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 
 ## Acceptance Criteria
 
-For AC-35, literal Git reads ignore replacement refs without modifying them.
-Git paths must decode as valid UTF-8; invalid byte sequences are refused rather
-than renamed through replacement characters, while valid Unicode is preserved.
-Materialized regular files have the declared `0644` or `0755` permission bits
-independently of the invoking process's umask.
-
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-043-AC-34 | Explicit lock-v2 policy names exactly the seven v1 sources plus engineering-assurance and the ordered Quoin validation set: process, ISO, engineering-assurance. Each declaration names its source repository and module subdirectory, exact committed tree and complete sorted path/mode/SHA-256 file inventory, including its manifest. Missing, duplicate, unknown, escaping, partial or malformed declarations fail. V1 remains a historical seven-source mode and is neither silently upgraded nor evidence of v2 isolation. | Test (TC-1593, TC-1594) |
-| FR-043-AC-35 | V2 relocking and replay derive and materialize declaration files from literal selected Git objects, refusing non-regular entries and inventory drift. Canonical Quoin validation passes exactly the declared ordered roots through repeated native Quire `--module` arguments, with no ambient module discovery or default installation. Poisoned installed catalogs and module environment variables cannot add inputs; native validation failures remain failures. Ordinary validation without an explicit set remains compatible. This slice does not change historical Tier-1/Tier-2 declaration or producer policy. | Test (TC-1595, TC-1596) |
 | FR-043-AC-1 | The metric dictionary declares, for every benchmark metric, its `unit` (what one of the value is), `population` (what the denominator is drawn from), and `method` (how it was arrived at, and what a partial read means). A metric missing any of the three is rejected at load, not reported with a gap. | Test (TC-926) |
 | FR-043-AC-2 | The dictionary defines `finding_precision` and `finding_recall` **per defect family**, each keyed on a family the corpora label, so a score cannot be reported over an unlabelled population. | Test (TC-927) |
 | FR-043-AC-3 | The dictionary defines `span_grounding_rate` — of the criteria carrying a specific property shape, the fraction whose `domain`, `precondition` and `oracle` are all present — with the pass-2 figure (0 of 65) recorded as the baseline it starts from. | Test (TC-928) |
@@ -130,6 +122,13 @@ independently of the invoking process's umask.
 > quoin#654, the `make` target does not exist, and the test the matrix cited,
 > `tests/verification-relock.test.ts`, does not exist either. TC-1589..TC-1592
 > are withdrawn with them. The ids are not reused.
+>
+> FR-043-AC-34 and FR-043-AC-35 are withdrawn for the same reason. They
+> specified the lock's v2 policy (a per-module SHA-256 file inventory) and v2
+> relocking and replay from it. The lock is deleted, and the matrix cited the
+> same nonexistent `tests/verification-relock.test.ts` for them.
+> TC-1593..TC-1596 are withdrawn with them, and so is the prose note that
+> qualified AC-35. The ids are not reused.
 
 ## Dependencies
 

@@ -44,6 +44,16 @@ description: "Chronological log of structural changes to this bundle."
   TC-1589..TC-1592 are withdrawn. MP-216, MP-217 and MP-219 stop citing the
   deleted lock.
 
+  **FR-043-AC-34 and FR-043-AC-35 are withdrawn** too (same CR note). They
+  specified the lock's v2 policy, a per-module SHA-256 file inventory, and v2
+  relocking from it, and the matrix cited the same nonexistent test for them.
+  TC-1593..TC-1596 and the prose note on AC-35 go with them.
+
+  Also removed: FR-016's rule that a module the Rust workspace also consumes
+  pins the commit id (its only test was AC-3), FR-108-AC-14's reference to "the
+  repin", and the reviewer name and merge commit recorded in NFR-014's matrix
+  row.
+
 * **2026-09-29** — **Agents stop hand-writing the Test Matrix** (PLAT-1083,
   epic PLAT-1076). The matrix is computed: `quire matrix` from criteria and
   trace tags, `quoin matrix` adding run evidence (FR-115). The skills and the
