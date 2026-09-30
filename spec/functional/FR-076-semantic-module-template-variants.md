@@ -57,7 +57,7 @@ and the mapping declarations it needs.
 - If an entry of `generated_targets` is outside the filament-core-data target registry, then the template SHALL abort rendering naming the entry.
 - The template SHALL accept every input as an argument, so that a rendering needs no terminal.
 - Where the template is run interactively, it SHALL prompt for the same inputs it accepts as arguments.
-- The template SHALL record every target it declares but does not emit today in the rendered README, in the rendered Test Matrix, and in the rendered `semantic.targets`, rather than presenting a declared target as an emitted one.
+- The template SHALL record every target it declares but does not emit today in the rendered README and in the rendered `semantic.targets`, rather than presenting a declared target as an emitted one.
 - The template SHALL report the same declared-not-emitted target set in all three places.
 - If `module_kind` is `mixed` and `imported_modules` is empty, then the template SHALL abort rendering saying that a mixed module declares at least one import.
 - The template SHALL perform every input check before it writes its first file, so that a refused rendering leaves no directory behind.
@@ -93,7 +93,7 @@ not a condition of this requirement.
 | FR-076-AC-7 | `imported_modules: ["agent-ix/spec-objects-business"]` aborts naming the entry; `agent-ix/spec-objects-business@0.3.0` renders. | Test (TC-1406) |
 | FR-076-AC-8 | `generated_targets: ["go"]` aborts naming `go`. | Test (TC-1407) |
 | FR-076-AC-9 | No rendered variant contains an `.npmrc` file at any depth. | Test (TC-1412) |
-| FR-076-AC-10 | A rendering that declares a target with no emitter today records that target as declared-not-emitted in the rendered README, in a `🚧` Test Matrix row carrying the reason, and in `semantic.targets`, and the three agree. | Test (TC-1451) |
+| FR-076-AC-10 | A rendering that declares a target with no emitter today records that target as declared-not-emitted in the rendered README and in `semantic.targets`, and the two agree. | Test (TC-1451) |
 | FR-076-AC-11 | Every variant renders unattended from arguments alone, with no prompt and no terminal. | Test (TC-1452) |
 | FR-076-AC-12 | `module_kind: mixed` with no `imported_modules` aborts saying a mixed module declares at least one import. | Test (TC-1453) |
 | FR-076-AC-13 | Every refused rendering leaves no directory at the output path. | Test (TC-1454) |
@@ -102,3 +102,9 @@ not a condition of this requirement.
 
 - **Upstream**: [US-021](../usecase/US-021-generate-a-conforming-semantic-module-repository.md), [FR-070](./FR-070-semantic-module-manifest-extension.md)
 - **Downstream**: [FR-077](./FR-077-generated-schema-emission.md), [FR-078](./FR-078-generated-manifest-semantic-block.md), [FR-083](./FR-083-template-render-self-tests.md)
+
+> **CR-001 (2026-09-29, PLAT-1083):** a declared-not-emitted target is recorded
+> in the rendered README and in `semantic.targets` only. The rendered `🚧` Test
+> Matrix row that also recorded it is gone with the rendered matrix
+> ([FR-082](./FR-082-generated-governance-tree.md) CR-001); AC-10 now compares two
+> records rather than three.

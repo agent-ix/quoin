@@ -8,6 +8,20 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-29** — **Agents stop hand-writing the Test Matrix** (PLAT-1083,
+  epic PLAT-1076). The matrix is computed: `quire matrix` from criteria and
+  trace tags, `quoin matrix` adding run evidence (FR-115). The skills and the
+  semantic-module template stop instructing anyone to author or maintain one;
+  existing hand-written matrices, this one included, stay where they are and
+  the `TestMatrix` archetype stays valid. FR-082 CR-001: the rendered
+  repository ships no `spec/matrix.md`; AC-2..AC-4 are restated to the absent
+  file, method-only `Verification` cells and criterion trace tags, and CON-1 is
+  withdrawn. FR-083 CR-001 withdraws AC-7 (the rendered `Status`-cell check).
+  FR-076 CR-001 records a declared-not-emitted target in the README and
+  `semantic.targets` only. NFR-005 CR-001 restates AC-1 now that
+  `spec-matrix` teaches no `Status` vocabulary. Matrix: TC-1440..TC-1442 and
+  TC-1451 restated at `🚧`; TC-271 and TC-1470 withdrawn.
+
 * **2026-09-28** — **FR-115 implemented** (PLAT-1080). `matrix.build` in
   `quoin-core` (domain in `quoin_assurance::matrix`) and `quoin matrix`
   rendering it in place of the `ix-flow` launch; `quire.coverage` now carries
