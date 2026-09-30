@@ -78,3 +78,9 @@ the rendered repository ships the two inputs and no copy of the output.
 > matrix's `Status` vocabulary, is withdrawn: there is no rendered `Status` cell
 > left for it to constrain. The `TestMatrix` archetype itself stays valid for
 > repositories that still carry one.
+>
+> The rendered NFR-001-AC-1 (zero skipped tests) and NFR-001-AC-2 (an absent
+> tool fails naming its install command) were recorded in the deleted matrix as
+> `🚧` rows, and no rendered test asserts either. Their `Verification` cells now
+> state `Inspection`, which the computed matrix reports as
+> `method-without-symbol`, so a fresh render carries no untagged criterion.

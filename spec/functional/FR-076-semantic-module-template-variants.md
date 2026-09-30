@@ -58,7 +58,7 @@ and the mapping declarations it needs.
 - The template SHALL accept every input as an argument, so that a rendering needs no terminal.
 - Where the template is run interactively, it SHALL prompt for the same inputs it accepts as arguments.
 - The template SHALL record every target it declares but does not emit today in the rendered README and in the rendered `semantic.targets`, rather than presenting a declared target as an emitted one.
-- The template SHALL report the same declared-not-emitted target set in all three places.
+- The template SHALL report the same declared-not-emitted target set in the rendered README and in `semantic.targets`.
 - If `module_kind` is `mixed` and `imported_modules` is empty, then the template SHALL abort rendering saying that a mixed module declares at least one import.
 - The template SHALL perform every input check before it writes its first file, so that a refused rendering leaves no directory behind.
 
@@ -93,7 +93,7 @@ not a condition of this requirement.
 | FR-076-AC-7 | `imported_modules: ["agent-ix/spec-objects-business"]` aborts naming the entry; `agent-ix/spec-objects-business@0.3.0` renders. | Test (TC-1406) |
 | FR-076-AC-8 | `generated_targets: ["go"]` aborts naming `go`. | Test (TC-1407) |
 | FR-076-AC-9 | No rendered variant contains an `.npmrc` file at any depth. | Test (TC-1412) |
-| FR-076-AC-10 | A rendering that declares a target with no emitter today records that target as declared-not-emitted in the rendered README and in `semantic.targets`, and the two agree. | Test (TC-1451) |
+| FR-076-AC-10 | A rendering that declares a target with no emitter today records that target as declared-not-emitted in the rendered README and in `semantic.targets`, and the two agree. | Test |
 | FR-076-AC-11 | Every variant renders unattended from arguments alone, with no prompt and no terminal. | Test (TC-1452) |
 | FR-076-AC-12 | `module_kind: mixed` with no `imported_modules` aborts saying a mixed module declares at least one import. | Test (TC-1453) |
 | FR-076-AC-13 | Every refused rendering leaves no directory at the output path. | Test (TC-1454) |

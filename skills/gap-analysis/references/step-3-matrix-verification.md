@@ -29,7 +29,9 @@ quire --version    # expect >= 0.34.0
 ```
 
 The evidence-backed matrix is the preferred input, because it carries the static axis
-verbatim and adds whether a passing run backs each criterion:
+verbatim and adds whether a passing run backs each criterion. It needs the first quoin
+release after 0.25.0 that includes FR-115; on 0.25.0 and earlier, `quoin matrix` is the
+retired workflow launcher and has no `--repo` flag:
 
 ```bash
 quoin matrix --repo <project_root> --json
@@ -59,8 +61,9 @@ Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (s
 | `evidence_status` (`quoin matrix` only) | evidence store + auditor | `bound` · `stale` · `suspect` · `undischarged` · `no run evidence` |
 | `evidence_detail` (`quoin matrix` only) | auditor | `findings`, `bindings`, `unevaluated` for that criterion |
 
-`method-without-symbol` means the criterion's declared method (an inspection, a
-demonstration, an eval) mints no source symbol, so no test tag is expected. It is neither a
+`method-without-symbol` means the criterion's declared method is one the active module
+declares mints no source symbol (`Inspection`, `Analysis`, `Manual`, `Eval` under
+`spec-artifacts-process`), so no test tag is expected. It is neither a
 gap nor coverage — count it separately.
 
 ## Stale tags
@@ -97,9 +100,10 @@ for execution evidence.
 
 ## Two ways the matrix can mislead
 
-- **Zero criteria is not full coverage.** `quire matrix` prints `No obligations matched this
-  scope.` and `quoin matrix` returns a `reason` with no requirements when the declared model
-  matched nothing. Treat that as **no data**, say so in `## Coverage`, and fall back (below).
+- **Zero criteria is not full coverage.** Under `--format json`, `quire matrix` omits the
+  `coverage_matrix` key entirely (the `No obligations matched this scope.` line appears only
+  in markdown output), and `quoin matrix --json` returns a `reason` with no requirements,
+  when the declared model matched nothing. Treat that as **no data**, say so in `## Coverage`, and fall back (below).
   It is not a `PASS`.
 - **A non-empty `diagnostics` list** from `quire coverage` means a declaration selected
   nothing — an unreadable document, or a model with no trace targets. The matrix is then

@@ -23,7 +23,12 @@ quire matrix --scope . --format json
 ```
 
 `--scope` is the repository root: spec documents are read from `<scope>/spec` and trace tags
-from the rest of the tree. For run evidence as well, use `quoin matrix --repo . --json`.
+from the rest of the tree.
+
+For run evidence as well, use `quoin matrix --repo . --json`. It needs the first quoin
+release after 0.25.0 that includes FR-115; on 0.25.0 and earlier `quoin matrix` is the
+retired workflow launcher. If `quoin matrix --repo . --json` fails, use
+`quire matrix --scope . --format json` above and read the static status alone.
 
 Each criterion carries one static status:
 
@@ -32,15 +37,18 @@ Each criterion carries one static status:
 | `tagged` | At least one test that is not ignored carries the id. | None. |
 | `untagged` | No test carries the id. | Find or write the test (step 2). |
 | `tagged-by-ignored-test` | Every test carrying the id is ignored or skipped. | Un-ignore it, or write a test that runs. |
-| `method-without-symbol` | The criterion's method (inspection, demonstration, eval) mints no source symbol. | None — no tag is expected. |
+| `method-without-symbol` | The criterion's method is one the module declares mints no source symbol (`Inspection`, `Analysis`, `Manual`, `Eval`). | None — no tag is expected. |
 
 ## 2. Tag the test that asserts the criterion
 
 For each `untagged` criterion, read its statement and find the test that actually asserts it.
-Tag that test with the criterion id, using the form your repository already uses:
+Tag that test with the criterion id. The canonical markers are the ones the module
+manifest declares:
 
 ```rust
-/// Trace: FR-012-AC-3
+use ix_trace_rs::trace; // the attribute is a macro; the crate must be a dev-dependency
+
+#[trace("FR-012-AC-3")]
 #[test]
 fn rejects_an_unpinned_import() { … }
 ```
@@ -50,9 +58,12 @@ fn rejects_an_unpinned_import() { … }
 def test_rejects_an_unpinned_import(): ...
 ```
 
+- A `Trace: FR-012-AC-3` comment line (`/// Trace:` in Rust) is the accepted legacy form: it
+  still binds, and a repository that already uses it (quoin's own `rust/` does) may keep
+  it. Its keyword is `Trace:` and its ids are comma-separated — `Tracing:` or a `;`
+  separator binds nothing.
 - Tag the **criterion** (`FR-012-AC-3`), not the requirement, and never a `TC-` id.
-- Several ids on one tag are comma-separated: `Trace: FR-012-AC-3, FR-012-AC-4`.
-- The keyword is `Trace:` — `Tracing:` or a `;` separator binds nothing.
+- Several ids on one marker are separate quoted arguments: `#[trace("FR-012-AC-3", "FR-012-AC-4")]`.
 - Only tag a test that would fail if the criterion were broken. A tag on a test that does not
   assert the criterion is coverage inflation, and `gap-analysis` reports it as such.
 - If no test asserts the criterion, write one. If the criterion cannot fail, fix the
