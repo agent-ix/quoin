@@ -25,8 +25,11 @@ description: "Chronological log of structural changes to this bundle."
   and none was re-homed under another requirement. FR-043-AC-20 has a real test
   and stays. Their TC rows move to `⛔`; TC-1066 keeps only its FR-032-AC-16
   trace. The tier-2 row's pinned SHA, the sentence on pinning it and the CR-099
-  note (commit revisions behind the withdrawn AC-12 and AC-13) are removed, and
-  `spec/evidence/baseline.json` drops the withdrawn FR-043 entries.
+  note (commit revisions behind the withdrawn AC-12 and AC-13) are removed.
+
+  **`spec/evidence/baseline.json` is deleted.** It was a hand-kept allowlist of
+  `undischarged:<criterion>` entries; nothing in this repository's gate reads
+  it, and `spec/evidence/suites.md` no longer describes it as a ratchet floor.
 
   **Withdrawal marks brought to the newer form.** `spec.md` marks US-022,
   FR-084..FR-092, NFR-021 and NFR-022 `⛔ **Withdrawn**` (#388), and the #388

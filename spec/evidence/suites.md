@@ -39,10 +39,7 @@ The reason is structural, not a misconfiguration. The junit adapter reads test
 where `quire coverage` reads them off symbols. A junit report carries no symbol,
 so there is nothing for an obligation id to match.
 
-So the audit reports **341 undischarged** obligations and **0 healthy**, and
-`baseline.json` accepts all 341 as the ratchet floor. `make evidence-audit`
-compares against that floor: the backlog cannot grow, and every obligation that
-becomes discharged is a permanent gain.
+So the audit reports **341 undischarged** obligations and **0 healthy**.
 
 Closing the binding gap needs one of two things, and neither is invented here:
 
