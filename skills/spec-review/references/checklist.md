@@ -3,7 +3,6 @@
 ## ID Format and Uniqueness
 - [ ] All user stories use `US-XXX` format (3-digit).
 - [ ] All functional requirements use `FR-XXX` format.
-- [ ] All test cases use `TC-XXX` format.
 - [ ] Acceptance criteria use `{PARENT}-AC-N`.
 - [ ] Options use `{PARENT}-OPT-{LETTER}`.
 - [ ] Constraints use `{PARENT}-CON-N`.
