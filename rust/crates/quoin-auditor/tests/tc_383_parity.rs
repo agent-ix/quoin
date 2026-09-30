@@ -133,7 +133,7 @@ fn canonical_of<T: serde::Serialize>(value: &T) -> String {
 /// golden case that decides it (quoin#501).
 ///
 /// Trace: FR-032-AC-1, FR-032-AC-2, FR-032-AC-3, FR-032-AC-4, FR-032-AC-5
-/// Trace: FR-032-AC-6, FR-032-AC-7, FR-032-AC-9, FR-032-AC-10, FR-032-AC-11
+/// Trace: FR-032-AC-6, FR-032-AC-7, FR-032-AC-9, FR-032-AC-10
 /// Trace: FR-032-AC-14, FR-032-AC-15, FR-032-AC-16, FR-032-CON-3
 /// Trace: FR-039-AC-1, FR-039-AC-2, FR-039-AC-3, FR-039-AC-4, FR-039-AC-5
 /// Trace: FR-039-AC-6, FR-039-AC-7, FR-039-AC-10, FR-039-AC-11, FR-039-AC-12

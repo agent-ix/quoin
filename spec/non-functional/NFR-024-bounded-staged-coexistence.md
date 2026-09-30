@@ -100,7 +100,7 @@ classifies nothing is reported as inconclusive rather than as clean.
 | NFR-024-AC-12 | The classified population includes executable paths with no governed extension, and a planted non-Rust assertion in a Makefile recipe or a workflow `run:` block is classified rather than skipped. | Test (TC-1707) |
 | NFR-024-AC-14 | A manifest entry declaring a category this requirement does not admit fails the run, naming the entry and the category. | Test (TC-1710) |
 
-> **CR note (2026-09-30):** The clauses that required each retained path to be
+> **CR note (2026-09-30, agent-ix/quoin#658):** The clauses that required each retained path to be
 > carried as a row of `docs/rust-burndown/executable-path-matrix.md` are
 > withdrawn: the Statement's matrix-row clause, the Verification sentence naming
 > that file as the place the stage issues are listed, and the Verification

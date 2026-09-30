@@ -71,7 +71,8 @@ description: "Chronological log of structural changes to this bundle."
   **The `data_schema` digest and versioned `$id` are no longer enforced**
   (FR-073 CR note). The `semantic.data-schema-digest`,
   `semantic.data-schema-digest-mismatch` and `semantic.data-schema-id` codes
-  are removed; a `digest` member is accepted and ignored. FR-073-AC-6 and
+  are removed; a `digest` member is accepted and ignored, and the `$id` need
+  not be absolute. FR-073-AC-6 and
   TC-1385 are withdrawn, and `SEMANTIC_CONTRACT` no longer records hashes or
   revisions of the npm-installed schemas. The semantic-module template no
   longer writes or checks manifest digests.
@@ -81,7 +82,10 @@ description: "Chronological log of structural changes to this bundle."
   Provenance ledgers under crate test fixtures (`PROVENANCE.md`,
   `STORE-PROVENANCE.md`, `*.captured.provenance.json`, `provenance.json`) and
   the tests that only asserted recorded revisions or digests are deleted.
-  `bench/metrics.json` and `bench/tier1-mapping.json` are deleted.
+  `bench/metrics.json` and `bench/tier1-mapping.json` are deleted, and MP-207,
+  whose protected apparatus they were, is retired. The unread `provenance`
+  blocks and recorded hashes in the crate goldens are deleted, and so is
+  `Finding::key()`, the ratchet baseline key.
 
 * **2026-09-29** — **The semantic type-fit audit is withdrawn, and three
   version-tracking criteria with it** (agent-ix/quoin#654).

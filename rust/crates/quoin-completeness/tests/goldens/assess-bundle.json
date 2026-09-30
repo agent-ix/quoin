@@ -1,11 +1,4 @@
 {
-  "provenance": {
-    "producer": "scripts/capture-semantic-goldens.mjs",
-    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
-    "quoinRevision": "dc834a22f45cea52275595ebc2857baa17484229",
-    "ajvVersion": "8.20.0",
-    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
-  },
   "source": "src/completeness/run.ts assessBundle() + declarations.ts loadVocabularyCoverage()",
   "moduleFiles": {
     "manifest.yaml": "name: iso\nversion: 1.0.0\nartifact_types:\n- name: NFR\n  grammar_ref: g\n  frontmatter_schema_ref: schemas/nfr.json\ntraceability:\n  vocabulary_coverage:\n  - name: quality-characteristics\n    from: NFR\n    field: quality_attribute\n    check: vocabulary-coverage\n    justified_absence_field: quality_attributes_not_applicable\n  - name: open-vocabulary\n    from: NFR\n    field: owner\n    check: owner-coverage\n  - name: missing-type\n    from: ZZZ\n    field: whatever\n    check: zzz\n",

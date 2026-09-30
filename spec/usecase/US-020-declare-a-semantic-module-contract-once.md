@@ -47,7 +47,7 @@ contract it implements.
 
 ### US-020-EX-3: A module points at its emitted schema
 
-- **Given** a module manifest whose `entity.data_schema` names the emitted `Entity.json` by path and digest and records the semantic-core version it imports
+- **Given** a module manifest whose `entity.data_schema` names the emitted `Entity.json` by path and records the semantic-core version it imports
 - **When** the manifest is loaded
 - **Then** the schema is read from the path, the digest is verified, and a mismatch is an error rather than a silent fallback to `{type: object}`
 

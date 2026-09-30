@@ -4,8 +4,7 @@
 //!
 //! The corpus in `tests/goldens/graph-analysis.json` was captured **once**, by
 //! a script run against the retained TypeScript. Both are deleted at HEAD
-//! (quoin#500) and the corpus records where each lived, as `<revision>:<path>`,
-//! in its `provenance` block. It is the committed bytes that are read here and
+//! (quoin#500). It is the committed bytes that are read here and
 //! nothing else: FR-101-AC-5 forbids leaving an oracle in the loop, and a test
 //! that shelled out to node would be exactly that.
 //!

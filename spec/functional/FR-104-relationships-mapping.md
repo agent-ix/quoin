@@ -148,7 +148,7 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 |---|---|---|---|
 | FR-104-CON-1 | Quire SHALL NOT read relationship category or composition from a verb's spelling, a target's name, or the object type's roles; only the registry entry decides them. | Correctness | Fixture inspection |
 
-> **CR note (2026-09-30):** FR-104-CON-2 is withdrawn. It required the golden
+> **CR note (2026-09-30, agent-ix/quoin#658):** FR-104-CON-2 is withdrawn. It required the golden
 > fixtures to record the `agent-ix/spec-artifacts-iso` and
 > `agent-ix/spec-objects-business` revisions their context comes from, which is
 > a record of pinned revisions, not behaviour; the `revision` fields are removed

@@ -167,8 +167,7 @@ fn tc_452_613_an_export_must_name_a_declared_type_that_ships_a_referenced_schema
         codes(&undeclared, &validators)
     );
 
-    // `enumeration` is declared, but carries an INLINE `data_schema`, so there
-    // is nothing to pin a digest to.
+    // `enumeration` is declared, but carries an INLINE `data_schema`.
     let inline = scratch.module_copy("export-inline", |manifest, _| {
         manifest["semantic"]["exports"] = json!(["entity", "enumeration"]);
     });
@@ -324,7 +323,7 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
 /// Trace: FR-073-AC-2
 /// Provenance: agent-ix/quoin#452
 #[test]
-fn tc_452_617_an_unhashable_missing_unparsable_or_non_schema_file_is_refused() {
+fn tc_452_617_a_missing_unparsable_or_non_schema_file_is_refused() {
     let validators = validators();
     let scratch = Scratch::new();
 
@@ -382,8 +381,8 @@ fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused(
     let validators = validators();
     let scratch = Scratch::new();
 
-    let self_ref = scratch.module_copy("self-ref", |manifest, root| {
-        rewrite_entity_schema(manifest, root, |schema| {
+    let self_ref = scratch.module_copy("self-ref", |_, root| {
+        rewrite_entity_schema(root, |schema| {
             let id = schema["$id"].as_str().unwrap().to_owned();
             schema["$defs"] = json!({ "marker": { "type": "string" } });
             schema["properties"]["marker"] = json!({ "$ref": format!("{id}#/$defs/marker") });
@@ -391,8 +390,8 @@ fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused(
     });
     assert_eq!(errors(&self_ref, &validators), Vec::<String>::new());
 
-    let version = scratch.module_copy("core-version", |manifest, root| {
-        rewrite_entity_schema(manifest, root, |schema| {
+    let version = scratch.module_copy("core-version", |_, root| {
+        rewrite_entity_schema(root, |schema| {
             schema["properties"]["fields"]["items"] = json!({
                 "$ref": "https://schemas.agent-ix.org/semantic-core/0.2.0/FieldDecl.json"
             });
@@ -406,8 +405,8 @@ fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused(
         codes(&version, &validators)
     );
 
-    let unshipped = scratch.module_copy("unshipped", |manifest, root| {
-        rewrite_entity_schema(manifest, root, |schema| {
+    let unshipped = scratch.module_copy("unshipped", |_, root| {
+        rewrite_entity_schema(root, |schema| {
             schema["properties"]["fields"]["items"] = json!({
                 "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/0.1.0/Missing.json"
             });
@@ -422,8 +421,8 @@ fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused(
         codes(&unshipped, &validators)
     );
 
-    let cycle = scratch.module_copy("cycle", |manifest, root| {
-        rewrite_entity_schema(manifest, root, |schema| {
+    let cycle = scratch.module_copy("cycle", |_, root| {
+        rewrite_entity_schema(root, |schema| {
             schema["properties"]["fields"]["items"] = json!({
                 "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/0.1.0/Other.json"
             });

@@ -59,7 +59,7 @@ can be added, fire a thousand times, and nobody can say whether any of them were
 > SHA), whose only validation was TC-933, is withdrawn with FR-043-AC-8. The ids
 > are not reused.
 
-> **CR note (2026-09-30):** FR-043-AC-1..AC-7, AC-9..AC-11, AC-13..AC-19,
+> **CR note (2026-09-30, agent-ix/quoin#658):** FR-043-AC-1..AC-7, AC-9..AC-11, AC-13..AC-19,
 > AC-21..AC-28, AC-30 and AC-36 are withdrawn. No test stands behind any of
 > them: the tier-1 and tier-2 runners, the metric-dictionary loader and their
 > TypeScript tests went with `scripts/`, `evals/` and the TypeScript test tree,

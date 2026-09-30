@@ -1,6 +1,6 @@
 ---
 id: FR-073
-title: "data_schema by emitted-schema path and digest"
+title: "data_schema by emitted-schema path"
 type: FR
 relationships:
   - target: "ix://agent-ix/quoin/US-020"
@@ -9,7 +9,7 @@ relationships:
     type: "depends_on"
 ---
 
-# FR-073: data_schema by emitted-schema path and digest
+# FR-073: data_schema by emitted-schema path
 
 ## Description
 
@@ -27,7 +27,7 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 
 - The `data_schema` value SHALL accept the reference form `{ schema: <relative path> }` in addition to the current inline object form.
 - If an object carries `schema` together with any other key, then Quoin SHALL reject it as ambiguous.
-- If the referenced file is missing, unreadable, not JSON, or not a JSON Schema 2020-12 document with an absolute `$id`, then Quoin SHALL reject the manifest naming the path and the reason.
+- If the referenced file is missing, unreadable, not JSON, or not a JSON Schema 2020-12 document with an `$id`, then Quoin SHALL reject the manifest naming the path and the reason.
 - If the path escapes the module root by `..` or by symlink, then Quoin SHALL reject the manifest naming the path.
 - Every `$ref` in the referenced schema SHALL resolve within the module's shipped bundle or the semantic-core bundle `https://schemas.agent-ix.org/semantic-core/<semantic.semantic_core>/`.
 - If a `$ref` names a semantic-core version other than `semantic.semantic_core`, an unshipped file, or forms a cycle that the resolver cannot close, then Quoin SHALL reject the manifest naming the `$ref`.
@@ -52,14 +52,14 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 | FR-073-AC-4 | Inline `data_schema` under a module with a `semantic` block yields `semantic.inline-data-schema`; without a `semantic` block it is silent. | Test |
 | FR-073-AC-5 | A path escaping the module root by `..` or by symlink is rejected; `{ schema, type: object }` is rejected as ambiguous. | Test |
 
-> **CR note (2026-09-30):** The `data_schema` digest and the versioned `$id`
+> **CR note (2026-09-30, agent-ix/quoin#658):** The `data_schema` digest and the versioned `$id`
 > are no longer enforced. Quoin no longer compares a referenced schema's bytes
 > to a recorded `digest` (the `semantic.data-schema-digest` and
 > `semantic.data-schema-digest-mismatch` codes are removed) or requires its
 > `$id` to equal a path built from the module version
 > (`semantic.data-schema-id` is removed). The package manager already fixes
 > which bytes ship. A `digest` member left in a manifest is accepted and
-> ignored. FR-073-AC-6 (bundle provenance equal to a recorded digest at a
+> ignored. The `$id` is no longer required to be absolute. FR-073-AC-6 (bundle provenance equal to a recorded digest at a
 > recorded revision) is withdrawn, and so are the recorded hashes and
 > revisions in `SEMANTIC_CONTRACT`. The id is not reused.
 

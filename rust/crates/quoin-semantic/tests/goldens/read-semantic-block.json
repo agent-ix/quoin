@@ -1,11 +1,4 @@
 {
-  "provenance": {
-    "producer": "scripts/capture-semantic-goldens.mjs",
-    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
-    "quoinRevision": "dc834a22f45cea52275595ebc2857baa17484229",
-    "ajvVersion": "8.20.0",
-    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
-  },
   "source": "src/semantic/manifest.ts readSemanticBlock()",
   "counts": {
     "total": 23
@@ -21,8 +14,7 @@
           {
             "name": "entity",
             "data_schema": {
-              "schema": "schemas/Entity.json",
-              "digest": "sha256:5aa3ab835807e0002d5375a1a56a2cb9104094316ce031c7185b81904d641f12"
+              "schema": "schemas/Entity.json"
             }
           }
         ],
@@ -79,8 +71,7 @@
           {
             "name": "entity",
             "data_schema": {
-              "schema": "schemas/Nope.json",
-              "digest": "sha256:5aa3ab835807e0002d5375a1a56a2cb9104094316ce031c7185b81904d641f12"
+              "schema": "schemas/Nope.json"
             }
           }
         ],
@@ -144,8 +135,7 @@
           {
             "name": "entity",
             "data_schema": {
-              "schema": "schemas/Entity.json",
-              "digest": "sha256:9721cf86f35ae901ad499d5e6c6f8c83451a976c52a1808a06fea27b04babb22"
+              "schema": "schemas/Entity.json"
             }
           }
         ],
@@ -211,8 +201,7 @@
           {
             "name": "entity",
             "data_schema": {
-              "schema": "schemas/Entity.json",
-              "digest": "sha256:ef4bee7c553f7c1da25db4c839ac227c7807a48a681ca2f826becafddd6123ae"
+              "schema": "schemas/Entity.json"
             }
           }
         ],
@@ -278,8 +267,7 @@
           {
             "name": "entity",
             "data_schema": {
-              "schema": "schemas/Entity.json",
-              "digest": "sha256:17019374b8b210647ba7bc853aa8dc1dc7186a514481c226240704a9732dcf1e"
+              "schema": "schemas/Entity.json"
             }
           }
         ],
@@ -458,7 +446,7 @@
           "code": "semantic.export-without-schema",
           "severity": "error",
           "path": "semantic.exports.ghost",
-          "message": "semantic.exports names ghost, whose data_schema is not a { schema, digest } reference; nothing can be pinned for it"
+          "message": "semantic.exports names ghost, whose data_schema is not a { schema } reference; nothing can be pinned for it"
         }
       ],
       "module": {
@@ -509,13 +497,13 @@
           "code": "semantic.inline-data-schema",
           "severity": "warning",
           "path": "object_types[entity].data_schema",
-          "message": "object type entity still carries an inline data_schema; migrate to { schema, digest } referencing the module's emitted schema (FR-073, FR-074)"
+          "message": "object type entity still carries an inline data_schema; migrate to { schema } referencing the module's emitted schema (FR-073, FR-074)"
         },
         {
           "code": "semantic.export-without-schema",
           "severity": "error",
           "path": "semantic.exports.entity",
-          "message": "semantic.exports names entity, whose data_schema is not a { schema, digest } reference; nothing can be pinned for it"
+          "message": "semantic.exports names entity, whose data_schema is not a { schema } reference; nothing can be pinned for it"
         }
       ],
       "module": {
@@ -543,7 +531,7 @@
                 "code": "semantic.inline-data-schema",
                 "severity": "warning",
                 "path": "object_types[entity].data_schema",
-                "message": "object type entity still carries an inline data_schema; migrate to { schema, digest } referencing the module's emitted schema (FR-073, FR-074)"
+                "message": "object type entity still carries an inline data_schema; migrate to { schema } referencing the module's emitted schema (FR-073, FR-074)"
               }
             ]
           }
@@ -576,7 +564,7 @@
           "code": "semantic.inline-data-schema",
           "severity": "warning",
           "path": "object_types[enumeration].data_schema",
-          "message": "object type enumeration still carries an inline data_schema; migrate to { schema, digest } referencing the module's emitted schema (FR-073, FR-074)"
+          "message": "object type enumeration still carries an inline data_schema; migrate to { schema } referencing the module's emitted schema (FR-073, FR-074)"
         }
       ],
       "module": {
@@ -602,7 +590,7 @@
                 "code": "semantic.inline-data-schema",
                 "severity": "warning",
                 "path": "object_types[enumeration].data_schema",
-                "message": "object type enumeration still carries an inline data_schema; migrate to { schema, digest } referencing the module's emitted schema (FR-073, FR-074)"
+                "message": "object type enumeration still carries an inline data_schema; migrate to { schema } referencing the module's emitted schema (FR-073, FR-074)"
               }
             ]
           }
@@ -680,8 +668,7 @@
           {
             "name": "entity",
             "data_schema": {
-              "schema": "../outside/Entity.json",
-              "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "schema": "../outside/Entity.json"
             }
           }
         ],

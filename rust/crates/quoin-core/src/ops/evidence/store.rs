@@ -3,7 +3,7 @@
 
 //! The `evidence` operations that READ or MAINTAIN the store.
 //!
-//! Collecting superseded records, re-affirming a binding, and the three bulk
+//! Collecting superseded records, re-affirming a binding, and the two bulk
 //! reads the command layer makes one call each for — the trust assessments and
 //! the pure auditor's whole input.
 

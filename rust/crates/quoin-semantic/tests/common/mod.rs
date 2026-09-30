@@ -84,11 +84,6 @@ pub fn schema_dir() -> PathBuf {
     quoin_semantic::contract::schema_dir(&semantic_root())
 }
 
-/// The vendored semantic-core bundle directory.
-pub fn semantic_core_dir() -> PathBuf {
-    quoin_semantic::contract::semantic_core_dir(&semantic_root())
-}
-
 /// `tests/fixtures/semantic-module`.
 pub fn fixtures_dir() -> PathBuf {
     repo_root()
@@ -211,14 +206,13 @@ pub fn message_for(root: &Path, validators: &SemanticValidators, code: &str) -> 
         .message
 }
 
-/// `sha256:<hex>` over a file's raw bytes, the spelling a `data_schema.digest`
-/// carries.
+/// `sha256:<hex>` over a file's raw bytes.
 pub fn digest_of(path: &Path) -> String {
     quoin_semantic::contract::file_sha256(path).expect("the schema file is readable")
 }
 
 /// Rewrite the fixture's `schemas/Entity.json` through `edit`.
-pub fn rewrite_entity_schema(_manifest: &mut Value, root: &Path, edit: impl FnOnce(&mut Value)) {
+pub fn rewrite_entity_schema(root: &Path, edit: impl FnOnce(&mut Value)) {
     let file = root.join("schemas").join("Entity.json");
     let mut schema: Value = serde_json::from_str(&fs::read_to_string(&file).unwrap()).unwrap();
     edit(&mut schema);

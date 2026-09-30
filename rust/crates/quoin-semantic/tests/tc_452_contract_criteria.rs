@@ -6,8 +6,7 @@
 //! These restate what `tests/semantic-contract.test.ts` carried before the
 //! cutover deleted it. The subject is the 35 JSON files under `src/semantic/`,
 //! which are DATA and stay there: the TypeScript that read them is gone, this
-//! crate reads them now, and what keeps the copies honest is that every hash
-//! `SEMANTIC_CONTRACT` records is re-derived here from the live bytes.
+//! crate reads them now.
 
 #![allow(
     clippy::unwrap_used,
@@ -22,7 +21,7 @@ mod common;
 use std::collections::BTreeMap;
 use std::fs;
 
-use common::{semantic_core_dir, semantic_root};
+use common::semantic_root;
 use quoin_semantic::SEMANTIC_CONTRACT;
 use quoin_semantic::contract::{common_schema_path, module_manifest_schema_path};
 use serde_json::Value;
@@ -177,59 +176,6 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
             "name".to_owned(),
             "version".to_owned()
         ])
-    );
-}
-
-/// The vendored semantic-core bundle's file list is the directory, and it is a
-/// version this quoin declares it ships.
-///
-/// Trace: FR-073-AC-6
-/// Provenance: agent-ix/quoin#452
-#[test]
-fn tc_452_642_the_vendored_semantic_core_bundle_lists_its_files() {
-    let record = SEMANTIC_CONTRACT.semantic_core;
-    let dir = semantic_core_dir();
-
-    let toolchain = read_json(&dir.join("toolchain.json"));
-    assert_eq!(
-        toolchain["base"],
-        format!(
-            "https://schemas.agent-ix.org/semantic-core/{}/",
-            record.version
-        )
-    );
-
-    let mut shipped: Vec<String> = fs::read_dir(&dir)
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
-        .filter(|name| {
-            std::path::Path::new(name)
-                .extension()
-                .is_some_and(|ext| ext == "json")
-                && name != "toolchain.json"
-        })
-        .collect();
-    shipped.sort();
-    let mut recorded: Vec<String> = toolchain["files"]
-        .as_array()
-        .expect("toolchain.json lists its files")
-        .iter()
-        .map(|v| v.as_str().unwrap().to_owned())
-        .collect();
-    recorded.sort();
-    assert_eq!(shipped, recorded);
-    for name in [
-        "FieldDecl.json",
-        "TypeRef.json",
-        "ClauseRef.json",
-        "OperationDecl.json",
-    ] {
-        assert!(shipped.iter().any(|s| s == name), "{name} is not vendored");
-    }
-    assert!(
-        SEMANTIC_CONTRACT
-            .semantic_core_versions
-            .contains(&record.version)
     );
 }
 

@@ -80,7 +80,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-070: Semantic-module manifest extension](./FR-070-semantic-module-manifest-extension.md)
 - [FR-071: Typed Properties table and SysML fence mapping to FieldDecl](./FR-071-typed-properties-mapping.md)
 - [FR-072: Invariants and Operations mapping to ClauseRef and OperationDecl](./FR-072-invariants-and-operations-mapping.md)
-- [FR-073: data_schema by emitted-schema path and digest](./FR-073-data-schema-by-path-and-digest.md)
+- [FR-073: data_schema by emitted-schema path](./FR-073-data-schema-by-path-and-digest.md)
 - [FR-074: Legacy authoring forms and declared migration](./FR-074-legacy-authoring-forms.md)
 - [FR-075: Semantic package exports, imports, locks, and generated coordinates](./FR-075-semantic-package-exports-and-locks.md)
 - [FR-076: Semantic-module template variants from one maintained core](./FR-076-semantic-module-template-variants.md)

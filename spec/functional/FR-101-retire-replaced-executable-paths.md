@@ -115,7 +115,7 @@ and an unresolved path disposition each block removal.
 | FR-101-AC-8 | The final inventory and `quoin-core lint.language` report no unapproved first-party non-Rust engine, production, planning, validation, canonicalization, digest, oracle or assertion logic, exclude manifest-declared inert samples from executable debt, and fail on a planted violation. | Test (TC-1648) |
 | FR-101-AC-10 | The inventory population includes executable paths with no governed extension — Makefile recipes and `run:` blocks under `.github/workflows/**` — and a planted non-Rust assertion in one of them is reported. | Test (TC-1700) |
 
-> **CR note (2026-09-30):** The Input naming
+> **CR note (2026-09-30, agent-ix/quoin#658):** The Input naming
 > `docs/rust-burndown/executable-path-matrix.md` is withdrawn; that file was an
 > inventory snapshot taken at one commit and is deleted. FR-101-AC-9 is
 > withdrawn with it: it asserted the path inventory's line and file counts at a

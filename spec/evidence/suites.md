@@ -49,5 +49,5 @@ Closing the binding gap needs one of two things, and neither is invented here:
   same join `quire coverage` already performs.
 
 Recording a store that discharges nothing is still worth doing: the run
-directory, the suite ids and the ratchet floor all exist now, and the next
+directory and the suite ids exist now, and the next
 person meets a store with real data in it rather than an absent directory.

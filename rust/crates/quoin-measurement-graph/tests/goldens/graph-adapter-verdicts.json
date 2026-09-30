@@ -1,13 +1,4 @@
 {
-  "provenance": {
-    "captured_by": "6ac2b49f86ece258db2f8837914b35ff30783717:rust/crates/quoin-measurement-graph/oracle/capture-graph-adapter-verdicts.mjs",
-    "module": "src/measurement/graph-adapters.ts",
-    "module_digest": "sha256:961ecad4aa9e112a669502de11b3906ca9654098bf1eb0c25adebd9ee65ac01a",
-    "node": "v22.15.0",
-    "zod": "4.4.3",
-    "quoin_revision": "9120e9b13d964e5373189edbbf830719f76fa3c8",
-    "note": "Captured once. FR-101 AC-5: no Rust test runs node. Deleted by the W12 cutover."
-  },
   "cases": [
     {
       "name": "select/quire-assurance-v1",

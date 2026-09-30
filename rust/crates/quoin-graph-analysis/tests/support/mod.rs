@@ -4,10 +4,8 @@
 //!
 //! `tests/goldens/graph-analysis.json` was written once by a capture script
 //! run against the retained `src/graph-analysis/`. Both are deleted at HEAD
-//! (quoin#500) and neither was ever consulted at test time (FR-101-AC-5); the
-//! corpus records where each one lived, as `<revision>:<path>`, in its own
-//! `provenance` block. Two tests read it, so the reading lives here rather
-//! than twice.
+//! (quoin#500) and neither was ever consulted at test time (FR-101-AC-5). Two
+//! tests read the corpus, so the reading lives here rather than twice.
 //!
 //! Provenance: quoin#385, quoin#500
 

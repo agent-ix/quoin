@@ -157,10 +157,5 @@
       "name": "fixture-repo-under-a-module-with-no-traceability",
       "origin": "rust/crates/quoin-quire/tests/fixtures/repo"
     }
-  ],
-  "provenance": {
-    "engine": "quire-rs = { version = \"=0.46.0\", git = \"https://github.com/agent-ix/quire-rs\", rev = \"85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f\" }",
-    "producer": "rust/crates/quoin-quire/oracle/capture-assurance-bases.rs",
-    "quoin_revision": "f1c2bd9983bba14f0d87f7a8da4a84703ca13f3d"
-  }
+  ]
 }

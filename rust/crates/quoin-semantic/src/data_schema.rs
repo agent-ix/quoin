@@ -332,9 +332,7 @@ pub fn resolve_data_schema(
         diagnostics.push(SemanticDiagnostic::error(
             DiagnosticCode::DataSchemaNotSchema,
             format!("{locus}.schema"),
-            format!(
-                "schema file is not a JSON Schema document with an absolute $id: {schema_path}"
-            ),
+            format!("schema file is not a JSON Schema document with an $id: {schema_path}"),
         ));
         return fail(diagnostics);
     };

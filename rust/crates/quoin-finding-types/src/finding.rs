@@ -136,16 +136,6 @@ impl Finding {
             other: OtherMembers::new(),
         }
     }
-
-    /// The baseline key for one finding: `` `{kind}:{obligation}` ``.
-    ///
-    /// Here rather than in the auditor because the ratchet baseline on disk is
-    /// a list of these strings, and a reader that wanted to ask "is this
-    /// finding accepted?" would otherwise re-spell the key.
-    #[must_use]
-    pub fn key(&self) -> String {
-        format!("{}:{}", self.kind, self.obligation)
-    }
 }
 
 /// The twelve kinds the auditor mints, as a reader's note.
@@ -280,12 +270,6 @@ mod tests {
             serde_json::to_string(&finding).unwrap(),
             r#"{"kind":"undischarged","obligation":"FR-001-AC-1","severity":"medium","summary":"s"}"#
         );
-    }
-
-    #[test]
-    fn the_baseline_key_is_kind_then_obligation() {
-        let finding = Finding::new("suspect-link", "FR-001-AC-1", Severity::high(), "s");
-        assert_eq!(finding.key(), "suspect-link:FR-001-AC-1");
     }
 
     /// A finding round-trips through JSON with every member the producer
