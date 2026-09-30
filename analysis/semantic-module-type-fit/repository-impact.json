@@ -211,14 +211,12 @@
     }
   ],
   "reconciliation": {
-    "architectureRevision": "61aeaddf4571550bf1989f7add3197e52f54f73b",
     "coreData": [
       {
         "censusRecords": [
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "engineering-assurance::artifact::AssuranceProfile::0",
         "disposition": "mapping",
         "evidence": [
@@ -233,7 +231,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "engineering-assurance::artifact::MeasurementPlan::1",
         "disposition": "mapping",
         "evidence": [
@@ -248,7 +245,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "engineering-assurance::artifact::ArchitectureDescription::2",
         "disposition": "mapping",
         "evidence": [
@@ -263,7 +259,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "engineering-assurance::artifact::ComponentAssuranceContract::3",
         "disposition": "mapping",
         "evidence": [
@@ -278,7 +273,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "engineering-assurance::artifact::AssuranceArgument::4",
         "disposition": "mapping",
         "evidence": [
@@ -293,7 +287,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::FR::0",
         "disposition": "mapping",
         "evidence": [
@@ -308,7 +301,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::NFR::1",
         "disposition": "mapping",
         "evidence": [
@@ -323,7 +315,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::StR::2",
         "disposition": "mapping",
         "evidence": [
@@ -338,7 +329,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::US::3",
         "disposition": "mapping",
         "evidence": [
@@ -353,7 +343,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::IT::4",
         "disposition": "mapping",
         "evidence": [
@@ -368,7 +357,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::TC::5",
         "disposition": "mapping",
         "evidence": [
@@ -383,7 +371,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::master-requirements::6",
         "disposition": "mapping",
         "evidence": [
@@ -401,7 +388,6 @@
           "INV-013",
           "INV-014"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::index::7",
         "disposition": "mapping",
         "evidence": [
@@ -419,7 +405,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::log::8",
         "disposition": "mapping",
         "evidence": [
@@ -434,7 +419,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-iso::artifact::Glossary::9",
         "disposition": "mapping",
         "evidence": [
@@ -452,7 +436,6 @@
           "INV-006",
           "INV-018"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-app::artifact::ApplicationSpec::0",
         "disposition": "mapping",
         "evidence": [
@@ -470,7 +453,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-app::artifact::MasterRequirements::1",
         "disposition": "mapping",
         "evidence": [
@@ -485,7 +467,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::ADR::0",
         "disposition": "mapping",
         "evidence": [
@@ -501,7 +482,6 @@
           "INV-002",
           "INV-013"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::Plan::1",
         "disposition": "mapping",
         "evidence": [
@@ -517,7 +497,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::Task::2",
         "disposition": "mapping",
         "evidence": [
@@ -532,7 +511,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::Review::3",
         "disposition": "mapping",
         "evidence": [
@@ -550,7 +528,6 @@
           "INV-006",
           "INV-018"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::SpecReview::4",
         "disposition": "mapping",
         "evidence": [
@@ -569,7 +546,6 @@
           "INV-002",
           "INV-005"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::Finding::5",
         "disposition": "mapping",
         "evidence": [
@@ -585,7 +561,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::Feedback::6",
         "disposition": "mapping",
         "evidence": [
@@ -602,7 +577,6 @@
           "INV-008",
           "INV-014"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::TestMatrixIndex::7",
         "disposition": "mapping",
         "evidence": [
@@ -620,7 +594,6 @@
           "INV-002",
           "INV-008"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::TestMatrix::8",
         "disposition": "mapping",
         "evidence": [
@@ -636,7 +609,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::Standard::9",
         "disposition": "mapping",
         "evidence": [
@@ -652,7 +624,6 @@
           "INV-002",
           "INV-019"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::SuiteRegistry::10",
         "disposition": "mapping",
         "evidence": [
@@ -671,7 +642,6 @@
           "INV-006",
           "INV-018"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::artifact::Inspections::11",
         "disposition": "mapping",
         "evidence": [
@@ -689,7 +659,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-artifacts-process::object::standard::0",
         "disposition": "mapping",
         "evidence": [
@@ -705,7 +674,6 @@
           "INV-002",
           "INV-010"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::domain::0",
         "disposition": "mapping",
         "evidence": [
@@ -721,7 +689,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::entity::1",
         "disposition": "mapping",
         "evidence": [
@@ -736,7 +703,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::value_object::2",
         "disposition": "mapping",
         "evidence": [
@@ -751,7 +717,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::aggregate_root::3",
         "disposition": "mapping",
         "evidence": [
@@ -766,7 +731,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::nested_entity::4",
         "disposition": "mapping",
         "evidence": [
@@ -781,7 +745,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::repository::5",
         "disposition": "mapping",
         "evidence": [
@@ -798,7 +761,6 @@
           "INV-007",
           "INV-010"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::event::6",
         "disposition": "mapping",
         "evidence": [
@@ -816,7 +778,6 @@
           "INV-002",
           "INV-010"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::state_machine::7",
         "disposition": "mapping",
         "evidence": [
@@ -834,7 +795,6 @@
           "INV-010",
           "INV-020"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::process::8",
         "disposition": "mapping",
         "evidence": [
@@ -851,7 +811,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-business::object::enumeration::9",
         "disposition": "mapping",
         "evidence": [
@@ -866,7 +825,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::api_endpoint::0",
         "disposition": "mapping",
         "evidence": [
@@ -881,7 +839,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::data_schema::1",
         "disposition": "mapping",
         "evidence": [
@@ -896,7 +853,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::queue::2",
         "disposition": "mapping",
         "evidence": [
@@ -915,7 +871,6 @@
           "INV-012",
           "INV-017"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::action::3",
         "disposition": "mapping",
         "evidence": [
@@ -934,7 +889,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::ui_component::4",
         "disposition": "mapping",
         "evidence": [
@@ -949,7 +903,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::interface::5",
         "disposition": "mapping",
         "evidence": [
@@ -964,7 +917,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::external_contract::6",
         "disposition": "mapping",
         "evidence": [
@@ -979,7 +931,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::extension_point::7",
         "disposition": "mapping",
         "evidence": [
@@ -994,7 +945,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::binary_format::8",
         "disposition": "mapping",
         "evidence": [
@@ -1009,7 +959,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-architecture::object::rate_limit::9",
         "disposition": "mapping",
         "evidence": [
@@ -1024,7 +973,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-enterprise::object::capability::0",
         "disposition": "mapping",
         "evidence": [
@@ -1039,7 +987,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-enterprise::object::business_function::1",
         "disposition": "mapping",
         "evidence": [
@@ -1054,7 +1001,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-enterprise::object::value_stream::2",
         "disposition": "mapping",
         "evidence": [
@@ -1069,7 +1015,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-enterprise::object::decision::3",
         "disposition": "mapping",
         "evidence": [
@@ -1084,7 +1029,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-enterprise::object::objective::4",
         "disposition": "mapping",
         "evidence": [
@@ -1099,7 +1043,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-enterprise::object::principle::5",
         "disposition": "mapping",
         "evidence": [
@@ -1114,7 +1057,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-enterprise::object::kpi::6",
         "disposition": "mapping",
         "evidence": [
@@ -1130,7 +1072,6 @@
           "INV-002",
           "INV-021"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-operational::object::configuration::0",
         "disposition": "mapping",
         "evidence": [
@@ -1146,7 +1087,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-operational::object::migration::1",
         "disposition": "mapping",
         "evidence": [
@@ -1161,7 +1101,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-operational::object::sli::2",
         "disposition": "mapping",
         "evidence": [
@@ -1176,7 +1115,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-operational::object::slo::3",
         "disposition": "mapping",
         "evidence": [
@@ -1191,7 +1129,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-operational::object::alert::4",
         "disposition": "mapping",
         "evidence": [
@@ -1206,7 +1143,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-operational::object::runbook::5",
         "disposition": "mapping",
         "evidence": [
@@ -1221,7 +1157,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-operational::object::incident::6",
         "disposition": "mapping",
         "evidence": [
@@ -1236,7 +1171,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-operational::object::deployment::7",
         "disposition": "mapping",
         "evidence": [
@@ -1251,7 +1185,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::auth_flow::0",
         "disposition": "mapping",
         "evidence": [
@@ -1266,7 +1199,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::permission::1",
         "disposition": "mapping",
         "evidence": [
@@ -1282,7 +1214,6 @@
           "INV-002",
           "INV-005"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::scope::2",
         "disposition": "mapping",
         "evidence": [
@@ -1298,7 +1229,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::role::3",
         "disposition": "mapping",
         "evidence": [
@@ -1313,7 +1243,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::secret::4",
         "disposition": "mapping",
         "evidence": [
@@ -1328,7 +1257,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::encryption_key::5",
         "disposition": "mapping",
         "evidence": [
@@ -1343,7 +1271,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::session_config::6",
         "disposition": "mapping",
         "evidence": [
@@ -1358,7 +1285,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::data_classification::7",
         "disposition": "mapping",
         "evidence": [
@@ -1373,7 +1299,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::trust_boundary::8",
         "disposition": "mapping",
         "evidence": [
@@ -1388,7 +1313,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::audit_event::9",
         "disposition": "mapping",
         "evidence": [
@@ -1403,7 +1327,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::csrf_token::10",
         "disposition": "mapping",
         "evidence": [
@@ -1418,7 +1341,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::cors_policy::11",
         "disposition": "mapping",
         "evidence": [
@@ -1433,7 +1355,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::password_policy::12",
         "disposition": "mapping",
         "evidence": [
@@ -1448,7 +1369,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::mfa_method::13",
         "disposition": "mapping",
         "evidence": [
@@ -1463,7 +1383,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::jwt_claim::14",
         "disposition": "mapping",
         "evidence": [
@@ -1478,7 +1397,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::threat::15",
         "disposition": "mapping",
         "evidence": [
@@ -1493,7 +1411,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::control::16",
         "disposition": "mapping",
         "evidence": [
@@ -1508,7 +1425,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::risk::17",
         "disposition": "mapping",
         "evidence": [
@@ -1523,7 +1439,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::vulnerability::18",
         "disposition": "mapping",
         "evidence": [
@@ -1538,7 +1453,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::asset::19",
         "disposition": "mapping",
         "evidence": [
@@ -1553,7 +1467,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::attack_surface::20",
         "disposition": "mapping",
         "evidence": [
@@ -1568,7 +1481,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::policy::21",
         "disposition": "mapping",
         "evidence": [
@@ -1583,7 +1495,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-security::object::audit_finding::22",
         "disposition": "mapping",
         "evidence": [
@@ -1598,7 +1509,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-safety::object::hazard::0",
         "disposition": "mapping",
         "evidence": [
@@ -1613,7 +1523,6 @@
           "INV-001",
           "INV-002"
         ],
-        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
         "declarationId": "spec-objects-safety::object::failure_mode::1",
         "disposition": "mapping",
         "evidence": [
@@ -1678,8 +1587,7 @@
     ],
     "quire": {
       "evidence": [
-        "agent-ix/quire-rs#385",
-        "agent-ix/quire-corpus@68eb2c7d93973adf36b2478c70176f3b89fbd5b0"
+        "agent-ix/quire-rs#385"
       ],
       "preservesBoundary": true,
       "responsibilities": [
@@ -1688,8 +1596,7 @@
         "extract",
         "address",
         "byte-splice"
-      ],
-      "revision": "68eb2c7d93973adf36b2478c70176f3b89fbd5b0"
+      ]
     },
     "schemaVersion": "semantic-audit-reconciliation-v1",
     "shadowContracts": []
