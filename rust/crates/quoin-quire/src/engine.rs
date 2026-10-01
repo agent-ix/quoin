@@ -48,15 +48,6 @@ pub const ADAPTER_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// `build.rs` rather than restated as a constant.
 pub const ENGINE_VERSION: &str = env!("QUOIN_QUIRE_ENGINE_VERSION");
 
-/// The oldest engine whose payloads this build will read back off disk.
-///
-/// Equal to [`ENGINE_VERSION`] deliberately, and that is the whole change in
-/// posture: `contract.ts` had to accept a *range* of producers because the
-/// producer was whatever binary was on `PATH`. This build has exactly one
-/// engine, so anything older is an artifact from a different instrument and is
-/// re-measured rather than reinterpreted.
-pub const MINIMUM_STORED_ENGINE: &str = ENGINE_VERSION;
-
 /// What this build can emit, as tokens.
 ///
 /// Open vocabulary: adding a token must not break a consumer written against
@@ -126,91 +117,6 @@ impl Provenance {
 impl Default for Provenance {
     fn default() -> Self {
         Self::current()
-    }
-}
-
-/// A three-part numeric version, compared numerically.
-///
-/// The successor to `compareVersions`, which split on `.` and compared three
-/// `parseInt`s. Same semantics, plus a type that cannot be handed a string
-/// that never parsed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Version {
-    major: u64,
-    minor: u64,
-    patch: u64,
-}
-
-impl Version {
-    /// The first `N.N.N` in a string, as `parseCliVersion` took it.
-    ///
-    /// Tolerant on purpose: an engine version can carry a `-123-gabcdef`
-    /// describe suffix, and the three numbers in front of it are the comparable
-    /// part.
-    ///
-    /// Only the first [`Self::SCAN_LIMIT`] bytes are scanned. The argument
-    /// comes off a stored artifact, so it is untrusted input of unbounded
-    /// length, and a backtracking scan over all of it is quadratic
-    /// (rust-review §11). No version string is 256 bytes long.
-    #[must_use]
-    pub fn parse_first(text: &str) -> Option<Self> {
-        let scanned = bounded(text, Self::SCAN_LIMIT);
-        (0..scanned.len()).find_map(|start| Self::at(scanned, start))
-    }
-
-    /// How much of a supplied string is scanned for a version.
-    pub const SCAN_LIMIT: usize = 256;
-
-    /// A version starting exactly at `from`, if one does.
-    fn at(text: &str, from: usize) -> Option<Self> {
-        let (major, cursor) = number(text, from)?;
-        let cursor = dot(text, cursor)?;
-        let (minor, cursor) = number(text, cursor)?;
-        let cursor = dot(text, cursor)?;
-        let (patch, _) = number(text, cursor)?;
-        Some(Self {
-            major,
-            minor,
-            patch,
-        })
-    }
-}
-
-/// The longest prefix of `text` no longer than `limit`, cut on a character
-/// boundary.
-fn bounded(text: &str, limit: usize) -> &str {
-    if text.len() <= limit {
-        return text;
-    }
-    let mut end = limit;
-    while end > 0 && !text.is_char_boundary(end) {
-        end -= 1;
-    }
-    text.get(..end).unwrap_or("")
-}
-
-/// A decimal run at `from`, and the offset just past it.
-///
-/// `None` for no digits, and for a run too long to be a `u64` — a 30-digit
-/// major version is not a version, and silently truncating it would invent one.
-fn number(text: &str, from: usize) -> Option<(u64, usize)> {
-    let rest = text.get(from..)?;
-    let digits = rest.bytes().take_while(u8::is_ascii_digit).count();
-    let slice = rest.get(..digits)?;
-    let value = slice.parse::<u64>().ok()?;
-    Some((value, from + digits))
-}
-
-/// The offset just past a `.` at `from`.
-fn dot(text: &str, from: usize) -> Option<usize> {
-    text.get(from..)?
-        .starts_with('.')
-        .then_some(from.saturating_add(1))
-}
-
-impl std::fmt::Display for Version {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
     }
 }
 
@@ -293,25 +199,6 @@ mod tests {
         assert_eq!(before, sorted.len(), "duplicate capability token");
         assert_eq!(CAPABILITIES, sorted.as_slice(), "tokens must be sorted");
         assert!(CAPABILITIES.iter().all(|token| !token.is_empty()));
-    }
-
-    /// Trace: FR-097
-    #[test]
-    fn tc_379_022_versions_compare_numerically_not_lexically() {
-        let ten = Version::parse_first("0.10.0").expect("parses");
-        let nine = Version::parse_first("0.9.0").expect("parses");
-        assert!(ten > nine, "0.10.0 must outrank 0.9.0");
-        assert_eq!(
-            Version::parse_first("quire 0.46.0\n"),
-            Version::parse_first("0.46.0")
-        );
-        // The describe suffix an engine pin can carry.
-        assert_eq!(
-            Version::parse_first("0.45.0-123-g85dfe9d"),
-            Version::parse_first("0.45.0")
-        );
-        assert_eq!(Version::parse_first("no version here"), None);
-        assert_eq!(Version::parse_first("1.2"), None);
     }
 
     /// Trace: FR-097
