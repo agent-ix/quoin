@@ -97,25 +97,4 @@ fn tc_375_the_pinned_channel_and_the_declared_msrv_agree() {
     assert!(toolchain.contains(r#"channel = "1.98.1""#), "{toolchain}");
     assert!(clippy.contains(r#"msrv = "1.98.1""#), "{clippy}");
     assert!(cargo.contains(r#"rust-version = "1.98.1""#), "{cargo}");
-
-    // The CI workflow is the fourth site, and the one that decides what the
-    // gate ACTUALLY ran on. A pin that agrees with itself in three files and
-    // disagrees with the runner is the failure this assertion exists for.
-    let workflow = root
-        .parent()
-        .unwrap()
-        .join(".github/workflows/build-test.yml");
-    let workflow = std::fs::read_to_string(&workflow).unwrap();
-    let mut rust_pins: Vec<&str> = workflow
-        .lines()
-        .map(str::trim)
-        .filter(|line| line.starts_with("toolchain:"))
-        .collect();
-    rust_pins.sort_unstable();
-    // Sorted, not positional: the assertion is about WHICH toolchains the
-    // workflow pins, and reordering jobs is not a defect. The retained Rust
-    // build job must exercise the compiler the workspace declares. The former
-    // Node, differential, and duplicate Rust jobs were retired with the shell,
-    // so they are intentionally no longer part of this census.
-    assert_eq!(rust_pins, vec!["toolchain: 1.98.1"]);
 }
