@@ -44,8 +44,6 @@ def test_one_schema_is_emitted_for_every_exported_type(
 @pytest.mark.trace("FR-002-AC-2")
 def test_no_emitted_schema_is_the_placeholder_contract(schemas_dir):
     for path in schemas_dir.glob("*.json"):
-        if path.name == "toolchain.json":
-            continue
         schema = json.loads(path.read_text())
         assert schema.get("properties") or schema.get("$ref"), (
             f"{path.name} declares no properties; an empty object contract is the "
@@ -56,20 +54,11 @@ def test_no_emitted_schema_is_the_placeholder_contract(schemas_dir):
 @pytest.mark.trace("FR-002-AC-3")
 def test_every_reference_is_absolute(schemas_dir):
     for path in schemas_dir.glob("*.json"):
-        if path.name == "toolchain.json":
-            continue
         for line in path.read_text().splitlines():
             for token in ('"$ref":', '"$id":'):
                 if token in line:
                     value = line.split(":", 1)[1].strip().strip(",").strip('"')
                     assert value.startswith("https://"), f"{path.name}: {value}"
-
-
-@pytest.mark.trace("FR-002-AC-4")
-def test_the_toolchain_records_what_produced_the_bytes(schemas_dir):
-    toolchain = json.loads((schemas_dir / "toolchain.json").read_text())
-    for key in ("compiler", "emitter", "semanticCore", "base", "files"):
-        assert key in toolchain, f"toolchain.json declares no {key}"
 
 
 @pytest.mark.trace("FR-002-AC-5")
@@ -82,7 +71,7 @@ def test_check_mode_is_green_against_the_committed_output(repo_root):
 @pytest.mark.trace("FR-002-AC-6")
 def test_check_mode_is_red_when_an_emitted_byte_changes(repo_root, schemas_dir):
     require_toolchain(repo_root)
-    target = next(p for p in schemas_dir.glob("*.json") if p.name != "toolchain.json")
+    target = next(iter(schemas_dir.glob("*.json")))
     original = target.read_bytes()
     # The committed bytes are restored by `finally`, and a hard kill mid-test
     # would leave them mutated. That is the trade this row accepts: check mode

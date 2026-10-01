@@ -37,9 +37,9 @@ normal state, not the exception.**
 Its characteristic failure is not a crash — it is a **clean result**. Both halves
 of FR-037 demonstrated it on the same afternoon:
 
-- the installed `quire` was **0.22.0** while the capability shipped in the CLI
-  that pins engine v0.33.0, so the check ran and reported nothing;
-- the module pin was **iso v0.14.0**, one release before the declaration the check
+- the installed `quire` predated the CLI that carried the capability, so the check ran
+  and reported nothing;
+- the module pin was one release before the declaration the check
   reads, so there was nothing to walk.
 
 Neither presents as a failure. Both present as a bundle with no findings, which is

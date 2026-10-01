@@ -92,10 +92,8 @@ fn the_m2_corpus_holds_the_tickets_named_acceptance_fixtures() {
     );
     for fixture in corpus.fixtures.iter().filter(|f| f.provenance == "real") {
         assert!(
-            fixture.source_repo.is_some()
-                && fixture.source_path.is_some()
-                && fixture.source_commit.is_some(),
-            "{}: a real-provenance row must name the repo, path and commit it was read at",
+            fixture.source_repo.is_some() && fixture.source_path.is_some(),
+            "{}: a real-provenance row must name the repo and path it was read from",
             fixture.fixture_id,
         );
     }

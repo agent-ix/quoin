@@ -1,12 +1,5 @@
 {
-  "$comment": "PLAT-838 M6 corpus: real FR/NFR/StR statements from agent-ix repos under ~/dev (quire-rs, quoin, quire-specification, quire-spec-language). `engine_tags` is the REAL verdict from running `quire validate --scope . \"spec/**/*.md\"` (quire 0.32.2, cli d61afb23, engine 0.46.0@acd1be63) against each repo's actual spec tree -- not imitated. Empty `engine_tags` means the owning document reported zero [grammar] findings of any kind in that run, not just zero ears: ones. This is NOT a human-labelled corpus; there is no ground truth beyond the engine's own mechanical output, which is exactly what M6 measures Jev's independent judgment against.",
-  "quire_version": "quire 0.32.2 (cli d61afb23, engine 0.46.0@acd1be63)",
-  "repo_revisions": {
-    "quire-rs": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
-    "quoin": "f552a59236751b46b58df2f19855acc19d21aac9",
-    "quire-specification": "2449ceb534ae13bef517cacfa415e101e75de88b",
-    "quire-spec-language": "18393434072d43daa6e6b6a689640e96dc9ee07f"
-  },
+  "$comment": "PLAT-838 M6 corpus: real FR/NFR/StR statements from agent-ix repos under ~/dev (quire-rs, quoin, quire-specification, quire-spec-language). `engine_tags` is the REAL verdict from running `quire validate --scope . \"spec/**/*.md\"` against each repo's actual spec tree -- not imitated. Empty `engine_tags` means the owning document reported zero [grammar] findings of any kind in that run, not just zero ears: ones. This is NOT a human-labelled corpus; there is no ground truth beyond the engine's own mechanical output, which is exactly what M6 measures Jev's independent judgment against.",
   "engine_naive_pattern_method": "Mechanically derived from each statement's leading trigger clause per FR-042's own documented rule (see this script's engine_naive_pattern()), NOT read from `quire validate`'s internal parser output -- the CLI does not expose a per-statement pattern label, only the [ears:*] finding codes. `engine_tags` (empty means clean) IS the real, measured `quire validate` output; `engine_naive_pattern` is this harness's own auditable approximation of what pattern the engine's rule would assign, used only to detect Jev's disagreement with the keyword the engine actually reads.",
   "flagged": [
     {

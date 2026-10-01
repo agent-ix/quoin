@@ -131,7 +131,7 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 
 | FR-076      | ✅ Covered | `tests/semantic-module-template.test.ts` TC-1400..TC-1407, TC-1412, TC-1451 — the three variants render from one core, the shared surfaces are single-sourced, and each rejected input aborts naming the value. `tests/semantic-module-template.test.ts` renders every variant on `make test`. |
 | FR-077      | 🚧 Partly | TC-1408, TC-1409, TC-1413 pass under `make template-gate`, which emits twice and re-checks. TC-1414..TC-1416 and TC-1449 are `🚧`: the emit driver implements each refusal and no run yet provokes one. |
-| FR-078      | ✅ Covered | TC-1417, TC-1410, TC-1409, TC-1419, TC-1402 — the nine-key `semantic` block, digest agreement, reference-form `data_schema`, comment-preserving digest rewrite, and `imports`. |
+| FR-078      | ✅ Covered | TC-1417, TC-1410, TC-1409, TC-1402 — the nine-key `semantic` block, reference-form `data_schema`, and `imports`. |
 | FR-079      | ✅ Covered | TC-1420..TC-1426, TC-1411 — typed table, `sysml` alternate, `ocl` invariants, distinct negative fixtures, the legacy warning, both-forms refusal, placeholder-free bodies, and the artifact mappings. |
 | FR-080      | 🚧 Partly | TC-1427 and TC-1430 pass under `make template-gate` — a rendered run reports 31 passed and zero skipped. TC-1428, TC-1429, TC-1431, TC-1450 and TC-1460 are `🚧`: the failure paths are authored in the rendered `conftest.py` and no run yet removes the tool to observe them. |
 | FR-081      | ✅ Covered | TC-1432..TC-1438 — licence consistency, the baseline files, wheel/tarball payload agreement, credential and registry scans, the manual release workflows, and the catalog document. |
@@ -187,14 +187,14 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | NFR-017     | ✅ Covered | TC-1379..TC-1382: default module load, warning-only sweep, corpus changed-path gate, unchanged manifest `required` arrays. |
 
 | NFR-018     | ✅ Covered | `tests/semantic-module-template.test.ts` TC-1436 and TC-1446 scan every rendered file of all three variants against the residue patterns declared in `templates/semantic-module/conformance.yaml`, with an injected instance of each class proving the scan fires; TC-1434 asserts one licence identifier. |
-| NFR-020     | 🚧 Partly | TC-1463 and TC-1464 pass on `make test` — `toolchain.yaml` declares a floor and an install step for every external command, and the renderer's absence fails naming it. TC-1448 and TC-1465 are `🚧`: those two absent-tool paths are authored and not yet driven. |
+| NFR-020     | 🚧 Partly | TC-1464 passes on `make test` — the renderer's absence fails naming it. TC-1448 and TC-1465 are `🚧`: those two absent-tool paths are authored and not yet driven. |
 | NFR-019     | ✅ Covered | `tests/semantic-module-template.test.ts` TC-1467 compares two renders of one variant byte for byte; `make template-gate` TC-1413 emits twice from an unchanged source and re-checks byte-for-byte. |
 | NFR-021 | ⛔ Withdrawn | Withdrawn 2026-09-12 under [#388](https://github.com/agent-ix/quoin/issues/388) with FR-084..FR-092, US-022 and its sibling, all of the closed gate [#291](https://github.com/agent-ix/quoin/issues/291). It constrained the corpus-measurement harness, which was disposed of rather than ported; its results are retained at `analysis/corpus-measurement/`. Not re-pointed at the measurement-record subsystem — that would be a new obligation under an old id. Capability class is corpus accounting, which the implementation-language policy places in `engineering-assurance`. |
 | NFR-022 | ⛔ Withdrawn | Withdrawn 2026-09-12 under [#388](https://github.com/agent-ix/quoin/issues/388) with FR-084..FR-092, US-022 and its sibling, all of the closed gate [#291](https://github.com/agent-ix/quoin/issues/291). It constrained the corpus-measurement harness, which was disposed of rather than ported; its results are retained at `analysis/corpus-measurement/`. Not re-pointed at the measurement-record subsystem — that would be a new obligation under an old id. Capability class is corpus accounting, which the implementation-language policy places in `engineering-assurance`. |
 | NFR-023     | 🚧 Pending | TC-1563..TC-1565, TC-1578 — every printed figure bound to the artifact and field it came from, recomputed from that artifact, and every rate carrying unit and population. Not yet implemented (agent-ix/quoin#291). |
 | NFR-024 | ⚠️ Spec-ahead-of-code | TC-1662..TC-1664, TC-1686, TC-1688, TC-1689, TC-1707, TC-1710 — bounded staged coexistence — the allowance manifest is checked in, and the enforcement run reports an empty population as inconclusive. 8 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
 | NFR-025 | ⚠️ Spec-ahead-of-code | TC-1665..TC-1669, TC-1704 — evidence and accepted-corpus bytes immutable across the port. 6 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
-| NFR-026 | ⚠️ Spec-ahead-of-code | TC-1670..TC-1673 — the Rust 1.98.1 toolchain floor, consistent with quire-corpus and filament-core-data. 4 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
+| NFR-026 | ⚠️ Spec-ahead-of-code | TC-1670..TC-1672 — the Rust toolchain floor declared in `rust/rust-toolchain.toml`. 3 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
 | NFR-027 | ⚠️ Spec-ahead-of-code | TC-1674..TC-1682 — Rust implementation idioms and the gates that must actually run — a gate described and not run is a green result for a check that did not execute. 9 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
 
 ## Functional Requirement Coverage
@@ -1120,19 +1120,18 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1405 | `module_kind: hybrid` aborts rendering naming `hybrid` | Unit | P0 | FR-076-AC-6 | ✅ |
 | TC-1406 | An `imported_modules` entry without an exact version aborts naming the entry; the `<org>/<repo>@<version>` form renders | Unit | P0 | FR-076-AC-7 | ✅ |
 | TC-1407 | A `generated_targets` entry outside the filament-core-data target registry aborts naming the value | Unit | P0 | FR-076-AC-8 | ✅ |
-| TC-1408 | Each rendered variant emits one schema per exported type plus `toolchain.json`, and every `$ref` resolves against the committed tree and semantic-core | Integration | P0 | FR-077-AC-1 | ✅ `make template-gate` |
+| TC-1408 | Each rendered variant emits one schema per exported type, and every `$ref` resolves against the committed tree and semantic-core | Integration | P0 | FR-077-AC-1 | ✅ `make template-gate` |
 | TC-1409 | No emitted schema of any rendered variant is the placeholder `{"type": "object"}` contract, and no exported type carries `data_schema: {type: object}` | Static | P0 | FR-077-AC-2, FR-077-CON-2, FR-078-AC-3 | ✅ `make template-gate` |
-| TC-1410 | Every exported type's `data_schema.digest` equals the SHA-256 of the file its `schema` names, and the rendered repository's own gate passes on a clean checkout | Integration | P0 | FR-078-AC-2, StR-008-VC-2 | ✅ `make template-gate` |
+| TC-1410 | Every exported type's `data_schema.schema` names an emitted file, and the rendered repository's own gate passes on a clean checkout | Integration | P0 | FR-078-AC-2, StR-008-VC-2 | ✅ `make template-gate` |
 | TC-1411 | No rendered skeleton section carries a `TODO`, an ellipsis, or another placeholder body | Static | P1 | FR-079-AC-7, FR-079-CON-1 | ✅ `make template-gate` |
 | TC-1412 | No rendered variant contains an `.npmrc` at any depth | Static | P0 | FR-076-AC-9, FR-076-CON-2 | ✅ |
-| TC-1413 | Two schema emissions from an unchanged rendered source are byte-identical, including `toolchain.json` and the manifest digest lines | Property | P0 | FR-077-AC-3 | ✅ `make template-gate` |
+| TC-1413 | Two schema emissions from an unchanged rendered source are byte-identical | Property | P0 | FR-077-AC-3 | ✅ `make template-gate` |
 | TC-1414 | Emission check mode exits zero on the committed output and non-zero naming the file after one emitted byte changes | Unit | P0 | FR-077-AC-4, FR-077-CON-1 | 🚧 the rendered suite asserts both check-mode directions and `make template-gate` runs check mode green; no run yet mutates a byte and asserts red (agent-ix/quoin#346) |
 | TC-1415 | A manifest `version` edited without the `@jsonSchema` base fails emission naming both values, and no committed file changes | Unit | P0 | FR-077-AC-5 | 🚧 no run yet drives a manifest version and `@jsonSchema` base out of agreement in a rendered tree (agent-ix/quoin#346) |
 | TC-1416 | The rendered `main.tsp` imports `@agent-ix/semantic-core` and redeclares no model the grammar already declares | Static | P0 | FR-077-AC-6 | 🚧 the rendered `main.tsp` imports semantic-core and the emission proves the refs resolve; no run yet asserts that no grammar model is redeclared (agent-ix/quoin#346) |
 | TC-1417 | Each rendered semantic block carries the nine admitted keys and no other, and validates against the vendored module-manifest schema | Unit | P0 | FR-078-AC-1, FR-078-CON-1 | ✅ `make template-gate` |
 | TC-1468 | The rendered semantic.exports and the rendered manifest's declared type names are the same set | Unit | P0 | FR-078-AC-6 | ✅ `make template-gate` |
 | TC-1418 | A surface the maintained module repositories carry and the conformance contract omits fails the drift check naming it | Static | P1 | FR-083-AC-5, StR-008-VC-3 | ✅ |
-| TC-1419 | Regenerating the manifest digests preserves every comment and YAML anchor in the rendered manifest | Unit | P1 | FR-078-AC-4, FR-078-CON-2 | ✅ `make template-gate` |
 | TC-1420 | Every exported type has a skeleton whose Properties table header is exactly the typed four-column form (Field, Type, Multiplicity, Constraints) with at least one row | Property | P0 | FR-079-AC-1 | ✅ `make template-gate` |
 | TC-1421 | Every rendered skeleton has a `sysml`-fence alternate declaring the same field names, types, and multiplicities | Property | P0 | FR-079-AC-2 | ✅ `make template-gate` |
 | TC-1422 | A document carrying both Properties forms is refused, and no rendered artifact carries both | Unit | P0 | FR-079-AC-6, FR-079-CON-2 | ✅ `make template-gate` |
@@ -1178,7 +1177,6 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1460 | An engine older than the declared floor fails the rendered suite naming the installed version and the floor | Unit | P0 | FR-080-AC-8 | 🚧 the floor comparison is authored in the rendered conftest; no run yet installs an engine below the floor (agent-ix/quoin#346) |
 | TC-1461 | The rendered master-requirements Out of Scope section states the module's domain types are the maintainer's, and no rendered requirement text is copied from a maintained module repository | Static | P1 | FR-082-AC-6, FR-082-CON-2 | ✅ |
 | TC-1462 | A maintained repository that cannot be read at its pinned revision fails the drift check naming the repository and the revision | Unit | P0 | FR-083-AC-8 | ✅ |
-| TC-1463 | Every external command the template and a rendered repository invoke has a declared minimum version recorded in one file | Static | P1 | NFR-020-AC-1 | ✅ |
 | TC-1464 | With the renderer absent, the render gate fails naming the renderer, the floor, and the install command | Unit | P0 | NFR-020-AC-2 | ✅ |
 | TC-1465 | With the validator absent, the rendered gate's validation leg fails naming the validator rather than reporting zero documents | Unit | P0 | NFR-020-AC-4 | 🚧 the rendered gate's validation leg names `quire`; no run yet removes it and observes the failure (agent-ix/quoin#346) |
 | TC-1500 | Withdrawn with FR-084 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-084-AC-1 | ⛔ |
@@ -1188,7 +1186,6 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1504 | Withdrawn with FR-084 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-084-AC-5 | ⛔ |
 | TC-1505 | Withdrawn with FR-084 (#388): the corpus-measurement harness was disposed of. | Property | P0 | FR-084-AC-6 | ⛔ |
 | TC-1506 | Withdrawn with FR-085 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-085-AC-1 | ⛔ |
-| TC-1507 | Withdrawn with FR-085 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-085-AC-2 | ⛔ |
 | TC-1508 | Withdrawn with FR-085 (#388): the corpus-measurement harness was disposed of. | Integration | P0 | FR-085-AC-3, FR-085-CON-1 | ⛔ |
 | TC-1509 | Withdrawn with FR-085 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-085-AC-4, FR-085-CON-2 | ⛔ |
 | TC-1510 | Withdrawn with FR-085 (#388): the corpus-measurement harness was disposed of. | Unit | P1 | FR-085-AC-5 | ⛔ |
@@ -1249,8 +1246,6 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1565 | Every rate printed by the report carries its unit and population | Static | P0 | NFR-023-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
 | TC-1566 | Withdrawn with FR-084 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-084-AC-7 | ⛔ |
 | TC-1567 | Withdrawn with FR-084 (#388): the corpus-measurement harness was disposed of. | Integration | P0 | FR-084-AC-8, FR-084-CON-3 | ⛔ |
-| TC-1568 | Withdrawn with FR-085 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-085-AC-7 | ⛔ |
-| TC-1569 | Withdrawn with FR-085 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-085-AC-8 | ⛔ |
 | TC-1570 | Withdrawn with FR-085 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-085-AC-9 | ⛔ |
 | TC-1571 | Withdrawn with FR-085 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-085-AC-10, FR-085-CON-2, FR-085-CON-3 | ⛔ |
 | TC-1572 | Withdrawn with FR-087 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-087-AC-8 | ⛔ |
@@ -1354,10 +1349,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1667 | Reading and re-serializing every store returns byte-identical records. | Unit | P0 | NFR-025-AC-3 | 🚧 |
 | TC-1668 | Comparing the evidence and accepted-corpus trees before and after a cutover, after its revert, and after the deletion | Unit | P0 | NFR-025-AC-4 | 🚧 |
 | TC-1669 | Digest replay whose population is zero, or whose store inventory is absent, is reported as inconclusive and does not | Unit | P0 | NFR-025-AC-5 | 🚧 |
-| TC-1670 | Workspace toolchain channel is declared in exactly one file, `rust/rust-toolchain.toml`, and its value is 1.98.1. | Unit | P0 | NFR-026-AC-1 | 🚧 |
+| TC-1670 | Workspace toolchain channel is declared in exactly one file, `rust/rust-toolchain.toml`. | Unit | P0 | NFR-026-AC-1 | 🚧 |
 | TC-1671 | Toolchain gate run with `RUSTUP_TOOLCHAIN` overriding the declared channel to an older version fails before `cargo | Unit | P0 | NFR-026-AC-2 | 🚧 |
 | TC-1672 | Second declaration of the channel in a file this repository authors — a workflow, a Makefile or a documentation table | Unit | P0 | NFR-026-AC-3 | 🚧 |
-| TC-1673 | Checked-in record of each upstream repository's declared channel is compared against this workspace's channel, and a | Unit | P0 | NFR-026-AC-4 | 🚧 |
 | TC-1674 | Every crate root declares `#![forbid(unsafe_code)]`, and a planted `unsafe` block fails the build. | Unit | P0 | NFR-027-AC-1 | 🚧 |
 | TC-1675 | Lint policy is declared once in `[workspace.lints]` at `rust/Cargo.toml`, every crate manifest opts in with `[lints] | Unit | P0 | NFR-027-AC-2 | 🚧 |
 | TC-1676 | `cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings` both exit zero, and | Unit | P0 | NFR-027-AC-3 | 🚧 |

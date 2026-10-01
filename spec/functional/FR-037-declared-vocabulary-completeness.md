@@ -122,5 +122,5 @@ tell an owned value from an excused one without opening documents. Filed as `age
 
 ## Dependencies
 
-- **Upstream**: `quire-rs` [FR-059](ix://agent-ix/quire-rs/FR-059) (computes the unowned set), `spec-artifacts-iso` v0.15.0 (declares the projection)
+- **Upstream**: `quire-rs` [FR-059](ix://agent-ix/quire-rs/FR-059) (computes the unowned set), `spec-artifacts-iso` (declares the projection)
 - **Downstream**: `agent-ix/quire-rs#179` (classify owned / excused / unowned in the diagnostic, retiring quoin's frontmatter reader)

@@ -38,8 +38,7 @@ is not asserted, it says so rather than implying otherwise.
 **No cutover may depend on this crate until every digest in every reachable
 store has been replayed through both implementations with zero mismatches.**
 
-The gate was run and cleared on 2026-09-12; the recorded artifact is
-`oracle/GATE-RESULT.md`. The Rust half still runs at `HEAD`:
+The Rust half runs at `HEAD`:
 
 ```bash
 # Rust half — the comparison. Exit status is the gate.
@@ -60,54 +59,6 @@ of the gate**: `gate_passes()` requires a non-zero comparison count equal to the
 store entities walked, with no unmatched entry on either side. A run that
 compared nothing reports `GATE: FAIL`, never `PASS` (`FR-098-CON-3`,
 `FR-098-AC-7`).
-
-### Gate result, 2026-09-12
-
-The full capture is recorded in [`oracle/GATE-RESULT.md`](oracle/GATE-RESULT.md),
-with the oracle capture's sha256, the reproduction commands, the verbatim output
-of both halves, and the list of stores.
-
-|                                                    |                                                           |
-| -------------------------------------------------- | --------------------------------------------------------- |
-| stores replayed                                    | **90**                                                    |
-| store files                                        | **464**, all parsed by both                               |
-| **compared population**                            | **471 of 471** store entities (464 files + 7 raw outputs) |
-| oracle entries unmatched / store entries unmatched | **0 / 0**                                                 |
-| digests replayed                                   | **10,748,598**                                            |
-| **digest mismatches**                              | **0**                                                     |
-| sealed records verified against their own digest   | 8                                                         |
-| retained outputs verified in the raw-bytes domain  | 7                                                         |
-| read → re-serialize byte-identical                 | 413 of 464                                                |
-| files Rust refused to read                         | 0                                                         |
-| store-integrity findings                           | 0                                                         |
-| **gate**                                           | **PASS** (exit status 0)                                  |
-
-Every JSON node of every store file is digested on both sides and compared —
-scalars included, because number formatting and string escaping are where the
-two implementations were most likely to disagree.
-
-Two results need stating rather than summarising:
-
-- **51 store files are not in canonical form on disk**, and both implementations
-  agree that they are not. They were written by producers that do not go through
-  `writeCanonical`: some differ by member order only, the rest also by shape —
-  raw GitHub API payloads stored compact and verbatim, and measurement records
-  containing `0.0`, which the ECMAScript number model prints as `0`. Rewriting
-  any of them through the canonical writer would change their bytes. If one is
-  ever referenced by a digest over its on-disk bytes, that rewrite breaks the
-  reference. (The per-cause split is not recomputed here; the replay reports the
-  total and names each divergent file under `--verbose`.)
-- **Production change-assurance instances now exist and were replayed.** Seven
-  attestation pairs and one sealed record, all under
-  `quire-contract-ir/target/assurance/store`, written by the shipped TypeScript
-  writers. All 8 sealed records verified against their own digest and all 7
-  retained outputs verified in the raw-bytes domain, with zero integrity
-  findings. This supersedes an earlier statement in this document that no
-  reachable repository held one. The committed fixture at
-  `tests/fixtures/change-assurance-store/`, built by
-  `oracle/build-change-assurance-fixture.mjs`
-  and replayed by
-  `tc_change_assurance_store.rs`, remains the hermetic test of the same shape.
 
 ---
 

@@ -21,17 +21,9 @@ FR-050-CON-1).
 
 ## Run the matrix
 
-Check the version first. `quire matrix` ships in quire-cli 0.34.0; an older build has no
-such subcommand.
-
-```bash
-quire --version    # expect >= 0.34.0
-```
-
 The evidence-backed matrix is the preferred input, because it carries the static axis
-verbatim and adds whether a passing run backs each criterion. It needs the first quoin
-release after 0.25.0 that includes FR-115; on 0.25.0 and earlier, `quoin matrix` is the
-retired workflow launcher and has no `--repo` flag:
+verbatim and adds whether a passing run backs each criterion. It needs a quoin
+with the `--repo` flag:
 
 ```bash
 quoin matrix --repo <project_root> --json

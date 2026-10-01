@@ -321,7 +321,7 @@ unknown-git = "deny"
 #     an ancestor of the current pin) ports rust.rs symbol extraction onto
 #     tree-sitter via this crate.
 #   * filament-core-data — the source of `agent-ix-semantic-schema`, pulled in
-#     transitively by quire-rs 0.48.0 at the tag its own manifest names.
+#     transitively by quire-rs at the tag its own manifest names.
 #
 # quire-rs and engineering-assurance are each pinned by an exact `rev` in
 # rust/Cargo.toml. quire-code-rs is pinned by an exact `rev` in quire-rs's own

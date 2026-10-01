@@ -63,9 +63,6 @@ first CI run.** `make bootstrap` runs `npm install`, which writes the
 lockfile from `package.json`; CI runs `make semantic-install`, which is
 `npm ci` and requires that lockfile to already be committed.
 
-`toolchain.yaml` records every external command this repository invokes and the
-version it must be at or above.
-
 ## Commands
 
 | Command | Does |
@@ -76,7 +73,7 @@ version it must be at or above.
 | `make gate` | Validate, lint, schema drift check, tests |
 | `make validate` | `quire validate` over `spec/` |
 | `make schemas` | Emit `{{ cookiecutter.package_name }}/schemas/` from `typespec/main.tsp` |
-| `make schemas-check` | Fail on schema or toolchain drift |
+| `make schemas-check` | Fail on schema drift |
 | `make test` | The verification suite |
 | `make build` / `make pack` | Python distribution / npm tarball |
 

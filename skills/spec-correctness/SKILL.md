@@ -48,7 +48,7 @@ whether existing tests are good (`gap-analysis`).
 ## Inputs
 
 - The target repo and its spec glob (default `spec/**/*.md`).
-- `quire properties --scope <repo> --json '<glob>'` output — quire-cli ≥ 0.12.0.
+- `quire properties --scope <repo> --json '<glob>'` output.
 - The repo's source and test trees.
 
 ## Steps

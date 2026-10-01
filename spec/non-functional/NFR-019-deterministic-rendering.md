@@ -25,13 +25,13 @@ somebody made.
 
 ## Scope
 
-- Applies to: the rendered file set of every variant, and the emitted schema set, `toolchain.json`, and manifest digests of a rendered repository.
+- Applies to: the rendered file set of every variant, and the emitted schema set of a rendered repository.
 - Operational context: two renders on the same machine and two renders on machines whose only difference is the working directory and the clock.
 - Not claimed: byte-identity across operating systems. The rendered tree is written with LF endings by a declared `.gitattributes`, which makes the committed bytes identical, but the working-tree bytes a checkout produces are the platform's business and this requirement does not measure them.
 
 ## Rationale
 
-Non-determinism defeats every downstream check that compares bytes. The digest
+Non-determinism defeats every downstream check that compares bytes. The schema
 contract of FR-073 assumes the emitted bytes are a function of the source; the
 drift gate of FR-077 assumes a re-emission that changes nothing produces no diff;
 and the conformance gate of FR-083 assumes two renders can be compared. A
@@ -51,8 +51,7 @@ three at once, and breaks them quietly.
 
 Quoin's gate renders each variant twice into two temporary directories and
 compares the trees byte for byte, then runs the rendered emit command twice over
-one rendered variant and compares the emitted schemas, `toolchain.json`, and the
-manifest digest lines.
+one rendered variant and compares the emitted schemas.
 
 ## Dependencies
 

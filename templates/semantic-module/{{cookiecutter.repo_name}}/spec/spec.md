@@ -102,5 +102,5 @@ verification exists to prevent.
 - ISO/IEC/IEEE 29148 — Requirements engineering.
 - The semantic-module contract, `agent-ix/quoin` FR-070 through FR-075.
 - `filament-core-data` ADR-0005 — TypeSpec is the structural schema source.
-- `@agent-ix/semantic-core` {{ cookiecutter.semantic_core_version }} — the shared declaration grammar.
-- This repository's `README.md`, `CONTRIBUTING.md` and `toolchain.yaml`.
+- `@agent-ix/semantic-core` at the version `manifest.yaml` declares — the shared declaration grammar.
+- This repository's `README.md` and `CONTRIBUTING.md`.

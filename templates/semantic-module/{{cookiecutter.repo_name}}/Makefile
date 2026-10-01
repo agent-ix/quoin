@@ -23,7 +23,7 @@ help:
 	@echo ""
 	@echo "Schemas"
 	@echo "  make schemas        - emit {{ cookiecutter.package_name }}/schemas/ from typespec/main.tsp"
-	@echo "  make schemas-check  - fail on schema or toolchain drift"
+	@echo "  make schemas-check  - fail on schema drift"
 	@echo ""
 	@echo "Build"
 	@echo "  make build          - build the Python distribution"

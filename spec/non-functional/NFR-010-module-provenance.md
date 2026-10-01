@@ -31,7 +31,7 @@ it does not.
 
 ## Rationale
 
-The default set is pinned by **git tag** — `ref: v0.15.0`. A tag is a mutable
+The default set is pinned by **git tag** — `ref: <tag>`. A tag is a mutable
 pointer: repointing it changes what the same pin resolves to, and nothing today
 would notice. Git verifies object integrity within a fetch, so this is not about
 corruption in transit; it is about the pin denoting one tree over time.

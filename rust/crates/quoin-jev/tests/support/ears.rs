@@ -243,8 +243,8 @@ pub(crate) struct M2Fixture {
     #[serde(default)]
     pub(crate) constraints: Option<String>,
     pub(crate) engine_naive_pattern: String,
-    /// `real` (verbatim from a spec tree under `~/dev`, with `source_repo`,
-    /// `source_path` and `source_commit` recorded) or `synthetic` (authored
+    /// `real` (verbatim from a spec tree under `~/dev`, with `source_repo`
+    /// and `source_path` recorded) or `synthetic` (authored
     /// for this evaluation). Defaults to `synthetic` so the original sixteen
     /// fixtures keep their meaning if the field is ever dropped.
     #[serde(default = "provenance_synthetic")]
@@ -253,8 +253,6 @@ pub(crate) struct M2Fixture {
     pub(crate) source_repo: Option<String>,
     #[serde(default)]
     pub(crate) source_path: Option<String>,
-    #[serde(default)]
-    pub(crate) source_commit: Option<String>,
     pub(crate) labels: M2Labels,
 }
 

@@ -14,7 +14,7 @@ layout uses `specs/<category>/<component>/spec/**/*.md`.
 quire properties --scope <repo> --json 'spec/**/*.md'
 ```
 
-Requires quire-cli ≥ 0.12.0 (`quire --version`). Output shape:
+Output shape:
 
 ```json
 {"documents": [{
