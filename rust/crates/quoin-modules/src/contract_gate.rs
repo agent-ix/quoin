@@ -311,18 +311,11 @@ fn materialise(
         ));
     }
 
-    quoin_semantic::registry_pin(module)
-        .map(|registry_pin| SemanticPin {
-            package: registry_pin.package,
-            semantic_core: registry_pin.semantic_core,
-            exports: registry_pin.exports.into_iter().collect(),
-        })
-        .map_err(|error| {
-            refuse(
-                "semantic/pin-underivable",
-                format!("the registry pin could not be derived: {error}"),
-            )
-        })
+    let registry_pin = quoin_semantic::registry_pin(module);
+    Ok(SemanticPin {
+        package: registry_pin.package,
+        semantic_core: registry_pin.semantic_core,
+    })
 }
 
 impl SemanticGate for ContractGate {

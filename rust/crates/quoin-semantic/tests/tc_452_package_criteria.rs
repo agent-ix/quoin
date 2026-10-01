@@ -4,11 +4,11 @@
 //! FR-075, criterion by criterion (quoin#452).
 //!
 //! These restate what `tests/semantic-package-manifest.test.ts` carried before
-//! the cutover deleted it: the derived filament-core-data package manifest, the
-//! per-export digests the registry pins, import resolution, and the `ix://`
-//! identity shape. The install-path halves of the same criteria — the manifest
-//! written beside an installed module, and the pin recorded in `registry.json`
-//! — are restated in `quoin-modules`, which owns the install.
+//! the cutover deleted it: the derived filament-core-data package manifest,
+//! import resolution, and the `ix://` identity shape. The install-path halves of
+//! the same criteria — the manifest written beside an installed module, and the
+//! pin recorded in `registry.json` — are restated in `quoin-modules`, which owns
+//! the install.
 
 #![allow(
     clippy::unwrap_used,
@@ -22,10 +22,10 @@ mod common;
 
 use std::fs;
 
-use common::{Scratch, codes, digest_of, errors, read, semantic_root, validators};
+use common::{Scratch, codes, errors, read, semantic_root, validators};
 use quoin_semantic::{
-    SemanticModule, derive_package_manifest, export_digests, mapping_identity, registry_pin,
-    resolve_imports, type_identity, validate_package_manifest,
+    SemanticModule, derive_package_manifest, mapping_identity, resolve_imports, type_identity,
+    validate_package_manifest,
 };
 use serde_json::json;
 
@@ -123,44 +123,6 @@ fn tc_452_631_declared_mappings_become_sorted_identities_at_the_root_and_the_pro
     ]);
     assert_eq!(value["mappings"], expected);
     assert_eq!(value["profiles"][0]["mappings"], expected);
-}
-
-/// One digest per exported object type, over the shipped schema's bytes, and a
-/// changed schema yields a changed digest.
-///
-/// The second half is the criterion's point: a pin that did not move when the
-/// bytes moved would pin nothing.
-///
-/// Trace: FR-075-AC-2
-/// Provenance: agent-ix/quoin#452
-#[test]
-fn tc_452_632_one_digest_per_export_moves_when_the_shipped_schema_moves() {
-    let validators = validators();
-    let scratch = Scratch::new();
-    let root = scratch.plain_copy("pins");
-    let pin = registry_pin(&module(&root, &validators)).unwrap();
-    assert_eq!(pin.package, "agent-ix/spec-objects-fixture");
-    assert_eq!(pin.semantic_core, "0.3.0");
-    assert_eq!(pin.exports.keys().collect::<Vec<_>>(), vec!["entity"]);
-    let digest = pin.exports["entity"].clone();
-    assert!(
-        digest.starts_with("sha256:") && digest.len() == 7 + 64,
-        "{digest}"
-    );
-    assert_eq!(
-        digest,
-        digest_of(&root.join("schemas").join("Entity.json")),
-        "the pin is over the shipped file's own bytes"
-    );
-
-    let changed = scratch.module_copy("pins-changed", |_, module_root| {
-        common::rewrite_entity_schema(module_root, |schema| {
-            schema["description"] = json!("changed");
-        });
-    });
-    assert_eq!(errors(&changed, &validators), Vec::<String>::new());
-    let moved = export_digests(&module(&changed, &validators)).unwrap();
-    assert_ne!(moved["entity"], digest);
 }
 
 /// An import no installed module provides is refused, naming the versions that

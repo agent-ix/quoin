@@ -62,8 +62,8 @@ pub use manifest::{
     read_semantic_block,
 };
 pub use package_manifest::{
-    SEMANTIC_CORE_PACKAGE, SemanticRegistryPin, derive_package_manifest, export_digests,
-    mapping_identity, registry_pin, resolve_imports, type_identity, validate_package_manifest,
+    SEMANTIC_CORE_PACKAGE, SemanticRegistryPin, derive_package_manifest, mapping_identity,
+    registry_pin, resolve_imports, type_identity, validate_package_manifest,
 };
 pub use sweep::{
     CorpusRoot, FormFinding, LEGACY_MIGRATION_EXAMPLE, LegacyFormDiagnostic, PropertiesForm,

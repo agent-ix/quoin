@@ -18,8 +18,7 @@ relationships:
 ## Description
 
 Where a module declares a `semantic` block, Quoin SHALL derive the module's
-`filament-core-data` package-manifest document and record per-export schema
-digests in the installed-module registry, so that dynamic use and static
+`filament-core-data` package-manifest document, so that dynamic use and static
 generated use share one identity graph.
 
 ## Rationale
@@ -32,7 +31,7 @@ ts-plugin-kit `registry.json` (FR-019) — and #287 may later move the pins.
 ## Behavior
 
 - `quoin module install` SHALL write `<module root>/semantic/package-manifest.json` conforming to `filament-core-data` `package-manifest.schema.json`, with `contractVersion: "1.0.0"`, `package.identity` = `semantic.package`, `package.version` = the module `version`, `schemaDialect` = the v1 package-manifest constant `https://json-schema.org/draft/2020-12/schema` (the TypeSpec authority is recorded by the IR `source.dialect`, not the manifest; filament-core-data FR-021), `sourceRoots: ["schemas/"]`, `imports` = one entry per `semantic.imports` value plus `agent-ix/semantic-core` at `semantic.semantic_core`, each with `versionConstraint: "=<version>"`, `exports: []`, and `capabilities: []`, `exports` = one entry per `semantic.exports` object type with `name`, `typeIdentity: ix://<org>/<repo>/type/<Name>`, and `visibility: public`, `profiles` = one `default` profile (`version` = module version, `options: {}`) selecting all exports, `semantic.targets`, and `semantic.mappings` with `compatibilityPosture: semantic.compatibility_posture`, `targets` = `semantic.targets`, `mappings` = `[]`, `extensions` = `[]`.
-- Quoin SHALL record, in the module's `registry.json` entry under `semantic`, the `package`, `semantic_core`, and one `sha256` per exported object type's referenced schema (FR-073), forming the module's schema fingerprint.
+- Quoin SHALL record, in the module's `registry.json` entry under `semantic`, the `package` and `semantic_core`.
 - If `semantic.imports` names a package that no installed module provides at exactly that version, then `quoin module install` SHALL fail naming the import and the installed versions.
 - If the import graph over `semantic.imports` contains a cycle, then `quoin module install` SHALL fail naming the cycle.
 - Quoin SHALL treat generated package coordinates (`rust`, `typescript`, `python-pydantic-v2`, `python-dataclass`, `json-schema`) as declarations in the derived manifest's `targets`, leaving publication to `agent-ix/quoin#290`.
@@ -51,10 +50,16 @@ ts-plugin-kit `registry.json` (FR-019) — and #287 may later move the pins.
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-075-AC-1 | The derived package manifest for a fixture module validates against `filament-core-data` `package-manifest.schema.json` with every required field derived as specified. | Test |
-| FR-075-AC-2 | The `registry.json` entry carries one digest per exported object type and changes when an emitted schema changes. | Test |
 | FR-075-AC-3 | An import at a version no installed module provides fails `quoin module install` naming the import and the installed versions; an import cycle fails naming the cycle. | Test |
 | FR-075-AC-4 | The derived manifest's export `typeIdentity` values equal the identities the dynamic load exposes for the same fixture module. | Test |
 | FR-075-AC-5 | A `semantic.package` given as `ix://agent-ix/x` or as a URL is rejected. | Test |
+
+> **CR note (2026-09-30, quoin PR for export digests):** FR-075-AC-2 is
+> withdrawn. It required the `registry.json` entry to carry one digest per
+> exported object type. The per-export digests are removed from the registry
+> entry, and so is the `semantic.export-without-schema` refusal that existed
+> only so every export had a digest. The package manager already fixes which
+> schema bytes ship. TC-1373 is withdrawn with it. The id is not reused.
 
 ## Dependencies
 

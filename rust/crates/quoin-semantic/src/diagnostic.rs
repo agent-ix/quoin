@@ -105,8 +105,6 @@ diagnostic_codes! {
     UnknownSemanticCore => "semantic.unknown-semantic-core",
     /// `legacy_forms: error` without a usable sweep report (FR-074).
     SweepReportRequired => "semantic.sweep-report-required",
-    /// An export whose `data_schema` is not a `{ schema }` reference.
-    ExportWithoutSchema => "semantic.export-without-schema",
     /// Another installed module already provides this `semantic.package`.
     DuplicatePackage => "semantic.duplicate-package",
     /// A `semantic.imports` entry no installed module provides at that version.
@@ -253,7 +251,7 @@ mod tests {
             );
             assert!(seen.insert(code.as_str()), "duplicate code {code}");
         }
-        assert_eq!(seen.len(), 26);
+        assert_eq!(seen.len(), 25);
     }
 
     /// Trace: FR-070

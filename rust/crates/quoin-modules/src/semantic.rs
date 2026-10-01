@@ -20,7 +20,6 @@
 //! [`ModuleInstaller`](crate::install::ModuleInstaller) takes the gate as a
 //! constructor argument rather than defaulting it.
 
-use std::collections::BTreeMap;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -39,8 +38,6 @@ pub struct SemanticPin {
     pub package: String,
     /// The semantic core it binds to.
     pub semantic_core: String,
-    /// Digest per exported symbol.
-    pub exports: BTreeMap<String, String>,
 }
 
 /// How serious a diagnostic is.
