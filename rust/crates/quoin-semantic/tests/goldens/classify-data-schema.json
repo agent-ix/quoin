@@ -30,7 +30,6 @@
       "id": "reference-with-extra",
       "value": {
         "schema": "a.json",
-        "digest": "x",
         "type": "object"
       },
       "form": "invalid",

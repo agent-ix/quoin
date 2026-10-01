@@ -10,7 +10,7 @@
 //! no symlink escape), be a JSON Schema 2020-12 document with an `$id`, and
 //! every `$ref` it carries must resolve inside the shipped bundle or the
 //! vendored semantic-core bundle at the version the manifest records. **No
-//! network read, ever.** A `digest` member is accepted and ignored.
+//! network read, ever.**
 
 use std::collections::BTreeSet;
 use std::path::{Component, Path, PathBuf};
@@ -121,28 +121,24 @@ pub fn classify_data_schema(
             )],
         );
     };
-    let has_schema = object.contains_key("schema");
-    let has_digest = object.contains_key("digest");
-    if !has_schema && !has_digest {
+    if !object.contains_key("schema") {
         return (DataSchemaForm::Inline, Vec::new());
     }
     let extra: Vec<&str> = object
         .keys()
-        .filter(|k| k.as_str() != "schema" && k.as_str() != "digest")
+        .filter(|k| k.as_str() != "schema")
         .map(String::as_str)
         .collect();
-    if !extra.is_empty() || !has_schema {
-        let detail = if extra.is_empty() {
-            "missing schema".to_owned()
-        } else {
-            extra.join(", ")
-        };
+    if !extra.is_empty() {
         return (
             DataSchemaForm::Invalid,
             vec![SemanticDiagnostic::error(
                 DiagnosticCode::DataSchemaAmbiguous,
                 locus,
-                format!("data_schema mixes the reference form with other keys ({detail})"),
+                format!(
+                    "data_schema mixes the reference form with other keys ({})",
+                    extra.join(", ")
+                ),
             )],
         );
     }

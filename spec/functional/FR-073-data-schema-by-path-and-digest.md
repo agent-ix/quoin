@@ -58,8 +58,7 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 > `semantic.data-schema-digest-mismatch` codes are removed) or requires its
 > `$id` to equal a path built from the module version
 > (`semantic.data-schema-id` is removed). The package manager already fixes
-> which bytes ship. A `digest` member left in a manifest is accepted and
-> ignored. The `$id` is no longer required to be absolute. FR-073-AC-6 (bundle provenance equal to a recorded digest at a
+> which bytes ship. The `$id` is no longer required to be absolute. FR-073-AC-6 (bundle provenance equal to a recorded digest at a
 > recorded revision) is withdrawn, and so are the recorded hashes and
 > revisions in `SEMANTIC_CONTRACT`. The id is not reused.
 

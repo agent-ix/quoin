@@ -71,8 +71,7 @@ description: "Chronological log of structural changes to this bundle."
   **The `data_schema` digest and versioned `$id` are no longer enforced**
   (FR-073 CR note). The `semantic.data-schema-digest`,
   `semantic.data-schema-digest-mismatch` and `semantic.data-schema-id` codes
-  are removed; a `digest` member is accepted and ignored, and the `$id` need
-  not be absolute. FR-073-AC-6 and
+  are removed, and the `$id` need not be absolute. FR-073-AC-6 and
   TC-1385 are withdrawn, and `SEMANTIC_CONTRACT` no longer records hashes or
   revisions of the npm-installed schemas. The semantic-module template no
   longer writes or checks manifest digests.
