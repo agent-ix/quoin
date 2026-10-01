@@ -2,14 +2,7 @@
 // Copyright (C) 2026 Agent-IX
 // Extract one `key = "…"` value out of a TOML inline-table line.
 //
-// `include!`d by both `build.rs` and `tests/manifest_pin.rs`. A build script
-// is never compiled as a test target, so a `#[cfg(test)]` module inside
-// `build.rs` would be a gate that silently never runs; the parser therefore
-// lives in one file that both targets include, and the assertions about it
-// run in the ordinary `cargo test`.
-//
-// This function is what enforces the engine revision pin, so it is anchored
-// rather than convenient.
+// `include!`d by `build.rs`.
 
 /// The value of `key = "…"` inside one inline table line.
 ///

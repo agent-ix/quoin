@@ -30,8 +30,7 @@ crate disagree, what each disagreement costs a user, and why the pin is
 
 The TypeScript was the oracle **exactly once**.
 `scripts/capture-semantic-goldens.mjs` ran it and wrote every verdict and every
-diagnostic to `tests/goldens/`, each file naming the quoin revision and the ajv
-version it was captured at. The tests read those files; nothing in the test lane
+diagnostic to `tests/goldens/`. The tests read those files; nothing in the test lane
 invokes Node.
 
 **The oracle and the capture script are gone.** quoin#452 deleted

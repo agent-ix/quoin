@@ -444,11 +444,7 @@ crosses 0.5 downward and falls by at least 0.10; an abstention on either row
 is a failure; one-sided sign test at alpha 0.05, gateable at 10 or more
 non-tie pairs. T0 is the comparator, on the rows both answered.
 
-**Versions.** `REQUEST_DIGEST_PINS` holds the pin of T3's current version
-only, now `T3@v3`; each bump replaced the previous version's pin. The pin
-covers the question text on the canonical row, not the state, so v3 (a
-wider assertion list, the same question) has v2's digest under a new label.
-T3 is its own family with the 5-version dev cap. This round was
+**Versions.** T3's current version is `T3@v3`. T3 is its own family with the 5-version dev cap. This round was
 pre-registered at 3 versions; v3 is the one version past that, allowed by the
 cap and run after PR #630's review. Every version run is reported with its
 numbers.

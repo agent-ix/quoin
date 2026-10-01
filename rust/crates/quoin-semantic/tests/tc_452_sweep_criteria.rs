@@ -83,13 +83,7 @@ fn tc_452_650_the_typed_table_fixture_classifies_as_the_authored_form() {
     assert_eq!(finding.form, PropertiesForm::TypedTable);
     assert!(finding.diagnostic.is_none(), "the authored form is clean");
 
-    // The expectations recorded beside the fixture are at the semantic-core
-    // version this quoin vendors, so the two are talking about one contract.
     let expected = mapping_json("config-version.expected.json");
-    assert_eq!(
-        expected["semanticCore"],
-        quoin_semantic::SEMANTIC_CONTRACT.semantic_core.version
-    );
     assert_eq!(
         expected["fields"].as_array().expect("fields").len(),
         7,

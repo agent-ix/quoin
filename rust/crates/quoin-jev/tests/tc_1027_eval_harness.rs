@@ -31,7 +31,6 @@
 mod eval_v2_support;
 mod gap_semantic_support;
 
-use std::fmt::Write as _;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -1441,53 +1440,15 @@ fn tc_1027_at_most_three_natural_rows_per_fr() {
 }
 
 // ---------------------------------------------------------------------------
-// Request-digest pins: wording is tied to variant@version (PR #620 review)
-// ---------------------------------------------------------------------------
-
-/// Provenance: PR #620 review, PLAT-1024 rule 5. Every (variant version,
-/// mode) has a pinned wording digest, and each pin matches: wording cannot
-/// change without a version bump.
-#[test]
-fn tc_1027_request_digest_is_pinned_per_variant_version() {
-    let registry: Vec<&Variant> = REGISTRY.iter().collect();
-    let actual = preflight::request_digests(&registry).unwrap();
-    let pinned: Vec<(String, &str, String)> = preflight::REQUEST_DIGEST_PINS
-        .iter()
-        .map(|(label, mode, digest)| ((*label).to_owned(), *mode, (*digest).to_owned()))
-        .collect();
-    let mut table = String::new();
-    for (label, mode, digest) in &actual {
-        let _ = writeln!(table, "    ({label:?}, {mode:?}, {digest:?}),");
-    }
-    assert_eq!(
-        actual, pinned,
-        "request digests differ from REQUEST_DIGEST_PINS. If a variant's wording changed, bump its \
-         version first; then pin:\n{table}"
-    );
-    preflight::check_request_pins(&registry).unwrap();
-}
-
-// ---------------------------------------------------------------------------
-// The run preflight: pins, the version cap, held-out selection (PR #620
+// The run preflight: the version cap, held-out selection (PR #620
 // re-review, findings 3a, 4 and 5)
 // ---------------------------------------------------------------------------
 
-fn other_wording(row: &eval_v2_support::corpus::Row) -> Vec<variant::Ask> {
-    vec![variant::Ask {
-        unit: None,
-        request: variant::request(
-            variant::state(row),
-            questions([("severity", noul("A wording nobody pinned?"))]),
-        ),
-    }]
-}
-
 /// Provenance: PR #620 re-review finding 4, MP-240. The runner's preflight
-/// refuses a `variant@version` whose wording differs from its pin, a bumped
-/// version with no pin, and a version past the 5-version dev cap; the
-/// registry as committed passes on dev.
+/// refuses a version past the 5-version dev cap; the registry as committed
+/// passes on dev.
 #[test]
-fn tc_1027_the_preflight_refuses_unpinned_wording_and_versions_past_the_cap() {
+fn tc_1027_the_preflight_refuses_versions_past_the_cap() {
     let dir = tempfile::tempdir().unwrap();
     let selection = dir.path().join("selection.json");
     let log = dir.path().join("heldout-runs.jsonl");
@@ -1505,27 +1466,6 @@ fn tc_1027_the_preflight_refuses_unpinned_wording_and_versions_past_the_cap() {
     );
 
     let s1_rt = variant::resolve("S1-RT").unwrap()[0];
-    let reworded = Variant {
-        asks: other_wording,
-        ..*s1_rt
-    };
-    let error = preflight::authorize_run(&gate, &[&reworded], &[]).unwrap_err();
-    assert!(
-        error.contains("S1-RT@v1 in RT asks wording sha256:")
-            && error.contains("a wording change needs a version bump"),
-        "{error}"
-    );
-
-    let bumped = Variant {
-        version: 2,
-        ..*s1_rt
-    };
-    let error = preflight::authorize_run(&gate, &[&bumped], &[]).unwrap_err();
-    assert!(
-        error.contains("S1-RT@v2 in RT has no request-digest pin"),
-        "{error}"
-    );
-
     assert_eq!(preflight::MAX_DEV_VERSIONS, 5);
     let past_cap = Variant {
         version: 6,

@@ -13,7 +13,7 @@ to a commit.
 |                      |                                                                                                                              |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Runner               | `scripts/bench-tier1.mjs`, invoked as `make bench-tier1 QUIRE=<absolute path>`                                               |
-| Corpus               | `agent-ix/qa-corpus` at **`42fdcaece936243772c08b1069534eb65363ca10`**, branch `epic/264-tier1-multilang` (parent `088771b`) |
+| Corpus               | `agent-ix/qa-corpus`, branch `epic/264-tier1-multilang` |
 | Corpus population    | **34 cases on disk, 34 scored, 0 pending.** Was 22 on disk / 21 scored / 1 pending                                           |
 | Languages            | **rust 22, python 6, typescript 6.** Was rust 22, python 0, typescript 0                                                     |
 | **Before** binary    | `quire 0.30.2 (engine 84740d4)`                                                                                              |
@@ -21,8 +21,7 @@ to a commit.
 | Engine distance      | 33 commits, `84740d4..816e187`, linear (`84740d4` is an ancestor)                                                            |
 | Vendored declaration | `spec-artifacts-process` at `c197b1c`, **held constant across both legs**                                                    |
 
-`816e187`, not the `26af2c8` the first run used: that commit was orphaned by a
-squash. Both binaries were rebuilt from `agent-ix/quire-cli` sources with
+Both binaries were rebuilt from `agent-ix/quire-cli` sources with
 `CARGO_TARGET_DIR` outside the shared `~/.cargo-target`, and passed to the
 runner by absolute path — `--quire` is deliberately not a `PATH` lookup
 (`scripts/bench-tier1.mjs:580-585`). The engine token in each version string above
@@ -225,7 +224,6 @@ Wave 3, which does not touch that family. Filed and fixed as
 ## Reproducing this
 
 ```bash
-git -C corpus rev-parse HEAD        # 42fdcaece936243772c08b1069534eb65363ca10
 CARGO_TARGET_DIR=/somewhere/outside/the/shared/target \
   cargo build --manifest-path <quire-cli>/Cargo.toml --bin quire
 make bench-tier1 QUIRE=/somewhere/outside/the/shared/target/debug/quire

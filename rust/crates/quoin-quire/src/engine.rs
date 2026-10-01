@@ -38,13 +38,6 @@
 //!    token. The pattern is `quire-cli`'s (`src/engine.rs`, agent-ix/
 //!    quire-cli#68) and it is borrowed on purpose: it is the half a version
 //!    comparison could never give.
-//!
-//! ## What survives
-//!
-//! Reading a **stored** artifact. An evidence-store payload was produced by
-//! some other build, possibly months ago, and its `engine` block is the only
-//! statement of which. [`check_premise`] is the narrowed remnant of
-//! `checkVersionPremise`, and it applies to exactly that case.
 
 use serde::{Deserialize, Serialize};
 
@@ -54,9 +47,6 @@ pub const ADAPTER_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// The linked `quire-rs` version, read from this crate's manifest by
 /// `build.rs` rather than restated as a constant.
 pub const ENGINE_VERSION: &str = env!("QUOIN_QUIRE_ENGINE_VERSION");
-
-/// The exact `quire-rs` object id this build links.
-pub const ENGINE_REVISION: &str = env!("QUOIN_QUIRE_ENGINE_REVISION");
 
 /// The oldest engine whose payloads this build will read back off disk.
 ///
@@ -224,82 +214,6 @@ impl std::fmt::Display for Version {
     }
 }
 
-/// What an artifact's `engine.engine` string actually names.
-///
-/// **Measured, not assumed.** `quire-cli` resolves that field from its own
-/// lockfile, and a lockfile entry for a `rev`-pinned git dependency carries the
-/// object id — so a real `coverage --json` written by quire-cli 0.32.0 says
-/// `"engine": "a874fb641cb70da83c8c8b23f9fea0a44255b88a"`, not `"0.46.0"`.
-/// `src/quire/contract.ts` never met this, because it read
-/// `quire --version` (where the first `N.N.N` is the **CLI** version) and never
-/// looked at a stored payload's provenance block at all.
-///
-/// Reading it as "a version that failed to parse" would report every real
-/// artifact as unknown provenance, which is the opposite of the truth.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum InstrumentId {
-    /// A three-part version, comparable.
-    Version(Version),
-    /// A 40-character object id. Comparable only by equality: a revision is
-    /// not ordered, and guessing an order from one is how a payload from a
-    /// side branch reads as "newer".
-    Revision(String),
-    /// Neither — including a missing provenance block.
-    Unknown(String),
-}
-
-/// Classify an artifact's `engine.engine` string.
-#[must_use]
-pub fn identify(found: Option<&str>) -> InstrumentId {
-    let Some(found) = found else {
-        return InstrumentId::Unknown("unknown".to_string());
-    };
-    if found.len() == 40 && found.bytes().all(|byte| byte.is_ascii_hexdigit()) {
-        return InstrumentId::Revision(found.to_string());
-    }
-    Version::parse_first(found).map_or_else(
-        || InstrumentId::Unknown(found.to_string()),
-        InstrumentId::Version,
-    )
-}
-
-/// Check a **stored** payload's `engine` block against this build.
-///
-/// `found` is the `engine.engine` string an artifact carries, or `None` for an
-/// artifact written before provenance existed.
-///
-/// # Errors
-/// [`crate::Error::EngineRevisionMismatch`] when the artifact names a different
-/// engine object id — which may be older *or* newer, and is why it is not the
-/// same condition as an old version. [`crate::Error::EnginePremise`] when it
-/// names a version below [`MINIMUM_STORED_ENGINE`], or names nothing readable.
-pub fn check_premise(subject: &str, found: Option<&str>) -> crate::Result<()> {
-    let required = Version::parse_first(MINIMUM_STORED_ENGINE).unwrap_or(Version {
-        major: 0,
-        minor: 0,
-        patch: 0,
-    });
-    match identify(found) {
-        InstrumentId::Version(version) if version >= required => Ok(()),
-        InstrumentId::Revision(revision) if revision == ENGINE_REVISION => Ok(()),
-        InstrumentId::Revision(revision) => Err(crate::Error::EngineRevisionMismatch {
-            subject: subject.to_string(),
-            found: revision,
-            required: ENGINE_REVISION.to_string(),
-        }),
-        InstrumentId::Version(version) => Err(crate::Error::EnginePremise {
-            subject: subject.to_string(),
-            found: version.to_string(),
-            required: MINIMUM_STORED_ENGINE.to_string(),
-        }),
-        InstrumentId::Unknown(raw) => Err(crate::Error::EnginePremise {
-            subject: subject.to_string(),
-            found: raw,
-            required: MINIMUM_STORED_ENGINE.to_string(),
-        }),
-    }
-}
-
 /// Compile-time witnesses for [`CAPABILITIES`].
 ///
 /// Each `const _` names the engine surface one token claims. The item is
@@ -364,14 +278,9 @@ mod tests {
     fn tc_379_020_the_pin_is_read_from_the_manifest_not_restated() {
         let manifest = include_str!("../Cargo.toml");
         assert!(
-            manifest.contains(&format!("rev = \"{ENGINE_REVISION}\"")),
-            "the compiled-in revision disagrees with the manifest"
-        );
-        assert!(
             manifest.contains(&format!("version = \"={ENGINE_VERSION}\"")),
             "the compiled-in engine version disagrees with the manifest"
         );
-        assert_eq!(ENGINE_REVISION.len(), 40);
     }
 
     /// Trace: FR-097
@@ -403,21 +312,6 @@ mod tests {
         );
         assert_eq!(Version::parse_first("no version here"), None);
         assert_eq!(Version::parse_first("1.2"), None);
-    }
-
-    /// Trace: FR-097
-    #[test]
-    fn tc_379_023_a_stored_artifact_from_an_older_engine_is_refused_by_name() {
-        assert!(check_premise("coverage artifact", Some(ENGINE_VERSION)).is_ok());
-
-        let error = check_premise("coverage artifact", Some("0.21.0")).expect_err("must refuse");
-        assert_eq!(error.code(), crate::ErrorCode::EnginePremise);
-        assert!(error.to_string().contains("0.21.0"));
-
-        // "no provenance at all" is its own reportable state, not a pass.
-        let missing = check_premise("coverage artifact", None).expect_err("must refuse");
-        assert_eq!(missing.code(), crate::ErrorCode::EnginePremise);
-        assert!(missing.to_string().contains("unknown"));
     }
 
     /// Trace: FR-097

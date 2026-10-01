@@ -49,15 +49,7 @@ cargo run --release --bin quoin-store-replay -- \
 
 The TypeScript half is **not** reproducible at `HEAD` and is not meant to be.
 `oracle/capture-store-oracle.mjs` was deleted by quoin#508 under the cutover
-convention (see _Regenerating the fixtures_ below); it is recoverable from git
-history with
-
-```bash
-git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/capture-store-oracle.mjs
-```
-
-and it needs a checkout of that revision with `node_modules` installed to run at
-all.
+convention (see _Regenerating the fixtures_ below).
 
 The gate is the _number_, not the tool: a run reports digests replayed and
 mismatches, and only `mismatches = 0` clears it. A mismatch is never reconciled
@@ -114,7 +106,6 @@ Two results need stating rather than summarising:
   reachable repository held one. The committed fixture at
   `tests/fixtures/change-assurance-store/`, built by
   `oracle/build-change-assurance-fixture.mjs`
-  (`git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/build-change-assurance-fixture.mjs`)
   and replayed by
   `tc_change_assurance_store.rs`, remains the hermetic test of the same shape.
 
@@ -336,15 +327,3 @@ git show <produced_from_revision>:<produced_by> | sha256sum   # == produced_by_d
 
 Where a golden names a `capture_script` it names it as `<revision>:<path>`, which
 `git show` resolves directly.
-
-**Recovering the scripts.** Deleted from `HEAD` is not lost. Both lived at
-`eb0ca08419fa2f05a1522c5bf2d108a818645c1f`:
-
-```bash
-git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/capture-cases.mjs
-git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/build-change-assurance-fixture.mjs
-```
-
-Either one needs a checkout with `node_modules` installed — a bare git worktree
-has none — and `QUOIN_SRC_ROOT` pointed at it. Nothing in this repository runs
-them, and nothing should.

@@ -36,7 +36,7 @@ last.
 ## Rationale
 
 Quoin's first-party behaviour is currently divided across 105,814 physical lines
-in 364 in-repository files, measured at `e718d45` over `git ls-files`
+in 364 in-repository files, measured over `git ls-files`
 intersected with `{.ts, .mjs, .js, .py, .sh, .tsp}`. The largest single block is
 `skills/` at 23,164 lines, whose `workflow-assets` are executable rather than
 inert because `src/flows.ts:57` spawns ix-flow against them and their

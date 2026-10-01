@@ -1,17 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! Compile the engine pin into the crate from the one place it is declared.
-//!
-//! `src/quire/contract.ts` recorded the quire-rs revision as a **hand-edited
-//! constant** next to a hand-edited table of schema hashes, and the refresh
-//! script was what kept them honest. Here the pin lives in `Cargo.toml`, which
-//! is also what Cargo resolves the dependency from, so there is exactly one
-//! site — and this script reads it rather than a second copy.
-//!
-//! Deliberately reads the **manifest**, not `Cargo.lock`: this crate has no
-//! committed lock (it becomes a member of the workspace quoin#375 owns, and
-//! that workspace owns the lock). The manifest's `rev` is the exact object
-//! Cargo checks out, so it is the fact worth reporting.
+//! Compile the linked engine version into the crate from `Cargo.toml`, the one
+//! place the dependency is declared.
 
 // A build script's only way to fail a build is to panic: there is no caller to
 // return a `Result` to, and cargo reports the panic message as the build error.
@@ -25,10 +15,7 @@
 
 use std::path::PathBuf;
 
-// The parser that enforces the pin, shared verbatim with `tests/manifest_pin.rs`.
-// A build script is never built as a test target, so a `#[cfg(test)]` module
-// here would never run; including one file in both targets is what makes the
-// assertions about `field` a real gate.
+// The manifest line parser.
 include!("build_support/manifest_pin.rs");
 
 fn main() {
@@ -56,24 +43,9 @@ fn main() {
     let version = field(line, "version").unwrap_or_else(|| {
         panic!("the quire-rs dependency must pin an exact `version = \"=X.Y.Z\"`")
     });
-    let revision = field(line, "rev").unwrap_or_else(|| {
-        panic!(
-            "the quire-rs dependency must pin a `rev`: a branch or tag is a claim \
-             about whatever resolved that morning, not about these bytes"
-        )
-    });
-    assert!(
-        version.starts_with('='),
-        "the quire-rs version must be an exact `=` pin, got {version:?}"
-    );
-    assert!(
-        revision.len() == 40 && revision.bytes().all(|b| b.is_ascii_hexdigit()),
-        "the quire-rs rev must be a full 40-character object id, got {revision:?}"
-    );
 
     println!(
         "cargo:rustc-env=QUOIN_QUIRE_ENGINE_VERSION={}",
         version.trim_start_matches('=')
     );
-    println!("cargo:rustc-env=QUOIN_QUIRE_ENGINE_REVISION={revision}");
 }

@@ -6,7 +6,7 @@
 //! This crate is the Rust port of `src/semantic/` (issue #378, EPIC #373
 //! Stage 3). It owns four things and nothing else:
 //!
-//! - [`contract`] — the vendored schema bundle and its recorded provenance.
+//! - [`contract`] — the shipped schema bundle.
 //! - [`manifest`] — reading and refusing a module manifest's `semantic` block.
 //! - [`data_schema`] — resolving an object type's `data_schema` reference.
 //! - [`package_manifest`] — the derived filament-core-data package manifest
@@ -45,7 +45,7 @@ pub mod package_manifest;
 pub mod schema;
 pub mod sweep;
 
-pub use contract::{SEMANTIC_CONTRACT, SemanticContract, VendoredSource};
+pub use contract::{SEMANTIC_CONTRACT, SemanticContract};
 pub use data_schema::{
     DataSchemaForm, ResolveContext, ResolvedDataSchema, classify_data_schema, resolve_data_schema,
 };

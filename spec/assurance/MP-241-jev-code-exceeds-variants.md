@@ -256,13 +256,8 @@ be run on dev. Every version tried is reported with its numbers, including
 those not selected. Retuning E2's tau or any other threshold after seeing dev
 creates a new version, and it counts against the budget.
 
-**Request identity.** Each variant version's request shape is pinned by a
-request digest in `REQUEST_DIGEST_PINS` (`tests/eval_v2_support/preflight.rs`,
-from PLAT-1028's #620); E0, E0-RC, E1, E2 and E4 are pinned at v1. The live
-runner's preflight refuses a variant whose wording no longer matches its pin,
-and a version with no pin. The pins cover wording only: a change to a derive
-rule or a threshold (E2's tau, E3's floor) changes no request, so its version
-bump is enforced by review.
+A change to wording, a derive rule or a threshold (E2's tau, E3's floor)
+bumps the variant's version; the bump is enforced by review.
 
 **Selection for the held-out run (one variant, one run).**
 
@@ -332,11 +327,7 @@ success crosses 0.5 upward and rises by at least 0.10, an abstention is a
 failure, one-sided sign test at alpha 0.05, gateable at 10 or more non-tie
 pairs. E0 (RTC) and E0-RC (RC) are the comparators.
 
-**Versions.** `REQUEST_DIGEST_PINS` holds the pin of E5's current version
-only, now `E5@v4`; each bump replaced the previous version's pin. The pin
-covers the question text on the canonical row, not the state or which units
-are asked, so v3 (a derive change) and v4 (fewer units asked) have v2's
-digest under new labels. E5 is its own family with the 5-version dev cap.
+**Versions.** E5's current version is `E5@v4`. E5 is its own family with the 5-version dev cap.
 This round was pre-registered at 3 versions; v4 is the one version past that,
 allowed by the cap and run after PR #630's review. Every version run is
 reported with its numbers.
