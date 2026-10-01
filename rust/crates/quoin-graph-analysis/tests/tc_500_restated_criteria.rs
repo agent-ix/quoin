@@ -52,8 +52,6 @@ use quoin_graph_analysis::{
 use serde_json::{Value, json};
 
 const DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-const OTHER_DIGEST: &str = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
-const SCHEMA_DIGEST: &str = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
 const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 const OTHER_REVISION: &str = "dddddddddddddddddddddddddddddddddddddddd";
 
@@ -71,7 +69,7 @@ fn modules() -> Value {
     json!([{
         "name": "example",
         "version": "1.0.0",
-        "schemas": [{ "archetype": "FR", "schema_digest": SCHEMA_DIGEST }],
+        "schemas": [{ "archetype": "FR" }],
     }])
 }
 
@@ -531,13 +529,13 @@ fn tc_500_045_bad_inputs_fail_closed_and_unavailable_is_not_zero() {
     widened[0]["schemas"]
         .as_array_mut()
         .unwrap()
-        .push(json!({ "archetype": "US", "schema_digest": DIGEST }));
+        .push(json!({ "archetype": "US" }));
     assert!(check_accepted_premises(&export, &with_modules(widened)).is_err());
     let mut extra = modules();
     extra.as_array_mut().unwrap().push(json!({
         "name": "not-in-export",
         "version": "1.0.0",
-        "schemas": [{ "archetype": "FR", "schema_digest": DIGEST }],
+        "schemas": [{ "archetype": "FR" }],
     }));
     assert!(check_accepted_premises(&export, &with_modules(extra)).is_err());
 
@@ -678,8 +676,8 @@ fn tc_500_049_a_permuted_premise_set_and_audit_parse_to_one_value() {
             "name": "second",
             "version": "2.0.0",
             "schemas": [
-                { "archetype": "US", "schema_digest": OTHER_DIGEST },
-                { "archetype": "NFR", "schema_digest": "e".repeat(64) },
+                { "archetype": "US" },
+                { "archetype": "NFR" },
             ],
         }));
         if reverse {

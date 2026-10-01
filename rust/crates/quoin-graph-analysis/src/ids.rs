@@ -208,13 +208,6 @@ checked_id!(
     "40 lowercase hexadecimal digits"
 );
 checked_id!(
-    /// An archetype's semantic schema digest: 64 lowercase hexadecimal digits
-    /// (`input.ts:16`).
-    SchemaDigest,
-    |text| is_lowercase_hex(text, 64),
-    "64 lowercase hexadecimal digits"
-);
-checked_id!(
     /// A repository identity. Non-empty (`input.ts:38`).
     RepositoryId,
     |text: &str| !text.is_empty(),
@@ -247,7 +240,7 @@ checked_id!(
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{Archetype, ArtifactId, Revision, SchemaDigest};
+    use super::{ArtifactId, Revision};
 
     /// The ordering is UTF-16's, which is not Rust's.
     ///
@@ -279,15 +272,6 @@ mod tests {
         assert!(Revision::parse("0".repeat(41)).is_err());
         assert!(Revision::parse(format!("{}A", "0".repeat(39))).is_err());
         assert!(Revision::parse(format!("{}g", "0".repeat(39))).is_err());
-    }
-
-    /// Provenance: quoin#385
-    #[test]
-    fn a_schema_digest_is_sixty_four_and_an_archetype_is_merely_present() {
-        assert!(SchemaDigest::parse("a".repeat(64)).is_ok());
-        assert!(SchemaDigest::parse("a".repeat(40)).is_err());
-        assert!(Archetype::parse("FR").is_ok());
-        assert!(Archetype::parse("").is_err());
     }
 
     /// A rejection names the value it rejected, and does not paste a megabyte

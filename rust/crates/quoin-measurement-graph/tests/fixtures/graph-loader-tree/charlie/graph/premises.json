@@ -12,12 +12,10 @@
       "version": "1.0.0",
       "schemas": [
         {
-          "archetype": "AC",
-          "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "archetype": "AC"
         },
         {
-          "archetype": "FR",
-          "schema_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          "archetype": "FR"
         }
       ]
     }

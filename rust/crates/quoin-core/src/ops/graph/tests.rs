@@ -39,7 +39,6 @@ use super::{MAX_SCALAR_BYTES, change_impact, churn, fan_out};
 
 const DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-const SCHEMA_DIGEST: &str = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
 
 /// A tree of files, and nothing else, standing in for the filesystem.
 struct FakeTree(BTreeMap<PathBuf, String>);
@@ -56,7 +55,7 @@ fn modules() -> Value {
     json!([{
         "name": "example",
         "version": "1.0.0",
-        "schemas": [{ "archetype": "FR", "schema_digest": SCHEMA_DIGEST }],
+        "schemas": [{ "archetype": "FR" }],
     }])
 }
 

@@ -88,7 +88,7 @@ not pass as agreement.
 
 A caller that can state its premises wants `assurance::read`, which is
 `quire_rs::read_assurance_export` — fail-closed, and it also checks the caller's
-module set and schema digests. `validate_assurance` answers the one question a
+module set. `validate_assurance` answers the one question a
 caller with no premises can ask: _is this the published shape?_ That caller is
 `src/measurement/graph-adapters.ts` and `src/graph-analysis/load.ts`, reading
 exports that arrived from other repositories, and it is why one vendored schema

@@ -55,7 +55,7 @@ impl Fixture {
             {
                 "name": "example",
                 "version": "1.0.0",
-                "schemas": [{ "archetype": "FR", "schema_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" }],
+                "schemas": [{ "archetype": "FR" }],
             }
         ]);
         let premises_value = serde_json::json!({

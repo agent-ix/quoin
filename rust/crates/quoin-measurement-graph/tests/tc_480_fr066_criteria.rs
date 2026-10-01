@@ -252,19 +252,6 @@ fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
             "{name}: refused for the premise it drifted on"
         );
     }
-
-    // A module schema digest the caller did not agree to. The capture holds no
-    // such case; the criterion names it, so it is minted here.
-    let mut drifted = base.clone();
-    drifted["document"]["modules"][0]["schemas"][0]["schema_digest"] =
-        Value::String("d".repeat(64));
-    assert_eq!(
-        adapt_quire_assurance(&drifted["document"], &accepted)
-            .expect_err("a disagreeing schema digest is refused")
-            .code(),
-        GraphAdapterErrorCode::InvalidPremise,
-        "a module schema digest is a premise"
-    );
 }
 
 /// Every Quire graph collection is handed through without translation.

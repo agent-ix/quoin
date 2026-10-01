@@ -122,7 +122,7 @@ partially constructed collection or graph input.
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-066-AC-1 | The registry exposes exactly versioned Quire-assurance and quire-code graph-quality adapters, and an unknown name fails with the available names before reading records. | Test (TC-1293) |
-| FR-066-AC-2 | A valid Quire export is exposed field-for-field with its source/module premises, while each unknown format, module version, or schema digest is refused before any graph record. | Test (TC-1294) |
+| FR-066-AC-2 | A valid Quire export is exposed field-for-field with its source/module premises, while each unknown format or module version is refused before any graph record. | Test (TC-1294) |
 | FR-066-AC-3 | FR-062 receives the adapter's artifacts, obligations, symbols, relations, observations, and availability states without a frontmatter read or relation-kind translation. | Integration (TC-1295) |
 | FR-066-AC-4 | Graph-quality intake validates schema version 1, recomputes the canonical observation id, and refuses changed or unknown fields before constructing a collection. | Test (TC-1296) |
 | FR-066-AC-5 | The exact scorer bytes reproduce the declared digest and are retained with media type and base64 bytes; a missing or mismatched attachment leaves no collection. | Test (TC-1297) |

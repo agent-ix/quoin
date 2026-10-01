@@ -13,7 +13,7 @@
 //! ajv to check an export before reading it. The engine ships
 //! [`quire_rs::read_assurance_export`]: a **fail-closed reader** that checks
 //! the format tag, the format version, the value shape *and* the caller's
-//! accepted module and schema-digest premises, and returns typed
+//! accepted module premises, and returns typed
 //! `AssuranceError` variants for each. It is stricter than the schema check it
 //! replaces — the schema cannot know which modules the caller accepts — and it
 //! is maintained by the same project that emits the payload.
@@ -101,9 +101,8 @@ pub fn build(request: &Request) -> Result<Outcome> {
 
 /// Read an export somebody else produced, under a byte ceiling.
 ///
-/// `accepted` is the caller's premise set: which module at which version, and
-/// which archetype schema digests. There is no "accept whatever it says"
-/// overload, deliberately — an export read without a premise is an export
+/// `accepted` is the caller's premise set: which module at which version.
+/// There is no "accept whatever it says" overload, deliberately — an export read without a premise is an export
 /// whose provenance nothing checked.
 ///
 /// # Errors

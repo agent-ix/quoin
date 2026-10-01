@@ -288,12 +288,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -360,12 +358,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -374,7 +370,7 @@
         }
       },
       "verdict": "accepted",
-      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      }\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        },\n        {\n          \"archetype\": \"TestMatrix\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
+      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      }\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\"\n        },\n        {\n          \"archetype\": \"TestMatrix\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
     },
     {
       "name": "assurance/missing/artifacts",
@@ -388,12 +384,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -460,12 +454,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -508,12 +500,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -580,12 +570,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -628,12 +616,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -700,12 +686,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -805,12 +789,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -854,12 +836,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -925,12 +905,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -974,12 +952,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1036,12 +1012,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1085,12 +1059,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1156,12 +1128,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1205,12 +1175,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1262,12 +1230,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1311,12 +1277,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1379,12 +1343,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1428,12 +1390,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1483,12 +1443,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1532,12 +1490,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1605,12 +1561,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1654,12 +1608,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1726,12 +1678,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1832,12 +1782,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1847,7 +1795,7 @@
       },
       "verdict": "refused",
       "code": "invalid_premise",
-      "message": "invalid_premise: modules expected [\n  {\n    \"name\": \"quoin-quire-fixture\",\n    \"schemas\": [\n      {\n        \"archetype\": \"FR\",\n        \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n      },\n      {\n        \"archetype\": \"TestMatrix\",\n        \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n      }\n    ],\n    \"version\": \"0.1.0\"\n  }\n]; observed []"
+      "message": "invalid_premise: modules expected [\n  {\n    \"name\": \"quoin-quire-fixture\",\n    \"schemas\": [\n      {\n        \"archetype\": \"FR\"\n      },\n      {\n        \"archetype\": \"TestMatrix\"\n      }\n    ],\n    \"version\": \"0.1.0\"\n  }\n]; observed []"
     },
     {
       "name": "assurance/source-revision-malformed",
@@ -1881,12 +1829,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -1953,12 +1899,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2002,12 +1946,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2074,12 +2016,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2123,12 +2063,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2195,12 +2133,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2244,12 +2180,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2316,12 +2250,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2330,7 +2262,7 @@
         }
       },
       "verdict": "accepted",
-      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"a..b.md\"\n      }\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        },\n        {\n          \"archetype\": \"TestMatrix\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
+      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"a..b.md\"\n      }\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\"\n        },\n        {\n          \"archetype\": \"TestMatrix\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
     },
     {
       "name": "assurance/uuid/nil",
@@ -2365,12 +2297,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2437,12 +2367,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2451,7 +2379,7 @@
         }
       },
       "verdict": "accepted",
-      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        },\n        {\n          \"archetype\": \"TestMatrix\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
+      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\"\n        },\n        {\n          \"archetype\": \"TestMatrix\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
     },
     {
       "name": "assurance/uuid/max",
@@ -2486,12 +2414,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2558,12 +2484,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2572,7 +2496,7 @@
         }
       },
       "verdict": "accepted",
-      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"ffffffff-ffff-ffff-ffff-ffffffffffff\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        },\n        {\n          \"archetype\": \"TestMatrix\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
+      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"ffffffff-ffff-ffff-ffff-ffffffffffff\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\"\n        },\n        {\n          \"archetype\": \"TestMatrix\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
     },
     {
       "name": "assurance/uuid/v4",
@@ -2607,12 +2531,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2679,12 +2601,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2693,7 +2613,7 @@
         }
       },
       "verdict": "accepted",
-      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        },\n        {\n          \"archetype\": \"TestMatrix\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
+      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\"\n        },\n        {\n          \"archetype\": \"TestMatrix\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
     },
     {
       "name": "assurance/uuid/v8",
@@ -2728,12 +2648,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2800,12 +2718,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2814,7 +2730,7 @@
         }
       },
       "verdict": "accepted",
-      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"3f2504e0-4f89-81d3-9a0c-0305e82c3301\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        },\n        {\n          \"archetype\": \"TestMatrix\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
+      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"3f2504e0-4f89-81d3-9a0c-0305e82c3301\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\"\n        },\n        {\n          \"archetype\": \"TestMatrix\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
     },
     {
       "name": "assurance/uuid/v9",
@@ -2849,12 +2765,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2921,12 +2835,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -2971,12 +2883,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -3043,12 +2953,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -3093,12 +3001,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -3165,12 +3071,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -3179,7 +3083,7 @@
         }
       },
       "verdict": "accepted",
-      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"3F2504E0-4F89-41D3-9A0C-0305E82C3301\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        },\n        {\n          \"archetype\": \"TestMatrix\",\n          \"schema_digest\": \"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
+      "output": "{\n  \"artifacts\": [\n    {\n      \"artifact_type\": \"FR\",\n      \"id\": \"FR-001\",\n      \"locator\": {\n        \"digest\": \"8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62\",\n        \"line\": 1,\n        \"path\": \"FR-001-example.md\"\n      },\n      \"uuid\": \"3F2504E0-4F89-41D3-9A0C-0305E82C3301\"\n    },\n    {\n      \"artifact_type\": \"TestMatrix\",\n      \"id\": \"TM-001\",\n      \"locator\": {\n        \"digest\": \"e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a\",\n        \"line\": 1,\n        \"path\": \"TM-001-matrix.md\"\n      }\n    }\n  ],\n  \"format\": \"quire-assurance\",\n  \"format_version\": 1,\n  \"modules\": [\n    {\n      \"name\": \"quoin-quire-fixture\",\n      \"schemas\": [\n        {\n          \"archetype\": \"FR\"\n        },\n        {\n          \"archetype\": \"TestMatrix\"\n        }\n      ],\n      \"version\": \"0.1.0\"\n    }\n  ],\n  \"obligations\": [],\n  \"relation_kinds\": [\n    {\n      \"availability\": \"available\",\n      \"kind\": \"verifies\",\n      \"sources\": [\n        \"trace_binding\",\n        \"observed\"\n      ]\n    }\n  ],\n  \"relation_observations\": [],\n  \"relations\": [\n    {\n      \"form\": \"rust-trace-attribute\",\n      \"freshness\": \"unknown\",\n      \"kind\": \"verifies\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"provenance\": \"canonical\",\n      \"source\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"target\": \"TC-001\"\n    }\n  ],\n  \"source\": {\n    \"repository\": \"agent-ix/quoin\",\n    \"revision\": \"0000000000000000000000000000000000000000\"\n  },\n  \"symbols\": [\n    {\n      \"capabilities\": [\n        \"verifies\"\n      ],\n      \"container\": null,\n      \"id\": \"11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3\",\n      \"kind\": \"test_function\",\n      \"language\": \"rust\",\n      \"locator\": {\n        \"digest\": \"652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7\",\n        \"line\": 12,\n        \"path\": \"lib/backed.rs\"\n      },\n      \"qualified_name\": \"covers_the_round_trip\"\n    }\n  ]\n}\n"
     },
     {
       "name": "assurance/uuid/truncated",
@@ -3214,12 +3118,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -3286,12 +3188,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -3336,12 +3236,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
@@ -3408,12 +3306,10 @@
               "name": "quoin-quire-fixture",
               "schemas": [
                 {
-                  "archetype": "FR",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "FR"
                 },
                 {
-                  "archetype": "TestMatrix",
-                  "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                  "archetype": "TestMatrix"
                 }
               ],
               "version": "0.1.0"
