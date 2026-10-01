@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "plugins": [
-    {"name":"engineering-assurance","source":{"type":"path","path":"fixture"},"ref":"3fe68f41703833a0114a9d10c27649767dd84cbf","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"engineering-assurance","source":{"type":"path","path":"fixture"},"ref":"7a05537e2214840e8d2fc4f0c09644121a9e5c91","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
     {"name":"spec-artifacts-iso","source":{"type":"path","path":"fixture"},"ref":"c57e09889f96aada95e46baafadce26049c197c8","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
     {"name":"spec-artifacts-app","source":{"type":"path","path":"fixture"},"ref":"843f7152cde7f78cff3afb8091190ac16274e13e","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
     {"name":"spec-artifacts-process","source":{"type":"path","path":"fixture"},"ref":"df3892cc687eb6d88b6bb05d1d3e992bcfa2c08b","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
