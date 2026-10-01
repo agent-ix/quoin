@@ -10,7 +10,7 @@ using AgentIx.Semantic.Core;
  * One model per type this module exports, each validating that type's Quire
  * declaration record. Every grammar item — a field, a relation, a clause, an
  * operation — is a reference to `@agent-ix/semantic-core`
- * {{ cookiecutter.semantic_core_version }} and is never redeclared here: this
+ * (the version `manifest.yaml` declares) and is never redeclared here: this
  * namespace contributes shapes, not grammar.
  *
  * The `$id` base carries no version: the package manager fixes which bytes

@@ -399,10 +399,9 @@ criterion prohibits.
 What is left to re-measure is this crate against that record:
 
 ```bash
-# The command runs from the repository root. The workspace root is
-# rust/Cargo.toml, so --manifest-path is required; without it cargo walks up
-# from the repository root and finds no manifest at all.
-cargo +1.98.1 test --manifest-path rust/Cargo.toml \
+# Run from rust/ so rustup selects the channel rust-toolchain.toml declares.
+cd rust
+cargo test \
   -p quoin-semantic -p quoin-completeness -p quoin-yaml --target-dir <dir>
 ```
 

@@ -1,5 +1,5 @@
 {
-  "$comment": "PLAT-838 M2 corpus, grown for the v3 re-measurement. EVERY label in this file is AGENT-LABELLED, not human ground truth: one agent read each statement, applied the EARS pattern definitions and recorded its reading, with a second defensible reading in `has_defect_contested` where one exists. Fixtures EARS-FIX-001..016 are the original synthetic set and are unchanged, so the v3 numbers measured against them remain comparable. EARS-FIX-017.. carry `provenance`: `real` rows are verbatim statements from the agent-ix spec trees under ~/dev (repo, path and commit recorded per row, and each was checked to appear verbatim in that file at that commit before this corpus was written); `synthetic` rows were authored for this evaluation to cover defect kinds the four real spec trees supplied no instance of. The defect/clean ratio is held near the original 5/16 so that the constant-predictor baseline MP-222 measures against does not move merely because defects were added. `engine_naive_pattern` is the mechanical keyword derivation, never Jev's answer.",
+  "$comment": "PLAT-838 M2 corpus, grown for the v3 re-measurement. EVERY label in this file is AGENT-LABELLED, not human ground truth: one agent read each statement, applied the EARS pattern definitions and recorded its reading, with a second defensible reading in `has_defect_contested` where one exists. Fixtures EARS-FIX-001..016 are the original synthetic set and are unchanged, so the v3 numbers measured against them remain comparable. EARS-FIX-017.. carry `provenance`: `real` rows are verbatim statements from the agent-ix spec trees under ~/dev (repo and path recorded per row, and each was checked to appear verbatim in that file before this corpus was written); `synthetic` rows were authored for this evaluation to cover defect kinds the four real spec trees supplied no instance of. The defect/clean ratio is held near the original 5/16 so that the constant-predictor baseline MP-222 measures against does not move merely because defects were added. `engine_naive_pattern` is the mechanical keyword derivation, never Jev's answer.",
   "fixtures": [
     {
       "fixture_id": "EARS-FIX-001",
@@ -333,7 +333,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-077-generated-schema-emission.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-077-generated-schema-emission.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "unwanted_behaviour",
@@ -355,7 +354,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-080-generated-verification-suite.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-080-generated-verification-suite.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "unwanted_behaviour",
@@ -377,7 +375,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-096-versioned-rust-engine-boundary.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-096-versioned-rust-engine-boundary.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "unwanted_behaviour",
@@ -399,7 +396,6 @@
       "provenance_note": "verbatim from quire-specification:spec/objects/observation/FR-269-consumer-mapping-loss.md at 2449ceb534ae13bef517cacfa415e101e75de88b",
       "source_repo": "quire-specification",
       "source_path": "spec/objects/observation/FR-269-consumer-mapping-loss.md",
-      "source_commit": "2449ceb534ae13bef517cacfa415e101e75de88b",
       "labeller": "agent",
       "labels": {
         "true_pattern": "unwanted_behaviour",
@@ -421,7 +417,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-060-operational-evidence-intake-report.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-060-operational-evidence-intake-report.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "state_driven",
@@ -443,7 +438,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-071-clause-and-operation-extraction.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-071-clause-and-operation-extraction.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "state_driven",
@@ -465,7 +459,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-029-archetype-input-contract.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-029-archetype-input-contract.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "ubiquitous",
@@ -487,7 +480,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-090-publish-rates-with-unit-population-and-method.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-090-publish-rates-with-unit-population-and-method.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "unwanted_behaviour",
@@ -509,7 +501,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-088-measure-the-l3-semantic-dimension.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-088-measure-the-l3-semantic-dimension.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "state_driven",
@@ -531,7 +522,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-043-module-concrete-lexicon.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-043-module-concrete-lexicon.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "event_driven",
@@ -553,7 +543,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-044-project-glossary-lexicon.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-044-project-glossary-lexicon.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "event_driven",
@@ -575,7 +564,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-045-filament-core-extraction-engine.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-045-filament-core-extraction-engine.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "event_driven",
@@ -597,7 +585,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-048-per-check-grammar-severity.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-048-per-check-grammar-severity.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "event_driven",
@@ -619,7 +606,6 @@
       "provenance_note": "verbatim from quire-specification:spec/functional/foundation/FR-047-emit-typed-located-causes.md at 2449ceb534ae13bef517cacfa415e101e75de88b",
       "source_repo": "quire-specification",
       "source_path": "spec/functional/foundation/FR-047-emit-typed-located-causes.md",
-      "source_commit": "2449ceb534ae13bef517cacfa415e101e75de88b",
       "labeller": "agent",
       "labels": {
         "true_pattern": "event_driven",
@@ -645,7 +631,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-084-pin-and-enumerate-the-governed-corpus.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-084-pin-and-enumerate-the-governed-corpus.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "state_driven",
@@ -667,7 +652,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-086-assign-one-measurement-state-per-document.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-086-assign-one-measurement-state-per-document.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "state_driven",
@@ -689,7 +673,6 @@
       "provenance_note": "verbatim from quire-spec-language:spec/functional/FR-043-evaluate-bounded-native-temporal.md at 18393434072d43daa6e6b6a689640e96dc9ee07f",
       "source_repo": "quire-spec-language",
       "source_path": "spec/functional/FR-043-evaluate-bounded-native-temporal.md",
-      "source_commit": "18393434072d43daa6e6b6a689640e96dc9ee07f",
       "labeller": "agent",
       "labels": {
         "true_pattern": "state_driven",
@@ -711,7 +694,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-057-intervention-experiment-intake-report.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-057-intervention-experiment-intake-report.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "state_driven",
@@ -737,7 +719,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-048-per-check-grammar-severity.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-048-per-check-grammar-severity.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "unwanted_behaviour",
@@ -759,7 +740,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-051-source-symbol-extraction.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-051-source-symbol-extraction.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "unwanted_behaviour",
@@ -781,7 +761,6 @@
       "provenance_note": "verbatim from quire-spec-language:spec/functional/FR-046-execute-predicates-and-ordered-queries.md at 18393434072d43daa6e6b6a689640e96dc9ee07f",
       "source_repo": "quire-spec-language",
       "source_path": "spec/functional/FR-046-execute-predicates-and-ordered-queries.md",
-      "source_commit": "18393434072d43daa6e6b6a689640e96dc9ee07f",
       "labeller": "agent",
       "labels": {
         "true_pattern": "unwanted_behaviour",
@@ -803,7 +782,6 @@
       "provenance_note": "verbatim from quire-spec-language:spec/functional/FR-036-link-composed-native-packages.md at 18393434072d43daa6e6b6a689640e96dc9ee07f",
       "source_repo": "quire-spec-language",
       "source_path": "spec/functional/FR-036-link-composed-native-packages.md",
-      "source_commit": "18393434072d43daa6e6b6a689640e96dc9ee07f",
       "labeller": "agent",
       "labels": {
         "true_pattern": "unwanted_behaviour",
@@ -825,7 +803,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-083-template-render-self-tests.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-083-template-render-self-tests.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "optional_feature",
@@ -847,7 +824,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-076-semantic-module-template-variants.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-076-semantic-module-template-variants.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "optional_feature",
@@ -869,7 +845,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-065-controlled-corpus-contract.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-065-controlled-corpus-contract.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "optional_feature",
@@ -891,7 +866,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-025-resolve-authoring-organization.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-025-resolve-authoring-organization.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "optional_feature",
@@ -917,7 +891,6 @@
       "provenance_note": "verbatim from quire-rs:spec/functional/FR-045-filament-core-extraction-engine.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/functional/FR-045-filament-core-extraction-engine.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "ubiquitous",
@@ -939,7 +912,6 @@
       "provenance_note": "verbatim from quire-spec-language:spec/functional/FR-047-evaluate-finite-object-reference-graphs.md at 18393434072d43daa6e6b6a689640e96dc9ee07f",
       "source_repo": "quire-spec-language",
       "source_path": "spec/functional/FR-047-evaluate-finite-object-reference-graphs.md",
-      "source_commit": "18393434072d43daa6e6b6a689640e96dc9ee07f",
       "labeller": "agent",
       "labels": {
         "true_pattern": "ubiquitous",
@@ -961,7 +933,6 @@
       "provenance_note": "verbatim from quoin:spec/functional/FR-090-publish-rates-with-unit-population-and-method.md at cd8515d6c5c83f055254797826d34f44ef1c1344",
       "source_repo": "quoin",
       "source_path": "spec/functional/FR-090-publish-rates-with-unit-population-and-method.md",
-      "source_commit": "cd8515d6c5c83f055254797826d34f44ef1c1344",
       "labeller": "agent",
       "labels": {
         "true_pattern": "ubiquitous",
@@ -983,7 +954,6 @@
       "provenance_note": "verbatim from quire-specification:spec/functional/protocol/FR-059-assess-finite-global-conformance.md at 2449ceb534ae13bef517cacfa415e101e75de88b",
       "source_repo": "quire-specification",
       "source_path": "spec/functional/protocol/FR-059-assess-finite-global-conformance.md",
-      "source_commit": "2449ceb534ae13bef517cacfa415e101e75de88b",
       "labeller": "agent",
       "labels": {
         "true_pattern": "ubiquitous",
@@ -1005,7 +975,6 @@
       "provenance_note": "verbatim from quire-rs:spec/non-functional/NFR-012-miri-ub-check.md at d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "source_repo": "quire-rs",
       "source_path": "spec/non-functional/NFR-012-miri-ub-check.md",
-      "source_commit": "d6f19eece1a813d2fff07e87ffa9f5cf78151457",
       "labeller": "agent",
       "labels": {
         "true_pattern": "ubiquitous",

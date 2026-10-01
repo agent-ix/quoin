@@ -44,16 +44,16 @@ that is the ticket to reopen.
 ### `contract-conformance`
 
 - **Producer** — `quire-contract-conformance run --manifest corpus/contract-v0.1/manifest.json`, `agent-ix/quire-contract-ir`.
-- **Pinned sample** — `tests/fixtures/evidence/contract-conformance-real.jsonl`: seven rows of a real 99-row run, each line unedited, spanning all four operations (`package`, `expression`, `coverage`, `migration`) and both valid and invalid fixtures. The full run is `sha256:b003309d25f6002c73c0c660725dce0eb2139dafd1198c794d0e561aca147485`.
+- **Sample** — `tests/fixtures/evidence/contract-conformance-real.jsonl`: seven rows of a real 99-row run, each line unedited, spanning all four operations (`package`, `expression`, `coverage`, `migration`) and both valid and invalid fixtures.
 - **Governed target record** — `RunRecord` entries, one per replayed fixture.
 - **Why nothing existing represents it** — it is JSONL, one object per line. `entries` requires a single object with an `entries` array; `junit` requires XML. The finding-shaped adapters would write it into `findings/`, which loses the clean-versus-unrun distinction FR-034 exists to make.
 - **Identity** — `<corpus>::<operation>::<fixture>`. The same fixture id is replayed under several operations, so collapsing them would let one result overwrite another.
-- **Trace metadata** — optional row `trace_ids` is retained as `RunEntry.traceIds`, preserving order and values. Supplied arrays must be non-empty and contain distinct nonblank strings. Omission remains compatible with the original producer. `tests/fixtures/evidence/contract-conformance-traces-real.jsonl` adds a byte-exact row from candidate `9b9102c3806e9cda0ed70312f4f6c23a211f6fbf`; its capture command and full-run digest are recorded in the fixture README. The adapter preserves identifiers; the producer owns their verification meaning, and the existing record path performs binding.
+- **Trace metadata** — optional row `trace_ids` is retained as `RunEntry.traceIds`, preserving order and values. Supplied arrays must be non-empty and contain distinct nonblank strings. Omission remains compatible with the original producer. `tests/fixtures/evidence/contract-conformance-traces-real.jsonl` adds a byte-exact row from the upstream runner. The adapter preserves identifiers; the producer owns their verification meaning, and the existing record path performs binding.
 
 ### `differential-report`
 
 - **Producer** — `agent-ix/tl-mltl`, comparing its engine against R2U2 4.2-release / C2PO 4.1.0.
-- **Pinned sample** — `tests/fixtures/evidence/differential-report-real.json`, the committed report at `tl-mltl` `fe1c620`, unedited. It carries eight agreements and one `unsupported`.
+- **Sample** — `tests/fixtures/evidence/differential-report-real.json`, the committed `tl-mltl` report, unedited. It carries eight agreements and one `unsupported`.
 - **Governed target record** — `RunRecord` entries, one per compared case.
 - **Why nothing existing represents it** — `junit` has no state for "the external reference cannot express this case"; `cargo-mutants` is mutation-shaped; `agent-eval` is measurement-shaped; the finding-shaped adapters would record a disagreement as a rule violation, which is a different claim from "two implementations disagree" and one the report does not make.
 - **Schema family** — `<domain>.differential-summary/v1`, so another domain can use the shape without claiming `tl-mltl`'s identity. A `v2` is refused rather than read by a `v1` reader that happens to recognise the fields.

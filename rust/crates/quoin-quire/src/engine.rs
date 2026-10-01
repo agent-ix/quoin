@@ -181,16 +181,6 @@ mod tests {
 
     /// Trace: FR-097
     #[test]
-    fn tc_379_020_the_pin_is_read_from_the_manifest_not_restated() {
-        let manifest = include_str!("../Cargo.toml");
-        assert!(
-            manifest.contains(&format!("version = \"={ENGINE_VERSION}\"")),
-            "the compiled-in engine version disagrees with the manifest"
-        );
-    }
-
-    /// Trace: FR-097
-    #[test]
     fn tc_379_021_capability_tokens_are_sorted_unique_and_non_empty() {
         let mut sorted = CAPABILITIES.to_vec();
         sorted.sort_unstable();

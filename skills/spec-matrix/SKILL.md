@@ -15,19 +15,14 @@ mint `TC-` ids. A test binds to a criterion by that criterion's own id.
 
 ## 1. Read the matrix
 
-`quire matrix` ships in quire-cli 0.34.0. Check before relying on it:
-
 ```bash
-quire --version    # expect >= 0.34.0
 quire matrix --scope . --format json
 ```
 
 `--scope` is the repository root: spec documents are read from `<scope>/spec` and trace tags
 from the rest of the tree.
 
-For run evidence as well, use `quoin matrix --repo . --json`. It needs the first quoin
-release after 0.25.0 that includes FR-115; on 0.25.0 and earlier `quoin matrix` is the
-retired workflow launcher. If `quoin matrix --repo . --json` fails, use
+For run evidence as well, use `quoin matrix --repo . --json`. If `quoin matrix --repo . --json` fails, use
 `quire matrix --scope . --format json` above and read the static status alone.
 
 Each criterion carries one static status:

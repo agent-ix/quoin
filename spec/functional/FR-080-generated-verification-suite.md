@@ -47,7 +47,7 @@ environment that would skip.
 - The rendered suite SHALL NOT call a skip for a missing engine, a missing grammar package, or a missing schema toolchain.
 - The rendered repository SHALL declare the engine as a dev dependency of its package metadata, sourced from the `internal-pypi` Poetry source.
 - The rendered repository SHALL carry a `semantic-install` command that installs the npm-resolved schema toolchain (`@typespec/compiler`, `@agent-ix/semantic-core`) via `npm ci`.
-- The rendered suite SHALL assert the rendered `semantic` block, the emitted schemas, the manifest digests, the skeleton mappings, the negative fixtures, and the legacy-form fixture.
+- The rendered suite SHALL assert the rendered `semantic` block, the emitted schemas, the skeleton mappings, the negative fixtures, and the legacy-form fixture.
 - When the grammar package is not installed, the rendered suite SHALL fail naming the install command rather than skipping the schema checks.
 - The rendered suite SHALL treat every warning as an error, so that a deprecation is a failure rather than scrollback.
 - The rendered suite SHALL compare the installed engine's version with the engine floor the rendered repository declares.

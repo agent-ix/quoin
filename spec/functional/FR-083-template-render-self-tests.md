@@ -45,7 +45,7 @@ repository rather than a discovery in the next migration.
 - Quoin's gate SHALL assert that no rendered file carries an unresolved template token, a placeholder organization, an absolute path from the rendering machine, a credential, or a private-registry publication default.
 - Quoin's gate SHALL assert that every rendered variant carries every surface the conformance contract names.
 - Quoin's gate SHALL run `quire validate` over each rendered variant's `spec/` tree.
-- Quoin's gate SHALL assert the rendered manifest validates against the vendored module-manifest schema and that every `data_schema` digest matches the file it names.
+- Quoin's gate SHALL assert the rendered manifest validates against the vendored module-manifest schema.
 - Where the schema toolchain is installed, Quoin's gate SHALL run the rendered emit command, asserting that it reproduces the committed schemas byte for byte.
 - If the schema toolchain is not installed, then Quoin's gate SHALL fail naming the install command, rather than skipping the emission checks.
 - The conformance contract SHALL name each maintained semantic-module repository it is compared against by remote and by one full commit revision, so that two runs of the drift check read the same bytes.

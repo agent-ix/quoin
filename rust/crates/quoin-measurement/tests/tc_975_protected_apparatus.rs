@@ -133,7 +133,7 @@ fn candidate(id: &str, minute: u8, matched: u32, artifacts: &Value) -> Value {
             "lockDigest": format!("sha256:{}", "1".repeat(64)),
             "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
-            "toolchains": { "rust": "1.98.1" },
+            "toolchains": { "rust": "0.0.0" },
             "sources": {
                 "fixture": {
                     "revision": "a".repeat(40),

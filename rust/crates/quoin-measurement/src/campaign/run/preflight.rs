@@ -30,7 +30,7 @@ mod tests {
         )])));
         assert!(valid_toolchains(&BTreeMap::from([(
             "rust".to_owned(),
-            "rustc 1.98.1 x86_64-unknown-linux-gnu".to_owned(),
+            "rustc 0.0.0 x86_64-unknown-linux-gnu".to_owned(),
         )])));
     }
 }

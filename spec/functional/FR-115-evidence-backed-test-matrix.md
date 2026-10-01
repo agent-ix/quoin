@@ -297,7 +297,7 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
   FR to `review` and `to-plan` only (see its own CR note).
 
 > **CR-001 (2026-09-27, PLAT-1080):** quoin pins quire-rs by git revision
-> (`=0.46.0`, `rev 523e47f`) — a dependency pin, not a vendored copy — whose
+> — a dependency pin, not a vendored copy — whose
 > `CoverageReport` carries `obligations: Vec<Obligation>` and
 > `criteria: Vec<CriteriaCounts>` (per-document property-shape counts) but no
 > `coverage_matrix` field and no per-criterion `binders`/`status`.
@@ -324,7 +324,7 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 > verbatim (CON-2).
 >
 > **CR-003 (2026-09-28, PLAT-1080):** the wire shape of `coverage`, measured
-> at the pinned quire-rs `=0.48.0` rather than assumed. `CoverageReport.
+> at the pinned quire-rs rather than assumed. `CoverageReport.
 > coverage_matrix` is `Vec<CoverageMatrixRequirement>` with
 > `skip_serializing_if = "Vec::is_empty"`: it serializes as a bare array of
 > `{document, criteria[]}` entries and is omitted entirely when empty. There

@@ -47,9 +47,10 @@ evidence, not as a cache.
 ## Gates
 
 ```bash
-cargo +1.98.1 fmt --check
-cargo +1.98.1 clippy --all-targets --all-features --target-dir <dir> -- -D warnings
-cargo +1.98.1 test --target-dir <dir>
+# From rust/, so rustup selects the channel rust-toolchain.toml declares.
+cargo fmt --check
+cargo clippy --all-targets --all-features --target-dir <dir> -- -D warnings
+cargo test --target-dir <dir>
 ```
 
 Always pass `--target-dir` explicitly; a shared default target directory across

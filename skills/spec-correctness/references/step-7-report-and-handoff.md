@@ -38,7 +38,7 @@ Before finishing, prove every emitted tag actually **binds** — not that it exi
 quire coverage --scope <repo> --json
 ```
 
-`--scope` is the repository root. Since quire-cli v0.16.0 (quire-rs CR-045) the command
+`--scope` is the repository root. The command
 derives two roots from it: documents from `<repo>/spec` only, trace tags from the source
 tree excluding `spec/`. A repo with no `spec/` directory exits with a diagnostic naming
 the missing document root, and a document outside `spec/` mints nothing.
@@ -65,9 +65,6 @@ Then confirm, as before:
 
 - no criterion this run tagged reads `tagged-by-ignored-test`;
 - no emitted tag names a `row_id` absent from the `quire properties` output.
-
-Check `quire --version` ≥ 0.16.0 first: the two-root semantics this step assumes are
-unenforced, and an older build silently walks the whole repository instead.
 
 Two distinct states get conflated here; keep them apart (they have different causes and
 different fixes — `gap-analysis` step 3 has the same reading):

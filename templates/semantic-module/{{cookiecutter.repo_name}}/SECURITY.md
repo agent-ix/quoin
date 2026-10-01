@@ -21,7 +21,6 @@ realistic security surface is therefore supply-chain rather than execution:
 - Every emitted schema is reproducible from `typespec/main.tsp` by
   `make schemas`, and `make lint` fails when the committed bytes differ from what
   the source produces.
-- `toolchain.yaml` records every external command and its minimum version.
 
 If you find a way for a published artifact to differ from what this repository's
 source produces, that is a vulnerability in the sense that matters here.

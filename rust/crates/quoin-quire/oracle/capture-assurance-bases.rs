@@ -14,8 +14,7 @@
 //!
 //! So the base documents are produced here, once, by
 //! `quire_rs::build_assurance_export` over the committed fixture corpus, and
-//! committed as `tests/goldens/assurance-bases.json` with the engine revision
-//! and quoin revision that produced them. `capture-ajv-verdicts.mjs` then reads
+//! committed as `tests/goldens/assurance-bases.json`. `capture-ajv-verdicts.mjs` then reads
 //! that file, applies the mutation ladder, and records the **oracle's** verdict
 //! — `validateAssurance` from `src/quire/validate.ts`.
 //!
@@ -30,8 +29,7 @@
 //!
 //! Deleted at the cutover commit per FR-101-AC-5.
 
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::PathBuf;
 
 use quoin_quire::{ModuleSelection, ScopeRoot, assurance, ids};
 use serde_json::{Value, json};
@@ -100,14 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }));
     }
 
-    let captured = json!({
-        "provenance": {
-            "producer": "rust/crates/quoin-quire/oracle/capture-assurance-bases.rs",
-            "engine": engine_pin(&manifest)?,
-            "quoin_revision": revision(&manifest)?,
-        },
-        "bases": documents,
-    });
+    let captured = json!({ "bases": documents });
 
     let out = manifest
         .join("tests")
@@ -118,22 +109,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::write(&out, text)?;
     println!("wrote {} bases to {}", BASES.len(), out.display());
     Ok(())
-}
-
-/// The `quire-rs` rev this build linked, read from the manifest rather than
-/// restated — the same rule `build.rs` follows.
-fn engine_pin(manifest: &Path) -> Result<String, Box<dyn std::error::Error>> {
-    let text = std::fs::read_to_string(manifest.join("Cargo.toml"))?;
-    let line = text
-        .lines()
-        .find(|line| line.starts_with("quire-rs = "))
-        .ok_or("Cargo.toml no longer declares quire-rs on one line")?;
-    Ok(line.trim().to_string())
-}
-
-fn revision(manifest: &Path) -> Result<String, Box<dyn std::error::Error>> {
-    let output = Command::new("git")
-        .args(["-C", &manifest.display().to_string(), "rev-parse", "HEAD"])
-        .output()?;
-    Ok(String::from_utf8(output.stdout)?.trim().to_string())
 }

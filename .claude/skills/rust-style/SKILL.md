@@ -260,13 +260,9 @@ is unit-testable without spawning a process.
 
 ## The toolchain
 
-**1.98.1**, stated in three places that must agree: `rust/rust-toolchain.toml`,
-`rust/clippy.toml`'s `msrv` and `rust/Cargo.toml`'s `rust-version`.
-`tc_375_the_pinned_channel_and_the_declared_msrv_agree` fails if they drift.
-
-NFR-026 states the floor as "consistent with quire-corpus and
-filament-core-data". **Those two do not agree today**: quire-corpus pins
-1.98.1, filament-core-data pins 1.94.1. quoin follows the stated floor.
+The channel is declared in `rust/rust-toolchain.toml`, the single place that
+states it; `rust/clippy.toml` and `rust/Cargo.toml` carry the matching MSRV and
+`rust-version` as the tools require.
 
 `rustup` selects a toolchain from the **working directory**, so
 `cargo --manifest-path rust/Cargo.toml` run from the repository root ignores

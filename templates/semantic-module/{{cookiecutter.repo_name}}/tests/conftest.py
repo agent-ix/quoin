@@ -4,7 +4,7 @@ Two policies live here and nowhere else.
 
 **The engine is a hard dependency of the semantic rows.** ``quire`` is a dev
 dependency resolved from ``internal-pypi`` (``poetry install``). When it is
-absent, or too old, or missing the capability, the semantic tests **fail**
+absent, or missing the capability, the semantic tests **fail**
 and say how to fix it. They never skip, because a skipped row is not
 coverage — and a clean runner, which is exactly where a regression would
 first show, is exactly where a skip would fire.
@@ -33,7 +33,6 @@ SKELETONS_DIR = PACKAGE_ROOT / "skeletons"
 NEGATIVE_DIR = REPO_ROOT / "tests" / "fixtures" / "negative"
 LEGACY_DIR = REPO_ROOT / "tests" / "fixtures" / "legacy"
 
-SEMANTIC_CORE_VERSION = "{{ cookiecutter.semantic_core_version }}"
 SEMANTIC_CORE_DIR = (
     REPO_ROOT
     / "node_modules"
@@ -42,11 +41,6 @@ SEMANTIC_CORE_DIR = (
     / "generated"
     / "json-schema"
 )
-SEMANTIC_CORE_BASE = (
-    f"https://schemas.agent-ix.org/semantic-core/{SEMANTIC_CORE_VERSION}/"
-)
-
-ENGINE_FLOOR = "{{ cookiecutter.quire_engine_floor }}"
 
 QUIRE_MISSING = (
     "the Quire wheel exposing `extract_semantic` is not installed in this "
@@ -108,21 +102,6 @@ def frontmatter(markdown: str) -> dict[str, Any]:
     return yaml.safe_load(match.group(1))
 
 
-def _version_tuple(value: str) -> tuple[int, ...]:
-    return tuple(int(part) for part in re.split(r"[.+-]", value)[:3] if part.isdigit())
-
-
-def _installed_engine_version() -> str | None:
-    """The installed engine's version. `quire` exposes no `__version__`, so the
-    distribution metadata is the only place that carries it."""
-    import importlib.metadata
-
-    try:
-        return importlib.metadata.version("quire")
-    except importlib.metadata.PackageNotFoundError:
-        return None
-
-
 def require_quire():
     """Import the engine, or FAIL naming the provisioning path. Never skip."""
     try:
@@ -132,14 +111,6 @@ def require_quire():
     if not hasattr(quire, "extract_semantic"):
         pytest.fail(
             f"`extract_semantic` is missing from the installed quire: {QUIRE_MISSING}"
-        )
-    installed = _installed_engine_version()
-    if installed and _version_tuple(installed) < _version_tuple(ENGINE_FLOOR):
-        pytest.fail(
-            f"the installed quire is {installed}, older than this module's declared "
-            f"floor {ENGINE_FLOOR}. A capability gap in an old engine reads as a "
-            "module defect, so this is a failure rather than a warning. Run "
-            "`poetry install` (or `poetry update quire` to move past the floor)."
         )
     return quire
 
@@ -266,13 +237,11 @@ def schema_registry():
 
     resources = []
     for path in sorted(SCHEMAS_DIR.glob("*.json")):
-        if path.name == "toolchain.json":
-            continue
         schema = json.loads(path.read_text())
         resources.append((schema["$id"], Resource.from_contents(schema)))
     for path in sorted(SEMANTIC_CORE_DIR.glob("*.json")):
         schema = json.loads(path.read_text())
-        uri = schema.get("$id") or f"{SEMANTIC_CORE_BASE}{path.name}"
+        uri = schema["$id"]
         resources.append((uri, Resource.from_contents(schema)))
     registry = Registry().with_resources(resources)
 

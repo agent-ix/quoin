@@ -18,7 +18,6 @@ all:
     - CONTRIBUTING.md
     - SECURITY.md
     - Makefile
-    - toolchain.yaml
     - pyproject.toml
     - package.json
     - .gitignore

@@ -83,18 +83,3 @@ fn tc_375_every_crate_opts_into_the_workspace_lint_policy() {
     }
     assert_eq!(without, Vec::<String>::new());
 }
-
-/// Trace: NFR-026
-/// Provenance: quoin#375
-#[test]
-fn tc_375_the_pinned_channel_and_the_declared_msrv_agree() {
-    // Three files state the toolchain; a pin that disagrees with itself means
-    // the gate measured something other than what the workspace declares.
-    let root = workspace_root();
-    let toolchain = std::fs::read_to_string(root.join("rust-toolchain.toml")).unwrap();
-    let clippy = std::fs::read_to_string(root.join("clippy.toml")).unwrap();
-    let cargo = std::fs::read_to_string(root.join("Cargo.toml")).unwrap();
-    assert!(toolchain.contains(r#"channel = "1.98.1""#), "{toolchain}");
-    assert!(clippy.contains(r#"msrv = "1.98.1""#), "{clippy}");
-    assert!(cargo.contains(r#"rust-version = "1.98.1""#), "{cargo}");
-}

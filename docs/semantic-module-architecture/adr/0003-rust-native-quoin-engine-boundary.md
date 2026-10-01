@@ -296,8 +296,6 @@ incompatibilities.
   replacement was removed in turn: quoin does not depend on
   `filament-ide-rs`, and plan syncing will be designed separately. This is no
   longer an open question.
-- `filament-core-data` and `quire-rs` pin Rust 1.94.1 today, not 1.98.1. See
-  [NFR-026](../../../spec/non-functional/NFR-026-rust-toolchain-floor.md).
 - The `corpus/` submodule points at `agent-ix/qa-corpus`, a repository this
   programme does not own. Whether the burn-down has any scope over it needs an
   owner ruling; until then

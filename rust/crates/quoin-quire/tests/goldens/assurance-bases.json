@@ -7,7 +7,7 @@
             "artifact_type": "FR",
             "id": "FR-001",
             "locator": {
-              "digest": "8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62",
+              "digest": "01ababababababababababababababababababababababababababababababab",
               "line": 1,
               "path": "FR-001-example.md"
             }
@@ -16,7 +16,7 @@
             "artifact_type": "TestMatrix",
             "id": "TM-001",
             "locator": {
-              "digest": "e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a",
+              "digest": "02ababababababababababababababababababababababababababababababab",
               "line": 1,
               "path": "TM-001-matrix.md"
             }
@@ -56,12 +56,12 @@
             "freshness": "unknown",
             "kind": "verifies",
             "locator": {
-              "digest": "652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7",
+              "digest": "03ababababababababababababababababababababababababababababababab",
               "line": 12,
               "path": "lib/backed.rs"
             },
             "provenance": "canonical",
-            "source": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
+            "source": "04ababababababababababababababababababababababababababababababab",
             "target": "TC-001"
           }
         ],
@@ -75,11 +75,11 @@
               "verifies"
             ],
             "container": null,
-            "id": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
+            "id": "04ababababababababababababababababababababababababababababababab",
             "kind": "test_function",
             "language": "rust",
             "locator": {
-              "digest": "652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7",
+              "digest": "03ababababababababababababababababababababababababababababababab",
               "line": 12,
               "path": "lib/backed.rs"
             },
@@ -97,7 +97,7 @@
             "artifact_type": "FR",
             "id": "FR-001",
             "locator": {
-              "digest": "8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62",
+              "digest": "01ababababababababababababababababababababababababababababababab",
               "line": 1,
               "path": "FR-001-example.md"
             }
@@ -106,7 +106,7 @@
             "artifact_type": "TestMatrix",
             "id": "TM-001",
             "locator": {
-              "digest": "e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a",
+              "digest": "02ababababababababababababababababababababababababababababababab",
               "line": 1,
               "path": "TM-001-matrix.md"
             }
@@ -139,11 +139,11 @@
               "verifies"
             ],
             "container": null,
-            "id": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
+            "id": "04ababababababababababababababababababababababababababababababab",
             "kind": "test_function",
             "language": "rust",
             "locator": {
-              "digest": "652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7",
+              "digest": "03ababababababababababababababababababababababababababababababab",
               "line": 12,
               "path": "lib/backed.rs"
             },

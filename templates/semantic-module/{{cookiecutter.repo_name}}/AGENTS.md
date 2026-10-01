@@ -28,5 +28,4 @@ skeletons, extraction mappings. There is no runtime here.
 | `{{ cookiecutter.package_name }}/skeletons/` | One authoring skeleton per type, plus its `sysml` alternate. |
 | `tests/fixtures/negative/` | One fixture per failure mode, each with a distinct `expect`. |
 | `tests/fixtures/legacy/` | The pre-contract authoring form, accepted at `warning`. |
-| `toolchain.yaml` | Every external command and its minimum version. |
 | `spec/` | This repository's own requirements and acceptance criteria. |

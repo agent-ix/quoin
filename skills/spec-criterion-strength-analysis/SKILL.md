@@ -89,11 +89,9 @@ copy the `ix-board` rule across by reflex.
    still a row, marked uncertain — neither is ever dropped.
 6. **Validate.** `quire validate --scope <repo> "spec/**/*.md"`.
 
-> **`--scope` is the repository root, and must be passed explicitly.** Since
-> quire-cli v0.16.0 (quire-rs CR-045) the command derives two roots from it and
+> **`--scope` is the repository root, and must be passed explicitly.** The command derives two roots from it and
 > never interchanges them: spec documents come from `<repo>/spec` only, trace
-> tags from the source tree at `<repo>` excluding `spec/`. Check
-> `quire --version` >= 0.16.0 before relying on this.
+> tags from the source tree at `<repo>` excluding `spec/`.
 
 ## Severity mapping
 
