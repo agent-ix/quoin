@@ -147,7 +147,6 @@ impl<'a> ModuleInstaller<'a> {
             resolved_path: content_root.to_string_lossy().into_owned(),
             target_path: target.to_string_lossy().into_owned(),
             installed_at: rfc3339_now(),
-            semantic: None,
         };
         registry.upsert(record.clone());
         registry.write(&self.paths.registry_path)?;
@@ -163,14 +162,6 @@ impl<'a> ModuleInstaller<'a> {
                 report: verdict.render(),
                 rollback,
             });
-        }
-
-        let mut record = record;
-        if let Some(pin) = verdict.pin {
-            let mut registry = ModuleRegistry::read(&self.paths.registry_path)?;
-            registry.pin_semantic(&name, pin.clone());
-            registry.write(&self.paths.registry_path)?;
-            record.semantic = Some(pin);
         }
 
         Ok(InstallOutcome {

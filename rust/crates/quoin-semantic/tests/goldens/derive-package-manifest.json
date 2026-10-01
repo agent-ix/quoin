@@ -55,11 +55,7 @@
         "mappings": [],
         "extensions": []
       },
-      "validAgainstSchema": true,
-      "registryPin": {
-        "package": "agent-ix/a",
-        "semanticCore": "0.1.0"
-      }
+      "validAgainstSchema": true
     },
     {
       "id": "exports-sorted",
@@ -136,11 +132,7 @@
         "mappings": [],
         "extensions": []
       },
-      "validAgainstSchema": true,
-      "registryPin": {
-        "package": "agent-ix/a",
-        "semanticCore": "0.1.0"
-      }
+      "validAgainstSchema": true
     },
     {
       "id": "mappings-sorted",
@@ -202,11 +194,7 @@
         ],
         "extensions": []
       },
-      "validAgainstSchema": true,
-      "registryPin": {
-        "package": "agent-ix/a",
-        "semanticCore": "0.1.0"
-      }
+      "validAgainstSchema": true
     },
     {
       "id": "imports-sorted",
@@ -274,11 +262,7 @@
         "mappings": [],
         "extensions": []
       },
-      "validAgainstSchema": true,
-      "registryPin": {
-        "package": "agent-ix/a",
-        "semanticCore": "0.1.0"
-      }
+      "validAgainstSchema": true
     },
     {
       "id": "targets-preserved-order",
@@ -340,11 +324,7 @@
         "mappings": [],
         "extensions": []
       },
-      "validAgainstSchema": true,
-      "registryPin": {
-        "package": "agent-ix/a",
-        "semanticCore": "0.1.0"
-      }
+      "validAgainstSchema": true
     },
     {
       "id": "posture-strict",
@@ -397,11 +377,7 @@
         "mappings": [],
         "extensions": []
       },
-      "validAgainstSchema": true,
-      "registryPin": {
-        "package": "agent-ix/a",
-        "semanticCore": "0.1.0"
-      }
+      "validAgainstSchema": true
     },
     {
       "id": "full",
@@ -497,11 +473,7 @@
         ],
         "extensions": []
       },
-      "validAgainstSchema": true,
-      "registryPin": {
-        "package": "agent-ix/a",
-        "semanticCore": "0.1.0"
-      }
+      "validAgainstSchema": true
     }
   ]
 }

@@ -27,7 +27,7 @@
 //!
 //! This crate is the right home rather than `quoin-semantic` because the gate
 //! is stated in *this* crate's vocabulary — [`SemanticGate`],
-//! [`SemanticVerdict`], [`SemanticPin`], [`ModuleName`], [`ModuleRegistry`] —
+//! [`SemanticVerdict`], [`ModuleName`], [`ModuleRegistry`] —
 //! and needs only free functions from `quoin-semantic`. Putting it the other
 //! way round would make the policy crate depend on the installer.
 //!
@@ -39,7 +39,7 @@ use crate::error::{ModulesError, RollbackOutcome};
 use crate::ids::ModuleName;
 use crate::paths::IxHome;
 use crate::registry::ModuleRegistry;
-use crate::semantic::{Diagnostic, SemanticGate, SemanticPin, SemanticVerdict, Severity};
+use crate::semantic::{Diagnostic, SemanticGate, SemanticVerdict, Severity};
 
 /// The semantic contract, put behind [`SemanticGate`].
 #[derive(Debug, Clone)]
@@ -238,8 +238,8 @@ impl ContractGate {
 /// One error diagnostic, which is what every refusal on this gate is.
 ///
 /// A free function rather than a closure inside `inspect` so that the helpers
-/// below refuse in exactly the same shape: a verdict carrying one error and no
-/// pin is what this crate reads as "do not install this".
+/// below refuse in exactly the same shape: a verdict carrying one error is what
+/// this crate reads as "do not install this".
 fn refuse(rule: &str, message: String) -> SemanticVerdict {
     SemanticVerdict {
         diagnostics: vec![Diagnostic {
@@ -247,7 +247,6 @@ fn refuse(rule: &str, message: String) -> SemanticVerdict {
             rule: rule.to_owned(),
             message,
         }],
-        pin: None,
     }
 }
 
@@ -266,18 +265,14 @@ fn as_gate_diagnostics(diagnostics: &[quoin_semantic::SemanticDiagnostic]) -> Ve
         .collect()
 }
 
-/// Derive, validate and write the package manifest, then derive the pin.
-///
-/// Order matters and is `installPlugin`'s: the manifest is validated and
-/// written before the pin is offered, so a module whose manifest is invalid
-/// never reaches the registry with a pin recorded for it.
+/// Derive, validate and write the package manifest.
 ///
 /// # Errors
 /// The refusal verdict to return, when any step of that sequence fails.
 fn materialise(
     module: &quoin_semantic::SemanticModule,
     semantic_root: &Path,
-) -> Result<SemanticPin, SemanticVerdict> {
+) -> Result<(), SemanticVerdict> {
     let derived = quoin_semantic::derive_package_manifest(module);
     match serde_json::to_value(&derived)
         .map_err(|e| e.to_string())
@@ -311,11 +306,7 @@ fn materialise(
         ));
     }
 
-    let registry_pin = quoin_semantic::registry_pin(module);
-    Ok(SemanticPin {
-        package: registry_pin.package,
-        semantic_core: registry_pin.semantic_core,
-    })
+    Ok(())
 }
 
 impl SemanticGate for ContractGate {
@@ -365,7 +356,6 @@ impl SemanticGate for ContractGate {
         };
 
         let mut diagnostics = result.diagnostics.clone();
-        let mut pin = None;
         if let Some(module) = result.module.as_ref() {
             let others = match self.others(&validators, name) {
                 Ok(others) => others,
@@ -378,17 +368,15 @@ impl SemanticGate for ContractGate {
             }
             diagnostics.extend(quoin_semantic::resolve_imports(module, &others));
 
-            if !quoin_semantic::has_errors(&diagnostics) {
-                match materialise(module, semantic_root) {
-                    Ok(derived_pin) => pin = Some(derived_pin),
-                    Err(verdict) => return verdict,
-                }
+            if !quoin_semantic::has_errors(&diagnostics)
+                && let Err(verdict) = materialise(module, semantic_root)
+            {
+                return verdict;
             }
         }
 
         SemanticVerdict {
             diagnostics: as_gate_diagnostics(&diagnostics),
-            pin,
         }
     }
 }
@@ -516,17 +504,15 @@ mod tests {
         ModuleName::new(of).unwrap()
     }
 
-    /// A lone module with a valid block passes and is pinned.
+    /// A lone module with a valid block passes.
     ///
     /// The control for everything below: without it a gate that refused
     /// everything would satisfy the refusal tests.
     #[test]
-    fn a_module_alone_in_its_home_is_clean_and_pinned() {
+    fn a_module_alone_in_its_home_is_clean() {
         let home = home(&["alpha"]);
         let verdict = home.gate().inspect(&name("alpha"), &home.root("alpha"));
         assert!(!verdict.has_errors(), "{:?}", verdict.diagnostics);
-        let pin = verdict.pin.expect("a valid semantic block is pinned");
-        assert_eq!(pin.package, "agent-ix/spec-objects-fixture");
     }
 
     /// THE population test. Two modules declaring the same `semantic.package`,
@@ -554,7 +540,6 @@ mod tests {
             report.contains("alpha"),
             "the refusal names the module already holding it: {report}"
         );
-        assert!(verdict.pin.is_none(), "a refused module is not pinned");
     }
 
     /// The population is every registered sibling, not every sibling that

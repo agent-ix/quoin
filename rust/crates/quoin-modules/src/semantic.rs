@@ -9,9 +9,9 @@
 //! That rule is implemented in `src/semantic/manifest.ts` and
 //! `src/semantic/package-manifest.ts`, which **Stage 3 owns**, not this stage.
 //!
-//! So it is a seam, not a stub: this crate owns *when* the gate runs, what a
-//! rejection does to the filesystem and the registry, and what is pinned on
-//! success. It does not own what the gate decides.
+//! So it is a seam, not a stub: this crate owns *when* the gate runs and what a
+//! rejection does to the filesystem and the registry. It does not own what the
+//! gate decides.
 //!
 //! [`PermissiveGate`] is the crate's default and passes everything. It is not a
 //! placeholder for missing work — it is the honest statement that this stage
@@ -22,23 +22,7 @@
 
 use std::path::Path;
 
-use serde::{Deserialize, Serialize};
-
 use crate::ids::ModuleName;
-
-/// The registry pin recorded under an installed module's `semantic` key.
-///
-/// Field names match `SemanticRegistryPin` in `src/semantic/package-manifest.ts`
-/// because the registry file is shared with the retained TypeScript.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct SemanticPin {
-    /// The module's declared semantic package.
-    pub package: String,
-    /// The semantic core it binds to.
-    pub semantic_core: String,
-}
 
 /// How serious a diagnostic is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -65,8 +49,6 @@ pub struct Diagnostic {
 pub struct SemanticVerdict {
     /// Everything found.
     pub diagnostics: Vec<Diagnostic>,
-    /// The pin to record, when the module declares a semantic block.
-    pub pin: Option<SemanticPin>,
 }
 
 impl SemanticVerdict {
@@ -102,7 +84,7 @@ impl SemanticVerdict {
 /// Judges whether a materialized module satisfies the semantic contract.
 ///
 /// Implemented by Stage 3's semantic crate. Taking it as a trait keeps the
-/// install/rollback/pin machinery testable with a gate that refuses on demand,
+/// install/rollback machinery testable with a gate that refuses on demand,
 /// which is the only way to exercise the rollback paths without a real
 /// contract violation.
 pub trait SemanticGate {

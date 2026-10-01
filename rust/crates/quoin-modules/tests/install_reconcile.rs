@@ -110,7 +110,6 @@ impl SemanticGate for RefusingGate {
                     rule: "SEM-001".to_owned(),
                     message: "data_schema reference is outside the contract".to_owned(),
                 }],
-                pin: None,
             };
         }
         SemanticVerdict::default()
