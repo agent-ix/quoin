@@ -17,7 +17,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::ModulesError;
 use crate::ids::{CommitSha, ModuleName};
-use crate::semantic::SemanticPin;
 use crate::source::Source;
 
 /// Upper bound on the registry file, in bytes.
@@ -47,9 +46,6 @@ pub struct InstalledModule {
     pub target_path: String,
     /// RFC 3339 timestamp of the install.
     pub installed_at: String,
-    /// The semantic contract pin, when the module declares a semantic block.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub semantic: Option<SemanticPin>,
 }
 
 /// The registry document.
@@ -193,12 +189,5 @@ impl ModuleRegistry {
     #[must_use]
     pub fn find(&self, name: &ModuleName) -> Option<&InstalledModule> {
         self.plugins.iter().find(|p| &p.name == name)
-    }
-
-    /// Record a semantic pin under an existing entry, if it is present.
-    pub fn pin_semantic(&mut self, name: &ModuleName, pin: SemanticPin) {
-        if let Some(entry) = self.plugins.iter_mut().find(|p| &p.name == name) {
-            entry.semantic = Some(pin);
-        }
     }
 }

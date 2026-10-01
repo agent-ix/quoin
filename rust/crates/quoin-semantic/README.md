@@ -11,7 +11,7 @@ Stage 3, issue [#378](https://github.com/agent-ix/quoin/issues/378).
 | `contract`         | `contract.ts`         | The vendored schema bundle's locations                                    |
 | `manifest`         | `manifest.ts`         | Reading and refusing a manifest's `semantic` block                        |
 | `data_schema`      | `data-schema.ts`      | Resolving `{ schema }` references and their `$ref` closure                |
-| `package_manifest` | `package-manifest.ts` | The derived filament-core-data manifest, registry pins, import resolution |
+| `package_manifest` | `package-manifest.ts` | The derived filament-core-data manifest, import resolution |
 | `sweep`            | `sweep.ts`            | The legacy Properties-form classifier and corpus sweep                    |
 | `schema`           | ajv, inline           | The ajv-shaped adapter over the Rust `jsonschema` crate                   |
 

@@ -175,7 +175,6 @@ fn tc_381_235_registry_bytes_match_the_typescript_writer() {
         resolved_path: "/p".to_owned(),
         target_path: "/t/m".to_owned(),
         installed_at: "2026-01-02T03:04:05.678Z".to_owned(),
-        semantic: None,
     });
     registry.write(&path).expect("write");
 
@@ -190,7 +189,7 @@ fn tc_381_235_registry_bytes_match_the_typescript_writer() {
 #[test]
 fn tc_381_239_registry_bytes_match_with_every_optional_field_present() {
     // `tc_381_235` writes a record whose every optional field is absent, so it
-    // pins nothing about where `ref`, `sha` and `semantic` go or whether they
+    // pins nothing about where `ref` and `sha` go or whether they
     // appear at all — exactly the keys a serde attribute could reorder or drop
     // without any golden noticing. This is that record with all of them set.
     let dir = tempfile::tempdir().expect("temp dir");
@@ -210,10 +209,6 @@ fn tc_381_239_registry_bytes_match_with_every_optional_field_present() {
         resolved_path: "/c/978111c/modules/m".to_owned(),
         target_path: "/t/m".to_owned(),
         installed_at: "2026-01-02T03:04:05.678Z".to_owned(),
-        semantic: Some(quoin_modules::SemanticPin {
-            package: "acme.widgets".to_owned(),
-            semantic_core: "quire-core@1".to_owned(),
-        }),
     });
     registry.write(&path).expect("write");
 

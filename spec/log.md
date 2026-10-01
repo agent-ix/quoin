@@ -8,8 +8,12 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
-* **2026-09-30** — **The per-export schema digests are deleted** (quoin PR for
-  export digests). **FR-075-AC-2 is withdrawn** (FR-075 CR note) with TC-1373.
+* **2026-09-30** — **The registry `semantic` pin is deleted** (agent-ix/quoin#662).
+  FR-075's Behavior clause recording `package` and `semantic_core` under the
+  module's `registry.json` entry is withdrawn (FR-075 CR note), and FR-075 no
+  longer depends on FR-019.
+
+* **2026-09-30** — **The per-export schema digests are deleted** (agent-ix/quoin#661). **FR-075-AC-2 is withdrawn** (FR-075 CR note) with TC-1373.
   `export_digests`, the `exports` digest map of the registry pin and its
   `semantic/pin-underivable` refusal, and the `semantic.export-without-schema`
   refusal are removed. The registry pin keeps `package` and `semanticCore`.

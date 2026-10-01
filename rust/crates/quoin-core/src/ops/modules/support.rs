@@ -148,7 +148,6 @@ pub(super) fn module(name: &str) -> InstalledModule {
         resolved_path: "/cache/m".to_owned(),
         target_path: "/home/filament/modules/m".to_owned(),
         installed_at: "2026-01-01T00:00:00Z".to_owned(),
-        semantic: None,
     }
 }
 

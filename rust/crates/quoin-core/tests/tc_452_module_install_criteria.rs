@@ -242,7 +242,7 @@ fn tc_452_661_a_rejected_reinstall_restores_the_installed_version() {
 fn tc_452_662_installing_writes_the_derived_manifest() {
     let (dir, home) = scratch();
     let root = module_copy(dir.path(), "derive", "");
-    let record = install(&home, &root).ok()["module"].clone();
+    install(&home, &root).ok();
 
     let module_dir = home.join("filament").join("modules").join("derive");
     let derived: Value = serde_json::from_str(
@@ -257,10 +257,6 @@ fn tc_452_662_installing_writes_the_derived_manifest() {
         derived["exports"][0]["typeIdentity"],
         "ix://agent-ix/spec-objects-fixture/type/entity"
     );
-
-    let pin = &record["semantic"];
-    assert_eq!(pin["package"], "agent-ix/spec-objects-fixture");
-    assert_eq!(pin["semanticCore"], "0.3.0");
 }
 
 /// `legacy_forms: error` without a usable sweep report refuses the install and

@@ -35,8 +35,6 @@ quoin-jsonschema = { workspace = true }
 # a libyaml binding (`serde_yaml`, `serde_norway`, `serde_yml`): those are
 # YAML 1.1 and the difference is verdict-level. See DIVERGENCE.md §6 (D4).
 quoin-yaml = { workspace = true }
-sha2 = { workspace = true }
-hex = "=0.4.3"
 # Optional, and enabled by `quoin-core`'s own `schema` feature rather than by
 # this crate: the derives are what let FR-097 read the wire schema off the
 # canonical type instead of a second declaration of it, and nothing on this

@@ -53,5 +53,5 @@ pub use module_name::read_module_name;
 pub use paths::{InstallPaths, IxHome};
 pub use reconcile::{ReconcileMode, ReconcileReport};
 pub use registry::{InstalledModule, ModuleRegistry};
-pub use semantic::{PermissiveGate, SemanticGate, SemanticPin, SemanticVerdict};
+pub use semantic::{PermissiveGate, SemanticGate, SemanticVerdict};
 pub use source::{Source, parse_source_arg, to_git_url};

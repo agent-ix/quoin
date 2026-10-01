@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Derived package manifest and registry pins (FR-075, issue #293).
+//! Derived package manifest (FR-075, issue #293).
 //!
 //! Port of `src/semantic/package-manifest.ts`. From a module's `semantic` block
 //! Quoin derives the filament-core-data `package-manifest` document (FR-021
@@ -274,25 +274,6 @@ pub fn validate_package_manifest(
     manifest: &Value,
 ) -> Result<Result<(), Vec<SchemaError>>, SemanticError> {
     Ok(PackageManifestValidator::load(semantic_root)?.validate(manifest))
-}
-
-/// The registry pin recorded under a plugin entry's `semantic` key.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-pub struct SemanticRegistryPin {
-    /// `<org>/<repo>`.
-    pub package: String,
-    /// The semantic-core version the module compiles against.
-    #[serde(rename = "semanticCore")]
-    pub semantic_core: String,
-}
-
-/// The registry pin for one module.
-#[must_use]
-pub fn registry_pin(module: &SemanticModule) -> SemanticRegistryPin {
-    SemanticRegistryPin {
-        package: module.block.package.as_str().to_owned(),
-        semantic_core: module.block.semantic_core.as_str().to_owned(),
-    }
 }
 
 /// Write `<module root>/semantic/package-manifest.json`; returns the path.

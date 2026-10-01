@@ -9,8 +9,8 @@
 //! - [`contract`] — the vendored schema bundle and its recorded provenance.
 //! - [`manifest`] — reading and refusing a module manifest's `semantic` block.
 //! - [`data_schema`] — resolving an object type's `data_schema` reference.
-//! - [`package_manifest`] — the derived filament-core-data package manifest,
-//!   its registry pin, and import resolution.
+//! - [`package_manifest`] — the derived filament-core-data package manifest
+//!   and import resolution.
 //! - [`sweep`] — the legacy Properties-form classifier and corpus sweep.
 //!
 //! # Parity with the TypeScript it replaces
@@ -62,8 +62,8 @@ pub use manifest::{
     read_semantic_block,
 };
 pub use package_manifest::{
-    SEMANTIC_CORE_PACKAGE, SemanticRegistryPin, derive_package_manifest, mapping_identity,
-    registry_pin, resolve_imports, type_identity, validate_package_manifest,
+    SEMANTIC_CORE_PACKAGE, derive_package_manifest, mapping_identity, resolve_imports,
+    type_identity, validate_package_manifest,
 };
 pub use sweep::{
     CorpusRoot, FormFinding, LEGACY_MIGRATION_EXAMPLE, LegacyFormDiagnostic, PropertiesForm,
