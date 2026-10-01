@@ -29,7 +29,7 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 - If an object carries `schema` together with any other key, then Quoin SHALL reject it as ambiguous.
 - If the referenced file is missing, unreadable, not JSON, or not a JSON Schema 2020-12 document with an `$id`, then Quoin SHALL reject the manifest naming the path and the reason.
 - If the path escapes the module root by `..` or by symlink, then Quoin SHALL reject the manifest naming the path.
-- Every `$ref` in the referenced schema SHALL resolve within the module's shipped bundle or the semantic-core bundle `https://schemas.agent-ix.org/semantic-core/<semantic.semantic_core>/`.
+- Every `$ref` in the referenced schema SHALL resolve within the module's shipped bundle, whose base is `https://schemas.agent-ix.org/<org>/<repo>/` and carries no module version, or the semantic-core bundle `https://schemas.agent-ix.org/semantic-core/<semantic.semantic_core>/`.
 - If a `$ref` names a semantic-core version other than `semantic.semantic_core`, an unshipped file, or forms a cycle that the resolver cannot close, then Quoin SHALL reject the manifest naming the `$ref`.
 - Quoin SHALL ship the semantic-core JSON Schema bundle at each supported version so resolution needs no network read.
 - Where a module declares a `semantic` block and an object type still carries an inline `data_schema`, Quoin SHALL emit a `warning` `semantic.inline-data-schema` naming the object type and the migration (FR-074).
@@ -60,7 +60,10 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 > (`semantic.data-schema-id` is removed). The package manager already fixes
 > which bytes ship. The `$id` is no longer required to be absolute. FR-073-AC-6 (bundle provenance equal to a recorded digest at a
 > recorded revision) is withdrawn, and so are the recorded hashes and
-> revisions in `SEMANTIC_CONTRACT`. The id is not reused.
+> revisions in `SEMANTIC_CONTRACT`. The id is not reused. A module's own schema base
+> carries no version either: it is `https://schemas.agent-ix.org/<org>/<repo>/`, so the
+> manifest version is not copied into any `$id` or `$ref`. The semantic-core base keeps
+> its `semantic-core/<version>/` shape.
 
 ## Dependencies
 
