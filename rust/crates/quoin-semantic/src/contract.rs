@@ -21,9 +21,6 @@
 
 use std::path::{Path, PathBuf};
 
-use sha2::{Digest, Sha256};
-
-use crate::error::SemanticError;
 use crate::ids::{ContractVersion, SemanticCoreVersion};
 
 /// A vendored file's origin: repository and path there.
@@ -161,27 +158,6 @@ pub fn sweep_report_schema_path(semantic_root: &Path) -> PathBuf {
     semantic_root.join("sweep-report.schema.json")
 }
 
-/// `sha256:<hex>` over a file's raw bytes.
-///
-/// # Errors
-///
-/// [`SemanticError::VendoredSchemaUnreadable`] when the file cannot be read.
-pub fn file_sha256(path: &Path) -> Result<String, SemanticError> {
-    let bytes = std::fs::read(path).map_err(|source| SemanticError::VendoredSchemaUnreadable {
-        path: path.to_path_buf(),
-        source,
-    })?;
-    Ok(sha256_hex(&bytes))
-}
-
-/// `sha256:<hex>` over arbitrary bytes.
-#[must_use]
-pub fn sha256_hex(bytes: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(bytes);
-    format!("sha256:{}", hex::encode(hasher.finalize()))
-}
-
 #[cfg(test)]
 // Indexing and `unreachable!` are a test-only convenience: an out-of-range
 // index in a test is a failing test, not a downed worker.
@@ -200,14 +176,5 @@ mod tests {
     fn tc_378_041_ships_semantic_core_is_exact() {
         assert!(SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.0")));
         assert!(!SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.1")));
-    }
-
-    /// Trace: FR-070
-    #[test]
-    fn tc_378_042_sha256_matches_the_typescript_form() {
-        assert_eq!(
-            sha256_hex(b""),
-            "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        );
     }
 }

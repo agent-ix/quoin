@@ -441,12 +441,6 @@
           "severity": "error",
           "path": "semantic.exports.ghost",
           "message": "semantic.exports names ghost, which object_types does not declare"
-        },
-        {
-          "code": "semantic.export-without-schema",
-          "severity": "error",
-          "path": "semantic.exports.ghost",
-          "message": "semantic.exports names ghost, whose data_schema is not a { schema } reference; nothing can be pinned for it"
         }
       ],
       "module": {
@@ -498,12 +492,6 @@
           "severity": "warning",
           "path": "object_types[entity].data_schema",
           "message": "object type entity still carries an inline data_schema; migrate to { schema } referencing the module's emitted schema (FR-073, FR-074)"
-        },
-        {
-          "code": "semantic.export-without-schema",
-          "severity": "error",
-          "path": "semantic.exports.entity",
-          "message": "semantic.exports names entity, whose data_schema is not a { schema } reference; nothing can be pinned for it"
         }
       ],
       "module": {

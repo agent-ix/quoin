@@ -148,13 +148,12 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
     assert_eq!(errors(&good, &validators), Vec::<String>::new());
 }
 
-/// An export no `object_types` entry declares is refused, and so is an export
-/// whose `data_schema` is not a `{ schema }` reference.
+/// An export no `object_types` entry declares is refused.
 ///
 /// Trace: FR-070-AC-4
 /// Provenance: agent-ix/quoin#452
 #[test]
-fn tc_452_613_an_export_must_name_a_declared_type_that_ships_a_referenced_schema() {
+fn tc_452_613_an_export_must_name_a_declared_type() {
     let validators = validators();
     let scratch = Scratch::new();
     let undeclared = scratch.module_copy("bad-export", |manifest, _| {
@@ -165,22 +164,6 @@ fn tc_452_613_an_export_must_name_a_declared_type_that_ships_a_referenced_schema
             .contains(&"error:semantic.unknown-export@semantic.exports.endpoint".to_owned()),
         "{:?}",
         codes(&undeclared, &validators)
-    );
-
-    // `enumeration` is declared, but carries an INLINE `data_schema`.
-    let inline = scratch.module_copy("export-inline", |manifest, _| {
-        manifest["semantic"]["exports"] = json!(["entity", "enumeration"]);
-    });
-    assert!(
-        codes(&inline, &validators).contains(
-            &"error:semantic.export-without-schema@semantic.exports.enumeration".to_owned()
-        ),
-        "{:?}",
-        codes(&inline, &validators)
-    );
-    assert!(
-        message_for(&inline, &validators, "semantic.export-without-schema").contains("enumeration"),
-        "the refusal names the export"
     );
 }
 

@@ -23,7 +23,7 @@ use serde_json::Value;
 use crate::contract::{
     SEMANTIC_CONTRACT, module_manifest_schema_path, semantic_core_dir, sweep_report_schema_path,
 };
-use crate::data_schema::{DataSchemaForm, ResolveContext, ResolvedDataSchema, resolve_data_schema};
+use crate::data_schema::{ResolveContext, ResolvedDataSchema, resolve_data_schema};
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic, Severity};
 use crate::error::SemanticError;
 use crate::ids::{
@@ -478,22 +478,6 @@ pub fn read_semantic_block(
         let resolved = resolve_data_schema(value, &ctx, true);
         diagnostics.extend(resolved.diagnostics.iter().cloned());
         data_schemas.insert(name, resolved);
-    }
-
-    for name in &block.exports {
-        let is_reference = data_schemas
-            .get(name)
-            .is_some_and(|resolved| resolved.kind == DataSchemaForm::Reference);
-        if !is_reference {
-            diagnostics.push(SemanticDiagnostic::error(
-                DiagnosticCode::ExportWithoutSchema,
-                format!("semantic.exports.{name}"),
-                format!(
-                    "semantic.exports names {name}, whose data_schema is not a \
-                     {{ schema }} reference; nothing can be pinned for it"
-                ),
-            ));
-        }
     }
 
     SemanticReadResult {

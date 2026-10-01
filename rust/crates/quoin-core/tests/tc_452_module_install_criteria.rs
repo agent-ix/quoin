@@ -234,13 +234,12 @@ fn tc_452_661_a_rejected_reinstall_restores_the_installed_version() {
     );
 }
 
-/// Installing a semantic module writes the derived package manifest beside it
-/// and records one digest per export in the registry.
+/// Installing a semantic module writes the derived package manifest beside it.
 ///
-/// Trace: FR-075-AC-1, FR-075-AC-2
+/// Trace: FR-075-AC-1
 /// Provenance: agent-ix/quoin#452
 #[test]
-fn tc_452_662_installing_writes_the_derived_manifest_and_pins_every_export() {
+fn tc_452_662_installing_writes_the_derived_manifest() {
     let (dir, home) = scratch();
     let root = module_copy(dir.path(), "derive", "");
     let record = install(&home, &root).ok()["module"].clone();
@@ -262,10 +261,6 @@ fn tc_452_662_installing_writes_the_derived_manifest_and_pins_every_export() {
     let pin = &record["semantic"];
     assert_eq!(pin["package"], "agent-ix/spec-objects-fixture");
     assert_eq!(pin["semanticCore"], "0.3.0");
-    assert!(
-        pin["exports"]["entity"].as_str().is_some(),
-        "the export is pinned"
-    );
 }
 
 /// `legacy_forms: error` without a usable sweep report refuses the install and

@@ -5,8 +5,7 @@
 //!
 //! Port of `src/semantic/package-manifest.ts`. From a module's `semantic` block
 //! Quoin derives the filament-core-data `package-manifest` document (FR-021
-//! there) and records one schema digest per exported object type, so dynamic use
-//! and a later generated package share one identity graph.
+//! there) so dynamic use and a later generated package share one identity graph.
 //!
 //! The derived document is a **typed struct**, not a hand-built
 //! `serde_json::Value`. The TypeScript builds an object literal, so the only
@@ -18,10 +17,7 @@ use std::path::Path;
 
 use serde_json::Value;
 
-use crate::contract::{
-    COMMON_SCHEMA_URI, common_schema_path, file_sha256, package_manifest_schema_path,
-};
-use crate::data_schema::DataSchemaForm;
+use crate::contract::{COMMON_SCHEMA_URI, common_schema_path, package_manifest_schema_path};
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic};
 use crate::error::SemanticError;
 use crate::ids::{ObjectTypeName, PackageIdentity};
@@ -280,35 +276,6 @@ pub fn validate_package_manifest(
     Ok(PackageManifestValidator::load(semantic_root)?.validate(manifest))
 }
 
-/// One sha256 per exported object type's referenced schema (FR-075-AC-2).
-///
-/// An export whose `data_schema` is not a resolved reference contributes no
-/// entry — the `semantic.export-without-schema` diagnostic has already reported
-/// it, and inventing a digest for it would pin nothing.
-///
-/// # Errors
-///
-/// [`SemanticError::VendoredSchemaUnreadable`] when a referenced file that
-/// resolved cannot be re-read.
-pub fn export_digests(module: &SemanticModule) -> Result<BTreeMap<String, String>, SemanticError> {
-    let mut names: Vec<&ObjectTypeName> = module.block.exports.iter().collect();
-    names.sort_unstable();
-    let mut digests = BTreeMap::new();
-    for name in names {
-        let Some(resolved) = module.data_schemas.get(name) else {
-            continue;
-        };
-        if resolved.kind != DataSchemaForm::Reference {
-            continue;
-        }
-        let Some(file) = resolved.file.as_deref() else {
-            continue;
-        };
-        digests.insert(name.as_str().to_owned(), file_sha256(file)?);
-    }
-    Ok(digests)
-}
-
 /// The registry pin recorded under a plugin entry's `semantic` key.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct SemanticRegistryPin {
@@ -317,22 +284,15 @@ pub struct SemanticRegistryPin {
     /// The semantic-core version the module compiles against.
     #[serde(rename = "semanticCore")]
     pub semantic_core: String,
-    /// One digest per exported type, by type name.
-    pub exports: BTreeMap<String, String>,
 }
 
 /// The registry pin for one module.
-///
-/// # Errors
-///
-/// [`SemanticError::VendoredSchemaUnreadable`] when a referenced schema file
-/// cannot be re-read.
-pub fn registry_pin(module: &SemanticModule) -> Result<SemanticRegistryPin, SemanticError> {
-    Ok(SemanticRegistryPin {
+#[must_use]
+pub fn registry_pin(module: &SemanticModule) -> SemanticRegistryPin {
+    SemanticRegistryPin {
         package: module.block.package.as_str().to_owned(),
         semantic_core: module.block.semantic_core.as_str().to_owned(),
-        exports: export_digests(module)?,
-    })
+    }
 }
 
 /// Write `<module root>/semantic/package-manifest.json`; returns the path.

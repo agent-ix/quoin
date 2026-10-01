@@ -26,7 +26,7 @@ const RECORD_KEYS: &[&str] = &[
 const SOURCE_KEYS: &[&str] = &[
     "type", "repo", "url", "path", "package", "ref", "sha", "version", "registry",
 ];
-const SEMANTIC_KEYS: &[&str] = &["package", "semanticCore", "exports"];
+const SEMANTIC_KEYS: &[&str] = &["package", "semanticCore"];
 type NestedOrder = fn(&str) -> Option<&'static [&'static str]>;
 
 /// The `module` command and its retained subcommands.

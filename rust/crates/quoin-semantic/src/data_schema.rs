@@ -57,8 +57,6 @@ pub struct ResolvedDataSchema {
     pub kind: DataSchemaForm,
     /// The parsed schema document (inline object, or referenced file).
     pub schema: Option<Value>,
-    /// Absolute path of the referenced file, for the reference form.
-    pub file: Option<PathBuf>,
     /// Everything the resolution found wrong.
     pub diagnostics: Vec<SemanticDiagnostic>,
 }
@@ -220,7 +218,6 @@ pub fn resolve_data_schema(
             return ResolvedDataSchema {
                 kind: DataSchemaForm::Inline,
                 schema: None,
-                file: None,
                 diagnostics: classified,
             };
         }
@@ -242,7 +239,6 @@ pub fn resolve_data_schema(
             return ResolvedDataSchema {
                 kind: DataSchemaForm::Inline,
                 schema: Some(value.clone()),
-                file: None,
                 diagnostics,
             };
         }
@@ -258,7 +254,6 @@ pub fn resolve_data_schema(
     let fail = |diagnostics: Vec<SemanticDiagnostic>| ResolvedDataSchema {
         kind: DataSchemaForm::Reference,
         schema: None,
-        file: None,
         diagnostics,
     };
 
@@ -362,7 +357,6 @@ pub fn resolve_data_schema(
     ResolvedDataSchema {
         kind: DataSchemaForm::Reference,
         schema: Some(parsed),
-        file: Some(file),
         diagnostics,
     }
 }

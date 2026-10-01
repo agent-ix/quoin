@@ -206,11 +206,6 @@ pub fn message_for(root: &Path, validators: &SemanticValidators, code: &str) -> 
         .message
 }
 
-/// `sha256:<hex>` over a file's raw bytes.
-pub fn digest_of(path: &Path) -> String {
-    quoin_semantic::contract::file_sha256(path).expect("the schema file is readable")
-}
-
 /// Rewrite the fixture's `schemas/Entity.json` through `edit`.
 pub fn rewrite_entity_schema(root: &Path, edit: impl FnOnce(&mut Value)) {
     let file = root.join("schemas").join("Entity.json");

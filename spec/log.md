@@ -8,6 +8,12 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-30** — **The per-export schema digests are deleted** (quoin PR for
+  export digests). **FR-075-AC-2 is withdrawn** (FR-075 CR note) with TC-1373.
+  `export_digests`, the `exports` digest map of the registry pin and its
+  `semantic/pin-underivable` refusal, and the `semantic.export-without-schema`
+  refusal are removed. The registry pin keeps `package` and `semanticCore`.
+
 * **2026-09-30** — **Tracking leftovers after #654 are deleted, and FR-043's
   untested criteria are withdrawn.**
 

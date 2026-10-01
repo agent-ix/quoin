@@ -213,12 +213,6 @@ fn tc_381_239_registry_bytes_match_with_every_optional_field_present() {
         semantic: Some(quoin_modules::SemanticPin {
             package: "acme.widgets".to_owned(),
             semantic_core: "quire-core@1".to_owned(),
-            exports: [
-                ("Gadget".to_owned(), "sha256:bb".to_owned()),
-                ("Widget".to_owned(), "sha256:aa".to_owned()),
-            ]
-            .into_iter()
-            .collect(),
         }),
     });
     registry.write(&path).expect("write");
