@@ -271,7 +271,7 @@ fn tc_452_604_sweep_corpus_classifies_a_real_tree_through_the_boundary() {
             "revision": "worktree",
         }],
         "package": "agent-ix/spec-objects-business",
-        "version": "0.3.0",
+        "version": "0.0.0",
         "generated_at": "2026-09-12T00:00:00.000Z",
     });
     // No contract: a sweep reads Markdown as text and validates nothing, so it
@@ -279,7 +279,7 @@ fn tc_452_604_sweep_corpus_classifies_a_real_tree_through_the_boundary() {
     let report = ok(&run("semantic.sweep_corpus", &request, false))["report"].clone();
 
     assert_eq!(report["package"], "agent-ix/spec-objects-business");
-    assert_eq!(report["version"], "0.3.0");
+    assert_eq!(report["version"], "0.0.0");
     assert_eq!(report["generatedAt"], "2026-09-12T00:00:00.000Z");
     assert_eq!(
         report["corpus"],
@@ -338,7 +338,7 @@ fn tc_452_605_migration_example_is_the_guidance_a_legacy_finding_directs_to() {
             "revision": "worktree",
         }],
         "package": "agent-ix/spec-objects-business",
-        "version": "0.3.0",
+        "version": "0.0.0",
         "generated_at": "2026-09-12T00:00:00.000Z",
     });
     let report = ok(&run("semantic.sweep_corpus", &request, false))["report"].clone();

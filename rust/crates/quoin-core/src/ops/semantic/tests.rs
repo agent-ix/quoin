@@ -40,7 +40,7 @@ use crate::error::CoreErrorCode;
 fn block(package: &str) -> SemanticBlock {
     SemanticBlock {
         contract_version: "1.0.0".into(),
-        semantic_core: "0.3.0".into(),
+        semantic_core: "0.0.0".into(),
         package: package.into(),
         exports: vec!["Entity".into()],
         imports: BTreeMap::new(),
@@ -141,7 +141,7 @@ impl SemanticHost for Recorder {
 fn module_at(root: &str, package: &str) -> SemanticModule {
     SemanticModule {
         name: "spec-objects".into(),
-        version: "0.3.0".into(),
+        version: "0.0.0".into(),
         root: PathBuf::from(root),
         block: block(package),
         data_schemas: BTreeMap::new(),
@@ -309,7 +309,7 @@ fn sweep_corpus_hands_the_host_the_roots_identity_and_clock_it_was_given() {
         &serde_json::json!({
             "roots": [{ "root": "/corpus", "repository": "quire-rs", "revision": "abc" }],
             "package": "agent-ix/spec-objects-business",
-            "version": "0.3.0",
+            "version": "0.0.0",
             "generated_at": "2026-09-12T00:00:00.000Z",
         }),
         &Capabilities::with_semantic(&host),
@@ -323,7 +323,7 @@ fn sweep_corpus_hands_the_host_the_roots_identity_and_clock_it_was_given() {
     assert_eq!(roots[0].repository, "quire-rs");
     assert_eq!(roots[0].revision, "abc");
     assert_eq!(identity.package.as_str(), "agent-ix/spec-objects-business");
-    assert_eq!(identity.version, "0.3.0");
+    assert_eq!(identity.version, "0.0.0");
     // The clock is the CALLER's. A timestamp minted inside the boundary could
     // not be asserted by anyone.
     assert_eq!(generated_at, "2026-09-12T00:00:00.000Z");
@@ -340,7 +340,7 @@ fn an_oversized_sweep_scalar_is_refused_before_the_host_is_consulted() {
         &serde_json::json!({
             "roots": [],
             "package": "x".repeat(super::MAX_SCALAR_BYTES + 1),
-            "version": "0.3.0",
+            "version": "0.0.0",
             "generated_at": "2026-09-12T00:00:00.000Z",
         }),
         &Capabilities::with_semantic(&host),

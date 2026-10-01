@@ -13,7 +13,7 @@
   "email": "agents@agent-ix.dev",
   "version": "0.1.0",
   "license": "AGPL-3.0-or-later",
-  "semantic_core_version": "0.3.0",
+  "semantic_core_version": "0.3.2",
   "typespec_version": "1.15.0",
   "python_version": "3.13",
   "generated_targets": "json-schema,markdown",

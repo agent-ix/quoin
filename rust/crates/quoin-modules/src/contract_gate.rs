@@ -626,7 +626,17 @@ mod tests {
         let manifest = fs::read_to_string(home.root("alpha").join("manifest.yaml")).unwrap();
         fs::write(
             home.root("alpha").join("manifest.yaml"),
-            manifest.replace("semantic_core: 0.3.0", "semantic_core: 9.9.9"),
+            manifest
+                .lines()
+                .map(|line| {
+                    if line.trim_start().starts_with("semantic_core:") {
+                        "  semantic_core: 9.9.9"
+                    } else {
+                        line
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n"),
         )
         .unwrap();
         let error = home.gate().validate_installed().unwrap_err();

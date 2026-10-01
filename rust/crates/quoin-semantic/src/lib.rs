@@ -45,7 +45,7 @@ pub mod package_manifest;
 pub mod schema;
 pub mod sweep;
 
-pub use contract::{SEMANTIC_CONTRACT, SemanticContract};
+pub use contract::{SEMANTIC_CONTRACT, SemanticContract, shipped_semantic_core_versions};
 pub use data_schema::{
     DataSchemaForm, ResolveContext, ResolvedDataSchema, classify_data_schema, resolve_data_schema,
 };

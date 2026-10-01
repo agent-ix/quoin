@@ -15,7 +15,7 @@ entries:
       type: git-subdir
       url: agent-ix/engineering-assurance
       path: engineering_assurance
-      ref: 7a05537e2214840e8d2fc4f0c09644121a9e5c91
+      ref: 762d2d5446edc53817354f26b1524d479a2daeca
 
   - name: spec-artifacts-iso
     defaultEnabled: true
@@ -23,7 +23,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-iso
       path: spec_artifacts_iso
-      ref: c57e09889f96aada95e46baafadce26049c197c8
+      ref: e37c00cdf8c9a6bed15422c305b1fa31b10cd1c5
 
   - name: spec-artifacts-app
     defaultEnabled: true
@@ -31,7 +31,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-app
       path: spec_artifacts_app
-      ref: 843f7152cde7f78cff3afb8091190ac16274e13e
+      ref: d6491201515a1b13511cd866cf7db321bede9f1a
 
   - name: spec-artifacts-process
     defaultEnabled: true
@@ -39,7 +39,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
-      ref: df3892cc687eb6d88b6bb05d1d3e992bcfa2c08b
+      ref: bbca6499057e3ee233aa26852ba1da29d9962526
 
   - name: spec-objects-business
     defaultEnabled: true
@@ -47,7 +47,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-business
       path: spec_objects_business
-      ref: 862ca064d1267a3464fc12741df5e627b667e966
+      ref: 6043163e3d900c416ee7a2bc76476cf29889eb92
 
   - name: spec-objects-architecture
     defaultEnabled: true
@@ -55,7 +55,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-architecture
       path: spec_objects_architecture
-      ref: fc45ffd7300445643a96e0c7fe126a74bf85907f
+      ref: 42447a111215ece7e7e8647960389182d0e4354b
 
   - name: spec-objects-enterprise
     defaultEnabled: true
@@ -63,7 +63,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-enterprise
       path: spec_objects_enterprise
-      ref: b1cd78e8da58e0d1c0a8cfc19ffe379030854580
+      ref: 7edf42c343d1e1692be442b2f2c9fcb3be284ca9
 
   - name: spec-objects-operational
     defaultEnabled: true
@@ -71,7 +71,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-operational
       path: spec_objects_operational
-      ref: d5b89f9e5b4fbb11221ab6ac6713cd60b02681fd
+      ref: e212bea01f23b0daeaea6f939f049f991f33040f
 
   - name: spec-objects-security
     defaultEnabled: true
@@ -79,7 +79,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-security
       path: spec_objects_security
-      ref: 7bb00d44f0679f192489733a61cc0cb5ced0c367
+      ref: b270f07371585e84424653810c730cf7d1c75e55
 
   - name: spec-objects-safety
     defaultEnabled: true
@@ -87,4 +87,4 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-safety
       path: spec_objects_safety
-      ref: 9bcdb85de101a615859bed68a01e825b5be9f6e5
+      ref: cda3537a71a657e2ca4617f47ebdbd4216e9487d

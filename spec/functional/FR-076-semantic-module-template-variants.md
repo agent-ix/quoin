@@ -90,7 +90,7 @@ not a condition of this requirement.
 | FR-076-AC-4 | Every file byte-identical across the three rendered variants exists exactly once in the template source. | Test (TC-1403) |
 | FR-076-AC-5 | `license: MIT` aborts rendering naming `MIT`; the default renders the AGPL-3.0-or-later text. | Test (TC-1404) |
 | FR-076-AC-6 | `module_kind: hybrid` aborts rendering naming `hybrid`. | Test (TC-1405) |
-| FR-076-AC-7 | `imported_modules: ["agent-ix/spec-objects-business"]` aborts naming the entry; `agent-ix/spec-objects-business@0.3.0` renders. | Test (TC-1406) |
+| FR-076-AC-7 | `imported_modules: ["agent-ix/spec-objects-business"]` aborts naming the entry; the `<org>/<repo>@<version>` form renders. | Test (TC-1406) |
 | FR-076-AC-8 | `generated_targets: ["go"]` aborts naming `go`. | Test (TC-1407) |
 | FR-076-AC-9 | No rendered variant contains an `.npmrc` file at any depth. | Test (TC-1412) |
 | FR-076-AC-10 | A rendering that declares a target with no emitter today records that target as declared-not-emitted in the rendered README and in `semantic.targets`, and the two agree. | Test |

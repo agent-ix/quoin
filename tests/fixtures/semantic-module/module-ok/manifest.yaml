@@ -17,7 +17,7 @@ object_types:
     type: object
 semantic:
   contract_version: 1.0.0
-  semantic_core: 0.3.0
+  semantic_core: 0.3.2
   package: agent-ix/spec-objects-fixture
   exports: [entity]
   targets: [json-schema, markdown]

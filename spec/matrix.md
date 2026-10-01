@@ -1258,7 +1258,6 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1579 | Withdrawn with FR-090 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-090-AC-9, FR-090-CON-3 | ⛔ |
 | TC-1580 | Withdrawn with FR-090 (#388): the corpus-measurement harness was disposed of. | Unit | P1 | FR-090-AC-10 | ⛔ |
 | TC-1581 | Withdrawn with FR-091 (#388): the corpus-measurement harness was disposed of. | Static | P1 | FR-091-AC-7, FR-091-CON-1 | ⛔ |
-| TC-1582 | Withdrawn with FR-091 (#388): the corpus-measurement harness was disposed of. | Unit | P0 | FR-091-AC-8 | ⛔ |
 | TC-1583 | Withdrawn with FR-092 and FR-085 (#388): the corpus-measurement harness was disposed of. | Integration | P0 | FR-092-AC-7, FR-085-CON-1 | ⛔ |
 | TC-1584 | Withdrawn with NFR-021 (#388): the corpus-measurement harness was disposed of. | Property | P0 | NFR-021-AC-4 | ⛔ |
 | TC-1125 | A clause-binding payload must satisfy the pinned runtime schema before discharge accounting consumes it | Unit | P0 | FR-046-AC-1 | ✅ |

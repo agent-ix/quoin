@@ -30,6 +30,41 @@ fn retained_home() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/retained-catalog/ix-home")
 }
 
+/// The registry's module refs, taken from `default-modules.yaml` at test time so
+/// the fixture carries no copy of them: each registry entry names a module, and
+/// the ref it was installed at is the one the catalog declares for that name.
+fn write_registry_refs(home: &Path) {
+    let catalog = quoin_yaml::from_str(include_str!("../../../../default-modules.yaml"))
+        .expect("default-modules.yaml parses");
+    let entries = catalog
+        .get("entries")
+        .and_then(serde_json::Value::as_array)
+        .expect("default-modules.yaml lists entries");
+    let path = home.join("filament/registry.json");
+    let mut registry: serde_json::Value =
+        serde_json::from_slice(&fs::read(&path).expect("registry fixture is readable"))
+            .expect("registry fixture is JSON");
+    let plugins = registry
+        .get_mut("plugins")
+        .and_then(serde_json::Value::as_array_mut)
+        .expect("registry fixture lists plugins");
+    for plugin in plugins {
+        let name = plugin.get("name").and_then(serde_json::Value::as_str);
+        let reference = entries
+            .iter()
+            .find(|entry| entry.get("name").and_then(serde_json::Value::as_str) == name)
+            .and_then(|entry| entry.pointer("/source/ref"))
+            .expect("every registry entry names a default module with a ref")
+            .clone();
+        plugin["ref"] = reference;
+    }
+    fs::write(
+        &path,
+        serde_json::to_vec(&registry).expect("registry serializes"),
+    )
+    .expect("registry is rewritten");
+}
+
 /// A real, on-disk semantic contract root for `QUOIN_SEMANTIC_ROOT`, so these
 /// tests exercise the override path deliberately rather than always falling
 /// through to the binary's own per-`IX_HOME` auto-materialization. Built once
@@ -81,6 +116,7 @@ fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
     let home = scratch.path().join("ix-home");
     copy_tree(&retained_home(), &home).expect("retained fixture is copied");
+    write_registry_refs(&home);
 
     let json = invoke(&home, &["catalog", "list", "--json"]);
     assert!(json.status.success(), "stderr: {}", text(&json.stderr));

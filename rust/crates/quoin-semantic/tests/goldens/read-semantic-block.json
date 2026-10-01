@@ -20,7 +20,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -31,7 +31,7 @@
         }
       },
       "files": {
-        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"$ref\": \"https://schemas.agent-ix.org/semantic-core/0.3.0/FieldDecl.json\"\n      }\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
+        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"$ref\": \"https://schemas.agent-ix.org/semantic-core/0.3.2/FieldDecl.json\"\n      }\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
       },
       "diagnostics": [],
       "module": {
@@ -39,7 +39,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -77,7 +77,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -98,7 +98,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -141,7 +141,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -164,7 +164,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -207,7 +207,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -230,7 +230,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -273,7 +273,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -296,7 +296,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/fixture",
           "exports": [
             "entity"
@@ -361,7 +361,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "2.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b"
         }
       },
@@ -394,7 +394,7 @@
           "code": "semantic.unknown-semantic-core",
           "severity": "error",
           "path": "semantic.semantic_core",
-          "message": "semantic_core 9.9.9 is not a version this quoin ships (0.3.0)"
+          "message": "semantic_core 9.9.9 is not a version this quoin ships (0.3.2)"
         }
       ],
       "module": {
@@ -427,7 +427,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [
             "ghost"
@@ -448,7 +448,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [
             "ghost"
@@ -478,7 +478,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [
             "entity"
@@ -499,7 +499,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [
             "entity"
@@ -542,7 +542,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b"
         }
       },
@@ -560,7 +560,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [],
           "imports": {},
@@ -603,7 +603,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b"
         }
       },
@@ -621,7 +621,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [],
           "imports": {},
@@ -662,7 +662,7 @@
         ],
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b"
         }
       },
@@ -680,7 +680,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [],
           "imports": {},
@@ -713,7 +713,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "nope": 1
         }
@@ -737,7 +737,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "legacy_forms": "error"
         }
@@ -756,7 +756,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [],
           "imports": {},
@@ -776,7 +776,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "legacy_forms": "error",
           "sweep_report": "semantic/sweep.json"
@@ -796,7 +796,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [],
           "imports": {},
@@ -817,7 +817,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "legacy_forms": "error",
           "sweep_report": "../sweep.json"
@@ -837,7 +837,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "a/b",
           "exports": [],
           "imports": {},
@@ -858,7 +858,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "legacy_forms": "error",
           "sweep_report": "semantic/sweep.json"
@@ -880,7 +880,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "exports": [],
           "imports": {},
@@ -901,7 +901,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "legacy_forms": "error",
           "sweep_report": "semantic/sweep.json"
@@ -923,7 +923,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "exports": [],
           "imports": {},
@@ -944,7 +944,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "legacy_forms": "error",
           "sweep_report": "semantic/sweep.json"
@@ -966,7 +966,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "exports": [],
           "imports": {},
@@ -987,7 +987,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "legacy_forms": "error",
           "sweep_report": "semantic/sweep.json"
@@ -1009,7 +1009,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "exports": [],
           "imports": {},
@@ -1030,7 +1030,7 @@
         "version": "0.1.0",
         "semantic": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "legacy_forms": "error",
           "sweep_report": "semantic/sweep.json"
@@ -1045,7 +1045,7 @@
         "version": "0.1.0",
         "block": {
           "contract_version": "1.0.0",
-          "semantic_core": "0.3.0",
+          "semantic_core": "0.3.2",
           "package": "agent-ix/spec-objects",
           "exports": [],
           "imports": {},

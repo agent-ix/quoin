@@ -37,8 +37,8 @@ relationships:
 ## Description
 
 The corpus measurement SHALL resolve every module of a declared required module set at the exact
-revision declared for it, recording each module's resolved commit, manifest, declared types and
-contract-surface digests, and SHALL refuse to publish a rate when a required module is unresolved.
+revision declared for it, recording each module's resolved commit, manifest and declared types,
+and SHALL refuse to publish a rate when a required module is unresolved.
 
 ## Rationale
 
@@ -57,9 +57,7 @@ resolved one module from satisfying every criterion.
 ## Outputs
 
 - A module record per module: name, repository origin, requested revision, resolved commit, manifest
-  version, declared artifact types, declared object types, and a digest per contract surface.
-- A `toolchain` record naming the measuring engine's version and source revision, the CLI's version
-  and source revision, and each module's declared `semantic_core` version.
+  version, declared artifact types, declared object types.
 - A refusal record for any declared module the measurement could not resolve.
 
 ## Behavior
@@ -72,8 +70,6 @@ resolved one module from satisfying every criterion.
   declared revision is a tag or another mutable ref.
 - If a required module's declared revision does not resolve, then the measurement SHALL exit non-zero
   before reading any corpus document.
-- The measurement SHALL record, for each module, the digest of its manifest, of each declared JSON
-  Schema and of its mappings declaration when it publishes one.
 - Where a module publishes no Markdown mappings declaration, the measurement SHALL record
   `mappings: absent` against it.
 - The measurement SHALL record, for each module, whether the revision measured equals the revision
@@ -94,12 +90,10 @@ resolved one module from satisfying every criterion.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-085-AC-1 | Each declared module resolves to a commit and records its manifest version, declared artifact types and declared object types. | Test (TC-1506) |
-| FR-085-AC-2 | Each contract surface of each module carries a SHA-256 digest in the module record. | Test (TC-1507) |
 | FR-085-AC-3 | Content read for a module is byte-identical to that module's content at the declared revision when the repository working tree carries an unrelated uncommitted edit, and no Git ref, index or object of that repository changes during the run. | Test (TC-1508) |
 | FR-085-AC-4 | An unresolvable required revision exits non-zero before any corpus document is read, naming the module and the revision. | Test (TC-1509) |
 | FR-085-AC-5 | A module publishing no mappings declaration records `mappings: absent` and still contributes its declared object types. | Test (TC-1510) |
 | FR-085-AC-6 | Each module record states whether the measured resolved commit equals the commit its `default-modules.yaml` ref resolves to, and the report names every module where it does not. | Test (TC-1511) |
-| FR-085-AC-8 | The toolchain record names the engine version and source revision, the CLI version and source revision, and each module's `semantic_core` version. | Test (TC-1569) |
 | FR-085-AC-9 | A module-load diagnostic, such as one name declared as both an archetype and an artifact type, is recorded as a module finding and fails no corpus document. | Test (TC-1570) |
 | FR-085-AC-10 | A required module set missing one of the campaign's completed modules is refused before any corpus document is read. | Test (TC-1571) |
 

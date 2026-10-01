@@ -21,15 +21,13 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::ids::{ContractVersion, SemanticCoreVersion};
+use crate::ids::ContractVersion;
 
 /// The contract this quoin implements.
 #[derive(Debug, Clone, Copy)]
 pub struct SemanticContract {
     /// The `semantic.contract_version` this quoin understands (FR-070).
     pub contract_version: &'static str,
-    /// The `semantic.semantic_core` versions this quoin ships a bundle for.
-    pub semantic_core_versions: &'static [&'static str],
     /// The ten admitted `semantic` keys (FR-070).
     pub semantic_keys: &'static [&'static str],
 }
@@ -40,18 +38,11 @@ impl SemanticContract {
     pub fn contract_version(&self) -> ContractVersion {
         ContractVersion::from(self.contract_version)
     }
-
-    /// True when `version` is one this quoin ships a semantic-core bundle for.
-    #[must_use]
-    pub fn ships_semantic_core(&self, version: &SemanticCoreVersion) -> bool {
-        self.semantic_core_versions.contains(&version.as_str())
-    }
 }
 
 /// The contract.
 pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
     contract_version: "1.0.0",
-    semantic_core_versions: &["0.3.0"],
     semantic_keys: &[
         "contract_version",
         "semantic_core",
@@ -65,6 +56,43 @@ pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
         "sweep_report",
     ],
 };
+
+/// The base every semantic-core `$id` and `$ref` sits under; the version is
+/// the next path segment.
+pub(crate) const SEMANTIC_CORE_BASE: &str = "https://schemas.agent-ix.org/semantic-core/";
+
+/// The `semantic.semantic_core` versions this quoin ships a bundle for.
+///
+/// Derived from the bundle itself: the version is the path segment after
+/// [`SEMANTIC_CORE_BASE`] in each member's `$id`, so the bundle is the one
+/// source and no version is typed here. Empty when the bundle is absent.
+#[must_use]
+pub fn shipped_semantic_core_versions(semantic_root: &Path) -> Vec<String> {
+    let mut versions = Vec::new();
+    let Ok(entries) = std::fs::read_dir(semantic_core_dir(semantic_root)) else {
+        return versions;
+    };
+    for entry in entries.flatten() {
+        let Ok(bytes) = std::fs::read(entry.path()) else {
+            continue;
+        };
+        let Ok(document) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+            continue;
+        };
+        let version = document
+            .get("$id")
+            .and_then(serde_json::Value::as_str)
+            .and_then(|id| id.strip_prefix(SEMANTIC_CORE_BASE))
+            .and_then(|rest| rest.split('/').next());
+        if let Some(version) = version
+            && !versions.iter().any(|known| known == version)
+        {
+            versions.push(version.to_owned());
+        }
+    }
+    versions.sort();
+    versions
+}
 
 /// The absolute URI `package-manifest.schema.json` resolves `common.schema.json`
 /// against — its `$id`.
@@ -126,8 +154,18 @@ mod tests {
 
     /// Trace: FR-070
     #[test]
-    fn tc_378_041_ships_semantic_core_is_exact() {
-        assert!(SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.0")));
-        assert!(!SEMANTIC_CONTRACT.ships_semantic_core(&SemanticCoreVersion::from("0.3.1")));
+    fn tc_378_041_shipped_versions_come_from_the_bundle_ids() -> std::io::Result<()> {
+        let root = std::env::temp_dir().join(format!("quoin-contract-{}", std::process::id()));
+        let core = semantic_core_dir(&root);
+        std::fs::create_dir_all(&core)?;
+        std::fs::write(
+            core.join("A.json"),
+            format!("{{\"$id\": \"{SEMANTIC_CORE_BASE}7.7.7/A.json\"}}"),
+        )?;
+        std::fs::write(core.join("note.txt"), "not json")?;
+        assert_eq!(shipped_semantic_core_versions(&root), vec!["7.7.7"]);
+        std::fs::remove_dir_all(&root)?;
+        assert!(shipped_semantic_core_versions(&root).is_empty());
+        Ok(())
     }
 }

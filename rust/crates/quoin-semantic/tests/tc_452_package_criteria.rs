@@ -22,7 +22,7 @@ mod common;
 
 use std::fs;
 
-use common::{Scratch, codes, errors, read, semantic_root, validators};
+use common::{Scratch, codes, errors, read, semantic_root, shipped_core, validators};
 use quoin_semantic::{
     SemanticModule, derive_package_manifest, mapping_identity, resolve_imports, type_identity,
     validate_package_manifest,
@@ -73,7 +73,7 @@ fn tc_452_630_the_derived_package_manifest_validates_and_carries_the_declaration
         value["imports"],
         json!([{
             "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.3.0",
+            "versionConstraint": format!("={}", shipped_core()),
             "exports": [],
             "capabilities": [],
         }])
