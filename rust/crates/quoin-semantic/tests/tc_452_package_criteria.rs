@@ -162,7 +162,7 @@ fn tc_452_633_an_unresolved_import_names_the_installed_versions_and_a_cycle_name
     let provider_root = scratch.module_copy("provider", |manifest, module_root| {
         common::rewrite_entity_schema(module_root, |schema| {
             schema["$id"] =
-                json!("https://schemas.agent-ix.org/agent-ix/spec-objects-other/0.1.0/Entity.json");
+                json!("https://schemas.agent-ix.org/agent-ix/spec-objects-other/Entity.json");
         });
         manifest["semantic"]["package"] = json!("agent-ix/spec-objects-other");
         manifest["version"] = json!("0.1.0");

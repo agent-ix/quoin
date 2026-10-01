@@ -278,7 +278,7 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
         schema["$id"]
             .as_str()
             .unwrap()
-            .ends_with("/spec-objects-fixture/0.1.0/Entity.json"),
+            .ends_with("/spec-objects-fixture/Entity.json"),
         "{schema}"
     );
     // Resolution is against the shipped bundle: the document's own `$ref`s
@@ -391,7 +391,7 @@ fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused(
     let unshipped = scratch.module_copy("unshipped", |_, root| {
         rewrite_entity_schema(root, |schema| {
             schema["properties"]["fields"]["items"] = json!({
-                "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/0.1.0/Missing.json"
+                "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/Missing.json"
             });
         });
     });
@@ -407,12 +407,12 @@ fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused(
     let cycle = scratch.module_copy("cycle", |_, root| {
         rewrite_entity_schema(root, |schema| {
             schema["properties"]["fields"]["items"] = json!({
-                "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/0.1.0/Other.json"
+                "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/Other.json"
             });
         });
         fs::write(
             root.join("schemas").join("Other.json"),
-            r#"{"$id":"https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/0.1.0/Other.json","$ref":"https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/0.1.0/Entity.json"}"#,
+            r#"{"$id":"https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/Other.json","$ref":"https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/Entity.json"}"#,
         )
         .unwrap();
     });

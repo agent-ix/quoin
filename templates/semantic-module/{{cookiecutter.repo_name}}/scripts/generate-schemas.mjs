@@ -78,18 +78,9 @@ function dependencyVersion(name) {
   return JSON.parse(readFileSync(path, "utf8")).version;
 }
 
-/** The manifest `version`, read without a YAML parser so the file is never reserialized. */
-function manifestVersion() {
-  const match = readFileSync(manifestPath, "utf8").match(
-    /^version:\s*["']?([^"'\s]+)["']?\s*$/m,
-  );
-  if (!match) fail(`${relative(repoRoot, manifestPath)} declares no top-level version`);
-  return match[1];
-}
-
 /**
  * Every base a `$ref` may resolve against: this module's, semantic-core's, and
- * one per imported semantic module at the exact version the manifest records.
+ * one per imported semantic module.
  * A reference matching none of them is a failure, not a guess.
  */
 function importedBases() {
@@ -101,25 +92,23 @@ function importedBases() {
     const entry = line.match(/^\s{4}([^:]+):\s*(\S+)\s*$/);
     if (!entry) continue;
     const identity = entry[1].trim().replace(/^["']|["']$/g, "");
-    const version = entry[2].trim().replace(/^["']|["']$/g, "");
-    bases.set(identity, `${SCHEMA_HOST}/${identity}/${version}/`);
+    bases.set(identity, `${SCHEMA_HOST}/${identity}/`);
   }
   return bases;
 }
 
-/** The `@jsonSchema` base declared by the source, checked against the manifest version. */
+/** The `@jsonSchema` base declared by the source, checked against the package identity. */
 function moduleBase() {
   const source = readFileSync(resolve(sourceDir, "main.tsp"), "utf8");
   const declared = source.match(/@jsonSchema\("([^"]+)"\)/)?.[1];
   if (!declared) fail("typespec/main.tsp declares no @jsonSchema base");
-  const version = manifestVersion();
-  const expected = `${SCHEMA_HOST}/${PACKAGE_IDENTITY}/${version}/`;
+  const expected = `${SCHEMA_HOST}/${PACKAGE_IDENTITY}/`;
   if (declared !== expected) {
     fail(
-      "@jsonSchema base version and manifest version disagree:\n" +
+      "@jsonSchema base does not match the package identity:\n" +
         `  typespec/main.tsp: ${declared}\n` +
-        `  manifest.yaml version: ${version} (expected base ${expected})\n` +
-        "A version bump edits both in one commit.",
+        `  expected base: ${expected}\n` +
+        "The base carries no version.",
     );
   }
   return declared;

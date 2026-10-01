@@ -68,8 +68,6 @@ pub struct ResolveContext {
     pub module_root: PathBuf,
     /// `<org>/<repo>` from `semantic.package`.
     pub package_identity: PackageIdentity,
-    /// The module's `version`.
-    pub module_version: String,
     /// `semantic.semantic_core`.
     pub semantic_core: SemanticCoreVersion,
     /// The object type being resolved.
@@ -89,10 +87,9 @@ impl ResolveContext {
     #[must_use]
     pub fn package_base(&self) -> String {
         format!(
-            "{PACKAGE_BASE}{}/{}/{}/",
+            "{PACKAGE_BASE}{}/{}/",
             self.package_identity.org(),
-            self.package_identity.repo(),
-            self.module_version
+            self.package_identity.repo()
         )
     }
 

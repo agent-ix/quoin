@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/0.1.0/Entity.json",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-fixture/Entity.json",
   "type": "object",
   "properties": {
     "fields": {

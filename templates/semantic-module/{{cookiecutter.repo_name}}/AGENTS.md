@@ -16,7 +16,7 @@ skeletons, extraction mappings. There is no runtime here.
 - **Never hand-edit `{{ cookiecutter.package_name }}/schemas/`.** It is emitted from `typespec/main.tsp`. Fix the `.tsp` and run `make schemas`.
 - **Never make a test skip.** If a tool is missing, the suite fails naming the install command. A skipped row is not coverage. Do not reach for `pytest.importorskip`.
 - **Never add an `.npmrc`.** `@agent-ix` resolves from the user-level npm configuration.
-- **Bump `manifest.yaml` `version` and the `@jsonSchema` base in `main.tsp` together.** `make schemas` fails when they disagree.
+- **The `@jsonSchema` base in `main.tsp` carries no version.** A release bumps `manifest.yaml` `version` only.
 - **Never hand-write a Test Matrix.** Tag each test with the acceptance-criterion ids it asserts (`@pytest.mark.trace("FR-001-AC-1")`); `quire matrix` computes the matrix from those tags.
 
 ## Where things live

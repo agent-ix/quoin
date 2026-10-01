@@ -31,7 +31,7 @@
         }
       },
       "files": {
-        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/0.1.0/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"$ref\": \"https://schemas.agent-ix.org/semantic-core/0.3.0/FieldDecl.json\"\n      }\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
+        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"$ref\": \"https://schemas.agent-ix.org/semantic-core/0.3.0/FieldDecl.json\"\n      }\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
       },
       "diagnostics": [],
       "module": {
@@ -149,14 +149,14 @@
         }
       },
       "files": {
-        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/0.1.0/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"$ref\": \"https://schemas.agent-ix.org/agent-ix/fixture/0.1.0/Missing.json\"\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
+        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"$ref\": \"https://schemas.agent-ix.org/agent-ix/fixture/Missing.json\"\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
       },
       "diagnostics": [
         {
           "code": "semantic.schema-ref-unshipped",
           "severity": "error",
           "path": "object_types[entity].data_schema.schema",
-          "message": "$ref https://schemas.agent-ix.org/agent-ix/fixture/0.1.0/Missing.json names no shipped file (Missing.json)"
+          "message": "$ref https://schemas.agent-ix.org/agent-ix/fixture/Missing.json names no shipped file (Missing.json)"
         }
       ],
       "module": {
@@ -184,7 +184,7 @@
                 "code": "semantic.schema-ref-unshipped",
                 "severity": "error",
                 "path": "object_types[entity].data_schema.schema",
-                "message": "$ref https://schemas.agent-ix.org/agent-ix/fixture/0.1.0/Missing.json names no shipped file (Missing.json)"
+                "message": "$ref https://schemas.agent-ix.org/agent-ix/fixture/Missing.json names no shipped file (Missing.json)"
               }
             ]
           }
@@ -215,7 +215,7 @@
         }
       },
       "files": {
-        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/0.1.0/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"$ref\": \"https://schemas.agent-ix.org/semantic-core/0.2.0/FieldDecl.json\"\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
+        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"$ref\": \"https://schemas.agent-ix.org/semantic-core/0.2.0/FieldDecl.json\"\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
       },
       "diagnostics": [
         {
@@ -281,7 +281,7 @@
         }
       },
       "files": {
-        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/0.1.0/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"$ref\": \"https://example.invalid/Other.json\"\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
+        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"$ref\": \"https://example.invalid/Other.json\"\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
       },
       "diagnostics": [
         {

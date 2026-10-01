@@ -470,7 +470,6 @@ pub fn read_semantic_block(
         let ctx = ResolveContext {
             module_root: module_root.to_path_buf(),
             package_identity: block.package.clone(),
-            module_version: module_version.as_str().to_owned(),
             semantic_core: semantic_core.clone(),
             object_type: name.clone(),
             semantic_core_dir: validators.semantic_core_dir.clone(),

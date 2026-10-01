@@ -26,8 +26,8 @@ fields, never two blocks in one document.
 4. Add one negative fixture per failure mode the schema refuses, each with a
    distinct `expect` and a `because`.
 5. Run `make schemas`, then `make gate`.
-6. Bump `manifest.yaml`'s `version` and the `@jsonSchema` base in `main.tsp`
-   **in the same commit** — `make schemas` fails when they disagree.
+6. Bump `manifest.yaml`'s `version`; the `@jsonSchema` base in `main.tsp`
+   carries no version and does not change.
 
 ## Before opening a pull request
 
