@@ -277,7 +277,7 @@ pub fn validate_accepted_premises(
         Ok(())
     } else {
         Err(
-            "the accepted format, version, modules, and schema digests must exactly match the \
+            "the accepted format, version, modules must exactly match the \
              assurance export"
                 .to_owned(),
         )

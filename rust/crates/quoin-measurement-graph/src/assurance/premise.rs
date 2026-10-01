@@ -8,7 +8,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::scalars::{BareDigest, FullRevision, NonEmptyText};
+use crate::scalars::{FullRevision, NonEmptyText};
 
 /// Which repository, at which revision, the export was taken from.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -20,14 +20,12 @@ pub struct SourcePremise {
     pub revision: FullRevision,
 }
 
-/// One archetype schema a module contributed, and its digest.
+/// One archetype schema a module contributed.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SchemaPremise {
     /// The archetype the schema governs.
     pub archetype: NonEmptyText,
-    /// The schema's digest.
-    pub schema_digest: BareDigest,
 }
 
 /// One module the export was produced under.

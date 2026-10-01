@@ -19,7 +19,7 @@
 //! Schema could only drift from it. That argument holds for every payload
 //! **quire produced in this process**, and [`crate::assurance::read`] is the
 //! stronger form of it — `quire_rs::read_assurance_export` is a fail-closed
-//! reader that also checks the caller's module and schema-digest premises.
+//! reader that also checks the caller's module premises.
 //!
 //! It does not hold for the one caller that has no premises to state.
 //! `src/measurement/graph-adapters.ts` and `src/graph-analysis/load.ts` read an

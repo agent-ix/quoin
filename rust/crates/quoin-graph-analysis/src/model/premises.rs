@@ -29,7 +29,7 @@
 use serde::Serialize;
 use serde_json::{Value, json};
 
-use crate::ids::{Archetype, ModuleName, ModuleVersion, SchemaDigest};
+use crate::ids::{Archetype, ModuleName, ModuleVersion};
 use crate::json as reader;
 
 /// The only format this contract accepts (`input.ts:30`).
@@ -43,8 +43,6 @@ pub const ASSURANCE_FORMAT_VERSION: u32 = 1;
 pub struct SchemaPremise {
     /// The archetype the schema is for.
     pub archetype: Archetype,
-    /// Its semantic schema digest.
-    pub schema_digest: SchemaDigest,
 }
 
 /// One loaded module and its active archetypes.
@@ -156,10 +154,7 @@ pub fn export_premises(export: &quoin_quire::model::AssuranceExport) -> Value {
             .map(|module| {
                 let mut schemas: Vec<&quoin_quire::model::AssuranceSchemaPremise> =
                     module.schemas.iter().collect();
-                schemas.sort_by(|left, right| {
-                    compare(&left.archetype, &right.archetype)
-                        .then_with(|| compare(&left.schema_digest, &right.schema_digest))
-                });
+                schemas.sort_by(|left, right| compare(&left.archetype, &right.archetype));
                 json!({
                     "name": module.name,
                     "version": module.version,
@@ -167,7 +162,6 @@ pub fn export_premises(export: &quoin_quire::model::AssuranceExport) -> Value {
                         .into_iter()
                         .map(|schema| json!({
                             "archetype": schema.archetype,
-                            "schema_digest": schema.schema_digest,
                         }))
                         .collect::<Vec<_>>(),
                 })
@@ -183,9 +177,9 @@ fn compare(left: &str, right: &str) -> std::cmp::Ordering {
 }
 
 fn sort_schemas(module: &mut ModulePremise) {
-    module.schemas.sort_by(|left, right| {
-        (&left.archetype, &left.schema_digest).cmp(&(&right.archetype, &right.schema_digest))
-    });
+    module
+        .schemas
+        .sort_by(|left, right| left.archetype.cmp(&right.archetype));
 }
 
 fn parse_module(value: &Value, at: &str) -> std::result::Result<ModulePremise, String> {
@@ -212,14 +206,9 @@ fn parse_module(value: &Value, at: &str) -> std::result::Result<ModulePremise, S
 
 fn parse_schema(value: &Value, at: &str) -> std::result::Result<SchemaPremise, String> {
     let object = reader::object(value, at)?;
-    reader::strict(object, at, &["archetype", "schema_digest"])?;
+    reader::strict(object, at, &["archetype"])?;
     Ok(SchemaPremise {
         archetype: Archetype::parse(reader::text(reader::member(object, at, "archetype")?, at)?)
             .map_err(|reason| format!("{at}archetype: {reason}"))?,
-        schema_digest: SchemaDigest::parse(reader::text(
-            reader::member(object, at, "schema_digest")?,
-            at,
-        )?)
-        .map_err(|reason| format!("{at}schema_digest: {reason}"))?,
     })
 }
