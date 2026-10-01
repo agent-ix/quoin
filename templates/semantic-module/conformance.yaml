@@ -106,19 +106,15 @@ private_registry:
     - "repository-url"
     - "extra_index_url"
 
-# The maintained semantic-module repositories the drift check reads, each pinned
-# by remote and by one full commit revision. Two runs of the check must read the
-# same bytes, or "no drift" means only "nobody pushed today".
+# The maintained semantic-module repositories the drift check reads.
 maintained_modules:
   - repo: spec-objects-business
     remote: "https://github.com/agent-ix/spec-objects-business.git"
-    revision: "567e5c4c1bd39061a2367fc5148b4a5183cb820c"
     local_path: "../spec-objects-business"
     package: spec_objects_business
     kind: object
   - repo: spec-artifacts-iso
     remote: "https://github.com/agent-ix/spec-artifacts-iso.git"
-    revision: "6686f112f2c38602c9d39c88e8134a945c34bbd6"
     local_path: "../spec-artifacts-iso"
     package: spec_artifacts_iso
     kind: artifact

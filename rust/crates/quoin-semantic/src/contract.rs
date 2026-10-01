@@ -23,26 +23,6 @@ use std::path::{Path, PathBuf};
 
 use crate::ids::{ContractVersion, SemanticCoreVersion};
 
-/// A vendored file's origin: repository and path there.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct VendoredSource {
-    /// Owning repository, `<org>/<repo>`.
-    pub repository: &'static str,
-    /// The path within that repository.
-    pub source_path: &'static str,
-}
-
-/// The semantic-core bundle's origin and version.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct VendoredBundle {
-    /// Owning repository, `<org>/<repo>`.
-    pub repository: &'static str,
-    /// The path within that repository.
-    pub source_path: &'static str,
-    /// The bundle version.
-    pub version: &'static str,
-}
-
 /// The contract this quoin implements.
 #[derive(Debug, Clone, Copy)]
 pub struct SemanticContract {
@@ -52,14 +32,6 @@ pub struct SemanticContract {
     pub semantic_core_versions: &'static [&'static str],
     /// The ten admitted `semantic` keys (FR-070).
     pub semantic_keys: &'static [&'static str],
-    /// The module-manifest schema, owned by filament-core-service.
-    pub module_manifest_schema: VendoredSource,
-    /// The semantic-core JSON Schema bundle.
-    pub semantic_core: VendoredBundle,
-    /// The filament-core-data package-manifest schema.
-    pub package_manifest_schema: VendoredSource,
-    /// The filament-core-data common schema.
-    pub common_schema: VendoredSource,
 }
 
 impl SemanticContract {
@@ -92,25 +64,6 @@ pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
         "legacy_forms",
         "sweep_report",
     ],
-    // Published by `agent-ix/filament-core-data` as `@agent-ix/semantic-schema`
-    // (PLAT-887 de-vendoring).
-    module_manifest_schema: VendoredSource {
-        repository: "agent-ix/filament-core-data",
-        source_path: "schema/semantic/v1/module-manifest.schema.json",
-    },
-    semantic_core: VendoredBundle {
-        repository: "agent-ix/filament-core-data",
-        source_path: "packages/semantic-core/generated/json-schema",
-        version: "0.3.0",
-    },
-    package_manifest_schema: VendoredSource {
-        repository: "agent-ix/filament-core-data",
-        source_path: "schema/semantic/v1/package-manifest.schema.json",
-    },
-    common_schema: VendoredSource {
-        repository: "agent-ix/filament-core-data",
-        source_path: "schema/semantic/v1/common.schema.json",
-    },
 };
 
 /// The absolute URI `package-manifest.schema.json` resolves `common.schema.json`

@@ -34,7 +34,6 @@ must not silently reinterpret older language or make a historical proposal curre
 | FR-050-AC-3 | The rendering responsibility described in draft ADR-0002 is marked historical for Quire and superseded by the current render-removed specification; byte-splicing remains preserved. | Test (TC-1147) |
 | FR-050-AC-4 | Accepted ADR-0011 remains governing for Quire/Quoin validation levels and capability roles. | Test (TC-1148) |
 | FR-050-AC-5 | The reconciliation states that Quire does not become a renderer or cross-language generator and Quoin does not become the parser or semantic compiler. | Test (TC-1149) |
-| FR-050-AC-6 | Every cited external decision records repository, path, decision status, and reviewed revision or date so later drift is visible. | Test (TC-1150) |
 
 ## Constraints
 

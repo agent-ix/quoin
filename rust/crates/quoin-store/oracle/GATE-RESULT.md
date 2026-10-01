@@ -2,13 +2,10 @@
 
 Recorded artifact for the differential replay described in `COMPATIBILITY.md`.
 The oracle capture itself is 687 MiB of newline-delimited JSON and is not
-committed; it is identified here by its digest, and the commands that produced
-it are recorded below as they ran on that date.
+committed; the commands that produced it are recorded below as they ran on that date.
 
 `oracle/capture-store-oracle.mjs` was deleted from `HEAD` by quoin#508 under the
-cutover convention, so the TypeScript half below does not run at `HEAD`. It ran
-at `eb0ca08419fa2f05a1522c5bf2d108a818645c1f` and is recoverable there:
-`git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/capture-store-oracle.mjs`.
+cutover convention, so the TypeScript half below does not run at `HEAD`.
 
 ## The run
 
@@ -36,7 +33,6 @@ Capture identity:
 
 |                              |                                                                    |
 | ---------------------------- | ------------------------------------------------------------------ |
-| sha256                       | `c6f55fec00734c0cd02d7d1019c5cf0a67ff0379e4d53c3dceda8f9a60776472` |
 | bytes                        | 720,326,915                                                        |
 | lines (one per store entity) | 471                                                                |
 

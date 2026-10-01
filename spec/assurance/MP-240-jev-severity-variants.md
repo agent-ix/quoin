@@ -106,17 +106,7 @@ model, and the run records which model answered. Repeat runs are
 replications: they are reported and not pooled.
 
 Phase 2 may revise variants on dev. Any change to wording or to a derive rule
-bumps the variant's `version`. Every `variant@version` carries a
-request-digest pin (`REQUEST_DIGEST_PINS` in
-`tests/eval_v2_support/preflight.rs`): the sha256 of the questions it sends,
-instructions and labels included, on a fixed canonical row per mode. The
-runner's preflight (`preflight::authorize_run`, called by
-`live_eval_v2.rs` before its first request) refuses a `variant@version`
-whose wording does not match its pin, and a bumped version that has no pin
-yet. The offline gate `tc_1027_request_digest_is_pinned_per_variant_version`
-also holds the pin table equal to the registry's digests. The pins cover
-wording only. A change to a derive rule changes no request, so no pin
-catches it: its version bump is enforced by review, not by the runner.
+bumps the variant's `version`; the bump is enforced by review.
 S1's two derive-rule changes at v1 (PR #620 re-review and delta review)
 both predate any live call, so no result was ever read under the old rule.
 

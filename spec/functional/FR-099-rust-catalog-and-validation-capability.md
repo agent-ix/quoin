@@ -60,7 +60,7 @@ store.
   SHALL resolve a requested type case-insensitively, and SHALL report duplicate
   type declarations rather than silently selecting one.
 - Quoin SHALL reimplement natively each `@agent-ix/ix-cli-core` symbol `src/`
-  imports — measured at `e718d45` as twelve: `BaseCommand`, `ConfigService`,
+  imports — twelve: `BaseCommand`, `ConfigService`,
   `RunnerLoadOptions`, `loadConfig`, `run`, `maybeOfferUpdate`,
   `registerPluginSchema`, `runConfigDoctor`, `runConfigEdit`, `runConfigGet`,
   `runConfigSet` and `runSelfUpdate`.
@@ -85,7 +85,7 @@ store.
   against those assets and their `specInvariants` decide whether a review, matrix
   or plan flow passes.
 - Quoin SHALL record one disposition for each such asset, distinguishing the
-  first-party invariant shim from the vendored bundle: measured at `e718d45`,
+  first-party invariant shim from the vendored bundle:
   22,575 of the 23,164 lines under `skills/` are three byte-identical copies of
   `workflow-assets/dist/index.js` and its declaration file, a build product of
   `ix-spec-workflows`, while `scripts/invariants.js` is 139 hand-written lines

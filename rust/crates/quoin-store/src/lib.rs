@@ -32,8 +32,7 @@
 //! store has been replayed through both the TypeScript and the Rust
 //! implementation with zero mismatches.** The tool that does it is
 //! [`replay`], driven on the TypeScript side by `capture-store-oracle.mjs`
-//! (deleted at cutover; recoverable with `git show
-//! eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/capture-store-oracle.mjs`)
+//! (deleted at cutover)
 //! and on the Rust side by the `quoin-store-replay` binary. "The replay tool
 //! works" is not the gate; a reported count of digests replayed with a
 //! mismatch count of zero is.

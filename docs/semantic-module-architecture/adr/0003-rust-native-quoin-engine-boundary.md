@@ -28,13 +28,13 @@ Quoin implements its first-party engine, production, planning, validation,
 canonicalization and digest, oracle, evidence and qualification behaviour in
 TypeScript on an oclif v4 command shell, with supporting `.mjs` scripts, an
 evaluation harness, and a Markdown skills tree carrying executable workflow
-assets. The measured baseline, taken at `e718d45` over `git ls-files`
+assets. The measured baseline, taken over `git ls-files`
 intersected with `{.ts, .mjs, .js, .py, .sh, .tsp}` and counted in physical
 lines, is **105,814 lines across 364 in-repository files**. The largest single
 block is `skills/` at 23,164 lines; `bin/` and the root tool configuration
 account for a further 302.
 
-`corpus/` is a **git submodule** pointing at `agent-ix/qa-corpus` at `7b81343`.
+`corpus/` is a **git submodule** pointing at `agent-ix/qa-corpus`.
 It is another repository's tree and is not counted in the in-repository
 baseline. Whether it is in this programme's scope at all is an open owner
 ruling.
@@ -213,7 +213,7 @@ inside them.
 2. **Reduce the TypeScript surface to a thin caller of that boundary.** Delivery
    stage 8: command residue, and deletion of `src/quire/exec.ts`.
 3. **Retire the oclif command shell and `@oclif/core`.** Delivery stage 9,
-   completed in `33ca665` after native fixture replay. The resulting executable
+   completed after native fixture replay. The resulting executable
    is `quoin`; the plugin and hook were withdrawn under #396. The native
    `quoin sync` command that briefly replaced it wired the dependency's own
    test doubles into production and pulled the private AGPL

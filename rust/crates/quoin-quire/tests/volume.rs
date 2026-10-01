@@ -11,7 +11,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-use quoin_quire::{CoveragePayload, ErrorCode, PayloadLimit, engine, payload};
+use quoin_quire::{CoveragePayload, ErrorCode, PayloadLimit, payload};
 
 /// The captured payload.
 const VOLUME: &[u8] = include_bytes!("fixtures/coverage-volume/filament-ide-rs-coverage.json");
@@ -132,38 +132,4 @@ fn tc_379_102_a_ceiling_below_the_payload_refuses_it_by_name() {
         message.contains("the #164 coverage payload"),
         "the refusal must name what was being read: {message}",
     );
-}
-
-/// Trace: FR-097
-///
-/// The engine-identity finding this fixture exposed: a real payload's
-/// `engine.engine` is a 40-character **object id**, not a version. Anything
-/// reading it as a version reports every stored artifact as unknown
-/// provenance.
-#[test]
-fn tc_379_103_stored_provenance_is_a_revision_and_is_treated_as_one() {
-    let parsed: CoveragePayload = payload::from_slice(
-        "the #164 coverage payload",
-        "CoverageReport",
-        VOLUME,
-        PayloadLimit::DEFAULT,
-    )
-    .expect("the payload reads");
-    let found = parsed.engine.as_ref().expect("provenance").engine.clone();
-
-    assert_eq!(
-        engine::identify(Some(&found)),
-        engine::InstrumentId::Revision(found.clone()),
-        "a 40-hex engine field is a revision, not an unparseable version",
-    );
-
-    // This build links a different object id, and that is reported as a
-    // mismatch rather than as "older": revisions are not ordered.
-    let error = engine::check_premise("the #164 coverage payload", Some(&found))
-        .expect_err("a foreign engine revision must be reported");
-    assert_eq!(error.code(), ErrorCode::EngineRevisionMismatch);
-
-    // ...and this build's own revision passes.
-    engine::check_premise("a payload this build wrote", Some(engine::ENGINE_REVISION))
-        .expect("this build's own revision satisfies the premise");
 }

@@ -13,7 +13,7 @@ relationships:
 
 # FR-097: Source every boundary type from one schema and refuse hand-written duplicates
 
-> **⛔ Withdrawn — 2026-09-15 at Stage 9 native cutover (`33ca665`).** This
+> **⛔ Withdrawn — 2026-09-15 at Stage 9 native cutover.** This
 > requirement described the temporary TypeScript-facing `quoin-core` subprocess
 > boundary: `quoin-schemas`, generated `src/core/types.ts`, and its npm-facing
 > provenance gate. The final architecture has no such boundary or generated

@@ -25,8 +25,7 @@ to the requirements it drives.
 
 `engineering-assurance` completed this transition and its record is the reference: ADR-002,
 StR-003, FR-014 through FR-019, NFR-005, all Python lanes retired. Quoin is the same shape and
-several times the size — 105,814 physical lines across 364 in-repository files, measured at
-`e718d45`. The largest block is `skills/` at 23,164 lines, which nobody had counted, and which is
+several times the size — 105,814 physical lines across 364 in-repository files, measured. The largest block is `skills/` at 23,164 lines, which nobody had counted, and which is
 not inert: `src/flows.ts:57` spawns ix-flow against `skills/*/workflow-assets/**` and their
 `specInvariants` decide whether a review, matrix or plan flow passes. The `corpus/` tree is a
 submodule pointing at another repository, `agent-ix/qa-corpus`.

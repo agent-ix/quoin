@@ -281,7 +281,7 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
             .ends_with("/spec-objects-fixture/0.1.0/Entity.json"),
         "{schema}"
     );
-    // Resolution is against the VENDORED bundle: the document's own `$ref`s
+    // Resolution is against the shipped bundle: the document's own `$ref`s
     // name semantic-core at the version the block records, and that version is
     // one this quoin ships. A resolver that ignored `$ref`s entirely would
     // pass an assertion about `$id` alone.
@@ -289,7 +289,7 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
     assert!(
         refs.contains(&format!(
             "https://schemas.agent-ix.org/semantic-core/{}/FieldDecl.json",
-            SEMANTIC_CONTRACT.semantic_core.version
+            module.block.semantic_core
         )),
         "{refs}"
     );
