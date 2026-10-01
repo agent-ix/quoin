@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing GitHub Release tag to repackage, e.g. v0.24.1"
+        description: "Existing GitHub Release tag to repackage, e.g. vX.Y.Z"
         required: true
         type: string
       publish:
