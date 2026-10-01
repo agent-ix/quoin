@@ -56,7 +56,7 @@ weak module or type partition — cannot be met by an aggregate that is printed 
 
 ## Inputs
 
-- The corpus record of FR-084 and the module and toolchain records of FR-085.
+- The corpus record of FR-084 and the module records of FR-085.
 - The state records of FR-086, the evaluation records of FR-087, the representation records of
   FR-088, and the partition of FR-089.
 - A declared divergence margin, in percentage points.

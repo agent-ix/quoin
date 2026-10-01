@@ -60,7 +60,7 @@ check that never executed.
 ## Inputs
 
 - The enumerated corpus documents of FR-084 — the same population, not a second walk.
-- The resolved module set and toolchain record of FR-085.
+- The resolved module set of FR-085.
 - The declared tool-defect ledger of FR-091.
 
 ## Outputs
@@ -85,7 +85,7 @@ check that never executed.
 - Where a document's classified form is `none`, the measurement SHALL record the document
   `not-applicable` for this check.
 - The measurement SHALL record the field-level conformance of every document `could-not-run` while
-  the toolchain record shows no engine surface for semantic extraction, citing the tool-defect ledger
+  no engine surface exposes semantic extraction, citing the tool-defect ledger
   entry that states it.
 - When a released toolchain exposes semantic extraction, the measurement SHALL obtain field-level
   conformance from that toolchain rather than from a classifier of its own.
@@ -106,11 +106,11 @@ check that never executed.
 | FR-088-AC-2 | The form census counts documents, states that unit, and its per-form counts sum to the enumerated document count. | Test (TC-1526) |
 | FR-088-AC-3 | A free-column table and a bullet list each yield one `unsupported-representation` advisory finding, and neither is counted as a conformance failure. | Test (TC-1527) |
 | FR-088-AC-4 | A document with no `## Properties` heading records `not-applicable` and is absent from both sides of this check's rate. | Test (TC-1528) |
-| FR-088-AC-5 | Every document's field-level record is `could-not-run` carrying a tool-defect ledger citation while the toolchain record shows no semantic-extraction surface. | Test (TC-1529) |
+| FR-088-AC-5 | Every document's field-level record is `could-not-run` carrying a tool-defect ledger citation while no engine surface exposes semantic extraction. | Test (TC-1529) |
 | FR-088-AC-6 | The document set the form census classified is the same set FR-084 enumerated, compared element by element. | Test (TC-1530) |
 | FR-088-AC-7 | No source file of the measurement resolves a `Type` token, a multiplicity form or a constraint keyword. | Inspection |
 
 ## Dependencies
 
-- **Upstream**: [FR-074](./FR-074-legacy-authoring-forms.md) declares the classifier this reuses; [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md) supplies the population; [FR-085](./FR-085-resolve-the-completed-module-set.md) supplies the toolchain record.
+- **Upstream**: [FR-074](./FR-074-legacy-authoring-forms.md) declares the classifier this reuses; [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md) supplies the population; [FR-085](./FR-085-resolve-the-completed-module-set.md) supplies the resolved module set.
 - **Downstream**: [FR-089](./FR-089-partition-every-failure.md), [FR-090](./FR-090-publish-rates-with-unit-population-and-method.md)

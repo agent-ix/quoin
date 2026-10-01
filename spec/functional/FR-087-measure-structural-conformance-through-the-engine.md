@@ -55,7 +55,7 @@ a statement about the real contract, and makes everything the engine cannot do v
 ## Inputs
 
 - The `measured` documents of FR-086.
-- The resolved module set and toolchain record of FR-085.
+- The resolved module set of FR-085.
 
 ## Outputs
 

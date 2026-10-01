@@ -76,8 +76,6 @@ could not speak for.
   where the entry's effect is on rows, additionally as a count of rows.
 - The measurement SHALL publish the tool-defect coverage statement beside the corpus aggregate rate.
 - The measurement SHALL NOT treat an undeclared failure as a tool defect.
-- The measurement SHALL record a tool-defect entry for every capability a measured module's contract
-  declares that the toolchain record of FR-085 shows no surface for.
 
 ## Constraints
 
@@ -97,7 +95,6 @@ could not speak for.
 | FR-091-AC-5 | A document outside every declared scope that fails is not classified `tool-defect`. | Test (TC-1549) |
 | FR-091-AC-6 | The published report states the share of the population covered by declared tool-defect exclusions beside the aggregate rate. | Test (TC-1550) |
 | FR-091-AC-7 | Every tool-defect entry's citation resolves to an existing issue in the named repository. | Test (TC-1581) |
-| FR-091-AC-8 | A module contract declaring a capability the toolchain record shows no surface for yields a tool-defect entry naming that capability. | Test (TC-1582) |
 
 ## Dependencies
 

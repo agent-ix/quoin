@@ -2,9 +2,6 @@
   "source": "src/semantic/contract.ts",
   "contract": {
     "contractVersion": "1.0.0",
-    "semanticCoreVersions": [
-      "0.3.0"
-    ],
     "semanticKeys": [
       "contract_version",
       "semantic_core",
@@ -23,8 +20,7 @@
     },
     "semanticCore": {
       "repository": "agent-ix/filament-core-data",
-      "sourcePath": "packages/semantic-core/generated/json-schema",
-      "version": "0.1.0"
+      "sourcePath": "packages/semantic-core/generated/json-schema"
     },
     "packageManifestSchema": {
       "repository": "agent-ix/filament-core-data",

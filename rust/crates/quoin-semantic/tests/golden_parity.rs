@@ -707,13 +707,6 @@ fn tc_378_111_the_contract_matches_the_oracle_exactly() {
         text(contract, "contractVersion"),
         SEMANTIC_CONTRACT.contract_version
     );
-    let versions: Vec<&str> = contract
-        .get("semanticCoreVersions")
-        .and_then(Value::as_array)
-        .map(|v| v.iter().filter_map(Value::as_str).collect())
-        .unwrap_or_default();
-    assert_eq!(versions, SEMANTIC_CONTRACT.semantic_core_versions);
-
     let keys: Vec<&str> = contract
         .get("semanticKeys")
         .and_then(Value::as_array)

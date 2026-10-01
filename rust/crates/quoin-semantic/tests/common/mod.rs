@@ -103,6 +103,15 @@ pub fn mapping_dir() -> PathBuf {
     fixtures_dir().join("mapping")
 }
 
+/// The semantic-core version the shipped bundle's `$id` names: the one source
+/// every test reads rather than typing a literal.
+pub fn shipped_core() -> String {
+    quoin_semantic::shipped_semantic_core_versions(&semantic_root())
+        .into_iter()
+        .next()
+        .expect("the shipped bundle names a semantic-core version")
+}
+
 /// The compiled validators, built from the live vendored tree.
 pub fn validators() -> SemanticValidators {
     SemanticValidators::load(&semantic_root()).expect("the vendored contract compiles")

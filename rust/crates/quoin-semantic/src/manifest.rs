@@ -21,7 +21,8 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 use crate::contract::{
-    SEMANTIC_CONTRACT, module_manifest_schema_path, semantic_core_dir, sweep_report_schema_path,
+    SEMANTIC_CONTRACT, module_manifest_schema_path, semantic_core_dir,
+    shipped_semantic_core_versions, sweep_report_schema_path,
 };
 use crate::data_schema::{ResolveContext, ResolvedDataSchema, resolve_data_schema};
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic, Severity};
@@ -180,6 +181,7 @@ pub struct SemanticValidators {
     semantic_block: SchemaValidator,
     sweep_report: SchemaValidator,
     semantic_core_dir: PathBuf,
+    shipped_semantic_core: Vec<String>,
 }
 
 impl SemanticValidators {
@@ -207,7 +209,22 @@ impl SemanticValidators {
             semantic_block: SchemaValidator::compile(&manifest_schema_path, block_schema, &[])?,
             sweep_report: SchemaValidator::compile(&sweep_path, &sweep_schema, &[])?,
             semantic_core_dir: semantic_core_dir(semantic_root),
+            shipped_semantic_core: shipped_semantic_core_versions(semantic_root),
         })
+    }
+
+    /// True when `version` is one the loaded bundle ships (its `$id` base).
+    #[must_use]
+    pub fn ships_semantic_core(&self, version: &SemanticCoreVersion) -> bool {
+        self.shipped_semantic_core
+            .iter()
+            .any(|shipped| shipped == version.as_str())
+    }
+
+    /// The semantic-core versions the loaded bundle ships.
+    #[must_use]
+    pub fn shipped_semantic_core_versions(&self) -> &[String] {
+        &self.shipped_semantic_core
     }
 
     /// The compiled `semantic` block validator.
@@ -389,13 +406,13 @@ pub fn read_semantic_block(
             .get("semantic_core")
             .map_or_else(String::new, stringify),
     );
-    if !SEMANTIC_CONTRACT.ships_semantic_core(&semantic_core) {
+    if !validators.ships_semantic_core(&semantic_core) {
         diagnostics.push(SemanticDiagnostic::error(
             DiagnosticCode::UnknownSemanticCore,
             "semantic.semantic_core",
             format!(
                 "semantic_core {semantic_core} is not a version this quoin ships ({})",
-                SEMANTIC_CONTRACT.semantic_core_versions.join(", ")
+                validators.shipped_semantic_core.join(", ")
             ),
         ));
     }

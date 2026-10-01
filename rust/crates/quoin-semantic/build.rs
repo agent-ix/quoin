@@ -73,10 +73,6 @@ fn semantic_core_members(
             absolute_path: json_schema_dir.join(&name),
         });
     }
-    embeds.push(Embed {
-        internal_name: "schemas/semantic-core/toolchain.json".to_owned(),
-        absolute_path: semantic_core_pkg.join("generated/toolchain.json"),
-    });
     Ok(())
 }
 

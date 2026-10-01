@@ -1,5 +1,4 @@
 {
-  "semanticCore": "0.2.0",
   "context": {
     "$comment": "The loaded-module and bundle facts the extraction reads (FR-104 Inputs).",
     "sources": {

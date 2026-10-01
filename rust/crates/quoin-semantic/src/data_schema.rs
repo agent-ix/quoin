@@ -17,11 +17,10 @@ use std::path::{Component, Path, PathBuf};
 
 use serde_json::Value;
 
-use crate::contract::SEMANTIC_CONTRACT;
+use crate::contract::SEMANTIC_CORE_BASE;
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic};
 use crate::ids::{ObjectTypeName, PackageIdentity, SemanticCoreVersion};
 
-const SEMANTIC_CORE_BASE: &str = "https://schemas.agent-ix.org/semantic-core/";
 const PACKAGE_BASE: &str = "https://schemas.agent-ix.org/";
 const DIALECT_2020_12: &str = "https://json-schema.org/draft/2020-12/schema";
 
@@ -483,13 +482,6 @@ impl RefWalker<'_> {
         self.stack.pop();
         true
     }
-}
-
-/// The versions this quoin ships a semantic-core bundle for, for a caller that
-/// wants to report them.
-#[must_use]
-pub fn shipped_semantic_core_versions() -> &'static [&'static str] {
-    SEMANTIC_CONTRACT.semantic_core_versions
 }
 
 #[cfg(test)]

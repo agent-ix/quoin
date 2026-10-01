@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "plugins": [
-    {"name":"engineering-assurance","source":{"type":"path","path":"fixture"},"ref":"7a05537e2214840e8d2fc4f0c09644121a9e5c91","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
-    {"name":"spec-artifacts-iso","source":{"type":"path","path":"fixture"},"ref":"c57e09889f96aada95e46baafadce26049c197c8","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
-    {"name":"spec-artifacts-app","source":{"type":"path","path":"fixture"},"ref":"843f7152cde7f78cff3afb8091190ac16274e13e","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
-    {"name":"spec-artifacts-process","source":{"type":"path","path":"fixture"},"ref":"df3892cc687eb6d88b6bb05d1d3e992bcfa2c08b","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
-    {"name":"spec-objects-business","source":{"type":"path","path":"fixture"},"ref":"862ca064d1267a3464fc12741df5e627b667e966","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
-    {"name":"spec-objects-architecture","source":{"type":"path","path":"fixture"},"ref":"fc45ffd7300445643a96e0c7fe126a74bf85907f","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
-    {"name":"spec-objects-enterprise","source":{"type":"path","path":"fixture"},"ref":"b1cd78e8da58e0d1c0a8cfc19ffe379030854580","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
-    {"name":"spec-objects-operational","source":{"type":"path","path":"fixture"},"ref":"d5b89f9e5b4fbb11221ab6ac6713cd60b02681fd","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
-    {"name":"spec-objects-security","source":{"type":"path","path":"fixture"},"ref":"7bb00d44f0679f192489733a61cc0cb5ced0c367","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
-    {"name":"spec-objects-safety","source":{"type":"path","path":"fixture"},"ref":"9bcdb85de101a615859bed68a01e825b5be9f6e5","resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"}
+    {"name":"engineering-assurance","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"spec-artifacts-iso","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"spec-artifacts-app","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"spec-artifacts-process","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"spec-objects-business","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"spec-objects-architecture","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"spec-objects-enterprise","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"spec-objects-operational","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"spec-objects-security","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"},
+    {"name":"spec-objects-safety","source":{"type":"path","path":"fixture"},"resolvedPath":"fixture","targetPath":"fixture","installedAt":"2026-01-01T00:00:00Z"}
   ]
 }
