@@ -260,9 +260,8 @@ is unit-testable without spawning a process.
 
 ## The toolchain
 
-**1.98.1**, stated in four places that must agree: `rust/rust-toolchain.toml`,
-`rust/clippy.toml`'s `msrv`, `rust/Cargo.toml`'s `rust-version`, and the
-`toolchain:` pins in `.github/workflows/build-test.yml`.
+**1.98.1**, stated in three places that must agree: `rust/rust-toolchain.toml`,
+`rust/clippy.toml`'s `msrv` and `rust/Cargo.toml`'s `rust-version`.
 `tc_375_the_pinned_channel_and_the_declared_msrv_agree` fails if they drift.
 
 NFR-026 states the floor as "consistent with quire-corpus and
