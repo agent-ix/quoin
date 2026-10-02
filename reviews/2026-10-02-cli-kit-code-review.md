@@ -12,6 +12,10 @@ relationships:
 
 # SR-180: Shared CLI foundation diff review
 
+## Summary
+
+Review of the shared foundation adoption against FR-096 and the repository Rust conventions.
+
 ## Verdict
 
 Pass after the documentation correction below. The local taxonomy and recursive
@@ -24,9 +28,9 @@ resource boundary relaxed.
 
 ## Findings
 
-| ID | Severity | Location at reviewed revision | Scenario |
+| ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | low | .claude/skills/rust-style/SKILL.md:61 | The touched boundary checklist still claims preserve_order is disabled and sorting is implicit, although the replacement explicitly sorts. A later maintainer could incorrectly remove explicit sorting based on this instruction. |
+| FND-001 | low | The touched boundary checklist still claims preserve_order is disabled and sorting is implicit, although the replacement explicitly sorts. A later maintainer could incorrectly remove explicit sorting based on this instruction. | .claude/skills/rust-style/SKILL.md:61 at 326d5f42 |
 
 ## Dispositions
 
