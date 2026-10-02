@@ -331,6 +331,7 @@ unknown-git = "deny"
 # git source. A fifth git dependency is listed here in the commit that adds it,
 # or this check refuses it.
 allow-git = [
+    "https://github.com/agent-ix/ix-cli-kit",
     "https://github.com/agent-ix/quire-rs",
     "https://github.com/agent-ix/engineering-assurance",
     "https://github.com/agent-ix/quire-code-rs",

@@ -22,6 +22,7 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
+ix-cli-kit = { workspace = true }
 clap = { workspace = true }
 quoin-core = { workspace = true }
 # `quoin matrix` renders `matrix.build`'s payload with the domain's own

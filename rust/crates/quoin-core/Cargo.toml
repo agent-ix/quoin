@@ -19,6 +19,7 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
+ix-cli-kit = { workspace = true }
 quoin-assurance = { workspace = true }
 # quoin#501, the Stage 7 cutover of `src/auditor/` and `src/advisor/`. The
 # crate is `Inert` by construction — no handle, no path, no command reaches

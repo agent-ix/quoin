@@ -23,6 +23,8 @@
 
 use std::collections::BTreeMap;
 
+use ix_cli_kit::exit::Outcome;
+
 /// The IPC protocol revision the boundary speaks.
 ///
 /// Lives beside the wire contract it versions. It used to sit in
@@ -72,60 +74,6 @@ pub const PROTOCOL_VERSION: u32 = 1;
 /// something no repository looks like, which is what a ceiling on an untrusted
 /// stream is for.
 pub const MAX_REQUEST_BYTES: usize = 64 * 1024 * 1024;
-
-/// How the process terminated, and therefore whether stdout is worth reading.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Outcome {
-    /// Complete payload, no diagnostics that matter. Exit 0.
-    Ok,
-    /// Complete, valid payload AND diagnostics. Exit 1. The caller decides
-    /// what a qualified result is worth; this status only stops the decision
-    /// being made by an exception.
-    Partial,
-    /// Understood and refused by a stated rule. No payload. Exit 2.
-    Refused,
-    /// Not a well-formed request for a known operation. No payload. Exit 3.
-    Invalid,
-    /// The boundary itself failed. No payload. Exit 4.
-    Internal,
-}
-
-impl Outcome {
-    /// The process exit status.
-    #[must_use]
-    pub const fn code(self) -> u8 {
-        match self {
-            Self::Ok => 0,
-            Self::Partial => 1,
-            Self::Refused => 2,
-            Self::Invalid => 3,
-            Self::Internal => 4,
-        }
-    }
-
-    /// Whether stdout holds a complete payload.
-    ///
-    /// This is the predicate `src/core/exec.ts` mirrors. It is a method on the
-    /// taxonomy rather than a comparison at each call site, because "non-zero
-    /// but valid" is exactly the judgement call sites get wrong.
-    #[must_use]
-    pub const fn carries_payload(self) -> bool {
-        matches!(self, Self::Ok | Self::Partial)
-    }
-
-    /// Recover the outcome from an observed exit status.
-    #[must_use]
-    pub const fn from_code(code: u8) -> Option<Self> {
-        match code {
-            0 => Some(Self::Ok),
-            1 => Some(Self::Partial),
-            2 => Some(Self::Refused),
-            3 => Some(Self::Invalid),
-            4 => Some(Self::Internal),
-            _ => None,
-        }
-    }
-}
 
 /// One entry of the stderr array.
 ///
@@ -189,59 +137,17 @@ impl Response {
     }
 }
 
-/// Serialise to canonical JSON: object keys sorted, no insignificant
-/// whitespace.
+/// Serialize the boundary through the shared canonical encoder.
 ///
-/// Canonical on the way OUT, so the native fixture suite compares two byte strings
-/// rather than two opinions about field order. `serde_json::Map`'s backing
-/// depends on whether `preserve_order` is active anywhere in the build --
-/// see [`sort_object_keys`]'s doc for why this build cannot assume it is
-/// off (it is on: the five `typesafe-sdk-*` crates PLAT-837 added each
-/// request it directly) -- so this function sorts explicitly rather than
-/// relying on `serde_json::Map`'s default ordering.
+/// Domain failures retain the boundary's stable Io code.
 ///
 /// # Errors
 ///
-/// Returns [`CoreErrorCode::Io`] if the value cannot be represented as JSON —
-/// a non-string map key or a non-finite float.
+/// Returns [`crate::error::CoreErrorCode::Io`] if encoding fails.
 pub fn canonical_json<T: serde::Serialize>(value: &T) -> Result<String, crate::error::CoreError> {
-    let as_value = serde_json::to_value(value).map_err(|e| {
-        crate::error::CoreError::new(crate::error::CoreErrorCode::Io, e.to_string())
-    })?;
-    let sorted = sort_object_keys(as_value);
-    serde_json::to_string(&sorted)
-        .map_err(|e| crate::error::CoreError::new(crate::error::CoreErrorCode::Io, e.to_string()))
-}
-
-/// Recursively sorts every object's keys, so the emitted JSON is
-/// lexicographic regardless of whether `serde_json`'s `preserve_order`
-/// feature happens to be active elsewhere in the build.
-///
-/// This function used to rely on `serde_json::Map`'s default backing
-/// (`BTreeMap`, sorted) for that ordering implicitly -- correct only as long
-/// as nothing in the dependency graph requested `preserve_order`, which
-/// switches the backing to an insertion-ordered `IndexMap` instead. That
-/// assumption held by accident, not by design: `preserve_order` is additive
-/// and workspace-wide once requested, because Cargo unifies a crate's
-/// features across every consumer that resolves the same version -- ANY
-/// crate anywhere in the graph mandating it (a third-party SDK's own
-/// `serde_json` dependency, for one; PLAT-837's `quoin-jev` is what exposed
-/// this) turns it on for this function too, with no `cfg` this file can react
-/// to. Sorting explicitly here removes the dependency on that accident.
-fn sort_object_keys(value: serde_json::Value) -> serde_json::Value {
-    match value {
-        serde_json::Value::Object(map) => {
-            let sorted: BTreeMap<String, serde_json::Value> = map
-                .into_iter()
-                .map(|(key, entry)| (key, sort_object_keys(entry)))
-                .collect();
-            serde_json::Value::Object(sorted.into_iter().collect())
-        }
-        serde_json::Value::Array(items) => {
-            serde_json::Value::Array(items.into_iter().map(sort_object_keys).collect())
-        }
-        scalar => scalar,
-    }
+    ix_cli_kit::json::encode_canonical(value, false).map_err(|error| {
+        crate::error::CoreError::new(crate::error::CoreErrorCode::Io, error.source.to_string())
+    })
 }
 
 #[cfg(test)]
@@ -253,6 +159,7 @@ fn sort_object_keys(value: serde_json::Value) -> serde_json::Value {
 mod tests {
     use super::*;
 
+    /// Trace: FR-096-AC-10
     #[test]
     fn exit_statuses_are_the_documented_taxonomy() {
         assert_eq!(
@@ -267,6 +174,7 @@ mod tests {
         );
     }
 
+    /// Trace: FR-096-AC-10
     #[test]
     fn every_status_round_trips() {
         for outcome in [
@@ -281,6 +189,7 @@ mod tests {
         assert_eq!(Outcome::from_code(5), None);
     }
 
+    /// Trace: FR-096-AC-10
     #[test]
     fn non_zero_but_valid_is_distinguishable_from_failed() {
         assert!(Outcome::Partial.carries_payload());
@@ -290,6 +199,7 @@ mod tests {
         }
     }
 
+    /// Trace: FR-096-AC-10
     #[test]
     fn canonical_json_sorts_keys_and_emits_no_whitespace() {
         let value = serde_json::json!({ "z": 1, "a": { "y": 2, "b": 3 } });
@@ -303,6 +213,7 @@ mod tests {
     /// untested -- it recurses into array elements but was never asserted to.
     /// An object nested inside an array element must come out sorted exactly
     /// like a top-level or nested-object one does.
+    /// Trace: FR-096-AC-10
     #[test]
     fn canonical_json_sorts_keys_inside_array_elements() {
         let value = serde_json::json!({ "z": [ { "b": 1, "a": 2 }, { "d": 3, "c": 4 } ] });
@@ -310,5 +221,14 @@ mod tests {
             canonical_json(&value).unwrap(),
             r#"{"z":[{"a":2,"b":1},{"c":4,"d":3}]}"#
         );
+    }
+
+    /// Trace: FR-096-AC-10
+    #[test]
+    fn serialization_failure_retains_the_domain_io_code() {
+        let value = BTreeMap::from([(vec![1, 2], "invalid JSON map key")]);
+        let error = canonical_json(&value).unwrap_err();
+        assert_eq!(error.code, crate::error::CoreErrorCode::Io);
+        assert_eq!(error.message.as_ref(), "key must be a string");
     }
 }

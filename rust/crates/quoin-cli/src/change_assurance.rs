@@ -377,7 +377,7 @@ fn receipt_response(response: Response, json: bool, verified: bool) -> Result<Re
         outcome: if outcome == "valid" {
             response.outcome
         } else {
-            quoin_core::protocol::Outcome::Partial
+            ix_cli_kit::exit::Outcome::Partial
         },
     })
 }

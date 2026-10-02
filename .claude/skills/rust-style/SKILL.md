@@ -51,7 +51,7 @@ Every rule in this section is asserted by `crates/quoin-core/tests/tc_boundary.r
   carries a payload.
 - **stderr is a JSON array of diagnostics.** Not prose.
 - **The exit taxonomy is 0/1/2/3/4** and lives in one place —
-  `protocol::Outcome`. The load-bearing member is `Partial` (1): a non-zero
+  `ix_cli_kit::exit::Outcome`. The load-bearing member is `Partial` (1): a non-zero
   status whose stdout is a complete, valid payload. That case is not
   hypothetical; it is `runQuireAllowFailure`'s reason for existing
   (agent-ix/quoin#103, where treating a qualified result as total failure

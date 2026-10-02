@@ -8,7 +8,7 @@
 //! API and the message is not. Codes are never renamed and never reused: a
 //! consumer that learned `CORE_UNKNOWN_OP` keeps it forever.
 
-use crate::protocol::Outcome;
+use ix_cli_kit::exit::Outcome;
 
 /// A stable, machine-matchable reason the boundary did not return a plain
 /// success.

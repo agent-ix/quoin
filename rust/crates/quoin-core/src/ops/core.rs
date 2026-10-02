@@ -8,7 +8,7 @@
 //! path is proven before any logic is ported onto it. `core.ping` is that
 //! operation: it identifies the build, echoes what it was given, and — because
 //! the taxonomy is only a contract if every status is reachable — exercises
-//! [`crate::protocol::Outcome::Partial`] and [`crate::protocol::Outcome::Refused`]
+//! [`ix_cli_kit::exit::Outcome::Partial`] and [`ix_cli_kit::exit::Outcome::Refused`]
 //! through real rules rather
 //! than through a test hook.
 
@@ -40,7 +40,7 @@ pub struct PingRequest {
     /// The protocol revision the caller believes it is speaking. When it
     /// disagrees with this build's, the answer is still complete — it is how
     /// the caller learns which revision it is actually talking to — so the
-    /// disagreement is reported as [`crate::protocol::Outcome::Partial`], not as a
+    /// disagreement is reported as [`ix_cli_kit::exit::Outcome::Partial`], not as a
     /// failure.
     #[serde(default)]
     pub expect_protocol: Option<u32>,
@@ -112,7 +112,7 @@ pub fn ping(request: &serde_json::Value) -> Result<Response, CoreError> {
 )]
 mod tests {
     use super::*;
-    use crate::protocol::Outcome;
+    use ix_cli_kit::exit::Outcome;
 
     #[test]
     fn an_empty_request_identifies_the_build() {

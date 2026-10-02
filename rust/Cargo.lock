@@ -2230,6 +2230,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
+name = "ix-cli-kit"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/ix-cli-kit?rev=cc69a934f887966f955440bff8c356e3da449bee#cc69a934f887966f955440bff8c356e3da449bee"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "jiff"
 version = "0.2.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2999,6 +3009,7 @@ version = "0.28.1"
 dependencies = [
  "clap",
  "engineering-assurance",
+ "ix-cli-kit",
  "quoin-assurance",
  "quoin-config",
  "quoin-core",
@@ -3060,6 +3071,7 @@ name = "quoin-core"
 version = "0.28.1"
 dependencies = [
  "engineering-assurance",
+ "ix-cli-kit",
  "quoin-assurance",
  "quoin-auditor",
  "quoin-catalog",

@@ -6,7 +6,8 @@
 use std::collections::BTreeMap;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use quoin_core::protocol::{Diagnostic, Outcome, Response};
+use ix_cli_kit::exit::Outcome;
+use quoin_core::protocol::{Diagnostic, Response};
 use quoin_delivery::{DEFAULT_MANIFEST_URL, DeliveryError, HttpTransport, UpdateResult};
 use semver::Version;
 

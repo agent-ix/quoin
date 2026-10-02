@@ -21,7 +21,8 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
-use quoin_core::protocol::{Outcome, Response};
+use ix_cli_kit::exit::Outcome;
+use quoin_core::protocol::Response;
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
 

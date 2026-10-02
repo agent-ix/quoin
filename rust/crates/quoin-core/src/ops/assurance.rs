@@ -340,7 +340,7 @@ mod tests {
     )]
 
     use super::*;
-    use crate::protocol::Outcome;
+    use ix_cli_kit::exit::Outcome;
 
     /// The smallest `clause-binding-v1` report the retained reader accepts.
     ///
