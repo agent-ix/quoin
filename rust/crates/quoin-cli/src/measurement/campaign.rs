@@ -187,7 +187,7 @@ fn required(args: &ArgMatches, name: &str) -> Result<String, String> {
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
     use super::*;
-    use quoin_core::protocol::Outcome;
+    use ix_cli_kit::exit::Outcome;
     use quoin_measurement::campaign::{CAMPAIGN_VERDICT_SCHEMA, CampaignDecision};
 
     /// Trace: FR-114-AC-5, TC-1946

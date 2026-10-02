@@ -35,9 +35,10 @@ use std::ffi::OsString;
 use std::io::Write as _;
 
 use clap::{Arg, ArgAction, ArgMatches, Command, error::ErrorKind};
+use ix_cli_kit::exit::Outcome;
 use quoin_core::capabilities::Capabilities;
 use quoin_core::ops::graph::{change_impact, churn, fan_out};
-use quoin_core::protocol::{Diagnostic, Outcome, Response, canonical_json};
+use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_graph_analysis::OsGraphInputReader;
 
 const EXIT_INVALID: u8 = Outcome::Invalid.code();

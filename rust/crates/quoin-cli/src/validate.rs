@@ -7,7 +7,8 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use quoin_core::protocol::{Outcome, Response};
+use ix_cli_kit::exit::Outcome;
+use quoin_core::protocol::Response;
 
 use crate::core_runtime::invoke;
 

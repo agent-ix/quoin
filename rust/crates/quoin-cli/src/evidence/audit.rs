@@ -4,7 +4,8 @@
 //! The retained read-only `quoin evidence audit` adapter.
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use quoin_core::protocol::{Outcome, Response};
+use ix_cli_kit::exit::Outcome;
+use quoin_core::protocol::Response;
 
 use super::{json_arg, repo_arg, required, revision};
 use crate::core_runtime::invoke;

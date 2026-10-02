@@ -26,7 +26,8 @@
 use serde_json::{Value, json};
 
 use crate::error::{CoreError, CoreErrorCode};
-use crate::protocol::{Outcome, Response};
+use crate::protocol::Response;
+use ix_cli_kit::exit::Outcome;
 
 use super::{MAX_AUDITOR_REQUEST_BYTES, advise, audit};
 

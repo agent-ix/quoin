@@ -84,6 +84,13 @@ distinguishes every non-success state, and admits no Node runtime type.
 - Quoin SHALL return a changed boundary interface or compatibility promise to
   specification before the implementation continues.
 
+> **CR-001 (2026-10-02, PLAT-105):** The Rust boundary consumes the authoritative
+> `ix-cli-kit` exit taxonomy and canonical JSON utilities through a git revision
+> dependency. Domain error classification and diagnostic shape remain in Quoin.
+> This adoption preserves statuses 0/1/2/3/4, payload eligibility, compact sorted
+> output at every depth, and existing error codes. The duplicated taxonomy and
+> key sorter are removed; callers import the shared type directly.
+
 ## Error Conditions
 
 Malformed JSON, an unknown protocol version, a request naming an unknown
@@ -119,3 +126,9 @@ non-success outcome and are never reported as success.
 
 - **Upstream**: accepted [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md) and [StR-009](../stakeholder/StR-009-one-implementation-language-for-engine-logic.md).
 - **Downstream**: [FR-097](./FR-097-schema-sourced-type-surface.md) through [FR-103](./FR-103-corpus-consolidation.md) all cross this boundary.
+
+## Shared foundation acceptance
+
+| ID | Criterion | Verification |
+| --- | --- | --- |
+| FR-096-AC-10 | The native boundary uses the shared outcome type, emits the existing 0/1/2/3/4 status and payload eligibility for every outcome, and emits compact lexicographically sorted JSON including objects nested inside arrays when insertion-order maps are enabled. Serialization errors retain the Quoin Io code. | Test |

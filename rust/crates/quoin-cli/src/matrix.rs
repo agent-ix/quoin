@@ -10,8 +10,9 @@
 //! `quoin evidence audit --strict`.
 
 use clap::{ArgMatches, Command};
+use ix_cli_kit::exit::Outcome;
 use quoin_core::error::{CoreError, CoreErrorCode};
-use quoin_core::protocol::{Diagnostic, Outcome, Response, canonical_json};
+use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 
 use crate::core_runtime::invoke;
 use crate::evidence::audit::{Assembly, assemble, module_arg, policy_args};

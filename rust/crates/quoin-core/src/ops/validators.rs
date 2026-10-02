@@ -32,11 +32,11 @@
 //! # Why a finding is not a failure
 //!
 //! [`quoin_validators::Verdict::Failing`] maps to process exit 1, and so does
-//! [`crate::protocol::Outcome::Partial`]. They are not the same 1 and must not
+//! [`ix_cli_kit::exit::Outcome::Partial`]. They are not the same 1 and must not
 //! be conflated. `Partial` says "the payload is complete but something about
 //! the OPERATION was qualified". A repository that has gate findings did not
 //! qualify the operation — the operation succeeded and the findings ARE the
-//! answer. So this op is [`crate::protocol::Outcome::Ok`] whether the report is
+//! answer. So this op is [`ix_cli_kit::exit::Outcome::Ok`] whether the report is
 //! empty or not, and `--strict`'s non-zero exit stays a caller policy derived
 //! from the payload.
 //!
@@ -222,7 +222,7 @@ pub fn run(request: &serde_json::Value) -> Result<Response, CoreError> {
 )]
 mod tests {
     use super::*;
-    use crate::protocol::Outcome;
+    use ix_cli_kit::exit::Outcome;
 
     /// A wired gate that counts forbidden matches and never asserts the count —
     /// the one defect `inspect_empty_gates` reports.

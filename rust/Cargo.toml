@@ -76,6 +76,7 @@ publish = false
 # lists every path. This was re-measured after quoin-quire, quoin-semantic and
 # quoin-store merged, not inherited from when the branch was cut.)
 [workspace.dependencies]
+ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", rev = "cc69a934f887966f955440bff8c356e3da449bee" }
 quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-change-assurance = { path = "crates/quoin-change-assurance" }
 quoin-catalog = { path = "crates/quoin-catalog" }

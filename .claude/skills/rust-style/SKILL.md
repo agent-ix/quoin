@@ -51,7 +51,7 @@ Every rule in this section is asserted by `crates/quoin-core/tests/tc_boundary.r
   carries a payload.
 - **stderr is a JSON array of diagnostics.** Not prose.
 - **The exit taxonomy is 0/1/2/3/4** and lives in one place —
-  `protocol::Outcome`. The load-bearing member is `Partial` (1): a non-zero
+  `ix_cli_kit::exit::Outcome`. The load-bearing member is `Partial` (1): a non-zero
   status whose stdout is a complete, valid payload. That case is not
   hypothetical; it is `runQuireAllowFailure`'s reason for existing
   (agent-ix/quoin#103, where treating a qualified result as total failure
@@ -61,10 +61,10 @@ Every rule in this section is asserted by `crates/quoin-core/tests/tc_boundary.r
   is the only mapping from code to status, so a new operation cannot invent a
   second meaning for status 2.
 - **Canonical JSON on the way out**: object keys sorted at every depth, no
-  insignificant whitespace, via `protocol::canonical_json`. On the Rust side
-  this falls out of `serde_json::Map` being a `BTreeMap` — the `preserve_order`
-  feature is deliberately **not** enabled, and enabling it silently breaks the
-  comparison `quoin-difftest` performs.
+  insignificant whitespace, via `protocol::canonical_json`, which delegates to
+  `ix_cli_kit::json::encode_canonical` and maps serialization errors into the
+  domain Io code. Sorting is explicit at every depth, including arrays, so
+  enabling `serde_json/preserve_order` elsewhere cannot change boundary bytes.
 
 ## Error envelopes
 

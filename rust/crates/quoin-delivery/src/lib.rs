@@ -151,7 +151,7 @@ impl DeliveryError {
 
 /// A minimal dependency-free representation of the CLI's exit taxonomy.
 pub mod quoin_outcome {
-    /// Failure categories the adapter maps to `quoin_core::protocol::Outcome`.
+    /// Failure categories the adapter maps to `ix_cli_kit::exit::Outcome`.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum OutcomeClass {
         /// Understood but unsafe input or state.

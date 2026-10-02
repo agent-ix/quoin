@@ -79,7 +79,7 @@ fn doctor() -> Result<Response, String> {
     let (rendered, outcome) = match entry.status {
         DoctorStatus::Valid { .. } => (
             format!("quoin valid ({})", entry.file_path.display()),
-            quoin_core::protocol::Outcome::Ok,
+            ix_cli_kit::exit::Outcome::Ok,
         ),
         DoctorStatus::Invalid { issues } => (
             format!(
@@ -91,11 +91,11 @@ fn doctor() -> Result<Response, String> {
                     .collect::<Vec<_>>()
                     .join("\n")
             ),
-            quoin_core::protocol::Outcome::Partial,
+            ix_cli_kit::exit::Outcome::Partial,
         ),
         DoctorStatus::Unregistered => (
             format!("quoin unregistered ({})", entry.file_path.display()),
-            quoin_core::protocol::Outcome::Partial,
+            ix_cli_kit::exit::Outcome::Partial,
         ),
     };
     Ok(Response {
