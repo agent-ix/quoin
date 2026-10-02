@@ -12,6 +12,10 @@ relationships:
 
 # SR-179: Shared CLI foundation adoption specification review
 
+## Summary
+
+Review of the shared foundation adoption against FR-096 and the repository Rust conventions.
+
 ## Verdict
 
 Pass. The change defines preservation of the existing five statuses, payload
@@ -27,4 +31,6 @@ warnings at lines 48, 52 and 71 are outside this change.
 
 ## Findings
 
-No findings.
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-001 | low | No findings (placeholder). | FR-096 CR-001 and AC-10 |
