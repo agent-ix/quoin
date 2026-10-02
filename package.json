@@ -8,6 +8,6 @@
   "dependencies": {
     "@agent-ix/ix-spec-workflows": ">=0.1.3",
     "@agent-ix/semantic-core": "0.3.2",
-    "@agent-ix/semantic-schema": "0.2.1"
+    "@agent-ix/semantic-schema": "0.3.0"
   }
 }

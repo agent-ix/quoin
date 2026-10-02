@@ -15,8 +15,8 @@ importers:
         specifier: 0.3.2
         version: 0.3.2(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))
       '@agent-ix/semantic-schema':
-        specifier: 0.2.1
-        version: 0.2.1
+        specifier: 0.3.0
+        version: 0.3.0
 
 packages:
 
@@ -29,8 +29,8 @@ packages:
       '@typespec/compiler': 1.15.0
       '@typespec/json-schema': 1.15.0
 
-  '@agent-ix/semantic-schema@0.2.1':
-    resolution: {integrity: sha512-xiQdUq9u3wrWO+KtIeb6rGJRAXt43alR8g7BZ0dDrMmoYaIZMIT5xizKvxY7I7R8vsiHbcmZTRR5AvbC3dV8pQ==, tarball: https://npm.pkg.github.com/download/@agent-ix/semantic-schema/0.2.1/b3a9a87392d3fbe4264ca7d140dc82c2b52f3cb1}
+  '@agent-ix/semantic-schema@0.3.0':
+    resolution: {integrity: sha512-9ZJ2cPUwgmjznc0J+8H11ldxtxML3tUfQ2j/OXiTeTHTT4Xu/S78kmDqPZ1uNt3bwTpQS1fnrQZORhej3OJCMA==, tarball: https://npm.pkg.github.com/download/@agent-ix/semantic-schema/0.3.0/1d533756bea4d066bd062ed4412237d641979991}
 
   '@agent-ix/workflow-core@0.1.6':
     resolution: {integrity: sha512-sVMNt9RwBOt2bw5WNVrqdpaHv81L+A36H2jsSc+nIA1a7xpLodudngYfgydERASdeU2bw+n3iVRd3OnRK+RAew==, tarball: https://npm.pkg.github.com/download/@agent-ix/workflow-core/0.1.6/0693441d3e94b827244733b2bed6f44b05a60e4e}
@@ -400,7 +400,7 @@ snapshots:
       '@typespec/compiler': 1.15.0
       '@typespec/json-schema': 1.15.0(@typespec/compiler@1.15.0)
 
-  '@agent-ix/semantic-schema@0.2.1': {}
+  '@agent-ix/semantic-schema@0.3.0': {}
 
   '@agent-ix/workflow-core@0.1.6':
     dependencies:
