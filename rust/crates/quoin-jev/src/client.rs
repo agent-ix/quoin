@@ -8,13 +8,13 @@
 //! sibling `typesafe-sdk` crate ships a `mock` feature backed by `wiremock`".
 //! That is a discrepancy worth recording precisely: `typesafe-sdk` (0.1.2,
 //! `codeitlikemiley/typesafe-sdk-rust`) is a DIFFERENT, unrelated crate from
-//! the `typesafe-sdk-client`/`-answers`/`-questions`/... family (0.6.2,
-//! `douglance/typesafe-sdk-rs`) this ticket pins -- different author,
+//! the `typesafe-sdk-client`/`-answers`/`-questions`/... family
+//! (`douglance/typesafe-sdk-rs`) this ticket pins -- different author,
 //! different repository, and its own `Cargo.toml` depends on none of the
-//! 0.6.2 family. It is not a "sibling" of anything pinned here.
+//! family. It is not a "sibling" of anything pinned here.
 //!
 //! The mock capability this ticket actually needs lives one level down, in
-//! `typesafe-sdk-http` itself (part of the pinned 0.6.2 family, no feature
+//! `typesafe-sdk-http` itself (part of the pinned family, no feature
 //! flag required): [`typesafe_sdk_http::Mock`] and
 //! [`typesafe_sdk_http::Exchange`] are a hand-rolled scripted [`Transport`],
 //! not a `wiremock` server. Every test in this crate uses that seam --

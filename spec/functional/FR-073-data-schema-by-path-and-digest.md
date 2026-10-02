@@ -52,19 +52,6 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 | FR-073-AC-4 | Inline `data_schema` under a module with a `semantic` block yields `semantic.inline-data-schema`; without a `semantic` block it is silent. | Test |
 | FR-073-AC-5 | A path escaping the module root by `..` or by symlink is rejected; `{ schema, type: object }` is rejected as ambiguous. | Test |
 
-> **CR note (2026-09-30, agent-ix/quoin#658):** The `data_schema` digest and the versioned `$id`
-> are no longer enforced. Quoin no longer compares a referenced schema's bytes
-> to a recorded `digest` (the `semantic.data-schema-digest` and
-> `semantic.data-schema-digest-mismatch` codes are removed) or requires its
-> `$id` to equal a path built from the module version
-> (`semantic.data-schema-id` is removed). The package manager already fixes
-> which bytes ship. The `$id` is no longer required to be absolute. FR-073-AC-6 (bundle provenance equal to a recorded digest at a
-> recorded revision) is withdrawn, and so are the recorded hashes and
-> revisions in `SEMANTIC_CONTRACT`. The id is not reused. A module's own schema base
-> carries no version either: it is `https://schemas.agent-ix.org/<org>/<repo>/`, so the
-> manifest version is not copied into any `$id` or `$ref`. The semantic-core base keeps
-> its `semantic-core/<version>/` shape.
-
 ## Dependencies
 
 - **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md), [FR-029](./FR-029-consume-quire-json-contract.md) (vendoring pattern), semantic-core emitted schemas (`agent-ix/filament-core-data` FR-033)

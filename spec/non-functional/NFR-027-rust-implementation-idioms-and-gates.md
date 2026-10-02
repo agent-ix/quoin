@@ -110,5 +110,5 @@ it accompanies.
 
 ## Dependencies
 
-- **Upstream**: [NFR-026](./NFR-026-rust-toolchain-floor.md), which pins the toolchain these gates run on; [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md), which adopts `/rust-review` as the workspace review guide.
+- **Upstream**: [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md), which adopts `/rust-review` as the workspace review guide.
 - **Downstream**: [FR-101](../functional/FR-101-retire-replaced-executable-paths.md), whose restated Rust criteria must carry the tracking tags this requires.

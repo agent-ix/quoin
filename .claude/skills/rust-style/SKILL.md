@@ -17,8 +17,7 @@ skills for this repository. Where it is silent, those apply.
 
 Governing tickets: quoin#373 (the burn-down EPIC), quoin#375 (Stage 0). The
 spec ids are FR-096 (the versioned boundary), FR-097 (schema-sourced types),
-FR-101 (retire-after-parity), NFR-024 (bounded coexistence) and NFR-026 (the
-toolchain floor).
+FR-101 (retire-after-parity) and NFR-024 (bounded coexistence).
 
 ## The workspace
 

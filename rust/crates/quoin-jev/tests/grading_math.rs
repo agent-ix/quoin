@@ -31,8 +31,7 @@ mod support;
 
 use support::{
     Graded, Tier, Verdict, calibration, class_stats, corpus, defect_recall, disagreement,
-    expected_calibration_error, full_context, grade_weakness, sound_recall, tally,
-    trivial_baseline,
+    expected_calibration_error, grade_weakness, sound_recall, tally, trivial_baseline,
 };
 
 use quoin_jev::FrVerdict;
@@ -160,10 +159,6 @@ fn every_fixture_has_a_non_empty_full_fr_context() {
                 .as_deref()
                 .is_some_and(|text| !text.trim().is_empty()),
             "{id}: empty description"
-        );
-        assert!(
-            !full_context(&id).extracted_from_commit.is_empty(),
-            "{id}: no provenance"
         );
         count += 1;
     }

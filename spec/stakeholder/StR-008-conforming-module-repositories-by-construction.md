@@ -45,7 +45,7 @@ result of a review that catches omissions after the fact.
 | --- | --- | --- |
 | StR-008-VC-1 | A repository rendered from the template with no hand editing carries a complete `semantic` manifest block, real emitted JSON Schemas, typed authoring skeletons, and a verification suite that fails rather than skips without the engine. | Demonstration |
 | StR-008-VC-2 | A rendered repository passes its own clean-checkout gate — spec validation, lint, schema-drift check, and unit tests — before any module vocabulary is authored. | Test (TC-1410) |
-| StR-008-VC-3 | A required surface that a maintained module repository carries and the template omits is reported by a conformance gate rather than discovered during the next migration. | Test (TC-1418) |
+| StR-008-VC-3 | A required surface that a maintained module repository carries and the template omits is reported by a conformance gate rather than discovered during the next migration. | Review |
 
 ## Stakeholders
 

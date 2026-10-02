@@ -16,7 +16,6 @@ requirements:
   - FR-112
   - NFR-024
   - NFR-025
-  - NFR-026
   - NFR-027
 ---
 
@@ -284,8 +283,7 @@ for a capability `quoin-quire` must wrap; if the evidence store's on-disk format
 cannot be preserved byte-for-byte through a Rust implementation; if digest or
 canonicalization agreement cannot be demonstrated over every reachable store; if
 the `filament-core-data` gate does not reach Phase A; or if a required tool
-demonstrably cannot run on the toolchain floor in
-[NFR-026](../../../spec/non-functional/NFR-026-rust-toolchain-floor.md).
+demonstrably cannot run on the workspace toolchain.
 Formatting differences and repairable lint findings are not tool
 incompatibilities.
 

@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@agent-ix/semantic-core": "{{ cookiecutter.semantic_core_version }}",
-    "@typespec/compiler": "{{ cookiecutter.typespec_version }}",
-    "@typespec/json-schema": "{{ cookiecutter.typespec_version }}"
+    "@typespec/compiler": "1.15.0",
+    "@typespec/json-schema": "1.15.0"
   }
 }
