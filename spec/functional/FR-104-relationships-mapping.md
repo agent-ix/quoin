@@ -60,13 +60,13 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 
 ## Behavior
 
-### Target design and the 0.2.0 carrier
+### Target design and the carrier
 
 - Each row SHALL lower to one `RelationDecl` that carries the row's `Name` as `name` and the row's `SourceLocus` as `sourceSpan`, the shape `agent-ix/filament-core-data#155` adds to semantic-core.
 - Each row SHALL lower to one `RelationDecl` whose `multiplicity` follows the one default-multiplicity rule that `agent-ix/filament-core-data#155` settles.
-- While the published semantic-core is `0.2.0`, whose `RelationDecl` has no `name` and no `sourceSpan`, Quire SHALL carry them in `relationSources` at the index of their `relations` element.
+- While the published semantic-core's `RelationDecl` has no `name` and no `sourceSpan`, Quire SHALL carry them in `relationSources` at the index of their `relations` element.
 - When `agent-ix/filament-core-data#155` ships, `relationSources` SHALL be removed and the goldens SHALL carry `name` and `sourceSpan` on each `RelationDecl`.
-- The `Multiplicity` cell SHALL be required, because semantic-core `0.2.0` lowers an absent multiplicity to `0..1` and `agent-ix/filament-core-data#155` has not yet settled the default; an omitted cell would otherwise encode a bound nobody authored.
+- The `Multiplicity` cell SHALL be required, because semantic-core lowers an absent multiplicity to `0..1` and `agent-ix/filament-core-data#155` has not yet settled the default; an omitted cell would otherwise encode a bound nobody authored.
 
 ### Mapping token and table shape
 

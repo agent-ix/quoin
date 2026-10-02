@@ -171,7 +171,7 @@ Or browse and install quoin from the `/plugins` menu inside the Codex TUI.
 <details>
 <summary><b>opencode</b></summary>
 
-Install the skills with the GitHub CLI (requires `gh` ≥ 2.90.0). `--all` installs
+Install the skills with the GitHub CLI. `--all` installs
 the whole bundle; `--scope user` makes it available in every repo:
 
 ```bash
@@ -190,7 +190,7 @@ copilot plugin marketplace add agent-ix/quoin
 copilot plugin install quoin@quoin
 ```
 
-Or install the skills with the GitHub CLI (requires `gh` ≥ 2.90.0):
+Or install the skills with the GitHub CLI:
 
 ```bash
 gh skill install agent-ix/quoin --all --scope user --agent github-copilot

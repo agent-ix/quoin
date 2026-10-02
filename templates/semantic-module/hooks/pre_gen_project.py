@@ -20,9 +20,6 @@ VERSION = "{{ cookiecutter.version }}"
 SEMANTIC_CORE = "{{ cookiecutter.semantic_core_version }}"
 GENERATED_TARGETS = "{{ cookiecutter.generated_targets }}"
 IMPORTED_MODULES = "{{ cookiecutter.imported_modules }}"
-TYPESPEC_VERSION = "{{ cookiecutter.typespec_version }}"
-PYTHON_VERSION = "{{ cookiecutter.python_version }}"
-QUIRE_ENGINE_FLOOR = "{{ cookiecutter.quire_engine_floor }}"
 NAV_CATEGORY_ORDER = "{{ cookiecutter.nav_category_order }}"
 
 # filament-core-data `common.schema.json`: `target` plus `representationFormat`,
@@ -102,24 +99,13 @@ def main():
             "importable package directory." % PACKAGE_NAME
         )
 
-    # Every version this template writes into a rendered file is checked here.
-    # NFR-020 makes each external command's floor a declared value, and a floor
-    # nobody validated is a floor a typo lowers to nothing.
+    # The two versions this template takes as inputs are checked here.
     for name, value in (
         ("version", VERSION),
         ("semantic_core_version", SEMANTIC_CORE),
-        ("typespec_version", TYPESPEC_VERSION),
-        ("quire_engine_floor", QUIRE_ENGINE_FLOOR),
     ):
         if not SEMVER.match(value):
             fail("%s %r is not an exact semantic version." % (name, value))
-
-    if not re.match(r"^3\.\d+$", PYTHON_VERSION):
-        fail(
-            "python_version %r is not a <major>.<minor> Python version; it is "
-            "written into the rendered dependency bound and the ruff target."
-            % PYTHON_VERSION
-        )
 
     if not NAV_CATEGORY_ORDER.isdigit():
         fail(

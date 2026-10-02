@@ -461,7 +461,6 @@ fn tc_379_118_the_published_capabilities_reach_a_payload() {
             "{token} is not published",
         );
     }
-    assert_eq!(provenance.engine, engine::ENGINE_VERSION);
     assert!(
         Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("Cargo.toml")

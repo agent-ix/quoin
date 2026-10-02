@@ -103,8 +103,6 @@ pub(crate) struct FullContext {
     pub(crate) behavior: Option<String>,
     /// The FR's Constraints section, verbatim, when it has one.
     pub(crate) constraints: Option<String>,
-    /// Informational provenance only. Nothing resolves it.
-    pub(crate) extracted_from_commit: String,
 }
 
 #[derive(Deserialize)]

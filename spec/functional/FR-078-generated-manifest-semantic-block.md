@@ -41,7 +41,7 @@ prevent.
 
 - The rendered `semantic` block SHALL carry `contract_version`, `semantic_core`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture`, and `legacy_forms`.
 - The rendered `semantic.contract_version` SHALL be `1.0.0`, the version FR-070 defines.
-- The rendered `semantic.semantic_core` SHALL be the exact version the rendered toolchain installs.
+- The rendered `semantic.semantic_core` SHALL be the semantic-core version the template takes as its input.
 - The rendered `semantic.package` SHALL be `<org>/<repo>` built from the template inputs.
 - The rendered `semantic.exports` SHALL name exactly the types the rendered manifest declares.
 - The rendered `semantic.legacy_forms` SHALL be `warning`.

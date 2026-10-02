@@ -32,7 +32,7 @@ exclude = [
 ]
 
 [tool.poetry.dependencies]
-python = ">={{ cookiecutter.python_version }},<3.14"
+python = ">=3.13,<3.14"
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.1.0"
@@ -43,7 +43,7 @@ pytest = "^9.0.2"
 pytest-cov = "^7.0.0"
 pytest-json-report = "^1.5.0"
 pyyaml = "^6.0.2"
-quire = { version = "^{{ cookiecutter.quire_engine_floor }}", source = "internal-pypi" }
+quire = { version = "^0.47.1", source = "internal-pypi" }
 referencing = "^0.36.2"
 ruff = "^0.14.13"
 
@@ -111,7 +111,7 @@ markers = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py{{ cookiecutter.python_version.replace('.', '') }}"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "TID"]

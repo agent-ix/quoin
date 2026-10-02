@@ -141,7 +141,7 @@ wrong, so the second pass can afford recall the deterministic pass cannot.
 | FR-028-AC-12 | Strategy selection reads `property` and is unchanged by any `shape` value                                               | Inspection      |
 
 > **CR-001 note (2026-08-13):** This requirement shipped in
-> `@agent-ix/quoin@0.12.0`/`0.12.1` with a **review queue** the requirement never
+> an earlier `@agent-ix/quoin` release with a **review queue** the requirement never
 > asked for. [#46](https://github.com/agent-ix/quire-rs/issues/46) said, in full:
 > *"`extraction: candidate` → generate, and mark the test as requiring review."*
 > What shipped was `tests/props/QUEUE.md` — a report committed into a test tree,
