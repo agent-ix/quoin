@@ -13,4 +13,4 @@ future contributions across the org.
 
 ## Questions
 
-Open an issue, or find us on [Discord](https://discord.gg/6qsdhSPE).
+Open an issue, or find us on [Discord](https://discord.gg/k8DVhuYBR2).
