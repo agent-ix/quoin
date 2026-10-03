@@ -5,6 +5,7 @@
 # Quoin
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/6qsdhSPE)
+[![Agent IX Plugins](https://github.com/agent-ix/agent-plugins/raw/refs/heads/main/assets/agent-ix-plugins.svg)](https://github.com/agent-ix/agent-plugins)
 [![ISO/IEC/IEEE 29148](https://img.shields.io/badge/ISO%2FIEC%2FIEEE-29148%20aligned-0052CC)](https://www.iso.org/standard/72089.html)
 [![Open Knowledge Format](https://img.shields.io/badge/OKF-Open%20Knowledge%20Format-4285F4)](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
 
@@ -150,8 +151,8 @@ contract](./docs/native-release.md).
 Run these inside Claude Code:
 
 ```text
-/plugin marketplace add agent-ix/quoin
-/plugin install quoin@quoin
+/plugin marketplace add agent-ix/agent-plugins
+/plugin install quoin@agent-ix-public
 ```
 
 </details>
@@ -160,8 +161,8 @@ Run these inside Claude Code:
 <summary><b>OpenAI Codex</b></summary>
 
 ```bash
-codex plugin marketplace add agent-ix/quoin
-codex plugin add quoin
+codex plugin marketplace add agent-ix/agent-plugins
+codex plugin add quoin@agent-ix-public
 ```
 
 Or browse and install quoin from the `/plugins` menu inside the Codex TUI.
@@ -285,3 +286,21 @@ The technical specification for this library was itself authored with the `spec-
 quoin is part of the Agent-IX ecosystem built on these core libraries:
 
 - [quire-cli](https://github.com/agent-ix/quire-cli), the static-binary CLI wrapping the Quire engine
+
+The standalone marketplace remains available for existing installations. When
+switching an installed plugin, follow the [migration guide](https://github.com/agent-ix/agent-plugins/blob/main/docs/migration.md)
+to avoid loading the old and new identities together.
+
+## Related Agent IX plugins
+
+Browse the [Agent IX public marketplace](https://github.com/agent-ix/agent-plugins)
+for independently installable Claude Code and Codex plugins:
+
+- [Quoin](https://github.com/agent-ix/quoin) authors, reviews, and plans specifications.
+- [Quire CLI](https://github.com/agent-ix/quire-cli) explores, writes, validates, links, and traces Markdown artifacts.
+- [Engineering Assurance](https://github.com/agent-ix/engineering-assurance) prepares governed assurance decisions and evidence.
+- [IX Flow](https://github.com/agent-ix/ix-flow) runs and authors resumable agent workflows.
+- [CLI Agent Evals](https://github.com/agent-ix/cli-agent-evals) runs and authors coding-agent evaluation suites.
+
+Plugin installation adds agent skills. Install each tool's CLI and any required
+Quire modules separately, following its own installation instructions.
