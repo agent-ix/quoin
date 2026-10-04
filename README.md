@@ -107,7 +107,14 @@ The default module set defines the spec archetypes and domain-object vocabulary.
 - **`spec-to-plan`** — convert StR/FR/NFR into a TDD project plan
 - **`spec-ideation`** — loose, exploratory drafting before formal authoring
 - **`spec-app-review`** / **`spec-object-review`** — application-spec and domain-object audits
+- **`gap-analysis`** — compare implemented behavior, requirements, and test evidence to find delivery gaps
+- **`assurance-status-report`** — report the state of an assurance campaign from recorded evidence
+- **`spec-architecture-evaluation`** — compare an implemented architecture with its stated boundaries and quality goals
+- **`spec-correctness`** — turn classified acceptance criteria into runnable property checks
+- **`spec-fuzz`** — create fuzz targets for requirements that call for fuzz evidence
 - Analysis lenses — focused review passes over a spec:
+  - **`spec-criterion-strength-analysis`** — check that acceptance criteria can fail meaningfully
+  - **`spec-ears-analysis`** — check requirement wording against EARS grammar
   - **`spec-integrity-analysis`** — completeness, consistency, and atomicity quality gates
   - **`spec-scope-boundary-analysis`** — system boundaries and responsibility allocation
   - **`spec-dependency-analysis`** — separates enablement work from feature work
