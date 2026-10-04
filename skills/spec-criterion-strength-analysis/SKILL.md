@@ -5,6 +5,8 @@ description: Judge whether each acceptance criterion can actually fail, using Je
 
 # Criterion-Strength Analysis
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Specified by PLAT-837. Use this skill to judge whether an acceptance criterion
 **can actually fail**, as distinct from whether it is backed by a passing test.
 A spec can have every criterion tagged by a passing test and mean nothing, because the ACs were

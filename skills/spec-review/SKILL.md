@@ -5,6 +5,8 @@ description: Review requirements for quality, consistency, and completeness.
 
 # Review Requirements
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Use this skill to validate requirements artefacts before implementation.
 
 ## Checklist

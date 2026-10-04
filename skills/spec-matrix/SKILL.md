@@ -5,6 +5,8 @@ description: Read the computed Test Matrix (`quire matrix` / `quoin matrix`) and
 
 # Close Test Matrix Gaps
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 The Test Matrix is **computed**, never written. `quire matrix` derives it on every run from
 the spec's acceptance criteria and the trace tags in the source tree; `quoin matrix` adds
 whether a passing run backs each criterion. This skill reads that matrix and makes the one

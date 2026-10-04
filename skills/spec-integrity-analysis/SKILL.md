@@ -5,6 +5,8 @@ description: Perform quality gate analysis on ISO-style specifications to ensure
 
 # Specification Integrity Analysis
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 This skill performs a quality gate analysis on specifications (User Stories, FR/SR, StR, NFR) before task generation.
 
 ## Process

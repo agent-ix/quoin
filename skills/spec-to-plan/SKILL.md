@@ -5,6 +5,8 @@ description: Convert ISO spec requirements (StR, FR, NFR) into a TDD-based proje
 
 # Spec to Plan
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 This skill provides a structured workflow for converting ISO/IEC/IEEE 29148 compliant specifications into an executable, dependency-aware project plan with parallel execution tracks and quality gates.
 
 A project may hold **multiple plans** — each a named group of tasks (e.g. "core app",

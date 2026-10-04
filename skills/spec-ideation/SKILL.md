@@ -5,6 +5,8 @@ description: Use for loose, exploratory specification drafting before formal aut
 
 # Spec Ideation
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 ## Mode
 
 This is a config-only skill. Do not create workflow state, call workflow

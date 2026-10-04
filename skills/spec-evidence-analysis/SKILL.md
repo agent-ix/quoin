@@ -5,6 +5,8 @@ description: Recommend verification methods per obligation from the declared cat
 
 # Verification & Evidence Strategy
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Every requirement needs a defined verification method and a concrete artifact
 that proves it was verified. This skill recommends the method **from the
 declared catalog**, and flags where the authored choice disagrees.

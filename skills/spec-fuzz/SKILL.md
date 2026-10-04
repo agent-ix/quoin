@@ -11,6 +11,8 @@ description: >-
 
 # Spec Fuzz
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Use this skill to **generate fuzz targets from robustness requirements you already wrote**.
 
 *"Never panic on arbitrary input"* and *"reject malformed frontmatter"* are property-shaped

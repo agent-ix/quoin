@@ -5,6 +5,8 @@ description: Produce an evidence-backed status report for a Quoin/Quire epic, ph
 
 # Assurance Status Report
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Report what the retained evidence proves about a named goal. Use Quoin for
 measurement meaning and history, Quire for producer provenance, git for local
 state, and GitHub for current ticket and promotion state. Do not recreate their

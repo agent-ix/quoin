@@ -5,6 +5,8 @@ description: Evaluate a repository's implemented architecture against its stated
 
 # Architecture Evaluation
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Evaluate the architecture that exists, including its specifications and code. Do not infer health from diagrams, test counts, or a single aggregate score.
 
 ## Evaluation

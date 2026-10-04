@@ -5,6 +5,8 @@ description: Create or update spec artifacts from a design or change request. Au
 
 # Specify
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Use this skill when turning an agreed design, feature, or change request into
 spec artifacts. `specify` decides **which artifacts the request needs**, authors
 each one **as its own file** using the catalog templates, and validates.

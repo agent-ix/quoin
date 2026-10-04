@@ -5,6 +5,8 @@ description: Audit spec domain objects, cross-references, and entity completenes
 
 # Spec Object Review
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Audit a codebase's spec domain objects for completeness, cross-reference integrity, and alignment with the object-type-guide format.
 
 ## When to Use
