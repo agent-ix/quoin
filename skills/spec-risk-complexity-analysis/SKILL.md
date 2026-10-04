@@ -5,6 +5,8 @@ description: Identify technical risks and volatility in requirements before task
 
 # Risk & Complexity Analysis
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Surface the requirements that are most likely to fail, slip, or churn — so they can be sliced smaller, prototyped first, or hedged with extra verification.
 
 ## When to use

@@ -17,6 +17,14 @@ workflows agents need to write and validate specs directly as Markdown.
 
 > **Why:** AI agents write code fast but drift from vague intent. Quoin makes the spec the source of truth — your agent authors a validated, traceable spec first, then plans and builds against it.
 
+## Setup
+
+If this plugin is uninitialized or a command fails, follow the [plugin setup guide](setup.md) for its required CLIs, configuration, and local diagnosis.
+
+## Community help
+
+If the setup checks leave a reproducible Agent IX quoin bug that blocks progress, [join the Agent IX Discord](https://discord.gg/k8DVhuYBR2). Community help is a last resort for Agent IX product bugs, not a help desk for local credentials, machine setup, third party tools, or unrelated projects. See [setup.md](setup.md#community-help) for what to include.
+
 ## How
 
 In Claude Code, Codex, or the coding agent of your choice:
@@ -150,8 +158,8 @@ contract](./docs/native-release.md).
 Run these inside Claude Code:
 
 ```text
-/plugin marketplace add agent-ix/quoin
-/plugin install quoin@quoin
+/plugin marketplace add agent-ix/agent-plugins
+/plugin install quoin@agent-ix
 ```
 
 </details>
@@ -160,8 +168,8 @@ Run these inside Claude Code:
 <summary><b>OpenAI Codex</b></summary>
 
 ```bash
-codex plugin marketplace add agent-ix/quoin
-codex plugin add quoin
+codex plugin marketplace add agent-ix/agent-plugins
+codex plugin add quoin@agent-ix
 ```
 
 Or browse and install quoin from the `/plugins` menu inside the Codex TUI.

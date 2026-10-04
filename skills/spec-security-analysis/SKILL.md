@@ -5,6 +5,8 @@ description: Analyze specifications and implementations to identify applicable s
 
 # Security Compliance Analysis
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Analyze a component's specification and implementation to generate comprehensive security compliance traceability. Apply ALL security standards for maximum coverage - overlapping controls strengthen rather than conflict.
 
 ## Mandatory Standards

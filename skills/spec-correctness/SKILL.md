@@ -9,6 +9,8 @@ description: Turn classified acceptance criteria into runnable property tests. C
 
 # Spec Correctness
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Use this skill to **generate property tests from acceptance criteria you already wrote**.
 
 `quire properties` classifies every binding acceptance criterion by property shape and

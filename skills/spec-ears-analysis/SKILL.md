@@ -5,6 +5,8 @@ description: Analyze requirement statements (FR/NFR/StR) for EARS requirement-gr
 
 # EARS Requirement-Grammar Analysis
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 This skill analyzes the natural-language **requirement statements** in a spec
 (FR Description/Behavior/Constraints, NFR Statement, StR Stakeholder Need)
 against **EARS** (Easy Approach to Requirements Syntax), and authors one

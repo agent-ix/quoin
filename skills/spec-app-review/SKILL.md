@@ -5,6 +5,8 @@ description: Review an application-type spec for completeness against UI renderi
 
 # Review Application Specification
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Validate a `component_type: application` spec against what the spec-editor-ui **actually renders** and the structural requirements from `specify`.
 
 ## When to Use

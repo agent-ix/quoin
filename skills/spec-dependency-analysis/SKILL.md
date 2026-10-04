@@ -5,6 +5,8 @@ description: Analyze dependencies and separate enablement from feature work.
 
 # Dependency & Ordering Analysis
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Identify prerequisite relationships between requirements so work can be sequenced. The deliverable is a directed acyclic graph (DAG) of FRs/StRs/NFRs in **logical order**, not a schedule.
 
 ## When to use

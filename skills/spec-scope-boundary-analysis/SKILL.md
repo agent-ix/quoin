@@ -5,6 +5,8 @@ description: Define system boundaries and allocate responsibilities for ISO-styl
 
 # Scope & Boundary Analysis
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Define what the system owns, what it consumes from outside, and which component owns each requirement.
 
 ## When to use

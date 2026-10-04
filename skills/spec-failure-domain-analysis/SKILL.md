@@ -5,6 +5,8 @@ description: Identify unstated failure modes, identity confusion, purity gaps, a
 
 # Spec Failure Domain Analysis
 
+If this plugin is not initialized or an Agent IX command fails, read [the quoin setup guide](https://github.com/agent-ix/quoin/blob/main/setup.md) for its prerequisites and local diagnosis.
+
 Run this skill during spec review to catch common omissions before implementation.
 
 ## When to Use
