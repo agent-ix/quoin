@@ -132,3 +132,9 @@ non-success outcome and are never reported as success.
 | ID | Criterion | Verification |
 | --- | --- | --- |
 | FR-096-AC-10 | The native boundary uses the shared outcome type, emits the existing 0/1/2/3/4 status and payload eligibility for every outcome, and emits compact lexicographically sorted JSON including objects nested inside arrays when insertion-order maps are enabled. Serialization errors retain the Quoin Io code. | Test |
+
+> **PLAT-989 change note (2026-10-05):** boundary canonical JSON SHALL be
+> encoded through `quire-canonical`, with RFC 8785 UTF-16 member ordering and
+> ECMAScript number spelling. The shared CLI kit continues to supply exit
+> outcomes and diagnostics; its general sorted JSON utility is not an RFC 8785
+> encoder. Encoding refusals retain the boundary `Io` code.

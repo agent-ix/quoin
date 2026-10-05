@@ -2902,6 +2902,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "quire-canonical"
+version = "0.3.0"
+source = "git+https://github.com/agent-ix/quire-canonical?rev=5dc4e12db63b8fae647825b4e4b78df9b6dcadfe#5dc4e12db63b8fae647825b4e4b78df9b6dcadfe"
+dependencies = [
+ "quire-canonical-derive",
+ "ryu-js",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror",
+]
+
+[[package]]
+name = "quire-canonical-derive"
+version = "0.3.0"
+source = "git+https://github.com/agent-ix/quire-canonical?rev=5dc4e12db63b8fae647825b4e4b78df9b6dcadfe#5dc4e12db63b8fae647825b4e4b78df9b6dcadfe"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.5",
+]
+
+[[package]]
 name = "quire-code-parse"
 version = "0.2.2"
 source = "git+https://github.com/agent-ix/quire-code-rs?rev=b58164a8cf4e6543d7bc5f5f2042ea792612ed16#b58164a8cf4e6543d7bc5f5f2042ea792612ed16"
@@ -3072,6 +3095,7 @@ version = "0.28.1"
 dependencies = [
  "engineering-assurance",
  "ix-cli-kit",
+ "quire-canonical",
  "quoin-assurance",
  "quoin-auditor",
  "quoin-catalog",
@@ -3277,6 +3301,7 @@ version = "0.28.1"
 dependencies = [
  "blake3",
  "libc",
+ "quire-canonical",
  "ryu-js",
  "sha2 0.10.9",
  "thiserror",

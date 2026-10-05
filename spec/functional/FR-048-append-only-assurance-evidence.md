@@ -53,3 +53,10 @@ separate versioned decision and migration plan.
 
 - FR-030 supplies the evidence-store root and canonical serialization rules.
 - FR-044 remains the measurement-collection provenance boundary.
+
+> **PLAT-989 change note (2026-10-05):** Canonical record content for new
+> identities means RFC 8785 bytes from `quire-canonical`, excluding `recordId`.
+> The indented store representation remains a storage/display format. This
+> changes legacy experiment and operational record identities, paths and
+> citations; adoption cannot claim the NFR-025 zero-change cutover gate without
+> resolving that compatibility decision. Existing records are not rewritten.

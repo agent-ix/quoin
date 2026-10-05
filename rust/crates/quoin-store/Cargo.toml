@@ -20,6 +20,7 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+quire-canonical = { workspace = true }
 # Exact pins, for the reason the workspace manifest states: a caret range makes
 # the gate a claim about whatever resolved that morning, `=` makes it a claim
 # about these bytes. These three are used by this crate alone, so they are

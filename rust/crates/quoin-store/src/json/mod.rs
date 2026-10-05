@@ -18,7 +18,7 @@
 ///
 /// # Why a bound exists
 ///
-/// The reader and both writers are recursive, and Rust does not grow the
+/// The reader and display writer are recursive, and Rust does not grow the
 /// stack. Without a bound, a document of 40,000 `[` ends the process with
 /// `fatal runtime error: stack overflow` (SIGABRT, exit 134) — an abort, not a
 /// refusal, on a path that reads untrusted evidence.
@@ -46,8 +46,10 @@
 /// deepest store file nests in the low tens.
 pub const MAX_NESTING_DEPTH: usize = 1_000;
 
+pub mod canonical;
 pub mod escape;
-pub mod jcs;
+/// Compatibility path for callers of the former local JCS writer.
+pub use canonical as jcs;
 pub mod number;
 pub mod order;
 pub mod parse;

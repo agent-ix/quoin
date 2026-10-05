@@ -331,6 +331,8 @@ unknown-git = "deny"
 # git source. A fifth git dependency is listed here in the commit that adds it,
 # or this check refuses it.
 allow-git = [
+    # PLAT-989: shared RFC 8785 encoding, also used by the core boundary.
+    "https://github.com/agent-ix/quire-canonical",
     "https://github.com/agent-ix/ix-cli-kit",
     "https://github.com/agent-ix/quire-rs",
     "https://github.com/agent-ix/engineering-assurance",
