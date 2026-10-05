@@ -57,6 +57,6 @@ separate versioned decision and migration plan.
 > **PLAT-989 change note (2026-10-05):** Canonical record content for new
 > identities means RFC 8785 bytes from `quire-canonical`, excluding `recordId`.
 > The indented store representation remains a storage/display format. This
-> changes legacy experiment and operational record identities, paths and
-> citations; adoption cannot claim the NFR-025 zero-change cutover gate without
-> resolving that compatibility decision. Existing records are not rewritten.
+> changes experiment and operational record identities, paths and citations.
+> The operator approved this identity change on 2026-10-05; preservation of
+> legacy identities is not required. No record fields or schema versions change.
