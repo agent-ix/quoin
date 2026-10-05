@@ -3,8 +3,8 @@
 //! The evidence store's on-disk form: `canonicalJson`.
 //!
 //! Two-space indent, `": "` between name and value, one trailing newline. It
-//! is **not** JCS and the two must never be confused: JCS is what digests are
-//! taken over, this is what `spec/evidence/**.json` contains so that a pull
+//! is **not** JCS and the two must never be confused: RFC 8785 is what canonical-domain digests are
+//! taken over; no canonical-domain identity hashes this pretty form. This is what `spec/evidence/**.json` contains so that a pull
 //! request diff of the store *is* the per-PR delta.
 //!
 //! The member order is the subtle part. The oracle is
