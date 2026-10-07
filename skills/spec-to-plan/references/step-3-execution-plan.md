@@ -141,15 +141,12 @@ relationships:
 - Mark blocked tasks with `status: blocked` and a `depends_on` edge to the blocker
 - Mark parallel-ready tasks (`status: not_started`, no unmet `depends_on`) so agents know they can start
 
-### 7. Write the bundle index and log
+### 7. Write the bundle index
 
 - **`index.md`** (`type: index`): update the `## Contents` link list so it points at
   `plan.md` and every `Task-NNN-*.md` just created — one bullet per file with a short
   description. This is the bundle's table of contents (replaces the old
   `tasks/README.md`).
-- **`log.md`** (`type: log`): append a dated `## History` entry recording this
-  planning pass (e.g. "Decomposed into 12 tasks across tracks A/B/C/S/J + 3 gates").
-  Use today's real calendar date.
 
 Coordination notes (what to freeze, what not to start early, merge sequencing) go in
 the `plan.md` body — see the Output Format below.

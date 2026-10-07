@@ -43,9 +43,8 @@ for the same effort**:
 - **Preserve progress.** Leave `status` on tasks already `in_progress`/`done` intact.
 - **Update the plan doc + edges.** Extend `plan.md`'s `relationships: references` and
   body (dependency graph, tracks) to include the new work.
-- **Refresh index + log.** Update `index.md`'s `## Contents` for any added/removed
-  task files, and append a dated `log.md` `## History` entry describing the change
-  (e.g. "Regenerated after FR-008 added: +Task-013").
+- **Refresh index.** Update `index.md`'s `## Contents` for any added/removed
+  task files.
 
 ### 2. Create a new plan bundle
 
@@ -90,21 +89,6 @@ for the same effort**:
      * [Plan-003: Packaging & distribution](./plan.md) - Plan overview, DAG, tracks, gates.
      ```
 
-   - `log.md` — `type: log`, body `## History` (dated entries; seed with creation):
-
-     ```markdown
-     ---
-     type: log
-     title: "Plan-003 — Update Log"
-     description: "Chronological log of changes to the Plan-003 bundle."
-     ---
-     # Plan-003 — Update Log
-
-     ## History
-
-     * **<YYYY-MM-DD>** — Plan created from spec; scoped to FR-008, FR-009, NFR-004.
-     ```
-
    - `tasks/` — empty directory (Step 3 populates it).
 
 ### 3. Hand off
@@ -115,7 +99,5 @@ explicitly so Steps 1–3 — and any downstream skill — write to the right pl
 ## Notes
 
 - **Never write to a second plan's files** during this run. One run targets one bundle.
-- Use **today's date** (real calendar date) in `log.md`; do not invent or reuse a
-  date from the skeleton.
-- `index.md`/`log.md` follow the reserved OKF archetypes from `spec-artifacts-iso`
-  (`skeletons/index.md`, `skeletons/log.md`).
+- `index.md` follows the reserved OKF archetype from `spec-artifacts-iso`
+  (`skeletons/index.md`).
