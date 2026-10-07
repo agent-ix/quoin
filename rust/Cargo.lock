@@ -2915,8 +2915,8 @@ dependencies = [
 
 [[package]]
 name = "quire-rs"
-version = "0.50.1"
-source = "git+https://github.com/agent-ix/quire-rs?rev=8ab0d509db3a067eafd5c03f657b51eb2aaab7f2#8ab0d509db3a067eafd5c03f657b51eb2aaab7f2"
+version = "0.50.2"
+source = "git+https://github.com/agent-ix/quire-rs?rev=d6376b2486d16e4d78c8007b0f1003069373e3cc#d6376b2486d16e4d78c8007b0f1003069373e3cc"
 dependencies = [
  "agent-ix-semantic-schema",
  "globset",
@@ -2939,7 +2939,7 @@ dependencies = [
 [[package]]
 name = "quire-rust-extraction"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=8ab0d509db3a067eafd5c03f657b51eb2aaab7f2#8ab0d509db3a067eafd5c03f657b51eb2aaab7f2"
+source = "git+https://github.com/agent-ix/quire-rs?rev=d6376b2486d16e4d78c8007b0f1003069373e3cc#d6376b2486d16e4d78c8007b0f1003069373e3cc"
 dependencies = [
  "quire-code-parse",
 ]

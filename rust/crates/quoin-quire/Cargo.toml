@@ -39,7 +39,7 @@ workspace = true
 # declaration of it here is how a workspace ends up with two validators that
 # agree by version number rather than by construction.
 quoin-jsonschema = { workspace = true }
-quire-rs = { version = "=0.50.1", git = "https://github.com/agent-ix/quire-rs", rev = "8ab0d509db3a067eafd5c03f657b51eb2aaab7f2" }
+quire-rs = { version = "=0.50.2", git = "https://github.com/agent-ix/quire-rs", rev = "d6376b2486d16e4d78c8007b0f1003069373e3cc" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
