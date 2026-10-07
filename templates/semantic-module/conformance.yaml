@@ -43,7 +43,6 @@ all:
     - tests/fixtures/legacy/
     - spec/spec.md
     - spec/index.md
-    - spec/log.md
     - spec/stakeholder/index.md
     - spec/usecase/index.md
     - spec/functional/index.md

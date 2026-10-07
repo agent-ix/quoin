@@ -1,6 +1,6 @@
 ---
 name: spec-to-plan
-description: Convert ISO spec requirements (StR, FR, NFR) into a TDD-based project plan with dependency analysis, parallel execution tracks, quality gates, and task decomposition. Selects or starts a plan and writes a frontmatter-typed plan bundle under plan/<Plan-id>-<slug>/ (Plan + Task + index + log).
+description: Convert ISO spec requirements (StR, FR, NFR) into a TDD-based project plan with dependency analysis, parallel execution tracks, quality gates, and task decomposition. Selects or starts a plan and writes a frontmatter-typed plan bundle under plan/<Plan-id>-<slug>/ (Plan + Task + index).
 ---
 
 # Spec to Plan
@@ -11,9 +11,9 @@ This skill provides a structured workflow for converting ISO/IEC/IEEE 29148 comp
 
 A project may hold **multiple plans** — each a named group of tasks (e.g. "core app",
 "packaging", "a11y hardening"). Every plan is a self-describing **bundle** under
-`plan/<Plan-id>-<slug>/` containing an `index.md`, a `log.md`, the `plan.md` itself,
-and a `tasks/` directory. Plans, tasks, and the index/log files are
-**frontmatter-typed** (`Plan`, `Task`, `index`, `log`) so the dependency graph and
+`plan/<Plan-id>-<slug>/` containing an `index.md`, the `plan.md` itself,
+and a `tasks/` directory. Plans, tasks, and the index are
+**frontmatter-typed** (`Plan`, `Task`, `index`) so the dependency graph and
 all task metadata are machine-parseable and quire-validatable.
 
 ## Purpose
@@ -42,7 +42,7 @@ Failure to meet these conditions WILL result in unstable tasking. If any conditi
 ## Steps
 All steps required!
 
-0.  **[Plan Selection](references/step-0-plan-selection.md)**: Select an existing plan to continue, or start a new one. Skip only if the target plan is already fixed in this session's context. Scaffolds the bundle (`index.md`, `log.md`, `tasks/`).
+0.  **[Plan Selection](references/step-0-plan-selection.md)**: Select an existing plan to continue, or start a new one. Skip only if the target plan is already fixed in this session's context. Scaffolds the bundle (`index.md`, `tasks/`).
 1.  **[Analysis](references/step-1-analysis.md)**: Analyze the spec structure and map dependencies into the bundle's `plan.md`.
 2.  **[Test Plan](references/step-2-test-plan.md)**: Generate the list of required tests.
 3.  **[Execution Plan](references/step-3-execution-plan.md)**: Derive dependency graph, critical path, parallel tracks, quality gates, and task decomposition into frontmatter-typed `Task` files.
@@ -63,8 +63,6 @@ This skill produces or updates a **plan bundle** at `<project_root>/plan/<Plan-i
     test traces). The body holds the human sections (Scope/Subtasks/Deliverables/Notes).
 -   `index.md` (`type: index`): `## Contents` link list to `plan.md` and every task —
     the bundle's table of contents.
--   `log.md` (`type: log`): `## History` of dated plan lifecycle events (plan created,
-    tasks added, status changes).
 
 Validate the bundle with:
 `quire validate --scope <project_root> "plan/**/*.md"`

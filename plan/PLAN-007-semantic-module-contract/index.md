@@ -16,4 +16,3 @@ okf_version: "0.1"
 - [TASK-042](./tasks/TASK-042-package-manifest-derivation-and-registry-pins.md) - Derive `package-manifest.json` and pin export digests.
 - [TASK-043](./tasks/TASK-043-non-disruption-gates.md) - NFR-017 gates.
 - [TASK-044](./tasks/TASK-044-review-gap-analysis-and-pr.md) - Review, gap analysis, PR.
-- [Update log](./log.md) - Chronological plan lifecycle.
