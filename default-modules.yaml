@@ -31,7 +31,7 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-app
       path: spec_artifacts_app
-      ref: e0432e4f12ca1caa31b0fbc3a2f3efb4d83cd8ba
+      ref: bc8a24bce4db0b71a2bd5bc80c934f2956b452c7
 
   - name: spec-artifacts-process
     defaultEnabled: true
