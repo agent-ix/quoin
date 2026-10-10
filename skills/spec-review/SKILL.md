@@ -59,8 +59,8 @@ The seven analyses:
         do not accept an existing use as a reason to keep it.
 3.  Selected Analyses:
     -   Run each analysis the user chose. Prefer running them **in parallel**.
-    -   **Fetch the template from quoin** once with `quoin write --types SpecReview` — use its
-        skeleton + schema as the contract (do not invent the format).
+    -   **Fetch the template from quoin** once with `quoin write . --types SpecReview`
+        from the target repository — use its skeleton + schema as the contract.
     -   Write **one `SpecReview` document per analysis** to `spec/reviews/<analysis>.md`
         (plus `spec/reviews/base.md` for the base checklist). Findings go in a validated
         `## Findings` table (`| ID | Severity | Summary | Refs |`, `FND-NNN` ids, Severity ∈
@@ -88,8 +88,9 @@ acceptance until every selected analysis has produced a validated `SpecReview` d
 `selected_analyses_covered` gate). Use it when you want the choice enforced rather than
 trusted to discipline, and always when an applicable profile uses
 `review_selection.mode: require`. Record the profile path, mode, and profile analysis
-set during intake. The per-analysis `SpecReview` structure + the findings table are
-defined in the workflow skill (`workflow-assets/skills/review/SKILL.md`).
+set during intake. Use the document structure and `## Findings` table described in
+the Process above, with the installed `SpecReview` skeleton and schema from
+`quoin write . --types SpecReview` in the target repository.
 
 ## Common Issues
 

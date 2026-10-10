@@ -81,7 +81,7 @@ copy the `ix-board` rule across by reflex.
    `adverse_case_coverage` `score`. This step needs the client the later task
    adds; nothing here performs it.
 5. **Author the `SpecReview`.** Fetch the template once with
-   `quoin write --types SpecReview`. Write one document to
+   `quoin write . --types SpecReview`. Write one document to
    `spec/reviews/criterion-strength.md` with `analysis: criterion-strength` in
    the frontmatter, a `## Summary`, and a validated `## Findings` table
    (`| ID | Severity | Summary | Refs |`, `FND-NNN` ids, Severity ∈
