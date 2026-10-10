@@ -23,7 +23,7 @@ run declined to test. That, and only that, is what this artifact is for.
 ## Fetch the template, then author
 
 ```
-quoin write --types SpecReview
+quoin write . --types SpecReview
 ```
 
 If `quoin write` is unavailable in the working tree, read the skeleton directly from

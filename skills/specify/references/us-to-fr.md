@@ -2,7 +2,7 @@
 
 Load this when a request involves turning user stories into functional
 requirements. It carries the *reasoning* for the derivation; the per-FR section
-rules come from the `FR` template (`quoin write --types FR`).
+rules come from the `FR` template (`quoin write . --types FR`).
 
 ## Rules
 
@@ -28,7 +28,7 @@ rules come from the `FR` template (`quoin write --types FR`).
    - Full list + relationship verbs: `spec-object-review`'s
      `references/object-type-guide.md`; inspect any type with
      `quoin catalog show <type>`.
-3. **Author** each FR as its own file (`quoin write --types FR` for the contract),
+3. **Author** each FR as its own file (`quoin write . --types FR` for the contract),
    and link it back to the story via frontmatter `relationships:`
    (`type: implements`, target the `US-XXX`).
 4. **Specify** inputs/outputs (typed and validated), error handling (failure

@@ -2946,7 +2946,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-assurance"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "quoin-evidence",
@@ -2960,7 +2960,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-auditor"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "proptest",
  "quoin-combinatorial",
@@ -2980,7 +2980,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-catalog"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "quoin-semantic",
  "quoin-yaml",
@@ -2992,7 +2992,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-change-assurance"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "quoin-jsonschema",
@@ -3005,7 +3005,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-cli"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "clap",
  "engineering-assurance",
@@ -3031,7 +3031,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-combinatorial"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "proptest",
  "quoin-store",
@@ -3043,7 +3043,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-completeness"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "quoin-yaml",
  "schemars",
@@ -3055,7 +3055,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-config"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "schemars",
@@ -3068,7 +3068,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-core"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "ix-cli-kit",
@@ -3098,7 +3098,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-delivery"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "flate2",
  "reqwest 0.13.5",
@@ -3115,7 +3115,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "quoin-quire-types",
  "quoin-store",
@@ -3129,7 +3129,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence-types"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "serde",
  "serde_json",
@@ -3137,7 +3137,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-finding-types"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "quoin-evidence",
  "schemars",
@@ -3147,7 +3147,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-graph-analysis"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "quoin-evidence",
  "quoin-finding-types",
@@ -3160,7 +3160,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-jev"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "async-trait",
  "engineering-assurance",
@@ -3185,7 +3185,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-jsonschema"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "jsonschema 0.56.0",
  "quoin-measurement",
@@ -3195,7 +3195,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "proptest",
@@ -3211,7 +3211,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement-graph"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "quoin-graph-analysis",
  "quoin-measurement",
@@ -3225,7 +3225,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-modules"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "gix",
  "quoin-semantic",
@@ -3239,7 +3239,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "quire-rs",
  "quoin-jsonschema",
@@ -3250,7 +3250,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire-types"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "schemars",
  "serde",
@@ -3260,7 +3260,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-semantic"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "quoin-jsonschema",
  "quoin-yaml",
@@ -3273,7 +3273,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-store"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "blake3",
  "libc",
@@ -3284,7 +3284,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-validators"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "regex",
  "schemars",
@@ -3296,7 +3296,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-yaml"
-version = "0.28.3"
+version = "0.28.4"
 dependencies = [
  "saphyr",
  "serde_json",

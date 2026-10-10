@@ -2,7 +2,7 @@
 
 Load this when a request involves integration tests — i.e. the system talks to
 external services (HTTP APIs, event buses, databases, third-party/cloud APIs).
-The per-section shape comes from the `IT` template (`quoin write --types IT`);
+The per-section shape comes from the `IT` template (`quoin write . --types IT`);
 this file carries the *reasoning and reality rules* that the template can't
 enforce.
 
@@ -50,7 +50,7 @@ Every IT MUST include acceptance criteria from **both** categories:
 ## Process
 
 1. List the external dependencies from the codebase (the integration points).
-2. Take the next `IT-XXX`; get the contract with `quoin write --types IT`.
+2. Take the next `IT-XXX`; get the contract with `quoin write . --types IT`.
 3. Fill the template: Target Integration (service + protocol), Preconditions
    (environment + data state), Test Data (`TD-XXX` fixtures with rationale),
    Execution Plan (atomic steps, each with a timeout and `IT-XXX-SC-XX` success

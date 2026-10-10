@@ -27,7 +27,7 @@ the seven analyses — and produces one `SpecReview` document per selected analy
 under `spec/reviews/`. Each doc is a validated artifact: a `## Summary` plus a
 `## Findings` table whose `Severity` column is constrained to `low|medium|high`.
 The author keeps direct authoring, but two guardrails keep quality stable over
-many uses: the agent fetches the template from quoin (`quoin write --types
+many uses: the agent fetches the template from quoin (`quoin write . --types
 SpecReview`) rather than inventing the format, and validates the output with
 `quire`. A coverage gate stops acceptance until every selected analysis has a
 recorded, validated doc.

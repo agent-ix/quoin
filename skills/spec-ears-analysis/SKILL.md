@@ -59,7 +59,7 @@ form the lens.
 3.  **Author the SpecReview.** Fetch the template once:
 
     ```bash
-    quoin write --types SpecReview
+    quoin write . --types SpecReview
     ```
 
     Write one document to `spec/reviews/ears-conformance.md` with
