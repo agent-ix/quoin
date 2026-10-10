@@ -22,16 +22,16 @@ use super::CODE;
 /// `None` when the document does not state it.
 ///
 /// Engineering-assurance's schema rules that EA's types cannot carry are
-/// enforced here too (FR-024-AC-8): a `gate` plan must state both lists, and
-/// an `apparatus-edit` control over no declared apparatus guards nothing.
-/// There is no exception for a gate plan written before FR-024: a gate that
-/// names nothing it protects gives credit a changed answer key can earn.
+/// enforced here too (FR-024-AC-8): a `gate` plan must state negative controls,
+/// and an `apparatus-edit` control over no declared apparatus guards nothing.
+/// A gate over independently produced admitted evidence can omit the apparatus
+/// list; a plan with an execution procedure must protect it (in [`super`]).
 ///
 /// # Errors
 ///
 /// [`crate::error::MeasurementErrorCode::PlanInvalid`] when either member is
 /// present and EA refuses it, naming the member and carrying EA's reason,
-/// when a `gate` plan states either list not at all, and when an
+/// when a `gate` plan states no negative controls, and when an
 /// `apparatus-edit` control is declared with no `protected_apparatus`.
 pub(super) fn apparatus_from(
     path: &str,
@@ -61,16 +61,11 @@ pub(super) fn apparatus_from(
         })
         .transpose()?;
     if stage == MeasurementStage::Gate {
-        for (member, missing) in [
-            ("protected_apparatus", protected.is_none()),
-            ("negative_controls", controls.is_none()),
-        ] {
-            if missing {
-                return Err(MeasurementError::new(
-                    CODE,
-                    format!("{path}: a `gate` plan requires `{member}`"),
-                ));
-            }
+        if controls.is_none() {
+            return Err(MeasurementError::new(
+                CODE,
+                format!("{path}: a `gate` plan requires `negative_controls`"),
+            ));
         }
     }
     if protected.is_none()
