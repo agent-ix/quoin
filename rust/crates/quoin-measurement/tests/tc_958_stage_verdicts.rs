@@ -538,12 +538,10 @@ fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reac
 /// Provenance: PLAT-958
 #[test]
 fn tc_958_009_a_plan_without_an_objective_or_at_another_stage_is_unchanged() {
-    // A `gate` plan requires `protected_apparatus` and `negative_controls`
-    // (PLAT-975, FR-110-AC-1) whether or not it states an `objective`; this
-    // test is not about apparatus, so it carries the minimal lists that
-    // satisfy plan load and nothing else exercises them.
-    let gate_no_objective = "protected_apparatus:\n  - answers.json\nnegative_controls:\n  - kind: apparatus-edit\n    \
-         description: test-only\n";
+    // A gate over independently admitted evidence needs controls but no
+    // apparatus list (PLAT-1162, FR-110-AC-1).
+    let gate_no_objective = "negative_controls:\n  - kind: stale-evidence\n    \
+         description: admitted evidence names the subject version\n";
     for document in [
         plan_document("ratchet", "v1", ""),
         plan_document("gate", "v1", gate_no_objective),
