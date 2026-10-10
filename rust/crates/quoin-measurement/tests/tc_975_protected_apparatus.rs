@@ -256,7 +256,11 @@ fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
     let gate = |extra: &str| {
         let source = MemoryMeasurement::new().with_document(
             "spec/assurance/MP-975.md",
-            plan_with("gate", "threshold: 0.8", extra),
+            plan_with(
+                "gate",
+                "threshold: 0.8",
+                &format!("ground_truth_kind: mechanical\n{extra}"),
+            ),
         );
         load_measurement_plans(&source, PlanLoadOptions::default())
     };
