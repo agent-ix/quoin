@@ -580,6 +580,55 @@ fn an_expected_calibration_error_over_nothing_is_none_rather_than_zero() {
     assert!((ece - 0.45).abs() < 1e-9, "got {ece}");
 }
 
+/// SAPHO-21 IT-010: the ten synthetic probability observations have the same
+/// confidence and correctness values in Sapho and Quoin's `jev.ece-v1` grader.
+#[test]
+fn sapho_21_ten_case_ece_parity() {
+    let cases = [
+        (0.95, true),
+        (0.85, true),
+        (0.75, false),
+        (0.65, true),
+        (0.55, false),
+        (0.55, true),
+        (0.65, true),
+        (0.75, false),
+        (0.9, true),
+        (1.0, false),
+    ];
+    let rows: Vec<Graded> = cases
+        .into_iter()
+        .enumerate()
+        .map(|(index, (confidence, correct))| {
+            let (actual, verdict) = if correct {
+                ("support", Verdict::Primary)
+            } else {
+                ("not_support", Verdict::Wrong)
+            };
+            graded(
+                &format!("SAPHO-21-{index:02}"),
+                Tier::Clean,
+                "support",
+                actual,
+                verdict,
+                Some(confidence),
+            )
+        })
+        .collect();
+
+    let (buckets, without_confidence) = calibration(&rows);
+    assert_eq!(without_confidence, 0);
+    assert_eq!(buckets[9].count, 3);
+    assert_eq!(buckets[9].correct, 2);
+    assert!((buckets[9].mean_confidence().unwrap() - 0.95).abs() < 1e-9);
+    assert_eq!(buckets[8].count, 1);
+    assert_eq!(buckets[8].correct, 1);
+    assert!((buckets[8].mean_confidence().unwrap() - 0.85).abs() < 1e-9);
+
+    let ece = expected_calibration_error(&rows).unwrap();
+    assert!((ece - 0.33).abs() < 1e-9, "got {ece}");
+}
+
 /// Provenance: PLAT-917. M1's own definition: a finding that appears in one
 /// run and not the other is a change, so the denominator is every id either
 /// run produced.
