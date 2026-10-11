@@ -252,18 +252,22 @@ fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
         load_measurement_plans(&source, PlanLoadOptions::default())
             .expect_err("the plan load is refused")
     };
-    // A gate plan must state both lists (engineering-assurance FR-024-AC-8).
+    // A gate needs controls; apparatus is required when a control claims it.
     let gate = |extra: &str| {
         let source = MemoryMeasurement::new().with_document(
             "spec/assurance/MP-975.md",
-            plan_with("gate", "threshold: 0.8", extra),
+            plan_with(
+                "gate",
+                "threshold: 0.8",
+                &format!("ground_truth_kind: mechanical\n{extra}"),
+            ),
         );
         load_measurement_plans(&source, PlanLoadOptions::default())
     };
     let controls =
         "negative_controls:\n  - kind: apparatus-edit\n    description: the key is digested\n";
     for (extra, member) in [
-        (String::new(), "protected_apparatus"),
+        (String::new(), "negative_controls"),
         (controls.to_owned(), "protected_apparatus"),
         (PROTECTED.to_owned(), "negative_controls"),
     ] {
@@ -272,6 +276,8 @@ fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
         assert!(error.to_string().contains(member), "{extra}: {error}");
     }
     gate(&format!("{PROTECTED}{controls}")).expect("a gate plan stating both loads");
+    gate("negative_controls:\n  - kind: stale-evidence\n    description: admitted evidence names the subject version\n")
+        .expect("an independent evidence gate needs no authored apparatus list");
 
     for (extra, member) in [
         (
