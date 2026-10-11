@@ -1,0 +1,14 @@
+[
+  {
+    "case": "assurance-experiment-valid",
+    "legacy_id": "sha256:62eabd8e72073f5989db6d26ffeb5c385fa307164f34abe0b5bde7f36d8a647e",
+    "rfc8785_id": "sha256:2465ee5efdc4725e6d8153c00484fb3c9b8b92d1a753c0699d4d425d3ffc3aeb",
+    "rfc8785": "{\"design\":{\"comparisonMethod\":\"A/B\",\"corpusRefs\":[\"corpus/a\"],\"decisionRule\":\"p<0.05\",\"timeBox\":\"1d\"},\"hypothesis\":\"the adapter reads real output\",\"producerProvenance\":{\"artifacts\":[{\"digest\":\"sha256:3333333333333333333333333333333333333333333333333333333333333333\",\"name\":\"report.json\"}],\"capabilities\":[\"record\"],\"configurationDigest\":\"sha256:2222222222222222222222222222222222222222222222222222222222222222\",\"executableDigest\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"identity\":\"quoin\",\"schemaVersion\":\"producer-provenance-v1\",\"sourceRevision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceState\":\"clean\",\"version\":\"0.1.0\"},\"recordedAt\":\"2026-01-01T00:00:00Z\",\"result\":{\"evidenceRefs\":[\"runs/SUITE-A\"],\"status\":\"supported\",\"summary\":\"it did\"},\"schemaVersion\":\"experiment-record-v1\",\"subject\":{\"id\":\"FR-001\",\"kind\":\"requirement\",\"sourceRevision\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}"
+  },
+  {
+    "case": "assurance-operational-valid",
+    "legacy_id": "sha256:2e3e7e07afd3f62c355f78d48832562c1bc88929269dfa42ef904cd482634280",
+    "rfc8785_id": "sha256:6e6f1ada054d51836bfd9b404a1ae25a88f19c40b414bcca483d37d8319a8e1a",
+    "rfc8785": "{\"environment\":\"production\",\"observations\":[{\"evidenceRefs\":[\"metrics/1\"],\"interpretation\":\"within bounds\",\"signal\":\"latency\",\"unit\":\"ms\",\"value\":\"12\"}],\"outcome\":\"within_bounds\",\"producerProvenance\":{\"artifacts\":[{\"digest\":\"sha256:3333333333333333333333333333333333333333333333333333333333333333\",\"name\":\"report.json\"}],\"capabilities\":[\"record\"],\"configurationDigest\":\"sha256:2222222222222222222222222222222222222222222222222222222222222222\",\"executableDigest\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"identity\":\"quoin\",\"schemaVersion\":\"producer-provenance-v1\",\"sourceRevision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceState\":\"clean\",\"version\":\"0.1.0\"},\"recordedAt\":\"2026-01-01T00:00:00Z\",\"schemaVersion\":\"operational-evidence-record-v1\",\"subject\":{\"id\":\"quoin-core\",\"kind\":\"service\",\"sourceRevision\":\"cccccccccccccccccccccccccccccccccccccccc\"},\"window\":{\"endedAt\":\"2026-01-02T00:00:00Z\",\"startedAt\":\"2026-01-01T00:00:00Z\"}}"
+  }
+]

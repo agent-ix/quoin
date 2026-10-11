@@ -378,3 +378,56 @@ fn tc_456_101_every_ported_behaviour_family_is_represented() {
         assert!(count >= 3, "family {kind} carries only {count} case(s)");
     }
 }
+
+/// Literal migration vectors: parity of validated fields alone cannot verify
+/// record identities, paths, or successful lookup by the published identity.
+/// Trace: FR-100-AC-11
+#[test]
+fn plat_989_assurance_ids_and_paths_use_the_declared_rfc8785_identity() {
+    let vectors: Value =
+        serde_json::from_str(include_str!("golden/plat-989-assurance-identity.json")).unwrap();
+    let (corpus, _) = load();
+    for vector in vectors.as_array().unwrap() {
+        let name = vector["case"].as_str().unwrap();
+        let case = corpus.cases.iter().find(|case| case.name == name).unwrap();
+        let mut store = MemoryEvidence::new();
+        let expected = vector["rfc8785_id"].as_str().unwrap();
+        let legacy = vector["legacy_id"].as_str().unwrap();
+        let (id, path, found) = if case.input["record"] == "experiment" {
+            let stored = write_experiment_record(&mut store, &case.input["value"]).unwrap();
+            let found = quoin_evidence::assurance_records::read_experiment_record(&store, expected)
+                .unwrap()
+                .is_some();
+            assert!(
+                quoin_evidence::assurance_records::read_experiment_record(&store, legacy)
+                    .unwrap()
+                    .is_none()
+            );
+            (stored.record.record_id, stored.path, found)
+        } else {
+            let stored =
+                write_operational_evidence_record(&mut store, &case.input["value"]).unwrap();
+            let found = quoin_evidence::assurance_records::read_operational_evidence_record(
+                &store, expected,
+            )
+            .unwrap()
+            .is_some();
+            assert!(
+                quoin_evidence::assurance_records::read_operational_evidence_record(&store, legacy)
+                    .unwrap()
+                    .is_none()
+            );
+            (stored.record.record_id, stored.path, found)
+        };
+        assert_eq!(id, expected, "{name}");
+        assert_ne!(
+            id, legacy,
+            "{name}: the legacy identity must not pass unnoticed"
+        );
+        assert!(path.ends_with(&format!(
+            "sha256-{}.json",
+            expected.strip_prefix("sha256:").unwrap()
+        )));
+        assert!(found, "{name}: published identity cannot be read back");
+    }
+}

@@ -522,21 +522,15 @@ pub fn digest_record_pair_file_name(first: &str, second: &str) -> RecordFileName
     RecordFileName(sha256_hex(&joined))
 }
 
-/// Compute an assurance record's identity from the value it will be stored as.
+/// Compute an assurance record's identity over shared RFC 8785 bytes.
 ///
-/// Hashes [`canonical_json`](crate::json::pretty::canonical_json) — the
-/// two-space, key-sorted, newline-terminated form the evidence store writes —
-/// under SHA-256. Pass the record WITHOUT its `recordId` member: the id is
-/// taken over the record's content, and including it would make the identity
-/// depend on itself.
+/// Pass the record WITHOUT `recordId`, which cannot identify itself. The pretty
+/// store representation is display/storage only; it is not identity input.
 ///
 /// # Errors
-///
-/// As [`canonical_json`](crate::json::pretty::canonical_json): a value with no
-/// canonical spelling has no identity either.
+/// As [`canonical_bytes`].
 pub fn digest_assurance_record(value: &JsonValue) -> Result<AssuranceRecordId, StoreError> {
-    crate::json::pretty::canonical_json(value)
-        .map(|text| AssuranceRecordId(sha256_hex(text.as_bytes())))
+    canonical_bytes(value).map(|bytes| AssuranceRecordId(sha256_hex(&bytes)))
 }
 
 /// Digest a file's complete bytes under SHA-256, with the guards a digest over
@@ -842,33 +836,31 @@ mod tests {
         assert!(!DigestDomain::AssuranceRecordSha256.is_opaque_bytes());
     }
 
-    /// An assurance record's id is SHA-256 over the store's canonical JSON
-    /// text — the two-space, key-sorted, newline-terminated form — and not
-    /// over the RFC 8785 bytes the blake3 canonical domain uses.
-    ///
-    /// The literal below is the digest `src/evidence/assurance-records.ts`
-    /// computes for the same value, so a change to either serializer or to the
-    /// trailing newline renames every record in every store (NFR-025).
-    ///
+    /// Trace: FR-100-AC-11
+    #[test]
+    fn plat_989_assurance_identity_uses_rfc8785_bytes() {
+        let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
+        // Independently specified compact RFC text, including exact whitespace.
+        assert_eq!(
+            digest_assurance_record(&value).unwrap().as_hex(),
+            super::sha256_hex(br#"{"a":[true,null],"b":1}"#)
+        );
+    }
+
     /// Trace: FR-048-AC-1, FR-100-CON-4
     #[test]
-    fn tc_456_assurance_record_ids_hash_the_canonical_json_text() {
+    fn tc_456_assurance_record_ids_use_jcs_and_keep_their_stored_spelling() {
         let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
         let id = digest_assurance_record(&value).unwrap();
-        let text = crate::json::pretty::canonical_json(&value).unwrap();
-        assert_eq!(
-            text,
-            "{\n  \"a\": [\n    true,\n    null\n  ],\n  \"b\": 1\n}\n"
-        );
-        assert_eq!(
-            id.to_stored(),
-            format!("sha256:{}", super::sha256_hex(text.as_bytes()))
-        );
         assert_eq!(id.domain(), DigestDomain::AssuranceRecordSha256);
-        // Not the JCS bytes: a different question, and a different answer.
+        assert_eq!(id.to_stored(), format!("sha256:{}", id.as_hex()));
         assert_ne!(
             id.as_hex(),
-            super::sha256_hex(&canonical_bytes(&value).unwrap())
+            super::sha256_hex(
+                crate::json::pretty::canonical_json(&value)
+                    .unwrap()
+                    .as_bytes()
+            )
         );
         assert_eq!(
             AssuranceRecordId::parse_stored(&id.to_stored()).unwrap(),

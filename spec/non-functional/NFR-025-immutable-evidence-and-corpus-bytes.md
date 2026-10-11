@@ -93,3 +93,12 @@ clean.
 
 - **Upstream**: [FR-098](../functional/FR-098-semantic-and-identity-parity.md) and [FR-100](../functional/FR-100-rust-evidence-measurement-change-assurance.md), which implement the single canonicalization and digest path.
 - **Downstream**: [FR-101](../functional/FR-101-retire-replaced-executable-paths.md) and [FR-103](../functional/FR-103-corpus-consolidation.md), whose cutovers and consolidation this bounds.
+
+> **PLAT-989 scope correction (2026-10-05):** The operator approved the move
+> from pretty JSON to RFC 8785 bytes for experiment and operational assurance
+> record identities. The zero digest-change and retained-writer byte-parity
+> targets above do not apply to that intentional identity transition; legacy
+> identities and citations need not be preserved. Record fields and schema
+> versions are unchanged. This does not waive corruption detection, canonical
+> integrity checking, or the prohibition on silently rewriting governed corpus
+> and store files as a side effect of reading them.
