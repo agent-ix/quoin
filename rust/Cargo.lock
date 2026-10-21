@@ -2232,7 +2232,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 [[package]]
 name = "ix-cli-kit"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/ix-cli-kit?rev=cc69a934f887966f955440bff8c356e3da449bee#cc69a934f887966f955440bff8c356e3da449bee"
+source = "git+https://github.com/agent-ix/ix-cli-kit?branch=main#be26cf02836e25f8ec7efa6de51e974d331a5816"
 dependencies = [
  "serde",
  "serde_json",
