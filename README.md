@@ -293,3 +293,5 @@ The technical specification for this library was itself authored with the `spec-
 quoin is part of the Agent-IX ecosystem built on these core libraries:
 
 - [quire-cli](https://github.com/agent-ix/quire-cli), the static-binary CLI wrapping the Quire engine
+
+<!-- STD-30 language-boundary canary: inert README change. -->
