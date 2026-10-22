@@ -21,8 +21,7 @@
 # must not be added as one. NFR-024 states this; it is repeated here
 # because the absence otherwise reads as an omission and invites a sixth entry.
 #
-# THIS FILE IS MEANT TO BE COPIED. The categories are NFR-024's and hold in any
-# repository; only `paths` is repo-specific.
+# The categories derive from NFR-024. These path decisions apply only to Quoin.
 
 version: 1
 repo: agent-ix/quoin
@@ -56,16 +55,10 @@ categories:
       - path: corpus/cases/**
         owner: quoin-maintainers
         note: >
-          Foreign-language sample inputs in the qa-corpus submodule — .rs 906 /
-          .ts 613 / .py 525 / .sh 36 across 162 files.
-      - path: corpus/**
-        owner: quoin-maintainers
-        note: >
-          Owner ruling 2026-09-12: qa-corpus is a test corpus and is out of
-          scope in full. bounds.py, verify.py and corpus/scripts/*.py stay
-          Python indefinitely and no conversion row is opened against them,
-          even though quoin's own gate executes bounds.py. A test corpus
-          written in the languages it tests is the corpus working correctly.
+          Foreign-language sample inputs in the qa-corpus submodule. The
+          submodule's executable tooling belongs to qa-corpus and is not an
+          inert-sample allowance in Quoin. Quoin's native gate does not invoke
+          the older pinned revision's bounds.py or verify.py.
       - path: skills/**/*.md
         owner: quoin-maintainers
         note: >
