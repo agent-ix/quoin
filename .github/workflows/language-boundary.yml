@@ -1,0 +1,49 @@
+name: Language boundary
+
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    uses: agent-ix/engineering-assurance/.github/workflows/language-boundary-reusable.yml@73a95925dbeb00b64c45e0ce13fe3a7932529834
+    with:
+      repository: ${{ github.repository }}
+      pull_number: ${{ github.event.pull_request.number }}
+      base_sha: ${{ github.event.pull_request.base.sha }}
+      head_sha: ${{ github.event.pull_request.head.sha }}
+
+  publish-status:
+    needs: guard
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Report language boundary on the PR head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GUARD_RESULT: ${{ needs.guard.result }}
+        run: |
+          if [ "$GUARD_RESULT" = success ]; then
+            state=success
+            description='Rust language boundary passed'
+          else
+            state=failure
+            description='Rust language boundary failed'
+          fi
+
+          gh api -X POST "repos/${REPOSITORY}/statuses/${HEAD_SHA}" \
+            -f state="$state" \
+            -f context=language-boundary \
+            -f target_url="$RUN_URL" \
+            -f description="$description"
+
+          if [ "$state" = failure ]; then
+            exit 1
+          fi
