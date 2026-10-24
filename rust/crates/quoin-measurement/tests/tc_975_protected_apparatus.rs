@@ -19,6 +19,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use engineering_assurance::measurement::NegativeControlKind;
@@ -207,6 +208,70 @@ fn checked(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Vec
         None,
     )
     .reasons
+}
+
+#[test]
+#[trace("TC-1810", "FR-110-AC-1", "FR-108-AC-4")]
+fn evidence_only_gate_still_needs_admitted_conclusive_measurements() {
+    for (label, matched, complete, expected) in [
+        ("passing", 10, true, Verdict::Accept),
+        ("failing", 5, true, Verdict::Reject),
+        ("incomplete", 10, false, Verdict::Inconclusive),
+    ] {
+        let repository = repository("");
+        let root = repository.path();
+        write(
+            root,
+            "spec/assurance/MP-975.md",
+            &plan_with(
+                "gate",
+                "threshold: 0.8",
+                "ground_truth_kind: mechanical\nnegative_controls:\n  - kind: suppressed-observation\n    description: Missing failing items prevent a pass\n",
+            ),
+        );
+        let plan = plan_of(root);
+        assert!(plan.protected_apparatus.is_none());
+        let missing = verify(
+            &plan,
+            &[],
+            TamperFacts::default(),
+            OrderSource::CallerSupplied,
+            None,
+        );
+        assert_eq!(missing.verdict, Verdict::Inconclusive);
+        assert_eq!(missing.reasons, [Reason::NoCollections]);
+        let mut collection = candidate(label, 0, matched, &artifacts(root, &ALL_FILES));
+        collection["observations"][0]["population"]["complete"] = json!(complete);
+        publish(root, &collection).expect("the real collection intake succeeds");
+        let collections = stored(root);
+        assert_eq!(collections.len(), 1);
+        assert!(
+            collections[0]
+                .protected_apparatus_of(plan.id.as_str())
+                .is_none()
+        );
+        let ranked = [Ranked::new(&collections[0], Some(0))];
+        let verdict = verify(
+            &plan,
+            &ranked,
+            TamperFacts::default(),
+            OrderSource::CallerSupplied,
+            None,
+        );
+        assert_eq!(verdict.verdict, expected, "{label}: {verdict:?}");
+        assert_eq!(verdict.counts.collections_considered, 1);
+        if expected == Verdict::Accept {
+            assert!(verdict.reasons.is_empty());
+            assert_eq!(verdict.counts.observations_recomputed, 1);
+        } else {
+            assert!(!verdict.reasons.is_empty());
+        }
+        let mut wrong_definition = collection;
+        wrong_definition["collectionId"] = json!("wrong-definition");
+        wrong_definition["observations"][0]["definitionVersion"] = json!("retired-definition");
+        assert!(publish(root, &wrong_definition).is_err());
+        assert_eq!(stored_count(root), 1, "refused evidence must not be stored");
+    }
 }
 
 fn verdict_of(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Verdict {

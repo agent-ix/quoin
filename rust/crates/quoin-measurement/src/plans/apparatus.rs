@@ -60,13 +60,11 @@ pub(super) fn apparatus_from(
             })
         })
         .transpose()?;
-    if stage == MeasurementStage::Gate {
-        if controls.is_none() {
-            return Err(MeasurementError::new(
-                CODE,
-                format!("{path}: a `gate` plan requires `negative_controls`"),
-            ));
-        }
+    if stage == MeasurementStage::Gate && controls.is_none() {
+        return Err(MeasurementError::new(
+            CODE,
+            format!("{path}: a `gate` plan requires `negative_controls`"),
+        ));
     }
     if protected.is_none()
         && controls

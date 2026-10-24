@@ -3230,6 +3230,7 @@ name = "quoin-measurement"
 version = "0.29.1"
 dependencies = [
  "engineering-assurance",
+ "ix-trace-rs",
  "proptest",
  "quoin-evidence",
  "quoin-jsonschema",
