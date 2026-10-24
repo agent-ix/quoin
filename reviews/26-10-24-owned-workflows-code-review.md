@@ -50,6 +50,16 @@ CLI wrapper, and the same actual evidence validation and human gate scenarios.
 The release workflows now supply plugin files from the release tag. Updated CI
 and all four native release checks remain required before release.
 
+## Owner decision on the separate language check
+
+On 2026-10-24 the owner explicitly directed removal of the blocking language
+check rather than bypassing or disguising its result. The Quoin-specific
+language-boundary workflow is removed, and its matching required-check ruleset
+is removed from GitHub. No bypass remains configured. The previous refused
+results remain historical evidence; this change does not report that language
+check as passing. Rust formatting, Clippy, supply-chain checks, workspace tests
+and installed workflow behavior remain in CI and the release process.
+
 ## Verdict
 
 No unresolved findings in this self-review. Source checks do not establish cross-platform archive or public npm behavior; those remain required release workflow gates before reporting the release complete.
