@@ -28,6 +28,8 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
+
 use quoin_store::json::parse::parse_strict_json_str;
 use quoin_store::json::value::JsonValue;
 use quoin_store::{canonical_json, canonicalize_jcs, digest_canonical_value, digest_record};
@@ -250,6 +252,7 @@ fn tc_380_proto_member_is_data_in_rust_and_deleted_by_the_typescript_pretty_form
 /// Every digest the oracle computed is reproduced exactly.
 ///
 /// Trace: FR-098-CON-1
+#[trace("FR-100-AC-11")]
 #[test]
 fn tc_380_digests_are_identical_to_the_oracle_on_every_case() {
     let mut replayed = 0_usize;

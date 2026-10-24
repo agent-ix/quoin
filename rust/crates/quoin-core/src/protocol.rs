@@ -166,6 +166,7 @@ pub fn canonical_json<T: serde::Serialize>(value: &T) -> Result<String, crate::e
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     /// Trace: FR-096-AC-10
     #[test]
@@ -218,6 +219,7 @@ mod tests {
     }
 
     /// PLAT-989: literal failure vectors and an ASCII healthy control.
+    #[trace("FR-100-AC-10")]
     #[test]
     fn canonical_boundary_matches_rfc8785_vectors() {
         let cases: serde_json::Value =

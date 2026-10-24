@@ -116,6 +116,7 @@ schema = [
 ]
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 # quoin does not grow its own syn-based source auditor: `source_audit` is the
 # shared home for "is this library half actually I/O-free" (quire-research
 # implementation-language-policy, "Shared tooling is consumed, not regrown").

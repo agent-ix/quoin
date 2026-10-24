@@ -44,5 +44,6 @@ sha2 = { workspace = true }
 libc = "=0.2.189"
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 # Exercise the shared Value adapter under both serde_json map feature sets.
 serde_json = { workspace = true }

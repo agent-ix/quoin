@@ -810,6 +810,8 @@ mod tests {
         clippy::panic,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
+
     use super::{
         AssuranceRecordId, CanonicalDigest, DigestDomain, RawBytesDigest, RawFileSha256Digest,
         digest_assurance_record, digest_bytes_sha256, digest_canonical_value, digest_file_sha256,
@@ -836,6 +838,7 @@ mod tests {
         assert!(!DigestDomain::AssuranceRecordSha256.is_opaque_bytes());
     }
 
+    #[trace("FR-100-AC-11")]
     #[test]
     fn plat_989_assurance_identity_uses_rfc8785_bytes() {
         let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
@@ -846,6 +849,7 @@ mod tests {
         );
     }
 
+    #[trace("FR-100-AC-11")]
     #[test]
     fn tc_456_assurance_record_ids_use_jcs_and_keep_their_stored_spelling() {
         let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
@@ -1019,6 +1023,7 @@ mod tests {
     ///
     /// Trace: FR-098-CON-1, FR-100-CON-4
     /// Provenance: quoin#484
+    #[trace("FR-100-AC-11")]
     #[test]
     fn tc_484_the_bytes_wise_sha256_agrees_with_the_file_wise_one() {
         const NIST_ABC: &str =

@@ -2,6 +2,8 @@
 // Copyright (C) 2026 Agent-IX
 //! The store adapts its value model; the shared owner encodes identities.
 
+use ix_trace_rs::trace;
+
 #[test]
 fn canonical_encoding_has_no_retained_local_implementations() {
     let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/json");
@@ -13,6 +15,7 @@ fn canonical_encoding_has_no_retained_local_implementations() {
     }
 }
 
+#[trace("FR-100-AC-10")]
 #[test]
 fn canonical_digests_match_shared_owner_and_literal_vectors()
 -> Result<(), Box<dyn std::error::Error>> {

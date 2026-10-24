@@ -2240,6 +2240,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "ix-trace-rs"
+version = "0.1.2"
+source = "git+https://github.com/agent-ix/ix-trace-rs?rev=e29cc07f70394ff018884d12406c1e150bded5f4#e29cc07f70394ff018884d12406c1e150bded5f4"
+
+[[package]]
 name = "jiff"
 version = "0.2.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3094,6 +3099,7 @@ version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "ix-cli-kit",
+ "ix-trace-rs",
  "quire-canonical",
  "quoin-assurance",
  "quoin-auditor",
@@ -3140,6 +3146,7 @@ dependencies = [
 name = "quoin-evidence"
 version = "0.28.4"
 dependencies = [
+ "ix-trace-rs",
  "quoin-quire-types",
  "quoin-store",
  "regex",
@@ -3299,6 +3306,7 @@ name = "quoin-store"
 version = "0.28.4"
 dependencies = [
  "blake3",
+ "ix-trace-rs",
  "libc",
  "quire-canonical",
  "serde_json",
