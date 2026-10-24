@@ -108,7 +108,7 @@ to record exactly one item with `id: quoin-launch-context`, absolute `repo_root`
 absolute `config_root` (normally ~/.ix), and absolute contained `targets`.
 Alternatively `quoin review --path <this-skill-directory> --target <repo-relative-path>
 --id <run-id> --json` starts the same definition and initializes that context.
-Both commands require the installed ix-flow CLI >=0.3.0 and Quoin CLI >=0.29.0
+Both commands require the installed ix-flow CLI >=0.3.1 and Quoin CLI >=0.29.1
 on PATH. The plugin supplies the definitions; no archived provider is used.
 Use the same --config-root and --state-dir for every ix-flow command.
 See [workflow instructions](references/workflow.md). Record the `request` interview with `review_set`,

@@ -51,7 +51,7 @@ help:
 
 .PHONY: workflow-test workflow-test-runtime
 workflow-test-runtime:
-	npm install --prefix $(CARGO_TARGET)/workflow-runner --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.0
+	npm install --prefix $(CARGO_TARGET)/workflow-runner --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.1
 
 workflow-test: rust-build workflow-test-runtime
 	cd $(RUST_DIR) && cargo run --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check -- smoke $(CARGO_TARGET)/debug/quoin $(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js $(CURDIR)

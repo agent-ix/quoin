@@ -75,7 +75,7 @@ smokes the published packages. See
 The Quoin agent plugin ships workflow definitions and instructions beside its
 skills. The single native executable supplies their Rust invariant provider.
 The native release matrix runs the Rust `quoin-workflow-check smoke` harness
-against each extracted artifact, using published ix-flow 0.3.0, synthetic live
+against each extracted artifact, using published ix-flow 0.3.1, synthetic live
 catalog modules, an isolated home and a copied installation of the released
 plugin skills. The npm release checks out its release tag and runs the same
 lifecycle smoke through the installed public launcher and plugin files.
@@ -88,3 +88,7 @@ skill path. No workflow extraction or private runtime credential is used.
 Existing semantic build inputs are independent. The CLI archive still contains
 one executable; plugin files are distributed through the Quoin agent plugin and
 the release's source archive, rather than inside that executable.
+
+The lifecycle smoke exercises LF and CRLF skill frontmatter on every platform.
+ix-flow 0.3.1 fixes the trailing-carriage-return parsing defect exposed by the
+Windows gate for the unpublished Quoin 0.29.0 candidate.

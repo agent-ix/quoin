@@ -118,7 +118,7 @@ jobs:
           test "$(find release-smoke -type f | wc -l | tr -d ' ')" = 1
           test -f "release-smoke/$BINARY"
           "./release-smoke/$BINARY" --version
-          npm install --prefix "$RUNNER_TEMP/quoin-workflow-runner" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.0
+          npm install --prefix "$RUNNER_TEMP/quoin-workflow-runner" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.1
           (cd rust && cargo build --locked --target-dir target -p quoin-workflow-check)
           CHECKER="rust/target/debug/quoin-workflow-check"
           if [ "$BINARY" = quoin.exe ]; then CHECKER="${CHECKER}.exe"; fi

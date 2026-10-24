@@ -179,7 +179,7 @@ jobs:
             sleep 15
           done
 
-          npm install --global @agent-ix/ix-flow@0.3.0
+          npm install --global @agent-ix/ix-flow@0.3.1
           rust/target/debug/quoin-workflow-check smoke "$PREFIX/bin/quoin" "$PREFIX/lib/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" "$GITHUB_WORKSPACE"
           actual_version="$("$PREFIX/bin/quoin" --version)"
           if [ "$actual_version" != "$VERSION" ]; then
