@@ -157,12 +157,11 @@ stays in the individual service specs. Otherwise use `assets/spec-template.md`.
 
 ## Reserved OKF Files
 
-`spec-artifacts-iso` ships two reserved archetypes for the OKF folder structure;
-author them like any other type:
+`spec-artifacts-iso` ships a reserved `index` archetype for the OKF folder structure;
+author it like any other type:
 
 - `index.md` — `type: index`, body is a `## Contents` link list pointing at the
   artifacts in the folder.
-- `log.md` — `type: log`, body is a `## History` of changes to the folder's specs.
 
 ## Common Spec Layout
 

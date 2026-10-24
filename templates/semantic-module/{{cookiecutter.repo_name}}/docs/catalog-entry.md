@@ -32,7 +32,3 @@ Project 18, "Quoin work") so its schema-completion and contract-migration work i
 visible beside the rest of the fleet. Give it a `Track` and a board state; a
 repository nobody can see on the board is a repository whose drift nobody
 notices.
-
-## 4. Record the decision
-
-Add a line to `spec/log.md` here naming the catalog pull request and the date.

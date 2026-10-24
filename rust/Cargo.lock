@@ -2232,7 +2232,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 [[package]]
 name = "ix-cli-kit"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/ix-cli-kit?rev=cc69a934f887966f955440bff8c356e3da449bee#cc69a934f887966f955440bff8c356e3da449bee"
+source = "git+https://github.com/agent-ix/ix-cli-kit?branch=main#be26cf02836e25f8ec7efa6de51e974d331a5816"
 dependencies = [
  "serde",
  "serde_json",
@@ -2938,8 +2938,8 @@ dependencies = [
 
 [[package]]
 name = "quire-rs"
-version = "0.50.1"
-source = "git+https://github.com/agent-ix/quire-rs?rev=8ab0d509db3a067eafd5c03f657b51eb2aaab7f2#8ab0d509db3a067eafd5c03f657b51eb2aaab7f2"
+version = "0.50.2"
+source = "git+https://github.com/agent-ix/quire-rs?rev=0649f7c0a88ff81f1a75b6754d55bd8cddc937f2#0649f7c0a88ff81f1a75b6754d55bd8cddc937f2"
 dependencies = [
  "agent-ix-semantic-schema",
  "globset",
@@ -2962,14 +2962,14 @@ dependencies = [
 [[package]]
 name = "quire-rust-extraction"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=8ab0d509db3a067eafd5c03f657b51eb2aaab7f2#8ab0d509db3a067eafd5c03f657b51eb2aaab7f2"
+source = "git+https://github.com/agent-ix/quire-rs?rev=0649f7c0a88ff81f1a75b6754d55bd8cddc937f2#0649f7c0a88ff81f1a75b6754d55bd8cddc937f2"
 dependencies = [
  "quire-code-parse",
 ]
 
 [[package]]
 name = "quoin-assurance"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "quoin-evidence",
@@ -2983,7 +2983,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-auditor"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "proptest",
  "quoin-combinatorial",
@@ -3003,7 +3003,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-catalog"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "quoin-semantic",
  "quoin-yaml",
@@ -3015,7 +3015,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-change-assurance"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "quoin-jsonschema",
@@ -3028,7 +3028,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-cli"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "clap",
  "engineering-assurance",
@@ -3054,7 +3054,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-combinatorial"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "proptest",
  "quoin-store",
@@ -3066,7 +3066,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-completeness"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "quoin-yaml",
  "schemars",
@@ -3078,7 +3078,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-config"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "schemars",
@@ -3091,7 +3091,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-core"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "ix-cli-kit",
@@ -3122,7 +3122,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-delivery"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "flate2",
  "reqwest 0.13.5",
@@ -3139,7 +3139,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "quoin-quire-types",
  "quoin-store",
@@ -3153,7 +3153,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence-types"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "serde",
  "serde_json",
@@ -3161,7 +3161,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-finding-types"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "quoin-evidence",
  "schemars",
@@ -3171,7 +3171,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-graph-analysis"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "quoin-evidence",
  "quoin-finding-types",
@@ -3184,7 +3184,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-jev"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "async-trait",
  "engineering-assurance",
@@ -3209,7 +3209,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-jsonschema"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "jsonschema 0.56.0",
  "quoin-measurement",
@@ -3219,7 +3219,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "engineering-assurance",
  "proptest",
@@ -3235,7 +3235,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement-graph"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "quoin-graph-analysis",
  "quoin-measurement",
@@ -3249,7 +3249,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-modules"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "gix",
  "quoin-semantic",
@@ -3263,7 +3263,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "quire-rs",
  "quoin-jsonschema",
@@ -3274,7 +3274,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire-types"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "schemars",
  "serde",
@@ -3284,7 +3284,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-semantic"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "quoin-jsonschema",
  "quoin-yaml",
@@ -3297,7 +3297,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-store"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "blake3",
  "libc",
@@ -3309,7 +3309,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-validators"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "regex",
  "schemars",
@@ -3321,7 +3321,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-yaml"
-version = "0.28.1"
+version = "0.28.4"
 dependencies = [
  "saphyr",
  "serde_json",

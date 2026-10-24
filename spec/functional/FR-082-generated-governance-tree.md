@@ -33,7 +33,7 @@ the rendered repository ships the two inputs and no copy of the output.
 
 ## Outputs
 
-- `spec/spec.md`, `spec/index.md`, `spec/log.md`
+- `spec/spec.md`, `spec/index.md`
 - `spec/stakeholder/`, `spec/usecase/`, `spec/functional/`, `spec/non-functional/`, each with an index
 
 ## Behavior

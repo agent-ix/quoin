@@ -8,7 +8,7 @@ when the skills were ported into quoin. Done 2026-06-20.
 
 The per-artifact `spec-write-fr/us/nfr/str` skills were **intentionally retired**:
 each requirement type's rules now live in its **template** (the skeleton + schema
-that `quoin write --types <T>` returns from the catalog). So their absence is by
+that `quoin write . --types <T>` returns from the catalog). So their absence is by
 design, not a gap. What must NOT be lost is the **orchestration** — telling the
 agent to author each requested type as a discrete artifact file, in sequence —
 and the **process/reasoning** that templates can't encode (US→FR derivation,

@@ -40,7 +40,7 @@ cast_sign_loss = "warn"
 cast_possible_wrap = "warn"
 
 [workspace.package]
-version = "0.28.1"
+version = "0.28.4"
 edition = "2024"
 rust-version = "1.98.1"
 license = "AGPL-3.0-or-later"
@@ -77,7 +77,7 @@ publish = false
 # quoin-store merged, not inherited from when the branch was cut.)
 [workspace.dependencies]
 quire-canonical = { git = "https://github.com/agent-ix/quire-canonical", rev = "5dc4e12db63b8fae647825b4e4b78df9b6dcadfe", features = ["serde_json"] }
-ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", rev = "cc69a934f887966f955440bff8c356e3da449bee" }
+ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", branch = "main" }
 quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-change-assurance = { path = "crates/quoin-change-assurance" }
 quoin-catalog = { path = "crates/quoin-catalog" }

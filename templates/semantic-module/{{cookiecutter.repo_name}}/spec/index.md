@@ -14,4 +14,3 @@ okf_version: "0.1"
 - [usecase](./usecase/index.md) - User stories.
 - [functional](./functional/index.md) - Functional requirements.
 - [non-functional](./non-functional/index.md) - Non-functional requirements.
-- [log](./log.md) - Change history.

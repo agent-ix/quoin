@@ -4,7 +4,7 @@ When an FR defines a domain object, set the `object:` frontmatter field and use 
 
 > The `assets/...-template.md` names below identify each object type's template
 > **within its catalog module** — they are not files shipped in this skill.
-> Obtain the actual skeleton + schema with `quoin write --types <type>` (or
+> Obtain the actual skeleton + schema with `quoin write . --types <type>` (or
 > inspect a type with `quoin catalog show <type>`).
 
 ## Business Objects (spec-objects-business)
