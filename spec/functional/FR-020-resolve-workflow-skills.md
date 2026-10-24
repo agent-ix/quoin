@@ -9,53 +9,50 @@ relationships:
     type: "implements"
 ---
 
-# FR-020: Expose workflow launchers and resolve their skills
+# FR-020: Own and materialize specification workflows
 
 ## Description
 
-The CLI SHALL expose the `review` and `to-plan` workflow launchers,
-and for each SHALL resolve the workflow's skill path across, in order, the
-`IX_SPEC_WORKFLOWS_ROOT` environment variable, the packaged skills, a sibling
-`ix-spec-workflows` checkout, and `~/.ix/plugins`, raising an error when no
-candidate root contains the skill.
+The CLI SHALL own the `review` and `to-plan` workflow definitions and instructions
+as first-party Quoin source. The CLI SHALL embed them into each native executable.
+When a workflow is launched, Quoin SHALL materialize an immutable snapshot below
+the selected config root. Quoin SHALL supply its absolute path to ix-flow. The published binary SHALL
+require no workflow npm package, private repository, or source checkout.
 
 ## Inputs
 
-- A `review` or `to-plan` invocation, and the candidate skill roots.
+- The workflow name, selected config root, launch repository and targets.
+- The running executable and the published ix-flow executable on PATH.
 
 ## Outputs
 
-- The resolved skill path, or a raised error naming the workflow.
+- A materialized owned workflow and a run initialized with repository context.
+- An actionable refusal when the runner, targets or runtime directory is unavailable.
 
 ## Behavior
 
-- The CLI SHALL recognize `review` and `to-plan` as workflow launchers.
-- The CLI SHALL search the candidate roots in order and SHALL use the first that
-  contains the workflow's skill.
-- The CLI SHALL raise an error directing the user to set `IX_SPEC_WORKFLOWS_ROOT`
-  when no candidate contains the skill.
+- Quoin SHALL recognize review and to-plan.
+- Quoin SHALL retain matrix as a native computed view.
+- Quoin SHALL reuse byte-identical snapshots.
+- Quoin SHALL preserve existing snapshots
+  when materializing a changed release or repairing incomplete assets.
+- Quoin SHALL require ix-flow >=0.3.0 before creating a run.
+- Quoin SHALL record canonical repository/config roots and contained targets in
+  one quoin_context item before reporting a successful initialized launch.
+- Quoin SHALL ignore the obsolete IX_SPEC_WORKFLOWS_ROOT override.
+- Quoin SHALL NOT resolve definitions from node_modules or a private checkout.
 
 ## Acceptance Criteria
 
-| ID          | Criteria                                                                                                      | Verification                  |
-| ----------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| FR-020-AC-1 | `review` and `to-plan` are recognized as the bundled workflow launchers, and `matrix` is not                  | Test (flow.rs)                |
-| FR-020-AC-2 | An unknown workflow name raises an error                                                                      | Test (flows.test.ts)          |
-| FR-020-AC-3 | When no candidate root contains the skill, an error names the workflow and points to `IX_SPEC_WORKFLOWS_ROOT` | Test (flows-notfound.test.ts) |
+| ID | Criteria | Verification |
+| --- | --- | --- |
+| FR-020-AC-1 | Review and to-plan launch from a relocated native executable with an empty home and no source checkout; matrix resolves no workflow. | Test |
+| FR-020-AC-2 | An unknown workflow is refused before spawning the runner. | Test |
+| FR-020-AC-3 | A missing or incompatible ix-flow reports the supported installation command without creating a run. | Test |
+| FR-020-AC-4 | Immutable snapshot reuse and repair preserve existing runtime snapshots. | Test |
+| FR-020-AC-5 | Run context resolves relative documents under the launch repository, including paths with spaces. | Test |
 
 ## Dependencies
 
-- **Upstream**: [StR-004](../stakeholder/StR-004-governed-workflows.md);
-  [US-005](../usecase/US-005-start-gated-spec-workflow.md).
-- **Downstream**: the resolved skill is launched by
-  [FR-021](./FR-021-launch-ix-flow-runs.md).
-
-> **CR note (2026-09-28, PLAT-1080):** `matrix` is retired from the workflow
-> launchers this FR exposes, as [FR-021](./FR-021-launch-ix-flow-runs.md)'s
-> CR note retires it from the flows FR-021 launches.
-> [FR-115](./FR-115-evidence-backed-test-matrix.md)-AC-13 replaces the
-> `ix-flow` "matrix" workflow with a deterministic, in-process render of
-> `matrix.build`, so `quoin matrix` resolves no workflow skill. AC-1 now
-> states the two launchers that remain and that `matrix` is not one of them;
-> `quoin-cli`'s `flow.rs` :: `tc_1080_300_matrix_is_not_a_flow` backs it.
-> `review` and `to-plan` are otherwise unaffected.
+- Upstream: [StR-004](../stakeholder/StR-004-governed-workflows.md).
+- Downstream: [FR-021](./FR-021-launch-ix-flow-runs.md).

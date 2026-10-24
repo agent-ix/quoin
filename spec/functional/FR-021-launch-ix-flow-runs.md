@@ -15,12 +15,10 @@ relationships:
 
 ## Description
 
-On launch, the CLI SHALL spawn
-`ix-flow run <flow> --path <skill> --config-root <home> --state-dir <home>/flows`,
-appending the optional `--id`, `--json`, and `--target` arguments, SHALL propagate
-the `ix-flow` exit code (defaulting to 1 when the child is terminated by a
-signal), SHALL surface a spawn error when `ix-flow` cannot be started, and SHALL
-hand all subsequent lifecycle control to `ix-flow`.
+The CLI SHALL launch Quoin-owned review and planning definitions through ix-flow
+and SHALL use Quoin's bounded native invariant provider for document checks.
+ix-flow SHALL retain ownership of run persistence, transitions, status, resume
+and explicit human acknowledgement.
 
 ## Inputs
 
@@ -49,6 +47,10 @@ hand all subsequent lifecycle control to `ix-flow`.
 | FR-021-AC-3 | A signal-terminated child yields exit status 1                                                                   | Test (flows.test.ts)              |
 | FR-021-AC-4 | A failure to spawn `ix-flow` surfaces an error                                                                   | Test (flows.test.ts)              |
 
+| FR-021-AC-5 | Malformed, unsupported and oversized provider requests fail without a success payload. | Test |
+| FR-021-AC-6 | Both workflows refuse automatic final acceptance and expose an explicit acknowledgement gate. | Test |
+| FR-021-AC-7 | Packaged native and npm installations run the actual workflow lifecycle without private runtime credentials. | Test |
+
 ## Dependencies
 
 - **Upstream**: [StR-004](../stakeholder/StR-004-governed-workflows.md);
@@ -69,3 +71,13 @@ hand all subsequent lifecycle control to `ix-flow`.
 > scratch, with no join against the evidence store or the auditor's verdict.
 > `review` and `to-plan` are unaffected: this FR's launcher, its ACs, and its
 > test coverage remain exactly as stated for those two.
+
+## Owned provider contract
+
+`quoin workflow-invariants` accepts one bounded stdin JSON request using
+`quoin.workflow-invariants/v1` and returns ordered outcomes using
+`quoin.workflow-invariants-result/v1`. Malformed requests and infrastructure
+failures SHALL produce explicit errors. Quoin SHALL validate selected artifacts
+through its linked engine and live catalog; unavailable validation SHALL NOT pass.
+The final transition SHALL remain human-gated even when a caller requests a gate
+override. Quoin SHALL NOT acknowledge a production acceptance gate automatically.

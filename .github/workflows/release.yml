@@ -1,7 +1,7 @@
 # Repackages an already-published, already-smoked GitHub Release into npm
-# packages. It never builds anything: `native-release.yml` is the only
-# workflow that runs `cargo build`, and this workflow only downloads the
-# release its `tag` input names, verifies each asset against that release's
+# packages. Only `native-release.yml` builds the shipping binary. This
+# workflow builds a separate acceptance checker, downloads the release its
+# `tag` input names, and verifies each asset against that release's
 # own `quoin-update-manifest.json`, and hands the verified archives to the
 # shared `agent-ix/nodejs-actions/publish-native-npm` action, which owns the
 # npm package layout and the `npm publish` calls. The npm version always
@@ -41,6 +41,20 @@ jobs:
       # Needed for LICENSE, which the npm packages carry.
       - uses: actions/checkout@v7
 
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.15.0
+      - name: Install release-check toolchain
+        shell: bash
+        working-directory: rust
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: Authenticate private Cargo build inputs
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
+      - name: Build native release checker
+        working-directory: rust
+        run: cargo build --locked --target-dir target -p quoin-workflow-check
       - name: Download the release
         shell: bash
         env:
@@ -163,6 +177,8 @@ jobs:
             sleep 15
           done
 
+          npm install --global @agent-ix/ix-flow@0.3.0
+          rust/target/debug/quoin-workflow-check smoke "$PREFIX/bin/quoin" "$PREFIX/lib/node_modules/@agent-ix/ix-flow/bin/ix-flow.js"
           actual_version="$("$PREFIX/bin/quoin" --version)"
           if [ "$actual_version" != "$VERSION" ]; then
             echo "::error::quoin --version printed '$actual_version', expected '$VERSION'" >&2

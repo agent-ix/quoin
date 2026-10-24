@@ -6,7 +6,7 @@ Install this agent plugin through the [Agent IX marketplace](https://github.com/
 
 ## Check local setup
 
-1. Confirm both the `quoin` and `ix-flow` CLIs are installed and resolve in the shell used by your agent. The Quoin plugin supplies skills and workflows; the CLIs execute them.
+1. Confirm both the `quoin` and `ix-flow` >=0.3.0 CLIs are installed and resolve in the shell used by your agent. The Quoin plugin supplies skills and workflows; the CLIs execute them.
 2. Confirm the Quoin plugin is installed in the current agent host. Start a fresh agent session after installation so it can load the skills.
 3. In the target repository, run `quoin catalog list` and `quoin catalog validate` to check module discovery. If a required module is unavailable, follow its installation instructions before retrying the skill.
 4. Check the target repository's `AGENTS.md` or `CLAUDE.md`, required spec files, and project permissions. Missing modules, malformed project artifacts, and local path or credential problems need local correction.
@@ -15,3 +15,32 @@ Install this agent plugin through the [Agent IX marketplace](https://github.com/
 ## Community help
 
 If these checks leave a reproducible **Agent IX Quoin bug** that blocks progress, [join the Agent IX Discord](https://discord.gg/k8DVhuYBR2). Share the Quoin and ix-flow versions, skill or command, operating system and agent host, expected and actual behavior, and a sanitized minimal reproduction. Community help is a last resort for Agent IX product bugs; local credentials, machine setup, and unrelated project errors belong with their owners or administrators. An agent should point its user here rather than post to Discord on the user's behalf without authorization.
+
+## Owned workflows and upgrading old installations
+
+Quoin 0.29.0 embeds its review and planning definitions and Rust validation
+provider. Install the published runner with `npm install -g @agent-ix/ix-flow@latest`.
+No archived workflow repository, workflow npm provider, pnpm installation in a
+subject repository, or IX_SPEC_WORKFLOWS_ROOT override is required.
+
+Run `command -v quoin`, `quoin --version`, `command -v ix-flow`, and
+`ix-flow --version` in the agent's shell. A version with a commit suffix or dirty
+marker is a source build, not the published release. Confirm the CLI and plugin
+versions after updating; load updated skills in a fresh session without stopping
+other agents automatically.
+
+Start from the subject repository: `quoin review --target spec/ --json` or
+`quoin to-plan --target spec/ --json`. Assets are materialized under the effective
+config root's workflows/quoin directory; run state stays under flows. ix-flow
+owns status, resume, advance and acknowledgement. Use the same config/state roots
+on subsequent commands.
+
+Old external-provider runs are preserved. Start a fresh owned run, register the
+existing review documents, revalidate them, and obtain fresh human acceptance.
+Direct analyses are documents, not evidence of an enforced acceptance receipt.
+An absent receipt does not establish that the underlying analyses are invalid.
+
+Inventory old receipts without modifying them:
+`cd rust && cargo run --locked --target-dir target -p quoin-workflow-check -- audit <state-dir> <repo>...`. The inventory
+distinguishes documents from run receipts and labels legacy enforcement unverified.
+It does not backfill acceptance or judge review quality.

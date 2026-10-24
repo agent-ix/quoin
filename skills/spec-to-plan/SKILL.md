@@ -84,3 +84,13 @@ After the bundle validates, run `filament open <plan-bundle>/plan.md` to open th
 plan in the running filament-ide cockpit (it fires the `filament-ide://` deep link
 and prints a clickable link as a fallback). Skip silently if the `filament`
 command is not installed.
+
+## Enforced planning
+
+`quoin to-plan --target <repo-relative-spec-path> --id <run-id> --json` starts
+the Quoin-owned workflow embedded in the CLI. It requires ix-flow >=0.3.0.
+Record the `plan` interview with `plan_path`, `index_path`, `task_paths`, and
+`readiness_notes`; paths resolve under the recorded repository root. Follow the
+materialized skill to advance, validate the actual Plan/Task/index bundle, and
+stop for explicit human acceptance. Never acknowledge that gate automatically.
+Obtain artifact contracts with `quoin write <repo> --types Plan,Task,index`.

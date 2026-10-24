@@ -15,16 +15,18 @@ See **[references/checklist.md](references/checklist.md)** for the detailed qual
 
 ## Choose the review set
 
-First look for an applicable installed `AssuranceProfile` in the requested spec scope.
-If it has `review_selection`:
+Inspect applicable active `AssuranceProfile` documents using the installed catalog.
+The current contract is `review_policy.mode` (`recommend` or `require`) and
+`review_policy.operations` (`spec-review`, `code-review`, `gap-analysis`).
+Record the actual profile paths and an applicability disposition, or explicitly
+state why none applies. Resolve ambiguous applicability with the owner.
 
-- `mode: recommend` supplies a reasoned default, but the user still chooses below;
-- `mode: require` uses an enforced `quoin review` run with exactly the profile-selected
-  analyses and records the profile path; do not claim completion through the direct path;
-- a selected analysis absent from the installed `SpecReview.analysis` schema is an
-  unavailable dependency, not permission to emit an invalid review document.
+A required `spec-review` operation needs an accepted enforced review run.
+The profile does not select individual analysis lenses. Requirements for
+`code-review` or `gap-analysis` remain separate operations; a specification
+review cannot mark those complete. Never author or interpret `review_selection`.
 
-Without a required profile selection, present these options to the user and let them
+For each review, present these options to the user and let them
 choose:
 
 - **base** — the **Checklist** only: ID formats, US/FR/TC quality, and the six coverage
@@ -83,14 +85,25 @@ The seven analyses:
 
 ## Enforced runs (workflow mode)
 
-`quoin review` drives this through `ix-flow`, which **records the chosen set and hard-blocks
-acceptance until every selected analysis has produced a validated `SpecReview` doc** (the
-`selected_analyses_covered` gate). Use it when you want the choice enforced rather than
-trusted to discipline, and always when an applicable profile uses
-`review_selection.mode: require`. Record the profile path, mode, and profile analysis
-set during intake. Use the document structure and `## Findings` table described in
-the Process above, with the installed `SpecReview` skeleton and schema from
-`quoin write . --types SpecReview` in the target repository.
+`quoin review --target <repo-relative-path> --id <run-id> --json` starts the
+Quoin-owned definition embedded in the native binary. Run it from the repository
+root. Install published `@agent-ix/ix-flow` >=0.3.0; no private workflow package or
+source checkout is needed. Quoin records repository/config roots and targets.
+
+Use the materialized workflow's instructions and the same config/state roots for
+all ix-flow commands. Record the `request` interview with `review_set`,
+`selected_analyses`, `assurance_profiles`, and `profile_disposition`. Register
+one `review_doc` item per analysis, including `base`, with its `id`, `analysis`,
+and repository-relative `path`. The Rust provider opens and validates every
+required document before validation and again before acceptance. Names or old
+validation claims alone cannot pass. `all` always includes the seven lenses above.
+
+The final transition requires explicit human acknowledgement; never automatically
+acknowledge it. A failed enforced run cannot be claimed complete from direct
+analyses. Direct review remains available when no applicable policy requires an
+enforced spec-review operation. The gate verifies artifact validity, not reasoning
+quality. Existing documents can be registered in a new owned run and revalidated;
+old external-provider runs are not silently migrated or retrospectively accepted.
 
 ## Common Issues
 

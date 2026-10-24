@@ -41,17 +41,19 @@ jobs:
         run: git config --global url."https://x-access-token:${{ secrets.REGISTRY_TOKEN }}@github.com/".insteadOf "https://github.com/"
       # rust/crates/quoin-semantic/build.rs embeds the semantic contract out of
       # node_modules/@agent-ix/* (PLAT-887's de-vendoring); `make rust-lint`,
-      # `make rust-build` and `make rust-test` all depend on `workflow-assets`,
+      # `make rust-build` and `make rust-test` all depend on `build-inputs`,
       # but installing it as its own step here keeps it visible and cacheable
       # rather than hidden inside the first Make target that happens to need it.
       - name: Install frozen dependency graph
-        run: make workflow-assets
+        run: make build-inputs
       - name: Format and lint
         run: make rust-lint
       - name: Build
         run: make rust-build
       - name: Test
         run: make rust-test
+      - name: Installed workflow behavior
+        run: make workflow-test
 
   rust-deny:
     name: Rust supply chain

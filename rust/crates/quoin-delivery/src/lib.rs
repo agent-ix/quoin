@@ -351,7 +351,10 @@ fn extract_zip(archive: &[u8], executable: &str) -> Result<Vec<u8>, DeliveryErro
     let mut entry = archive
         .by_index(0)
         .map_err(|error| DeliveryError::Archive(error.to_string()))?;
-    validate_archive_path(Path::new(entry.name()), executable)?;
+    let name = entry
+        .name()
+        .map_err(|error| DeliveryError::Archive(error.to_string()))?;
+    validate_archive_path(Path::new(name.as_ref()), executable)?;
     if !entry.is_file() || entry.is_symlink() {
         return Err(DeliveryError::Archive(
             "archive member is not a regular file".to_owned(),

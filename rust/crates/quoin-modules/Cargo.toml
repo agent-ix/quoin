@@ -34,7 +34,7 @@ gix = { version = "=0.87.1", features = [
     "blocking-http-transport-reqwest-rust-tls",
     "revision",
 ] }
-serde_yaml_ng = "=0.10.0"
+serde_yaml_ng = { package = "yaml_serde", version = "=0.10.7" }
 schemars = { workspace = true, optional = true }
 
 [features]

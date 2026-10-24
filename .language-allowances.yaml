@@ -59,6 +59,9 @@ categories:
           submodule's executable tooling belongs to qa-corpus and is not an
           inert-sample allowance in Quoin. Quoin's native gate does not invoke
           the older pinned revision's bounds.py or verify.py.
+      - path: workflows/**/*.md
+        owner: quoin-maintainers
+        note: First-party instructions; executable invariant decisions live in Rust.
       - path: skills/**/*.md
         owner: quoin-maintainers
         note: >
@@ -85,6 +88,14 @@ categories:
     owner: quoin-maintainers
     requires: [date, deciding_owner]
     paths:
+      - path: workflows/**/def.yaml
+        owner: quoin-maintainers
+        date: 2026-10-24
+        deciding_owner: kreneskyp
+        note: >
+          Owner selected Quoin-owned workflow definitions with ix-flow as the
+          generic runner. Definitions are first-party Quoin source; invariant
+          decisions and document validation execute in the Rust provider.
       - path: templates/semantic-module/{{cookiecutter.repo_name}}/typespec/main.tsp
         owner: quoin-maintainers
         date: 2026-09-12

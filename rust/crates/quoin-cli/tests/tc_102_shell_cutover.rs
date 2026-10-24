@@ -57,13 +57,8 @@ fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
         );
     }
 
-    // `package.json` and `pnpm-lock.yaml` are no longer on the retired list
-    // (PLAT-157): the repository root carries one, declaring the single
-    // `@agent-ix/ix-spec-workflows` dependency quoin-cli's `flow` module
-    // resolves at run time, which is unrelated to the retired CLI shell. What
-    // actually identified that shell was `oclif` and a `bin` entry pointing at
-    // `bin/quoin.js` -- assert those two markers are absent instead of
-    // banning the manifest outright.
+    // The private root manifest supplies semantic schema build inputs, not
+    // an executable Node shell. Workflow assets belong to the native binary.
     if let Ok(package_json) = std::fs::read_to_string(root.join("package.json")) {
         let manifest: serde_json::Value =
             serde_json::from_str(&package_json).expect("package.json is valid JSON");

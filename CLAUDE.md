@@ -3,9 +3,9 @@
 ## Commands
 
 `quoin` is a native Rust CLI (`rust/crates/quoin-cli`, binary name `quoin`).
-There is no Node/JavaScript build here — no root `package.json`, no `jest`,
-no `pnpm`. `src/semantic/` holds JSON schemas the Rust workspace reads, not a
-second build tree.
+The root package.json and pnpm lock supply semantic schema build inputs.
+There is no Node/JavaScript executable build here. `src/semantic/` holds
+JSON schemas the Rust workspace reads, not a second build tree.
 
 ```bash
 make build   # cargo build --workspace --locked
@@ -24,7 +24,8 @@ the resulting binary as a GitHub Release archive. A separate workflow,
 `.github/workflows/release.yml`, then repackages that same release's assets
 into npm packages (`@agent-ix/quoin` plus one platform package per target,
 FR-112) via the shared `agent-ix/nodejs-actions/publish-native-npm` action —
-it never builds anything itself, and no packaging logic lives in this repo.
+it builds only the separate native acceptance checker, and no npm packaging
+logic lives in this repo.
 
 ## Agent worktrees
 

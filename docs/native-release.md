@@ -69,3 +69,15 @@ always equals the release tag. `publish: false` (the default) verifies and
 packages without publishing; `publish: true` publishes to public npm and
 smokes the published packages. See
 [FR-112](../spec/functional/FR-112-npm-distribution-from-release-assets.md).
+
+## Workflow release gate
+
+The single native executable embeds Quoin-owned review and planning assets and
+their Rust invariant provider. The native release matrix runs
+the Rust `quoin-workflow-check smoke` harness against every extracted artifact, using published
+ix-flow 0.3.0, synthetic live catalog modules and an isolated home. The npm release
+runs the same lifecycle smoke through the installed public launcher. Missing
+review documents and tasks, invalid live contracts and automatic acceptance must
+fail; a valid artifact set reaches an explicit human gate. A --version-only smoke
+is insufficient for these commands. No private credential is passed to runtime
+validation in these tests. Existing semantic build inputs are independent.

@@ -46,6 +46,9 @@ signal-hook = { workspace = true }
 # apparatus file's git-committed bytes against its recorded digest.
 quoin-store = { workspace = true }
 quoin-yaml = { workspace = true }
+quoin-quire = { workspace = true }
+thiserror = { workspace = true }
+tempfile = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
 semver = { workspace = true }
