@@ -18,8 +18,6 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use quoin_store::json::order::cmp_utf16;
-
 use crate::date_time::Rfc3339DateTime;
 use crate::error::MeasurementError;
 use crate::intervention::intake::read_intervention_records;
@@ -88,9 +86,13 @@ pub fn build_portfolio_report_from_collections(
 /// `[...].sort(compare)` (`portfolio.ts:369-371`) over resolved roots.
 ///
 /// `compare` is JavaScript's `<` on strings, which orders by UTF-16 code unit;
-/// [`cmp_utf16`] is that order, and is the store's rather than a second one.
+/// standard [`str::encode_utf16`] iterators retain that text order.
 fn sort_roots(roots: &mut [PathBuf]) {
-    roots.sort_by(|left, right| cmp_utf16(&left.to_string_lossy(), &right.to_string_lossy()));
+    roots.sort_by(|left, right| {
+        left.to_string_lossy()
+            .encode_utf16()
+            .cmp(right.to_string_lossy().encode_utf16())
+    });
 }
 
 /// One repository, read or refused. `loadRepository` (`portfolio.ts:223-280`).
@@ -246,7 +248,7 @@ fn finalize(mut repositories: Vec<PortfolioRepositoryReport>) -> PortfolioReport
     timestamps.sort_by(|left, right| {
         epoch_millis(left)
             .cmp(&epoch_millis(right))
-            .then_with(|| cmp_utf16(left, right))
+            .then_with(|| left.encode_utf16().cmp(right.encode_utf16()))
     });
     let newest_collection_timestamp = timestamps.last().map(|&found| found.to_owned());
     let newest = newest_collection_timestamp

@@ -13,9 +13,9 @@
 
 use std::cmp::Ordering;
 
+use crate::ids::compare_text;
 use quoin_finding_types::{Finding, UnevaluatedCheck};
 use quoin_quire::model::{AssuranceExport, AssuranceSource};
-use quoin_store::json::order::cmp_utf16;
 use serde::Serialize;
 
 use crate::ids::{ArtifactId, Author, Commit, ObligationId, RelationKind, SuiteId};
@@ -150,9 +150,9 @@ pub struct GraphGap {
 
 impl Ord for GraphGap {
     fn cmp(&self, other: &Self) -> Ordering {
-        cmp_utf16(self.kind.as_str(), other.kind.as_str())
-            .then_with(|| cmp_utf16(&self.subject, &other.subject))
-            .then_with(|| cmp_utf16(&self.reason, &other.reason))
+        compare_text(self.kind.as_str(), other.kind.as_str())
+            .then_with(|| compare_text(&self.subject, &other.subject))
+            .then_with(|| compare_text(&self.reason, &other.reason))
     }
 }
 

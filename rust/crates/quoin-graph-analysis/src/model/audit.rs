@@ -19,8 +19,8 @@
 //! `quoin-finding-types`', which carry their undeclared members in a flattened
 //! map for exactly this reason.
 
+use crate::ids::compare_text;
 use quoin_finding_types::AuditReport;
-use quoin_store::json::order::cmp_utf16;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -229,9 +229,13 @@ fn non_empty(
 /// spelling.
 pub fn canonicalize_report(mut report: AuditReport) -> Result<AuditReport> {
     for check in &mut report.unevaluated {
-        check.suites.sort_by(|left, right| cmp_utf16(left, right));
+        check
+            .suites
+            .sort_by(|left, right| compare_text(left, right));
     }
-    report.healthy.sort_by(|left, right| cmp_utf16(left, right));
+    report
+        .healthy
+        .sort_by(|left, right| compare_text(left, right));
     sort_by_stable_key(&mut report.findings)?;
     sort_by_stable_key(&mut report.unevaluated)?;
     Ok(report)
@@ -252,7 +256,7 @@ fn sort_by_stable_key<T: Serialize>(entries: &mut Vec<T>) -> Result<()> {
         })?;
         keyed.push((crate::json::stable_key(&value)?, entry));
     }
-    keyed.sort_by(|(left, _), (right, _)| cmp_utf16(left, right));
+    keyed.sort_by(|(left, _), (right, _)| compare_text(left, right));
     entries.extend(keyed.into_iter().map(|(_, entry)| entry));
     Ok(())
 }

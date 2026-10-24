@@ -78,7 +78,7 @@ pub use digest::{
     verify_record_digest,
 };
 pub use error::{StoreError, StoreErrorCode};
-pub use json::jcs::{canonical_bytes, canonicalize_jcs};
+pub use json::canonical::{canonical_bytes, canonicalize_jcs};
 pub use json::parse::{parse_strict_json, parse_strict_json_str};
 pub use json::pretty::{canonical_json, canonical_json_bytes};
 pub use json::value::{JsonNumber, JsonObject, JsonValue};

@@ -5,7 +5,7 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-use quoin_store::json::order::cmp_utf16;
+use crate::ids::compare_text;
 
 use crate::analysis::draft::{Draft, obligation_owners};
 use crate::ids::{Author, Commit, ObligationId, SuiteId};
@@ -31,7 +31,7 @@ impl Ord for EventKey {
         self.who
             .cmp(&other.who)
             .then_with(|| self.commit.cmp(&other.commit))
-            .then_with(|| cmp_utf16(&self.note, &other.note))
+            .then_with(|| compare_text(&self.note, &other.note))
     }
 }
 

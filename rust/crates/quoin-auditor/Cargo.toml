@@ -37,8 +37,7 @@ quoin-evidence = { workspace = true }
 quoin-finding-types = { workspace = true }
 # `Obligation` and `CoverageDiagnostic`, as quire emits them.
 quoin-quire-types = { workspace = true }
-# `json::order::cmp_utf16` and `json::number::format_number`. Nothing in this
-# crate formats a number or orders a string any other way.
+# Finite number display delegates through JsonNumber to the shared encoder.
 quoin-store = { workspace = true }
 # The one YAML reader on the quoin boundary (quoin#378). A module manifest is
 # read through this or not at all.

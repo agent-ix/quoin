@@ -28,10 +28,10 @@
 //! [`quoin_store::canonical_json_bytes`] — called, never reimplemented.
 //! Everywhere the retained source writes `compare(left, right)` it means
 //! JavaScript `<` on strings, which is UTF-16 code-unit order;
-//! `quoin_store::json::order::cmp_utf16` is that comparator and the id
-//! newtypes in [`ids`] derive their `Ord` from it, so a `BTreeMap` keyed on
-//! one iterates in the order the oracle sorts in. `tests/tc_385_one_canonical_json.rs`
-//! asserts that no second implementation of either has appeared.
+//! the id newtypes in [`ids`] compare standard [`str::encode_utf16`]
+//! iterators, so a `BTreeMap` keyed on one iterates in the order the oracle
+//! sorts in. `tests/tc_385_one_canonical_json.rs` asserts that no second
+//! canonical JSON writer has appeared.
 //!
 //! # "corpus" here means the spec corpus
 //!

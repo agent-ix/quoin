@@ -18,12 +18,6 @@ workspace = true
 regex = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
-# For `quoin_store::json::order::cmp_utf16`. The retained implementation sorts
-# with JavaScript's `<`/`>` on strings and with `Array.prototype.sort`'s default
-# comparator, both of which are UTF-16 code-unit order. That ordering already
-# has exactly one home in this workspace and this crate uses it rather than
-# minting a second.
-quoin-store = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

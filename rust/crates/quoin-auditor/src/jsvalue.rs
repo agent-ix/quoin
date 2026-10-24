@@ -10,11 +10,11 @@
 //! the coercion into the catalog, so the port has to do the same or it reads a
 //! module the TypeScript reads and produces a different catalog.
 //!
-//! Number formatting is [`quoin_store::json::number::format_number`] and
+//! Number formatting is [`number_text`] and
 //! nothing else — the ECMAScript `Number::toString` algorithm, which is not
 //! Rust's `{}`.
 
-use quoin_store::json::number::format_number;
+use quoin_store::json::value::JsonNumber;
 use serde_json::Value;
 
 /// `String(value)`, for the values a YAML 1.2 document can hold.
@@ -30,7 +30,7 @@ pub fn string_of(value: &Value) -> String {
         Value::Bool(false) => "false".to_owned(),
         Value::Number(number) => number
             .as_f64()
-            .map_or_else(|| number.to_string(), format_number),
+            .map_or_else(|| number.to_string(), number_text),
         Value::String(text) => text.clone(),
         // `Array.prototype.toString` joins with `,` and renders `null` and
         // `undefined` members as the empty string.
@@ -64,6 +64,13 @@ pub fn string_or(value: Option<&Value>, fallback: &str) -> String {
         None | Some(Value::Null) => fallback.to_owned(),
         Some(present) => string_of(present),
     }
+}
+
+/// ECMAScript numeric manifest coercion, using the shared encoder for finite
+/// values and preserving the existing null spelling for non-finite inputs.
+#[must_use]
+pub fn number_text(value: f64) -> String {
+    JsonNumber::new(value).map_or_else(|_| "null".to_owned(), |number| number.to_string())
 }
 
 #[cfg(test)]

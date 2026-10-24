@@ -4,15 +4,19 @@
 //!
 //! `graph-portfolio.ts:840-846` declares `compare` (JavaScript `<` on strings)
 //! and `compareInstants` (`Date.parse(a) - Date.parse(b) || compare(a, b)`).
-//! Both already exist in this workspace and are re-used rather than rewritten:
-//! the string order is [`quoin_store::json::order::cmp_utf16`], and the instant
-//! is read by [`quoin_measurement::Rfc3339DateTime`], the measurement domain's
-//! single grammar.
+//! The text comparison uses standard [`str::encode_utf16`] iterators. The
+//! instant is read by [`quoin_measurement::Rfc3339DateTime`], the measurement
+//! domain's single grammar.
 
 use std::cmp::Ordering;
 
 use quoin_measurement::Rfc3339DateTime;
-pub use quoin_store::json::order::cmp_utf16 as compare_text;
+
+/// Compare the projection's text by JavaScript UTF-16 code-unit order.
+#[must_use]
+pub fn compare_text(left: &str, right: &str) -> Ordering {
+    left.encode_utf16().cmp(right.encode_utf16())
+}
 
 /// `compareInstants` (`graph-portfolio.ts:844-846`).
 ///

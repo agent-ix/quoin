@@ -173,7 +173,7 @@ pub fn export_premises(export: &quoin_quire::model::AssuranceExport) -> Value {
 /// The UTF-16 comparison every ordering in the retained source performs, for
 /// the two sides that are still plain engine `String`s.
 fn compare(left: &str, right: &str) -> std::cmp::Ordering {
-    quoin_store::json::order::cmp_utf16(left, right)
+    crate::ids::compare_text(left, right)
 }
 
 fn sort_schemas(module: &mut ModulePremise) {

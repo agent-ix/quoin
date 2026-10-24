@@ -631,7 +631,7 @@ fn tc_475_054_the_identity_ordering_difference_is_unreachable() {
         "code-point order puts the astral name second"
     );
     assert_eq!(
-        quoin_store::json::order::cmp_utf16("\u{10000}", "\u{FFFD}"),
+        quoin_measurement_graph::order::compare_text("\u{10000}", "\u{FFFD}"),
         std::cmp::Ordering::Less,
         "code-unit order puts the astral name first"
     );

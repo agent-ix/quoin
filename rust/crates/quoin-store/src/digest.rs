@@ -101,7 +101,7 @@
 use std::fmt;
 
 use crate::error::StoreError;
-use crate::json::jcs::canonical_bytes;
+use crate::json::canonical::canonical_bytes;
 use crate::json::value::{JsonObject, JsonValue};
 
 /// The member name a sealed record carries its own digest under.
@@ -522,21 +522,15 @@ pub fn digest_record_pair_file_name(first: &str, second: &str) -> RecordFileName
     RecordFileName(sha256_hex(&joined))
 }
 
-/// Compute an assurance record's identity from the value it will be stored as.
+/// Compute an assurance record's identity over shared RFC 8785 bytes.
 ///
-/// Hashes [`canonical_json`](crate::json::pretty::canonical_json) — the
-/// two-space, key-sorted, newline-terminated form the evidence store writes —
-/// under SHA-256. Pass the record WITHOUT its `recordId` member: the id is
-/// taken over the record's content, and including it would make the identity
-/// depend on itself.
+/// Pass the record WITHOUT `recordId`, which cannot identify itself. The pretty
+/// store representation is display/storage only; it is not identity input.
 ///
 /// # Errors
-///
-/// As [`canonical_json`](crate::json::pretty::canonical_json): a value with no
-/// canonical spelling has no identity either.
+/// As [`canonical_bytes`].
 pub fn digest_assurance_record(value: &JsonValue) -> Result<AssuranceRecordId, StoreError> {
-    crate::json::pretty::canonical_json(value)
-        .map(|text| AssuranceRecordId(sha256_hex(text.as_bytes())))
+    canonical_bytes(value).map(|bytes| AssuranceRecordId(sha256_hex(&bytes)))
 }
 
 /// Digest a file's complete bytes under SHA-256, with the guards a digest over
@@ -816,13 +810,15 @@ mod tests {
         clippy::panic,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
+
     use super::{
         AssuranceRecordId, CanonicalDigest, DigestDomain, RawBytesDigest, RawFileSha256Digest,
         digest_assurance_record, digest_bytes_sha256, digest_canonical_value, digest_file_sha256,
         digest_opened_file, digest_raw_bytes, digest_record, open_for_digest, verify_record_digest,
     };
     use crate::error::StoreErrorCode;
-    use crate::json::jcs::canonical_bytes;
+    use crate::json::canonical::canonical_bytes;
     use crate::json::parse::parse_strict_json_str;
 
     /// Trace: FR-098-CON-1
@@ -842,33 +838,31 @@ mod tests {
         assert!(!DigestDomain::AssuranceRecordSha256.is_opaque_bytes());
     }
 
-    /// An assurance record's id is SHA-256 over the store's canonical JSON
-    /// text — the two-space, key-sorted, newline-terminated form — and not
-    /// over the RFC 8785 bytes the blake3 canonical domain uses.
-    ///
-    /// The literal below is the digest `src/evidence/assurance-records.ts`
-    /// computes for the same value, so a change to either serializer or to the
-    /// trailing newline renames every record in every store (NFR-025).
-    ///
-    /// Trace: FR-048-AC-1, FR-100-CON-4
+    #[trace("FR-100-AC-11")]
     #[test]
-    fn tc_456_assurance_record_ids_hash_the_canonical_json_text() {
+    fn plat_989_assurance_identity_uses_rfc8785_bytes() {
+        let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
+        // Independently specified compact RFC text, including exact whitespace.
+        assert_eq!(
+            digest_assurance_record(&value).unwrap().as_hex(),
+            super::sha256_hex(br#"{"a":[true,null],"b":1}"#)
+        );
+    }
+
+    #[trace("FR-100-AC-11")]
+    #[test]
+    fn tc_456_assurance_record_ids_use_jcs_and_keep_their_stored_spelling() {
         let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
         let id = digest_assurance_record(&value).unwrap();
-        let text = crate::json::pretty::canonical_json(&value).unwrap();
-        assert_eq!(
-            text,
-            "{\n  \"a\": [\n    true,\n    null\n  ],\n  \"b\": 1\n}\n"
-        );
-        assert_eq!(
-            id.to_stored(),
-            format!("sha256:{}", super::sha256_hex(text.as_bytes()))
-        );
         assert_eq!(id.domain(), DigestDomain::AssuranceRecordSha256);
-        // Not the JCS bytes: a different question, and a different answer.
+        assert_eq!(id.to_stored(), format!("sha256:{}", id.as_hex()));
         assert_ne!(
             id.as_hex(),
-            super::sha256_hex(&canonical_bytes(&value).unwrap())
+            super::sha256_hex(
+                crate::json::pretty::canonical_json(&value)
+                    .unwrap()
+                    .as_bytes()
+            )
         );
         assert_eq!(
             AssuranceRecordId::parse_stored(&id.to_stored()).unwrap(),
@@ -1029,6 +1023,7 @@ mod tests {
     ///
     /// Trace: FR-098-CON-1, FR-100-CON-4
     /// Provenance: quoin#484
+    #[trace("FR-100-AC-11")]
     #[test]
     fn tc_484_the_bytes_wise_sha256_agrees_with_the_file_wise_one() {
         const NIST_ABC: &str =
