@@ -131,7 +131,7 @@ field, a different number formatting, a different string or a different array
 order all still fail. Only key order is normalized away, and key order is not
 part of the report's meaning — every consumer reads it with a parser.
 
-Number formatting is `quoin_store::json::number::format_number`, the
+Number formatting is `jsvalue::number_text` via the shared canonical encoder, the
 ECMAScript `Number::toString` algorithm, everywhere a score or a count reaches a
 string. Rust's `{}` is not that algorithm, and a mutation score of `0.1` would
 be the first place it showed.

@@ -93,6 +93,13 @@ impl ShellError {
 
 fn main() -> std::process::ExitCode {
     let arguments = std::env::args_os().collect::<Vec<_>>();
+    if matches!(arguments.as_slice(), [_, command] if command == "workflow-invariants") {
+        return std::process::ExitCode::from(flow::provider::serve(
+            std::io::stdin().lock(),
+            std::io::stdout().lock(),
+            std::io::stderr().lock(),
+        ));
+    }
     if is_version_request(&arguments) {
         return emit_version();
     }
@@ -172,7 +179,13 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
     } else {
         ShellError::command
     };
-    invocation::with_current(invocation, || dispatch(&matches)).map_err(failure)
+    invocation::with_current(invocation, || {
+        if let Some((name @ ("review" | "to-plan"), arguments)) = matches.subcommand() {
+            flow::run(name, arguments)
+        } else {
+            dispatch(&matches).map_err(failure)
+        }
+    })
 }
 
 /// The command family an invocation names, answered even when the invocation
@@ -240,11 +253,6 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     }
     if let Some(("update", update)) = matches.subcommand() {
         return update::run(update);
-    }
-    if let Some((name, flow_arguments)) = matches.subcommand()
-        && matches!(name, "review" | "to-plan")
-    {
-        return flow::run(name, flow_arguments);
     }
     if let Some(("matrix", arguments)) = matches.subcommand() {
         return matrix::run(arguments);
@@ -358,6 +366,11 @@ fn command() -> Command {
         .subcommand(validate::command())
         .subcommand(write::command())
         .subcommand(update::command())
+        .subcommand(
+            Command::new("workflow-invariants")
+                .hide(true)
+                .about("Evaluate Quoin workflow invariants over bounded JSON on stdin"),
+        )
         .subcommand(flow::command("review"))
         .subcommand(matrix::command())
         .subcommand(flow::command("to-plan"))
@@ -614,6 +627,7 @@ mod tests {
         "quoin to-plan",
         "quoin update",
         "quoin validate",
+        "quoin workflow-invariants",
         "quoin write",
     ];
 

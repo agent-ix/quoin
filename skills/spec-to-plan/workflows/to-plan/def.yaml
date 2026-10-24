@@ -1,0 +1,40 @@
+name: to-plan
+version: 1.0.0
+description: Quoin-owned planning with live catalog validation and human acceptance.
+initialPhase: intake
+phases:
+  - {name: intake}
+  - {name: evidence_recorded}
+  - {name: plan_drafted}
+  - {name: validated}
+  - {name: accepted, terminal: true}
+transitions:
+  - from: intake
+    to: evidence_recorded
+    invariants: ["interview.complete:plan", plan_inputs_ready, human_acceptance_required]
+    defaultGate: auto
+  - from: evidence_recorded
+    to: plan_drafted
+    invariants: [human_acceptance_required]
+    defaultGate: auto
+  - from: plan_drafted
+    to: validated
+    invariants: [plan_documents_valid, human_acceptance_required]
+    defaultGate: auto
+  - from: validated
+    to: accepted
+    invariants: [plan_documents_valid, human_acceptance_required]
+    defaultGate: hitl
+itemSchemas:
+  quoin_context: {}
+  plan_answers: {}
+linkSchemas: {}
+interviews:
+  plan:
+    itemType: plan_answers
+    completenessRule: all_required
+    questions:
+      - {key: plan_path, prompt: "Plan document path.", type: text, required: true}
+      - {key: index_path, prompt: "Bundle index path.", type: text, required: true}
+      - {key: task_paths, prompt: "Every task document in the bundle.", type: "list<text>", minItems: 1, required: true}
+      - {key: readiness_notes, prompt: "Resolved readiness, dependencies and verification strategy.", type: text, required: true}

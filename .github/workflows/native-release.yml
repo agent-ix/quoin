@@ -69,6 +69,13 @@ jobs:
       - name: Install frozen dependency graph
         shell: bash
         run: pnpm install --frozen-lockfile
+      - name: Authenticate private Cargo build inputs
+        shell: bash
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private Rust build dependencies"; exit 1; }
+          git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
       - name: Build the native quoin artifact
         shell: bash
         run: cd rust && cargo build --locked --release -p quoin-cli --bin quoin
@@ -111,6 +118,11 @@ jobs:
           test "$(find release-smoke -type f | wc -l | tr -d ' ')" = 1
           test -f "release-smoke/$BINARY"
           "./release-smoke/$BINARY" --version
+          npm install --prefix "$RUNNER_TEMP/quoin-workflow-runner" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.1
+          (cd rust && cargo build --locked --target-dir target -p quoin-workflow-check)
+          CHECKER="rust/target/debug/quoin-workflow-check"
+          if [ "$BINARY" = quoin.exe ]; then CHECKER="${CHECKER}.exe"; fi
+          "$CHECKER" smoke "release-smoke/$BINARY" "$RUNNER_TEMP/quoin-workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4
         with:
           name: quoin-${{ matrix.target }}

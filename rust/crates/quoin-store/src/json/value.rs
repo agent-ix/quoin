@@ -55,11 +55,22 @@ impl PartialEq for JsonNumber {
     /// `0`, and a digest cannot distinguish them; treating them as unequal
     /// here would make equality disagree with identity.
     fn eq(&self, other: &Self) -> bool {
-        crate::json::number::format_number(self.0) == crate::json::number::format_number(other.0)
+        self.0 == other.0
     }
 }
 
 impl Eq for JsonNumber {}
+
+impl std::fmt::Display for JsonNumber {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Every finite double fits in 25 canonical ASCII bytes. Encoding policy
+        // belongs to the shared owner, including negative zero and exponents.
+        let bytes = quire_canonical::to_vec(&self.0, quire_canonical::Limits::new(32))
+            .map_err(|_| std::fmt::Error)?;
+        let text = std::str::from_utf8(&bytes).map_err(|_| std::fmt::Error)?;
+        formatter.write_str(text)
+    }
+}
 
 /// A JSON object: member names to values, with duplicate names refused.
 ///

@@ -3,8 +3,8 @@
 //! The evidence store's on-disk form: `canonicalJson`.
 //!
 //! Two-space indent, `": "` between name and value, one trailing newline. It
-//! is **not** JCS and the two must never be confused: JCS is what digests are
-//! taken over, this is what `spec/evidence/**.json` contains so that a pull
+//! is **not** JCS and the two must never be confused: RFC 8785 is what canonical-domain digests are
+//! taken over; no canonical-domain identity hashes this pretty form. This is what `spec/evidence/**.json` contains so that a pull
 //! request diff of the store *is* the per-PR delta.
 //!
 //! The member order is the subtle part. The oracle is
@@ -13,14 +13,11 @@
 //! does not preserve that order: ECMAScript emits array-index names first in
 //! ascending numeric order, then the rest in insertion order. A store object
 //! keyed by numbers — `{"10": …, "2": …}` — therefore serializes as `2` before
-//! `10`, which is neither Rust's `BTreeMap` order nor JCS order. See
-//! [`crate::json::order::ecmascript_own_property_order`].
+//! `10`, which is neither Rust's `BTreeMap` order nor JCS order. This is a storage presentation policy, never the canonical identity order.
 
 use crate::error::StoreError;
 use crate::json::MAX_NESTING_DEPTH;
 use crate::json::escape::write_json_string;
-use crate::json::number::format_number;
-use crate::json::order::ecmascript_own_property_order;
 use crate::json::value::JsonValue;
 
 const INDENT: &str = "  ";
@@ -65,7 +62,9 @@ fn write(out: &mut String, value: &JsonValue, depth: usize) -> Result<(), StoreE
         JsonValue::Null => out.push_str("null"),
         JsonValue::Bool(true) => out.push_str("true"),
         JsonValue::Bool(false) => out.push_str("false"),
-        JsonValue::Number(number) => out.push_str(&format_number(number.get())),
+        JsonValue::Number(number) => out.push_str(&crate::json::canonical::canonicalize_jcs(
+            &JsonValue::Number(*number),
+        )?),
         JsonValue::String(text) => write_json_string(out, text),
         JsonValue::Array(items) => {
             if items.is_empty() {
@@ -90,10 +89,7 @@ fn write(out: &mut String, value: &JsonValue, depth: usize) -> Result<(), StoreE
                 return Ok(());
             }
             out.push_str("{\n");
-            for (index, name) in ecmascript_own_property_order(object.names())
-                .into_iter()
-                .enumerate()
-            {
+            for (index, name) in storage_names(object.names()).into_iter().enumerate() {
                 if index > 0 {
                     out.push_str(",\n");
                 }
@@ -111,4 +107,53 @@ fn write(out: &mut String, value: &JsonValue, depth: usize) -> Result<(), StoreE
         }
     }
     Ok(())
+}
+
+// JSON.stringify presents canonical array-index names numerically first.
+// This affects readable storage only; the shared encoder owns identity order.
+fn storage_names<'a>(names: impl Iterator<Item = &'a str>) -> Vec<&'a str> {
+    fn array_index(name: &str) -> Option<u32> {
+        let value: u32 = name.parse().ok()?;
+        (value < u32::MAX && value.to_string() == name).then_some(value)
+    }
+    let mut names: Vec<_> = names.collect();
+    names.sort_unstable_by(
+        |left, right| match (array_index(left), array_index(right)) {
+            (Some(a), Some(b)) => a.cmp(&b),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => left.encode_utf16().cmp(right.encode_utf16()),
+        },
+    );
+    names
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn storage_indices_remain_presentation_order_not_identity_order() {
+        assert_eq!(
+            super::storage_names(
+                [
+                    "10",
+                    "2",
+                    "01",
+                    "4294967294",
+                    "4294967295",
+                    "\u{10000}",
+                    "\u{fffd}"
+                ]
+                .into_iter()
+            ),
+            [
+                "2",
+                "10",
+                "4294967294",
+                "01",
+                "4294967295",
+                "\u{10000}",
+                "\u{fffd}"
+            ]
+        );
+    }
 }

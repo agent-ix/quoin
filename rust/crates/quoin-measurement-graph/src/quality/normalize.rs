@@ -16,7 +16,7 @@
 //! the measurement validator mints the type: parse, don't validate, with the
 //! parser that already exists.
 
-use quoin_store::json::order::cmp_utf16;
+use crate::order::compare_text;
 use serde_json::{Value, json};
 
 use crate::canonical::pretty_text;
@@ -174,7 +174,7 @@ pub fn normalize_graph_quality(
 /// Refuse a repeated partition, then sort by the canonical text of the
 /// dimensions.
 ///
-/// The comparison is [`cmp_utf16`] rather than Rust's `str: Ord` because the
+/// The comparison is [`compare_text`] rather than Rust's `str: Ord` because the
 /// retained comparator is JavaScript `<`, which is UTF-16 lexicographic. The
 /// two orders disagree above the BMP, and there is no reason to leave that
 /// difference latent when the workspace already states the right one.
@@ -191,7 +191,7 @@ fn unique_and_sort(observations: Vec<Value>) -> Result<Vec<Value>> {
         }
         keyed.push((key, observation));
     }
-    keyed.sort_by(|(left, _), (right, _)| cmp_utf16(left, right));
+    keyed.sort_by(|(left, _), (right, _)| compare_text(left, right));
     Ok(keyed
         .into_iter()
         .map(|(_, observation)| observation)

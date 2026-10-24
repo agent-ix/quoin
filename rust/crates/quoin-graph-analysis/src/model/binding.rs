@@ -217,13 +217,13 @@ fn canonicalize(mut bindings: Vec<Binding>) -> Vec<Binding> {
     for binding in &mut bindings {
         binding
             .symbols
-            .sort_by(|left, right| quoin_store::json::order::cmp_utf16(left, right));
+            .sort_by(|left, right| crate::ids::compare_text(left, right));
         if let Some(affirmations) = binding.affirmations.as_mut() {
             affirmations.sort_by(|left, right| {
                 (&left.who, &left.commit)
                     .cmp(&(&right.who, &right.commit))
                     .then_with(|| {
-                        quoin_store::json::order::cmp_utf16(
+                        crate::ids::compare_text(
                             left.note.as_deref().unwrap_or(""),
                             right.note.as_deref().unwrap_or(""),
                         )

@@ -1,0 +1,41 @@
+[
+  {
+    "name": "supplementary-before-bmp",
+    "input": {
+      "": 1,
+      "𐀀": 2
+    },
+    "canonical": "{\"𐀀\":2,\"\":1}"
+  },
+  {
+    "name": "integer-shaped-member-order",
+    "input": {
+      "2": 2,
+      "10": 10
+    },
+    "canonical": "{\"10\":10,\"2\":2}"
+  },
+  {
+    "name": "ecmascript-numbers",
+    "input": {
+      "zero": -0.0,
+      "integral": 1.0,
+      "exponent": 1e+21
+    },
+    "canonical": "{\"exponent\":1e+21,\"integral\":1,\"zero\":0}"
+  },
+  {
+    "name": "healthy-ascii-control",
+    "input": {
+      "z": {
+        "b": 2,
+        "a": 1
+      },
+      "a": [
+        true,
+        null
+      ]
+    },
+    "canonical": "{\"a\":[true,null],\"z\":{\"a\":1,\"b\":2}}"
+  }
+]

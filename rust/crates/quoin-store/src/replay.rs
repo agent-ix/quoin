@@ -36,8 +36,7 @@ use std::path::{Path, PathBuf};
 
 use crate::digest::{digest_canonical_value, digest_raw_bytes, verify_record_digest};
 use crate::error::StoreError;
-use crate::json::jcs::canonicalize_jcs;
-use crate::json::order::jcs_order;
+use crate::json::canonical::canonicalize_jcs;
 use crate::json::parse::parse_strict_json;
 use crate::json::pretty::canonical_json;
 use crate::json::value::JsonValue;
@@ -109,7 +108,9 @@ pub fn walk_nodes<'a>(value: &'a JsonValue, out: &mut Vec<&'a JsonValue>) {
             }
         }
         JsonValue::Object(object) => {
-            for name in jcs_order(object.names()) {
+            let mut names: Vec<_> = object.names().collect();
+            names.sort_unstable_by(|left, right| left.encode_utf16().cmp(right.encode_utf16()));
+            for name in names {
                 if let Some(member) = object.get(name) {
                     walk_nodes(member, out);
                 }

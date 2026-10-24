@@ -13,7 +13,7 @@ The `SpecReview` archetype lives in `spec-artifacts-process`. Render its skeleto
 then author, then validate (the ecosystem direct-render-then-validate model):
 
 ```
-quoin write --types SpecReview
+quoin write . --types SpecReview
 ```
 
 If `quoin write` is unavailable, use the complete frontmatter, body, findings-table, and

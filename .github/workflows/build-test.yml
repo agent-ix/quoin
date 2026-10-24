@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: pnpm/action-setup@v6
         with:
@@ -40,17 +41,19 @@ jobs:
         run: git config --global url."https://x-access-token:${{ secrets.REGISTRY_TOKEN }}@github.com/".insteadOf "https://github.com/"
       # rust/crates/quoin-semantic/build.rs embeds the semantic contract out of
       # node_modules/@agent-ix/* (PLAT-887's de-vendoring); `make rust-lint`,
-      # `make rust-build` and `make rust-test` all depend on `workflow-assets`,
+      # `make rust-build` and `make rust-test` all depend on `build-inputs`,
       # but installing it as its own step here keeps it visible and cacheable
       # rather than hidden inside the first Make target that happens to need it.
       - name: Install frozen dependency graph
-        run: make workflow-assets
+        run: make build-inputs
       - name: Format and lint
         run: make rust-lint
       - name: Build
         run: make rust-build
       - name: Test
         run: make rust-test
+      - name: Installed workflow behavior
+        run: make workflow-test
 
   rust-deny:
     name: Rust supply chain
@@ -63,3 +66,44 @@ jobs:
         with:
           manifest-path: rust/Cargo.toml
           command: check
+
+  windows-workflows:
+    name: Windows workflow behavior
+    runs-on: windows-2025
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.20.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.15.0
+          cache: pnpm
+      - uses: agent-ix/nodejs-actions/setup-npmrc@main
+        with:
+          npm_registry_token: ${{ secrets.REGISTRY_TOKEN }}
+      - name: Install Rust toolchain
+        working-directory: rust
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: Authenticate private Cargo build inputs
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          test -n "$REGISTRY_TOKEN"
+          git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
+      - name: Install build inputs and published runner
+        run: |
+          pnpm install --frozen-lockfile
+          npm install --prefix "$RUNNER_TEMP/quoin-workflow-runner" --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.1
+      - name: Build candidate CLI and native checker
+        working-directory: rust
+        run: cargo build --locked --target-dir target -p quoin-cli -p quoin-workflow-check
+      - name: Exercise installed LF and CRLF plugin workflows
+        run: rust/target/debug/quoin-workflow-check.exe smoke rust/target/debug/quoin.exe "$RUNNER_TEMP/quoin-workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" "$GITHUB_WORKSPACE"

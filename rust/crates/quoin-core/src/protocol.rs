@@ -139,14 +139,22 @@ impl Response {
 
 /// Serialize the boundary through the shared canonical encoder.
 ///
-/// Domain failures retain the boundary's stable Io code.
+/// Member names follow RFC 8785 UTF-16 order and numbers follow ECMAScript.
+/// Exact Rust integers outside the shared encoder's lossless range are refused,
+/// rather than rounded. Domain failures retain the boundary's stable Io code.
 ///
 /// # Errors
 ///
 /// Returns [`crate::error::CoreErrorCode::Io`] if encoding fails.
 pub fn canonical_json<T: serde::Serialize>(value: &T) -> Result<String, crate::error::CoreError> {
-    ix_cli_kit::json::encode_canonical(value, false).map_err(|error| {
-        crate::error::CoreError::new(crate::error::CoreErrorCode::Io, error.source.to_string())
+    let value = serde_json::to_value(value).map_err(|error| {
+        crate::error::CoreError::new(crate::error::CoreErrorCode::Io, error.to_string())
+    })?;
+    let bytes = quire_canonical::to_vec(&value, quire_canonical::Limits::new(u64::MAX)).map_err(
+        |error| crate::error::CoreError::new(crate::error::CoreErrorCode::Io, error.to_string()),
+    )?;
+    String::from_utf8(bytes).map_err(|error| {
+        crate::error::CoreError::new(crate::error::CoreErrorCode::Io, error.to_string())
     })
 }
 
@@ -158,6 +166,7 @@ pub fn canonical_json<T: serde::Serialize>(value: &T) -> Result<String, crate::e
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     /// Trace: FR-096-AC-10
     #[test]
@@ -207,6 +216,43 @@ mod tests {
             canonical_json(&value).unwrap(),
             r#"{"a":{"b":3,"y":2},"z":1}"#
         );
+    }
+
+    /// PLAT-989: literal failure vectors and an ASCII healthy control.
+    #[trace("FR-100-AC-10")]
+    #[test]
+    fn canonical_boundary_matches_rfc8785_vectors() {
+        let cases: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/plat_989_canonical.json"))
+                .unwrap();
+        for case in cases.as_array().unwrap() {
+            let store_value = quoin_store::json::parse::parse_strict_json_str(
+                &serde_json::to_string(&case["input"]).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                canonical_json(&case["input"]).unwrap(),
+                quoin_store::canonicalize_jcs(&store_value).unwrap()
+            );
+            assert_eq!(
+                canonical_json(&case["input"]).unwrap(),
+                case["canonical"].as_str().unwrap(),
+                "{}",
+                case["name"]
+            );
+        }
+    }
+
+    #[test]
+    fn canonical_boundary_refuses_inexact_integer_identity() {
+        assert_eq!(
+            canonical_json(&9_007_199_254_740_992_u64).unwrap(),
+            "9007199254740992"
+        );
+        for integer in [9_007_199_254_740_993_u64, 1_u64 << 60] {
+            let refusal = canonical_json(&integer).unwrap_err();
+            assert_eq!(refusal.code, crate::error::CoreErrorCode::Io);
+        }
     }
 
     /// Provenance: PLAT-837 review. `sort_object_keys`'s `Array` branch was

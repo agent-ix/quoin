@@ -15,6 +15,8 @@ use std::path::PathBuf;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[non_exhaustive]
 pub enum StoreErrorCode {
+    /// The shared canonical encoder refused an output.
+    CanonicalEncoding,
     /// Input bytes were not valid UTF-8.
     JsonNotUtf8,
     /// Input began with a byte-order mark.
@@ -75,7 +77,8 @@ pub enum StoreErrorCode {
 
 impl StoreErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 28] = [
+    pub const ALL: [Self; 29] = [
+        Self::CanonicalEncoding,
         Self::JsonNotUtf8,
         Self::JsonByteOrderMark,
         Self::JsonExpectedValue,
@@ -110,6 +113,7 @@ impl StoreErrorCode {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
+            Self::CanonicalEncoding => "QSTORE-CANONICAL-ENCODING",
             Self::JsonNotUtf8 => "QSTORE-JSON-NOT-UTF8",
             Self::JsonByteOrderMark => "QSTORE-JSON-BOM",
             Self::JsonExpectedValue => "QSTORE-JSON-EXPECTED-VALUE",
@@ -165,6 +169,13 @@ pub type Offset = usize;
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum StoreError {
+    /// The shared encoder refused canonical output; no bytes are returned.
+    #[error("canonical JSON encoding failed: {source}")]
+    CanonicalEncoding {
+        /// The underlying typed encoder refusal.
+        #[source]
+        source: quire_canonical::Error,
+    },
     /// Input bytes were not valid UTF-8.
     #[error("input is not valid UTF-8")]
     JsonNotUtf8,
@@ -398,6 +409,7 @@ impl StoreError {
     #[must_use]
     pub const fn code(&self) -> StoreErrorCode {
         match self {
+            Self::CanonicalEncoding { .. } => StoreErrorCode::CanonicalEncoding,
             Self::JsonNotUtf8 => StoreErrorCode::JsonNotUtf8,
             Self::JsonByteOrderMark => StoreErrorCode::JsonByteOrderMark,
             Self::JsonExpectedValue { .. } => StoreErrorCode::JsonExpectedValue,

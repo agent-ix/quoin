@@ -1,6 +1,17 @@
 ---
 name: spec-to-plan
 description: Convert ISO spec requirements (StR, FR, NFR) into a TDD-based project plan with dependency analysis, parallel execution tracks, quality gates, and task decomposition. Selects or starts a plan and writes a frontmatter-typed plan bundle under plan/<Plan-id>-<slug>/ (Plan + Task + index).
+metadata:
+  ix-flow-workflows: ./workflows
+  ix-flow-invariant-provider:
+    command: quoin
+    args: [workflow-invariants]
+    request-protocol: quoin.workflow-invariants/v1
+    result-protocol: quoin.workflow-invariants-result/v1
+    invariants:
+      - plan_inputs_ready
+      - plan_documents_valid
+      - human_acceptance_required
 ---
 
 # Spec to Plan
@@ -84,3 +95,20 @@ After the bundle validates, run `filament open <plan-bundle>/plan.md` to open th
 plan in the running filament-ide cockpit (it fires the `filament-ide://` deep link
 and prints a clickable link as a fallback). Skip silently if the `filament`
 command is not installed.
+
+## Enforced workflow
+
+This installed skill contains `workflows/to-plan/def.yaml`. From the subject
+repository, start `ix-flow run to-plan --path <this-skill-directory> --id <run-id>
+--target <repo-relative-path> --json`, using the absolute directory containing
+this SKILL.md. Before advancing, add exactly one `quoin_context` item with
+`id: quoin-launch-context`, absolute `repo_root`, absolute `config_root` (normally
+~/.ix), and absolute contained `targets` through `ix-flow add-item`.
+
+Alternatively `quoin to-plan --path <this-skill-directory> --id <run-id>
+--target <repo-relative-path> --json` starts the same definition and initializes
+the context. Require Quoin >=0.29.1 and ix-flow >=0.3.1 on PATH. Use the same
+--config-root and --state-dir on subsequent commands. Follow the
+[workflow instructions](references/workflow.md) for interview fields, artifact
+validation and explicit human acceptance. Existing external-provider runs are
+preserved; start a new run to revalidate existing documents.

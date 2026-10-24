@@ -487,7 +487,8 @@ mod tests {
             "]".repeat(MAX_NESTING_DEPTH)
         );
         let value = parse_strict_json_str(&at_budget).expect("at the budget");
-        crate::json::jcs::canonicalize_jcs(&value).expect("both writers reach the same budget");
+        crate::json::canonical::canonicalize_jcs(&value)
+            .expect("both writers reach the same budget");
         crate::json::pretty::canonical_json(&value).expect("both writers reach the same budget");
     }
 
@@ -603,7 +604,7 @@ mod tests {
         // rather than about the escape syntax.
         let paired = parse_strict_json_str(r#""😀""#).expect("a paired surrogate is a character");
         assert_eq!(
-            crate::json::jcs::canonicalize_jcs(&paired).expect("canonicalizes"),
+            crate::json::canonical::canonicalize_jcs(&paired).expect("canonicalizes"),
             "\"\u{1F600}\"",
         );
     }
@@ -617,7 +618,7 @@ mod tests {
             value = crate::json::value::JsonValue::Array(vec![value]);
         }
         assert_eq!(
-            crate::json::jcs::canonicalize_jcs(&value)
+            crate::json::canonical::canonicalize_jcs(&value)
                 .expect_err("past the budget")
                 .code(),
             StoreErrorCode::JsonNestingTooDeep

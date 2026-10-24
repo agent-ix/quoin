@@ -22,15 +22,20 @@
 //! hypothetical for a corpus of spec ids and author names, and
 //! `text/escapes-and-utf16-order` in the golden corpus makes it observable.
 //!
-//! So [`cmp_utf16`] — `quoin-store`'s, the one this workspace already owns —
-//! is the `Ord` of every type here. A `BTreeMap` keyed on one of them iterates
+//! Comparing the standard [`str::encode_utf16`] iterators supplies the `Ord`
+//! of every type here. A `BTreeMap` keyed on one of them iterates
 //! in the order the oracle sorts in, with no sort step to forget.
 
 use std::cmp::Ordering;
 use std::fmt;
 
-use quoin_store::json::order::cmp_utf16;
 use serde::{Deserialize, Serialize};
+
+/// The retained graph comparison: lexicographic UTF-16 code units.
+#[must_use]
+pub(crate) fn compare_text(left: &str, right: &str) -> Ordering {
+    left.encode_utf16().cmp(right.encode_utf16())
+}
 
 /// The shared half: wrapping, borrowing, rendering, and UTF-16 ordering.
 macro_rules! ordered_text {
@@ -57,7 +62,7 @@ macro_rules! ordered_text {
 
         impl Ord for $name {
             fn cmp(&self, other: &Self) -> Ordering {
-                cmp_utf16(&self.0, &other.0)
+                compare_text(&self.0, &other.0)
             }
         }
 

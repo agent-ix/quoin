@@ -5,10 +5,10 @@
 
 use std::collections::BTreeSet;
 
+use crate::jsvalue::number_text;
 use quoin_evidence::types::{Binding, Outcome, RunRecord};
 use quoin_finding_types::{Finding, FindingKind, Severity};
 use quoin_quire_types::Obligation;
-use quoin_store::json::number::format_number;
 
 use super::input::AuditInput;
 
@@ -167,7 +167,7 @@ pub fn mutation_finding(
                 "{id} is criticality {criticality}, which demands a mutation score of at \
                  least {floor}, and no run bound to it records one.",
                 id = obligation.id,
-                floor = format_number(floor)
+                floor = number_text(floor)
             ),
         ));
     }
@@ -187,8 +187,8 @@ pub fn mutation_finding(
             "{id} is criticality {criticality}, which demands a mutation score of at least \
              {floor}; its weakest bound symbol scores {worst}.",
             id = obligation.id,
-            floor = format_number(floor),
-            worst = format_number(worst)
+            floor = number_text(floor),
+            worst = number_text(worst)
         ),
     ))
 }

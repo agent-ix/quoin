@@ -53,7 +53,7 @@ thiserror = { workspace = true }
 # the live API and both append a line -- that needs an async-aware mutex. Only
 # the `sync` feature: no runtime is built here (see `lib.rs`). Same pin as the
 # dev-dependency below and as the version already resolved through `reqwest`.
-tokio = { version = "=1.48.0", default-features = false, features = ["sync"] }
+tokio = { version = "=1.51.6", default-features = false, features = ["sync"] }
 # The cassette (PLAT-977) is a `typesafe_sdk_http::Transport` implementation,
 # and that trait is itself declared with `#[async_trait]` -- an implementer
 # needs the same macro to produce a matching `dyn`-compatible shape. Pinned to
@@ -77,7 +77,7 @@ typesafe-sdk-headers = "=0.6.2"
 # integration suite; no production code in this crate builds a runtime (see
 # `lib.rs`'s module doc: the async/blocking bridge is a future CLI caller's
 # concern, not this library's).
-tokio = { version = "=1.48.0", default-features = false, features = ["rt", "macros"] }
+tokio = { version = "=1.51.6", default-features = false, features = ["rt", "macros"] }
 tempfile = { workspace = true }
 # `tc_1016_constant_predictor.rs` builds a `DecisionRule::against_baseline`
 # and calls `quoin_measurement::verify` end to end; production code in this

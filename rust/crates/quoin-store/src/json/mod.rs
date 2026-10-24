@@ -8,7 +8,7 @@
 //!
 //! | writer | shape | what it is for |
 //! |---|---|---|
-//! | [`jcs::canonicalize_jcs`] | RFC 8785, compact, UTF-16 key order | the bytes a digest is taken over |
+//! | [`canonical::canonicalize_jcs`] | RFC 8785, compact, UTF-16 key order | the bytes a digest is taken over |
 //! | [`pretty::canonical_json`] | 2-space indent, ECMAScript own-property order, trailing newline | the bytes `spec/evidence/**.json` holds |
 //!
 //! Using the pretty form where the JCS form belongs changes every digest;
@@ -18,7 +18,7 @@
 ///
 /// # Why a bound exists
 ///
-/// The reader and both writers are recursive, and Rust does not grow the
+/// The reader and display writer are recursive, and Rust does not grow the
 /// stack. Without a bound, a document of 40,000 `[` ends the process with
 /// `fatal runtime error: stack overflow` (SIGABRT, exit 134) — an abort, not a
 /// refusal, on a path that reads untrusted evidence.
@@ -46,10 +46,8 @@
 /// deepest store file nests in the low tens.
 pub const MAX_NESTING_DEPTH: usize = 1_000;
 
+pub mod canonical;
 pub mod escape;
-pub mod jcs;
-pub mod number;
-pub mod order;
 pub mod parse;
 pub mod pretty;
 pub mod value;
