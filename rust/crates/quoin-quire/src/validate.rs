@@ -274,6 +274,13 @@ fn not_run(document: String, reason: NotRunReason) -> Evaluation {
     }
 }
 
+/// Read frontmatter through the linked engine's Markdown parser.
+/// Malformed or absent frontmatter remains absent; callers must refuse it.
+#[must_use]
+pub fn frontmatter(text: &str) -> Option<serde_json::Map<String, serde_json::Value>> {
+    quire_rs::parse_document(text).frontmatter
+}
+
 fn archetype_of(text: &str) -> Option<String> {
     let document = quire_rs::parse_document(text);
     quire_rs::concept_type(&document).map(str::to_string)

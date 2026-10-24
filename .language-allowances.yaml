@@ -64,10 +64,9 @@ categories:
         note: >
           Skill bodies are prose an agent host reads. They carry no executable
           extension and contribute nothing to the metric population; declared
-          so the skills tree is not silently half-covered. The EXECUTABLES
-          under skills/**/workflow-assets/** are NOT covered by this entry —
-          their specInvariants decide whether a review, matrix or plan flow
-          passes, which is an assertion, so the inert test refuses them.
+          so the skills tree is not silently half-covered. Workflow definitions
+          have an explicit owner disposition below; executable invariant
+          decisions are implemented in Rust and are not covered by this entry.
 
   - id: thin-host
     rule: >
@@ -85,6 +84,14 @@ categories:
     owner: quoin-maintainers
     requires: [date, deciding_owner]
     paths:
+      - path: skills/**/workflows/**/def.yaml
+        owner: quoin-maintainers
+        date: 2026-10-24
+        deciding_owner: kreneskyp
+        note: >
+          Owner selected Quoin-owned workflow definitions with ix-flow as the
+          generic runner. Definitions are first-party Quoin source; invariant
+          decisions and document validation execute in the Rust provider.
       - path: templates/semantic-module/{{cookiecutter.repo_name}}/typespec/main.tsp
         owner: quoin-maintainers
         date: 2026-09-12

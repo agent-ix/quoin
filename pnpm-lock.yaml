@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@agent-ix/ix-spec-workflows':
-        specifier: '>=0.1.3'
-        version: 0.1.3
       '@agent-ix/semantic-core':
         specifier: 0.3.2
         version: 0.3.2(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))
@@ -20,9 +17,6 @@ importers:
 
 packages:
 
-  '@agent-ix/ix-spec-workflows@0.1.3':
-    resolution: {integrity: sha512-XEV7il1jwVd3wN4VeZITwW4ryB25o7NRMsuxKDj0kJKeogsvDoCyvKEDsr/MG6QXxUSnrH96dtODfZ9JCUF8ug==, tarball: https://npm.pkg.github.com/download/@agent-ix/ix-spec-workflows/0.1.3/1b264a8f796318c5c8e023b70a7e53e7fe2683a7}
-
   '@agent-ix/semantic-core@0.3.2':
     resolution: {integrity: sha512-Rz/83LT+a9klXhudg8q2UjAo3DjjROOlmw0yjJXjGQPkCJ0Mpqlkv7I76BzmlAoFyCm64WKgbeWePZchftz/fQ==, tarball: https://npm.pkg.github.com/download/@agent-ix/semantic-core/0.3.2/55b883ac34241ba6332c9fbae682cb0b9554208e}
     peerDependencies:
@@ -31,9 +25,6 @@ packages:
 
   '@agent-ix/semantic-schema@0.3.0':
     resolution: {integrity: sha512-9ZJ2cPUwgmjznc0J+8H11ldxtxML3tUfQ2j/OXiTeTHTT4Xu/S78kmDqPZ1uNt3bwTpQS1fnrQZORhej3OJCMA==, tarball: https://npm.pkg.github.com/download/@agent-ix/semantic-schema/0.3.0/1d533756bea4d066bd062ed4412237d641979991}
-
-  '@agent-ix/workflow-core@0.1.6':
-    resolution: {integrity: sha512-sVMNt9RwBOt2bw5WNVrqdpaHv81L+A36H2jsSc+nIA1a7xpLodudngYfgydERASdeU2bw+n3iVRd3OnRK+RAew==, tarball: https://npm.pkg.github.com/download/@agent-ix/workflow-core/0.1.6/0693441d3e94b827244733b2bed6f44b05a60e4e}
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -386,14 +377,7 @@ packages:
     resolution: {integrity: sha512-2rAgRKu54VsHkqI0/tYkmluGXHD4KW7yZoycuqDQ15QOTnc2VVfy0nN/1eMhnQLO00A+dwtK20xuCnc1YGeUyg==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=23}
 
-  zod@4.6.2:
-    resolution: {integrity: sha512-lh5RCAGFa1Cm2hjtNwLQhSs/AsqdWnTQaBER9fEwN/88pSh7KOtJavtBx/0VlkN/uFd61SwYmljLMDAsHlvzBQ==}
-
 snapshots:
-
-  '@agent-ix/ix-spec-workflows@0.1.3':
-    dependencies:
-      '@agent-ix/workflow-core': 0.1.6
 
   '@agent-ix/semantic-core@0.3.2(@typespec/compiler@1.15.0)(@typespec/json-schema@1.15.0(@typespec/compiler@1.15.0))':
     dependencies:
@@ -401,11 +385,6 @@ snapshots:
       '@typespec/json-schema': 1.15.0(@typespec/compiler@1.15.0)
 
   '@agent-ix/semantic-schema@0.3.0': {}
-
-  '@agent-ix/workflow-core@0.1.6':
-    dependencies:
-      yaml: 2.9.1
-      zod: 4.6.2
 
   '@babel/code-frame@7.29.7':
     dependencies:
@@ -695,5 +674,3 @@ snapshots:
       string-width: 8.2.2
       y18n: 5.0.8
       yargs-parser: 22.0.0
-
-  zod@4.6.2: {}
