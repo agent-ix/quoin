@@ -15,14 +15,14 @@ relationships:
 
 ## Description
 
-The CLI SHALL launch Quoin-owned review and planning definitions through ix-flow
+The CLI SHALL launch the explicitly supplied Quoin plugin skill through ix-flow
 and SHALL use Quoin's bounded native invariant provider for document checks.
 ix-flow SHALL retain ownership of run persistence, transitions, status, resume
 and explicit human acknowledgement.
 
 ## Inputs
 
-- The resolved skill path, the config root, and the optional `--id`/`--json`/
+- The explicit --path skill directory, the config root, and the optional `--id`/`--json`/
   `--target` flags.
 
 ## Outputs
@@ -49,7 +49,7 @@ and explicit human acknowledgement.
 
 | FR-021-AC-5 | Malformed, unsupported and oversized provider requests fail without a success payload. | Test |
 | FR-021-AC-6 | Both workflows refuse automatic final acceptance and expose an explicit acknowledgement gate. | Test |
-| FR-021-AC-7 | Packaged native and npm installations run the actual workflow lifecycle without private runtime credentials. | Test |
+| FR-021-AC-7 | Packaged native and npm installations run the installed plugin workflow lifecycle without an agent host or private runtime credentials. | Test |
 
 ## Dependencies
 

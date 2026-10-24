@@ -23,6 +23,7 @@ struct Harness {
     binary: PathBuf,
     runner: PathBuf,
     runner_bin: PathBuf,
+    plugin: PathBuf,
     root: PathBuf,
     home: PathBuf,
     config: PathBuf,
@@ -105,7 +106,7 @@ fn schema(kind: &str) -> Value {
 }
 
 impl Harness {
-    fn new(binary: &str, runner: &str) -> Result<Self> {
+    fn new(binary: &str, runner: &str, plugin: &str) -> Result<Self> {
         let scratch = tempfile::tempdir().map_err(|e| e.to_string())?;
         let root = scratch.path().join("unrelated repo with spaces");
         let home = scratch.path().join("fresh home");
@@ -116,14 +117,30 @@ impl Harness {
         let binary = if binary.components().any(|c| c.as_os_str() == "node_modules") {
             binary
         } else {
-            let relocated = scratch.path().join(if cfg!(windows) {
-                "relocated quoin.exe"
-            } else {
-                "relocated quoin"
-            });
+            let relocated = scratch
+                .path()
+                .join("native bin with spaces")
+                .join(if cfg!(windows) { "quoin.exe" } else { "quoin" });
+            fs::create_dir_all(relocated.parent().ok_or("native bin has no parent")?)
+                .map_err(|e| e.to_string())?;
             fs::copy(&binary, &relocated).map_err(|e| e.to_string())?;
             relocated
         };
+        let installed_plugin = scratch.path().join("installed plugins/quoin");
+        let plugin = fs::canonicalize(plugin).map_err(|e| e.to_string())?;
+        copy_tree(&plugin.join("skills"), &installed_plugin.join("skills"))?;
+        for directory in [".codex-plugin", ".claude-plugin"] {
+            copy_tree(&plugin.join(directory), &installed_plugin.join(directory))?;
+            let manifest: Value = serde_json::from_slice(
+                &fs::read(installed_plugin.join(directory).join("plugin.json"))
+                    .map_err(|e| e.to_string())?,
+            )
+            .map_err(|e| e.to_string())?;
+            require(
+                manifest.get("version").and_then(Value::as_str) == Some(env!("CARGO_PKG_VERSION")),
+                "plugin manifest must match the release checker version",
+            )?;
+        }
         let runner = fs::canonicalize(runner).map_err(|e| e.to_string())?;
         let runner_bin = runner
             .parent()
@@ -133,10 +150,12 @@ impl Harness {
             .ok_or("ix-flow package location invalid")?
             .join(".bin");
         fs::create_dir_all(&root).map_err(|e| e.to_string())?;
+        let root = fs::canonicalize(root).map_err(|e| e.to_string())?;
         let harness = Self {
             binary,
             runner,
             runner_bin,
+            plugin: installed_plugin,
             root,
             home,
             config,
@@ -168,7 +187,13 @@ impl Harness {
     }
     fn command(&self, executable: &Path) -> Result<Command> {
         let mut command = Command::new(executable);
-        let mut paths = vec![self.runner_bin.clone()];
+        let mut paths = vec![
+            self.binary
+                .parent()
+                .ok_or("binary has no parent")?
+                .to_path_buf(),
+            self.runner_bin.clone(),
+        ];
         paths.extend(std::env::split_paths(
             &std::env::var_os("PATH").unwrap_or_default(),
         ));
@@ -215,16 +240,27 @@ impl Harness {
             .output()
             .map_err(|e| e.to_string())
     }
+    fn skill(&self, kind: &str) -> PathBuf {
+        self.plugin.join("skills").join(if kind == "review" {
+            "spec-review"
+        } else {
+            "spec-to-plan"
+        })
+    }
     fn start(&self, kind: &str, id: &str) -> Result<Value> {
-        passed(
-            &self
-                .command(&self.binary)?
-                .arg("--config-root")
-                .arg(&self.config)
-                .args([kind, "--target", "spec/target.md", "--id", id, "--json"])
-                .output()
-                .map_err(|e| e.to_string())?,
-        )
+        let skill = self.skill(kind);
+        let skill = skill.to_str().ok_or("skill path is not UTF-8")?;
+        passed(&self.flow(&[
+            "run",
+            kind,
+            "--path",
+            skill,
+            "--id",
+            id,
+            "--target",
+            "spec/target.md",
+        ])?)?;
+        passed(&self.flow(&["add-item", id, "quoin_context", "--item", &json!({"id":"quoin-launch-context","repo_root":self.root,"config_root":self.config,"targets":[self.root.join("spec/target.md")]}).to_string()])?)
     }
     fn answers(&self, id: &str, interview: &str, answers: &Value) -> Result<Value> {
         passed(&self.flow(&[
@@ -250,8 +286,8 @@ impl Harness {
 }
 
 /// Trace: FR-020-AC-1, FR-020-AC-5, FR-021-AC-6, FR-021-AC-7, FR-095-AC-6, FR-095-AC-8, FR-095-AC-9
-pub(super) fn run(binary: &str, runner: &str) -> Result<()> {
-    let h = Harness::new(binary, runner)?;
+pub(super) fn run(binary: &str, runner: &str, plugin: &str) -> Result<()> {
+    let h = Harness::new(binary, runner, plugin)?;
     // Trace: FR-020-AC-1, FR-020-AC-5, FR-021-AC-6, FR-021-AC-7, FR-095-AC-6, FR-095-AC-8, FR-095-AC-9
     let started = h.start("review", "smoke-base")?;
     require(
@@ -259,6 +295,25 @@ pub(super) fn run(binary: &str, runner: &str) -> Result<()> {
         "run must start at intake",
     )?;
     passed(&h.flow(&["resume", "smoke-base"])?)?;
+    let skill_path = text(&started, "/data/skillPath/absolute")?;
+    require(
+        Path::new(&skill_path) == h.skill("review"),
+        "run must use the installed plugin skill directly",
+    )?;
+    require(
+        !h.config.join("workflows").exists(),
+        "launch must not extract embedded workflows",
+    )?;
+    let convenience = h
+        .command(&h.binary)?
+        .arg("--config-root")
+        .arg(&h.config)
+        .args(["review", "--path"])
+        .arg(h.skill("review"))
+        .args(["--id", "smoke-convenience", "--json"])
+        .output()
+        .map_err(|e| e.to_string())?;
+    passed(&convenience)?;
     h.answers("smoke-base", "request", &selection("base", &[]))?;
     h.advance("smoke-base", "analyses_run")?;
     h.advance("smoke-base", "reviews_rendered")?;
@@ -325,7 +380,7 @@ pub(super) fn run(binary: &str, runner: &str) -> Result<()> {
     plan_scenario(&h)?;
     runner_failures(&h)?;
     println!(
-        "owned workflow smoke passed: relocated binary, live catalog, published ix-flow, review/profile/plan validation and explicit human acceptance"
+        "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, published ix-flow, review/profile/plan validation and explicit human acceptance"
     );
     Ok(())
 }
@@ -482,7 +537,9 @@ fn runner_failures(h: &Harness) -> Result<()> {
             .env("PATH", &search)
             .arg("--config-root")
             .arg(&h.config)
-            .args(["review", "--id", "must-not-start", "--json"])
+            .args(["review", "--path"])
+            .arg(h.skill("review"))
+            .args(["--id", "must-not-start", "--json"])
             .output()
             .map_err(|e| e.to_string())?;
         if version == "0.2.3" {
@@ -497,6 +554,22 @@ fn runner_failures(h: &Harness) -> Result<()> {
                     && String::from_utf8_lossy(&output.stderr).contains("synthetic runner failure"),
                 "child exit 7 must be propagated",
             )?;
+        }
+    }
+    Ok(())
+}
+
+fn copy_tree(source: &Path, target: &Path) -> Result<()> {
+    fs::create_dir_all(target).map_err(|e| e.to_string())?;
+    for entry in fs::read_dir(source).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let kind = entry.file_type().map_err(|e| e.to_string())?;
+        if kind.is_dir() {
+            copy_tree(&entry.path(), &target.join(entry.file_name()))?;
+        } else if kind.is_file() {
+            fs::copy(entry.path(), target.join(entry.file_name())).map_err(|e| e.to_string())?;
+        } else {
+            return Err("plugin install must contain regular files and directories".to_owned());
         }
     }
     Ok(())

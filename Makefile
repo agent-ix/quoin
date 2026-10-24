@@ -13,8 +13,8 @@ CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
 
 build: rust-build
 
-# First-party workflow definitions are compiled into quoin. This install only
-# supplies semantic schema build inputs; no external workflow provider is used.
+# Workflow definitions ship beside plugin skills. This install supplies only
+# semantic schema build inputs; the archived workflow provider is not used.
 build-inputs:
 	pnpm install --frozen-lockfile
 
@@ -54,4 +54,4 @@ workflow-test-runtime:
 	npm install --prefix $(CARGO_TARGET)/workflow-runner --registry=https://registry.npmjs.org/ --@agent-ix:registry=https://registry.npmjs.org/ --ignore-scripts --no-audit --no-fund @agent-ix/ix-flow@0.3.0
 
 workflow-test: rust-build workflow-test-runtime
-	cd $(RUST_DIR) && cargo run --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check -- smoke $(CARGO_TARGET)/debug/quoin $(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js
+	cd $(RUST_DIR) && cargo run --locked $(CARGO_TARGET_FLAG) -p quoin-workflow-check -- smoke $(CARGO_TARGET)/debug/quoin $(CARGO_TARGET)/workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js $(CURDIR)

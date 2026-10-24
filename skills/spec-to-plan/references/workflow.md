@@ -1,22 +1,7 @@
----
-name: quoin-to-plan
-description: Quoin-owned to-plan workflow with native validation and explicit human acceptance.
-metadata:
-  ix-flow-workflows: ./workflows
-  ix-flow-invariant-provider:
-    command: __QUOIN_EXECUTABLE__
-    args: [workflow-invariants]
-    request-protocol: quoin.workflow-invariants/v1
-    result-protocol: quoin.workflow-invariants-result/v1
-    invariants:
-      - plan_inputs_ready
-      - plan_documents_valid
-      - human_acceptance_required
----
 
 # Quoin specification to plan
 
-Start through `quoin to-plan`; Quoin records absolute repository/config roots and
+Start through the installed skill as described in SKILL.md. Record absolute repository/config roots and
 targets in the run. Follow the installed spec-to-plan skill and live catalog
 contracts. Resolve readiness, scope, verification strategy, dependencies, risks,
 and failure domains before drafting tasks.

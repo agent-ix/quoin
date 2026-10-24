@@ -1,23 +1,8 @@
----
-name: quoin-review
-description: Quoin-owned review workflow with native validation and explicit human acceptance.
-metadata:
-  ix-flow-workflows: ./workflows
-  ix-flow-invariant-provider:
-    command: __QUOIN_EXECUTABLE__
-    args: [workflow-invariants]
-    request-protocol: quoin.workflow-invariants/v1
-    result-protocol: quoin.workflow-invariants-result/v1
-    invariants:
-      - review_selection_consistent
-      - selected_analyses_covered
-      - human_acceptance_required
----
 
 # Quoin specification review
 
 Quoin owns this definition and its Rust invariant provider. ix-flow owns state,
-transitions and acknowledgements. Start through `quoin review`; it records one
+transitions and acknowledgements. Start through the installed skill as described in SKILL.md. Record one
 `quoin_context` with absolute repository/config roots and target paths.
 
 1. Inspect the applicable active AssuranceProfile documents using the installed
@@ -29,7 +14,7 @@ transitions and acknowledgements. Start through `quoin review`; it records one
 2. Obtain the user's base/all/subset selection. Record `request` interview answers
    with `review_set`, `selected_analyses`, `assurance_profiles` (possibly empty),
    and `profile_disposition`. Base is always required. The all set is:
-   __QUOIN_LENSES__.
+   failure-domain, integrity, dependency, evidence, risk-complexity, scope-boundary, ears-conformance.
 3. Advance to analyses_run, perform the base checklist and selected lenses, then
    obtain each live artifact contract with `quoin write <repo> --types SpecReview`.
    Author one SpecReview per required analysis with a valid Findings table.

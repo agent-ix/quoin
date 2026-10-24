@@ -72,12 +72,19 @@ smokes the published packages. See
 
 ## Workflow release gate
 
-The single native executable embeds Quoin-owned review and planning assets and
-their Rust invariant provider. The native release matrix runs
-the Rust `quoin-workflow-check smoke` harness against every extracted artifact, using published
-ix-flow 0.3.0, synthetic live catalog modules and an isolated home. The npm release
-runs the same lifecycle smoke through the installed public launcher. Missing
+The Quoin agent plugin ships workflow definitions and instructions beside its
+skills. The single native executable supplies their Rust invariant provider.
+The native release matrix runs the Rust `quoin-workflow-check smoke` harness
+against each extracted artifact, using published ix-flow 0.3.0, synthetic live
+catalog modules, an isolated home and a copied installation of the released
+plugin skills. The npm release checks out its release tag and runs the same
+lifecycle smoke through the installed public launcher and plugin files.
+
+The primary test starts the workflows through `ix-flow run --path`, as an agent
+or CI does. It also checks Quoin's explicit --path convenience launcher. Missing
 review documents and tasks, invalid live contracts and automatic acceptance must
-fail; a valid artifact set reaches an explicit human gate. A --version-only smoke
-is insufficient for these commands. No private credential is passed to runtime
-validation in these tests. Existing semantic build inputs are independent.
+fail; valid artifacts reach an explicit human gate. Runs retain the installed
+skill path. No workflow extraction or private runtime credential is used.
+Existing semantic build inputs are independent. The CLI archive still contains
+one executable; plugin files are distributed through the Quoin agent plugin and
+the release's source archive, rather than inside that executable.

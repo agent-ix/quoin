@@ -15,7 +15,7 @@ use serde_json::Value;
 
 use crate::{core_runtime, invocation};
 
-pub(super) const LENSES: [&str; 7] = [
+const LENSES: [&str; 7] = [
     "failure-domain",
     "integrity",
     "dependency",

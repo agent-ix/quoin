@@ -2,9 +2,8 @@
 // Copyright (C) 2026 Agent-IX
 
 //! Launch Quoin-owned workflows through the maintained generic ix-flow runner.
-//! Runtime assets and native validation travel inside the native release.
+//! Definitions live beside installed plugin skills; native validation lives here.
 
-mod assets;
 pub(crate) mod provider;
 
 use std::io::Read;
@@ -46,6 +45,8 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
     if !FLOWS.contains(&name) {
         return Err("an unknown flow command reached dispatch".to_owned().into());
     }
+    let path = skill_path(name, arguments)?;
+    let home = absolute_home()?;
     let version = execute(ProcessCommand::new(runner_program()).arg("--version"))?;
     let parsed = semver::Version::parse(version.trim().trim_start_matches('v'))
         .map_err(|_| "ix-flow did not report a supported semantic version".to_owned())?;
@@ -56,9 +57,6 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
                 .into(),
         );
     }
-    let home = absolute_home()?;
-    let executable = std::env::current_exe().map_err(|e| e.to_string())?;
-    let path = assets::materialize(name, &home, &executable)?;
     let repo = std::env::current_dir()
         .and_then(|p| p.canonicalize())
         .map_err(|e| e.to_string())?;
@@ -137,6 +135,24 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
         )
     };
     Ok(Response::ok(serde_json::json!({"rendered":rendered})))
+}
+
+fn skill_path(name: &str, arguments: &ArgMatches) -> Result<PathBuf, String> {
+    let path = arguments
+        .get_one::<String>("path")
+        .ok_or_else(|| "pass --path <installed-quoin-skill-directory>; install the Quoin agent plugin or use its released source".to_owned())?;
+    let path = std::path::Path::new(path)
+        .canonicalize()
+        .map_err(|e| format!("workflow skill directory {path}: {e}"))?;
+    if !path.join("SKILL.md").is_file()
+        || !path.join("workflows").join(name).join("def.yaml").is_file()
+    {
+        return Err(format!(
+            "{} must contain SKILL.md and workflows/{name}/def.yaml from the Quoin plugin",
+            path.display()
+        ));
+    }
+    Ok(path)
 }
 
 fn runner(home: &std::path::Path, operation: &str) -> ProcessCommand {
@@ -235,6 +251,11 @@ fn execute(command: &mut ProcessCommand) -> Result<String, LaunchFailure> {
 pub(crate) fn command(name: &'static str) -> Command {
     Command::new(name)
         .about("Start the Quoin-owned specification workflow")
+        .arg(
+            Arg::new("path")
+                .long("path")
+                .help("Installed Quoin skill directory containing SKILL.md and workflows"),
+        )
         .arg(Arg::new("target").long("target").action(ArgAction::Append))
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
         .arg(Arg::new("id").long("id"))
@@ -260,5 +281,32 @@ fn runner_program() -> &'static str {
         "ix-flow.cmd"
     } else {
         "ix-flow"
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::expect_used, reason = "test assertions may panic")]
+mod tests {
+    use super::{command, run};
+
+    /// Trace: FR-020-AC-2
+    #[test]
+    fn unknown_workflows_are_refused_before_launch() {
+        let arguments = command("matrix")
+            .try_get_matches_from(["matrix"])
+            .expect("arguments");
+        assert!(run("matrix", &arguments).is_err_and(|e| e.message.contains("unknown flow")));
+    }
+
+    /// Trace: FR-020-AC-4
+    #[test]
+    fn missing_plugin_path_has_an_actionable_refusal() {
+        let arguments = command("review")
+            .try_get_matches_from(["review"])
+            .expect("arguments");
+        assert!(run("review", &arguments).is_err_and(|e| {
+            e.message
+                .contains("--path <installed-quoin-skill-directory>")
+        }));
     }
 }

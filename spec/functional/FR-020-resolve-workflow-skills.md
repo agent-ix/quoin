@@ -9,48 +9,47 @@ relationships:
     type: "implements"
 ---
 
-# FR-020: Own and materialize specification workflows
+# FR-020: Own specification workflow skills
 
 ## Description
 
-The CLI SHALL own the `review` and `to-plan` workflow definitions and instructions
-as first-party Quoin source. The CLI SHALL embed them into each native executable.
-When a workflow is launched, Quoin SHALL materialize an immutable snapshot below
-the selected config root. Quoin SHALL supply its absolute path to ix-flow. The published binary SHALL
-require no workflow npm package, private repository, or source checkout.
+Quoin SHALL own review and to-plan definitions and instructions as first-party
+source beside their agent plugin skills. Each skill SHALL declare its relative
+workflows directory in metadata. ix-flow SHALL load these ordinary files from
+an explicit skill directory. The CLI SHALL supply the native invariant provider.
+The workflow SHALL require no archived provider package or private checkout.
 
 ## Inputs
 
-- The workflow name, selected config root, launch repository and targets.
-- The running executable and the published ix-flow executable on PATH.
+- The workflow name, explicit skill directory, config root, repository and targets.
+- Installed Quoin and ix-flow executables on PATH.
 
 ## Outputs
 
-- A materialized owned workflow and a run initialized with repository context.
-- An actionable refusal when the runner, targets or runtime directory is unavailable.
+- An ix-flow run referencing the supplied skill directory and repository context.
+- An actionable refusal when a skill path or supported runner is unavailable.
 
 ## Behavior
 
-- Quoin SHALL recognize review and to-plan.
-- Quoin SHALL retain matrix as a native computed view.
-- Quoin SHALL reuse byte-identical snapshots.
-- Quoin SHALL preserve existing snapshots
-  when materializing a changed release or repairing incomplete assets.
-- Quoin SHALL require ix-flow >=0.3.0 before creating a run.
-- Quoin SHALL record canonical repository/config roots and contained targets in
-  one quoin_context item before reporting a successful initialized launch.
+- Quoin SHALL recognize review and to-plan and retain matrix as a computed view.
+- The plugin SHALL ship SKILL.md and workflows/<name>/def.yaml for each workflow.
+- The agent SHALL launch the installed skill through ix-flow run --path.
+- The convenience CLI SHALL accept --path and initialize one quoin_context item.
+- The CLI SHALL require ix-flow >=0.3.0 before creating a run.
+- Quoin SHALL record canonical repository/config roots and contained targets.
+- Quoin SHALL preserve existing runs and their recorded skill paths.
 - Quoin SHALL ignore the obsolete IX_SPEC_WORKFLOWS_ROOT override.
-- Quoin SHALL NOT resolve definitions from node_modules or a private checkout.
+- The CLI SHALL NOT embed or extract workflow definitions.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-020-AC-1 | Review and to-plan launch from a relocated native executable with an empty home and no source checkout; matrix resolves no workflow. | Test |
-| FR-020-AC-2 | An unknown workflow is refused before spawning the runner. | Test |
+| FR-020-AC-1 | Copied plugin skills launch directly through ix-flow with a relocated native CLI, empty home and no source checkout; matrix resolves no workflow. | Test |
+| FR-020-AC-2 | An unknown convenience-launcher workflow is refused before spawning the runner. | Test |
 | FR-020-AC-3 | A missing or incompatible ix-flow reports the supported installation command without creating a run. | Test |
-| FR-020-AC-4 | Immutable snapshot reuse and repair preserve existing runtime snapshots. | Test |
-| FR-020-AC-5 | Run context resolves relative documents under the launch repository, including paths with spaces. | Test |
+| FR-020-AC-4 | A missing explicit skill directory reports how to provide the installed plugin skill, without extracting workflow assets. | Test |
+| FR-020-AC-5 | Run context resolves relative documents under the subject repository, including paths with spaces. | Test |
 
 ## Dependencies
 

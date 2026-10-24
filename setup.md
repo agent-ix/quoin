@@ -18,22 +18,30 @@ If these checks leave a reproducible **Agent IX Quoin bug** that blocks progress
 
 ## Owned workflows and upgrading old installations
 
-Quoin 0.29.0 embeds its review and planning definitions and Rust validation
-provider. Install the published runner with `npm install -g @agent-ix/ix-flow@latest`.
-No archived workflow repository, workflow npm provider, pnpm installation in a
-subject repository, or IX_SPEC_WORKFLOWS_ROOT override is required.
+Quoin 0.29.0 ships review and planning definitions beside its agent plugin skills.
+The CLI supplies the Rust validation provider. Install the published runner with
+`npm install -g @agent-ix/ix-flow@latest`. No archived workflow repository,
+workflow npm provider, or IX_SPEC_WORKFLOWS_ROOT override is required.
 
 Run `command -v quoin`, `quoin --version`, `command -v ix-flow`, and
-`ix-flow --version` in the agent's shell. A version with a commit suffix or dirty
-marker is a source build, not the published release. Confirm the CLI and plugin
-versions after updating; load updated skills in a fresh session without stopping
-other agents automatically.
+`ix-flow --version` in the agent's shell. Confirm Quoin CLI/plugin >=0.29.0 and
+ix-flow >=0.3.0. Load updated skills in a fresh session without stopping other
+agents automatically.
 
-Start from the subject repository: `quoin review --target spec/ --json` or
-`quoin to-plan --target spec/ --json`. Assets are materialized under the effective
-config root's workflows/quoin directory; run state stays under flows. ix-flow
-owns status, resume, advance and acknowledgement. Use the same config/state roots
-on subsequent commands.
+Invoke the spec-review or spec-to-plan skill. Its frontmatter declares the local
+workflows directory, and its instructions start `ix-flow run review --path
+<installed-spec-review-directory> --json` or the equivalent to-plan workflow.
+The agent records repository context and drives ix-flow's normal commands.
+The convenience CLI commands accept the same explicit skill directory through
+`quoin review --path <skill-directory> --target spec/ --json`; they initialize
+context automatically. A missing --path is an actionable error. Definitions are
+read from that directory and are never extracted from the binary.
+
+CI needs no agent host or plugin manager: check out the released Quoin tag and
+use `skills/spec-review` or `skills/spec-to-plan` as the skill directory. Install
+the Quoin and ix-flow CLIs and the required catalog, then drive the same commands.
+The release smoke copies the released skills into an isolated plugin directory
+and tests their real workflows against the packaged native executable.
 
 Old external-provider runs are preserved. Start a fresh owned run, register the
 existing review documents, revalidate them, and obtain fresh human acceptance.

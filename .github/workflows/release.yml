@@ -40,6 +40,8 @@ jobs:
     steps:
       # Needed for LICENSE, which the npm packages carry.
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
 
       - uses: actions/setup-node@v7
         with:
@@ -178,7 +180,7 @@ jobs:
           done
 
           npm install --global @agent-ix/ix-flow@0.3.0
-          rust/target/debug/quoin-workflow-check smoke "$PREFIX/bin/quoin" "$PREFIX/lib/node_modules/@agent-ix/ix-flow/bin/ix-flow.js"
+          rust/target/debug/quoin-workflow-check smoke "$PREFIX/bin/quoin" "$PREFIX/lib/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" "$GITHUB_WORKSPACE"
           actual_version="$("$PREFIX/bin/quoin" --version)"
           if [ "$actual_version" != "$VERSION" ]; then
             echo "::error::quoin --version printed '$actual_version', expected '$VERSION'" >&2

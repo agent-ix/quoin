@@ -14,9 +14,9 @@ type Result<T> = std::result::Result<T, String>;
 fn main() -> ExitCode {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     let result = match args.as_slice() {
-        [operation, binary, runner] if operation == "smoke" => smoke::run(binary, runner),
+        [operation, binary, runner, plugin] if operation == "smoke" => smoke::run(binary, runner, plugin),
         [operation, state, repos @ ..] if operation == "audit" => audit::run(state, repos),
-        _ => Err("usage: quoin-workflow-check smoke <quoin-executable> <ix-flow.js> | audit <state-directory> <repo>...".to_owned()),
+        _ => Err("usage: quoin-workflow-check smoke <quoin-executable> <ix-flow.js> <quoin-plugin-directory> | audit <state-directory> <repo>...".to_owned()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

@@ -59,18 +59,14 @@ categories:
           submodule's executable tooling belongs to qa-corpus and is not an
           inert-sample allowance in Quoin. Quoin's native gate does not invoke
           the older pinned revision's bounds.py or verify.py.
-      - path: workflows/**/*.md
-        owner: quoin-maintainers
-        note: First-party instructions; executable invariant decisions live in Rust.
       - path: skills/**/*.md
         owner: quoin-maintainers
         note: >
           Skill bodies are prose an agent host reads. They carry no executable
           extension and contribute nothing to the metric population; declared
-          so the skills tree is not silently half-covered. The EXECUTABLES
-          under skills/**/workflow-assets/** are NOT covered by this entry —
-          their specInvariants decide whether a review, matrix or plan flow
-          passes, which is an assertion, so the inert test refuses them.
+          so the skills tree is not silently half-covered. Workflow definitions
+          have an explicit owner disposition below; executable invariant
+          decisions are implemented in Rust and are not covered by this entry.
 
   - id: thin-host
     rule: >
@@ -88,7 +84,7 @@ categories:
     owner: quoin-maintainers
     requires: [date, deciding_owner]
     paths:
-      - path: workflows/**/def.yaml
+      - path: skills/**/workflows/**/def.yaml
         owner: quoin-maintainers
         date: 2026-10-24
         deciding_owner: kreneskyp

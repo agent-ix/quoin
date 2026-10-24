@@ -1,6 +1,17 @@
 ---
 name: spec-review
 description: Review requirements for quality, consistency, and completeness.
+metadata:
+  ix-flow-workflows: ./workflows
+  ix-flow-invariant-provider:
+    command: quoin
+    args: [workflow-invariants]
+    request-protocol: quoin.workflow-invariants/v1
+    result-protocol: quoin.workflow-invariants-result/v1
+    invariants:
+      - review_selection_consistent
+      - selected_analyses_covered
+      - human_acceptance_required
 ---
 
 # Review Requirements
@@ -85,13 +96,22 @@ The seven analyses:
 
 ## Enforced runs (workflow mode)
 
-`quoin review --target <repo-relative-path> --id <run-id> --json` starts the
-Quoin-owned definition embedded in the native binary. Run it from the repository
-root. Install published `@agent-ix/ix-flow` >=0.3.0; no private workflow package or
-source checkout is needed. Quoin records repository/config roots and targets.
+This installed skill contains `workflows/review/def.yaml`. Start from the subject
+repository, using the absolute directory containing this SKILL.md:
 
-Use the materialized workflow's instructions and the same config/state roots for
-all ix-flow commands. Record the `request` interview with `review_set`,
+```bash
+ix-flow run review --path <this-skill-directory> --id <run-id> --target <repo-relative-path> --json
+```
+
+Before advancing, use `ix-flow add-item <run-id> quoin_context --item '<json>'`
+to record exactly one item with `id: quoin-launch-context`, absolute `repo_root`,
+absolute `config_root` (normally ~/.ix), and absolute contained `targets`.
+Alternatively `quoin review --path <this-skill-directory> --target <repo-relative-path>
+--id <run-id> --json` starts the same definition and initializes that context.
+Both commands require the installed ix-flow CLI >=0.3.0 and Quoin CLI >=0.29.0
+on PATH. The plugin supplies the definitions; no archived provider is used.
+Use the same --config-root and --state-dir for every ix-flow command.
+See [workflow instructions](references/workflow.md). Record the `request` interview with `review_set`,
 `selected_analyses`, `assurance_profiles`, and `profile_disposition`. Register
 one `review_doc` item per analysis, including `base`, with its `id`, `analysis`,
 and repository-relative `path`. The Rust provider opens and validates every
