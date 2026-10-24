@@ -159,7 +159,7 @@ fn tc_1650_native_root_help_matches_the_retained_capture() {
 ///
 /// Trace: FR-003, FR-101, FR-102, TC-1650
 #[test]
-fn tc_1650_native_help_replays_every_retained_command_contract() {
+fn tc_1650_native_help_preserves_retained_routes_and_current_workflow_paths() {
     for case in capture()
         .cases
         .into_iter()
@@ -167,12 +167,27 @@ fn tc_1650_native_help_replays_every_retained_command_contract() {
     {
         let output = invoke(&case.argv);
         assert_eq!(output.status.code(), Some(case.exit), "{:?}", case.argv);
-        assert_eq!(
-            normalize_version(&text(&output.stdout)),
-            case.stdout,
-            "stdout for {:?}",
-            case.argv
-        );
+        if matches!(
+            case.argv.first().map(String::as_str),
+            Some("review" | "to-plan")
+        ) {
+            let help = text(&output.stdout);
+            assert!(
+                help.contains("--path"),
+                "workflow help must expose the installed skill path"
+            );
+            assert!(
+                help.contains("Installed Quoin skill directory"),
+                "workflow help must explain the plugin directory"
+            );
+        } else {
+            assert_eq!(
+                normalize_version(&text(&output.stdout)),
+                case.stdout,
+                "stdout for {:?}",
+                case.argv
+            );
+        }
         assert_eq!(
             text(&output.stderr),
             case.stderr,

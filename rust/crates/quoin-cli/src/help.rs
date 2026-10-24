@@ -152,6 +152,12 @@ pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<Str
             }
         })
         .collect::<Vec<_>>();
+    // These workflows now require an explicit installed-skill path. Render
+    // their current Clap grammar instead of the historical bundled-flow page.
+    if matches!(argv.as_slice(), [name, flag] if matches!(name.as_str(), "review" | "to-plan") && flag == "--help")
+    {
+        return None;
+    }
     let retained = serde_json::from_str::<serde_json::Value>(RETAINED_HELP).ok()?;
     let cases = retained.get("cases")?.as_array()?;
     let page = cases.iter().find(|case| {

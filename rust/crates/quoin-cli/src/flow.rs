@@ -50,9 +50,9 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
     let version = execute(ProcessCommand::new(runner_program()).arg("--version"))?;
     let parsed = semver::Version::parse(version.trim().trim_start_matches('v'))
         .map_err(|_| "ix-flow did not report a supported semantic version".to_owned())?;
-    if parsed < semver::Version::new(0, 3, 0) {
+    if parsed < semver::Version::new(0, 3, 1) {
         return Err(
-            "ix-flow >=0.3.0 is required; run npm install -g @agent-ix/ix-flow@latest"
+            "ix-flow >=0.3.1 is required; run npm install -g @agent-ix/ix-flow@latest"
                 .to_owned()
                 .into(),
         );

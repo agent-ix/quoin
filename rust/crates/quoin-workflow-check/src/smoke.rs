@@ -106,7 +106,7 @@ fn schema(kind: &str) -> Value {
 }
 
 impl Harness {
-    fn new(binary: &str, runner: &str, plugin: &str) -> Result<Self> {
+    fn new(binary: &str, runner: &str, plugin: &str, crlf: bool) -> Result<Self> {
         let scratch = tempfile::tempdir().map_err(|e| e.to_string())?;
         let root = scratch.path().join("unrelated repo with spaces");
         let home = scratch.path().join("fresh home");
@@ -129,6 +129,20 @@ impl Harness {
         let installed_plugin = scratch.path().join("installed plugins/quoin");
         let plugin = fs::canonicalize(plugin).map_err(|e| e.to_string())?;
         copy_tree(&plugin.join("skills"), &installed_plugin.join("skills"))?;
+        for skill in ["spec-review", "spec-to-plan"] {
+            let path = installed_plugin.join("skills").join(skill).join("SKILL.md");
+            let text = fs::read_to_string(&path)
+                .map_err(|e| e.to_string())?
+                .replace("\r\n", "\n");
+            write(
+                &path,
+                if crlf {
+                    text.replace('\n', "\r\n")
+                } else {
+                    text
+                },
+            )?;
+        }
         for directory in [".codex-plugin", ".claude-plugin"] {
             copy_tree(&plugin.join(directory), &installed_plugin.join(directory))?;
             let manifest: Value = serde_json::from_slice(
@@ -287,7 +301,17 @@ impl Harness {
 
 /// Trace: FR-020-AC-1, FR-020-AC-5, FR-021-AC-6, FR-021-AC-7, FR-095-AC-6, FR-095-AC-8, FR-095-AC-9
 pub(super) fn run(binary: &str, runner: &str, plugin: &str) -> Result<()> {
-    let h = Harness::new(binary, runner, plugin)?;
+    for crlf in [false, true] {
+        lifecycle(&Harness::new(binary, runner, plugin, crlf)?)?;
+        println!(
+            "plugin workflow line endings passed: {}",
+            if crlf { "CRLF" } else { "LF" }
+        );
+    }
+    Ok(())
+}
+
+fn lifecycle(h: &Harness) -> Result<()> {
     // Trace: FR-020-AC-1, FR-020-AC-5, FR-021-AC-6, FR-021-AC-7, FR-095-AC-6, FR-095-AC-8, FR-095-AC-9
     let started = h.start("review", "smoke-base")?;
     require(
@@ -376,9 +400,9 @@ pub(super) fn run(binary: &str, runner: &str, plugin: &str) -> Result<()> {
         )? == "accepted",
         "acceptance must persist",
     )?;
-    review_scenarios(&h, &started)?;
-    plan_scenario(&h)?;
-    runner_failures(&h)?;
+    review_scenarios(h, &started)?;
+    plan_scenario(h)?;
+    runner_failures(h)?;
     println!(
         "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, published ix-flow, review/profile/plan validation and explicit human acceptance"
     );
@@ -515,7 +539,7 @@ fn runner_failures(h: &Harness) -> Result<()> {
         &std::env::var_os("PATH").unwrap_or_default(),
     ));
     let search = std::env::join_paths(paths).map_err(|e| e.to_string())?;
-    for version in ["0.2.3", "0.3.0"] {
+    for version in ["0.3.0", "0.3.1"] {
         let body = if cfg!(windows) {
             format!(
                 "@echo off\r\nif \"%~1\"==\"--version\" (echo {version}& exit /b 0)\r\necho synthetic runner failure 1>&2\r\nexit /b 7\r\n"
@@ -542,10 +566,10 @@ fn runner_failures(h: &Harness) -> Result<()> {
             .args(["--id", "must-not-start", "--json"])
             .output()
             .map_err(|e| e.to_string())?;
-        if version == "0.2.3" {
+        if version == "0.3.0" {
             require(
                 !output.status.success()
-                    && String::from_utf8_lossy(&output.stderr).contains("ix-flow >=0.3.0"),
+                    && String::from_utf8_lossy(&output.stderr).contains("ix-flow >=0.3.1"),
                 "old runner must be refused before starting a run",
             )?;
         } else {
