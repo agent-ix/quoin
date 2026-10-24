@@ -15,9 +15,11 @@ relationships:
 
 The CLI SHALL expose the `review` and `to-plan` workflow launchers,
 and for each SHALL resolve the workflow's skill path across, in order, the
-`IX_SPEC_WORKFLOWS_ROOT` environment variable, the packaged skills, a sibling
-`ix-spec-workflows` checkout, and `~/.ix/plugins`, raising an error when no
-candidate root contains the skill.
+`IX_SPEC_WORKFLOWS_ROOT` override, assets installed beneath the effective
+configuration root, and the current repository's workflow dependency. The CLI SHALL validate an explicit
+override without silently falling back. Lookup SHALL accept
+package roots and the `spec/` and `skills/` layouts and SHALL require the skill,
+definition, invariant shim, and runtime bundle.
 
 ## Inputs
 
@@ -32,8 +34,8 @@ candidate root contains the skill.
 - The CLI SHALL recognize `review` and `to-plan` as workflow launchers.
 - The CLI SHALL search the candidate roots in order and SHALL use the first that
   contains the workflow's skill.
-- The CLI SHALL raise an error directing the user to set `IX_SPEC_WORKFLOWS_ROOT`
-  when no candidate contains the skill.
+- The CLI SHALL raise an error directing the user to install workflow assets or set `IX_SPEC_WORKFLOWS_ROOT`
+  and the workflow installation command when no candidate contains the skill.
 
 ## Acceptance Criteria
 
@@ -41,7 +43,10 @@ candidate root contains the skill.
 | ----------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | FR-020-AC-1 | `review` and `to-plan` are recognized as the bundled workflow launchers, and `matrix` is not                  | Test (flow.rs)                |
 | FR-020-AC-2 | An unknown workflow name raises an error                                                                      | Test (flows.test.ts)          |
-| FR-020-AC-3 | When no candidate root contains the skill, an error names the workflow and points to `IX_SPEC_WORKFLOWS_ROOT` | Test (flows-notfound.test.ts) |
+| FR-020-AC-3 | When no candidate root contains the skill, an error names the workflow and the asset installation command | Test (flows-notfound.test.ts) |
+| FR-020-AC-4 | `workflows install` installs a complete built package or registry package beneath the effective configuration root and supports replacement. | Test (flow.rs) |
+| FR-020-AC-5 | Both layouts resolve without dependencies in the target repository; an incomplete explicit override is refused. | Test (flow.rs) |
+| FR-020-AC-6 | A review definition without the final selected_analyses_covered invariant is refused before creating a run. | Test (flow.rs) |
 
 ## Dependencies
 

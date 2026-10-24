@@ -246,6 +246,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     {
         return flow::run(name, flow_arguments);
     }
+    if let Some(("workflows", arguments)) = matches.subcommand() {
+        return flow::install(arguments);
+    }
     if let Some(("matrix", arguments)) = matches.subcommand() {
         return matrix::run(arguments);
     }
@@ -358,6 +361,7 @@ fn command() -> Command {
         .subcommand(validate::command())
         .subcommand(write::command())
         .subcommand(update::command())
+        .subcommand(flow::workflows_command())
         .subcommand(flow::command("review"))
         .subcommand(matrix::command())
         .subcommand(flow::command("to-plan"))
@@ -614,6 +618,8 @@ mod tests {
         "quoin to-plan",
         "quoin update",
         "quoin validate",
+        "quoin workflows",
+        "quoin workflows install",
         "quoin write",
     ];
 
@@ -822,6 +828,7 @@ mod tests {
                 "to-plan",
                 "update",
                 "validate",
+                "workflows",
                 "write",
             ]
         );

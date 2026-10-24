@@ -84,6 +84,19 @@ fn normalize_version(text: &str) -> String {
     }
 }
 
+// The historical capture stays intact. FR-020 adds one command after the
+// cutover; assert its literal row alongside the retained root page.
+fn expected_stdout(case: &CaptureCase) -> String {
+    if case.kind == "help" && case.argv == ["--help"] {
+        case.stdout.replace(
+            "  write             ",
+            "  workflows         Install specification workflow runtime assets.\n  write             ",
+        )
+    } else {
+        case.stdout.clone()
+    }
+}
+
 /// The fixture is a non-vacuous retained capture.
 ///
 /// Trace: FR-101, FR-102, TC-1650
@@ -149,7 +162,10 @@ fn tc_1650_native_root_help_matches_the_retained_capture() {
         .expect("the retained capture contains root --help");
     let output = invoke(&root.argv);
     assert_eq!(output.status.code(), Some(root.exit));
-    assert_eq!(normalize_version(&text(&output.stdout)), root.stdout);
+    assert_eq!(
+        normalize_version(&text(&output.stdout)),
+        expected_stdout(root)
+    );
     assert_eq!(text(&output.stderr), root.stderr);
 }
 
@@ -169,7 +185,7 @@ fn tc_1650_native_help_replays_every_retained_command_contract() {
         assert_eq!(output.status.code(), Some(case.exit), "{:?}", case.argv);
         assert_eq!(
             normalize_version(&text(&output.stdout)),
-            case.stdout,
+            expected_stdout(&case),
             "stdout for {:?}",
             case.argv
         );
@@ -197,7 +213,7 @@ fn tc_1650_native_shell_replays_the_retained_offline_contracts() {
         assert_eq!(output.status.code(), Some(case.exit), "{:?}", case.argv);
         assert_eq!(
             normalize_version(&text(&output.stdout)),
-            case.stdout,
+            expected_stdout(&case),
             "stdout for {:?}",
             case.argv
         );

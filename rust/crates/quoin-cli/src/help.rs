@@ -107,6 +107,10 @@ const COMMANDS: &[(&str, &str)] = &[
         "Validate repository QA gates and report located defects.",
     ),
     (
+        "workflows",
+        "Install specification workflow runtime assets.",
+    ),
+    (
         "write",
         "Build an authoring pack for spec files an agent is about to\n                    create or edit.",
     ),

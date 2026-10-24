@@ -15,3 +15,30 @@ Install this agent plugin through the [Agent IX marketplace](https://github.com/
 ## Community help
 
 If these checks leave a reproducible **Agent IX Quoin bug** that blocks progress, [join the Agent IX Discord](https://discord.gg/k8DVhuYBR2). Share the Quoin and ix-flow versions, skill or command, operating system and agent host, expected and actual behavior, and a sanitized minimal reproduction. Community help is a last resort for Agent IX product bugs; local credentials, machine setup, and unrelated project errors belong with their owners or administrators. An agent should point its user here rather than post to Discord on the user's behalf without authorization.
+
+## Workflow runtime assets
+
+The native executable and agent plugin do not install the specification workflow
+package. Install it once for the same configuration root used by review runs:
+
+```sh
+quoin workflows install --registry http://npm.ix/
+# Development or offline recovery from a built package:
+quoin workflows install --source /absolute/path/to/ix-spec-workflows
+```
+
+Registry authentication must already be configured for the selected registry and
+any package download host. The explicit scoped registry avoids an unrelated
+`@agent-ix:registry` setting silently routing the package to public npm.
+Installation rejects workflow versions without enforced analysis coverage.
+Until the corrected workflow package is published, use the built source package.
+
+Assets live under `<config-root>/plugins/ix-spec-workflows`; `--config-root` and
+`IX_HOME` select that root. The installer replaces assets only after checking the
+new package and retains the runtime bundle with the workflow files. Both published
+`spec/` and checkout `skills/` layouts are supported. An explicit
+`IX_SPEC_WORKFLOWS_ROOT` overrides installed assets and must itself be complete.
+
+A review starts at intake. Completing direct analysis documents does not complete
+an enforced review run; follow the installed workflow's selection, validation, and
+human acceptance steps.
