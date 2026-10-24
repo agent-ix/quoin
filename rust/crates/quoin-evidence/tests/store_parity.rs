@@ -381,7 +381,6 @@ fn tc_456_101_every_ported_behaviour_family_is_represented() {
 
 /// Literal migration vectors: parity of validated fields alone cannot verify
 /// record identities, paths, or successful lookup by the published identity.
-/// Trace: FR-100-AC-11
 #[test]
 fn plat_989_assurance_ids_and_paths_use_the_declared_rfc8785_identity() {
     let vectors: Value =

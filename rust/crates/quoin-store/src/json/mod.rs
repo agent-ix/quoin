@@ -8,7 +8,7 @@
 //!
 //! | writer | shape | what it is for |
 //! |---|---|---|
-//! | [`jcs::canonicalize_jcs`] | RFC 8785, compact, UTF-16 key order | the bytes a digest is taken over |
+//! | [`canonical::canonicalize_jcs`] | RFC 8785, compact, UTF-16 key order | the bytes a digest is taken over |
 //! | [`pretty::canonical_json`] | 2-space indent, ECMAScript own-property order, trailing newline | the bytes `spec/evidence/**.json` holds |
 //!
 //! Using the pretty form where the JCS form belongs changes every digest;
@@ -48,10 +48,6 @@ pub const MAX_NESTING_DEPTH: usize = 1_000;
 
 pub mod canonical;
 pub mod escape;
-/// Compatibility path for callers of the former local JCS writer.
-pub use canonical as jcs;
-pub mod number;
-pub mod order;
 pub mod parse;
 pub mod pretty;
 pub mod value;

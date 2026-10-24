@@ -23,12 +23,16 @@
 //! The retained comparator is `a === b ? 0 : a < b ? -1 : 1`, and
 //! `Array.prototype.sort`'s default comparator is UTF-16 lexicographic. Rust's
 //! `str: Ord` compares Unicode scalar values, which disagrees above the BMP.
-//! [`cmp_js`] is `quoin_store::json::order::cmp_utf16`, called — this crate
-//! does not mint a second ordering.
+//! [`cmp_js`] compares the standard [`str::encode_utf16`] iterators to retain
+//! that text order without depending on JSON serialization.
 
 use std::cmp::Ordering;
 
-pub use quoin_store::json::order::cmp_utf16 as cmp_js;
+/// Compare text as JavaScript does: lexicographically by UTF-16 code unit.
+#[must_use]
+pub fn cmp_js(left: &str, right: &str) -> Ordering {
+    left.encode_utf16().cmp(right.encode_utf16())
+}
 
 /// Every character ECMAScript's `RegExp` `\s` matches, as a `regex` class body.
 ///

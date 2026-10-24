@@ -14,7 +14,7 @@
 use std::cmp::{Ordering, Reverse};
 use std::collections::{BTreeMap, BinaryHeap};
 
-use quoin_store::json::order::cmp_utf16;
+use crate::ids::compare_text;
 
 use crate::ids::{ArtifactId, RelationKind};
 use crate::model::report::{ImpactPath, ImpactPathEdge};
@@ -73,7 +73,7 @@ impl KeyedPath {
             return true;
         };
         match self.path.edges.len().cmp(&current.path.edges.len()) {
-            Ordering::Equal => cmp_utf16(&self.key, &current.key).is_lt(),
+            Ordering::Equal => compare_text(&self.key, &current.key).is_lt(),
             other => other.is_lt(),
         }
     }
@@ -94,7 +94,7 @@ impl Ord for Queued {
             .edges
             .len()
             .cmp(&other.path.path.edges.len())
-            .then_with(|| cmp_utf16(&self.path.key, &other.path.key))
+            .then_with(|| compare_text(&self.path.key, &other.path.key))
             .then_with(|| self.node.cmp(&other.node))
     }
 }

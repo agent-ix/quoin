@@ -217,7 +217,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-100-AC-10
     /// PLAT-989: literal failure vectors and an ASCII healthy control.
     #[test]
     fn canonical_boundary_matches_rfc8785_vectors() {
@@ -225,6 +224,14 @@ mod tests {
             serde_json::from_str(include_str!("../tests/fixtures/plat_989_canonical.json"))
                 .unwrap();
         for case in cases.as_array().unwrap() {
+            let store_value = quoin_store::json::parse::parse_strict_json_str(
+                &serde_json::to_string(&case["input"]).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                canonical_json(&case["input"]).unwrap(),
+                quoin_store::canonicalize_jcs(&store_value).unwrap()
+            );
             assert_eq!(
                 canonical_json(&case["input"]).unwrap(),
                 case["canonical"].as_str().unwrap(),
@@ -234,22 +241,23 @@ mod tests {
         }
     }
 
-    /// Provenance: PLAT-837 review. `sort_object_keys`'s `Array` branch was
-    /// untested -- it recurses into array elements but was never asserted to.
-    /// An object nested inside an array element must come out sorted exactly
-    /// like a top-level or nested-object one does.
-    /// Trace: FR-096-AC-10
-    /// Trace: FR-096-AC-2, FR-100-AC-10
     #[test]
     fn canonical_boundary_refuses_inexact_integer_identity() {
         assert_eq!(
             canonical_json(&9_007_199_254_740_992_u64).unwrap(),
             "9007199254740992"
         );
-        let refusal = canonical_json(&9_007_199_254_740_993_u64).unwrap_err();
-        assert_eq!(refusal.code, crate::error::CoreErrorCode::Io);
+        for integer in [9_007_199_254_740_993_u64, 1_u64 << 60] {
+            let refusal = canonical_json(&integer).unwrap_err();
+            assert_eq!(refusal.code, crate::error::CoreErrorCode::Io);
+        }
     }
 
+    /// Provenance: PLAT-837 review. `sort_object_keys`'s `Array` branch was
+    /// untested -- it recurses into array elements but was never asserted to.
+    /// An object nested inside an array element must come out sorted exactly
+    /// like a top-level or nested-object one does.
+    /// Trace: FR-096-AC-10
     #[test]
     fn canonical_json_sorts_keys_inside_array_elements() {
         let value = serde_json::json!({ "z": [ { "b": 1, "a": 2 }, { "d": 3, "c": 4 } ] });

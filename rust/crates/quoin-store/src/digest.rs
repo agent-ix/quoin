@@ -101,7 +101,7 @@
 use std::fmt;
 
 use crate::error::StoreError;
-use crate::json::jcs::canonical_bytes;
+use crate::json::canonical::canonical_bytes;
 use crate::json::value::{JsonObject, JsonValue};
 
 /// The member name a sealed record carries its own digest under.
@@ -816,7 +816,7 @@ mod tests {
         digest_opened_file, digest_raw_bytes, digest_record, open_for_digest, verify_record_digest,
     };
     use crate::error::StoreErrorCode;
-    use crate::json::jcs::canonical_bytes;
+    use crate::json::canonical::canonical_bytes;
     use crate::json::parse::parse_strict_json_str;
 
     /// Trace: FR-098-CON-1
@@ -836,7 +836,6 @@ mod tests {
         assert!(!DigestDomain::AssuranceRecordSha256.is_opaque_bytes());
     }
 
-    /// Trace: FR-100-AC-11
     #[test]
     fn plat_989_assurance_identity_uses_rfc8785_bytes() {
         let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
@@ -847,7 +846,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-048-AC-1, FR-100-CON-4
     #[test]
     fn tc_456_assurance_record_ids_use_jcs_and_keep_their_stored_spelling() {
         let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();

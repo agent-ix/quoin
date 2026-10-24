@@ -26,8 +26,8 @@
 //! [`crate::json_bridge::from_serde`] carries it to the store's value, and
 //! [`quoin_store::canonical_json`] writes it. `canonicalJson` sorts member
 //! names at every level and `JSON.stringify` then hoists array-index names, and
-//! that is precisely `ecmascript_own_property_order`, so the sort the retained
-//! function performs is already the writer's.
+//! the store's pretty writer retains that storage order, so the sort the
+//! retained function performs is already the writer's.
 
 use std::collections::BTreeMap;
 

@@ -10,7 +10,7 @@
 //!
 //! The retained source sorts with `compare()` (`analysis.ts:717`), which is
 //! JavaScript `<` on strings — UTF-16 code-unit order. The id newtypes take
-//! their `Ord` from [`quoin_store::json::order::cmp_utf16`], so the
+//! their `Ord` from comparing standard [`str::encode_utf16`] iterators, so the
 //! `BTreeMap`s and `BTreeSet`s below *are* those sorts: a set replaces
 //! `new Set(...)` followed by `sorted(...)`, and a map replaces an
 //! insertion-ordered `Map` followed by `.sort()`. Nothing is sorted twice and

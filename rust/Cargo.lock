@@ -3057,7 +3057,6 @@ name = "quoin-combinatorial"
 version = "0.28.4"
 dependencies = [
  "proptest",
- "quoin-store",
  "regex",
  "serde",
  "serde_json",
@@ -3302,7 +3301,7 @@ dependencies = [
  "blake3",
  "libc",
  "quire-canonical",
- "ryu-js",
+ "serde_json",
  "sha2 0.10.9",
  "thiserror",
 ]
