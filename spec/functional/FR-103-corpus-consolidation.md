@@ -29,8 +29,6 @@ read but not retire, and SHALL change no accepted-corpus byte.
 
 - A corpus-accounting record naming the corpus identity, its pinned submodule
   revision and the population it covers.
-- A final disposition for each Quoin-side corpus module: reimplement in Rust,
-  retain as approved code, or delete.
 - A recorded statement of which corpus concerns are out of Quoin's ownership,
   pending the owner scope ruling.
 
@@ -49,8 +47,6 @@ read but not retire, and SHALL change no accepted-corpus byte.
 - Quoin SHALL obtain corpus accounting from `engineering-assurance` rather than
   implementing a local equivalent, and if `engineering-assurance` does not supply
   it, then Quoin SHALL file a gap ticket in `engineering-assurance`.
-- Quoin SHALL record one disposition per Quoin-side corpus module and SHALL leave
-  no such module unclassified.
 - Quoin SHALL complete this consolidation before the measurement crates are
   ported, so that the measurement port reads one corpus source.
 - Quoin SHALL verify corpus identity by digest before and after the
@@ -60,8 +56,7 @@ read but not retire, and SHALL change no accepted-corpus byte.
 
 ## Error Conditions
 
-A corpus digest that differs before and after consolidation, an unclassified
-Quoin-side corpus module, a measurement run that resolves two corpus sources, an
+A corpus digest that differs before and after consolidation, a measurement run that resolves two corpus sources, an
 unpinned or missing submodule revision, and a port or delete disposition
 recorded against a file inside the submodule each block consolidation.
 
@@ -71,13 +66,11 @@ recorded against a file inside the submodule each block consolidation.
 |----|-----------|------|------------|
 | FR-103-CON-1 | Consolidation SHALL NOT change an accepted-corpus byte. | Data Integrity | Test |
 | FR-103-CON-2 | Quoin SHALL NOT record a port or delete disposition for a file inside the `corpus/` submodule. | Scope | Test |
-| FR-103-CON-3 | Quoin SHALL NOT open a corpus debt row that the containment matrix does not carry. | Scope | Inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-103-AC-1 | Every Quoin-side corpus module carries one recorded disposition, and the gate fails when one is unclassified. | Test (TC-1655) |
 | FR-103-AC-2 | The accepted-corpus digest computed before consolidation equals the digest computed after it, over a named non-empty population. | Test (TC-1656) |
 | FR-103-AC-3 | A measurement run resolves exactly one corpus source, and a planted second source is refused. | Test (TC-1657) |
 | FR-103-AC-4 | Corpus accounting is obtained from `engineering-assurance`, and no local corpus-accounting implementation exists in the workspace. | Test (TC-1658) |
