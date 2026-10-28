@@ -64,6 +64,8 @@ fn plan_document(bar_digest: &str, bar_text: &str) -> String {
          stage: gate\n\
          metric: quality.gate\n\
          definition_version: quality.gate-v1\n\
+         ground_truth_kind: mechanical\n\
+         statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    threshold: 0.8\n\
          protected_apparatus:\n\
          \x20\x20- spec/assurance/MP-900.md\n\
          negative_controls:\n\
@@ -245,6 +247,8 @@ fn tc_583_a_plan_without_preregistration_is_unaffected() {
          stage: gate\n\
          metric: quality.gate\n\
          definition_version: quality.gate-v1\n\
+         ground_truth_kind: mechanical\n\
+         statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    threshold: 0.8\n\
          protected_apparatus:\n\
          \x20\x20- spec/assurance/MP-900.md\n\
          negative_controls:\n\

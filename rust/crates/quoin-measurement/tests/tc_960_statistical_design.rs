@@ -42,7 +42,7 @@ use quoin_measurement::types::plan::{GroundTruthKind, MeasurementPlan};
 use quoin_measurement::validate;
 use serde_json::{Value, json};
 
-/// An active gate plan for `quality.gate`, with `extra` spliced into its
+/// An active ratchet plan for `quality.gate`, with `extra` spliced into its
 /// frontmatter verbatim (each line already indented as YAML needs).
 fn plan_document(extra: &str) -> String {
     format!(
@@ -52,7 +52,7 @@ fn plan_document(extra: &str) -> String {
          type: MeasurementPlan\n\
          status: active\n\
          owner: test\n\
-         stage: gate\n\
+         stage: ratchet\n\
          metric: quality.gate\n\
          definition_version: quality.gate-v1\n\
          protected_apparatus:\n\
@@ -335,8 +335,9 @@ fn tc_960_005_a_plan_without_the_fields_behaves_exactly_as_before() {
         build_measurement_report(&DiskMeasurement::new(root), root).expect("the report builds");
     let rendered = render_measurement_report(&report).expect("the report renders");
     assert!(
-        rendered
-            .contains("| quality.gate | MP-900 (spec/assurance/MP-900.md) | gate | 0.9 fraction |"),
+        rendered.contains(
+            "| quality.gate | MP-900 (spec/assurance/MP-900.md) | ratchet | 0.9 fraction |"
+        ),
         "a plan without ground_truth_kind renders its plan cell unchanged:\n{rendered}"
     );
     let json_text = render_measurement_report_json(&report).expect("the JSON report renders");
@@ -364,7 +365,7 @@ fn tc_960_006_the_report_states_the_plans_ground_truth_kind() {
     assert!(
         rendered.contains(
             "| quality.gate | MP-900 (spec/assurance/MP-900.md; ground truth: human-labelled) \
-             | gate | 0.9 fraction |"
+             | ratchet | 0.9 fraction |"
         ),
         "the Plan cell must state the ground-truth kind:\n{rendered}"
     );

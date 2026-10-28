@@ -21,8 +21,10 @@
 
 use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use engineering_assurance::measurement::NegativeControlKind;
+use quoin_jsonschema::SchemaValidator;
 use quoin_measurement::error::MeasurementErrorCode;
 use quoin_measurement::json_bridge::from_serde;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
@@ -212,65 +214,116 @@ fn checked(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Vec
 
 #[test]
 #[trace("TC-1810", "FR-110-AC-1", "FR-108-AC-4")]
-fn evidence_only_gate_still_needs_admitted_conclusive_measurements() {
-    for (label, matched, complete, expected) in [
-        ("passing", 10, true, Verdict::Accept),
-        ("failing", 5, true, Verdict::Reject),
-        ("incomplete", 10, false, Verdict::Inconclusive),
+fn tc_975_010_analyze_shaped_gate_matches_locked_ea_schema_and_loads() {
+    let fixture = include_str!("fixtures/MP-001-evidence-gate.md");
+    let frontmatter = fixture
+        .strip_prefix("---\n")
+        .and_then(|rest| rest.split_once("\n---\n"))
+        .map(|(frontmatter, _)| frontmatter)
+        .expect("the fixture has delimited frontmatter");
+    let authored = quoin_yaml::from_str(frontmatter).expect("the fixture frontmatter is YAML");
+
+    let metadata = Command::new("cargo")
+        .args(["metadata", "--locked", "--format-version", "1"])
+        .current_dir(env!("CARGO_MANIFEST_DIR"))
+        .output()
+        .expect("Cargo reports the locked dependency graph");
+    assert!(
+        metadata.status.success(),
+        "{}",
+        String::from_utf8_lossy(&metadata.stderr)
+    );
+    let metadata: Value = serde_json::from_slice(&metadata.stdout).expect("Cargo metadata is JSON");
+    let ea = metadata["packages"]
+        .as_array()
+        .expect("Cargo metadata lists packages")
+        .iter()
+        .find(|package| {
+            package["name"] == "engineering-assurance"
+                && package["source"].as_str().is_some_and(|source| {
+                    source.ends_with("#6e8c0d978846726cb8d52ab1709a886d12b69011")
+                })
+        })
+        .expect("the graph locks the reviewed EA schema commit");
+    let ea_manifest = PathBuf::from(
+        ea["manifest_path"]
+            .as_str()
+            .expect("the EA package has a manifest path"),
+    );
+    let schema_path = ea_manifest
+        .parent()
+        .expect("the EA manifest has a parent")
+        .join("engineering_assurance/schemas/measurement-plan-frontmatter.schema.json");
+    let schema: Value = serde_json::from_slice(
+        &std::fs::read(&schema_path).expect("the locked EA package carries its schema"),
+    )
+    .expect("the locked EA schema is JSON");
+    let validator = SchemaValidator::compile_vendored(&schema_path, &schema, &[])
+        .expect("the locked EA schema compiles");
+    assert!(
+        validator.is_valid(&authored),
+        "EA schema errors: {:?}",
+        validator.errors(&authored)
+    );
+
+    let root = tempfile::tempdir().expect("the fixture repository is creatable");
+    write(
+        root.path(),
+        "spec/assurance/MP-001-analyze-measurements.md",
+        fixture,
+    );
+    let plan = plan_of(root.path());
+    assert_eq!(plan.id.as_str(), "MP-001");
+    assert!(plan.protected_apparatus.is_none());
+    assert!(plan.execution_procedure.is_none());
+    let missing = verify(
+        &plan,
+        &[],
+        TamperFacts::default(),
+        OrderSource::CallerSupplied,
+        None,
+    );
+    assert_eq!(missing.verdict, Verdict::Inconclusive);
+    assert_eq!(missing.reasons, [Reason::NoCollections]);
+}
+
+/// Trace: FR-108-AC-4, FR-110-AC-1
+/// Provenance: PLAT-1162
+#[test]
+fn tc_975_011_active_evidence_gate_uses_retained_conclusive_results() {
+    let extra = concat!(
+        "ground_truth_kind: mechanical\n",
+        "negative_controls:\n  - kind: stale-evidence\n    description: stale evidence refuses a pass\n",
+    );
+    for (id, matched, complete, expected) in [
+        ("gate-pass", 10, true, Verdict::Accept),
+        ("gate-fail", 5, true, Verdict::Reject),
+        ("gate-incomplete", 10, false, Verdict::Inconclusive),
     ] {
-        let repository = repository("");
-        let root = repository.path();
+        let root = tempfile::tempdir().expect("the run repository is creatable");
         write(
-            root,
+            root.path(),
             "spec/assurance/MP-975.md",
-            &plan_with(
-                "gate",
-                "threshold: 0.8",
-                "ground_truth_kind: mechanical\nnegative_controls:\n  - kind: suppressed-observation\n    description: Missing failing items prevent a pass\n",
-            ),
+            &plan_with("gate", "threshold: 0.8", extra),
         );
-        let plan = plan_of(root);
-        assert!(plan.protected_apparatus.is_none());
-        let missing = verify(
-            &plan,
-            &[],
-            TamperFacts::default(),
-            OrderSource::CallerSupplied,
-            None,
+        let plan = plan_of(root.path());
+        let mut collection = candidate(
+            id,
+            0,
+            matched,
+            &json!({ "config": format!("sha256:{}", "3".repeat(64)) }),
         );
-        assert_eq!(missing.verdict, Verdict::Inconclusive);
-        assert_eq!(missing.reasons, [Reason::NoCollections]);
-        let mut collection = candidate(label, 0, matched, &artifacts(root, &ALL_FILES));
         collection["observations"][0]["population"]["complete"] = json!(complete);
-        publish(root, &collection).expect("the real collection intake succeeds");
-        let collections = stored(root);
-        assert_eq!(collections.len(), 1);
-        assert!(
-            collections[0]
-                .protected_apparatus_of(plan.id.as_str())
-                .is_none()
-        );
-        let ranked = [Ranked::new(&collections[0], Some(0))];
+        publish(root.path(), &collection).expect("the retained evidence is admitted");
+        let collections = stored(root.path());
         let verdict = verify(
             &plan,
-            &ranked,
+            &[Ranked::new(&collections[0], Some(0))],
             TamperFacts::default(),
             OrderSource::CallerSupplied,
             None,
         );
-        assert_eq!(verdict.verdict, expected, "{label}: {verdict:?}");
-        assert_eq!(verdict.counts.collections_considered, 1);
-        if expected == Verdict::Accept {
-            assert!(verdict.reasons.is_empty());
-            assert_eq!(verdict.counts.observations_recomputed, 1);
-        } else {
-            assert!(!verdict.reasons.is_empty());
-        }
-        let mut wrong_definition = collection;
-        wrong_definition["collectionId"] = json!("wrong-definition");
-        wrong_definition["observations"][0]["definitionVersion"] = json!("retired-definition");
-        assert!(publish(root, &wrong_definition).is_err());
-        assert_eq!(stored_count(root), 1, "refused evidence must not be stored");
+        assert_eq!(verdict.verdict, expected, "{id}: {verdict:?}");
     }
 }
 
@@ -367,6 +420,38 @@ fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
         let error = refused(extra);
         assert_eq!(error.code(), MeasurementErrorCode::PlanInvalid, "{extra}");
         assert!(error.to_string().contains(member), "{extra}: {error}");
+    }
+}
+
+/// Trace: FR-110-AC-1
+/// Provenance: PLAT-1162
+#[test]
+fn tc_975_004_non_retired_gate_requires_typed_definition_fields() {
+    let document = |truth: &str, design: &str| {
+        format!(
+            "---\nid: MP-975\ntitle: Evidence gate\ntype: MeasurementPlan\n\
+             status: active\nstage: gate\nmetric: gate.pass_rate\n\
+             definition_version: gate.pass-rate-v1\n{truth}{design}\
+             negative_controls:\n  - kind: stale-evidence\n    description: stale evidence refuses a pass\n---\n\
+             # Evidence gate\n"
+        )
+    };
+    let valid_design = "statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    threshold: 0.8\n";
+    for (member, truth, design) in [
+        ("ground_truth_kind", "", valid_design),
+        ("statistical_design", "ground_truth_kind: mechanical\n", ""),
+        (
+            "statistical_design.decision_rule",
+            "ground_truth_kind: mechanical\n",
+            "statistical_design:\n  estimator: proportion\n",
+        ),
+    ] {
+        let source = MemoryMeasurement::new()
+            .with_document("spec/assurance/MP-975.md", document(truth, design));
+        let error = load_measurement_plans(&source, PlanLoadOptions::default())
+            .expect_err("an incomplete non-retired gate is refused");
+        assert_eq!(error.code(), MeasurementErrorCode::PlanInvalid);
+        assert!(error.to_string().contains(member), "{member}: {error}");
     }
 }
 
