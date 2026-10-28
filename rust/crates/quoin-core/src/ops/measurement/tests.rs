@@ -36,7 +36,7 @@ use super::{
 /// and an unrecognised or absent one is a collection — the retained
 /// `record.ts` ternary, which falls through to `writeMeasurementCollection`.
 ///
-/// Trace: FR-096, FR-101-AC-2
+/// Trace: FR-096
 /// Provenance: quoin#478
 #[test]
 fn the_candidates_own_record_type_names_its_intake() {
@@ -70,7 +70,6 @@ fn the_candidates_own_record_type_names_its_intake() {
 /// the store were opened, this test would report an I/O failure instead — which
 /// is exactly the defect the ordering exists to prevent.
 ///
-/// Trace: FR-101-AC-2
 /// Provenance: quoin#478
 #[test]
 fn a_record_past_its_intakes_ceiling_is_refused_before_the_store_is_opened() {
@@ -95,7 +94,6 @@ fn a_record_past_its_intakes_ceiling_is_refused_before_the_store_is_opened() {
 
 /// A field ceiling names the field, so the caller knows which member to shrink.
 ///
-/// Trace: FR-101-AC-2
 /// Provenance: quoin#478
 #[test]
 fn a_field_past_its_ceiling_is_refused_and_named() {
@@ -164,7 +162,6 @@ fn a_field_past_its_ceiling_is_refused_and_named() {
 /// would reject records the store would take; a shorter one would admit records
 /// it will not write.
 ///
-/// Trace: FR-101-AC-7
 /// Provenance: quoin#478
 #[test]
 fn the_identity_ceiling_is_the_stores_own() {
@@ -174,7 +171,6 @@ fn the_identity_ceiling_is_the_stores_own() {
 /// A request of the wrong shape is the caller's mistake (3), not a refusal (2),
 /// and it names the operation that could not read it.
 ///
-/// Trace: FR-101-AC-2
 /// Provenance: quoin#478
 #[test]
 fn a_misshapen_request_is_a_bad_request() {

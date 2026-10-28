@@ -11,7 +11,7 @@
 //! # Why this file exists
 //!
 //! `tests/graph-adapters.test.ts` was deleted in the same commit as
-//! `src/measurement/graph-adapters.ts` (FR-101). It carried twelve
+//! `src/measurement/graph-adapters.ts`. It carried twelve
 //! criterion-tagged assertions. `tc_475_parity.rs` proves this crate answers
 //! what the retained module answered on 89 captured cases, but it is tagged
 //! `FR-066-AC-1` only — a corpus-wide agreement gate is not a per-criterion

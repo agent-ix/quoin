@@ -10,7 +10,7 @@
 //!
 //! # Why this file exists
 //!
-//! FR-101 retires `src/measurement/` after parity, and `tests/operational.test.ts`
+//! The retire-after-parity rule retires `src/measurement/` after parity, and `tests/operational.test.ts`
 //! is deleted with it. Every acceptance criterion that file carried has to be
 //! restated against the Rust port before the TypeScript goes, or the criterion
 //! is retired rather than ported. One `#[test]` per criterion, each tagged at

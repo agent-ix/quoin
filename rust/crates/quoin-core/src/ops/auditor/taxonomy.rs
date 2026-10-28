@@ -83,7 +83,6 @@ mod tests {
     use super::{core_code, map_error};
     use crate::error::CoreErrorCode;
 
-    /// Trace: FR-101-AC-3
     /// Provenance: quoin#501
     #[test]
     fn the_error_mapping_covers_every_auditor_code() {
@@ -105,7 +104,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-101-AC-3
     /// Provenance: quoin#501
     #[test]
     fn a_refusal_carries_its_code_and_its_operation() {

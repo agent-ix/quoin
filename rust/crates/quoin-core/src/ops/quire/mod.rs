@@ -47,7 +47,7 @@
 //! module, corpus and symbol walks. They are **not** on either payload.
 //! `runQuire` piped quire's stderr and discarded it on a successful run, so no
 //! quoin command has ever shown a notice to anyone; surfacing them now would be
-//! a user-visible change to six commands' output, which FR-101 says a cutover
+//! a user-visible change to six commands' output, which the retire-after-parity rule says a cutover
 //! does not get to make. Reported as quoin#513 rather than absorbed.
 
 mod taxonomy;

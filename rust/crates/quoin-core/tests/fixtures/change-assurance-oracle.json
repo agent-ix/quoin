@@ -1,5 +1,5 @@
 {
-  "provenance": "Extracted from rust/crates/quoin-change-assurance/tests/fixtures/oracle.json, captured against the retained TypeScript in src/change-assurance/ by oracle/capture-change-assurance-oracle.mjs before its deletion (quoin#457, FR-101 AC-5).",
+  "provenance": "Extracted from rust/crates/quoin-change-assurance/tests/fixtures/oracle.json, captured against the retained TypeScript in src/change-assurance/ by oracle/capture-change-assurance-oracle.mjs before its deletion (quoin#457).",
   "cases": [
     {
       "name": "everything-agrees",

@@ -5,7 +5,7 @@
 //!
 //! `tests/golden/cases.json` is hand-authored input; `tests/golden/expected.json`
 //! was captured once from `src/evidence/adapters/` and is the only oracle
-//! consulted here. No Node process runs in this lane (FR-101-AC-5).
+//! consulted here. No Node process runs in this lane.
 
 #![allow(
     clippy::unwrap_used,

@@ -4,7 +4,6 @@
 //!
 //! Trace: FR-067-AC-1
 //! Trace: FR-100-AC-4
-//! Trace: FR-101-AC-5
 //! Provenance: quoin#477
 //!
 //! # What this gate is
@@ -195,7 +194,7 @@ fn text_at<'a>(value: &'a Value, key: &str) -> &'a str {
 /// The whole report, byte for byte, for the repositories whose every sentence
 /// both trees produce.
 ///
-/// Trace: FR-067-AC-1, FR-100-AC-4, FR-101-AC-5
+/// Trace: FR-067-AC-1, FR-100-AC-4
 /// Provenance: quoin#477
 #[test]
 fn tc_477_010_byte_identical_report() {
@@ -241,7 +240,7 @@ fn tc_477_010_byte_identical_report() {
 /// Availability and path for the two graph refusals whose sentence is an
 /// operating system's or a schema validator's. `DIVERGENCE.md` §9.
 ///
-/// Trace: FR-067-AC-1, FR-100-AC-4, FR-101-AC-5
+/// Trace: FR-067-AC-1, FR-100-AC-4
 /// Provenance: quoin#477
 #[test]
 fn tc_477_011_graph_refusal_verdicts() {
@@ -296,7 +295,6 @@ fn tc_477_011_graph_refusal_verdicts() {
 
 /// The golden's tree token is the one the replay substitutes.
 ///
-/// Trace: FR-101-AC-5
 /// Provenance: quoin#477
 #[test]
 fn tc_477_012_golden_states_its_tree_token() {

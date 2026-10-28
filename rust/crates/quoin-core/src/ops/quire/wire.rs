@@ -11,7 +11,7 @@
 //! `auditor.audit` and `auditor.advise` already read, and [`PropertyShape`]
 //! from `quoin-auditor`, which `auditor.advise` already accepts. Declaring a
 //! second `Obligation` here — one for the payload, one for the request — is
-//! exactly the hand-written duplicate FR-097-CON-1 forbids, and nothing would
+//! exactly the hand-written duplicate the schema-source rule forbids, and nothing would
 //! compare the two.
 //!
 //! That reuse is what makes the wiring honest end to end: the obligation

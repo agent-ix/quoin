@@ -504,7 +504,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-068, FR-101
+    /// Trace: FR-068
     #[test]
     fn tc_373_change_assurance_schema_and_recover_preserve_their_grammar() {
         assert!(

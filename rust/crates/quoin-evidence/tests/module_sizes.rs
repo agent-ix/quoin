@@ -74,7 +74,6 @@ fn collect(root: &Path, directory: &Path, found: &mut Vec<(String, usize)>) {
 /// wrong directory would find nothing and pass, which is the failure mode this
 /// kind of test has.
 ///
-/// Trace: FR-101-AC-5
 /// Provenance: quoin#458
 #[test]
 fn tc_458_310_no_module_grows_past_the_ceiling() {

@@ -8,7 +8,7 @@
 //!
 //! # Why this file exists
 //!
-//! FR-101 retires `src/measurement/` after parity. `tests/operational.test.ts`
+//! The retire-after-parity rule retires `src/measurement/` after parity. `tests/operational.test.ts`
 //! goes with it, and with it the only statement of what the GitHub-release
 //! operational producer must do. Each criterion is restated here against the
 //! Rust producer, one `#[test]` each, tagged at criterion level.

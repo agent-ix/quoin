@@ -111,7 +111,7 @@ fn mapping(name: &str, file: &str) -> String {
 
 /// The report pair over one store: the document, and the markdown.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_200_the_report_pair_reads_one_store() {
@@ -143,7 +143,7 @@ fn tc_478_200_the_report_pair_reads_one_store() {
 /// list of eleven does not name; `src/commands/report.ts` cannot be rewired
 /// without it.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_201_the_comparison_pair_names_both_collections() {
@@ -167,7 +167,7 @@ fn tc_478_201_the_comparison_pair_names_both_collections() {
 
 /// A series is one metric's history, oldest first.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_202_a_series_is_one_metrics_history() {
@@ -192,7 +192,7 @@ fn tc_478_202_a_series_is_one_metrics_history() {
 /// The portfolio pair spans several stores, and its repository entries carry no
 /// graph.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_203_the_portfolio_pair_spans_several_stores() {
@@ -226,7 +226,7 @@ fn tc_478_203_the_portfolio_pair_spans_several_stores() {
 /// The graph portfolio pair reads the mapped graph documents over the same
 /// stores, and says what the plain pair cannot.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_204_the_graph_portfolio_pair_carries_the_graph() {

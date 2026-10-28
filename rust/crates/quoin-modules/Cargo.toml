@@ -38,10 +38,10 @@ serde_yaml_ng = { package = "yaml_serde", version = "=0.10.7" }
 schemars = { workspace = true, optional = true }
 
 [features]
-# FR-097. `quoin-core` turns this on so `quoin-schemas` can read the wire shape
+# `quoin-core` turns this on so `quoin-schemas` can read the wire shape
 # of a registry record off `InstalledModule` itself. The alternative — a second
 # declaration of the same record inside `quoin-core` — is exactly the duplicate
-# FR-097 exists to remove. No `default`: a feature that is on by default is a
+# The schema-source rule exists to remove. No `default`: a feature that is on by default is a
 # feature nobody ever proves works when it is off.
 schema = ["dep:schemars"]
 

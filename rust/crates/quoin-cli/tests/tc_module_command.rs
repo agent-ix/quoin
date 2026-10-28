@@ -78,7 +78,7 @@ fn output_text(output: &Output) -> String {
 /// Install, list, and remove must operate on one real temporary IX home through
 /// the shipped command—not the retired protocol executable.
 ///
-/// Trace: FR-070, FR-101, FR-102
+/// Trace: FR-070, FR-102
 /// Provenance: quoin#449, quoin#521
 #[test]
 fn tc_521_module_install_list_and_remove_use_the_shipped_binary() {
@@ -115,7 +115,7 @@ fn tc_521_module_install_list_and_remove_use_the_shipped_binary() {
 /// A release executable owns its semantic contract; it must not rely on the
 /// source checkout that happened to build it.
 ///
-/// Trace: FR-070, FR-101
+/// Trace: FR-070
 /// Provenance: quoin#527, quoin#531, quoin#533
 #[test]
 fn tc_527_001_native_module_install_bootstraps_without_a_semantic_root_env() {

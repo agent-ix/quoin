@@ -12,7 +12,7 @@
 //!
 //! The retained TypeScript no longer exists: quoin#479 deleted `src/measurement/`
 //! after this port took over its routes. Both documents are therefore measured
-//! against **committed captures** under `tests/goldens/`. FR-101-AC-5 forbids a live non-Rust runtime oracle
+//! against **committed captures** under `tests/goldens/`. The retire-after-parity rule forbids a live non-Rust runtime oracle
 //! after cutover; a committed byte sequence is not one.
 //!
 //! The operational schema was already a JSON document, so it is carried over

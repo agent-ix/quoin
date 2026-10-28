@@ -4,7 +4,6 @@
 //!
 //! Trace: FR-067-AC-1
 //! Trace: FR-100-AC-4
-//! Trace: FR-101-AC-5
 //! Provenance: quoin#476
 //!
 //! # What this gate is
@@ -119,7 +118,7 @@ fn normalise(text: &str) -> String {
 /// `render.rs` doc — an appended advisory "Priority ranking" section with no
 /// counterpart in this frozen `graph-portfolio.ts` capture, for the same
 /// reason `quoin-measurement`'s own `tc_473_reporting.rs` strips it: the
-/// section did not exist when the oracle was captured, and FR-101-AC-5
+/// section did not exist when the oracle was captured, and the retire-after-parity rule
 /// forbids a live TypeScript run to add one. Unlike that file, the ranking
 /// section here is not the last thing rendered — `render_governed_graph_portfolio`
 /// appends its own "Governed graph evidence" sections after it — so this

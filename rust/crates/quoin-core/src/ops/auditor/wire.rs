@@ -61,7 +61,7 @@ pub struct AuditPayload {
     /// The boundary is not reading retained bytes. It is answering a request
     /// it just computed, and it knows exactly what it put there — so the
     /// member is MOVED here and typed, rather than copied. Copied would be the
-    /// same list encoded twice, the shape FR-097 forbids, and left in place it
+    /// same list encoded twice, the shape the schema-source rule forbids, and left in place it
     /// would reach TypeScript as an undeclared key no generated type carries.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub independence: Option<Vec<IndependenceAssessment>>,

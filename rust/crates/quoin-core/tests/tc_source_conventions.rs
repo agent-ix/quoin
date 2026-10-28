@@ -40,7 +40,6 @@ fn rust_sources(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// Trace: NFR-024
 /// Provenance: quoin#375
 #[test]
 fn tc_375_every_rust_file_carries_the_agpl_spdx_header() {
@@ -66,7 +65,6 @@ fn tc_375_every_rust_file_carries_the_agpl_spdx_header() {
     assert_eq!(missing, Vec::<String>::new());
 }
 
-/// Trace: NFR-024
 /// Provenance: quoin#375
 #[test]
 fn tc_375_every_crate_opts_into_the_workspace_lint_policy() {

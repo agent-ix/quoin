@@ -104,7 +104,7 @@ pub struct VocabularyDeclarations {
 /// does not exist yet, and taking already-located roots as input would change
 /// the API this crate is meant to be parity-tested against. The successor is the
 /// catalog crate; when it lands, this function is deleted and the caller passes
-/// its result (NFR-024: every retained path has a successor).
+/// its result.
 #[must_use]
 pub fn locate_module_root(candidate: &Path) -> Option<PathBuf> {
     let root = if candidate.is_absolute() {

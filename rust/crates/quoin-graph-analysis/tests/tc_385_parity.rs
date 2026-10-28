@@ -5,7 +5,7 @@
 //! The corpus in `tests/goldens/graph-analysis.json` was captured **once**, by
 //! a script run against the retained TypeScript. Both are deleted at HEAD
 //! (quoin#500). It is the committed bytes that are read here and
-//! nothing else: FR-101-AC-5 forbids leaving an oracle in the loop, and a test
+//! nothing else: the retire-after-parity rule forbids leaving an oracle in the loop, and a test
 //! that shelled out to node would be exactly that.
 //!
 //! # What is compared, and how exactly
@@ -46,7 +46,7 @@
 //! declared one that has stopped disagreeing fails too: a divergence nothing
 //! exercises is an unmeasured claim.
 //!
-//! Trace: FR-062-AC-1, FR-062-AC-2, FR-062-AC-3, FR-101-AC-5
+//! Trace: FR-062-AC-1, FR-062-AC-2, FR-062-AC-3
 //!
 //! Provenance: quoin#385
 

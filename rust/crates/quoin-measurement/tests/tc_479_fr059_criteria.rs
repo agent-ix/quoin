@@ -10,7 +10,7 @@
 //! # Why this file exists
 //!
 //! `tests/operational.test.ts` is deleted in the same commit as
-//! `src/measurement/operational.ts` (FR-101). Nine FR-059 criteria were
+//! `src/measurement/operational.ts`. Nine FR-059 criteria were
 //! carried by five of its cases, and a criterion that appears on no test after
 //! the cutover is a criterion nothing holds. `tc_472_operational_pairs.rs`
 //! proves the one retained pair still validates, and

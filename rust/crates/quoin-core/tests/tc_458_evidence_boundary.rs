@@ -133,7 +133,6 @@ fn junit(case: &str) -> String {
     format!(r#"<testsuite name="unit"><testcase name="{case}"/></testsuite>"#)
 }
 
-/// Trace: FR-101-AC-1
 ///
 /// `store_facts` is the only operation that answers `mutation_score_metric`,
 /// and the only one that takes no arguments at all.
@@ -148,7 +147,6 @@ fn tc_458_010_store_facts_serves_the_store_constants() {
     );
 }
 
-/// Trace: FR-101-AC-3
 ///
 /// `parse_results` is the only operation that answers a bare `entries` list
 /// with no store path beside it.
@@ -165,7 +163,6 @@ fn tc_458_020_parse_results_transcribes_a_producer_document() {
     assert!(payload.get("run_path").is_none(), "{payload}");
 }
 
-/// Trace: FR-101-AC-3
 #[test]
 fn tc_458_030_parse_lineage_reads_a_lineage_document() {
     let payload = ok(&run(
@@ -175,7 +172,6 @@ fn tc_458_030_parse_lineage_reads_a_lineage_document() {
     assert_eq!(payload["lineage"]["actor"], "peter");
 }
 
-/// Trace: FR-101-AC-3
 #[test]
 fn tc_458_040_parse_policy_reads_a_policy_and_checks_its_obligations() {
     let policy = json!({
@@ -204,7 +200,6 @@ fn tc_458_040_parse_policy_reads_a_policy_and_checks_its_obligations() {
     assert!(refused.stderr.contains("QE-E007"), "{}", refused.stderr);
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `record` is the only operation that answers `run_path`.
 #[test]
@@ -227,7 +222,6 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
     reported_store_path(dir.path(), run_path, "runs/unit/aaaaaaaaaaaa.json");
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `affirm` is the only operation that answers `found`.
 #[test]
@@ -268,7 +262,6 @@ fn tc_458_060_affirm_clears_suspicion_on_a_binding_that_exists() {
     );
 }
 
-/// Trace: FR-101-AC-2
 ///
 /// `gc` is the only operation that answers `deleted` — and the divergence this
 /// ticket declares is asserted HERE, through the binary, because the join onto
@@ -306,7 +299,6 @@ fn tc_458_070_gc_reports_absolute_paths_and_removes_only_the_superseded() {
     assert!(store_path(dir.path(), "runs/unit/bbbbbbbbbbbb.json").is_file());
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `trust_decision` is the only operation that answers both a `path` and an
 /// `assessment`.
@@ -357,7 +349,6 @@ fn tc_458_080_trust_decision_is_assessed_before_it_is_stored() {
     reported_store_family(dir.path(), path, "trust");
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `trust_assessments` is the only operation that answers `unreadable`.
 #[test]
@@ -371,7 +362,6 @@ fn tc_458_090_trust_assessments_reads_an_empty_store_as_empty() {
     assert_eq!(payload["unreadable"], json!([]));
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `inspect_mocks` is the only operation that answers `injections`. An empty
 /// COMPLETED inspection is still recorded — that is how audit tells "looked and
@@ -395,7 +385,6 @@ fn tc_458_100_inspect_mocks_records_an_empty_inspection() {
     reported_store_path(dir.path(), path, "mock-inspections/unit/aaaaaaaaaaaa.json");
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `record_experiment` and `record_operational` are the only operations that
 /// answer `created`, and they write to different families — which is the fact
@@ -507,7 +496,6 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
     assert_eq!(payload["created"], true);
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `audit_inputs` is the only operation that answers `vacuous_scan_suites`.
 #[test]
@@ -532,7 +520,6 @@ fn tc_458_120_audit_inputs_answers_everything_the_pure_auditor_reads() {
     assert_eq!(payload["independence"], json!([]));
 }
 
-/// Trace: FR-101-AC-3
 ///
 /// The exit taxonomy, through the binary: a caller mistake is 3, a refusal is
 /// 2, and neither writes a payload to stdout.
@@ -595,7 +582,6 @@ fn tc_458_150_audit_inputs_names_the_scans_that_evaluated_no_rules() {
     assert_eq!(payload["vacuous_scan_suites"], json!(["SUITE-VACUOUS"]));
 }
 
-/// Trace: FR-101-AC-2
 ///
 /// The second declared divergence, through the real binary.
 ///

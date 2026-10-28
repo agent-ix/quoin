@@ -86,7 +86,7 @@ fn normalize_version(text: &str) -> String {
 
 /// The fixture is a non-vacuous retained capture.
 ///
-/// Trace: FR-101, FR-102, TC-1650
+/// Trace: FR-102, TC-1650
 #[test]
 fn tc_1650_retained_help_capture_is_provenanced_and_covers_every_native_route() {
     let capture = capture();
@@ -138,7 +138,7 @@ fn tc_1650_retained_help_capture_is_provenanced_and_covers_every_native_route() 
 /// Route-specific renderers are added from the same fixture without invoking
 /// the retained implementation again.
 ///
-/// Trace: FR-003, FR-101, FR-102, TC-1650
+/// Trace: FR-003, FR-102, TC-1650
 #[test]
 fn tc_1650_native_root_help_matches_the_retained_capture() {
     let capture = capture();
@@ -157,7 +157,7 @@ fn tc_1650_native_root_help_matches_the_retained_capture() {
 /// No Node process participates: this is the deletion-safe half of the Stage 8
 /// command-contract evidence.
 ///
-/// Trace: FR-003, FR-101, FR-102, TC-1650
+/// Trace: FR-003, FR-102, TC-1650
 #[test]
 fn tc_1650_native_help_preserves_retained_routes_and_current_workflow_paths() {
     for case in capture()
@@ -200,7 +200,7 @@ fn tc_1650_native_help_preserves_retained_routes_and_current_workflow_paths() {
 /// The frozen non-help cases prove shell-level stream and status behavior that
 /// route-help replay cannot exercise, without invoking the retained CLI.
 ///
-/// Trace: FR-005, FR-101, FR-102, TC-1650
+/// Trace: FR-005, FR-102, TC-1650
 #[test]
 fn tc_1650_native_shell_replays_the_retained_offline_contracts() {
     for case in capture()

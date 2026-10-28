@@ -261,7 +261,6 @@ mod tests {
     /// When this fails: a code was added to `quoin-measurement`. Decide which
     /// group it belongs to, add it to that arm, and raise the count.
     ///
-    /// Trace: FR-101-AC-7
     /// Provenance: quoin#478
     #[test]
     fn the_measurement_mapping_covers_every_code() {
@@ -342,7 +341,6 @@ mod tests {
     /// compiler guards it. The count is still asserted, because a variant
     /// REMOVED upstream would silently shrink both the match and this list.
     ///
-    /// Trace: FR-101-AC-7
     /// Provenance: quoin#478
     #[test]
     fn the_intake_mapping_covers_every_refusal_code() {
@@ -388,7 +386,6 @@ mod tests {
 
     /// `GraphAdapterErrorCode` is `#[non_exhaustive]`; the count is the guard.
     ///
-    /// Trace: FR-101-AC-7
     /// Provenance: quoin#478
     #[test]
     fn the_graph_mapping_covers_every_code() {
@@ -446,7 +443,6 @@ mod tests {
 
     /// The producer's two failures do not collapse into one status.
     ///
-    /// Trace: FR-101-AC-7
     /// Provenance: quoin#478
     #[test]
     fn the_release_producer_keeps_its_two_failures_apart() {

@@ -242,7 +242,7 @@ fn indent_json(value: &str, indent: usize) -> String {
 mod tests {
     use super::{command, modules_json};
 
-    /// Trace: FR-017, FR-101
+    /// Trace: FR-017
     #[test]
     fn tc_373_module_defaults_to_list_and_requires_mutation_arguments() {
         assert!(command().try_get_matches_from(["module"]).is_ok());
@@ -268,7 +268,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-017, FR-101
+    /// Trace: FR-017
     #[test]
     fn tc_373_module_output_keeps_the_registry_field_order() {
         let rendered = modules_json(

@@ -162,7 +162,7 @@ fn workspace(evidence: &[&str]) -> tempfile::TempDir {
 /// store refuses a collection naming a retired or drifted plan, and refusing is
 /// not what this test is measuring.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_100_a_collection_is_published_under_measurements() {
@@ -194,7 +194,7 @@ fn tc_478_100_a_collection_is_published_under_measurements() {
 /// The intervention intake: `record_type: intervention_experiment` is published
 /// under `interventions/`, at the `p-` prefixed name the store mints.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_101_an_intervention_record_is_published_under_interventions() {
@@ -227,7 +227,7 @@ fn tc_478_101_an_intervention_record_is_published_under_interventions() {
 /// `read_operational_entries` would answer with for a record already inside
 /// one, so a store carrying it would not exercise this path at all.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_102_an_operational_record_is_published_under_operational() {
@@ -265,7 +265,7 @@ fn tc_478_102_an_operational_record_is_published_under_operational() {
 /// `measurement.produce_agent_eval_intervention` produces a record from a
 /// retained definition and publishes it.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_103_the_agent_eval_producer_publishes_an_intervention() {
@@ -297,7 +297,7 @@ fn tc_478_103_the_agent_eval_producer_publishes_an_intervention() {
 /// and publishes it under `operational/pairs/` — which is neither of the two
 /// directories the record route writes to.
 ///
-/// Trace: FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_104_the_release_producer_publishes_an_operational_pair() {
@@ -327,7 +327,7 @@ fn tc_478_104_the_release_producer_publishes_an_operational_pair() {
 /// repository it names does not exist, so a store opened before the ceiling was
 /// applied would answer with an I/O fault instead.
 ///
-/// Trace: FR-096-AC-4, FR-101-AC-7
+/// Trace: FR-096-AC-4
 /// Provenance: quoin#478
 #[test]
 fn tc_478_105_an_oversized_record_is_refused_by_the_process() {

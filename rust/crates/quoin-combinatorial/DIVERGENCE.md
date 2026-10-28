@@ -118,7 +118,7 @@ plus the two captured cases in the golden corpus.
 
 `tests/goldens/combinatorial.json` holds 31 cases, captured once by
 `oracle/capture-combinatorial.mjs` and committed. **No test spawns node**
-(FR-101-AC-5).
+.
 
 It covers every `parseSpace` refusal path (no header, an unanchored header, no
 whitespace after `over`, strength `0`, an infinite strength, fewer than two

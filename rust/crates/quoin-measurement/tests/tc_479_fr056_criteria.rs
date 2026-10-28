@@ -10,7 +10,7 @@
 //! # Why this file exists
 //!
 //! `tests/intervention.test.ts` is deleted in the same commit as
-//! `src/measurement/intervention.ts` (FR-101, Stage 6 cutover). It carried the
+//! `src/measurement/intervention.ts` (Stage 6 cutover). It carried the
 //! nine FR-056 criteria across six `test` blocks, several of which tagged two
 //! criteria at once. `tc_471_corpus.rs` proves this crate reads and reproduces
 //! the one retained record, and `tc_471_intake.rs` proves the record-id and

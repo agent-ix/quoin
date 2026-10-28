@@ -6,7 +6,7 @@
 //! The first REAL quoin capability across the boundary. Stage 0's `core.ping`
 //! proved the mechanism against a purpose-built oracle; every operation here
 //! is compared against the retained `src/assurance/` itself, which is the
-//! whole reason that module is retained rather than deleted (FR-101).
+//! whole reason that module is retained rather than deleted.
 
 use serde::{Deserialize, Serialize};
 

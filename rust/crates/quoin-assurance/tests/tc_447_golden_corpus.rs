@@ -6,7 +6,7 @@
 //! # Why a checked-in corpus rather than a live oracle
 //!
 //! The retired differential harness ran one request through retained
-//! `src/assurance/` and through `quoin-core`. FR-101 AC-5 forbids a live Node
+//! `src/assurance/` and through `quoin-core`. The retire-after-parity rule forbids a live Node
 //! runtime in the Rust test path after cutover, so the oracle is committed
 //! bytes instead.
 //!
@@ -121,7 +121,7 @@ fn request_for(corpus: &Corpus, case: &Case) -> Value {
 
 /// Every captured TypeScript verdict, reproduced by the port.
 ///
-/// Trace: FR-040, FR-047, FR-101
+/// Trace: FR-040, FR-047
 /// Provenance: quoin#447
 #[test]
 fn tc_447_500_the_port_reproduces_every_captured_typescript_verdict() {
@@ -255,7 +255,6 @@ fn tc_447_500_the_port_reproduces_every_captured_typescript_verdict() {
 /// was authored. A corpus that drifted into 128 `requirement_of` cases would
 /// pass every assertion above and test one function.
 ///
-/// Trace: FR-101
 /// Provenance: quoin#447
 #[test]
 fn tc_447_501_the_corpus_exercises_all_four_retired_operations() {
@@ -276,7 +275,6 @@ fn tc_447_501_the_corpus_exercises_all_four_retired_operations() {
 
 /// Every case carries the requirement id it exists for.
 ///
-/// Trace: FR-101
 /// Provenance: quoin#447
 #[test]
 fn tc_447_502_every_case_names_a_requirement_and_a_unique_name() {

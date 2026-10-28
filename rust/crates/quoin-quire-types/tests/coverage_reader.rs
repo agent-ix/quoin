@@ -5,7 +5,7 @@
 //!
 //! # Why the fixture is captured and not written
 //!
-//! FR-101 names the self-fixture tautology: a test asserting against bytes the
+//! The retire-after-parity rule names the self-fixture tautology: a test asserting against bytes the
 //! test itself invented proves that the author's idea of the format agrees
 //! with the author's idea of the format. quoin does not own this format —
 //! quire does — so a hand-written fixture here would be exactly that, and the
@@ -50,7 +50,6 @@ fn obligations(value: &serde_json::Value) -> &Vec<serde_json::Value> {
         .expect("the capture must carry an `obligations` array")
 }
 
-/// Trace: FR-101
 #[test]
 fn reads_every_obligation_quire_emitted() {
     let value = fixture();
@@ -78,7 +77,6 @@ fn reads_every_obligation_quire_emitted() {
     }
 }
 
-/// Trace: FR-101
 #[test]
 fn the_fixture_carries_engine_computed_digests() {
     // The anti-self-fixture check. `statement_hash` is sha256 of `statement`,
@@ -107,7 +105,6 @@ fn the_fixture_carries_engine_computed_digests() {
     }
 }
 
-/// Trace: FR-101
 #[test]
 fn the_capture_still_covers_every_shape_quire_mints() {
     // The capture was selected by census: one obligation per distinct

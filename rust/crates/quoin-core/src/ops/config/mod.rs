@@ -134,7 +134,7 @@ pub struct ResolveOrgPayload {
 ///
 /// Served over the boundary so the sentence has ONE home. It was a `const` in
 /// `src/org.ts` and a `const` in `quoin_config::org`, and two copies of a
-/// user-facing sentence is exactly the drift FR-101 retires.
+/// user-facing sentence is exactly the drift the retire-after-parity rule retires.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct UnresolvedOrgMessagePayload {

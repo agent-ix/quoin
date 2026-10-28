@@ -27,7 +27,7 @@
 //! cargo run -p quoin-quire --example capture-assurance-bases
 //! ```
 //!
-//! Deleted at the cutover commit per FR-101-AC-5.
+//! Deleted at the cutover commit per the retire-after-parity rule.
 
 use std::path::PathBuf;
 

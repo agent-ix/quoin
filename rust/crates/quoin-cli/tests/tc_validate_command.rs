@@ -67,7 +67,7 @@ fn invoke(root: &Path, strict: bool) -> std::process::Output {
 /// The captured TypeScript verdict corpus must be observable through the
 /// shipped `quoin validate` command, not a retired private protocol binary.
 ///
-/// Trace: FR-098, FR-101, FR-102
+/// Trace: FR-098, FR-102
 /// Provenance: quoin#412, quoin#377, quoin#521
 #[test]
 fn tc_521_validate_replays_every_captured_validator_verdict() {

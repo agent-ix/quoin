@@ -33,7 +33,7 @@
 //!    empty string and rendering a blank row.
 //! 2. **The fixture is captured from the pinned quire binary**, never written
 //!    by hand — a hand-written fixture asserts against bytes the test itself
-//!    invented, which FR-101 names as a self-fixture tautology. See
+//!    invented, which the retire-after-parity rule names as a self-fixture tautology. See
 //!    `tests/coverage_reader.rs`.
 //!
 //! There is deliberately **no** `deny_unknown_fields`: [`Obligation`] reads
@@ -49,7 +49,7 @@
 //! so these types are the shape a `quire.coverage` payload is WRITTEN in as
 //! well as the shape `auditor.audit` reads it back in. One declaration serves
 //! both directions, deliberately — a second struct for the outbound side would
-//! be the hand-written duplicate FR-097-CON-1 forbids, and nothing would
+//! be the hand-written duplicate the schema-source rule forbids, and nothing would
 //! compare the two.
 //!
 //! It does NOT make this crate a definition. `skip_serializing_if` mirrors

@@ -347,7 +347,6 @@ impl std::io::Write for LimitedWriter {
 mod tests {
     use super::*;
 
-    /// Trace: NFR-024
     #[test]
     fn tc_379_030_a_zero_ceiling_is_refused_as_a_configuration_mistake() {
         assert_eq!(PayloadLimit::bytes(0), None);
@@ -355,7 +354,6 @@ mod tests {
         assert_eq!(PayloadLimit::DEFAULT.get(), 64 * 1024 * 1024);
     }
 
-    /// Trace: NFR-024
     #[test]
     fn tc_379_031_an_oversized_slice_names_the_ceiling_not_a_syntax_error() {
         let limit = PayloadLimit::bytes(8).expect("non-zero");
@@ -372,7 +370,6 @@ mod tests {
         assert!(message.contains('8'), "{message}");
     }
 
-    /// Trace: NFR-024
     #[test]
     fn tc_379_032_bad_json_and_bad_shape_are_different_codes() {
         let limit = PayloadLimit::DEFAULT;
@@ -386,7 +383,6 @@ mod tests {
         assert_eq!(bad_shape.code(), crate::ErrorCode::PayloadShape);
     }
 
-    /// Trace: NFR-024
     #[test]
     fn tc_379_033_encoding_stops_at_the_ceiling_rather_than_allocating_past_it() {
         let value = vec!["x".repeat(64); 64];

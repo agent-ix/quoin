@@ -104,7 +104,7 @@ fn request(json_output: bool) -> Value {
 /// Each named route answers with its own view, and an absent retained store is
 /// a report rather than a refusal.
 ///
-/// Trace: FR-062-AC-9, FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-062-AC-9, FR-096-AC-2
 /// Provenance: quoin#500
 #[test]
 fn tc_500_300_each_route_answers_with_its_own_view() {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 //! The engine edge — what `src/quire/contract.ts` was for, and why almost none
-//! of it survives the move (quoin#379, EPIC #373 FR-097).
+//! of it survives the move (quoin#379, EPIC #373).
 //!
 //! ## What `contract.ts` guarded
 //!
@@ -179,7 +179,6 @@ mod capability_witnesses {
 mod tests {
     use super::*;
 
-    /// Trace: FR-097
     #[test]
     fn tc_379_021_capability_tokens_are_sorted_unique_and_non_empty() {
         let mut sorted = CAPABILITIES.to_vec();
@@ -191,7 +190,6 @@ mod tests {
         assert!(CAPABILITIES.iter().all(|token| !token.is_empty()));
     }
 
-    /// Trace: FR-097
     #[test]
     fn tc_379_024_provenance_uses_the_key_names_the_retained_typescript_reads() {
         let value = serde_json::to_value(Provenance::current()).expect("serializes");

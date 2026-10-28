@@ -3,10 +3,6 @@ id: FR-098
 title: "Preserve semantic and identity parity across every port"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/StR-009"
-    type: "implements"
-  - target: "ix://agent-ix/quoin/US-024"
-    type: "implements"
   - target: "ix://agent-ix/quoin/FR-096"
     type: "requires"
 ---
@@ -122,4 +118,4 @@ differential run whose compared population is empty each block cutover.
 ## Dependencies
 
 - **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md).
-- **Downstream**: [FR-099](./FR-099-rust-catalog-and-validation-capability.md), [FR-100](./FR-100-rust-evidence-measurement-change-assurance.md) and [FR-101](./FR-101-retire-replaced-executable-paths.md) consume this parity evidence; [NFR-025](../non-functional/NFR-025-immutable-evidence-and-corpus-bytes.md) constrains it.
+- **Downstream**: [FR-099](./FR-099-rust-catalog-and-validation-capability.md), and [FR-100](./FR-100-rust-evidence-measurement-change-assurance.md) consume this parity evidence; [NFR-025](../non-functional/NFR-025-immutable-evidence-and-corpus-bytes.md) constrains it.

@@ -109,7 +109,7 @@ port does not touch them.
 ## 2. The corpus
 
 Captured once from the TypeScript (deleted at the quoin#452 cutover, per
-FR-101-AC-5).
+the retire-after-parity rule).
 
 | Schema                                                                | Documents |  Valid | Invalid | Call site                                                      |
 | --------------------------------------------------------------------- | --------: | -----: | ------: | -------------------------------------------------------------- |
@@ -390,7 +390,7 @@ these were all measured rather than assumed:
 
 **The capture step is gone and cannot be re-run.** quoin#452 deleted
 `src/semantic/`'s TypeScript and `scripts/capture-semantic-goldens.mjs` in one
-commit, because FR-101-AC-5 forbids a live non-Rust oracle once the port lands.
+commit, because the retire-after-parity rule forbids a live non-Rust oracle once the port lands.
 The goldens under `tests/goldens/` are the record, frozen at the revision each
 file names; they are evidence, not a cache, and there is no path that rewrites
 them. Standing the oracle back up to refresh one would be the thing the

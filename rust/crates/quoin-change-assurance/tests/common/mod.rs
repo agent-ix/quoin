@@ -4,7 +4,7 @@
 //!
 //! `tests/fixtures/oracle.json` was written once by a capture script run
 //! against `src/change-assurance/`, the retained TypeScript. Both the script
-//! and the tree it read were deleted at quoin#457, because FR-101 AC-5 forbids
+//! and the tree it read were deleted at quoin#457, because the retire-after-parity rule forbids
 //! a non-Rust test oracle once the cutover has landed — the committed fixture
 //! is now the whole of the oracle's testimony and cannot be regenerated.
 //!

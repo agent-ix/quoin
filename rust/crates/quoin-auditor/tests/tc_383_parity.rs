@@ -9,7 +9,7 @@
 //!
 //! The corpus is `tests/goldens/auditor.json`, captured by
 //! `oracle/capture-auditor.mjs` and committed. **No test spawns node**
-//! (FR-101-AC-5): the retained implementation is not a runtime oracle.
+//! The retained implementation is not a runtime oracle.
 //!
 //! Comparison is over **canonical JSON bytes**
 //! ([`quoin_store::canonical_json`]), not over `serde_json::Value` equality.

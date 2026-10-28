@@ -150,7 +150,7 @@ fn request_for(corpus: &Corpus, case: &Case) -> Value {
 
 /// Every captured TypeScript verdict, reproduced by the production runtime.
 ///
-/// Trace: FR-040, FR-047, FR-101
+/// Trace: FR-040, FR-047
 /// Provenance: quoin#447
 #[test]
 fn tc_447_510_the_boundary_reproduces_every_captured_typescript_verdict() {
@@ -214,7 +214,6 @@ fn tc_447_510_the_boundary_reproduces_every_captured_typescript_verdict() {
 /// A corpus that drifted into 128 `requirement_of` cases would pass every
 /// assertion above and exercise one handler.
 ///
-/// Trace: FR-101
 /// Provenance: quoin#447
 #[test]
 fn tc_447_511_the_corpus_reaches_all_four_retired_operations() {
@@ -258,7 +257,7 @@ fn tc_447_511_the_corpus_reaches_all_four_retired_operations() {
 /// here — a count, not "fewer than the other one", which 2 against 27 satisfies
 /// as comfortably as 13 against 14 would.
 ///
-/// Trace: FR-040, FR-101
+/// Trace: FR-040
 /// Provenance: quoin#447
 #[test]
 fn tc_447_512_a_built_case_is_a_renderable_case_unless_its_assessments_are_untyped() {

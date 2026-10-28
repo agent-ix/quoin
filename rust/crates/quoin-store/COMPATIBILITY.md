@@ -234,7 +234,7 @@ hand to a serializer; the check exists because that is true. A Rust `String` is
 guaranteed well-formed UTF-8, and an unpaired surrogate has no UTF-8 encoding,
 so no `JsonValue::String` can carry one and no serializer needs to be defended
 against one. A function taking `&str` and looking for a lone surrogate would be
-a check over an empty population — the failure FR-101 AC-7 names by name.
+a check over an empty population — the failure the retire-after-parity rule names by name.
 
 The refusal has not been dropped, it has moved to where the condition can
 actually occur: the **parser**, reading `\uD800` in the source text, where

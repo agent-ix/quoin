@@ -295,7 +295,6 @@ fn archetype_of(text: &str) -> Option<String> {
 mod tests {
     use super::*;
 
-    /// Trace: FR-097
     #[test]
     fn tc_379_070_reason_labels_are_the_engines_labels() {
         let reasons = [

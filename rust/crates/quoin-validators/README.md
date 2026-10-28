@@ -13,7 +13,7 @@ gate that counts forbidden matches but never asserts the count ([quoin#224]).
 
 **No TypeScript was deleted.** `src/validators/` and `tests/gate-validator.test.ts`
 are retained and still passing; cutover and deletion are separate tickets per
-FR-101/FR-018.
+FR-018.
 
 ## Layout
 

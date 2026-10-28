@@ -11,7 +11,7 @@
 //! # Why this file exists
 //!
 //! `tests/graph-portfolio.test.ts` was deleted in the same commit as
-//! `src/measurement/graph-portfolio.ts` (FR-101). `tc_476_graph_portfolio.rs`
+//! `src/measurement/graph-portfolio.ts`. `tc_476_graph_portfolio.rs`
 //! proves this crate's report is the retained module's bytes over one committed
 //! tree, and is tagged `FR-067-AC-1`, `-AC-2` and `-AC-3` for the three
 //! properties that tree exercises. The other eight criteria had no Rust home.

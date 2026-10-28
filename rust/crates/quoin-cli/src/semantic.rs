@@ -187,7 +187,7 @@ mod tests {
 
     use super::{absolute, command};
 
-    /// Trace: FR-074, FR-101
+    /// Trace: FR-074
     #[test]
     fn tc_373_sweep_requires_identity_and_one_or_more_roots() {
         assert!(

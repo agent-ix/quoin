@@ -3,10 +3,6 @@ id: FR-100
 title: "Provide evidence, measurement and change-assurance capability in Rust"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/StR-009"
-    type: "implements"
-  - target: "ix://agent-ix/quoin/US-024"
-    type: "implements"
   - target: "ix://agent-ix/quoin/FR-096"
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-099"
@@ -140,7 +136,7 @@ successful report.
 ## Dependencies
 
 - **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md), [FR-098](./FR-098-semantic-and-identity-parity.md) and [FR-099](./FR-099-rust-catalog-and-validation-capability.md); [FR-030](./FR-030-evidence-store.md) and [FR-063](./FR-063-change-assurance-record-integrity.md), whose behaviour it preserves; [NFR-023](../non-functional/NFR-023-figures-carry-their-provenance.md), which constrains every figure the surviving measurement renderers print. NFR-021 and NFR-022 are withdrawn with the corpus-measurement harness they constrained and are deliberately not cited here.
-- **Downstream**: [FR-101](./FR-101-retire-replaced-executable-paths.md); [NFR-024](../non-functional/NFR-024-bounded-staged-coexistence.md) defines the allowance manifest and the successor reference this requirement's enforcement record reads; [NFR-025](../non-functional/NFR-025-immutable-evidence-and-corpus-bytes.md) constrains it.
+- **Downstream**: [NFR-025](../non-functional/NFR-025-immutable-evidence-and-corpus-bytes.md) constrains it.
 
 > **PLAT-989 change note (2026-10-05):** RFC 8785 encoding moves to the shared
 > dependency. Quoin retains its identity-domain rules and storage format. Raw-file

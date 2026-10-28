@@ -24,7 +24,7 @@
 //! Nothing here recomputes what the Rust decided and compares it with itself.
 //! `tests/fixtures/change-assurance-oracle.json` is an extract of the capture
 //! taken against the retained TypeScript BEFORE it was deleted, so every digest
-//! and verdict asserted below is the TypeScript's answer (FR-101 AC-5).
+//! and verdict asserted below is the TypeScript's answer.
 
 #![allow(
     clippy::unwrap_used,
@@ -667,7 +667,7 @@ fn tc_457_607_every_oracle_case_reproduces_the_typescripts_receipt() {
 /// than left for a harness to discover. Native fixture tests cover only
 /// `core.ping`, so there is no live difftest case to declare it in.
 ///
-/// Trace: FR-068-AC-7, FR-101
+/// Trace: FR-068-AC-7
 /// Provenance: agent-ix/quoin#457
 #[test]
 fn tc_457_608_a_malformed_digest_inside_a_receipt_is_refused_not_thrown() {

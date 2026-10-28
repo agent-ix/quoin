@@ -3,10 +3,6 @@ id: FR-102
 title: "Preserve the command surface and retire the oclif shell last"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/StR-009"
-    type: "implements"
-  - target: "ix://agent-ix/quoin/FR-101"
-    type: "requires"
 ---
 
 # FR-102: Preserve the command surface and retire the oclif shell last
@@ -69,7 +65,7 @@ plugin disposition, or a remaining Node/oclif shell path blocks the cutover.
 
 ## Dependencies
 
-- **Upstream**: [FR-101](./FR-101-retire-replaced-executable-paths.md).
+- **Upstream**: none.
 - **Downstream**: [FR-112](./FR-112-npm-distribution-from-release-assets.md),
   which repackages this requirement's GitHub Release assets into npm
   packages.

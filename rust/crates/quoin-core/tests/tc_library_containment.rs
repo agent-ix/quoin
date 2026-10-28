@@ -10,11 +10,9 @@
 //! `std::fs::read_to_string` added to `ops/` would pass every existing test,
 //! pass clippy, and quietly make the boundary untestable without a filesystem.
 //!
-//! The audit is `engineering_assurance::source_audit`, consumed, not regrown
-//! (quire-research `implementation-language-policy.md`, "Shared tooling is
-//! consumed, not regrown"). quoin does not own a second syn-based Rust source
-//! auditor; when this one does not fit, the answer is a ticket in
-//! agent-ix/engineering-assurance.
+//! The audit is `engineering_assurance::source_audit`, consumed, not regrown.
+//! quoin does not own a second syn-based Rust source auditor; when this one
+//! does not fit, the answer is a ticket in agent-ix/engineering-assurance.
 
 use std::path::{Path, PathBuf};
 
@@ -52,7 +50,7 @@ fn library_sources(dir: &Path, out: &mut Vec<PathBuf>) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Trace: FR-096, NFR-024
+/// Trace: FR-096
 /// Provenance: quoin#373
 #[test]
 fn tc_373_the_library_half_names_no_host_capability() {

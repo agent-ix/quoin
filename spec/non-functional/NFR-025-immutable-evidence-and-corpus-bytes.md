@@ -8,8 +8,6 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-100"
     type: "constrains"
-  - target: "ix://agent-ix/quoin/FR-101"
-    type: "constrains"
   - target: "ix://agent-ix/quoin/FR-103"
     type: "constrains"
 ---
@@ -50,7 +48,7 @@ the explicitly bounded PLAT-989 assurance identity transition defined below.
   deletion change, and the corpus consolidation.
 - Not applied to: the contents of the `corpus/` submodule, which belong to
   `agent-ix/qa-corpus` and are read rather than guaranteed by this repository;
-  and generated build output, which carries its own provenance under FR-097.
+  and generated build output, which carries its own provenance.
 
 ## Rationale
 
@@ -71,7 +69,7 @@ invalidating the report that carries it.
 
 The guarantee must hold in both directions. A cutover that is reverted must
 restore the retained invocation without having left a rewritten byte behind, or
-the reversibility FR-101 claims is not reversibility.
+a claimed reversibility is not reversibility.
 
 ## Measurement and Evaluation
 
@@ -113,7 +111,7 @@ than as clean.
 ## Dependencies
 
 - **Upstream**: [FR-098](../functional/FR-098-semantic-and-identity-parity.md) and [FR-100](../functional/FR-100-rust-evidence-measurement-change-assurance.md), which implement the single canonicalization and digest path.
-- **Downstream**: [FR-101](../functional/FR-101-retire-replaced-executable-paths.md) and [FR-103](../functional/FR-103-corpus-consolidation.md), whose cutovers and consolidation this bounds.
+- **Downstream**: [FR-103](../functional/FR-103-corpus-consolidation.md), whose consolidation this bounds.
 
 > **PLAT-989 authorization (2026-10-05):** The operator approved the bounded
 > identity transition stated in Scope and reflected in the metrics, replay and
