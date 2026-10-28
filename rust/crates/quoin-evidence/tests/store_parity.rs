@@ -6,8 +6,7 @@
 //!
 //! `tests/golden/store-cases.json` is hand-authored input;
 //! `tests/golden/store-expected.json` was captured once from `src/evidence/` and
-//! is the only oracle consulted here. No Node process runs in this lane
-//! (FR-101-AC-5).
+//! is the only oracle consulted here. No Node process runs in this lane.
 //!
 //! The `canonical` cases compare the **bytes the writers put on disk**, which is
 //! what NFR-025 is a statement about, rather than a re-canonicalisation of a

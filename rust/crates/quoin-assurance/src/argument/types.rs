@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 /// caller can: every one of the seventeen predicates this module checks leaves
 /// the boundary as the single code `CORE_BAD_REQUEST`, because that is what
 /// the retained `parseAssuranceArgument` does — it throws one `Error` — and
-/// FR-101 parity is the whole point of the port. Seventeen typed variants
+/// Parity is the whole point of the port. Seventeen typed variants
 /// would be public API that nothing branches on (§3), and the first caller
 /// that wanted one would be asking for a distinction the oracle does not make.
 /// There is one discriminant, and it is spelled `Err`.

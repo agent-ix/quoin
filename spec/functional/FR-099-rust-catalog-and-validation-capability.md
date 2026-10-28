@@ -3,10 +3,6 @@ id: FR-099
 title: "Provide catalog, module and validation capability in Rust"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/StR-009"
-    type: "implements"
-  - target: "ix://agent-ix/quoin/US-024"
-    type: "implements"
   - target: "ix://agent-ix/quoin/FR-007"
     type: "extends"
   - target: "ix://agent-ix/quoin/FR-029"

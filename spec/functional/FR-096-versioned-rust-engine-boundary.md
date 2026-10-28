@@ -3,10 +3,6 @@ id: FR-096
 title: "Expose a versioned Rust engine boundary"
 type: FR
 relationships:
-  - target: "ix://agent-ix/quoin/StR-009"
-    type: "implements"
-  - target: "ix://agent-ix/quoin/US-024"
-    type: "implements"
 ---
 
 # FR-096: Expose a versioned Rust engine boundary
@@ -124,8 +120,7 @@ non-success outcome and are never reported as success.
 
 ## Dependencies
 
-- **Upstream**: accepted [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md) and [StR-009](../stakeholder/StR-009-one-implementation-language-for-engine-logic.md).
-- **Downstream**: [FR-097](./FR-097-schema-sourced-type-surface.md) through [FR-103](./FR-103-corpus-consolidation.md) all cross this boundary.
+- **Downstream**: [FR-098](./FR-098-semantic-and-identity-parity.md) through [FR-103](./FR-103-corpus-consolidation.md) all cross this boundary.
 
 ## Shared foundation acceptance
 

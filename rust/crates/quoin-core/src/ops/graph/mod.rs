@@ -16,7 +16,7 @@
 //! is `quoin_store::canonical_json` and `render_graph_analysis` is the markdown
 //! the retained `render.ts` wrote. Putting the report object on the wire as
 //! well would be a second encoding of the same report for the TypeScript side
-//! to re-render and disagree with — which is the shape FR-097 forbids.
+//! to re-render and disagree with — which is the shape the schema-source rule forbids.
 //!
 //! # No host capability of this domain's own, and how
 //!

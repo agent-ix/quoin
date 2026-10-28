@@ -20,7 +20,7 @@
 //! was extracted from the capture taken against `src/change-assurance/` before
 //! quoin#457 deleted it — so "the Rust reaches the same digest" is a comparison
 //! against the oracle rather than against this crate's own output. The capture
-//! script went with the TypeScript it read, which FR-101 AC-5 requires: after a
+//! script went with the TypeScript it read, which the retire-after-parity rule requires: after a
 //! cutover there is no non-Rust oracle left to run.
 
 #![allow(

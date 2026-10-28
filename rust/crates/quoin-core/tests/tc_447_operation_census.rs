@@ -145,7 +145,7 @@ fn integration_tests() -> Vec<(String, String)> {
 /// to the shipped CLI. Their named in-process invocation keeps the dispatch
 /// census able to catch a swapped match arm without retaining that executable.
 ///
-/// Trace: FR-101, FR-102
+/// Trace: FR-102
 #[test]
 fn tc_521_migrated_command_routes_remain_named_in_the_runtime_census() {
     for result in [
@@ -177,7 +177,7 @@ fn tc_521_migrated_command_routes_remain_named_in_the_runtime_census() {
 /// census over a transcribed list is a census of the transcription, which is
 /// the #443 failure this whole area already has scar tissue from.
 ///
-/// Trace: FR-096, NFR-024
+/// Trace: FR-096
 /// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
 #[test]
 fn tc_447_600_every_operation_is_invoked_by_name_by_some_test() {

@@ -483,7 +483,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-030, FR-101
+    /// Trace: FR-030
     #[test]
     fn tc_373_evidence_store_command_grammar_is_retained() {
         assert!(

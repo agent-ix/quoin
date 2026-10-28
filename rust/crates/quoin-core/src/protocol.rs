@@ -29,7 +29,7 @@ use ix_cli_kit::exit::Outcome;
 ///
 /// Lives beside the wire contract it versions. It used to sit in
 /// `quoin-schemas` on the premise that the generated TypeScript side is
-/// generated from that crate — but FR-097 makes the canonical Rust type the
+/// generated from that crate — but the schema-source rule makes the canonical Rust type the
 /// source, so `quoin-schemas` now reads FROM here and the constant belongs
 /// with the taxonomy, the diagnostic and the payloads it revises together.
 /// The generated `src/core/types.ts` carries this number, so a bump reaches

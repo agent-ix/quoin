@@ -10,8 +10,6 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-100"
     type: "constrains"
-  - target: "ix://agent-ix/quoin/FR-101"
-    type: "constrains"
 ---
 
 # NFR-027: Rust implementation idioms and the gates that enforce them
@@ -36,10 +34,8 @@ these SHALL be run rather than assumed.
 
 ## Rationale
 
-The `/rust-review` skill is the standing review guide for this programme, and
-[ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md)
-adopts it for this workspace. A review guide is advice; a requirement is a gate.
-This requirement promotes the subset of that guidance that a machine can check,
+The `/rust-review` skill is the standing review guide for this workspace.
+A review guide is advice; a requirement is a gate. This requirement promotes the subset of that guidance that a machine can check,
 so that a deviation is a failing run rather than a reviewer's recollection.
 
 Each item is here because its absence has a named failure. An error variant whose
@@ -110,5 +106,5 @@ it accompanies.
 
 ## Dependencies
 
-- **Upstream**: [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md), which adopts `/rust-review` as the workspace review guide.
-- **Downstream**: [FR-101](../functional/FR-101-retire-replaced-executable-paths.md), whose restated Rust criteria must carry the tracking tags this requires.
+- **Upstream**: the `/rust-review` workspace review guide.
+- **Downstream**: none.

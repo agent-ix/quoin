@@ -16,7 +16,7 @@ Stage 3, issue [#378](https://github.com/agent-ix/quoin/issues/378).
 | `schema`           | ajv, inline           | The ajv-shaped adapter over the Rust `jsonschema` crate                   |
 
 The TypeScript is **not deleted**: cutover and deletion are separate tickets per
-FR-101. Both implementations read the same vendored schema tree at
+the retire-after-parity rule. Both implementations read the same vendored schema tree at
 `src/semantic/schemas/`, which is why this crate does not copy it.
 
 ## Read this first
@@ -35,7 +35,7 @@ invokes Node.
 
 **The oracle and the capture script are gone.** quoin#452 deleted
 `src/semantic/`'s TypeScript and `scripts/capture-semantic-goldens.mjs`
-together, because FR-101-AC-5 forbids a live non-Rust oracle after cutover. The
+together, because the retire-after-parity rule forbids a live non-Rust oracle after cutover. The
 goldens stay, and they are no longer reproducible: treat them as pinned
 evidence, not as a cache.
 

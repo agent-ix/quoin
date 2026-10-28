@@ -100,7 +100,6 @@ mod tests {
     /// When this fails: a code was added to `quoin-evidence`. Decide which
     /// group it belongs to, add it to that arm, and raise the count.
     ///
-    /// Trace: FR-101-AC-3
     #[test]
     fn the_error_mapping_covers_every_evidence_code() {
         assert_eq!(

@@ -1,7 +1,7 @@
 # `quoin-measurement-graph` — declared divergences
 
 <!--
-Trace: FR-066-AC-1, FR-067-AC-1, FR-100-AC-4, FR-101-AC-5
+Trace: FR-066-AC-1, FR-067-AC-1, FR-100-AC-4
 Provenance: quoin#475, quoin#476, quoin#465
 -->
 

@@ -146,7 +146,7 @@
 //!
 //! This is a port wave. `src/measurement/graph-adapters.ts` is untouched, and
 //! it is not a runtime oracle: the corpus under `tests/corpus/` was captured
-//! from it once and committed, per FR-101 AC-5. The cutover is W11 and the
+//! from it once and committed, per the retire-after-parity rule. The cutover is W11 and the
 //! deletion is W12.
 
 pub mod adapter;

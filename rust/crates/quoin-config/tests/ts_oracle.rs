@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Parity with the TypeScript oracle (quoin#381, FR-101).
+//! Parity with the TypeScript oracle (quoin#381).
 //!
 //! Every expectation here is read from `rust/goldens/ts-oracle.json`, captured
 //! once from the TypeScript implementation and committed. No

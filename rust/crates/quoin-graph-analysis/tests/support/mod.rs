@@ -4,7 +4,7 @@
 //!
 //! `tests/goldens/graph-analysis.json` was written once by a capture script
 //! run against the retained `src/graph-analysis/`. Both are deleted at HEAD
-//! (quoin#500) and neither was ever consulted at test time (FR-101-AC-5). Two
+//! (quoin#500) and neither was ever consulted at test time. Two
 //! tests read the corpus, so the reading lives here rather than twice.
 //!
 //! Provenance: quoin#385, quoin#500

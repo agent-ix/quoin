@@ -510,7 +510,6 @@ fn archetype_of(text: &str) -> Option<String> {
 mod tests {
     use super::*;
 
-    /// Trace: FR-097
     #[test]
     fn tc_379_063_local_labels_are_the_engines_labels() {
         // The one place this payload restates an engine vocabulary. Asserted

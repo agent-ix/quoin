@@ -23,7 +23,6 @@ const VOLUME_BYTES: usize = 1_632_821;
 /// The payload size that caused #164, for the comparison the bound exists for.
 const INCIDENT_BYTES: usize = 1_090_714;
 
-/// Trace: NFR-024
 ///
 /// The headline: a payload half again the size of the one that killed six
 /// commands is read whole, by value, with no ceiling anywhere near it.
@@ -105,7 +104,6 @@ fn tc_379_101_the_incident_payload_round_trips() {
     assert_eq!(encoded, again);
 }
 
-/// Trace: NFR-024
 ///
 /// The bound is real, and it names itself. `src/quire/exec.ts` could only
 /// report this as a process killed by `ENOBUFS`; here it is a refusal that

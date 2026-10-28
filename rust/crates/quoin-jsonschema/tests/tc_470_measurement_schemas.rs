@@ -9,7 +9,7 @@
 //! retained TypeScript was deleted in quoin#479, so its bytes were committed
 //! unchanged to `tests/goldens/operational-evidence-v1.captured.json`
 //! beforehand, and that capture — not a live TypeScript tree — was the
-//! comparand (FR-101-AC-5 forbids a non-Rust runtime oracle after cutover, and
+//! comparand (the retire-after-parity rule forbids a non-Rust runtime oracle after cutover, and
 //! a committed document is not one). PLAT-972 moved it onto the same
 //! delta-enumeration shape `intervention-experiment-v1.schema.json` already
 //! used, once it too needed a ruling.
@@ -117,7 +117,7 @@ fn differences(pointer: &str, left: &Value, right: &Value, into: &mut Vec<Differ
 /// The vendored operational schema differs from the committed capture by
 /// exactly one recorded delta: `strength` (PLAT-972).
 ///
-/// Trace: FR-100-AC-4, FR-101-AC-5
+/// Trace: FR-100-AC-4
 /// Provenance: quoin#479, PLAT-972
 #[test]
 fn tc_470_the_operational_schema_carries_exactly_the_one_recorded_delta() {

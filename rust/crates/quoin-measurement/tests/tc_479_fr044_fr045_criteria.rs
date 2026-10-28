@@ -12,7 +12,7 @@
 //!
 //! # Why this file exists
 //!
-//! `src/measurement/` is deleted at cutover (FR-101) and its tests go with it.
+//! `src/measurement/` is deleted at cutover and its tests go with it.
 //! `tc_473_reporting.rs` already proves this crate writes the retained
 //! TypeScript's bytes over the committed fixture tree, but it is tagged
 //! `FR-100-AC-4` — a byte-for-byte agreement gate is not a per-criterion one,
@@ -1802,7 +1802,7 @@ fn tc_479_011_a_missing_baseline_is_not_computed_with_current_provenance() {
 ///
 /// AC-1's other half — that `quoin report` exposes repeated `--portfolio`
 /// flags and no observation-value flag — is a COMMAND-SURFACE property of
-/// `src/commands/report.ts`, which FR-101 does not delete. It has no Rust home
+/// `src/commands/report.ts`, which the retire-after-parity rule does not delete. It has no Rust home
 /// because this crate has no command surface. See this file's report.
 ///
 /// Trace: FR-045-AC-1

@@ -18,7 +18,7 @@
 //!
 //! # Why the fixture is written here and the expectations are not derived
 //!
-//! FR-101 names the self-fixture tautology. The input below is a hand-written
+//! The retire-after-parity rule names the self-fixture tautology. The input below is a hand-written
 //! `clause-binding-v1` document, which is what the retained test used too —
 //! quoin cannot capture one from a live quire in CI, for the reason
 //! `quoin-quire-types/tests/coverage_reader.rs` records. What makes these

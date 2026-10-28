@@ -4,7 +4,7 @@
 # The Rust workspace for the quoin burn-down (quoin#373, Stage 0 = quoin#375).
 #
 # It lives INSIDE the quoin repository, beside the retained `src/`, because
-# FR-101 requires old and new implementations to be exercised at ONE candidate
+# The retire-after-parity rule requires old and new implementations to be exercised at ONE candidate
 # revision. A second repository would turn that into a two-repo pin-and-sync
 # problem, which is the failure this arrangement exists to avoid.
 #
@@ -111,7 +111,7 @@ quoin-yaml = { path = "crates/quoin-yaml" }
 # `deny.toml`'s `[bans] skip` for the half we do not. `engineering-assurance`
 # 0.3.1 (on main) requires exactly 1.0.229, so the two sides already agree.
 serde = { version = "=1.0.229", features = ["derive"] }
-# FR-097: the JSON Schema the generated TypeScript surface is derived from.
+# The schema-source rule: the JSON Schema the generated TypeScript surface is derived from.
 # Exact pin for the same reason as every other line here — the generated file
 # is hash-asserted, so the generator's version is part of the contract and a
 # caret range would let a patch release silently move the digest.
@@ -128,7 +128,7 @@ schemars = { version = "=1.2.2", features = ["derive"] }
 # cut.
 serde_json = "=1.0.151"
 time = { version = "=0.3.55", features = ["formatting"] }
-# The digest under the FR-097 hash assertion. Exact pin like everything else.
+# The digest under the schema-source hash assertion. Exact pin like everything else.
 #
 # 0.10.9 AND NOT 0.11.0, and the reason is an upstream requirement rather than
 # taste: `quire-rs` — linked by quoin-quire — depends on sha2 0.10.9,

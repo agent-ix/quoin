@@ -32,8 +32,7 @@ updater — owns the files it placed under `node_modules`.
 ## Rationale
 
 Owner ruling, 2026-09-23: quoin's npm distribution was withdrawn during the
-Rust burn-down (StR-009) as a deliberate, dated exemption while the port
-ran (ADR-0003 "Registries"), and the owner has now reinstated it in the
+Rust burn-down as a deliberate, dated exemption while the port ran, and the owner has now reinstated it in the
 shape `quire-cli` already ships — a thin launcher plus per-platform
 optional dependencies, repackaged from artifacts that are already built and
 already smoked rather than rebuilt for a second channel. Rebuilding for npm

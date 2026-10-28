@@ -224,7 +224,6 @@ fn tc_379_112_classification_reports_partial_results_as_data() {
     );
 }
 
-/// Trace: FR-097
 ///
 /// The hand-written properties payload is a `Serialize` struct, so it has a
 /// reviewable field list — and it survives a round trip, which a
@@ -445,7 +444,6 @@ fn tc_379_117_a_document_outside_the_scope_is_refused() {
     assert_eq!(error.code(), ErrorCode::PathEscapesRoot);
 }
 
-/// Trace: FR-097
 ///
 /// The capability list is not decorative: every token this build publishes
 /// names an engine surface, and the witnesses in `engine.rs` are what make

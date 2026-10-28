@@ -12,7 +12,7 @@
 //!
 //! `tests/fixtures/portfolio-oracle.json` was captured once and is committed
 //! and frozen. Nothing here spawns node:
-//! FR-101-AC-5 forbids a live TypeScript runtime as a test-time oracle, and the
+//! The retire-after-parity rule forbids a live TypeScript runtime as a test-time oracle, and the
 //! suite has to keep running once the TypeScript is deleted at cutover.
 //!
 //! The fixture tree is not a copy of anything this crate produced — it is
@@ -134,7 +134,7 @@ fn denormalise(capture: &Capture, location: &str) -> PathBuf {
 /// PLAT-968 appended an advisory "Priority ranking" section to the rendered
 /// portfolio, and a `ranking` member to its JSON, with no counterpart in the
 /// frozen TypeScript oracle: `portfolio.ts` never ranked anything, and
-/// FR-101-AC-5 forbids re-capturing this oracle from a live TypeScript
+/// The retire-after-parity rule forbids re-capturing this oracle from a live TypeScript
 /// runtime to add one. This strips exactly that appended, Rust-only content
 /// before the byte comparison — the one place this suite deliberately does
 /// not assert parity with an oracle that cannot state an opinion about

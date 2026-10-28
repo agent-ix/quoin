@@ -4,7 +4,7 @@
 # `ScopeOrAmbient` shape a real repository carrying its own module has. Kept
 # here rather than borrowed from `quoin-quire/tests/fixtures/repo`, because
 # that one declares no `obligations:` source — and an obligation census over an
-# empty population is the vacuity FR-101 refuses. This module declares one, so
+# empty population is the vacuity the retire-after-parity rule refuses. This module declares one, so
 # `quire.coverage` answers with a row that exists.
 name: quoin-core-quire-fixture
 version: 0.1.0

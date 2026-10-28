@@ -7,7 +7,7 @@
 //!
 //! `tests/goldens/graph-adapter-verdicts.json` was captured **once** by
 //! `oracle/capture-graph-adapter-verdicts.mjs`, which imports the retained
-//! module rather than reimplementing it. FR-101 AC-5 forbids a Rust test
+//! module rather than reimplementing it. The retire-after-parity rule forbids a Rust test
 //! spawning node, so the capture is committed and this test reads it; the
 //! capture script is deleted by the W12 cutover commit, with the TypeScript it
 //! captures.
@@ -38,7 +38,7 @@
 //! observation identity's member ordering. It is proved unreachable instead,
 //! by [`tc_475_054_the_identity_ordering_difference_is_unreachable`].
 //!
-//! Trace: FR-066-AC-1, FR-101-AC-5
+//! Trace: FR-066-AC-1
 //! Provenance: quoin#475, quoin#465
 
 #![allow(

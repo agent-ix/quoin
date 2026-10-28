@@ -19,7 +19,7 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
-# FR-097. Optional, and turned on by `quoin-schemas` rather than here: the
+# Optional, and turned on by `quoin-schemas` rather than here: the
 # `auditor.*` wire shapes are this crate's types, and a schema nobody generates
 # is a contract nobody checks.
 schemars = { workspace = true, optional = true }
@@ -59,7 +59,7 @@ tempfile = "=3.27.0"
 
 
 [features]
-# FR-097. Off by default on purpose: a feature that is on by default is a
+# Off by default on purpose: a feature that is on by default is a
 # feature nobody ever proves works when it is off.
 schema = [
     "dep:schemars",

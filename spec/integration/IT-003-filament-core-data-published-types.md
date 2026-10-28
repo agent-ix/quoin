@@ -3,8 +3,6 @@ id: IT-003
 title: "Quoin consumes filament-core-data published types across Rust and TypeScript"
 type: IT
 relationships:
-  - target: "ix://agent-ix/quoin/FR-097"
-    type: "verifies"
   - target: "ix://agent-ix/quoin/FR-096"
     type: "verifies"
 ---
@@ -93,15 +91,9 @@ per-step success criterion holds.
 
 ## Dependencies
 
-**Upstream**: [FR-097](../functional/FR-097-schema-sourced-type-surface.md) and
-[FR-096](../functional/FR-096-versioned-rust-engine-boundary.md), which this
-verifies; the `filament-core-data` Phase A and Phase B gates recorded in
-[ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md).
-**Downstream**: the hand-written-duplicate retirement clauses of
-[FR-097](../functional/FR-097-schema-sourced-type-surface.md), which may not
-begin before this boundary holds; the rest of
-[FR-101](../functional/FR-101-retire-replaced-executable-paths.md) is released by
-Phase A and is not gated on this test.
+**Upstream**: [FR-096](../functional/FR-096-versioned-rust-engine-boundary.md), which this
+verifies; the `filament-core-data` Phase A and Phase B gates.
+**Downstream**: none.
 
 ## Notes
 
@@ -118,5 +110,4 @@ publication.
 ## Traceability
 
 This integration test verifies the schema-sourced type surface and the boundary
-type rules, and exercises the stakeholder need for one schema source recorded in
-[StR-009](../stakeholder/StR-009-one-implementation-language-for-engine-logic.md).
+type rules.

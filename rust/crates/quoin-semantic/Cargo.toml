@@ -36,13 +36,13 @@ quoin-jsonschema = { workspace = true }
 # YAML 1.1 and the difference is verdict-level. See DIVERGENCE.md §6 (D4).
 quoin-yaml = { workspace = true }
 # Optional, and enabled by `quoin-core`'s own `schema` feature rather than by
-# this crate: the derives are what let FR-097 read the wire schema off the
+# this crate: the derives are what let the schema generator read the wire schema off the
 # canonical type instead of a second declaration of it, and nothing on this
 # crate's execution path needs them.
 schemars = { workspace = true, optional = true }
 
 [features]
-# FR-097. Turned on transitively by `quoin-core/schema`, which `quoin-schemas`
+# Turned on transitively by `quoin-core/schema`, which `quoin-schemas`
 # turns on. No `default`: a feature that is on by default is a feature nobody
 # ever proves works when it is off.
 schema = ["dep:schemars"]

@@ -31,7 +31,7 @@
 //!
 //! # Why the fixtures are written here and the expectations are not derived
 //!
-//! FR-101 names the self-fixture tautology. The documents below are
+//! The retire-after-parity rule names the self-fixture tautology. The documents below are
 //! hand-written frontmatter, exactly as the retained test wrote them — that is
 //! the input shape, and there is no live corpus to capture one from in CI.
 //! What makes these non-tautological is the other half: every expectation is

@@ -228,7 +228,7 @@ mod tests {
     /// The native snapshot walker is a transport optimisation only: it must
     /// reach every gate the independent on-disk validator would classify.
     ///
-    /// Trace: FR-096, FR-101, TC-1650
+    /// Trace: FR-096, TC-1650
     #[test]
     fn tc_1650_native_validate_snapshot_matches_the_independent_disk_reader() {
         let scratch = tempfile::tempdir().expect("scratch tree is created");

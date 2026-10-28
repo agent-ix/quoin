@@ -499,7 +499,7 @@ mod tests {
     /// what the retained `parseStrictJson` was deleted for having (quoin#504).
     /// Until this test they were stated in the module doc and implemented, but
     /// asserted nowhere — a criterion backed by nothing, which is exactly the
-    /// deletion FR-101 AC-7 forbids. A permissive reader passes every one of
+    /// deletion the retire-after-parity rule forbids. A permissive reader passes every one of
     /// these inputs, silently: last member wins, the BOM becomes whitespace,
     /// the number becomes an infinity, the trailing bytes are ignored.
     ///

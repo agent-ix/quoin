@@ -32,7 +32,7 @@ serde_json = { workspace = true }
 sha2 = { workspace = true }
 
 [features]
-# FR-097. `quoin-schemas` turns this on to read the wire shapes off the types
+# `quoin-schemas` turns this on to read the wire shapes off the types
 # that actually deserialise them. No `default`: a feature that is on by default
 # is a feature nobody ever proves works when it is off.
 schema = ["dep:schemars"]

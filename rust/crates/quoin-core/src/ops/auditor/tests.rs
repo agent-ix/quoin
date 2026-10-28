@@ -54,7 +54,6 @@ fn payload(response: Response) -> Value {
     response.payload
 }
 
-/// Trace: FR-101-AC-1
 /// Provenance: quoin#501
 #[test]
 fn an_audit_reports_an_unbound_obligation() {
@@ -66,7 +65,6 @@ fn an_audit_reports_an_unbound_obligation() {
     );
 }
 
-/// Trace: FR-101-AC-1
 /// Provenance: quoin#501
 #[test]
 fn advice_comes_back_one_row_per_obligation_in_the_order_given() {
@@ -89,7 +87,6 @@ fn advice_comes_back_one_row_per_obligation_in_the_order_given() {
 
 /// An engine predating quire-rs CR-091 emits the reason with no `value`.
 ///
-/// Trace: FR-101-AC-1
 /// Provenance: quoin#501
 #[test]
 fn advice_says_when_the_engine_could_not_classify_the_vocabulary() {
@@ -107,7 +104,6 @@ fn advice_says_when_the_engine_could_not_classify_the_vocabulary() {
     );
 }
 
-/// Trace: FR-101-AC-3
 /// Provenance: quoin#501
 #[test]
 fn a_field_the_boundary_would_drop_is_refused_rather_than_ignored() {
@@ -129,7 +125,6 @@ fn a_field_the_boundary_would_drop_is_refused_rather_than_ignored() {
     }
 }
 
-/// Trace: FR-101-AC-3
 /// Provenance: quoin#501
 #[test]
 fn every_operation_names_itself_on_a_bad_request() {
@@ -144,7 +139,6 @@ fn every_operation_names_itself_on_a_bad_request() {
     }
 }
 
-/// Trace: FR-101-AC-3
 /// Provenance: quoin#501
 #[test]
 fn the_request_ceiling_is_a_store_and_not_a_filename() {

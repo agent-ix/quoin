@@ -314,7 +314,7 @@ impl SemanticGate for ContractGate {
         // No vendored tree means no judgement is possible. REFUSING is the only
         // honest answer: accepting unjudged would install a module the
         // TypeScript path would have rejected, silently, which is exactly the
-        // regression FR-101's retire-after-parity rule exists to prevent.
+        // regression the retire-after-parity rule exists to prevent.
         let Some(semantic_root) = self.semantic_root.as_deref() else {
             return refuse(
                 "semantic/contract-unavailable",

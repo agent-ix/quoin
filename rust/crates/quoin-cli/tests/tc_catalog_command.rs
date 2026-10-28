@@ -110,7 +110,7 @@ fn text(bytes: &[u8]) -> String {
 /// fixture deliberately has no resolved module roots: its contract is the
 /// empty JSON module list and an entirely empty human response.
 ///
-/// Trace: FR-099, FR-101, FR-102, TC-1650
+/// Trace: FR-099, FR-102, TC-1650
 #[test]
 fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
@@ -141,7 +141,7 @@ fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
 /// The shipped command, rather than the retired protocol executable, discovers
 /// one nested module root and preserves its declared artifact projection.
 ///
-/// Trace: FR-099, FR-101, FR-102
+/// Trace: FR-099, FR-102
 #[test]
 fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
@@ -179,7 +179,7 @@ fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
 
 /// Candidate discovery preserves the lexical symlink root the operator passed.
 ///
-/// Trace: FR-099, FR-101, FR-102
+/// Trace: FR-099, FR-102
 #[cfg(unix)]
 #[test]
 fn tc_521_catalog_list_preserves_a_symlink_candidate_path() {
@@ -205,7 +205,7 @@ fn tc_521_catalog_list_preserves_a_symlink_candidate_path() {
 
 /// The shipped `catalog methods` command retains first-wins merge semantics.
 ///
-/// Trace: FR-099, FR-101, FR-102
+/// Trace: FR-099, FR-102
 #[test]
 fn tc_521_catalog_methods_preserves_first_wins_data() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");

@@ -103,7 +103,6 @@ fn filler(size: usize) -> String {
     "x".repeat(size)
 }
 
-/// Trace: FR-101-AC-1
 ///
 /// The facts the command layer needs before it can build any other request,
 /// served from the crate rather than restated in TypeScript.
@@ -127,7 +126,6 @@ fn store_facts_serves_the_constants_the_command_layer_would_otherwise_restate() 
     assert_eq!(triggers.len(), 5, "{triggers:?}");
 }
 
-/// Trace: FR-101-AC-1
 #[test]
 fn store_facts_takes_no_arguments() {
     let error = store_facts(&json!({"repo": "/repo"})).unwrap_err();
@@ -135,7 +133,6 @@ fn store_facts_takes_no_arguments() {
     assert_eq!(error.outcome().code(), 3);
 }
 
-/// Trace: FR-101-AC-2
 ///
 /// The declared divergence: `quoin_evidence::store::gc` returns STORE-RELATIVE
 /// paths because it names no host capability, and the retained `gc()` returned
@@ -168,7 +165,6 @@ fn tc_458_gc_reports_absolute_paths_by_joining_the_store_root() {
     );
 }
 
-/// Trace: FR-101-AC-2
 #[test]
 fn a_dry_run_gc_removes_nothing() {
     let store = MemoryEvidence::new()
@@ -201,7 +197,6 @@ fn a_dry_run_gc_removes_nothing() {
     );
 }
 
-/// Trace: FR-101-AC-2
 ///
 /// The second declared divergence. The retained reader handed back a
 /// structurally malformed record half-formed; typed deserialization refuses it,
@@ -233,7 +228,6 @@ fn tc_458_a_malformed_record_is_skipped_and_named_rather_than_half_read() {
     assert_eq!(runs[0]["suite"], "alpha");
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// One subprocess answers everything the pure auditor reads, including the two
 /// questions it would otherwise ask inside per-obligation loops.
@@ -265,7 +259,6 @@ fn audit_inputs_answers_vacuity_and_independence_alongside_the_records() {
     );
 }
 
-/// Trace: FR-101-AC-3
 #[test]
 fn an_unknown_adapter_is_a_caller_mistake_not_a_refusal() {
     let error = parse_results(&json!({"text": "{}", "adapter": "nosuch"})).unwrap_err();
@@ -275,7 +268,6 @@ fn an_unknown_adapter_is_a_caller_mistake_not_a_refusal() {
     assert_eq!(error.context["op"], "evidence.parse_results");
 }
 
-/// Trace: FR-101-AC-3
 #[test]
 fn a_store_that_cannot_be_read_is_refused_not_reported_as_empty() {
     let host = TestHost::new(MemoryEvidence::new().with_file("bindings.json", "<<<<<<< HEAD"));
@@ -286,7 +278,6 @@ fn a_store_that_cannot_be_read_is_refused_not_reported_as_empty() {
     assert_eq!(error.context["evidence_code"], "QE-E003");
 }
 
-/// Trace: FR-101-AC-5
 ///
 /// A missing host is this build's fault, not the caller's: Internal (4), never
 /// Refused (2). Every host-taking operation is driven, because the mapping is
@@ -343,7 +334,6 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
     }
 }
 
-/// Trace: FR-101-AC-6
 ///
 /// Every bound refuses BEFORE the host is consulted. The host panics if it is
 /// reached, so a bound applied after the store was opened fails here rather
@@ -398,7 +388,6 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
     }
 }
 
-/// Trace: FR-101-AC-6
 ///
 /// A scalar field is measured on its own, so a field that fits inside the
 /// request's ceiling but is absurd on its own is still refused before any work.
@@ -416,7 +405,6 @@ fn an_oversized_scalar_is_refused_before_the_host_is_consulted() {
     assert_eq!(error.context["limit_bytes"], MAX_SCALAR_BYTES.to_string());
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// Nothing is written when no binding matched: an unmatched affirmation must
 /// not rewrite `bindings.json` with identical content and a fresh mtime.
@@ -443,7 +431,6 @@ fn an_affirmation_that_matches_nothing_writes_nothing() {
     );
 }
 
-/// Trace: FR-101-AC-4
 #[test]
 fn a_run_shaped_record_writes_a_run_and_a_finding_shaped_one_writes_a_scan() {
     let host = TestHost::empty();
@@ -495,7 +482,6 @@ fn a_run_shaped_record_writes_a_run_and_a_finding_shaped_one_writes_a_scan() {
     );
 }
 
-/// Trace: FR-101-AC-3
 #[test]
 fn a_policy_naming_an_underived_obligation_is_refused_with_its_own_code() {
     let policy = json!({
@@ -515,7 +501,6 @@ fn a_policy_naming_an_underived_obligation_is_refused_with_its_own_code() {
     assert_eq!(error.context["evidence_code"], "QE-E007");
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// The assurance family and its wire spelling round trip, both ways.
 ///

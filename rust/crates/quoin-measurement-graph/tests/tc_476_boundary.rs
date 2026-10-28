@@ -3,7 +3,6 @@
 //! The crate has one canonicaliser, one base64 codec, one digest and no oracle.
 //!
 //! Trace: FR-100-AC-8
-//! Trace: FR-101-AC-5
 //! Provenance: quoin#476
 //!
 //! # Why a source census and not a review note
@@ -203,7 +202,6 @@ fn tc_476_021_there_is_no_second_codec_digest_or_bridge() {
 
 /// No test in this crate can spawn a TypeScript runtime.
 ///
-/// Trace: FR-101-AC-5
 /// Provenance: quoin#476
 #[test]
 fn tc_476_022_no_test_runs_the_retained_typescript() {
@@ -222,7 +220,7 @@ fn tc_476_022_no_test_runs_the_retained_typescript() {
                 assert!(
                     !code.contains(forbidden),
                     "{}: contains {forbidden}; the oracle is a committed golden, \
-                     captured once (FR-101-AC-5)",
+                     captured once",
                     path.display()
                 );
             }
@@ -269,7 +267,6 @@ fn tc_476_023_every_ported_entry_point_is_still_exported() {
 /// is about.
 ///
 /// Trace: FR-100-AC-4
-/// Trace: FR-101-AC-5
 /// Provenance: quoin#476
 #[test]
 fn tc_476_024_no_retained_dimension_value_is_a_non_string() {

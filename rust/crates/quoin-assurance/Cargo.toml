@@ -39,7 +39,7 @@ schemars = { workspace = true, optional = true }
 engineering-assurance = { workspace = true, features = ["source-audit"] }
 
 [features]
-# FR-097. `quoin-schemas` turns this on to read the wire shapes off the types
+# `quoin-schemas` turns this on to read the wire shapes off the types
 # that actually serialise them, rather than off a second declaration of the
 # same shapes. There is no `default` here on purpose: a feature that is on by
 # default is a feature nobody ever proves works when it is off.

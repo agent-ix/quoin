@@ -21,7 +21,7 @@ workspace = true
 # THE PIN. Exactly what `quire-cli` HEAD pins, and that is the whole argument:
 # quire-cli is the governed producer of the payloads quoin reads today, so
 # linking its engine byte-for-byte makes `quoin-quire` and the `quire` binary
-# one candidate revision (EPIC #373 FR-101), not two things that agree by
+# one candidate revision (EPIC #373 the retire-after-parity rule), not two things that agree by
 # version number.
 #
 # `rev`, never a tag or branch: a moving ref makes the gate a claim about
@@ -45,7 +45,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 # The one-time oracle captures live under `oracle/` rather than `examples/` so
-# they are visibly the thing FR-101-AC-5 deletes at the cutover, not part of the
+# they are visibly the thing the retire-after-parity rule deletes at the cutover, not part of the
 # crate's own surface. Cargo needs the path stated because the directory is not
 # the conventional one.
 [[example]]

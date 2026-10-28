@@ -12,11 +12,11 @@
 //!
 //! `tests/intervention.test.ts` is deleted in the same commit as
 //! `src/measurement/intervention.ts`, `intervention-report.ts` and
-//! `agent-eval-intervention.ts` (FR-101). Six of its `test` blocks carried
+//! `agent-eval-intervention.ts`. Six of its `test` blocks carried
 //! FR-057 criteria, several of them four at a time. `tc_471_corpus.rs` proves
 //! this crate reproduces the retained store byte for byte and `tc_473_reporting`
 //! proves the renderers agree with the captured TypeScript, but both are tagged
-//! `FR-100`/`FR-101` — a corpus-wide agreement gate is not a per-criterion one.
+//! `FR-100` — a corpus-wide agreement gate is not a per-criterion one.
 //! This file is: one test per criterion, named by the criterion, so a criterion
 //! cannot be lost without a named test disappearing with it.
 //!

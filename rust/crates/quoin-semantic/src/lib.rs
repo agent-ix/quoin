@@ -21,7 +21,7 @@
 //! The tests in `tests/` read those files. Nothing here invokes Node.
 //!
 //! Both the oracle and that script were **deleted** at the quoin#452 cutover —
-//! FR-101-AC-5 forbids a live non-Rust oracle once the port lands — so the
+//! The retire-after-parity rule forbids a live non-Rust oracle once the port lands — so the
 //! captured goldens are now the whole record and cannot be recaptured. They are
 //! pinned evidence: never hand-edit them, and a disagreement with one is a
 //! finding about this crate.
