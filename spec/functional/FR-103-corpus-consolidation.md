@@ -36,8 +36,6 @@ read but not retire, and SHALL change no accepted-corpus byte.
 
 - Quoin SHALL scope this consolidation to the corpus accounting and selection its
   own measurement crates consume.
-- Quoin SHALL NOT record a port or delete disposition for a file inside the
-  `corpus/` submodule.
 - Quoin SHALL record that corpus construction and reproduction from recorded
   sources belong to the repository the submodule points at, and SHALL treat the
   question of whether this programme has any scope over `agent-ix/qa-corpus` as
@@ -47,8 +45,6 @@ read but not retire, and SHALL change no accepted-corpus byte.
 - Quoin SHALL obtain corpus accounting from `engineering-assurance` rather than
   implementing a local equivalent, and if `engineering-assurance` does not supply
   it, then Quoin SHALL file a gap ticket in `engineering-assurance`.
-- Quoin SHALL complete this consolidation before the measurement crates are
-  ported, so that the measurement port reads one corpus source.
 - Quoin SHALL verify corpus identity by digest before and after the
   consolidation and SHALL change no accepted-corpus byte.
 - Quoin SHALL publish no corpus tooling package to public npmjs or crates.io, and
@@ -56,16 +52,15 @@ read but not retire, and SHALL change no accepted-corpus byte.
 
 ## Error Conditions
 
-A corpus digest that differs before and after consolidation, a measurement run that resolves two corpus sources, an
-unpinned or missing submodule revision, and a port or delete disposition
-recorded against a file inside the submodule each block consolidation.
+A corpus digest that differs before and after consolidation, a measurement run
+that resolves two corpus sources, and an unpinned or missing submodule revision
+each block consolidation.
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
 | FR-103-CON-1 | Consolidation SHALL NOT change an accepted-corpus byte. | Data Integrity | Test |
-| FR-103-CON-2 | Quoin SHALL NOT record a port or delete disposition for a file inside the `corpus/` submodule. | Scope | Test |
 
 ## Acceptance Criteria
 
@@ -74,7 +69,6 @@ recorded against a file inside the submodule each block consolidation.
 | FR-103-AC-2 | The accepted-corpus digest computed before consolidation equals the digest computed after it, over a named non-empty population. | Test (TC-1656) |
 | FR-103-AC-3 | A measurement run resolves exactly one corpus source, and a planted second source is refused. | Test (TC-1657) |
 | FR-103-AC-4 | Corpus accounting is obtained from `engineering-assurance`, and no local corpus-accounting implementation exists in the workspace. | Test (TC-1658) |
-| FR-103-AC-6 | A port or delete disposition recorded against a path inside the `corpus/` submodule fails the gate, naming the submodule and its upstream repository. | Test (TC-1684) |
 | FR-103-AC-7 | The submodule is pinned to an exact revision, and a revision change is reported as a corpus identity change with both revisions named. | Test (TC-1685) |
 
 ## Dependencies
