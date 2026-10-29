@@ -16,8 +16,8 @@ relationships:
 ## Stakeholder Need
 
 Authors require that once their module set is in place, repeated spec work shall
-run without further network access and shall resolve the same pinned module
-versions every time, so that authoring is fast, reproducible, and unaffected by
+run without further network access and shall resolve the same installed modules
+every time, so that authoring is fast, reproducible, and unaffected by
 upstream changes or connectivity.
 
 ## Rationale
