@@ -19,8 +19,9 @@ package, `@agent-ix/quoin`, plus one platform package per supported
 target — `@agent-ix/quoin-linux-x64`, `@agent-ix/quoin-linux-arm64`,
 `@agent-ix/quoin-darwin-arm64` and `@agent-ix/quoin-win32-x64` — the way
 `quire-cli` already publishes itself. The npm packages SHALL be built only
-from the GitHub Release assets of an existing tag, after each asset's
-SHA-256 is checked against that release's `quoin-update-manifest.json`;
+from the GitHub Release assets of an existing tag, taking each asset the
+release's `quoin-update-manifest.json` names; the workflow computes and
+compares no hash, and trusts the GitHub Release transport for the bytes.
 quoin SHALL NOT rebuild the binary to publish it to npm. Packaging is
 performed by the shared `agent-ix/nodejs-actions/publish-native-npm` action,
 called from `.github/workflows/release.yml`; quoin's own workspace carries
@@ -46,14 +47,14 @@ and a second version to track.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-112-AC-1 | `npm install -g @agent-ix/quoin@<v>` installs the native `<v>` binary for `linux-x64`, `linux-arm64`, `darwin-arm64` and `win32-x64`, and the installed `quoin --version` reports `<v>` on each. | Test (TC-1885) |
-| FR-112-AC-2 | The npm packages published for tag `v<v>` are built from that tag's GitHub Release assets after each artifact's SHA-256 is verified against `quoin-update-manifest.json`; a checksum mismatch fails the workflow before anything is published, and no artifact is rebuilt from source for npm. | Test (TC-1886) |
+| FR-112-AC-2 | The npm packages published for tag `v<v>` are built from that tag's GitHub Release assets from the assets `quoin-update-manifest.json` names; a manifest naming no asset, or an asset file absent from the release, fails the workflow before anything is published, and no artifact is rebuilt from source for npm. | Test (TC-1886) |
 | FR-112-AC-3 | Under an npm install, `quoin update` given as the first argument makes no change to the installation, exits non-zero, and its stderr names the npm command that manages it (`npm install -g @agent-ix/quoin@latest`) and states that quoin was installed with npm. | Test (TC-1887) |
 | FR-112-AC-4 | Every Linux platform package (`@agent-ix/quoin-linux-x64`, `@agent-ix/quoin-linux-arm64`) declares `libc: ["glibc"]` in `package.json`, matching the glibc floor the archived binary was built against. | Test (TC-1888) |
 
 ## Constraints
 
 - **FR-112-CON-1**: No packaging, archive-extraction or npm-publish logic
-  lives in this repository; `release.yml` verifies and extracts the release
+  lives in this repository; `release.yml` extracts the release
   assets and calls `agent-ix/nodejs-actions/publish-native-npm@main`, which
   owns the package layout and the `npm publish` calls.
 - **FR-112-CON-2**: The published npm version always equals the dispatched

@@ -64,7 +64,7 @@ publication, enforcement, retirement, database, API, UI, or conflicting feature-
 
 | Input                  | Required identity and treatment                                                                                                         |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `default-modules.yaml` | Branch-local bytes, digest, ordered declarations, requested refs and resolved SHAs.                                                     |
+| `default-modules.yaml` | Branch-local bytes, ordered declarations and declared refs.                                                     |
 | Default module sources | Canonical repository/subdirectory and exact inspected content/commit; disagreement is retained.                                         |
 | Quire                  | CLI and engine identity plus pinned `quire-rs#385` corpus revision; parsing failures remain records.                                    |
 | Semantic architecture  | PR #311 merged as `4a82644ad3cf75770cc53ef3812e3b13e80b516d`; its decisions guide classification while downstream changes remain gated. |
@@ -98,7 +98,7 @@ default-modules.yaml + resolved module sources + Quire/core-data evidence
 3. Run the pure functions against fixture modules, including duplicate names, placeholder schemas,
    malformed/untyped Markdown, absent instances, provenance drift, and output tampering.
 4. Run the read-only audit against all 10 pinned default modules and retain canonical artifacts.
-5. Generate report and SpecReview from the canonical object, validate all artifacts, and reconcile counts/digests.
+5. Generate report and SpecReview from the canonical object, validate all artifacts, and reconcile counts.
 6. Run a fresh census, full repository gates, `/code-review`, and `/gap-analysis`; fix all findings.
 7. Open a stacked PR and stop for #289 approval and any major-interference recommendation.
 
@@ -149,7 +149,7 @@ TASK-019 stacked PR + major-interference/architecture gate
 | Provenance      | Requested, resolved, installed, and reviewed identities agree or conflicts are retained and verdict is non-clean. | Do not normalize or omit the disagreement.                       |
 | Completeness    | All source denominators reconcile exactly.                                                                        | Keep the audit incomplete; do not publish a clean review.        |
 | Scope           | Diff is limited to spec, plan, audit scripts/tests, analysis, and reviews.                                        | Remove or split behavior/module/consumer changes.                |
-| Reproducibility | Equal identified inputs produce equal canonical content and all digests/counts validate.                          | Fix nondeterminism or stale projection before review.            |
+| Reproducibility | Equal identified inputs produce equal canonical content and all counts validate.                          | Fix nondeterminism or stale projection before review.            |
 | Freshness       | Immediate pre-signoff census matches the retained snapshot.                                                       | Regenerate and re-review the audit.                              |
 | Review          | Code review and gap analysis contain no unresolved medium/high finding.                                           | Fix and rerun affected evidence.                                 |
 | Promotion       | #289 architecture is approved and no recommendation crosses a major-interference boundary without its own gate.   | Leave PR stacked/open; do not merge or activate downstream work. |
@@ -159,6 +159,6 @@ TASK-019 stacked PR + major-interference/architecture gate
 - TC-1156..TC-1193 pass with exact tags and every automated matrix row is covered.
 - Every default-module entry, declaration, contract surface, and Markdown path is reconciled.
 - Every qualified type has every axis, one disposition, confidence, and linked evidence.
-- Canonical JSON, generated report, and validated SpecReview agree by count and digest.
+- Canonical JSON, generated report, and validated SpecReview agree by count.
 - Fresh-census, deterministic rerun, read-only filesystem, full repository, code-review, and gap gates pass.
 - TC-1194 and the #289 approval disposition are retained in SR-058; every downstream major-interference boundary remains explicit and unsatisfied.

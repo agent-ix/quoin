@@ -65,8 +65,9 @@ store.
   reimplemented only to the extent [FR-022](./FR-022-self-update.md) already
   requires.
 - Module reconcile SHALL remain idempotent and SHALL perform no git or network
-  access when every declared module is already materialized at the reference
-  its module declaration names.
+  access when every declared module is already materialized at the commit id its
+  declaration names (NFR-010 requires that `ref` to be a full commit id; a tag
+  or branch name is refused, not materialized).
 - If a module manifest declares an unknown key, then the Rust manifest reader
   SHALL refuse it, preserving the existing strict-parsing behaviour.
 - Quoin SHALL keep exactly one catalog and one module store across the port and
@@ -86,9 +87,9 @@ store.
   `workflow-assets/dist/index.js` and its declaration file, a build product of
   `ix-spec-workflows`, while `scripts/invariants.js` is 139 hand-written lines
   that re-export `specInvariants` from it.
-- Quoin SHALL treat the vendored bundle as claiming the generated allowance only
-  once its generator identity and generator version are recorded, and SHALL treat it
-  as first-party source until then.
+- Quoin SHALL treat the vendored bundle as a generated build product by its
+  location and by the disposition recorded above; no generator identity or
+  version is recorded or compared.
 - Quoin SHALL apply the boundary hardening of
   [FR-096](./FR-096-versioned-rust-engine-boundary.md) — real-path resolution, a
   resolution diagnostic when the executable cannot be resolved, a declared output ceiling, a timeout and the three-way

@@ -32,6 +32,11 @@ command defaults to the public GitHub latest-release manifest.
 - The CLI SHALL compare the running version (see
   [FR-002](./FR-002-print-package-version.md)) against a stable native release
   manifest and safely stage its target-specific artifact before replacement.
+- The manifest carries no digest of any artifact. The update path SHALL check
+  only that the downloaded byte count equals the manifest's `size` and that the
+  archive holds the one safe executable; it trusts the HTTPS transport and the
+  release host for the bytes themselves, and SHALL NOT compute or compare a
+  hash.
 - The CLI SHALL report availability without installing when `--check` is given.
 - The CLI SHALL pass a `--registry` manifest endpoint through, and SHALL
   otherwise default to GitHub's stable latest-release manifest.
@@ -44,7 +49,7 @@ command defaults to the public GitHub latest-release manifest.
 
 | ID          | Criteria                                                                                                              | Verification          |
 | ----------- | --------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| FR-022-AC-1 | `update` selects the running host's native artifact from a stable manifest and verifies it before replacement | Test (Rust delivery tests) |
+| FR-022-AC-1 | `update` selects the running host's native artifact from a stable manifest and checks its byte count and single-executable layout before replacement; no hash is computed or compared | Test (Rust delivery tests) |
 | FR-022-AC-2 | `--check` reports availability without downloading an archive or mutating the installation | Test (Rust delivery tests) |
 | FR-022-AC-3 | `--registry <url>` selects an explicit manifest endpoint; its absence uses the GitHub latest-release manifest | Test (Rust CLI tests) |
 

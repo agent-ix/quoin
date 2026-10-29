@@ -1,6 +1,6 @@
 ---
 id: NFR-010
-title: "An installed module is the one that was pinned"
+title: "A default module is declared at an immutable revision"
 type: NFR
 quality_attribute: security
 relationships:
@@ -10,62 +10,47 @@ relationships:
     type: "traces_to"
 ---
 
-# NFR-010: An installed module is the one that was pinned
+# NFR-010: A default module is declared at an immutable revision
 
 ## Statement
 
-`quoin` SHALL resolve every default-set module to an **immutable** revision.
-`quoin` SHALL record the resolved commit SHA alongside the human-readable pin, so
-that a later install of the same pin either yields the same tree or reports that
-it does not.
+`quoin` SHALL resolve every default-set module from a `ref` that is a full git
+commit id, which names one tree for ever. `quoin` SHALL refuse a `ref` that is a
+branch or tag name for a default-set entry, and SHALL record no second copy of
+the resolved commit and compare nothing against it: the declared `ref` is the
+whole truth.
 
 ## Scope
 
-- Applies to: `default-modules.yaml` pins and the install path that materializes
-  them into `~/.ix/filament/modules`.
+- Applies to: `default-modules.yaml` entries and the install path that
+  materializes them into `~/.ix/filament/modules`.
 - Operational context: any `quoin module ensure-defaults` or
   `quoin plugin install`, including the lazy install `quire validate` triggers.
-- Excluded: the transport itself. Fetching is `@agent-ix/ts-plugin-kit`'s
-  responsibility (`git clone --filter=blob:none` + sparse checkout); this
-  requirement is about **what quoin asks for and what it records**.
+- Excluded: the transport itself, which is `@agent-ix/ts-plugin-kit`'s
+  responsibility.
 
 ## Rationale
 
-The default set is pinned by **git tag** — `ref: <tag>`. A tag is a mutable
-pointer: repointing it changes what the same pin resolves to, and nothing today
-would notice. Git verifies object integrity within a fetch, so this is not about
-corruption in transit; it is about the pin denoting one tree over time.
-
-The blast radius grew during ADR-0011 Phase 2. Module data is no longer only
-document schemas: `traceability.vocabulary_coverage` and the
-`verification_catalog` now decide **what quoin checks and what it will accept as
-verified** (FR-031, FR-037). A module that silently changes underneath a pin
-changes the verdicts a repository's CI produces.
-
-Recording the resolved SHA is the smallest thing that makes the pin mean
-something. It does not require signing, a registry, or a lockfile format — the
-existing `release-drift pins` report is the natural place for the comparison.
+A tag is a mutable pointer: repointing it changes what the same declaration
+resolves to. A commit id cannot be repointed, so declaring one makes the
+declaration denote one tree without a recorded SHA, a lockfile, or a
+comparison step. Module data decides what quoin checks and accepts as verified
+(FR-031, FR-037), so the declaration must not float.
 
 ## Measurement and Evaluation
 
-| Metric                                                          | Target | Threshold | Method      |
-| --------------------------------------------------------------- | ------ | --------- | ----------- |
-| Default-set pins recording the commit SHA their ref resolved to | 100%   | 100%      | Test        |
-| Installs that proceed when a recorded SHA no longer matches     | 0      | 0         | Test        |
-| Module fetches from a source outside the declared pin set       | 0      | 0         | Inspection  |
+| Metric                                                      | Target | Threshold | Method     |
+| ----------------------------------------------------------- | ------ | --------- | ---------- |
+| Default-set entries whose `ref` is a full commit id         | 100%   | 100%      | Test       |
+| Installs that proceed for a branch or tag `ref`             | 0      | 0         | Test       |
+| Module fetches from a source outside the declared entries   | 0      | 0         | Inspection |
 
 ## Verification
 
-`default-modules.yaml` is inspected for a resolved-SHA field on every entry, and
-the install path is exercised against a pin whose recorded SHA does not match the
-tree it resolves to.
-
-**Not met at the time of writing.** `default-modules.yaml` records `version` and
-`ref` only. This requirement is stated ahead of the implementation, which is the
-spec-first order; the gap is `agent-ix/quoin#132`.
+`default-modules.yaml` is inspected so every entry's `ref` is a full commit id,
+and the install path is exercised against a tag `ref`, which it refuses.
 
 ## Dependencies
 
 - **Upstream**: [StR-001](../stakeholder/StR-001-standalone-cli.md) standalone CLI.
-- **Downstream**: the pin drift report (`scripts/release-drift.js pins`) is where
-  a mismatch surfaces.
+- **Downstream**: none.

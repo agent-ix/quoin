@@ -47,10 +47,9 @@ measurement model and consuming shared assurance capability from
   `auditor`-to-`advisor` dependency cycle before any crate implementing those
   capabilities exists.
 - `quoin-store` SHALL own evidence-store display/storage serialization,
-  sha256 record-identity computation, blake3 digest computation and atomic
-  record replacement. Quoin SHALL obtain RFC 8785 encoding from the
+  UUID record-identity assignment and atomic record replacement. Quoin SHALL obtain RFC 8785 encoding from the
   `quire-canonical` dependency rather than implement another encoder.
-- Every other crate SHALL obtain store identity and digest operations from
+- Every other crate SHALL obtain store identity and write operations from
   `quoin-store` rather than implement them. Native boundary JSON SHALL use
   the same RFC 8785 dependency. Canonical serialization SHALL NOT be taken from
   `engineering-assurance`, because Quoin owns the identity domain its evidence
@@ -95,7 +94,7 @@ measurement model and consuming shared assurance capability from
 
 ## Error Conditions
 
-An unreadable store, a record whose digest does not match, a store schema version
+An unreadable store, a record that does not parse, a store schema version
 the implementation does not support, a producer document that does not validate
 against its declared adapter, and an absent `engineering-assurance` capability
 each produce a distinguishable refusal and are never reported as an empty but
@@ -108,7 +107,7 @@ successful report.
 | FR-100-CON-1 | Quoin SHALL NOT create a second evidence store, evidence model or measurement model. | Architecture | Test |
 | FR-100-CON-2 | Quoin SHALL NOT reimplement a capability `engineering-assurance` publishes. | Responsibility | Inspection |
 | FR-100-CON-3 | The Rust implementation SHALL NOT write a governed-corpus byte. | Data Integrity | Test |
-| FR-100-CON-4 | RFC 8785 encoding SHALL NOT be reimplemented in Quoin; it SHALL use `quire-canonical`. Store identity-domain and digest behaviour SHALL NOT be reimplemented outside `quoin-store`. | Architecture | Test |
+| FR-100-CON-4 | RFC 8785 encoding SHALL NOT be reimplemented in Quoin; it SHALL use `quire-canonical`. Store identity and atomic-write behaviour SHALL NOT be reimplemented outside `quoin-store`. | Architecture | Test |
 
 ## Acceptance Criteria
 
@@ -120,10 +119,10 @@ successful report.
 | FR-100-AC-4 | Each measurement collection and report produced by the Rust crates carries the same record envelope, plan binding, comparison verdict and rendered figures as the retained TypeScript produces for the same inputs. The comparison is against a report the retained implementation can still generate; it is not stated over the corpus-measurement report, whose generator #388 disposed of. | Test (TC-1636) |
 | FR-100-AC-5 | A measurement run over a read-only governed corpus completes and the corpus working tree is unchanged afterwards. | Test (TC-1637) |
 | FR-100-AC-6 | Every locally retained assurance capability carries a recorded three-part retention answer, and a capability with no recorded answer fails the gate. | Test (TC-1638) |
-| FR-100-AC-8 | A static check over a named non-empty population of crate sources finds store identity-domain and digest operations implemented only in `quoin-store`, RFC 8785 encoding delegated to `quire-canonical`, and fails when a second implementation is planted. | Test (TC-1640) |
+| FR-100-AC-8 | A static check over a named non-empty population of crate sources finds store identity and atomic-write operations implemented only in `quoin-store`, RFC 8785 encoding delegated to `quire-canonical`, and fails when a second implementation is planted. | Test (TC-1640) |
 | FR-100-AC-9 | An interrupted record write leaves no torn record readable and no orphaned temporary file after the next run, and concurrent writes to one store root produce a readable store with every completed record intact. | Test (TC-1699) |
 | FR-100-AC-10 | The store JCS adapter and native boundary encoder emit the literal RFC 8785 bytes for supplementary-plane versus BMP member names, integer-shaped names, negative zero, integral floats, and exponent thresholds; their output is unchanged by `serde_json/preserve_order`. | Test |
-| FR-100-AC-11 | Existing RFC 8785 digest vectors remain byte-identical after encoder adoption. Assurance-record identities are computed over RFC 8785 bytes, with all affected stored identities, paths and citations listed before landing. The pretty form remains display/storage only; raw-file digests continue to identify actual file bytes. | Test |
+| FR-100-AC-11 | Existing RFC 8785 serialization vectors remain byte-identical after encoder adoption. Assurance-record identifiers are opaque UUIDs, with all affected stored identifiers, paths and citations listed before landing. The pretty form remains display/storage only. | Test |
 
 ## Dependencies
 
@@ -131,6 +130,5 @@ successful report.
 - **Downstream**: [NFR-025](../non-functional/NFR-025-immutable-evidence-and-corpus-bytes.md) constrains it.
 
 > **PLAT-989 change note (2026-10-05):** RFC 8785 encoding moves to the shared
-> dependency. Quoin retains its identity-domain rules and storage format. Raw-file
-> digests retain their separate FR-201 byte-integrity meaning. Boundary JSON now
+> dependency. Quoin retains its identity-domain rules and storage format. Boundary JSON now
 > follows RFC 8785 UTF-16 order and number spelling instead of code-point ordering.

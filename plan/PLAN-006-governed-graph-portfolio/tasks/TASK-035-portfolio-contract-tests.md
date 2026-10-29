@@ -43,7 +43,7 @@ TC-1316 retained-adapter stakeholder flow.
 ## Scope
 
 Create TC/AC-tagged tests for graph-quality current/history rows, partitions,
-availability, compatibility, raw digest resolution, injected report identity,
+availability, compatibility, raw record resolution by id, injected report identity,
 local failure isolation, permutations, old-store compatibility, and boundaries.
 
 ## Subtasks

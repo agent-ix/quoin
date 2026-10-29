@@ -18,8 +18,8 @@ read but not retire, and SHALL change no accepted-corpus byte.
 
 ## Inputs
 
-- The `corpus/` git submodule, pointing at `agent-ix/qa-corpus` at its pinned
-  revision.
+- `agent-ix/qa-corpus` read as a sibling checkout; this repository carries no
+  `corpus/` submodule and no gitlink to it.
 - The governed corpus pins consumed by the measurement crates.
 - The Quoin-side corpus selection and accounting code reached from `src/` and
   `scripts/`.
@@ -27,8 +27,7 @@ read but not retire, and SHALL change no accepted-corpus byte.
 
 ## Outputs
 
-- A corpus-accounting record naming the corpus identity, its pinned submodule
-  revision and the population it covers.
+- A corpus-accounting record naming the corpus identity and the population it covers.
 - A recorded statement of which corpus concerns are out of Quoin's ownership,
   pending the owner scope ruling.
 
@@ -45,14 +44,14 @@ read but not retire, and SHALL change no accepted-corpus byte.
 - Quoin SHALL obtain corpus accounting from `engineering-assurance` rather than
   implementing a local equivalent, and if `engineering-assurance` does not supply
   it, then Quoin SHALL file a gap ticket in `engineering-assurance`.
-- Quoin SHALL verify corpus identity by digest before and after the
-  consolidation and SHALL change no accepted-corpus byte.
+- Quoin SHALL show, with `git diff --quiet` over the `corpus/` tree before and after the
+  consolidation, that no accepted-corpus byte changed; no digest is computed.
 - Quoin SHALL publish no corpus tooling package to public npmjs or crates.io, and
   SHALL publish any retained Python package to the internal PyPI.
 
 ## Error Conditions
 
-A corpus digest that differs before and after consolidation, a measurement run
+A `corpus/` tree that differs byte for byte before and after consolidation, a measurement run
 that resolves two corpus sources, and an unpinned or missing submodule revision
 each block consolidation.
 
@@ -66,7 +65,7 @@ each block consolidation.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-103-AC-2 | The accepted-corpus digest computed before consolidation equals the digest computed after it, over a named non-empty population. | Test (TC-1656) |
+| FR-103-AC-2 | `git diff` over the accepted-corpus tree between the commit before consolidation and the commit after it is empty, over a named non-empty population. | Test (TC-1656) |
 | FR-103-AC-3 | A measurement run resolves exactly one corpus source, and a planted second source is refused. | Test (TC-1657) |
 | FR-103-AC-4 | Corpus accounting is obtained from `engineering-assurance`, and no local corpus-accounting implementation exists in the workspace. | Test (TC-1658) |
 | FR-103-AC-7 | The submodule is pinned to an exact revision, and a revision change is reported as a corpus identity change with both revisions named. | Test (TC-1685) |

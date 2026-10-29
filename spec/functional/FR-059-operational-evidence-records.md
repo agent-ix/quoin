@@ -102,7 +102,7 @@ or aggregate one record's strength against another's.
       "required": [
         "tool_identity",
         "tool_version",
-        "configuration_digest",
+        "configuration_ref",
         "source_revision",
         "environment",
         "definition_version"
@@ -110,7 +110,7 @@ or aggregate one record's strength against another's.
       "properties": {
         "tool_identity": { "type": "string", "minLength": 1 },
         "tool_version": { "$ref": "#/$defs/immutable_version" },
-        "configuration_digest": { "$ref": "#/$defs/digest" },
+        "configuration_ref": { "type": "string", "minLength": 1 },
         "source_revision": { "type": "string", "minLength": 1 },
         "environment": {
           "type": "object",
@@ -149,15 +149,14 @@ or aggregate one record's strength against another's.
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["kind", "identity", "revision", "digest"],
+            "required": ["kind", "identity", "revision"],
             "properties": {
               "kind": {
                 "type": "string",
                 "enum": ["policy", "prompt", "model", "tool", "data"]
               },
               "identity": { "$ref": "#/$defs/identity" },
-              "revision": { "type": "string", "minLength": 1 },
-              "digest": { "$ref": "#/$defs/digest" }
+              "revision": { "type": "string", "minLength": 1 }
             },
             "additionalProperties": false
           }
@@ -290,12 +289,11 @@ or aggregate one record's strength against another's.
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["path", "media_type", "size_bytes", "digest"],
+        "required": ["path", "media_type", "size_bytes"],
         "properties": {
           "path": { "type": "string", "minLength": 1 },
           "media_type": { "type": "string", "minLength": 1 },
-          "size_bytes": { "type": "integer", "minimum": 0 },
-          "digest": { "$ref": "#/$defs/raw_digest" }
+          "size_bytes": { "type": "integer", "minimum": 0 }
         },
         "additionalProperties": false
       }
@@ -366,17 +364,9 @@ or aggregate one record's strength against another's.
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
     },
-    "digest": {
-      "type": "string",
-      "pattern": "^(sha256|blake3):[a-f0-9]{64}$"
-    },
-    "raw_digest": {
-      "type": "string",
-      "pattern": "^sha256:[a-f0-9]{64}$"
-    },
     "immutable_version": {
       "type": "string",
-      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|(sha256|blake3):[a-f0-9]{64})$"
+      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40})$"
     },
     "clock": {
       "type": "object",
@@ -442,8 +432,7 @@ or aggregate one record's strength against another's.
 - Every raw-evidence path SHALL be a normalized relative path within the evidence
   store. Absolute paths, parent traversal, and paths that resolve outside the
   evidence store SHALL be refused.
-- Every raw-evidence digest SHALL use SHA-256, the algorithm Quoin independently
-  recomputes from the retained bytes.
+- Raw evidence carries its path, media type and byte size; no digest is recorded or compared.
 
 ## Acceptance Criteria
 
@@ -455,9 +444,9 @@ or aggregate one record's strength against another's.
 | FR-059-AC-4 | An exercise record requires actual-or-drill mode, ordered start and completion timestamps, actor, trigger, outcome, before/after state, at least one observation, and clock applicability. | Test (TC-1226) |
 | FR-059-AC-5 | Exactly one shape payload is present: standing capability excludes exercise data, and exercise excludes capability data. | Test (TC-1227) |
 | FR-059-AC-6 | An `operational_with_clock` exercise requires ordered start and deadline timestamps and a status consistent with completion and immutable observation time; a not-applicable clock requires `not_applicable` status and no clock timestamps. | Test (TC-1228) |
-| FR-059-AC-7 | Each policy, prompt, model, tool, or data pin record carries at least one matching typed identity, revision, and digest, with no duplicate kind/identity key. | Test (TC-1229) |
+| FR-059-AC-7 | Each policy, prompt, model, tool, or data version record carries at least one matching typed identity and revision, with no duplicate kind/identity key. | Test (TC-1229) |
 | FR-059-AC-8 | Succeeded, failed, partial, and aborted exercises all validate as retained outcomes. | Test (TC-1230) |
-| FR-059-AC-9 | Gaps, owner, actions, and at least one safe content-digested raw-evidence reference with media type and byte size are retained; invalid capability links and undeclared fields are refused. | Test (TC-1231) |
+| FR-059-AC-9 | Gaps, owner, actions, and at least one safe raw-evidence reference with media type and byte size are retained; invalid capability links and undeclared fields are refused. | Test (TC-1231) |
 | FR-059-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `observed` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test (TC-1883) |
 
 ## Dependencies

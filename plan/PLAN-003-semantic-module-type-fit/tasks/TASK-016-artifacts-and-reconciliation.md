@@ -18,12 +18,12 @@ relationships:
 
 ## Status
 
-**done** — nine canonical/generated artifacts validate by count and digest, the SpecReview passes
+**done** — nine canonical/generated artifacts validate by count, the SpecReview passes
 Quire validation, and findings link architecture, the core-data census, Quire, and gated follow-ups.
 
 ## Scope
 
-Serialize the canonical artifact family, manifest counts/digests, conflict/missing ledgers and
+Serialize the canonical artifact family, manifest counts, conflict/missing ledgers and
 repository impacts. Reconcile findings to the architecture record, core-data census, Quire corpus,
 and gated follow-up classes. Generate `report.md` and a validated SpecReview from the same data.
 

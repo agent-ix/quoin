@@ -1,6 +1,6 @@
 ---
 id: FR-063
-title: "Integrity-sealed change assurance record"
+title: "Change assurance record"
 type: FR
 object: data_schema
 relationships:
@@ -14,7 +14,7 @@ relationships:
     type: "requires"
 ---
 
-# FR-063: Integrity-sealed change assurance record
+# FR-063: Change assurance record
 
 ## Description
 
@@ -23,10 +23,12 @@ its source and impact premises, its proof obligations, and its disclosed
 unknowns as an engine-independent semantic record. The record SHALL use the
 versioned JSON Schema below.
 
-Approval is not a field added after sealing. An ix-flow decision event refers
-to the exact sealed digest, so the record and the decision can be verified
-without a circular hash. A record qualifies as approved only when FR-065 finds
-a matching integrity-valid `approved` event.
+Approval is not a field added after the record is written. An ix-flow decision
+event names the record by `record_id` and `revision`, so the record and the
+decision are joined by identity and no hash is involved. A record revision is
+immutable once written (a new revision is a new file, never an edit), and git
+history is the tamper evidence. A record qualifies as approved only when
+FR-065 finds a matching `approved` event.
 
 ## Schema
 
@@ -41,8 +43,6 @@ a matching integrity-valid `approved` event.
     "record_type",
     "record_id",
     "revision",
-    "parent_digest",
-    "digest",
     "subject",
     "source_connections",
     "impact_snapshot",
@@ -54,10 +54,6 @@ a matching integrity-valid `approved` event.
     "record_type": { "const": "change_assurance" },
     "record_id": { "$ref": "#/$defs/identity" },
     "revision": { "type": "integer", "minimum": 1 },
-    "parent_digest": {
-      "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }]
-    },
-    "digest": { "$ref": "#/$defs/digest" },
     "subject": {
       "type": "object",
       "required": ["repository", "base_revision", "scope"],
@@ -80,11 +76,10 @@ a matching integrity-valid `approved` event.
     },
     "impact_snapshot": {
       "type": "object",
-      "required": ["identity", "revision", "digest", "completeness", "truncated", "gaps"],
+      "required": ["identity", "revision", "completeness", "truncated", "gaps"],
       "properties": {
         "identity": { "$ref": "#/$defs/identity" },
         "revision": { "type": "string", "minLength": 1 },
-        "digest": { "$ref": "#/$defs/digest" },
         "completeness": {
           "type": "string",
           "enum": ["complete", "incomplete"]
@@ -144,13 +139,9 @@ a matching integrity-valid `approved` event.
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
     },
-    "digest": {
-      "type": "string",
-      "pattern": "^[a-f0-9]{64}$"
-    },
     "source_connection": {
       "type": "object",
-      "required": ["source_id", "kind", "revision", "digest"],
+      "required": ["source_id", "kind", "revision"],
       "properties": {
         "source_id": { "$ref": "#/$defs/identity" },
         "kind": {
@@ -165,8 +156,7 @@ a matching integrity-valid `approved` event.
             "other"
           ]
         },
-        "revision": { "type": "string", "minLength": 1 },
-        "digest": { "$ref": "#/$defs/digest" }
+        "revision": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
@@ -222,7 +212,7 @@ a matching integrity-valid `approved` event.
         "evidence_kind",
         "command",
         "tool_identity",
-        "configuration_digest"
+        "configuration_ref"
       ],
       "properties": {
         "proof_id": { "$ref": "#/$defs/identity" },
@@ -236,7 +226,7 @@ a matching integrity-valid `approved` event.
         "evidence_kind": { "$ref": "#/$defs/identity" },
         "command": { "$ref": "#/$defs/command" },
         "tool_identity": { "type": "string", "minLength": 1 },
-        "configuration_digest": { "$ref": "#/$defs/digest" }
+        "configuration_ref": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
@@ -260,7 +250,7 @@ a matching integrity-valid `approved` event.
 }
 ```
 
-Every array SHALL be sorted by its identity key before sealing. A meaningful
+Every array SHALL be sorted by its identity key before the record is written. A meaningful
 empty `preservation_constraints` or `unknowns` array SHALL remain present.
 Duplicate requirement, constraint, proof, unknown, or source identities SHALL
 be refused rather than deduplicated. A `resolved` unknown SHALL carry a
@@ -271,46 +261,38 @@ POSIX path.
 
 Each `argv` SHALL contain literal arguments without shell expansion.
 
-## Canonical integrity contract
+## Record identity and lineage
 
-The serialized sealing and verification boundary SHALL receive the exact UTF-8
-JSON bytes, not an already parsed host-language object. Quoin SHALL parse those
-bytes with a duplicate-preserving JSON decoder so duplicate object names,
-invalid Unicode, non-I-JSON numbers, and a byte-order mark remain observable
-and can be refused before any normalized value is constructed. Programmatic
-callers SHALL pass through the same validation and canonicalization boundary.
+`record_id` is assigned by the caller at revision 1 (a UUID or a caller-chosen
+`identity`) and never derived from content. A record is addressed by the pair
+`(record_id, revision)` and stored at `records/<record_id>/<revision>.json`.
 
-Quoin SHALL compute `digest` by removing only the top-level `digest` member,
-applying RFC 8785 JSON Canonicalization Scheme to the
-remaining value, encoding the canonical text as UTF-8 without a byte-order mark,
-hashing those bytes with the 32-byte BLAKE3 output, and encoding that output as
-exactly 64 lowercase hexadecimal characters with no prefix.
+The serialized boundary SHALL receive the exact UTF-8 JSON bytes, not an
+already parsed host-language object. Quoin SHALL parse those bytes with a
+duplicate-preserving JSON decoder so duplicate object names, invalid Unicode,
+non-I-JSON numbers, and a byte-order mark remain observable and are refused
+before any normalized value is constructed. Output uses one deterministic
+serialization (RFC 8785 key and number rules), so two runs over the same input
+write the same bytes; that is checked by comparing the two outputs byte for
+byte, never by hashing.
 
-Before canonicalization, Quoin SHALL refuse duplicate object names, non-I-JSON
-numbers, and invalid Unicode including lone surrogate code points. It SHALL use
-RFC 8785 string, number, and UTF-16 property-name ordering rules rather than a
-locale or a generic recursively sorted serializer.
-
-Revision 1 SHALL carry `parent_digest: null`. Revision N greater than 1 SHALL
-name the valid digest of retained revision N-1 with the same `record_id`.
-Sealing a successor SHALL write a new digest-addressed record and SHALL NOT
-replace or mutate its parent.
+Revision 1 has no predecessor. Revision N greater than 1 requires retained
+revision N-1 of the same `record_id`. Writing a successor SHALL write a new
+file and SHALL NOT replace or mutate its predecessor.
 
 ## ix-flow decision contract
 
 The matching ix-flow event SHALL have kind
 `change_assurance.review_decided`, `actor.kind: human`, and a payload containing
-exactly `schema_version: 1`, `record_id`, `revision`, `record_digest`,
+exactly `schema_version: 1`, `record_id`, `revision`,
 `decision`, and optional `note`.
 
 The event's `decision` SHALL be `approved`, `rejected`, or `revise`.
 
 The event's run id SHALL equal `review_workflow.run_id`.
 
-The event's record id, revision, and `record_digest` SHALL equal the sealed
-record's id, revision, and `digest`.
+The event's record id and revision SHALL equal the record's id and revision.
 
-The record digest and ix-flow event hash are integrity values, not signatures.
 The event's actor label is recorded attribution only and does not prove a
 person's identity, authority, possession of a key, or non-repudiation.
 
@@ -318,25 +300,25 @@ person's identity, authority, possession of a key, or non-repudiation.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-063-CON-1 | Sealing and verification SHALL perform no Git, workflow, proof, network, or identity-provider operation. | Architecture | Inspection |
-| FR-063-CON-2 | The store SHALL preserve every sealed parent and rejected or revise-requested revision by digest. | Integrity | Test |
+| FR-063-CON-1 | Writing and verification SHALL perform no Git, workflow, proof, network, or identity-provider operation. | Architecture | Inspection |
+| FR-063-CON-2 | The store SHALL preserve every earlier revision and every rejected or revise-requested revision by `(record_id, revision)`. | Integrity | Test |
 | FR-063-CON-3 | Documentation and output SHALL make no identity, authorization, signature, authenticity, or non-repudiation claim. | Responsibility | Inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-063-AC-1 | Schema v1 requires the record identity/revision/parent/digest, repository and base revision, non-empty scope and sources, impact snapshot, complete definition collections, and review-workflow binding; undeclared fields are refused. | Test (TC-1261) |
-| FR-063-AC-2 | Requirements and proof obligations are non-empty; meaningful empty preservation and unknown arrays remain present; duplicate identities are refused before sealing. | Property (TC-1262) |
-| FR-063-AC-3 | Every requirement retains its reviewed statement, and every proof fixes its owning evidence obligations, literal argv, repository-relative cwd, evidence kind, tool identity, and configuration digest. | Test (TC-1263) |
+| FR-063-AC-1 | Schema v1 requires the record identity and revision, repository and base revision, non-empty scope and sources, impact snapshot, complete definition collections, and review-workflow binding; undeclared fields (including any digest member) are refused. | Test (TC-1261) |
+| FR-063-AC-2 | Requirements and proof obligations are non-empty; meaningful empty preservation and unknown arrays remain present; duplicate identities are refused before the record is written. | Property (TC-1262) |
+| FR-063-AC-3 | Every requirement retains its reviewed statement, and every proof fixes its owning evidence obligations, literal argv, repository-relative cwd, evidence kind, tool identity, and configuration reference. | Test (TC-1263) |
 | FR-063-AC-4 | An incomplete or truncated impact snapshot and each open, accepted, deferred, or resolved unknown remain explicit rather than becoming a completeness claim. | Test (TC-1264) |
-| FR-063-AC-5 | RFC 8785 conformance vectors produce their expected canonical UTF-8 bytes and BLAKE3 lowercase-hex record digests across supported runtimes. | Test (TC-1265) |
-| FR-063-AC-6 | Changing each semantic leaf independently, including source, impact, definition, review-workflow, revision, or parent data, invalidates the stored digest. | Property (TC-1266) |
-| FR-063-AC-7 | Duplicate names, lone surrogates, non-I-JSON numbers, locale-sensitive ordering, uppercase hex, a digest prefix, and a byte-order mark are refused or fail their pinned vector. | Property (TC-1267) |
-| FR-063-AC-8 | Revision 1 requires a null parent; a successor requires the retained valid N-1 digest with the same record id; a missing, changed, skipped, or cross-record parent fails lineage verification. | Property (TC-1268) |
-| FR-063-AC-9 | Writing a successor leaves the parent's path and bytes unchanged, and rejected or revise-requested records remain addressable by digest (CON-2). | Integration (TC-1269) |
-| FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, revision, or digest cannot approve it. | Integration (TC-1270) |
-| FR-063-AC-11 | Static and golden-text checks prove sealing runs nothing and describes digests and actor labels only as integrity and recorded attribution, never identity, authority, signature, authenticity, or non-repudiation (CON-1, CON-3). | Analysis (TC-1271) |
+| FR-063-AC-5 | Withdrawn: a record carries no digest, so no digest vector remains (id not reused). | Test (TC-1265) |
+| FR-063-AC-6 | Withdrawn: there is no stored digest for a leaf change to invalidate; tampering is visible in git history (id not reused). | Property (TC-1266) |
+| FR-063-AC-7 | Withdrawn: there is no digest form to refuse; duplicate names, lone surrogates, non-I-JSON numbers and a byte-order mark are refused under AC-1 and AC-2 (id not reused). | Property (TC-1267) |
+| FR-063-AC-8 | Revision 1 has no predecessor; a successor requires retained revision N-1 of the same record id; a missing, skipped, or cross-record predecessor fails lineage verification. | Property (TC-1268) |
+| FR-063-AC-9 | Writing a successor leaves the predecessor's path and bytes unchanged, and rejected or revise-requested records remain addressable by `(record_id, revision)` (CON-2). | Integration (TC-1269) |
+| FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, or revision cannot approve it. | Integration (TC-1270) |
+| FR-063-AC-11 | Static and golden-text checks prove writing a record runs nothing and describes actor labels only as recorded attribution, never identity, authority, signature, authenticity, or non-repudiation (CON-1, CON-3). | Analysis (TC-1271) |
 
 ## Dependencies
 

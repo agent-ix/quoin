@@ -73,19 +73,19 @@ control is its own incompleteness.
   none has a dedicated member under `checks`, because the judgment is
   about the change proposed against a linked plan, not about the record's
   own shape.
-- **`governing_plan_id`** (PLAT-1015): the sealed receipt records the
+- **`governing_plan_id`** (PLAT-1015): the receipt records the
   `MeasurementPlan` id `governing_plan` was resolved from, or `null` when the
   caller asked no plan question. This is an explicit recorded fact, not an
   inference: a caller that omits `--plan` and a record genuinely unlinked from
   any plan both leave `apparatus_touched`/`diff_missing` unfired, and without
-  this field an auditor reading the sealed receipt afterward cannot tell
+  this field an auditor reading the receipt afterward cannot tell
   those two apart.
-- **`diff_paths_supplied`** (PLAT-1015): the sealed receipt records whether
+- **`diff_paths_supplied`** (PLAT-1015): the receipt records whether
   `diff_paths` was supplied at all — `true` for `Some(_)` (a retained diff,
   even an empty one), `false` for `None`. Distinct from the absence of
   `diff_missing`/`apparatus_touched` in `reasons`, which a caller can produce
   either by supplying a diff that touches nothing or by never supplying one
-  at all; `diff_paths_supplied` is what tells those two apart on the sealed
+  at all; `diff_paths_supplied` is what tells those two apart on the written
   receipt itself.
 
 ## Behavior
@@ -118,7 +118,7 @@ control is its own incompleteness.
 | FR-111-AC-2 | A diff naming no path inside `protected_apparatus` adds neither reason; the receipt is unchanged from an unlinked verification. | Test (TC-1869) |
 | FR-111-AC-3 | A declared `negative_controls` entry whose kind is not `apparatus-edit`, or an `apparatus-edit` entry with no protected list, is `negative_control_uncaught`, and this alone leaves the outcome `incomplete` rather than `invalid`; a declared `apparatus-edit` entry over an untouched diff adds nothing. | Test (TC-1870) |
 | FR-111-AC-4 | A plan that protects apparatus, verified with no diff retained, is `diff_missing` and the receipt is `incomplete`; with no plan linked, a missing diff adds nothing. | Test (TC-1871) |
-| FR-111-AC-5 | The sealed receipt records `governing_plan_id` (the linked plan's id, or `null` when none was asked) and `diff_paths_supplied` (`true` when `diff_paths` was supplied at all, even empty, `false` when it was not) as explicit fields, distinguishable from a caller's omission producing the same silence in `reasons`. | Test (TC-1915) |
+| FR-111-AC-5 | The receipt records `governing_plan_id` (the linked plan's id, or `null` when none was asked) and `diff_paths_supplied` (`true` when `diff_paths` was supplied at all, even empty, `false` when it was not) as explicit fields, distinguishable from a caller's omission producing the same silence in `reasons`. | Test (TC-1915) |
 
 ## Constraints
 
@@ -139,10 +139,10 @@ control is its own incompleteness.
   (the load PLAT-975 already governs) so `protected_apparatus` and
   `negative_controls` are read by that one parser rather than restated on
   the wire. It is read from `repo`'s plan documents as they stand on disk
-  when the receipt is sealed, not from `candidate_revision`, so a checkout
+  when the receipt is written, not from `candidate_revision`, so a checkout
   whose change edits the plan's own `protected_apparatus` is judged against
   the edited list. Whether a plan is linked at all is likewise the caller's
-  choice: a request naming no `plan` seals an unlinked receipt, to which this
+  choice: a request naming no `plan` writes an unlinked receipt, to which this
   requirement adds no reason. This requirement therefore guards a caller that
   asks the question honestly; it does not detect a caller that omits the
   plan, or the paths, it would be refused for — but PLAT-1015 makes that

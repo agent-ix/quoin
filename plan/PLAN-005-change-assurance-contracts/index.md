@@ -10,7 +10,7 @@ okf_version: "0.1"
 ## Contents
 
 - [PLAN-005: Change-assurance integrity contracts](./plan.md) - Plan overview, DAG, tests, tracks, and gates.
-- [TASK-025: Strict canonical integrity core](./tasks/TASK-025-canonical-integrity-core.md) - Raw JSON, schema, RFC 8785, and BLAKE3.
+- [TASK-025: Strict canonical core](./tasks/TASK-025-canonical-integrity-core.md) - Raw JSON, schema, and RFC 8785 serialization; no digest (FR-063 withdrew it).
 - [TASK-026: Record lineage and decisions](./tasks/TASK-026-record-lineage-decisions.md) - Immutable revision chains and ix-flow decision matching.
 - [TASK-027: Atomic attestation intake](./tasks/TASK-027-attestation-intake.md) - Exact output verification and paired persistence.
 - [TASK-028: Pure receipt evaluator](./tasks/TASK-028-receipt-evaluator.md) - Selection, bindings, precedence, and proof checks.
