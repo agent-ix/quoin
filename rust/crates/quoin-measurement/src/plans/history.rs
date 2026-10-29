@@ -47,7 +47,7 @@ pub fn plan_from_text(
     if value.get("type").and_then(serde_json::Value::as_str) != Some("MeasurementPlan") {
         return Ok(None);
     }
-    plan_from(path, &value, text, options).map(Some)
+    plan_from(path, &value, options).map(Some)
 }
 
 /// Whether `before` and `after` — two revisions of the same plan document, in

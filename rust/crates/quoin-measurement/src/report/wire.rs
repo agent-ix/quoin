@@ -214,7 +214,6 @@ pub(crate) struct CollectionSummaryWire<'a> {
     timestamp: &'a str,
     tool_identity: &'a str,
     tool_version: &'a str,
-    config_digest: &'a str,
     source_revision: &'a str,
     /// Assigned from an optional member, so absent rather than `null`.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -234,7 +233,6 @@ impl<'a> CollectionSummaryWire<'a> {
             timestamp: &summary.timestamp,
             tool_identity: &summary.tool_identity,
             tool_version: &summary.tool_version,
-            config_digest: &summary.config_digest,
             source_revision: &summary.source_revision,
             corpus_revision: summary.corpus_revision.as_deref(),
             path: &summary.path,

@@ -5,10 +5,10 @@
 //! Ports `MeasurementCollection` and `VerificationStackAttestation` from
 //! `src/measurement/types.ts:28-58`.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use engineering_assurance::measurement::ApparatusPath;
-use quoin_store::{JsonObject, JsonValue, RawFileSha256Digest};
+use quoin_store::{JsonObject, JsonValue};
 
 use crate::types::ids::{FullGitRevision, NonEmptyText};
 use crate::types::observation::MeasurementObservation;
@@ -95,10 +95,6 @@ impl CleanSourceState {
 /// The immutable identity of everything that produced a collection.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerificationStackAttestation {
-    /// The dependency lock's digest.
-    pub lock_digest: RawFileSha256Digest,
-    /// The measured executable's digest.
-    pub executable_digest: RawFileSha256Digest,
     /// Which build the executable came from, when declared.
     pub build_profile: Option<BuildProfile>,
     /// The pinned toolchains, when declared.
@@ -107,8 +103,8 @@ pub struct VerificationStackAttestation {
     pub sources: BTreeMap<String, SourceAttestation>,
     /// The capabilities the producer exercised, non-empty.
     pub capabilities: Vec<NonEmptyText>,
-    /// Every produced artifact and its digest, non-empty.
-    pub artifacts: BTreeMap<String, RawFileSha256Digest>,
+    /// Every produced artifact's name, non-empty and unique (FR-044-AC-13).
+    pub artifacts: Vec<String>,
     /// Names from `artifacts` this repository holds no filesystem entry for,
     /// sorted.
     ///
@@ -125,7 +121,7 @@ pub struct VerificationStackAttestation {
     /// (PLAT-975, engineering-assurance FR-024).
     ///
     /// Intake ([`crate::store::publish`]) resolves every `protected_apparatus`
-    /// entry of every plan governing an observation, digests each file, and
+    /// entry of every plan governing an observation, and
     /// merges this member into the stored bytes, so a later comparison reads
     /// the apparatus as it was when the collection was written rather than as
     /// the disk holds it today. A plan that protects nothing has no entry, and
@@ -136,13 +132,12 @@ pub struct VerificationStackAttestation {
 }
 
 /// One plan's resolved protected apparatus: every file its entries named,
-/// repository-relative and `/`-separated, and that file's digest when the
-/// collection was written.
+/// repository-relative and `/`-separated.
 ///
-/// What an apparatus comparison compares is this set of (path, digest)
-/// pairs, so a file added under or removed from a `<directory>/**` entry is a
-/// change exactly as an edited file is (engineering-assurance FR-024).
-pub type ResolvedApparatus = BTreeMap<String, RawFileSha256Digest>;
+/// Comparing two collections compares these path sets, so a file added under
+/// or removed from a `<directory>/**` entry is a change; whether a path's
+/// bytes changed between two source revisions is asked of git (FR-110).
+pub type ResolvedApparatus = BTreeSet<String>;
 
 /// Why `path` cannot be a key of a [`ResolvedApparatus`], or `None` when it
 /// can: a key names one concrete file, so it must parse as an
@@ -181,8 +176,6 @@ pub struct MeasurementCollection {
     pub tool_identity: NonEmptyText,
     /// Which version of that tool.
     pub tool_version: NonEmptyText,
-    /// The digest of the configuration it ran under.
-    pub config_digest: NonEmptyText,
     /// When it ran.
     ///
     /// Kept as text: `validate.ts:76-84` requires a non-empty string and

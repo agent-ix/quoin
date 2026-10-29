@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! Resolving and digesting a plan's protected apparatus when a collection is
+//! Resolving a plan's protected apparatus when a collection is
 //! written (PLAT-975, engineering-assurance FR-024).
 //!
 //! # Why intake resolves the set itself
 //!
-//! `verificationStack.artifacts` is the producer's own map. A producer can
-//! leave a file out of it, and a comparison over that map alone would then
+//! `verificationStack.artifacts` is the producer's own list. A producer can
+//! leave a file out of it, and a comparison over that list alone would then
 //! never see the file change. So intake walks the repository itself, resolves
 //! every `protected_apparatus` entry of every plan governing an observation,
-//! digests each file, and refuses the write when the producer's map omits a
-//! resolved file ([`MeasurementErrorCode::ApparatusUndeclared`]) or disagrees
-//! with its bytes. The resolved (path, digest) set is what intake records, in
-//! `verificationStack.protectedApparatus`, so a later comparison reads the
-//! apparatus as it was when the collection was written and never today's
-//! disk.
+//! and refuses the write when the producer's list omits a resolved file
+//! ([`MeasurementErrorCode::ApparatusUndeclared`]). The resolved path set is
+//! what intake records, in `verificationStack.protectedApparatus`, so a later
+//! comparison reads the apparatus as it was when the collection was written
+//! and never today's disk. No digest is computed: git answers whether the
+//! paths differ between two source revisions (FR-110).
 //!
 //! # The resolver (engineering-assurance FR-024)
 //!
@@ -27,10 +27,10 @@
 //!   bare `stat` of `Answers.json` would find `answers.json`.
 //! - A symlink — named by an entry, passed through on the way to it, or found
 //!   under a directory entry — is refused and never followed
-//!   ([`MeasurementErrorCode::ApparatusSymlink`]). Following one would digest
+//!   ([`MeasurementErrorCode::ApparatusSymlink`]). Following one would read
 //!   bytes the repository does not hold, which is PLAT-969's F3 in another
 //!   place.
-//! - A file that cannot be digested, or anything under a directory entry that
+//! - A file that cannot be read, or anything under a directory entry that
 //!   is neither a file, a directory nor a symlink, is
 //!   [`MeasurementErrorCode::ApparatusUnreadable`].
 //! - One plan's set holds at most [`MAX_PROTECTED_FILES`] files; past that
@@ -58,8 +58,8 @@ use walk::{Walk, disk_listing};
 
 /// The most files one plan's protected apparatus may resolve to.
 ///
-/// Each resolved file is one `path: digest` member of the stored collection,
-/// about a hundred bytes; this bounds that member near 5 MB.
+/// Each resolved file is one path of the stored collection, under a hundred
+/// bytes; this bounds that member near 5 MB.
 pub const MAX_PROTECTED_FILES: usize = 50_000;
 
 /// The most directories one write's protected-apparatus walks may visit,
@@ -87,7 +87,7 @@ pub(crate) const MAX_TOTAL_PROTECTED_FILES: usize = 200_000;
 
 /// Resolve every governing plan's protected apparatus under `repo`, keyed by
 /// plan id, and require the candidate's `verificationStack.artifacts` to
-/// declare every resolved file at its digest.
+/// declare every resolved file.
 ///
 /// A plan governs the collection when an observation's metric names it, the
 /// same lookup [`crate::validate::measurement_collection`] admitted the
@@ -103,9 +103,7 @@ pub(crate) const MAX_TOTAL_PROTECTED_FILES: usize = 200_000;
 /// [`MeasurementErrorCode::ApparatusTooLarge`] from resolution, each naming
 /// the plan and the entry;
 /// [`MeasurementErrorCode::ApparatusUndeclared`] naming every resolved file
-/// the artifacts map omits; and
-/// [`MeasurementErrorCode::CollectionInvalid`] when it states a resolved
-/// file at another digest.
+/// the artifacts list omits.
 pub(super) fn resolve_protected(
     repo: &Path,
     collection: &MeasurementCollection,
@@ -177,7 +175,7 @@ struct Spent {
     files: usize,
 }
 
-/// Require `artifacts` to state every resolved file at its digest.
+/// Require `artifacts` to name every resolved file.
 fn declared(
     collection: &MeasurementCollection,
     plan: &str,
@@ -187,31 +185,15 @@ fn declared(
         .verification_stack
         .as_ref()
         .map(|stack| &stack.artifacts);
-    let mut undeclared = Vec::new();
-    for (path, digest) in files {
-        match artifacts.and_then(|artifacts| artifacts.get(path)) {
-            None => undeclared.push(format!(
-                "verificationStack.artifacts does not declare `{path}`, which plan {plan} \
-                 protects; it digests to {}",
-                digest.to_stored()
-            )),
-            // This runs before `verify_local_artifacts`, so for a protected
-            // file this is the check that refuses a disagreeing digest, under
-            // the same code PLAT-931's check uses for any other file.
-            Some(stated) if stated != digest => {
-                return Err(MeasurementError::new(
-                    MeasurementErrorCode::CollectionInvalid,
-                    format!(
-                        "verificationStack.artifacts.{path} does not match the protected file \
-                         plan {plan} names: the record says {}, the file digests to {}",
-                        stated.to_stored(),
-                        digest.to_stored()
-                    ),
-                ));
-            }
-            Some(_) => {}
-        }
-    }
+    let undeclared: Vec<String> = files
+        .iter()
+        .filter(|path| !artifacts.is_some_and(|names| names.contains(path)))
+        .map(|path| {
+            format!(
+                "verificationStack.artifacts does not declare `{path}`, which plan {plan} protects"
+            )
+        })
+        .collect();
     if undeclared.is_empty() {
         Ok(())
     } else {
@@ -233,11 +215,8 @@ pub(super) fn protected_member(
     }
     let mut plans = JsonObject::new();
     for (plan, files) in resolved {
-        let mut digests = JsonObject::new();
-        for (path, digest) in files {
-            digests.set(path.clone(), JsonValue::string(digest.to_stored()));
-        }
-        plans.set(plan.clone(), JsonValue::Object(digests));
+        let paths = files.iter().cloned().map(JsonValue::string).collect();
+        plans.set(plan.clone(), JsonValue::Array(paths));
     }
     Some(JsonValue::Object(plans))
 }

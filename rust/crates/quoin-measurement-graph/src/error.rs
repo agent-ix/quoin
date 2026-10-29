@@ -49,8 +49,8 @@ pub enum GraphAdapterErrorCode {
     InvalidAttestation,
     /// The scorer attachment's bytes or media type were not supplied.
     AttachmentMissing,
-    /// The scorer attachment's digest disagreed with the record's.
-    AttachmentDigestMismatch,
+    /// The scorer attachment's byte length disagreed with the record's.
+    AttachmentLengthMismatch,
     /// No single active plan governs the observed definition version.
     InactivePlan,
     /// Two producer facts map to one partition, so one would overwrite the other.
@@ -95,7 +95,7 @@ impl GraphAdapterErrorCode {
         Self::InvalidObservation,
         Self::InvalidAttestation,
         Self::AttachmentMissing,
-        Self::AttachmentDigestMismatch,
+        Self::AttachmentLengthMismatch,
         Self::InactivePlan,
         Self::DuplicatePartition,
         Self::AttachmentEncodingInvalid,
@@ -117,7 +117,7 @@ impl GraphAdapterErrorCode {
             Self::InvalidObservation => "QMG-INVALID-OBSERVATION",
             Self::InvalidAttestation => "QMG-INVALID-ATTESTATION",
             Self::AttachmentMissing => "QMG-ATTACHMENT-MISSING",
-            Self::AttachmentDigestMismatch => "QMG-ATTACHMENT-DIGEST-MISMATCH",
+            Self::AttachmentLengthMismatch => "QMG-ATTACHMENT-LENGTH-MISMATCH",
             Self::InactivePlan => "QMG-INACTIVE-PLAN",
             Self::DuplicatePartition => "QMG-DUPLICATE-PARTITION",
             Self::AttachmentEncodingInvalid => "QMG-ATTACHMENT-ENCODING-INVALID",
@@ -141,7 +141,7 @@ impl GraphAdapterErrorCode {
             Self::InvalidObservation => Some("invalid_observation"),
             Self::InvalidAttestation => Some("invalid_attestation"),
             Self::AttachmentMissing => Some("attachment_missing"),
-            Self::AttachmentDigestMismatch => Some("attachment_digest_mismatch"),
+            Self::AttachmentLengthMismatch => Some("attachment_length_mismatch"),
             Self::InactivePlan => Some("inactive_plan"),
             Self::DuplicatePartition => Some("duplicate_partition"),
             Self::InvalidRepositoryMapping => Some("invalid_repository_mapping"),
@@ -250,7 +250,7 @@ mod tests {
         assert_eq!(
             retained,
             BTreeSet::from([
-                "attachment_digest_mismatch",
+                "attachment_length_mismatch",
                 "attachment_missing",
                 "duplicate_partition",
                 "inactive_plan",

@@ -206,7 +206,6 @@ struct HistoryRowWire<'a> {
     plan: Option<PlanRefWire<'a>>,
     tool_identity: &'a str,
     tool_version: &'a str,
-    config_digest: &'a str,
     source_revision: &'a str,
     /// `| null`.
     corpus_revision: Option<&'a str>,
@@ -215,9 +214,7 @@ struct HistoryRowWire<'a> {
     /// As `populationIdentity`.
     producer: Value,
     /// `| null`.
-    producer_record_digest: Option<&'a str>,
-    /// `| null`.
-    scorer_digest: Option<&'a str>,
+    observation_id: Option<&'a str>,
     partitions: Vec<PartitionWire<'a>>,
 }
 
@@ -233,13 +230,11 @@ impl<'a> HistoryRowWire<'a> {
             plan: row.plan.as_ref().map(PlanRefWire::of),
             tool_identity: &row.tool_identity,
             tool_version: &row.tool_version,
-            config_digest: &row.config_digest,
             source_revision: &row.source_revision,
             corpus_revision: row.corpus_revision.as_deref(),
             population_identity: opaque(row.population_identity.as_ref())?,
             producer: opaque(row.producer.as_ref())?,
-            producer_record_digest: row.producer_record_digest.as_deref(),
-            scorer_digest: row.scorer_digest.as_deref(),
+            observation_id: row.observation_id.as_deref(),
             partitions: row.partitions.iter().map(PartitionWire::of).collect(),
         })
     }

@@ -1691,7 +1691,7 @@ pub(crate) fn require_cassette(
     }
     Err(format!(
         "{mine:?} are MP-242 variants and must run with a recording cassette: set \
-         QUOIN_JEV_CASSETTE and QUOIN_JEV_MODEL, so a rerun after a stopped run replays what \
+         QUOIN_JEV_CASSETTE, so a rerun after a stopped run replays what \
          was already answered"
     ))
 }

@@ -115,7 +115,7 @@ availability_subset! {
         Available => "available",
         /// It was read and does not match the active plan or itself.
         Incompatible => "incompatible",
-        /// Its retained scorer attachment does not hash to its declared digest.
+        /// Its retained scorer attachment does not have its declared byte length.
         Unreadable => "unreadable",
         /// Its producer record or scorer identity is not there to check.
         Unknown => "unknown",

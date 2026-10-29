@@ -173,9 +173,9 @@ pub(crate) struct CodeArtifact {
     pub(crate) body: String,
 }
 
-/// Where an external row's files live.
+/// Where an external row's files live. Unknown members (an older corpus's
+/// `commit` or `sha256`) are ignored: the checkout at `<root>` is what it is.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub(crate) struct Reference {
     /// e.g. `agent-ix/quire-rs`; the checkout is `<root>/<last segment>`.
     pub(crate) repo: String,
@@ -368,8 +368,7 @@ pub(crate) fn combined_rows(sources: &[Source], split: Split) -> Result<Vec<Row>
     Ok(rows)
 }
 
-/// One loaded corpus: its path, its raw text (the seal is over the text, not
-/// over a re-serialization) and the parsed file.
+/// One loaded corpus: its path, its raw text (as read, not a re-serialization) and the parsed file.
 #[derive(Debug, Clone)]
 pub(crate) struct Source {
     /// Where it came from.
@@ -445,7 +444,7 @@ pub(crate) fn load_in_repo() -> Result<Option<Source>, String> {
 /// The external corpus named by `corpus`, with every by-reference row
 /// materialized from `root`. `Ok(None)` when `corpus` is `None`.
 ///
-/// A row that cannot be materialized (missing file, digest mismatch, a path
+/// A row that cannot be materialized (missing file, a path
 /// that escapes the root, patch or symbol failure) is moved to
 /// [`Source::excluded`] with its reason, and the rest load. The exclusion is
 /// printed with every report, never dropped silently.

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The crate has one canonicaliser, one base64 codec, one digest and no oracle.
+//! The crate has one canonicaliser, one base64 codec and no oracle.
 //!
 //! Trace: FR-100-AC-8
 //! Provenance: quoin#476
@@ -13,9 +13,9 @@
 //! call site. A reviewer reading a diff sees the delegation; only a census sees
 //! the copy someone adds next month in a module the diff never touched.
 //!
-//! The same argument applies to the other three seams this wave could have
-//! duplicated and did not: the base64 decoder W8 landed (quoin#465), the SHA-256
-//! the scorer-integrity check needs, and the JSON-value bridge.
+//! The same argument applies to the other two seams this wave could have
+//! duplicated and did not: the base64 decoder W8 landed (quoin#465) and the
+//! JSON-value bridge.
 //!
 //! # The ported surface census
 //!
@@ -158,25 +158,18 @@ fn tc_476_020_there_is_exactly_one_canonical_json_writer() {
     }
 }
 
-/// One base64 codec (quoin#475's), one SHA-256 (the store's), one bridge.
+/// One base64 codec (quoin#475's), one bridge.
 ///
 /// Trace: FR-100-AC-8
 /// Provenance: quoin#476
 #[test]
-fn tc_476_021_there_is_no_second_codec_digest_or_bridge() {
+fn tc_476_021_there_is_no_second_codec_or_bridge() {
     let mut base64: Vec<String> = Vec::new();
-    let mut digests: Vec<String> = Vec::new();
     let mut bridges: Vec<String> = Vec::new();
     for (name, contents) in modules() {
         let code = code_of(&contents);
         if code.contains("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") {
             base64.push(name.clone());
-        }
-        // Type *names* naming the algorithm are references
-        // (`Sha256Reference` wraps the store's parsed digest); an `sha2` crate
-        // import or a hasher construction would be a second implementation.
-        if code.contains("sha2::") || code.contains("Sha256::new") || code.contains("Digest::new") {
-            digests.push(name.clone());
         }
         if code.contains("fn from_serde(") || code.contains("fn to_serde(") {
             bridges.push(name);
@@ -187,11 +180,6 @@ fn tc_476_021_there_is_no_second_codec_digest_or_bridge() {
         vec![BASE64_MODULE.to_owned()],
         "the base64 alphabet may appear in exactly one module; \
          `scorer.rs` calls `crate::base64::decode` rather than writing a second decoder"
-    );
-    assert!(
-        digests.is_empty(),
-        "no module may reach a SHA-256 implementation directly; the digest is \
-         `quoin_store::digest_bytes_sha256`, and these do otherwise: {digests:?}"
     );
     assert!(
         bridges.is_empty(),

@@ -22,7 +22,6 @@ struct CollectionPayload<'a> {
     scope: CollectionScope<'a>,
     tool_identity: &'a str,
     tool_version: &'a str,
-    config_digest: String,
     timestamp: &'a str,
     source_revision: &'a str,
     environment: CollectionEnvironment<'a>,
@@ -49,13 +48,11 @@ struct CollectionEnvironment<'a> {
 #[serde(rename_all = "camelCase")]
 struct CollectionStack<'a> {
     schema_version: &'static str,
-    lock_digest: String,
-    executable_digest: String,
     build_profile: &'static str,
     toolchains: &'a BTreeMap<String, String>,
     sources: BTreeMap<String, CollectionSource<'a>>,
     capabilities: [&'static str; 1],
-    artifacts: BTreeMap<String, String>,
+    artifacts: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -172,9 +169,9 @@ pub(super) fn publish_collection(
     let source_inventory = producer_source.input_inventory()?;
     let input_origins = from_runtime(runtime, &request_value, &source_inventory, procedure)
         .map_err(|error| CampaignRunError::binding(error.to_string()))?;
-    let mut artifacts = BTreeMap::new();
-    artifacts.insert(result_relative, format!("sha256:{result_digest}"));
+    let mut artifacts = BTreeSet::from([result_relative]);
     artifacts.extend(protected_artifacts(plan, plan_source)?);
+    let artifacts: Vec<String> = artifacts.into_iter().collect();
     let collection_value = serde_json::to_value(CollectionPayload {
         schema_version: crate::MEASUREMENT_SCHEMA_VERSION,
         collection_id: &collection_id,
@@ -187,7 +184,6 @@ pub(super) fn publish_collection(
         },
         tool_identity: &result.producer.name,
         tool_version: &result.producer.version,
-        config_digest: format!("sha256:{source_graph_digest}"),
         timestamp: &runtime.timestamp,
         source_revision: &result.producer.source_revision,
         environment: CollectionEnvironment {
@@ -196,8 +192,6 @@ pub(super) fn publish_collection(
         },
         verification_stack: CollectionStack {
             schema_version: "verification-stack-attestation-v1",
-            lock_digest: format!("sha256:{source_graph_digest}"),
-            executable_digest: format!("sha256:{}", result.producer.executable_digest.as_str()),
             build_profile: "release",
             toolchains: &runtime.toolchains,
             sources,
@@ -286,7 +280,7 @@ pub(super) fn publish_collection(
 fn protected_artifacts(
     plan: &MeasurementPlan,
     source: &VerifiedSource,
-) -> Result<BTreeMap<String, String>, CampaignRunError> {
+) -> Result<BTreeSet<String>, CampaignRunError> {
     let mut selected = BTreeSet::new();
     if let Some(protected) = &plan.protected_apparatus {
         let regular = source.tracked_regular_paths()?;
@@ -307,12 +301,5 @@ fn protected_artifacts(
             }
         }
     }
-    selected
-        .into_iter()
-        .map(|path| {
-            let bytes = source.read_tracked_file(&path)?;
-            let digest = quoin_store::digest_bytes_sha256(&bytes);
-            Ok((path, format!("sha256:{}", digest.as_hex())))
-        })
-        .collect()
+    Ok(selected)
 }

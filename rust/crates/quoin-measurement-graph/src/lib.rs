@@ -43,7 +43,7 @@
 //! [`quoin_measurement::portfolio`]: that view reports what each repository
 //! measured and how stale the reading is; this one additionally holds every
 //! reading to the active plan and re-checks the retained scorer attachment
-//! against the digest its producer declared.
+//! against the byte length its producer declared.
 //!
 //! | retained TypeScript | here |
 //! | --- | --- |
@@ -99,9 +99,8 @@
 //! # What is deliberately absent
 //!
 //! - **No canonicalizer and no digest.** The bytes are
-//!   [`quoin_store::canonical_json`] and [`quoin_store::canonical_bytes`]'s and
-//!   the sha256 is [`quoin_store::digest_bytes_sha256`]'s (quoin#484). See
-//!   [`canonical`] and [`quality::identity`].
+//!   [`quoin_store::canonical_json`] and [`quoin_store::canonical_bytes`]'s
+//!   (quoin#484). See [`canonical`].
 //! - **No second `serde_json` ↔ [`quoin_store::JsonValue`] crossing.**
 //!   [`quoin_measurement::json_bridge`] is the workspace's one crossing.
 //!   [`canonical`] and [`quality::adapt`] both call it.
@@ -111,8 +110,7 @@
 //!   [`quoin_quire::validate_assurance`] (quoin#474) and the transcribed
 //!   collection by [`quoin_measurement::validate::measurement_collection`].
 //! - **No `bool`-returning validator.** Every check mints the type that proves
-//!   it, which is the `parse, don't validate` rule
-//!   [`quoin_store::RawFileSha256Digest::parse_stored`] models.
+//!   it, which is the `parse, don't validate` rule.
 //!
 //! # Declared divergences
 //!
@@ -127,13 +125,6 @@
 //! base64 decoder's strictness (quoin#465, see [`base64`]), `Date.parse`'s
 //! implementation-defined heuristic (see [`attestation`] and [`order`]), and a
 //! non-string `dimensions` member (see [`history::partition_identity`]).
-//!
-//! A third difference — the observation identity sorts member names by UTF-16
-//! code unit where the retained module sorts by code point (see
-//! [`quality::identity`]) — is **not** declared, because a declaration that
-//! cannot fire is a licence rather than a measurement. It is proved unreachable
-//! instead: every member name an admissible record may carry is schema-fixed
-//! ASCII, and `tests/tc_475_parity.rs` measures that over the corpus.
 //!
 //! quoin#477 adds one more of each. Declared: the sentence a graph refusal
 //! carries when an operating system or a schema validator wrote it
@@ -185,7 +176,6 @@ pub use quality::GraphQualityObservationV1;
 pub use quality::adapt::{
     AdaptGraphQualityInput, TranscribedCollection, adapt_graph_quality_observation,
 };
-pub use quality::identity::graph_quality_observation_id;
 
 pub use build::build_governed_graph_portfolio_from;
 pub use compare::compare_graph_quality_collections;

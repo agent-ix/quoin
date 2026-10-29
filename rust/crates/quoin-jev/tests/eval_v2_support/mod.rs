@@ -30,7 +30,7 @@
 //! - [`units`] cuts one named item out of a Rust or Python file, and splits a
 //!   body into functions or branches for fan-out, by one rule in both.
 //! - [`fixtures`] holds the synthetic rows the offline tests and the
-//!   request-digest pins share.
+//!   preflight share.
 //! - [`preflight`] is every check a run passes before its first request.
 //! - [`patch`] applies a mutation's unified diff to a by-reference file.
 //! - [`variants`] holds the experiment variants, one module per question:

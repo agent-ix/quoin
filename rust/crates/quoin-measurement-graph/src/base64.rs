@@ -27,11 +27,10 @@
 //!
 //! [`decode`] refuses all three. That is a **declared divergence**: input Node
 //! accepted is newly refused. It is declared rather than fixed because
-//! silently discarding bytes from a digest-bearing attachment is the failure
-//! the refusal exists to prevent — the whole point of `bytesBase64` is that its
-//! digest is checkable, and a decoder that invents a decoding for corrupt input
-//! makes the check pass over the wrong bytes. See `DECLARED_DIVERGENCES` in
-//! `tests/tc_475_parity.rs`.
+//! silently discarding bytes from a length-declaring attachment is the failure
+//! the refusal exists to prevent — the whole point of `bytesBase64` is that
+//! its declared length is checkable, and a decoder that invents a decoding for
+//! corrupt input makes the check pass over the wrong bytes.
 
 use crate::error::{GraphAdapterError, GraphAdapterErrorCode, Result};
 

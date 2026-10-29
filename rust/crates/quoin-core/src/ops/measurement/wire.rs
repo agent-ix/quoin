@@ -195,12 +195,6 @@ pub struct VerifyRequest {
     /// access to check.
     #[serde(default)]
     pub edited_collections: Vec<TamperedCollectionRequest>,
-    /// Ids of collections whose recorded protected-apparatus digest for this
-    /// plan disagreed with `git show <sourceRevision>:<path>`, as the caller
-    /// checked (PLAT-985). Empty when the caller has no git access to check,
-    /// or found nothing to disagree.
-    #[serde(default)]
-    pub apparatus_forged: Vec<String>,
     /// Whether the caller found this plan's objective, estimator, decision
     /// rule or protected apparatus changed between two revisions of its
     /// document that share a `definition_version` — committed revisions, and

@@ -125,12 +125,6 @@ pub enum Reason {
     ApparatusEdit,
     /// The claimed verdict is not the checker's.
     ClaimedVerdictDisagrees,
-    /// A collection's recorded protected-apparatus digest for this plan does
-    /// not match `git show <sourceRevision>:<path>` — the file's actual
-    /// bytes at the commit the collection claims to be from. A collection
-    /// written by hand, rather than through intake's own resolver, can state
-    /// any digest it likes; this is the check that catches it (PLAT-985).
-    ApparatusForged,
     /// A collection that measured this plan was added to the store and later
     /// removed, so it no longer appears among the runs counted — detected
     /// from the store's git history, not from anything a producer states
@@ -154,7 +148,7 @@ impl Reason {
     /// [`Ord`], and `verify` sorts a verdict's `reasons` by it, so declaration
     /// order is the wire order. Place a new reason beside the ones it belongs
     /// with rather than at the end.
-    pub const ALL: [Self; 33] = [
+    pub const ALL: [Self; 32] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
         Self::NoCollections,
@@ -178,7 +172,6 @@ impl Reason {
         Self::RerunUntilPass,
         Self::ApparatusEdit,
         Self::ClaimedVerdictDisagrees,
-        Self::ApparatusForged,
         Self::CollectionDeleted,
         Self::CollectionEdited,
         Self::DefinitionChangedWithoutVersionBump,
@@ -220,7 +213,6 @@ impl Reason {
             Self::RerunUntilPass => "rerun_until_pass",
             Self::ApparatusEdit => "apparatus_edit",
             Self::ClaimedVerdictDisagrees => "claimed_verdict_disagrees",
-            Self::ApparatusForged => "apparatus_forged",
             Self::CollectionDeleted => "collection_deleted",
             Self::CollectionEdited => "collection_edited",
             Self::DefinitionChangedWithoutVersionBump => "definition_changed_without_version_bump",
@@ -282,7 +274,6 @@ impl Reason {
             | Self::RerunUntilPass
             | Self::ApparatusEdit
             | Self::ClaimedVerdictDisagrees
-            | Self::ApparatusForged
             | Self::CollectionDeleted
             | Self::CollectionEdited
             | Self::DefinitionChangedWithoutVersionBump => Verdict::Reject,

@@ -30,17 +30,14 @@
 //! the candidate before canonicalising, and refuses a candidate that states
 //! it. PLAT-975 adds the second, under the same refusal:
 //! `verificationStack.protectedApparatus`, each governing plan's resolved
-//! protected apparatus with every file's digest, which intake resolves from
+//! protected apparatus as a sorted path list, which intake resolves from
 //! the repository itself (see [`super::apparatus`]). Nothing else about the
 //! candidate is touched.
 
-use std::error::Error as _;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-use quoin_store::{
-    JsonValue, RawFileSha256Digest, canonical_json_bytes, store::write_content_addressed,
-};
+use quoin_store::{JsonValue, canonical_json_bytes, store::write_content_addressed};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
@@ -66,12 +63,10 @@ use crate::validate;
 /// already retained holding different bytes, and
 /// [`crate::error::MeasurementErrorCode::PlanInvalid`] from the plan load the
 /// admission check needs, [`crate::error::MeasurementErrorCode::CollectionInvalid`]
-/// when a named `verificationStack.artifacts` entry is reachable under `repo`
-/// and its bytes do not match the digest the candidate submitted (PLAT-931),
 /// [`crate::error::MeasurementErrorCode::ArtifactNameUnsafe`] when an artifact
 /// name is not a safe relative path, and
 /// [`crate::error::MeasurementErrorCode::ArtifactUnreadable`] when it names an
-/// entry under `repo` that cannot be digested (PLAT-969), and the
+/// entry under `repo` that is not a regular file (FR-044-AC-13), and the
 /// `QM-APPARATUS-*` refusals when a governing plan's protected apparatus
 /// cannot be resolved, or is not declared in `artifacts` (PLAT-975).
 pub fn write_measurement_collection(
@@ -154,25 +149,17 @@ fn with_computed_members(
     written
 }
 
-/// Truth-check the digests intake can verify for itself, refusing a record
-/// whose submitted digest disagrees with the bytes it names (PLAT-931), and
-/// refusing one whose named artifact cannot be checked at all (PLAT-969).
+/// Check each `verificationStack.artifacts` name against `repo`, refusing a
+/// name that cannot be checked at all (FR-044-AC-13).
 /// Returns the sorted names that turned out to be labels — nothing under
 /// `repo` at all — for [`write_measurement_collection`] to record honestly
 /// rather than pass over in silence (PLAT-969's ruling: a label stays
 /// admitted, but it is never unstated).
 ///
-/// `verificationStack.lockDigest`, `.executableDigest` and `.configDigest`
-/// carry no name or path in the candidate at all — only `quoin measurement
-/// record --digest-from-file` (or the producer's own care) can ever check
-/// those. `artifacts`, though, is a name-keyed map, and every name is tried
-/// here as a `repo`-relative path under the same safety rule
+/// Every name is tried as a `repo`-relative path under the same safety rule
 /// [`crate::raw_evidence::RawEvidencePath`] applies to raw evidence. Each name
-/// lands in exactly one [`LocalArtifact`] or refuses the write (FR-044-AC-6).
-///
-/// Until PLAT-969 an unsafe name and an entry that could not be digested were
-/// both skipped with a bare `continue`, so a record naming `../outside` or a
-/// directory was admitted with its digest never checked.
+/// lands in exactly one [`LocalArtifact`] or refuses the write. No bytes are
+/// read and nothing is hashed.
 fn verify_local_artifacts(
     repo: &Path,
     collection: &MeasurementCollection,
@@ -180,54 +167,37 @@ fn verify_local_artifacts(
     let Some(stack) = collection.verification_stack.as_ref() else {
         return Ok(Vec::new());
     };
-    // `stack.artifacts` is a `BTreeMap`, so iterating it already visits names
-    // in sorted order — nothing further to sort before this is stored as
-    // `unverifiedArtifacts`.
     let mut unverified = Vec::new();
-    for (name, submitted) in &stack.artifacts {
+    for name in &stack.artifacts {
         match reach_local_artifact(repo, name)? {
-            LocalArtifact::Digested(computed) if computed == *submitted => {}
-            LocalArtifact::Digested(computed) => {
-                return Err(MeasurementError::new(
-                    MeasurementErrorCode::CollectionInvalid,
-                    format!(
-                        "verificationStack.artifacts.{name} does not match the local file: the \
-                         record says {}, the file digests to {}",
-                        submitted.to_stored(),
-                        computed.to_stored(),
-                    ),
-                ));
-            }
-            // A label, not a file this repository holds: the fixture
-            // collections' own `config` is one. Its digest was checked for
-            // shape by `validate::stack` and nothing here can check more, so
-            // it is recorded as unverified rather than checked further.
+            LocalArtifact::File => {}
             LocalArtifact::Label => unverified.push(name.clone()),
         }
     }
+    unverified.sort();
     Ok(unverified)
 }
 
 /// What one `verificationStack.artifacts` name is, locally.
 #[derive(Debug)]
 enum LocalArtifact {
-    /// The name is a regular file under the repository, digested here.
-    Digested(RawFileSha256Digest),
+    /// The name is a regular file under the repository.
+    File,
     /// Nothing exists at the name under the repository: it labels an artifact
-    /// the repository does not hold, and its digest is admitted on shape.
+    /// the repository does not hold.
     Label,
 }
 
 /// Resolve one artifact name under `repo`.
 ///
 /// Only a name with **no filesystem entry at all** is a [`LocalArtifact::Label`].
-/// An entry that exists and cannot be digested — a directory, a symlink, an
-/// unreadable or oversized file — is refused, because the record names a
-/// local thing whose bytes intake then cannot see. A symlink anywhere
+/// An entry that exists and is not a regular file — a directory, a symlink,
+/// anything unreadable — is refused, because the record names a local thing
+/// intake cannot vouch for. A symlink anywhere
 /// *before* the final component is refused the same way, before the
-/// NotFound-or-digest decision is even made (PLAT-969 F3): otherwise a
+/// NotFound-or-regular-file decision is even made (PLAT-969 F3): otherwise a
 /// directory the name walks through, not just the name's last segment,
-/// silently redirects the check — `dist -> /elsewhere` would digest a file
+/// silently redirects the check — `dist -> /elsewhere` would check a file
 /// this repository does not hold, and `dist -> /missing` would `lstat` as
 /// `NotFound` and pass as a label, both without the write ever refusing.
 ///
@@ -235,7 +205,7 @@ enum LocalArtifact {
 ///
 /// [`MeasurementErrorCode::ArtifactNameUnsafe`] when the name is not a safe
 /// relative path, and [`MeasurementErrorCode::ArtifactUnreadable`] when it
-/// resolves to an entry that cannot be digested, or passes through a
+/// resolves to an entry that is not a regular file, or passes through a
 /// symlinked component. Both name the artifact.
 fn reach_local_artifact(repo: &Path, name: &str) -> Result<LocalArtifact, MeasurementError> {
     let relative = RawEvidencePath::parse(name).map_err(|error| {
@@ -260,26 +230,25 @@ fn reach_local_artifact(repo: &Path, name: &str) -> Result<LocalArtifact, Measur
         ));
     }
     // Only absence makes a label. Any other answer — an entry, or a stat that
-    // failed for another reason — goes to the digest, which refuses what it
-    // cannot read and says why.
-    if std::fs::symlink_metadata(&path).is_err_and(|error| error.kind() == ErrorKind::NotFound) {
-        return Ok(LocalArtifact::Label);
+    // failed for another reason — must be a regular file.
+    match std::fs::symlink_metadata(&path) {
+        Err(error) if error.kind() == ErrorKind::NotFound => Ok(LocalArtifact::Label),
+        Ok(metadata) if metadata.file_type().is_file() => Ok(LocalArtifact::File),
+        Ok(_) => Err(MeasurementError::new(
+            MeasurementErrorCode::ArtifactUnreadable,
+            format!(
+                "verificationStack.artifacts.{name} names {} but it is not a regular file",
+                path.display()
+            ),
+        )),
+        Err(error) => Err(MeasurementError::new(
+            MeasurementErrorCode::ArtifactUnreadable,
+            format!(
+                "verificationStack.artifacts.{name} names {} but it cannot be read: {error}",
+                path.display()
+            ),
+        )),
     }
-    quoin_store::digest_file_sha256(&path)
-        .map(LocalArtifact::Digested)
-        .map_err(|error| {
-            let cause = error
-                .source()
-                .map_or_else(String::new, |source| format!(": {source}"));
-            MeasurementError::new(
-                MeasurementErrorCode::ArtifactUnreadable,
-                format!(
-                    "verificationStack.artifacts.{name} names {} but it cannot be digested: \
-                     {error}{cause}",
-                    path.display()
-                ),
-            )
-        })
 }
 
 /// The first path component before `relative`'s final one that is a symlink
@@ -290,8 +259,7 @@ fn reach_local_artifact(repo: &Path, name: &str) -> Result<LocalArtifact, Measur
 /// *name* (no `..`, no leading `/`) says nothing about what the filesystem
 /// actually put at each component, and only `symlink_metadata` can see that a
 /// component the name calls a directory is a link elsewhere. The final
-/// component's own symlink-ness is left to `digest_file_sha256`, which
-/// already refuses it.
+/// component's own symlink-ness is refused by the `symlink_metadata` check.
 fn first_symlink_ancestor<'name>(repo: &Path, relative: &'name str) -> Option<&'name str> {
     let mut cursor = repo.to_path_buf();
     let mut segments = relative.split('/').peekable();

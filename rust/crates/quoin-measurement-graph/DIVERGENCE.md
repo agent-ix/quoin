@@ -27,11 +27,8 @@ measurement. Where it can be reached, this file says what the fixture covers
 **and what it cannot**, rather than widening the fixture until everything looks
 covered.
 
-W8 declared its two divergences in module documentation
-(`src/base64.rs`, `src/attestation.rs`) and in `DECLARED_DIVERGENCES` in
-`tests/tc_475_parity.rs`, and landed no `DIVERGENCE.md` — the only ported crate
-without one. W9 consolidates them here; the module docs and the test table
-stay, and this file is the index over them. **Reported against quoin#475
+W8 declared its divergence in module documentation (`src/base64.rs`). W9 consolidates it here; the module doc
+stays, and this file is the index over it. **Reported against quoin#475
 rather than absorbed silently.**
 
 ## §2 — `dimensions` members are read as strings, or the partition is `unknown`
@@ -102,27 +99,25 @@ Node's `Buffer.from(text, "base64")` silently discards every character outside
 the alphabet, does not require padding, and stops at the first `=`, so
 `Buffer.from("aG!!VsbG8=", "base64")` is `"hello"`. [`base64::decode`] refuses
 all three forms, because the whole point of a `bytesBase64` attachment is that
-its digest is checkable and a decoder that invents a decoding for corrupt input
+its length is checkable and a decoder that invents a decoding for corrupt input
 makes the check pass over the wrong bytes.
 
 W8 named the encode call site (`graph-adapters.ts:564`). **The decode call site
 is in W9's module**: `graph-portfolio.ts:786`, inside the retained scorer
 integrity check. `scorer.rs` routes it through `crate::base64::decode` — there
 is no second decoder in this crate, and
-`tc_476_021_there_is_no_second_codec_digest_or_bridge` asserts the RFC 4648 §4
+`tc_476_021_there_is_no_second_codec_or_bridge` asserts the RFC 4648 §4
 alphabet appears in exactly one module.
 
 The consequence at _this_ call site: where the retained code would decode
-corrupt base64 into plausible bytes and then report a **digest mismatch**, this
+corrupt base64 into plausible bytes and then report a **length mismatch**, this
 one reports `unreadable — retained scorer bytes are not base64: <reason>`. Both
 verdicts are `unreadable` and both stop the reading; the sentence differs.
 
 **What the fixture covers:** `echo/e-2026-02` carries well-formed base64 whose
-bytes hash to the wrong digest, so the mismatch sentence is under the byte
+bytes have the wrong length, so the mismatch sentence is under the byte
 comparison. The lenient-input refusal is covered by
-`base64::tests::tc_475_012_the_lenient_forms_node_accepts_are_refused` and by
-the `DECLARED_DIVERGENCES` entries in `tests/tc_475_parity.rs`, which fail if
-they stop firing.
+`base64::tests::tc_475_012_the_lenient_forms_node_accepts_are_refused`.
 
 **What it cannot cover:** a golden case whose captured bytes are the decoding
 Node invented, because the two implementations produce different bytes there by
@@ -208,8 +203,8 @@ Restating them here would create a second place where they could drift.
 
 ## §7 — differences proved unreachable rather than declared
 
-Two places where the implementations are written differently and **cannot**
-answer differently. Neither is declared, because a declaration that cannot fire
+One place where the implementations are written differently and **cannot**
+answer differently. It is not declared, because a declaration that cannot fire
 is a licence by another route.
 
 1. **The lost-sample throw.** `graph-portfolio.ts:300` builds two `Map`s, unions
@@ -218,12 +213,6 @@ is a licence by another route.
    [`compare`] uses one merged `Pair` index whose `before` and `after` are
    `Option`s, so the branch does not exist to be taken. The type makes the
    throw unrepresentable; there is nothing to test because there is no input.
-2. **Observation identity member ordering** (W8). The identity sorts member
-   names by UTF-16 code unit where the retained module sorts by code point.
-   Every member name an admissible record may carry is schema-fixed ASCII,
-   where the two orders coincide, and
-   `tc_475_054_the_identity_ordering_difference_is_unreachable` measures that
-   over the corpus.
 
 ## §8 — what the W9 golden is, and what it is not
 

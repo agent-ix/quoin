@@ -82,8 +82,6 @@ pub struct GraphQualityHistoryRow {
     pub tool_identity: String,
     /// Which version of that tool.
     pub tool_version: String,
-    /// The digest of the configuration it ran under.
-    pub config_digest: String,
     /// The revision of the measured source.
     pub source_revision: String,
     /// The revision of the measured corpus, when it stated one.
@@ -92,10 +90,8 @@ pub struct GraphQualityHistoryRow {
     pub population_identity: Option<JsonValue>,
     /// The producer record, uninterpreted.
     pub producer: Option<JsonValue>,
-    /// The producer record's own observation id.
-    pub producer_record_digest: Option<String>,
-    /// The digest of the retained scorer attachment.
-    pub scorer_digest: Option<String>,
+    /// The producer record's own observation id, as the producer assigned it.
+    pub observation_id: Option<String>,
     /// Its graph partitions, in identity order.
     pub partitions: Vec<GraphPartitionRow>,
 }
@@ -107,8 +103,6 @@ pub enum GraphCompatibilityCode {
     PlanChanged,
     /// They name different definition versions.
     DefinitionChanged,
-    /// The two collections ran under different configurations.
-    ConfigurationChanged,
     /// They were produced by different tools or tool versions.
     ToolChanged,
     /// They measured different corpus revisions.
@@ -123,10 +117,9 @@ pub enum GraphCompatibilityCode {
 
 impl GraphCompatibilityCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 7] = [
         Self::PlanChanged,
         Self::DefinitionChanged,
-        Self::ConfigurationChanged,
         Self::ToolChanged,
         Self::CorpusChanged,
         Self::PopulationIncomplete,
@@ -140,7 +133,6 @@ impl GraphCompatibilityCode {
         match self {
             Self::PlanChanged => "plan_changed",
             Self::DefinitionChanged => "definition_changed",
-            Self::ConfigurationChanged => "configuration_changed",
             Self::ToolChanged => "tool_changed",
             Self::CorpusChanged => "corpus_changed",
             Self::PopulationIncomplete => "population_incomplete",
@@ -256,7 +248,7 @@ mod tests {
         let count = spellings.len();
         spellings.dedup();
         assert_eq!(spellings.len(), count);
-        assert_eq!(count, 8, "anti-vacuity floor: the retained union has eight");
+        assert_eq!(count, 7, "anti-vacuity floor: the retained union has seven");
     }
 
     #[test]

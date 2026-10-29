@@ -52,7 +52,7 @@ use quoin_measurement::Rfc3339DateTime;
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::scalars::{FullRevision, NonEmptyText, Sha256Reference};
+use crate::scalars::{FullRevision, NonEmptyText};
 use crate::wire::{CleanSourceState, ReleaseProfile, VerificationStackVersion};
 
 /// The three language toolchains a producer pins.
@@ -91,10 +91,6 @@ pub struct SourceAttestation {
 pub struct VerificationStack {
     /// Always `verification-stack-attestation-v1`.
     pub schema_version: VerificationStackVersion,
-    /// The dependency lock's digest.
-    pub lock_digest: Sha256Reference,
-    /// The measured executable's digest.
-    pub executable_digest: Sha256Reference,
     /// Always `release`.
     pub build_profile: ReleaseProfile,
     /// The pinned toolchains.
@@ -103,8 +99,8 @@ pub struct VerificationStack {
     pub sources: BTreeMap<String, SourceAttestation>,
     /// The capabilities the producer exercised, non-empty.
     pub capabilities: Vec<NonEmptyText>,
-    /// Every produced artifact and its digest.
-    pub artifacts: BTreeMap<String, Sha256Reference>,
+    /// Every produced artifact's name (FR-044-AC-13).
+    pub artifacts: Vec<NonEmptyText>,
 }
 
 /// One producer invocation's subject, scope, instant and stack.

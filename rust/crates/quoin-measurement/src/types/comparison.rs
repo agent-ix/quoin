@@ -15,8 +15,6 @@ use quoin_store::JsonValue;
 pub enum ComparisonReasonCode {
     /// The metric's definition version moved between the two collections.
     DefinitionChanged,
-    /// The producer's configuration digest moved.
-    ConfigurationChanged,
     /// One side's population is incomplete.
     IncompletePopulation,
     /// The populations differ. Not blocking: the delta is shown with a warning.
@@ -27,22 +25,28 @@ pub enum ComparisonReasonCode {
     /// collections: a protected file was edited, added under or removed from
     /// a directory entry, or only one side recorded the set (PLAT-975).
     ApparatusChanged,
-    /// A `verificationStack.artifacts` digest the plan does not protect
-    /// moved. Not blocking: reported beside the delta, and only for a slice
-    /// whose plan protects apparatus on at least one side (PLAT-975).
+    /// A `verificationStack.artifacts` entry the plan does not protect is
+    /// stated by one side alone or differs between the two source revisions.
+    /// Not blocking: reported beside the delta, and only for a slice whose
+    /// plan protects apparatus on at least one side (PLAT-975).
     ArtifactChanged,
+    /// Both collections recorded protected files, and git could not say
+    /// whether those files differ between the two source revisions (an
+    /// unknown revision, a shallow clone, no repository). Blocking: never a
+    /// silent pass (FR-110).
+    ApparatusUnverifiable,
 }
 
 impl ComparisonReasonCode {
     /// Every code, in declaration order.
     pub const ALL: [Self; 7] = [
         Self::DefinitionChanged,
-        Self::ConfigurationChanged,
         Self::IncompletePopulation,
         Self::PopulationChanged,
         Self::ToolChanged,
         Self::ApparatusChanged,
         Self::ArtifactChanged,
+        Self::ApparatusUnverifiable,
     ];
 
     /// The stable wire spelling.
@@ -50,12 +54,12 @@ impl ComparisonReasonCode {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::DefinitionChanged => "definition_changed",
-            Self::ConfigurationChanged => "configuration_changed",
             Self::IncompletePopulation => "incomplete_population",
             Self::PopulationChanged => "population_changed",
             Self::ToolChanged => "tool_changed",
             Self::ApparatusChanged => "apparatus_changed",
             Self::ArtifactChanged => "artifact_changed",
+            Self::ApparatusUnverifiable => "apparatus_unverifiable",
         }
     }
 
@@ -75,9 +79,9 @@ impl ComparisonReasonCode {
     pub const fn is_blocking(self) -> bool {
         match self {
             Self::DefinitionChanged
-            | Self::ConfigurationChanged
             | Self::IncompletePopulation
-            | Self::ApparatusChanged => true,
+            | Self::ApparatusChanged
+            | Self::ApparatusUnverifiable => true,
             Self::PopulationChanged | Self::ToolChanged | Self::ArtifactChanged => false,
         }
     }

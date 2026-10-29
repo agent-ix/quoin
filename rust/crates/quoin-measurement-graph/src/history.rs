@@ -10,7 +10,7 @@
 //! A reading is `available` only if it survives four questions, asked in this
 //! order because a later one presumes the earlier answered:
 //!
-//! 1. Does the retained scorer attachment hash to its declared digest?
+//! 1. Does the retained scorer attachment have its declared byte length?
 //!    A contradiction here is `unreadable` (`graph-portfolio.ts:600-602`).
 //! 2. Is the producer record and scorer identity there at all? `unknown`.
 //! 3. Do this collection's own graph partitions agree on plan, definition
@@ -93,14 +93,8 @@ pub fn history_row(
     let raw = record(Some(&collection.raw_evidence));
     let producer_record = record(member(raw, "producer"));
     let producer = member(producer_record, "producer");
-    let producer_record_digest = string_field(producer_record, "observation_id");
+    let observation_id = string_field(producer_record, "observation_id");
     let scorer = record(member(raw, "scorer"));
-    let scorer_digest = string_field(scorer, "digest").or_else(|| {
-        string_field(
-            record(member(producer_record, "raw_scorer_output")),
-            "digest",
-        )
-    });
     let plan = observations.first().map(|first| HistoryPlanRef {
         id: first.plan_id.as_str().to_owned(),
         definition_version: first.definition_version.as_str().to_owned(),
@@ -108,8 +102,7 @@ pub fn history_row(
     let attachment_failure = integrity_failure(producer_record, scorer);
     let (availability, reason) = availability_of(
         attachment_failure.as_ref(),
-        producer_record_digest.as_deref(),
-        scorer_digest.as_deref(),
+        observation_id.as_deref(),
         producer,
         &observations,
         plan.as_ref(),
@@ -129,7 +122,6 @@ pub fn history_row(
         plan,
         tool_identity: collection.tool_identity.as_str().to_owned(),
         tool_version: collection.tool_version.as_str().to_owned(),
-        config_digest: collection.config_digest.as_str().to_owned(),
         source_revision: collection.source_revision.as_str().to_owned(),
         corpus_revision: collection.corpus_revision.clone(),
         population_identity: observations
@@ -137,8 +129,7 @@ pub fn history_row(
             .and_then(|first| first.population.as_ref())
             .and_then(|population| population.identity.clone()),
         producer: producer.cloned(),
-        producer_record_digest,
-        scorer_digest,
+        observation_id,
         partitions,
     })
 }
@@ -156,8 +147,7 @@ pub fn history_row(
 )]
 fn availability_of(
     attachment_failure: Option<&ScorerIntegrityFailure>,
-    producer_record_digest: Option<&str>,
-    scorer_digest: Option<&str>,
+    observation_id: Option<&str>,
     producer: Option<&JsonValue>,
     observations: &[&MeasurementObservation],
     plan: Option<&HistoryPlanRef>,
@@ -169,11 +159,7 @@ fn availability_of(
             Some(failure.reason().to_owned()),
         ));
     }
-    if producer_record_digest.is_none()
-        || scorer_digest.is_none()
-        || producer.is_none()
-        || attachment_failure.is_some()
-    {
+    if observation_id.is_none() || producer.is_none() || attachment_failure.is_some() {
         return Ok((
             HistoryAvailability::Unknown,
             Some(

@@ -187,7 +187,7 @@ pub(crate) fn unverified_artifacts_suffix(names: &[String]) -> String {
     if names.is_empty() {
         String::new()
     } else {
-        format!("; digest not checked: {}", names.join(", "))
+        format!("; not found locally: {}", names.join(", "))
     }
 }
 
@@ -257,13 +257,12 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
         }
         seen.push(&collection.collection_id);
         lines.push(format!(
-            "- {} — {} {}; source {}; corpus {}; config {}{}",
+            "- {} — {} {}; source {}; corpus {}{}",
             collection.timestamp,
             collection.tool_identity,
             collection.tool_version,
             collection.source_revision,
             collection.corpus_revision.as_deref().unwrap_or("n/a"),
-            collection.config_digest,
             unverified_artifacts_suffix(&collection.unverified_artifacts),
         ));
     }
