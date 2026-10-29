@@ -293,10 +293,10 @@ TypeScript caller's suite runs against fake binaries — the only way to produce
 an ENOBUFS death or a SIGTERM on demand — and a fake agrees with whatever the
 test wrote into it. It found a real defect on its first run: `runCoreAllowFailure`
 resolved the executable INSIDE the try block that classifies a termination, so
-a digest mismatch (no status, no signal, no errno) fell through to
-"could not be run (undefined)" and the pinning diagnostic was lost. Resolution
-now happens before the try. **The same shape is latent in `src/quire/exec.ts`**
-and was left alone — it is not this ticket's code.
+a resolution failure (no status, no signal, no errno) fell through to
+"could not be run (undefined)" and the resolution diagnostic was lost. Resolution
+now happens before the try. The executable is resolved by identity (`QUOIN_CORE`
+or `PATH`); no digest of its bytes is recorded or compared.
 
 `make rust-difftest` is the retire-after-parity check, not a formality: it feeds the same
 request to the retained TypeScript and to `quoin-core` and compares canonical
