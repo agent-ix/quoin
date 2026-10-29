@@ -1,6 +1,6 @@
 ---
 id: TASK-047
-title: "Rendered manifest semantic block and digests"
+title: "Rendered manifest semantic block"
 type: Task
 status: done
 track: A
@@ -24,22 +24,22 @@ relationships:
     type: verifies
 ---
 
-# TASK-047: Rendered manifest semantic block and digests
+# TASK-047: Rendered manifest semantic block
 
 ## Scope
 
 Render the module manifest carrying the `semantic` block FR-070 admits and a
-`{schema, digest}` reference for every exported type, with the digests written by
-the emit driver rather than authored.
+`{ schema: <relative path> }` reference for every exported type, with the paths
+written by the emit driver rather than authored.
 
 ## Subtasks
 
 - [x] Render `semantic` with `contract_version`, `semantic_core`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture: additive`, `legacy_forms: warning`, and no `sweep_report` (TC-1417).
-- [x] Render `artifact_types` for the artifact variant, `object_types` for the object variant, and both for mixed, each with `data_schema: {schema, digest}` and `body_extraction` locators.
-- [x] Rewrite the `digest:` lines textually from the emitted bytes so comments and YAML anchors survive regeneration (TC-1419).
+- [x] Render `artifact_types` for the artifact variant, `object_types` for the object variant, and both for mixed, each with `data_schema: { schema: <path> }` and `body_extraction` locators.
+- [x] Rewrite the `schema:` path lines textually from the emitted files so comments and YAML anchors survive regeneration (TC-1419).
 - [x] Assert the rendered `exports` and the declared type names are the same set, and that no type name appears twice (TC-1468, TC-1458).
 - [x] Map each imported package identity to its exact version, and refuse two entries naming the same identity (TC-1459).
-- [x] Validate the rendered manifest against Quoin's vendored module-manifest schema (TC-1417) and assert each digest equals the SHA-256 of the file it names (TC-1410).
+- [x] Validate the rendered manifest against Quoin's vendored module-manifest schema (TC-1417) and assert each `data_schema.schema` names an emitted file (TC-1410).
 
 ## Deliverables
 

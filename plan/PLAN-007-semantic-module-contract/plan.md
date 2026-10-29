@@ -40,9 +40,9 @@ quire-rs#388 implements the extraction the fixtures define.
 - [x] **FR-070:** Optional `semantic` manifest block with a closed key set; install-time rejections in Quoin; vendored schema with provenance.
 - [x] **FR-071:** Typed Properties table and line-level `sysml` fence map to one normalized `FieldDecl[]`; golden fixtures for quire-rs#388.
 - [x] **FR-072:** Invariants and Operations map to `ClauseRef[]`/`OperationDecl[]`; `Identifier` clause ids; advisory unchecked languages.
-- [x] **FR-073:** `data_schema` by path + digest, offline `$ref` resolution against a vendored semantic-core bundle, inline-schema warning.
+- [x] **FR-073:** `data_schema` by emitted-schema path, offline `$ref` resolution against a vendored semantic-core bundle, inline-schema warning.
 - [x] **FR-074:** Legacy forms at `warning`, `quoin semantic sweep` and the sweep-report guard for promotion.
-- [x] **FR-075:** Derived `package-manifest.json` and per-export digests pinned in `registry.json`; import resolution at `quoin module install`.
+- [x] **FR-075:** Derived `package-manifest.json` (per-export digests withdrawn, quoin#661); import resolution at `quoin module install`.
 
 ### Non-Functional Requirements
 
@@ -57,7 +57,7 @@ TASK-039 -> TASK-040 -> TASK-042 --\
 
 - TASK-039 lands the schema change in filament-core-service#21 and vendors both schemas (module manifest, semantic-core bundle) with provenance; every later task validates against them.
 - TASK-040 (manifest block, `data_schema` references, authoring pack) and TASK-041 (mapping fixtures, legacy forms, sweep) touch disjoint code and run in parallel.
-- TASK-042 (package manifest derivation, registry pins) needs the loaded block and the schema digests from TASK-040.
+- TASK-042 (package manifest derivation, registry pins) needs the loaded block and the resolved schema references from TASK-040.
 - TASK-043 runs the NFR-017 gates over the finished slice; TASK-044 is the review gate.
 
 ### Cross-cutting constraints

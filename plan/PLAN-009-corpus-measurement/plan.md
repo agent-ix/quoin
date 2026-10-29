@@ -53,7 +53,7 @@ justifying a looser rule.
 ### Functional Requirements
 
 - [ ] **FR-084:** Enumerate and pin the governed corpus under a declared exclusion vocabulary, with the worktree, nested-repository and symlink rules, and record cleanliness and stability per repository.
-- [ ] **FR-085:** Resolve the declared required module set from each module repository's object store, record contract-surface digests, check declared `data_schema` digests, and publish the toolchain record.
+- [ ] **FR-085:** Resolve the declared required module set from each module repository's object store, resolve each declared `data_schema` path to the file read, and publish the toolchain record.
 - [ ] **FR-086:** Give every enumerated document exactly one state from `measured`, `out-of-model`, `unreadable` and `contested`, resolving types case-sensitively on a module-qualified key.
 - [ ] **FR-087:** Obtain structural conformance by running the Quire engine over each measured document against the resolved module set, recording `pass`, `fail` or `could-not-run` and never implementing a second extractor.
 - [ ] **FR-088:** Publish the Properties form census over the FR-084 population, and record the field-level semantic dimension `could-not-run` while no released toolchain exposes it.

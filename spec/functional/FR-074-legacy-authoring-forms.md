@@ -57,5 +57,5 @@ rewritten.
 
 ## Dependencies
 
-- **Upstream**: [FR-071](./FR-071-typed-properties-mapping.md), [FR-073](./FR-073-data-schema-by-path-and-digest.md)
+- **Upstream**: [FR-071](./FR-071-typed-properties-mapping.md), [FR-073](./FR-073-data-schema-by-path.md)
 - **Downstream**: `agent-ix/quoin#291` (measurement sweep), `agent-ix/quoin#287` (catalog locks), `agent-ix/quire-rs#388`

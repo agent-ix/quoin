@@ -67,4 +67,4 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 ## Dependencies
 
 - **Upstream**: [US-020](../usecase/US-020-declare-a-semantic-module-contract-once.md), [FR-009](./FR-009-read-module-manifest.md), [FR-049](./FR-049-preserve-dynamic-and-generated-modules.md), `filament-core-data` FR-021 and `common.schema.json`, semantic-core (`agent-ix/filament-core-data#35`), `agent-ix/filament-core-service#21`
-- **Downstream**: [FR-071](./FR-071-typed-properties-mapping.md), [FR-073](./FR-073-data-schema-by-path-and-digest.md), [FR-074](./FR-074-legacy-authoring-forms.md), [FR-075](./FR-075-semantic-package-exports-and-locks.md), `agent-ix/quire-rs#388`
+- **Downstream**: [FR-071](./FR-071-typed-properties-mapping.md), [FR-073](./FR-073-data-schema-by-path.md), [FR-074](./FR-074-legacy-authoring-forms.md), [FR-075](./FR-075-semantic-package-exports-and-locks.md), `agent-ix/quire-rs#388`

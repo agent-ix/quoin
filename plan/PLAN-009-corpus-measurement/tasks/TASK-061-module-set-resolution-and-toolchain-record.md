@@ -41,15 +41,15 @@ object store — never its working tree — and record what was resolved. The re
 set is the nine modules this wave completed plus `engineering-assurance`; a
 missing or unresolvable member exits non-zero before a corpus document is read.
 Each module records its resolved commit, manifest version, declared artifact and
-object types, and a digest per contract surface, and each declared `data_schema`
-digest is compared with the schema file actually read.
+object types, and each declared `data_schema` path is resolved to the schema file
+actually read.
 
 ## Subtasks
 
 - [ ] Read module files with `git show <rev>:<path>` against the module repository, so a dirty checkout cannot change what is measured.
 - [ ] Resolve every declared ref to a commit and record both, so a moved tag is visible.
 - [ ] Digest the manifest, every declared JSON Schema, and the mappings declaration where one exists.
-- [ ] Compare each declared `data_schema` digest with the digest of the file read; a difference is a module finding.
+- [ ] Resolve each declared `data_schema: { schema: <path> }` to the file read at the resolved commit; an unreadable or missing file is a module finding.
 - [ ] Record `mappings: absent` for a module that publishes none, and still take its object types.
 - [ ] Compare each measured commit with the commit its `default-modules.yaml` ref resolves to and record the divergence.
 - [ ] Build the toolchain record: engine version and source revision, CLI version and source revision, each module's `semantic_core`.

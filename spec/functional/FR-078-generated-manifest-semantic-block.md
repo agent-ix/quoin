@@ -74,5 +74,5 @@ prevent.
 
 ## Dependencies
 
-- **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md), [FR-073](./FR-073-data-schema-by-path-and-digest.md), [FR-077](./FR-077-generated-schema-emission.md)
+- **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md), [FR-073](./FR-073-data-schema-by-path.md), [FR-077](./FR-077-generated-schema-emission.md)
 - **Downstream**: [FR-080](./FR-080-generated-verification-suite.md)
