@@ -466,7 +466,6 @@ fn direct_fixture() -> (
         checker: Some(bindings("fictional-checker", true)),
         inputs: Vec::new(),
         timestamp: "2026-09-23T00:00:00Z".to_owned(),
-        toolchains: BTreeMap::from([("python".to_owned(), "system-python3".to_owned())]),
         source_remotes: BTreeMap::from([
             (
                 "fictional/source".to_owned(),
@@ -817,35 +816,10 @@ fn tc_1942_malformed_checker_receipt_retains_each_collection() {
 )]
 fn tc_1942_direct_process_and_checker_publish_protected_collection() {
     use engineering_assurance::campaign::{CampaignVerdict, canonical_digest};
-    use quoin_measurement::campaign::run::{BindingFailure, CampaignRunError, run_campaign};
+    use quoin_measurement::campaign::run::run_campaign;
     use quoin_measurement::campaign::store::digest_path;
 
     let (repo, _producer_repo, definition, checkouts, runs) = direct_fixture();
-    let mut invalid_runs = runs.clone();
-    invalid_runs
-        .get_mut("one")
-        .expect("fixture member")
-        .toolchains
-        .clear();
-    // TC-1942: a configuration collection intake would refuse must fail
-    // before the producer executes or any run is published.
-    let invalid_run_id = "fixture-empty-toolchains";
-    assert!(matches!(
-        run_campaign(
-            repo.path(),
-            &definition,
-            invalid_run_id,
-            &checkouts,
-            &invalid_runs,
-        ),
-        Err(CampaignRunError::Binding(BindingFailure::InvalidToolchains { member }))
-            if member == "one"
-    ));
-    assert!(
-        !run_path(repo.path(), invalid_run_id)
-            .expect("safe invalid run path")
-            .exists()
-    );
     let run = run_campaign(
         repo.path(),
         &definition,

@@ -177,7 +177,6 @@ fn candidate_at(id: &str, minute: u8, matched: u32, artifacts: &Value, revision:
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
             "buildProfile": "release",
-            "toolchains": { "rust": "0.0.0" },
             "sources": {
                 "fixture": {
                     "revision": "a".repeat(40),

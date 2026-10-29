@@ -53,9 +53,6 @@
         "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "sourceState": "clean"
       }
-    },
-    "toolchains": {
-      "rust": "0.0.0"
     }
   }
 }

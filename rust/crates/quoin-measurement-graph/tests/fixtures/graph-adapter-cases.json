@@ -3022,11 +3022,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -3082,13 +3077,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -3242,11 +3230,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -3293,13 +3276,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -3394,11 +3370,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -3450,13 +3421,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -3546,11 +3510,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -3606,13 +3565,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -3766,11 +3718,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -3826,13 +3773,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -3986,11 +3926,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -4037,13 +3972,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -4197,11 +4125,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -4257,13 +4180,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -4358,11 +4274,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -4418,13 +4329,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -4579,11 +4483,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -4639,13 +4538,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -4791,11 +4683,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -4851,13 +4738,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -5011,11 +4891,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -5071,13 +4946,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -5231,11 +5099,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -5291,13 +5154,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -5451,11 +5307,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -5492,13 +5343,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -5652,11 +5496,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -5703,13 +5542,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -5863,11 +5695,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -5914,13 +5741,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -6074,11 +5894,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -6134,13 +5949,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -6294,11 +6102,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -6345,13 +6148,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -6505,11 +6301,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -6565,13 +6356,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -6725,11 +6509,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -6785,13 +6564,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -6945,11 +6717,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -7005,13 +6772,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -7165,11 +6925,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -7225,13 +6980,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -7385,11 +7133,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -7445,13 +7188,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -7605,11 +7341,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -7665,13 +7396,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -7825,11 +7549,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -7885,13 +7604,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -8034,221 +7746,6 @@
             "artifacts": [
               "scores.json"
             ],
-            "buildProfile": "release",
-            "capabilities": [
-              "graph_quality"
-            ],
-            "schemaVersion": "verification-stack-attestation-v1",
-            "sources": {
-              "agent-ix/quire-code-rs": {
-                "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                "sourceState": "clean"
-              }
-            }
-          }
-        },
-        "plans": [
-          {
-            "definitionVersion": "quire-code.graph-quality-v1",
-            "id": "MP-001",
-            "metric": "graph_quality",
-            "path": "spec/assurance/MP-001-graph-quality.md",
-            "stage": "observe",
-            "status": "active",
-            "title": "Graph quality"
-          },
-          {
-            "definitionVersion": "quire-code.graph-quality-v1",
-            "id": "MP-900",
-            "metric": "coverage",
-            "path": "spec/assurance/MP-001-graph-quality.md",
-            "stage": "observe",
-            "status": "active",
-            "title": "Graph quality"
-          }
-        ],
-        "record": {
-          "measurement_plan": {
-            "definition_version": "quire-code.graph-quality-v1",
-            "ref": "ix://agent-ix/quire-code-rs/MP-001"
-          },
-          "observation_id": "obs-6fd8cd184fe0",
-          "population": {
-            "census": {
-              "languages": [
-                {
-                  "count": 8,
-                  "key": "rust"
-                },
-                {
-                  "count": 2,
-                  "key": "typescript"
-                }
-              ],
-              "node_kinds": [],
-              "relation_kinds": [],
-              "resolver_tiers": []
-            },
-            "files_seen": 12,
-            "state": "measured",
-            "supported_files": 10,
-            "unreadable_files": 0,
-            "unsupported_files": 2
-          },
-          "producer": {
-            "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-            "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-          },
-          "raw_scorer_output": {
-            "path": "out/scores.json"
-          },
-          "record_type": "graph_quality_observation",
-          "results": {
-            "ambiguous": [
-              {
-                "count": 1,
-                "dimension": "resolver_tier",
-                "key": "tier-2"
-              }
-            ],
-            "confusion_matrices": [
-              {
-                "dimension": "overall",
-                "false_negative": 1,
-                "false_positive": 0,
-                "key": "k0",
-                "true_negative": 100,
-                "true_positive": 10
-              },
-              {
-                "dimension": "language",
-                "false_negative": 1,
-                "false_positive": 1,
-                "key": "k1",
-                "true_negative": 100,
-                "true_positive": 11
-              },
-              {
-                "dimension": "node_kind",
-                "false_negative": 1,
-                "false_positive": 2,
-                "key": "k2",
-                "true_negative": 100,
-                "true_positive": 12
-              },
-              {
-                "dimension": "relation_kind",
-                "false_negative": 1,
-                "false_positive": 3,
-                "key": "k3",
-                "true_negative": 100,
-                "true_positive": 13
-              }
-            ],
-            "recall": [
-              {
-                "dimension": "overall",
-                "expected": 10,
-                "key": "all",
-                "ratio": 0.9,
-                "recovered": 9
-              }
-            ],
-            "unresolved": [
-              {
-                "count": 3,
-                "dimension": "overall",
-                "key": "unresolved"
-              }
-            ]
-          },
-          "schema_version": 1
-        },
-        "scorerBytes": [
-          123,
-          34,
-          115,
-          99,
-          111,
-          114,
-          101,
-          115,
-          34,
-          58,
-          91,
-          49,
-          44,
-          50,
-          44,
-          51,
-          93,
-          44,
-          34,
-          110,
-          111,
-          116,
-          101,
-          34,
-          58,
-          34,
-          99,
-          111,
-          109,
-          112,
-          108,
-          101,
-          116,
-          101,
-          32,
-          115,
-          99,
-          111,
-          114,
-          101,
-          114,
-          32,
-          111,
-          117,
-          116,
-          112,
-          117,
-          116,
-          34,
-          125
-        ],
-        "scorerMediaType": "application/json"
-      },
-      "name": "quality/attestation/no-toolchains"
-    },
-    {
-      "input": {
-        "attestation": {
-          "environment": {
-            "CI": "true"
-          },
-          "scope": {
-            "repositories": [
-              "agent-ix/quoin"
-            ]
-          },
-          "subject": "agent-ix/quire-code-rs",
-          "timestamp": "2026-01-02T03:04:05.000Z",
-          "verificationStack": {
-            "artifacts": [
-              "scores.json"
-            ],
             "buildProfile": "debug",
             "capabilities": [
               "graph_quality"
@@ -8260,11 +7757,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -8320,13 +7812,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -8480,11 +7965,6 @@
                 "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
-            },
-            "toolchains": {
-              "node": "22.15.0",
-              "python": "3.13.1",
-              "rust": "1.98.1"
             }
           }
         },
@@ -8540,13 +8020,6 @@
             "configuration_ref": "config/graph-quality.json",
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
-            "parser_grammars": [
-              {
-                "grammar": "tree-sitter-rust",
-                "language": "rust",
-                "revision": "v0.21.0"
-              }
-            ],
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0",
             "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

@@ -174,11 +174,6 @@
         "revision": "7b42ade336d94c6e2db19bc173a9b0f436733111",
         "sourceState": "clean"
       }
-    },
-    "toolchains": {
-      "node": "n/a -- this evaluation is a pure-Rust measurement path (quoin-jev's own live-api test binary); no Node toolchain was invoked",
-      "python": "n/a -- no Python toolchain was invoked",
-      "rust": "1.94.1"
     }
   }
 }

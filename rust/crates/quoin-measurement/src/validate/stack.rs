@@ -13,7 +13,7 @@ use quoin_store::{JsonObject, JsonValue};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::types::collection::{
-    BuildProfile, CleanSourceState, ResolvedApparatus, SourceAttestation, Toolchains,
+    BuildProfile, CleanSourceState, ResolvedApparatus, SourceAttestation,
     VERIFICATION_STACK_SCHEMA_VERSION, VerificationStackAttestation, unrecordable_apparatus_path,
 };
 use crate::types::ids::{FullGitRevision, NonEmptyText};
@@ -21,9 +21,6 @@ use crate::validate::read;
 
 /// The code every refusal in this module carries.
 const CODE: MeasurementErrorCode = MeasurementErrorCode::CollectionInvalid;
-
-/// The three toolchains a collection pins, in the order the oracle names them.
-pub(crate) const TOOLCHAIN_NAMES: [&str; 3] = ["node", "rust", "python"];
 
 fn refuse(message: impl Into<String>) -> MeasurementError {
     MeasurementError::new(CODE, message.into())
@@ -56,7 +53,6 @@ pub(crate) fn verification_stack(
     // than fixing them one round trip at a time (PLAT-929).
     let mut findings = Vec::new();
     let build_profile = note(&mut findings, build_profile(object));
-    let toolchains = note(&mut findings, toolchains(object));
     let sources = note(&mut findings, sources(object));
     let capabilities = note(&mut findings, capabilities(object));
     let artifacts = note(&mut findings, artifacts(object));
@@ -76,7 +72,6 @@ pub(crate) fn verification_stack(
     (|| {
         Some(VerificationStackAttestation {
             build_profile: build_profile?,
-            toolchains: toolchains?,
             sources: sources?,
             capabilities: capabilities?,
             artifacts: artifacts?,
@@ -91,7 +86,7 @@ pub(crate) fn verification_stack(
 ///
 /// Unlike a `?`, this lets every member be checked even after an earlier one
 /// fails (PLAT-929): a failing member's own findings are kept when it has
-/// any (so an internally-accumulating check like [`toolchains`] or
+/// any (so an internally-accumulating check like
 /// [`sources`] does not lose all but one of its own problems), and its
 /// subject otherwise.
 fn note<T>(findings: &mut Vec<String>, result: Result<T, MeasurementError>) -> Option<T> {
@@ -120,74 +115,6 @@ fn build_profile(object: &JsonObject) -> Result<Option<BuildProfile>, Measuremen
             .ok_or_else(|| {
                 refuse("verificationStack.buildProfile must be debug, release, or absent")
             }),
-    }
-}
-
-fn toolchains(object: &JsonObject) -> Result<Option<Toolchains>, MeasurementError> {
-    let Some(value) = object.get("toolchains") else {
-        return Ok(None);
-    };
-    let toolchains = read::object(
-        value,
-        CODE,
-        "verificationStack.toolchains must be an object",
-    )?;
-
-    // Every language is checked, even after an earlier one fails, so several
-    // malformed toolchain identities are named individually rather than only
-    // the first (PLAT-929).
-    let mut findings = Vec::new();
-    let node = note(
-        &mut findings,
-        toolchain_identity(toolchains, TOOLCHAIN_NAMES[0]),
-    );
-    let rust = note(
-        &mut findings,
-        toolchain_identity(toolchains, TOOLCHAIN_NAMES[1]),
-    );
-    let python = note(
-        &mut findings,
-        toolchain_identity(toolchains, TOOLCHAIN_NAMES[2]),
-    );
-    if !findings.is_empty() {
-        return Err(MeasurementError::with_findings(
-            CODE,
-            "verificationStack.toolchains is invalid",
-            findings,
-        ));
-    }
-    let (node, rust, python) = (|| Some((node?, rust?, python?)))()
-        .ok_or_else(|| refuse("verificationStack.toolchains is invalid"))?;
-
-    // PLAT-930 made each language optional, but a stack that pins none of
-    // them names nothing: an empty `{}` must not satisfy "toolchains was
-    // supplied" any more than an absent member would. Require at least one.
-    if node.is_none() && rust.is_none() && python.is_none() {
-        return Err(refuse(
-            "verificationStack.toolchains must name at least one language; mark a language not \
-             used as absent or null rather than omitting all three",
-        ));
-    }
-
-    Ok(Some(Toolchains { node, rust, python }))
-}
-
-/// One toolchain identity (PLAT-930): absent or explicit `null` means "not
-/// applicable" for this language, and anything else must be a non-empty
-/// string. Only the malformed shapes refuse — an empty string, or a value
-/// that is neither a string nor `null`.
-fn toolchain_identity(
-    toolchains: &JsonObject,
-    name: &str,
-) -> Result<Option<NonEmptyText>, MeasurementError> {
-    match toolchains.get(name) {
-        None | Some(JsonValue::Null) => Ok(None),
-        Some(JsonValue::String(text)) if !text.is_empty() => {
-            NonEmptyText::parse(text, CODE, name).map(Some)
-        }
-        _ => Err(refuse(format!(
-            "verificationStack.toolchains.{name} must be a non-empty string, null, or absent"
-        ))),
     }
 }
 

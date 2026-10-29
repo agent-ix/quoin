@@ -92,8 +92,6 @@ pub struct RunMemberBindings {
     pub inputs: Vec<SelectedInput>,
     /// Caller-provided RFC 3339 UTC timestamp for collections.
     pub timestamp: String,
-    /// Actual Node/Rust/Python toolchain identities under the existing store contract.
-    pub toolchains: BTreeMap<String, String>,
     /// Exact remote display names for the source graph's repositories.
     pub source_remotes: BTreeMap<String, String>,
     /// Runtime environment values selected from checked source identities.
@@ -140,12 +138,6 @@ pub enum BindingFailure {
     /// Required configuration or source-bound selection was absent or invalid.
     #[error("invalid campaign binding: {0}")]
     InvalidConfiguration(String),
-    /// Collection intake requires at least one supported, nonempty toolchain identity.
-    #[error("campaign member {member} has invalid toolchain identities")]
-    InvalidToolchains {
-        /// Campaign member whose runtime toolchain inventory is invalid.
-        member: String,
-    },
     /// A retained request/result/artifact identity differed from the selected bytes.
     #[error("campaign identity mismatch: {0}")]
     IdentityMismatch(String),
@@ -293,15 +285,6 @@ pub fn run_campaign_with_cancellation(
         return Err(CampaignRunError::binding(
             "member binding inventory".to_owned(),
         ));
-    }
-    for (member, runtime) in bindings {
-        if !valid_toolchains(&runtime.toolchains) {
-            return Err(CampaignRunError::Binding(
-                BindingFailure::InvalidToolchains {
-                    member: member.clone(),
-                },
-            ));
-        }
     }
     let definition_value = serde_json::to_value(definition)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
@@ -487,8 +470,6 @@ mod collection;
 mod domain;
 mod evidence;
 mod execution;
-mod preflight;
 pub use cancellation::CampaignCancellation;
 use evidence::evidence_of_attempt;
 use execution::run_member;
-use preflight::valid_toolchains;
