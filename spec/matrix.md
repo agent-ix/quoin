@@ -1278,7 +1278,10 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1606 | Every boundary operation emits exactly one declared-version JSON document on stdout and sends all diagnostics to | Property | P0 | FR-096-AC-2 | 🚧 |
 | TC-1607 | Unknown protocol version, an unknown operation, malformed JSON and an escaping root each refuse before any filesystem | Property | P0 | FR-096-AC-3 | 🚧 |
 | TC-1608 | Refusal carrying a valid result payload is distinguishable by the caller from a fault carrying no payload, for every | Unit | P0 | FR-096-AC-4 | 🚧 |
-| TC-1609 | With `QUOIN_CORE` naming a missing path, or no `quoin-core` on `PATH`, the caller reports a resolution diagnostic rather than a spawn failure | Unit | P0 | FR-096-AC-5 | 🚧 |
+| TC-1609 | With `QUOIN_CORE` naming a missing path, the caller reports a resolution diagnostic naming that path | Unit | P0 | FR-096-AC-5 | 🚧 |
+| TC-1980 | With `QUOIN_CORE` unset and no `quoin-core` on `PATH`, the caller reports a resolution diagnostic naming `PATH` | Unit | P0 | FR-096-AC-11 | 🚧 |
+| TC-1981 | A failure to resolve the executable is reported as a resolution diagnostic, not a spawn failure | Unit | P0 | FR-096-AC-12 | 🚧 |
+| TC-1982 | `core.ping` with a differing `expect_protocol` returns a complete payload with partial status and `ProtocolSkew` | Unit | P0 | FR-096-AC-13 | 🚧 |
 | TC-1610 | Result payload of 67,108,864 bytes is returned to the caller intact under a declared buffer ceiling strictly greater | Unit | P0 | FR-096-AC-6 | 🚧 |
 | TC-1611 | Static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is | Unit | P0 | FR-096-AC-7 | 🚧 |
 | TC-1618 | Native Rust fixture tests replay retained expected results over the golden corpora and report the compared | Unit | P0 | FR-098-AC-1 | 🚧 |
@@ -1330,7 +1333,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1693 | Document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by | Unit | P0 | FR-098-AC-9 | 🚧 |
 | TC-1694 | `sha256:<hex>` record identifiers and `sha256-<hex>.json` file names produced by the Rust implementation are | Unit | P0 | FR-098-AC-10 | 🚧 |
 | TC-1695 | After a capability cuts over, native fixture tests spawn no retained implementation for that capability and compare | Unit | P0 | FR-098-AC-11 | 🚧 |
-| TC-1696 | Ix-flow child process is spawned through the same hardened path as `quoin-core`: real-path resolution | Unit | P0 | FR-099-AC-10 | 🚧 |
+| TC-1696 | Ix-flow child process is spawned through the same hardened path as `quoin-core`: real-path resolution, resolution diagnostic | Unit | P0 | FR-099-AC-10 | 🚧 |
 | TC-1697 | Partially materialized module root is refused rather than served, so an interrupted checkout cannot satisfy the | Unit | P0 | FR-099-AC-11 | 🚧 |
 | TC-1698 | Duplicate type detection folds case under the same rule the resolver uses, so no two declarations are distinct to the | Unit | P0 | FR-099-AC-12 | 🚧 |
 | TC-1699 | Interrupted record write leaves no torn record readable and no orphaned temporary file after the next run, and | Unit | P0 | FR-100-AC-9 | 🚧 |
