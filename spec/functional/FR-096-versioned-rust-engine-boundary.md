@@ -22,8 +22,8 @@ distinguishes every non-success state, and admits no Node runtime type.
   for an operation that analyses a repository, the file map the caller read —
   not a path for `quoin-core` to walk — together with the directories the caller
   could not list. For an operation that names a configuration root, that root.
-- The `QUOIN_CORE` executable path and the `QUOIN_EXPECTED_CORE_SHA256` expected
-  digest.
+- The `QUOIN_CORE` executable path, when the caller is not to find `quoin-core`
+  on `PATH`.
 
 ## Outputs
 
@@ -49,8 +49,14 @@ distinguishes every non-success state, and admits no Node runtime type.
   that carries a valid payload from one that carries none.
 - The TypeScript caller SHALL resolve the `quoin-core` executable through its
   real path.
-- If the executable's bytes do not match `QUOIN_EXPECTED_CORE_SHA256`, or that
-  variable is unset, then the TypeScript caller SHALL refuse to invoke it.
+- The TypeScript caller SHALL resolve the `quoin-core` executable by identity,
+  from `QUOIN_CORE` or else `PATH`, and before it classifies any child-process
+  termination. If resolution fails, then the caller SHALL report a resolution
+  diagnostic that names what could not be resolved, and SHALL NOT report the
+  failure as a spawn failure. The caller SHALL NOT record or compare a stored
+  digest of the executable's bytes; the binding between caller and engine is the
+  protocol discriminator and the revision pinned in `Cargo.toml` and
+  `Cargo.lock`.
 - The TypeScript caller SHALL resolve the caller-selected repository and
   configuration roots through their real paths, so that a symbolic link inside a
   permitted root cannot reach outside it.
@@ -112,7 +118,7 @@ non-success outcome and are never reported as success.
 | FR-096-AC-2 | Every boundary operation emits exactly one declared-version JSON document on stdout and sends all diagnostics to stderr. | Property (TC-1606) |
 | FR-096-AC-3 | An unknown protocol version, an unknown operation, malformed JSON and an escaping root each refuse before any filesystem write, returning the declared exit status. | Property (TC-1607) |
 | FR-096-AC-4 | A refusal carrying a valid result payload is distinguishable by the caller from a fault carrying no payload, for every declared non-zero exit status. | Test (TC-1608) |
-| FR-096-AC-5 | With `QUOIN_EXPECTED_CORE_SHA256` set and the binary's bytes altered, the caller refuses to invoke it and names the expected and observed digests; with the variable unset the caller refuses rather than invoking unpinned. | Test (TC-1609) |
+| FR-096-AC-5 | With `QUOIN_CORE` naming a path that does not exist, or with no `quoin-core` on `PATH`, the caller reports a resolution diagnostic naming what could not be resolved, never a spawn failure and never `could not be run (undefined)`, and no digest of the executable is read, stored or compared. | Test (TC-1609) |
 | FR-096-AC-6 | A result payload of 67,108,864 bytes is returned to the caller intact under a declared buffer ceiling strictly greater than that size, and process exit, signal termination and spawn failure are reported as three distinct outcomes. | Test (TC-1610) |
 | FR-096-AC-7 | A static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is planted. | Test (TC-1611) |
 | FR-096-AC-8 | Over one materialised repository, the verdict reached through the caller's snapshot equals the verdict reached by `quoin-core` reading the same tree from disk, including for a directory the caller's pre-filter does not exclude and for one both sides do; narrowing the caller's pre-filter by one directory fails the comparison. | Test (TC-1713) |

@@ -1278,7 +1278,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1606 | Every boundary operation emits exactly one declared-version JSON document on stdout and sends all diagnostics to | Property | P0 | FR-096-AC-2 | 🚧 |
 | TC-1607 | Unknown protocol version, an unknown operation, malformed JSON and an escaping root each refuse before any filesystem | Property | P0 | FR-096-AC-3 | 🚧 |
 | TC-1608 | Refusal carrying a valid result payload is distinguishable by the caller from a fault carrying no payload, for every | Unit | P0 | FR-096-AC-4 | 🚧 |
-| TC-1609 | With `QUOIN_EXPECTED_CORE_SHA256` set and the binary's bytes altered, the caller refuses to invoke it and names the | Unit | P0 | FR-096-AC-5 | 🚧 |
+| TC-1609 | With `QUOIN_CORE` naming a missing path, or no `quoin-core` on `PATH`, the caller reports a resolution diagnostic rather than a spawn failure | Unit | P0 | FR-096-AC-5 | 🚧 |
 | TC-1610 | Result payload of 67,108,864 bytes is returned to the caller intact under a declared buffer ceiling strictly greater | Unit | P0 | FR-096-AC-6 | 🚧 |
 | TC-1611 | Static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is | Unit | P0 | FR-096-AC-7 | 🚧 |
 | TC-1618 | Native Rust fixture tests replay retained expected results over the golden corpora and report the compared | Unit | P0 | FR-098-AC-1 | 🚧 |
