@@ -55,7 +55,7 @@ TASK-039 -> TASK-040 -> TASK-042 --\
         \-> TASK-041 --------------+-> TASK-043 -> TASK-044
 ```
 
-- TASK-039 lands the schema change in filament-core-service#21 and vendors both schemas (module manifest, semantic-core bundle) with provenance; every later task validates against them.
+- TASK-039 lands the schema change in filament-core-service#21 and consumes both schemas (module manifest, semantic-core bundle) from their published packages; every later task validates against them.
 - TASK-040 (manifest block, `data_schema` references, authoring pack) and TASK-041 (mapping fixtures, legacy forms, sweep) touch disjoint code and run in parallel.
 - TASK-042 (package manifest derivation, registry pins) needs the loaded block and the resolved schema references from TASK-040.
 - TASK-043 runs the NFR-017 gates over the finished slice; TASK-044 is the review gate.
@@ -90,7 +90,7 @@ Fixtures live under `tests/fixtures/semantic-module/`.
 ### Entrance Criteria
 
 - US-020, FR-070..075, NFR-017, TC-1336..1386, SR-118..125 validate with Quire (done 2026-09-03).
-- filament-core-data#35 merged (semantic-core 0.1.0 `generated/json-schema` + `toolchain.json` available to vendor).
+- filament-core-data#35 merged (semantic-core 0.1.0 `generated/json-schema` published).
 
 ### Exit Criteria
 

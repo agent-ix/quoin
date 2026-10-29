@@ -61,7 +61,12 @@ measurement that can write is a measurement that can destroy the evidence it was
 - The measurement SHALL write its artifacts only under the declared output directory.
 - If the declared output directory is inside an enumerated corpus repository other than the one the
   measurement runs from, then the measurement SHALL refuse to start naming that repository.
-- The measurement SHALL record, in its own manifest, a digest of every artifact it wrote.
+
+> **CR note (2026-10-29):** the behavior clause and FR-092-AC-5 requiring the run
+> manifest to carry a SHA-256 digest of every artifact written are withdrawn.
+> Nothing reads those digests back: reproducibility (NFR-021) is checked by
+> comparing the artifact bytes of two runs directly. TC-1555 stays withdrawn. The
+> id is not reused.
 
 ## Constraints
 
@@ -78,7 +83,6 @@ measurement that can write is a measurement that can destroy the evidence it was
 | FR-092-AC-2 | The Git status of every enumerated corpus repository is byte-identical before and after a run. | Test (TC-1552) |
 | FR-092-AC-3 | Every file written by a run is under the declared output directory. | Test (TC-1553) |
 | FR-092-AC-4 | A declared output directory inside another enumerated corpus repository is refused before any file is read. | Test (TC-1554) |
-| FR-092-AC-5 | The run manifest carries a SHA-256 digest for every artifact written. | Test (TC-1555) |
 | FR-092-AC-6 | A measurement that cannot resolve a module of its declared required module set exits non-zero before reading a corpus document, distinguishing a tool failure from a measured failure. | Test (TC-1556) |
 | FR-092-AC-7 | The refs, index and working tree of every enumerated corpus repository and every module repository compare equal before and after a run. | Test (TC-1583) |
 

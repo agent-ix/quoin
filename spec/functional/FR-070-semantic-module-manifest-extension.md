@@ -35,7 +35,7 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 - The `semantic` block SHALL admit exactly these keys: `contract_version` (semver, `1.0.0` for this specification), `semantic_core` (the exact `@agent-ix/semantic-core` version), `package` (an IR `packageIdentity`, `<org>/<repo>`), `exports` (object-type names published as semantic types), `imports` (other modules' `package` identities with exact versions), `targets` (values from the filament-core-data declared target registry: `common.schema.json` `target` together with its `representationFormat` values, as vendored), `mappings` (named representation mappings, FR-071..073), `compatibility_posture` (`strict`, `additive`, or `declared-lossy`, default `additive`), `legacy_forms` (`warning` or `error`, default `warning`, FR-074), and `sweep_report` (relative path, FR-074).
 - The `semantic` block SHALL require `contract_version`, `semantic_core`, and `package`.
 - The module-manifest JSON Schema, owned by filament-core-service (`agent-ix/filament-core-service#21`), SHALL publish the block with `additionalProperties: false`.
-- Quoin SHALL vendor that schema with recorded provenance, as it vendors the Quire output schemas (FR-029).
+- Quoin SHALL take that schema from the published `@agent-ix/semantic-schema` package at the version its lockfile records, and the Quire output schemas from the linked `quire-rs` engine (FR-029).
 - When `quoin module install` meets an unknown key inside `semantic`, Quoin SHALL reject the manifest with a diagnostic naming the key rather than degrading to an empty model.
 - When `semantic.exports` names an object type the manifest does not declare, Quoin SHALL reject the manifest naming the export.
 - When `semantic.contract_version` is outside the versions this specification defines, Quoin SHALL reject the manifest before reading any other semantic key.
@@ -50,7 +50,14 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 | ID | Constraint | Type | Validation |
 |---|---|---|---|
 | FR-070-CON-1 | The `semantic` block SHALL add no required key to the manifest root, `ObjectTypeEntry`, `ArchetypeEntry`, or `ArtifactTypeEntry`. | Compatibility | Manifest schema diff |
-| FR-070-CON-2 | Quoin's vendored copy of the module-manifest schema SHALL carry the source repository, revision, path, and SHA-256 of the filament-core-service original. | Integrity | Provenance test |
+| FR-070-CON-2 | Quoin SHALL take the module-manifest schema from the published `@agent-ix/semantic-schema` package at the version its lockfile records, with no copy kept. | Integrity | Build inspection |
+
+> **CR note (2026-10-29):** FR-070-CON-2 previously required a vendored copy of
+> the module-manifest schema to carry source repository, revision, path and
+> SHA-256. The copy no longer exists: the schema is read from the published
+> `@agent-ix/semantic-schema` package at the version the lockfile records, and
+> that version is the whole provenance. TC-1343 is withdrawn with it. The id is
+> not reused.
 
 ## Acceptance Criteria
 

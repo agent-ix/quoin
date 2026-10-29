@@ -61,7 +61,6 @@ after the walk, and a repository whose either value moved is recorded
 - [ ] Record every excluded candidate with the rule that excluded it, `symlink` and `nested-repository` included.
 - [ ] Re-read `HEAD` and cleanliness after the walk and record `stable`.
 - [ ] Refuse an output directory inside another enumerated corpus repository before reading a file.
-- [ ] Write the run manifest with a SHA-256 digest of every artifact written.
 - [ ] Exit zero whatever is found; reserve non-zero for the measurement failing to run.
 - [ ] Assert working-tree and ref invariance over every enumerated repository before and after a run.
 

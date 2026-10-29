@@ -54,5 +54,5 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 
 ## Dependencies
 
-- **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md), [FR-029](./FR-029-consume-quire-json-contract.md) (vendoring pattern), semantic-core emitted schemas (`agent-ix/filament-core-data` FR-033)
+- **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md), [FR-029](./FR-029-consume-the-quire-json-contract.md) (schemas taken from the published package or linked engine), semantic-core emitted schemas (`agent-ix/filament-core-data` FR-033)
 - **Downstream**: `agent-ix/quire-rs#388`, module tickets, [FR-074](./FR-074-legacy-authoring-forms.md)

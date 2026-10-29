@@ -64,7 +64,7 @@ justifying a looser rule.
 
 ### Non-Functional Requirements
 
-- [ ] **NFR-021:** Repeated runs over the committed fixture corpus produce digest-identical artifacts, including with networking disabled and in a shuffled enumeration order.
+- [ ] **NFR-021:** Repeated runs over the committed fixture corpus produce byte-identical artifacts, including with networking disabled and in a shuffled enumeration order.
 - [ ] **NFR-022:** A full run over up to 30,000 documents in 300 repositories completes inside 15 minutes on the recorded reference machine, opening every corpus file read-only.
 - [ ] **NFR-023:** Every figure the report prints names the artifact and field it came from and equals the value recomputed from it.
 
@@ -99,10 +99,10 @@ TASK-060 -> TASK-061 -> TASK-062 -> TASK-063 -> TASK-066 -> TASK-067 -> TASK-069
 | Gate                     | Condition                                                                                                                                                                                                      | Blocks           |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | G1 — population stated   | The enumerated document count, the exclusion vocabulary and every repository pin are recorded, and the per-repository counts sum to the total.                                                                 | TASK-061 onward  |
-| G2 — contract pinned     | Every required module resolves to a commit, every contract surface carries a digest, and the toolchain record names the engine and CLI revisions.                                                              | TASK-062 onward  |
+| G2 — contract pinned     | Every required module resolves to a commit, and the toolchain record names the engine and CLI revisions.                                                              | TASK-062 onward  |
 | G3 — no second extractor | No source file of the measurement parses a module mapping, builds a semantic record, or resolves a type, multiplicity or constraint keyword.                                                                   | TASK-066         |
 | G4 — nothing hidden      | Every document holds exactly one state, every finding holds exactly one class, `could-not-run` never enters a rate, and the `unknown` and `undispositioned` counts are headline figures.                       | TASK-067         |
-| G5 — reproducible        | Two runs over the fixture corpus are digest-identical, an offline run agrees, and a shuffled enumeration order agrees.                                                                                         | TASK-069         |
+| G5 — reproducible        | Two runs over the fixture corpus are byte-identical, an offline run agrees, and a shuffled enumeration order agrees.                                                                                         | TASK-069         |
 | G6 — repo green          | `make lint` passes, `npx vitest run` passes apart from the four failures already failing on `main`, `quire validate --scope . "spec/**/*.md"` is structurally clean, and every corpus repository is untouched. | the pull request |
 
 ## Test Plan

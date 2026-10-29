@@ -64,7 +64,7 @@ prevent.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-078-AC-1 | Each rendered variant's `semantic` block carries the nine keys above and no other, and validates against Quoin's vendored module-manifest schema. | Test (TC-1417) |
+| FR-078-AC-1 | Each rendered variant's `semantic` block carries the nine keys above and no other, and validates against the published module-manifest schema. | Test (TC-1417) |
 | FR-078-AC-2 | Every exported type of every rendered variant has `data_schema: {schema}` naming an emitted file. | Test (TC-1410) |
 | FR-078-AC-3 | No exported type of any rendered variant carries `data_schema: {type: object}`. | Test (TC-1409) |
 | FR-078-AC-5 | A mixed-variant rendering with two imported modules yields two `semantic.imports` entries carrying exact versions; an object-variant rendering with none yields `imports: {}`. | Test (TC-1402) |

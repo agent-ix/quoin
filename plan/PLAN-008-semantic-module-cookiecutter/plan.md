@@ -107,7 +107,7 @@ here is what makes the template verified rather than merely written.
 | --------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
 | Input contract and variants | `tests/semantic-module-template.test.ts` | TC-1400..TC-1407, TC-1412, TC-1451..TC-1456, TC-1466, TC-1467 |
 | Emission                    | `tests/semantic-module-template.test.ts` | TC-1408, TC-1409, TC-1413..TC-1416, TC-1449, TC-1457          |
-| Manifest block              | `tests/semantic-module-template.test.ts` | TC-1410, TC-1417..TC-1419, TC-1458, TC-1459, TC-1468          |
+| Manifest block              | `tests/semantic-module-template.test.ts` | TC-1410, TC-1417, TC-1458, TC-1459, TC-1468          |
 | Skeletons and fixtures      | `tests/semantic-module-template.test.ts` | TC-1411, TC-1420..TC-1426                                     |
 | Rendered suite behaviour    | `tests/semantic-module-template.test.ts` | TC-1427..TC-1431, TC-1450, TC-1460, TC-1469                   |
 | Packaging baseline          | `tests/semantic-module-template.test.ts` | TC-1432..TC-1438                                              |

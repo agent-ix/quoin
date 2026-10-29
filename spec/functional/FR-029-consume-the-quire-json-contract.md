@@ -34,20 +34,14 @@ against the published schema **first**; the models exist to describe what the
 validator has already made true. A mismatch surfaces as a violation naming the
 offending path rather than as an `undefined` three frames later.
 
-### The schemas are vendored, with recorded provenance
+### The schemas come from the linked engine
 
-quire-rs is a Rust crate consumed from git; quoin is an npm package. There is
-no dependency edge along which a schema file could travel, and quoin performs no
-network reads on a command path. So the artifacts are copied in with their
-exact 40-character source revision, path and **content hash** recorded. The
-refresh script reads the files from that git object rather than from the source
-checkout's working tree, so unrelated tracking-branch edits cannot alter the
-contract being recorded.
-
-That is a copy, and a copy can drift. What keeps it honest is that the hash is
-asserted on every test run: an edit to a vendored file without a matching
-refresh fails immediately rather than silently teaching quoin a contract quire
-does not emit.
+quire-rs is a Rust crate and quoin links it as its engine at the version
+`Cargo.lock` records. The published schemas are `quire-rs` documents exposed by
+that crate, so the schema quoin validates against and the schema the engine was
+built from are the same by construction. quoin keeps no copy of them, performs no
+network read on a command path, and records no hash of them: the locked engine
+version is the whole provenance.
 
 ### The version premise is checked before anything parses
 
@@ -60,7 +54,7 @@ names the found version, the required version, and the consequence.
 
 - `quire coverage --json` and `quire properties --json` payloads
 - `quire --version` output
-- The vendored schemas under `src/quire/schemas/`
+- The published schemas exposed by the linked `quire-rs` engine
 
 ## Outputs
 
@@ -70,8 +64,8 @@ names the found version, the required version, and the consequence.
 
 ## Behavior
 
-- `validateCoverage` / `validateProperties` SHALL validate against the vendored
-  published schema and SHALL return a result rather than throwing, so a caller
+- `validateCoverage` / `validateProperties` SHALL validate against the published
+  schema and SHALL return a result rather than throwing, so a caller
   chooses how to report.
 - `parseCoverage` / `parseProperties` SHALL parse and validate in one call, so
   no caller can hold an unvalidated payload it might use by accident.
@@ -102,26 +96,26 @@ names the found version, the required version, and the consequence.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-029-CON-1 | quoin SHALL NOT restate the published schemas as hand-written validators. The duplication is the failure being closed; the vendored artifact plus its hash is the whole mechanism. | Architecture | Test |
+| FR-029-CON-1 | quoin SHALL NOT restate the published schemas as hand-written validators. The duplication is the failure being closed; using the published schema from the linked engine is the whole mechanism. | Architecture | Test |
 | FR-029-CON-2 | quoin SHALL NOT fetch a schema at runtime. Every command path stays network-free. | Architecture | Inspection |
-| FR-029-CON-3 | The vendored schemas SHALL mirror the publisher's open/closed decision for every vocabulary rather than second-guessing it. Closing `diagnostics[].reason` would reject a newer engine's payload that a consumer could otherwise read. | Architecture | Test |
+| FR-029-CON-3 | The schemas quoin validates against SHALL mirror the publisher's open/closed decision for every vocabulary rather than second-guessing it. Closing `diagnostics[].reason` would reject a newer engine's payload that a consumer could otherwise read. | Architecture | Test |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-029-AC-1 | Each vendored schema hashes to the value recorded beside it and carries a `$id` naming the pinned contract version. | Test (TC-110) |
+| FR-029-AC-1 | Each published schema quoin validates against is the one exposed by the linked engine and carries a `$id` naming the contract version. | Test (TC-110) |
 | FR-029-AC-2 | A conformant coverage payload and a conformant properties payload each validate. | Test (TC-111) |
 | FR-029-AC-3 | A payload missing a required key, carrying an added field, or using a value outside a closed engine enum is rejected, and the report names the failing path. | Test (TC-112) |
 | FR-029-AC-4 | Unreadable output is reported as a named contract violation rather than thrown, and the message names the likeliest cause. | Test (TC-113) |
 | FR-029-AC-5 | A CLI older than the pinned minimum fails the premise with the found version, the required version and the consequence; an unreadable version is a failure rather than a pass. | Test (TC-114) |
 | FR-029-AC-6 | Version comparison is numeric, so `0.21.0` ranks above `0.9.0`. | Test (TC-115) |
 | FR-029-AC-7 | A payload omitting every optional key validates; one carrying every optional key validates, with "every" read off the schema's optional-key list so a schema refresh that adds a key fails the fixture until it carries the new key. The full binding-census fixture carries the optional self-named population, bound count, and unbound example, so a producer adding any of those fields before the vendored schema is refreshed fails the consumer test. Malformed optional records are rejected, including status, obligation, minted-target and unmatched-tag records. | Test (TC-111, TC-116) |
-| FR-029-AC-9 | Payloads emitted by the explicitly selected `QUIRE` binary validate against the vendored schemas, so the contract is checked against the same real emitter as the gate and not only against fixtures. The live coverage bundle emits an `implements` edge, a minted-target record and an unmatched-tag record; absence of any witness fails the test as vacuous. | Test (TC-118) |
+| FR-029-AC-9 | Payloads emitted by the explicitly selected `QUIRE` binary validate against the published schemas, so the contract is checked against the same real emitter as the gate and not only against fixtures. The live coverage bundle emits an `implements` edge, a minted-target record and an unmatched-tag record; absence of any witness fails the test as vacuous. | Test (TC-118) |
 | FR-029-AC-10 | When the `quire` subprocess exits non-zero, its **stderr** is surfaced in the raised diagnostic. Its own message names the cause — a missing traceability model, a bad `--module` — and discarding it undoes the care FR-029 takes over the version premise one frame later. | Inspection (TC-134), Test (TC-256) |
 | FR-029-AC-11 | Every `quire` subprocess call sets an explicit `maxBuffer` sized for real corpora, so a corpus whose `coverage --json` payload exceeds Node's 1 MiB default still runs every command that shells out. | Test (TC-254) |
 | FR-029-AC-12 | A child that never exited on its own — killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr. | Test (TC-254, TC-255, TC-257) |
-| FR-029-AC-13 | The TypeScript interfaces conform to the vendored coverage schema: a typed sample per `$defs` entry, forced by `Required<Interface>` to carry every interface field, has exactly its schema entry's property keys and validates against the schema — a schema key with no interface field, or an interface field with no schema key, fails the suite. | Test (TC-272) |
+| FR-029-AC-13 | The TypeScript interfaces conform to the published coverage schema: a typed sample per `$defs` entry, forced by `Required<Interface>` to carry every interface field, has exactly its schema entry's property keys and validates against the schema — a schema key with no interface field, or an interface field with no schema key, fails the suite. | Test (TC-272) |
 
 ## Dependencies
 

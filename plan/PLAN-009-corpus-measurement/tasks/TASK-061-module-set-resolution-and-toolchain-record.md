@@ -1,6 +1,6 @@
 ---
 id: TASK-061
-title: "Module set resolution, contract-surface digests and the toolchain record"
+title: "Module set resolution and the toolchain record"
 type: Task
 status: todo
 track: A
@@ -32,7 +32,7 @@ relationships:
     type: verifies
 ---
 
-# TASK-061: Module set resolution, contract-surface digests and the toolchain record
+# TASK-061: Module set resolution and the toolchain record
 
 ## Scope
 
@@ -48,7 +48,6 @@ actually read.
 
 - [ ] Read module files with `git show <rev>:<path>` against the module repository, so a dirty checkout cannot change what is measured.
 - [ ] Resolve every declared ref to a commit and record both, so a moved tag is visible.
-- [ ] Digest the manifest, every declared JSON Schema, and the mappings declaration where one exists.
 - [ ] Resolve each declared `data_schema: { schema: <path> }` to the file read at the resolved commit; an unreadable or missing file is a module finding.
 - [ ] Record `mappings: absent` for a module that publishes none, and still take its object types.
 - [ ] Compare each measured commit with the commit its `default-modules.yaml` ref resolves to and record the divergence.

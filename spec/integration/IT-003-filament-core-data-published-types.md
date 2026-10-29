@@ -58,12 +58,12 @@ Each step performs one discrete action and has its own success criterion.
      package.
 2. Compare the schema each published form describes for the selected type.
    - IT-003-SC-02: the Rust crate's schema and the TypeScript package's schema
-     agree on field names, required fields and types, and both carry the same
-     source-schema digest in their provenance record.
+     agree on field names, required fields and types, and both resolve to the same
+     `filament-core-data` version.
 3. Run the type-surface gate over the repository.
    - IT-003-SC-03: the gate reports no hand-written first-party declaration of
-     the selected type, and the generated `src/core/types.ts` matches its
-     asserted digest.
+     the selected type, and the generated `src/core/types.ts` regenerates
+     from the published schema with no diff.
 4. Send the instance document through the `quoin-core` boundary operation that
    carries the selected type and read the result back in TypeScript.
    - IT-003-SC-04: the document round-trips with a byte-identical canonical
@@ -77,7 +77,7 @@ Each step performs one discrete action and has its own success criterion.
 
 Quoin resolves the `filament-core-data`-published type from the internal
 registries only, the Rust and TypeScript forms describe the same schema with the
-same recorded provenance, the generated type surface matches its asserted digest,
+same `filament-core-data` version, the generated type surface regenerates with no diff,
 an instance document round-trips across the boundary byte-identically, and a
 planted duplicate declaration is refused. The test passes only when every
 per-step success criterion holds.
