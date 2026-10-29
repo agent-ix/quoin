@@ -17,6 +17,9 @@ transitions and acknowledgements. Start through the installed skill as described
    failure-domain, integrity, dependency, evidence, risk-complexity, scope-boundary, ears-conformance.
 3. Advance to analyses_run, perform the base checklist and selected lenses, then
    obtain each live artifact contract with `quoin write <repo> --types SpecReview`.
+   The base checklist always includes the Hash / Digest / Pin Antipattern check,
+   regardless of the selected lenses. Record each violation as P0 / `high`, mark
+   the review summary FAIL, and require removal before implementation.
    Author one SpecReview per required analysis with a valid Findings table.
 4. Register every document using `ix-flow add-item <id> review_doc --item
    '{"id":"base-review","analysis":"base","path":"spec/reviews/base.md"}'`.
