@@ -123,7 +123,7 @@ jobs:
           CHECKER="rust/target/debug/quoin-workflow-check"
           if [ "$BINARY" = quoin.exe ]; then CHECKER="${CHECKER}.exe"; fi
           "$CHECKER" smoke "release-smoke/$BINARY" "$RUNNER_TEMP/quoin-workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" "$GITHUB_WORKSPACE"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: quoin-${{ matrix.target }}
           path: release/
