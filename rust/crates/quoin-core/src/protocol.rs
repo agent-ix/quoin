@@ -25,17 +25,6 @@ use std::collections::BTreeMap;
 
 use ix_cli_kit::exit::Outcome;
 
-/// The IPC protocol revision the boundary speaks.
-///
-/// Lives beside the wire contract it versions. It used to sit in
-/// `quoin-schemas` on the premise that the generated TypeScript side is
-/// generated from that crate — but the schema-source rule makes the canonical Rust type the
-/// source, so `quoin-schemas` now reads FROM here and the constant belongs
-/// with the taxonomy, the diagnostic and the payloads it revises together.
-/// The generated `src/core/types.ts` carries this number, so a bump reaches
-/// the TypeScript side only through a regeneration whose digest is asserted.
-pub const PROTOCOL_VERSION: u32 = 1;
-
 /// The largest request, in bytes, that may be read off stdin.
 ///
 /// **The transport ceiling, enforced while the stream is being read** —

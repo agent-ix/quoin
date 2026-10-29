@@ -37,12 +37,6 @@ mod tests {
         let response = invoke("core.ping", &serde_json::json!({}))
             .expect("the embedded runtime answers without a quoin-core process on PATH");
         assert!(response.outcome.carries_payload());
-        assert_eq!(
-            response
-                .payload
-                .get("protocol_version")
-                .and_then(serde_json::Value::as_u64),
-            Some(1)
-        );
+        assert!(response.payload.get("core_version").is_some());
     }
 }
