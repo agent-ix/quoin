@@ -76,5 +76,5 @@ the emitter leaves relative, and render deterministically.
 
 ## Dependencies
 
-- **Upstream**: [FR-076](./FR-076-semantic-module-template-variants.md), [FR-073](./FR-073-data-schema-by-path-and-digest.md)
+- **Upstream**: [FR-076](./FR-076-semantic-module-template-variants.md), [FR-073](./FR-073-data-schema-by-path.md)
 - **Downstream**: [FR-078](./FR-078-generated-manifest-semantic-block.md), [NFR-019](../non-functional/NFR-019-deterministic-rendering.md)

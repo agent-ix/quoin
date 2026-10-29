@@ -11,7 +11,7 @@ okf_version: "0.1"
 
 - [PLAN-009](./plan.md) - Requirements, dependency graph, tracks, gates, and the test plan.
 - [TASK-060](./tasks/TASK-060-corpus-enumeration-and-read-only-envelope.md) - Corpus enumeration, pinning and the read-only envelope.
-- [TASK-061](./tasks/TASK-061-module-set-resolution-and-toolchain-record.md) - Module set resolution, contract-surface digests and the toolchain record.
+- [TASK-061](./tasks/TASK-061-module-set-resolution-and-toolchain-record.md) - Module set resolution and the toolchain record.
 - [TASK-062](./tasks/TASK-062-document-state-assignment.md) - One measurement state per corpus document.
 - [TASK-063](./tasks/TASK-063-engine-driven-structural-measurement.md) - Structural conformance through the Quire engine.
 - [TASK-064](./tasks/TASK-064-properties-form-census-and-l3-gap.md) - The Properties form census and the L3 could-not-run.

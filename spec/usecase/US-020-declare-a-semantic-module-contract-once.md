@@ -49,7 +49,7 @@ contract it implements.
 
 - **Given** a module manifest whose `entity.data_schema` names the emitted `Entity.json` by path and records the semantic-core version it imports
 - **When** the manifest is loaded
-- **Then** the schema is read from the path, the digest is verified, and a mismatch is an error rather than a silent fallback to `{type: object}`
+- **Then** the schema is read from the path, and a missing or invalid file is an error rather than a silent fallback to `{type: object}`
 
 ### US-020-EX-4: A legacy artifact keeps validating
 

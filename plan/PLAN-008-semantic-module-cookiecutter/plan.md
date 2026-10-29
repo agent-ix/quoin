@@ -51,7 +51,7 @@ contract (`agent-ix/quoin#293`, merged `3e842ce`), filament-core-data ADR-0005,
 
 - [x] **FR-076:** Artifact, object and mixed variants from one template core; AGPL by default with no silent fallback; every invalid input aborts naming the value; unattended rendering.
 - [x] **FR-077:** TypeSpec source importing `@agent-ix/semantic-core`; deterministic emission through the official emitter; absolute `$id`/`$ref`; check mode.
-- [x] **FR-078:** The `semantic` manifest block with the nine admitted keys and reference-form `data_schema`; machine-written digests; unique export names.
+- [x] **FR-078:** The `semantic` manifest block with the nine admitted keys and reference-form `data_schema` written by the emit driver; unique export names.
 - [x] **FR-079:** Typed-table skeletons with `sysml` alternates and `ocl` invariants; one negative fixture per declared failure mode; a legacy-form fixture at `warning`.
 - [x] **FR-080:** The rendered suite treats the engine as a hard dependency and fails, naming `make dev-quire`, rather than skipping.
 - [x] **FR-081:** Public AGPL baseline: one licence identifier, the ownership and guidance files, matching Python and npm payloads, no credential, no private publication default.
@@ -73,7 +73,7 @@ TASK-045 -> TASK-046 -> TASK-047 -> TASK-048 -> TASK-050 -> TASK-051
 
 - TASK-045 is enablement for everything else: the template skeleton, the input contract, the hooks, and the conformance contract. Nothing can render until it exists.
 - TASK-046 (schema source and emit pipeline) and TASK-049 (public packaging baseline and governance tree) touch disjoint rendered surfaces and run in parallel after TASK-045.
-- TASK-047 (manifest `semantic` block and digests) needs the emitted schemas TASK-046 produces.
+- TASK-047 (manifest `semantic` block) needs the emitted schemas TASK-046 produces.
 - TASK-048 (skeletons, mappings, fixtures, and the rendered suite) needs the manifest TASK-047 writes.
 - TASK-050 is the gate in this repository: it renders all three variants, scans for residue, checks conformance and drift, and is the first thing that proves the template works rather than reads well.
 - TASK-051 closes the cycle — code review, gap analysis, the pull request.
@@ -92,7 +92,7 @@ TASK-045 -> TASK-046 -> TASK-047 -> TASK-048 -> TASK-050 -> TASK-051
 | --------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | G1 — renders    | All three variants render unattended with no error.                                                                       | TASK-046 onward  |
 | G2 — emits      | A rendered variant emits one schema per exported type, twice, byte-identically.                                           | TASK-047         |
-| G3 — declares   | The rendered manifest validates against the vendored module-manifest schema and every digest matches.                     | TASK-048         |
+| G3 — declares   | The rendered manifest validates against the published module-manifest schema and every `data_schema.schema` names an emitted file.                      | TASK-048         |
 | G4 — verifies   | The rendered suite runs, fails without the engine, and reports zero skips with it.                                        | TASK-050         |
 | G5 — conforms   | Quoin's gate passes: conformance, residue, determinism, drift, and `quire validate` over each rendered spec tree.         | TASK-051         |
 | G6 — repo green | `make lint` and `make test` pass in this repository, and `quire validate --scope . "spec/**/*.md"` is structurally clean. | the pull request |
@@ -107,7 +107,7 @@ here is what makes the template verified rather than merely written.
 | --------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
 | Input contract and variants | `tests/semantic-module-template.test.ts` | TC-1400..TC-1407, TC-1412, TC-1451..TC-1456, TC-1466, TC-1467 |
 | Emission                    | `tests/semantic-module-template.test.ts` | TC-1408, TC-1409, TC-1413..TC-1416, TC-1449, TC-1457          |
-| Manifest and digests        | `tests/semantic-module-template.test.ts` | TC-1410, TC-1417..TC-1419, TC-1458, TC-1459, TC-1468          |
+| Manifest block              | `tests/semantic-module-template.test.ts` | TC-1410, TC-1417, TC-1458, TC-1459, TC-1468          |
 | Skeletons and fixtures      | `tests/semantic-module-template.test.ts` | TC-1411, TC-1420..TC-1426                                     |
 | Rendered suite behaviour    | `tests/semantic-module-template.test.ts` | TC-1427..TC-1431, TC-1450, TC-1460, TC-1469                   |
 | Packaging baseline          | `tests/semantic-module-template.test.ts` | TC-1432..TC-1438                                              |

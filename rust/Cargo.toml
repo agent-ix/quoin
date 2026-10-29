@@ -113,8 +113,8 @@ quoin-yaml = { path = "crates/quoin-yaml" }
 serde = { version = "=1.0.229", features = ["derive"] }
 # The schema-source rule: the JSON Schema the generated TypeScript surface is derived from.
 # Exact pin for the same reason as every other line here — the generated file
-# is hash-asserted, so the generator's version is part of the contract and a
-# caret range would let a patch release silently move the digest.
+# is derived from it, so the generator's version is part of the contract and a
+# caret range would let a patch release silently change its output.
 #
 # 1.2.2 AND NOT 1.2.1, and the difference is `multiple-versions = "deny"`
 # rather than taste. `schemars_derive` 1.2.2 is on `syn` 3, which is where
@@ -128,7 +128,7 @@ schemars = { version = "=1.2.2", features = ["derive"] }
 # cut.
 serde_json = "=1.0.151"
 time = { version = "=0.3.55", features = ["formatting"] }
-# The digest under the schema-source hash assertion. Exact pin like everything else.
+# SHA-256 for the content-addressed store. Exact pin like everything else.
 #
 # 0.10.9 AND NOT 0.11.0, and the reason is an upstream requirement rather than
 # taste: `quire-rs` — linked by quoin-quire — depends on sha2 0.10.9,

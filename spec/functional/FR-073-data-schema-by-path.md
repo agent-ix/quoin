@@ -33,13 +33,13 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 - If a `$ref` names a semantic-core version other than `semantic.semantic_core`, an unshipped file, or forms a cycle that the resolver cannot close, then Quoin SHALL reject the manifest naming the `$ref`.
 - Quoin SHALL ship the semantic-core JSON Schema bundle at each supported version so resolution needs no network read.
 - Where a module declares a `semantic` block and an object type still carries an inline `data_schema`, Quoin SHALL emit a `warning` `semantic.inline-data-schema` naming the object type and the migration (FR-074).
-- Quire SHALL validate each extracted `FieldDecl` against the vendored `FieldDecl.json` and the archetype's extracted record against the referenced `<Name>.json` (`agent-ix/quire-rs#388`).
+- Quire SHALL validate each extracted `FieldDecl` against the semantic-core `FieldDecl.json` and the archetype's extracted record against the referenced `<Name>.json` (`agent-ix/quire-rs#388`).
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |---|---|---|---|
-| FR-073-CON-1 | Quoin SHALL perform no network read to resolve a schema reference; every referenced file ships inside the module or the vendored semantic-core bundle. | Offline | Integration test with network disabled |
+| FR-073-CON-1 | Quoin SHALL perform no network read to resolve a schema reference; every referenced file ships inside the module or the semantic-core bundle embedded from the published `@agent-ix/semantic-core` package. | Offline | Integration test with network disabled |
 | FR-073-CON-2 | A module without a `semantic` block SHALL keep the inline `data_schema` form valid with no warning. | Compatibility | Existing-fixture suite |
 
 ## Acceptance Criteria
@@ -54,5 +54,5 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 
 ## Dependencies
 
-- **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md), [FR-029](./FR-029-consume-quire-json-contract.md) (vendoring pattern), semantic-core emitted schemas (`agent-ix/filament-core-data` FR-033)
+- **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md), [FR-029](./FR-029-consume-the-quire-json-contract.md) (schemas taken from the published package or linked engine), semantic-core emitted schemas (`agent-ix/filament-core-data` FR-033)
 - **Downstream**: `agent-ix/quire-rs#388`, module tickets, [FR-074](./FR-074-legacy-authoring-forms.md)

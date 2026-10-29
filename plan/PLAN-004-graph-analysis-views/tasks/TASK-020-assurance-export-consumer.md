@@ -18,15 +18,15 @@ relationships:
 
 ## Scope
 
-Vendor the published assurance-v1 schema and producer provenance, validate the complete payload,
+Use the published assurance-v1 schema from the linked engine, validate the complete payload,
 enforce accepted format/module/schema premises, and expose immutable typed records only after every
 premise succeeds.
 
 ## Subtasks
 
-- [x] Add the hand-authored schema, recorded publisher revision, and content digest.
+- [x] Add the hand-authored schema; the publisher's version is the locked `quire-rs` engine version.
 - [x] Implement typed parse/validation with fail-closed premise checking.
-- [x] Preserve source revision, module versions, schema digests, and distinct availability states.
+- [x] Preserve source revision, module versions, schema versions, and distinct availability states.
 - [x] Read required `--export <json>`, `--premises <json>`, and `--audit <json>` inputs without
       invoking Quire, recomputing an audit, or discovering acceptance from ambient modules.
 - [x] Validate audit source/export identity before exposing its unchanged FR-032 findings,

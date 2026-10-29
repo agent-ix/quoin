@@ -30,16 +30,16 @@ relationships:
 
 ## Scope
 
-Derive `semantic/package-manifest.json` per FR-075 and pin per-export schema digests in `registry.json`; resolve `semantic.imports` at install.
+Derive `semantic/package-manifest.json` per FR-075 and resolve `semantic.imports` at install.
 
 ## Subtasks
 
-- [x] `src/semantic/package-manifest.ts`: derive every required field as FR-075 states; validate against the vendored filament-core-data `package-manifest.schema.json` (TC-1372).
-- [x] Registry pins under the module entry's `semantic` key (TC-1373); import resolution and cycle rejection at install (TC-1374); identity parity test (TC-1375); package-form rejections (TC-1376); static scans (TC-1377, TC-1378).
+- [x] `src/semantic/package-manifest.ts`: derive every required field as FR-075 states; validate against the published filament-core-data `package-manifest.schema.json` (TC-1372).
+- [x] Import resolution and cycle rejection at install (TC-1374); identity parity test (TC-1375); package-form rejections (TC-1376); static scans (TC-1377, TC-1378).
 
 ## Deliverables
 
-- Derived manifest writer and registry pins.
+- Derived manifest writer.
 
 ## Notes
 
