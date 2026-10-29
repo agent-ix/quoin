@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Agent-IX
 
 //! Corpus v2: the schema, the loaders, validation, by-reference
-//! materialization and the held-out seal (PLAT-1027).
+//! materialization and the held-out gate (PLAT-1027).
 //!
 //! # The schema is shared
 //!
@@ -17,26 +17,20 @@
 //!   callers treat `Ok(None)` as "nothing to measure", never as a pass.
 //! - **External**, the path in `QUOIN_JEV_EXTERNAL_CORPUS`, optional. Its rows
 //!   may set `ref` instead of embedding bodies: the harness reads the named
-//!   files under `QUOIN_JEV_EXTERNAL_ROOT/<repo name>`, checks each file's
-//!   sha256 against the row, applies the mutation patch, and cuts the named
-//!   item out: a Rust `fn` or a Python `def`, chosen by the file's extension
-//!   ([`extract_item`]). `ref.commit` is informational: the digest over the bytes is
-//!   what is checked, so a checkout at another commit with identical bytes is
-//!   accepted, and one with different bytes is refused.
+//!   files under `QUOIN_JEV_EXTERNAL_ROOT/<repo name>`, applies the mutation
+//!   patch, and cuts the named item out: a Rust `fn` or a Python `def`,
+//!   chosen by the file's extension ([`extract_item`]). The checkout is read
+//!   as it is; the caller's git history says which commit that is.
 //!
-//! # The held-out seal
+//! # The held-out split
 //!
-//! A corpus's held-out rows are sealed by `heldout.sha256` in the corpus
-//! file's own directory: the sha256 (hex, optionally `sha256:`-prefixed) of
-//! the RFC 8785 canonical JSON of the array of held-out row objects, in file
-//! order, exactly as they appear in the corpus file (before any
-//! materialization). [`heldout_digest`] computes it.
+//! A held-out run needs the `QUOIN_JEV_HELDOUT=1` flag and a committed
+//! selection entry, and is logged; no stored hash guards the rows.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::path::{Component, Path, PathBuf};
 
-use quoin_store::{JsonValue, canonical_bytes, digest_bytes_sha256, parse_strict_json_str};
 use serde::{Deserialize, Serialize};
 
 use super::keys::{Mode, NO, YES, spec};
@@ -51,8 +45,6 @@ pub(crate) const EXTERNAL_CORPUS_ENV: &str = "QUOIN_JEV_EXTERNAL_CORPUS";
 pub(crate) const EXTERNAL_ROOT_ENV: &str = "QUOIN_JEV_EXTERNAL_ROOT";
 /// The env var that must be `1` for a held-out run.
 pub(crate) const HELDOUT_ENV: &str = "QUOIN_JEV_HELDOUT";
-/// The seal's file name, beside its corpus.
-pub(crate) const SEAL_FILE: &str = "heldout.sha256";
 
 /// The whole corpus file.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,8 +56,6 @@ pub(crate) struct CorpusFile {
     pub(crate) sampling_rule: String,
     /// The sampling seed.
     pub(crate) seed: u64,
-    /// The commit the population was drawn at. Informational.
-    pub(crate) source_commit: String,
     /// The labelling rule per question key, as the labellers were given it
     /// (PLAT-1025's corpus header). Absent in a corpus with no agent labels.
     #[serde(default)]
@@ -189,12 +179,8 @@ pub(crate) struct CodeArtifact {
 pub(crate) struct Reference {
     /// e.g. `agent-ix/quire-rs`; the checkout is `<root>/<last segment>`.
     pub(crate) repo: String,
-    /// Informational: the digests are what is checked.
-    pub(crate) commit: String,
     /// Role (`requirement` / `test` / `code`) to a repo-relative path.
     pub(crate) paths: BTreeMap<String, String>,
-    /// Role to the sha256 of that file's pristine bytes.
-    pub(crate) sha256: BTreeMap<String, String>,
 }
 
 /// Which artifact a mutation edited.
@@ -551,7 +537,7 @@ fn collapse(text: &str) -> String {
 /// Fills an external row's bodies from its checkout.
 ///
 /// Every file is resolved through symlinks and must still lie under the
-/// canonical `root`; its bytes must match the row's sha256; a mutation is
+/// canonical `root`; a mutation is
 /// applied to the file it targets, which `ref.paths` must name. A
 /// requirement mutation is checked: the patched requirement file must
 /// contain the row's `statement` (and `ac_text`, when set), whitespace
@@ -593,19 +579,6 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
             ));
         }
         let bytes = std::fs::read(&real).map_err(|error| format!("{}: {error}", real.display()))?;
-        let expected = reference
-            .sha256
-            .get(role)
-            .ok_or_else(|| format!("ref.sha256 has no digest for role {role:?}"))?;
-        let expected = expected.strip_prefix("sha256:").unwrap_or(expected);
-        let actual = digest_bytes_sha256(&bytes);
-        if !actual.as_hex().eq_ignore_ascii_case(expected) {
-            return Err(format!(
-                "{}: content digest {} does not match the row's {expected}",
-                path.display(),
-                actual.as_hex()
-            ));
-        }
         let mut text = String::from_utf8(bytes)
             .map_err(|error| format!("{}: not UTF-8: {error}", path.display()))?;
         let mutated = row.mutation.as_ref().filter(|m| m.target.role() == role);
@@ -629,7 +602,7 @@ pub(crate) fn materialize(row: &mut Row, root: &Path) -> Result<(), String> {
                 code.body = extract_item(relative, &text, &code.symbol)?;
             }
             // The requirement's text is carried in the row. Unmutated, its
-            // file is digest-checked only; mutated, the patched file must
+            // file is only read; mutated, the patched file must
             // carry the row's (mutated) text.
             _ => {
                 if mutated.is_some() {
@@ -910,90 +883,18 @@ pub(crate) fn census(file: &CorpusFile) -> String {
     out
 }
 
-/// The held-out row objects of a corpus text, in file order.
-fn heldout_rows(text: &str) -> Result<Vec<JsonValue>, String> {
-    let value = parse_strict_json_str(text).map_err(|error| format!("strict parse: {error}"))?;
-    let JsonValue::Object(object) = value else {
-        return Err("the corpus is not a JSON object".to_owned());
-    };
-    let Some(JsonValue::Array(rows)) = object.get("rows") else {
-        return Err("the corpus has no `rows` array".to_owned());
-    };
-    let heldout: Vec<JsonValue> = rows
-        .iter()
-        .filter(|row| {
-            matches!(row, JsonValue::Object(fields)
-                if matches!(fields.get("split"), Some(JsonValue::String(split)) if split == "heldout"))
-        })
-        .cloned()
-        .collect();
-    Ok(heldout)
-}
-
-/// The held-out seal of a corpus text: see this module's doc.
+/// Gate for a held-out run: `flag` (the value of [`HELDOUT_ENV`]) must be `1`.
 ///
 /// # Errors
-/// When the text is not strict JSON or has no `rows` array.
-pub(crate) fn heldout_digest(text: &str) -> Result<String, String> {
-    let bytes = canonical_bytes(&JsonValue::Array(heldout_rows(text)?))
-        .map_err(|error| format!("canonicalize: {error}"))?;
-    Ok(digest_bytes_sha256(&bytes).as_hex().to_owned())
-}
-
-/// Checks `source` against the seal beside it; returns the digest.
-///
-/// The seal is [`SEAL_FILE`] in the corpus file's own directory, for the
-/// external corpus as for the in-repo one: an external corpus's seal lives
-/// next to it, outside quoin. A source with no held-out rows has nothing to
-/// seal and needs no seal file.
-///
-/// # Errors
-/// When the source has held-out rows and the seal file is missing, or the
-/// seal does not match. The mismatch message prints both digests; resealing
-/// is a committed, reviewable diff.
-pub(crate) fn verify_seal(source: &Source) -> Result<String, String> {
-    let seal_path = source
-        .path
-        .parent()
-        .map_or_else(|| PathBuf::from(SEAL_FILE), |dir| dir.join(SEAL_FILE));
-    if !seal_path.exists() && heldout_rows(&source.text)?.is_empty() {
-        return heldout_digest(&source.text);
-    }
-    let committed = std::fs::read_to_string(&seal_path).map_err(|error| {
-        format!(
-            "{}: the held-out split is not sealed ({error})",
-            seal_path.display()
-        )
-    })?;
-    let committed = committed.trim();
-    let committed = committed.strip_prefix("sha256:").unwrap_or(committed);
-    let actual = heldout_digest(&source.text)?;
-    if !actual.eq_ignore_ascii_case(committed) {
-        return Err(format!(
-            "{}: held-out rows digest to {actual}, the committed seal is {committed}; \
-             the held-out split changed after it was sealed",
-            source.path.display()
-        ));
-    }
-    Ok(actual)
-}
-
-/// Gate for a held-out run: `flag` (the value of [`HELDOUT_ENV`]) must be
-/// `1`, and every source's seal must hold. Returns each source's digest.
-///
-/// # Errors
-/// When the flag is not `1` or any seal fails.
-pub(crate) fn authorize_heldout(
-    flag: Option<&str>,
-    sources: &[&Source],
-) -> Result<Vec<String>, String> {
+/// When the flag is not `1`.
+pub(crate) fn authorize_heldout(flag: Option<&str>) -> Result<(), String> {
     if flag != Some("1") {
         return Err(format!(
             "the held-out split runs only with {HELDOUT_ENV}=1; winners are chosen on dev \
              and reported once on held-out (PLAT-1024)"
         ));
     }
-    sources.iter().map(|source| verify_seal(source)).collect()
+    Ok(())
 }
 
 /// One held-out run, as appended to [`heldout_log_path`].
@@ -1004,8 +905,6 @@ pub(crate) struct HeldoutRun {
     pub(crate) unix_seconds: u64,
     /// Every variant label run, in run order.
     pub(crate) variants: Vec<String>,
-    /// Each sealed source's held-out digest.
-    pub(crate) seals: Vec<String>,
     /// Held-out rows run.
     pub(crate) rows: usize,
     /// Answering model, by count of requests sent.

@@ -103,7 +103,6 @@ fn rows(values: &[Value]) -> Vec<Row> {
         "schema": corpus::SCHEMA,
         "sampling_rule": "every row, synthetic",
         "seed": 7,
-        "source_commit": "0000000",
         "rows": values,
     }))
     .unwrap();

@@ -61,7 +61,6 @@ pub(crate) fn corpus_text(rows: &[Value]) -> String {
         "schema": corpus::SCHEMA,
         "sampling_rule": "every row, synthetic",
         "seed": 7,
-        "source_commit": "0000000",
         "rows": rows,
     }))
     .unwrap_or_default()

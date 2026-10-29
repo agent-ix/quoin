@@ -20,7 +20,7 @@
 //! | --- | --- |
 //! | `QUOIN_JEV_VARIANTS` | comma-separated variant ids; default every registered one. Each `variant@version` must match its request-digest pin and be within the 5-version dev cap (`eval_v2_support::preflight`) |
 //! | `QUOIN_JEV_SPLIT` | `dev` (default) or `heldout` |
-//! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; the seal is verified, every variant must be covered by `fixtures/eval-v2/heldout-selection.json`, and the run is logged before any number prints |
+//! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; every variant must be covered by `fixtures/eval-v2/heldout-selection.json`, and the run is logged before any number prints |
 //! | `QUOIN_JEV_HELDOUT_RERUN` | a reason; required to run a variant version already on the held-out log |
 //! | `QUOIN_JEV_EXTERNAL_CORPUS` / `QUOIN_JEV_EXTERNAL_ROOT` | optional external corpus and its checkouts |
 //! | `QUOIN_JEV_EXTERNAL_ONLY` | `1` skips the in-repo corpus, so the report covers the external rows alone; needs `QUOIN_JEV_EXTERNAL_CORPUS` |
@@ -312,7 +312,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
     let selection = corpus::heldout_selection_path();
     let log = corpus::heldout_log_path();
     let refs: Vec<&Source> = sources.iter().collect();
-    let seals = preflight::authorize_run(
+    preflight::authorize_run(
         &RunGate {
             split,
             heldout_flag: heldout_flag.as_deref(),
@@ -352,7 +352,6 @@ async fn tc_1027_run_variants_over_corpus_v2() {
             HeldoutRun {
                 unix_seconds: 0,
                 variants: labels.clone(),
-                seals,
                 rows: rows.len(),
                 models: BTreeMap::new(),
                 rerun_reason,

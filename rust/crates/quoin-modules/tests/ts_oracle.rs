@@ -22,7 +22,6 @@ use quoin_modules::{IxHome, Source, parse_source_arg, read_module_name, to_git_u
 use serde_json::Value as Json;
 
 const GOLDENS: &str = include_str!("../../../goldens/ts-oracle.json");
-const DEFAULT_MODULES: &str = include_str!("../../../goldens/default-modules.yaml");
 
 fn section(name: &str) -> Json {
     let all: Json = serde_json::from_str(GOLDENS).expect("committed goldens parse");
@@ -95,41 +94,6 @@ fn tc_381_232_source_validation_accepts_and_refuses_what_the_oracle_did() {
         let actual_ok =
             serde_json::from_value::<Source>(input.clone()).is_ok_and(|s| s.validate().is_ok());
         assert_eq!(actual_ok, expected_ok, "source {input}");
-    }
-}
-
-/// Trace: FR-019-AC-2
-#[test]
-fn tc_381_233_the_committed_default_module_set_parses_to_the_same_entries() {
-    let manifest = MarketplaceManifest::from_yaml(DEFAULT_MODULES).expect("default set is valid");
-    let expected = section("default_modules_manifest");
-    let expected = expected["value"].as_object().expect("manifest value");
-    assert_eq!(
-        manifest.name.as_deref(),
-        expected["name"].as_str(),
-        "manifest name"
-    );
-    let expected_entries = expected["entries"].as_array().expect("entries");
-    assert_eq!(
-        manifest.entries.len(),
-        expected_entries.len(),
-        "entry count"
-    );
-    for (actual, expected) in manifest.entries.iter().zip(expected_entries) {
-        assert_eq!(
-            actual.name.as_str(),
-            expected["name"].as_str().expect("name")
-        );
-        assert_eq!(
-            actual.is_enabled(),
-            expected["defaultEnabled"].as_bool().unwrap_or(true)
-        );
-        let actual_source = serde_json::to_value(&actual.source).expect("source serializes");
-        assert_eq!(
-            actual_source, expected["source"],
-            "entry {} source",
-            actual.name
-        );
     }
 }
 

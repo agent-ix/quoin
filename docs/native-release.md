@@ -14,9 +14,9 @@ per supported target:
 | `aarch64-apple-darwin` | `quoin-v{version}-aarch64-apple-darwin.tar.gz` | `quoin` |
 | `x86_64-pc-windows-msvc` | `quoin-v{version}-x86_64-pc-windows-msvc.zip` | `quoin.exe` |
 
-The manifest has `schema_version: 1`, a stable SemVer `version`, and one
+The manifest has `schema_version: 2`, a stable SemVer `version`, and one
 record per target containing `target`, `asset`, `archive` (`tar-gz` or `zip`),
-`size`, lowercase SHA-256 `sha256`, and HTTPS asset `url`. Archives contain
+`size`, and HTTPS asset `url`. Archives contain
 exactly one regular member. The default updater endpoint is the GitHub
 `releases/latest/download/quoin-update-manifest.json` URL, so prereleases are
 not candidates for ordinary updates.
@@ -25,8 +25,8 @@ not candidates for ordinary updates.
 update source, but the URL now names a manifest rather than an npm registry.
 ## Initial installation
 
-Download the archive for the host target from the stable GitHub Release, verify
-it against `quoin-update-manifest.json`, extract its sole executable, and place
+Download the archive for the host target from the stable GitHub Release,
+extract its sole executable, and place
 that executable on `PATH`. The native `quoin update` command then manages later
 updates from the same manifest contract. The release workflow smokes the
 extracted archive on every supported target before publishing it.

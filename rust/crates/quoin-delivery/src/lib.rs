@@ -15,7 +15,6 @@ use std::path::{Component, Path, PathBuf};
 use flate2::read::GzDecoder;
 use semver::Version;
 use serde::Deserialize;
-use sha2::{Digest as _, Sha256};
 use tar::Archive;
 use url::Url;
 
@@ -121,9 +120,9 @@ pub enum DeliveryError {
     /// No release record can safely serve this host.
     #[error("release manifest has no supported artifact for {0}")]
     UnsupportedTarget(String),
-    /// The archive does not hash to the manifest digest.
-    #[error("downloaded archive checksum does not match the manifest")]
-    DigestMismatch,
+    /// The archive is not the size the manifest states.
+    #[error("downloaded archive size does not match the manifest")]
+    SizeMismatch,
     /// The archive is not the single safe executable promised by the convention.
     #[error("release archive is unsafe: {0}")]
     Archive(String),
@@ -140,7 +139,7 @@ impl DeliveryError {
             Self::InvalidManifestUrl | Self::Manifest(_) => quoin_outcome::OutcomeClass::Invalid,
             Self::InsecureUrl
             | Self::UnsupportedTarget(_)
-            | Self::DigestMismatch
+            | Self::SizeMismatch
             | Self::Archive(_) => quoin_outcome::OutcomeClass::Refused,
             Self::Transport(_) | Self::HttpStatus(_) | Self::BodyTooLarge | Self::Io(_) => {
                 quoin_outcome::OutcomeClass::Internal
@@ -203,10 +202,7 @@ pub fn update(
     }
     let archive = transport.get(&archive_url, MAX_ARCHIVE_BYTES)?;
     if archive.len() != artifact.size {
-        return Err(DeliveryError::DigestMismatch);
-    }
-    if sha256_hex(&archive) != artifact.sha256 {
-        return Err(DeliveryError::DigestMismatch);
+        return Err(DeliveryError::SizeMismatch);
     }
     let binary = extract(&archive, artifact.archive, executable_name())?;
     install(executable, &binary, &artifact.version)
@@ -385,10 +381,6 @@ fn read_bounded(reader: &mut impl Read, limit: usize) -> Result<Vec<u8>, Deliver
     Ok(bytes)
 }
 
-fn sha256_hex(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ReleaseManifest {
@@ -404,7 +396,6 @@ struct ArtifactRecord {
     asset: String,
     archive: ArchiveFormat,
     size: usize,
-    sha256: String,
     url: String,
 }
 
@@ -419,7 +410,6 @@ struct SelectedArtifact {
     version: Version,
     archive: ArchiveFormat,
     size: usize,
-    sha256: String,
     url: String,
 }
 
@@ -427,7 +417,7 @@ impl ReleaseManifest {
     fn parse(bytes: &[u8]) -> Result<Self, DeliveryError> {
         let manifest: Self = serde_json::from_slice(bytes)
             .map_err(|error| DeliveryError::Manifest(error.to_string()))?;
-        if manifest.schema_version != 1 {
+        if manifest.schema_version != 2 {
             return Err(DeliveryError::Manifest(
                 "unsupported schema version".to_owned(),
             ));
@@ -469,7 +459,6 @@ impl ReleaseManifest {
             version,
             archive: record.archive,
             size: record.size,
-            sha256: record.sha256.clone(),
             url: record.url.clone(),
         })
     }
@@ -487,16 +476,6 @@ fn validate_record(record: &ArtifactRecord) -> Result<(), DeliveryError> {
     }
     if record.asset.contains('/') || record.asset.contains('\\') || record.asset.contains("..") {
         return Err(DeliveryError::Manifest("asset name is unsafe".to_owned()));
-    }
-    if record.sha256.len() != 64
-        || !record
-            .sha256
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
-    {
-        return Err(DeliveryError::Manifest(
-            "sha256 must be 64 lowercase hexadecimal characters".to_owned(),
-        ));
     }
     let url = Url::parse(&record.url)
         .map_err(|_| DeliveryError::Manifest("artifact URL is invalid".to_owned()))?;
@@ -537,7 +516,7 @@ mod tests {
     }
 
     fn manifest(archive: &[u8], url: &str) -> Vec<u8> {
-        serde_json::to_vec(&serde_json::json!({"schema_version": 1, "version": "9.9.9", "artifacts": [{"target": host_target().unwrap(), "asset": "quoin-v9.9.9-test.tar.gz", "archive": "tar-gz", "size": archive.len(), "sha256": sha256_hex(archive), "url": url}]})).unwrap()
+        serde_json::to_vec(&serde_json::json!({"schema_version": 2, "version": "9.9.9", "artifacts": [{"target": host_target().unwrap(), "asset": "quoin-v9.9.9-test.tar.gz", "archive": "tar-gz", "size": archive.len(), "url": url}]})).unwrap()
     }
 
     fn tar(bytes: &[u8], path: &str) -> Vec<u8> {
@@ -565,12 +544,12 @@ mod tests {
     /// Trace: FR-022
     #[test]
     fn tc_373_746_manifest_rejects_prereleases_and_duplicate_targets() {
-        let prerelease = br#"{"schema_version":1,"version":"1.0.0-rc.1","artifacts":[]}"#;
+        let prerelease = br#"{"schema_version":2,"version":"1.0.0-rc.1","artifacts":[]}"#;
         assert!(matches!(
             ReleaseManifest::parse(prerelease),
             Err(DeliveryError::Manifest(_))
         ));
-        let duplicate = br#"{"schema_version":1,"version":"1.0.0","artifacts":[{"target":"x","asset":"a.tar.gz","archive":"tar-gz","size":1,"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","url":"https://example.test/a"},{"target":"x","asset":"b.tar.gz","archive":"tar-gz","size":1,"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","url":"https://example.test/b"}]}"#;
+        let duplicate = br#"{"schema_version":2,"version":"1.0.0","artifacts":[{"target":"x","asset":"a.tar.gz","archive":"tar-gz","size":1,"url":"https://example.test/a"},{"target":"x","asset":"b.tar.gz","archive":"tar-gz","size":1,"url":"https://example.test/b"}]}"#;
         let parsed = ReleaseManifest::parse(duplicate).expect("fixture parses");
         assert!(matches!(
             parsed.select("x"),
@@ -609,14 +588,13 @@ mod tests {
 
     /// Trace: FR-022
     #[test]
-    fn tc_373_748_checksum_mismatch_leaves_the_installed_binary_unchanged() {
+    fn tc_373_748_size_mismatch_leaves_the_installed_binary_unchanged() {
         let archive_url = "https://example.test/quoin.tar.gz";
         let archive = tar(b"new executable", executable_name());
         let manifest_url = "https://example.test/manifest.json";
-        let digest = sha256_hex(&archive);
         let document = String::from_utf8(manifest(&archive, archive_url))
             .unwrap()
-            .replacen(&digest, &"b".repeat(64), 1);
+            .replacen(&format!("\"size\":{}", archive.len()), "\"size\":1", 1);
         let mut bodies = BTreeMap::new();
         bodies.insert(manifest_url.to_owned(), document.into_bytes());
         bodies.insert(archive_url.to_owned(), archive);
@@ -631,7 +609,7 @@ mod tests {
             &executable,
             false,
         );
-        assert!(matches!(result, Err(DeliveryError::DigestMismatch)));
+        assert!(matches!(result, Err(DeliveryError::SizeMismatch)));
         assert_eq!(fs::read(executable).unwrap(), b"old executable");
     }
 

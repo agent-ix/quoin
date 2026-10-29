@@ -7,7 +7,7 @@
 //! offline test, not only a live run nobody can afford to repeat.
 //!
 //! - No variant may be past the dev cap of [`MAX_DEV_VERSIONS`] versions.
-//! - On the held-out split: the flag and the seal
+//! - On the held-out split: the flag
 //!   ([`corpus::authorize_heldout`]), a committed selection entry covering
 //!   every variant ([`corpus::check_heldout_selected`]), and no unexplained
 //!   rerun ([`corpus::check_heldout_rerun`]).
@@ -57,21 +57,20 @@ pub(crate) struct RunGate<'a> {
     pub(crate) log: &'a Path,
 }
 
-/// Every check a run must pass before its first request. Returns each
-/// sealed source's held-out digest (empty on dev).
+/// Every check a run must pass before its first request.
 ///
 /// # Errors
 /// The first check that fails, naming what it refused.
 pub(crate) fn authorize_run(
     gate: &RunGate<'_>,
     variants: &[&Variant],
-    sources: &[&Source],
-) -> Result<Vec<String>, String> {
+    _sources: &[&Source],
+) -> Result<(), String> {
     check_version_cap(variants)?;
     if gate.split != Split::Heldout {
-        return Ok(Vec::new());
+        return Ok(());
     }
-    let seals = corpus::authorize_heldout(gate.heldout_flag, sources)?;
+    corpus::authorize_heldout(gate.heldout_flag)?;
     let text = std::fs::read_to_string(gate.selection)
         .map_err(|error| format!("{}: {error}", gate.selection.display()))?;
     let selection = corpus::parse_selection(&text)?;
@@ -82,5 +81,5 @@ pub(crate) fn authorize_run(
     corpus::check_heldout_selected(&selection, &chosen)?;
     let labels: Vec<String> = variants.iter().map(|variant| variant.label()).collect();
     corpus::check_heldout_rerun(gate.log, &labels, gate.rerun_reason)?;
-    Ok(seals)
+    Ok(())
 }

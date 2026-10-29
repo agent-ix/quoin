@@ -84,7 +84,6 @@ fn rows() -> Vec<Row> {
         "schema": corpus::SCHEMA,
         "sampling_rule": "synthetic",
         "seed": 1,
-        "source_commit": "0000000",
         "rows": [
             row_value("EV2-0001", Mode::ReqTest),
             row_value("EV2-0002", Mode::ReqCode),

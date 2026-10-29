@@ -93,7 +93,6 @@ fn parse(rows: &[Value]) -> CorpusFile {
         "schema": corpus::SCHEMA,
         "sampling_rule": "every row, synthetic",
         "seed": 7,
-        "source_commit": "0000000",
         "rows": rows,
     }))
     .unwrap();
@@ -916,7 +915,6 @@ fn tc_1030_a_stopped_heldout_run_is_still_logged() {
     let run = || corpus::HeldoutRun {
         unix_seconds: 0,
         variants: labels.clone(),
-        seals: vec!["abc".to_owned()],
         rows: 1,
         models: BTreeMap::new(),
         rerun_reason: None,

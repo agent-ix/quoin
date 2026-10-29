@@ -525,10 +525,6 @@ class Cache:
         pass
 "#;
 
-fn sha(text: &str) -> String {
-    quoin_store::digest_bytes_sha256(text.as_bytes()).to_stored()
-}
-
 /// An `RTC` external row reading `TEST_FILE` and `CODE_FILE` from
 /// `sibling`, with `symbol` as its code symbol.
 fn python_row(id: &str, symbol: &str) -> Value {
@@ -544,9 +540,8 @@ fn python_row(id: &str, symbol: &str) -> Value {
                         "context": null},
         "test": {"path": "tests/test_store.py", "fn_name": "TestStore.test_save"},
         "code": {"path": "src/store.py", "symbol": symbol},
-        "ref": {"repo": "agent-ix/sibling", "commit": "deadbeef",
-                "paths": {"test": "tests/test_store.py", "code": "src/store.py"},
-                "sha256": {"test": sha(TEST_FILE), "code": sha(CODE_FILE)}},
+        "ref": {"repo": "agent-ix/sibling",
+                "paths": {"test": "tests/test_store.py", "code": "src/store.py"}},
         "mutation": null,
         "truth": {"code_implements_intent": {"answer": true, "kind": "mechanical",
                                              "alternatives": [], "rationale": "stated"}},
@@ -574,7 +569,6 @@ fn tc_1035_an_external_python_row_materializes_and_splits() {
         "schema": corpus::SCHEMA,
         "sampling_rule": "every row, synthetic",
         "seed": 7,
-        "source_commit": "0000000",
         "rows": [python_row("EVX-0001", "Store.save"), python_row("EVX-0002", "save")],
     }))
     .unwrap();
@@ -639,7 +633,7 @@ fn fr_008_row(id: &str, repo: &str) -> Value {
                         "ac_text": null, "context": null},
         "test": null,
         "code": null,
-        "ref": {"repo": repo, "commit": "c", "paths": {}, "sha256": {}},
+        "ref": {"repo": repo, "paths": {}},
         "mutation": null,
         "truth": {"criterion_sound": {"answer": true, "kind": "agent_dual",
                                       "alternatives": [], "rationale": "stated"}},
@@ -652,7 +646,6 @@ fn external_file(rows: &[Value]) -> corpus::CorpusFile {
             "schema": corpus::SCHEMA,
             "sampling_rule": "every row, synthetic",
             "seed": 7,
-            "source_commit": "0000000",
             "rows": rows,
         })
         .to_string(),
