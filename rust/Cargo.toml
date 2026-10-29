@@ -162,7 +162,7 @@ regex = "=1.13.1"
 # in its acceptance criterion, so this is the place.
 proptest = { version = "=1.9.0", default-features = false, features = ["std", "bit-set"] }
 jsonschema = { version = "=0.56.0", default-features = false }
-engineering-assurance = { version = "=0.7.1", git = "https://github.com/agent-ix/engineering-assurance.git", rev = "08bbf1cc5acc8b5a6e636d133ec662b812fc0221", default-features = false }
+engineering-assurance = { version = "=0.7.1", git = "https://github.com/agent-ix/engineering-assurance.git", rev = "6e8c0d978846726cb8d52ab1709a886d12b69011", default-features = false }
 signal-hook = "=0.4.4"
 clap = { version = "=4.5.47", default-features = false, features = ["std", "help", "usage", "error-context"] }
 flate2 = "=1.1.10"

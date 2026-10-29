@@ -207,6 +207,13 @@ pub(crate) fn plan_from(
     let objective = design::objective_from(path, value)?;
     design::rule_agrees_with_objective(path, statistical_design.as_ref(), objective.as_ref())?;
     let (protected_apparatus, negative_controls) = apparatus::apparatus_from(path, value, stage)?;
+    validate_gate_definition(
+        path,
+        stage,
+        status,
+        ground_truth_kind.is_some(),
+        statistical_design.as_ref(),
+    )?;
     if let Some(procedure) = execution_procedure.as_deref() {
         let covered = protected_apparatus.as_ref().is_some_and(|apparatus| {
             apparatus.iter().any(|entry| {
@@ -242,6 +249,39 @@ pub(crate) fn plan_from(
         protected_apparatus,
         negative_controls,
     })
+}
+
+fn validate_gate_definition(
+    path: &str,
+    stage: MeasurementStage,
+    status: LifecycleStatus,
+    has_ground_truth: bool,
+    statistical_design: Option<&crate::types::plan::StatisticalDesign>,
+) -> Result<(), MeasurementError> {
+    if stage != MeasurementStage::Gate || status == LifecycleStatus::Retired {
+        return Ok(());
+    }
+    if !has_ground_truth {
+        return Err(MeasurementError::new(
+            CODE,
+            format!("{path}: a non-retired `gate` plan requires `ground_truth_kind`"),
+        ));
+    }
+    let Some(statistical_design) = statistical_design else {
+        return Err(MeasurementError::new(
+            CODE,
+            format!("{path}: a non-retired `gate` plan requires `statistical_design`"),
+        ));
+    };
+    if statistical_design.decision_rule.is_none() {
+        return Err(MeasurementError::new(
+            CODE,
+            format!(
+                "{path}: a non-retired `gate` plan requires `statistical_design.decision_rule`"
+            ),
+        ));
+    }
+    Ok(())
 }
 
 fn execution_procedure_from(

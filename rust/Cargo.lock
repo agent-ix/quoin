@@ -11,7 +11,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 [[package]]
 name = "agent-ix-engineering-assurance-campaign"
 version = "0.0.0"
-source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=08bbf1cc5acc8b5a6e636d133ec662b812fc0221#08bbf1cc5acc8b5a6e636d133ec662b812fc0221"
+source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=6e8c0d978846726cb8d52ab1709a886d12b69011#6e8c0d978846726cb8d52ab1709a886d12b69011"
 dependencies = [
  "serde",
 ]
@@ -597,7 +597,7 @@ dependencies = [
 [[package]]
 name = "engineering-assurance"
 version = "0.7.1"
-source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=08bbf1cc5acc8b5a6e636d133ec662b812fc0221#08bbf1cc5acc8b5a6e636d133ec662b812fc0221"
+source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=6e8c0d978846726cb8d52ab1709a886d12b69011#6e8c0d978846726cb8d52ab1709a886d12b69011"
 dependencies = [
  "agent-ix-engineering-assurance-campaign",
  "rustix",
@@ -623,7 +623,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1288,7 +1288,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c91d8cffac8849493a82233811bd02b2b183b8cf39bf704de0fa0841b737595"
 dependencies = [
  "bstr",
- "hashbrown 0.17.1",
+ "hashbrown 0.16.1",
 ]
 
 [[package]]
@@ -2903,7 +2903,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3230,6 +3230,7 @@ name = "quoin-measurement"
 version = "0.29.2"
 dependencies = [
  "engineering-assurance",
+ "ix-trace-rs",
  "proptest",
  "quoin-evidence",
  "quoin-jsonschema",
@@ -3645,7 +3646,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3703,7 +3704,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4150,7 +4151,7 @@ dependencies = [
  "getrandom 0.3.4",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4844,7 +4845,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

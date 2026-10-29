@@ -37,7 +37,7 @@ use quoin_measurement::report::{
 use quoin_measurement::source::{DiskMeasurement, MemoryMeasurement};
 use quoin_measurement::store::write_measurement_collection;
 use quoin_measurement::types::collection::MeasurementCollection;
-use quoin_measurement::types::plan::MeasurementPlan;
+use quoin_measurement::types::plan::{MeasurementPlan, MeasurementStage};
 use quoin_measurement::validate;
 use serde_json::{Value, json};
 
@@ -538,12 +538,11 @@ fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reac
 /// Provenance: PLAT-958
 #[test]
 fn tc_958_009_a_plan_without_an_objective_or_at_another_stage_is_unchanged() {
-    // A `gate` plan requires `protected_apparatus` and `negative_controls`
-    // (PLAT-975, FR-110-AC-1) whether or not it states an `objective`; this
-    // test is not about apparatus, so it carries the minimal lists that
-    // satisfy plan load and nothing else exercises them.
-    let gate_no_objective = "protected_apparatus:\n  - answers.json\nnegative_controls:\n  - kind: apparatus-edit\n    \
-         description: test-only\n";
+    // A valid gate definition can omit an objective and authored apparatus.
+    let gate_no_objective = "ground_truth_kind: mechanical\n\
+         statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    threshold: 0.8\n\
+         negative_controls:\n  - kind: stale-evidence\n    \
+         description: admitted evidence names the subject version\n";
     for document in [
         plan_document("ratchet", "v1", ""),
         plan_document("gate", "v1", gate_no_objective),
@@ -1045,10 +1044,8 @@ fn tc_958_018_a_target_direction_is_reached_only_on_exact_equality() {
 
 /// A `gate` plan for `quality.score` under `definition`, with `objective`
 /// direction `direction` and `statistical_design.decision_rule` set to
-/// `rule` (already YAML-indented under `decision_rule:`). `protected_apparatus`
-/// and `negative_controls` are the minimal lists FR-110-AC-1 requires of
-/// every `gate` plan; this file is not about apparatus, so nothing else
-/// exercises them.
+/// `rule` (already YAML-indented under `decision_rule:`). The gate declares
+/// typed ground truth and an adverse control, without an authored inventory.
 fn gate_plan_document(direction: &str, definition: &str, rule: &str) -> String {
     format!(
         "---\n\
@@ -1061,8 +1058,8 @@ fn gate_plan_document(direction: &str, definition: &str, rule: &str) -> String {
          metric: quality.score\n\
          definition_version: {definition}\n\
          objective:\n  direction: {direction}\n\
-         protected_apparatus:\n  - answers.json\n\
-         negative_controls:\n  - kind: apparatus-edit\n    description: test-only\n\
+         ground_truth_kind: mechanical\n\
+         negative_controls:\n  - kind: stale-evidence\n    description: stale evidence refuses a pass\n\
          statistical_design:\n  decision_rule:\n{rule}\
          ---\n\
          \n\
@@ -1305,7 +1302,7 @@ fn tc_958_020_a_baseline_gate_reads_prior_collection_or_best_seen() {
 #[test]
 fn tc_958_021_a_gate_is_inconclusive_with_no_rule_no_prior_or_an_unsupported_baseline() {
     // No `statistical_design` at all: `no_decision_rule`.
-    let no_rule = plans(&plan_document("gate", "v1", &{
+    let mut no_rule = plans(&plan_document("ratchet", "v1", &{
         let mut objective = objective("higher", None);
         objective.push_str(
             "protected_apparatus:\n  - answers.json\nnegative_controls:\n  - kind: \
@@ -1313,6 +1310,7 @@ fn tc_958_021_a_gate_is_inconclusive_with_no_rule_no_prior_or_an_unsupported_bas
         );
         objective
     }));
+    no_rule[0].stage = MeasurementStage::Gate;
     assert_eq!(
         gate_over(&no_rule, &[0.9]),
         GateOutcome::Inconclusive(InconclusiveReason::NoDecisionRule)
@@ -1410,7 +1408,7 @@ fn tc_958_023_a_gate_verdict_renders_in_text_and_json_and_a_fail_is_an_attention
     let text = render_measurement_report(&failing).expect("the report renders");
     assert!(
         text.contains(
-            "| quality.score | MP-958 (spec/assurance/MP-958.md) | gate | higher | fail | \
+            "| quality.score | MP-958 (spec/assurance/MP-958.md; ground truth: mechanical) | gate | higher | fail | \
              current 0.4; baseline 0.6 |"
         ),
         "{text}"

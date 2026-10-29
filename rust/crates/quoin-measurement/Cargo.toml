@@ -59,6 +59,7 @@ thiserror = { workspace = true }
 tempfile = { workspace = true }
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 # Property tests over the verdict checker's estimator recomputation
 # (PLAT-961); the workspace pin.
 proptest = { workspace = true }
