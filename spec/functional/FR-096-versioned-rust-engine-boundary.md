@@ -119,7 +119,7 @@ non-success outcome and are never reported as success.
 | FR-096-CON-1 | The boundary SHALL NOT expose a function-shaped operation. | Architecture | Test |
 | FR-096-CON-2 | The boundary SHALL NOT derive a verdict from unstructured stdout or stderr text. | Responsibility | Test |
 | FR-096-CON-3 | The Rust workspace SHALL remain in this repository. | Architecture | Test |
-| FR-096-CON-4 | No crate of the workspace SHALL be published to crates.io; consumers pin by git revision. | Distribution | Inspection |
+| FR-096-CON-4 | Quoin SHALL NOT publish any crate of the workspace to crates.io; consumers depend on a git revision recorded in `Cargo.toml` and `Cargo.lock`. | Distribution | Inspection |
 
 ## Acceptance Criteria
 
@@ -134,7 +134,6 @@ non-success outcome and are never reported as success.
 | FR-096-AC-7 | A static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is planted. | Test (TC-1611) |
 | FR-096-AC-8 | Over one materialised repository, the verdict reached through the caller's snapshot equals the verdict reached by `quoin-core` reading the same tree from disk, including for a directory the caller's pre-filter does not exclude and for one both sides do; narrowing the caller's pre-filter by one directory fails the comparison. | Test (TC-1713) |
 | FR-096-AC-9 | A stdin stream one byte past the transport bound is refused with the declared refusal status, without the request being parsed and without the stream being read beyond that bound; a stream of exactly the bound is accepted; and the transport bound is strictly greater than every declared per-operation request bound. | Test (TC-1714) |
-
 | FR-096-AC-11 | With `QUOIN_CORE` unset and no `quoin-core` on `PATH`, the caller reports a resolution diagnostic naming `PATH`. | Test (TC-1980) |
 | FR-096-AC-12 | A failure to resolve the executable is reported as a resolution diagnostic and not as the spawn-failure outcome, and never as `could not be run (undefined)`. | Test (TC-1981) |
 | FR-096-AC-13 | `core.ping` declaring an `expect_protocol` that differs from the revision `quoin-core` speaks returns a complete payload carrying `protocol_version`, with a partial status and the `ProtocolSkew` code. | Test (TC-1982) |

@@ -65,8 +65,8 @@ store.
   reimplemented only to the extent [FR-022](./FR-022-self-update.md) already
   requires.
 - Module reconcile SHALL remain idempotent and SHALL perform no git or network
-  access when every declared module is already materialized at its pinned
-  reference.
+  access when every declared module is already materialized at the reference
+  its module declaration names.
 - If a module manifest declares an unknown key, then the Rust manifest reader
   SHALL refuse it, preserving the existing strict-parsing behaviour.
 - Quoin SHALL keep exactly one catalog and one module store across the port and
