@@ -42,6 +42,20 @@
 - [ ] `Verification` cells name a method only, with no `TC-` id.
 
 ## Hash / Digest / Pin Antipattern (any hit is a `high` finding)
+
+**Mandatory in base, all, and subset reviews.** Mirror `/code-review`'s P0 rule
+for unasked-for ceremony and file tracking: we have git; do not specify a second
+file-tracking system. Review requirements, acceptance criteria, test cases, ADRs,
+and implementation instructions before they become code.
+
+Search for hash, digest, SHA, checksum, pin, manifest, ledger, provenance,
+attestation, receipt, relocation, inventory, and recorded/reviewed revision uses;
+inspect the surrounding requirement rather than treating a keyword alone as a
+finding. Apply the proof-binding exception below. For every violation, record a
+P0 finding with `Severity: high`, a FAIL verdict in the review summary, the exact
+artifact/criterion references, and removal as the required correction. A valid
+review document does not make a failing spec ready for implementation.
+
 - [ ] No requirement, criterion, test case, ADR or instruction creates, keeps or checks a hash, digest, SHA, checksum, pin, checksum catalog, manifest, ledger, inventory, provenance record, attestation, receipt, relocation map, ID-block table or recorded/reviewed revision.
 - [ ] No test case counts, hashes or scans files, fixtures, versions, spec text or source text.
 - [ ] No exact tool or toolchain version pinned in prose. Package versions live in `Cargo.toml` / `package.json` and their lockfiles only; a report may name the app version it ran.
