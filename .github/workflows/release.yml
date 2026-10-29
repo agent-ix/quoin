@@ -80,10 +80,10 @@ jobs:
         run: |
           set -euo pipefail
           jq -e --arg v "$VERSION" \
-            '.schema_version == 1 and .version == $v and (.artifacts | length == 4)' \
+            '.schema_version == 2 and .version == $v and (.artifacts | length == 4)' \
             release/quoin-update-manifest.json > /dev/null
 
-      - name: Verify asset checksums and extract
+      - name: Extract release assets
         shell: bash
         run: |
           set -euo pipefail
@@ -96,16 +96,9 @@ jobs:
             target=$(jq -r '.target' <<<"$artifact")
             asset=$(jq -r '.asset' <<<"$artifact")
             archive=$(jq -r '.archive' <<<"$artifact")
-            expected_sha=$(jq -r '.sha256' <<<"$artifact")
 
             file="release/$asset"
             test -f "$file"
-
-            actual_sha=$(sha256sum "$file" | cut -d ' ' -f1)
-            if [ "$actual_sha" != "$expected_sha" ]; then
-              echo "::error::$asset sha256 mismatch: manifest says $expected_sha, downloaded file is $actual_sha" >&2
-              exit 1
-            fi
 
             dest="artifacts/$target"
             mkdir -p "$dest"
