@@ -34,7 +34,7 @@ Derive `semantic/package-manifest.json` per FR-075 and resolve `semantic.imports
 
 ## Subtasks
 
-- [x] `src/semantic/package-manifest.ts`: derive every required field as FR-075 states; validate against the vendored filament-core-data `package-manifest.schema.json` (TC-1372).
+- [x] `src/semantic/package-manifest.ts`: derive every required field as FR-075 states; validate against the published filament-core-data `package-manifest.schema.json` (TC-1372).
 - [x] Import resolution and cycle rejection at install (TC-1374); identity parity test (TC-1375); package-form rejections (TC-1376); static scans (TC-1377, TC-1378).
 
 ## Deliverables

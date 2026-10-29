@@ -53,7 +53,7 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 
 ## Outputs
 
-- `relations`: `RelationDecl[]` in row order, each validating against the vendored semantic-core `RelationDecl.json`.
+- `relations`: `RelationDecl[]` in row order, each validating against the semantic-core `RelationDecl.json`.
 - `relationSources`: one `{ name, sourceSpan }` per `relations` element, at the same index, where `name` is the row's `Name` cell and `sourceSpan` is a semantic-core `SourceLocus`.
 - `availability.relations`: `{ state, reason?, lossy }`, as FR-072 reports clauses and operations.
 - Diagnostics on the quire-rs FR-075 shape: `code`, `severity`, `line`, `section`, `reason`, `sourceSpan` of the declaring line, and a `message`.

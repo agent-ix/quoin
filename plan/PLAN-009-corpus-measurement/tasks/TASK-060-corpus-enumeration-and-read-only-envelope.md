@@ -34,8 +34,6 @@ relationships:
     type: verifies
   - target: "ix://agent-ix/quoin/TC-1554"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1555"
-    type: verifies
   - target: "ix://agent-ix/quoin/TC-1583"
     type: verifies
 ---

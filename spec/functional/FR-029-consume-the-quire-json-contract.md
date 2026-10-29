@@ -34,13 +34,14 @@ against the published schema **first**; the models exist to describe what the
 validator has already made true. A mismatch surfaces as a violation naming the
 offending path rather than as an `undefined` three frames later.
 
-### The schemas come from the linked engine
+### Schemas are not copied
 
-quire-rs is a Rust crate and quoin links it as its engine at the version
-`Cargo.lock` records. The published schemas are `quire-rs` documents exposed by
-that crate, so the schema quoin validates against and the schema the engine was
-built from are the same by construction. quoin keeps no copy of them, performs no
-network read on a command path, and records no hash of them: the locked engine
+quoin keeps no copy of any Quire schema, performs no network read on a command
+path, and records no hash of one. Quoin links `quire-rs` as its engine at the
+version `Cargo.lock` records. For the `assurance-v1` export it validates against
+the schema the crate itself exposes (`quire_rs::assurance::ASSURANCE_V1_SCHEMA`);
+the coverage, properties and other payloads are read into the engine's own types
+rather than checked against a separate schema document. The locked engine
 version is the whole provenance.
 
 ### The version premise is checked before anything parses
@@ -54,7 +55,7 @@ names the found version, the required version, and the consequence.
 
 - `quire coverage --json` and `quire properties --json` payloads
 - `quire --version` output
-- The published schemas exposed by the linked `quire-rs` engine
+- The `assurance-v1` schema exposed by the linked `quire-rs` engine, and the engine's own payload types
 
 ## Outputs
 
@@ -96,15 +97,21 @@ names the found version, the required version, and the consequence.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-029-CON-1 | quoin SHALL NOT restate the published schemas as hand-written validators. The duplication is the failure being closed; using the published schema from the linked engine is the whole mechanism. | Architecture | Test |
+| FR-029-CON-1 | quoin SHALL NOT restate the published schemas as hand-written validators. The duplication is the failure being closed; using the linked engine's schema and types is the whole mechanism. | Architecture | Test |
 | FR-029-CON-2 | quoin SHALL NOT fetch a schema at runtime. Every command path stays network-free. | Architecture | Inspection |
 | FR-029-CON-3 | The schemas quoin validates against SHALL mirror the publisher's open/closed decision for every vocabulary rather than second-guessing it. Closing `diagnostics[].reason` would reject a newer engine's payload that a consumer could otherwise read. | Architecture | Test |
+
+> **CR note (2026-10-29):** FR-029-AC-1 is withdrawn. It required each vendored
+> schema to hash to a value recorded beside it. quoin keeps no schema copy; the
+> locked `quire-rs` version is the provenance. TC-110 is withdrawn with it. The
+> id is not reused. AC-7, AC-9, AC-13 and TC-116, TC-118, TC-272 still describe
+> the former TypeScript validators and are flagged for the requirement owner.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-029-AC-1 | Each published schema quoin validates against is the one exposed by the linked engine and carries a `$id` naming the contract version. | Test (TC-110) |
+| FR-029-AC-1 | Withdrawn (CR note, 2026-10-29): required each schema copy to hash to a recorded value. quoin keeps no copy, so nothing remains to check. | Withdrawn (TC-110) |
 | FR-029-AC-2 | A conformant coverage payload and a conformant properties payload each validate. | Test (TC-111) |
 | FR-029-AC-3 | A payload missing a required key, carrying an added field, or using a value outside a closed engine enum is rejected, and the report names the failing path. | Test (TC-112) |
 | FR-029-AC-4 | Unreadable output is reported as a named contract violation rather than thrown, and the message names the likeliest cause. | Test (TC-113) |

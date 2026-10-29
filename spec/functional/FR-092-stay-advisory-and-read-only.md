@@ -83,6 +83,7 @@ measurement that can write is a measurement that can destroy the evidence it was
 | FR-092-AC-2 | The Git status of every enumerated corpus repository is byte-identical before and after a run. | Test (TC-1552) |
 | FR-092-AC-3 | Every file written by a run is under the declared output directory. | Test (TC-1553) |
 | FR-092-AC-4 | A declared output directory inside another enumerated corpus repository is refused before any file is read. | Test (TC-1554) |
+| FR-092-AC-5 | Withdrawn (CR note, 2026-10-29): required a SHA-256 digest of every artifact in the run manifest; nothing reads it back. | Withdrawn (TC-1555) |
 | FR-092-AC-6 | A measurement that cannot resolve a module of its declared required module set exits non-zero before reading a corpus document, distinguishing a tool failure from a measured failure. | Test (TC-1556) |
 | FR-092-AC-7 | The refs, index and working tree of every enumerated corpus repository and every module repository compare equal before and after a run. | Test (TC-1583) |
 

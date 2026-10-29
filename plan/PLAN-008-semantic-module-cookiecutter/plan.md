@@ -92,7 +92,7 @@ TASK-045 -> TASK-046 -> TASK-047 -> TASK-048 -> TASK-050 -> TASK-051
 | --------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | G1 — renders    | All three variants render unattended with no error.                                                                       | TASK-046 onward  |
 | G2 — emits      | A rendered variant emits one schema per exported type, twice, byte-identically.                                           | TASK-047         |
-| G3 — declares   | The rendered manifest validates against the vendored module-manifest schema and every `data_schema.schema` names an emitted file.                     | TASK-048         |
+| G3 — declares   | The rendered manifest validates against the published module-manifest schema and every `data_schema.schema` names an emitted file.                      | TASK-048         |
 | G4 — verifies   | The rendered suite runs, fails without the engine, and reports zero skips with it.                                        | TASK-050         |
 | G5 — conforms   | Quoin's gate passes: conformance, residue, determinism, drift, and `quire validate` over each rendered spec tree.         | TASK-051         |
 | G6 — repo green | `make lint` and `make test` pass in this repository, and `quire validate --scope . "spec/**/*.md"` is structurally clean. | the pull request |

@@ -1,6 +1,6 @@
 ---
 id: TASK-039
-title: "Schema ownership and vendoring"
+title: "Schema ownership and published packages"
 type: Task
 status: done
 track: A
@@ -14,13 +14,9 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/TC-1342"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1343"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1385"
-    type: verifies
 ---
 
-# TASK-039: Schema ownership and vendoring
+# TASK-039: Schema ownership and published packages
 
 ## Scope
 

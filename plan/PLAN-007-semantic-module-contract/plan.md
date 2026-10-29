@@ -37,10 +37,10 @@ quire-rs#388 implements the extraction the fixtures define.
 
 ### Functional Requirements
 
-- [x] **FR-070:** Optional `semantic` manifest block with a closed key set; install-time rejections in Quoin; vendored schema with provenance.
+- [x] **FR-070:** Optional `semantic` manifest block with a closed key set; install-time rejections in Quoin; module-manifest schema from the published package at the lockfile version.
 - [x] **FR-071:** Typed Properties table and line-level `sysml` fence map to one normalized `FieldDecl[]`; golden fixtures for quire-rs#388.
 - [x] **FR-072:** Invariants and Operations map to `ClauseRef[]`/`OperationDecl[]`; `Identifier` clause ids; advisory unchecked languages.
-- [x] **FR-073:** `data_schema` by emitted-schema path, offline `$ref` resolution against a vendored semantic-core bundle, inline-schema warning.
+- [x] **FR-073:** `data_schema` by emitted-schema path, offline `$ref` resolution against the semantic-core bundle from the published package, inline-schema warning.
 - [x] **FR-074:** Legacy forms at `warning`, `quoin semantic sweep` and the sweep-report guard for promotion.
 - [x] **FR-075:** Derived `package-manifest.json` (per-export digests withdrawn, quoin#661); import resolution at `quoin module install`.
 
@@ -57,12 +57,12 @@ TASK-039 -> TASK-040 -> TASK-042 --\
 
 - TASK-039 lands the schema change in filament-core-service#21 and consumes both schemas (module manifest, semantic-core bundle) from their published packages; every later task validates against them.
 - TASK-040 (manifest block, `data_schema` references, authoring pack) and TASK-041 (mapping fixtures, legacy forms, sweep) touch disjoint code and run in parallel.
-- TASK-042 (package manifest derivation, registry pins) needs the loaded block and the resolved schema references from TASK-040.
+- TASK-042 (package manifest derivation) needs the loaded block and the resolved schema references from TASK-040.
 - TASK-043 runs the NFR-017 gates over the finished slice; TASK-044 is the review gate.
 
 ### Cross-cutting constraints
 
-- Quire-executed behaviour (extraction, artifact-time diagnostics) is specified here by fixtures and executed by quire-rs#388; quoin tests verify the fixtures' expected outputs against the vendored schemas and each other, not extraction itself.
+- Quire-executed behaviour (extraction, artifact-time diagnostics) is specified here by fixtures and executed by quire-rs#388; quoin tests verify the fixtures' expected outputs against the published schemas and each other, not extraction itself.
 - `quoin` performs no network read on any command path (FR-073-CON-1) and writes nothing outside `IX_HOME` and the module root.
 - quoin's two pre-existing uncommitted ignore-file edits are not part of this plan; stage `spec/`, `src/`, `tests/`, `scripts/`, `plan/` paths explicitly.
 
@@ -71,20 +71,19 @@ TASK-039 -> TASK-040 -> TASK-042 --\
 `src/catalog.ts` `loadCatalog` gains the `semantic` block reader and install-time
 validation (via `src/commands/module/install.ts`); `src/write.ts` reports the
 block in the authoring pack; a new `src/semantic/` module holds the schema
-vendoring, `data_schema` reference resolution, package-manifest derivation,
-registry pins, and the sweep command; `scripts/refresh-manifest-schema.mjs` and
-`scripts/refresh-semantic-core-schemas.mjs` follow `refresh-quire-schemas.mjs`.
+resolution, `data_schema` reference resolution, package-manifest derivation,
+and the sweep command.
 Fixtures live under `tests/fixtures/semantic-module/`.
 
 ## Test Plan
 
-- [x] **TC-1342, TC-1343, TC-1385:** schema diffs and vendored provenance.
+- [x] **TC-1342:** manifest schema diff. (TC-1343 and TC-1385 withdrawn.)
 - [x] **TC-1336..1341, TC-1383, TC-1337:** manifest block load, rejections, pack.
 - [x] **TC-1360..1366:** `data_schema` references, failures, offline resolution.
 - [x] **TC-1344..1352, TC-1384:** Properties mapping fixtures and cell grammars.
 - [x] **TC-1353..1359:** Invariants/Operations fixtures.
 - [x] **TC-1367..1371, TC-1386:** legacy forms, promotion guard, sweep.
-- [x] **TC-1372..1378:** derived package manifest and registry pins.
+- [x] **TC-1372..1378:** derived package manifest (TC-1373 withdrawn).
 - [x] **TC-1379..1382:** NFR-017 gates.
 
 ### Entrance Criteria
@@ -102,11 +101,11 @@ Fixtures live under `tests/fixtures/semantic-module/`.
 
 ### Track A: Critical Path
 
-- **A1 = TASK-039** Schema ownership and vendoring — Medium.
+- **A1 = TASK-039** Schema ownership and published packages — Medium.
 - **A2 = TASK-040** Manifest block, `data_schema` references, authoring pack — Hard.
-- **A3 = TASK-042** Package manifest derivation and registry pins — Medium.
+- **A3 = TASK-042** Package manifest derivation — Medium.
 
-### Track B: Parallel after vendoring
+### Track B: Parallel after schema ownership
 
 - **B1 = TASK-041** Mapping fixtures, legacy forms, sweep — Hard.
 
@@ -119,7 +118,7 @@ Fixtures live under `tests/fixtures/semantic-module/`.
 
 | Task     | Track | Owns (references)      | Verified by (verifies)                         | Status |
 | -------- | ----- | ---------------------- | ---------------------------------------------- | ------ |
-| TASK-039 | A     | FR-070, FR-073         | TC-1342, TC-1343, TC-1385                      | done   |
+| TASK-039 | A     | FR-070, FR-073         | TC-1342                                        | done   |
 | TASK-040 | A     | FR-070, FR-073         | TC-1336..1341, TC-1360..1366, TC-1383          | done   |
 | TASK-041 | B     | FR-071, FR-072, FR-074 | TC-1344..1359, TC-1367..1371, TC-1384, TC-1386 | done   |
 | TASK-042 | A     | FR-075                 | TC-1372..1378                                  | done   |
@@ -128,6 +127,6 @@ Fixtures live under `tests/fixtures/semantic-module/`.
 
 ## Coordination Rules
 
-- Only TASK-039 touches vendored schema files; later tasks read them.
+- Only TASK-039 touches the schema package dependencies; later tasks read them.
 - `src/semantic/` is single-writer per task: install-time validation (040), fixtures/sweep (041), derivation/pins (042).
 - Merge sequencing: TASK-039..043 on `spec/293-semantic-module-contract`, then `/code-review` and `/gap-analysis`, then the "mergeable" comment and squash merge verified on the tree.
