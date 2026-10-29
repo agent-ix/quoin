@@ -56,8 +56,8 @@ distinguishes every non-success state, and admits no Node runtime type.
   starts the child process.
 - If `QUOIN_CORE` names a path that does not exist, then the caller SHALL report
   a resolution diagnostic naming that path.
-- If `QUOIN_CORE` is unset and no `quoin-core` is on `PATH`, then the caller
-  SHALL report a resolution diagnostic naming `PATH`.
+- If `QUOIN_CORE` is unset and `PATH` holds no `quoin-core`,
+  then the caller SHALL report a resolution diagnostic naming `PATH`.
 - The caller SHALL report a failure to resolve the executable as a resolution
   diagnostic distinct from the spawn-failure outcome.
 - When a caller sends `core.ping` declaring the protocol revision it expects
