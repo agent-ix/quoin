@@ -1,6 +1,6 @@
 ---
 id: TASK-042
-title: "Package manifest derivation and registry pins"
+title: "Package manifest derivation"
 type: Task
 status: done
 track: A
@@ -11,8 +11,6 @@ relationships:
   - target: "ix://agent-ix/quoin/FR-075"
     type: references
   - target: "ix://agent-ix/quoin/TC-1372"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1373"
     type: verifies
   - target: "ix://agent-ix/quoin/TC-1374"
     type: verifies
@@ -26,7 +24,7 @@ relationships:
     type: verifies
 ---
 
-# TASK-042: Package manifest derivation and registry pins
+# TASK-042: Package manifest derivation
 
 ## Scope
 
@@ -43,4 +41,4 @@ Derive `semantic/package-manifest.json` per FR-075 and resolve `semantic.imports
 
 ## Notes
 
-- quoin#287 may relocate the pins later; keep the writer behind one function.
+- TC-1373 is withdrawn with FR-075-AC-2 (per-export digests removed); this task verifies none of it. The registry entry records no pin (FR-075 CR notes 2026-09-30).

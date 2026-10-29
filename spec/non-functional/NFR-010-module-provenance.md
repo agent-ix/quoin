@@ -1,6 +1,6 @@
 ---
 id: NFR-010
-title: "A default module is declared at an immutable revision"
+title: "A default module is the one its declaration names"
 type: NFR
 quality_attribute: security
 relationships:
@@ -10,15 +10,15 @@ relationships:
     type: "traces_to"
 ---
 
-# NFR-010: A default module is declared at an immutable revision
+# NFR-010: A default module is the one its declaration names
 
 ## Statement
 
-`quoin` SHALL resolve every default-set module from a `ref` that is a full git
-commit id, which names one tree for ever. `quoin` SHALL refuse a `ref` that is a
-branch or tag name for a default-set entry, and SHALL record no second copy of
-the resolved commit and compare nothing against it: the declared `ref` is the
-whole truth.
+`quoin` SHALL resolve every default-set module from the `ref` its
+`default-modules.yaml` declaration names, which may be a release tag or a
+branch name, and SHALL refuse no `ref` for being a tag or a branch. `quoin`
+SHALL NOT require a `ref` to be a full commit id, and SHALL record no resolved
+commit and compare nothing against one: the declared `ref` is the whole truth.
 
 ## Scope
 
@@ -31,24 +31,24 @@ whole truth.
 
 ## Rationale
 
-A tag is a mutable pointer: repointing it changes what the same declaration
-resolves to. A commit id cannot be repointed, so declaring one makes the
-declaration denote one tree without a recorded SHA, a lockfile, or a
-comparison step. Module data decides what quoin checks and accepts as verified
-(FR-031, FR-037), so the declaration must not float.
+A module declaration is data the module owner maintains, and the owner names
+the revision by tag or branch. Quoin installs what the declaration names and
+keeps no second record of the resolved revision, so there is no recorded
+revision to drift from and no pinned commit to refresh.
 
 ## Measurement and Evaluation
 
-| Metric                                                      | Target | Threshold | Method     |
-| ----------------------------------------------------------- | ------ | --------- | ---------- |
-| Default-set entries whose `ref` is a full commit id         | 100%   | 100%      | Test       |
-| Installs that proceed for a branch or tag `ref`             | 0      | 0         | Test       |
-| Module fetches from a source outside the declared entries   | 0      | 0         | Inspection |
+| Metric                                                        | Target | Threshold | Method     |
+| ------------------------------------------------------------- | ------ | --------- | ---------- |
+| Default-set entries whose `ref` is a tag or branch name       | 100%   | 100%      | Inspection |
+| Installs refused because a `ref` is a tag or a branch         | 0      | 0         | Test       |
+| Module fetches from a source outside the declared entries     | 0      | 0         | Inspection |
 
 ## Verification
 
-`default-modules.yaml` is inspected so every entry's `ref` is a full commit id,
-and the install path is exercised against a tag `ref`, which it refuses.
+`default-modules.yaml` is inspected so every entry's `ref` is a name the module
+repository declares and no entry carries a full commit id, and the install path
+is exercised against a tag `ref`, which it installs.
 
 ## Dependencies
 

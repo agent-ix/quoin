@@ -2,7 +2,7 @@
 id: PLAN-009
 title: "Advisory corpus measurement"
 type: Plan
-status: active
+status: withdrawn
 relationships:
   - target: "ix://agent-ix/quoin/US-022"
     type: references
@@ -33,6 +33,10 @@ relationships:
 ---
 
 # PLAN-009: Advisory corpus measurement
+
+> **Withdrawn.** FR-084..FR-092, US-022, NFR-021 and NFR-022 are withdrawn (gate
+> `agent-ix/quoin#291` closed) and nothing in this plan is scheduled; every item
+> below is retained for provenance and none is live work.
 
 Issue: `agent-ix/quoin#291`, under EPIC `agent-ix/quoin#286`. Reviews: SR-140..SR-148
 under `reviews/26-09-04-spec-review-*-291.md`. Upstream: the semantic-module contract

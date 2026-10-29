@@ -128,5 +128,5 @@ Fixtures live under `tests/fixtures/semantic-module/`.
 ## Coordination Rules
 
 - Only TASK-039 touches the schema package dependencies; later tasks read them.
-- `src/semantic/` is single-writer per task: install-time validation (040), fixtures/sweep (041), derivation/pins (042).
+- `src/semantic/` is single-writer per task: install-time validation (040), fixtures/sweep (041), derivation (042).
 - Merge sequencing: TASK-039..043 on `spec/293-semantic-module-contract`, then `/code-review` and `/gap-analysis`, then the "mergeable" comment and squash merge verified on the tree.

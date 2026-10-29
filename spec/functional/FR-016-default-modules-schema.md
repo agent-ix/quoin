@@ -16,8 +16,8 @@ relationships:
 
 The committed default module set SHALL be expressed as a `ts-plugin-kit`
 marketplace manifest stored at `default-modules.yaml`, declaring each default
-module with a typed source pinned to an immutable revision: a release tag or a
-commit id. This document defines the structural schema of that file; its behavioral installation
+module with a typed source and the `ref` (a release tag or branch name) the
+module declaration names. This document defines the structural schema of that file; its behavioral installation
 is specified by
 [FR-017](./FR-017-reconcile-default-modules.md).
 
@@ -67,7 +67,7 @@ is specified by
 | ID          | Criteria                                                                               | Verification         |
 | ----------- | -------------------------------------------------------------------------------------- | -------------------- |
 | FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest             | Test (index.test.ts) |
-| FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed pinned source, and excludes private opt-in modules | Test (index.test.ts) |
+| FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed source, and excludes private opt-in modules | Test (index.test.ts) |
 
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-016-AC-3 is withdrawn. It
 > required every committed copy of a module's pin to agree and the manifest's
