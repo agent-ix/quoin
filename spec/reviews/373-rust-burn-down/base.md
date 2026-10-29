@@ -85,7 +85,7 @@ marked *owner* is not a defect the author may close.
 | Fixture provenance unconstrained; recapture from Rust possible (SR-155 FND-009) | Resolved. FR-101 requires producing implementation, revision and request digest per fixture and refuses a Rust-produced fixture; FR-101-AC-11. |
 | Self-written-fixture gate named no command and was too narrow (SR-155 FND-010) | Resolved. FR-101-AC-6 names `quoin-core lint.removal` and covers setup helpers and generation steps. |
 | ix-flow is a second unhardened trust boundary (SR-152 FND-007) | Resolved. FR-099 applies the FR-096 hardening to the ix-flow child; FR-099-AC-10. |
-| Unset `QUOIN_EXPECTED_CORE_SHA256` was a vacuous pass (SR-152 FND-008) | Resolved. FR-096 refuses when unset; FR-096-AC-5. |
+| Unset `QUOIN_EXPECTED_CORE_SHA256` was a vacuous pass (SR-152 FND-008) | Withdrawn. The digest pin is removed; the executable is resolved by identity (`QUOIN_CORE` or `PATH`) and FR-096-AC-5 now covers the resolution diagnostic. |
 | Root escape via symlink (SR-152 FND-017) | Resolved. FR-096 real-path-resolves the repository and configuration roots. |
 | 67,108,864-byte payload sits exactly on the retained cap (SR-156 FND-178) | Resolved. FR-096 requires a ceiling strictly greater than the payload. |
 | Partially materialized module root; case-folding collision (SR-152 FND-015, FND-014) | Resolved. FR-099-AC-11 and FR-099-AC-12. |

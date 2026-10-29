@@ -14,7 +14,7 @@
 //!
 //! | `src/quire/` | here |
 //! |---|---|
-//! | `exec.ts` — executable resolution, `QUOIN_EXPECTED_QUIRE_SHA256`, a 64 MiB `maxBuffer`, a three-way termination taxonomy | nothing. There is no child process |
+//! | `exec.ts` — executable resolution, a 64 MiB `maxBuffer`, a three-way termination taxonomy | nothing. There is no child process |
 //! | `contract.ts` — a `minimumCli` floor, five schema digests, `checkVersionPremise` | nothing. The premise is the `rev` pin in `quoin-quire`'s manifest, checked by Cargo at build time rather than by quoin at run time |
 //! | `validate.ts` — ajv compilation, `ContractViolation` | serde. The type a payload is read into is the engine's own |
 //! | `types.ts` — hand-written mirrors of quire's payloads | [`wire`], which restates nothing: both payloads are built from types that already cross the boundary |

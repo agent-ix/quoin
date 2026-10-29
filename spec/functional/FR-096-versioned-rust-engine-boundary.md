@@ -22,8 +22,8 @@ distinguishes every non-success state, and admits no Node runtime type.
   for an operation that analyses a repository, the file map the caller read —
   not a path for `quoin-core` to walk — together with the directories the caller
   could not list. For an operation that names a configuration root, that root.
-- The `QUOIN_CORE` executable path and the `QUOIN_EXPECTED_CORE_SHA256` expected
-  digest.
+- The `QUOIN_CORE` executable path, when the caller is not to find `quoin-core`
+  on `PATH`.
 
 ## Outputs
 
@@ -49,8 +49,25 @@ distinguishes every non-success state, and admits no Node runtime type.
   that carries a valid payload from one that carries none.
 - The TypeScript caller SHALL resolve the `quoin-core` executable through its
   real path.
-- If the executable's bytes do not match `QUOIN_EXPECTED_CORE_SHA256`, or that
-  variable is unset, then the TypeScript caller SHALL refuse to invoke it.
+- Resolving the `quoin-core` executable by identity means taking the path named
+  by `QUOIN_CORE` when that variable is set, and otherwise the `quoin-core`
+  found on `PATH`.
+- The caller SHALL resolve the `quoin-core` executable by identity before it
+  starts the child process.
+- If `QUOIN_CORE` names a path that does not exist, then the caller SHALL report
+  a resolution diagnostic naming that path.
+- If `QUOIN_CORE` is unset and `PATH` holds no `quoin-core`,
+  then the caller SHALL report a resolution diagnostic naming `PATH`.
+- The caller SHALL report a failure to resolve the executable as a resolution
+  diagnostic distinct from the spawn-failure outcome.
+- When a caller sends `core.ping` declaring the protocol revision it expects
+  (`expect_protocol`) and `quoin-core` speaks a different revision,
+  `quoin-core` SHALL return a complete payload carrying its own
+  `protocol_version`, with a partial status and the `ProtocolSkew` code.
+- Caller and engine are bound by the protocol revision (`protocol_version`, a
+  `u32`) and by the Cargo.toml and Cargo.lock revision that binds `quoin-quire`
+  to the `quire-rs` library; no build hash of the executable is part of the
+  boundary.
 - The TypeScript caller SHALL resolve the caller-selected repository and
   configuration roots through their real paths, so that a symbolic link inside a
   permitted root cannot reach outside it.
@@ -91,7 +108,7 @@ distinguishes every non-success state, and admits no Node runtime type.
 
 Malformed JSON, an unknown protocol version, a request naming an unknown
 operation, a repository or configuration root escaping the caller-selected root,
-an executable whose digest does not match the expected digest, an oversized
+an executable that cannot be resolved, an oversized
 payload, a signal termination and a spawn failure each produce a distinguishable
 non-success outcome and are never reported as success.
 
@@ -102,7 +119,7 @@ non-success outcome and are never reported as success.
 | FR-096-CON-1 | The boundary SHALL NOT expose a function-shaped operation. | Architecture | Test |
 | FR-096-CON-2 | The boundary SHALL NOT derive a verdict from unstructured stdout or stderr text. | Responsibility | Test |
 | FR-096-CON-3 | The Rust workspace SHALL remain in this repository. | Architecture | Test |
-| FR-096-CON-4 | No crate of the workspace SHALL be published to crates.io; consumers pin by git revision. | Distribution | Inspection |
+| FR-096-CON-4 | Quoin SHALL NOT publish any crate of the workspace to crates.io; consumers depend on a git revision recorded in `Cargo.toml` and `Cargo.lock`. | Distribution | Inspection |
 
 ## Acceptance Criteria
 
@@ -112,11 +129,14 @@ non-success outcome and are never reported as success.
 | FR-096-AC-2 | Every boundary operation emits exactly one declared-version JSON document on stdout and sends all diagnostics to stderr. | Property (TC-1606) |
 | FR-096-AC-3 | An unknown protocol version, an unknown operation, malformed JSON and an escaping root each refuse before any filesystem write, returning the declared exit status. | Property (TC-1607) |
 | FR-096-AC-4 | A refusal carrying a valid result payload is distinguishable by the caller from a fault carrying no payload, for every declared non-zero exit status. | Test (TC-1608) |
-| FR-096-AC-5 | With `QUOIN_EXPECTED_CORE_SHA256` set and the binary's bytes altered, the caller refuses to invoke it and names the expected and observed digests; with the variable unset the caller refuses rather than invoking unpinned. | Test (TC-1609) |
+| FR-096-AC-5 | With `QUOIN_CORE` naming a path that does not exist, the caller reports a resolution diagnostic naming that path. | Test (TC-1609) |
 | FR-096-AC-6 | A result payload of 67,108,864 bytes is returned to the caller intact under a declared buffer ceiling strictly greater than that size, and process exit, signal termination and spawn failure are reported as three distinct outcomes. | Test (TC-1610) |
 | FR-096-AC-7 | A static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is planted. | Test (TC-1611) |
 | FR-096-AC-8 | Over one materialised repository, the verdict reached through the caller's snapshot equals the verdict reached by `quoin-core` reading the same tree from disk, including for a directory the caller's pre-filter does not exclude and for one both sides do; narrowing the caller's pre-filter by one directory fails the comparison. | Test (TC-1713) |
 | FR-096-AC-9 | A stdin stream one byte past the transport bound is refused with the declared refusal status, without the request being parsed and without the stream being read beyond that bound; a stream of exactly the bound is accepted; and the transport bound is strictly greater than every declared per-operation request bound. | Test (TC-1714) |
+| FR-096-AC-11 | With `QUOIN_CORE` unset and no `quoin-core` on `PATH`, the caller reports a resolution diagnostic naming `PATH`. | Test (TC-1980) |
+| FR-096-AC-12 | A failure to resolve the executable is reported as a resolution diagnostic and not as the spawn-failure outcome, and never as `could not be run (undefined)`. | Test (TC-1981) |
+| FR-096-AC-13 | `core.ping` declaring an `expect_protocol` that differs from the revision `quoin-core` speaks returns a complete payload carrying `protocol_version`, with a partial status and the `ProtocolSkew` code. | Test (TC-1982) |
 
 ## Dependencies
 
