@@ -58,8 +58,8 @@ and causes no graph input to be read or discovered.
 Each repository report SHALL retain its existing FR-045 fields and add:
 
 - `graph_quality`: active plan, current state, complete ordered history,
-  definition, producer/config/source/corpus revisions, population identity,
-  partitioned observations, comparison, and raw observation/scorer digests;
+  definition, producer/source/corpus revisions, population identity,
+  partitioned observations, comparison, and the producer-assigned observation id;
 - `graph`: export availability and premises plus FR-062 fan-out and churn
   reports, and change-impact reports for requested seeds; and
 - `gaps`: each missing, unreadable, incompatible, unknown, or not-applicable
@@ -88,7 +88,7 @@ separate `measured` or `not_computed` fact.
   equal corpus revision and exact population identity.
 - The comparison report SHALL name every blocking premise and emit no delta for
   an incompatible pair.
-- Raw producer-record and scorer digests SHALL remain visible on current,
+- The producer-assigned observation id SHALL remain visible on current,
   history, and comparison rows.
 - When a graph export is supplied, the portfolio SHALL embed the same FR-062
   report objects used by standalone graph commands. When it is absent or
@@ -123,12 +123,12 @@ not abort readable repositories or readable collections in the same store.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-067-AC-1 | Each readable repository reports its active graph-quality plan, current collection, definition, complete producer tuple, source/corpus revisions, population identity, and raw record/scorer digests. | Test (TC-1305) |
+| FR-067-AC-1 | Each readable repository reports its active graph-quality plan, current collection, definition, complete producer tuple, source/corpus revisions, population identity, and producer-assigned observation id. | Test (TC-1305) |
 | FR-067-AC-2 | History retains every structurally readable graph-quality collection in timestamp/id order with its availability and premises, including records no longer governed by the active plan. | Test (TC-1306) |
 | FR-067-AC-3 | Every measure/dimension/key partition remains a distinct row in human and JSON output, with no sum or average across partitions or repositories. | Property (TC-1307) |
 | FR-067-AC-4 | Missing, unreadable, incompatible, unknown, and not-applicable graph inputs remain distinct from measured and not-computed states and are never rendered as numeric zero. | Test (TC-1308) |
 | FR-067-AC-5 | Equal plan, definition, configuration, tool, corpus revision, and population identity permit comparison; changing each premise independently blocks the delta and names the mismatch. | Property (TC-1309) |
-| FR-067-AC-6 | Current, historical, and comparison rows resolve to the exact retained producer record and scorer digests rather than a transcribed summary. | Integration (TC-1310) |
+| FR-067-AC-6 | Current, historical, and comparison rows resolve to the exact retained producer record, by its producer-assigned observation id, rather than a transcribed summary. | Integration (TC-1310) |
 | FR-067-AC-7 | A supplied export/premises/audit triple embeds byte-equivalent FR-062 fan-out and churn reports plus requested change-impact reports; no triple yields `missing`, a partial triple yields `incompatible` without a graph read, and no seed yields change-impact `not_applicable`. | Integration (TC-1311) |
 | FR-067-AC-8 | An unreadable repository, collection, raw attachment, or graph export is named locally while readable sibling repositories retain complete reports. | Test (TC-1312) |
 | FR-067-AC-9 | Reordered repository arguments and equivalent store enumeration produce byte-identical canonical JSON, and human output renders the same report object. | Property (TC-1313) |
