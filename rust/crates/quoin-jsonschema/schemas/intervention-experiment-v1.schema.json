@@ -313,10 +313,6 @@
     "producer": {
       "additionalProperties": false,
       "properties": {
-        "configuration_digest": {
-          "pattern": "^sha256:[a-f0-9]{64}$",
-          "type": "string"
-        },
         "definition_version": {
           "minLength": 1,
           "type": "string"
@@ -349,15 +345,19 @@
           "minLength": 1,
           "type": "string"
         },
+        "configuration_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
         "tool_version": {
-          "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|sha256:[a-f0-9]{64})$",
+          "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40})$",
           "type": "string"
         }
       },
       "required": [
         "tool_identity",
         "tool_version",
-        "configuration_digest",
+        "configuration_ref",
         "source_revision",
         "environment",
         "definition_version"
@@ -368,10 +368,6 @@
       "items": {
         "additionalProperties": false,
         "properties": {
-          "digest": {
-            "pattern": "^sha256:[a-f0-9]{64}$",
-            "type": "string"
-          },
           "media_type": {
             "minLength": 1,
             "type": "string"
@@ -388,8 +384,7 @@
         "required": [
           "path",
           "media_type",
-          "size_bytes",
-          "digest"
+          "size_bytes"
         ],
         "type": "object"
       },

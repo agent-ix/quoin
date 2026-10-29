@@ -29,7 +29,6 @@
       "configuration": {
         "version_pins": [
           {
-            "digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
             "identity": "release-workflow",
             "kind": "tool",
             "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
@@ -43,7 +42,7 @@
       "observed_at": "2026-08-29T23:11:38Z",
       "owner": "engineering assurance",
       "producer": {
-        "configuration_digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
+        "configuration_ref": "github-actions/quoin-271-release-v0.22.5-definition.json",
         "definition_version": "github-actions.release-operational-v2",
         "environment": {
           "github_repository": "agent-ix/quoin",
@@ -58,19 +57,16 @@
       },
       "raw_evidence": [
         {
-          "digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
           "media_type": "application/yaml",
           "path": "github-actions/quoin-271-release-v0.22.5-workflow.yml",
           "size_bytes": 6651
         },
         {
-          "digest": "sha256:a3a3eea43f6f17fc9851a50aa6853aa1d67a77ad91c6b4ddc1922aa03c4acaaf",
           "media_type": "application/json",
           "path": "github-actions/quoin-271-release-v0.22.5-run.json",
           "size_bytes": 11898
         },
         {
-          "digest": "sha256:adb0e51b5212d9ff4f01238a26040f8ea893c75f6bc02cfbc4b7d98552182e92",
           "media_type": "application/json",
           "path": "github-actions/quoin-271-release-v0.22.5-jobs.json",
           "size_bytes": 13166
@@ -98,7 +94,6 @@
       "configuration": {
         "version_pins": [
           {
-            "digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
             "identity": "release-workflow",
             "kind": "tool",
             "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
@@ -141,7 +136,7 @@
       "observed_at": "2026-08-29T23:11:38Z",
       "owner": "engineering assurance",
       "producer": {
-        "configuration_digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
+        "configuration_ref": "github-actions/quoin-271-release-v0.22.5-definition.json",
         "definition_version": "github-actions.release-operational-v2",
         "environment": {
           "github_repository": "agent-ix/quoin",
@@ -156,19 +151,16 @@
       },
       "raw_evidence": [
         {
-          "digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
           "media_type": "application/yaml",
           "path": "github-actions/quoin-271-release-v0.22.5-workflow.yml",
           "size_bytes": 6651
         },
         {
-          "digest": "sha256:a3a3eea43f6f17fc9851a50aa6853aa1d67a77ad91c6b4ddc1922aa03c4acaaf",
           "media_type": "application/json",
           "path": "github-actions/quoin-271-release-v0.22.5-run.json",
           "size_bytes": 11898
         },
         {
-          "digest": "sha256:adb0e51b5212d9ff4f01238a26040f8ea893c75f6bc02cfbc4b7d98552182e92",
           "media_type": "application/json",
           "path": "github-actions/quoin-271-release-v0.22.5-jobs.json",
           "size_bytes": 13166

@@ -174,7 +174,7 @@ pub fn render_operational_report(entries: &[OperationalReportEntry]) -> String {
                 entry
                     .raw_evidence
                     .iter()
-                    .map(|raw| format!("{} — {}", raw.path, raw.digest)),
+                    .map(|raw| format!("{} — {} bytes", raw.path, raw.size_bytes)),
             )
             .collect();
         let sections: [(&str, &[String], &str); 4] = [

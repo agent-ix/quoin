@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::identity::{Digest, Revision, SubjectId};
+use crate::common::identity::{Revision, SubjectId};
 use crate::common::scalar::EnvironmentValue;
 
 /// What a record is about.
@@ -30,8 +30,8 @@ pub struct Producer {
     pub tool_identity: String,
     /// The producing tool's version.
     pub tool_version: String,
-    /// A digest of the producer's configuration.
-    pub configuration_digest: Digest,
+    /// Where the producer's configuration is kept.
+    pub configuration_ref: String,
     /// The revision of the producer's own source.
     pub source_revision: Revision,
     /// The environment the production ran in.

@@ -9,14 +9,13 @@
   "producer": {
     "tool_identity": "quoin-agent-eval-intervention-adapter",
     "tool_version": "0.9.0",
-    "configuration_digest": "sha256:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2",
+    "configuration_ref": "agent-evals/quoin-270-sentinel-definition.json",
     "source_revision": "b340140e4fa9667fe39e1843c18b526c820a37be",
     "environment": {
       "node": "24.15.0",
       "codex_cli": "0.151.0",
       "suite_revision": "suite-v1",
       "fixture_revision": "fixtures-v1",
-      "fixture_digest": "sha256:e78a0dfa8a75b4a66444f4fc65fe80c77f5b7b237ebce0c7375b5e0d9530ffcd",
       "engineering_assurance_revision": "236f420987bdfd5309fb531806a851ddc9f75ae3",
       "baseline_runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
       "treatment_runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
@@ -68,14 +67,6 @@
     {
       "name": "host",
       "value": "codex-cli 0.151.0"
-    },
-    {
-      "name": "suite configuration digest",
-      "value": "sha256:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2"
-    },
-    {
-      "name": "fixture digest",
-      "value": "sha256:e78a0dfa8a75b4a66444f4fc65fe80c77f5b7b237ebce0c7375b5e0d9530ffcd"
     }
   ],
   "interactions": [

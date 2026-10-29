@@ -12,7 +12,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::identity::{ControlId, Digest, RecordId, Revision, WireInstant};
+use crate::common::identity::{ControlId, RecordId, Revision, WireInstant};
 use crate::common::literal_bool::LiteralBool;
 use crate::common::producer::{Producer, Subject};
 use crate::common::recorded_evidence::RecordedEvidenceReference;
@@ -157,8 +157,6 @@ pub struct VersionPin {
     pub identity: String,
     /// At which revision.
     pub revision: Revision,
-    /// And at which digest.
-    pub digest: Digest,
 }
 
 /// The pinned configuration. `operational-types.ts:40-48`.

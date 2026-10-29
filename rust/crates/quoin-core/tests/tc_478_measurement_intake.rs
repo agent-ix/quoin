@@ -15,7 +15,7 @@
 //! | --- | --- |
 //! | collection | `spec/evidence/measurements/<collection id>.json` |
 //! | intervention | `spec/evidence/interventions/p-<record id>.json` |
-//! | operational | `spec/evidence/operational/<digest>.json` |
+//! | operational | `spec/evidence/operational/<record id>.json` |
 //!
 //! The two producers are held apart the same way: an agent-eval intervention
 //! lands under `interventions/`, and a GitHub release pair under
@@ -220,7 +220,7 @@ fn tc_478_101_an_intervention_record_is_published_under_interventions() {
 }
 
 /// The operational intake: `record_type: operational_evidence` is published
-/// under `operational/`, at a name derived from the record identity's digest.
+/// under `operational/`, at a name derived from the record identity.
 ///
 /// The candidate is the standing capability of the retained pair, published
 /// into a store that holds no pair — the retained pair FILE is what
@@ -235,7 +235,7 @@ fn tc_478_102_an_operational_record_is_published_under_operational() {
     let root = temporary.path();
     let pair = read_json(&repo().join(
         "spec/evidence/operational/pairs/\
-         c1b30a188d4d03bbe316e0fdb7582eff3fa314c55268a5f71f81f99f8ea2acf8.json",
+         quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json",
     ));
     let candidate = pair["records"][0].clone();
     assert_eq!(candidate["record_type"], "operational_evidence");
@@ -253,11 +253,9 @@ fn tc_478_102_an_operational_record_is_published_under_operational() {
         .file_name()
         .and_then(std::ffi::OsStr::to_str)
         .unwrap_or_else(|| panic!("{} has no file name", path.display()));
-    let stem = name.trim_end_matches(".json");
-    assert_eq!(stem.len(), 64, "{name} is not a digest basename");
-    assert!(
-        stem.chars().all(|c| c.is_ascii_hexdigit()),
-        "{name} is not a digest basename"
+    assert_eq!(
+        name, "quoin-271-release-v0.22.5-capability.json",
+        "{name} is not the record id basename"
     );
     assert!(path.exists(), "{} was not written", path.display());
 }
@@ -314,7 +312,7 @@ fn tc_478_104_the_release_producer_publishes_an_operational_pair() {
     assert_eq!(directory(&path), "pairs", "{}", path.display());
     assert_eq!(
         path.file_name().and_then(std::ffi::OsStr::to_str),
-        Some("c1b30a188d4d03bbe316e0fdb7582eff3fa314c55268a5f71f81f99f8ea2acf8.json"),
+        Some("quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json"),
         "{}",
         path.display()
     );

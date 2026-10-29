@@ -224,8 +224,8 @@ fn read_export(
 
 /// `github-release-operational.ts:216-223`: account for the file, then read it.
 ///
-/// The accounting is not incidental — it is what puts the file's size and
-/// digest under the same guards the record's `raw_evidence` is checked against,
+/// The accounting is not incidental — it is what puts the file's size
+/// under the same guards the record's `raw_evidence` is checked against,
 /// so a producer cannot read a file the record could not then reference.
 fn retained_text(
     source: &DiskMeasurement,

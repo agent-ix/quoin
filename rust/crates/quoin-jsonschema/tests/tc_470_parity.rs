@@ -60,10 +60,9 @@ const CORPUS_FLOOR: usize = 100;
 
 /// The corpus entries where the Rust verdict deliberately differs from ajv's.
 ///
-/// `(mutation, ajv verdict, Rust verdict, the ruling)`. Every entry is one of
-/// the two deltas recorded in `DIVERGENCE.md`, and both are intervention-only:
-/// the operational schema is vendored verbatim, so its `blake3:` alternative
-/// and its permissive `date-time` are unchanged.
+/// `(mutation, ajv verdict, Rust verdict, the ruling)`. Every entry is a
+/// delta recorded in `DIVERGENCE.md`, and all are intervention-only: the
+/// operational schema's permissive `date-time` is unchanged.
 const DECLARED_DIVERGENCES: &[(&str, bool, bool, &str)] = &[
     (
         "set/observed_at=lowercase-t-and-z",
@@ -82,12 +81,6 @@ const DECLARED_DIVERGENCES: &[(&str, bool, bool, &str)] = &[
         false,
         true,
         "quoin#440: RFC 3339 §5.6 permits lowercase z",
-    ),
-    (
-        "set/producer.tool_version=blake3-prefixed",
-        true,
-        false,
-        "quoin#409: blake3: has no producer and no instance",
     ),
 ];
 

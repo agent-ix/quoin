@@ -470,7 +470,7 @@ fn tc_479_204_a_reused_record_id_with_different_bytes_does_not_replace_the_entry
 }
 
 /// Completed, failed, inconclusive and `cause_not_established` records remain
-/// independently queryable with their raw-evidence digests.
+/// independently queryable with their raw-evidence references.
 ///
 /// Trace: FR-057-AC-6
 /// Provenance: quoin#479
@@ -478,10 +478,10 @@ fn tc_479_204_a_reused_record_id_with_different_bytes_does_not_replace_the_entry
 fn tc_479_205_every_terminal_result_stays_independently_queryable() {
     /// The three terminal statuses the criterion names.
     const STATUSES: [&str; 3] = ["completed", "failed", "inconclusive"];
-    /// The digests the committed record rests on, in path order.
-    const DIGESTS: [&str; 2] = [
-        "sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076",
-        "sha256:baade4ab1c2e8f3447b4c585c95634884cb2ed1c69a9cf8819d0b495c7f77963",
+    /// The retained files the committed record rests on, in path order.
+    const PATHS: [&str; 2] = [
+        "agent-evals/quoin-270-sentinel-baseline.json",
+        "agent-evals/quoin-270-sentinel-treatment.json",
     ];
 
     let temporary = governed_repo();
@@ -511,14 +511,14 @@ fn tc_479_205_every_terminal_result_stays_independently_queryable() {
         // The conclusion the committed record carries is the terminal one the
         // criterion names beside the three statuses.
         assert_eq!(record.conclusion.kind.as_str(), "cause_not_established");
-        let digests: Vec<&str> = record
+        let paths: Vec<&str> = record
             .raw_evidence
             .iter()
-            .map(|reference| reference.digest.as_str())
+            .map(|reference| reference.path.as_str())
             .collect();
         assert_eq!(
-            digests, DIGESTS,
-            "the {status} record is queryable with its raw-evidence digests"
+            paths, PATHS,
+            "the {status} record is queryable with its raw-evidence references"
         );
     }
 }
@@ -538,7 +538,6 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
                                treatment 0.5, effect 0 fraction";
     /// The first raw reference, as `intervention-report.ts:82-86` writes it.
     const RAW_LINE: &str = "- agent-evals/quoin-270-sentinel-baseline.json — \
-                            sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076; \
                             11305 bytes; application/json";
 
     let temporary = governed_repo();
@@ -591,8 +590,8 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
         "the JSON view carries the measured effect under evidence"
     );
     assert_eq!(
-        entry["evidence"]["raw_evidence"][0]["digest"],
-        json!("sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076"),
+        entry["evidence"]["raw_evidence"][0]["size_bytes"],
+        json!(11305),
         "the JSON view carries the raw reference under evidence"
     );
 }
@@ -908,7 +907,7 @@ fn views_agree(expected_human: &str, expected_json: &str) {
     }
 }
 
-/// Unsafe, missing, wrong-sized or digest-mismatched raw evidence returns
+/// Unsafe, missing or wrong-sized raw evidence returns
 /// `raw_evidence_mismatch`, identifies each mismatch, and writes no record.
 ///
 /// Trace: FR-057-AC-11
@@ -954,23 +953,15 @@ fn tc_479_210_every_raw_evidence_disagreement_is_named_and_writes_nothing() {
         vec!["/raw_evidence/0/size_bytes"],
     ));
 
-    let mut wrong_digest = base.clone();
-    wrong_digest["raw_evidence"][1]["digest"] = json!(format!("sha256:{}", "f".repeat(64)));
-    cases.push((
-        "a recorded digest the file does not have",
-        wrong_digest,
-        vec!["/raw_evidence/1/digest"],
-    ));
-
     // Both at once, on different references: each mismatch is identified, not
     // just the first.
     let mut both = base;
     both["raw_evidence"][0]["size_bytes"] = json!(11306);
-    both["raw_evidence"][1]["digest"] = json!(format!("sha256:{}", "f".repeat(64)));
+    both["raw_evidence"][1]["size_bytes"] = json!(1);
     cases.push((
-        "a size mismatch and a digest mismatch together",
+        "two size mismatches together",
         both,
-        vec!["/raw_evidence/0/size_bytes", "/raw_evidence/1/digest"],
+        vec!["/raw_evidence/0/size_bytes", "/raw_evidence/1/size_bytes"],
     ));
 
     assert!(

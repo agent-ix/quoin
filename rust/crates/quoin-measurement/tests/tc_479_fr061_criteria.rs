@@ -61,7 +61,8 @@ use quoin_measurement::operational::record::{OperationalEvidenceRecord, Operatio
 use quoin_measurement::source::SystemClock;
 
 /// The pair the retained TypeScript produced from the retained exports.
-const RETAINED_PAIR: &str = "c1b30a188d4d03bbe316e0fdb7582eff3fa314c55268a5f71f81f99f8ea2acf8.json";
+const RETAINED_PAIR: &str =
+    "quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json";
 
 /// The definition that produced it, under `spec/evidence/`.
 const DEFINITION: &str = "quoin-271-release-v0.22.5-definition.json";

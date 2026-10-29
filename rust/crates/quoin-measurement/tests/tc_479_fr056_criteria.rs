@@ -250,21 +250,19 @@ fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
 }
 
 /// The producer tuple refuses each missing field independently, a mutable tool
-/// version, an empty environment, and a malformed configuration digest.
+/// version, and an empty environment.
 ///
 /// > FR-056-AC-2: The producer tuple rejects a missing field, a mutable tool
-/// > version, an empty environment, and a malformed configuration digest.
+/// > version, an empty environment, and an empty configuration reference.
 ///
 /// Trace: FR-056-AC-2
 /// Provenance: quoin#479
 #[test]
 fn tc_479_101_each_producer_defect_is_refused_independently() {
-    /// The six producer members `intervention.test.ts:157` deleted one at a
-    /// time.
-    const PRODUCER: [&str; 6] = [
+    /// The producer members `intervention.test.ts:157` deleted one at a time.
+    const PRODUCER: [&str; 5] = [
         "tool_identity",
         "tool_version",
-        "configuration_digest",
         "source_revision",
         "environment",
         "definition_version",
@@ -273,34 +271,16 @@ fn tc_479_101_each_producer_defect_is_refused_independently() {
     /// Versions that name something that can move under the record.
     const MUTABLE: [&str; 5] = ["latest", "main", "1.2", "v1", ""];
 
-    /// Digests the `sha256:<64 lowercase hex>` grammar refuses.
-    const MALFORMED: [&str; 5] = [
-        "sha256:",
-        "sha256:abc",
-        "3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2",
-        "sha1:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2",
-        "sha256:3E1A8362B21A05D0962BD9789DAE5EEBEF362F33C9C25665C838372BF20658D2",
-    ];
-
     accepted(&retained(), "the retained record");
-    assert_eq!(PRODUCER.len(), 6, "every producer member is measured");
+    assert_eq!(PRODUCER.len(), 5, "every producer member is measured");
     for member in PRODUCER {
         required(&["producer", member]);
     }
 
-    assert!(!MUTABLE.is_empty() && !MALFORMED.is_empty());
     for version in MUTABLE {
         let what = format!("tool_version {version:?}");
         let error = refused(&with(&["producer", "tool_version"], json!(version)), &what);
         names(&error, "tool_version", &what);
-    }
-    for digest in MALFORMED {
-        let what = format!("configuration_digest {digest:?}");
-        let error = refused(
-            &with(&["producer", "configuration_digest"], json!(digest)),
-            &what,
-        );
-        names(&error, "configuration_digest", &what);
     }
 
     let what = "an empty environment";
@@ -313,8 +293,8 @@ fn tc_479_101_each_producer_defect_is_refused_independently() {
             .producer
             .environment
             .len(),
-        10,
-        "the retained producer declares ten environment entries"
+        9,
+        "the retained producer declares nine environment entries"
     );
 }
 
@@ -416,7 +396,7 @@ fn tc_479_103_arms_variables_and_held_constants_are_linked_and_unique() {
     assert_eq!(base.treatments[0].id.as_str(), "standalone-detector");
     assert_eq!(
         base.held_constant.len(),
-        4,
+        2,
         "the held-constant list is explicit"
     );
     assert_eq!(
@@ -921,11 +901,11 @@ fn causal_base() -> Value {
     candidate
 }
 
-/// Gaps, owner, actions and content-digested raw evidence are required; unsafe
+/// Gaps, owner, actions and raw evidence are required; unsafe
 /// paths and undeclared fields are refused, recursively, and nothing is
 /// written.
 ///
-/// > FR-056-AC-9: Gaps, owner, actions, and at least one content-digested
+/// > FR-056-AC-9: Gaps, owner, actions, and at least one safe
 /// > raw-evidence reference with media type and byte size are retained; unsafe
 /// > paths and undeclared fields are refused.
 ///
@@ -952,8 +932,8 @@ fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused()
         &["raw_evidence", "0"],
     ];
 
-    /// The four raw-evidence members the criterion names.
-    const EVIDENCE: [&str; 4] = ["path", "media_type", "size_bytes", "digest"];
+    /// The three raw-evidence members the criterion names.
+    const EVIDENCE: [&str; 3] = ["path", "media_type", "size_bytes"];
 
     let base = accepted(&retained(), "the retained record");
     assert_eq!(base.gaps.len(), 5, "the gaps are retained");
@@ -966,15 +946,11 @@ fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused()
     );
     assert_eq!(base.raw_evidence[0].media_type.as_str(), "application/json");
     assert_eq!(base.raw_evidence[0].size_bytes, 11305);
-    assert_eq!(
-        base.raw_evidence[0].digest.as_str(),
-        "sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076"
-    );
 
     for member in ["gaps", "owner", "actions", "raw_evidence"] {
         required(&[member]);
     }
-    assert_eq!(EVIDENCE.len(), 4, "every evidence member is measured");
+    assert_eq!(EVIDENCE.len(), 3, "every evidence member is measured");
     for member in EVIDENCE {
         required(&["raw_evidence", "0", member]);
     }
@@ -1042,7 +1018,6 @@ fn refuses_unsafe_paths_without_writing() {
     // A reference whose declared bytes are not the retained file's.
     let mut mismatched = retained();
     mismatched["raw_evidence"][0]["size_bytes"] = json!(11306);
-    mismatched["raw_evidence"][1]["digest"] = json!(format!("sha256:{}", "f".repeat(64)));
     refused_write(
         root,
         &mismatched,

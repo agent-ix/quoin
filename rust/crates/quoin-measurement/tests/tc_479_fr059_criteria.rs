@@ -35,7 +35,7 @@
 //! which must be able to write. That runs in a `tempfile` workspace holding the
 //! producer's whole input contract — the assurance documents the governance
 //! check reads and the three retained GitHub exports the raw-evidence
-//! accounting digests — copied from this repository, exactly as
+//! accounting reads — copied from this repository, exactly as
 //! `tc_472_github_release.rs` does. Nothing here writes into the repository.
 
 #![allow(
@@ -70,7 +70,8 @@ use quoin_measurement::source::SystemClock;
 use serde_json::{Value, json};
 
 /// The committed pair both base cases are read from.
-const RETAINED_PAIR: &str = "c1b30a188d4d03bbe316e0fdb7582eff3fa314c55268a5f71f81f99f8ea2acf8.json";
+const RETAINED_PAIR: &str =
+    "quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json";
 
 /// The requirement the schema under test is authored in.
 const REQUIREMENT: &str = "spec/functional/FR-059-operational-evidence-records.md";
@@ -221,10 +222,9 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
         "raw_evidence",
     ];
     /// The FR-044 producer tuple, unchanged.
-    const PRODUCER: [&str; 6] = [
+    const PRODUCER: [&str; 5] = [
         "tool_identity",
         "tool_version",
-        "configuration_digest",
         "source_revision",
         "environment",
         "definition_version",
@@ -243,7 +243,11 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
             &format!("an envelope missing `{member}`"),
         );
     }
-    assert_eq!(PRODUCER.len(), 6, "the FR-044 producer tuple is six fields");
+    assert_eq!(
+        PRODUCER.len(),
+        5,
+        "the FR-044 producer tuple is five fields"
+    );
     for member in PRODUCER {
         refused_naming(
             &without(&base, &["producer", member]),
@@ -354,7 +358,6 @@ fn tc_479_301_every_declared_control_kind_validates_and_no_other_does() {
                     "kind": pin_kind,
                     "identity": "fixture",
                     "revision": "v1",
-                    "digest": format!("sha256:{}", "2".repeat(64)),
                 }]),
             );
         }
@@ -672,7 +675,7 @@ fn tc_479_305_a_clocked_status_is_derived_from_the_instants_and_not_believed() {
 }
 
 /// Each policy, prompt, model, tool, or data pin record carries at least one
-/// matching typed identity, revision, and digest, with no duplicate
+/// matching typed identity, and revision, with no duplicate
 /// kind/identity key.
 ///
 /// Trace: FR-059-AC-7
@@ -684,7 +687,6 @@ fn tc_479_306_a_pin_control_requires_one_unique_matching_typed_pin() {
         "kind": "model",
         "identity": "fixture-model",
         "revision": "v1",
-        "digest": format!("sha256:{}", "3".repeat(64)),
     });
     let pinned_with = |pins: Value| with(&pinned, &["configuration", "version_pins"], pins);
 
@@ -714,19 +716,13 @@ fn tc_479_306_a_pin_control_requires_one_unique_matching_typed_pin() {
     );
 
     // The pin is typed: every member is required, independently.
-    for member in ["kind", "identity", "revision", "digest"] {
+    for member in ["kind", "identity", "revision"] {
         refused_naming(
             &pinned_with(json!([without(&pin, &[member])])),
             &required("/configuration/version_pins/0", member),
             &format!("a pin missing `{member}`"),
         );
     }
-    // And the digest is a digest, not any string.
-    refused_naming(
-        &pinned_with(json!([with(&pin, &["digest"], json!("not-a-digest"))])),
-        "/configuration/version_pins/0/digest",
-        "a pin digest outside the declared grammar",
-    );
     // And the pin kind is the declared vocabulary.
     refused_naming(
         &pinned_with(json!([with(&pin, &["kind"], json!("weights"))])),
@@ -791,7 +787,7 @@ fn tc_479_307_every_declared_outcome_round_trips_without_collapsing() {
 /// Refuses, one defect at a time, every governance or raw-evidence member
 /// FR-059-AC-9 requires of a lone document: the three governance fields, a
 /// non-empty owner and action list, at least one raw-evidence reference with
-/// all four of its members under SHA-256, and no undeclared field.
+/// all three of its members, and no undeclared field.
 fn refuse_every_document_defect_ac9(base: &Value) {
     // Governance fields, each independently.
     for member in ["owner", "gaps", "actions"] {
@@ -824,7 +820,7 @@ fn refuse_every_document_defect_ac9(base: &Value) {
         "a record with an empty raw-evidence list",
     );
     let reference = base["raw_evidence"][0].clone();
-    for member in ["path", "media_type", "size_bytes", "digest"] {
+    for member in ["path", "media_type", "size_bytes"] {
         refused_naming(
             &with(
                 base,
@@ -835,20 +831,6 @@ fn refuse_every_document_defect_ac9(base: &Value) {
             &format!("a raw-evidence reference missing `{member}`"),
         );
     }
-    // The content digest is SHA-256, the algorithm quoin recomputes itself.
-    refused_naming(
-        &with(
-            base,
-            &["raw_evidence"],
-            json!([with(
-                &reference,
-                &["digest"],
-                json!(format!("blake3:{}", "a".repeat(64)))
-            )]),
-        ),
-        "/raw_evidence/0/digest",
-        "a raw-evidence digest under another algorithm",
-    );
 
     // An undeclared field is refused rather than silently dropped.
     refused_naming(
@@ -863,7 +845,7 @@ fn refuse_every_document_defect_ac9(base: &Value) {
     );
 }
 
-/// Gaps, owner, actions, and at least one safe content-digested raw-evidence
+/// Gaps, owner, actions, and at least one safe raw-evidence
 /// reference with media type and byte size are retained; invalid capability
 /// links and undeclared fields are refused.
 ///
@@ -925,17 +907,13 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
         "a refused record must leave the store as it found it"
     );
 
-    // Raw evidence that no longer digests to what it claims, and raw evidence
+    // Raw evidence whose size is not the retained file's, and raw evidence
     // that points outside the store, are both refused under the raw-evidence
     // code — and both write nothing.
     for (raw_evidence, what) in [
         (
-            with(
-                &reference,
-                &["digest"],
-                json!(format!("sha256:{}", "f".repeat(64))),
-            ),
-            "a digest the retained bytes do not produce",
+            with(&reference, &["size_bytes"], json!(1)),
+            "a size the retained bytes do not have",
         ),
         (
             with(&reference, &["path"], json!("../../etc/passwd")),

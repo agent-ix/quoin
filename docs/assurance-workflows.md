@@ -108,7 +108,6 @@ provenance tuple:
   "version": "1.2.3",
   "sourceRevision": "0123456789abcdef",
   "sourceState": "clean",
-  "executableDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "configurationDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "capabilities": ["synthetic-experiment-v1"],
   "artifacts": [
