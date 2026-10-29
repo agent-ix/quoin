@@ -150,11 +150,10 @@ jobs:
             target="$1"; suffix="$2"; format="$3"
             name="quoin-v${VERSION}-${target}.${suffix}"
             size=$(wc -c < "release/$name" | tr -d ' ')
-            digest=$(sha256sum "release/$name" | cut -d ' ' -f1)
-            jq -n --arg target "$target" --arg asset "$name" --arg archive "$format" --argjson size "$size" --arg sha256 "$digest" --arg url "https://github.com/${REPOSITORY}/releases/download/${TAG}/${name}" '{target:$target,asset:$asset,archive:$archive,size:$size,sha256:$sha256,url:$url}'
+            jq -n --arg target "$target" --arg asset "$name" --arg archive "$format" --argjson size "$size" --arg url "https://github.com/${REPOSITORY}/releases/download/${TAG}/${name}" '{target:$target,asset:$asset,archive:$archive,size:$size,url:$url}'
           }
-          jq -n --arg version "$VERSION" --slurpfile artifacts <(asset x86_64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-apple-darwin tar.gz tar-gz; asset x86_64-pc-windows-msvc zip zip) '{schema_version:1,version:$version,artifacts:$artifacts}' > release/quoin-update-manifest.json
-          jq -e '.schema_version == 1 and (.artifacts | length == 4)' release/quoin-update-manifest.json
+          jq -n --arg version "$VERSION" --slurpfile artifacts <(asset x86_64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-unknown-linux-gnu tar.gz tar-gz; asset aarch64-apple-darwin tar.gz tar-gz; asset x86_64-pc-windows-msvc zip zip) '{schema_version:2,version:$version,artifacts:$artifacts}' > release/quoin-update-manifest.json
+          jq -e '.schema_version == 2 and (.artifacts | length == 4)' release/quoin-update-manifest.json
       - name: Create and upload the manual GitHub Release
         shell: bash
         env:
