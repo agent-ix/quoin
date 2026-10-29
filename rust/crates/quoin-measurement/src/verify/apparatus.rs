@@ -62,8 +62,10 @@ pub(super) fn findings(
     for run in history {
         match run.apparatus {
             Some(theirs) if theirs == own => {
-                if moved(run.collection, candidate.collection, own, movement) {
-                    out.push(at(Reason::ApparatusEdit, run.collection));
+                match moved(run.collection, candidate.collection, own, movement) {
+                    Some(true) => out.push(at(Reason::ApparatusEdit, run.collection)),
+                    Some(false) => {}
+                    None => out.push(at(Reason::ApparatusUnverifiable, run.collection)),
                 }
             }
             Some(_) => out.push(at(Reason::ApparatusEdit, run.collection)),
@@ -74,16 +76,17 @@ pub(super) fn findings(
 }
 
 /// Whether git reports a protected file differing between the two
-/// collections' source revisions (FR-110). `false` when the caller supplied
-/// no git, or git cannot answer: the checker states only what it was told.
+/// collections' source revisions (FR-110). `Some(false)` only when the
+/// caller supplied no git; `None` when git was asked and cannot answer,
+/// which is `apparatus_unverifiable`, never a pass.
 fn moved(
     earlier: &MeasurementCollection,
     candidate: &MeasurementCollection,
     protected: &ResolvedApparatus,
     movement: Option<&dyn PathMovement>,
-) -> bool {
+) -> Option<bool> {
     let Some(movement) = movement else {
-        return false;
+        return Some(false);
     };
     let paths: Vec<String> = protected.iter().cloned().collect();
     movement
@@ -92,5 +95,5 @@ fn moved(
             candidate.source_revision.as_str(),
             &paths,
         )
-        .is_some_and(|changed| !changed.is_empty())
+        .map(|changed| !changed.is_empty())
 }

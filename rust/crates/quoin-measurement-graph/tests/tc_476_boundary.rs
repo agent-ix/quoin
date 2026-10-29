@@ -207,16 +207,16 @@ fn tc_476_022_no_test_runs_the_retained_typescript() {
             for forbidden in ["std::process::Command", "ts-node", "node --"] {
                 assert!(
                     !code.contains(forbidden),
-                    "{}: contains {forbidden}; the oracle is a committed golden, \
-                     captured once",
+                    "{}: contains {forbidden}; no test spawns an oracle, \
+                     the TypeScript is deleted",
                     path.display()
                 );
             }
         }
     }
     assert!(
-        checked >= 4,
-        "anti-vacuity floor: at least 4 test files expected, saw {checked}"
+        checked >= 3,
+        "anti-vacuity floor: at least 3 test files expected, saw {checked}"
     );
 }
 

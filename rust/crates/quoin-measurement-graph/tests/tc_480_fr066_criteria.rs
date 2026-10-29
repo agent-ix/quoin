@@ -330,12 +330,12 @@ fn tc_480_022_the_schema_is_closed_and_the_observation_id_is_taken_as_stated() {
     );
 }
 
-/// The scorer bytes are retained exactly and a length mismatch is refused.
+/// The scorer bytes are retained exactly and an attachment with no type is refused.
 ///
 /// Trace: FR-066-AC-5
 /// Provenance: quoin#480
 #[test]
-fn tc_480_023_scorer_bytes_are_retained_and_a_mismatch_refused() {
+fn tc_480_023_scorer_bytes_are_retained_and_an_untyped_attachment_refused() {
     let base = case("quality/measured");
     let bytes = scorer_bytes(&base["scorerBytes"]);
     let transcribed = adapt_quality(&base).expect("the captured base record is admissible");
@@ -364,10 +364,6 @@ fn tc_480_023_scorer_bytes_are_retained_and_a_mismatch_refused() {
         base["scorerMediaType"].as_str().unwrap()
     );
 
-    assert_eq!(
-        refusal(&case("quality/length-mismatch"), "a length mismatch"),
-        GraphAdapterErrorCode::AttachmentLengthMismatch,
-    );
     assert_eq!(
         refusal(&case("quality/no-media-type"), "an attachment with no type"),
         GraphAdapterErrorCode::AttachmentMissing,

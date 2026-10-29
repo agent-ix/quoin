@@ -122,7 +122,7 @@ fn repository_input(
     // came from this same list and both sides resolve it with
     // `quoin_measurement::portfolio::location::resolve_against`. The refusal
     // is kept rather than unwrapped because a missing entry would otherwise be
-    // a panic in a library. See `DIVERGENCE.md` §10.
+    // a panic in a library.
     let base = by_root
         .get(root.to_string_lossy().as_ref())
         .ok_or_else(|| {
@@ -194,7 +194,7 @@ fn collection_reads(root: &Path) -> Vec<GraphCollectionRead> {
 ///
 /// The retained check is `!Number.isFinite(Date.parse(timestamp))`, read here
 /// by [`Rfc3339DateTime`] — this workspace's one instant grammar. The
-/// difference between the two grammars is `DIVERGENCE.md` §4, which this call
+/// difference between the two grammars is the one the instant grammar in `attestation` documents, which this call
 /// site widens rather than re-declaring.
 fn readable_or_undated(path: String, collection: MeasurementCollection) -> GraphCollectionRead {
     if Rfc3339DateTime::parse(collection.timestamp.as_str()).is_ok() {

@@ -18,9 +18,8 @@
 //! [`quoin_measurement::Rfc3339DateTime`], unified on the permissive RFC 3339
 //! reading by quoin#440 — and the Stage 6 plan §5 forbids a seventh. So a
 //! timestamp V8's heuristic accepts and RFC 3339 does not is newly refused.
-//! That is declared in `tests/tc_475_parity.rs` and measured against the
-//! oracle, not assumed: an attestation whose instant cannot be re-read the same
-//! way by a second implementation is not an attestation of *when*.
+//! An attestation whose instant cannot be re-read the same way by a second
+//! implementation is not an attestation of *when*.
 //!
 //! # `Toolchains` is a divergence this crate cannot measure
 //!
@@ -32,8 +31,8 @@
 //! touches every language, and there is deliberately no sentinel spelling of
 //! "not applicable" alongside the real absence.
 //!
-//! Unlike the timestamp divergence above, this one is **not** declared in
-//! `tests/tc_475_parity.rs` against a captured verdict, because there is
+//! Unlike the timestamp divergence above, this one is **not** measured
+//! against a captured verdict, because there is
 //! nothing left to capture one from: quoin#480 (commit `eb0ca08`) deleted
 //! `graph-adapters.ts` and its oracle capture script months before PLAT-930
 //! was filed, and the retired TypeScript governed graph portfolio has run

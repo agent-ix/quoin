@@ -40,10 +40,9 @@
 //! plan's id and `definition_version` is a run. The rule is applied to every
 //! run against its own history, so a run that regressed stays visible even
 //! when a later one passed; and a regressed run with the candidate's own
-//! apparatus — the same source revision, tool and corpus — means the same thing was re-run until it passed,
-//! which is `rerun_until_pass`. A changed protected apparatus does not make
-//! it a different run: editing the answer key between a failed run and a
-//! pass is the rerun this rule exists to catch.
+//! apparatus — the same source revision, tool and corpus — means the same thing
+//! was re-run until it passed, which is `rerun_until_pass`, whatever protected
+//! set either run recorded.
 //!
 //! # Protected apparatus
 //!
@@ -135,7 +134,7 @@ pub fn verify(
     if order == OrderSource::GitShallow {
         check.findings.push(plan_level(Reason::OrderUnattested));
     }
-    check.findings.extend(tamper::findings(&check.runs, tamper));
+    check.findings.extend(tamper::findings(tamper));
     match (check.rule, design.estimator) {
         (None, _) => check.findings.push(plan_level(Reason::NoDecisionRule)),
         (_, None) => check.findings.push(plan_level(Reason::NoEstimator)),

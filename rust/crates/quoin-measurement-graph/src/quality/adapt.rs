@@ -124,16 +124,6 @@ pub fn adapt_graph_quality_observation(
             "scorer attachment media type is required",
         ));
     }
-    let observed_length = u64::try_from(input.scorer_bytes.len()).unwrap_or(u64::MAX);
-    if observed_length != record.raw_scorer_output.byte_length {
-        return Err(GraphAdapterError::new(
-            GraphAdapterErrorCode::AttachmentLengthMismatch,
-            format!(
-                "raw_scorer_output.byte_length expected {}; observed {observed_length}",
-                record.raw_scorer_output.byte_length
-            ),
-        ));
-    }
 
     let attestation = InvocationAttestation::parse(input.attestation)?;
     let plan = governing_plan(input.plans)?;
@@ -169,7 +159,6 @@ pub fn adapt_graph_quality_observation(
             "producer": input.record,
             "scorer": {
                 "path": record.raw_scorer_output.path.as_str(),
-                "byteLength": record.raw_scorer_output.byte_length,
                 "mediaType": input.scorer_media_type,
                 "bytesBase64": base64::encode(input.scorer_bytes),
             },

@@ -1,7 +1,7 @@
 {
-  "produced_by": "src/measurement/report.ts, src/measurement/portfolio.ts",
+  "produced_by": "TypeScript src/measurement/report.ts and portfolio.ts (deleted at quoin#479); a frozen capture, node not re-run",
   "produced_by_node": "v22.15.0",
-  "hand_edits": "PLAT-1201: configDigest and every digest-bearing member removed from the captured outputs; the rendered provenance no longer states a configuration digest.",
+  "hand_edits": "PLAT-1201: configDigest and every digest-bearing member and text were hand-stripped from the captured outputs (scripted removal, not regenerated from Rust). The one comparison case whose result changed with the removal (alpha_baseline_found) is deleted, not regenerated.",
   "fixture_tree": "rust/crates/quoin-measurement/tests/fixtures/portfolio-tree",
   "tree_token": "@@TREE@@",
   "reports": [
@@ -32,12 +32,6 @@
     }
   ],
   "comparisons": [
-    {
-      "name": "alpha_baseline_found",
-      "repository": "alpha",
-      "before": "revision-one",
-      "json": "{\n  \"after\": {\n    \"collectionId\": \"c-2026-03\",\n    \"corpusGaps\": 3,\n    \"corpusRevision\": null,\n    \"path\": \"@@TREE@@/alpha/spec/evidence/measurements/c-2026-03.json\",\n    \"sourceRevision\": \"revision-three\",\n    \"timestamp\": \"2026-03-01T00:00:00.000Z\",\n    \"toolIdentity\": \"quoin\",\n    \"toolVersion\": \"0.9.1\"\n  },\n  \"before\": {\n    \"collectionId\": \"a-2026-01\",\n    \"corpusGaps\": 7,\n    \"corpusRevision\": \"corpus-one\",\n    \"path\": \"@@TREE@@/alpha/spec/evidence/measurements/a-2026-01.json\",\n    \"sourceRevision\": \"revision-one\",\n    \"timestamp\": \"2026-01-01T00:00:00.000Z\",\n    \"toolIdentity\": \"quoin\",\n    \"toolVersion\": \"0.9.0\"\n  },\n  \"comparisons\": [\n    {\n      \"after\": 0.75,\n      \"before\": 0.5,\n      \"delta\": 0.25,\n      \"dimensions\": {},\n      \"metric\": \"actionability_rate\",\n      \"reasons\": [\n        {\n          \"blocking\": false,\n          \"code\": \"population_changed\",\n          \"message\": \"actionability_rate: population changed; delta is shown with this warning\"\n        },\n        {\n          \"blocking\": false,\n          \"code\": \"tool_changed\",\n          \"message\": \"actionability_rate: tool moved 0.9.0 -> 0.9.1\"\n        }\n      ],\n      \"status\": \"comparable\"\n    },\n    {\n      \"after\": 4,\n      \"before\": 1,\n      \"delta\": 3,\n      \"dimensions\": {},\n      \"metric\": \"drifted_metric\",\n      \"reasons\": [\n        {\n          \"blocking\": false,\n          \"code\": \"tool_changed\",\n          \"message\": \"drifted_metric: tool moved 0.9.0 -> 0.9.1\"\n        }\n      ],\n      \"status\": \"comparable\"\n    },\n    {\n      \"after\": 3,\n      \"before\": 2,\n      \"delta\": 1,\n      \"dimensions\": {},\n      \"metric\": \"finding_precision.unadjudicated\",\n      \"reasons\": [\n        {\n          \"blocking\": false,\n          \"code\": \"tool_changed\",\n          \"message\": \"finding_precision.unadjudicated: tool moved 0.9.0 -> 0.9.1\"\n        }\n      ],\n      \"status\": \"comparable\"\n    },\n    {\n      \"after\": 0.5,\n      \"before\": 0,\n      \"delta\": 0.5,\n      \"dimensions\": {\n        \"language\": \"python\"\n      },\n      \"metric\": \"finding_recall\",\n      \"reasons\": [\n        {\n          \"blocking\": false,\n          \"code\": \"population_changed\",\n          \"message\": \"finding_recall: population changed; delta is shown with this warning\"\n        },\n        {\n          \"blocking\": false,\n          \"code\": \"tool_changed\",\n          \"message\": \"finding_recall: tool moved 0.9.0 -> 0.9.1\"\n        }\n      ],\n      \"status\": \"comparable\"\n    },\n    {\n      \"after\": 1e+21,\n      \"before\": null,\n      \"delta\": null,\n      \"dimensions\": {\n        \"language\": \"rust\",\n        \"tier\": \"2\"\n      },\n      \"metric\": \"finding_recall\",\n      \"reasons\": [],\n      \"status\": \"not_computed\"\n    },\n    {\n      \"after\": null,\n      \"before\": 9,\n      \"delta\": null,\n      \"dimensions\": {},\n      \"metric\": \"retired_metric\",\n      \"reasons\": [],\n      \"status\": \"not_computed\"\n    }\n  ],\n  \"reason\": null,\n  \"status\": \"compared\"\n}\n"
-    },
     {
       "name": "alpha_baseline_prefix",
       "repository": "alpha",

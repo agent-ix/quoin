@@ -29,11 +29,9 @@ campaign = ["engineering-assurance/campaign"]
 # operational-evidence records each carry one EA `ClaimStrength` (PLAT-971)
 # rather than a local mirror enum.
 engineering-assurance = { workspace = true, features = ["measurement", "claim-strength"] }
-# The ONLY place canonical JSON, strict JSON parsing, sha256 file digests and
-# durable store writes come from. FR-100-CON-4 forbids a second implementation
-# and `tc_468_boundary` asserts over this crate's own sources that there is not
-# one here. In particular: this crate has no `sha2` dependency, because the one
-# sha256 it needs is `quoin_store::digest_file_sha256`.
+# The ONLY place canonical JSON, strict JSON parsing and durable store writes
+# come from. FR-100-CON-4 forbids a second implementation and `tc_468_boundary`
+# asserts over this crate's own sources that there is not one here.
 # The FR-042 refusal boundary for `cli-agent-evals` reports. The agent-eval
 # producer names that adapter rather than re-deciding what the format is
 # (`agent-eval-intervention.ts:21-27`).

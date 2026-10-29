@@ -89,6 +89,4 @@ impl MeasurementPlanReference {
 pub struct RawScorerOutput {
     /// The relative, non-drive-qualified path.
     pub path: crate::scalars::ScorerOutputPath,
-    /// The exact byte length of the retained bytes.
-    pub byte_length: u64,
 }

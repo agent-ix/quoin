@@ -7,15 +7,13 @@
 //!
 //! # The availability ladder
 //!
-//! A reading is `available` only if it survives four questions, asked in this
+//! A reading is `available` only if it survives three questions, asked in this
 //! order because a later one presumes the earlier answered:
 //!
-//! 1. Does the retained scorer attachment have its declared byte length?
-//!    A contradiction here is `unreadable` (`graph-portfolio.ts:600-602`).
-//! 2. Is the producer record and scorer identity there at all? `unknown`.
-//! 3. Do this collection's own graph partitions agree on plan, definition
+//! 1. Is the producer record there at all? `unknown`.
+//! 2. Do this collection's own graph partitions agree on plan, definition
 //!    version and population identity? `incompatible`.
-//! 4. Does that plan match the repository's *active* `graph_quality` plan?
+//! 3. Does that plan match the repository's *active* `graph_quality` plan?
 //!    `incompatible`.
 //!
 //! The order is load-bearing and is the retained `if`/`else if` chain, not a
@@ -37,14 +35,13 @@ use crate::order::compare_text;
 use crate::reading::{
     GraphPartitionRow, GraphQualityHistoryRow, HistoryPlanRef, PartitionIdentity,
 };
-use crate::scorer::{ScorerIntegrityFailure, integrity_failure};
 
 /// The metric this whole crate is about. `graph-portfolio.ts:462`.
 pub const GRAPH_QUALITY_METRIC: &str = "graph_quality";
 
-/// The sentence stated when the producer record or scorer identity is absent.
+/// The sentence stated when the producer record is absent.
 /// `graph-portfolio.ts:612-613`.
-const NO_PRODUCER_IDENTITY: &str = "raw producer record or scorer identity is unavailable";
+const NO_PRODUCER_IDENTITY: &str = "raw producer record is unavailable";
 
 /// The sentence stated when a collection's own partitions disagree.
 /// `graph-portfolio.ts:616-617`.
@@ -94,14 +91,11 @@ pub fn history_row(
     let producer_record = record(member(raw, "producer"));
     let producer = member(producer_record, "producer");
     let observation_id = string_field(producer_record, "observation_id");
-    let scorer = record(member(raw, "scorer"));
     let plan = observations.first().map(|first| HistoryPlanRef {
         id: first.plan_id.as_str().to_owned(),
         definition_version: first.definition_version.as_str().to_owned(),
     });
-    let attachment_failure = integrity_failure(producer_record, scorer);
     let (availability, reason) = availability_of(
-        attachment_failure.as_ref(),
         observation_id.as_deref(),
         producer,
         &observations,
@@ -146,27 +140,16 @@ pub fn history_row(
               not exist and hide the order, which is the load-bearing part"
 )]
 fn availability_of(
-    attachment_failure: Option<&ScorerIntegrityFailure>,
     observation_id: Option<&str>,
     producer: Option<&JsonValue>,
     observations: &[&MeasurementObservation],
     plan: Option<&HistoryPlanRef>,
     active_plan: Option<&MeasurementPlan>,
 ) -> Result<(HistoryAvailability, Option<String>), GraphAdapterError> {
-    if let Some(failure @ ScorerIntegrityFailure::Unreadable { .. }) = attachment_failure {
-        return Ok((
-            HistoryAvailability::Unreadable,
-            Some(failure.reason().to_owned()),
-        ));
-    }
-    if observation_id.is_none() || producer.is_none() || attachment_failure.is_some() {
+    if observation_id.is_none() || producer.is_none() {
         return Ok((
             HistoryAvailability::Unknown,
-            Some(
-                attachment_failure
-                    .map_or(NO_PRODUCER_IDENTITY, ScorerIntegrityFailure::reason)
-                    .to_owned(),
-            ),
+            Some(NO_PRODUCER_IDENTITY.to_owned()),
         ));
     }
     if !self_consistent(observations)? {
@@ -244,7 +227,7 @@ fn partition_row(row: &MeasurementObservation) -> GraphPartitionRow {
 /// The retained `row.dimensions?.measure ?? "unknown"` reads a member declared
 /// `Record<string, string>` and nothing validates that declaration, so a
 /// non-string member reaches the renderer in TypeScript and is refused here.
-/// That divergence is declared in `DIVERGENCE.md` §2 and is why this reads
+/// That divergence is why this reads
 /// through [`quoin_store::JsonValue::as_str`] rather than through
 /// `js_string`: a number here would be a *different measure name* in the
 /// partition key, not merely a different rendering.

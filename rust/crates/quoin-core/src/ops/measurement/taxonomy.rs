@@ -228,10 +228,8 @@ const fn graph_code(code: GraphAdapterErrorCode) -> Option<CoreErrorCode> {
         | GraphAdapterErrorCode::InvalidObservation
         | GraphAdapterErrorCode::InvalidAttestation
         | GraphAdapterErrorCode::AttachmentMissing
-        | GraphAdapterErrorCode::AttachmentLengthMismatch
         | GraphAdapterErrorCode::InactivePlan
         | GraphAdapterErrorCode::DuplicatePartition
-        | GraphAdapterErrorCode::AttachmentEncodingInvalid
         | GraphAdapterErrorCode::CollectionRefused
         | GraphAdapterErrorCode::Measurement
         | GraphAdapterErrorCode::Store => CoreErrorCode::Refused,
@@ -391,7 +389,7 @@ mod tests {
     fn the_graph_mapping_covers_every_code() {
         assert_eq!(
             GraphAdapterErrorCode::ALL.len(),
-            16,
+            14,
             "quoin-measurement-graph gained or lost an error code; map it deliberately"
         );
 
@@ -407,10 +405,8 @@ mod tests {
             GraphAdapterErrorCode::InvalidObservation,
             GraphAdapterErrorCode::InvalidAttestation,
             GraphAdapterErrorCode::AttachmentMissing,
-            GraphAdapterErrorCode::AttachmentLengthMismatch,
             GraphAdapterErrorCode::InactivePlan,
             GraphAdapterErrorCode::DuplicatePartition,
-            GraphAdapterErrorCode::AttachmentEncodingInvalid,
             GraphAdapterErrorCode::CollectionRefused,
             GraphAdapterErrorCode::Measurement,
             GraphAdapterErrorCode::Store,

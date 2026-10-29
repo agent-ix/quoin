@@ -15,7 +15,7 @@
 //!   hold the committed corpus equal to its rebuild.
 //! - [`corpus`] reads and validates `fixtures/eval-v2/corpus.json` and the
 //!   optional external corpus, materializes by-reference rows from a local
-//!   checkout, and holds the held-out seal.
+//!   checkout, and holds the held-out access gate (a flag and a log, no hash).
 //! - [`criterion_defects`] defines the five criterion-soundness checks once:
 //!   the corpus header, the label passes and the soundness variants read it.
 //! - [`keys`] names every question key and its answer space.

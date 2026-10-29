@@ -55,8 +55,7 @@ contains no observation value, population count, result, or verdict.
 either measured quality facts or one `empty`, `unreadable`, or `unsupported`
 state. Its `observationId` is an opaque, producer-assigned unique string (a UUID),
 never derived from the record's content; `configRef` is the repository-relative
-path of the configuration file at `sourceRevision`, which git addresses. The scorer attachment names a media type and the
-exact byte length of its bytes.
+path of the configuration file at `sourceRevision`, which git addresses. The scorer attachment names a media type and carries its bytes.
 
 ## Outputs
 
@@ -72,7 +71,7 @@ The graph-quality adapter returns one current-schema `MeasurementCollection`:
 - subject, scope, timestamp, environment, and verification stack copy the
   invocation attestation;
 - `rawEvidence` retains the complete producer record and exact scorer bytes as
-  base64 with media type and byte length; and
+  base64 with media type; and
 - normalized observations use metric `graph_quality` and dimensions
   `(measure, dimension, key)`.
 
@@ -89,8 +88,7 @@ naming `empty`, `unreadable`, or `unsupported`; it never emits result rows.
 - The Quire adapter SHALL apply Quire FR-067's schema and accepted-premise checks
   before exposing any graph record.
 - The graph-quality adapter SHALL validate the producer schema, require a
-  non-empty `observationId`, and check the raw scorer bytes have the named
-  byte length before constructing a collection.
+  non-empty `observationId` before constructing a collection.
 - The graph-quality adapter SHALL require an active `graph_quality`
   MeasurementPlan whose id and definition version equal the producer record.
 - The adapter SHALL sort and deduplicate normalized dimensions and reject two
@@ -103,7 +101,7 @@ naming `empty`, `unreadable`, or `unsupported`; it never emits result rows.
 
 The adapters SHALL report one of `unknown_adapter`, `invalid_premise`,
 `invalid_observation`, `invalid_attestation`, `attachment_missing`,
-`attachment_length_mismatch`, `inactive_plan`, or `duplicate_partition`. Each
+`inactive_plan`, or `duplicate_partition`. Each
 error names the failing field or expected/observed premise and returns no
 partially constructed collection or graph input.
 
@@ -124,7 +122,7 @@ partially constructed collection or graph input.
 | FR-066-AC-2 | A valid Quire export is exposed field-for-field with its source/module premises, while each unknown format or module version is refused before any graph record. | Test (TC-1294) |
 | FR-066-AC-3 | FR-062 receives the adapter's artifacts, obligations, symbols, relations, observations, and availability states without a frontmatter read or relation-kind translation. | Integration (TC-1295) |
 | FR-066-AC-4 | Graph-quality intake validates schema version 1, requires a non-empty producer-assigned `observationId` (taken as stated, never derived from the record), and refuses changed or unknown fields before constructing a collection; the collection records no configuration digest. | Test (TC-1296) |
-| FR-066-AC-5 | The exact scorer bytes have the declared length and are retained with media type and base64 bytes; a missing or mismatched attachment leaves no collection. | Test (TC-1297) |
+| FR-066-AC-5 | The exact scorer bytes are retained with media type and base64 bytes; a missing attachment leaves no collection. | Test (TC-1297) |
 | FR-066-AC-6 | Missing subject, scope, timestamp, environment, verification-stack field, or immutable producer identity is refused independently rather than invented. | Test (TC-1298) |
 | FR-066-AC-7 | Intake refuses an absent, inactive, wrong-id, or wrong-definition graph-quality plan and names both expected and observed premises. | Test (TC-1299) |
 | FR-066-AC-8 | Population totals and all language, node-kind, relation-kind, and resolver-tier census values map bijectively to sorted count observations. | Property (TC-1300) |

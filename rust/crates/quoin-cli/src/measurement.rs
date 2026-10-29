@@ -7,11 +7,9 @@ mod campaign;
 mod tamper;
 
 use std::io::Read as _;
-use std::path::Path;
 
-use clap::{Arg, ArgAction, ArgMatches, Command};
+use clap::{Arg, ArgMatches, Command};
 use quoin_core::protocol::Response;
-use serde_json::Value;
 
 use crate::core_runtime::invoke;
 

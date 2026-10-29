@@ -67,11 +67,9 @@ use serde_json::{Value, json};
 /// Each compatibility premise, and the mutation that breaks exactly it.
 type Mutation = (GraphCompatibilityCode, fn(&mut Value));
 
-/// The retained scorer bytes every template collection carries, and their
-/// length — `scorer.rs` re-checks it, so the pair must be real.
+/// The retained scorer bytes every template collection carries.
 const SCORER_BASE64: &str =
     "eyJzY29yZXMiOlswLjgsMC45LDAuNV0sIm5vdGUiOiJncmFwaCBzY29yZXIgb3V0cHV0In0=";
-const SCORER_LENGTH: u64 = 53;
 
 /// The active plan every repository in this file governs its evidence by.
 fn plan() -> MeasurementPlan {
@@ -163,10 +161,9 @@ fn collection_json(id: &str, timestamp: &str) -> Value {
                 "observation_id": format!("obs-{id}"),
                 "producer": { "extractor_revision": "v1.2.3", "scorer_version": "v0.4.0" },
                 "population": { "state": "measured" },
-                "raw_scorer_output": { "byte_length": SCORER_LENGTH, "path": "out/scores.json" },
+                "raw_scorer_output": { "path": "out/scores.json" },
             },
             "scorer": {
-                "byteLength": SCORER_LENGTH,
                 "bytesBase64": SCORER_BASE64,
                 "mediaType": "application/json",
             },
@@ -641,34 +638,6 @@ fn tc_480_044_corruption_is_a_local_gap() {
         Some("other"),
         "one repository's corruption does not hide another's evidence"
     );
-
-    // Retained bytes that are not the length the producer declared are
-    // not a current reading, and say so.
-    let corrupt = build(&[one(
-        "/repos/c",
-        vec![collection_with(
-            "bad-attachment",
-            "2026-08-31T00:00:00Z",
-            |value| {
-                value["rawEvidence"]["scorer"]["bytesBase64"] =
-                    Value::String("Y2hhbmdlZA==".to_owned());
-            },
-        )],
-    )]);
-    assert!(
-        corrupt.repositories[0].graph_quality.current.is_none(),
-        "a corrupt attachment is not a current reading"
-    );
-    assert!(
-        corrupt.repositories[0].gaps.iter().any(|gap| {
-            gap.availability == GapAvailability::Unreadable
-                && gap
-                    .path
-                    .as_deref()
-                    .is_some_and(|path| path.contains("bad-attachment"))
-        }),
-        "the corrupt attachment is a gap naming the record it is in"
-    );
 }
 
 /// The report is canonical under permutation, and the mappings are too.
@@ -851,7 +820,7 @@ fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
     /// The modules that are `graph-portfolio.ts`. `loader` and `structural` are
     /// deliberately absent: they are `graph-portfolio-load.ts`, the one part
     /// that is *allowed* to read bytes and to call FR-062.
-    const PROJECTION_MODULES: [&str; 14] = [
+    const PROJECTION_MODULES: [&str; 13] = [
         "availability.rs",
         "build.rs",
         "compare.rs",
@@ -864,7 +833,6 @@ fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
         "render.rs",
         "render_json.rs",
         "report.rs",
-        "scorer.rs",
         "text.rs",
     ];
 
@@ -881,7 +849,7 @@ fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
     ];
 
     /// Below this the census is reading an empty tree.
-    const SOURCE_FLOOR: usize = 14;
+    const SOURCE_FLOOR: usize = 13;
 
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut measured = 0_usize;

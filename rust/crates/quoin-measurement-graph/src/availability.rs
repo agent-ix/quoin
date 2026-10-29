@@ -115,9 +115,7 @@ availability_subset! {
         Available => "available",
         /// It was read and does not match the active plan or itself.
         Incompatible => "incompatible",
-        /// Its retained scorer attachment does not have its declared byte length.
-        Unreadable => "unreadable",
-        /// Its producer record or scorer identity is not there to check.
+        /// Its producer record is not there to check.
         Unknown => "unknown",
     }
 }
@@ -146,14 +144,13 @@ impl HistoryAvailability {
     /// The gap this reading raises, or [`None`] when it raises none.
     ///
     /// `graph-portfolio.ts:493-499` pushes a gap for every history row that is
-    /// not `available`, and the four-member history vocabulary narrows into
+    /// not `available`, and the three-member history vocabulary narrows into
     /// the five-member gap vocabulary exactly.
     #[must_use]
     pub const fn as_gap(self) -> Option<GapAvailability> {
         match self {
             Self::Available => None,
             Self::Incompatible => Some(GapAvailability::Incompatible),
-            Self::Unreadable => Some(GapAvailability::Unreadable),
             Self::Unknown => Some(GapAvailability::Unknown),
         }
     }
@@ -291,8 +288,8 @@ mod tests {
             assert_eq!(GapAvailability::from(*member).as_str(), member.as_str());
             seen += 1;
         }
-        // Anti-vacuity floor: 5 + 4 + 4 + 2.
-        assert_eq!(seen, 15);
+        // Anti-vacuity floor: 5 + 4 + 3 + 2.
+        assert_eq!(seen, 14);
     }
 
     #[test]

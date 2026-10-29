@@ -22,7 +22,7 @@
 //! taken by matching the prose of whichever `fs` error node happened to
 //! produce. [`RecordingReader`] keeps the [`std::io::ErrorKind`] the seam
 //! already reported, so the same distinction is read off a type. See
-//! `DIVERGENCE.md` §9 for the one input on which the two disagree.
+//! the structural graph loader for the one input on which the two disagree.
 
 use std::cell::RefCell;
 use std::collections::BTreeMap;

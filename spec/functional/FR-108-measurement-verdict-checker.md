@@ -147,6 +147,7 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `slice_missing` | inconclusive | a slice an earlier run measured under this definition is absent from the candidate |
 | `observation_missing` | inconclusive | a collection with the candidate's `subject` and `scope`, not before it in intake order, carries no observation of the plan |
 | `apparatus_unrecorded` | inconclusive | in a protected series, the candidate or an earlier run recorded no protected apparatus (FR-110) |
+| `apparatus_unverifiable` | inconclusive | git was asked whether the protected files differ between an earlier run's source revision and the candidate's and could not answer (FR-110) |
 | `rule_not_met` | reject | the rule does not hold for the candidate |
 | `value_disagrees_with_rows` | reject | a stored `value` is inconsistent with the estimate recomputed from `matched` and `examined`, in any run |
 | `population_below_minimum` | reject | the candidate's `examined` — `0` included — is below `minimum_population` |

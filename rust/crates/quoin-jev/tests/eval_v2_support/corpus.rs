@@ -173,9 +173,11 @@ pub(crate) struct CodeArtifact {
     pub(crate) body: String,
 }
 
-/// Where an external row's files live. Unknown members (an older corpus's
-/// `commit` or `sha256`) are ignored: the checkout at `<root>` is what it is.
+/// Where an external row's files live. A member beyond `repo` and `paths`
+/// (a pinned `commit` or `sha256`) is refused: the checkout at `<root>` is
+/// what it is.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct Reference {
     /// e.g. `agent-ix/quire-rs`; the checkout is `<root>/<last segment>`.
     pub(crate) repo: String,

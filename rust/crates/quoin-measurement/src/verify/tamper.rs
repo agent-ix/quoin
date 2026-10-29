@@ -6,7 +6,7 @@
 //! Split from [`super`] so the checker stays under this crate's module-size
 //! ceiling.
 
-use super::{Finding, Reason, Run, TamperFacts, plan_level};
+use super::{Finding, Reason, TamperFacts, plan_level};
 
 /// The plan-level and per-run findings the caller's git-derived
 /// [`TamperFacts`] contribute, independent of whether the plan has a rule to
@@ -15,7 +15,7 @@ use super::{Finding, Reason, Run, TamperFacts, plan_level};
 /// Deleted and edited collections come attributed to the plan by the caller,
 /// not read off the runs, since tampering can remove a run from this plan's
 /// runs entirely.
-pub(super) fn findings(_runs: &[Run<'_>], tamper: TamperFacts<'_>) -> Vec<Finding> {
+pub(super) fn findings(tamper: TamperFacts<'_>) -> Vec<Finding> {
     let mut findings = Vec::new();
     for id in tamper.deleted_collections {
         findings.push(Finding {

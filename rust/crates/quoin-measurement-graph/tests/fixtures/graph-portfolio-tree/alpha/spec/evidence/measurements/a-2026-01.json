@@ -142,12 +142,10 @@
         "scorer_version": "v0.4.0"
       },
       "raw_scorer_output": {
-        "byte_length": 53,
         "path": "out/scores.json"
       }
     },
     "scorer": {
-      "byteLength": 53,
       "bytesBase64": "eyJzY29yZXMiOlswLjgsMC45LDAuNV0sIm5vdGUiOiJncmFwaCBzY29yZXIgb3V0cHV0In0=",
       "mediaType": "application/json"
     }

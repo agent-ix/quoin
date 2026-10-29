@@ -49,8 +49,8 @@ between the two collections' source revisions (`git diff --quiet <revA>
   `artifact_changed` (not blocking).
 - The ratchet inconclusive reasons `apparatus_changed` and
   `apparatus_unrecorded`.
-- The checker reasons `apparatus_unrecorded` (inconclusive) and
-  `apparatus_edit` (reject).
+- The checker reasons `apparatus_unrecorded` and `apparatus_unverifiable`
+  (inconclusive) and `apparatus_edit` (reject).
 
 ## Behavior
 
@@ -150,12 +150,12 @@ between the two collections' source revisions (`git diff --quiet <revA>
 - An earlier run that recorded a set different from the candidate's, or whose
   protected files differ from the candidate's between their source revisions,
   SHALL be the finding `apparatus_edit` (reject). An earlier run, or a candidate, that
-  recorded no set SHALL be `apparatus_unrecorded` (inconclusive).
+  recorded no set SHALL be `apparatus_unrecorded` (inconclusive). Where git is
+  asked and cannot answer, the finding is `apparatus_unverifiable`
+  (inconclusive), never a pass.
 - `rerun_until_pass` SHALL ignore the protected set: a regressed run followed
-  by a pass of the same source revision, configuration, tool, corpus and
-  verification stack is a rerun even when the apparatus changed between them,
-  because editing the answer key between a failed run and a pass is the rerun
-  the rule exists to catch.
+  by a pass of the same source revision, tool and corpus is a rerun
+  (`rerun_until_pass`), whatever protected set either recorded.
 
 ### Why a changed set rejects
 
@@ -183,10 +183,10 @@ and never rejects.
 | FR-110-AC-4 | Comparing two stored collections, an edited protected file (git reports the bytes differ between the source revisions), a file added under or removed from a directory entry, a record on one side only, and a protected path listed as unverified each add blocking `apparatus_changed` with a `null` delta and `incomparable` status, naming the path; a moved unprotected artifact adds only non-blocking `artifact_changed` with the delta kept; under a plan that protects nothing, neither reason appears. | Test (TC-1816..TC-1819, TC-1821) |
 | FR-110-AC-5 | A baseline stored before the apparatus was edited cannot be rewritten under its id, and a new run is `apparatus_changed` against it even when a regenerated baseline was stored beside the run. | Test (TC-1820) |
 | FR-110-AC-6 | A ratchet whose earlier value was measured with a different recorded set is `inconclusive` (`apparatus_changed`), and one whose newest collection recorded none is `inconclusive` (`apparatus_unrecorded`), including after the list is removed from the plan; over one set it is `held`. | Test (TC-1825, TC-1828, TC-1830) |
-| FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_edit` (reject) with or without an `apparatus-edit` control, and `apparatus_unrecorded` (inconclusive) when it recorded no set; removing the list from the plan still rejects the changed series; an uncommitted answer-key edit between a regressed run and a pass is `rerun_until_pass`; the same runs over one set are accepted. | Test (TC-1822..TC-1824, TC-1828, TC-1829) |
+| FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_edit` (reject) with or without an `apparatus-edit` control, and `apparatus_unrecorded` (inconclusive) when it recorded no set; removing the list from the plan still rejects the changed series; a regressed run followed by a pass of the same source revision, tool and corpus is `rerun_until_pass`; the same runs over one set are accepted. | Test (TC-1822..TC-1824, TC-1828, TC-1829) |
 | FR-110-AC-8 | A stored `protectedApparatus` that is not an object, holds an empty plan entry, or holds a value that is not a path list is refused on read as `QM-COLLECTION-INVALID` naming the member. An empty plan-id key, and a path key that is not a valid single-file `ApparatusPath` (a `<directory>/**` entry, an absolute path, or a `..` segment among them), are refused the same way, and intake refuses to resolve a protected file whose path such a key could not hold as `QM-APPARATUS-UNREADABLE`. | Test (TC-1826, TC-1833, TC-1838) |
 | FR-110-AC-9 | One plan's resolved set past its limit (50,000 files) is `QM-APPARATUS-TOO-LARGE`; each path segment is matched exactly against the directory listing, so a case-only difference names no file on any filesystem. | Test (TC-1831, TC-1832) |
-| FR-110-AC-10 | A protected file is opened exactly once, with `O_NOFOLLOW` and `O_NONBLOCK`, and its type and bytes are read from the open handle (`fstat`), never from a second look at the path: swapping what the path names after the open changes nothing the resolver reads, and a FIFO is refused as not a regular file promptly rather than blocking the resolver waiting for a writer. One write's directory walks, summed across every plan it governs, are refused as `QM-APPARATUS-TOO-LARGE` past 100,000 directories visited, counting empty ones, even when they resolve to no file; the files every plan one write governs resolve to, summed, are refused the same way past 200,000. | Test (TC-1834..TC-1837) |
+| FR-110-AC-10 | A protected file is never opened and none of its bytes is read: one `symlink_metadata` look refuses a symlink as `QM-APPARATUS-SYMLINK` and any other non-regular file, a FIFO included, as `QM-APPARATUS-UNREADABLE`, without blocking. One write's directory walks, summed across every plan it governs, are refused as `QM-APPARATUS-TOO-LARGE` past 100,000 directories visited, counting empty ones, even when they resolve to no file; the files every plan one write governs resolve to, summed, are refused the same way past 200,000. | Test (TC-1834..TC-1837) |
 
 ## Constraints
 
