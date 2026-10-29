@@ -174,7 +174,7 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | NFR-006     | ⚠️ Review  | The agent-pty harness (`evals/run.mjs`) records latency, tokens, tool calls, validation attempts, and context fetches from the Claude Code transcript; defined in `spec/evals.md`, implemented in `evals/`.                                                                  |
 | NFR-007     | ✅ Covered | `flows.test.ts` :: "rejects when ix-flow cannot be spawned (PATH has no ix-flow)"; :: "sets process.exitCode when ix-flow exits non-zero"; `write.test.ts` validation-command tests confirm `quire` is emitted, not executed. (Version pinning is an accepted gap — Review.) |
 | NFR-008     | ✅ Covered | `catalog.test.ts` :: "skips candidates that do not resolve to a module root" (missing-manifest skip); :: "aborts (strict) on a present but unparseable manifest.yaml" (strict-abort path).                                                                                   |
-| NFR-010     | ⚠️ Spec-ahead-of-code | Module pins record `version` and `ref` only; no resolved commit SHA is stored, so a repointed tag resolves differently under the same pin and nothing notices. Stated ahead of the implementation — `agent-ix/quoin#132`. |
+| NFR-010     | ⛔ Withdrawn | Withdrawn. Module refs are by name and resolve to the module's default branch; no commit id or tag is declared. The id is not reused. |
 | NFR-011     | ⚠️ Spec-ahead-of-code | No performance measurement exists anywhere in the repository — no benchmark, no timing assertion, no threshold. The budget is stated so a regression fails a test rather than being absorbed as "CI got slower" — `agent-ix/quoin#133`. |
 | NFR-012     | ⚠️ Partial | The quire half is covered: `quire-contract.test.ts` TC-114 asserts the version premise names found/required/consequence, TC-118 validates a payload from the **installed** quire. |
 | NFR-013     | ✅ Covered | `tests/semantic-module-architecture.test.ts` resolves index links, checks every external-decision identity field, and rejects provisional claims presented as normative (TC-1151..TC-1153). |
@@ -1328,7 +1328,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1681 | Continuous-integration change that removes a gate lane, narrows one, or adds `continue-on-error` fails this | Unit | P0 | NFR-027-AC-8 | 🚧 |
 | TC-1682 | Each of the source and test checks reports the population it scanned, and a check that scanned nothing is reported as | Unit | P0 | NFR-027-AC-9 | 🚧 |
 | TC-1683 | Every asset under `skills/**/workflow-assets/**` carries a recorded disposition that distinguishes the first-party | Unit | P0 | FR-099-AC-9 | 🚧 |
-| TC-1685 | Submodule is pinned to an exact revision, and a revision change is reported as a corpus identity change with both | Unit | P0 | FR-103-AC-7 | 🚧 |
+| TC-1685 | Withdrawn with FR-103-AC-7: the corpus is no longer a pinned submodule, so there is no revision to report a change of. | Unit | P0 | FR-103-AC-7 | ⛔ |
 | TC-1692 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes | Unit | P0 | FR-098-AC-8 | 🚧 |
 | TC-1693 | Document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by | Unit | P0 | FR-098-AC-9 | 🚧 |
 | TC-1694 | Record identifiers produced by the Rust implementation are opaque UUIDs and files are `<recordId>.json`; legacy identifiers are read as opaque strings and left unchanged. | Unit | P0 | FR-098-AC-10 | 🚧 |
@@ -1423,7 +1423,7 @@ found the stakeholder layer had no rows here at all.
 | StR-002-VC-1    | US-003; FR-018, FR-019 | Demonstration — TC-EV-003/TC-EV-009/TC-EV-010/TC-EV-020 install from local, GitHub and subdir sources              | ✅ Covered      |
 | StR-003-VC-1    | US-004; FR-014, FR-015 | Demonstration — TC-EV-001/TC-EV-004/TC-EV-008 author to the skeleton and validate with a real `quire`           | ✅ Covered      |
 | StR-004-VC-1    | US-005; FR-020, FR-021 | Inspection — TC-EV-005/TC-EV-013 start runs and inspect status; resume/advance/gate progression is untested  | 🚧 progression untested |
-| StR-005-VC-1    | US-003; FR-016, FR-017 | Inspection — the default set is version-pinned; NFR-001 covers idempotent offline reconcile            | ✅ Covered      |
+| StR-005-VC-1    | US-003; FR-016, FR-017 | Inspection — the default set is declared by module name; NFR-001 covers idempotent offline reconcile            | ✅ Covered      |
 | StR-006-VC-1    | US-009; FR-022, FR-112 | Demonstration — Rust delivery/CLI tests cover delegation, `--check` and `--registry` (FR-022); TC-1885..TC-1888 cover the npm-installed path, including `update` deferring to npm (FR-112)          | ✅ Covered      |
 | StR-008-VC-1    | US-021; FR-076, FR-083 | Demonstration — a variant rendered with no hand editing carries the `semantic` block, emitted schemas, typed skeletons, and a fail-not-skip suite (TC-1400..TC-1402, TC-1408, TC-1417, TC-1420, TC-1427) | ✅ Covered |
 | StR-008-VC-2    | US-021; FR-078, FR-080 | Test (TC-1410) — the rendered repository's clean-checkout gate passes before any module vocabulary is authored | ✅ Covered |
@@ -1513,7 +1513,7 @@ boundaries are exercised non-deterministically by the agent-pty evals.
 
 | Integration Test | Coverage              | Evidence / Related evals                                                                                                                                                                                                 |
 | ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| IT-001           | ⚠️ Spec-ahead-of-code | Default-module reconcile from pinned git tags. Unit tests use path-source fixtures (`index.test.ts`) and the evals seed modules into `evals/.seed-cache/`; no deterministic live first-run-then-offline test exists yet. |
+| IT-001           | ⚠️ Spec-ahead-of-code | Default-module reconcile from git. Unit tests use path-source fixtures (`index.test.ts`) and the evals seed modules into `evals/.seed-cache/`; no deterministic live first-run-then-offline test exists yet. |
 | IT-002           | ⚠️ Spec-ahead-of-code | `github://` plugin install. Unit tests cover path sources only (`quoin-modules` `install_reconcile.rs`); live GitHub install is exercised at the eval layer (TC-EV-003/TC-EV-009/TC-EV-010/TC-EV-020).                                                    |
 | IT-003 | ⚠️ Spec-ahead-of-code | TC-1709 — Quoin ↔ filament-core-data published-type integration. One end-to-end procedure, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
 
