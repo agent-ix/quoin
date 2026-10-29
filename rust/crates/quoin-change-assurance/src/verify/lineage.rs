@@ -33,18 +33,12 @@ pub fn lineage_reason(error: &ChangeAssuranceError) -> Reason {
             // caught by `/no parent/i`, not by `/mismatch/i`.
             LineageFailure::GenesisHasAParent => Reason::ParentMissing,
             LineageFailure::RevisionGap => Reason::RevisionGap,
-            LineageFailure::CrossRecordParent
-            | LineageFailure::ParentDigestMismatch
-            | LineageFailure::ImmediateParentMismatch => Reason::ParentMismatch,
+            LineageFailure::CrossRecordParent => Reason::ParentMismatch,
         },
-
-        // A parent whose own digest did not verify.
-        ChangeAssuranceError::DigestMismatch { .. } => Reason::ParentMismatch,
 
         // A parent missing a required member. Note that an *undeclared* member
         // is `extra field x`, which matches none of the three regexes and so
-        // lands on `parent_invalid` — as does a malformed digest, whose
-        // message says "must be exactly 64 lowercase hexadecimal characters".
+        // lands on `parent_invalid`.
         ChangeAssuranceError::Shape { failure, .. } if failure.reads_as_absence() => {
             Reason::ParentMissing
         }

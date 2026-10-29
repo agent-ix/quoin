@@ -2,16 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-ix.github.io/quoin/schemas/verification-receipt-v1.schema.json",
   "title": "VerificationReceiptV1",
-  "$comment": "governing_plan_id and diff_paths_supplied (PLAT-1015, FR-111) are required on every receipt sealed from PLAT-1015 on. This schema describes what is sealed; verify_receipt additionally re-verifies a receipt sealed before PLAT-1015, which carries neither member and reads back as no plan linked and no diff supplied.",
-  "type": "object",
+    "type": "object",
   "required": [
     "schema_version",
     "record_type",
-    "digest",
-    "record_digest",
+    "record_id",
+    "record_revision",
     "candidate_revision",
     "decision_event",
-    "parent_digests",
     "checks",
     "proofs",
     "unknowns",
@@ -23,15 +21,11 @@
   "properties": {
     "schema_version": { "const": 1 },
     "record_type": { "const": "verification_receipt" },
-    "digest": { "$ref": "#/$defs/digest" },
-    "record_digest": { "$ref": "#/$defs/digest" },
+    "record_id": { "$ref": "#/$defs/identity" },
+    "record_revision": { "type": "integer", "minimum": 1 },
     "candidate_revision": { "type": "string", "minLength": 1 },
     "decision_event": {
       "anyOf": [{ "$ref": "#/$defs/decision_event" }, { "type": "null" }]
-    },
-    "parent_digests": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/digest" }
     },
     "checks": {
       "type": "object",
@@ -78,10 +72,6 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
     },
-    "digest": {
-      "type": "string",
-      "pattern": "^[a-f0-9]{64}$"
-    },
     "outcome": {
       "type": "string",
       "enum": ["valid", "invalid", "incomplete"]
@@ -90,7 +80,7 @@
       "type": "string",
       "enum": [
         "schema_invalid",
-        "record_digest_mismatch",
+        "record_revision_mismatch",
         "parent_missing",
         "parent_invalid",
         "parent_mismatch",
@@ -106,9 +96,9 @@
         "review_revision_requested",
         "attestation_missing",
         "attestation_schema_invalid",
-        "attestation_digest_mismatch",
+        "attestation_id_mismatch",
         "output_missing",
-        "output_digest_mismatch",
+        "output_size_mismatch",
         "record_binding_mismatch",
         "candidate_revision_mismatch",
         "proof_id_mismatch",
@@ -146,16 +136,14 @@
       "required": [
         "run_id",
         "event_id",
-        "event_hash",
-        "chain_tail_hash",
+        "sequence",
         "recorded_actor",
         "decision"
       ],
       "properties": {
         "run_id": { "$ref": "#/$defs/identity" },
         "event_id": { "$ref": "#/$defs/identity" },
-        "event_hash": { "$ref": "#/$defs/digest" },
-        "chain_tail_hash": { "$ref": "#/$defs/digest" },
+        "sequence": { "type": "integer", "minimum": 1 },
         "recorded_actor": { "type": "string", "minLength": 1 },
         "decision": {
           "type": "string",
@@ -178,9 +166,7 @@
       "required": [
         "proof_id",
         "obligation_ids",
-        "attestation_digest",
-        "retained_output_digest",
-        "audit_report_digest",
+        "attestation_id",
         "audit_findings",
         "outcome",
         "reasons"
@@ -192,14 +178,8 @@
           "minItems": 1,
           "items": { "$ref": "#/$defs/identity" }
         },
-        "attestation_digest": {
-          "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }]
-        },
-        "retained_output_digest": {
-          "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }]
-        },
-        "audit_report_digest": {
-          "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }]
+        "attestation_id": {
+          "anyOf": [{ "$ref": "#/$defs/identity" }, { "type": "null" }]
         },
         "audit_findings": {
           "type": "array",

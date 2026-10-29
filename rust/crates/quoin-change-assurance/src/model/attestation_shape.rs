@@ -7,12 +7,12 @@
 //! `model/record`) so that module stays under the 700-line hard ceiling after
 //! PLAT-972 added the `strength` member; nothing here changed behaviour.
 
-/// Whether `version` is one of the three immutable spellings the oracle admits.
+/// Whether `version` is one of the two immutable spellings the schema admits.
 ///
-/// `^(?:v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|[a-f0-9]{64})$`.
+/// `^(?:v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?|[a-f0-9]{40})$`.
 #[must_use]
 pub fn is_an_immutable_version(version: &str) -> bool {
-    if is_lowercase_hex(version, 40) || is_lowercase_hex(version, 64) {
+    if is_lowercase_hex(version, 40) {
         return true;
     }
     let core = version.strip_prefix('v').unwrap_or(version);
@@ -172,13 +172,13 @@ mod tests {
     use super::{is_a_real_instant, is_an_immutable_version};
 
     #[test]
-    fn immutable_versions_are_releases_commits_and_digests_and_nothing_else() {
+    fn immutable_versions_are_releases_and_commits_and_nothing_else() {
         assert!(is_an_immutable_version("1.2.3"));
         assert!(is_an_immutable_version("v1.2.3"));
         assert!(is_an_immutable_version("1.2.3-rc.1"));
         assert!(is_an_immutable_version("1.2.3+build.5"));
         assert!(is_an_immutable_version(&"a".repeat(40)));
-        assert!(is_an_immutable_version(&"0".repeat(64)));
+        assert!(!is_an_immutable_version(&"0".repeat(64)));
         assert!(!is_an_immutable_version("latest"));
         assert!(!is_an_immutable_version("main"));
         assert!(!is_an_immutable_version("1.2"));

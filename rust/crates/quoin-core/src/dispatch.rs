@@ -33,12 +33,12 @@ pub const OPERATIONS: &[&str] = &[
     "catalog.load",
     "catalog.methods",
     "change_assurance.intake",
+    "change_assurance.prepare_attestation",
     "change_assurance.receipt",
     "change_assurance.recover",
     "change_assurance.schema",
-    "change_assurance.seal_attestation",
-    "change_assurance.seal_record",
     "change_assurance.verify_receipt",
+    "change_assurance.write_record",
     "completeness.assess_bundle",
     "completeness.read_frontmatter",
     "completeness.schema_refs",
@@ -125,16 +125,18 @@ pub fn dispatch(
         "assurance.build_discharge" => crate::ops::assurance::build_discharge(request),
         "assurance.render_discharge" => crate::ops::assurance::render_discharge(request),
         "change_assurance.intake" => crate::ops::change_assurance::intake(request, capabilities),
+        "change_assurance.prepare_attestation" => {
+            crate::ops::change_assurance::prepare_attestation(request)
+        }
         "change_assurance.receipt" => crate::ops::change_assurance::receipt(request, capabilities),
         "change_assurance.recover" => crate::ops::change_assurance::recover(request, capabilities),
         "change_assurance.schema" => crate::ops::change_assurance::schema(request),
-        "change_assurance.seal_attestation" => {
-            crate::ops::change_assurance::seal_attestation(request)
+        "change_assurance.verify_receipt" => {
+            crate::ops::change_assurance::verify_receipt(request, capabilities)
         }
-        "change_assurance.seal_record" => {
-            crate::ops::change_assurance::seal_record(request, capabilities)
+        "change_assurance.write_record" => {
+            crate::ops::change_assurance::write_record(request, capabilities)
         }
-        "change_assurance.verify_receipt" => crate::ops::change_assurance::verify_receipt(request),
         "completeness.assess_bundle" => crate::ops::completeness::assess_bundle(request),
         "completeness.read_frontmatter" => crate::ops::completeness::read_frontmatter(request),
         "completeness.schema_refs" => crate::ops::completeness::schema_refs(request),
@@ -899,12 +901,12 @@ mod tests {
             crate::ops::change_assurance::MAX_SCHEMA_BYTES,
         ),
         (
-            "ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES",
-            crate::ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES,
+            "ops::change_assurance::MAX_PREPARE_ATTESTATION_BYTES",
+            crate::ops::change_assurance::MAX_PREPARE_ATTESTATION_BYTES,
         ),
         (
-            "ops::change_assurance::MAX_SEAL_RECORD_BYTES",
-            crate::ops::change_assurance::MAX_SEAL_RECORD_BYTES,
+            "ops::change_assurance::MAX_WRITE_RECORD_BYTES",
+            crate::ops::change_assurance::MAX_WRITE_RECORD_BYTES,
         ),
         (
             "ops::change_assurance::MAX_VERIFY_RECEIPT_BYTES",

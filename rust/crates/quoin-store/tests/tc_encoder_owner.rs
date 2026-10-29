@@ -17,8 +17,8 @@ fn canonical_encoding_has_no_retained_local_implementations() {
 
 #[trace("FR-100-AC-10")]
 #[test]
-fn canonical_digests_match_shared_owner_and_literal_vectors()
--> Result<(), Box<dyn std::error::Error>> {
+fn canonical_bytes_match_shared_owner_and_literal_vectors() -> Result<(), Box<dyn std::error::Error>>
+{
     let cases = [
         (
             r#"{"\ue000":1,"\ud800\udc00":2}"#,
@@ -33,11 +33,6 @@ fn canonical_digests_match_shared_owner_and_literal_vectors()
         let owner = quire_canonical::to_vec(&boundary, quire_canonical::Limits::new(4096))?;
         assert_eq!(owner, expected.as_bytes());
         assert_eq!(quoin_store::canonical_bytes(&store)?, owner);
-        let expected_value = quoin_store::json::parse::parse_strict_json_str(expected)?;
-        assert_eq!(
-            quoin_store::digest_canonical_value(&store)?,
-            quoin_store::digest_canonical_value(&expected_value)?
-        );
     }
     Ok(())
 }

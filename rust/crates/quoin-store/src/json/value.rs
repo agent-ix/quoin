@@ -52,7 +52,7 @@ impl PartialEq for JsonNumber {
     /// Equality is on the *canonical serialization*, not on the bit pattern.
     ///
     /// `0.0` and `-0.0` are distinct doubles that canonicalize to the same
-    /// `0`, and a digest cannot distinguish them; treating them as unequal
+    /// `0`, and the canonical bytes cannot distinguish them; treating them as unequal
     /// here would make equality disagree with identity.
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0

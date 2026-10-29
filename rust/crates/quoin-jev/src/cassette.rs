@@ -10,17 +10,16 @@
 //! it for free afterward -- every live-API test either spends a call or
 //! carries a fixture someone typed by hand. [`Cassette`] is a
 //! [`Transport`] that does that: it sits where [`typesafe_sdk_http::Reqwest`]
-//! or [`typesafe_sdk_http::Mock`] would, keyed by a canonical hash of the
+//! or [`typesafe_sdk_http::Mock`] would, keyed by the canonical text of the
 //! request's `state`/`questions`, and either records a real call once or
 //! replays a prior recording with no socket at all.
 //!
-//! **Hashing.** The key is [`quoin_store::digest_canonical_value`] over
-//! `{state, questions}` -- the RFC 8785 canonical-JSON/blake3 digest this
-//! workspace already has one of. The ticket that opened this module named
-//! `sha256` by analogy with a third-party project's own cassette; this crate
-//! reuses the canonicalizer quoin already ships instead of adding a second,
-//! differently-implemented one for the same job (`rust-review`'s "one fact,
-//! one place"). `model` is deliberately excluded from the key: a cassette line
+//! **Key.** The key is the RFC 8785 canonical JSON text of
+//! `{state, questions}`, from [`quoin_store::canonicalize_jcs`]: this crate
+//! reuses the canonicalizer quoin already ships (`rust-review`'s "one fact,
+//! one place") and derives nothing from it, so two requests share a key
+//! exactly when they asked the same thing. `model` is deliberately excluded
+//! from the key: a cassette line
 //! is keyed on what was asked, not on which model answered it, so a
 //! model-mismatch is something [`Cassette::replay`] can detect and refuse
 //! (see below) rather than something the key silently routes around.
@@ -57,7 +56,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use quoin_store::{JsonObject, JsonValue, digest_canonical_value, parse_strict_json_str};
+use quoin_store::{JsonObject, JsonValue, canonicalize_jcs, parse_strict_json_str};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use typesafe_sdk_error::{Error as SdkError, Result as SdkResult};
@@ -98,7 +97,7 @@ pub(crate) const MODEL_MISMATCH_PREFIX: &str = "JEV_CASSETTE_MODEL_MISMATCH: ";
 /// depends on that continuing to be true.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CassetteLine {
-    /// The canonical hash of this request's `{state, questions}` -- see
+    /// The canonical text of this request's `{state, questions}` -- see
     /// [`request_key`].
     key: String,
     /// The HTTP status the real call answered with. Only a `2xx` response is
@@ -138,7 +137,7 @@ enum Mode {
 }
 
 /// A [`Transport`] that records real Jev answers to a JSONL file, keyed by a
-/// canonical hash of the request, or replays them with no socket at all.
+/// canonical text of the request, or replays them with no socket at all.
 ///
 /// Install it exactly where a real or mocked transport goes:
 /// `client::with_transport(config, Arc::new(cassette))`.
@@ -426,7 +425,7 @@ fn append_line(path: &Path, line: &CassetteLine) -> Result<()> {
 }
 
 /// The canonical key for a request whose serialised JSON body is `body`:
-/// [`digest_canonical_value`] over `{"state": ..., "questions": ...}`, both
+/// [`canonicalize_jcs`] of `{"state": ..., "questions": ...}`, both
 /// taken from `body` and defaulting to `null` when the field is absent.
 ///
 /// `model` and `extra` (`request.rs`'s pass-through field) are deliberately
@@ -457,9 +456,8 @@ fn request_key(body: &str) -> Result<String> {
         )
         .map_err(|error| JevError::new(JevErrorCode::CassetteInvalid, error.to_string()))?;
 
-    let digest = digest_canonical_value(&JsonValue::Object(keyed))
-        .map_err(|error| JevError::new(JevErrorCode::CassetteInvalid, error.to_string()))?;
-    Ok(digest.as_hex().to_owned())
+    canonicalize_jcs(&JsonValue::Object(keyed))
+        .map_err(|error| JevError::new(JevErrorCode::CassetteInvalid, error.to_string()))
 }
 
 #[cfg(test)]
@@ -643,7 +641,7 @@ mod tests {
         assert_eq!(error.code, JevErrorCode::CassetteModelMismatch);
     }
 
-    /// Provenance: PLAT-977. Two independent inputs hash to two independent
+    /// Provenance: PLAT-977. Two independent inputs key to two independent
     /// keys, so replay cannot cross-answer one request with another's
     /// recording.
     #[tokio::test]

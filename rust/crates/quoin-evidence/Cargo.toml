@@ -9,7 +9,7 @@
 # measured by the workspace's gate and cannot drift from it.
 #
 # `quoin-store` is a hard dependency and not an optional one: FR-100-CON-4
-# forbids reimplementing canonical JSON, JCS, sha256 record identity, blake3 or
+# forbids reimplementing canonical JSON, JCS, sha256 identity or
 # atomic replacement anywhere else, so every byte this crate writes goes
 # through it.
 [package]

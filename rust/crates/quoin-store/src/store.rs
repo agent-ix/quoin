@@ -5,8 +5,8 @@
 //! Every write here is **crash-atomic**: the bytes are written to a temporary
 //! name in the destination directory, `fsync`ed, renamed into place, and the
 //! destination directory is `fsync`ed. A reader therefore sees either the
-//! previous file or the complete new one, never a truncated one. Evidence is
-//! referenced by digest; a half-written record is not a recoverable state.
+//! previous file or the complete new one, never a truncated one. A half-written
+//! record is not a recoverable state.
 //!
 //! The oracle's evidence-store writer (`writeCanonical` → `writeFileSync`) is
 //! *not* atomic; its change-assurance writer is. Making both atomic here is a
@@ -38,20 +38,24 @@ pub fn change_assurance_root(repo: &Path) -> PathBuf {
     store_root(repo).join("change-assurance")
 }
 
-/// A sealed change-assurance record's path.
+/// A change-assurance record's path: `records/<record_id>/<revision>.json`.
+///
+/// A record is addressed by the pair `(record_id, revision)`; nothing in the
+/// path is derived from content.
 #[must_use]
-pub fn record_path(repo: &Path, digest: &crate::digest::CanonicalDigest) -> PathBuf {
+pub fn record_path(repo: &Path, record_id: &str, revision: u64) -> PathBuf {
     change_assurance_root(repo)
         .join("records")
-        .join(format!("{}.json", digest.as_hex()))
+        .join(record_id)
+        .join(format!("{revision}.json"))
 }
 
-/// A proof attestation's directory.
+/// A proof attestation's directory: `attestations/<attestation_id>`.
 #[must_use]
-pub fn attestation_path(repo: &Path, digest: &crate::digest::CanonicalDigest) -> PathBuf {
+pub fn attestation_path(repo: &Path, attestation_id: &str) -> PathBuf {
     change_assurance_root(repo)
         .join("attestations")
-        .join(digest.as_hex())
+        .join(attestation_id)
 }
 
 fn io<'a>(
@@ -154,10 +158,10 @@ pub fn write_canonical(path: &Path, value: &JsonValue) -> Result<(), StoreError>
     write_atomic(path, &canonical_json_bytes(value)?)
 }
 
-/// Write content-addressed bytes, refusing a collision.
+/// Write bytes to a path that is written once, refusing a collision.
 ///
 /// If the path already exists it must already hold exactly these bytes; a
-/// differing body under a digest-named path is corruption, not an overwrite to
+/// differing body at an already-written path is corruption, not an overwrite to
 /// perform. Returns `true` when the file was newly written.
 ///
 /// The publish step is [`fs::hard_link`], not [`fs::rename`]. Rename replaces

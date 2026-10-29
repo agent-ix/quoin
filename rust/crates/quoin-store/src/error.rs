@@ -10,8 +10,8 @@ use std::path::PathBuf;
 
 /// A stable, never-reused code for each refusal this crate can produce.
 ///
-/// Codes are part of the compatibility surface: they appear in replay reports
-/// and in any downstream diagnostic. Add members; never rename or repurpose one.
+/// Codes are part of the compatibility surface: they appear in
+/// downstream diagnostics. Add members; never rename or repurpose one.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[non_exhaustive]
 pub enum StoreErrorCode {
@@ -53,18 +53,12 @@ pub enum StoreErrorCode {
     JsonNestingTooDeep,
     /// A digest string was not exactly 64 lowercase hexadecimal characters.
     DigestMalformed,
-    /// A record's stored `digest` member did not equal the recomputed digest.
-    DigestMismatch,
-    /// A record carried no `digest` member where one is required.
-    DigestMissing,
     /// A value that must be a JSON object was not one.
     NotAnObject,
     /// A filesystem operation failed.
     Io,
     /// A content-addressed path already held different bytes.
     ContentCollision,
-    /// A record's digest disagreed with the digest in its own path.
-    PathDigestMismatch,
     /// A path offered for digesting was a symbolic link.
     DigestSourceIsSymlink,
     /// A path offered for digesting was not a regular file.
@@ -77,7 +71,7 @@ pub enum StoreErrorCode {
 
 impl StoreErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 29] = [
+    pub const ALL: [Self; 26] = [
         Self::CanonicalEncoding,
         Self::JsonNotUtf8,
         Self::JsonByteOrderMark,
@@ -97,12 +91,9 @@ impl StoreErrorCode {
         Self::JsonNumberNotFinite,
         Self::JsonNestingTooDeep,
         Self::DigestMalformed,
-        Self::DigestMismatch,
-        Self::DigestMissing,
         Self::NotAnObject,
         Self::Io,
         Self::ContentCollision,
-        Self::PathDigestMismatch,
         Self::DigestSourceIsSymlink,
         Self::DigestSourceNotRegularFile,
         Self::DigestSourceTooLarge,
@@ -132,12 +123,9 @@ impl StoreErrorCode {
             Self::JsonNumberNotFinite => "QSTORE-JSON-NUMBER-NOT-FINITE",
             Self::JsonNestingTooDeep => "QSTORE-JSON-NESTING-TOO-DEEP",
             Self::DigestMalformed => "QSTORE-DIGEST-MALFORMED",
-            Self::DigestMismatch => "QSTORE-DIGEST-MISMATCH",
-            Self::DigestMissing => "QSTORE-DIGEST-MISSING",
             Self::NotAnObject => "QSTORE-NOT-AN-OBJECT",
             Self::Io => "QSTORE-IO",
             Self::ContentCollision => "QSTORE-CONTENT-COLLISION",
-            Self::PathDigestMismatch => "QSTORE-PATH-DIGEST-MISMATCH",
             Self::DigestSourceIsSymlink => "QSTORE-DIGEST-SOURCE-SYMLINK",
             Self::DigestSourceNotRegularFile => "QSTORE-DIGEST-SOURCE-NOT-REGULAR-FILE",
             Self::DigestSourceTooLarge => "QSTORE-DIGEST-SOURCE-TOO-LARGE",
@@ -312,19 +300,6 @@ pub enum StoreError {
         value: String,
     },
 
-    /// A record's stored `digest` member did not equal the recomputed digest.
-    #[error("digest mismatch: stored {stored}, recomputed {recomputed}")]
-    DigestMismatch {
-        /// The digest the record carried.
-        stored: String,
-        /// The digest recomputed over the record's canonical bytes.
-        recomputed: String,
-    },
-
-    /// A record carried no `digest` member where one is required.
-    #[error("record carries no digest member")]
-    DigestMissing,
-
     /// A value that must be a JSON object was not one.
     #[error("expected a JSON object, found {found}")]
     NotAnObject {
@@ -349,17 +324,6 @@ pub enum StoreError {
     ContentCollision {
         /// The content-addressed path.
         path: PathBuf,
-    },
-
-    /// A record's digest disagreed with the digest in its own path.
-    #[error("path digest mismatch at {path}: record carries {found}, path names {expected}")]
-    PathDigestMismatch {
-        /// The path read.
-        path: PathBuf,
-        /// The digest the path encodes.
-        expected: String,
-        /// The digest the record carries.
-        found: String,
     },
 
     /// A path offered for digesting was a symbolic link.
@@ -428,12 +392,9 @@ impl StoreError {
             Self::JsonNumberNotFinite { .. } => StoreErrorCode::JsonNumberNotFinite,
             Self::JsonNestingTooDeep { .. } => StoreErrorCode::JsonNestingTooDeep,
             Self::DigestMalformed { .. } => StoreErrorCode::DigestMalformed,
-            Self::DigestMismatch { .. } => StoreErrorCode::DigestMismatch,
-            Self::DigestMissing => StoreErrorCode::DigestMissing,
             Self::NotAnObject { .. } => StoreErrorCode::NotAnObject,
             Self::Io { .. } => StoreErrorCode::Io,
             Self::ContentCollision { .. } => StoreErrorCode::ContentCollision,
-            Self::PathDigestMismatch { .. } => StoreErrorCode::PathDigestMismatch,
             Self::DigestSourceIsSymlink { .. } => StoreErrorCode::DigestSourceIsSymlink,
             Self::DigestSourceNotRegularFile { .. } => StoreErrorCode::DigestSourceNotRegularFile,
             Self::DigestSourceTooLarge { .. } => StoreErrorCode::DigestSourceTooLarge,
@@ -471,8 +432,8 @@ mod tests {
             StoreErrorCode::JsonByteOrderMark
         );
         assert_eq!(
-            StoreError::DigestMissing.code(),
-            StoreErrorCode::DigestMissing
+            StoreError::NotAnObject { found: "array" }.code(),
+            StoreErrorCode::NotAnObject
         );
     }
 }

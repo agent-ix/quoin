@@ -2,40 +2,25 @@
 // Copyright (C) 2026 Agent-IX
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
-//! Canonical JSON, digest domains, and durable evidence-store writes for Quoin.
-//!
-//! # What this crate is for
-//!
-//! Digests here are not checksums. They are **identifiers inside retained
-//! evidence records**: a change-assurance record is named by its digest, an
-//! attestation references its retained output by digest, and both already exist
-//! on disk in repositories across the ecosystem. A digest this crate computes
-//! differently from the TypeScript it replaces is not a failing test; it is
-//! evidence that can no longer be found by the name it was filed under, with no
-//! migration back.
-//!
-//! Everything in the layout below follows from that.
+//! Canonical JSON and durable evidence-store writes for Quoin.
 //!
 //! # Layout
 //!
-//! * [`json`] — the strict I-JSON reader and the two canonical writers.
-//! * [`digest`] — the one digest function, and the two non-substitutable
-//!   digest domains as separate types.
-//! * [`store`] — store paths, [`store::STORE_SCHEMA_VERSION`], and durable
+//! * [`json`] - the strict I-JSON reader and the two canonical writers.
+//! * [`digest`] - the sha256 helpers the measurement crates still call, and the
+//!   bounded no-follow file read (see that module for what remains and why).
+//! * [`store`] - store paths, [`store::STORE_SCHEMA_VERSION`], and durable
 //!   atomic writes.
-//! * [`replay`] — the cutover gate.
-//! * [`error`] — one error enum, one stable code per refusal.
+//! * [`error`] - one error enum, one stable code per refusal.
 //!
-//! # The hard gate (`COMPATIBILITY.md` restates this in full)
+//! # Records are addressed by identity, not content
 //!
-//! **No cutover may depend on this crate until every digest in every reachable
-//! store has been replayed through both the TypeScript and the Rust
-//! implementation with zero mismatches.** The tool that does it is
-//! [`replay`], driven on the TypeScript side by `capture-store-oracle.mjs`
-//! (deleted at cutover)
-//! and on the Rust side by the `quoin-store-replay` binary. "The replay tool
-//! works" is not the gate; a reported count of digests replayed with a
-//! mismatch count of zero is.
+//! A change-assurance record is stored at
+//! `change-assurance/records/<record_id>/<revision>.json` and an attestation at
+//! `change-assurance/attestations/<attestation_id>/`. Both identities are
+//! assigned by the caller; nothing in a path is derived from the bytes it
+//! holds, so this crate computes no digest over either and git history is the
+//! tamper evidence.
 //!
 //! # The frozen compatibility surface
 //!
@@ -43,10 +28,9 @@
 //! improvement, and each is asserted by a test:
 //!
 //! 1. **`STORE_SCHEMA_VERSION == 1`.**
-//! 2. **Two canonical serializations, not one.** RFC 8785 JCS for digest bytes
-//!    and for the change-assurance family's on-disk form; `canonicalJson`
-//!    (two-space indent, `": "` separator, trailing newline) for every other
-//!    store file.
+//! 2. **Two canonical serializations, not one.** RFC 8785 JCS for the
+//!    change-assurance family's on-disk form; `canonicalJson` (two-space
+//!    indent, `": "` separator, trailing newline) for every other store file.
 //! 3. **JCS member order is UTF-16 code unit order**, not Unicode scalar order.
 //! 4. **The pretty form's member order is ECMAScript own-property order**:
 //!    array-index names first in ascending numeric order, then the rest in
@@ -56,26 +40,16 @@
 //! 6. **Every JSON number is an IEEE-754 double**, integers included. Integer
 //!    precision beyond 2^53 is already lost in retained evidence.
 //! 7. **No Unicode normalization**, ever, on member names or string values.
-//! 8. **Change-assurance digests are blake3, stored as 64 lowercase hex
-//!    characters with no algorithm prefix. Measurement raw-evidence and
-//!    contract-pin digests are sha256, stored `sha256:`-prefixed.** Two
-//!    algorithms, told apart in the retained stores only by that prefix; here
-//!    the algorithm is part of the type.
-//! 9. **A sealed record's digest is taken over the record with its top-level
-//!    `digest` member removed** — and only the top-level one.
 
 pub mod digest;
 pub mod error;
 pub mod json;
-pub mod replay;
 pub mod store;
 
 pub use digest::{
-    AssuranceRecordId, CanonicalDigest, DigestDomain, MAX_DIGESTED_FILE_BYTES, RawBytesDigest,
-    RawFileSha256Digest, RecordFileName, blake3_hex, digest_assurance_record, digest_bytes_sha256,
-    digest_canonical_value, digest_file_sha256, digest_raw_bytes, digest_record,
-    digest_record_file_name, digest_record_pair_file_name, read_regular_file_bounded,
-    verify_record_digest,
+    AssuranceRecordId, DigestDomain, MAX_DIGESTED_FILE_BYTES, RawFileSha256Digest, RecordFileName,
+    digest_assurance_record, digest_bytes_sha256, digest_file_sha256, digest_record_file_name,
+    digest_record_pair_file_name, read_regular_file_bounded,
 };
 pub use error::{StoreError, StoreErrorCode};
 pub use json::canonical::{canonical_bytes, canonicalize_jcs};

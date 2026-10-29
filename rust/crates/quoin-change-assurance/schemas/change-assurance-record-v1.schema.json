@@ -8,8 +8,6 @@
     "record_type",
     "record_id",
     "revision",
-    "parent_digest",
-    "digest",
     "subject",
     "source_connections",
     "impact_snapshot",
@@ -21,10 +19,6 @@
     "record_type": { "const": "change_assurance" },
     "record_id": { "$ref": "#/$defs/identity" },
     "revision": { "type": "integer", "minimum": 1 },
-    "parent_digest": {
-      "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }]
-    },
-    "digest": { "$ref": "#/$defs/digest" },
     "subject": {
       "type": "object",
       "required": ["repository", "base_revision", "scope"],
@@ -50,7 +44,6 @@
       "required": [
         "identity",
         "revision",
-        "digest",
         "completeness",
         "truncated",
         "gaps"
@@ -58,7 +51,6 @@
       "properties": {
         "identity": { "$ref": "#/$defs/identity" },
         "revision": { "type": "string", "minLength": 1 },
-        "digest": { "$ref": "#/$defs/digest" },
         "completeness": {
           "type": "string",
           "enum": ["complete", "incomplete"]
@@ -118,13 +110,9 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
     },
-    "digest": {
-      "type": "string",
-      "pattern": "^[a-f0-9]{64}$"
-    },
     "source_connection": {
       "type": "object",
-      "required": ["source_id", "kind", "revision", "digest"],
+      "required": ["source_id", "kind", "revision"],
       "properties": {
         "source_id": { "$ref": "#/$defs/identity" },
         "kind": {
@@ -139,8 +127,7 @@
             "other"
           ]
         },
-        "revision": { "type": "string", "minLength": 1 },
-        "digest": { "$ref": "#/$defs/digest" }
+        "revision": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
@@ -196,7 +183,7 @@
         "evidence_kind",
         "command",
         "tool_identity",
-        "configuration_digest"
+        "configuration_ref"
       ],
       "properties": {
         "proof_id": { "$ref": "#/$defs/identity" },
@@ -210,7 +197,7 @@
         "evidence_kind": { "$ref": "#/$defs/identity" },
         "command": { "$ref": "#/$defs/command" },
         "tool_identity": { "type": "string", "minLength": 1 },
-        "configuration_digest": { "$ref": "#/$defs/digest" }
+        "configuration_ref": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },

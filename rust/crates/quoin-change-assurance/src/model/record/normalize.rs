@@ -5,7 +5,7 @@
 //! Runs before a record is read, so it assumes no shape: every helper below
 //! leaves a member it does not recognise exactly where it found it. Sorting
 //! here is what makes two callers who listed the same scope in a different
-//! order seal to the same digest.
+//! order write the same bytes.
 
 use quoin_store::JsonValue;
 
@@ -15,7 +15,7 @@ use crate::model::json::{compare_utf16, sort_utf16, string_values};
 ///
 /// Operates on the JSON rather than on a typed value because the oracle sorts
 /// **before** validating: an input whose collections are out of order is
-/// accepted by `sealChangeRecord` and refused by `verifyChangeRecord`, and a
+/// accepted by the oracle's preparing step and refused by its reading step, and a
 /// port that normalized after parsing could never reproduce that.
 ///
 /// Shapes this does not recognise are left alone; the validation pass that
@@ -26,7 +26,6 @@ pub fn normalize_record(value: &JsonValue) -> JsonValue {
         return value.clone();
     };
     let mut normalized = root.clone();
-    normalized.remove("digest");
     if let Some(JsonValue::Object(subject)) = normalized.get("subject") {
         let mut subject = subject.clone();
         sort_string_member(&mut subject, "scope");

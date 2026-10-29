@@ -7,8 +7,8 @@
     "schema_version",
     "record_type",
     "attestation_id",
-    "digest",
-    "record_digest",
+    "record_id",
+    "record_revision",
     "candidate_revision",
     "proof_id",
     "command",
@@ -23,18 +23,18 @@
     "schema_version": { "const": 1 },
     "record_type": { "const": "proof_attestation" },
     "attestation_id": { "$ref": "#/$defs/identity" },
-    "digest": { "$ref": "#/$defs/digest" },
-    "record_digest": { "$ref": "#/$defs/digest" },
+    "record_id": { "$ref": "#/$defs/identity" },
+    "record_revision": { "type": "integer", "minimum": 1 },
     "candidate_revision": { "type": "string", "minLength": 1 },
     "proof_id": { "$ref": "#/$defs/identity" },
     "command": { "$ref": "#/$defs/command" },
     "tool": {
       "type": "object",
-      "required": ["identity", "version", "configuration_digest"],
+      "required": ["identity", "version", "configuration_ref"],
       "properties": {
         "identity": { "type": "string", "minLength": 1 },
         "version": { "$ref": "#/$defs/immutable_version" },
-        "configuration_digest": { "$ref": "#/$defs/digest" }
+        "configuration_ref": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
@@ -61,10 +61,9 @@
     },
     "retained_output": {
       "type": "object",
-      "required": ["media_type", "digest", "size_bytes"],
+      "required": ["media_type", "size_bytes"],
       "properties": {
         "media_type": { "type": "string", "minLength": 1 },
-        "digest": { "$ref": "#/$defs/digest" },
         "size_bytes": { "type": "integer", "minimum": 0 }
       },
       "additionalProperties": false
@@ -75,13 +74,9 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
     },
-    "digest": {
-      "type": "string",
-      "pattern": "^[a-f0-9]{64}$"
-    },
     "immutable_version": {
       "type": "string",
-      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|[a-f0-9]{64})$"
+      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40})$"
     },
     "command": {
       "type": "object",

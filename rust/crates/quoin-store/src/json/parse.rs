@@ -8,7 +8,7 @@
 //!
 //! * a byte-order mark;
 //! * duplicate member names (the second silently wins in a permissive reader,
-//!   so the digest depends on which one the reader kept);
+//!   so the value depends on which one the reader kept);
 //! * unescaped C0 controls in strings;
 //! * unpaired surrogate escapes (`\uD800` with no `\uDC00` after it), which
 //!   have no UTF-8 spelling and therefore no canonical bytes;

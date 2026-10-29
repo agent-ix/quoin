@@ -10,15 +10,14 @@
 
 use std::collections::BTreeMap;
 
-use quoin_store::CanonicalDigest;
-
 use crate::error::{ChangeAssuranceError, Subject};
+use crate::ids::{AttestationId, RecordId, Revision};
 use crate::intake::{EvidenceStore, Published, RetainedPair};
 
 /// Evidence kept in memory.
 #[derive(Clone, Debug, Default)]
 pub struct MemoryEvidenceStore {
-    records: BTreeMap<String, Vec<u8>>,
+    records: BTreeMap<(String, u64), Vec<u8>>,
     attestations: BTreeMap<String, RetainedPair>,
     staging: BTreeMap<String, RetainedPair>,
 }
@@ -48,24 +47,32 @@ impl MemoryEvidenceStore {
 }
 
 impl EvidenceStore for MemoryEvidenceStore {
-    fn record(&self, digest: &CanonicalDigest) -> Result<Option<Vec<u8>>, ChangeAssuranceError> {
-        Ok(self.records.get(digest.as_hex()).cloned())
+    fn record(
+        &self,
+        record_id: &RecordId,
+        revision: Revision,
+    ) -> Result<Option<Vec<u8>>, ChangeAssuranceError> {
+        Ok(self
+            .records
+            .get(&(record_id.as_str().to_owned(), revision.get()))
+            .cloned())
     }
 
     fn publish_record(
         &mut self,
-        digest: &CanonicalDigest,
+        record_id: &RecordId,
+        revision: Revision,
         bytes: &[u8],
     ) -> Result<Published, ChangeAssuranceError> {
-        match self.records.get(digest.as_hex()) {
+        let key = (record_id.as_str().to_owned(), revision.get());
+        match self.records.get(&key) {
             Some(existing) if existing == bytes => Ok(Published::AlreadyRetained),
             Some(_) => Err(ChangeAssuranceError::ContentCollision {
                 what: Subject::Record,
-                digest: digest.as_hex().to_owned(),
+                id: format!("{record_id}/{revision}"),
             }),
             None => {
-                self.records
-                    .insert(digest.as_hex().to_owned(), bytes.to_vec());
+                self.records.insert(key, bytes.to_vec());
                 Ok(Published::Retained)
             }
         }
@@ -73,25 +80,25 @@ impl EvidenceStore for MemoryEvidenceStore {
 
     fn attestation(
         &self,
-        digest: &CanonicalDigest,
+        attestation_id: &AttestationId,
     ) -> Result<Option<RetainedPair>, ChangeAssuranceError> {
-        Ok(self.attestations.get(digest.as_hex()).cloned())
+        Ok(self.attestations.get(attestation_id.as_str()).cloned())
     }
 
     fn publish_attestation(
         &mut self,
-        digest: &CanonicalDigest,
+        attestation_id: &AttestationId,
         pair: &RetainedPair,
     ) -> Result<Published, ChangeAssuranceError> {
-        match self.attestations.get(digest.as_hex()) {
+        match self.attestations.get(attestation_id.as_str()) {
             Some(existing) if existing == pair => Ok(Published::AlreadyRetained),
             Some(_) => Err(ChangeAssuranceError::ContentCollision {
                 what: Subject::Attestation,
-                digest: digest.as_hex().to_owned(),
+                id: attestation_id.as_str().to_owned(),
             }),
             None => {
                 self.attestations
-                    .insert(digest.as_hex().to_owned(), pair.clone());
+                    .insert(attestation_id.as_str().to_owned(), pair.clone());
                 Ok(Published::Retained)
             }
         }

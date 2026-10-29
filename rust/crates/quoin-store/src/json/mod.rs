@@ -8,10 +8,10 @@
 //!
 //! | writer | shape | what it is for |
 //! |---|---|---|
-//! | [`canonical::canonicalize_jcs`] | RFC 8785, compact, UTF-16 key order | the bytes a digest is taken over |
+//! | [`canonical::canonicalize_jcs`] | RFC 8785, compact, UTF-16 key order | the bytes the `change-assurance` family is written as |
 //! | [`pretty::canonical_json`] | 2-space indent, ECMAScript own-property order, trailing newline | the bytes `spec/evidence/**.json` holds |
 //!
-//! Using the pretty form where the JCS form belongs changes every digest;
+//! Using the pretty form where the JCS form belongs changes the retained bytes;
 //! using the JCS form where the pretty form belongs rewrites every store file.
 
 /// The deepest array/object nesting this crate will read or write.

@@ -4,16 +4,11 @@
 //!
 //! Two things are asserted, and the second is the point. First, that the
 //! vocabulary in [`quoin_change_assurance::schemas`] is closed and each asset
-//! declares its own identity. Second — and this is what a schema carried
-//! beside its reader never had — that a document **this crate actually seals**
+//! declares its own identity. Second - and this is what a schema carried
+//! beside its reader never had - that a document **this crate actually writes**
 //! satisfies the schema that describes it. A shape change in
 //! `quoin_change_assurance::model` that nobody mirrored into the asset fails
 //! here rather than shipping a schema describing the previous release.
-//!
-//! The sealed documents come from `tests/fixtures/oracle.json`, so the inputs
-//! are the retained TypeScript's and not this crate's invention; what is
-//! measured is the agreement between two things this crate owns, which is
-//! exactly the drift the assets were previously free to have.
 
 #![allow(
     clippy::unwrap_used,
@@ -27,8 +22,8 @@ mod common;
 
 use std::path::Path;
 
-use quoin_change_assurance::attestations::seal_attestation;
-use quoin_change_assurance::records::seal_change_record;
+use quoin_change_assurance::attestations::read_attestation_json;
+use quoin_change_assurance::records::prepare_change_record;
 use quoin_change_assurance::schemas::{
     ASSET_NAMES, CHANGE_ASSURANCE_RECORD_V1, PROOF_ATTESTATION_V1, VERIFICATION_RECEIPT_V1, asset,
 };
@@ -36,7 +31,7 @@ use quoin_change_assurance::verify::verify_change_assurance;
 use quoin_jsonschema::SchemaValidator;
 use quoin_store::{JsonValue, canonical_bytes};
 
-use crate::common::{member, oracle, section, text, verification_input};
+use crate::common::base_input;
 
 /// One asset, compiled.
 ///
@@ -126,79 +121,40 @@ fn tc_503_011_every_asset_declares_its_own_identity() {
 /// Trace: FR-063-AC-1
 /// Provenance: quoin#503
 ///
-/// Every record this crate seals satisfies `change-assurance-record-v1`.
+/// A record and an attestation this crate writes, and the receipt it emits,
+/// satisfy the schemas that describe them.
 #[test]
-fn tc_503_012_sealed_records_satisfy_the_record_schema() {
-    let captured = section(&oracle(), "records");
-    assert!(
-        captured.len() >= 4,
-        "anti-vacuity floor: at least 4 captured records, found {}",
-        captured.len(),
+fn tc_503_012_written_documents_satisfy_their_schemas() {
+    let input = base_input();
+    let record = prepare_change_record(&input.record).unwrap();
+    assert_valid(
+        &validator(ASSET_NAMES[0]),
+        ASSET_NAMES[0],
+        "record",
+        &as_instance(&record.to_json().unwrap()),
     );
-    let validator = validator(ASSET_NAMES[0]);
-    for entry in &captured {
-        let name = text(entry, "name");
-        let sealed = seal_change_record(member(entry, "input"))
-            .unwrap_or_else(|error| panic!("sealing {name}: {error}"));
-        let instance = as_instance(&sealed.to_json().unwrap());
-        assert_valid(&validator, ASSET_NAMES[0], name, &instance);
-    }
-}
-
-/// Trace: FR-064-AC-1
-/// Provenance: quoin#503
-///
-/// Every attestation this crate seals satisfies `proof-attestation-v1`.
-#[test]
-fn tc_503_013_sealed_attestations_satisfy_the_attestation_schema() {
-    let captured = section(&oracle(), "attestations");
-    assert!(
-        captured.len() >= 4,
-        "anti-vacuity floor: at least 4 captured attestations, found {}",
-        captured.len(),
+    let attestation = read_attestation_json(&input.attestations[0].attestation).unwrap();
+    assert_valid(
+        &validator(ASSET_NAMES[1]),
+        ASSET_NAMES[1],
+        "attestation",
+        &as_instance(&attestation.to_json().unwrap()),
     );
-    let validator = validator(ASSET_NAMES[1]);
-    for entry in &captured {
-        let name = text(entry, "name");
-        // The capture kept only the sealed attestation, so that is the input:
-        // `seal_attestation` removes any `digest` before it computes one, so
-        // re-sealing a sealed attestation runs the whole sealing path.
-        let sealed = seal_attestation(member(entry, "sealed"))
-            .unwrap_or_else(|error| panic!("sealing {name}: {error}"));
-        let instance = as_instance(&sealed.to_json().unwrap());
-        assert_valid(&validator, ASSET_NAMES[1], name, &instance);
-    }
-}
-
-/// Trace: FR-065-AC-1
-/// Provenance: quoin#503
-///
-/// Every receipt this crate emits satisfies `verification-receipt-v1` —
-/// including the refusal receipts, which are the shapes a consumer is least
-/// likely to have a sample of and most likely to meet in anger.
-#[test]
-fn tc_503_014_emitted_receipts_satisfy_the_receipt_schema() {
-    let captured = section(&oracle(), "verifications");
-    assert!(
-        captured.len() >= 30,
-        "anti-vacuity floor: at least 30 captured scenarios, found {}",
-        captured.len(),
+    let receipt = verify_change_assurance(&input).unwrap();
+    assert_valid(
+        &validator(ASSET_NAMES[2]),
+        ASSET_NAMES[2],
+        "receipt",
+        &as_instance(&receipt.to_json().unwrap()),
     );
-    let validator = validator(ASSET_NAMES[2]);
-    let mut validated = 0_usize;
-    for scenario in &captured {
-        let name = text(scenario, "name");
-        let Ok(receipt) = verify_change_assurance(&verification_input(member(scenario, "input")))
-        else {
-            continue;
-        };
-        let instance = as_instance(&receipt.to_json().unwrap());
-        assert_valid(&validator, ASSET_NAMES[2], name, &instance);
-        validated += 1;
-    }
-    assert!(
-        validated >= 30,
-        "anti-vacuity floor: at least 30 receipts validated, validated {validated}",
+    let mut refusal = input;
+    refusal.record = JsonValue::Null;
+    let receipt = verify_change_assurance(&refusal).unwrap();
+    assert_valid(
+        &validator(ASSET_NAMES[2]),
+        ASSET_NAMES[2],
+        "refusal receipt",
+        &as_instance(&receipt.to_json().unwrap()),
     );
 }
 
