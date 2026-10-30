@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! Full generic EA execution and independent replay of authored input origins.
+//! Full generic EA execution and recorded authored input origins.
 
 #![cfg(feature = "campaign")]
 #![cfg_attr(not(target_os = "linux"), allow(dead_code, unused_imports))]
@@ -15,18 +15,15 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-use engineering_assurance::campaign::{CampaignDefinition, CampaignVerdict, canonical_digest};
+use engineering_assurance::campaign::{CampaignDefinition, CampaignVerdict};
 use engineering_assurance::content_digest::ContentDigest;
 use engineering_assurance::producer_execution::{
     CancellationBinding, ContainmentBinding, ContractBinding, ExecutionBudget, ExitCodeBinding,
     OutputBinding, ProducerDescriptor, StdinBinding,
 };
-use quoin_measurement::campaign::CampaignOutcome;
 use quoin_measurement::campaign::run::{
-    BindingFailure, CampaignRunError, InputSource, RunMemberBindings, SelectedInput, run_campaign,
+    InputSource, RunMemberBindings, SelectedInput, run_campaign,
 };
-use quoin_measurement::campaign::store::run_path;
-use quoin_measurement::campaign::verify::verify_retained_campaign;
 use quoin_store::digest_bytes_sha256;
 use serde_json::{Value, json};
 
@@ -59,12 +56,8 @@ else:
 sys.stdout.write('ok')
 ";
 
-const CHECKER: &str = r"import hashlib
-import json
+const CHECKER: &str = r"import json
 import sys
-
-def digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()).hexdigest()
 
 with open(sys.argv[sys.argv.index('--input') + 1], encoding='utf-8') as stream:
     selected = json.load(stream)
@@ -76,15 +69,6 @@ receipt = {
     'member':selected['member'],
     'planId':selected['planId'],
     'definitionVersion':selected['definitionVersion'],
-    'definitionDigest':selected['definitionDigest'],
-    'sourceGraphDigest':selected['sourceGraphDigest'],
-    'requestDigest':selected['requestDigest'],
-    'resultDigest':selected['resultDigest'],
-    'rawArtifactsDigest':digest(selected['rawArtifacts']),
-    'rawBundleDigest':selected['rawBundleDigest'],
-    'dependenciesDigest':digest(selected['dependencies']),
-    'stdoutDigest':result['process']['stdout']['digest'],
-    'stderrDigest':result['process']['stderr']['digest'],
     'verdict':'accept' if accepted else 'reject',
     'reasons':[] if accepted else ['fictional-output-mismatch'],
 }
@@ -243,6 +227,7 @@ fn fixture() -> (tempfile::TempDir, CampaignDefinition, String) {
         repo.path(),
         &["ls-tree", "-r", "-z", "--full-tree", &revision],
     );
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest is validated against the manifest by EA at rev 08bbf1cc.
     let digest = digest_bytes_sha256(&manifest).as_hex().to_owned();
     let definition = serde_json::from_value(json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
@@ -271,6 +256,7 @@ fn bindings(
         kind: kind.to_owned(),
         version: "1".to_owned(),
         revision: revision.to_owned(),
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest at rev 08bbf1cc
         digest: ContentDigest::of_bytes(kind.as_bytes()),
     };
     engineering_assurance::campaign::ProcedureBindings {
@@ -279,6 +265,7 @@ fn bindings(
             version: "1".to_owned(),
             source_revision: revision.to_owned(),
             executable: python.to_str().expect("UTF-8 Python path").to_owned(),
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest at rev 08bbf1cc
             executable_digest: ContentDigest::of_file(&python).expect("Python identity"),
         },
         caller: contract("fictional.caller"),
@@ -370,9 +357,9 @@ fn runtime(repo: &Path, revision: &str, prepare: bool) -> RunMemberBindings {
 #[test]
 #[allow(
     clippy::too_many_lines,
-    reason = "one authored two-member replay and its rehashed-substitution rejection form one scenario"
+    reason = "one authored two-member campaign and its recorded origins form one scenario"
 )]
-fn tc_1947_two_member_authored_origins_replay_and_rehashed_substitution_rejects() {
+fn tc_1947_two_member_authored_origins_are_recorded() {
     let (repo, definition, revision) = fixture();
     let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);
     let selections = BTreeMap::from([
@@ -388,33 +375,11 @@ fn tc_1947_two_member_authored_origins_replay_and_rehashed_substitution_rejects(
     )
     .expect("bounded two-member campaign");
     assert_eq!(run.verdict, CampaignVerdict::Accepted, "{run:?}");
-    let definition_digest = canonical_digest(&definition).expect("definition identity");
-    let receipt = verify_retained_campaign(
-        repo.path(),
-        definition_digest.as_str(),
-        "origin-run",
-        &checkouts,
-    )
-    .expect("independent retained replay");
-    assert_eq!(
-        receipt.decision.verdict,
-        CampaignOutcome::Accept,
-        "{receipt:?}"
-    );
-
-    let consume = run
-        .attempts
-        .as_ref()
-        .expect("attempts")
-        .iter()
-        .find(|attempt| attempt.member == "consume")
-        .expect("consume attempt");
-    let collection_id = quoin_measurement::types::ids::CollectionId::parse(
-        consume.collection_id.as_deref().expect("collection ID"),
-    )
-    .expect("valid collection ID");
+    let collection_id =
+        quoin_measurement::types::ids::CollectionId::parse("campaign-origin-run-m1-1")
+            .expect("valid collection ID");
     let collection_path = quoin_measurement::store::measurement_path(repo.path(), &collection_id);
-    let mut collection: Value =
+    let collection: Value =
         serde_json::from_slice(&fs::read(&collection_path).expect("collection"))
             .expect("collection JSON");
     assert_eq!(
@@ -432,48 +397,6 @@ fn tc_1947_two_member_authored_origins_replay_and_rehashed_substitution_rejects(
         origins
             .iter()
             .any(|item| item.pointer("/source/kind").and_then(Value::as_str) == Some("dependency"))
-    );
-    let dependency = origins
-        .iter()
-        .position(|item| item.pointer("/source/kind").and_then(Value::as_str) == Some("dependency"))
-        .expect("dependency origin");
-    *collection
-        .pointer_mut(&format!(
-            "/rawEvidence/inputOrigins/inputs/{dependency}/source/artifactRole"
-        ))
-        .expect("dependency artifact role") = json!("substituted-role");
-    let altered = serde_json::to_vec(&collection).expect("rehashed collection");
-    fs::write(&collection_path, &altered).expect("altered collection");
-    let run_file = run_path(repo.path(), "origin-run").expect("retained run path");
-    let mut run_value: Value =
-        serde_json::from_slice(&fs::read(&run_file).expect("run file")).expect("run JSON");
-    let attempt_index = run_value
-        .get("attempts")
-        .expect("run attempts")
-        .as_array()
-        .expect("attempts")
-        .iter()
-        .position(|item| item.get("member").and_then(Value::as_str) == Some("consume"))
-        .expect("consume attempt");
-    *run_value
-        .pointer_mut(&format!("/attempts/{attempt_index}/collectionDigest"))
-        .expect("consume collection digest") = json!(digest_bytes_sha256(&altered).as_hex());
-    fs::write(
-        &run_file,
-        serde_json::to_vec(&run_value).expect("rehashed run"),
-    )
-    .expect("altered run");
-    let rejected = verify_retained_campaign(
-        repo.path(),
-        definition_digest.as_str(),
-        "origin-run",
-        &checkouts,
-    )
-    .expect("well-formed tampered run");
-    assert_eq!(
-        rejected.decision.verdict,
-        CampaignOutcome::Reject,
-        "{rejected:?}"
     );
 }
 
@@ -512,118 +435,4 @@ fn tc_1947_selected_input_at_a_tracked_path_is_refused() {
         fs::read(repo.path().join("source.txt")).expect("tracked source"),
         b"tracked source bytes\n"
     );
-}
-
-/// Trace: FR-114-AC-2, FR-114-AC-3. Provenance: PLAT-1043, TC-1942.
-/// A dependent member cannot consume an artifact named by a rehashed but
-/// independently false checkpoint from a previous partial invocation.
-#[cfg(target_os = "linux")]
-#[test]
-fn tc_1942_resume_rejects_tampered_dependency_checkpoint_before_consumer() {
-    let (repo, definition, revision) = fixture();
-    let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);
-    let mut consume = runtime(repo.path(), &revision, false);
-    consume.inputs[0].source = InputSource::File(repo.path().join("missing-first-run.txt"));
-    let mut selections = BTreeMap::from([
-        ("prepare".to_owned(), runtime(repo.path(), &revision, true)),
-        ("consume".to_owned(), consume),
-    ]);
-    let run_id = "checkpoint-origin-substitution";
-    assert!(run_campaign(repo.path(), &definition, run_id, &checkouts, &selections).is_err());
-    assert!(!run_path(repo.path(), run_id).expect("run path").exists());
-    let checkpoint_dir =
-        quoin_measurement::campaign::store::campaigns_root(repo.path()).join("checkpoints");
-    let checkpoints: Vec<_> = fs::read_dir(checkpoint_dir)
-        .expect("checkpoint directory")
-        .map(|entry| entry.expect("checkpoint entry").path())
-        .collect();
-    assert_eq!(checkpoints.len(), 1, "prepare attempt was retained");
-    let checkpoint_path = &checkpoints[0];
-    let mut checkpoint: Value =
-        serde_json::from_slice(&fs::read(checkpoint_path).expect("checkpoint bytes"))
-            .expect("checkpoint JSON");
-    assert_eq!(checkpoint["attempt"]["member"], json!("prepare"));
-    assert_eq!(
-        checkpoint["attempt"]["rawArtifacts"][0]["role"],
-        json!("generated")
-    );
-    let (substituted_digest, _) = quoin_measurement::campaign::store::retain_bytes(
-        repo.path(),
-        "raw",
-        "bin",
-        b"substituted generated bytes\n",
-    )
-    .expect("retain substituted bytes");
-    checkpoint["attempt"]["rawArtifacts"][0]["digest"] = json!(substituted_digest);
-    fs::write(
-        checkpoint_path,
-        serde_json::to_vec(&checkpoint).expect("checkpoint JSON"),
-    )
-    .expect("tamper fixture checkpoint");
-
-    selections.insert("consume".to_owned(), runtime(repo.path(), &revision, false));
-    let outcome = run_campaign(repo.path(), &definition, run_id, &checkouts, &selections);
-    assert!(
-        matches!(
-            outcome,
-            Err(CampaignRunError::Binding(BindingFailure::IdentityMismatch(
-                _
-            )))
-        ),
-        "checkpoint evidence must refuse before consumer: {outcome:?}"
-    );
-    assert!(!run_path(repo.path(), run_id).expect("run path").exists());
-}
-
-/// Trace: FR-114-AC-3. Provenance: PLAT-1043, TC-1944.
-/// A sealed producer output tree is still checked from retained bytes, and
-/// absence is distinct from changed bytes on independent replay.
-#[cfg(target_os = "linux")]
-#[test]
-fn tc_1944_missing_or_altered_raw_artifact_has_distinct_verdict() {
-    let (repo, definition, revision) = fixture();
-    let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);
-    let selections = BTreeMap::from([
-        ("prepare".to_owned(), runtime(repo.path(), &revision, true)),
-        ("consume".to_owned(), runtime(repo.path(), &revision, false)),
-    ]);
-    let run_id = "raw-artifact-refusal";
-    let run = run_campaign(repo.path(), &definition, run_id, &checkouts, &selections)
-        .expect("accepted two-member campaign");
-    assert_eq!(run.verdict, CampaignVerdict::Accepted);
-    let prepare = run
-        .attempts
-        .as_ref()
-        .expect("attempts")
-        .iter()
-        .find(|attempt| attempt.member == "prepare")
-        .expect("prepare attempt");
-    let artifact = prepare
-        .raw_artifacts
-        .as_ref()
-        .expect("raw inventory")
-        .iter()
-        .find(|artifact| artifact.role == "generated")
-        .expect("generated artifact");
-    let raw_path = quoin_measurement::campaign::store::digest_path(
-        repo.path(),
-        "raw",
-        &artifact.digest,
-        "bin",
-    )
-    .expect("raw artifact path");
-    let bytes = fs::read(&raw_path).expect("raw artifact bytes");
-    let definition_digest = canonical_digest(&definition).expect("definition identity");
-
-    fs::remove_file(&raw_path).expect("remove fixture raw artifact");
-    let missing =
-        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
-            .expect("well-formed run with absent raw artifact");
-    assert_eq!(missing.decision.verdict, CampaignOutcome::Inconclusive);
-    fs::write(&raw_path, b"altered generated bytes\n").expect("alter raw artifact");
-    let altered =
-        verify_retained_campaign(repo.path(), definition_digest.as_str(), run_id, &checkouts)
-            .expect("well-formed run with altered raw artifact");
-    assert_eq!(altered.decision.verdict, CampaignOutcome::Reject);
-    fs::write(&raw_path, bytes).expect("restore raw artifact");
 }

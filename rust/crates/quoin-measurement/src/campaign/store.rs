@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! Immutable campaign definitions, runs, executor results and raw bytes (FR-114).
+//! Campaign run records and bounded strict-JSON reading (FR-114).
 
 use std::path::{Path, PathBuf};
 
-use quoin_store::{
-    RawFileSha256Digest, canonical_bytes, digest_bytes_sha256, parse_strict_json,
-    store::write_content_addressed,
-};
+use quoin_store::{canonical_bytes, parse_strict_json};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use thiserror::Error;
@@ -31,9 +28,6 @@ pub enum CampaignStoreError {
     /// A retained file is linked, not regular, or exceeds the size ceiling.
     #[error("campaign evidence is not an admissible regular file: {0}")]
     File(PathBuf),
-    /// A retained digest does not match its file's bytes.
-    #[error("campaign evidence digest mismatch at {0}")]
-    Digest(PathBuf),
     /// The retained file is not strict or typed JSON.
     #[error("invalid campaign JSON at {path}: {message}")]
     Json {
@@ -70,121 +64,20 @@ pub fn run_path(repo: &Path, id: &str) -> Result<PathBuf, CampaignStoreError> {
     Ok(campaigns_root(repo).join("runs").join(format!("{id}.json")))
 }
 
-/// A content-addressed retained record path. `digest` is bare SHA-256 hex.
+/// Encode a structural JSON value as RFC 8785 canonical bytes.
 ///
 /// # Errors
-/// Refuses a malformed digest before constructing a path.
-pub fn digest_path(
-    repo: &Path,
-    kind: &'static str,
-    digest: &str,
-    extension: &'static str,
-) -> Result<PathBuf, CampaignStoreError> {
-    if !matches!(
-        kind,
-        "definitions"
-            | "requests"
-            | "results"
-            | "raw"
-            | "inputs"
-            | "domain-verdicts"
-            | "verdicts"
-            | "bundles"
-    ) || !matches!(extension, "json" | "bin")
-    {
-        return Err(CampaignStoreError::RunId(
-            "invalid campaign evidence namespace".to_owned(),
-        ));
-    }
-    let stored = format!("sha256:{digest}");
-    RawFileSha256Digest::parse_stored(&stored)
-        .map_err(|_| CampaignStoreError::RunId(format!("malformed {kind} digest")))?;
-    Ok(campaigns_root(repo)
-        .join(kind)
-        .join(format!("{digest}.{extension}")))
-}
-
-/// Retain exact bytes under a SHA-256 path without replacing prior evidence.
-///
-/// # Errors
-/// Refuses oversized bytes or a collision with different retained bytes.
-pub fn retain_bytes(
-    repo: &Path,
-    kind: &'static str,
-    extension: &'static str,
-    bytes: &[u8],
-) -> Result<(String, PathBuf), CampaignStoreError> {
-    if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > MAX_CAMPAIGN_EVIDENCE_BYTES {
-        return Err(CampaignStoreError::File(campaigns_root(repo).join(kind)));
-    }
-    let digest = digest_bytes_sha256(bytes).as_hex().to_owned();
-    let path = digest_path(repo, kind, &digest, extension)?;
-    write_content_addressed(&path, bytes).map_err(|error| CampaignStoreError::Store {
-        path: path.clone(),
-        message: error.to_string(),
-    })?;
-    Ok((digest, path))
-}
-
-/// Retain JSON bytes after strict parsing and RFC 8785 canonicalization.
-///
-/// # Errors
-/// Refuses duplicate-key/invalid JSON or a durable write collision.
-pub fn retain_json_bytes(
-    repo: &Path,
-    kind: &'static str,
-    raw: &[u8],
-) -> Result<(String, PathBuf), CampaignStoreError> {
-    let parsed = parse_strict_json(raw).map_err(|error| CampaignStoreError::Json {
-        path: campaigns_root(repo).join(kind),
-        message: error.to_string(),
-    })?;
-    let bytes = canonical_bytes(&parsed).map_err(|error| CampaignStoreError::Json {
-        path: campaigns_root(repo).join(kind),
-        message: error.to_string(),
-    })?;
-    retain_bytes(repo, kind, "json", &bytes)
-}
-
-/// Retain a typed EA or Quoin record after the store's canonical writer has
-/// encoded its structural JSON value. Callers compare the returned digest to
-/// the type owner's independently minted identity before granting credit.
-///
-/// # Errors
-/// Refuses any numeric value the store cannot represent or a durable collision.
-pub fn retain_value(
-    repo: &Path,
-    kind: &'static str,
-    value: &Value,
-) -> Result<(String, PathBuf), CampaignStoreError> {
+/// Refuses any numeric value the store cannot represent.
+pub fn encode_value(repo: &Path, value: &Value) -> Result<Vec<u8>, CampaignStoreError> {
     let parsed =
         crate::json_bridge::from_serde(value).map_err(|error| CampaignStoreError::Json {
-            path: campaigns_root(repo).join(kind),
+            path: campaigns_root(repo),
             message: error.to_string(),
         })?;
-    let bytes = canonical_bytes(&parsed).map_err(|error| CampaignStoreError::Json {
-        path: campaigns_root(repo).join(kind),
+    canonical_bytes(&parsed).map_err(|error| CampaignStoreError::Json {
+        path: campaigns_root(repo),
         message: error.to_string(),
-    })?;
-    retain_bytes(repo, kind, "json", &bytes)
-}
-
-/// Read a bounded, regular evidence file and check the digest in its name.
-///
-/// # Errors
-/// Refuses a link, non-file, oversized file, unreadable file or mismatch.
-pub fn read_digest_bytes(
-    repo: &Path,
-    kind: &'static str,
-    digest: &str,
-    extension: &'static str,
-) -> Result<Vec<u8>, CampaignStoreError> {
-    let path = digest_path(repo, kind, digest, extension)?;
-    let bytes = read_bounded(&path)?;
-    if digest_bytes_sha256(&bytes).as_hex() != digest {
-        return Err(CampaignStoreError::Digest(path));
-    }
-    Ok(bytes)
+    })
 }
 
 /// Read a strict JSON record through its generated contract type.

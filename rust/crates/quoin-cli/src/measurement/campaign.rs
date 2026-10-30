@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! Rust campaign CLI: exact source configuration and independent replay.
+//! Rust campaign CLI: exact source configuration and a checked run.
 
 #[path = "campaign/config.rs"]
 mod config;
@@ -13,38 +13,40 @@ use std::sync::Arc;
 use std::thread;
 
 use clap::{Arg, ArgMatches, Command};
-use engineering_assurance::campaign::{CampaignDefinition, canonical_digest};
+use engineering_assurance::campaign::{CampaignDefinition, CampaignRun, CampaignVerdict};
 use quoin_core::error::{CoreError, CoreErrorCode};
 use quoin_core::protocol::{Response, canonical_json};
-use quoin_measurement::campaign::CampaignOutcome;
 use quoin_measurement::campaign::run::RunMemberBindings;
 #[cfg(not(windows))]
 use quoin_measurement::campaign::run::{CampaignCancellation, run_campaign_with_cancellation};
 #[cfg(windows)]
 use quoin_measurement::campaign::run::{CampaignRunError, run_campaign};
-use quoin_measurement::campaign::verify::{CampaignVerdictReceipt, verify_retained_campaign};
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use quoin_measurement::campaign::{CAMPAIGN_VERDICT_SCHEMA, CampaignOutcome};
+use serde::{Serialize, de::DeserializeOwned};
 
 use self::config::RunSelection;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct SourceSelection {
-    schema: String,
-    sources: BTreeMap<String, PathBuf>,
+/// The campaign verdict a run reached.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CampaignReceipt {
+    schema: &'static str,
+    campaign_id: String,
+    run_id: String,
+    verdict: CampaignOutcome,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CampaignCliPayload {
     #[serde(flatten)]
-    receipt: CampaignVerdictReceipt,
+    receipt: CampaignReceipt,
     rendered: String,
 }
 
 pub(super) fn command() -> Command {
     Command::new("campaign")
-        .about("Run and independently verify a generic measurement campaign")
+        .about("Run a generic measurement campaign")
         .subcommand(
             Command::new("run")
                 .arg(Arg::new("repo").long("repo").default_value("."))
@@ -52,24 +54,12 @@ pub(super) fn command() -> Command {
                 .arg(Arg::new("run-id").long("run-id").required(true))
                 .arg(Arg::new("config").long("config").required(true)),
         )
-        .subcommand(
-            Command::new("verify")
-                .arg(Arg::new("repo").long("repo").default_value("."))
-                .arg(
-                    Arg::new("definition-digest")
-                        .long("definition-digest")
-                        .required(true),
-                )
-                .arg(Arg::new("run-id").long("run-id").required(true))
-                .arg(Arg::new("sources").long("sources").required(true)),
-        )
 }
 
 pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     match arguments.subcommand() {
         Some(("run", args)) => execute(args),
-        Some(("verify", args)) => verify(args),
-        _ => Err("campaign requires run or verify".to_owned()),
+        _ => Err("campaign requires run".to_owned()),
     }
 }
 
@@ -83,11 +73,13 @@ fn execute(args: &ArgMatches) -> Result<Response, String> {
         return Err("unsupported campaign run-config schema".to_owned());
     }
     let (sources, bindings) = config.into_parts()?;
-    run_with_signal(&repo, &definition, &run_id, &sources, &bindings)?;
-    let digest = canonical_digest(&definition).map_err(|error| error.to_string())?;
-    let receipt = verify_retained_campaign(&repo, digest.as_str(), &run_id, &sources)
-        .map_err(|error| error.to_string())?;
-    response(receipt)
+    let run = run_with_signal(&repo, &definition, &run_id, &sources, &bindings)?;
+    response(CampaignReceipt {
+        schema: CAMPAIGN_VERDICT_SCHEMA,
+        campaign_id: definition.id,
+        run_id: run.id.clone(),
+        verdict: outcome_of(&run),
+    })
 }
 
 #[cfg(not(windows))]
@@ -97,7 +89,7 @@ fn run_with_signal(
     run_id: &str,
     sources: &BTreeMap<String, PathBuf>,
     bindings: &BTreeMap<String, RunMemberBindings>,
-) -> Result<(), String> {
+) -> Result<CampaignRun, String> {
     let mut signals = signal_hook::iterator::Signals::new([signal_hook::consts::SIGINT])
         .map_err(|error| format!("campaign SIGINT handler: {error}"))?;
     let signal_handle = signals.handle();
@@ -114,8 +106,7 @@ fn run_with_signal(
     signal_thread
         .join()
         .map_err(|_| "campaign SIGINT handler panicked".to_owned())?;
-    outcome.map_err(|error| error.to_string())?;
-    Ok(())
+    outcome.map_err(|error| error.to_string())
 }
 
 #[cfg(windows)]
@@ -125,28 +116,21 @@ fn run_with_signal(
     run_id: &str,
     sources: &BTreeMap<String, PathBuf>,
     bindings: &BTreeMap<String, RunMemberBindings>,
-) -> Result<(), String> {
+) -> Result<CampaignRun, String> {
     run_campaign(repo, definition, run_id, sources, bindings)
-        .map(|_| ())
         .map_err(|error: CampaignRunError| error.to_string())
 }
 
-fn verify(args: &ArgMatches) -> Result<Response, String> {
-    let repo = PathBuf::from(required(args, "repo")?);
-    let digest = required(args, "definition-digest")?;
-    let run_id = required(args, "run-id")?;
-    let config_path = PathBuf::from(required(args, "sources")?);
-    let selection: SourceSelection = load_strict(&config_path)?;
-    if selection.schema != "quoin.campaign-sources/v1" {
-        return Err("unsupported campaign source-selection schema".to_owned());
+fn outcome_of(run: &CampaignRun) -> CampaignOutcome {
+    match run.verdict {
+        CampaignVerdict::Accepted => CampaignOutcome::Accept,
+        CampaignVerdict::Rejected => CampaignOutcome::Reject,
+        CampaignVerdict::Inconclusive => CampaignOutcome::Inconclusive,
     }
-    let receipt = verify_retained_campaign(&repo, &digest, &run_id, &selection.sources)
-        .map_err(|error| error.to_string())?;
-    response(receipt)
 }
 
-fn response(receipt: CampaignVerdictReceipt) -> Result<Response, String> {
-    let outcome = receipt.decision.verdict;
+fn response(receipt: CampaignReceipt) -> Result<Response, String> {
+    let outcome = receipt.verdict;
     let rendered = canonical_json(&receipt).map_err(|error| error.to_string())?;
     let payload = serde_json::to_value(CampaignCliPayload { receipt, rendered })
         .map_err(|error| error.to_string())?;
@@ -188,26 +172,16 @@ fn required(args: &ArgMatches, name: &str) -> Result<String, String> {
 mod tests {
     use super::*;
     use ix_cli_kit::exit::Outcome;
-    use quoin_measurement::campaign::{CAMPAIGN_VERDICT_SCHEMA, CampaignDecision};
 
     /// Trace: FR-114-AC-5, TC-1946
     // Response projection only; the native CLI path has a separate test.
     #[test]
     fn inconclusive_campaign_response_renders_its_structured_receipt() {
-        let receipt = CampaignVerdictReceipt {
+        let receipt = CampaignReceipt {
             schema: CAMPAIGN_VERDICT_SCHEMA,
             campaign_id: "stage1".to_owned(),
             run_id: "v9-run".to_owned(),
-            definition_digest: "definition-digest".to_owned(),
-            source_graph_digest: "source-graph-digest".to_owned(),
-            run_digest: "run-digest".to_owned(),
-            attempt_inventory_digest: "attempt-inventory-digest".to_owned(),
-            decision: CampaignDecision {
-                schema: CAMPAIGN_VERDICT_SCHEMA,
-                verdict: CampaignOutcome::Inconclusive,
-                reasons: Vec::new(),
-                members: Vec::new(),
-            },
+            verdict: CampaignOutcome::Inconclusive,
         };
         let expected = serde_json::to_value(&receipt).expect("receipt serializes");
 
