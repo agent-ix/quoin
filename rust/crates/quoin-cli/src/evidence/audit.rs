@@ -287,3 +287,29 @@ fn render_text(report: &serde_json::Value, reported: &serde_json::Value) -> Resu
     }
     Ok(lines.join("\n"))
 }
+
+#[cfg(test)]
+#[allow(clippy::expect_used, reason = "test fixtures may panic")]
+mod tests {
+    use ix_trace_rs::trace;
+
+    use super::{command, values};
+
+    /// Repeatable `--module` arguments reach the producer one by one and in the
+    /// order supplied, so the catalog loader and native coverage read one array.
+    #[trace("FR-032-AC-12")]
+    #[test]
+    fn repeatable_module_arguments_keep_their_supplied_order() {
+        let matches = command()
+            .try_get_matches_from([
+                "audit", "--module", "/zeta", "--module", "/alpha", "--module", "/mid",
+            ])
+            .expect("repeatable --module parses");
+        assert_eq!(values(&matches, "module"), ["/zeta", "/alpha", "/mid"]);
+
+        let none = command()
+            .try_get_matches_from(["audit"])
+            .expect("--module is optional");
+        assert_eq!(values(&none, "module").len(), 0);
+    }
+}

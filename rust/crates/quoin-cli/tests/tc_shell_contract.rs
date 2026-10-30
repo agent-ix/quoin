@@ -10,6 +10,8 @@
 
 use std::process::{Command, Output};
 
+use ix_trace_rs::trace;
+
 fn invoke(arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
         .args(arguments)
@@ -43,6 +45,7 @@ fn tc_1650_root_help_is_a_successful_stdout_catalogue() {
 /// and send the actionable command catalogue to stderr.
 ///
 /// Trace: FR-005, FR-102, TC-1650
+#[trace("FR-005-AC-1")]
 #[test]
 fn tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue() {
     let output = invoke(&["not-a-command"]);
@@ -59,6 +62,7 @@ fn tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue() {
 /// while excluding flags from that identity.
 ///
 /// Trace: FR-005, FR-102, TC-1650
+#[trace("FR-005-AC-2")]
 #[test]
 fn tc_1650_nested_unknown_command_keeps_the_oclif_path_identity() {
     let output = invoke(&["catalog", "not-a-command", "--format", "json"]);

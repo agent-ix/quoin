@@ -299,6 +299,8 @@ fn quote(value: &str) -> String {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
+    use ix_trace_rs::trace;
+
     use super::{command, org_environment, quote, types};
 
     /// Trace: FR-025, FR-062
@@ -330,6 +332,7 @@ mod tests {
     }
 
     /// Trace: FR-025
+    #[trace("FR-015-AC-2", "FR-015-AC-3")]
     #[test]
     fn tc_373_744_quotes_validation_scopes_for_a_posix_shell() {
         assert_eq!(quote("/tmp/my repo"), "'/tmp/my repo'");

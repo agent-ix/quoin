@@ -40,6 +40,7 @@
 
 use std::path::{Path, PathBuf};
 
+use ix_trace_rs::trace;
 use quoin_graph_analysis::model::binding::{BindingInput, parse_bindings_file};
 use quoin_graph_analysis::{
     ArtifactId, DEFAULT_RELATION_KINDS, GraphAnalysis, GraphAnalysisInput, RelationKind,
@@ -741,4 +742,42 @@ fn tc_500_048_the_views_carry_no_score_or_threshold() {
         "the structural fact itself must still be there — an empty report would pass the check \
          above by saying nothing"
     );
+}
+
+/// A binding to an obligation the accepted export does not have is named under
+/// its suite and in the report gaps, and is excluded from the live count
+/// rather than dropped or treated as live.
+#[trace("FR-062-AC-2")]
+#[test]
+fn tc_500_050_a_binding_to_an_unexported_obligation_is_named_and_not_live() {
+    let report = as_json(&GraphAnalysis::from(analyze_fan_out(&plain(&[
+        binding("FR-001-AC-1", "unit"),
+        binding("FR-404-AC-9", "unit"),
+        binding("FR-404-AC-9", "prop"),
+    ]))));
+    let rows = report["rows"].as_array().unwrap();
+    let row = |suite: &str| rows.iter().find(|row| row["suite"] == suite).unwrap();
+
+    let unit = row("unit");
+    assert_eq!(
+        unit["obligationCount"], 1,
+        "the unexported obligation is not live"
+    );
+    assert_eq!(unit["unresolvedBindings"], json!(["FR-404-AC-9"]));
+    assert_eq!(unit["obligations"].as_array().unwrap().len(), 1);
+
+    let prop = row("prop");
+    assert_eq!(
+        prop["obligationCount"], 0,
+        "a suite can hold only an unresolved binding"
+    );
+    assert_eq!(prop["unresolvedBindings"], json!(["FR-404-AC-9"]));
+
+    let subjects: Vec<&str> = report["gaps"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|gap| gap["subject"].as_str().unwrap())
+        .collect();
+    assert_eq!(subjects, ["prop:FR-404-AC-9", "unit:FR-404-AC-9"]);
 }
