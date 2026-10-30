@@ -547,7 +547,7 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
         "the measured effect is evidence: {evidence:?}"
     );
     assert!(
-        evidence.contains(&RAW_LINE),
+        evidence.contains(RAW_LINE),
         "the raw reference is evidence: {evidence:?}"
     );
     assert!(
@@ -555,7 +555,7 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
         "the conclusion is a claim, not evidence"
     );
     assert!(
-        !claims.contains(EFFECT_LINE) && !claims.contains(&RAW_LINE),
+        !claims.contains(EFFECT_LINE) && !claims.contains(RAW_LINE),
         "a measured effect and a raw reference are evidence, not claims"
     );
 
