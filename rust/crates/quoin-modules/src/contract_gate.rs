@@ -630,7 +630,7 @@ mod tests {
                 .lines()
                 .map(|line| {
                     if line.trim_start().starts_with("semantic_core:") {
-                        "  semantic_core: 9.9.9"
+                        "  not_a_semantic_key: 1"
                     } else {
                         line
                     }
