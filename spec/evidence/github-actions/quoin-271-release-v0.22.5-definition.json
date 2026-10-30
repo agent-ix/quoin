@@ -25,15 +25,6 @@
     "environment": "npm-production",
     "population": "v0.22.5 package release"
   },
-  "configuration": {
-    "version_pins": [
-      {
-        "kind": "tool",
-        "identity": "release-workflow",
-        "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
-      }
-    ]
-  },
   "supported_transition": "tagged-to-published",
   "authorized_roles": ["repository maintainer with Actions dispatch access"],
   "coverage": "manual npm publication of the exact tagged @agent-ix/quoin version",

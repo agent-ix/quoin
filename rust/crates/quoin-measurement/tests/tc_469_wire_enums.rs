@@ -34,8 +34,7 @@ use quoin_measurement::intervention::record::{
 use quoin_measurement::intervention::report::{AdverseDisposition, CounterevidenceKind};
 use quoin_measurement::operational::record::{
     CapabilityStatus, ClockStatus, ExerciseMode, ExerciseOutcome, NotApplicableClockStatus,
-    OperationalControlKind, OperationalRecordShape, OperationalRecordType, VersionPinKind,
-    WithClockApplicability,
+    OperationalControlKind, OperationalRecordShape, OperationalRecordType, WithClockApplicability,
 };
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -101,7 +100,6 @@ fn tc_469_every_wire_union_round_trips_through_its_spelling() {
         round_trips::<CounterevidenceKind>(),
         round_trips::<AdverseDisposition>(),
         round_trips::<OperationalControlKind>(),
-        round_trips::<VersionPinKind>(),
         round_trips::<OperationalRecordType>(),
         round_trips::<CapabilityStatus>(),
         round_trips::<ExerciseMode>(),

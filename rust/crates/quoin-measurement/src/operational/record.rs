@@ -12,7 +12,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::identity::{ControlId, RecordId, Revision, WireInstant};
+use crate::common::identity::{ControlId, RecordId, WireInstant};
 use crate::common::literal_bool::LiteralBool;
 use crate::common::producer::{Producer, Subject};
 use crate::common::recorded_evidence::RecordedEvidenceReference;
@@ -43,34 +43,8 @@ wire_enum! {
         Abstention => "abstention",
         /// Degrading to a known-safe behaviour.
         SafeFallback => "safe_fallback",
-        /// Pinning the governing policy.
-        PolicyPin => "policy_pin",
-        /// Pinning the governing prompt.
-        PromptPin => "prompt_pin",
-        /// Pinning the governing model.
-        ModelPin => "model_pin",
-        /// Pinning the governing tool.
-        ToolPin => "tool_pin",
-        /// Pinning the governing data.
-        DataPin => "data_pin",
         /// Reporting an operational fact onward.
         Reporting => "reporting",
-    }
-}
-
-wire_enum! {
-    /// What a version pin pins. `operational-types.ts:42`.
-    pub enum VersionPinKind {
-        /// The governing policy.
-        Policy => "policy",
-        /// The governing prompt.
-        Prompt => "prompt",
-        /// The governing model.
-        Model => "model",
-        /// The governing tool.
-        Tool => "tool",
-        /// The governing data.
-        Data => "data",
     }
 }
 
@@ -146,26 +120,6 @@ wire_enum! {
     }
 }
 
-/// One pinned component of the configuration a control ran under.
-///
-/// `operational-types.ts:41-46`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct VersionPin {
-    /// What is pinned.
-    pub kind: VersionPinKind,
-    /// Which one.
-    pub identity: String,
-    /// At which revision.
-    pub revision: Revision,
-}
-
-/// The pinned configuration. `operational-types.ts:40-48`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct OperationalConfiguration {
-    /// Every pin, in the order recorded.
-    pub version_pins: Vec<VersionPin>,
-}
-
 /// Where a control was observed. `operational-types.ts:39`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OperationalScope {
@@ -200,8 +154,6 @@ pub struct OperationalBase {
     pub strength: engineering_assurance::claim_strength::ClaimStrength,
     /// Where the control was observed.
     pub scope: OperationalScope,
-    /// What the control ran under.
-    pub configuration: OperationalConfiguration,
     /// Who owns the record.
     pub owner: String,
     /// What the record leaves unsettled.

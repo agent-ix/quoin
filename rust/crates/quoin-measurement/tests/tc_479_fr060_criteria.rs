@@ -324,12 +324,6 @@ fn intake_refusal_cases() -> Vec<(&'static str, Value, InterventionRefusalCode, 
             "/control_kind",
         ),
         (
-            "a pin control kind with no matching pin",
-            patch(&capability, "/control_kind", json!("model_pin")),
-            InvalidRecord,
-            "/configuration/version_pins: model_pin requires a matching pin kind",
-        ),
-        (
             "an unsupported clock still carrying its bounds",
             patch(
                 &capability,

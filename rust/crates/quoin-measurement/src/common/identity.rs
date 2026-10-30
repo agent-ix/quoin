@@ -80,8 +80,8 @@ identity_newtype! {
 }
 
 identity_newtype! {
-    /// A source revision — `subject.revision`, `producer.source_revision` and a
-    /// version pin's `revision`.
+    /// A source revision — `subject.revision`, and
+    /// `producer.source_revision`.
     pub struct Revision;
 }
 

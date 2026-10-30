@@ -86,7 +86,6 @@ pub(super) fn base_for(
         producer: producer.clone(),
         strength: ClaimStrength::Observed,
         scope: definition.scope.clone(),
-        configuration: definition.configuration.clone(),
         owner: definition.owner.clone(),
         gaps: definition.gaps.clone(),
         actions: definition.actions.clone(),

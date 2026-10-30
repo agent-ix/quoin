@@ -1042,15 +1042,6 @@
             "environment": "prod",
             "population": "all"
           },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
-          },
           "owner": "release",
           "gaps": [
             "one declared gap"
@@ -1162,15 +1153,6 @@
             "environment": "prod",
             "population": "all"
           },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
-          },
           "owner": "release",
           "gaps": [
             "one declared gap"
@@ -1278,15 +1260,6 @@
             "service": "quoin",
             "environment": "prod",
             "population": "all"
-          },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
           },
           "owner": "release",
           "gaps": [
@@ -1397,15 +1370,6 @@
             "environment": "prod",
             "population": "all"
           },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
-          },
           "owner": "release",
           "gaps": [
             "one declared gap"
@@ -1514,15 +1478,6 @@
             "service": "quoin",
             "environment": "prod",
             "population": "all"
-          },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
           },
           "owner": "release",
           "gaps": [
@@ -1640,15 +1595,6 @@
             "environment": "prod",
             "population": "all"
           },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
-          },
           "owner": "release",
           "gaps": [
             "one declared gap"
@@ -1762,15 +1708,6 @@
             "environment": "prod",
             "population": "all"
           },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
-          },
           "owner": "release",
           "gaps": [
             "one declared gap"
@@ -1882,15 +1819,6 @@
             "service": "quoin",
             "environment": "prod",
             "population": "all"
-          },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
           },
           "owner": "release",
           "gaps": [
@@ -2006,15 +1934,6 @@
             "environment": "prod",
             "population": "all"
           },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
-          },
           "owner": "release",
           "gaps": [
             "one declared gap"
@@ -2129,15 +2048,6 @@
             "environment": "prod",
             "population": "all"
           },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
-          },
           "owner": "release",
           "gaps": [
             "one declared gap"
@@ -2214,15 +2124,6 @@
             "environment": "prod",
             "population": "all"
           },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
-          },
           "owner": "release",
           "gaps": [
             "one declared gap"
@@ -2293,15 +2194,6 @@
             "service": "quoin",
             "environment": "prod",
             "population": "all"
-          },
-          "configuration": {
-            "version_pins": [
-              {
-                "kind": "model",
-                "identity": "opus",
-                "revision": "5"
-              }
-            ]
           },
           "owner": "release",
           "gaps": [

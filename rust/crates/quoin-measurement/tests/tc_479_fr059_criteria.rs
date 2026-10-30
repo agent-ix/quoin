@@ -204,8 +204,8 @@ fn required(pointer: &str, member: &str) -> String {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_300_the_envelope_requires_every_declared_member() {
-    /// The fourteen members both shapes carry.
-    const ENVELOPE: [&str; 14] = [
+    /// The thirteen members both shapes carry.
+    const ENVELOPE: [&str; 13] = [
         "schema_version",
         "record_type",
         "record_id",
@@ -215,7 +215,6 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
         "subject",
         "producer",
         "scope",
-        "configuration",
         "owner",
         "gaps",
         "actions",
@@ -235,7 +234,7 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
 
     // Each member independently: a record missing exactly one is refused, and
     // the refusal names the member that is gone.
-    assert_eq!(ENVELOPE.len(), 14, "the envelope census is the criterion's");
+    assert_eq!(ENVELOPE.len(), 13, "the envelope census is the criterion's");
     for member in ENVELOPE {
         refused_naming(
             &without(&base, &[member]),
@@ -306,16 +305,15 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
 }
 
 /// The control vocabulary admits releases, flags, canary and shadow deployment,
-/// rollback and kill, override and appeal, abstention and fallback, reporting,
-/// and policy, prompt, model, tool, and data pinning.
+/// rollback and kill, override and appeal, abstention and fallback, and reporting.
 ///
 /// Trace: FR-059-AC-2
 /// Provenance: quoin#479
 #[test]
 fn tc_479_301_every_declared_control_kind_validates_and_no_other_does() {
-    /// The sixteen kinds FR-059 declares, written out rather than read back
+    /// The eleven kinds FR-059 declares, written out rather than read back
     /// from the enum being measured.
-    const KINDS: [&str; 16] = [
+    const KINDS: [&str; 11] = [
         "release",
         "feature_flag",
         "canary_deployment",
@@ -326,11 +324,6 @@ fn tc_479_301_every_declared_control_kind_validates_and_no_other_does() {
         "appeal",
         "abstention",
         "safe_fallback",
-        "policy_pin",
-        "prompt_pin",
-        "model_pin",
-        "tool_pin",
-        "data_pin",
         "reporting",
     ];
 
@@ -346,21 +339,7 @@ fn tc_479_301_every_declared_control_kind_validates_and_no_other_does() {
 
     let base = capability();
     for kind in KINDS {
-        let mut candidate = with(&base, &["control_kind"], json!(kind));
-        // A `*_pin` control is required to carry the pin it is named after;
-        // that requirement is FR-059-AC-7's, and here it is only satisfied so
-        // that this test measures the vocabulary and nothing else.
-        if let Some(pin_kind) = kind.strip_suffix("_pin") {
-            candidate = with(
-                &candidate,
-                &["configuration", "version_pins"],
-                json!([{
-                    "kind": pin_kind,
-                    "identity": "fixture",
-                    "revision": "v1",
-                }]),
-            );
-        }
+        let candidate = with(&base, &["control_kind"], json!(kind));
         admitted(&candidate, &format!("the control kind `{kind}`"));
     }
 
@@ -671,63 +650,6 @@ fn tc_479_305_a_clocked_status_is_derived_from_the_instants_and_not_believed() {
         ),
         "/exercise/clock",
         "a not-applicable clock claiming a deadline status",
-    );
-}
-
-/// Each policy, prompt, model, tool, or data pin record carries at least one
-/// matching typed identity, and revision, with no duplicate
-/// kind/identity key.
-///
-/// Trace: FR-059-AC-7
-/// Provenance: quoin#479
-#[test]
-fn tc_479_306_a_pin_control_requires_one_unique_matching_typed_pin() {
-    let pinned = with(&capability(), &["control_kind"], json!("model_pin"));
-    let pin = json!({
-        "kind": "model",
-        "identity": "fixture-model",
-        "revision": "v1",
-    });
-    let pinned_with = |pins: Value| with(&pinned, &["configuration", "version_pins"], pins);
-
-    // An empty pin list, and a list pinning something else, are both refused.
-    refused_naming(
-        &pinned_with(json!([])),
-        "model_pin requires a matching pin kind",
-        "a model_pin record pinning nothing",
-    );
-    refused_naming(
-        &pinned_with(json!([with(&pin, &["kind"], json!("policy"))])),
-        "model_pin requires a matching pin kind",
-        "a model_pin record carrying only a policy pin",
-    );
-
-    // One matching pin is enough.
-    admitted(
-        &pinned_with(json!([pin])),
-        "a model_pin record with a model pin",
-    );
-
-    // Two pins on one thing are refused at the second.
-    refused_naming(
-        &pinned_with(json!([pin, pin])),
-        "duplicate kind/identity",
-        "a pin list naming one thing twice",
-    );
-
-    // The pin is typed: every member is required, independently.
-    for member in ["kind", "identity", "revision"] {
-        refused_naming(
-            &pinned_with(json!([without(&pin, &[member])])),
-            &required("/configuration/version_pins/0", member),
-            &format!("a pin missing `{member}`"),
-        );
-    }
-    // And the pin kind is the declared vocabulary.
-    refused_naming(
-        &pinned_with(json!([with(&pin, &["kind"], json!("weights"))])),
-        "/configuration/version_pins/0/kind",
-        "a pin kind outside the declared vocabulary",
     );
 }
 

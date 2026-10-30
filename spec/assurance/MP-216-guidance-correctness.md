@@ -37,6 +37,8 @@ Passing independent reviews divided by selected applicable records. The target i
 
 The evaluator contract, review evidence, and producer records are retained together.
 
+BLOCKED-BY QSL-1276 (owner: planner titan:QSL:plan): Quire export locator statement_hash. The retained `sha256:` finding ids, `statement_hash` members and guidance `recordId`/`selectedRecordIds` in these records are minted by the Quire export; they are removed with QSL-1276, not here.
+
 ## Environment and Sampling
 
 Sampling is deterministic and consumer-owned. Producers cannot exclude their own missing fields.

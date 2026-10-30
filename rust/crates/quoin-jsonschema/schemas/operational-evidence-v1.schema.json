@@ -14,7 +14,6 @@
     "producer",
     "strength",
     "scope",
-    "configuration",
     "owner",
     "gaps",
     "actions",
@@ -42,11 +41,6 @@
         "appeal",
         "abstention",
         "safe_fallback",
-        "policy_pin",
-        "prompt_pin",
-        "model_pin",
-        "tool_pin",
-        "data_pin",
         "reporting"
       ]
     },
@@ -100,29 +94,6 @@
         "service": { "$ref": "#/$defs/identity" },
         "environment": { "type": "string", "minLength": 1 },
         "population": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": false
-    },
-    "configuration": {
-      "type": "object",
-      "required": ["version_pins"],
-      "properties": {
-        "version_pins": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["kind", "identity", "revision"],
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["policy", "prompt", "model", "tool", "data"]
-              },
-              "identity": { "$ref": "#/$defs/identity" },
-              "revision": { "type": "string", "minLength": 1 }
-            },
-            "additionalProperties": false
-          }
-        }
       },
       "additionalProperties": false
     },
@@ -291,34 +262,6 @@
           }
         }
       ]
-    },
-    {
-      "if": {
-        "type": "object",
-        "properties": {
-          "control_kind": {
-            "enum": [
-              "policy_pin",
-              "prompt_pin",
-              "model_pin",
-              "tool_pin",
-              "data_pin"
-            ]
-          }
-        },
-        "required": ["control_kind"]
-      },
-      "then": {
-        "properties": {
-          "configuration": {
-            "type": "object",
-            "properties": {
-              "version_pins": { "type": "array", "minItems": 1 }
-            },
-            "required": ["version_pins"]
-          }
-        }
-      }
     }
   ],
   "$defs": {

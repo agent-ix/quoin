@@ -6329,15 +6329,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -6425,15 +6416,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -6514,15 +6496,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -6613,105 +6586,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "control_kind": "release",
-        "gaps": [
-          "npm registry receipt is not part of this first producer's retained input contract"
-        ],
-        "observed_at": "2026-08-29T23:11:38Z",
-        "owner": "engineering assurance",
-        "producer": {
-          "configuration_ref": "config/x.json",
-          "definition_version": "github-actions.release-operational-v1",
-          "environment": {
-            "github_repository": "agent-ix/quoin",
-            "github_run_id": 33280266874,
-            "github_run_url": "https://github.com/agent-ix/quoin/actions/runs/33280266874",
-            "github_workflow_run_id": 33280266874,
-            "release_version": "0.22.5"
-          },
-          "source_revision": "06ababababababababababababababababababab",
-          "tool_identity": "quoin-github-release-operational-adapter",
-          "tool_version": "0.9.0"
-        },
-        "raw_evidence": [
-          {
-            "media_type": "application/yaml",
-            "path": "github-actions/quoin-271-release-v0.22.5-workflow.yml",
-            "size_bytes": 6651
-          },
-          {
-            "media_type": "application/json",
-            "path": "github-actions/quoin-271-release-v0.22.5-run.json",
-            "size_bytes": 11898
-          },
-          {
-            "media_type": "application/json",
-            "path": "github-actions/quoin-271-release-v0.22.5-jobs.json",
-            "size_bytes": 13166
-          }
-        ],
-        "record_id": "quoin-271-release-v0.22.5-capability",
-        "record_shape": "standing_capability",
-        "record_type": "operational_evidence",
-        "schema_version": 1,
-        "scope": {
-          "environment": "npm-production",
-          "population": "v0.22.5 package release",
-          "service": "agent-ix/quoin"
-        },
-        "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
-        }
-      },
-      "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/configuration",
-      "mutation": "remove/configuration",
-      "origin": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0",
-      "schema": "operational_evidence_v1"
-    },
-    {
-      "ajv_error_identities": [
-        [
-          "",
-          "required"
-        ]
-      ],
-      "ajv_valid": false,
-      "document": {
-        "actions": [
-          "retain a later adverse release run to exercise the non-success operational path with real evidence"
-        ],
-        "capability": {
-          "authorized_roles": [
-            "repository maintainer with Actions dispatch access"
-          ],
-          "clock_support": {
-            "completion_event": "release_job_completed",
-            "deadline_seconds": 600,
-            "start_event": "release_job_started",
-            "supported": true
-          },
-          "control_id": "quoin-npm-release",
-          "coverage": "manual npm publication of the exact tagged @agent-ix/quoin version",
-          "limitations": [
-            "the initial producer covers GitHub Actions release workflows only",
-            "one successful release exercise does not estimate future release reliability"
-          ],
-          "status": "available",
-          "supported_transitions": [
-            "tagged-to-published"
-          ],
-          "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
         ],
@@ -6801,15 +6675,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "observed_at": "2026-08-29T23:11:38Z",
         "owner": "engineering assurance",
@@ -6896,15 +6761,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -6995,15 +6851,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -7093,15 +6940,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -7178,15 +7016,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -7259,15 +7088,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -7378,15 +7198,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -7475,15 +7286,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -7574,15 +7376,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -7672,15 +7465,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -7765,15 +7549,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -7860,15 +7635,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -7961,15 +7727,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -8059,15 +7816,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -8159,15 +7907,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -8257,15 +7996,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -8357,15 +8087,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -8450,15 +8171,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -8545,15 +8257,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -8638,15 +8341,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -8738,15 +8432,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -8832,15 +8517,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -8925,15 +8601,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -9025,15 +8692,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -9118,15 +8776,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -9213,15 +8862,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -9306,15 +8946,6 @@
             "tagged-to-published"
           ],
           "surface": ".github/workflows/release.yml"
-        },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
         },
         "control_kind": "release",
         "gaps": [
@@ -9406,15 +9037,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -9505,15 +9127,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -9598,15 +9211,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -9681,15 +9285,6 @@
           ],
           "surface": ".github/workflows/release.yml"
         },
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -9753,15 +9348,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -9856,15 +9442,6 @@
       ],
       "ajv_valid": false,
       "document": {
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -9962,112 +9539,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "control_kind": "release",
-        "exercise": {
-          "actor": "kreneskyp",
-          "capability_record_id": "quoin-271-release-v0.22.5-capability",
-          "clock": {
-            "applicability": "operational_with_clock",
-            "completed_at": "2026-08-29T23:11:37Z",
-            "deadline_at": "2026-08-29T23:21:00.000Z",
-            "started_at": "2026-08-29T23:11:00Z",
-            "status": "met"
-          },
-          "completed_at": "2026-08-29T23:11:37Z",
-          "control_id": "quoin-npm-release",
-          "mode": "actual",
-          "observations": [
-            "workflow .github/workflows/release.yml",
-            "job Publish concluded success"
-          ],
-          "outcome": "succeeded",
-          "started_at": "2026-08-29T23:11:00Z",
-          "state_after": {
-            "conclusion": "success",
-            "run_id": 33280266874,
-            "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
-          },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
-          "trigger": "workflow_dispatch"
-        },
-        "gaps": [
-          "npm registry receipt is not part of this first producer's retained input contract"
-        ],
-        "observed_at": "2026-08-29T23:11:38Z",
-        "owner": "engineering assurance",
-        "producer": {
-          "configuration_ref": "config/x.json",
-          "definition_version": "github-actions.release-operational-v1",
-          "environment": {
-            "github_repository": "agent-ix/quoin",
-            "github_run_id": 33280266874,
-            "github_run_url": "https://github.com/agent-ix/quoin/actions/runs/33280266874",
-            "github_workflow_run_id": 33280266874,
-            "release_version": "0.22.5"
-          },
-          "source_revision": "06ababababababababababababababababababab",
-          "tool_identity": "quoin-github-release-operational-adapter",
-          "tool_version": "0.9.0"
-        },
-        "raw_evidence": [
-          {
-            "media_type": "application/yaml",
-            "path": "github-actions/quoin-271-release-v0.22.5-workflow.yml",
-            "size_bytes": 6651
-          },
-          {
-            "media_type": "application/json",
-            "path": "github-actions/quoin-271-release-v0.22.5-run.json",
-            "size_bytes": 11898
-          },
-          {
-            "media_type": "application/json",
-            "path": "github-actions/quoin-271-release-v0.22.5-jobs.json",
-            "size_bytes": 13166
-          }
-        ],
-        "record_id": "quoin-271-release-v0.22.5-exercise",
-        "record_shape": "exercise",
-        "record_type": "operational_evidence",
-        "schema_version": 1,
-        "scope": {
-          "environment": "npm-production",
-          "population": "v0.22.5 package release",
-          "service": "agent-ix/quoin"
-        },
-        "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
-        }
-      },
-      "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/configuration",
-      "mutation": "remove/configuration",
-      "origin": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1",
-      "schema": "operational_evidence_v1"
-    },
-    {
-      "ajv_error_identities": [
-        [
-          "",
-          "required"
-        ]
-      ],
-      "ajv_valid": false,
-      "document": {
-        "actions": [
-          "retain a later adverse release run to exercise the non-success operational path with real evidence"
-        ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "exercise": {
           "actor": "kreneskyp",
           "capability_record_id": "quoin-271-release-v0.22.5-capability",
@@ -10176,15 +9647,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "gaps": [
           "npm registry receipt is not part of this first producer's retained input contract"
@@ -10253,15 +9715,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -10356,15 +9809,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -10461,15 +9905,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -10566,15 +10001,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -10658,15 +10084,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -10747,15 +10164,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -10872,15 +10280,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -10977,15 +10376,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -11082,15 +10472,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -11187,15 +10568,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -11288,15 +10660,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -11390,15 +10753,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -11497,15 +10851,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -11603,15 +10948,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -11709,15 +11045,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -11815,15 +11142,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -11921,15 +11239,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12022,15 +11331,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12123,15 +11423,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12224,15 +11515,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12330,15 +11612,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12431,15 +11704,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12532,15 +11796,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12638,15 +11893,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12739,15 +11985,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12840,15 +12077,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -12941,15 +12169,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -13047,15 +12266,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -13153,15 +12363,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -13253,15 +12454,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
@@ -13343,15 +12535,6 @@
         "actions": [
           "retain a later adverse release run to exercise the non-success operational path with real evidence"
         ],
-        "configuration": {
-          "version_pins": [
-            {
-              "identity": "release-workflow",
-              "kind": "tool",
-              "revision": "05ababababababababababababababababababab"
-            }
-          ]
-        },
         "control_kind": "release",
         "exercise": {
           "actor": "kreneskyp",
