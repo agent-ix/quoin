@@ -66,7 +66,7 @@ pub(super) fn evaluate_challenge(
 }
 
 /// The nine required keys of a sufficiency decision, plus the one optional.
-const DECISION_KEYS: [&str; 10] = [
+const DECISION_KEYS: [&str; 9] = [
     "reasoningId",
     "criterion",
     "state",
