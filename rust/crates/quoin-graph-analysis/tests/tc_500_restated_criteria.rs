@@ -51,14 +51,13 @@ use quoin_graph_analysis::{
 };
 use serde_json::{Value, json};
 
-const DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 const OTHER_REVISION: &str = "dddddddddddddddddddddddddddddddddddddddd";
 
 const REQUIREMENTS: [&str; 4] = ["FR-001", "FR-002", "FR-003", "FR-004"];
 
 fn locator(path: &str, line: u32) -> Value {
-    json!({ "path": path, "line": line, "digest": DIGEST })
+    json!({ "path": path, "line": line })
 }
 
 fn source() -> Value {
@@ -91,9 +90,6 @@ fn obligation(id: &str, owner: &str) -> Value {
         "id": id,
         "document": format!("spec/{owner}.md"),
         "statement": format!("{id} statement"),
-        // BLOCKED-BY quire-rs-statement-hash (owner: planner titan:QSL:plan): assurance-v1 still requires
-        // `statement_hash` on every obligation (additionalProperties: false); remove with the quire-rs field.
-        "statement_hash": DIGEST,
         "target_ids": [format!("TC-{id}")],
         "locator": locator(&format!("spec/{owner}.md"), 20),
     })

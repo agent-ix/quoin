@@ -35,8 +35,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -44,8 +43,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -53,8 +51,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -62,8 +59,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -71,8 +67,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -80,8 +75,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -89,8 +83,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -98,8 +91,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -109,14 +101,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -124,14 +114,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -139,14 +127,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -154,14 +140,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -169,14 +153,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -184,14 +166,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -199,14 +179,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -278,8 +256,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -291,8 +268,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -304,8 +280,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -317,8 +292,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -330,8 +304,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -343,8 +316,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -356,8 +328,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -369,8 +340,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -625,8 +595,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -634,8 +603,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -643,8 +611,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -652,8 +619,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -661,8 +627,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -670,8 +635,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -679,8 +643,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -688,8 +651,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -699,14 +661,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -714,14 +674,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -729,14 +687,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -744,14 +700,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -759,14 +713,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -774,14 +726,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -789,14 +739,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -868,8 +816,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -881,8 +828,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -894,8 +840,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -907,8 +852,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -920,8 +864,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -933,8 +876,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -946,8 +888,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -959,8 +900,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -1211,8 +1151,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1220,8 +1159,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1229,8 +1167,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1238,8 +1175,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1247,8 +1183,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1256,8 +1191,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1265,8 +1199,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1274,8 +1207,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -1285,14 +1217,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1300,14 +1230,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1315,14 +1243,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1330,14 +1256,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1345,14 +1269,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1360,14 +1282,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1375,14 +1295,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -1454,8 +1372,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -1467,8 +1384,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -1480,8 +1396,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -1493,8 +1408,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -1506,8 +1420,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -1519,8 +1432,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -1532,8 +1444,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -1545,8 +1456,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -1800,8 +1710,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1809,8 +1718,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1818,8 +1726,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1827,8 +1734,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1836,8 +1742,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1845,8 +1750,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1854,8 +1758,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -1863,8 +1766,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -1874,14 +1776,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1889,14 +1789,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1904,14 +1802,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1919,14 +1815,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1934,14 +1828,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1949,14 +1841,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -1964,14 +1854,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -2043,8 +1931,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2056,8 +1943,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2069,8 +1955,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2082,8 +1967,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2095,8 +1979,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2108,8 +1991,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2121,8 +2003,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2134,8 +2015,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -2388,8 +2268,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -2397,8 +2276,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -2406,8 +2284,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -2415,8 +2292,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -2424,8 +2300,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -2433,8 +2308,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -2442,8 +2316,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -2451,8 +2324,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -2462,14 +2334,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -2477,14 +2347,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -2492,14 +2360,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -2507,14 +2373,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -2522,14 +2386,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -2537,14 +2399,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -2552,14 +2412,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -2631,8 +2489,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2644,8 +2501,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2657,8 +2513,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2670,8 +2525,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2683,8 +2537,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2696,8 +2549,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2709,8 +2561,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -2722,8 +2573,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -2981,8 +2831,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -2990,8 +2839,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -2999,8 +2847,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3008,8 +2855,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3017,8 +2863,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3026,8 +2871,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3035,8 +2879,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3044,8 +2887,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -3055,14 +2897,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3070,14 +2910,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3085,14 +2923,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3100,14 +2936,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3115,14 +2949,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3130,14 +2962,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3145,14 +2975,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -3224,8 +3052,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3237,8 +3064,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3250,8 +3076,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3263,8 +3088,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3276,8 +3100,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3289,8 +3112,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3302,8 +3124,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3315,8 +3136,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -3576,8 +3396,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3585,8 +3404,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3594,8 +3412,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3603,8 +3420,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3612,8 +3428,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3621,8 +3436,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3630,8 +3444,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -3639,8 +3452,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -3650,14 +3462,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3665,14 +3475,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3680,14 +3488,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3695,14 +3501,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3710,14 +3514,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3725,14 +3527,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -3740,14 +3540,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -3819,8 +3617,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3832,8 +3629,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3845,8 +3641,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3858,8 +3653,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3871,8 +3665,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3884,8 +3677,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3897,8 +3689,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -3910,8 +3701,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -4167,8 +3957,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4176,8 +3965,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4185,8 +3973,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4194,8 +3981,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4203,8 +3989,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4212,8 +3997,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4221,8 +4005,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4230,8 +4013,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -4241,14 +4023,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4256,14 +4036,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4271,14 +4049,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4286,14 +4062,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4301,14 +4075,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4316,14 +4088,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4331,14 +4101,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -4410,8 +4178,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -4423,8 +4190,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -4436,8 +4202,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -4449,8 +4214,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -4462,8 +4226,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -4475,8 +4238,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -4488,8 +4250,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -4501,8 +4262,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -4761,8 +4521,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4770,8 +4529,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4779,8 +4537,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4788,8 +4545,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4797,8 +4553,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4806,8 +4561,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4815,8 +4569,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -4824,8 +4577,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -4835,14 +4587,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4850,14 +4600,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4865,14 +4613,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4880,14 +4626,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4895,14 +4639,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4910,14 +4652,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -4925,14 +4665,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -5004,8 +4742,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5017,8 +4754,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5030,8 +4766,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5043,8 +4778,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5056,8 +4790,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5069,8 +4802,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5082,8 +4814,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5095,8 +4826,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -5349,8 +5079,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5358,8 +5087,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5367,8 +5095,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5376,8 +5103,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5385,8 +5111,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5394,8 +5119,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5403,8 +5127,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5412,8 +5135,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -5423,14 +5145,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -5438,14 +5158,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -5453,14 +5171,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -5468,14 +5184,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -5483,14 +5197,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -5498,14 +5210,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -5513,14 +5223,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -5592,8 +5300,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5605,8 +5312,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5618,8 +5324,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5631,8 +5336,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5644,8 +5348,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5657,8 +5360,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5670,8 +5372,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -5683,8 +5384,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -5875,8 +5575,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5884,8 +5583,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5893,8 +5591,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5902,8 +5599,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5911,8 +5607,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5920,8 +5615,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5929,8 +5623,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -5938,8 +5631,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -5949,14 +5641,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -5964,14 +5654,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -5979,14 +5667,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -5994,14 +5680,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -6009,14 +5693,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -6024,14 +5706,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -6039,14 +5719,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -6118,8 +5796,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6131,8 +5808,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6144,8 +5820,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6157,8 +5832,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6170,8 +5844,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6183,8 +5856,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6196,8 +5868,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6209,8 +5880,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -6401,8 +6071,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6410,8 +6079,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6419,8 +6087,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6428,8 +6095,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6437,8 +6103,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6446,8 +6111,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6455,8 +6119,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6464,8 +6127,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -6475,14 +6137,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -6490,14 +6150,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -6505,14 +6163,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -6520,14 +6176,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -6535,14 +6189,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -6550,14 +6202,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -6565,14 +6215,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -6644,8 +6292,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6657,8 +6304,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6670,8 +6316,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6683,8 +6328,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6696,8 +6340,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6709,8 +6352,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6722,8 +6364,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -6735,8 +6376,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -6927,8 +6567,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6936,8 +6575,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6945,8 +6583,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6954,8 +6591,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6963,8 +6599,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6972,8 +6607,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6981,8 +6615,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -6990,8 +6623,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -7001,14 +6633,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7016,14 +6646,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7031,14 +6659,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7046,14 +6672,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7061,14 +6685,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7076,14 +6698,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7091,14 +6711,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -7170,8 +6788,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -7183,8 +6800,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -7196,8 +6812,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -7209,8 +6824,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -7222,8 +6836,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -7235,8 +6848,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -7248,8 +6860,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -7261,8 +6872,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -7499,8 +7109,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -7508,8 +7117,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -7519,14 +7127,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7534,14 +7140,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -7613,8 +7217,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -7871,8 +7474,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -7880,8 +7482,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/pipe.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -7889,8 +7490,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/astral.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -7898,8 +7498,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/replacement.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -7907,8 +7506,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/tick.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -7918,14 +7516,12 @@
               "id": "AC|1",
               "document": "spec/pipe.md",
               "statement": "AC|1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-AC|1"
               ],
               "locator": {
                 "path": "spec/pipe.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7933,14 +7529,12 @@
               "id": "AC-😀",
               "document": "spec/astral.md",
               "statement": "AC-😀 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-AC-😀"
               ],
               "locator": {
                 "path": "spec/astral.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7948,14 +7542,12 @@
               "id": "AC-�",
               "document": "spec/replacement.md",
               "statement": "AC-� statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-AC-�"
               ],
               "locator": {
                 "path": "spec/replacement.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7963,14 +7555,12 @@
               "id": "AC-newline",
               "document": "spec/tick.md",
               "statement": "AC-newline statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-AC-newline"
               ],
               "locator": {
                 "path": "spec/tick.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -7978,14 +7568,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -8057,8 +7645,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR|002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8070,8 +7657,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-😀.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8083,8 +7669,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-�.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -8259,8 +7844,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8268,8 +7852,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8277,8 +7860,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8286,8 +7868,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8295,8 +7876,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-005.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -8306,14 +7886,12 @@
               "id": "FR-005-AC-1",
               "document": "spec/FR-005.md",
               "statement": "FR-005-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-005-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-005.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -8385,8 +7963,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8398,8 +7975,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8411,8 +7987,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8424,8 +7999,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-005.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8437,8 +8011,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-005.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -8570,8 +8143,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8579,8 +8151,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8588,8 +8159,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8597,8 +8167,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8606,8 +8175,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8615,8 +8183,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8624,8 +8191,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -8633,8 +8199,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -8644,14 +8209,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -8659,14 +8222,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -8674,14 +8235,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -8689,14 +8248,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -8704,14 +8261,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -8719,14 +8274,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -8734,14 +8287,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -8813,8 +8364,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8826,8 +8376,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8839,8 +8388,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8852,8 +8400,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8865,8 +8412,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8878,8 +8424,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8891,8 +8436,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -8904,8 +8448,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -9110,8 +8653,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9119,8 +8661,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9128,8 +8669,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9137,8 +8677,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9146,8 +8685,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9155,8 +8693,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9164,8 +8701,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9173,8 +8709,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -9184,14 +8719,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9199,14 +8732,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9214,14 +8745,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9229,14 +8758,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9244,14 +8771,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9259,14 +8784,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9274,14 +8797,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -9353,8 +8874,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9366,8 +8886,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9379,8 +8898,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9392,8 +8910,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9405,8 +8922,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9418,8 +8934,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9431,8 +8946,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9444,8 +8958,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }
@@ -9709,8 +9222,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9718,8 +9230,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9727,8 +9238,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9736,8 +9246,7 @@
               "artifact_type": "FR",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9745,8 +9254,7 @@
               "artifact_type": "NFR",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9754,8 +9262,7 @@
               "artifact_type": "IT",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9763,8 +9270,7 @@
               "artifact_type": "US",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             },
             {
@@ -9772,8 +9278,7 @@
               "artifact_type": "StR",
               "locator": {
                 "path": "spec/shared.md",
-                "line": 1,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 1
               }
             }
           ],
@@ -9783,14 +9288,12 @@
               "id": "FR-001-AC-1",
               "document": "spec/FR-001.md",
               "statement": "FR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9798,14 +9301,12 @@
               "id": "FR-002-AC-1",
               "document": "spec/FR-002.md",
               "statement": "FR-002-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-002-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9813,14 +9314,12 @@
               "id": "FR-003-AC-1",
               "document": "spec/FR-003.md",
               "statement": "FR-003-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-003-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9828,14 +9327,12 @@
               "id": "FR-004-AC-1",
               "document": "spec/FR-004.md",
               "statement": "FR-004-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-FR-004-AC-1"
               ],
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9843,14 +9340,12 @@
               "id": "NFR-001-AC-1",
               "document": "spec/NFR-001.md",
               "statement": "NFR-001-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-NFR-001-AC-1"
               ],
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9858,14 +9353,12 @@
               "id": "SHARED-AC-1",
               "document": "spec/shared.md",
               "statement": "SHARED-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-SHARED-AC-1"
               ],
               "locator": {
                 "path": "spec/shared.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             },
             {
@@ -9873,14 +9366,12 @@
               "id": "ORPHAN-AC-1",
               "document": "spec/nowhere.md",
               "statement": "ORPHAN-AC-1 statement",
-              "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "target_ids": [
                 "TC-ORPHAN-AC-1"
               ],
               "locator": {
                 "path": "spec/nowhere.md",
-                "line": 20,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 20
               }
             }
           ],
@@ -9952,8 +9443,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-002.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9965,8 +9455,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-003.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9978,8 +9467,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -9991,8 +9479,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-004.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -10004,8 +9491,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/FR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -10017,8 +9503,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/IT-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -10030,8 +9515,7 @@
               "resolution": "dangling",
               "locator": {
                 "path": "spec/FR-009.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             },
@@ -10043,8 +9527,7 @@
               "resolution": "resolved",
               "locator": {
                 "path": "spec/NFR-001.md",
-                "line": 5,
-                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "line": 5
               },
               "freshness": "not_applicable"
             }

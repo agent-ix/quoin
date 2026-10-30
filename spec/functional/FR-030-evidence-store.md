@@ -160,10 +160,8 @@ undischarged with the evidence sitting right there.
 > affirmation history, and `quoin evidence affirm` and the `suspect` list of
 > `quoin evidence record` are gone. FR-030-AC-5 and FR-030-AC-6 are withdrawn,
 > with TC-123 and TC-124; the other ACs lose their hash and affirmation clauses.
-> The ids are not reused. The obligations quire derives still carry a
-> `statement_hash` on the `assurance-v1` export; quoin does not read it. BLOCKED-BY
-> quire-rs-statement-hash (owner: planner titan:QSL:plan): the `statement_hash`
-> member of the quire-rs obligation and of the `assurance-v1` schema.
+> The ids are not reused. quire-rs no longer emits `statement_hash` on the
+> `assurance-v1` export, and quoin reads none.
 >
 > **CR note (2026-09-30, agent-ix/quoin#658):** `spec/evidence/baseline.json`
 > is no longer a store output, and FR-030-AC-13 no longer names it. The ratchet

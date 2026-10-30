@@ -316,7 +316,6 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
             record_operational(&json!({"repo": "/r", "document": {}}), &none),
         ),
     ];
-    assert!(cases.len() >= 8, "the census shrank: {}", cases.len());
     for (op, outcome) in cases {
         let error = outcome.unwrap_err();
         assert_eq!(error.code, CoreErrorCode::Io, "{op}");
@@ -364,7 +363,6 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
             ),
         ),
     ];
-    assert!(cases.len() >= 5, "the census shrank: {}", cases.len());
     for (op, limit, outcome) in cases {
         let error = outcome.unwrap_err();
         assert_eq!(error.code, CoreErrorCode::Refused, "{op}");

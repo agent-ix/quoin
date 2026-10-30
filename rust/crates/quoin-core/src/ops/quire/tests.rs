@@ -141,10 +141,6 @@ fn obligation() -> quoin_quire::model::Obligation {
         id: "FR-001-AC-1".to_owned(),
         document: "spec/FR-001.md".to_owned(),
         statement: "The command reports coverage.".to_owned(),
-        // BLOCKED-BY quire-rs-statement-hash (owner: planner titan:QSL:plan):
-        // `quire_rs::obligation::Obligation::statement_hash`. quoin neither
-        // reads nor emits it; this struct literal cannot omit the upstream
-        // field until quire-rs removes it (no ticket yet; file one).
         method: Some("Test".to_owned()),
         parameters: BTreeMap::from([("threshold".to_owned(), "0.9".to_owned())]),
         criticality: Some("high".to_owned()),

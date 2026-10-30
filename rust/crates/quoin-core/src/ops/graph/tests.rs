@@ -37,7 +37,6 @@ use crate::protocol::Response;
 
 use super::{MAX_SCALAR_BYTES, change_impact, fan_out};
 
-const DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
 /// A tree of files, and nothing else, standing in for the filesystem.
@@ -72,18 +71,15 @@ fn export() -> Value {
         "artifacts": [{
             "id": "FR-001",
             "artifact_type": "FR",
-            "locator": { "path": "spec/FR-001.md", "line": 1, "digest": DIGEST },
+            "locator": { "path": "spec/FR-001.md", "line": 1 },
         }],
         "obligations": [{
             "source": "acceptance-criterion",
             "id": "FR-001-AC-1",
             "document": "spec/FR-001.md",
             "statement": "The command reports fan-out.",
-            // BLOCKED-BY quire-rs-statement-hash (owner: planner titan:QSL:plan): assurance-v1 still requires
-            // `statement_hash` on every obligation (additionalProperties: false); remove with the quire-rs field.
-            "statement_hash": DIGEST,
             "target_ids": ["TC-1249"],
-            "locator": { "path": "spec/FR-001.md", "line": 20, "digest": DIGEST },
+            "locator": { "path": "spec/FR-001.md", "line": 20 },
         }],
         "symbols": [],
         "relation_kinds": quoin_graph_analysis::DEFAULT_RELATION_KINDS
