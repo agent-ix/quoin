@@ -36,8 +36,7 @@ submits it through the FR-057 intake boundary.
 
 - One accepted intervention-experiment record, or an actionable refusal from the
   existing FR-057 intake surface.
-- Raw-evidence references to both unmodified input reports with computed media type,
-  and byte size.
+- Raw-evidence references to both unmodified input reports with computed media type.
 
 ## Behavior
 
@@ -55,7 +54,7 @@ submits it through the FR-057 intake boundary.
 - The producer SHALL derive the record observation timestamp from the treatment
   report's `generatedAt` clock; it SHALL NOT accept a caller-supplied replacement.
 - The producer SHALL compute the raw-evidence metadata from the exact input bytes;
-  it SHALL NOT accept a caller-supplied size or measured effect.
+  it SHALL NOT accept a caller-supplied measured effect.
 - The producer SHALL emit `cause_not_established` with `none` attribution confidence
   whenever either report lacks a valid repeated sample, any declared interaction or
   confounder is uncontrolled/unknown, or the definition does not supply a justified
@@ -71,7 +70,7 @@ submits it through the FR-057 intake boundary.
 | --- | --- | --- |
 | FR-058-AC-1 | Two real agent-eval reports governed by a supported input-schema declaration and carrying the same non-empty scenario set produce treatment-linked observations whose sample counts, pass rates, computed effects, and observation timestamp match the reports. | Test (TC-1217) |
 | FR-058-AC-2 | An absent or unsupported input-schema declaration and empty, malformed, structurally incompatible, duplicate-scenario, or baseline/treatment scenario-mismatch reports are refused without an intervention store entry. | Test (TC-1218) |
-| FR-058-AC-3 | The observation timestamp and raw-evidence media type and byte size are computed from the exact unmodified reports; caller-supplied substitutes cannot change them. | Test (TC-1219) |
+| FR-058-AC-3 | The observation timestamp and raw-evidence media type are computed from the exact unmodified reports; caller-supplied substitutes cannot change them. Withdrawn: the raw-evidence byte size (a recorded size). | Test (TC-1219) |
 | FR-058-AC-4 | Inadequate repetition, an uncontrolled/unknown qualifier, or absent attribution method produces `cause_not_established` with `none` confidence and explicit gaps rather than a causal conclusion. | Test (TC-1220) |
 | FR-058-AC-5 | A real two-run integration invokes `cli-agent-evals` outside Quoin, then the Quoin producer consumes the retained reports without spawning any process and persists the record through FR-057. | Test (TC-1221) |
 

@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::raw_evidence::RawEvidencePath;
 
-use super::{MeasurementSource, RawEvidenceFile, has_extension};
+use super::{MeasurementSource, has_extension};
 
 /// A repository stated in memory.
 ///
@@ -133,23 +133,14 @@ impl MeasurementSource for MemoryMeasurement {
         ))
     }
 
-    fn raw_evidence_file(
-        &self,
-        path: &RawEvidencePath,
-    ) -> Result<RawEvidenceFile, MeasurementError> {
-        let text = self.retained.get(path.as_str()).ok_or_else(|| {
+    fn raw_evidence_file(&self, path: &RawEvidencePath) -> Result<(), MeasurementError> {
+        self.retained.get(path.as_str()).ok_or_else(|| {
             MeasurementError::new(
                 MeasurementErrorCode::RawEvidenceUnavailable,
                 format!("this source holds no file at `{path}`"),
             )
         })?;
-        let bytes = text.as_bytes();
-        Ok(RawEvidenceFile {
-            // The size the retained accounting records is the byte length, not
-            // the UTF-16 length JavaScript's `.length` would give: `"é"` is one
-            // unit and two bytes, and `statSync().size` is bytes on both sides.
-            size_bytes: u64::try_from(bytes.len()).unwrap_or(u64::MAX),
-        })
+        Ok(())
     }
 
     fn retained_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError> {

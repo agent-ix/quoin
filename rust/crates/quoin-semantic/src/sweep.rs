@@ -320,8 +320,6 @@ pub struct CorpusRoot {
     pub root: PathBuf,
     /// The repository the root stands for, used as the finding-path prefix.
     pub repository: String,
-    /// The revision swept, recorded in the report.
-    pub revision: String,
 }
 
 /// The package and version a sweep report is for.
@@ -339,8 +337,6 @@ pub struct SweepIdentity {
 pub struct ReportCorpusRoot {
     /// `<org>/<repo>`.
     pub repository: String,
-    /// The revision swept.
-    pub revision: String,
 }
 
 /// The per-form tallies.
@@ -495,7 +491,6 @@ pub fn sweep_corpus(
             .iter()
             .map(|root| ReportCorpusRoot {
                 repository: root.repository.clone(),
-                revision: root.revision.clone(),
             })
             .collect(),
         counts: SweepCounts {

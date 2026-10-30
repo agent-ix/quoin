@@ -3,11 +3,11 @@
 
 //! A run that failed the tagged test is stale evidence, not a clean bill.
 //!
-//! FR-032 line 28 named a failed run beside a missing run and a run behind
-//! HEAD as one of the three ways evidence rots, but the ladder's only
+//! FR-032 line 28 named a failed run beside a missing run as one of the ways
+//! evidence rots, but the ladder's only
 //! outcome-aware rung was `ladder.rs`'s vacuity check, which asks only
 //! `Outcome::Skip`. A suite that ran the tagged test and reported `fail` or
-//! `error` at HEAD read as healthy on a red build, and the upcoming computed
+//! `error` read as healthy on a red build, and the upcoming computed
 //! matrix maps `healthy` to "bound by a passing run" (PLAT-1086).
 //!
 //! Trace: FR-032-AC-17
@@ -22,15 +22,12 @@
 )]
 
 use quoin_auditor::audit::{AuditInput, audit};
-use quoin_evidence::ids::{Commit, ObligationId, SuiteId, SymbolId};
+use quoin_evidence::ids::{ObligationId, SuiteId, SymbolId};
 use quoin_evidence::source::MemoryEvidence;
 use quoin_evidence::store::{latest_runs, write_run};
 use quoin_evidence::types::{Binding, Outcome, RunEntry, RunRecord, STORE_SCHEMA_VERSION};
 use quoin_finding_types::{AuditReport, Finding, Severity};
 use quoin_quire_types::Obligation;
-
-const COMMIT: &str = "deadbeefdead";
-const OLDER_COMMIT: &str = "0000feedface";
 
 /// One obligation.
 fn an_obligation(id: &str) -> Obligation {
@@ -49,19 +46,17 @@ fn a_binding(obligation: &str, suite: &str, symbol: &str) -> Binding {
     Binding {
         obligation: ObligationId::new(obligation),
         suite: SuiteId::new(suite),
-        commit: Commit::new(COMMIT),
         symbols: vec![SymbolId::new(symbol)],
         lineage: None,
     }
 }
 
-/// One run of one suite at a given commit and timestamp, with the given
+/// One run of one suite at a given timestamp, with the given
 /// outcomes.
-fn a_run(suite: &str, commit: &str, timestamp: &str, entries: Vec<(&str, Outcome)>) -> RunRecord {
+fn a_run(suite: &str, timestamp: &str, entries: Vec<(&str, Outcome)>) -> RunRecord {
     RunRecord {
         schema_version: STORE_SCHEMA_VERSION,
         suite: SuiteId::new(suite),
-        commit: Commit::new(commit),
         tool: "cargo-test".to_owned(),
         evidence_kind: None,
         timestamp: timestamp.to_owned(),
@@ -72,14 +67,13 @@ fn a_run(suite: &str, commit: &str, timestamp: &str, entries: Vec<(&str, Outcome
     }
 }
 
-/// One run at HEAD (`COMMIT`), for the single-run fixtures.
+/// One run, for the single-run fixtures.
 fn a_run_at_head(suite: &str, entries: Vec<(&str, Outcome)>) -> RunRecord {
-    a_run(suite, COMMIT, "2026-09-27T00:00:00Z", entries)
+    a_run(suite, "2026-09-27T00:00:00Z", entries)
 }
 
 /// An input with one suite inspected (so the mocked-confirmation rung does
-/// not report `unevaluated` and mask what this test is about) and `COMMIT`
-/// as HEAD.
+/// not report `unevaluated` and mask what this test is about).
 fn an_input(
     obligations: Vec<Obligation>,
     bindings: Vec<Binding>,
@@ -89,7 +83,6 @@ fn an_input(
         obligations,
         bindings,
         runs,
-        head_commit: Some(COMMIT.to_owned()),
         mock_inspection_suites: Some(vec!["unit".to_owned()]),
         ..AuditInput::default()
     }
@@ -122,7 +115,7 @@ fn the_stale_finding<'a>(report: &'a AuditReport, obligation: &str) -> &'a Findi
 }
 
 /// A pass-then-fail run pair: the criterion leaves `healthy` and a
-/// `stale-evidence` finding names the failing suite, symbol and commit at
+/// `stale-evidence` finding names the failing suite, and symbol at
 /// `high` severity.
 ///
 /// Trace: FR-032-AC-17
@@ -150,11 +143,6 @@ fn tc_1963_a_pass_then_fail_run_raises_stale_evidence() {
     assert!(
         finding.summary.contains("unit:tests::tc_900"),
         "the reason must name the failing suite and symbol: {}",
-        finding.summary
-    );
-    assert!(
-        finding.summary.contains(&COMMIT[..12]),
-        "the reason must name the failing commit: {}",
         finding.summary
     );
     assert!(
@@ -186,11 +174,6 @@ fn tc_1963_a_pass_then_error_run_raises_stale_evidence() {
     assert!(
         finding.summary.contains("unit:tests::tc_901"),
         "the reason must name the erroring suite and symbol: {}",
-        finding.summary
-    );
-    assert!(
-        finding.summary.contains(&COMMIT[..12]),
-        "the reason must name the erroring commit: {}",
         finding.summary
     );
     assert!(
@@ -279,13 +262,11 @@ fn tc_1963_two_runs_pass_then_newer_fail_flags_stale() {
     let mut store = MemoryEvidence::new();
     let older = a_run(
         "unit",
-        OLDER_COMMIT,
         "2026-09-01T00:00:00Z",
         vec![("tests::tc_904", Outcome::Pass)],
     );
     let newer = a_run(
         "unit",
-        COMMIT,
         "2026-09-27T00:00:00Z",
         vec![("tests::tc_904", Outcome::Fail)],
     );
@@ -310,7 +291,6 @@ fn tc_1963_two_runs_pass_then_newer_fail_flags_stale() {
     );
     let finding = the_stale_finding(&report, "FR-904-AC-1");
     assert_eq!(finding.severity, Some(Severity::high()));
-    assert!(finding.summary.contains(&COMMIT[..12]));
 }
 
 /// The reciprocal: an older failing run superseded by a newer passing run of
@@ -326,13 +306,11 @@ fn tc_1963_two_runs_fail_then_newer_pass_stays_healthy() {
     let mut store = MemoryEvidence::new();
     let older = a_run(
         "unit",
-        OLDER_COMMIT,
         "2026-09-01T00:00:00Z",
         vec![("tests::tc_905", Outcome::Fail)],
     );
     let newer = a_run(
         "unit",
-        COMMIT,
         "2026-09-27T00:00:00Z",
         vec![("tests::tc_905", Outcome::Pass)],
     );
@@ -355,50 +333,6 @@ fn tc_1963_two_runs_fail_then_newer_pass_stays_healthy() {
     assert_eq!(stale_findings(&report, "FR-905-AC-1").len(), 0);
 }
 
-/// A run that is both behind HEAD and failing reports only the high
-/// failed-run finding, not a second medium behind-HEAD one: both are
-/// `stale-evidence`, and the failed-run rung's
-/// early return means the ladder never reaches the behind-HEAD rung for this
-/// obligation.
-///
-/// Trace: FR-032-AC-17
-#[test]
-fn tc_1963_a_failed_run_behind_head_reports_only_the_high_finding() {
-    let obligation = an_obligation("FR-906-AC-1");
-    let binding = a_binding("FR-906-AC-1", "unit", "tests::tc_906");
-    // Recorded at OLDER_COMMIT, not COMMIT (HEAD) — behind HEAD AND failing.
-    let run = a_run(
-        "unit",
-        OLDER_COMMIT,
-        "2026-09-01T00:00:00Z",
-        vec![("tests::tc_906", Outcome::Fail)],
-    );
-    let input = an_input(vec![obligation], vec![binding], vec![run]);
-
-    let report = audit(&input).expect("a well-formed input never refuses");
-
-    assert!(!report.healthy.contains(&"FR-906-AC-1".to_owned()));
-    let findings = stale_findings(&report, "FR-906-AC-1");
-    assert_eq!(
-        findings.len(),
-        1,
-        "a run both behind HEAD and failing must report exactly one \
-         stale-evidence finding, saw {}: {:?}",
-        findings.len(),
-        findings
-            .iter()
-            .map(|f| f.summary.as_str())
-            .collect::<Vec<_>>()
-    );
-    assert_eq!(
-        findings[0].severity,
-        Some(Severity::high()),
-        "the high failed-run finding must win, not the medium behind-HEAD one, saw {:?}",
-        findings[0].severity
-    );
-    assert!(findings[0].summary.contains("fail"));
-}
-
 /// The auditor's own index (`Indexed::of`) keeps the LAST run supplied for a
 /// suite, matching its own documented contract ("a later entry for the same
 /// suite replaces an earlier one"). Unlike the two tests above, this
@@ -414,13 +348,11 @@ fn tc_1963_the_index_keeps_the_last_run_supplied_for_a_suite() {
     let binding = a_binding("FR-907-AC-1", "unit", "tests::tc_907");
     let older_pass = a_run(
         "unit",
-        OLDER_COMMIT,
         "2026-09-01T00:00:00Z",
         vec![("tests::tc_907", Outcome::Pass)],
     );
     let newer_fail = a_run(
         "unit",
-        COMMIT,
         "2026-09-27T00:00:00Z",
         vec![("tests::tc_907", Outcome::Fail)],
     );
@@ -453,13 +385,11 @@ fn tc_1963_the_index_keeps_the_last_run_supplied_for_a_suite_reciprocal() {
     let binding = a_binding("FR-908-AC-1", "unit", "tests::tc_908");
     let older_fail = a_run(
         "unit",
-        OLDER_COMMIT,
         "2026-09-01T00:00:00Z",
         vec![("tests::tc_908", Outcome::Fail)],
     );
     let newer_pass = a_run(
         "unit",
-        COMMIT,
         "2026-09-27T00:00:00Z",
         vec![("tests::tc_908", Outcome::Pass)],
     );

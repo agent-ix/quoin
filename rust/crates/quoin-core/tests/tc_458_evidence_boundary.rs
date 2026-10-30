@@ -125,10 +125,6 @@ fn reported_store_family(root: &Path, reported: &str, family: &str) -> PathBuf {
     path.to_path_buf()
 }
 
-fn commit(seed: char) -> String {
-    std::iter::repeat_n(seed, 40).collect()
-}
-
 fn junit(case: &str) -> String {
     format!(r#"<testsuite name="unit"><testcase name="{case}"/></testsuite>"#)
 }
@@ -206,7 +202,6 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
         &json!({
             "repo": dir.path(),
             "suite": "unit",
-            "commit": commit('a'),
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
@@ -215,7 +210,11 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
     ));
     assert_eq!(payload["kind"], "run");
     let run_path = payload["run_path"].as_str().unwrap();
-    reported_store_path(dir.path(), run_path, "runs/unit/aaaaaaaaaaaa.json");
+    reported_store_path(
+        dir.path(),
+        run_path,
+        "runs/unit/2026-01-01T00~3A00~3A00Z.json",
+    );
 }
 
 ///
@@ -225,13 +224,12 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
 #[test]
 fn tc_458_070_gc_reports_absolute_paths_and_removes_only_the_superseded() {
     let dir = repo();
-    for (seed, timestamp) in [('a', "2026-01-01T00:00:00Z"), ('b', "2026-02-01T00:00:00Z")] {
+    for timestamp in ["2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"] {
         ok(&run(
             "evidence.record",
             &json!({
                 "repo": dir.path(),
                 "suite": "unit",
-                "commit": commit(seed),
                 "tool": "vitest 1.0.0",
                 "timestamp": timestamp,
                 "adapter": "junit",
@@ -245,14 +243,14 @@ fn tc_458_070_gc_reports_absolute_paths_and_removes_only_the_superseded() {
     ));
     let deleted = payload["deleted"].as_array().unwrap();
     assert_eq!(deleted.len(), 1, "{payload}");
-    let expected = store_path(dir.path(), "runs/unit/aaaaaaaaaaaa.json");
+    let expected = store_path(dir.path(), "runs/unit/2026-01-01T00~3A00~3A00Z.json");
     assert_eq!(
         deleted[0].as_str().unwrap(),
         expected.to_string_lossy(),
         "a store-relative path reached the caller"
     );
     assert!(!expected.exists());
-    assert!(store_path(dir.path(), "runs/unit/bbbbbbbbbbbb.json").is_file());
+    assert!(store_path(dir.path(), "runs/unit/2026-02-01T00~3A00~3A00Z.json").is_file());
 }
 
 ///
@@ -330,7 +328,6 @@ fn tc_458_100_inspect_mocks_records_an_empty_inspection() {
         &json!({
             "repo": dir.path(),
             "suite": "unit",
-            "commit": commit('a'),
             "tool": "grep",
             "timestamp": "2026-01-01T00:00:00Z",
             "dry_run": false,
@@ -338,7 +335,11 @@ fn tc_458_100_inspect_mocks_records_an_empty_inspection() {
     ));
     assert_eq!(payload["injections"], json!([]));
     let path = payload["path"].as_str().unwrap();
-    reported_store_path(dir.path(), path, "mock-inspections/unit/aaaaaaaaaaaa.json");
+    reported_store_path(
+        dir.path(),
+        path,
+        "mock-inspections/unit/2026-01-01T00~3A00~3A00Z.json",
+    );
 }
 
 ///
@@ -477,7 +478,6 @@ fn tc_458_120_audit_inputs_answers_everything_the_pure_auditor_reads() {
         &json!({
             "repo": dir.path(),
             "suite": "unit",
-            "commit": commit('a'),
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
@@ -533,7 +533,6 @@ fn tc_458_150_audit_inputs_names_the_scans_that_evaluated_no_rules() {
             &json!({
                 "repo": dir.path(),
                 "suite": suite,
-                "commit": commit('a'),
                 "tool": "semgrep 1.2.3",
                 "timestamp": "2026-01-01T00:00:00Z",
                 "adapter": "sarif",
@@ -573,14 +572,13 @@ fn tc_458_160_a_malformed_record_is_skipped_and_named_through_the_binary() {
         &json!({
             "repo": dir.path(),
             "suite": "readable",
-            "commit": commit('a'),
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
             "results": junit("works"),
         }),
     ));
-    // Well-formed JSON, and not a run record: no `entries`, no `commit`.
+    // Well-formed JSON, and not a run record: no `entries`.
     write_store(
         dir.path(),
         "runs/broken/cccccccccccc.json",

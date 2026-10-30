@@ -170,12 +170,7 @@ pub fn render_operational_report(entries: &[OperationalReportEntry]) -> String {
             .evidence
             .iter()
             .cloned()
-            .chain(
-                entry
-                    .raw_evidence
-                    .iter()
-                    .map(|raw| format!("{} — {} bytes", raw.path, raw.size_bytes)),
-            )
+            .chain(entry.raw_evidence.iter().map(|raw| raw.path.to_string()))
             .collect();
         let sections: [(&str, &[String], &str); 4] = [
             ("Claims", &entry.claims, "No affirmative claim."),

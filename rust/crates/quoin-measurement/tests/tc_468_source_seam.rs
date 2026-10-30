@@ -104,21 +104,20 @@ fn tc_468_one_analysis_runs_unchanged_on_disk_and_in_memory() {
     );
 }
 
-/// The in-memory host accounts for the bytes it holds.
+/// The in-memory host accounts for the files it holds.
 ///
 /// The refusal is reserved for a path the source was never given.
 ///
 /// Trace: FR-100-AC-4, FR-100-CON-4
 /// Provenance: quoin#468, quoin#484
 #[test]
-fn tc_484_a_memory_source_sizes_the_bytes_it_holds() {
+fn tc_484_a_memory_source_accounts_for_the_files_it_holds() {
     use quoin_measurement::{MeasurementErrorCode, RawEvidencePath};
 
     let path = RawEvidencePath::parse("raw/run.json").expect("a safe path");
 
     let stated = MemoryMeasurement::new().with_retained_evidence("raw/run.json", "abc");
-    let accounted = stated.raw_evidence_file(&path).expect("the bytes are held");
-    assert_eq!(accounted.size_bytes, 3);
+    stated.raw_evidence_file(&path).expect("the bytes are held");
 
     // A path the source was never given is still a refusal, and still the same
     // code: the host knows nothing about it, which is not the same as it being

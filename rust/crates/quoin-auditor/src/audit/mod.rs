@@ -6,8 +6,8 @@
 //! A trace link is currently a string match that never expires. Evidence rots
 //! in two ways, none detected before this:
 //!
-//!  1. **Stale evidence** — bound to an old commit, a failed run, or a run
-//!     that never happened.
+//!  1. **Stale evidence** — a failed run, or a run that never
+//!     happened.
 //!  2. **Vacuous evidence** — a tagged test that is skipped, xfail, or
 //!     assertion-free.
 //!

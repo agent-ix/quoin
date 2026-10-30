@@ -268,7 +268,6 @@ fn tc_452_604_sweep_corpus_classifies_a_real_tree_through_the_boundary() {
         "roots": [{
             "root": root.to_string_lossy(),
             "repository": "fixture-corpus",
-            "revision": "worktree",
         }],
         "package": "agent-ix/spec-objects-business",
         "version": "0.0.0",
@@ -283,7 +282,7 @@ fn tc_452_604_sweep_corpus_classifies_a_real_tree_through_the_boundary() {
     assert_eq!(report["generatedAt"], "2026-09-12T00:00:00.000Z");
     assert_eq!(
         report["corpus"],
-        json!([{ "repository": "fixture-corpus", "revision": "worktree" }])
+        json!([{ "repository": "fixture-corpus" }])
     );
     assert_eq!(report["counts"]["artifacts"], 2);
     assert_eq!(report["counts"]["forms"]["typed-table"], 1);
@@ -335,7 +334,6 @@ fn tc_452_605_migration_example_is_the_guidance_a_legacy_finding_directs_to() {
         "roots": [{
             "root": temp.path().to_string_lossy(),
             "repository": "fixture-corpus",
-            "revision": "worktree",
         }],
         "package": "agent-ix/spec-objects-business",
         "version": "0.0.0",

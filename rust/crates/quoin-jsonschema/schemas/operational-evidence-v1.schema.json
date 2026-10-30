@@ -219,11 +219,10 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["path", "media_type", "size_bytes"],
+        "required": ["path", "media_type"],
         "properties": {
           "path": { "type": "string", "minLength": 1 },
-          "media_type": { "type": "string", "minLength": 1 },
-          "size_bytes": { "type": "integer", "minimum": 0 }
+          "media_type": { "type": "string", "minLength": 1 }
         },
         "additionalProperties": false
       }

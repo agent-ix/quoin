@@ -10,13 +10,11 @@
 //! `quoin evidence audit --strict`.
 
 use clap::{ArgMatches, Command};
-use ix_cli_kit::exit::Outcome;
-use quoin_core::error::{CoreError, CoreErrorCode};
-use quoin_core::protocol::{Diagnostic, Response, canonical_json};
+use quoin_core::protocol::{Response, canonical_json};
 
 use crate::core_runtime::invoke;
 use crate::evidence::audit::{Assembly, assemble, module_arg, policy_args};
-use crate::evidence::{json_arg, repo_arg, required, revision};
+use crate::evidence::{json_arg, repo_arg, required};
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
 pub(crate) const ABOUT: &str = "Render the evidence-backed test matrix, per criterion.";
@@ -32,20 +30,7 @@ pub(crate) fn command() -> Command {
 
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
-    let head = revision(&repo);
-    if head.is_empty() {
-        // An auditor given no HEAD skips its behind-HEAD check, and a binding
-        // from months ago would then render as fresh. Refuse instead.
-        return Ok(refused(
-            &CoreError::new(
-                CoreErrorCode::Refused,
-                "cannot resolve the repository's HEAD commit; `quoin matrix` needs it to judge whether evidence is current",
-            )
-            .with_context("op", "matrix")
-            .with_context("repo", repo),
-        ));
-    }
-    let audited = match assemble(arguments, &repo, Some(&head))? {
+    let audited = match assemble(arguments, &repo)? {
         Assembly::Audited(audited) => audited,
         Assembly::Declined(response) => return Ok(response),
     };
@@ -90,12 +75,4 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         diagnostics,
         outcome: built.outcome,
     })
-}
-
-fn refused(error: &CoreError) -> Response {
-    Response {
-        payload: serde_json::Value::Null,
-        diagnostics: vec![Diagnostic::from(error)],
-        outcome: Outcome::Refused,
-    }
 }

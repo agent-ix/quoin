@@ -36,7 +36,7 @@ FR-060 intake boundary.
 - One `release` standing-capability record and one linked `release` exercise
   record accepted through FR-060, or an actionable refusal with no partial pair.
 - Raw-evidence references to the unmodified workflow and API responses with
-  computed media type and byte size.
+  computed media type.
 
 ## Behavior
 
@@ -58,7 +58,7 @@ FR-060 intake boundary.
 - The producer SHALL submit both records as one pair so neither record is retained
   if validation or persistence of the other fails.
 - The producer SHALL compute raw-evidence metadata from the exact input bytes.
-- The producer SHALL NOT accept caller-supplied byte sizes, timestamps, conclusions, or
+- The producer SHALL NOT accept caller-supplied timestamps, conclusions, or
   clock status.
 - The producer SHALL NOT contact GitHub, dispatch a workflow, publish a release,
   invoke a process, or alter any operational control. It consumes already-retained

@@ -729,7 +729,7 @@ fn refuse_every_document_defect_ac9(base: &Value) {
         "a record with an empty raw-evidence list",
     );
     let reference = base["raw_evidence"][0].clone();
-    for member in ["path", "media_type", "size_bytes"] {
+    for member in ["path", "media_type"] {
         refused_naming(
             &with(
                 base,
@@ -755,7 +755,7 @@ fn refuse_every_document_defect_ac9(base: &Value) {
 }
 
 /// Gaps, owner, actions, and at least one safe raw-evidence
-/// reference with media type and byte size are retained; invalid capability
+/// reference with media type are retained; invalid capability
 /// links and undeclared fields are refused.
 ///
 /// Trace: FR-059-AC-9
@@ -813,36 +813,26 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
         "a refused record must leave the store as it found it"
     );
 
-    // Raw evidence whose size is not the retained file's, and raw evidence
-    // that points outside the store, are both refused under the raw-evidence
-    // code — and both write nothing.
-    for (raw_evidence, what) in [
-        (
-            with(&reference, &["size_bytes"], json!(1)),
-            "a size the retained bytes do not have",
-        ),
-        (
-            with(&reference, &["path"], json!("../../etc/passwd")),
-            "a path that resolves outside the evidence store",
-        ),
-    ] {
-        let tampered = with(&exercise, &["raw_evidence"], json!([raw_evidence]));
-        let Err(error) = write_operational_record(root, &SystemClock, &tampered) else {
-            panic!("{what}: admitted, and the criterion says it is refused")
-        };
-        assert_eq!(
-            error.code(),
-            InterventionRefusalCode::RawEvidenceMismatch,
-            "{what}: refused under the wrong code"
-        );
-        assert_eq!(
-            read_operational_records(root)
-                .expect("the store reads back")
-                .len(),
-            1,
-            "{what}: a refused record must leave the store as it found it"
-        );
-    }
+    // Raw evidence that points outside the store is refused under the
+    // raw-evidence code, and writes nothing.
+    let what = "a path that resolves outside the evidence store";
+    let raw_evidence = with(&reference, &["path"], json!("../../etc/passwd"));
+    let tampered = with(&exercise, &["raw_evidence"], json!([raw_evidence]));
+    let Err(error) = write_operational_record(root, &SystemClock, &tampered) else {
+        panic!("{what}: admitted, and the criterion says it is refused")
+    };
+    assert_eq!(
+        error.code(),
+        InterventionRefusalCode::RawEvidenceMismatch,
+        "{what}: refused under the wrong code"
+    );
+    assert_eq!(
+        read_operational_records(root)
+            .expect("the store reads back")
+            .len(),
+        1,
+        "{what}: a refused record must leave the store as it found it"
+    );
 }
 
 /// Every record, of either shape, carries exactly one EA claim strength, and

@@ -240,12 +240,13 @@ pub fn render_intervention_report(entries: &[InterventionReportEntry]) -> String
             );
             lines.push(line);
         }
-        lines.extend(entry.evidence.raw_evidence.iter().map(|raw| {
-            format!(
-                "- {} — {} bytes; {}",
-                raw.path, raw.size_bytes, raw.media_type
-            )
-        }));
+        lines.extend(
+            entry
+                .evidence
+                .raw_evidence
+                .iter()
+                .map(|raw| format!("- {} — {}", raw.path, raw.media_type)),
+        );
         lines.push(String::new());
         lines.push("#### Counterevidence".to_owned());
         lines.push(String::new());
