@@ -205,7 +205,7 @@ impl ContractWire {
             kind: self.kind,
             version: self.version,
             revision: self.revision,
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest at rev 08bbf1cc
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
             digest: parse_digest(&self.digest)?,
         })
     }
@@ -218,7 +218,7 @@ impl ProducerWire {
             version: self.version,
             source_revision: self.source_revision,
             executable: self.executable,
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest at rev 08bbf1cc
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
             executable_digest: parse_digest(&self.executable_digest)?,
         })
     }

@@ -31,7 +31,7 @@ checker contains project names, milestone names or native tool result rules.
 A member's producer and its checker run with the checkout of the member's
 declared source repository as the EA capability root and working directory.
 Before any request is created, `run` checks that each source
-checkout is the repository root at the member's declared revision and has no tracked edits or staged changes. The request records that repository and its raw `git ls-tree -r -z --full-tree` inventory as its
+checkout is the repository root of the member's declared source repository and has no tracked edits or staged changes. The request records that repository and its raw `git ls-tree -r -z --full-tree` inventory as its
 source-tree binding. Quoin computes and compares no hash. Measurement plans and procedures are read from the Git blobs of that tree. Selected inputs are written at their declared relative paths beneath the
 checkout, and a path that is tracked in the source tree, or lies beneath a tracked link, is not one of them. The
 producer can see and write any file in the checkout.
@@ -41,8 +41,8 @@ producer can see and write any file in the checkout.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-114-AC-1 | A campaign definition and run are read through EA's generated contract types. Duplicate or missing members, an undeclared dependency, a dependency cycle, and an unknown completion rule refuse intake. | Test (TC-1940) |
-| FR-114-AC-2 | Every producer and declared domain-checker invocation uses EA's bounded `ProducerExecutor` with the member's source repository checkout, at its pinned revision and clean, as the capability root. A structurally invalid request has its typed preflight refusal retained. Every terminal state, including unavailable, timed out, malformed and refused execution, appears as an attempt. A successful producer invocation retains a separate `MeasurementCollection`. | Test (TC-1941, TC-1942) |
-| FR-114-AC-3 | The domain checker reads the producer request, result and raw artifacts as staged read-only inputs and emits a receipt naming the member, plan and definition version it checked. A receipt naming another member or plan is reject. Missing or unusable checker evidence is inconclusive. | Test (TC-1943, TC-1944) |
+| FR-114-AC-2 | Every producer and declared domain-checker invocation uses EA's bounded `ProducerExecutor` with the member's clean source repository checkout as the capability root. A structurally invalid request has its typed preflight refusal retained. Every terminal state, including unavailable, timed out, malformed and refused execution, appears as an attempt. A successful producer invocation retains a separate `MeasurementCollection`. | Test (TC-1941, TC-1942) |
+| FR-114-AC-3 | The domain checker reads the producer request, result and raw artifacts as staged read-only inputs and emits a receipt naming the member, plan and definition version it checked. A receipt naming another member, plan or definition version is reject, and a checker that is absent, incomplete or emits a malformed receipt is inconclusive. | Test (TC-1947, TC-1983) |
 | FR-114-AC-4 | The `all-required` result accepts exactly when every required member has a completed, independently accepted attempt and all dependencies accept. Rejected members reject the campaign; missing or unavailable evidence is inconclusive. Optional members remain visible and cannot mask a required failure. | Test (TC-1945) |
 | FR-114-AC-5 | The CLI emits one versioned campaign-verdict document. It exits nonzero for reject or inconclusive without losing that document. A non-TL fixture exercises the path before any TL campaign is used. | Test (TC-1946) |
 

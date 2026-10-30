@@ -212,3 +212,63 @@ pub fn assess_receipt(
         DomainOutcome::Inconclusive => AttemptEvidence::Inconclusive,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn input() -> DomainCheckInput {
+        DomainCheckInput {
+            schema: DOMAIN_CHECK_INPUT_SCHEMA.to_owned(),
+            definition_path: CHECKER_DEFINITION_PATH.to_owned(),
+            member: "one".to_owned(),
+            plan_id: "MP-ONE".to_owned(),
+            definition_version: "v1".to_owned(),
+            request_path: CHECKER_REQUEST_PATH.to_owned(),
+            result_path: CHECKER_RESULT_PATH.to_owned(),
+            raw_bundle_path: CHECKER_RAW_BUNDLE_PATH.to_owned(),
+            raw_artifacts: Vec::new(),
+            dependencies: Vec::new(),
+        }
+    }
+
+    fn receipt(verdict: DomainOutcome) -> DomainVerdictReceipt {
+        DomainVerdictReceipt {
+            schema: "fictional.domain-verdict/v1".to_owned(),
+            member: "one".to_owned(),
+            plan_id: "MP-ONE".to_owned(),
+            definition_version: "v1".to_owned(),
+            verdict,
+            reasons: Vec::new(),
+            details: None,
+        }
+    }
+
+    /// Trace: FR-114-AC-3, TC-1983.
+    #[test]
+    fn tc_1983_receipt_must_name_the_checked_member_plan_and_version() {
+        assert_eq!(
+            assess_receipt(&input(), &receipt(DomainOutcome::Accept)),
+            Ok(AttemptEvidence::Accept)
+        );
+        assert_eq!(
+            assess_receipt(&input(), &receipt(DomainOutcome::Reject)),
+            Ok(AttemptEvidence::Reject)
+        );
+        for alter in [
+            |r: &mut DomainVerdictReceipt| r.member = "two".to_owned(),
+            |r: &mut DomainVerdictReceipt| r.plan_id = "MP-TWO".to_owned(),
+            |r: &mut DomainVerdictReceipt| r.definition_version = "v2".to_owned(),
+        ] {
+            let mut other = receipt(DomainOutcome::Accept);
+            alter(&mut other);
+            assert_eq!(
+                assess_receipt(&input(), &other),
+                Err(ReceiptError::Identity)
+            );
+        }
+        let mut blank = receipt(DomainOutcome::Accept);
+        blank.schema = " ".to_owned();
+        assert_eq!(assess_receipt(&input(), &blank), Err(ReceiptError::Schema));
+    }
+}

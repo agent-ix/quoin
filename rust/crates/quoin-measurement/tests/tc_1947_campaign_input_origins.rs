@@ -227,7 +227,7 @@ fn fixture() -> (tempfile::TempDir, CampaignDefinition, String) {
         repo.path(),
         &["ls-tree", "-r", "-z", "--full-tree", &revision],
     );
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest is validated against the manifest by EA at rev 08bbf1cc.
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest is validated against the manifest by EA.
     let digest = digest_bytes_sha256(&manifest).as_hex().to_owned();
     let definition = serde_json::from_value(json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
@@ -256,7 +256,7 @@ fn bindings(
         kind: kind.to_owned(),
         version: "1".to_owned(),
         revision: revision.to_owned(),
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest at rev 08bbf1cc
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
         digest: ContentDigest::of_bytes(kind.as_bytes()),
     };
     engineering_assurance::campaign::ProcedureBindings {
@@ -265,7 +265,7 @@ fn bindings(
             version: "1".to_owned(),
             source_revision: revision.to_owned(),
             executable: python.to_str().expect("UTF-8 Python path").to_owned(),
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest at rev 08bbf1cc
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
             executable_digest: ContentDigest::of_file(&python).expect("Python identity"),
         },
         caller: contract("fictional.caller"),

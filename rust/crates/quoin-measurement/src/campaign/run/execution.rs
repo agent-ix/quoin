@@ -254,7 +254,7 @@ fn select_inputs(
             Ok(InputBinding {
                 role: selected.role.clone(),
                 path: selected.path.clone(),
-                // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA InputBinding.digest is required by the producer request at rev 08bbf1cc.
+                // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA InputBinding.digest is required by the producer request.
                 digest: ContentDigest::of_bytes(&bytes),
                 executable: selected.executable,
             })
@@ -290,7 +290,7 @@ fn retain_artifacts(
         }
         records.push(CampaignRawArtifact {
             role: artifact.role.clone(),
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignRawArtifact.digest is a required field at rev 08bbf1cc; the value is EA's own.
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignRawArtifact.digest; the value is EA's own.
             digest: artifact.digest.as_str().to_owned(),
         });
         retained.push((artifact.role.clone(), bytes));

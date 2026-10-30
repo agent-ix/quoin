@@ -333,7 +333,7 @@ fn stage_checker_input(
     Ok(InputBinding {
         role: role.to_owned(),
         path: relative.to_owned(),
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA InputBinding.digest is required by the checker request at rev 08bbf1cc.
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA InputBinding.digest is required by the checker request.
         digest: ContentDigest::of_bytes(bytes),
         executable: false,
     })

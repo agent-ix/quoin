@@ -388,11 +388,11 @@ pub fn run_campaign_with_cancellation(
                 .map(|retained| retained.attempt.clone())
                 .collect(),
         ),
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignRun.definition_digest at rev 08bbf1cc (checked by EA validate_run)
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignRun.definition_digest (checked by EA validate_run)
         definition_digest: canonical_digest(definition)?.as_str().to_owned(),
         id: run_id.to_owned(),
         schema_version: CAMPAIGN_RUN_VERSION.to_owned(),
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignRun.source_graph_digest at rev 08bbf1cc (checked by EA validate_run)
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignRun.source_graph_digest (checked by EA validate_run)
         source_graph_digest: canonical_digest(&definition.source_graph)?
             .as_str()
             .to_owned(),

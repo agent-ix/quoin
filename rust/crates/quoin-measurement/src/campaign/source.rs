@@ -318,6 +318,7 @@ fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource,
         });
     }
     let head = git(path, "rev-parse", &["rev-parse", "--verify", "HEAD"], 1024)?;
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision is a required field and EA's source-tree binding names it.
     if String::from_utf8_lossy(&head).trim() != source.revision {
         return Err(SourceError::Revision(source.repository.clone()));
     }
@@ -390,7 +391,7 @@ mod tests {
         let source = CampaignSource {
             repository: "fictional/source".to_owned(),
             revision,
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest is a required field at rev 08bbf1cc; Quoin neither computes nor checks it.
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest; Quoin neither computes nor checks it.
             digest: String::new(),
         };
         let root = verify_source(&source, repo.path()).expect("repository root verifies");
