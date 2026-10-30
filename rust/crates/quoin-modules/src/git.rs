@@ -186,13 +186,10 @@ pub trait GitResolver {
 
 /// What revision to resolve.
 ///
-/// A closed enum rather than an `Option<&str>` pair, so "pinned to a sha" and
-/// "follow a ref" cannot both be set and cannot both be absent.
+/// A closed enum rather than an `Option<&str>`, so "follow a ref" and "follow
+/// the default branch" are distinct states. Every revision resolves live.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Revision<'a> {
-    /// An exact commit id. A rebuilt history can orphan one, which is
-    /// [`ModulesError::GitRevisionNotFound`], not a silent fallback to HEAD.
-    Sha(&'a str),
     /// A tag or branch name.
     Ref(&'a str),
     /// The remote's default branch.
@@ -200,14 +197,12 @@ pub enum Revision<'a> {
 }
 
 impl<'a> Revision<'a> {
-    /// The revision a source requests: its sha if pinned, else its ref, else
-    /// the default branch.
+    /// The revision a source requests: its ref, else the default branch.
     #[must_use]
-    pub fn of(sha: Option<&'a str>, r#ref: Option<&'a str>) -> Self {
-        match (sha, r#ref) {
-            (Some(sha), _) => Self::Sha(sha),
-            (None, Some(r#ref)) => Self::Ref(r#ref),
-            (None, None) => Self::Head,
+    pub fn of(r#ref: Option<&'a str>) -> Self {
+        match r#ref {
+            Some(r#ref) => Self::Ref(r#ref),
+            None => Self::Head,
         }
     }
 
@@ -215,7 +210,7 @@ impl<'a> Revision<'a> {
     #[must_use]
     pub fn as_str(&self) -> &str {
         match self {
-            Self::Sha(s) | Self::Ref(s) => s,
+            Self::Ref(s) => s,
             Self::Head => "HEAD",
         }
     }
@@ -305,26 +300,11 @@ impl GitResolver for GixResolver {
     ) -> Result<ResolvedGitSource, ModulesError> {
         let requested_ref = match revision {
             Revision::Ref(r) => Some(r.to_owned()),
-            Revision::Sha(_) | Revision::Head => None,
+            Revision::Head => None,
         };
 
-        // An exact pin whose content is already extracted needs no network at
-        // all — the hot path for every CLI run once the default set is settled.
-        if let Revision::Sha(sha) = revision
-            && let Ok(sha) = CommitSha::new(sha)
-        {
-            let dir = self.content_dir(url, &sha, subdir);
-            if dir.join(COMPLETE_MARKER).is_file() {
-                return Ok(ResolvedGitSource {
-                    dir,
-                    sha,
-                    requested_ref,
-                });
-            }
-        }
-
         let repo_dir = self.repo_dir(url);
-        let repo = fetch_into(&repo_dir, url, revision, self.limits)?;
+        let repo = fetch_into(&repo_dir, url, self.limits)?;
         let sha = resolve_revision(&repo, url, revision)?;
 
         let dir = self.content_dir(url, &sha, subdir);
@@ -343,7 +323,6 @@ impl GitResolver for GixResolver {
 fn fetch_into(
     repo_dir: &Path,
     url: &str,
-    revision: Revision<'_>,
     limits: GitLimits,
 ) -> Result<gix::Repository, ModulesError> {
     let transport = |detail: String| ModulesError::GitTransport {
@@ -357,15 +336,6 @@ fn fetch_into(
         fs::create_dir_all(repo_dir).map_err(|e| transport(e.to_string()))?;
         gix::init_bare(repo_dir).map_err(|e| transport(e.to_string()))?
     };
-
-    // An exact pin that is already in the object database is settled: no
-    // network. This is the equivalent of the oracle's "zero git when settled"
-    // reconcile path, moved one layer down so ad-hoc installs get it too.
-    if let Revision::Sha(sha) = revision
-        && repo.rev_parse_single(sha).is_ok()
-    {
-        return Ok(repo);
-    }
 
     let deadline = Deadline::start(limits.fetch_budget)?;
     // The third refspec is not decoration: `refs/heads/*` creates no ref named
@@ -426,7 +396,6 @@ fn resolve_revision(
         revision: revision.as_str().to_owned(),
     };
     let spec = match revision {
-        Revision::Sha(sha) => sha.to_owned(),
         Revision::Ref(r) => r.to_owned(),
         Revision::Head => "refs/remotes/origin/HEAD".to_owned(),
     };
@@ -484,7 +453,7 @@ fn extract_tree(
         limits,
     };
     write_tree(repo, &root, &staging, 0, &mut budget)?;
-    fs::write(staging.join(COMPLETE_MARKER), sha.as_str()).map_err(|source| {
+    fs::write(staging.join(COMPLETE_MARKER), b"").map_err(|source| {
         ModulesError::MaterializeFailed {
             target: staging.clone(),
             source,
@@ -662,10 +631,9 @@ mod tests {
 
     /// Trace: FR-019-AC-2
     #[test]
-    fn tc_381_251_revision_of_prefers_the_pinned_sha() {
-        assert_eq!(Revision::of(Some("abc"), Some("v1")), Revision::Sha("abc"));
-        assert_eq!(Revision::of(None, Some("v1")), Revision::Ref("v1"));
-        assert_eq!(Revision::of(None, None), Revision::Head);
+    fn tc_381_251_revision_of_follows_the_ref_else_the_default_branch() {
+        assert_eq!(Revision::of(Some("v1")), Revision::Ref("v1"));
+        assert_eq!(Revision::of(None), Revision::Head);
     }
 
     /// Trace: NFR-004

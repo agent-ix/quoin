@@ -18,17 +18,10 @@
 //!
 //! # Where the inputs come from
 //!
-//! Not from fixtures this file wrote. The base capability and exercise are the
-//! two records of the one committed pair,
-//! `spec/evidence/operational/pairs/c1b3….json`, produced by the retained
-//! TypeScript from the retained GitHub exports; the governing plan is the
-//! committed `spec/assurance/MP-221-…md`; the raw-evidence files are the
-//! committed `spec/evidence/github-actions/` exports. Every refusal case is a
-//! **mutation of that committed base**, so an expected refusal is a statement
-//! about real evidence rather than about a fixture written to be refused.
-//!
-//! Each test runs against a temporary repository holding copies of those
-//! inputs. Nothing here writes into this repository.
+//! `common/release_evidence.rs` builds synthetic GitHub exports and a governing
+//! plan into a temporary repository; the producer turns them into a pair, and
+//! that pair's two records are the base capability and exercise. Every refusal
+//! case is a mutation of that base. Nothing here writes into this repository.
 
 #![allow(
     clippy::unwrap_used,
@@ -42,12 +35,12 @@
 mod census;
 #[path = "common/copy.rs"]
 mod copy;
-#[path = "common/paths.rs"]
-mod paths;
+#[path = "common/release_evidence.rs"]
+mod release_evidence;
 
 use census::rust_files;
 use copy::copy_tree;
-use paths::{fixture_store, repo_root};
+use release_evidence::{JOBS, PREFIX, RUN, WORKFLOW, write_repository};
 
 use std::path::{Path, PathBuf};
 
@@ -73,43 +66,36 @@ use quoin_measurement::{
 use quoin_store::StoreError;
 use quoin_store::store::write_new_or_identical;
 
-/// The one pair `spec/evidence/operational/pairs/` retains.
-const RETAINED_PAIR: &str =
-    "quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json";
+/// The three exports both records reference.
+fn retained_paths() -> Vec<String> {
+    [WORKFLOW, RUN, JOBS]
+        .iter()
+        .map(|name| format!("github-actions/{name}"))
+        .collect()
+}
 
-/// A retained intervention record, for the no-migration criterion.
-const RETAINED_INTERVENTION: &str = "quoin-270-cli-eval-sentinel-contract.json";
-
-/// The three retained exports both records reference.
-const RETAINED_PATHS: [&str; 3] = [
-    "github-actions/quoin-271-release-v0.22.5-workflow.yml",
-    "github-actions/quoin-271-release-v0.22.5-run.json",
-    "github-actions/quoin-271-release-v0.22.5-jobs.json",
-];
-
-/// A temporary repository carrying the committed governance and raw evidence.
+/// A temporary repository carrying the synthetic governance and raw evidence.
 fn temporary_repository() -> tempfile::TempDir {
     let temporary = tempfile::tempdir().expect("a temporary directory");
-    let root = temporary.path();
-    copy_tree(
-        &repo_root().join("spec").join("assurance"),
-        &root.join("spec").join("assurance"),
-    );
-    copy_tree(
-        &fixture_store().join("github-actions"),
-        &root.join("spec").join("evidence").join("github-actions"),
-    );
+    write_repository(temporary.path());
     temporary
 }
 
-/// The committed pair's capability and exercise, as documents.
+/// The capability and exercise the producer writes from the synthetic exports,
+/// as documents.
 fn pair_records() -> (Value, Value) {
-    let path = fixture_store()
-        .join("operational")
-        .join("pairs")
-        .join(RETAINED_PAIR);
-    let bytes = std::fs::read(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-    let envelope: Value = serde_json::from_slice(&bytes).expect("the retained pair is JSON");
+    let workspace = temporary_repository();
+    let definition = serde_json::from_value(release_evidence::definition_document())
+        .expect("the definition reads");
+    let produced =
+        quoin_measurement::operational::github_release::produce_github_release_operational(
+            workspace.path(),
+            &SystemClock,
+            &definition,
+        )
+        .expect("the synthetic exports produce a pair");
+    let bytes = std::fs::read(&produced.path).expect("the produced pair is readable");
+    let envelope: Value = serde_json::from_slice(&bytes).expect("the pair is JSON");
     let records = envelope["records"]
         .as_array()
         .expect("the envelope carries records");
@@ -135,7 +121,7 @@ fn patch(base: &Value, pointer: &str, value: Value) -> Value {
     let mut out = base.clone();
     let slot = out
         .pointer_mut(pointer)
-        .unwrap_or_else(|| panic!("{pointer} is present in the committed record"));
+        .unwrap_or_else(|| panic!("{pointer} is present in the base record"));
     *slot = value;
     out
 }
@@ -145,7 +131,7 @@ fn remove(base: &Value, pointer: &str, key: &str) -> Value {
     let mut out = base.clone();
     let slot = out
         .pointer_mut(pointer)
-        .unwrap_or_else(|| panic!("{pointer} is present in the committed record"));
+        .unwrap_or_else(|| panic!("{pointer} is present in the base record"));
     slot.as_object_mut()
         .unwrap_or_else(|| panic!("{pointer} is an object"))
         .remove(key)
@@ -165,7 +151,7 @@ fn obligation_of(document: &Value) -> OperationalObligation {
     serde_json::from_value(document.clone()).expect("the obligation reads")
 }
 
-/// The obligation the committed exercise is against.
+/// The obligation the base exercise is against.
 fn obligation() -> Value {
     json!({
         "control_kind": "release",
@@ -175,7 +161,7 @@ fn obligation() -> Value {
         "scope": {
             "service": "agent-ix/quoin",
             "environment": "npm-production",
-            "population": "v0.22.5 package release"
+            "population": "synthetic package release"
         },
         "accepted_modes": ["actual"],
         "clock": {
@@ -213,7 +199,7 @@ fn tc_479_400_valid_intake_publishes_one_complete_canonical_record() {
     let (capability, _) = pair_records();
 
     let path = write_operational_record(root, &SystemClock, &capability)
-        .expect("the committed capability is admissible against its own evidence");
+        .expect("the base capability is admissible against its own evidence");
 
     // One file, and no temporary left beside it: the publication is atomic in
     // the directory it lands in.
@@ -259,7 +245,7 @@ fn tc_479_400_valid_intake_publishes_one_complete_canonical_record() {
     assert_eq!(records.len(), 1);
     assert_eq!(
         records[0].record_id().as_str(),
-        "quoin-271-release-v0.22.5-capability"
+        &format!("{PREFIX}-capability")
     );
 }
 
@@ -289,7 +275,7 @@ fn tc_479_401_invalid_records_and_mismatched_raw_evidence_write_nothing() {
     }
 }
 
-/// The refused mutations of the committed records, with what each must say.
+/// The refused mutations of the base records, with what each must say.
 fn intake_refusal_cases() -> Vec<(&'static str, Value, InterventionRefusalCode, &'static str)> {
     use InterventionRefusalCode::{InvalidRecord, RawEvidenceMismatch};
     let (capability, exercise) = pair_records();
@@ -380,14 +366,9 @@ fn tc_479_402_governing_definition_refusals_name_the_versions_and_write_nothing(
     // No active MeasurementPlan at all: the governance check has nothing to
     // admit the record against.
     let ungoverned = tempfile::tempdir().expect("a temporary directory");
-    copy_tree(
-        &fixture_store().join("github-actions"),
-        &ungoverned
-            .path()
-            .join("spec")
-            .join("evidence")
-            .join("github-actions"),
-    );
+    write_repository(ungoverned.path());
+    std::fs::remove_dir_all(ungoverned.path().join("spec").join("assurance"))
+        .expect("the governing plans are removed");
     let error = write_operational_record(ungoverned.path(), &SystemClock, &capability)
         .expect_err("an ungoverned definition is refused");
     assert_eq!(error.code(), InterventionRefusalCode::GoverningPlanAbsent);
@@ -453,7 +434,7 @@ fn tc_479_403_identical_bytes_are_idempotent_standalone_and_inside_a_pair() {
     let paired = temporary_repository();
     let root = paired.path();
     let pair = write_operational_pair(root, &SystemClock, &capability, &exercise)
-        .expect("the committed pair is admissible");
+        .expect("the base pair is admissible");
     let pair_bytes = std::fs::read(&pair).expect("the retained pair");
     assert_eq!(
         write_operational_pair(root, &SystemClock, &capability, &exercise).expect("repeated"),
@@ -528,7 +509,7 @@ fn tc_479_404_one_logical_id_cannot_be_retained_twice_and_a_stale_lock_fails_clo
     retained.sort_unstable();
     retained.dedup();
     assert_eq!(retained.len(), listed, "a logical id was retained twice");
-    assert!(retained.contains(&"quoin-271-release-v0.22.5-capability".to_owned()));
+    assert!(retained.contains(&format!("{PREFIX}-capability")));
 
     // A lock nobody holds is still a lock: intake fails closed rather than
     // clearing it.
@@ -565,7 +546,7 @@ fn tc_479_405_capabilities_and_every_exercise_outcome_stay_queryable() {
         let candidate = patch(
             &candidate,
             "/record_id",
-            json!(format!("quoin-271-release-v0.22.5-exercise-{outcome}")),
+            json!(format!("{PREFIX}-exercise-{outcome}")),
         );
         write_operational_record(root, &SystemClock, &candidate)
             .unwrap_or_else(|error| panic!("the {outcome} exercise is admissible: {error}"));
@@ -587,7 +568,7 @@ fn tc_479_405_capabilities_and_every_exercise_outcome_stay_queryable() {
             .collect();
         assert_eq!(
             claimed,
-            RETAINED_PATHS.to_vec(),
+            retained_paths(),
             "{} lost its raw-evidence references",
             record.record_id()
         );
@@ -605,11 +586,11 @@ fn tc_479_405_capabilities_and_every_exercise_outcome_stay_queryable() {
 #[test]
 fn tc_479_406_discharge_requires_full_identity_mode_success_and_a_met_clock() {
     let (capability, exercise) = pair_records();
-    let valid = validate_operational_record(&exercise).expect("the committed exercise");
+    let valid = validate_operational_record(&exercise).expect("the base exercise");
     assert_eq!(
         operational_discharge(&valid, &obligation_of(&obligation())),
         Ok(Discharged),
-        "the committed exercise discharges the obligation it was produced for"
+        "the base exercise discharges the obligation it was produced for"
     );
     assert_eq!(
         Discharged::REASON,
@@ -938,10 +919,7 @@ fn tc_479_407_only_available_capabilities_and_met_successes_render_as_claims() {
         assert_eq!(entry.owner, "engineering assurance", "{label}: owner");
         assert_eq!(
             entry.actions,
-            [
-                "retain a later adverse release run to exercise the non-success operational path \
-              with real evidence"
-            ],
+            ["retain a later adverse release run to exercise the non-success path"],
             "{label}: actions"
         );
     }
@@ -1132,16 +1110,12 @@ fn tc_479_410_the_operational_modules_hold_no_control_path() {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_411_existing_collections_and_interventions_read_beside_operational_records() {
-    let workspace = temporary_repository();
+    let workspace = tempfile::tempdir().expect("a writable workspace");
     let root = workspace.path();
-    let evidence = fixture_store();
-    let target = root.join("spec").join("evidence").join("interventions");
-    std::fs::create_dir_all(&target).expect("a writable destination");
-    std::fs::copy(
-        evidence.join("interventions").join(RETAINED_INTERVENTION),
-        target.join(RETAINED_INTERVENTION),
-    )
-    .expect("a copied retained file");
+    let fixture_spec =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/portfolio-tree/alpha/spec");
+    copy_tree(&fixture_spec, &root.join("spec"));
+    write_repository(root);
 
     let (capability, exercise) = pair_records();
     write_operational_pair(root, &SystemClock, &capability, &exercise)
@@ -1149,6 +1123,11 @@ fn tc_479_411_existing_collections_and_interventions_read_beside_operational_rec
 
     let report = build_measurement_report(&DiskMeasurement::new(root), root)
         .expect("the pre-operational evidence reads without migration");
+    assert_eq!(
+        report.corpus_gaps,
+        Some(3.0),
+        "the retained collection's stated bounds did not survive"
+    );
     assert_eq!(report.interventions.len(), 1);
     assert_eq!(report.operational.len(), 2);
     assert_ne!(report.plans.len(), 0);
