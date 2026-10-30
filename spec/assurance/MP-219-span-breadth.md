@@ -34,7 +34,7 @@ Exact reviewed boundaries or explicit justified safe refusals divided by the fro
 
 ## Collection Procedure
 
-Every label names repository, full revision, document, row, statement, property, expected outcome, and review rationale.
+Every label names repository, document, row, statement, property, expected outcome, and review rationale.
 
 ## Environment and Sampling
 

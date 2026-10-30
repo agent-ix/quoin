@@ -81,6 +81,7 @@ struct ProducerWire {
     version: String,
     source_revision: String,
     executable: String,
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
     executable_digest: String,
 }
 
@@ -90,6 +91,7 @@ struct ContractWire {
     kind: String,
     version: String,
     revision: String,
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
     digest: String,
 }
 
@@ -350,6 +352,7 @@ impl MemberBindingWire {
     }
 }
 
+// BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContentDigest (ContractBinding.digest, ProducerDescriptor.executable_digest)
 fn parse_digest(value: &str) -> Result<ContentDigest, String> {
     ContentDigest::parse(value).map_err(|error| error.to_string())
 }
@@ -369,6 +372,7 @@ mod tests {
             "kind": "fixture.contract",
             "version": "1",
             "revision": "fixture-revision",
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
             "digest": "a".repeat(64)
         })
     }
@@ -380,6 +384,7 @@ mod tests {
                 "version": "1",
                 "sourceRevision": "fixture-revision",
                 "executable": "/usr/bin/true",
+                // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
                 "executableDigest": "b".repeat(64)
             },
             "caller": contract(),

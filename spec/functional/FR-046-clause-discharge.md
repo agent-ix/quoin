@@ -47,6 +47,6 @@ aggregate score.
 
 ## Dependencies
 
-- FR-029 supplies the pinned, runtime-validated Quire contract.
+- FR-029 supplies the runtime-validated Quire contract.
 - FR-040 consumes the open/discharged partition when rendering an authored
   argument.

@@ -50,8 +50,7 @@ and implementation instructions before they become code.
 
 Search for hash, digest, SHA, checksum, pin, manifest, ledger, provenance,
 attestation, receipt, relocation, inventory, and recorded/reviewed revision uses;
-inspect the surrounding requirement rather than treating a keyword alone as a
-finding. Apply the proof-binding exception below. For every violation, record a
+a keyword alone is not a finding, but a requirement that instructs any of them is. For every violation, record a
 P0 finding with `Severity: high`, a FAIL verdict in the review summary, the exact
 artifact/criterion references, and removal as the required correction. A valid
 review document does not make a failing spec ready for implementation.

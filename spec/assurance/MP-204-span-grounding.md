@@ -19,7 +19,7 @@ precondition, and oracle analysis.
 
 ## Population
 
-Include criteria classified with a specific property shape in the pinned
+Include criteria classified with a specific property shape in the
 corpus entry.
 
 ## Measure Definition
@@ -35,7 +35,7 @@ denominator misses. Non-specific property shapes are retained as
 ## Collection Procedure
 
 Retain the raw properties payload, tool and engine versions, definitions,
-source and corpus revisions, configuration, and timestamp.
+configuration, and timestamp.
 
 ## Environment and Sampling
 

@@ -55,7 +55,7 @@ pub enum StoreErrorCode {
     NotAnObject,
     /// A filesystem operation failed.
     Io,
-    /// A content-addressed path already held different bytes.
+    /// A write-once path already held different bytes.
     ContentCollision,
     /// A path offered for a bounded read was a symbolic link.
     ReadSourceIsSymlink,
@@ -311,10 +311,10 @@ pub enum StoreError {
         source: std::io::Error,
     },
 
-    /// A content-addressed path already held different bytes.
+    /// A write-once path already held different bytes.
     #[error("content collision at {path}: existing bytes differ from the bytes offered")]
     ContentCollision {
-        /// The content-addressed path.
+        /// The write-once path.
         path: PathBuf,
     },
 

@@ -36,7 +36,7 @@ SHALL decide no question of assurance sufficiency.
 - An `unrepresented` list naming each producer result that no run-entry outcome
   carries, with the producer's own state verbatim and the reason.
 - A published inventory recording, for every campaign-native format, the real
-  producer, the pinned sample, the governed target record, and why an existing
+  producer, the real sample, the governed target record, and why an existing
   adapter does or does not represent it.
 
 ## Behavior
@@ -92,7 +92,7 @@ recorded on any of these paths.
 | FR-069-AC-6 | `quoin evidence record` prints every unrepresented result in both human and JSON output (CON-2). | Test (TC-1333) |
 | FR-069-AC-7 | The inventory names, for every scope item, a real producer and a verdict, and every added adapter names its sample (CON-4). | Test (TC-1334) |
 | FR-069-AC-8 | Static boundaries prove neither adapter spawns a process, performs network work, or scrapes console text for a verdict (CON-1, CON-3). | Inspection (TC-1335) |
-| FR-069-AC-9 | A pinned real conformance row retains every supplied trace id and its order in `RunEntry.traceIds`; legacy rows omitting the field remain readable without trace ids. | Test (TC-1585) |
+| FR-069-AC-9 | A real conformance row retains every supplied trace id and its order in `RunEntry.traceIds`; legacy rows omitting the field remain readable without trace ids. | Test (TC-1585) |
 | FR-069-AC-10 | A supplied non-array, empty array, non-string id, empty or whitespace-only id, or duplicate id fails naming the line and `trace_ids`; a valid preceding row causes no partial evidence write. | Test (TC-1586, TC-1588) |
 | FR-069-AC-11 | `quoin evidence record --adapter contract-conformance` retains trace ids and binds the real producer's Test Case ids through Quire-derived criterion targets; failing entries bind nothing and unmatched ids remain visible. | Integration (TC-1587) |
 

@@ -120,6 +120,7 @@ mod tests {
         engineering_assurance::producer_execution::ContractBinding {
             kind: kind.to_owned(),
             version: version.to_owned(),
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.revision and ContractBinding.digest
             revision: "0123456789abcdef0123456789abcdef01234567".to_owned(),
             digest: ContentDigest::of_bytes(kind.as_bytes()),
         }
@@ -136,6 +137,7 @@ mod tests {
         .expect("supported bindings");
         let stream = CapturedStream {
             bytes: Vec::new(),
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CapturedStream.digest
             digest: ContentDigest::of_bytes(&[]),
             truncated: false,
         };

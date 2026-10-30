@@ -30,7 +30,7 @@ case, mode, and language dimensions.
 ## Collection Procedure
 
 Retain raw coverage payloads, case inventory, declaration, engine,
-scorer and corpus revisions, configuration, and timestamp.
+scorer, configuration, and timestamp.
 
 ## Environment and Sampling
 

@@ -259,7 +259,7 @@ index; the files are authoritative.
 - [FR-081](./functional/FR-081-generated-public-repository-baseline.md) — generated public repository and packaging baseline.
 - [FR-082](./functional/FR-082-generated-governance-tree.md) — generated governance tree validates as rendered.
 - [FR-083](./functional/FR-083-template-render-self-tests.md) — template render self-tests and module conformance gate.
-- [FR-084](./functional/FR-084-pin-and-enumerate-the-governed-corpus.md) — pin and enumerate the governed corpus. ⛔ **Withdrawn** (#388)
+- [FR-084](./functional/FR-084-pin-and-enumerate-the-governed-corpus.md) — enumerate the governed corpus. ⛔ **Withdrawn** (#388)
 - [FR-085](./functional/FR-085-resolve-the-completed-module-set.md) — resolve the completed module set and its contract surfaces. ⛔ **Withdrawn** (#388)
 - [FR-086](./functional/FR-086-assign-one-measurement-state-per-document.md) — assign exactly one measurement state to every corpus document. ⛔ **Withdrawn** (#388)
 - [FR-087](./functional/FR-087-evaluate-declared-markdown-mappings.md) — evaluate declared Markdown mappings and validate the extracted record. ⛔ **Withdrawn** (#388)

@@ -29,11 +29,11 @@ locus, definition `finding.localisation-v1`.
 ## Collection Procedure
 
 Retain emitted and expected loci, raw outputs, labels, scorer, tools, engine,
-declaration and corpus revisions, configuration, and timestamp.
+declaration, configuration, and timestamp.
 
 ## Environment and Sampling
 
-Use pinned labelled cases and preserve labels with no exact line as a distinct
+Use labelled cases and preserve labels with no exact line as a distinct
 population.
 
 ## Interpretation

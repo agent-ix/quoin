@@ -48,7 +48,7 @@ the conclusion that they qualify.
 
 ### US-015-EX-1: A repeated experiment supports a causal conclusion
 
-- **Given** a repeated baseline/treatment experiment with pinned inputs and no known
+- **Given** a repeated baseline/treatment experiment with fixed inputs and no known
   confounder
 - **When** the practitioner inspects its retained record
 - **Then** the observed effect, causal conclusion, attribution confidence, and raw

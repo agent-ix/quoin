@@ -22,6 +22,7 @@ pub(super) fn binding() -> quoin_quire_types::ClauseBindingReport {
             "id": "synthetic-widget-rules",
             "version": "1.0.0"
         },
+        // BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
         "clauseSetDigest": digest(),
         "context": { "product": "widget", "deployment": "test" },
         "clauses": [

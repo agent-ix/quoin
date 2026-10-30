@@ -38,7 +38,7 @@ labelled fixture corpus, plus MP-231 (engine/semantic delta) over the M6 real-
 statement corpus and MP-225 (disagreement under repetition) over the M2
 corpus at whatever `variant` and `N` were actually run.
 
-The M2 corpus revision a verdict is computed over is part of the verdict.
+A verdict is computed over one M2 corpus and states which.
 PLAT-838's first run used a 16-fixture, 5-defect revision; the `v3` run uses
 a 59-fixture, 19-defect revision (31 rows verbatim from real agent-ix spec
 trees, 28 authored), holding the defect share at 32.2% against the original
@@ -58,7 +58,7 @@ never treated as satisfied.
 
 No collection of its own. Reads the already-collected MP-222/223/224/225/231
 observations for `lens: ears` and states the verdict; retains which variant
-and corpus revision the verdict was computed against.
+and corpus the verdict was computed against.
 
 ### Variant log: the PLAT-979 optimization loop
 
@@ -203,9 +203,9 @@ every variant.
 
 ## Environment and Sampling
 
-Every upstream metric it reads must share the same corpus revision, question
-set and `quire` engine version within one variant; a verdict computed across
-mismatched revisions is refused, not reported.
+Every upstream metric it reads must share the same corpus and question
+set within one variant; a verdict computed across
+mismatched inputs is refused, not reported.
 
 ## Interpretation
 
@@ -275,10 +275,10 @@ requests.
 **The record backing this table was withdrawn, 2026-09-23.**
 `spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json` did not
 carry `rawEvidence` and recorded `verificationStack.sources.quire-rs` as
-`dirty` rather than a clean full-SHA source -- both refused by the ported
+`dirty` -- both refused by the ported
 intake validator, so the file was never an admissible collection and was
 removed rather than backfilled with data not actually measured (agent-ix/quoin#607).
-Its bytes remain in git history at `0a257691` (#575). The numbers below are
+Its bytes remain in git history (#575). The numbers below are
 unbacked by a retained record until a fresh `v3` run is recorded cleanly;
 they are not retracted, only unproven by machine-readable evidence pending
 that re-run.

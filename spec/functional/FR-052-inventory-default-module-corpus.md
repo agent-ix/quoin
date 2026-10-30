@@ -24,7 +24,7 @@ relationships:
 
 ## Description
 
-Given the frozen audit snapshot, the audit SHALL inventory every default module, declared semantic
+Given an audit snapshot, the audit SHALL inventory every default module, declared semantic
 type, contract surface, and Markdown document without silently excluding malformed or untyped input.
 
 ## Rationale

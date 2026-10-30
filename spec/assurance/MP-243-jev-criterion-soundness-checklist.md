@@ -44,7 +44,7 @@ boundary cases belong in the criteria text.
 ## Population
 
 The `dev` split of corpus v2 (PLAT-1025, plus any PLAT-1026 external rows),
-mode `R` rows only, at the committed corpus revision.
+mode `R` rows only.
 Two kinds of row:
 
 - **Natural rows.** Criteria as they ship, with two independent agent
@@ -299,6 +299,6 @@ has no step for that. It is not eligible for held-out under this plan. If it
 is wanted, it gets its own definition version and bars, committed before it
 is fitted.
 
-Compare only like variant version, corpus revision and label revision. A
+Compare only like variant version. A
 change to any question text, example or derive rule bumps the variant's
 version, and that is a new instrument.

@@ -23,7 +23,6 @@ use crate::common::identity::{MetricName, WireInstant};
 use crate::common::scalar::{EffectValue, EnvironmentValue, ScalarValue};
 use crate::intervention::agent_eval::AgentEvalInterventionDefinition;
 use crate::intervention::agent_eval::report::AgentEvalReport;
-use crate::intervention::agent_eval::version::ImmutableVersion;
 use crate::intervention::intake::{
     InterventionIntakeError, InterventionRefusalCode, write_intervention_record,
 };
@@ -163,10 +162,6 @@ fn validate_definition(
             )],
         ));
     }
-    ImmutableVersion::parse(
-        &definition.cli_agent_evals_version,
-        "cli_agent_evals_version",
-    )?;
     let baseline = definition.baseline_evidence_path.as_str();
     let treatment = definition.treatment_evidence_path.as_str();
     if baseline.is_empty() || treatment.is_empty() || baseline == treatment {

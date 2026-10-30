@@ -70,6 +70,8 @@ impl ClauseSetDigest {
     /// is not exactly 64 lowercase hexadecimal characters. Uppercase hex is
     /// refused rather than folded: two spellings of one digest would make the
     /// emitted discharge document's bytes depend on how the producer wrote it.
+    ///
+    /// BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): `ClauseSetDigest`
     pub fn parse_stored(value: &str) -> Result<Self, MalformedClauseSetDigest> {
         let hex = value
             .strip_prefix("sha256:")
@@ -107,6 +109,8 @@ impl<'de> Deserialize<'de> for ClauseSetDigest {
 
 /// A `clauseSetDigest` that is not `sha256:` followed by 64 lowercase hex
 /// characters.
+///
+/// BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): `ClauseSetDigest`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MalformedClauseSetDigest(String);
 
@@ -297,6 +301,7 @@ mod tests {
                 "id": "synthetic-widget-rules",
                 "version": "1.0.0"
             },
+            // BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
             "clauseSetDigest": format!("sha256:{}", "a".repeat(64)),
             "context": { "product": "widget", "deployment": "test" },
             "clauses": [{
@@ -412,6 +417,8 @@ mod tests {
     ///
     /// Trace: FR-046-AC-1
     /// Provenance: quoin#502
+    ///
+    /// BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): `ClauseSetDigest`
     #[test]
     fn tc_502_020_a_malformed_clause_set_digest_is_refused() {
         let accepted = serde_json::from_value::<ClauseBindingReport>(wire());
@@ -439,6 +446,8 @@ mod tests {
     ///
     /// Trace: FR-046-AC-1
     /// Provenance: quoin#502
+    ///
+    /// BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): `ClauseSetDigest`
     #[test]
     fn tc_502_021_a_clause_set_digest_round_trips_its_stored_spelling() {
         let stored = format!("sha256:{}", "0123456789abcdef".repeat(4));

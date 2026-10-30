@@ -149,8 +149,8 @@ recall on defect kinds the corpus does not hold.
 
 ## Comparison and Enforcement
 
-The bars below were first committed in `55c467d9a57d21be3c15ff0bbf1be0db1e4b429c`
-(agent-ix/quoin, branch `plat-jev-live-tests`), in the module doc of
+The bars below were first committed on branch `plat-jev-live-tests`
+(agent-ix/quoin), in the module doc of
 `rust/crates/quoin-jev/tests/live_criterion_strength.rs`, before any round-two
 call to the service. They are reproduced here word for word.
 

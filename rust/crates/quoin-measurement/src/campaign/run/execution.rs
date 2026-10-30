@@ -47,6 +47,7 @@ pub(super) fn run_member(
     index: i64,
 ) -> Result<Retained, CampaignRunError> {
     let mut attempt = CampaignAttempt {
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignAttempt request/result/collection/verdict digest members
         checker_request_digest: None,
         checker_result_digest: None,
         collection_digest: None,

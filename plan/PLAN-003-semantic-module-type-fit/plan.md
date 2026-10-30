@@ -67,7 +67,7 @@ publication, enforcement, retirement, database, API, UI, or conflicting feature-
 | `default-modules.yaml` | Branch-local bytes, ordered declarations and declared refs.                                                     |
 | Default module sources | Canonical repository/subdirectory and exact inspected content/commit; disagreement is retained.                                         |
 | Quire                  | CLI and engine identity plus pinned `quire-rs#385` corpus revision; parsing failures remain records.                                    |
-| Semantic architecture  | PR #311 merged as `4a82644ad3cf75770cc53ef3812e3b13e80b516d`; its decisions guide classification while downstream changes remain gated. |
+| Semantic architecture  | PR #311 merged; its decisions guide classification while downstream changes remain gated. |
 | Core-data census       | Merged `filament-core-data#10` commit and its contract inventory, linked rather than copied.                                            |
 
 ## Deliverable flow

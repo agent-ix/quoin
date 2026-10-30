@@ -719,7 +719,7 @@ mod tests {
         assert_eq!(package.message, "semantic.package does not match ^a$");
 
         let other = map_schema_error(&SchemaError {
-            instance_path: "/semantic_core".to_owned(),
+            instance_path: "/other".to_owned(),
             keyword: SchemaKeyword::Pattern,
             params: SchemaErrorParams::Pattern("^a$".to_owned()),
             instance: json!("X"),

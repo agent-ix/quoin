@@ -29,8 +29,8 @@ families separate and report unadjudicated findings.
 
 ## Collection Procedure
 
-Retain finding loci, labels, raw outputs, scorer revision, tools, engine,
-declaration, corpus revision, configuration, and timestamp.
+Retain finding loci, labels, raw outputs, scorer, tools, engine,
+declaration, configuration, and timestamp.
 
 ## Environment and Sampling
 

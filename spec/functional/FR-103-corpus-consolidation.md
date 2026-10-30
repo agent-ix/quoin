@@ -20,7 +20,7 @@ read but not retire, and SHALL change no accepted-corpus byte.
 
 - `agent-ix/qa-corpus` read as a sibling checkout; this repository carries no
   `corpus/` submodule and no gitlink to it.
-- The governed corpus pins consumed by the measurement crates.
+- The governed corpus consumed by the measurement crates.
 - The Quoin-side corpus selection and accounting code reached from `src/` and
   `scripts/`.
 - `engineering-assurance`'s published corpus-accounting capability.
@@ -42,8 +42,8 @@ read but not retire, and SHALL change no accepted-corpus byte.
 - Quoin SHALL obtain corpus accounting from `engineering-assurance` rather than
   implementing a local equivalent, and if `engineering-assurance` does not supply
   it, then Quoin SHALL file a gap ticket in `engineering-assurance`.
-- Quoin SHALL show, with `git diff --quiet` over the `corpus/` tree before and after the
-  consolidation, that no accepted-corpus byte changed; no digest is computed.
+- Quoin SHALL leave every accepted-corpus file unchanged by the consolidation;
+  the repository's own history shows it, and nothing is computed or recorded.
 - Quoin SHALL publish no corpus tooling package to public npmjs or crates.io, and
   SHALL publish any retained Python package to the internal PyPI.
 

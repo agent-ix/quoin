@@ -49,4 +49,4 @@ document, citing the tool-defect entry that explains why.
 
 ## Notes
 
-- The released `quire` CLI 0.31.0 pins engine `ca7362d4`, which predates the `quire-rs#388` merge `17b80e4`, and exposes no semantic surface at all. Reporting the field-level dimension as anything but `could-not-run` would report a check that never ran.
+- The released `quire` CLI 0.31.0 predates the `quire-rs#388` merge and exposes no semantic surface at all. Reporting the field-level dimension as anything but `could-not-run` would report a check that never ran.

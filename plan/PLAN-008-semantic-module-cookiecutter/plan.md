@@ -36,9 +36,9 @@ relationships:
 
 Issue: `agent-ix/quoin#307`, under EPIC `agent-ix/quoin#286`. Reviews: SR-128..135
 under `spec/reviews/module-cookiecutter-*.md`. Upstream: the semantic-module
-contract (`agent-ix/quoin#293`, merged `3e842ce`), filament-core-data ADR-0005,
+contract (`agent-ix/quoin#293`, merged), filament-core-data ADR-0005,
 `@agent-ix/semantic-core` 0.1.0. Ground truth: the two completed hand migrations,
-`spec-objects-business#4` (`567e5c4`) and `spec-artifacts-iso#34` (`6686f11`).
+`spec-objects-business#4` and `spec-artifacts-iso#34`.
 
 ## Requirements Summary
 

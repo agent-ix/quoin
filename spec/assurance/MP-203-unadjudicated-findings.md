@@ -30,7 +30,7 @@ count, not a precision estimate.
 
 ## Collection Procedure
 
-Retain normalized finding envelopes, raw output, scorer and corpus revisions, tool configuration, timestamp, rubric
+Retain normalized finding envelopes, raw output, scorer, tool configuration, timestamp, rubric
 version, reviewer, rationale, disagreements, and defect follow-up. Refuse a
 ruling whose finding bytes, metric version, rubric version, or population
 identity changed.

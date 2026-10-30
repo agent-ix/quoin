@@ -191,7 +191,7 @@ skip = [
     { crate = "block-buffer@0.10.4", reason = "PLAT-1043: sha1 0.10.7 (EA campaign and gix) plus sha2 0.10.9 (Quire/Quoin); 0.12.1 via EA sha2 0.11.0 stays checked" },
     { crate = "crypto-common@0.1.7", reason = "PLAT-1043: digest 0.10.7 via sha1 0.10.7 and sha2 0.10.9; 0.2.2 via EA sha2 0.11.0 stays checked" },
     { crate = "digest@0.10.7", reason = "PLAT-1043: sha1 0.10.7 (EA campaign and gix) plus sha2 0.10.9 (Quire/Quoin); 0.11.3 via EA sha2 0.11.0 stays checked" },
-    { crate = "sha2@0.10.9", reason = "PLAT-1043: Quire requires sha2 0.10 and Quoin shares that pin; EA producer-execution requires sha2 0.11.0, which stays checked" },
+    { crate = "sha2@0.10.9", reason = "PLAT-1043: Quire requires sha2 0.10; EA producer-execution requires sha2 0.11.0, which stays checked" },
     { crate = "getrandom@0.2.17", reason = "jsonschema 0.18.3 via quire-rs" },
     { crate = "getrandom@0.3.4", reason = "ahash -> jsonschema 0.18.3 via quire-rs" },
     { crate = "r-efi@5.3.0", reason = "getrandom 0.3.4 -> ahash -> jsonschema 0.18.3 via quire-rs" },
@@ -217,7 +217,7 @@ skip = [
     #
     # 0.2.17 is skipped and 0.3.1 is NOT: 0.2.17 is the side that disappears
     # when quire-rs moves, and 0.3.1 is the side we keep.
-    { crate = "cpufeatures@0.2.17", reason = "quoin#438: 0.2.17 via sha2 0.10.9 <- quire-rs <- quoin-quire (and the workspace sha2 pin held at 0.10 by that requirement); 0.3.1 via chacha20 and sha2 0.11, which stay checked" },
+    { crate = "cpufeatures@0.2.17", reason = "quoin#438: 0.2.17 via sha2 0.10.9 <- quire-rs <- quoin-quire ; 0.3.1 via chacha20 and sha2 0.11, which stay checked" },
     # --- The five quoin#434 / quire-rs#429 entries. Remove together. ---
     { crate = "jsonschema@0.18.3", reason = "quoin#434: 0.18.3 via quoin-quire -> quire-rs (jsonschema = \"~0.18\"); 0.56.0 via quoin-semantic, which stays checked" },
     { crate = "bit-set@0.5.3", reason = "quoin#434: 0.5.3 via fancy-regex 0.13.0 -> jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.8.0 via fancy-regex 0.19.1 -> jsonschema 0.56.0 -> quoin-semantic" },

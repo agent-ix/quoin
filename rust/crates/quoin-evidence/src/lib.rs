@@ -14,7 +14,7 @@
 //!
 //! # What this crate does NOT own
 //!
-//! Canonical JSON, JCS canonicalization, sha256 identity and
+//! Canonical JSON, JCS canonicalization and
 //! atomic replacement all live in `quoin-store`, and FR-100-CON-4 forbids a
 //! second implementation anywhere — including here. Every byte this crate
 //! writes goes out through `quoin_store`.

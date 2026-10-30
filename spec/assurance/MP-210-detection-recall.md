@@ -19,7 +19,7 @@ language, or finding family in the validator toolchain.
 
 ## Population
 
-Use every findable failure case in the pinned `qa-corpus`. Report L1, L2, and
+Use every findable failure case in the `qa-corpus`. Report L1, L2, and
 L3 independently for every mode-language-family partition.
 
 ## Measure Definition

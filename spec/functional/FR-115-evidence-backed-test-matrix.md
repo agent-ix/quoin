@@ -295,8 +295,8 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 - **Downstream**: [FR-021](./FR-021-launch-ix-flow-runs.md), narrowed by this
   FR to `review` and `to-plan` only (see its own CR note).
 
-> **CR-001 (2026-09-27, PLAT-1080):** quoin pins quire-rs by git revision
-> — a dependency pin, not a vendored copy — whose
+> **CR-001 (2026-09-27, PLAT-1080):** quoin depends on quire-rs by git revision in `Cargo.toml`
+> — not a vendored copy — whose
 > `CoverageReport` carries `obligations: Vec<Obligation>` and
 > `criteria: Vec<CriteriaCounts>` (per-document property-shape counts) but no
 > `coverage_matrix` field and no per-criterion `binders`/`status`.
@@ -323,7 +323,7 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 > verbatim (CON-2).
 >
 > **CR-003 (2026-09-28, PLAT-1080):** the wire shape of `coverage`, measured
-> at the pinned quire-rs rather than assumed. `CoverageReport.
+> at the linked quire-rs rather than assumed. `CoverageReport.
 > coverage_matrix` is `Vec<CoverageMatrixRequirement>` with
 > `skip_serializing_if = "Vec::is_empty"`: it serializes as a bare array of
 > `{document, criteria[]}` entries and is omitted entirely when empty. There

@@ -278,5 +278,5 @@ known-truth path and none passed, the PLAT-1028 result is "no
 variant beats S0 on dev". If no family was gateable, it is "no claim": the
 corpus was too small to judge, and that says nothing about the variants.
 
-Compare only like variant version, corpus revision and label revision. An
+Compare only like variant version. An
 edit to the corpus's severity labels is a new definition version.

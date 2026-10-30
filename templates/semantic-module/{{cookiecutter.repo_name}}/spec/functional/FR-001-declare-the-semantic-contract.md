@@ -20,7 +20,7 @@ and SHALL reference every exported type's emitted schema by path.
 
 ## Behavior
 
-- The manifest SHALL carry `contract_version`, `semantic_core`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture` and `legacy_forms`, and no other key inside `semantic`.
+- The manifest SHALL carry `contract_version`, `semantic_core` (BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream module-manifest schema requires `semantic_core`; the value is not read or checked here), `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture` and `legacy_forms`, and no other key inside `semantic`.
 - The manifest SHALL set `compatibility_posture` to `additive` and `legacy_forms` to `warning`.
 - Where `legacy_forms` is `warning`, the manifest SHALL omit `sweep_report`.
 - The manifest SHALL name in `exports` exactly the types it declares.

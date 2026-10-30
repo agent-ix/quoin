@@ -9,10 +9,8 @@
 //! (FR-098-AC-10), and its path is `<recordId>.json`. A new record is given a
 //! fresh UUID; a record published again with the `recordId` it was given is
 //! idempotent when the bytes are the same and a named refusal when they are
-//! not, and nothing is ever overwritten. Identifiers written before this
-//! change (`sha256:<hex>`, file `sha256-<hex>.json`) are read as opaque strings
-//! and left unchanged. Tampering is visible in git history; nothing here
-//! recomputes an identity from content.
+//! not, and nothing is ever overwritten. Tampering is visible in git history;
+//! nothing here recomputes an identity from content.
 //!
 //! # Validation is hand-written, and that is the point
 //!

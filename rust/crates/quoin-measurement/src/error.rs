@@ -73,9 +73,8 @@ pub enum MeasurementErrorCode {
     /// path, so intake cannot tell whether it names a local file (PLAT-969).
     ArtifactNameUnsafe,
     /// A `verificationStack.artifacts` name resolves to an entry under the
-    /// repository that cannot be digested — a directory, a symlink, an
-    /// unreadable or oversized file — so its submitted digest cannot be
-    /// checked (PLAT-969).
+    /// repository that cannot be read — a directory, a symlink, an
+    /// unreadable or oversized file (PLAT-969).
     ArtifactUnreadable,
     /// A measured observation's `population.examined` is below its plan's
     /// `statistical_design.minimum_population` (PLAT-960).
@@ -110,7 +109,7 @@ pub enum MeasurementErrorCode {
     /// directory a symlink, which is refused without being followed
     /// (PLAT-975, engineering-assurance FR-024).
     ApparatusSymlink,
-    /// A protected-apparatus file exists but cannot be digested — unreadable,
+    /// A protected-apparatus file exists but cannot be read — unreadable,
     /// oversized, or not a regular file (PLAT-975).
     ApparatusUnreadable,
     /// A resolved protected-apparatus file is absent from the candidate's

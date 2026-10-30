@@ -118,7 +118,7 @@ in MP-233's own live battery (`live_gap_battery.rs`, PLAT-839/PLAT-979). The
 labels here were written by reading the corpus's static content (spec text,
 test source, covered code) and MP-233's own already-committed `note` fields,
 which had already flagged the mistraces -- not by reading any `noul`/`choice`
-output from that earlier run. But the pre-registration commit (`7aa3ca2f`)
+output from that earlier run. But the pre-registration commit
 cannot prove, and does not claim, that the labeller had never seen MP-233's
 results at all before writing these labels. Weigh the "1 of 4 holds" verdict
 accordingly.
@@ -151,13 +151,13 @@ predictors after seeing both would be a free point); `severity` at its exact
 rubric level; the `FullBattery` replication; the correctly-traced and
 uncontested subsets.
 
-Compare only like variant, corpus revision and label revision. An edit to the
+Compare only like variant. An edit to the
 labels file is a new definition version.
 
 ## Measured outcome -- 1 of 4 holds, 2026-09-23
 
 MEASURED by `the_remaining_four_questions_beat_doing_nothing` after the
-pre-registration commit (`7aa3ca2f`). Three consecutive runs, each 29
+pre-registration commit. Three consecutive runs, each 29
 `FullBatteryV1` requests (gated) plus 29 `FullBattery` requests (replication).
 Every response in all three runs came from `jev-1.13.0`. Run 1 is the gated
 run. Runs 2 and 3 are replications, reported and not pooled.

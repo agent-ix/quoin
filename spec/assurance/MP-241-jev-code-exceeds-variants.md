@@ -279,7 +279,7 @@ bumps the variant's version; the bump is enforced by review.
 If no candidate qualifies, there is no held-out run, and the result is
 reported as "no claim" or negative, whichever applies.
 
-Compare only like variant version, corpus revision and label revision. An
+Compare only like variant version. An
 edit to the corpus truth is a new definition version.
 
 ## Round 2: E5, outcome necessity per unit

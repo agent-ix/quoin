@@ -75,7 +75,7 @@ difference is exempt. No digest is computed or compared anywhere in the port.
   Quoin SHALL refuse the cutover and SHALL name the differing input, the
   operation and both results.
 - Quoin SHALL resolve the JSON Schema validator version used across the
-  workspace to one pin, recorded in `rust/Cargo.toml`.
+  workspace to one version, in `rust/Cargo.toml`.
 - Quoin SHALL assert no `format` keyword during validation, matching the
   retained validator, which declares no format package; enabling format
   assertion is a deliberate semantic change requiring its own requirement.

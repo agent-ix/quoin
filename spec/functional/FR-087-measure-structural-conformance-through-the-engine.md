@@ -67,7 +67,7 @@ a statement about the real contract, and makes everything the engine cannot do v
 
 - The measurement SHALL run the engine with the resolved module set as its only module source, so
   that no installed catalog copy or repository-local module can supply a contract the run did not
-  pin.
+  name.
 - The measurement SHALL record a document `pass` when the engine reports no diagnostic of severity
   `error` against it.
 - The measurement SHALL record a document `fail` when the engine reports at least one diagnostic of

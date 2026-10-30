@@ -17,13 +17,13 @@ relationships:
 ## Statement
 
 Where `quoin` depends on a capability of `quire` or of a spec module, it SHALL
-state the version that capability arrived in, and SHALL report skew as skew — a
-component too old to answer the question SHALL NOT present as a component
-answering it in the negative.
+report skew as skew — a component too old to answer the question SHALL NOT
+present as a component answering it in the negative. Quoin records no minimum
+version and compares none.
 
 ## Scope
 
-- Applies to: the `quire` CLI contract (`src/quire/contract.ts`), the module set
+- Applies to: the `quire` CLI contract, the module set
   declared in `default-modules.yaml`, and the agent surfaces skills are emitted for.
 - Operational context: any invocation that reads a module declaration or a quire
   output envelope.
@@ -48,26 +48,24 @@ indistinguishable from a bundle that is complete. That is the same shape as the
 class this whole program exists to catch, arriving through version skew instead of
 through dead links.
 
-`FR-029`'s version premise already does this for the quire contract. This states
-the property it implements, so a second integration point cannot be added without one.
+FR-029 consumes the quire contract in process. This states the property, so a
+second integration point cannot be added without it.
 
 ## Measurement and Evaluation
 
 | Metric                                                                     | Target | Threshold | Method     |
 | -------------------------------------------------------------------------- | ------ | --------- | ---------- |
-| Capabilities used without a declared minimum version                       | 0      | 0         | Inspection |
 | Skew conditions reported as a diagnostic rather than an empty result       | 100%   | 100%      | Test       |
 
 ## Verification
 
-`checkVersionPremise` is exercised against a `quire` below the declared floor and
-asserted to name found, required and consequence. The source is inspected for reads of module data whose
-introducing version is not declared.
+A component that cannot answer is exercised and asserted to produce a named
+diagnostic rather than an empty result.
 
 ## Dependencies
 
 - **Upstream**: [FR-029](../functional/FR-029-consume-the-quire-json-contract.md)
-  (the version premise), [NFR-007](./NFR-007-external-tool-invocation.md)
+  (the quire JSON contract), [NFR-007](./NFR-007-external-tool-invocation.md)
   (external tools resolved from `PATH`).
 - **Downstream**: [NFR-009](./NFR-009-single-source-skills-across-agents.md), whose
   agent surfaces are the third skewing axis.

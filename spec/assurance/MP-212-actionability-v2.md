@@ -42,11 +42,11 @@ hide a weak producer or family.
 
 Retain the raw producer record beside its normalized envelope, producer class,
 channel and version, counts, exclusions, and each named miss. Record scorer,
-tool, corpus, configuration, and source revisions with the collection.
+tool, corpus, and configuration with the collection.
 
 ## Environment and Sampling
 
-Report controlled Tier-1 and pinned Tier-2 populations separately.
+Report controlled Tier-1 and Tier-2 populations separately.
 
 ## Interpretation
 

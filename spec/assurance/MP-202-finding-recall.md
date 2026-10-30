@@ -30,7 +30,7 @@ reported per family and never macro-averaged.
 ## Collection Procedure
 
 Retain case and control identities, labels, raw outputs, scorer, tool and engine
-versions, declaration, corpus revision, configuration, and timestamp.
+versions, declaration, configuration, and timestamp.
 
 ## Environment and Sampling
 

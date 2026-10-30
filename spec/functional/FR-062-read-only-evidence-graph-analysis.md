@@ -41,8 +41,7 @@ completeness state.
 
 - A Quire assurance export supplied through required `--export <json>` and
   accepted against the required `--premises <json>` input under its format,
-  module-version, and module-schema premises, carrying the pinned source
-  revision, live obligations, artifacts, and corpus relationships.
+  module-version, and module-schema premises, carrying the live obligations, artifacts, and corpus relationships.
 - [FR-030](./FR-030-evidence-store.md) bindings.
 - [FR-032](./FR-032-evidence-auditor.md) verdicts supplied through required
   `--audit <json>`, used without reinterpretation. The accepted audit envelope

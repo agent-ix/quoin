@@ -40,7 +40,7 @@ relationships:
 
 Issue: `agent-ix/quoin#291`, under EPIC `agent-ix/quoin#286`. Reviews: SR-140..SR-148
 under `reviews/26-09-04-spec-review-*-291.md`. Upstream: the semantic-module contract
-(`agent-ix/quoin#293`, merged `3e842ce`) and the nine module schema completions of this
+(`agent-ix/quoin#293`, merged) and the nine module schema completions of this
 wave. Downstream: the promotion gate `agent-ix/quoin#290`, which has no other evidence
 to consume.
 

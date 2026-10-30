@@ -22,11 +22,9 @@
 
 pub mod produce;
 pub mod report;
-pub mod version;
 
 pub use produce::{ProducedIntervention, produce_agent_eval_intervention};
 pub use report::{AgentEvalReport, ScenarioRate};
-pub use version::{ImmutableVersion, ImmutableVersionKind};
 
 use serde::{Deserialize, Serialize};
 

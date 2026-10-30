@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Content-addressed, append-only experiment and operational records (FR-048).
+//! Append-only experiment and operational records (FR-048).
 //!
 //! These carry their own producer-provenance contract and do not alter the
 //! FR-030 run records: the accepted provenance boundary leaves those unchanged
@@ -127,9 +127,9 @@ pub struct ExperimentRecordInput {
 
 /// An identified experiment record, as it is written to disk.
 ///
-/// The id is a digest over the canonical JSON of the *input*, so the record on
-/// disk is the input plus one key. `flatten` rather than a nested object for
-/// exactly that reason: a nested input would change every stored byte.
+/// The id is an assigned UUID, so the record on disk is the input plus one
+/// key. `flatten` rather than a nested object for exactly that reason: a
+/// nested input would change every stored byte.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]

@@ -22,7 +22,7 @@ relationships:
 
 While the semantic-module architecture is reviewed or maintained, it SHALL remain understandable
 from the repository alone with every normative ownership, authority, and compatibility claim traced
-to a local requirement or an identity-pinned external decision.
+to a local requirement or an identified external decision.
 
 ## Scope
 

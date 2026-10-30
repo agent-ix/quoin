@@ -87,9 +87,8 @@ pub fn suite_dir(family: &str, suite: &SuiteId) -> String {
 
 /// An assurance record's file, `<stem>.json`.
 ///
-/// The stem is the record id for a UUID, and the id without its `sha256:`
-/// prefix for a legacy identifier (a colon is not a portable file-name
-/// character); see [`crate::assurance_records::record_file_stem`].
+/// The stem is the record id (a UUID); see
+/// [`crate::assurance_records::record_file_stem`].
 #[must_use]
 pub fn assurance_record_path(family: &str, stem: &str) -> String {
     format!("{family}/{stem}.json")
