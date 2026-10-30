@@ -344,7 +344,6 @@ fn runtime(repo: &Path, revision: &str, prepare: bool) -> RunMemberBindings {
         checker: Some(bindings(repo, revision, "fictional-checker", true)),
         inputs,
         timestamp: "2026-09-24T00:00:00Z".to_owned(),
-        toolchains: BTreeMap::from([("python".to_owned(), "system-python3".to_owned())]),
         source_remotes: BTreeMap::from([(
             "fictional/source".to_owned(),
             "https://example.invalid/fictional.git".to_owned(),

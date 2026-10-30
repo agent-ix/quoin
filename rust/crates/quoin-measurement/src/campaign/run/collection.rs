@@ -48,7 +48,6 @@ struct CollectionEnvironment<'a> {
 struct CollectionStack<'a> {
     schema_version: &'static str,
     build_profile: &'static str,
-    toolchains: &'a BTreeMap<String, String>,
     sources: BTreeMap<String, CollectionSource<'a>>,
     capabilities: [&'static str; 1],
     artifacts: Vec<String>,
@@ -169,7 +168,6 @@ pub(super) fn publish_collection(
         verification_stack: CollectionStack {
             schema_version: "verification-stack-attestation-v1",
             build_profile: "release",
-            toolchains: &runtime.toolchains,
             sources,
             capabilities: ["campaign.direct-process"],
             artifacts,

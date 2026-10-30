@@ -89,8 +89,6 @@ pub struct RunMemberBindings {
     pub inputs: Vec<SelectedInput>,
     /// Caller-provided RFC 3339 UTC timestamp for collections.
     pub timestamp: String,
-    /// Actual Node/Rust/Python toolchain identities under the existing store contract.
-    pub toolchains: BTreeMap<String, String>,
     /// Exact remote display names for the source graph's repositories.
     pub source_remotes: BTreeMap<String, String>,
     /// Runtime environment values selected from checked source identities.
@@ -147,12 +145,6 @@ pub enum BindingFailure {
     /// Required configuration or source-bound selection was absent or invalid.
     #[error("invalid campaign binding: {0}")]
     InvalidConfiguration(String),
-    /// Collection intake requires at least one supported, nonempty toolchain identity.
-    #[error("campaign member {member} has invalid toolchain identities")]
-    InvalidToolchains {
-        /// Campaign member whose runtime toolchain inventory is invalid.
-        member: String,
-    },
 }
 
 /// Stable EA execution or staging refusal category.
@@ -294,15 +286,6 @@ pub fn run_campaign_with_cancellation(
             "member binding inventory".to_owned(),
         ));
     }
-    for (member, runtime) in bindings {
-        if !valid_toolchains(&runtime.toolchains) {
-            return Err(CampaignRunError::Binding(
-                BindingFailure::InvalidToolchains {
-                    member: member.clone(),
-                },
-            ));
-        }
-    }
     let executor =
         ProducerExecutor::new(1).map_err(|error| CampaignRunError::execution(error.to_string()))?;
     let mut attempts: Vec<Retained> = Vec::new();
@@ -426,7 +409,5 @@ mod cancellation;
 mod collection;
 mod domain;
 mod execution;
-mod preflight;
 pub use cancellation::CampaignCancellation;
 use execution::run_member;
-use preflight::valid_toolchains;

@@ -271,8 +271,7 @@ fn with_change_impact(
 /// `graph-portfolio-load.ts:135-140` builds this from the export's own source
 /// and the premises document's modules. Both halves are re-read through
 /// [`AcceptedQuirePremises`]'s own contract rather than transcribed member by
-/// member, so the scalars this crate already proved — `FullRevision`,
-/// `BareDigest` — are the ones the adapter compares.
+/// member, so the scalars this crate already proved are the ones the adapter compares.
 fn accepted_premises(loaded: &GraphAnalysisInput) -> Result<AcceptedQuirePremises> {
     let stated = serde_json::json!({
         "source": loaded.assurance.source,

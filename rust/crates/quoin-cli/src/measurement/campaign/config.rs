@@ -49,7 +49,6 @@ struct MemberBindingWire {
     #[serde(default)]
     inputs: Vec<SelectedInputWire>,
     timestamp: String,
-    toolchains: BTreeMap<String, String>,
     source_remotes: BTreeMap<String, String>,
     #[serde(default)]
     environment_sources: BTreeMap<String, EnvironmentSourceWire>,
@@ -345,7 +344,6 @@ impl MemberBindingWire {
                 .transpose()?,
             inputs,
             timestamp: self.timestamp,
-            toolchains: self.toolchains,
             source_remotes: self.source_remotes,
             environment_sources,
         })
@@ -425,7 +423,6 @@ mod tests {
                         }
                     }],
                     "timestamp": "2026-01-01T00:00:00Z",
-                    "toolchains": {},
                     "sourceRemotes": {"fixture": "https://example.invalid/fixture"},
                     "environmentSources": {
                         "SOURCE_REVISION": {"kind": "source_revision", "repository": "fixture"}

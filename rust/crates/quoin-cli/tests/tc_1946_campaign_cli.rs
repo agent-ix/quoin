@@ -248,7 +248,6 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
                 "exitCodes":{"kind":"any"}
             },
             "checker":null,"inputs":[],"timestamp":"2026-09-24T00:00:00Z",
-            "toolchains":{"python":"system-python3"},
             "sourceRemotes":{"fictional/source":"https://example.invalid/source.git"}
         }}
     });

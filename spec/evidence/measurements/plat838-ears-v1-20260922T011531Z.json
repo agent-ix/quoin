@@ -164,11 +164,6 @@
         "revision": "55d79ef1138d4e0c426c6ffda0f140a6a983a6d1",
         "sourceState": "clean"
       }
-    },
-    "toolchains": {
-      "node": "n/a — this evaluation is a pure-Rust measurement path (quoin-core in-process dispatch); no Node toolchain was invoked",
-      "python": "n/a — no Python toolchain was invoked",
-      "rust": "1.94.1"
     }
   }
 }
