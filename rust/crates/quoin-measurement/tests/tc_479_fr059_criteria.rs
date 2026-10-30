@@ -253,13 +253,11 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
             &format!("a producer missing `{member}`"),
         );
     }
-    for member in ["id"] {
-        refused_naming(
-            &without(&base, &["subject", member]),
-            &required("/subject", member),
-            &format!("a subject missing `{member}`"),
-        );
-    }
+    refused_naming(
+        &without(&base, &["subject", "id"]),
+        &required("/subject", "id"),
+        "a subject missing `id`",
+    );
     for member in ["service", "environment", "population"] {
         refused_naming(
             &without(&base, &["scope", member]),
