@@ -38,7 +38,7 @@
 //! must move in. An entry that disagrees without being listed fails, and a
 //! listed entry that has stopped disagreeing fails too.
 //!
-//! Trace: FR-100-AC-4, FR-098
+//! Trace: FR-100-AC-4, FR-098-AC-11
 
 #![allow(
     clippy::unwrap_used,
@@ -149,7 +149,7 @@ fn validators() -> BTreeMap<&'static str, MeasurementValidator> {
 /// Every corpus document gets the same verdict from both validators, except
 /// the declared divergences, which move in the declared direction.
 ///
-/// Trace: FR-100-AC-4, FR-098
+/// Trace: FR-100-AC-4, FR-098-AC-11
 #[test]
 fn tc_470_ajv_and_jsonschema_agree_on_every_verdict() {
     let goldens = goldens();

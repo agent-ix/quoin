@@ -2,7 +2,6 @@
   "schemaVersion": "guidance-evaluator-contract-v1",
   "populationSource": {
     "corpusRevision": "7442f2770880a4ade303fb23d725804bdef454db",
-    "corpusInputDigest": "sha256:4a806b0807eaf4c5a866ee478335c243856b5f98e701be2f9164c0c01cf271b8",
     "producer": {
       "schemaVersion": "quire-tool-provenance-v1",
       "cli": {
@@ -53,10 +52,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
       "denominator": 318,
-      "populationDigest": "sha256:4a9cc2cecaaa9dc3aa555a4c6821f1a6438697ebb249f145b7df19caf8a57353",
-      "templateDigests": [
-        "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b"
-      ],
       "selectedRecordIds": [
         "sha256:04bcc494c3a71f6299b5a0c923dc198a71c8bbcdd49de9035826688988a81b54",
         "sha256:12090cdd69585b04a546ba835552ddbc7fea01cb03b91fc7b40b00fab1ef49c6",
@@ -69,10 +64,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/catch-all-universal",
       "denominator": 112,
-      "populationDigest": "sha256:db71580bb240528db17589bebec6c7b53c4930cc083a2150600053d36cd142a9",
-      "templateDigests": [
-        "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d"
-      ],
       "selectedRecordIds": [
         "sha256:0db101ff5990229184d57f721b50d063c9535da63b8e28dc8a3122321e1ace98",
         "sha256:33902fe450554cd9068ac343ae96447a3f1bc6448aed3adfc848f859df808f92",
@@ -85,10 +76,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/hollow-denominator",
       "denominator": 13,
-      "populationDigest": "sha256:bc659d0fc8360af148dcb57b083ab3cc570826801fdb60ae915eb922fc635330",
-      "templateDigests": [
-        "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73"
-      ],
       "selectedRecordIds": [
         "sha256:2f265bf60eb00121b67db78066b34bae57e320e3fe992e3ad1efceb63413351c",
         "sha256:51ff44bdb451c9dad2f92874b9095bfb96f7d5d3f4bdab172a57a255ceaba284",
@@ -100,10 +87,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/id-column-matches-nothing",
       "denominator": 3,
-      "populationDigest": "sha256:9389e57dfb4386cdd7327ab4e76990ffd0db962422c2dc26547e672561fcaeb8",
-      "templateDigests": [
-        "sha256:8f19c6f5bdd78f3bbc6e3544294e5d3d2027529d6a6be311a2979e2ae24137e9"
-      ],
       "selectedRecordIds": [
         "sha256:2e404109ee155d659943cef6d82b4fe06550dd6830ef2b72e7e254bddaee1428",
         "sha256:bdec69b8d8feed7bd0b06787d1a48ae637fb69f2900b1ca33991fc8a9e539123",
@@ -113,10 +96,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/low-symbol-binding",
       "denominator": 1,
-      "populationDigest": "sha256:0afa6268c67a37db0d60eddab8a83f48b17d50f1d9d886b3991b1dad1d2cdd31",
-      "templateDigests": [
-        "sha256:2c55ad05961f0c932937b5d7a1890aa549061758c9a175e2a1e5d816ba480757"
-      ],
       "selectedRecordIds": [
         "sha256:7be12acbde8fabb5481de5dbe7f11b060905e7218e451cfc0a932cc004f4109e"
       ]
@@ -124,11 +103,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/marker-form-mismatch",
       "denominator": 13,
-      "populationDigest": "sha256:ee8cd654f5f65f4f44b11430fcac9d2f1a1aae251d3b19463cf42bf4bc2ed12e",
-      "templateDigests": [
-        "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
-        "sha256:995c1c37e7115e238888cca31e1a5d4307564492c53538a08202cc28bdde9327"
-      ],
       "selectedRecordIds": [
         "sha256:27f3645c16ad4b833fe8a0cc157621d91b04a0721329701faf8a0d79cbf4d25f",
         "sha256:51882fdce86cbd52019469ddf9eb404fd91baa358a912eb15e004c6712a9d4b4",
@@ -142,10 +116,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/model-mints-nothing",
       "denominator": 1,
-      "populationDigest": "sha256:aa4a6eb77c88b228ab26c3eabe342f1e2d5dce9b94ed35e95098327ef5ac468a",
-      "templateDigests": [
-        "sha256:3df3ba6726d07bdf20d5cbafe6cc3e3c414a16c159680ddb9650004950dfcd0d"
-      ],
       "selectedRecordIds": [
         "sha256:50a681691985e37d56d6372fc4944fd22495ffcb5d30c0e3d37d81ae2924c6bb"
       ]
@@ -153,10 +123,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/obligation-row-states-nothing",
       "denominator": 1,
-      "populationDigest": "sha256:6bfd2e6f19a522adbcd67a115e76665f8de777dd71ec4df17596aadcc19049c0",
-      "templateDigests": [
-        "sha256:e91e68ff1871b52019f38b328b4761a146744aefd977f6c0fee4c42a5bff8fb1"
-      ],
       "selectedRecordIds": [
         "sha256:d13f52b53d3c2061e5b01e42105f29883f6c59cd9a69a544d0ffa9ff226f9a80"
       ]
@@ -164,10 +130,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/section-holds-no-table",
       "denominator": 3,
-      "populationDigest": "sha256:f6cafbb60c50b945f18b4b824a5eb8e9da1ad40ca09e25b976646eb427240f68",
-      "templateDigests": [
-        "sha256:735892152c76b2b26437c61623fb0e6934c95ad5ffba65c2668337e79fb471b7"
-      ],
       "selectedRecordIds": [
         "sha256:26e32174e4ce3e579f7e7927a02f834febfb9b2e21d33521939fa9e9527529b9",
         "sha256:9284d7d23f994bf5387fcdf5d80e1efb14a527cc34ffb58882e0a2377c3f6667",
@@ -177,10 +139,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/section-matches-nothing",
       "denominator": 6,
-      "populationDigest": "sha256:b6bbb32fb00372cf5d0f3c2b17cacf9d9a7d8ec6bc3cff241437175d265c69c9",
-      "templateDigests": [
-        "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca"
-      ],
       "selectedRecordIds": [
         "sha256:2b41200fe0b9f4b0316905662f618303714ab04c47c5998b5dd214e9f808e4e2",
         "sha256:5cf18ce737c65d5688a11d156e3ac634cd198f769d806acba959740b8638d11b",
@@ -192,10 +150,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/status-column-matches-nothing",
       "denominator": 7,
-      "populationDigest": "sha256:6df23bd3961f3fdab2b511197cea46241469ab251c0d59cd9e0ec82ccad36b2a",
-      "templateDigests": [
-        "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56"
-      ],
       "selectedRecordIds": [
         "sha256:039387c110c2e6cd7fe82581a123b22d52e839c55eaffa58e8268e893b2ab2bf",
         "sha256:05ba77ddf45efd539057f676e9a231be613eaf1af8a23c6b98975344c8551c28",
@@ -208,10 +162,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/tag-on-non-binding-symbol",
       "denominator": 6,
-      "populationDigest": "sha256:e5420b8f0d67e281235f4dc8e48c594711ab6b4eab144063f5b33affd19f7088",
-      "templateDigests": [
-        "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761"
-      ],
       "selectedRecordIds": [
         "sha256:47bc1c06faa32a63e10d6b936a5fe96542906d3239fe644465ec96011db32a84",
         "sha256:85e0f9dc4ee1b6f8ed762dd7e46578de072c1427a23e60931a4d776cd02aba20",
@@ -223,10 +173,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/uncatalogued-verification-method",
       "denominator": 1,
-      "populationDigest": "sha256:60f7f4b23599ced9b8c46dc9f824e08115cb9f52e1d6064eebe6bd89618c464e",
-      "templateDigests": [
-        "sha256:8f8d87e50a7365c7236421ef3e02ee92da8641dc30de275efe5e14abf77f3b42"
-      ],
       "selectedRecordIds": [
         "sha256:57f135351965987db91b6617361918c336e785ec84fbd5e641f347fa2fe13ac6"
       ]
@@ -234,10 +180,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/undeclared-coverage-vocabulary",
       "denominator": 1,
-      "populationDigest": "sha256:676bd21da36e292853c16e31fe7aae73e64b88a9f601825006ae4acd0495aabe",
-      "templateDigests": [
-        "sha256:8b5a2cbc6d704f576da5d404b5b0e45f2d33500cc2a895ef50624ee6931f910f"
-      ],
       "selectedRecordIds": [
         "sha256:406301c52b70b28e2ff3d5bfed5f6e45abb64b056001bb135c2f0fe2c07263db"
       ]
@@ -245,10 +187,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/unminted-id-guidance",
       "denominator": 6,
-      "populationDigest": "sha256:a0b12d63f5a72987c8adb2132b166d03a34d95f750066e07e140b3a926fb8955",
-      "templateDigests": [
-        "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02"
-      ],
       "selectedRecordIds": [
         "sha256:40b8b0ce71d0f9804cfbf56a2d770efc3bbe4c0f5fea0aa6d055b58559ccabf3",
         "sha256:426440a9b68e0108ca06a2008b7b23c449700a4b1066b36bad106743ff9298aa",
@@ -261,10 +199,6 @@
     {
       "id": "quire/quire/coverage.diagnostics/untracked-id-near-miss",
       "denominator": 1,
-      "populationDigest": "sha256:dc3eaf6e23ad65d5de1c8ff819679dbef022c3359d1fe546442c67c13f45ec27",
-      "templateDigests": [
-        "sha256:41ca545e7e8a52f921f83f7812637d0967369447ae11407d986dc805b8355895"
-      ],
       "selectedRecordIds": [
         "sha256:0a2de819474d71fb5ab5148a15919b602af820bdc1f2d48ef377232fb42ac974"
       ]
@@ -272,10 +206,6 @@
     {
       "id": "quire/quire/coverage.suspicions/oracle-is-code-copy",
       "denominator": 4,
-      "populationDigest": "sha256:946b00b120eb4468c67ff5fa23468474ea6e1b0a2712819c3630ee801d1385ac",
-      "templateDigests": [
-        "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5"
-      ],
       "selectedRecordIds": [
         "sha256:5f599c28a6b18cb265c54ef27378e316debe57590e6c0b5b867f1f2ec924f0d0",
         "sha256:8e0df7cc227bc74b5d8db6dd2b8c9ae09301569a89a5b4e36834d42b9a077372",
@@ -286,10 +216,6 @@
     {
       "id": "quire/quire/coverage.suspicions/vacuous-under-guard",
       "denominator": 1,
-      "populationDigest": "sha256:5339af826884f1e235c30c39d65c48e09ac41dff2e10f4baaecd7d3ceac58493",
-      "templateDigests": [
-        "sha256:7968a1a8d6515660ea1ef341d10cdafb1b1460840516d1f368f995eb7a0e7936"
-      ],
       "selectedRecordIds": [
         "sha256:1c6f0e4621665ffe8efb4c2db1882cf30e48a106940775f6241793bb95667974"
       ]
@@ -297,10 +223,6 @@
     {
       "id": "quire/quire/validate.findings/undeclared-type-value",
       "denominator": 3,
-      "populationDigest": "sha256:4821848648b02d7167f853d931b84f3d961f88bdc6fed57ae4a462adac784e71",
-      "templateDigests": [
-        "sha256:d451bb5c643c3ed1b2f85d975af6a02d6ff34e4b8a4539b12d356049ef6bedaa"
-      ],
       "selectedRecordIds": [
         "sha256:020c64cc0b345b997841229800ca18118681a3b6e6ff8a052ee03d7ac095619e",
         "sha256:23b00e4973f5b5005b74c4e469580dc76cce8018f786b1a2aa3f966062556a2c",
@@ -310,10 +232,6 @@
     {
       "id": "quoin/quoin/evidence.audit/mocked-confirmation",
       "denominator": 3,
-      "populationDigest": "sha256:a64c590b6920b77f42901546a696feecb7010b8189d952b4f4f2eb3e31ecd2cf",
-      "templateDigests": [
-        "sha256:aa3b6d58e0407b1d8c898b1adfad6681049e9559330da656693bde0e10313a82"
-      ],
       "selectedRecordIds": [
         "sha256:20441731fc72542931d37e19c31010ff9c50242ed246f398475cc873bc831551",
         "sha256:8f02741edef39231f094468c786e2a31cdd3377cb6e4510de810b6169c385fa9",
@@ -323,12 +241,6 @@
     {
       "id": "quoin/quoin/validate/gate-that-gates-nothing",
       "denominator": 3,
-      "populationDigest": "sha256:9b88eceb338c7f344864f7662e319e147bf21f1ff8a1fb6c8a3dae6c0a90bd3c",
-      "templateDigests": [
-        "sha256:57cae873778a6505e0b9b76076685960ad45a5165f100ef3749353da49721e39",
-        "sha256:61275b93402b6217c38c50e817305b88e3380d43f3c63fb2493580a7b62ffc37",
-        "sha256:90f6659f9fdccdc68e71423b7f6a5ac3d6d2883560b79970fcaf91e318824f28"
-      ],
       "selectedRecordIds": [
         "sha256:0d31711dedd750fec974466b02dda584e1d07426d2e018e0044500d35df6e04f",
         "sha256:33f36a57ccfbe2d15ea83e11fdacf927689bb060a053653b1d8bc88ebf2a96c0",
