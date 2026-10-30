@@ -136,11 +136,11 @@ fn store_facts_takes_no_arguments() {
 fn tc_458_gc_reports_absolute_paths_by_joining_the_store_root() {
     let store = MemoryEvidence::new()
         .with_file(
-            "runs/alpha/2026-01-01T00-00-00Z.json",
+            "runs/alpha/2026-01-01T00~3A00~3A00Z.json",
             run_record("alpha", "2026-01-01T00:00:00Z"),
         )
         .with_file(
-            "runs/alpha/2026-02-01T00-00-00Z.json",
+            "runs/alpha/2026-02-01T00~3A00~3A00Z.json",
             run_record("alpha", "2026-02-01T00:00:00Z"),
         );
     let host = TestHost::new(store);
@@ -155,7 +155,7 @@ fn tc_458_gc_reports_absolute_paths_by_joining_the_store_root() {
     // Anti-vacuity: an empty list would pass any "every path is absolute" check.
     assert_eq!(deleted.len(), 1, "{deleted:?}");
     assert_eq!(
-        deleted[0], "/somewhere/spec/evidence/runs/alpha/2026-01-01T00-00-00Z.json",
+        deleted[0], "/somewhere/spec/evidence/runs/alpha/2026-01-01T00~3A00~3A00Z.json",
         "the store-relative path was reported without the root joined onto it"
     );
 }
@@ -164,11 +164,11 @@ fn tc_458_gc_reports_absolute_paths_by_joining_the_store_root() {
 fn a_dry_run_gc_removes_nothing() {
     let store = MemoryEvidence::new()
         .with_file(
-            "runs/alpha/2026-01-01T00-00-00Z.json",
+            "runs/alpha/2026-01-01T00~3A00~3A00Z.json",
             run_record("alpha", "2026-01-01T00:00:00Z"),
         )
         .with_file(
-            "runs/alpha/2026-02-01T00-00-00Z.json",
+            "runs/alpha/2026-02-01T00~3A00~3A00Z.json",
             run_record("alpha", "2026-02-01T00:00:00Z"),
         );
     let host = TestHost::new(store);
@@ -188,7 +188,7 @@ fn a_dry_run_gc_removes_nothing() {
     .unwrap();
     assert_eq!(
         host.store.borrow().paths(),
-        vec!["runs/alpha/2026-02-01T00-00-00Z.json"]
+        vec!["runs/alpha/2026-02-01T00~3A00~3A00Z.json"]
     );
 }
 
@@ -200,7 +200,7 @@ fn a_dry_run_gc_removes_nothing() {
 fn tc_458_a_malformed_record_is_skipped_and_named_rather_than_half_read() {
     let store = MemoryEvidence::new()
         .with_file(
-            "runs/alpha/2026-01-01T00-00-00Z.json",
+            "runs/alpha/2026-01-01T00~3A00~3A00Z.json",
             run_record("alpha", "2026-01-01T00:00:00Z"),
         )
         .with_file(
@@ -238,7 +238,7 @@ fn audit_inputs_answers_vacuity_and_independence_alongside_the_records() {
     })
     .to_string();
     let host = TestHost::new(
-        MemoryEvidence::new().with_file("scans/scan-suite/2026-01-01T00-00-00Z.json", scan),
+        MemoryEvidence::new().with_file("scans/scan-suite/2026-01-01T00~3A00~3A00Z.json", scan),
     );
     let capabilities = Capabilities::with_evidence(&host);
 

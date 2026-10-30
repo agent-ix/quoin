@@ -210,7 +210,11 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
     ));
     assert_eq!(payload["kind"], "run");
     let run_path = payload["run_path"].as_str().unwrap();
-    reported_store_path(dir.path(), run_path, "runs/unit/2026-01-01T00-00-00Z.json");
+    reported_store_path(
+        dir.path(),
+        run_path,
+        "runs/unit/2026-01-01T00~3A00~3A00Z.json",
+    );
 }
 
 ///
@@ -239,14 +243,14 @@ fn tc_458_070_gc_reports_absolute_paths_and_removes_only_the_superseded() {
     ));
     let deleted = payload["deleted"].as_array().unwrap();
     assert_eq!(deleted.len(), 1, "{payload}");
-    let expected = store_path(dir.path(), "runs/unit/2026-01-01T00-00-00Z.json");
+    let expected = store_path(dir.path(), "runs/unit/2026-01-01T00~3A00~3A00Z.json");
     assert_eq!(
         deleted[0].as_str().unwrap(),
         expected.to_string_lossy(),
         "a store-relative path reached the caller"
     );
     assert!(!expected.exists());
-    assert!(store_path(dir.path(), "runs/unit/2026-02-01T00-00-00Z.json").is_file());
+    assert!(store_path(dir.path(), "runs/unit/2026-02-01T00~3A00~3A00Z.json").is_file());
 }
 
 ///
@@ -334,7 +338,7 @@ fn tc_458_100_inspect_mocks_records_an_empty_inspection() {
     reported_store_path(
         dir.path(),
         path,
-        "mock-inspections/unit/2026-01-01T00-00-00Z.json",
+        "mock-inspections/unit/2026-01-01T00~3A00~3A00Z.json",
     );
 }
 
