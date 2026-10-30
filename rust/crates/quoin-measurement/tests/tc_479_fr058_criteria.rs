@@ -9,11 +9,9 @@
 //! # Why this file exists
 //!
 //! `src/measurement/agent-eval-intervention.ts` and the tests that held it to
-//! FR-058 are deleted in the same commit. `tc_471_corpus.rs` proves
-//! the port reproduces the retained record byte for byte, but it is one test
-//! tagged `FR-100`: it does not say which of FR-058's five criteria it carries,
-//! and four of them are about what the producer *refuses* or *ignores*, which a
-//! reproduction test cannot see. This file is one test per criterion.
+//! FR-058 are deleted in the same commit. Four of FR-058's five criteria are
+//! about what the producer *refuses* or *ignores*, which a reproduction test
+//! cannot see. This file is one test per criterion.
 //!
 //! # Where the inputs come from
 //!

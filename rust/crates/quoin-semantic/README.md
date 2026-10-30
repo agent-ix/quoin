@@ -28,18 +28,14 @@ crate disagree, what each disagreement costs a user, and why the pin is
 
 ## Parity
 
-The TypeScript was the oracle **exactly once**.
-`scripts/capture-semantic-goldens.mjs` ran it and wrote every verdict and every
-diagnostic to `tests/goldens/`. The tests read those files; nothing in the test lane
-invokes Node.
+The TypeScript was the oracle once. **The oracle and the capture script are
+gone.** quoin#452 deleted `src/semantic/`'s TypeScript and
+`scripts/capture-semantic-goldens.mjs` together, because the retire-after-parity
+rule forbids a live non-Rust oracle after cutover, and the recorded goldens went
+with the replay tests that read them. Nothing in the test lane invokes Node or
+reads a recorded answer.
 
-**The oracle and the capture script are gone.** quoin#452 deleted
-`src/semantic/`'s TypeScript and `scripts/capture-semantic-goldens.mjs`
-together, because the retire-after-parity rule forbids a live non-Rust oracle after cutover. The
-goldens stay, and they are no longer reproducible: treat them as pinned
-evidence, not as a cache.
-
-- **Verdict parity is exact and contractual** over 171 golden documents.
+- **Verdicts are contractual.**
 - **Diagnostic parity is normalized** on `(instance location, keyword)` as a
   multiset.
 - **Error text and error order are not contractual.** See `DIVERGENCE.md` §5.

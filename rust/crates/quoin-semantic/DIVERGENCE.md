@@ -232,8 +232,7 @@ change under a patch bump.
 **What the port does.** `SchemaValidator::errors` sorts by
 `(instance location, keyword)` and says so in its doc comment. That is stable
 across dependency bumps and across libraries, which neither native order is. The
-golden tests compare identity **multisets** and deliberately do not compare
-order.
+comparison is of identity **multisets**; order is deliberately not compared.
 
 `sweepReportProblem` prints ajv's _first_ error; the Rust prints the first in the
 sorted order. For a report failing on one keyword — every real case — that is the
@@ -261,7 +260,7 @@ false:
   `strings_at` silently drops one. The TypeScript's `stringsAt` drops it too, so
   the drop itself is parity-correct — the divergence is one step earlier, in
   which scalars become strings in the first place.
-- **The zero was measured over an empty population.** The golden corpus
+- **The zero was measured over an empty population.** The captured corpus
   contained no ambiguous token, so the check had nothing to find.
 
 The old table was also factually wrong about the reader it described.
@@ -286,24 +285,10 @@ That is a **verdict-level** difference, not a diagnostic-text one. Reproduced on
 a bundle whose `quality_attributes_not_applicable` excuses `017`: the oracle
 resolves `017` to a number, drops it, finds nothing, and returns `PASS`; the
 libyaml reader kept `"017"`, raised a high-severity `undeclared-exclusion`, and
-returned `FAIL`. Verbatim, before the fix:
-
-```
----- tc_378_304_assess_bundle_matches_the_oracle_end_to_end stdout ----
-assertion `left == right` failed: advisory: verdict
-  left: "PASS"
- right: "FAIL"
-```
-
-and on the projection itself:
-
-```
----- tc_378_303_bundle_frontmatter_matches_the_oracle stdout ----
-assertion `left == right` failed: projected claims
-  left: [..., ("ambiguous/claims.md", ["security", "on", "no", "1:30", "2026-09-12", "0b101"], []), ...]
- right: [..., ("ambiguous/claims.md", ["security", "on", "no", "1:30", "2026-09-12", "017", "010"], []),
-         ("ambiguous/excuse.md", [], ["017"]), ...]
-```
+returned `FAIL`. The verdict
+differed (`PASS` from the oracle, `FAIL` from the libyaml reader), and so did the
+projected claims: the libyaml reader dropped `on`-style tokens and kept `"017"`
+where the oracle did the opposite.
 
 ### How it was closed
 
@@ -321,12 +306,9 @@ every scalar, not just the string-typed ones.
 and `quoin-completeness`'s frontmatter reader. `serde_norway` is gone from the
 workspace. Adding a second YAML reader re-opens D4.
 
-Corpus: `scripts/capture-semantic-goldens.mjs` wrote `ambiguous/claims.md`
-and `ambiguous/excuse.md` into the bundle corpus, carrying `on`, `no`, `null`,
-`1:30`, `2026-09-12`, `017`, `010` and `0b101` as module and keyword values.
-`tc_378_303` asserts, over the goldens, that the oracle keeps the first five and
-drops `017`/`010` — so the population cannot be silently emptied again — and
-`tc_378_304` asserts the resulting verdict.
+The capture corpus carried `on`, `no`, `null`, `1:30`, `2026-09-12`, `017`,
+`010` and `0b101` as module and keyword values. The recorded replay of it is
+deleted; `quoin-yaml`'s own tests hold the YAML 1.2 scalar rules.
 
 ### What is still divergent, and why it is accepted
 
@@ -350,15 +332,13 @@ class.
 
 - `resolveImports` walks `Object.keys(module.block.imports)` — **insertion
   order**, i.e. manifest order. The port uses a `BTreeMap`, i.e. **sorted** order.
-  The _set_ of cycles found is identical (the DFS is complete either way, and the
-  golden corpus's 9 import cases all match). What can differ is which cycle is
+  The _set_ of cycles found is identical (the DFS is complete either way). What can differ is which cycle is
   printed first, and the trail a cycle prints, for a module with two imports that
   both close cycles. Sorted was chosen because manifest order is not reproducible
   across a manifest rewrite.
 - `derivePackageManifest` sorts imports with `localeCompare`; the port relies on
   `BTreeMap` byte order. These agree for every value the schema admits
-  (`^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$` is ASCII), and the 7 golden
-  derivation cases compare the full derived document byte-for-byte.
+  (`^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$` is ASCII), and the derived document is the same.
 - `completeness` sorts findings with three `localeCompare` calls; the port uses
   byte order, for the same reason and with the same ASCII guarantee.
 
@@ -390,11 +370,9 @@ these were all measured rather than assumed:
 
 **The capture step is gone and cannot be re-run.** quoin#452 deleted
 `src/semantic/`'s TypeScript and `scripts/capture-semantic-goldens.mjs` in one
-commit, because the retire-after-parity rule forbids a live non-Rust oracle once the port lands.
-The goldens under `tests/goldens/` are the record, frozen at the revision each
-file names; they are evidence, not a cache, and there is no path that rewrites
-them. Standing the oracle back up to refresh one would be the thing the
-criterion prohibits.
+commit, because the retire-after-parity rule forbids a live non-Rust oracle once
+the port lands. The recorded goldens were deleted with the replay tests that
+read them; no recorded answer is kept.
 
 What is left to re-measure is this crate against that record:
 
@@ -404,10 +382,6 @@ cd rust
 cargo test \
   -p quoin-semantic -p quoin-completeness -p quoin-yaml --target-dir <dir>
 ```
-
-A verdict disagreement fails `tc_378_100`/`101`/`102` with the document id. **Do
-not allowlist one.** A verdict disagreement is either a TypeScript defect or a
-specification gap, and both matter more than the port does.
 
 ---
 
@@ -427,9 +401,8 @@ changed:
 
 - `quoin-core` loses `protocol::tests::canonical_json_sorts_keys_and_emits_no_whitespace`
   and `tc_375_stdout_is_canonical_json_one_line`.
-- `quoin-semantic` (15 tests) and `quoin-completeness` (6 golden-parity tests)
-  pass either way — the byte-parity goldens this crate owns do not in fact need
-  the feature.
+- `quoin-semantic` and `quoin-completeness` pass either way — they do not in
+  fact need the feature.
 
 **User-visible consequence if it is ever enabled:** the CLI's canonical JSON
 stops being canonical. Two runs over the same data can emit different byte

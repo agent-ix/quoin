@@ -6,10 +6,8 @@
 //!
 //! quoin#500 deleted `src/graph-analysis/` and the 630-line vitest file that
 //! was the only home of FR-062-AC-4 through AC-12, FR-062-CON-2 and
-//! FR-062-CON-3. `tc_385_parity.rs` already pins what the three views COMPUTE,
-//! against the captured oracle corpus, but it does so under three coarse tags
-//! (AC-1, AC-2, AC-3): a criterion that is exercised by a corpus rung nobody
-//! named is a criterion the matrix reads as unbacked. So each deleted criterion
+//! FR-062-CON-3. A criterion exercised only by an unnamed corpus rung is a
+//! criterion the matrix reads as unbacked. So each deleted criterion
 //! is restated here as its own named assertion over its own fixture, in the
 //! same shape the vitest case asserted it.
 //!

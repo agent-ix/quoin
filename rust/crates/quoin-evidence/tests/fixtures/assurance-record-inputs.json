@@ -1,0 +1,93 @@
+{
+  "cases": [
+    {
+      "name": "assurance-experiment-valid",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": {
+          "schemaVersion": "experiment-record-v1",
+          "subject": {
+            "kind": "requirement",
+            "id": "FR-001"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "hypothesis": "the adapter reads real output",
+          "design": {
+            "timeBox": "1d",
+            "corpusRefs": [
+              "corpus/a"
+            ],
+            "comparisonMethod": "A/B",
+            "decisionRule": "p<0.05"
+          },
+          "result": {
+            "status": "supported",
+            "summary": "it did",
+            "evidenceRefs": [
+              "runs/SUITE-A"
+            ]
+          },
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "capabilities": [
+              "record"
+            ],
+            "artifacts": [
+              {
+                "name": "report.json"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-operational-valid",
+      "kind": "assurance",
+      "input": {
+        "record": "operational",
+        "value": {
+          "schemaVersion": "operational-evidence-record-v1",
+          "subject": {
+            "kind": "service",
+            "id": "quoin-core"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "window": {
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2026-01-02T00:00:00Z"
+          },
+          "environment": "production",
+          "observations": [
+            {
+              "signal": "latency",
+              "value": "12",
+              "unit": "ms",
+              "interpretation": "within bounds",
+              "evidenceRefs": [
+                "metrics/1"
+              ]
+            }
+          ],
+          "outcome": "within_bounds",
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "capabilities": [
+              "record"
+            ],
+            "artifacts": [
+              {
+                "name": "report.json"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

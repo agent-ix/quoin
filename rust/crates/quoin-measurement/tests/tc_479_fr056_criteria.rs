@@ -12,10 +12,9 @@
 //! `tests/intervention.test.ts` is deleted in the same commit as
 //! `src/measurement/intervention.ts` (Stage 6 cutover). It carried the
 //! nine FR-056 criteria across six `test` blocks, several of which tagged two
-//! criteria at once. `tc_471_corpus.rs` proves this crate reads and reproduces
-//! the one retained record, and `tc_471_intake.rs` proves the record-id and
-//! path guards, but neither is tagged per criterion: a corpus round trip is not
-//! a statement that `producer.environment` may not be empty. This file is one
+//! criteria at once. `tc_471_intake.rs` proves the record-id and path guards, but it is
+//! not tagged per criterion: that is no statement that
+//! `producer.environment` may not be empty. This file is one
 //! test per criterion, named by the criterion, so a criterion cannot be lost
 //! without a named test disappearing with it.
 //!

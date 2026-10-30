@@ -23,8 +23,7 @@ that would fail if it stopped being true.
 ## §1 — `headCommit` staleness: the retained code throws where this one answers
 
 **Input that separates them:** an obligation bound to two suites, one backed by
-a finding-shaped scan and one by a run, with `headCommit` set. The corpus case
-is `a-scan-only-binding-beside-a-run-throws-in-the-retained-code`.
+a finding-shaped scan and one by a run, with `headCommit` set.
 
 `src/auditor/audit.ts:412-419`:
 
@@ -58,7 +57,7 @@ expressible. The reported suite is always the suite whose run is behind.
 ## §2 — `unreadable[].reason` is the reader's own sentence
 
 **Input that separates them:** any module whose `manifest.yaml` is missing or
-malformed. The corpus case is `a-malformed-manifest-is-reported-not-thrown`.
+malformed.
 
 `src/method-catalog.ts` records `cause.message` from whatever threw. Under Node
 that is `ENOENT: no such file or directory, open '…'` for a missing file and
@@ -157,14 +156,11 @@ is the coverage for it.
 - **`healthy`.** The retained source pushes it as the last statement of the loop
   body, so the one silent `continue` — `runBindings.length === 0` at
   `audit.ts:413` — leaves an obligation neither healthy nor found. `Pass` here
-  carries a `completed` flag for that exact reason, and
-  `a-scan-backed-binding-is-not-stale` is the corpus case that holds it in
-  place. Inferring "healthy" from "no finding" reports a stronger result than
+  carries a `completed` flag for that exact reason. Inferring "healthy" from "no finding" reports a stronger result than
   the retained code does.
 - **String ordering.** `js::compare` is UTF-16 code-unit order, which is what
   `Array.prototype.sort` and `<` give in JavaScript, and it is not Rust's
-  `str: Ord`. The corpus case
-  `obligations-and-findings-sort-by-code-unit-not-by-locale` separates the two.
+  `str: Ord`.
 - **`String(...)` coercion** of eight manifest fields. A YAML author writing
   `name: 1.0` gets `"1"` on both sides. See `src/jsvalue.rs`.
 - **The regex table.** Every retained `/…/i` without the `u` flag is compiled
@@ -172,10 +168,9 @@ is the coverage for it.
   as in JavaScript. The three patterns that also carry `\s` or `≤`/`≥` are
   assembled with `(?i-u:…)` around the ASCII parts only, with
   `quoin_combinatorial::js::JS_WHITESPACE_CLASS` in place of `\s`, preserving
-  match extents. `a-non-ascii-neighbour-is-not-a-word-character-to-a-unicode-less-regexp`
-  is the corpus case that separates ASCII `\w` from Unicode `\w`.
+  match extents.
 - **`Severity`.** An open newtype, not a closed enum, and `Finding.severity` is
-  `Option`. `quoin-assurance`'s captured corpus carries `severity: "error"` and
+  `Option`. `quoin-assurance`'s inputs carry `severity: "error"` and
   findings with no `severity` key at all, and a TypeScript union is not a
   runtime check: where the retained data is wider than the declared type, the
   retained data wins.
@@ -183,7 +178,7 @@ is the coverage for it.
   `IndependenceAssessment`s and this port does too, but it is carried in
   `quoin_finding_types::AuditReport::other` rather than declared as a typed
   field. Declaring it made the workspace gate refuse
-  `quoin-graph-analysis`'s captured corpus, which holds
+  `quoin-graph-analysis`'s inputs, which hold
   `independence: [{"obligation": "…", "axes": ["author"]}]` — not an assessment
   at all, and accepted by every retained reader because nothing between the
   producer and the view validates the member. Same ruling as `Severity`: where

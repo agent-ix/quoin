@@ -678,8 +678,7 @@ fn defect_recall_over(graded: &[Graded], ids: &[String]) -> Option<f64> {
 /// `spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json` had no
 /// `rawEvidence` and a dirty `quire-rs` source, both refused by the ported
 /// intake validator, so it was removed rather than backfilled with data not
-/// actually measured (agent-ix/quoin#607). Bytes remain in git history at
-/// `0a257691` (#575). The numbers below are unbacked by a retained record
+/// actually measured (agent-ix/quoin#607). Bytes remain in git history (#575). The numbers below are unbacked by a retained record
 /// until a fresh `v3` run is recorded cleanly.
 ///
 /// | bar | metric | value |

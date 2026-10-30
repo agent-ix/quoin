@@ -20,8 +20,7 @@
 //! which every libyaml binding implements — the plain scalar `on` resolves to
 //! the boolean `true`, and this lookup would miss on every GitHub workflow file
 //! there is. [`quoin_yaml::from_str`] is YAML 1.2 core, where `on` is the
-//! string it looks like, and `tests/tc_472_github_release.rs` asserts that
-//! against the retained export rather than trusting it.
+//! string it looks like.
 //!
 //! # Two error shapes, because there are two failures
 //!

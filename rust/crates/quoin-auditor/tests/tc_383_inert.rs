@@ -29,9 +29,9 @@
 //! A type-level proof covers the inputs. It does not stop someone writing
 //! `Command::new` in the middle of `audit()` against a path it built itself,
 //! so the second test reads this crate's own `src/audit/` and `src/advise/`
-//! trees and refuses the tokens that reach the world. Its anti-vacuity floor
-//! is a positive control: the same scanner must FIND those tokens in
-//! `src/catalog/source.rs`, which is the one module allowed to have them.
+//! trees and refuses the tokens that reach the world. A positive control: the
+//! same scanner must FIND those tokens in `src/catalog/source.rs`, which is the
+//! one module allowed to have them.
 
 #![allow(
     clippy::unwrap_used,

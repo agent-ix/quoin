@@ -20,7 +20,7 @@ serde = { workspace = true }
 # this workspace swaps serde_json's `Map` from `BTreeMap` to `IndexMap` for
 # every crate, which silently turns off the key sorting
 # `quoin-core::protocol::canonical_json` depends on. Measured, not assumed:
-# with it on, `quoin-core` loses two tests and this crate's goldens still
+# with it on, `quoin-core` loses two tests and this crate's tests still
 # pass. See DIVERGENCE.md §10.
 serde_json = { workspace = true }
 thiserror = { workspace = true }

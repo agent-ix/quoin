@@ -213,7 +213,7 @@ fn tc_447_600_every_operation_is_invoked_by_name_by_some_test() {
 
 /// `assurance.parse_argument` returns the validated argument.
 ///
-/// The 128-case golden replay in `tc_447_assurance_boundary.rs` reaches this
+/// The corpus-driven `tc_447_assurance_boundary.rs` reaches this
 /// operation through a `format!("assurance.{}", case.op)`, so no test named it.
 /// That is coverage a census cannot see and a reader cannot either.
 ///

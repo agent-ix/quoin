@@ -103,8 +103,8 @@ The same reasoning covers `__proto__`, with one wrinkle that belongs to the
 capture script rather than to the algebra: an object _literal_ spelling
 `__proto__: "1"` invokes the prototype setter and creates no own property, while
 `JSON.parse` uses `CreateDataProperty` and does. The production path reads
-configurations out of a parsed run record, so the oracle captures the parsed
-spelling; `oracle/capture-combinatorial.mjs` says so at the case.
+configurations out of a parsed run record, so the parsed
+spelling is the one that matters.
 
 **Must-have-fired:** `tc_382_004_an_inherited_property_name_is_an_ordinary_dimension`.
 

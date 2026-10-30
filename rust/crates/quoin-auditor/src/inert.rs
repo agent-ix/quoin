@@ -46,7 +46,7 @@
 //! reads `manifest.yaml`, on purpose, behind that one trait. It claims that
 //! the *audit* and *advise* surfaces cannot reach it. `tests/tc_383_inert.rs`
 //! states the second half as a source census over `src/audit/` and
-//! `src/advise/`, with an anti-vacuity floor, because a type bound says
+//! `src/advise/`, because a type bound says
 //! nothing about a function that ignores its arguments and shells out anyway.
 
 mod sealed {

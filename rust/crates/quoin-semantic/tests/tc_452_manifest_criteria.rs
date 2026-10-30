@@ -4,11 +4,8 @@
 //! FR-070 and FR-073, criterion by criterion (quoin#452).
 //!
 //! These restate the acceptance criteria `tests/semantic-manifest.test.ts`
-//! carried before the cutover deleted it. They are NOT the golden-parity suite
-//! next door: `golden_parity.rs` proves this crate answers what the TypeScript
-//! answered over a captured corpus, which is a statement about the *port*. A
-//! criterion is a statement about the *contract*, and it has to survive the
-//! oracle's deletion — so each test below names one criterion and asserts the
+//! carried before the cutover deleted it. A criterion is a statement about the
+//! *contract*, and it has to survive the oracle's deletion — so each test below names one criterion and asserts the
 //! rule it states, against the live vendored contract and the shipped
 //! `module-ok` fixture.
 //!

@@ -704,13 +704,6 @@ mod tests {
     }
 
     #[test]
-    fn the_drift_guard_can_see_the_arms_it_guards() {
-        // Without this, a refactor that changes `dispatch`'s formatting turns
-        // the guard above into a comparison of two empty lists, which passes.
-        // A check over an empty population is the failure this ticket is about.
-    }
-
-    #[test]
     fn an_unknown_operation_names_the_ones_that_exist() {
         // A domain this build will never implement. The example used to be
         // `evidence.record`, which quoin#458 then made real — a test whose

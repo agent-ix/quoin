@@ -9,8 +9,7 @@
 //! that would overstate what retained evidence proves. Absence cannot be
 //! observed by calling a function - a second canonicalizer used on one rare
 //! path would pass every behavioural test in this crate. So these read the crate's
-//! own `src/` tree, and each carries a floor so that a census over an empty
-//! or mis-rooted population fails instead of passing.
+//! own `src/` tree, and each is a source census.
 
 #![allow(
     clippy::unwrap_used,
@@ -162,9 +161,7 @@ fn tc_455_no_second_canonicalization_implementation_exists_here() {
 /// The golden-terminology check. A record here is retained content and
 /// recorded attribution; it is never authentication, authorization, a
 /// signature or non-repudiation. Every place this crate's prose reaches for
-/// one of those words, it is to deny it — and the census floor means a crate
-/// that simply stopped saying anything about the boundary would fail this
-/// rather than pass it.
+/// one of those words, it is to deny it.
 #[test]
 fn tc_455_the_integrity_boundary_is_stated_and_never_overstated() {
     assert_eq!(

@@ -13,10 +13,7 @@
 //! `tests/intervention.test.ts` is deleted in the same commit as
 //! `src/measurement/intervention.ts`, `intervention-report.ts` and
 //! `agent-eval-intervention.ts`. Six of its `test` blocks carried
-//! FR-057 criteria, several of them four at a time. `tc_471_corpus.rs` proves
-//! this crate reproduces the retained store byte for byte and `tc_473_reporting`
-//! proves the renderers agree with the captured TypeScript, but both are tagged
-//! `FR-100` — a corpus-wide agreement gate is not a per-criterion one.
+//! FR-057 criteria, several of them four at a time. A corpus-wide agreement gate is not a per-criterion one.
 //! This file is: one test per criterion, named by the criterion, so a criterion
 //! cannot be lost without a named test disappearing with it.
 //!
@@ -70,7 +67,7 @@ const DEFINITION_VERSION: &str = "cli-agent-evals.sentinel-contract-v1";
 
 /// The file name the writer chooses for the retained record's identity. The
 /// `p-` prefix is `intervention.ts:39-45`'s portable namespace; the retained
-/// record predates it (quoin#486, held by `tc_471_corpus`).
+/// record predates it (quoin#486).
 const PUBLISHED_BASENAME: &str = "p-quoin-270-cli-eval-sentinel-contract.json";
 
 /// The retained record's committed bytes.

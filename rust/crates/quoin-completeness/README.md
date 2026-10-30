@@ -36,10 +36,9 @@ duplication FR-037 exists to avoid. The caller supplies the roots.
 
 ## Parity
 
-Captured once from the TypeScript by `scripts/capture-semantic-goldens.mjs`
-(deleted with the TypeScript at the quoin#452 cutover);
-goldens live in `tests/goldens/` and name the revision they came from. Verdicts,
-finding kinds, severities and rollup counts are compared exactly. Message text is
+The TypeScript oracle and its capture script were deleted at the quoin#452
+cutover, and the recorded goldens with the replay tests that read them. Verdicts,
+finding kinds, severities and rollup counts are contractual. Message text is
 not.
 
 This crate compiles no JSON Schema, so the ajv/`jsonschema` divergence does not

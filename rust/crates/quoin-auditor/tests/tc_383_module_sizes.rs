@@ -8,8 +8,7 @@
 //! criterion enforced only by review is enforced only when someone is looking,
 //! and `quoin-change-assurance`'s `model/record.rs` reached 1,078 lines that
 //! way before quoin#457 split it. So the ceiling is read off this crate's own
-//! `src/` tree here, with a floor underneath it: a census that stopped finding
-//! files would otherwise pass by finding nothing.
+//! `src/` tree here.
 //!
 //! This is the crate's **one** census, modelled on
 //! `quoin-quire/tests/tc_474_module_sizes.rs`. A second here would be a copy

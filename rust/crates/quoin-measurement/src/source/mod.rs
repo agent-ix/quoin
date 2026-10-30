@@ -12,9 +12,8 @@
 //! `quoin_validators`' `RepoSource` do. The alternative is two copies of the
 //! analysis, and a port that duplicates the thing it ported has not ported it.
 //!
-//! [`DiskMeasurement`] is what the shipped command runs on, so the retained
-//! corpus under `spec/evidence/measurements/` exercises the same code the
-//! boundary runs. [`MemoryMeasurement`] is what a caller with no filesystem
+//! [`DiskMeasurement`] is what the shipped command runs on, so the code the
+//! boundary runs is the code the library runs. [`MemoryMeasurement`] is what a caller with no filesystem
 //! uses, and is what lets this crate's tests state a repository in three lines.
 //!
 //! # Two path spaces, said out loud

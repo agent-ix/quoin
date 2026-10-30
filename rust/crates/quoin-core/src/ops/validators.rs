@@ -20,8 +20,8 @@
 //! only four; and a request that depends on the filesystem cannot be
 //! fixture-replayed, because the native suite feeds captured input to Rust and
 //! its `Request` enum has no filesystem variant. So the request
-//! carries the file map, which is also the shape the golden corpus already uses
-//! (`quoin-validators/tests/golden/cases.json`).
+//! carries the file map, which is also the shape the retired TypeScript
+//! validators used.
 //!
 //! The classification of those files — which are shell scripts, which are
 //! wiring — stays in Rust, in [`quoin_validators::inspect_empty_gates_in`],
@@ -89,8 +89,8 @@ pub struct RunRequest {
     /// shell script or as wiring, and refuses only if the analysis reaches for
     /// its text — which is the on-demand read the TypeScript oracle performs.
     ///
-    /// Lines rather than one string because that is the shape the golden corpus
-    /// already carries. Joining the lines with a newline reconstructs the file,
+    /// Lines rather than one string because that is the shape the retired TypeScript
+    /// validators used. Joining the lines with a newline reconstructs the file,
     /// so a caller must split on a newline alone and leave any carriage return
     /// on the line.
     pub files: BTreeMap<String, Option<Vec<String>>>,

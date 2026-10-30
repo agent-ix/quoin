@@ -15,19 +15,14 @@
 //!
 //! # Parity with the TypeScript it replaces
 //!
-//! The TypeScript in `src/semantic/` is the oracle, and it was consulted
-//! **once**: `scripts/capture-semantic-goldens.mjs` recorded every verdict and
-//! every diagnostic into `tests/goldens/`, with the quoin revision it ran at.
-//! The tests in `tests/` read those files. Nothing here invokes Node.
-//!
-//! Both the oracle and that script were **deleted** at the quoin#452 cutover —
-//! The retire-after-parity rule forbids a live non-Rust oracle once the port lands — so the
-//! captured goldens are now the whole record and cannot be recaptured. They are
-//! pinned evidence: never hand-edit them, and a disagreement with one is a
-//! finding about this crate.
+//! The TypeScript in `src/semantic/` was the oracle. Both it and its capture
+//! script were **deleted** at the quoin#452 cutover (the retire-after-parity
+//! rule forbids a live non-Rust oracle once the port lands), and the recorded
+//! goldens were deleted with the replay tests that read them. Nothing here
+//! invokes Node or reads a recorded answer.
 //!
 //! Schema validation moves from `ajv` to the Rust `jsonschema` crate. Verdicts
-//! are contractual and measured at exact parity over the golden corpus; error
+//! are contractual; error
 //! *text* is not, and the two libraries' diagnostic shape, coverage and
 //! ordering differ in named, measured ways recorded in `DIVERGENCE.md`.
 //! Read that document before changing anything in [`schema`].

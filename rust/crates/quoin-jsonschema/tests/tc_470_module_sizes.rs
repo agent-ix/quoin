@@ -8,8 +8,7 @@
 //! A criterion enforced only by review is enforced only when someone is
 //! looking, and `quoin-change-assurance`'s `model/record.rs` reached 1,078
 //! lines that way before quoin#457 split it. So the ceiling is read off the
-//! crate's own `src/` tree here instead, with a floor underneath it: a census
-//! that stopped finding files would otherwise pass by finding nothing.
+//! crate's own `src/` tree here instead.
 //!
 //! There is no allow-list. If one is ever needed, it belongs here as an entry
 //! carrying the one-line reason that module is exempt — not as a raised

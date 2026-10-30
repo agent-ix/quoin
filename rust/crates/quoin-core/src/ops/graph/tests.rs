@@ -9,8 +9,8 @@
 //! `tests/tc_library_containment.rs` makes a rule: `ops/graph/` is handed what
 //! it may read and acquires nothing.
 //!
-//! What the three views COMPUTE is `quoin-graph-analysis`' and is pinned there
-//! against the captured oracle corpus (`tc_385_parity.rs`). What is pinned here
+//! What the three views COMPUTE is `quoin-graph-analysis`' and is tested there.
+//! What is pinned here
 //! is the boundary: that a request reaches those functions unchanged, that a
 //! refusal reaches the caller as the status `src/commands/graph/*` exited with,
 //! and that the payload is the bytes the renderer wrote.

@@ -4,10 +4,8 @@
 //! The FR-030/FR-031/FR-048/FR-093/FR-094 criteria the retained TypeScript
 //! suites state, restated against the Rust port (quoin#456).
 //!
-//! These are behaviour assertions, not golden comparisons — `store_parity.rs`
-//! carries the byte-level agreement with the oracle. What is restated here is
-//! what each criterion *says*, so the port is gated on the criterion and not
-//! only on the previous implementation's output.
+//! These are behaviour assertions, not golden comparisons: what is restated
+//! here is what each criterion *says*.
 
 #![allow(
     clippy::unwrap_used,

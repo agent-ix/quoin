@@ -12,12 +12,7 @@
 //! `tests/operational.test.ts` is deleted in the same commit as
 //! `src/measurement/operational.ts`. Nine FR-059 criteria were
 //! carried by five of its cases, and a criterion that appears on no test after
-//! the cutover is a criterion nothing holds. `tc_472_operational_pairs.rs`
-//! proves the one retained pair still validates, and
-//! `tc_472_github_release.rs` proves the producer rebuilds it byte for byte —
-//! but a corpus round trip is not a per-criterion gate: neither would notice
-//! if the control vocabulary lost a member or the clock stopped being derived.
-//! This file is the per-criterion gate: one `#[test]` per criterion, named by
+//! the cutover is a criterion nothing holds. This file is the per-criterion gate: one `#[test]` per criterion, named by
 //! the criterion, so a criterion cannot be lost without a named test
 //! disappearing with it.
 //!
@@ -35,8 +30,7 @@
 //! which must be able to write. That runs in a `tempfile` workspace holding the
 //! producer's whole input contract — the assurance documents the governance
 //! check reads and the three retained GitHub exports the raw-evidence
-//! accounting reads — copied from this repository, exactly as
-//! `tc_472_github_release.rs` does. Nothing here writes into the repository.
+//! accounting reads — copied from this repository. Nothing here writes into the repository.
 
 #![allow(
     clippy::unwrap_used,

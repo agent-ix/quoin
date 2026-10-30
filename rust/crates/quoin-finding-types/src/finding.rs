@@ -66,9 +66,8 @@ pub struct Finding {
     pub obligation: String,
     /// How serious it is, when the producer said.
     ///
-    /// Optional because the assurance corpus holds findings without one: four
-    /// of the six findings in `quoin-assurance/tests/golden/cases.json` omit
-    /// the key entirely, and the view has always rendered them. The auditor
+    /// Optional because findings authored without one exist (the assurance
+    /// input corpus holds some), and the view has always rendered them. The auditor
     /// itself always writes one — [`Finding::new`] takes it by value, so a
     /// finding minted through the constructor cannot lack it.
     #[serde(default, skip_serializing_if = "Option::is_none")]

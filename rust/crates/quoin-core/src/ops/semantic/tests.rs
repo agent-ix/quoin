@@ -9,8 +9,7 @@
 //! payload paths are all decided by this module, so they can all be exercised
 //! without a vendored contract tree, a module or a corpus.
 //!
-//! What the real host does with a real tree is `quoin-semantic`'s own golden
-//! parity suite, and what the wire spelling is end to end is
+//! What the real host does with a real tree is `quoin-semantic`'s own suite, and what the wire spelling is end to end is
 //! `tests/tc_452_semantic_boundary.rs` against the real binary.
 
 #![allow(

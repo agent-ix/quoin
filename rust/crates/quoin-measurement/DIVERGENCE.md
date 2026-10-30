@@ -18,7 +18,7 @@ Everything the two trees agree on is checked, not asserted: all 48 collections
 retained under `spec/evidence/measurements/` read through
 `quoin_store::parse_strict_json`, re-serialise through
 `quoin_store::canonical_json_bytes` **byte for byte**, and pass the ported
-validator (`tests/tc_468_corpus.rs`). What follows is everything outside that
+validator. What follows is everything outside that
 corpus where the two can be told apart, grouped by why.
 
 ## §1 — Divergences of strength: the Rust refuses more, or loses less
@@ -191,12 +191,10 @@ allow-list; no module in this crate is over the soft ceiling.
 # Wave 2 — record types and the two report renderers (quoin#469)
 
 `src/measurement/` is still the oracle for this port and is still the shipping
-implementation: quoin#469 deletes nothing. `tests/fixtures/report-oracle.json`
-is a frozen capture of what `buildInterventionReport`,
-`renderInterventionReport`, `buildOperationalReport` and
-`renderOperationalReport` produce at the revision the file names, and every one
-of its 15 cases is reproduced here byte for byte — both the projected entries,
-compared as JSON, and the rendered markdown.
+implementation: quoin#469 deletes nothing. The port was once checked against a
+frozen capture of what `buildInterventionReport`, `renderInterventionReport`,
+`buildOperationalReport` and `renderOperationalReport` produced; that capture
+and its replay test are deleted, and no recorded answer is read any more.
 
 What follows is everything outside that capture where the two trees can be told
 apart. Each entry names the input that separates them.
@@ -297,10 +295,8 @@ approximated, so that no later wave finds a second implementation to unify:
 ## §11 — the operational port (quoin#472)
 
 Wave 5 ports `src/measurement/operational.ts` and
-`src/measurement/github-release-operational.ts`. The producer reproduces the one
-retained pair byte for byte (`tests/tc_472_github_release.rs`), so the
-divergences below are all in _how_ a refusal or a write happens, never in what
-is written.
+`src/measurement/github-release-operational.ts`. The divergences below are all in _how_ a
+refusal or a write happens, never in what is written.
 
 ### §11.1 — an unreadable store refuses with a code, not a bare `Error`
 
@@ -515,20 +511,20 @@ parses as RFC 3339.
 Two defects wave 6 found in the wave-1 type model, both fixed here rather than
 absorbed:
 
-1. **Unmodelled `population` members were dropped.** 25 of 14,644 corpus
-   observations carry `exclusions` and `namedMisses`.
+1. **Unmodelled `population` members were dropped.** Corpus observations
+   carry `exclusions` and `namedMisses`.
    [`types::observation::MeasurementPopulation`] now keeps every unmodelled
    member verbatim and flattens it back on serialisation. §3.3 is amended.
-2. **An absent `dimensions` was flattened to an empty map.** 305 of 14,644
+2. **An absent `dimensions` was flattened to an empty map.** Some
    observations state no `dimensions` at all, and `{}` and absent are different
    bytes in the report JSON. [`types::observation::Dimensions`] now models the
    distinction: `ABSENT` serialises as absent, `stated(entries)` as the object.
 
-A census over all 14,644 retained observations settles what is left: there is no
-unmodelled observation-level or collection-level member, `dimensions` is never a
-stated `{}`, `population` is never a non-object, and all four modelled
-population members always carry their modelled type. Those are facts about the
-corpus at this revision, not guarantees; a future observation that breaks one
+A census over the retained observations settled what was left: there was no
+unmodelled observation-level or collection-level member, `dimensions` was never a
+stated `{}`, `population` was never a non-object, and all four modelled
+population members always carried their modelled type. Those were facts about the
+corpus when it was read, not guarantees; a future observation that breaks one
 would be refused by [`validate`] rather than silently reshaped.
 
 ### §13.5 — `dimensions` are ordered, not in insertion order
@@ -539,6 +535,6 @@ order. This is invisible in the canonical JSON, which sorts names anyway, and it
 is invisible in the rendered `[language=rust, tier=2]` suffix for the same
 reason — `report.ts:106` sorts the entries before joining them.
 
-It is visible nowhere in the corpus: all 23,214 `dimensions` and `population`
-objects under `spec/evidence/measurements/` are already stored in sorted-name
+It is visible nowhere in the corpus: every `dimensions` and `population`
+object under `spec/evidence/measurements/` was already stored in sorted-name
 order, because every one of them was written through `canonicalJson`.
