@@ -264,7 +264,7 @@ pub struct GraphPortfolioRequest {
     /// `<repository>=<path>` mappings naming accepted graph premises.
     #[serde(default)]
     pub graph_premises: Vec<String>,
-    /// `<repository>=<path>` mappings naming a source-bound audit envelope.
+    /// `<repository>=<path>` mappings naming an audit envelope.
     #[serde(default)]
     pub graph_audits: Vec<String>,
     /// `<repository>=<requirement>` mappings for graph change-impact.

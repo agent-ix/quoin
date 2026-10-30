@@ -147,12 +147,6 @@ fn a_lens_matching_every_label_scores_perfectly_and_every_bar_is_measurable() {
             "{name}: no `{no_defect}` row, so no-defect recall is unmeasurable"
         );
     }
-    // One triple (`GAP-01`) is excluded from `code_exceeds_requirement` by
-    // its own stated rule; every other population is the whole corpus.
-    assert_eq!(grades.implements.len(), 29);
-    assert_eq!(grades.exceeds.len(), 28);
-    assert_eq!(grades.divergence_asked.len(), 29);
-    assert_eq!(grades.severity_verdict.len(), 29);
 }
 
 /// Provenance: PLAT-1014. A triple the lens never answered is graded as

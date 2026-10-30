@@ -73,7 +73,7 @@ pub struct BindOutcome {
     pub created: bool,
 }
 
-/// Bind an obligation to the run that discharged it.
+/// Bind an obligation to the suite that discharged it.
 ///
 /// **Keyed on `(obligation, suite)`, not on the obligation alone.** The graph
 /// is cross-suite by design — one obligation discharged by a unit suite and a
@@ -99,7 +99,6 @@ pub fn bind(existing: &[Binding], next: &Binding) -> BindOutcome {
     let Some(prior) = bindings.get_mut(index) else {
         unreachable!("the index came from this same slice")
     };
-    prior.commit = next.commit.clone();
     prior.symbols.clone_from(&next.symbols);
     // Lineage describes the CURRENT relationship. Omission on a new record
     // clears it rather than silently carrying an old independence claim into

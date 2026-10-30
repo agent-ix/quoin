@@ -57,8 +57,7 @@ evidence kind is declared (`agent-ix/quoin#105`).
 
 ### Freshness reuses the fix, it does not rebuild it
 
-Scan ordering is by `timestamp`, with the commit as tiebreak — identical to `readRuns`. A filename
-is a commit prefix and a commit prefix is uniformly random hex, so lexical order is not time order.
+Scan ordering is by `timestamp` — identical to `readRuns`. A filename is a sanitised timestamp, so ordering reads the record's own `timestamp`.
 `agent-ix/quoin#104` fixed that once for runs; reintroducing it here would rebuild the same defect
 beside its fix.
 
@@ -116,7 +115,7 @@ review rather than by the tests, which is itself the finding.
 
 A finding-shaped adapter is selected **before** anything is parsed, because it writes a different
 record type: letting a scan fall through to the run path would put it in `runs/` and lose the
-clean-versus-unrun distinction at the point of intake, silently and permanently for that commit.
+clean-versus-unrun distinction at the point of intake, silently and permanently for that record.
 
 ### Reachable from every side, not only the write side
 
@@ -138,7 +137,7 @@ over the command and passed; no criterion asked whether anything ever read what 
 | FR-034-CON-1 | A `FindingRecord` SHALL be written only for a report envelope an adapter actually read. Writing one for an absent scan destroys the single distinction this record type exists to make. | Design | Inspection |
 | FR-034-CON-2 | quoin SHALL NOT normalize a scanner's severity strings. Scanners disagree about what "high" means; translating would invent a comparison the tools never made. | Design | Test (TC-171) |
 | FR-034-CON-3 | Judging whether a reported finding is *acceptable* stays with the consumer's gate policy. | Design | Inspection |
-| FR-034-CON-4 | Scan ordering SHALL be by timestamp, never by commit prefix (`agent-ix/quoin#104`). | Design | Inspection |
+| FR-034-CON-4 | Scan ordering SHALL be by timestamp, never by file name (`agent-ix/quoin#104`). | Design | Inspection |
 
 ## Dependencies
 

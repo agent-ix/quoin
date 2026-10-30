@@ -98,13 +98,6 @@ impl Clock for SystemClock {
     }
 }
 
-/// One retained file, as the raw-evidence accounting sees it.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct RawEvidenceFile {
-    /// The file's size in bytes.
-    pub size_bytes: u64,
-}
-
 /// Where measurement inputs are read from.
 pub trait MeasurementSource {
     /// Every `.md` document under the repository's assurance roots, as
@@ -189,7 +182,7 @@ pub trait MeasurementSource {
     /// read as UTF-8.
     fn raw_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError>;
 
-    /// The size of one retained raw-evidence file.
+    /// Whether one retained raw-evidence file is present and readable.
     ///
     /// # Errors
     ///
@@ -197,10 +190,7 @@ pub trait MeasurementSource {
     /// outside the evidence store or names something that is not a regular
     /// file, and [`MeasurementErrorCode::RawEvidenceUnavailable`] from a source
     /// that holds no files.
-    fn raw_evidence_file(
-        &self,
-        path: &RawEvidencePath,
-    ) -> Result<RawEvidenceFile, MeasurementError>;
+    fn raw_evidence_file(&self, path: &RawEvidencePath) -> Result<(), MeasurementError>;
 
     /// The UTF-8 text of one retained raw-evidence file.
     ///
@@ -208,7 +198,7 @@ pub trait MeasurementSource {
     /// GitHub exports this way, after accounting for them with
     /// [`raw_evidence_file`](Self::raw_evidence_file). Separate from that
     /// method because a producer needs the *content* and the accounting needs
-    /// only the size, and a 15 MiB export should not be held in
+    /// only its presence, and a 15 MiB export should not be held in
     /// memory to be measured.
     ///
     /// # Errors

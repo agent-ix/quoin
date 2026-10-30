@@ -70,10 +70,6 @@ pub enum ErrorCode {
     AssuranceContract,
     /// The vendored `assurance-v1` schema did not compile.
     VendoredSchemaInvalid,
-    /// A repository identity was empty.
-    RepositoryEmpty,
-    /// A revision was not 40 lowercase hexadecimal digits.
-    RevisionMalformed,
     /// A stored payload names an engine older than this build requires.
     EnginePremise,
     /// A stored payload names a different engine object id.
@@ -104,8 +100,6 @@ impl ErrorCode {
             Self::Assurance => "QQ-1060",
             Self::AssuranceContract => "QQ-1063",
             Self::VendoredSchemaInvalid => "QQ-1064",
-            Self::RepositoryEmpty => "QQ-1061",
-            Self::RevisionMalformed => "QQ-1062",
             Self::EnginePremise => "QQ-1080",
             Self::EngineRevisionMismatch => "QQ-1081",
         }
@@ -138,8 +132,6 @@ impl ErrorCode {
             Self::Assurance,
             Self::AssuranceContract,
             Self::VendoredSchemaInvalid,
-            Self::RepositoryEmpty,
-            Self::RevisionMalformed,
             Self::EnginePremise,
             Self::EngineRevisionMismatch,
         ]
@@ -374,17 +366,6 @@ pub enum Error {
         detail: String,
     },
 
-    /// A repository identity was empty.
-    #[error("repository identity must not be empty")]
-    RepositoryEmpty,
-
-    /// A revision was not 40 lowercase hexadecimal digits.
-    #[error("revision '{revision}' is not a full lowercase Git object id")]
-    RevisionMalformed {
-        /// The value supplied.
-        revision: String,
-    },
-
     /// A stored payload names an engine this build will not read.
     ///
     /// The successor to `checkVersionPremise`, and narrower by construction:
@@ -449,8 +430,6 @@ impl Error {
             Self::Assurance(_) => ErrorCode::Assurance,
             Self::AssuranceContract { .. } => ErrorCode::AssuranceContract,
             Self::VendoredSchemaInvalid { .. } => ErrorCode::VendoredSchemaInvalid,
-            Self::RepositoryEmpty => ErrorCode::RepositoryEmpty,
-            Self::RevisionMalformed { .. } => ErrorCode::RevisionMalformed,
             Self::EnginePremise { .. } => ErrorCode::EnginePremise,
             Self::EngineRevisionMismatch { .. } => ErrorCode::EngineRevisionMismatch,
         }
@@ -546,17 +525,15 @@ mod tests {
                 shape: "CoverageReport",
                 reason: "missing field".into(),
             },
-            Error::Assurance(quire_rs::AssuranceError::EmptyRepository),
+            Error::Assurance(quire_rs::AssuranceError::MissingModuleName {
+                path: "module.yaml".into(),
+            }),
             Error::AssuranceContract {
                 violations: vec!["<root>: must have required property 'format'".into()],
             },
             Error::VendoredSchemaInvalid {
                 path: PathBuf::from(crate::schema::SOURCE_PATH),
                 detail: "unknown keyword".into(),
-            },
-            Error::RepositoryEmpty,
-            Error::RevisionMalformed {
-                revision: "abc".into(),
             },
             Error::EnginePremise {
                 subject: "coverage".into(),

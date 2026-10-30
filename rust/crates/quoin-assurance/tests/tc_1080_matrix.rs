@@ -24,11 +24,10 @@ fn criterion(id: &str) -> Value {
     json!({ "id": id, "statement": "s", "method": "Test", "binders": [], "status": "untagged" })
 }
 
-fn binding(obligation: &str, suite: &str, commit: &str) -> Value {
+fn binding(obligation: &str, suite: &str) -> Value {
     json!({
         "obligation": obligation,
         "suite": suite,
-        "commit": commit,
         "symbols": ["tc_1"],
     })
 }
@@ -74,7 +73,7 @@ fn status_with(findings: &[&str], healthy: bool, checks: &[&str]) -> EvidenceSta
     let healthy: &[&str] = if healthy { &[id] } else { &[] };
     let output = build(&input(
         &[id],
-        &[binding(id, "unit", "a")],
+        &[binding(id, "unit")],
         &audit(&findings, healthy, &checks),
     ))
     .unwrap();
@@ -189,7 +188,7 @@ fn tc_1080_003_precedence_is_bound_then_suspect_then_stale_then_undischarged() {
     // No binding for this criterion while the store holds one for another.
     let output = build(&input(
         &["FR-001-AC-1", "FR-001-AC-2"],
-        &[binding("FR-001-AC-1", "unit", "a")],
+        &[binding("FR-001-AC-1", "unit")],
         &audit(&[], &["FR-001-AC-1"], &[]),
     ))
     .unwrap();
@@ -204,7 +203,7 @@ fn tc_1080_003_precedence_is_bound_then_suspect_then_stale_then_undischarged() {
 fn tc_1080_004_a_contradictory_audit_is_refused_not_resolved() {
     let with_finding = build(&input(
         &["FR-001-AC-1"],
-        &[binding("FR-001-AC-1", "unit", "a")],
+        &[binding("FR-001-AC-1", "unit")],
         &audit(
             &[
                 finding("FR-001-AC-2", "vacuous-evidence"),
@@ -247,7 +246,7 @@ fn tc_1080_005_the_static_axis_is_verbatim_and_method_is_omitted_not_null() {
         "coverage": [{ "document": "spec/FR-001.md", "criteria": [
             { "id": "FR-001-AC-1", "statement": "s", "binders": [binder], "status": "tagged-by-ignored-test" },
         ]}],
-        "bindings": { "schemaVersion": 1, "bindings": [binding("FR-001-AC-1", "unit", "a")] },
+        "bindings": { "schemaVersion": 1, "bindings": [binding("FR-001-AC-1", "unit")] },
         "audit": audit(&[], &["FR-001-AC-1"], &[]),
     }))
     .unwrap();
@@ -317,11 +316,7 @@ fn tc_1080_007_evidence_detail_is_total_and_ordered() {
     });
     let output = build(&input(
         &[id, "FR-001-AC-2"],
-        &[
-            binding(id, "unit", "b"),
-            binding(id, "bench", "c"),
-            binding(id, "unit", "a"),
-        ],
+        &[binding(id, "unit"), binding(id, "bench")],
         &audit(
             &[
                 finding(id, "unknown-method"),
@@ -363,9 +358,8 @@ fn tc_1080_007_evidence_detail_is_total_and_ordered() {
     assert_eq!(
         full["bindings"],
         json!([
-            { "suite": "bench", "commit": "c" },
-            { "suite": "unit", "commit": "a" },
-            { "suite": "unit", "commit": "b" },
+            { "suite": "bench" },
+            { "suite": "unit" },
         ])
     );
     assert_eq!(
@@ -407,7 +401,7 @@ fn tc_1080_008_an_absent_matrix_renders_its_reason() {
 fn tc_1080_009_markdown_renders_one_table_per_requirement() {
     let output = build(&input(
         &["FR-001-AC-1", "FR-001-AC-2"],
-        &[binding("FR-001-AC-1", "unit", "abc")],
+        &[binding("FR-001-AC-1", "unit")],
         &audit(
             &[json!({ "kind": "stale-evidence", "obligation": "FR-001-AC-1", "summary": "a|b" })],
             &[],
@@ -423,7 +417,7 @@ fn tc_1080_009_markdown_renders_one_table_per_requirement() {
          \n\
          | Requirement | Criterion | Method | Static Status | Evidence Status | Detail |\n\
          |---|---|---|---|---|---|\n\
-         | FR-001 | FR-001-AC-1 | Test | untagged | stale | stale-evidence: a\\|b; bound by unit@abc |\n\
+         | FR-001 | FR-001-AC-1 | Test | untagged | stale | stale-evidence: a\\|b; bound by unit |\n\
          | FR-001 | FR-001-AC-2 | Test | untagged | undischarged | — |\n"
     );
 }

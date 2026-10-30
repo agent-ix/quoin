@@ -25,7 +25,6 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::error::{GraphError, Result};
-use crate::ids::{RepositoryId, Revision};
 use crate::json as reader;
 use crate::model::premises::{AcceptedPremises, export_premises};
 
@@ -35,20 +34,9 @@ pub const AUDIT_FORMAT: &str = "quoin-audit-envelope";
 /// The envelope's format-version literal (`input.ts:75`).
 pub const AUDIT_FORMAT_VERSION: u32 = 1;
 
-/// The immutable repository identity an audit was taken at.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct SourceIdentity {
-    /// The repository.
-    pub repository: RepositoryId,
-    /// The revision: 40 lowercase hexadecimal digits.
-    pub revision: Revision,
-}
-
-/// One FR-032 audit, with the identity it was taken under.
+/// One FR-032 audit, with the premises it was taken under.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditEnvelope {
-    /// Where and when the audit was taken.
-    pub source: SourceIdentity,
     /// The exact identity copied from the export, not the caller's acceptance
     /// set (`input.ts:86`).
     pub export: AcceptedPremises,
@@ -69,10 +57,9 @@ impl Serialize for AuditEnvelope {
         serializer: S,
     ) -> std::result::Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct as _;
-        let mut envelope = serializer.serialize_struct("AuditEnvelope", 5)?;
+        let mut envelope = serializer.serialize_struct("AuditEnvelope", 4)?;
         envelope.serialize_field("format", AUDIT_FORMAT)?;
         envelope.serialize_field("format_version", &AUDIT_FORMAT_VERSION)?;
-        envelope.serialize_field("source", &self.source)?;
         envelope.serialize_field("export", &self.export)?;
         envelope.serialize_field("report", &self.report)?;
         envelope.end()
@@ -87,45 +74,19 @@ impl AuditEnvelope {
     /// One line naming the member that failed and why.
     pub fn parse(value: &Value) -> std::result::Result<Self, String> {
         let root = reader::object(value, "<root>")?;
-        reader::strict(
-            root,
-            "",
-            &["format", "format_version", "source", "export", "report"],
-        )?;
+        reader::strict(root, "", &["format", "format_version", "export", "report"])?;
         reader::literal_text(reader::member(root, "", "format")?, "format", AUDIT_FORMAT)?;
         reader::literal_number(
             reader::member(root, "", "format_version")?,
             "format_version",
             u64::from(AUDIT_FORMAT_VERSION),
         )?;
-        let source = parse_source(reader::member(root, "", "source")?)?;
         let export = AcceptedPremises::parse(reader::member(root, "", "export")?)
             .map_err(|reason| format!("export.{reason}"))?;
         let report = parse_report(reader::member(root, "", "report")?)?;
         let report = canonicalize_report(report).map_err(|error| error.to_string())?;
-        Ok(Self {
-            source,
-            export,
-            report,
-        })
+        Ok(Self { export, report })
     }
-}
-
-fn parse_source(value: &Value) -> std::result::Result<SourceIdentity, String> {
-    let object = reader::object(value, "source")?;
-    reader::strict(object, "source.", &["repository", "revision"])?;
-    Ok(SourceIdentity {
-        repository: RepositoryId::parse(reader::text(
-            reader::member(object, "source.", "repository")?,
-            "source.repository",
-        )?)
-        .map_err(|reason| format!("source.repository: {reason}"))?,
-        revision: Revision::parse(reader::text(
-            reader::member(object, "source.", "revision")?,
-            "source.revision",
-        )?)
-        .map_err(|reason| format!("source.revision: {reason}"))?,
-    })
 }
 
 fn parse_report(value: &Value) -> std::result::Result<AuditReport, String> {
@@ -292,18 +253,11 @@ pub fn validate_accepted_premises(
 ///
 /// # Errors
 ///
-/// The retained sentence for whichever half disagrees, source first.
+/// The retained sentence when the format/module premises disagree.
 pub fn validate_audit_identity(
     audit: &AuditEnvelope,
     export: &quoin_quire::model::AssuranceExport,
 ) -> Result<std::result::Result<(), String>> {
-    if audit.source.repository.as_str() != export.source.repository
-        || audit.source.revision.as_str() != export.source.revision
-    {
-        return Ok(Err(
-            "the audit source repository/revision does not match the assurance export".to_owned(),
-        ));
-    }
     match validate_accepted_premises(export, &audit.export)? {
         Ok(()) => Ok(Ok(())),
         Err(_) => Ok(Err(

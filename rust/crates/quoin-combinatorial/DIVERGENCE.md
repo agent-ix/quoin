@@ -6,9 +6,8 @@
 This crate is the port of `src/auditor/combinatorial.ts` (quoin#382): 195 lines
 of t-way covering-array algebra with zero imports.
 
-The retained TypeScript is still present and is still the oracle. Nothing in it
-was edited by this wave — a port declares its divergences, it does not retrofit
-the implementation it is replacing (FR-018).
+The TypeScript this crate replaced is deleted; the divergences below are
+recorded against what it did.
 
 There are **two** divergences and **one** near-divergence that turns out not to
 be one. Each is named below with the assertion that would fail if it stopped

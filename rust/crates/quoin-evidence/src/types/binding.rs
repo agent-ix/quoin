@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::ids::{Commit, ObligationId, SuiteId, SymbolId};
+use crate::ids::{ObligationId, SuiteId, SymbolId};
 
 /// Separation facts carried by one evidence relationship.
 ///
@@ -59,8 +59,6 @@ pub struct Binding {
     pub obligation: ObligationId,
     /// The suite that discharged it.
     pub suite: SuiteId,
-    /// The commit of the run that first discharged it.
-    pub commit: Commit,
     /// Symbols within that suite carrying the obligation's trace id.
     pub symbols: Vec<SymbolId>,
     /// Separation facts, for profile-selected independence checks.

@@ -119,8 +119,6 @@ pub struct RawEvidenceReference {
     pub path: RawEvidencePath,
     /// The producer's media type for the file.
     pub media_type: NonEmptyText,
-    /// The file's size in bytes.
-    pub size_bytes: u64,
 }
 
 impl From<RawEvidenceReference> for RecordedEvidenceReference {
@@ -133,7 +131,6 @@ impl From<RawEvidenceReference> for RecordedEvidenceReference {
         Self {
             path: crate::common::identity::EvidencePath::from_stored(value.path.as_str()),
             media_type: crate::common::identity::MediaType::from_stored(value.media_type.as_str()),
-            size_bytes: value.size_bytes,
         }
     }
 }
@@ -157,12 +154,8 @@ pub fn raw_evidence_for<S: MeasurementSource + ?Sized>(
         MeasurementErrorCode::CollectionInvalid,
         "media_type",
     )?;
-    let file = source.raw_evidence_file(&path)?;
-    Ok(RawEvidenceReference {
-        path,
-        media_type,
-        size_bytes: file.size_bytes,
-    })
+    source.raw_evidence_file(&path)?;
+    Ok(RawEvidenceReference { path, media_type })
 }
 
 /// Check every claimed reference against the file it names.
@@ -182,14 +175,7 @@ pub fn verify_raw_evidence_references<S: MeasurementSource + ?Sized>(
     let mut findings = Vec::new();
     for (index, reference) in references.iter().enumerate() {
         match check(source, reference) {
-            Ok(file) => {
-                if file.size_bytes != reference.size_bytes {
-                    findings.push(format!(
-                        "/raw_evidence/{index}/size_bytes: expected {}, observed {}",
-                        reference.size_bytes, file.size_bytes
-                    ));
-                }
-            }
+            Ok(()) => {}
             // The retained code catches around the whole read, so an unsafe
             // path, an absent file and an unreadable one all land on
             // `/path` as one finding rather than aborting the loop.
@@ -210,7 +196,7 @@ pub fn verify_raw_evidence_references<S: MeasurementSource + ?Sized>(
 fn check<S: MeasurementSource + ?Sized>(
     source: &S,
     reference: &RecordedEvidenceReference,
-) -> Result<crate::source::RawEvidenceFile, MeasurementError> {
+) -> Result<(), MeasurementError> {
     source.raw_evidence_file(&RawEvidencePath::parse(reference.path.as_str())?)
 }
 

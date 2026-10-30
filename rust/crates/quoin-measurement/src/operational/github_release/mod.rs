@@ -8,11 +8,11 @@
 //! # The producer decides nothing it is not shown
 //!
 //! Every value in the two records it writes comes from the definition or from
-//! one of the three retained exports, and every cross-check the retained code
-//! makes is kept: the run's workflow path, event and head revision against the
-//! definition, the job's run id, revision and attempt against the run, and the
-//! three instants against each other. A producer that filled a gap with a
-//! default would be producing evidence rather than recording it.
+//! one of the three input exports, and every cross-check is retained: the run's
+//! workflow path and event against the definition, the job's run id, head
+//! revision and attempt against the run, and the three instants against each
+//! other. A producer that filled a gap with a default would be producing
+//! evidence rather than recording it.
 //!
 //! # The workflow export is read as YAML 1.2, and `on:` is a key
 //!

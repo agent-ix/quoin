@@ -34,8 +34,7 @@ an audit, reconstruct the export, or discover acceptance premises from ambient
 modules.
 
 These are structural views, not measurements or assurance verdicts. Counts and
-paths stay attached to their exact source revision, contract premises, and
-completeness state.
+paths stay attached to their contract premises and completeness state.
 
 ## Inputs
 
@@ -45,9 +44,8 @@ completeness state.
 - [FR-030](./FR-030-evidence-store.md) bindings.
 - [FR-032](./FR-032-evidence-auditor.md) verdicts supplied through required
   `--audit <json>`, used without reinterpretation. The accepted audit envelope
-  SHALL carry `format: "quoin-audit-envelope"`, `format_version: 1`, the source
-  repository and revision, and the export format, version, and exact module
-  premises, all of which SHALL match the accepted export before any verdict is
+  SHALL carry `format: "quoin-audit-envelope"`, `format_version: 1`, and the export
+  format, version, and exact module premises, all of which SHALL match the accepted export before any verdict is
   joined. Its nested FR-032 `findings`, `healthy`, and `unevaluated` payload
   SHALL remain unchanged.
 - For `change-impact`, one or more live requirement ids supplied through the
@@ -61,8 +59,7 @@ completeness state.
 
 Every report SHALL carry:
 
-- `view`, the Quire source repository and full revision, the accepted export
-  format and module premises, and a deterministic `complete`, `incomplete`, or
+- `view`, the accepted export format and module premises, and a deterministic `complete`, `incomplete`, or
   `not_computed` state;
 - `gaps`, including every absent or unreadable store input, unknown relationship
   availability, unresolved binding id, and requested requirement that cannot be
@@ -119,7 +116,7 @@ graph. Human and JSON renderers SHALL consume the same report object.
 An absent or unreadable `--export`, `--premises`, or `--audit` path SHALL fail
 before row construction and name the failed input. A valid export whose
 declared premises do not exactly match the accepted premise input, or an audit
-whose source/export identity does not exactly match that export, SHALL likewise
+whose export premises do not exactly match that export, SHALL likewise
 fail before any artifact, relationship, obligation, verdict, or row is
 returned.
 
@@ -143,8 +140,8 @@ returned.
 | FR-062-AC-5 | Each impacted binding carries its unchanged FR-032 verdict in a field distinct from change exposure; reachability alone never changes the verdict (CON-3). | Test (TC-1253) |
 | FR-062-AC-6 | Withdrawn (CR note, 2026-10-29): required churn to deduplicate affirmation events. The store keeps no affirmations and the churn view is removed. | Withdrawn (TC-1254) |
 | FR-062-AC-7 | Withdrawn (CR note, 2026-10-29): required churn rows and affirmation-history gaps. The churn view is removed. | Withdrawn (TC-1255) |
-| FR-062-AC-8 | Every view carries the exact accepted source revision and export/module premises; repeated analysis over identical accepted inputs preserves those fields byte-for-byte. | Test (TC-1256) |
-| FR-062-AC-9 | Invalid inputs, absent or unreadable required `--export`/`--premises`/`--audit` paths, rejected premises, and mismatched audit identity fail before rows; absent, unreadable, incomplete, and empty retained inputs produce distinct report states and reasons, never an invented healthy zero. | Test (TC-1257) |
+| FR-062-AC-8 | Every view carries the export/module premises; repeated analysis over identical accepted inputs preserves those fields byte-for-byte. | Test (TC-1256) |
+| FR-062-AC-9 | Invalid inputs, absent or unreadable required `--export`/`--premises`/`--audit` paths, rejected premises, and mismatched audit premises fail before rows; absent, unreadable, incomplete, and empty retained inputs produce distinct report states and reasons, never an invented healthy zero. | Test (TC-1257) |
 | FR-062-AC-10 | Reordered equivalent inputs produce byte-identical JSON, and human and JSON renderings are projections of the same sorted report object. | Test (TC-1258) |
 | FR-062-AC-11 | Static boundaries and a non-JSON command-path regression prove the two views execute and write nothing, disable the inherited update check, and consume no frontmatter reader or independently built graph (CON-1, CON-4). | Inspection (TC-1259) |
 | FR-062-AC-12 | Existing evidence audit, assurance-case, and measurement reports remain byte-compatible when graph analysis is not invoked, and graph reports contain no derived score or threshold label (CON-2). | Test (TC-1260) |

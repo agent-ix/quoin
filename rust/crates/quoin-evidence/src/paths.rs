@@ -14,7 +14,7 @@
 //! family beneath the same root; reaching into evidence for it was one half of
 //! the import cycle agent-ix/quoin#376 closed.
 
-use crate::ids::{Commit, SuiteId, TrustDecisionId};
+use crate::ids::{SuiteId, TrustDecisionId};
 
 /// Where a suite's run records live, relative to the store root.
 pub const RUNS_DIR: &str = "runs";
@@ -61,24 +61,6 @@ pub fn trust_decision_path(id: &TrustDecisionId) -> String {
     format!("{TRUST_DIR}/{id}.json")
 }
 
-/// `runs/<suite>/<commit12>.json` — one file is one run of one suite.
-#[must_use]
-pub fn run_path(suite: &SuiteId, commit: &Commit) -> String {
-    record_path(RUNS_DIR, suite, commit)
-}
-
-/// `scans/<suite>/<commit12>.json` — one file is one scan of one suite.
-#[must_use]
-pub fn scan_path(suite: &SuiteId, commit: &Commit) -> String {
-    record_path(SCANS_DIR, suite, commit)
-}
-
-/// `mock-inspections/<suite>/<commit12>.json`.
-#[must_use]
-pub fn mock_inspection_path(suite: &SuiteId, commit: &Commit) -> String {
-    record_path(MOCK_INSPECTIONS_DIR, suite, commit)
-}
-
 /// The directory holding one suite's records of one kind.
 #[must_use]
 pub fn suite_dir(family: &str, suite: &SuiteId) -> String {
@@ -94,8 +76,40 @@ pub fn assurance_record_path(family: &str, stem: &str) -> String {
     format!("{family}/{stem}.json")
 }
 
-fn record_path(family: &str, suite: &SuiteId, commit: &Commit) -> String {
-    format!("{family}/{suite}/{}.json", commit.short())
+/// A record's file stem: its caller-supplied timestamp, with every byte outside
+/// ASCII alphanumerics and `-` encoded as `~HH`. The encoding is injective and
+/// the stem can never escape the suite directory.
+#[must_use]
+pub fn record_stem(timestamp: &str) -> String {
+    if timestamp.is_empty() {
+        return "~E".to_owned();
+    }
+
+    let mut stem = String::with_capacity(timestamp.len());
+    for byte in timestamp.bytes() {
+        if byte.is_ascii_alphanumeric() || byte == b'-' {
+            stem.push(char::from(byte));
+        } else {
+            stem.push('~');
+            stem.push(
+                char::from_digit(u32::from(byte >> 4), 16)
+                    .unwrap_or('0')
+                    .to_ascii_uppercase(),
+            );
+            stem.push(
+                char::from_digit(u32::from(byte & 0x0f), 16)
+                    .unwrap_or('0')
+                    .to_ascii_uppercase(),
+            );
+        }
+    }
+    stem
+}
+
+/// `<family>/<suite>/<stem>.json` — one file is one record of one suite.
+#[must_use]
+pub fn record_path(family: &str, suite: &SuiteId, timestamp: &str) -> String {
+    format!("{family}/{suite}/{}.json", record_stem(timestamp))
 }
 
 #[cfg(test)]
@@ -105,23 +119,18 @@ fn record_path(family: &str, suite: &SuiteId, commit: &Commit) -> String {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{
-        assurance_record_path, mock_inspection_path, run_path, scan_path, trust_decision_path,
-    };
-    use crate::ids::{Commit, SuiteId, TrustDecisionId};
+    use super::{assurance_record_path, record_path, record_stem, trust_decision_path};
+    use crate::ids::{SuiteId, TrustDecisionId};
 
     #[test]
-    fn the_frozen_layout_is_reproduced_exactly() {
+    fn record_path_contains_suite_and_json_record() {
         let suite = SuiteId::new("SUITE-1");
-        let commit = Commit::new("0123456789abcdef0123");
-        assert_eq!(run_path(&suite, &commit), "runs/SUITE-1/0123456789ab.json");
-        assert_eq!(
-            scan_path(&suite, &commit),
-            "scans/SUITE-1/0123456789ab.json"
-        );
-        assert_eq!(
-            mock_inspection_path(&suite, &commit),
-            "mock-inspections/SUITE-1/0123456789ab.json"
+        let path = record_path("runs", &suite, "2026-09-27T00:00:00Z");
+        assert!(path.starts_with("runs/SUITE-1/"));
+        assert!(
+            std::path::Path::new(&path)
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
         );
         assert_eq!(
             trust_decision_path(&TrustDecisionId::parse("ETD-12").unwrap()),
@@ -130,6 +139,15 @@ mod tests {
         assert_eq!(
             assurance_record_path("experiments", "0b9a7a52-8f0c-4d0e-9d57-3f1b2c6a1e44"),
             "experiments/0b9a7a52-8f0c-4d0e-9d57-3f1b2c6a1e44.json"
+        );
+    }
+
+    #[test]
+    fn distinct_timestamps_never_alias_a_record_stem() {
+        assert_ne!(
+            record_stem("x:y"),
+            record_stem("x~3Ay"),
+            "reserved characters and escape-looking text must encode distinctly"
         );
     }
 }

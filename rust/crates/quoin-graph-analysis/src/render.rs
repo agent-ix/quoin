@@ -16,7 +16,7 @@
 //! A table cell escapes `|` and flattens newlines ([`cell`]); a code span
 //! escapes the backtick ([`escape_code`]). They are not interchangeable and
 //! the retained source applies each in specific places — a suite name goes
-//! through `cell`, a repository name through `escape_code` — so both are here
+//! through `cell`, a module name through `escape_code` — so both are here
 //! and neither is generalised into one "escape" that would silently change
 //! which characters survive where.
 
@@ -42,11 +42,6 @@ pub fn render_graph_analysis(analysis: &GraphAnalysis) -> String {
         format!("# Evidence graph: {}", base.view.as_str()),
         String::new(),
         format!("State: **{}**", base.state.as_str()),
-        format!(
-            "Source: `{}@{}`",
-            escape_code(&base.source.repository),
-            base.source.revision
-        ),
         format!(
             "Export: `{} v{}`",
             base.export.format, base.export.format_version

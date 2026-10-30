@@ -4,10 +4,10 @@
 //! The store's identities, as types rather than as `String`.
 //!
 //! Every one of these is a `String` on disk and they are freely interchangeable
-//! there, which is the problem: a suite name, a commit sha, an obligation id
-//! and a record digest all cross the same function boundaries, and the retained
+//! there, which is the problem: a suite name, an obligation id
+//! and a symbol all cross the same function boundaries, and the retained
 //! TypeScript distinguishes them only by parameter order. `runPath(repo, suite,
-//! commit)` called with the arguments swapped is a well-typed call producing a
+//! stamp)` called with the arguments swapped is a well-typed call producing a
 //! path nobody meant.
 //!
 //! The newtypes carry the validation that belongs to the identity — a trust
@@ -15,13 +15,6 @@
 //! where the value is minted rather than at the filesystem.
 
 use crate::error::EvidenceError;
-
-/// The 12-character commit prefix run, scan and inspection filenames use.
-///
-/// `commit.slice(0, 12)` in the retained source. Not a hash of the commit and
-/// not shortened by git's rules: a fixed prefix, frozen because it is the file
-/// name (NFR-025).
-pub const SHORT_COMMIT_LENGTH: usize = 12;
 
 /// Declares one opaque string identity.
 ///
@@ -83,49 +76,6 @@ opaque_id!(
     schema = "EvidenceObligationId"
 );
 opaque_id!(SymbolId, "FR-051 stable symbol identity");
-
-/// A full commit sha, as the caller reported it.
-///
-/// Not validated as hexadecimal: the retained store accepts whatever the
-/// caller's CI reports, and refusing here would refuse records that already
-/// exist on disk.
-#[derive(
-    Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
-)]
-#[serde(transparent)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct Commit(String);
-
-impl Commit {
-    /// Take a commit from a caller that already has one.
-    #[must_use]
-    pub fn new(value: impl Into<String>) -> Self {
-        Self(value.into())
-    }
-
-    /// The full sha.
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    /// The 12-character prefix the filenames carry.
-    ///
-    /// Character-wise, not byte-wise: `slice(0, 12)` in the retained source
-    /// counts UTF-16 code units, and for the hexadecimal shas this is ever
-    /// called with the two agree. Slicing bytes would panic on a non-ASCII
-    /// boundary for an input that the TypeScript merely truncated oddly.
-    #[must_use]
-    pub fn short(&self) -> String {
-        self.0.chars().take(SHORT_COMMIT_LENGTH).collect()
-    }
-}
-
-impl std::fmt::Display for Commit {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.0)
-    }
-}
 
 /// A trust decision id, `ETD-<digits>`.
 ///
@@ -241,14 +191,7 @@ impl std::fmt::Display for ProfileId {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{Commit, ProfileId, TrustDecisionId};
-
-    #[test]
-    fn short_takes_the_first_twelve_characters() {
-        assert_eq!(Commit::new("0123456789abcdef").short(), "0123456789ab");
-        assert_eq!(Commit::new("abc").short(), "abc");
-        assert_eq!(Commit::new("").short(), "");
-    }
+    use super::{ProfileId, TrustDecisionId};
 
     #[test]
     fn trust_decision_ids_accept_only_the_stored_spelling() {

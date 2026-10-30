@@ -25,9 +25,6 @@ pub enum Source {
         /// A tag or branch to pin to.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         r#ref: Option<String>,
-        /// A commit id to pin to; outranks `ref`.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        sha: Option<String>,
     },
     /// A module living in a subdirectory of a git repository.
     GitSubdir {
@@ -38,9 +35,6 @@ pub enum Source {
         /// A tag or branch to pin to.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         r#ref: Option<String>,
-        /// A commit id to pin to; outranks `ref`.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        sha: Option<String>,
     },
     /// A git repository by url.
     Git {
@@ -49,9 +43,6 @@ pub enum Source {
         /// A tag or branch to pin to.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         r#ref: Option<String>,
-        /// A commit id to pin to; outranks `ref`.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        sha: Option<String>,
     },
     /// A plain url. Accepted structurally, not resolvable.
     Url {
@@ -60,9 +51,6 @@ pub enum Source {
         /// A tag or branch, carried for round-tripping.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         r#ref: Option<String>,
-        /// A commit id, carried for round-tripping.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        sha: Option<String>,
     },
     /// A local directory.
     Path {
@@ -130,26 +118,18 @@ impl Source {
         }
 
         match self {
-            Self::Github { repo, r#ref, sha } => {
+            Self::Github { repo, r#ref } => {
                 safe(repo, "repo")?;
-                safe_opt(r#ref.as_ref(), "ref")?;
-                safe_opt(sha.as_ref(), "sha")
+                safe_opt(r#ref.as_ref(), "ref")
             }
-            Self::Git { url, r#ref, sha } | Self::Url { url, r#ref, sha } => {
+            Self::Git { url, r#ref } | Self::Url { url, r#ref } => {
                 safe(url, "url")?;
-                safe_opt(r#ref.as_ref(), "ref")?;
-                safe_opt(sha.as_ref(), "sha")
+                safe_opt(r#ref.as_ref(), "ref")
             }
-            Self::GitSubdir {
-                url,
-                path,
-                r#ref,
-                sha,
-            } => {
+            Self::GitSubdir { url, path, r#ref } => {
                 safe(url, "url")?;
                 safe(path, "path")?;
-                safe_opt(r#ref.as_ref(), "ref")?;
-                safe_opt(sha.as_ref(), "sha")
+                safe_opt(r#ref.as_ref(), "ref")
             }
             Self::Path { path } => non_empty(path, "path"),
             Self::Npm { package, .. } => safe(package, "package"),
@@ -162,18 +142,6 @@ impl Source {
         match self {
             Self::GitSubdir { path, .. } => Some(path.as_str()),
             _ => None,
-        }
-    }
-
-    /// The commit id this source pins to, if any.
-    #[must_use]
-    pub fn pinned_sha(&self) -> Option<&str> {
-        match self {
-            Self::Github { sha, .. }
-            | Self::GitSubdir { sha, .. }
-            | Self::Git { sha, .. }
-            | Self::Url { sha, .. } => sha.as_deref(),
-            Self::Path { .. } | Self::Npm { .. } => None,
         }
     }
 
@@ -251,13 +219,11 @@ pub fn parse_source_arg(arg: &str) -> Result<Source, ModulesError> {
                 url: url.to_owned(),
                 path: path.to_owned(),
                 r#ref,
-                sha: None,
             }
         } else {
             Source::Github {
                 repo: spec.to_owned(),
                 r#ref,
-                sha: None,
             }
         }
     } else if let Some(spec) = arg.strip_prefix("package:") {
@@ -305,7 +271,6 @@ mod tests {
         let evil = Source::Github {
             repo: "--upload-pack=evil".to_owned(),
             r#ref: None,
-            sha: None,
         };
         let err = evil.validate().expect_err("an option-like repo is refused");
         assert_eq!(err.code(), crate::error::ModulesErrorCode::InvalidSource);

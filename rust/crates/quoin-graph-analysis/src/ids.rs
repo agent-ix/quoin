@@ -6,7 +6,7 @@
 //!
 //! `analysis.ts` passes eight different kinds of identifier through functions
 //! that all take `string`: an artifact id, an obligation id, a suite name, a
-//! document path, a relation kind, an author and a commit.
+//! document path, a relation kind, and an author.
 //! `verdictFor(report, obligation, gaps)` and
 //! `selectedCorpusEdges(export, selection, requirementIds, allArtifactIds, …)`
 //! are both call sites where two same-typed arguments could be transposed
@@ -132,15 +132,6 @@ producer_id!(
     /// One relationship kind — `depends_on`, `traces_to`.
     RelationKind
 );
-producer_id!(
-    /// A commit, as the bindings store recorded it.
-    ///
-    /// Not [`Revision`]: the bindings store's `commit` carries no shape
-    /// constraint at any boundary the retained implementation checks, and
-    /// giving it one here would refuse stores that already exist.
-    Commit
-);
-
 /// An identifier a boundary in this crate refuses to accept malformed.
 ///
 /// The constructor is `parse`, it returns the type or the reason, and there is
@@ -165,7 +156,7 @@ macro_rules! checked_id {
                 if ($check)(text.as_str()) {
                     Ok(Self(text))
                 } else {
-                    Err(format!("{} is not {}", Debugged(&text), $what))
+                    Err(format!("{text:?} is not {}", $what))
                 }
             }
         }
@@ -174,40 +165,6 @@ macro_rules! checked_id {
     };
 }
 
-/// A rejected value, rendered short enough to read in a diagnostic.
-struct Debugged<'a>(&'a str);
-
-impl fmt::Display for Debugged<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        const LIMIT: usize = 48;
-        if self.0.chars().count() <= LIMIT {
-            return write!(f, "{:?}", self.0);
-        }
-        let head: String = self.0.chars().take(LIMIT).collect();
-        write!(f, "{head:?}…")
-    }
-}
-
-/// `true` when `text` is exactly `width` lowercase hexadecimal digits.
-fn is_lowercase_hex(text: &str, width: usize) -> bool {
-    text.len() == width
-        && text
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-}
-
-checked_id!(
-    /// A source revision: 40 lowercase hexadecimal digits (`input.ts:39`).
-    Revision,
-    |text| is_lowercase_hex(text, 40),
-    "40 lowercase hexadecimal digits"
-);
-checked_id!(
-    /// A repository identity. Non-empty (`input.ts:38`).
-    RepositoryId,
-    |text: &str| !text.is_empty(),
-    "a non-empty repository identity"
-);
 checked_id!(
     /// A loaded module's name. Non-empty (`input.ts:22`).
     ModuleName,
@@ -235,7 +192,7 @@ checked_id!(
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{ArtifactId, Revision};
+    use super::ArtifactId;
 
     /// The ordering is UTF-16's, which is not Rust's.
     ///
@@ -257,27 +214,5 @@ mod tests {
             astral.as_str() > replacement.as_str(),
             "and Rust's own str order does not, which is why this type has its own"
         );
-    }
-
-    /// Provenance: quoin#385
-    #[test]
-    fn a_revision_is_forty_lowercase_hex_digits_and_nothing_else() {
-        assert!(Revision::parse("0".repeat(40)).is_ok());
-        assert!(Revision::parse("0".repeat(39)).is_err());
-        assert!(Revision::parse("0".repeat(41)).is_err());
-        assert!(Revision::parse(format!("{}A", "0".repeat(39))).is_err());
-        assert!(Revision::parse(format!("{}g", "0".repeat(39))).is_err());
-    }
-
-    /// A rejection names the value it rejected, and does not paste a megabyte
-    /// of it into the diagnostic.
-    ///
-    /// Provenance: quoin#385
-    #[test]
-    fn a_rejection_truncates_what_it_quotes() {
-        let long = "z".repeat(4096);
-        let message = Revision::parse(long).expect_err("not a revision");
-        assert!(message.len() < 200, "the diagnostic is readable: {message}");
-        assert!(message.contains('…'), "and says it was cut: {message}");
     }
 }

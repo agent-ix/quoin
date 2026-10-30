@@ -146,11 +146,9 @@ fn tc_446_063_a_github_prefix_yields_owner_repo_and_a_ref_only_when_given() {
                     Source::Github {
                         repo: parsed,
                         r#ref,
-                        sha,
                     } => {
                         assert_eq!(parsed, format!("{owner}/{repo}"), "{arg}");
                         assert_eq!(r#ref.as_deref(), r, "{arg}");
-                        assert_eq!(sha, None, "{arg}");
                     }
                     other => panic!("{arg:?} parsed as {other:?}"),
                 }
@@ -175,16 +173,10 @@ fn tc_446_064_a_double_slash_yields_git_subdir_split_at_the_first_one() {
                         None => format!("github:{owner}/{repo}//{sub}"),
                     };
                     match parse_source_arg(&arg).unwrap_or_else(|e| panic!("{arg:?}: {e}")) {
-                        Source::GitSubdir {
-                            url,
-                            path,
-                            r#ref,
-                            sha,
-                        } => {
+                        Source::GitSubdir { url, path, r#ref } => {
                             assert_eq!(url, format!("{owner}/{repo}"), "{arg}");
                             assert_eq!(path, *sub, "{arg}");
                             assert_eq!(r#ref.as_deref(), r, "{arg}");
-                            assert_eq!(sha, None, "{arg}");
                         }
                         other => panic!("{arg:?} parsed as {other:?}"),
                     }

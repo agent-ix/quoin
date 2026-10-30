@@ -81,7 +81,7 @@ impl GitResolver for CountingResolver {
             sha: CommitSha::new(sha_for(wanted)).expect("fixture sha is 40 hex"),
             requested_ref: match revision {
                 Revision::Ref(r) => Some(r.to_owned()),
-                Revision::Sha(_) | Revision::Head => None,
+                Revision::Head => None,
             },
         })
     }
@@ -273,7 +273,6 @@ fn git_manifest(name: &str, r#ref: &str) -> MarketplaceManifest {
             source: Source::Github {
                 repo: "agent-ix/fixture".to_owned(),
                 r#ref: Some(r#ref.to_owned()),
-                sha: None,
             },
             default_enabled: None,
             path: None,

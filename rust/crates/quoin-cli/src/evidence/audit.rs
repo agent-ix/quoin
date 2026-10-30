@@ -7,7 +7,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::protocol::Response;
 
-use super::{json_arg, repo_arg, required, revision};
+use super::{json_arg, repo_arg, required};
 use crate::core_runtime::invoke;
 
 pub(super) fn command() -> Command {
@@ -61,11 +61,7 @@ pub(crate) enum Assembly {
 ///
 /// The one assembly `quoin evidence audit` and `quoin matrix` share, so the
 /// two commands cannot audit the same working tree differently.
-pub(crate) fn assemble(
-    arguments: &ArgMatches,
-    repo: &str,
-    head: Option<&str>,
-) -> Result<Assembly, String> {
+pub(crate) fn assemble(arguments: &ArgMatches, repo: &str) -> Result<Assembly, String> {
     let modules = values(arguments, "module");
     let coverage = invoke(
         "quire.coverage",
@@ -78,7 +74,7 @@ pub(crate) fn assemble(
     let policy = policy(arguments, &obligations)?;
     let store = invoke(
         "evidence.audit_inputs",
-        &serde_json::json!({ "repo": repo, "head_commit": head, "independence_policy": policy }),
+        &serde_json::json!({ "repo": repo, "independence_policy": policy }),
     )?;
     if !store.outcome.carries_payload() {
         return Ok(Assembly::Declined(store));
@@ -103,7 +99,6 @@ pub(crate) fn assemble(
         "vacuousScanSuites": field(&store.payload, "vacuous_scan_suites")?,
         "independence": field(&store.payload, "independence")?,
         "catalog": catalog.payload,
-        "headCommit": head,
         "multiplicityRequires": values(arguments, "multiplicity-requires"),
         "mutationFloor": mutation_floor(&values(arguments, "mutation-floor"))?,
         "independencePolicy": policy,
@@ -122,9 +117,7 @@ pub(crate) fn assemble(
 
 pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
-    let head = revision(&repo);
-    let head = (!head.is_empty()).then_some(head.as_str());
-    let audited = match assemble(arguments, &repo, head)? {
+    let audited = match assemble(arguments, &repo)? {
         Assembly::Audited(audited) => audited.response,
         Assembly::Declined(response) => return Ok(response),
     };

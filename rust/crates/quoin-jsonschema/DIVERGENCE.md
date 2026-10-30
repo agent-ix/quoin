@@ -8,9 +8,8 @@ This crate carries two things: the ajv-parity validator extracted from
 from `src/measurement/intervention-schema.ts` and
 `src/measurement/operational-schema.ts`.
 
-The retained TypeScript is still present and is still the oracle. Nothing in it
-was edited by this wave — a port declares its divergences, it does not retrofit
-the implementation it is replacing.
+The TypeScript this crate replaced is deleted; the divergences below are
+recorded against what it did.
 
 Two sections below are **owner rulings**: deliberate, recorded changes in what
 is accepted. The rest are shape differences between `ajv` and the Rust

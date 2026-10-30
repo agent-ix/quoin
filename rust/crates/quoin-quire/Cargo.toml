@@ -39,19 +39,10 @@ workspace = true
 # declaration of it here is how a workspace ends up with two validators that
 # agree by version number rather than by construction.
 quoin-jsonschema = { workspace = true }
-quire-rs = { version = "=0.50.3", git = "https://github.com/agent-ix/quire-rs", rev = "5b4be36d594a488b21c854051f05116eb9302d78" }
+quire-rs = { version = "=0.50.3", git = "https://github.com/agent-ix/quire-rs", rev = "fb2bde655c9ea41709499147af6c81ae6e0e1d77" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 quoin-quire-types = { workspace = true }
-
-# The one-time oracle captures live under `oracle/` rather than `examples/` so
-# they are visibly the thing the retire-after-parity rule deletes at the cutover, not part of the
-# crate's own surface. Cargo needs the path stated because the directory is not
-# the conventional one.
-[[example]]
-name = "capture-assurance-bases"
-path = "oracle/capture-assurance-bases.rs"
-

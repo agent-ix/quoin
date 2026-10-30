@@ -21,16 +21,13 @@ use quoin_auditor::catalog::{
     MemoryModuleCatalogSource, MethodCatalog, ModuleRoot, VerificationMethod,
     load_method_catalog_from,
 };
-use quoin_evidence::ids::{Commit, ObligationId, SuiteId, SymbolId};
+use quoin_evidence::ids::{ObligationId, SuiteId, SymbolId};
 use quoin_evidence::types::{
     Binding, MUTATION_SCORE_METRIC, MockInjection, Outcome, RunEntry, RunRecord,
     STORE_SCHEMA_VERSION,
 };
 use quoin_finding_types::{AuditReport, Finding, Severity};
 use quoin_quire_types::Obligation;
-
-const HEAD: &str = "deadbeefdead";
-const OLD: &str = "0000feedface";
 
 fn ob(id: &str, statement: &str) -> Obligation {
     Obligation {
@@ -55,7 +52,6 @@ fn bind(obligation: &str, suite: &str, symbols: &[&str]) -> Binding {
     Binding {
         obligation: ObligationId::new(obligation),
         suite: SuiteId::new(suite),
-        commit: Commit::new(HEAD),
         symbols: symbols
             .iter()
             .map(|symbol| SymbolId::new(*symbol))
@@ -64,11 +60,10 @@ fn bind(obligation: &str, suite: &str, symbols: &[&str]) -> Binding {
     }
 }
 
-fn run_of(suite: &str, commit: &str, kind: Option<&str>, entries: Vec<RunEntry>) -> RunRecord {
+fn run_of(suite: &str, kind: Option<&str>, entries: Vec<RunEntry>) -> RunRecord {
     RunRecord {
         schema_version: STORE_SCHEMA_VERSION,
         suite: SuiteId::new(suite),
-        commit: Commit::new(commit),
         tool: "some-tool".to_owned(),
         evidence_kind: kind.map(ToOwned::to_owned),
         timestamp: "2026-09-27T00:00:00Z".to_owned(),
@@ -88,7 +83,7 @@ fn scored(symbol: &str, outcome: Outcome, score: f64, metric: Option<&str>) -> R
     }
 }
 
-/// An input with HEAD set and every named suite already inspected for mocks,
+/// An input with every named suite already inspected for mocks,
 /// so the `unevaluated` bucket does not mask what a test is about.
 fn input(obligations: Vec<Obligation>, bindings: Vec<Binding>, runs: Vec<RunRecord>) -> AuditInput {
     let suites = runs
@@ -99,7 +94,6 @@ fn input(obligations: Vec<Obligation>, bindings: Vec<Binding>, runs: Vec<RunReco
         obligations,
         bindings,
         runs,
-        head_commit: Some(HEAD.to_owned()),
         mock_inspection_suites: Some(suites),
         ..AuditInput::default()
     }
@@ -143,42 +137,33 @@ fn catalog() -> MethodCatalog {
 
 // ── FR-032 ────────────────────────────────────────────────────────────────
 
-/// A run at HEAD whose symbols passed produces no finding and is healthy.
+/// A passing run produces no finding and is healthy.
 #[trace("FR-032-AC-1")]
 #[test]
 fn a_passing_run_at_head_is_healthy_and_silent() {
     let audited = input(
         vec![ob("FR-9-AC-1", "the system SHALL do the thing")],
         vec![bind("FR-9-AC-1", "unit", &["t::a"])],
-        vec![run_of("unit", HEAD, None, vec![pass("t::a")])],
+        vec![run_of("unit", None, vec![pass("t::a")])],
     );
     let out = report(&audited);
     assert!(out.findings.is_empty(), "{:?}", out.findings);
     assert_eq!(out.healthy, ["FR-9-AC-1"]);
 }
 
-/// No recorded run is high severity; a run merely behind HEAD is medium.
+/// A missing recorded run is high severity.
 #[trace("FR-032-AC-3")]
 #[test]
-fn a_missing_run_is_high_and_a_run_behind_head_is_medium() {
+fn a_missing_run_is_high() {
     let audited = input(
-        vec![
-            ob("FR-9-AC-1", "the system SHALL do the thing"),
-            ob("FR-9-AC-2", "the system SHALL do another thing"),
-        ],
-        vec![
-            bind("FR-9-AC-1", "ghost", &["t::a"]),
-            bind("FR-9-AC-2", "unit", &["t::b"]),
-        ],
-        vec![run_of("unit", OLD, None, vec![pass("t::b")])],
+        vec![ob("FR-9-AC-1", "the system SHALL do the thing")],
+        vec![bind("FR-9-AC-1", "ghost", &["t::a"])],
+        vec![],
     );
     let out = report(&audited);
     let missing = of_kind(&out, "stale-evidence", "FR-9-AC-1");
     assert_eq!(missing.len(), 1);
     assert_eq!(missing[0].severity, Some(Severity::high()));
-    let behind = of_kind(&out, "stale-evidence", "FR-9-AC-2");
-    assert_eq!(behind.len(), 1);
-    assert_eq!(behind[0].severity, Some(Severity::medium()));
 }
 
 /// Vacuity fires when every bound symbol was skipped or absent, and does not
@@ -197,7 +182,6 @@ fn vacuity_needs_every_bound_symbol_skipped_or_absent() {
         ],
         vec![run_of(
             "unit",
-            HEAD,
             None,
             vec![RunEntry::new("t::skipped", Outcome::Skip), pass("t::ok")],
         )],
@@ -233,7 +217,7 @@ fn a_non_test_method_discharged_by_a_test_run_is_flagged() {
         let mut audited = input(
             vec![ob_with("FR-9-AC-1", Some(declared), None)],
             vec![bind("FR-9-AC-1", "unit", &["t::a"])],
-            vec![run_of("unit", HEAD, Some("test-run"), vec![pass("t::a")])],
+            vec![run_of("unit", Some("test-run"), vec![pass("t::a")])],
         );
         audited.catalog = catalog;
         report(&audited)
@@ -262,8 +246,8 @@ fn two_independent_methods_means_two_suites_not_two_symbols() {
             vec![ob_with("FR-9-AC-1", None, Some(criticality))],
             bindings,
             vec![
-                run_of("unit", HEAD, None, vec![pass("t::a"), pass("t::b")]),
-                run_of("prop", HEAD, None, vec![pass("t::c")]),
+                run_of("unit", None, vec![pass("t::a"), pass("t::b")]),
+                run_of("prop", None, vec![pass("t::c")]),
             ],
         );
         audited.multiplicity_requires = Some(vec!["P0".to_owned()]);
@@ -301,7 +285,7 @@ fn a_run_declaring_no_kind_is_not_judged_for_conformance() {
         let mut audited = input(
             vec![ob_with("FR-9-AC-1", Some("model-checking"), None)],
             vec![bind("FR-9-AC-1", "unit", &["t::a"])],
-            vec![run_of("unit", HEAD, kind, vec![pass("t::a")])],
+            vec![run_of("unit", kind, vec![pass("t::a")])],
         );
         audited.catalog = Some(catalog());
         report(&audited)
@@ -408,8 +392,8 @@ fn only_mocked_bindings_make_a_mocked_confirmation() {
             vec![ob("FR-9-AC-1", statement)],
             bindings,
             vec![
-                run_of("unit", HEAD, None, vec![pass("t::mocked")]),
-                run_of("real", HEAD, None, vec![pass("t::real")]),
+                run_of("unit", None, vec![pass("t::mocked")]),
+                run_of("real", None, vec![pass("t::real")]),
             ],
         );
         audited.injections = Some(injections);
@@ -447,25 +431,19 @@ fn only_mocked_bindings_make_a_mocked_confirmation() {
     );
 }
 
-/// The auditor skips a check it cannot perform: an absent catalog and an
-/// absent HEAD each remove a question rather than answering it.
+/// The auditor skips a check it cannot perform when the catalog is absent.
 #[trace("FR-032-CON-3")]
 #[test]
-fn an_absent_catalog_and_an_absent_head_remove_a_question() {
+fn an_absent_catalog_removes_the_method_check() {
     let mut audited = input(
         vec![ob_with("FR-9-AC-1", Some("Smoke"), None)],
         vec![bind("FR-9-AC-1", "unit", &["t::a"])],
-        vec![run_of("unit", OLD, None, vec![pass("t::a")])],
+        vec![run_of("unit", None, vec![pass("t::a")])],
     );
     audited.catalog = None;
-    audited.head_commit = None;
     let out = report(&audited);
     assert!(out.findings.is_empty(), "{:?}", out.findings);
     assert_eq!(out.healthy, ["FR-9-AC-1"]);
-
-    audited.head_commit = Some(HEAD.to_owned());
-    let out = report(&audited);
-    assert_eq!(of_kind(&out, "stale-evidence", "FR-9-AC-1").len(), 1);
 }
 
 // ── FR-039 ────────────────────────────────────────────────────────────────
@@ -491,7 +469,7 @@ fn mutation_audit(
     let mut audited = input(
         vec![ob_with("FR-9-AC-1", None, Some(criticality))],
         vec![bind("FR-9-AC-1", "mutants", &symbol_refs)],
-        vec![run_of("mutants", HEAD, None, entries)],
+        vec![run_of("mutants", None, entries)],
     );
     audited.mutation_floor = floors;
     report(&audited)
@@ -666,7 +644,6 @@ fn the_metric_and_not_the_tool_decides_whether_a_score_is_judged() {
             tool: "a-mutation-tool-nobody-lists".to_owned(),
             ..run_of(
                 "mutants",
-                HEAD,
                 None,
                 vec![scored(
                     "t::a",
@@ -694,7 +671,6 @@ fn an_unlabelled_entry_is_not_a_score_whatever_the_tool_says() {
             tool: "cargo-mutants".to_owned(),
             ..run_of(
                 "mutants",
-                HEAD,
                 None,
                 vec![scored("t::a", Outcome::Pass, 1.0, None)],
             )
@@ -729,7 +705,7 @@ fn space_audit(statement: &str, entries: Vec<RunEntry>) -> AuditReport {
     report(&input(
         vec![ob("FR-9-AC-1", statement)],
         vec![bind("FR-9-AC-1", "matrix", &refs)],
-        vec![run_of("matrix", HEAD, None, entries)],
+        vec![run_of("matrix", None, entries)],
     ))
 }
 

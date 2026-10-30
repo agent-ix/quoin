@@ -4,7 +4,7 @@
 //! Reading and writing the three per-suite record families.
 //!
 //! Runs, scans and mock inspections are laid out identically — one directory
-//! per suite, one file per commit — so they share the generic readers below and
+//! per suite, one file per record, named by its timestamp — so they share the generic readers below and
 //! differ only in their family directory and their record type. The retained
 //! `store.ts` writes the three sets out three times; a port that copied that
 //! would have three places for the ordering defect agent-ix/quoin#104 fixed to
@@ -14,20 +14,16 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 use crate::error::EvidenceError;
-use crate::ids::{Commit, SuiteId};
-use crate::paths::{MOCK_INSPECTIONS_DIR, RUNS_DIR, SCANS_DIR, suite_dir};
+use crate::ids::SuiteId;
+use crate::paths::{MOCK_INSPECTIONS_DIR, RUNS_DIR, SCANS_DIR, record_path, suite_dir};
 use crate::source::EvidenceSource;
 use crate::store::codec::{canonical_bytes_of, decode};
 use crate::types::{FindingRecord, MockInspectionRecord, RunRecord, STORE_SCHEMA_VERSION};
 
-/// What the store orders records by: the caller's timestamp, then the commit.
+/// What the store orders records by: the caller's timestamp, then the file name.
 ///
-/// **Not the file name.** A file name is a commit prefix, which is uniformly
-/// random hex, so the lexicographically last file is the newest run with
-/// probability 1/n. That arbitrary choice drove the auditor's freshness and
-/// vacuity checks and `gc`'s retention until agent-ix/quoin#104 fixed it, and
-/// no amount of re-recording could clear the resulting finding because the
-/// ordering is a property of the random prefix.
+/// The timestamp is read from the record, not from the file name, which is only
+/// a sanitised spelling of it.
 pub(crate) trait StoredRecord {
     /// The family directory this record lives under.
     const FAMILY: &'static str;
@@ -36,8 +32,6 @@ pub(crate) trait StoredRecord {
 
     /// The suite the record covers.
     fn suite(&self) -> &SuiteId;
-    /// The commit the record was made at.
-    fn commit(&self) -> &Commit;
     /// The caller-supplied ISO-8601 stamp.
     fn timestamp(&self) -> &str;
 }
@@ -48,9 +42,6 @@ impl StoredRecord for RunRecord {
 
     fn suite(&self) -> &SuiteId {
         &self.suite
-    }
-    fn commit(&self) -> &Commit {
-        &self.commit
     }
     fn timestamp(&self) -> &str {
         &self.timestamp
@@ -64,9 +55,6 @@ impl StoredRecord for FindingRecord {
     fn suite(&self) -> &SuiteId {
         &self.suite
     }
-    fn commit(&self) -> &Commit {
-        &self.commit
-    }
     fn timestamp(&self) -> &str {
         &self.timestamp
     }
@@ -79,9 +67,6 @@ impl StoredRecord for MockInspectionRecord {
     fn suite(&self) -> &SuiteId {
         &self.suite
     }
-    fn commit(&self) -> &Commit {
-        &self.commit
-    }
     fn timestamp(&self) -> &str {
         &self.timestamp
     }
@@ -89,20 +74,10 @@ impl StoredRecord for MockInspectionRecord {
 
 /// Where one record belongs, from the record itself.
 fn path_of<T: StoredRecord>(record: &T) -> String {
-    format!(
-        "{}/{}/{}.json",
-        T::FAMILY,
-        record.suite(),
-        record.commit().short()
-    )
+    record_path(T::FAMILY, record.suite(), record.timestamp())
 }
 
-/// Where one record belongs, from its coordinates.
-fn path_for<T: StoredRecord>(suite: &SuiteId, commit: &Commit) -> String {
-    format!("{}/{suite}/{}.json", T::FAMILY, commit.short())
-}
-
-/// Write one record, last-write-wins at the same `(suite, commit)`.
+/// Write one record, last-write-wins at the same `(suite, timestamp)`.
 ///
 /// The stored `schemaVersion` is always [`STORE_SCHEMA_VERSION`] regardless of
 /// what the caller put in the record, reproducing the retained
@@ -132,27 +107,6 @@ where
     let bytes = canonical_bytes_of(T::LABEL, &value)?;
     source.write(&path, &bytes)?;
     Ok(path)
-}
-
-/// Read one record, or `None` when that `(suite, commit)` has none.
-///
-/// # Errors
-///
-/// [`EvidenceError::StoreRead`] when the file exists and does not parse.
-pub(crate) fn read_record<S, T>(
-    source: &S,
-    suite: &SuiteId,
-    commit: &Commit,
-) -> Result<Option<T>, EvidenceError>
-where
-    S: EvidenceSource + ?Sized,
-    T: StoredRecord + DeserializeOwned,
-{
-    let path = path_for::<T>(suite, commit);
-    match source.read(&path)? {
-        None => Ok(None),
-        Some(text) => decode(&path, &text).map(Some),
-    }
 }
 
 /// Every record file recorded for a suite, in **file-name** order.
@@ -204,11 +158,7 @@ where
             Err(other) => return Err(other),
         }
     }
-    records.sort_by(|a, b| {
-        a.timestamp()
-            .cmp(b.timestamp())
-            .then_with(|| a.commit().as_str().cmp(b.commit().as_str()))
-    });
+    records.sort_by(|a, b| a.timestamp().cmp(b.timestamp()));
     Ok(records)
 }
 

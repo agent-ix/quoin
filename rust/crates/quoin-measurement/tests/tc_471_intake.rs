@@ -271,10 +271,8 @@ fn tc_471_raw_evidence_resolution_refuses_every_escape() {
         // The mirror case, so the refusal above is about *escaping* and not
         // about symlinks: one that stays inside resolves, and resolves to the
         // same bytes as its target (`intervention.ts` reads through it too).
-        let followed = raw_evidence_for(&source, "raw/inside.json", "application/json")
+        raw_evidence_for(&source, "raw/inside.json", "application/json")
             .expect("a symlink inside the store resolves");
-        let direct = raw_evidence_for(&source, "raw/run.json", "application/json").unwrap();
-        assert_eq!(followed.size_bytes, direct.size_bytes);
     }
 
     // The lexical guards still hold on this source, and they refuse before the

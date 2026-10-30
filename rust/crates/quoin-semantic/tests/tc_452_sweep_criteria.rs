@@ -283,7 +283,6 @@ fn report(root: &Path) -> Value {
         &[CorpusRoot {
             root: root.to_path_buf(),
             repository: "corpus".to_owned(),
-            revision: "worktree".to_owned(),
         }],
         &SweepIdentity {
             package: "agent-ix/spec-objects-fixture".into(),

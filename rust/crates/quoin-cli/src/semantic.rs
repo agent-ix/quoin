@@ -4,7 +4,6 @@
 //! The Rust `quoin semantic sweep` command (quoin#373, Stage 8).
 
 use std::path::{Component, Path, PathBuf};
-use std::process::Command as ProcessCommand;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
@@ -62,7 +61,6 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
             serde_json::json!({
                 "root": root,
                 "repository": root.file_name().and_then(|name| name.to_str()).unwrap_or(""),
-                "revision": revision_of(root),
             })
         })
         .collect::<Vec<_>>();
@@ -154,18 +152,6 @@ fn absolute(value: &str) -> Result<PathBuf, String> {
 
 fn inside(path: &Path, root: &Path) -> bool {
     path == root || path.starts_with(root)
-}
-
-fn revision_of(root: &Path) -> String {
-    ProcessCommand::new("git")
-        .args(["-C", &root.to_string_lossy(), "rev-parse", "HEAD"])
-        .output()
-        .ok()
-        .filter(|output| output.status.success())
-        .and_then(|output| String::from_utf8(output.stdout).ok())
-        .map(|revision| revision.trim().to_owned())
-        .filter(|revision| !revision.is_empty())
-        .unwrap_or_else(|| "worktree".to_owned())
 }
 
 fn rendered(response: Response, text: &str) -> Response {

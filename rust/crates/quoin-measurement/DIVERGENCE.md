@@ -11,8 +11,8 @@ report renderers).
 
 # Wave 1 — plans, collections, validation, store, raw evidence (quoin#468)
 
-`src/measurement/` is still the oracle: quoin#468 is a **port wave**, not a
-cutover, and no TypeScript was deleted. The cutover is quoin#479.
+`src/measurement/` was the oracle for this port wave (quoin#468); the
+TypeScript is deleted.
 
 Everything the two trees agree on is checked, not asserted: all 48 collections
 retained under `spec/evidence/measurements/` read through
@@ -190,8 +190,7 @@ allow-list; no module in this crate is over the soft ceiling.
 
 # Wave 2 — record types and the two report renderers (quoin#469)
 
-`src/measurement/` is still the oracle for this port and is still the shipping
-implementation: quoin#469 deletes nothing. The port was once checked against a
+`src/measurement/` was the oracle for this port wave (quoin#469). The port was once checked against a
 frozen capture of what `buildInterventionReport`, `renderInterventionReport`,
 `buildOperationalReport` and `renderOperationalReport` produced; that capture
 and its replay test are deleted, and no recorded answer is read any more.
@@ -250,11 +249,11 @@ exact for every record in the capture.
 
 ## §8 — a numeric field written as a float
 
-`size_bytes`, `sample_size`, `repetitions` and `deadline_seconds` are `u64`.
+`sample_size`, `repetitions` and `deadline_seconds` are `u64`.
 TypeScript's `number` admits `12.0`, and `JSON.parse` cannot tell it from `12`;
 this crate refuses it, because serde will not read `12.0` into a `u64`.
 
-Separating input: `"size_bytes": 12.0`.
+Separating input: `"sample_size": 12.0`.
 
 Not reconciled. The intervention and operational JSON schemas
 (`src/measurement/schemas/`) declare these `integer`, so a record carrying
@@ -370,8 +369,7 @@ ten seconds for it.
 # Wave 4 — intake, the record-id encoding, and the agent-eval producer (quoin#471)
 
 `src/measurement/intervention.ts` and `src/measurement/agent-eval-intervention.ts`,
-ported under `src/intervention/`. The retained TypeScript is unchanged and
-remains the oracle until the cutover (quoin#479).
+ported under `src/intervention/`. The TypeScript is deleted.
 
 The strongest evidence that these divergences are the only ones that matter:
 `tc_471_the_producer_reproduces_the_retained_record` runs the ported producer

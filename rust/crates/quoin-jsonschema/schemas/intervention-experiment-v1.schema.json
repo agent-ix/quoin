@@ -370,16 +370,11 @@
           "path": {
             "minLength": 1,
             "type": "string"
-          },
-          "size_bytes": {
-            "minimum": 0,
-            "type": "integer"
           }
         },
         "required": [
           "path",
-          "media_type",
-          "size_bytes"
+          "media_type"
         ],
         "type": "object"
       },

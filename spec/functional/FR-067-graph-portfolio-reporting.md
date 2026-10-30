@@ -38,7 +38,7 @@ population identity are compatible.
   caller's accepted format/module/schema premises for the corresponding
   export.
 - Optional repeated `--graph-audit <repository>=<path>` mappings naming the
-  source-bound FR-032 audit envelope for the corresponding export.
+  FR-032 audit envelope for the corresponding export.
 - Optional repeated `--changed <repository>=<requirement-id>` seeds for
   change-impact; seeds are inapplicable when no accepted graph-input triple is
   supplied.

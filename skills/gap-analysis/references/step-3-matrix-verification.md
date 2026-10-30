@@ -29,8 +29,7 @@ with the `--repo` flag:
 quoin matrix --repo <project_root> --json
 ```
 
-When `quoin matrix` is unavailable or refuses (for example, the repository's HEAD cannot be
-resolved), read the static axis alone and say so in `## Coverage`:
+When `quoin matrix` is unavailable or refuses (for example, the store cannot be read), read the static axis alone and say so in `## Coverage`:
 
 ```bash
 quire matrix --scope <project_root> --format json
@@ -78,7 +77,7 @@ this step does not audit.
 | `untagged` | The criterion has no test carrying its id | `high` |
 | `tagged-by-ignored-test` | Every test carrying its id is ignored or skipped, so nothing runs for it | `high` |
 | `evidence_status: suspect` | The auditor distrusts the evidence (a mocked confirmation, vacuous or non-independent evidence) | `high` |
-| `evidence_status: stale` | The bound run is behind HEAD, or its latest run failed | `medium` |
+| `evidence_status: stale` | The bound run is missing, or its latest run failed | `medium` |
 | `untracked_symbols` | A test tag naming an id no criterion declares — a typo, or a criterion that was renumbered | `medium` |
 
 `Refs` for each finding is the criterion id, plus `path::qualified_name` from `binders` where

@@ -9,6 +9,7 @@
 
 use std::path::Path;
 
+use quoin_evidence::SuiteId;
 use quoin_evidence::independence::assess_independence;
 use quoin_evidence::mock_inspection::mock_inspection_input;
 use quoin_evidence::store::{
@@ -16,7 +17,6 @@ use quoin_evidence::store::{
 };
 use quoin_evidence::trust::assess_trust;
 use quoin_evidence::types::Binding;
-use quoin_evidence::{Commit, SuiteId};
 
 use crate::capabilities::Capabilities;
 use crate::error::CoreError;
@@ -118,11 +118,6 @@ pub fn audit_inputs(
     bound(request, op, MAX_AUDIT_INPUTS_BYTES)?;
     let request: AuditInputsRequest = parse(request, op)?;
     check_scalar(op, "repo", &request.repo)?;
-    check_scalar(
-        op,
-        "head_commit",
-        request.head_commit.as_deref().unwrap_or(""),
-    )?;
 
     let host = host(capabilities, op)?;
     let payload = host.with_store(Path::new(&request.repo), &mut |source| {
@@ -132,9 +127,8 @@ pub fn audit_inputs(
             .bindings;
         let runs = latest_runs(source, &mut skipped).map_err(|e| map_error(&e, op))?;
         let scans = latest_scans(source, &mut skipped).map_err(|e| map_error(&e, op))?;
-        let head = request.head_commit.as_deref().map(Commit::new);
         let (mock_inspection_suites, injections) =
-            mock_inspection_input(source, head.as_ref()).map_err(|e| map_error(&e, op))?;
+            mock_inspection_input(source).map_err(|e| map_error(&e, op))?;
 
         // `None` — the tool reported no rule count — stays out of this list.
         // The check is silent for it rather than guessing, which is the same

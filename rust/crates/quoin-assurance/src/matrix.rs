@@ -120,7 +120,7 @@ pub struct EvidenceDetail {
     /// Every audit finding against this id, suspect-class first, then
     /// `stale-evidence`, then the rest, by kind within each group.
     pub findings: Vec<FindingDetail>,
-    /// Every binding for this id, ordered by `(suite, commit)`.
+    /// Every binding for this id, ordered by suite.
     pub bindings: Vec<BindingDetail>,
     /// Every check the auditor could not evaluate for this id, lexically.
     pub unevaluated: Vec<String>,
@@ -146,17 +146,11 @@ pub struct FindingDetail {
 }
 
 /// One binding, reduced to what the matrix shows.
-///
-/// `commit` is the binding's own field: the run that FIRST discharged the
-/// obligation. It is not the run that made the evidence stale, and this view
-/// does not claim it is.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct BindingDetail {
     /// The suite that discharged the obligation.
     pub suite: String,
-    /// The commit of the run that first discharged it.
-    pub commit: String,
 }
 
 /// The audit named one obligation both healthy and not.
@@ -257,7 +251,6 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, ContradictoryAudit> {
             .or_default()
             .push(BindingDetail {
                 suite: binding.suite.as_str().to_owned(),
-                commit: binding.commit.as_str().to_owned(),
             });
     }
     let store_is_empty = input.bindings.bindings.is_empty();
@@ -393,7 +386,7 @@ fn detail_text(detail: &EvidenceDetail) -> String {
         detail
             .bindings
             .iter()
-            .map(|binding| format!("bound by {}@{}", binding.suite, binding.commit)),
+            .map(|binding| format!("bound by {}", binding.suite)),
     );
     parts.extend(
         detail

@@ -7,30 +7,13 @@
 //! Trace: FR-059-AC-6, FR-059-AC-8, FR-059-AC-9, FR-059-AC-10
 //! Provenance: quoin#479
 //!
-//! # Why this file exists
-//!
-//! `tests/operational.test.ts` is deleted in the same commit as
-//! `src/measurement/operational.ts`. Nine FR-059 criteria were
-//! carried by five of its cases, and a criterion that appears on no test after
-//! the cutover is a criterion nothing holds. This file is the per-criterion gate: one `#[test]` per criterion, named by
-//! the criterion, so a criterion cannot be lost without a named test
-//! disappearing with it.
-//!
 //! # Where the inputs come from
 //!
-//! `spec/evidence/operational/pairs/c1b30a…acf8.json` — the one committed pair,
-//! produced by the retained TypeScript from real release evidence. Its
-//! capability and its exercise are the valid base cases here, and every refusal
-//! case is that base mutated **in Rust**, below. The TypeScript fixture the
-//! deleted file built by hand is deliberately not respelled: a fixture this
-//! file wrote would agree with whatever this file believes, while the committed
-//! pair was written by the implementation being retired.
-//!
-//! The one case the retained evidence cannot supply is intake against a store,
-//! which must be able to write. That runs in a `tempfile` workspace holding the
-//! producer's whole input contract — the assurance documents the governance
-//! check reads and the three retained GitHub exports the raw-evidence
-//! accounting reads — copied from this repository. Nothing here writes into the repository.
+//! `common/release_evidence.rs` builds synthetic GitHub exports and a governing
+//! plan into a temporary repository; the producer writes a pair from them, and
+//! that pair's capability and exercise are the valid base cases. Every refusal
+//! case is that base mutated in Rust, below. Nothing here writes into this
+//! repository.
 
 #![allow(
     clippy::unwrap_used,
@@ -40,13 +23,13 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-#[path = "common/copy.rs"]
-mod copy;
 #[path = "common/paths.rs"]
 mod paths;
+#[path = "common/release_evidence.rs"]
+mod release_evidence;
 
-use copy::copy_tree;
-use paths::{fixture_store, repo_root};
+use paths::repo_root;
+use release_evidence::write_repository;
 
 use engineering_assurance::claim_strength::ClaimStrength;
 use quoin_jsonschema::MeasurementSchema;
@@ -63,45 +46,48 @@ use quoin_measurement::operational::validate::{
 use quoin_measurement::source::SystemClock;
 use serde_json::{Value, json};
 
-/// The committed pair both base cases are read from.
-const RETAINED_PAIR: &str =
-    "quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json";
-
 /// The requirement the schema under test is authored in.
 const REQUIREMENT: &str = "spec/functional/FR-059-operational-evidence-records.md";
 
 // ------------------------------------------------------------ the base cases
 
-/// The retained pair's record of one shape.
+/// The record of one shape, from a pair the producer writes from synthetic
+/// exports.
 fn retained(shape: &str) -> Value {
-    let path = fixture_store()
-        .join("operational")
-        .join("pairs")
-        .join(RETAINED_PAIR);
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-    let envelope: Value = serde_json::from_str(&text).expect("the retained pair is JSON");
+    let workspace = tempfile::tempdir().expect("a writable workspace");
+    write_repository(workspace.path());
+    let definition = serde_json::from_value(release_evidence::definition_document())
+        .expect("the definition reads");
+    let produced =
+        quoin_measurement::operational::github_release::produce_github_release_operational(
+            workspace.path(),
+            &SystemClock,
+            &definition,
+        )
+        .expect("the synthetic exports produce a pair");
+    let text = std::fs::read_to_string(&produced.path).expect("the pair is readable");
+    let envelope: Value = serde_json::from_str(&text).expect("the pair is JSON");
     let records = envelope["records"]
         .as_array()
-        .expect("the retained pair carries records");
+        .expect("the pair carries records");
     assert_eq!(
         records.len(),
         2,
-        "a pair is one capability and one exercise; the base cases come from it"
+        "a pair is one capability and one exercise"
     );
     records
         .iter()
         .find(|record| record["record_shape"] == json!(shape))
-        .unwrap_or_else(|| panic!("the retained pair carries no `{shape}` record"))
+        .unwrap_or_else(|| panic!("the pair carries no `{shape}` record"))
         .clone()
 }
 
-/// The retained standing-capability record.
+/// The standing-capability record.
 fn capability() -> Value {
     retained("standing_capability")
 }
 
-/// The retained exercise record.
+/// The exercise record.
 fn exercise() -> Value {
     retained("exercise")
 }
@@ -225,6 +211,7 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
 
     // Each member independently: a record missing exactly one is refused, and
     // the refusal names the member that is gone.
+    assert_eq!(ENVELOPE.len(), 13, "the envelope census is the criterion's");
     for member in ENVELOPE {
         refused_naming(
             &without(&base, &[member]),
@@ -449,6 +436,7 @@ fn tc_479_303_an_exercise_requires_its_whole_shape_and_ordered_timing() {
     let base = exercise();
     admitted(&base, "the retained exercise");
 
+    assert_eq!(EXERCISE.len(), 11, "the exercise census is the criterion's");
     for member in EXERCISE {
         refused_naming(
             &without(&base, &["exercise", member]),
@@ -729,7 +717,7 @@ fn refuse_every_document_defect_ac9(base: &Value) {
         "a record with an empty raw-evidence list",
     );
     let reference = base["raw_evidence"][0].clone();
-    for member in ["path", "media_type", "size_bytes"] {
+    for member in ["path", "media_type"] {
         refused_naming(
             &with(
                 base,
@@ -773,14 +761,7 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
     // producer's whole input contract and nothing else.
     let workspace = tempfile::tempdir().expect("a writable workspace");
     let root = workspace.path();
-    copy_tree(
-        &repo_root().join("spec").join("assurance"),
-        &root.join("spec").join("assurance"),
-    );
-    copy_tree(
-        &fixture_store().join("github-actions"),
-        &root.join("spec").join("evidence").join("github-actions"),
-    );
+    write_repository(root);
 
     let retained_path = write_operational_record(root, &SystemClock, &base)
         .expect("the retained capability is admissible against its own evidence");
@@ -813,36 +794,26 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
         "a refused record must leave the store as it found it"
     );
 
-    // Raw evidence whose size is not the retained file's, and raw evidence
-    // that points outside the store, are both refused under the raw-evidence
-    // code — and both write nothing.
-    for (raw_evidence, what) in [
-        (
-            with(&reference, &["size_bytes"], json!(1)),
-            "a size the retained bytes do not have",
-        ),
-        (
-            with(&reference, &["path"], json!("../../etc/passwd")),
-            "a path that resolves outside the evidence store",
-        ),
-    ] {
-        let tampered = with(&exercise, &["raw_evidence"], json!([raw_evidence]));
-        let Err(error) = write_operational_record(root, &SystemClock, &tampered) else {
-            panic!("{what}: admitted, and the criterion says it is refused")
-        };
-        assert_eq!(
-            error.code(),
-            InterventionRefusalCode::RawEvidenceMismatch,
-            "{what}: refused under the wrong code"
-        );
-        assert_eq!(
-            read_operational_records(root)
-                .expect("the store reads back")
-                .len(),
-            1,
-            "{what}: a refused record must leave the store as it found it"
-        );
-    }
+    // Raw evidence that points outside the store is refused under the
+    // raw-evidence code, and writes nothing.
+    let what = "a path that resolves outside the evidence store";
+    let raw_evidence = with(&reference, &["path"], json!("../../etc/passwd"));
+    let tampered = with(&exercise, &["raw_evidence"], json!([raw_evidence]));
+    let Err(error) = write_operational_record(root, &SystemClock, &tampered) else {
+        panic!("{what}: admitted, and the criterion says it is refused")
+    };
+    assert_eq!(
+        error.code(),
+        InterventionRefusalCode::RawEvidenceMismatch,
+        "{what}: refused under the wrong code"
+    );
+    assert_eq!(
+        read_operational_records(root)
+            .expect("the store reads back")
+            .len(),
+        1,
+        "{what}: a refused record must leave the store as it found it"
+    );
 }
 
 /// Every record, of either shape, carries exactly one EA claim strength, and
@@ -858,6 +829,7 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
 /// Provenance: PLAT-972
 #[test]
 fn tc_479_309_strength_is_required_and_closed_to_observed() {
+    let mut measured = 0_usize;
     for (shape, base) in [("capability", capability()), ("exercise", exercise())] {
         let admitted = admitted(&base, &format!("the retained {shape}"));
         assert_eq!(admitted.record().base().strength, ClaimStrength::Observed);
@@ -877,6 +849,7 @@ fn tc_479_309_strength_is_required_and_closed_to_observed() {
                 "/strength",
                 &format!("a {shape} claiming `{strength}`"),
             );
+            measured += 1;
         }
         refused_naming(
             &with(&base, &["strength"], json!("verified")),
@@ -884,6 +857,10 @@ fn tc_479_309_strength_is_required_and_closed_to_observed() {
             &format!("a {shape} with a strength outside the EA vocabulary"),
         );
     }
+    assert_eq!(
+        measured, 6,
+        "anti-vacuity floor: every strength but `observed`, for both shapes, is measured"
+    );
 }
 
 // -------------------------------------------------------------- the workspace

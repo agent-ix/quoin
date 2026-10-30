@@ -12,34 +12,37 @@ relationships:
 ## Description
 
 Quoin SHALL preserve the observable semantics of every ported capability,
-including each refusal and non-success path, and SHALL produce RFC 8785
-canonical serializations whose bytes are fixed by the canonical encoder alone.
-No digest is computed or compared anywhere in the port.
-
-The retained implementation, and every recorded golden corpus, fixture or
-expected result captured from it, is gone. There is no recorded oracle left to
-replay, so the criteria that existed only to replay one (FR-098-AC-1, AC-2,
-AC-5 and AC-6) are withdrawn in place, and the "refuse the cutover" clause that
-compared a Rust result with a recorded one is moot and removed. Behaviour that
-is observable on live code stays: refusal paths, the strict JSON parser
-boundary, the single canonical encoder, opaque record identifiers, and the rule
-that no suite starts a retained implementation.
+including each refusal and non-success path, and SHALL produce byte-identical
+canonical serializations from the Rust implementation and the implementation
+it replaces, compared byte for byte. No difference is exempt. No digest is computed or compared anywhere in the port.
 
 ## Inputs
 
-- The `quoin-core` operation under test.
+- The retained TypeScript entry point for the capability under port.
+- The `quoin-core` operation replacing it.
+- Golden corpora: `tests/fixtures`, this repository's own `spec/`, `plan/` and
+  `reviews/` trees, and one external spec corpus named by repository in the
+  checked-in differential manifest.
 - Every canonical record in each reachable store, where the
   reachable set is the evidence store root under the caller-selected
   configuration root together with each store root named in the checked-in store
-  inventory.
+  inventory, and an absent inventory refuses the replay rather than narrowing
+  it.
 
 ## Outputs
 
-- Canonical stdout, exit status and normalized diagnostic shape from the
-  `quoin-core` operation.
+- A native fixture replay report per candidate revision comparing canonical
+  stdout, exit status and normalized diagnostic shape.
+- A record replay report naming the population replayed and the count of
+  records whose bytes differ.
+- A parity refusal naming the first differing input.
 
 ## Behavior
 
+- The native fixture suite SHALL replay every retained request against the
+  `quoin-core` operation and compare its canonical-JSON result, exit status
+  and normalized diagnostic shape with the committed expected fixture captured
+  from the retained implementation before cutover.
 - Quoin SHALL treat a validation verdict as contractual and SHALL treat
   diagnostic message text as non-contractual, comparing diagnostics as the
   normalized tuple of instance location, schema keyword and schema path.
@@ -48,14 +51,25 @@ that no suite starts a retained implementation.
   and unavailable hosts.
 - Quoin SHALL obtain RFC 8785 encoding from `quire-canonical` and implement
   store identity and atomic-write operations only in `quoin-store`.
-- Record identifiers
+- That path SHALL produce the same bytes as the retained implementation for
+  the same input. Record identifiers
   are opaque random UUIDs (v4) assigned once when a record is written, stored,
   and compared as exact strings, and a record is stored as `<recordId>.json`;
   an identifier is never derived from content.
 - Quoin SHALL port the retained strict JSON parser's refusal boundary — its
   refusal of a UTF-8 byte-order mark, of non-fatal UTF-8 and of trailing content
-  — and SHALL refuse them before canonicalization runs, because they guard
+  — and SHALL compare those refusals as part of parity, because they guard
   canonicalization rather than following it.
+- Before a store-backed capability cuts over, Quoin SHALL read every record in
+  every reachable store through Rust, write it back, and SHALL refuse the
+  cutover if the written bytes differ from the stored bytes.
+- Quoin SHALL test JCS canonicalization over adversarial Unicode, number-format
+  and key-order inputs.
+- Quoin SHALL port each `fast-check` property suite under `tests/props` to a
+  `proptest` suite asserting the same property.
+- If Rust disagrees with a retained expected fixture on any golden input, then
+  Quoin SHALL refuse the cutover and SHALL name the differing input, the
+  operation and both results.
 - Quoin SHALL resolve the JSON Schema validator version used across the
   workspace to one version, in `rust/Cargo.toml`.
 - Quoin SHALL assert no `format` keyword during validation, matching the
@@ -64,13 +78,15 @@ that no suite starts a retained implementation.
 - Quoin SHALL exclude the retained validator's schema-authoring strict-mode
   diagnostics from the compared diagnostic set, because they analyse the schema
   rather than the instance and have no counterpart in the Rust validator.
-- After a capability cuts over, no integration suite SHALL execute a retained
-  implementation.
+- After a capability cuts over, the native fixture suite SHALL execute no
+  retained implementation and SHALL compare against committed expected
+  fixtures only.
 
 ## Error Conditions
 
-A differing exit status, a differing normalized diagnostic tuple, any byte
-difference during replay and an unreadable store each block cutover.
+A differing canonical result, a differing exit status, a differing normalized
+diagnostic tuple, any byte difference during replay, an unreadable store and a
+differential run whose compared population is empty each block cutover.
 
 ## Constraints
 
@@ -84,17 +100,17 @@ difference during replay and an unreadable store each block cutover.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-098-AC-1 | Withdrawn: it replayed retained expected fixtures over golden corpora; no recorded oracle remains to replay (id not reused). | Withdrawn (TC-1618) |
-| FR-098-AC-2 | Withdrawn: it compared Rust verdicts with a retained expected verdict per schema; no recorded oracle remains (id not reused). | Withdrawn (TC-1619) |
+| FR-098-AC-1 | Native Rust tests replay retained expected fixtures over the golden corpora and report the compared population count with each run. | Test (TC-1618) |
+| FR-098-AC-2 | For every schema in the corpus, Rust returns the retained expected verdict, and diagnostics agree as normalized instance-location, keyword and schema-path tuples. | Property (TC-1619) |
 | FR-098-AC-3 | Withdrawn: the replay of captured records through the retained implementation is gone; records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn (TC-1620) |
-| FR-098-AC-4 | Withdrawn: it compared JCS bytes against a recorded jcs-oracle corpus; no recorded oracle remains (id not reused). | Withdrawn (TC-1621) |
-| FR-098-AC-5 | Withdrawn: it compared each refusal classification with the retained implementation's; no retained implementation remains (id not reused). | Withdrawn (TC-1622) |
-| FR-098-AC-6 | Withdrawn: it required a `proptest` counterpart of every retained `fast-check` suite and a TypeScript-versus-Rust comparison; the TypeScript suites are gone (id not reused). | Withdrawn (TC-1623) |
+| FR-098-AC-4 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both implementations. | Property (TC-1621) |
+| FR-098-AC-5 | Each ported refusal path returns the same non-success classification from the Rust implementation as from the retained one. | Property (TC-1622) |
+| FR-098-AC-6 | Every `tests/props` property has a `proptest` counterpart asserting the same property, and a property holding in TypeScript and violated in Rust fails the run. | Test (TC-1623) |
 | FR-098-AC-7 | Withdrawn: there is no differential run whose population could be zero, and no cutover gate it could satisfy (id not reused). | Withdrawn (TC-1624) |
 | FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test (TC-1692) |
-| FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation before canonicalization runs. | Test (TC-1693) |
+| FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test (TC-1693) |
 | FR-098-AC-10 | Withdrawn: the identifier format is stated once in the Behavior clause, and no legacy identifier form remains (id not reused). | Withdrawn (TC-1694) |
-| FR-098-AC-11 | After a capability cuts over, no integration suite spawns a retained implementation. | Test (TC-1695) |
+| FR-098-AC-11 | After a capability cuts over, the native fixture suite spawns no retained implementation for that capability and compares against committed fixtures. | Test (TC-1695) |
 
 ## Dependencies
 

@@ -97,13 +97,11 @@
   "raw_evidence": [
     {
       "media_type": "application/json",
-      "path": "agent-evals/quoin-270-sentinel-baseline.json",
-      "size_bytes": 11305
+      "path": "agent-evals/quoin-270-sentinel-baseline.json"
     },
     {
       "media_type": "application/json",
-      "path": "agent-evals/quoin-270-sentinel-treatment.json",
-      "size_bytes": 14261
+      "path": "agent-evals/quoin-270-sentinel-treatment.json"
     }
   ],
   "record_id": "quoin-270-cli-eval-sentinel-contract",

@@ -30,7 +30,7 @@ render the record under claims, evidence, counterevidence, gaps, owner, and acti
 
 - A record conforming to
   [FR-056](./FR-056-intervention-experiment-record.md)
-- The exact retained bytes addressed by every raw-evidence path in the record
+- The retained files addressed by every raw-evidence path in the record
 - The active authored plan that owns the record's definition version
 - The existing evidence store defined by
   [FR-030](./FR-030-evidence-store.md) and
@@ -46,8 +46,8 @@ render the record under claims, evidence, counterevidence, gaps, owner, and acti
 - If schema or cross-record integrity validation fails, then Quoin SHALL refuse the
   record with stable reason code `invalid_record` plus every failing JSON path and
   reason.
-- If a raw-evidence path is unsafe, absent, or has a different byte size, then Quoin SHALL refuse the record with stable reason
-  code `raw_evidence_mismatch`, identify the path and mismatch, and write no record.
+- If a raw-evidence path is unsafe or absent, then Quoin SHALL refuse the record with stable reason
+  code `raw_evidence_mismatch`, identify the path, and write no record.
 - If the governing plan is absent, then Quoin SHALL refuse the record by naming
   the requested definition and stable reason code `governing_plan_absent`.
 - If the record's definition differs from the governing plan, then Quoin SHALL
@@ -88,7 +88,7 @@ render the record under claims, evidence, counterevidence, gaps, owner, and acti
 | FR-057-AC-8 | Uncontrolled or unknown interactions and confounders render as counterevidence; declared gaps render separately beside owner and actions. | Test (TC-1211) |
 | FR-057-AC-9 | Neither human nor JSON output contains an aggregate trust, confidence, or quality score derived from experiment records. | Test (TC-1212) |
 | FR-057-AC-10 | Re-rendering an unchanged store is byte-identical, and human and JSON views expose the same claims, evidence, counterevidence, gaps, owners, and actions. | Test (TC-1213) |
-| FR-057-AC-11 | Unsafe, missing, or wrong-sized raw evidence returns `raw_evidence_mismatch`, identifies each mismatch, and writes no record. | Test (TC-1216) |
+| FR-057-AC-11 | Unsafe or missing raw evidence returns `raw_evidence_mismatch`, identifies each mismatch, and writes no record. | Test (TC-1216) |
 
 ## Constraints
 

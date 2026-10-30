@@ -14,7 +14,7 @@ use serde::Deserialize;
 
 use crate::wire::{FormatVersion1, QuireAssuranceFormat};
 use entities::{Artifact, Obligation, Symbol};
-use premise::{ModulePremise, SourcePremise};
+use premise::ModulePremise;
 use relations::{Relation, RelationKind, RelationObservation};
 
 /// One `quire-assurance` export, at format version 1.
@@ -29,8 +29,6 @@ pub struct QuireAssuranceV1 {
     pub format: QuireAssuranceFormat,
     /// Always `1`.
     pub format_version: FormatVersion1,
-    /// Where the export was taken from. BLOCKED-BY PLAT-1226 (owner: planner titan:QSL:plan): quire-rs assurance-v1 sourcePremise.revision
-    pub source: SourcePremise,
     /// Which modules were active.
     pub modules: Vec<ModulePremise>,
     /// The spec artifacts.

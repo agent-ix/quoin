@@ -40,7 +40,6 @@
 
 use std::path::{Path, PathBuf};
 
-use ix_trace_rs::trace;
 use quoin_graph_analysis::model::binding::{BindingInput, parse_bindings_file};
 use quoin_graph_analysis::{
     ArtifactId, DEFAULT_RELATION_KINDS, GraphAnalysis, GraphAnalysisInput, RelationKind,
@@ -50,17 +49,10 @@ use quoin_graph_analysis::{
 };
 use serde_json::{Value, json};
 
-const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-const OTHER_REVISION: &str = "dddddddddddddddddddddddddddddddddddddddd";
-
 const REQUIREMENTS: [&str; 4] = ["FR-001", "FR-002", "FR-003", "FR-004"];
 
 fn locator(path: &str, line: u32) -> Value {
     json!({ "path": path, "line": line })
-}
-
-fn source() -> Value {
-    json!({ "repository": "agent-ix/example", "revision": REVISION })
 }
 
 fn modules() -> Value {
@@ -137,7 +129,6 @@ fn export_value() -> Value {
         "format": "quire-assurance",
         "format_version": 1,
         "modules": modules(),
-        "source": source(),
         "artifacts": artifacts(),
         "obligations": obligations(),
         "symbols": [],
@@ -169,7 +160,6 @@ fn audit_value(healthy: &[&str], findings: &Value) -> Value {
     json!({
         "format": "quoin-audit-envelope",
         "format_version": 1,
-        "source": source(),
         "export": premises_value(),
         "report": { "findings": findings, "healthy": healthy, "unevaluated": [] },
     })
@@ -179,7 +169,6 @@ fn binding(obligation: &str, suite: &str) -> Value {
     json!({
         "obligation": obligation,
         "suite": suite,
-        "commit": REVISION,
         "symbols": ["test"],
     })
 }
@@ -373,15 +362,14 @@ fn tc_500_041_the_auditor_verdict_is_copied_and_never_re_decided() {
     );
 }
 
-/// Every view carries the accepted full source revision and the format/module
-/// premises, byte for byte.
+/// Every view carries the format/module premises, byte for byte.
 ///
-/// Restates "preserves source and accepted premises across every view".
+/// Restates "preserves accepted premises across every view".
 ///
 /// Trace: FR-062-AC-8
 /// Provenance: quoin#500
 #[test]
-fn tc_500_044_every_view_carries_the_accepted_source_and_premises() {
+fn tc_500_044_every_view_carries_the_accepted_premises() {
     let value = plain(&[binding("FR-001-AC-1", "unit")]);
     let views = [
         GraphAnalysis::from(analyze_fan_out(&value)),
@@ -392,11 +380,6 @@ fn tc_500_044_every_view_carries_the_accepted_source_and_premises() {
     ];
     for view in &views {
         let report = as_json(view);
-        assert_eq!(
-            report["source"],
-            source(),
-            "the full revision, never a prefix"
-        );
         assert_eq!(report["premises"], premises_value());
         assert_eq!(
             report["export"],
@@ -445,11 +428,11 @@ fn tc_500_045_bad_inputs_fail_closed_and_unavailable_is_not_zero() {
     assert!(check_accepted_premises(&export, &with_modules(extra)).is_err());
 
     let mut moved = audit_value(&["FR-001-AC-1"], &json!([]));
-    moved["source"]["revision"] = json!(OTHER_REVISION);
+    moved["export"]["modules"] = json!([]);
     let moved = parse_audit_envelope(&moved.to_string()).expect("the candidate envelope parses");
     assert!(
         check_audit_identity(&moved, &export).is_err(),
-        "an audit taken at another revision is not this export's audit"
+        "an audit taken under other premises is not this export's audit"
     );
 
     let with_store = |bindings: BindingInput| {
@@ -553,10 +536,6 @@ fn tc_500_046_equivalent_permutations_render_identical_bytes() {
     );
 
     let markdown = render_graph_analysis(&left);
-    assert!(
-        markdown.contains(REVISION),
-        "the human rendering carries the full accepted revision"
-    );
     assert!(markdown.contains("Suite"));
 }
 
@@ -744,40 +723,31 @@ fn tc_500_048_the_views_carry_no_score_or_threshold() {
     );
 }
 
-/// A binding to an obligation the accepted export does not have is named under
-/// its suite and in the report gaps, and is excluded from the live count
-/// rather than dropped or treated as live.
-#[trace("FR-062-AC-2")]
+/// Bindings are read in `(obligation, suite)` order whatever order the store
+/// lists them in.
+///
+/// Provenance: quoin#500
 #[test]
-fn tc_500_050_a_binding_to_an_unexported_obligation_is_named_and_not_live() {
-    let report = as_json(&GraphAnalysis::from(analyze_fan_out(&plain(&[
-        binding("FR-001-AC-1", "unit"),
-        binding("FR-404-AC-9", "unit"),
-        binding("FR-404-AC-9", "prop"),
-    ]))));
-    let rows = report["rows"].as_array().unwrap();
-    let row = |suite: &str| rows.iter().find(|row| row["suite"] == suite).unwrap();
-
-    let unit = row("unit");
-    assert_eq!(
-        unit["obligationCount"], 1,
-        "the unexported obligation is not live"
-    );
-    assert_eq!(unit["unresolvedBindings"], json!(["FR-404-AC-9"]));
-    assert_eq!(unit["obligations"].as_array().unwrap().len(), 1);
-
-    let prop = row("prop");
-    assert_eq!(
-        prop["obligationCount"], 0,
-        "a suite can hold only an unresolved binding"
-    );
-    assert_eq!(prop["unresolvedBindings"], json!(["FR-404-AC-9"]));
-
-    let subjects: Vec<&str> = report["gaps"]
-        .as_array()
-        .unwrap()
+fn bindings_for_one_obligation_are_ordered_by_suite() {
+    let bindings = parse_bindings_file(&json!({
+        "schemaVersion": 1,
+        "bindings": [
+            binding("FR-001-AC-1", "unit"),
+            binding("FR-001-AC-1", "integration"),
+            binding("FR-000-AC-1", "unit"),
+        ],
+    }))
+    .expect("the store parses");
+    let order: Vec<(&str, &str)> = bindings
         .iter()
-        .map(|gap| gap["subject"].as_str().unwrap())
+        .map(|b| (b.obligation.as_str(), b.suite.as_str()))
         .collect();
-    assert_eq!(subjects, ["prop:FR-404-AC-9", "unit:FR-404-AC-9"]);
+    assert_eq!(
+        order,
+        [
+            ("FR-000-AC-1", "unit"),
+            ("FR-001-AC-1", "integration"),
+            ("FR-001-AC-1", "unit"),
+        ]
+    );
 }

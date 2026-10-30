@@ -11,7 +11,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use quoin_quire::model::{AssuranceExport, AssuranceSource, RelationAvailability};
+use quoin_quire::model::{AssuranceExport, RelationAvailability};
 
 use crate::ids::{ArtifactId, ObligationId};
 use crate::model::report::{
@@ -27,7 +27,6 @@ pub(crate) type Owners = BTreeMap<ObligationId, Vec<ArtifactId>>;
 /// A report head under construction.
 pub(crate) struct Draft {
     view: GraphView,
-    source: AssuranceSource,
     export: ExportIdentity,
     premises: AcceptedPremises,
     gaps: BTreeSet<GraphGap>,
@@ -38,7 +37,6 @@ impl Draft {
     pub(crate) fn new(input: &GraphAnalysisInput, view: GraphView) -> Self {
         let mut draft = Self {
             view,
-            source: input.assurance.source.clone(),
             export: ExportIdentity {
                 format: input.assurance.format.clone(),
                 format_version: input.assurance.format_version,
@@ -92,7 +90,6 @@ impl Draft {
     fn seal(self, state: GraphAnalysisState) -> GraphReportBase {
         GraphReportBase {
             view: self.view,
-            source: self.source,
             export: self.export,
             premises: self.premises,
             state,

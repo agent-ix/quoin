@@ -272,11 +272,10 @@ or aggregate one record's strength against another's.
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["path", "media_type", "size_bytes"],
+        "required": ["path", "media_type"],
         "properties": {
           "path": { "type": "string", "minLength": 1 },
-          "media_type": { "type": "string", "minLength": 1 },
-          "size_bytes": { "type": "integer", "minimum": 0 }
+          "media_type": { "type": "string", "minLength": 1 }
         },
         "additionalProperties": false
       }
@@ -490,7 +489,7 @@ or aggregate one record's strength against another's.
 | FR-056-AC-6 | Interactions and confounders remain separate collections whose entries distinguish controlled, uncontrolled, unknown, and not-applicable dispositions. | Test (TC-1200) |
 | FR-056-AC-7 | Completed, failed, and inconclusive statuses validate; failed and inconclusive records require the first-class `cause_not_established` conclusion. | Test (TC-1201) |
 | FR-056-AC-8 | A causal-effect conclusion requires positive baseline and treatment samples, at least one non-null measured effect, non-`none` attribution confidence, and no uncontrolled or unknown interaction or confounder; a no-effect conclusion requires positive samples and an observed comparison. | Test (TC-1202) |
-| FR-056-AC-9 | Gaps, owner, actions, and at least one raw-evidence reference with media type and byte size are retained; unsafe paths and undeclared fields are refused. | Test (TC-1203) |
+| FR-056-AC-9 | Gaps, owner, actions, and at least one raw-evidence reference with media type are retained; unsafe paths and undeclared fields are refused. | Test (TC-1203) |
 | FR-056-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `tested` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test (TC-1882) |
 
 ## Dependencies

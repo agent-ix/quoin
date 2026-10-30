@@ -17,7 +17,6 @@
     "N-152",
     "N-161",
     "N-134",
-    "N-089",
     "N-137",
     "N-009",
     "N-119",
@@ -26,11 +25,9 @@
     "N-113",
     "N-013",
     "N-081",
-    "N-025",
     "N-073",
     "N-122",
     "N-057",
-    "N-131",
     "N-116",
     "N-049",
     "N-101",
@@ -205,14 +202,6 @@
       "modes": [
         "RTC"
       ],
-      "slot": "VIOL-18",
-      "source": "N-089"
-    },
-    {
-      "kind": "violating_code",
-      "modes": [
-        "RTC"
-      ],
       "slot": "VIOL-19",
       "source": "N-137"
     },
@@ -271,14 +260,6 @@
       ],
       "slot": "VIOL-26",
       "source": "N-081"
-    },
-    {
-      "kind": "violating_code",
-      "modes": [
-        "RTC"
-      ],
-      "slot": "VIOL-27",
-      "source": "N-025"
     },
     {
       "kind": "violating_code",
@@ -421,14 +402,6 @@
       "modes": [
         "RTC"
       ],
-      "slot": "ADD-14",
-      "source": "N-025"
-    },
-    {
-      "kind": "additive_code",
-      "modes": [
-        "RTC"
-      ],
       "slot": "ADD-15",
       "source": "N-122"
     },
@@ -503,14 +476,6 @@
       ],
       "slot": "WEAK-08",
       "source": "N-161"
-    },
-    {
-      "kind": "test_weakening",
-      "modes": [
-        "RTC"
-      ],
-      "slot": "WEAK-09",
-      "source": "N-089"
     },
     {
       "kind": "test_weakening",
@@ -621,14 +586,6 @@
       "modes": [
         "RT"
       ],
-      "slot": "REQ-08",
-      "source": "N-035"
-    },
-    {
-      "kind": "requirement_text",
-      "modes": [
-        "RT"
-      ],
       "slot": "REQ-09",
       "source": "N-150"
     },
@@ -679,14 +636,6 @@
       ],
       "slot": "REQ-15",
       "source": "N-011"
-    },
-    {
-      "kind": "requirement_text",
-      "modes": [
-        "RT"
-      ],
-      "slot": "REQ-16",
-      "source": "N-123"
     },
     {
       "defect": "vague_term",
@@ -1080,15 +1029,6 @@
       "modes": [
         "RC"
       ],
-      "partner_req_id": "FR-018",
-      "slot": "SWAP-14",
-      "source": "N-030"
-    },
-    {
-      "kind": "trace_swap",
-      "modes": [
-        "RC"
-      ],
       "partner_req_id": "FR-056",
       "slot": "SWAP-15",
       "source": "N-006"
@@ -1140,43 +1080,6 @@
         "test_kind": "integration"
       },
       "stratum": "RTC|fr_behaviour|integration|quoin-change-assurance"
-    },
-    {
-      "crit_id": "FR-054-CON-2",
-      "id": "N-002",
-      "mode": "RC",
-      "owning_test": {
-        "filter": "tc_383_003_every_advise_case_matches_the_retained_advice",
-        "name": "tc_383_003_every_advise_case_matches_the_retained_advice",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "req_id": "FR-054",
-      "source": {
-        "code": {
-          "end_line": 142,
-          "leading_line": 66,
-          "line": 74,
-          "path": "rust/crates/quoin-auditor/src/advise/mod.rs",
-          "symbol": "advise"
-        },
-        "crate": "quoin-auditor",
-        "crit_id": "FR-054-CON-2",
-        "req_id": "FR-054",
-        "test": {
-          "end_line": 313,
-          "language": "rust",
-          "leading_line": 253,
-          "line": 260,
-          "path": "rust/crates/quoin-auditor/tests/tc_383_parity.rs",
-          "symbol": "tc_383_003_every_advise_case_matches_the_retained_advice"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RC|constraint|-|quoin-auditor"
     },
     {
       "crit_id": "FR-100-CON-4",
@@ -1491,43 +1394,6 @@
     },
     {
       "crit_id": null,
-      "id": "N-014",
-      "mode": "RC",
-      "owning_test": {
-        "filter": "tc_377_021_missing_root_is_a_coded_refusal",
-        "name": "tc_377_021_missing_root_is_a_coded_refusal",
-        "package": "quoin-validators",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "req_id": "FR-096",
-      "source": {
-        "code": {
-          "end_line": 137,
-          "leading_line": 129,
-          "line": 131,
-          "path": "rust/crates/quoin-validators/src/error.rs",
-          "symbol": "ValidatorError::path"
-        },
-        "crate": "quoin-validators",
-        "crit_id": null,
-        "req_id": "FR-096",
-        "test": {
-          "end_line": 245,
-          "language": "rust",
-          "leading_line": 228,
-          "line": 236,
-          "path": "rust/crates/quoin-validators/tests/golden_parity.rs",
-          "symbol": "tc_377_021_missing_root_is_a_coded_refusal"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RC|fr_behaviour|-|quoin-validators"
-    },
-    {
-      "crit_id": null,
       "id": "N-015",
       "mode": "RT",
       "owning_test": {
@@ -1804,43 +1670,6 @@
       "stratum": "R|fr_behaviour|state_driven"
     },
     {
-      "crit_id": null,
-      "id": "N-025",
-      "mode": "RTC",
-      "owning_test": {
-        "filter": "tc_378_108_identities_match_the_oracle",
-        "name": "tc_378_108_identities_match_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "req_id": "FR-075",
-      "source": {
-        "code": {
-          "end_line": 44,
-          "leading_line": 40,
-          "line": 42,
-          "path": "rust/crates/quoin-semantic/src/package_manifest.rs",
-          "symbol": "mapping_identity"
-        },
-        "crate": "quoin-semantic",
-        "crit_id": null,
-        "req_id": "FR-075",
-        "test": {
-          "end_line": 666,
-          "language": "rust",
-          "leading_line": 649,
-          "line": 652,
-          "path": "rust/crates/quoin-semantic/tests/golden_parity.rs",
-          "symbol": "tc_378_108_identities_match_the_oracle"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RTC|fr_behaviour|integration|quoin-semantic"
-    },
-    {
       "crit_id": "FR-062-AC-5",
       "id": "N-026",
       "mode": "RC",
@@ -1959,43 +1788,6 @@
       "stratum": "RTC|fr_behaviour|unit|quoin-cli"
     },
     {
-      "crit_id": null,
-      "id": "N-030",
-      "mode": "RC",
-      "owning_test": {
-        "filter": "tc_447_500_the_port_reproduces_every_captured_typescript_verdict",
-        "name": "tc_447_500_the_port_reproduces_every_captured_typescript_verdict",
-        "package": "quoin-assurance",
-        "selector": [
-          "--test",
-          "tc_447_golden_corpus"
-        ]
-      },
-      "req_id": "FR-040",
-      "source": {
-        "code": {
-          "end_line": 344,
-          "leading_line": 37,
-          "line": 50,
-          "path": "rust/crates/quoin-assurance/src/argument/parse.rs",
-          "symbol": "parse_assurance_argument"
-        },
-        "crate": "quoin-assurance",
-        "crit_id": null,
-        "req_id": "FR-040",
-        "test": {
-          "end_line": 252,
-          "language": "rust",
-          "leading_line": 124,
-          "line": 129,
-          "path": "rust/crates/quoin-assurance/tests/tc_447_golden_corpus.rs",
-          "symbol": "tc_447_500_the_port_reproduces_every_captured_typescript_verdict"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RC|fr_behaviour|-|quoin-assurance"
-    },
-    {
       "crit_id": "FR-027-AC-9",
       "id": "N-031",
       "mode": "RT",
@@ -2080,80 +1872,6 @@
         "test_kind": "integration"
       },
       "stratum": "RTC|constraint|integration|quoin-core"
-    },
-    {
-      "crit_id": "FR-032-AC-1",
-      "id": "N-034",
-      "mode": "RC",
-      "owning_test": {
-        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "req_id": "FR-032",
-      "source": {
-        "code": {
-          "end_line": 238,
-          "leading_line": 134,
-          "line": 148,
-          "path": "rust/crates/quoin-auditor/src/audit/mod.rs",
-          "symbol": "audit"
-        },
-        "crate": "quoin-auditor",
-        "crit_id": "FR-032-AC-1",
-        "req_id": "FR-032",
-        "test": {
-          "end_line": 209,
-          "language": "rust",
-          "leading_line": 150,
-          "line": 163,
-          "path": "rust/crates/quoin-auditor/tests/tc_383_parity.rs",
-          "symbol": "tc_383_001_every_audit_case_matches_the_retained_report"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RC|fr_behaviour|-|quoin-auditor"
-    },
-    {
-      "crit_id": "FR-035-AC-1",
-      "id": "N-035",
-      "mode": "RT",
-      "owning_test": {
-        "filter": "tc_382_002_a_demand_past_the_ceiling_is_refused_where_the_retained_side_exhausts_the_heap",
-        "name": "tc_382_002_a_demand_past_the_ceiling_is_refused_where_the_retained_side_exhausts_the_heap",
-        "package": "quoin-combinatorial",
-        "selector": [
-          "--test",
-          "tc_382_parity"
-        ]
-      },
-      "req_id": "FR-035",
-      "source": {
-        "code": {
-          "end_line": 290,
-          "leading_line": 234,
-          "line": 238,
-          "path": "rust/crates/quoin-combinatorial/src/space.rs",
-          "symbol": "parse_space"
-        },
-        "crate": "quoin-combinatorial",
-        "crit_id": "FR-035-AC-1",
-        "req_id": "FR-035",
-        "test": {
-          "end_line": 318,
-          "language": "rust",
-          "leading_line": 279,
-          "line": 290,
-          "path": "rust/crates/quoin-combinatorial/tests/tc_382_parity.rs",
-          "symbol": "tc_382_002_a_demand_past_the_ceiling_is_refused_where_the_retained_side_exhausts_the_heap"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RT|fr_behaviour|integration|quoin-combinatorial"
     },
     {
       "crit_id": "NFR-024-AC-13",
@@ -2907,37 +2625,6 @@
       "stratum": "RC|fr_behaviour|-|quoin-evidence"
     },
     {
-      "crit_id": "FR-099-AC-2",
-      "id": "N-063",
-      "mode": "RT",
-      "owning_test": {
-        "filter": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "name": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "package": "quoin-quire",
-        "selector": [
-          "--test",
-          "tc_474_assurance_parity"
-        ]
-      },
-      "req_id": "FR-099",
-      "source": {
-        "code": null,
-        "crate": "quoin-quire",
-        "crit_id": "FR-099-AC-2",
-        "req_id": "FR-099",
-        "test": {
-          "end_line": 250,
-          "language": "rust",
-          "leading_line": 226,
-          "line": 231,
-          "path": "rust/crates/quoin-quire/tests/tc_474_assurance_parity.rs",
-          "symbol": "tc_474_023_the_verdict_capture_records_its_provenance"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RT|fr_behaviour|integration|quoin-quire"
-    },
-    {
       "crit_id": "FR-059-AC-3",
       "id": "N-064",
       "mode": "R",
@@ -3023,43 +2710,6 @@
         "test_kind": "integration"
       },
       "stratum": "RC|fr_behaviour|-|quoin-modules"
-    },
-    {
-      "crit_id": "FR-025-AC-8",
-      "id": "N-067",
-      "mode": "RT",
-      "owning_test": {
-        "filter": "tc_381_105_worktree_gitdir_resolves_the_main_checkouts_org",
-        "name": "tc_381_105_worktree_gitdir_resolves_the_main_checkouts_org",
-        "package": "quoin-config",
-        "selector": [
-          "--test",
-          "ts_oracle"
-        ]
-      },
-      "req_id": "FR-025",
-      "source": {
-        "code": {
-          "end_line": 183,
-          "leading_line": 136,
-          "line": 142,
-          "path": "rust/crates/quoin-config/src/org.rs",
-          "symbol": "resolve_org"
-        },
-        "crate": "quoin-config",
-        "crit_id": "FR-025-AC-8",
-        "req_id": "FR-025",
-        "test": {
-          "end_line": 291,
-          "language": "rust",
-          "leading_line": 250,
-          "line": 252,
-          "path": "rust/crates/quoin-config/tests/ts_oracle.rs",
-          "symbol": "tc_381_105_worktree_gitdir_resolves_the_main_checkouts_org"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RT|fr_behaviour|integration|quoin-config"
     },
     {
       "crit_id": "StR-008-VC-3",
@@ -3208,43 +2858,6 @@
         "test_kind": "property"
       },
       "stratum": "RTC|fr_behaviour|property|quoin-combinatorial"
-    },
-    {
-      "crit_id": null,
-      "id": "N-074",
-      "mode": "RC",
-      "owning_test": {
-        "filter": "tc_378_300_written_reason_matches_the_oracle",
-        "name": "tc_378_300_written_reason_matches_the_oracle",
-        "package": "quoin-completeness",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "req_id": "FR-037",
-      "source": {
-        "code": {
-          "end_line": 349,
-          "leading_line": 303,
-          "line": 310,
-          "path": "rust/crates/quoin-completeness/src/assess.rs",
-          "symbol": "written_reason_for"
-        },
-        "crate": "quoin-completeness",
-        "crit_id": null,
-        "req_id": "FR-037",
-        "test": {
-          "end_line": 112,
-          "language": "rust",
-          "leading_line": 88,
-          "line": 91,
-          "path": "rust/crates/quoin-completeness/tests/golden_parity.rs",
-          "symbol": "tc_378_300_written_reason_matches_the_oracle"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RC|fr_behaviour|-|quoin-completeness"
     },
     {
       "crit_id": "FR-093-AC-7",
@@ -3434,43 +3047,6 @@
       "stratum": "RTC|fr_behaviour|integration|quoin-evidence"
     },
     {
-      "crit_id": null,
-      "id": "N-082",
-      "mode": "RC",
-      "owning_test": {
-        "filter": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "name": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "req_id": "FR-075",
-      "source": {
-        "code": {
-          "end_line": 176,
-          "leading_line": 170,
-          "line": 172,
-          "path": "rust/crates/quoin-semantic/src/contract.rs",
-          "symbol": "package_manifest_schema_path"
-        },
-        "crate": "quoin-semantic",
-        "crit_id": null,
-        "req_id": "FR-075",
-        "test": {
-          "end_line": 247,
-          "language": "rust",
-          "leading_line": 213,
-          "line": 216,
-          "path": "rust/crates/quoin-semantic/tests/golden_parity.rs",
-          "symbol": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RC|fr_behaviour|-|quoin-semantic"
-    },
-    {
       "crit_id": "FR-098-CON-1",
       "id": "N-083",
       "mode": "RT",
@@ -3637,43 +3213,6 @@
         "req_id": "FR-051"
       },
       "stratum": "R|fr_behaviour|event_driven"
-    },
-    {
-      "crit_id": "FR-035-AC-1",
-      "id": "N-089",
-      "mode": "RTC",
-      "owning_test": {
-        "filter": "tc_382_004_an_inherited_property_name_is_not_a_divergence_because_the_value_guard_catches_it",
-        "name": "tc_382_004_an_inherited_property_name_is_not_a_divergence_because_the_value_guard_catches_it",
-        "package": "quoin-combinatorial",
-        "selector": [
-          "--test",
-          "tc_382_parity"
-        ]
-      },
-      "req_id": "FR-035",
-      "source": {
-        "code": {
-          "end_line": 290,
-          "leading_line": 234,
-          "line": 238,
-          "path": "rust/crates/quoin-combinatorial/src/space.rs",
-          "symbol": "parse_space"
-        },
-        "crate": "quoin-combinatorial",
-        "crit_id": "FR-035-AC-1",
-        "req_id": "FR-035",
-        "test": {
-          "end_line": 392,
-          "language": "rust",
-          "leading_line": 365,
-          "line": 376,
-          "path": "rust/crates/quoin-combinatorial/tests/tc_382_parity.rs",
-          "symbol": "tc_382_004_an_inherited_property_name_is_not_a_divergence_because_the_value_guard_catches_it"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RTC|fr_behaviour|integration|quoin-combinatorial"
     },
     {
       "crit_id": null,
@@ -4578,37 +4117,6 @@
       "stratum": "RTC|fr_behaviour|integration|quoin-measurement"
     },
     {
-      "crit_id": "NFR-009-AC-1",
-      "id": "N-123",
-      "mode": "RT",
-      "owning_test": {
-        "filter": "tc_383_004_every_characteristic_case_matches",
-        "name": "tc_383_004_every_characteristic_case_matches",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "req_id": "NFR-009",
-      "source": {
-        "code": null,
-        "crate": "quoin-auditor",
-        "crit_id": "NFR-009-AC-1",
-        "req_id": "NFR-009",
-        "test": {
-          "end_line": 358,
-          "language": "rust",
-          "leading_line": 315,
-          "line": 323,
-          "path": "rust/crates/quoin-auditor/tests/tc_383_parity.rs",
-          "symbol": "tc_383_004_every_characteristic_case_matches"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RT|nfr|integration|quoin-auditor"
-    },
-    {
       "crit_id": "FR-026-AC-1",
       "id": "N-124",
       "mode": "R",
@@ -4781,43 +4289,6 @@
         "req_id": "NFR-020"
       },
       "stratum": "R|nfr|ubiquitous"
-    },
-    {
-      "crit_id": null,
-      "id": "N-131",
-      "mode": "RTC",
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "req_id": "FR-073",
-      "source": {
-        "code": {
-          "end_line": 151,
-          "leading_line": 109,
-          "line": 111,
-          "path": "rust/crates/quoin-semantic/src/data_schema.rs",
-          "symbol": "classify_data_schema"
-        },
-        "crate": "quoin-semantic",
-        "crit_id": null,
-        "req_id": "FR-073",
-        "test": {
-          "end_line": 692,
-          "language": "rust",
-          "leading_line": 668,
-          "line": 671,
-          "path": "rust/crates/quoin-semantic/tests/golden_parity.rs",
-          "symbol": "tc_378_109_classify_data_schema_matches_the_oracle"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RTC|fr_behaviour|integration|quoin-semantic"
     },
     {
       "crit_id": "FR-031-CON-1",
@@ -5139,37 +4610,6 @@
         "test_kind": "integration"
       },
       "stratum": "RTC|fr_behaviour|integration|quoin-measurement"
-    },
-    {
-      "crit_id": "FR-031-AC-18",
-      "id": "N-144",
-      "mode": "RT",
-      "owning_test": {
-        "filter": "tc_383_011_the_score_filter_matches",
-        "name": "tc_383_011_the_score_filter_matches",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "req_id": "FR-031",
-      "source": {
-        "code": null,
-        "crate": "quoin-auditor",
-        "crit_id": "FR-031-AC-18",
-        "req_id": "FR-031",
-        "test": {
-          "end_line": 639,
-          "language": "rust",
-          "leading_line": 613,
-          "line": 618,
-          "path": "rust/crates/quoin-auditor/tests/tc_383_parity.rs",
-          "symbol": "tc_383_011_the_score_filter_matches"
-        },
-        "test_kind": "integration"
-      },
-      "stratum": "RT|fr_behaviour|integration|quoin-auditor"
     },
     {
       "crit_id": "FR-034-CON-2",
@@ -5995,7 +5435,6 @@
   "seed": 20260923,
   "split": {
     "N-001": "heldout",
-    "N-002": "heldout",
     "N-003": "heldout",
     "N-004": "dev",
     "N-005": "heldout",
@@ -6007,7 +5446,6 @@
     "N-011": "dev",
     "N-012": "dev",
     "N-013": "heldout",
-    "N-014": "heldout",
     "N-015": "dev",
     "N-016": "dev",
     "N-017": "heldout",
@@ -6018,17 +5456,13 @@
     "N-022": "heldout",
     "N-023": "heldout",
     "N-024": "dev",
-    "N-025": "heldout",
     "N-026": "dev",
     "N-027": "heldout",
     "N-028": "dev",
     "N-029": "heldout",
-    "N-030": "dev",
     "N-031": "heldout",
     "N-032": "heldout",
     "N-033": "dev",
-    "N-034": "dev",
-    "N-035": "heldout",
     "N-036": "heldout",
     "N-037": "dev",
     "N-038": "heldout",
@@ -6056,18 +5490,15 @@
     "N-060": "dev",
     "N-061": "heldout",
     "N-062": "heldout",
-    "N-063": "dev",
     "N-064": "heldout",
     "N-065": "dev",
     "N-066": "heldout",
-    "N-067": "heldout",
     "N-068": "dev",
     "N-069": "dev",
     "N-070": "heldout",
     "N-071": "heldout",
     "N-072": "dev",
     "N-073": "heldout",
-    "N-074": "heldout",
     "N-075": "heldout",
     "N-076": "heldout",
     "N-077": "heldout",
@@ -6075,14 +5506,12 @@
     "N-079": "dev",
     "N-080": "heldout",
     "N-081": "heldout",
-    "N-082": "dev",
     "N-083": "dev",
     "N-084": "heldout",
     "N-085": "heldout",
     "N-086": "heldout",
     "N-087": "heldout",
     "N-088": "heldout",
-    "N-089": "heldout",
     "N-090": "heldout",
     "N-091": "dev",
     "N-092": "heldout",
@@ -6116,7 +5545,6 @@
     "N-120": "heldout",
     "N-121": "heldout",
     "N-122": "heldout",
-    "N-123": "heldout",
     "N-124": "dev",
     "N-125": "heldout",
     "N-126": "heldout",
@@ -6124,7 +5552,6 @@
     "N-128": "heldout",
     "N-129": "heldout",
     "N-130": "dev",
-    "N-131": "heldout",
     "N-132": "heldout",
     "N-133": "heldout",
     "N-134": "heldout",
@@ -6137,7 +5564,6 @@
     "N-141": "heldout",
     "N-142": "heldout",
     "N-143": "dev",
-    "N-144": "heldout",
     "N-145": "dev",
     "N-146": "heldout",
     "N-147": "dev",

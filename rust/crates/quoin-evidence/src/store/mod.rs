@@ -26,17 +26,17 @@ pub use records::{list_recorded_suites, scan_is_vacuous};
 pub use trust_store::{read_trust_decision, read_trust_decisions, write_trust_decision};
 
 use crate::error::EvidenceError;
-use crate::ids::{Commit, SuiteId};
+use crate::ids::SuiteId;
 use crate::source::EvidenceSource;
 use crate::types::{FindingRecord, MockInspectionRecord, RunRecord};
 
 macro_rules! family {
     (
         $record:ty,
-        $write:ident, $read:ident, $list:ident, $read_all:ident, $latest:ident, $latest_each:ident,
+        $write:ident, $list:ident, $read_all:ident, $latest:ident, $latest_each:ident,
         $what:literal
     ) => {
-        #[doc = concat!("Write one ", $what, ". Last-write-wins at the same `(suite, commit)`.")]
+        #[doc = concat!("Write one ", $what, ". Last-write-wins at the same `(suite, timestamp)`.")]
         ///
         /// # Errors
         ///
@@ -46,19 +46,6 @@ macro_rules! family {
             record: &$record,
         ) -> Result<String, EvidenceError> {
             records::write_record(source, record)
-        }
-
-        #[doc = concat!("Read one ", $what, ", or `None` when that `(suite, commit)` has none.")]
-        ///
-        /// # Errors
-        ///
-        /// [`EvidenceError::StoreRead`] when the file is present and unparseable.
-        pub fn $read<S: EvidenceSource + ?Sized>(
-            source: &S,
-            suite: &SuiteId,
-            commit: &Commit,
-        ) -> Result<Option<$record>, EvidenceError> {
-            records::read_record(source, suite, commit)
         }
 
         #[doc = concat!("Every ", $what, " file a suite has, in file-name order.")]
@@ -118,7 +105,6 @@ macro_rules! family {
 family!(
     RunRecord,
     write_run,
-    read_run,
     list_runs,
     read_runs,
     latest_run,
@@ -128,7 +114,6 @@ family!(
 family!(
     FindingRecord,
     write_scan,
-    read_scan,
     list_scans,
     read_scans,
     latest_scan,
@@ -138,7 +123,6 @@ family!(
 family!(
     MockInspectionRecord,
     write_mock_inspection,
-    read_mock_inspection,
     list_mock_inspections,
     read_mock_inspections,
     latest_mock_inspection,
