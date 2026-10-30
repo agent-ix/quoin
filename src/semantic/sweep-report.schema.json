@@ -20,11 +20,10 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["repository", "revision"],
+        "required": ["repository"],
         "additionalProperties": false,
         "properties": {
-          "repository": { "type": "string", "minLength": 1 },
-          "revision": { "type": "string", "minLength": 1 }
+          "repository": { "type": "string", "minLength": 1 }
         }
       }
     },

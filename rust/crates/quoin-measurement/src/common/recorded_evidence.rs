@@ -33,6 +33,4 @@ pub struct RecordedEvidenceReference {
     pub path: EvidencePath,
     /// The file's media type as recorded.
     pub media_type: MediaType,
-    /// The file's size in bytes as recorded.
-    pub size_bytes: u64,
 }

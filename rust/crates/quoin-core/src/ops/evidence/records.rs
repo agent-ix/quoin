@@ -23,7 +23,7 @@ use quoin_evidence::trust::assess_trust;
 use quoin_evidence::types::{
     Binding, FindingRecord, MockInspectionRecord, STORE_SCHEMA_VERSION, TrustDecision,
 };
-use quoin_evidence::{Commit, ObligationId, SuiteId};
+use quoin_evidence::{ObligationId, SuiteId};
 
 use crate::capabilities::{Capabilities, EvidenceHost};
 use crate::error::{CoreError, CoreErrorCode};
@@ -45,7 +45,7 @@ use super::{absolute, bound, check_scalar, host, parse, value};
 /// BEFORE anything is parsed, from the adapter registry alone. Letting a scan
 /// fall through to the run path would write it into `runs/` and lose the
 /// clean-versus-unrun distinction at the point of intake — silently, and
-/// permanently for that commit (FR-034).
+/// permanently for that record (FR-034).
 ///
 /// # Errors
 ///
@@ -65,7 +65,6 @@ pub fn record(
     for (field, text) in [
         ("repo", request.repo.as_str()),
         ("suite", request.suite.as_str()),
-        ("commit", request.commit.as_str()),
         ("tool", request.tool.as_str()),
         ("timestamp", request.timestamp.as_str()),
         ("adapter", request.adapter.as_deref().unwrap_or("")),
@@ -137,7 +136,6 @@ fn record_scan(
             &FindingRecord {
                 schema_version: STORE_SCHEMA_VERSION,
                 suite: SuiteId::new(&request.suite),
-                commit: Commit::new(&request.commit),
                 tool: request.tool.clone(),
                 evidence_kind: request.kind.clone(),
                 timestamp: request.timestamp.clone(),
@@ -167,7 +165,6 @@ fn record_scan(
                     &Binding {
                         obligation: ObligationId::new(id),
                         suite: SuiteId::new(&request.suite),
-                        commit: Commit::new(&request.commit),
                         // A scan binds no symbol: it has none. The record is
                         // the evidence.
                         symbols: Vec::new(),
@@ -209,7 +206,6 @@ fn record_entries(
             source,
             &StoreRecordRequest {
                 suite: SuiteId::new(&request.suite),
-                commit: Commit::new(&request.commit),
                 tool: request.tool.clone(),
                 evidence_kind: request.kind.clone(),
                 lineage: request.lineage.clone(),
@@ -288,7 +284,6 @@ pub fn inspect_mocks(
     for (field, text) in [
         ("repo", request.repo.as_str()),
         ("suite", request.suite.as_str()),
-        ("commit", request.commit.as_str()),
         ("tool", request.tool.as_str()),
         ("timestamp", request.timestamp.as_str()),
     ] {
@@ -309,7 +304,6 @@ pub fn inspect_mocks(
                     &MockInspectionRecord {
                         schema_version: STORE_SCHEMA_VERSION,
                         suite: suite.clone(),
-                        commit: Commit::new(&request.commit),
                         tool: request.tool.clone(),
                         timestamp: request.timestamp.clone(),
                         injections: injections.clone(),

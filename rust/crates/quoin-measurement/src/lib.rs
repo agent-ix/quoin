@@ -118,7 +118,7 @@ pub use report::{
     MeasurementReport, build_measurement_report, render_measurement_report,
     render_measurement_report_json, render_series_json, series_for,
 };
-pub use source::{DiskMeasurement, MeasurementSource, MemoryMeasurement, RawEvidenceFile};
+pub use source::{DiskMeasurement, MeasurementSource, MemoryMeasurement};
 pub use store::{
     MeasurementCollectionReadResult, intervention_path, interventions_root, measurement_path,
     measurements_root, read_measurement_collection_results, read_measurement_collections,

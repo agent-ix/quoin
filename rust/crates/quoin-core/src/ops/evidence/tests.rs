@@ -86,11 +86,10 @@ impl EvidenceHost for RefusingHost {
     }
 }
 
-fn run_record(suite: &str, commit: &str, timestamp: &str) -> String {
+fn run_record(suite: &str, timestamp: &str) -> String {
     json!({
         "schemaVersion": 1,
         "suite": suite,
-        "commit": commit,
         "tool": "vitest 1.0.0",
         "timestamp": timestamp,
         "entries": [{"symbol": "a", "outcome": "pass"}],
@@ -137,12 +136,12 @@ fn store_facts_takes_no_arguments() {
 fn tc_458_gc_reports_absolute_paths_by_joining_the_store_root() {
     let store = MemoryEvidence::new()
         .with_file(
-            "runs/alpha/aaaaaaaaaaaa.json",
-            run_record("alpha", "a".repeat(40).as_str(), "2026-01-01T00:00:00Z"),
+            "runs/alpha/2026-01-01T00-00-00Z.json",
+            run_record("alpha", "2026-01-01T00:00:00Z"),
         )
         .with_file(
-            "runs/alpha/bbbbbbbbbbbb.json",
-            run_record("alpha", "b".repeat(40).as_str(), "2026-02-01T00:00:00Z"),
+            "runs/alpha/2026-02-01T00-00-00Z.json",
+            run_record("alpha", "2026-02-01T00:00:00Z"),
         );
     let host = TestHost::new(store);
     let capabilities = Capabilities::with_evidence(&host);
@@ -156,7 +155,7 @@ fn tc_458_gc_reports_absolute_paths_by_joining_the_store_root() {
     // Anti-vacuity: an empty list would pass any "every path is absolute" check.
     assert_eq!(deleted.len(), 1, "{deleted:?}");
     assert_eq!(
-        deleted[0], "/somewhere/spec/evidence/runs/alpha/aaaaaaaaaaaa.json",
+        deleted[0], "/somewhere/spec/evidence/runs/alpha/2026-01-01T00-00-00Z.json",
         "the store-relative path was reported without the root joined onto it"
     );
 }
@@ -165,12 +164,12 @@ fn tc_458_gc_reports_absolute_paths_by_joining_the_store_root() {
 fn a_dry_run_gc_removes_nothing() {
     let store = MemoryEvidence::new()
         .with_file(
-            "runs/alpha/aaaaaaaaaaaa.json",
-            run_record("alpha", "a".repeat(40).as_str(), "2026-01-01T00:00:00Z"),
+            "runs/alpha/2026-01-01T00-00-00Z.json",
+            run_record("alpha", "2026-01-01T00:00:00Z"),
         )
         .with_file(
-            "runs/alpha/bbbbbbbbbbbb.json",
-            run_record("alpha", "b".repeat(40).as_str(), "2026-02-01T00:00:00Z"),
+            "runs/alpha/2026-02-01T00-00-00Z.json",
+            run_record("alpha", "2026-02-01T00:00:00Z"),
         );
     let host = TestHost::new(store);
     let capabilities = Capabilities::with_evidence(&host);
@@ -189,7 +188,7 @@ fn a_dry_run_gc_removes_nothing() {
     .unwrap();
     assert_eq!(
         host.store.borrow().paths(),
-        vec!["runs/alpha/bbbbbbbbbbbb.json"]
+        vec!["runs/alpha/2026-02-01T00-00-00Z.json"]
     );
 }
 
@@ -201,8 +200,8 @@ fn a_dry_run_gc_removes_nothing() {
 fn tc_458_a_malformed_record_is_skipped_and_named_rather_than_half_read() {
     let store = MemoryEvidence::new()
         .with_file(
-            "runs/alpha/aaaaaaaaaaaa.json",
-            run_record("alpha", "a".repeat(40).as_str(), "2026-01-01T00:00:00Z"),
+            "runs/alpha/2026-01-01T00-00-00Z.json",
+            run_record("alpha", "2026-01-01T00:00:00Z"),
         )
         .with_file(
             "runs/beta/cccccccccccc.json",
@@ -232,15 +231,15 @@ fn audit_inputs_answers_vacuity_and_independence_alongside_the_records() {
     let scan = json!({
         "schemaVersion": 1,
         "suite": "scan-suite",
-        "commit": "c".repeat(40),
         "tool": "semgrep",
         "timestamp": "2026-01-01T00:00:00Z",
         "rulesEvaluated": 0,
         "findings": [],
     })
     .to_string();
-    let host =
-        TestHost::new(MemoryEvidence::new().with_file("scans/scan-suite/cccccccccccc.json", scan));
+    let host = TestHost::new(
+        MemoryEvidence::new().with_file("scans/scan-suite/2026-01-01T00-00-00Z.json", scan),
+    );
     let capabilities = Capabilities::with_evidence(&host);
 
     let response = audit_inputs(&json!({"repo": "/somewhere"}), &capabilities).unwrap();
@@ -284,7 +283,7 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
         (
             "evidence.record",
             record(
-                &json!({"repo": "/r", "suite": "s", "commit": "c", "tool": "junit", "timestamp": "t", "results": "<testsuite/>"}),
+                &json!({"repo": "/r", "suite": "s", "tool": "junit", "timestamp": "t", "results": "<testsuite/>"}),
                 &none,
             ),
         ),
@@ -295,7 +294,7 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
         (
             "evidence.inspect_mocks",
             inspect_mocks(
-                &json!({"repo": "/r", "suite": "s", "commit": "c", "tool": "t", "timestamp": "ts"}),
+                &json!({"repo": "/r", "suite": "s", "tool": "t", "timestamp": "ts"}),
                 &none,
             ),
         ),
@@ -376,12 +375,12 @@ fn an_oversized_scalar_is_refused_before_the_host_is_consulted() {
     let host = RefusingHost;
     let capabilities = Capabilities::with_evidence(&host);
     let error = audit_inputs(
-        &json!({"repo": "/r", "head_commit": filler(MAX_SCALAR_BYTES + 1)}),
+        &json!({"repo": filler(MAX_SCALAR_BYTES + 1)}),
         &capabilities,
     )
     .unwrap_err();
     assert_eq!(error.code, CoreErrorCode::Refused);
-    assert_eq!(error.context["field"], "head_commit");
+    assert_eq!(error.context["field"], "repo");
     assert_eq!(error.context["limit_bytes"], MAX_SCALAR_BYTES.to_string());
 }
 
@@ -394,7 +393,6 @@ fn a_run_shaped_record_writes_a_run_and_a_finding_shaped_one_writes_a_scan() {
         &json!({
             "repo": "/somewhere",
             "suite": "unit",
-            "commit": "a".repeat(40),
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
@@ -413,7 +411,6 @@ fn a_run_shaped_record_writes_a_run_and_a_finding_shaped_one_writes_a_scan() {
         &json!({
             "repo": "/somewhere",
             "suite": "scan",
-            "commit": "b".repeat(40),
             "tool": "sarif",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "sarif",

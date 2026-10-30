@@ -30,8 +30,8 @@ raw-byte-verified intervention intake and stable refusal reasons.
 ## TDD Work
 
 - Write TC-1204..TC-1209 and TC-1216 against temporary same-filesystem stores.
-- Resolve the active plan definition before any write and verify every raw path,
-  byte size, and safe-root constraint.
+- Resolve the active plan definition before any write and verify every raw path
+  and safe-root constraint.
 - Reuse canonical serialization and same-directory atomic no-replace publication
   for idempotency and collision protection.
 

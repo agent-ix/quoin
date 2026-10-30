@@ -12,7 +12,7 @@ use quoin_store::store::store_root;
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::raw_evidence::RawEvidencePath;
 
-use super::{MeasurementSource, RawEvidenceFile, has_extension};
+use super::{MeasurementSource, has_extension};
 
 /// A repository on disk.
 #[derive(Clone, Debug)]
@@ -181,15 +181,10 @@ impl MeasurementSource for DiskMeasurement {
         std::fs::read_to_string(&resolved).map_err(|error| io(&resolved, &error))
     }
 
-    fn raw_evidence_file(
-        &self,
-        path: &RawEvidencePath,
-    ) -> Result<RawEvidenceFile, MeasurementError> {
+    fn raw_evidence_file(&self, path: &RawEvidencePath) -> Result<(), MeasurementError> {
         let resolved = self.resolve_raw_evidence(path)?;
-        let size_bytes = std::fs::metadata(&resolved)
-            .map_err(|error| io(&resolved, &error))?
-            .len();
-        Ok(RawEvidenceFile { size_bytes })
+        std::fs::metadata(&resolved).map_err(|error| io(&resolved, &error))?;
+        Ok(())
     }
 
     fn retained_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError> {

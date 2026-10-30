@@ -887,7 +887,7 @@ fn causal_base() -> Value {
 /// written.
 ///
 /// > FR-056-AC-9: Gaps, owner, actions, and at least one safe
-/// > raw-evidence reference with media type and byte size are retained; unsafe
+/// > raw-evidence reference with media type are retained; unsafe
 /// > paths and undeclared fields are refused.
 ///
 /// Trace: FR-056-AC-9
@@ -913,8 +913,8 @@ fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused()
         &["raw_evidence", "0"],
     ];
 
-    /// The three raw-evidence members the criterion names.
-    const EVIDENCE: [&str; 3] = ["path", "media_type", "size_bytes"];
+    /// The raw-evidence members the criterion names.
+    const EVIDENCE: [&str; 2] = ["path", "media_type"];
 
     let base = accepted(&retained(), "the retained record");
     assert_eq!(base.gaps.len(), 5, "the gaps are retained");
@@ -930,7 +930,6 @@ fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused()
     for member in ["gaps", "owner", "actions", "raw_evidence"] {
         required(&[member]);
     }
-    assert_eq!(EVIDENCE.len(), 3, "every evidence member is measured");
     for member in EVIDENCE {
         required(&["raw_evidence", "0", member]);
     }
@@ -954,7 +953,7 @@ fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused()
     refuses_unsafe_paths_without_writing();
 }
 
-/// Every unsafe raw-evidence path, and the byte mismatch, refused at intake
+/// Every unsafe raw-evidence path, refused at intake
 /// with nothing left in the store.
 fn refuses_unsafe_paths_without_writing() {
     /// Paths the schema admits and `resolveRawPath` refuses.
@@ -994,19 +993,6 @@ fn refuses_unsafe_paths_without_writing() {
             &format!("raw evidence at {path:?}"),
         );
     }
-
-    // A reference whose declared bytes are not the retained file's.
-    let mut mismatched = retained();
-    let declared = mismatched["raw_evidence"][0]["size_bytes"]
-        .as_u64()
-        .expect("a declared size");
-    mismatched["raw_evidence"][0]["size_bytes"] = json!(declared + 1);
-    refused_write(
-        root,
-        &mismatched,
-        InterventionRefusalCode::RawEvidenceMismatch,
-        "a raw-evidence byte mismatch",
-    );
 
     // An undeclared field is refused before anything is written, too.
     let mut undeclared = retained();

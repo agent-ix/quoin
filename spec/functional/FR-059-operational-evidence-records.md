@@ -257,11 +257,10 @@ or aggregate one record's strength against another's.
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["path", "media_type", "size_bytes"],
+        "required": ["path", "media_type"],
         "properties": {
           "path": { "type": "string", "minLength": 1 },
-          "media_type": { "type": "string", "minLength": 1 },
-          "size_bytes": { "type": "integer", "minimum": 0 }
+          "media_type": { "type": "string", "minLength": 1 }
         },
         "additionalProperties": false
       }
@@ -370,7 +369,7 @@ or aggregate one record's strength against another's.
 - Every raw-evidence path SHALL be a normalized relative path within the evidence
   store. Absolute paths, parent traversal, and paths that resolve outside the
   evidence store SHALL be refused.
-- Raw evidence carries its path, media type and byte size; no digest is recorded or compared.
+- Raw evidence carries its path and media type; no digest or size is recorded or compared.
 
 ## Acceptance Criteria
 
@@ -384,7 +383,7 @@ or aggregate one record's strength against another's.
 | FR-059-AC-6 | An `operational_with_clock` exercise requires ordered start and deadline timestamps and a status consistent with completion and immutable observation time; a not-applicable clock requires `not_applicable` status and no clock timestamps. | Test (TC-1228) |
 | FR-059-AC-7 | Withdrawn: a version pin recorded a typed `(kind, identity, revision)` and required a matching pin for each `*_pin` control. A recorded revision is a pin; the pins, the `*_pin` control kinds and the `configuration` member are removed with their duplicate and kind-match checks, with no replacement contract (id not reused). | Withdrawn |
 | FR-059-AC-8 | Succeeded, failed, partial, and aborted exercises all validate as retained outcomes. | Test (TC-1230) |
-| FR-059-AC-9 | Gaps, owner, actions, and at least one safe raw-evidence reference with media type and byte size are retained; invalid capability links and undeclared fields are refused. | Test (TC-1231) |
+| FR-059-AC-9 | Gaps, owner, actions, and at least one safe raw-evidence reference with media type are retained; invalid capability links and undeclared fields are refused. | Test (TC-1231) |
 | FR-059-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `observed` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test (TC-1883) |
 
 ## Dependencies

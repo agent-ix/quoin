@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::ids::{Commit, SuiteId, SymbolId};
+use crate::ids::{SuiteId, SymbolId};
 
 /// The metric name `cargo-mutants` scores are recorded under.
 ///
@@ -92,12 +92,11 @@ impl RunEntry {
     }
 }
 
-/// One run of ONE suite at ONE commit.
+/// One run of ONE suite.
 ///
 /// The suite is the atomic unit of evidence: aggregation is a view, and a
 /// partial run must never be able to masquerade as a full one. Re-runs at the
-/// same commit are last-write-wins, latest only — the file name carries the
-/// short commit and nothing distinguishing one attempt from the next.
+/// same timestamp are last-write-wins.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -106,8 +105,6 @@ pub struct RunRecord {
     pub schema_version: u32,
     /// The suite this run covered.
     pub suite: SuiteId,
-    /// Full commit sha the run was performed at.
-    pub commit: Commit,
     /// Tool and version, as the adapter reported them.
     pub tool: String,
     /// The declared `test_type` this run produced, when the caller names one.

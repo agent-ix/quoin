@@ -22,7 +22,7 @@ use quoin_evidence::independence::{
     assess_independence, require_known_policy_obligations, validate_independence_policy,
 };
 use quoin_evidence::mock_inspection::{inspect_mock_injections, mock_inspection_input};
-use quoin_evidence::paths::{bindings_path, run_path, scan_path, trust_decision_path};
+use quoin_evidence::paths::{bindings_path, record_path, trust_decision_path};
 use quoin_evidence::record::{RecordRequest, record_run};
 use quoin_evidence::store::{
     gc, list_recorded_suites, read_bindings, read_runs, read_trust_decisions, write_bindings,
@@ -36,21 +36,14 @@ use quoin_evidence::types::{
     TrustStatus, TrustTrigger, TrustUse,
 };
 use quoin_evidence::{
-    Commit, DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, SuiteId,
-    SymbolId, TrustDecisionId,
+    DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, SuiteId, SymbolId,
+    TrustDecisionId,
 };
 use quoin_quire_types::Obligation;
 use serde_json::json;
 
-const COMMIT: &str = "aaaaaaaaaaaa0000";
-const OTHER_COMMIT: &str = "bbbbbbbbbbbb0000";
-
 fn suite(name: &str) -> SuiteId {
     SuiteId::new(name)
-}
-
-fn commit(value: &str) -> Commit {
-    Commit::new(value)
 }
 
 fn obligation(id: &str) -> Obligation {
@@ -78,11 +71,10 @@ fn entry(symbol: &str, outcome: Outcome, traces: &[&str]) -> RunEntry {
     }
 }
 
-fn run(suite_name: &str, commit_value: &str, timestamp: &str, entries: Vec<RunEntry>) -> RunRecord {
+fn run(suite_name: &str, timestamp: &str, entries: Vec<RunEntry>) -> RunRecord {
     RunRecord {
         schema_version: STORE_SCHEMA_VERSION,
         suite: suite(suite_name),
-        commit: commit(commit_value),
         tool: "cargo test".to_owned(),
         evidence_kind: None,
         timestamp: timestamp.to_owned(),
@@ -90,10 +82,9 @@ fn run(suite_name: &str, commit_value: &str, timestamp: &str, entries: Vec<RunEn
     }
 }
 
-fn request(suite_name: &str, commit_value: &str, entries: Vec<RunEntry>) -> RecordRequest {
+fn request(suite_name: &str, entries: Vec<RunEntry>) -> RecordRequest {
     RecordRequest {
         suite: suite(suite_name),
-        commit: commit(commit_value),
         tool: "cargo test".to_owned(),
         evidence_kind: None,
         lineage: None,
@@ -106,7 +97,6 @@ fn binding(obligation_id: &str, suite_name: &str) -> Binding {
     Binding {
         obligation: ObligationId::new(obligation_id),
         suite: suite(suite_name),
-        commit: commit(COMMIT),
         symbols: vec![SymbolId::new("t")],
         lineage: None,
     }
@@ -203,14 +193,14 @@ fn operational() -> serde_json::Value {
 
 /// Trace: FR-030-AC-1
 #[test]
-fn tc_456_200_a_run_file_is_named_by_suite_and_twelve_character_commit_prefix() {
+fn tc_456_200_a_run_file_is_named_by_suite_and_timestamp() {
     assert_eq!(
-        run_path(&suite("SUITE-001"), &commit(COMMIT)),
-        "runs/SUITE-001/aaaaaaaaaaaa.json"
+        record_path("runs", &suite("SUITE-001"), "2026-08-17T00:00:00Z"),
+        "runs/SUITE-001/2026-08-17T00-00-00Z.json"
     );
     assert_eq!(
-        scan_path(&suite("SUITE-001"), &commit(COMMIT)),
-        "scans/SUITE-001/aaaaaaaaaaaa.json"
+        record_path("scans", &suite("SUITE-001"), "2026-08-17T00:00:00Z"),
+        "scans/SUITE-001/2026-08-17T00-00-00Z.json"
     );
     assert_eq!(bindings_path(), "bindings.json");
     assert_eq!(
@@ -225,7 +215,6 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
     let mut store = MemoryEvidence::new();
     let record = run(
         "SUITE-001",
-        COMMIT,
         "2026-08-17T00:00:00Z",
         vec![entry("tests::ok", Outcome::Pass, &["FR-001-AC-1"])],
     );
@@ -267,40 +256,39 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
 
 /// Trace: FR-030-AC-3
 #[test]
-fn tc_456_202_one_file_per_suite_and_commit_and_the_last_write_wins() {
+fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
     let mut store = MemoryEvidence::new();
     write_run(
         &mut store,
-        &run("SUITE-001", COMMIT, "2026-08-17T00:00:00Z", vec![]),
+        &run("SUITE-001", "2026-08-17T00:00:00Z", vec![]),
     )
     .unwrap();
     write_run(
         &mut store,
-        &run("SUITE-002", COMMIT, "2026-08-17T00:00:00Z", vec![]),
+        &run("SUITE-002", "2026-08-17T00:00:00Z", vec![]),
     )
     .unwrap();
     assert_eq!(
         store.paths(),
         vec![
-            "runs/SUITE-001/aaaaaaaaaaaa.json",
-            "runs/SUITE-002/aaaaaaaaaaaa.json"
+            "runs/SUITE-001/2026-08-17T00-00-00Z.json",
+            "runs/SUITE-002/2026-08-17T00-00-00Z.json"
         ],
-        "two suites at one commit must not merge into one file"
+        "two suites at one timestamp must not merge into one file"
     );
 
     write_run(
         &mut store,
         &run(
             "SUITE-001",
-            COMMIT,
-            "2026-08-18T00:00:00Z",
+            "2026-08-17T00:00:00Z",
             vec![entry("tests::later", Outcome::Pass, &[])],
         ),
     )
     .unwrap();
     assert_eq!(store.paths().len(), 2, "the rewrite added a file");
     let text = store
-        .read("runs/SUITE-001/aaaaaaaaaaaa.json")
+        .read("runs/SUITE-001/2026-08-17T00-00-00Z.json")
         .unwrap()
         .unwrap();
     assert!(text.contains("tests::later"), "the later write did not win");
@@ -321,7 +309,6 @@ fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
             &mut store,
             &request(
                 "SUITE-001",
-                COMMIT,
                 vec![entry("tests::tc001", outcome, &["FR-001-AC-1"])],
             ),
             &obligations,
@@ -339,7 +326,6 @@ fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
         &mut store,
         &request(
             "SUITE-001",
-            COMMIT,
             vec![entry("tests::tc001", Outcome::Pass, &["FR-404-AC-1"])],
         ),
         &[obligation("FR-001-AC-1")],
@@ -351,31 +337,15 @@ fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
 
 /// Trace: FR-030-AC-8
 #[test]
-fn tc_456_207_gc_deletes_only_unreferenced_older_runs_and_dry_run_changes_nothing() {
+fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     let mut store = MemoryEvidence::new();
-    write_run(
-        &mut store,
-        &run("SUITE-001", COMMIT, "2026-08-17T00:00:00Z", vec![]),
-    )
-    .unwrap();
-    write_run(
-        &mut store,
-        &run("SUITE-001", OTHER_COMMIT, "2026-08-18T00:00:00Z", vec![]),
-    )
-    .unwrap();
-    write_run(
-        &mut store,
-        &run(
-            "SUITE-001",
-            "cccccccccccc0000",
-            "2026-08-16T00:00:00Z",
-            vec![],
-        ),
-    )
-    .unwrap();
-    let mut referenced = binding("FR-001-AC-1", "SUITE-001");
-    referenced.commit = commit(COMMIT);
-    write_bindings(&mut store, &[referenced]).unwrap();
+    for timestamp in [
+        "2026-08-17T00:00:00Z",
+        "2026-08-18T00:00:00Z",
+        "2026-08-16T00:00:00Z",
+    ] {
+        write_run(&mut store, &run("SUITE-001", timestamp, vec![])).unwrap();
+    }
 
     let before = store.paths().len();
     let dry = gc(&mut store, true).unwrap();
@@ -384,18 +354,15 @@ fn tc_456_207_gc_deletes_only_unreferenced_older_runs_and_dry_run_changes_nothin
     assert_eq!(dry, wet, "the dry run and the real run disagree");
     assert_eq!(
         wet,
-        vec!["runs/SUITE-001/cccccccccccc.json".to_owned()],
-        "gc kept the newest and the referenced, and collected the rest"
+        vec![
+            "runs/SUITE-001/2026-08-16T00-00-00Z.json".to_owned(),
+            "runs/SUITE-001/2026-08-17T00-00-00Z.json".to_owned(),
+        ],
+        "gc kept the newest and collected the rest"
     );
     assert!(
         store
-            .read("runs/SUITE-001/aaaaaaaaaaaa.json")
-            .unwrap()
-            .is_some()
-    );
-    assert!(
-        store
-            .read("runs/SUITE-001/bbbbbbbbbbbb.json")
+            .read("runs/SUITE-001/2026-08-18T00-00-00Z.json")
             .unwrap()
             .is_some()
     );
@@ -419,7 +386,6 @@ fn tc_456_209_the_graph_never_keeps_the_statement() {
         &mut store,
         &request(
             "SUITE-001",
-            COMMIT,
             vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
         ),
         &[obligation("FR-001-AC-1")],
@@ -444,7 +410,6 @@ fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
         &mut store,
         &request(
             "EVAL-001",
-            COMMIT,
             vec![entry("TC-EV-054", Outcome::Pass, &["TC-EV-054"])],
         ),
         &[first, second],
@@ -470,7 +435,6 @@ fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
         &mut store,
         &request(
             "SUITE-001",
-            COMMIT,
             vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-2"])],
         ),
         &[sibling, obligation("FR-001-AC-2")],
@@ -481,34 +445,28 @@ fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
 
 /// Trace: FR-030-AC-16
 #[test]
-fn tc_456_212_a_completed_empty_inspection_is_recorded_and_read_at_the_exact_commit() {
+fn tc_456_212_a_completed_empty_inspection_is_recorded_and_read() {
     let mut store = MemoryEvidence::new();
     write_mock_inspection(
         &mut store,
         &MockInspectionRecord {
             schema_version: STORE_SCHEMA_VERSION,
             suite: suite("SUITE-001"),
-            commit: commit(COMMIT),
             tool: "quoin".to_owned(),
             timestamp: "2026-08-17T00:00:00Z".to_owned(),
             injections: Vec::new(),
         },
     )
     .unwrap();
-    let (suites, injections) = mock_inspection_input(&store, Some(&commit(COMMIT))).unwrap();
+    let (suites, injections) = mock_inspection_input(&store).unwrap();
     assert_eq!(suites, vec![suite("SUITE-001")]);
     assert!(
         injections.is_empty(),
         "an empty inspection is a completed inspection"
     );
 
-    let (other_suites, _) = mock_inspection_input(&store, Some(&commit(OTHER_COMMIT))).unwrap();
-    assert!(
-        other_suites.is_empty(),
-        "a record at another commit must not be read as this one's"
-    );
-    let (none, _) = mock_inspection_input(&store, None).unwrap();
-    assert_eq!(none.len(), 0);
+    let (none, _) = mock_inspection_input(&MemoryEvidence::new()).unwrap();
+    assert_eq!(none.len(), 0, "no record means nobody looked");
 }
 
 // ---------------------------------------------------------------- FR-031 -----
@@ -549,49 +507,64 @@ fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
     );
 }
 
+/// Trace: FR-030-AC-8
+#[test]
+fn tc_456_226_gc_keeps_the_newest_record_whatever_its_file_is_called() {
+    let mut store = MemoryEvidence::new();
+    // Records written under the older layout: a commit member, commit-named files.
+    let body = |timestamp: &str| {
+        format!(
+            "{{\"commit\":\"abcdef123456\",\"entries\":[],\"schemaVersion\":1,\"suite\":\"SUITE-001\",\"timestamp\":\"{timestamp}\",\"tool\":\"t 1\"}}\n"
+        )
+    };
+    store
+        .write(
+            "runs/SUITE-001/aaaaaaaaaaaa.json",
+            body("2026-08-20T00:00:00Z").as_bytes(),
+        )
+        .unwrap();
+    store
+        .write(
+            "runs/SUITE-001/bbbbbbbbbbbb.json",
+            body("2026-08-10T00:00:00Z").as_bytes(),
+        )
+        .unwrap();
+
+    let deleted = gc(&mut store, false).unwrap();
+    assert_eq!(deleted, vec!["runs/SUITE-001/bbbbbbbbbbbb.json".to_owned()]);
+    let mut skipped = Vec::new();
+    let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
+    assert_eq!(
+        runs.len(),
+        1,
+        "the older commit member is tolerated on read"
+    );
+    assert_eq!(runs[0].timestamp, "2026-08-20T00:00:00Z");
+}
+
 /// Trace: FR-031-AC-2
 #[test]
 fn tc_456_222_the_newest_record_is_the_newest_by_timestamp_not_by_filename() {
     let mut store = MemoryEvidence::new();
-    // `aaaa…` sorts first but ran last.
+    // The later stamp is written first.
     write_run(
         &mut store,
-        &run("SUITE-001", COMMIT, "2026-08-20T00:00:00Z", vec![]),
+        &run("SUITE-001", "2026-08-20T00:00:00Z", vec![]),
     )
     .unwrap();
     write_run(
         &mut store,
-        &run("SUITE-001", OTHER_COMMIT, "2026-08-01T00:00:00Z", vec![]),
+        &run("SUITE-001", "2026-08-01T00:00:00Z", vec![]),
     )
     .unwrap();
     let mut skipped = Vec::new();
     let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
     assert_eq!(
-        runs.last().unwrap().commit.as_str(),
-        COMMIT,
+        runs.last().unwrap().timestamp.as_str(),
+        "2026-08-20T00:00:00Z",
         "records are not ordered by timestamp"
     );
     assert_eq!(skipped.len(), 0);
-}
-
-/// Trace: FR-031-AC-2
-#[test]
-fn tc_456_223_two_records_sharing_a_timestamp_are_ordered_by_commit() {
-    let mut store = MemoryEvidence::new();
-    write_run(
-        &mut store,
-        &run("SUITE-001", OTHER_COMMIT, "2026-08-17T00:00:00Z", vec![]),
-    )
-    .unwrap();
-    write_run(
-        &mut store,
-        &run("SUITE-001", COMMIT, "2026-08-17T00:00:00Z", vec![]),
-    )
-    .unwrap();
-    let mut skipped = Vec::new();
-    let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
-    let commits: Vec<&str> = runs.iter().map(|record| record.commit.as_str()).collect();
-    assert_eq!(commits, vec![COMMIT, OTHER_COMMIT]);
 }
 
 /// Trace: FR-031-AC-3
@@ -620,7 +593,6 @@ fn tc_456_225_one_corrupt_run_file_is_skipped_rather_than_hiding_every_finding()
         &mut store,
         &run(
             "SUITE-001",
-            COMMIT,
             "2026-08-17T00:00:00Z",
             vec![entry("tests::ok", Outcome::Pass, &[])],
         ),
@@ -633,8 +605,10 @@ fn tc_456_225_one_corrupt_run_file_is_skipped_rather_than_hiding_every_finding()
     let mut skipped = Vec::new();
     let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
     assert_eq!(
-        runs.iter().map(|r| r.commit.as_str()).collect::<Vec<_>>(),
-        vec![COMMIT],
+        runs.iter()
+            .map(|r| r.timestamp.as_str())
+            .collect::<Vec<_>>(),
+        vec!["2026-08-17T00:00:00Z"],
         "the good record did not reach the caller"
     );
     assert_eq!(skipped.len(), 1);
@@ -985,7 +959,6 @@ fn tc_456_284_a_later_run_that_states_no_lineage_clears_the_old_claim() {
     let mut store = MemoryEvidence::new();
     let mut first = request(
         "SUITE-001",
-        COMMIT,
         vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
     );
     first.lineage = Some(lineage(Some("alice"), None));
@@ -1002,7 +975,6 @@ fn tc_456_284_a_later_run_that_states_no_lineage_clears_the_old_claim() {
 
     let second = request(
         "SUITE-001",
-        OTHER_COMMIT,
         vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
     );
     record_run(&mut store, &second, &[obligation("FR-001-AC-1")]).unwrap();

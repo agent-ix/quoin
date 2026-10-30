@@ -56,7 +56,7 @@ Every criterion in the population gets exactly one of:
 | Status | Meaning |
 |---|---|
 | `bound` | A passing run backs this criterion, and the auditor found nothing wrong with it. |
-| `stale` | The auditor reports `stale-evidence`: either a binding names a suite with **no recorded run** at all, or its bound run is **behind HEAD**. |
+| `stale` | The auditor reports `stale-evidence`: a binding names a suite with **no recorded run** at all, or its bound run failed or errored. |
 | `suspect` | The auditor distrusts the binding: `mocked-confirmation` (a stand-in for the verified behavior), `insufficient-independence` (a separation-axis violation), or `vacuous-evidence` (every bound symbol was skipped or absent from its run). All three are the auditor's own "claims to exist and does not hold" class. |
 | `undischarged` | No binding exists for this criterion while the store holds bindings for others, or the auditor's remaining finding kinds apply (`undischarged`, `unknown-method`, `method-conformance`, `insufficient-multiplicity`, `insufficient-mutation-score`, `unmeasured-mutation-score`, `combinatorial-gap`), or the criterion has an `unevaluated` entry, or it appears in none of `healthy`/`findings`/`unevaluated`. |
 | `no run evidence` | The evidence store's binding graph is **empty** — no criterion in this run has ever been discharged. |
@@ -69,10 +69,10 @@ That is all 11 `FindingKind` values this FR reads
 `insufficient-mutation-score`, `unmeasured-mutation-score`, and
 `combinatorial-gap` map to `undischarged`. Folding `vacuous-evidence` into
 `suspect` (rather than `stale`, where an earlier draft of this FR left it) is
-deliberate: `behind_head` does not stop the auditor's ladder, so a run behind
-HEAD in which every symbol was skipped would otherwise carry both
-`stale-evidence` and `vacuous-evidence` and render only the medium-severity
-`stale` — hiding the high-severity vacuity behind it. Folding vacuity into
+deliberate: a stale-evidence finding does not stop the auditor's ladder, so a run
+in which every symbol was skipped could otherwise carry both
+`stale-evidence` and `vacuous-evidence` and render only `stale` — hiding the
+vacuity behind it. Folding vacuity into
 `suspect` (which outranks `stale`, below) means that case now renders
 `suspect`.
 
@@ -112,11 +112,9 @@ up in the supplied `AuditReport` (`Finding.obligation` / `healthy` /
 4. **`undischarged`** — else (any other `Finding` kind, an `unevaluated`
    entry, or absence from all three collections).
 
-This order mirrors `quoin-auditor`'s own ladder (`mocked-confirmation` is asked before `unrecorded_evidence`/`behind_head`),
+This order mirrors `quoin-auditor`'s own ladder (`mocked-confirmation` is asked before `unrecorded_evidence`),
 which already prevents an obligation from carrying both a suspect-class and a
-stale-class finding in the common case. The only ladder rung that does not
-stop evaluation once a suspect- or undischarged-class finding has already
-fired is `behind_head`; folding `vacuous-evidence` into `suspect` (above)
+stale-class finding in the common case. Folding `vacuous-evidence` into `suspect` (above)
 closes the one case that rung could otherwise hide.
 
 **A contradictory `AuditReport` is refused, not resolved by precedence.**
@@ -132,16 +130,9 @@ a winner silently.
 
 `quoin matrix` SHALL assemble the `AuditReport` it passes to `matrix.build`
 through **the same code path `quoin evidence audit` already uses** — not a
-second, parallel assembly. `head_commit` is resolved as the repository's own
-git HEAD, exactly as `quoin evidence audit` resolves it, and the
-mock-inspection, catalog, and independence inputs are the identical values
-`quoin evidence audit` would supply for the same working tree. When HEAD
-cannot be resolved (no git repository, or the resolution itself fails),
-`quoin matrix` SHALL refuse rather than call the auditor with
-`head_commit: None` — an auditor invoked that way silently skips the
-`behind_head` check ([FR-032](./FR-032-evidence-auditor.md)'s `ladder.rs`
-filters that check on `Some(head)`), which would render a binding from months
-ago as fresh rather than `stale`.
+second, parallel assembly. The mock-inspection, catalog, and independence
+inputs are the identical values `quoin evidence audit` would supply for the
+same working tree. No commit is resolved or supplied.
 
 ### Grouping diverges deliberately from quire's own grouping
 
@@ -160,8 +151,8 @@ section keyed by the document that happens to hold them.
 inputs — the coverage matrix, the bindings, the audit report — are supplied
 whole on stdin by the caller, which already had to assemble them (run `quire
 coverage`, read the store, run the auditor) to produce this call's arguments.
-`matrix.build` adds no second commit comparison of its own: whether a binding
-counts as fresh at HEAD was already decided by the auditor, before
+`matrix.build` adds no second freshness comparison of its own: whether a binding
+holds was already decided by the auditor, before
 `matrix.build` ever sees the result (see "Assembling the auditor's inputs",
 above, and CR-002 for the failed/errored-run check that decision now includes).
 
@@ -197,11 +188,7 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
     status mapping uses (suspect-class kinds, alphabetically among
     themselves, then `stale-evidence`, then the remaining undischarged-class
     kinds alphabetically), then by `kind` name within a tie.
-  - `bindings`: every `Binding` for this id, reduced to `{suite, commit}`
-    where `commit` is the binding's own `commit` field (the commit of the run
-    that **first** discharged it, per [FR-030](./FR-030-evidence-store.md) —
-    `matrix.build` reports this verbatim and does not claim it is the commit
-    that made the evidence stale), ordered by `(suite, commit)`.
+  - `bindings`: every `Binding` for this id, reduced to `{suite}`, ordered by suite.
   - `unevaluated`: the `check` name of every `UnevaluatedCheck` entry for
     this id, ordered lexically.
   - An id appearing in none of `audit.healthy`/`findings`/`unevaluated` — for
@@ -237,13 +224,8 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 - `quoin matrix` SHALL render `MatrixOutput` as markdown (default) or JSON
   (`--json`) to stdout, and SHALL write nothing under `spec/`.
 - `quoin matrix` SHALL assemble its `AuditReport` input through the same
-  assembly path `quoin evidence audit` uses (`head_commit`, mock-inspection,
+  assembly path `quoin evidence audit` uses (mock-inspection,
   catalog, and independence inputs identical for the same working tree).
-- `quoin matrix` SHALL refuse rather than proceed when `head_commit` cannot be
-  resolved, exiting with `Outcome::Refused.code()` (exit 2) — the same
-  process-exit reuse of `quoin-core`'s own `Refused` class `quoin-cli`
-  already uses for `EXIT_UNKNOWN_COMMAND`/`EXIT_DOCUMENT_REFUSED`
-  (`main.rs`), not a CLI-specific exit number invented for this command.
 - `quoin matrix` SHALL no longer launch `ix-flow` ([FR-021](./FR-021-launch-ix-flow-runs.md)).
   `quoin-cli`'s `flow::FLOWS` table SHALL drop its `("matrix", "matrix")` entry,
   and the CLI's flow-dispatch match SHALL route only `"review"` and
@@ -272,15 +254,15 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 | FR-115-AC-3 | When `bindings.bindings` is empty, every criterion's `evidence_status` is `no run evidence`, regardless of what `audit` contains; `evidence_detail` is still computed per AC-9 and is not suppressed by this override. | Test |
 | FR-115-AC-4 | When `bindings.bindings` is non-empty: a criterion whose id is in `audit.healthy` is `bound`; else a criterion with a `mocked-confirmation`, `insufficient-independence`, or `vacuous-evidence` finding is `suspect`; else a criterion with a `stale-evidence` finding is `stale`; else (any other finding kind, an `unevaluated` entry, or absence from `healthy`/`findings`/`unevaluated`) is `undischarged`. | Test |
 | FR-115-AC-5 | An `audit` naming one obligation id in both `healthy` and a `Finding` or `UnevaluatedCheck` refuses the whole `matrix.build` call with `CoreErrorCode::Refused` (exit 2), `context` carrying `reason: "contradictory-audit"` and the offending id; no partial `MatrixOutput` is emitted. | Test |
-| FR-115-AC-6 | A fixture evidence store holding one passing binding **with a mock inspection recorded at HEAD** (so its obligation reaches `healthy` rather than an `unevaluated` entry), one binding whose run is behind the audited HEAD (`stale-evidence`/`behind_head`), and one criterion with zero bindings (while the store holds the other two) yields three distinct `evidence_status` values (`bound`, `stale`, `undischarged`) in one `matrix.build` call. | Test |
+| FR-115-AC-6 | A fixture evidence store holding one passing binding **with a mock inspection recorded** (so its obligation reaches `healthy` rather than an `unevaluated` entry), one binding whose suite has no recorded run (`stale-evidence`), and one criterion with zero bindings (while the store holds the other two) yields three distinct `evidence_status` values (`bound`, `stale`, `undischarged`) in one `matrix.build` call. | Test |
 | FR-115-AC-7 | Each criterion's `static_status` and `binders` are copied verbatim from the supplied `coverage_matrix` criterion, unmodified by evidence computation; a criterion's `evidence_status` never influences its `static_status` or vice versa. A criterion whose upstream obligation record omits `method` renders with `method` omitted, never `null`. | Test |
 | FR-115-AC-8 | `requirements[]` groups criteria by `quoin_assurance::requirement_of(criterion.id)`, not by `coverage_matrix`'s own document grouping; a fixture document holding obligations from two requirement-id prefixes yields two `requirements[]` entries, not one. Requirements are ordered by requirement id (ASCII byte order); criteria within a requirement retain `coverage_matrix`'s own relative order. | Test |
-| FR-115-AC-9 | `evidence_detail` is total: for every criterion it carries `findings` (every `Finding` for that id, ordered suspect-class-then-`stale-evidence`-then-remaining-undischarged-class kinds, alphabetically by kind name within each group), `bindings` (every `Binding` for that id as `{suite, commit}`, ordered by `(suite, commit)`), and `unevaluated` (every matching `UnevaluatedCheck.check` name, ordered lexically) — each an empty list, never an absent key, when nothing applies. A fixture exercising all three non-empty, and a criterion appearing in none of `healthy`/`findings`/`unevaluated`/`bindings` (all three lists empty), are both covered by one test. | Test |
+| FR-115-AC-9 | `evidence_detail` is total: for every criterion it carries `findings` (every `Finding` for that id, ordered suspect-class-then-`stale-evidence`-then-remaining-undischarged-class kinds, alphabetically by kind name within each group), `bindings` (every `Binding` for that id as `{suite}`, ordered by suite), and `unevaluated` (every matching `UnevaluatedCheck.check` name, ordered lexically) — each an empty list, never an absent key, when nothing applies. A fixture exercising all three non-empty, and a criterion appearing in none of `healthy`/`findings`/`unevaluated`/`bindings` (all three lists empty), are both covered by one test. | Test |
 | FR-115-AC-10 | Two `matrix.build` calls over byte-identical canonical JSON input emit byte-identical canonical JSON **output** (the full payload, compared byte for byte — not only exit class or diagnostic code), covered by a `quoin-core` protocol test (`tc_NNN_matrix_boundary.rs`) built on the same fixture-corpus pattern as `tc_447_assurance_boundary.rs`. | Test |
 | FR-115-AC-11 | `quoin matrix` renders `MatrixOutput` as a markdown table (`Requirement`/`Criterion`/`Method`/`Static Status`/`Evidence Status`/`Detail`, grouped under a `##` heading per requirement in requirement-id order) by default, and as the canonical `MatrixOutput` JSON under `--json`; a `coverage` that is absent or carries no criteria renders the `reason` string (never an empty table), and `quoin matrix` exits 0 on that empty population. `quoin matrix` has no `--strict` flag of its own: it is a read-only view, and the gates over the same two data sources already exist elsewhere — `quire matrix --strict` (quire-cli FR-026 §G/AC-10) gates the static axis (`quire coverage --strict` gates a *different* report, the unbacked/status-lie/untracked-symbol one, not `coverage_matrix`), and `quoin evidence audit --strict` gates the evidence axis (FR-032's own `--strict`-gated exit; `quoin-cli/src/evidence/audit.rs`'s `Outcome::Partial` arm fires only when `arguments.get_flag("strict")`). This command adds no third gate. | Test |
 | FR-115-AC-12 | Running `quoin matrix` against a fixture repository leaves the fixture's `spec/` directory byte-for-byte unchanged (directory listing and every file's bytes diffed before/after). | Test |
 | FR-115-AC-13 | `quoin-cli`'s `flow::FLOWS` no longer maps `"matrix"`; the CLI's flow-dispatch match routes only `"review"` and `"to-plan"` through `flow::run`; invoking `quoin matrix` never spawns `ix-flow`. | Test |
-| FR-115-AC-14 | `quoin matrix` resolves `head_commit` and the mock-inspection/catalog/independence inputs through the identical assembly path `quoin evidence audit` uses for the same working tree; when HEAD cannot be resolved, `quoin matrix` refuses (exit 2, `Outcome::Refused`) rather than invoking the auditor with `head_commit: None`. | Test |
+| FR-115-AC-14 | `quoin matrix` resolves the mock-inspection/catalog/independence inputs through the identical assembly path `quoin evidence audit` uses for the same working tree. Withdrawn: refusal when HEAD cannot be resolved; no commit is resolved or supplied. | Test |
 | FR-115-AC-15 | `quoin matrix --help` (and the retained CLI help surface, `help.rs`) describes the deterministic evidence-backed render, not the retired "Build or update a requirements test matrix" agent-workflow summary. | Test |
 
 ## Dependencies

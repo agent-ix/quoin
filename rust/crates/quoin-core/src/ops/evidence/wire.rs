@@ -50,7 +50,7 @@ pub const MAX_TRUST_ASSESSMENTS_BYTES: usize = 8 * 1024;
 
 /// The largest `evidence.inspect_mocks` request, in bytes.
 ///
-/// Suite, commit, tool and timestamp. The SOURCE it inspects never rides on
+/// Suite, tool and timestamp. The SOURCE it inspects never rides on
 /// the request — the host walks it.
 pub const MAX_INSPECT_MOCKS_BYTES: usize = 64 * 1024;
 
@@ -76,8 +76,8 @@ pub const MAX_TRUST_DECISION_BYTES: usize = 4 * 1024 * 1024;
 
 /// The largest `evidence.audit_inputs` request, in bytes.
 ///
-/// The store is READ by the host, so this bounds the repository path, the head
-/// commit and an optional independence policy — not the records.
+/// The store is READ by the host, so this bounds the repository path and an
+/// optional independence policy — not the records.
 pub const MAX_AUDIT_INPUTS_BYTES: usize = 8 * 1024 * 1024;
 
 /// The largest `evidence.parse_results` request, in bytes.
@@ -95,7 +95,7 @@ pub const MAX_RECORD_BYTES: usize = 48 * 1024 * 1024;
 /// The largest single path, identity or timestamp this domain accepts, in
 /// bytes.
 ///
-/// A repository root, a suite id, a commit, a tool identity and an ISO-8601
+/// A repository root, a suite id, a tool identity and an ISO-8601
 /// stamp are all one of these. 4 KiB is past every platform's `PATH_MAX` and
 /// still refuses a stream.
 pub const MAX_SCALAR_BYTES: usize = 4 * 1024;
@@ -301,8 +301,6 @@ pub struct RecordRequest {
     pub repo: String,
     /// The suite that ran.
     pub suite: String,
-    /// The commit it ran at.
-    pub commit: String,
     /// Tool and version, as it identifies itself.
     pub tool: String,
     /// The declared evidence kind, when the caller names one.
@@ -407,8 +405,6 @@ pub struct InspectMocksRequest {
     pub repo: String,
     /// The suite whose test source is inspected.
     pub suite: String,
-    /// Full commit sha whose source is inspected.
-    pub commit: String,
     /// The inspecting tool and its version.
     pub tool: String,
     /// ISO-8601 inspection time.
@@ -465,13 +461,6 @@ pub struct AssuranceRecordPayload {
 pub struct AuditInputsRequest {
     /// The repository root.
     pub repo: String,
-    /// HEAD, when the caller could resolve one.
-    ///
-    /// `None` is not an error: a repository with no git history still has a
-    /// store, and the mock-inspection input is then empty because only records
-    /// **at that commit** count.
-    #[serde(default)]
-    pub head_commit: Option<String>,
     /// The profile-selected independence policy, when one was given.
     #[serde(default)]
     pub independence_policy: Option<IndependencePolicy>,
@@ -492,9 +481,9 @@ pub struct AuditInputsPayload {
     pub runs: Vec<RunRecord>,
     /// The newest finding-shaped scan per recorded suite, by timestamp.
     pub scans: Vec<FindingRecord>,
-    /// Mock injections recorded at exactly `head_commit`.
+    /// Mock injections recorded for each suite's newest inspection.
     pub injections: Vec<MockInjection>,
-    /// The suites that have an inspection record at exactly `head_commit`.
+    /// The suites that have an inspection record.
     ///
     /// Distinct from `injections`: an empty completed inspection means "looked
     /// and found none", no record at all means "nobody looked".

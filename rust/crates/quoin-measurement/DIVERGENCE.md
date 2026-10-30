@@ -249,11 +249,11 @@ exact for every record in the capture.
 
 ## §8 — a numeric field written as a float
 
-`size_bytes`, `sample_size`, `repetitions` and `deadline_seconds` are `u64`.
+`sample_size`, `repetitions` and `deadline_seconds` are `u64`.
 TypeScript's `number` admits `12.0`, and `JSON.parse` cannot tell it from `12`;
 this crate refuses it, because serde will not read `12.0` into a `u64`.
 
-Separating input: `"size_bytes": 12.0`.
+Separating input: `"sample_size": 12.0`.
 
 Not reconciled. The intervention and operational JSON schemas
 (`src/measurement/schemas/`) declare these `integer`, so a record carrying

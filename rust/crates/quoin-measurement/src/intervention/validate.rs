@@ -72,7 +72,7 @@ pub fn validate_intervention_record(
     // Reached only once the schema has accepted the document, so a failure
     // here is a disagreement between the schema and the typed model rather
     // than ordinary bad input — see `DIVERGENCE.md` §8 for the one shape where
-    // that can happen (`"size_bytes": 12.0`).
+    // that can happen (`"sample_size": 12.0`).
     serde_json::from_value(candidate.clone()).map_err(|error| {
         refusal(vec![format!(
             "/: schema-valid but unreadable as an intervention record: {error}"

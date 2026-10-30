@@ -114,7 +114,7 @@ the retire-after-parity rule).
 | Schema                                                                | Documents |  Valid | Invalid | Call site                                                      |
 | --------------------------------------------------------------------- | --------: | -----: | ------: | -------------------------------------------------------------- |
 | `semantic` block (`module-manifest.schema.json#/properties/semantic`) |        65 |     24 |      41 | `src/semantic/manifest.ts` `semanticBlockValidator()`          |
-| `sweep-report.schema.json`                                            |        47 |     15 |      32 | `src/semantic/manifest.ts` `sweepReportValidator()`            |
+| `sweep-report.schema.json`                                            |        46 |     15 |      31 | `src/semantic/manifest.ts` `sweepReportValidator()`            |
 | `package-manifest.schema.json` + `common.schema.json`                 |        59 |     14 |      45 | `src/semantic/package-manifest.ts` `validatePackageManifest()` |
 | **Total**                                                             |   **171** | **53** | **118** |                                                                |
 
@@ -203,9 +203,9 @@ instance-location order with parent-level keywords last.
 | Corpus           | Invalid | Byte-identical order | Differs in order only |
 | ---------------- | ------: | -------------------: | --------------------: |
 | `semantic` block |      41 |                   38 |                     2 |
-| sweep report     |      32 |                   30 |                     2 |
+| sweep report     |      31 |                   29 |                     2 |
 | package manifest |      45 |                   42 |                     0 |
-| **Total**        | **118** |              **110** |                 **4** |
+| **Total**        | **117** |              **109** |                 **4** |
 
 Concretely, `semantic-block/many-faults`:
 

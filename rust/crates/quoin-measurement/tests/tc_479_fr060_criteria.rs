@@ -345,12 +345,6 @@ fn intake_refusal_cases() -> Vec<(&'static str, Value, InterventionRefusalCode, 
             "/exercise/capability_record_id: linked capability does not match",
         ),
         (
-            "a raw-evidence size that is not the file's",
-            patch(&capability, "/raw_evidence/1/size_bytes", json!(1)),
-            RawEvidenceMismatch,
-            "/raw_evidence/1/size_bytes: expected",
-        ),
-        (
             "a raw-evidence path that escapes the store",
             patch(
                 &capability,

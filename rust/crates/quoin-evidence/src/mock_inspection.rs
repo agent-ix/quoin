@@ -24,9 +24,9 @@ use std::collections::BTreeMap;
 use regex::Regex;
 
 use crate::error::EvidenceError;
-use crate::ids::{Commit, SuiteId, SymbolId};
+use crate::ids::{SuiteId, SymbolId};
 use crate::source::EvidenceSource;
-use crate::store::{list_recorded_suites, read_mock_inspection};
+use crate::store::{latest_mock_inspection, list_recorded_suites};
 use crate::types::MockInjection;
 
 /// One test function's span in a source file.
@@ -37,31 +37,21 @@ struct TestMarker {
     symbol: String,
 }
 
-/// Exact-commit inspection input for the pure auditor.
-///
-/// Only records **at that commit** count. An inspection of an older tree says
-/// nothing about the source as it stands, and accepting one would let a stale
-/// record answer for code it never read.
+/// Inspection input for the pure auditor: the newest record of each suite.
 ///
 /// # Errors
 ///
 /// [`EvidenceError::StoreIo`] or [`EvidenceError::StoreRead`] from the store.
 pub fn mock_inspection_input<S: EvidenceSource + ?Sized>(
     source: &S,
-    commit: Option<&Commit>,
 ) -> Result<(Vec<SuiteId>, Vec<MockInjection>), EvidenceError> {
-    let Some(commit) = commit else {
-        return Ok((Vec::new(), Vec::new()));
-    };
+    let mut skipped = Vec::new();
     let mut suites = Vec::new();
     let mut injections = Vec::new();
     for suite in list_recorded_suites(source)? {
-        let Some(record) = read_mock_inspection(source, &suite, commit)? else {
+        let Some(record) = latest_mock_inspection(source, &suite, &mut skipped)? else {
             continue;
         };
-        if &record.commit != commit {
-            continue;
-        }
         suites.push(record.suite.clone());
         injections.extend(record.injections);
     }

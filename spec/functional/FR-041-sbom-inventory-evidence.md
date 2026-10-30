@@ -33,7 +33,7 @@ line per obligation** — statement, supported-or-open, and the auditor's reason
 component list, and could not usefully: an assurance case is read by a person, and a thousand-row
 inventory inside an argument is not an argument.
 
-So the claim an SBOM supports is *"a complete inventory was produced at this commit"* — a **run
+So the claim an SBOM supports is *"a complete inventory was produced"* — a **run
 record**. Contents-level judgement, *component X at version Y carries advisory Z*, is finding-shaped
 and already lands through `cargo-audit` and SARIF (FR-034).
 

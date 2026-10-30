@@ -53,7 +53,7 @@ pub enum MeasurementErrorCode {
     DefinitionMismatch,
     /// A raw-evidence reference's path is not a safe store-relative path.
     RawEvidencePathUnsafe,
-    /// A raw-evidence reference's size disagreed with the file.
+    /// A raw-evidence reference names a file that cannot be read.
     RawEvidenceMismatch,
     /// This source has no bytes for the named retained file.
     ///
@@ -344,11 +344,11 @@ mod tests {
         let error = MeasurementError::with_findings(
             MeasurementErrorCode::RawEvidenceMismatch,
             "records",
-            vec!["/raw_evidence/0/size_bytes: expected 1, observed 2".to_owned()],
+            vec!["/raw_evidence/0/path: absent".to_owned()],
         );
         assert_eq!(
             error.to_string(),
-            "QM-RAW-EVIDENCE-MISMATCH: records: /raw_evidence/0/size_bytes: expected 1, observed 2"
+            "QM-RAW-EVIDENCE-MISMATCH: records: /raw_evidence/0/path: absent"
         );
     }
 }

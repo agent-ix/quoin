@@ -519,17 +519,9 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
     /// The one measured effect, as `intervention-report.ts:76-80` writes it.
     const EFFECT_LINE: &str = "- standalone-detector/agent-eval.ea-001.pass-rate: baseline 0.5, \
                                treatment 0.5, effect 0 fraction";
-    // The first raw reference, as `intervention-report.ts:82-86` writes it.
-    let baseline_bytes = std::fs::metadata(
-        fixture_store()
-            .join("agent-evals")
-            .join("quoin-270-sentinel-baseline.json"),
-    )
-    .expect("the baseline report")
-    .len();
-    let raw_line = format!(
-        "- agent-evals/quoin-270-sentinel-baseline.json — {baseline_bytes} bytes; application/json"
-    );
+    /// The first raw reference, as `intervention-report.ts:82-86` writes it.
+    const RAW_LINE: &str = "- agent-evals/quoin-270-sentinel-baseline.json — \
+                            application/json";
 
     let temporary = governed_repo();
     let repo = temporary.path();
@@ -555,7 +547,7 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
         "the measured effect is evidence: {evidence:?}"
     );
     assert!(
-        evidence.contains(&raw_line),
+        evidence.contains(&RAW_LINE),
         "the raw reference is evidence: {evidence:?}"
     );
     assert!(
@@ -563,7 +555,7 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
         "the conclusion is a claim, not evidence"
     );
     assert!(
-        !claims.contains(EFFECT_LINE) && !claims.contains(&raw_line),
+        !claims.contains(EFFECT_LINE) && !claims.contains(&RAW_LINE),
         "a measured effect and a raw reference are evidence, not claims"
     );
 
@@ -581,8 +573,8 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
         "the JSON view carries the measured effect under evidence"
     );
     assert_eq!(
-        entry["evidence"]["raw_evidence"][0]["size_bytes"],
-        json!(baseline_bytes),
+        entry["evidence"]["raw_evidence"][0]["media_type"],
+        json!("application/json"),
         "the JSON view carries the raw reference under evidence"
     );
 }
@@ -928,23 +920,15 @@ fn tc_479_210_every_raw_evidence_disagreement_is_named_and_writes_nothing() {
         vec!["/raw_evidence/1/path"],
     ));
 
-    let mut wrong_size = base.clone();
-    wrong_size["raw_evidence"][0]["size_bytes"] = json!(11306);
-    cases.push((
-        "a recorded size the file does not have",
-        wrong_size,
-        vec!["/raw_evidence/0/size_bytes"],
-    ));
-
     // Both at once, on different references: each mismatch is identified, not
     // just the first.
     let mut both = base;
-    both["raw_evidence"][0]["size_bytes"] = json!(11306);
-    both["raw_evidence"][1]["size_bytes"] = json!(1);
+    both["raw_evidence"][0]["path"] = json!("agent-evals/never-retained-0.json");
+    both["raw_evidence"][1]["path"] = json!("agent-evals/never-retained-1.json");
     cases.push((
-        "two size mismatches together",
+        "two absent paths together",
         both,
-        vec!["/raw_evidence/0/size_bytes", "/raw_evidence/1/size_bytes"],
+        vec!["/raw_evidence/0/path", "/raw_evidence/1/path"],
     ));
 
     for (what, candidate, expected) in &cases {

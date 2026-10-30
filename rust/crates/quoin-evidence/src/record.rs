@@ -14,7 +14,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use quoin_quire_types::Obligation;
 
 use crate::error::EvidenceError;
-use crate::ids::{Commit, ObligationId, SuiteId, SymbolId};
+use crate::ids::{ObligationId, SuiteId, SymbolId};
 use crate::source::EvidenceSource;
 use crate::store::{bind, read_bindings, write_bindings, write_run};
 use crate::types::{Binding, EvidenceLineage, Outcome, RunEntry, RunRecord, STORE_SCHEMA_VERSION};
@@ -24,8 +24,6 @@ use crate::types::{Binding, EvidenceLineage, Outcome, RunEntry, RunRecord, STORE
 pub struct RecordRequest {
     /// The suite that ran.
     pub suite: SuiteId,
-    /// The commit it ran at.
-    pub commit: Commit,
     /// Tool and version, as the adapter reported them.
     pub tool: String,
     /// The declared `test_type`, when the caller names one.
@@ -77,7 +75,6 @@ pub fn record_run<S: EvidenceSource + ?Sized>(
         &RunRecord {
             schema_version: STORE_SCHEMA_VERSION,
             suite: request.suite.clone(),
-            commit: request.commit.clone(),
             tool: request.tool.clone(),
             evidence_kind: request.evidence_kind.clone(),
             timestamp: request.timestamp.clone(),
@@ -162,7 +159,6 @@ pub fn record_run<S: EvidenceSource + ?Sized>(
             &Binding {
                 obligation: ObligationId::new(id),
                 suite: request.suite.clone(),
-                commit: request.commit.clone(),
                 symbols: sorted,
                 lineage: request.lineage.clone(),
             },

@@ -55,10 +55,10 @@ that quire "validates them wherever they live", which measurement contradicts.
 
 ### The suite is the atomic unit
 
-One file per (suite, commit); aggregation is a view. A partial run must never be
+One file per (suite, timestamp); aggregation is a view. A partial run must never be
 able to masquerade as a full one — the `make ci` / `make ci-python` split
 already caused exactly that rot (quire-rs TC-715), where a green "CI" meant one
-of two suites. Re-runs at the same commit are last-write-wins: flake history is
+of two suites. Re-runs at the same timestamp are last-write-wins: flake history is
 analytics, not the record of record.
 
 ### Auto-bind
@@ -74,7 +74,7 @@ people to click through it.
 
 ## Outputs
 
-- `spec/evidence/runs/<SUITE-N>/<commit12>.json` — one run of one suite
+- `spec/evidence/runs/<SUITE-N>/<timestamp>.json` — one run of one suite
 - `spec/evidence/bindings.json` — obligation → evidence
 
 ## Behavior
@@ -90,7 +90,7 @@ people to click through it.
   rather than dropping it. That is the quire-rs#72 class arriving from the other
   direction: a test claiming to verify something the spec does not state.
 - `gc` SHALL retain the **newest** run per suite — by `timestamp`, never by
-  filename — plus anything a binding references. Dir-per-suite keeps the policy local, so an expensive suite's
+  filename. Dir-per-suite keeps the policy local, so an expensive suite's
   retention or `.gitignore` decision touches one directory.
 - An absent store SHALL read as empty rather than as an error.
 - Every newly recorded run or scan SHALL carry an immutable tool version. A
@@ -135,24 +135,31 @@ undischarged with the evidence sitting right there.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-030-AC-1 | The store root is `spec/evidence/`, and a run path is `runs/<SUITE-N>/<commit12>.json`. | Test (TC-119) |
+| FR-030-AC-1 | The store root is `spec/evidence/`, and a run path is `runs/<SUITE-N>/<timestamp>.json`, the timestamp reduced to ASCII letters, digits and `-`. No record carries a commit. | Test (TC-119) |
 | FR-030-AC-2 | Writes are canonical and byte-identical across repeated serialization of the same record. | Test (TC-120) |
-| FR-030-AC-3 | Two suites at one commit produce two files, and a re-run at the same commit is last-write-wins with one file retained. | Test (TC-121) |
+| FR-030-AC-3 | Two suites at one timestamp produce two files, and a re-run at the same timestamp is last-write-wins with one file retained. | Test (TC-121) |
 | FR-030-AC-4 | A passing symbol binds its obligation; a failing or skipped symbol binds nothing while its run is still recorded. | Test (TC-122) |
 | FR-030-AC-5 | Withdrawn (CR note, 2026-10-29): required a reworded statement to make a binding suspect by comparing a hash stamped at binding. The store keeps no statement hash, so nothing remains to compare. | Withdrawn (TC-123) |
 | FR-030-AC-6 | Withdrawn (CR note, 2026-10-29): required `evidence affirm` to move the stamped hash forward and record who affirmed. With no stamped hash there is nothing to re-affirm, and the verb is removed. | Withdrawn (TC-124) |
 | FR-030-AC-7 | A trace id no obligation states is reported as unmatched rather than silently dropped. | Test (TC-125) |
-| FR-030-AC-8 | `gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. The command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why. | Test (TC-126, TC-263) |
+| FR-030-AC-8 | `gc` deletes only runs that are not the latest for their suite, and `--dry-run` deletes nothing. The command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why. | Test (TC-126, TC-263) |
 | FR-030-AC-9 | An absent store reads as an empty binding graph, an empty run list and an empty collection. | Test (TC-127) |
 | FR-030-AC-10 | No obligation statement, document or method appears anywhere in the written store — only the id (CON-2). | Test (TC-128) |
 | FR-030-AC-11 | A binding is keyed on `(obligation, suite)`: a second suite discharging the same obligation **appends** a binding rather than replacing the first, re-discharging the same suite merges into its own binding. The graph is cross-suite, so the file must be able to hold two. | Test (TC-129) |
-| FR-030-AC-12 | The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. Two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine. | Test (TC-130) |
+| FR-030-AC-12 | The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename. `gc` retains that run, and the auditor reads it. Withdrawn: ordering of two runs that share a timestamp by their commit; a shared timestamp names one file and the last write wins. | Test (TC-130) |
 | FR-030-AC-13 | A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph is not, because reading an empty graph would report every obligation as undischarged. | Test (TC-131) |
 | FR-030-AC-14 | Store ordering is locale-independent: written bytes are fixed by test, so a runtime's collation data cannot change the diff of a checked-in file. | Test (TC-132) |
 | FR-030-AC-15 | A run's trace id binds through an obligation's declared test cases as well as its own id, so a tool keyed on the Test Matrix discharges the criteria that name it. A direct obligation id wins over the indirect route, and an id no obligation states by either route is still reported unmatched. | Test (TC-245) |
-| FR-030-AC-16 | A completed source-level mock inspection is recorded at `mock-inspections/<SUITE-N>/<commit12>.json`, including an empty result. Readers select the exact full commit being audited: an empty current record means the suite was inspected and no stand-in was observed; no current record means the check was not evaluated. | Test (TC-1064, TC-1065) |
+| FR-030-AC-16 | A completed source-level mock inspection is recorded at `mock-inspections/<SUITE-N>/<timestamp>.json`, including an empty result. Readers select the newest record of each suite: an empty record means the suite was inspected and no stand-in was observed; no record means the check was not evaluated. Withdrawn: selection by exact full commit. | Test (TC-1064, TC-1065) |
 | FR-030-AC-17 | `evidence record` refuses a bare or mutable `--tool` identity and accepts an exact semantic version. Withdrawn: acceptance of a full source revision (a git commit id); tool identity is the exact semantic version, with no sha. First-party Vitest and mock-inspection records include the version they actually ran. | Test (TC-1123, TC-1124) |
 
+> **CR note (PLAT-1228, 2026-10-30):** Run, scan, mock-inspection and binding
+> records no longer carry a commit. Filenames derive from the record's
+> timestamp, a binding no longer records the run that first discharged it, `gc`
+> keeps only the newest record per suite, and the exact-commit selection of mock
+> inspections and the tie-break by commit are withdrawn inside FR-030-AC-12 and
+> FR-030-AC-16. The ids are not reused.
+>
 > **CR note (2026-10-29, PLAT-1213):** The binding hash mechanism is removed.
 > A binding no longer stamps the obligation's statement hash, the store keeps no
 > affirmation history, and `quoin evidence affirm` and the `suspect` list of

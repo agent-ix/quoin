@@ -20,15 +20,14 @@
 //!
 //! "Do not add a third" enforced by review is enforced only when someone is
 //! looking. So the crate's own `src/` tree is read here: every `struct`
-//! declaring all the members a retained-evidence pointer carries — a path, a
-//! media type, and a size in bytes — is found by name, and the set
+//! declaring all the members a retained-evidence pointer carries — a path and a
+//! media type — is found by name, and the set
 //! must be exactly the two below.
 //!
-//! # The anti-vacuity floor
+//! # The found set is compared by name
 //!
-//! A scanner that matched nothing would pass. So the file count has a floor and
-//! the found set is compared by name, not by size: a census that found two
-//! *different* types would be as wrong as one that found three.
+//! Not by size: a census that found two *different* types would be as wrong as
+//! one that found three.
 
 #![allow(
     clippy::unwrap_used,
@@ -46,16 +45,13 @@ const REPRESENTATIONS: [&str; 2] = ["RawEvidenceReference", "RecordedEvidenceRef
 /// The members that together make a declaration a retained-evidence pointer.
 ///
 /// quoin#471 landed a second census over the same concept and matched on these
-/// two rather than on all three of `path`, `media_type` and `size_bytes`. Two
-/// is the stronger net and it is the one kept: pointing at a retained file is
-/// exactly what this census exists to count. It still excludes the near miss
-/// — `RawEvidenceFile` carries a size but no path, and is a *file*, not a
-/// reference to one.
+/// two. Pointing at a retained file is exactly what this census exists to
+/// count.
 ///
 /// # These are member *names*, not substrings (quoin#473)
 ///
 /// The match is on the parsed member name, not a substring of the body.
-const MEMBERS: [&str; 2] = ["path", "size_bytes"];
+const MEMBERS: [&str; 2] = ["path", "media_type"];
 
 fn sources() -> Vec<(String, String)> {
     fn walk(root: &Path, directory: &Path, into: &mut Vec<(String, String)>) {
@@ -132,7 +128,6 @@ fn member_names(body: &str) -> Vec<String> {
 #[test]
 fn tc_472_a_retained_evidence_file_has_exactly_two_representations() {
     let sources = sources();
-
     let mut found: Vec<String> = Vec::new();
     for (module, text) in &sources {
         for (name, body) in declarations(text) {

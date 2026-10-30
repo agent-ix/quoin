@@ -55,8 +55,8 @@ fn request() -> Value {
             { "id": "FR-001-AC-2", "statement": "s", "binders": [], "status": "untagged" },
         ]}],
         "bindings": { "schemaVersion": 1, "bindings": [
-            { "obligation": "FR-001-AC-1", "suite": "unit", "commit": "c1", "symbols": ["tc_1"] },
-            { "obligation": "FR-002-AC-1", "suite": "unit", "commit": "c0", "symbols": ["tc_2"] },
+            { "obligation": "FR-001-AC-1", "suite": "unit", "symbols": ["tc_1"] },
+            { "obligation": "FR-002-AC-1", "suite": "unit", "symbols": ["tc_2"] },
         ]},
         "audit": {
             "findings": [{ "kind": "stale-evidence", "obligation": "FR-002-AC-1", "severity": "medium", "summary": "behind HEAD" }],
@@ -82,11 +82,11 @@ fn tc_1080_100_two_runs_over_one_input_emit_identical_canonical_bytes() {
         concat!(
             r#"{"requirements":[{"criteria":["#,
             r#"{"binders":[{"column":1,"kind":"function","line":1,"path":"t.rs","qualified_name":"tc_1"}],"#,
-            r#""evidence_detail":{"bindings":[{"commit":"c1","suite":"unit"}],"findings":[],"unevaluated":[]},"#,
+            r#""evidence_detail":{"bindings":[{"suite":"unit"}],"findings":[],"unevaluated":[]},"#,
             r#""evidence_status":"bound","id":"FR-001-AC-1","method":"Test","static_status":"tagged"},"#,
             r#"{"binders":[],"evidence_detail":{"bindings":[],"findings":[],"unevaluated":[]},"#,
             r#""evidence_status":"undischarged","id":"FR-001-AC-2","static_status":"untagged"}],"id":"FR-001"},"#,
-            r#"{"criteria":[{"binders":[],"evidence_detail":{"bindings":[{"commit":"c0","suite":"unit"}],"#,
+            r#"{"criteria":[{"binders":[],"evidence_detail":{"bindings":[{"suite":"unit"}],"#,
             r#""findings":[{"kind":"stale-evidence","summary":"behind HEAD"}],"unevaluated":[]},"#,
             r#""evidence_status":"stale","id":"FR-002-AC-1","method":"Test","static_status":"untagged"}],"id":"FR-002"}]}"#,
         )

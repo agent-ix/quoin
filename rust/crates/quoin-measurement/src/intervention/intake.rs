@@ -42,7 +42,7 @@ wire_enum! {
     pub enum InterventionRefusalCode {
         /// The record did not validate against the intervention schema.
         InvalidRecord => "invalid_record",
-        /// A referenced raw evidence file does not match its recorded size.
+        /// A referenced raw evidence file cannot be read.
         RawEvidenceMismatch => "raw_evidence_mismatch",
         /// No governing measurement plan admits this record.
         GoverningPlanAbsent => "governing_plan_absent",
