@@ -91,12 +91,6 @@ impl ResolveContext {
             self.package_identity.repo()
         )
     }
-
-    /// The base URI a semantic-core `$ref` must sit under.
-    #[must_use]
-    pub fn core_base(&self) -> String {
-        format!("{SEMANTIC_CORE_BASE}{}/", self.semantic_core)
-    }
 }
 
 /// Classify a `data_schema` value: inline object, reference, or ambiguous.
@@ -341,7 +335,6 @@ pub fn resolve_data_schema(
         ctx,
         locus: &locus,
         base: &base,
-        core_base: ctx.core_base(),
         schema_dir: file.parent().unwrap_or(&ctx.module_root).to_path_buf(),
         visited: BTreeSet::new(),
         stack: Vec::new(),
@@ -363,7 +356,6 @@ struct RefWalker<'a> {
     ctx: &'a ResolveContext,
     locus: &'a str,
     base: &'a str,
-    core_base: String,
     schema_dir: PathBuf,
     visited: BTreeSet<String>,
     stack: Vec<String>,
@@ -408,7 +400,11 @@ impl RefWalker<'_> {
             if url.is_empty() || Some(url) == self_id.as_deref() {
                 continue; // a fragment within this document
             }
-            if let Some(name) = url.strip_prefix(self.core_base.as_str()) {
+            if let Some(name) = url
+                .strip_prefix(SEMANTIC_CORE_BASE)
+                .and_then(|rest| rest.split_once('/'))
+                .map(|(_version, name)| name)
+            {
                 let core_path = self.ctx.semantic_core_dir.join(name);
                 if !core_path.exists() {
                     self.push(
@@ -440,15 +436,6 @@ impl RefWalker<'_> {
                 if !self.walk(&document, &format!("semantic-core/{name}")) {
                     return false;
                 }
-            } else if let Some(rest) = url.strip_prefix(SEMANTIC_CORE_BASE) {
-                let version = rest.split('/').next().unwrap_or("");
-                self.push(
-                    DiagnosticCode::SchemaRefVersion,
-                    format!(
-                        "$ref {url} names semantic-core {version}, manifest records {}",
-                        self.ctx.semantic_core
-                    ),
-                );
             } else if let Some(name) = url.strip_prefix(self.base) {
                 let sibling = self.schema_dir.join(name);
                 if !sibling.exists() || !inside_root(&self.ctx.module_root, &sibling) {

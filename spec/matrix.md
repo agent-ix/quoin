@@ -983,7 +983,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1730 | With no bundle package the section is `unavailable` (`no-bundle-package`) with one heading advisory and no row diagnostic, and a shape error wins over the missing package | Unit | P0 | FR-104-AC-12 | ⚠️ Delegated — fixture published here; agent-ix/quire-rs `tests/semantic_relations.rs` :: `bundle_package_from_source_identity_or_unavailable` (TC-1867), and `tests/semantic_contract.rs` :: `validate_document_qualifies_under_the_bundle_package` (TC-1866); the vendored cases run once quire-rs re-vendors this fixture |
 | TC-1360 | `data_schema: { schema }` installs; the fixture's declaration set validates against `FieldDecl.json` and its record against `Entity.json` | Unit | P0 | FR-073-AC-1, US-020-EX-3 | ✅ Complete |
 | TC-1361 | Missing, non-JSON, and `$id`-less files each fail naming the path and reason | Unit | P0 | FR-073-AC-2 | ✅ Complete |
-| TC-1362 | `$ref` to semantic-core `0.2.0` under `0.1.0`, an unshipped `$ref`, and a `$ref` cycle each fail naming the `$ref` | Unit | P0 | FR-073-AC-3 | ✅ Complete |
+| TC-1362 | An unshipped `$ref` and a `$ref` cycle each fail naming the `$ref` (the semantic-core version-mismatch case is withdrawn, PLAT-1221) | Unit | P0 | FR-073-AC-3 | ✅ Complete |
 | TC-1363 | Inline `data_schema` under a `semantic` block yields `semantic.inline-data-schema`; without one it is silent | Unit | P0 | FR-073-AC-4 | ✅ Complete |
 | TC-1364 | `..` and symlink escapes are rejected; `{ schema, type }` is rejected as ambiguous | Unit | P0 | FR-073-AC-5 | ✅ Complete |
 | TC-1365 | Schema reference resolution completes with the network disabled | Integration | P0 | FR-073-CON-1 | ✅ Complete |

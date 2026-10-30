@@ -30,7 +30,7 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 - If the referenced file is missing, unreadable, not JSON, or not a JSON Schema 2020-12 document with an `$id`, then Quoin SHALL reject the manifest naming the path and the reason.
 - If the path escapes the module root by `..` or by symlink, then Quoin SHALL reject the manifest naming the path.
 - Every `$ref` in the referenced schema SHALL resolve within the module's shipped bundle, whose base is `https://schemas.agent-ix.org/<org>/<repo>/` and carries no module version, or the semantic-core bundle `https://schemas.agent-ix.org/semantic-core/<semantic.semantic_core>/`.
-- If a `$ref` names a semantic-core version other than `semantic.semantic_core`, an unshipped file, or forms a cycle that the resolver cannot close, then Quoin SHALL reject the manifest naming the `$ref`.
+- If a `$ref` names an unshipped file or forms a cycle that the resolver cannot close, then Quoin SHALL reject the manifest naming the `$ref`. A semantic-core `$ref` resolves against the shipped bundle by file name; its version segment is not compared with `semantic.semantic_core` (CR note, 2026-10-29, PLAT-1221).
 - Quoin SHALL ship the semantic-core JSON Schema bundle at each supported version so resolution needs no network read.
 - Where a module declares a `semantic` block and an object type still carries an inline `data_schema`, Quoin SHALL emit a `warning` `semantic.inline-data-schema` naming the object type and the migration (FR-074).
 - Quire SHALL validate each extracted `FieldDecl` against the semantic-core `FieldDecl.json` and the archetype's extracted record against the referenced `<Name>.json` (`agent-ix/quire-rs#388`).
@@ -48,7 +48,7 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 |---|---|---|
 | FR-073-AC-1 | `data_schema: { schema: schemas/Entity.json }` installs, and the fixture artifact's declaration set validates against `FieldDecl.json` while its record validates against `Entity.json`. | Test |
 | FR-073-AC-2 | A missing, non-JSON, or `$id`-less file fails naming the path and reason. | Test |
-| FR-073-AC-3 | A schema `$ref`ing semantic-core `0.2.0` under a manifest recording `0.1.0`, an unshipped `$ref`, and a `$ref` cycle each fail naming the `$ref`. | Test |
+| FR-073-AC-3 | An unshipped `$ref` and a `$ref` cycle each fail naming the `$ref`. The clause for a semantic-core `$ref` whose version differs from the manifest's recorded `semantic_core` is withdrawn (CR note, 2026-10-29, PLAT-1221): no recorded-version comparison remains. | Test |
 | FR-073-AC-4 | Inline `data_schema` under a module with a `semantic` block yields `semantic.inline-data-schema`; without a `semantic` block it is silent. | Test |
 | FR-073-AC-5 | A path escaping the module root by `..` or by symlink is rejected; `{ schema, type: object }` is rejected as ambiguous. | Test |
 

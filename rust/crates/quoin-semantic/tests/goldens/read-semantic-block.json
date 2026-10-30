@@ -1,7 +1,7 @@
 {
   "source": "src/semantic/manifest.ts readSemanticBlock()",
   "counts": {
-    "total": 22
+    "total": 21
   },
   "cases": [
     {
@@ -185,72 +185,6 @@
                 "severity": "error",
                 "path": "object_types[entity].data_schema.schema",
                 "message": "$ref https://schemas.agent-ix.org/agent-ix/fixture/Missing.json names no shipped file (Missing.json)"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": "ref-wrong-semantic-core",
-      "manifest": {
-        "manifest_version": "1.0.0",
-        "name": "fixture",
-        "version": "0.1.0",
-        "object_types": [
-          {
-            "name": "entity",
-            "data_schema": {
-              "schema": "schemas/Entity.json"
-            }
-          }
-        ],
-        "semantic": {
-          "contract_version": "1.0.0",
-          "semantic_core": "0.3.2",
-          "package": "agent-ix/fixture",
-          "exports": [
-            "entity"
-          ]
-        }
-      },
-      "files": {
-        "schemas/Entity.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"$id\": \"https://schemas.agent-ix.org/agent-ix/fixture/Entity.json\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"fields\": {\n      \"$ref\": \"https://schemas.agent-ix.org/semantic-core/0.2.0/FieldDecl.json\"\n    }\n  },\n  \"required\": [\n    \"fields\"\n  ]\n}"
-      },
-      "diagnostics": [
-        {
-          "code": "semantic.schema-ref-version",
-          "severity": "error",
-          "path": "object_types[entity].data_schema.schema",
-          "message": "$ref https://schemas.agent-ix.org/semantic-core/0.2.0/FieldDecl.json names semantic-core 0.2.0, manifest records 0.1.0"
-        }
-      ],
-      "module": {
-        "name": "fixture",
-        "version": "0.1.0",
-        "block": {
-          "contract_version": "1.0.0",
-          "semantic_core": "0.3.2",
-          "package": "agent-ix/fixture",
-          "exports": [
-            "entity"
-          ],
-          "imports": {},
-          "targets": [],
-          "mappings": [],
-          "compatibility_posture": "additive",
-          "legacy_forms": "warning"
-        },
-        "dataSchemas": {
-          "entity": {
-            "kind": "reference",
-            "hasFile": true,
-            "diagnostics": [
-              {
-                "code": "semantic.schema-ref-version",
-                "severity": "error",
-                "path": "object_types[entity].data_schema.schema",
-                "message": "$ref https://schemas.agent-ix.org/semantic-core/0.2.0/FieldDecl.json names semantic-core 0.2.0, manifest records 0.1.0"
               }
             ]
           }

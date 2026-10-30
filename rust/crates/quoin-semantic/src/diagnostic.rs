@@ -131,8 +131,6 @@ diagnostic_codes! {
     SchemaRefCycle => "semantic.schema-ref-cycle",
     /// A `$ref` names a file neither bundle ships.
     SchemaRefUnshipped => "semantic.schema-ref-unshipped",
-    /// A `$ref` names a semantic-core version the manifest does not record.
-    SchemaRefVersion => "semantic.schema-ref-version",
     /// A legacy Properties form found by the sweep (FR-074).
     LegacyPropertiesForm => "semantic.legacy-properties-form",
 }

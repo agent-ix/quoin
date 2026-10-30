@@ -360,7 +360,7 @@ fn tc_452_617_a_missing_unparsable_or_non_schema_file_is_refused() {
 /// Trace: FR-073-AC-3
 /// Provenance: agent-ix/quoin#452
 #[test]
-fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused() {
+fn tc_452_618_a_self_reference_is_a_fragment_and_the_two_bad_refs_are_refused() {
     let validators = validators();
     let scratch = Scratch::new();
 
@@ -372,21 +372,6 @@ fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused(
         });
     });
     assert_eq!(errors(&self_ref, &validators), Vec::<String>::new());
-
-    let version = scratch.module_copy("core-version", |_, root| {
-        rewrite_entity_schema(root, |schema| {
-            schema["properties"]["fields"]["items"] = json!({
-                "$ref": "https://schemas.agent-ix.org/semantic-core/0.2.0/FieldDecl.json"
-            });
-        });
-    });
-    assert!(
-        codes(&version, &validators).contains(
-            &"error:semantic.schema-ref-version@object_types[entity].data_schema.schema".to_owned()
-        ),
-        "{:?}",
-        codes(&version, &validators)
-    );
 
     let unshipped = scratch.module_copy("unshipped", |_, root| {
         rewrite_entity_schema(root, |schema| {
