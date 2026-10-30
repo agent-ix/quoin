@@ -37,8 +37,7 @@ use quoin_evidence::store::{
 };
 use quoin_evidence::trust::assess_trust;
 use quoin_evidence::types::{
-    Binding, FindingRecord, IndependenceRequirement, MockInspectionRecord, RunRecord,
-    TrustDecision,
+    Binding, FindingRecord, IndependenceRequirement, MockInspectionRecord, RunRecord, TrustDecision,
 };
 use quoin_evidence::{DiskEvidence, EvidenceSource, MemoryEvidence, ProfileId, SuiteId};
 use serde::Deserialize;

@@ -27,15 +27,15 @@ use quoin_evidence::mock_inspection::{inspect_mock_injections, mock_inspection_i
 use quoin_evidence::paths::{bindings_path, run_path, scan_path, trust_decision_path};
 use quoin_evidence::record::{RecordRequest, record_run};
 use quoin_evidence::store::{
-    gc, list_recorded_suites, read_bindings, read_runs, read_trust_decisions,
-    write_bindings, write_mock_inspection, write_run, write_trust_decision,
+    gc, list_recorded_suites, read_bindings, read_runs, read_trust_decisions, write_bindings,
+    write_mock_inspection, write_run, write_trust_decision,
 };
 use quoin_evidence::trust::{assess_trust, validate_trust_decision};
 use quoin_evidence::types::{
-    Binding, EvidenceLineage, IndependenceDimension, IndependencePolicy,
-    IndependenceRequirement, IndependenceStatus, MockInspectionRecord, Outcome, ProducerContext,
-    RunEntry, RunRecord, STORE_SCHEMA_VERSION, TrustAdapter, TrustDecision, TrustDecisionKind,
-    TrustEvidenceReference, TrustStatus, TrustTrigger, TrustUse,
+    Binding, EvidenceLineage, IndependenceDimension, IndependencePolicy, IndependenceRequirement,
+    IndependenceStatus, MockInspectionRecord, Outcome, ProducerContext, RunEntry, RunRecord,
+    STORE_SCHEMA_VERSION, TrustAdapter, TrustDecision, TrustDecisionKind, TrustEvidenceReference,
+    TrustStatus, TrustTrigger, TrustUse,
 };
 use quoin_evidence::{
     Commit, DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, SuiteId,

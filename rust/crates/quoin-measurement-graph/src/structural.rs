@@ -31,8 +31,7 @@ use std::path::{Path, PathBuf};
 
 use quoin_graph_analysis::{
     ArtifactId, GraphAnalysisInput, GraphError, GraphInput, GraphInputReader, GraphLoadOptions,
-    OsGraphInputReader, analyze_change_impact, analyze_fan_out,
-    load_graph_analysis_input,
+    OsGraphInputReader, analyze_change_impact, analyze_fan_out, load_graph_analysis_input,
 };
 use quoin_store::JsonValue;
 use serde::Serialize;

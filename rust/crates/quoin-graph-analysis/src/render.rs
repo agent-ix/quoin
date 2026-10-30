@@ -21,9 +21,7 @@
 //! which characters survive where.
 
 use crate::error::Result;
-use crate::model::report::{
-    ChangeImpactAnalysis, FanOutAnalysis, GraphAnalysis, GraphReportBase,
-};
+use crate::model::report::{ChangeImpactAnalysis, FanOutAnalysis, GraphAnalysis, GraphReportBase};
 
 /// The report as canonical JSON: 2-space indent, ordered members, trailing
 /// newline (`render.ts:11`).

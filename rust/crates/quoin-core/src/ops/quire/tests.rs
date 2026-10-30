@@ -145,7 +145,6 @@ fn obligation() -> quoin_quire::model::Obligation {
         // `quire_rs::obligation::Obligation::statement_hash`. quoin neither
         // reads nor emits it; this struct literal cannot omit the upstream
         // field until quire-rs removes it (no ticket yet; file one).
-        statement_hash: String::new(),
         method: Some("Test".to_owned()),
         parameters: BTreeMap::from([("threshold".to_owned(), "0.9".to_owned())]),
         criticality: Some("high".to_owned()),

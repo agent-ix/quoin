@@ -45,9 +45,9 @@ use std::path::{Path, PathBuf};
 use quoin_graph_analysis::model::binding::{BindingInput, parse_bindings_file};
 use quoin_graph_analysis::{
     ArtifactId, DEFAULT_RELATION_KINDS, GraphAnalysis, GraphAnalysisInput, RelationKind,
-    analyze_change_impact, analyze_fan_out, check_accepted_premises,
-    check_audit_identity, parse_accepted_premises, parse_assurance_export, parse_audit_envelope,
-    render_graph_analysis, render_graph_analysis_json,
+    analyze_change_impact, analyze_fan_out, check_accepted_premises, check_audit_identity,
+    parse_accepted_premises, parse_assurance_export, parse_audit_envelope, render_graph_analysis,
+    render_graph_analysis_json,
 };
 use serde_json::{Value, json};
 
@@ -527,10 +527,7 @@ fn tc_500_045_bad_inputs_fail_closed_and_unavailable_is_not_zero() {
 /// Provenance: quoin#500
 #[test]
 fn tc_500_046_equivalent_permutations_render_identical_bytes() {
-    let bindings = vec![
-        binding("FR-002-AC-1", "z"),
-        binding("FR-001-AC-1", "a"),
-    ];
+    let bindings = vec![binding("FR-002-AC-1", "z"), binding("FR-001-AC-1", "a")];
     let left = analyze_fan_out(&plain(&bindings));
 
     let mut reversed_export = export_value();
@@ -739,10 +736,12 @@ fn tc_500_047_the_analysis_half_reaches_nothing_but_its_one_reader() {
 /// Provenance: quoin#500
 #[test]
 fn tc_500_048_the_views_carry_no_score_or_threshold() {
-    let rendered = render_graph_analysis_json(&GraphAnalysis::from(analyze_fan_out(&plain(&[
-        binding("FR-001-AC-1", "unit"),
-    ]))))
-    .expect("the report has a canonical spelling");
+    let rendered =
+        render_graph_analysis_json(&GraphAnalysis::from(analyze_fan_out(&plain(&[binding(
+            "FR-001-AC-1",
+            "unit",
+        )]))))
+        .expect("the report has a canonical spelling");
 
     let lowered = rendered.to_lowercase();
     for banned in ["trust", "quality", "releasereadiness", "threshold", "score"] {
