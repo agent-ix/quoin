@@ -4,7 +4,7 @@
 //! The committed default module set (quoin#381, FR-019).
 //!
 //! `default-modules.yaml` is the canonical source of truth for which modules
-//! quoin ships and which revision each is pinned to. This module parses and
+//! quoin ships, by name. This module parses and
 //! validates it.
 
 use serde::{Deserialize, Serialize};
