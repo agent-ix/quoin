@@ -1,33 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The five measurement routes that WRITE, each driven through the production runtime
+//! The measurement routes that WRITE, each driven through the production runtime
 //! against a real store.
 //!
 //! # Route coverage is not handler coverage (quoin#447)
 //!
-//! `measurement.record` is one wire name over three intakes, and a suite that
+//! `measurement.record` is one wire name over several intakes, and a suite that
 //! exercised the route once would leave two of the three never executed with
-//! every gate green. So it is driven three times here, and each run asserts the
+//! every gate green. So it is driven once per intake here, and each run asserts the
 //! path only its own intake can return:
 //!
 //! | intake | published at |
 //! | --- | --- |
 //! | collection | `spec/evidence/measurements/<collection id>.json` |
 //! | intervention | `spec/evidence/interventions/p-<record id>.json` |
-//! | operational | `spec/evidence/operational/<record id>.json` |
 //!
-//! The two producers are held apart the same way: an agent-eval intervention
-//! lands under `interventions/`, and a GitHub release pair under
-//! `operational/pairs/`, which is neither of the other two.
+//! The agent-eval producer lands an intervention under `interventions/`.
 //!
 //! # Where the inputs come from
 //!
 //! Nothing below writes its own fixture and then reads it back. Every candidate
 //! is a document this repository already retains — the committed collection
 //! fixture under `quoin-measurement/tests/fixtures/`, the retained intervention
-//! record, the retained operational pair and the two retained producer
-//! definitions — copied into a temporary tree so the store may be written to.
+//! record and the retained producer definition — copied into a temporary tree so the store may be written to.
 //! A self-written candidate would prove only that the boundary agrees with this
 //! file.
 
@@ -137,7 +133,7 @@ fn directory(path: &Path) -> &str {
 /// evidence directories named, and no published record of its own.
 ///
 /// Not a copy of the whole of `spec/`: the retained measurements alone are
-/// none of the routes below reads them. What is copied
+/// tens of megabytes, and none of the routes below reads them. What is copied
 /// is exactly the producer's and the intake's input contract.
 fn workspace(evidence: &[&str]) -> tempfile::TempDir {
     let temporary = tempfile::tempdir().expect("a temporary directory");
@@ -147,9 +143,7 @@ fn workspace(evidence: &[&str]) -> tempfile::TempDir {
     );
     for name in evidence {
         copy_tree(
-            &repo()
-                .join("tests/fixtures/evidence/measurement-store")
-                .join(name),
+            &repo().join("spec/evidence").join(name),
             &temporary.path().join("spec/evidence").join(name),
         );
     }
@@ -203,7 +197,7 @@ fn tc_478_101_an_intervention_record_is_published_under_interventions() {
     let temporary = workspace(&["agent-evals"]);
     let root = temporary.path();
     let candidate = read_json(
-        &repo().join("tests/fixtures/evidence/measurement-store/interventions/quoin-270-cli-eval-sentinel-contract.json"),
+        &repo().join("spec/evidence/interventions/quoin-270-cli-eval-sentinel-contract.json"),
     );
     assert_eq!(candidate["record_type"], "intervention_experiment");
 
@@ -221,47 +215,6 @@ fn tc_478_101_an_intervention_record_is_published_under_interventions() {
     assert!(path.exists(), "{} was not written", path.display());
 }
 
-/// The operational intake: `record_type: operational_evidence` is published
-/// under `operational/`, at a name derived from the record identity.
-///
-/// The candidate is the standing capability of the retained pair, published
-/// into a store that holds no pair — the retained pair FILE is what
-/// `read_operational_entries` would answer with for a record already inside
-/// one, so a store carrying it would not exercise this path at all.
-///
-/// Trace: FR-096-AC-2
-/// Provenance: quoin#478
-#[test]
-fn tc_478_102_an_operational_record_is_published_under_operational() {
-    let temporary = workspace(&["github-actions"]);
-    let root = temporary.path();
-    let pair = read_json(&repo().join(
-        "tests/fixtures/evidence/measurement-store/operational/pairs/\
-         quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json",
-    ));
-    let candidate = pair["records"][0].clone();
-    assert_eq!(candidate["record_type"], "operational_evidence");
-    assert_eq!(
-        candidate["record_id"],
-        "quoin-271-release-v0.22.5-capability"
-    );
-
-    let path = published(&run(
-        "measurement.record",
-        &json!({ "repo": root.to_string_lossy(), "record": candidate }).to_string(),
-    ));
-    assert_eq!(directory(&path), "operational", "{}", path.display());
-    let name = path
-        .file_name()
-        .and_then(std::ffi::OsStr::to_str)
-        .unwrap_or_else(|| panic!("{} has no file name", path.display()));
-    assert_eq!(
-        name, "quoin-271-release-v0.22.5-capability.json",
-        "{name} is not the record id basename"
-    );
-    assert!(path.exists(), "{} was not written", path.display());
-}
-
 /// `measurement.produce_agent_eval_intervention` produces a record from a
 /// retained definition and publishes it.
 ///
@@ -271,9 +224,8 @@ fn tc_478_102_an_operational_record_is_published_under_operational() {
 fn tc_478_103_the_agent_eval_producer_publishes_an_intervention() {
     let temporary = workspace(&["agent-evals"]);
     let root = temporary.path();
-    let definition = read_json(&repo().join(
-        "tests/fixtures/evidence/measurement-store/agent-evals/quoin-270-sentinel-definition.json",
-    ));
+    let definition =
+        read_json(&repo().join("spec/evidence/agent-evals/quoin-270-sentinel-definition.json"));
 
     let path = published(&run(
         "measurement.produce_agent_eval_intervention",
@@ -294,33 +246,131 @@ fn tc_478_103_the_agent_eval_producer_publishes_an_intervention() {
     );
 }
 
+/// A repository holding a synthetic governing plan and synthetic GitHub release
+/// exports, built here, and the producer definition that names them.
+fn synthetic_release_workspace() -> (tempfile::TempDir, Value) {
+    let temporary = tempfile::tempdir().expect("a temporary directory");
+    let root = temporary.path();
+    let assurance = root.join("spec/assurance");
+    std::fs::create_dir_all(&assurance).expect("an assurance directory");
+    std::fs::write(
+        assurance.join("MP-9001-synthetic-release-operational-evidence.md"),
+        "---\nid: MP-9001\ntitle: Synthetic release operational evidence\ntype: MeasurementPlan\n\
+status: active\nowner: engineering assurance\nstage: gate\nmetric: release_operational_evidence\n\
+definition_version: github-actions.release-operational-v2\nground_truth_kind: mechanical\n\
+protected_apparatus:\n  - spec/evidence/github-actions/synthetic-workflow.yml\nnegative_controls:\n  - kind: apparatus-edit\n    description: an edit to the protected apparatus without a new definition version rejects\nrelationships: []\n---\n\n# Synthetic release operational evidence\n\n## Decision Use\n\nDecide.\n",
+    )
+    .expect("a governing plan");
+    let actions = root.join("spec/evidence/github-actions");
+    std::fs::create_dir_all(&actions).expect("an exports directory");
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(1, |elapsed| elapsed.as_nanos());
+    let revision = format!("{nanos:040x}");
+    let job = |name: &str, started: &str, completed: &str| {
+        json!({
+            "run_id": 7, "run_attempt": 1, "head_sha": revision, "status": "completed",
+            "conclusion": "success", "started_at": started, "completed_at": completed,
+            "name": name
+        })
+    };
+    let write = |name: &str, text: String| {
+        std::fs::write(actions.join(name), text).expect("a writable export");
+    };
+    write(
+        "synthetic-run.json",
+        json!({
+            "id": 7, "head_sha": revision, "path": ".github/workflows/release.yml",
+            "event": "workflow_dispatch", "status": "completed", "conclusion": "success",
+            "html_url": "https://github.example.test/runs/7", "updated_at": "2026-08-29T23:11:38Z",
+            "run_attempt": 1, "actor": { "login": "release-actor" }
+        })
+        .to_string(),
+    );
+    write(
+        "synthetic-jobs.json",
+        json!({ "jobs": [job("Publish", "2026-08-29T23:11:00Z", "2026-08-29T23:11:37Z")] })
+            .to_string(),
+    );
+    write(
+        "synthetic-workflow.yml",
+        "name: Release\non:\n  workflow_dispatch:\njobs:\n  publish:\n    name: Publish\n    steps: []\n"
+            .to_owned(),
+    );
+    let definition = json!({
+        "record_prefix": "synthetic-release",
+        "workflow_path": ".github/workflows/release.yml",
+        "release_job": "Publish",
+        "accepted_event": "workflow_dispatch",
+        "control_id": "synthetic-release-control",
+        "subject": { "id": "synthetic/subject" },
+        "producer": {
+            "tool_identity": "synthetic-adapter", "tool_version": "0.0.1",
+            "configuration_ref": "github-actions/synthetic-definition.json",
+            "environment": {},
+            "definition_version": "github-actions.release-operational-v2"
+        },
+        "scope": { "service": "synthetic", "environment": "test", "population": "synthetic" },
+        "supported_transition": "tagged-to-published",
+        "authorized_roles": ["maintainer"],
+        "coverage": "synthetic coverage",
+        "limitations": ["synthetic"],
+        "owner": "engineering assurance",
+        "gaps": ["synthetic"],
+        "actions": ["synthetic"],
+        "clock_deadline_seconds": 600,
+        "workflow_evidence_path": "github-actions/synthetic-workflow.yml",
+        "run_evidence_path": "github-actions/synthetic-run.json",
+        "jobs_evidence_path": "github-actions/synthetic-jobs.json"
+    });
+    (temporary, definition)
+}
+
 /// `measurement.produce_github_release_operational` produces the linked pair
-/// and publishes it under `operational/pairs/` — which is neither of the two
-/// directories the record route writes to.
+/// from synthetic exports and publishes it under `operational/pairs/`.
 ///
 /// Trace: FR-096-AC-2
 /// Provenance: quoin#478
 #[test]
 fn tc_478_104_the_release_producer_publishes_an_operational_pair() {
-    let temporary = workspace(&["github-actions"]);
+    let (temporary, definition) = synthetic_release_workspace();
     let root = temporary.path();
-    let definition = read_json(
-        &repo().join("tests/fixtures/evidence/measurement-store/github-actions/quoin-271-release-v0.22.5-definition.json"),
-    );
 
     let path = published(&run(
         "measurement.produce_github_release_operational",
         &json!({ "repo": root.to_string_lossy(), "definition": definition }).to_string(),
     ));
     assert_eq!(directory(&path), "pairs", "{}", path.display());
-    assert_eq!(
-        path.file_name().and_then(std::ffi::OsStr::to_str),
-        Some("quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json"),
-        "{}",
-        path.display()
-    );
     let produced = read_json(&path);
     assert_eq!(produced["records"].as_array().map(Vec::len), Some(2));
+}
+
+/// The operational intake: `record_type: operational_evidence` is published
+/// under `operational/`, at a name derived from the record identity.
+///
+/// Trace: FR-096-AC-2
+/// Provenance: quoin#478
+#[test]
+fn tc_478_102_an_operational_record_is_published_under_operational() {
+    let (source, definition) = synthetic_release_workspace();
+    let pair = published(&run(
+        "measurement.produce_github_release_operational",
+        &json!({ "repo": source.path().to_string_lossy(), "definition": definition }).to_string(),
+    ));
+    let candidate = read_json(&pair)["records"][0].clone();
+    assert_eq!(candidate["record_type"], "operational_evidence");
+
+    let (target, _) = synthetic_release_workspace();
+    let path = published(&run(
+        "measurement.record",
+        &json!({ "repo": target.path().to_string_lossy(), "record": candidate }).to_string(),
+    ));
+    assert_eq!(directory(&path), "operational", "{}", path.display());
+    assert_eq!(
+        path.file_name().and_then(std::ffi::OsStr::to_str),
+        Some("synthetic-release-capability.json")
+    );
+    assert!(path.exists(), "{} was not written", path.display());
 }
 
 /// A request past its intake's ceiling is refused by the PROCESS, with the

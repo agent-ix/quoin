@@ -18,13 +18,12 @@ const RECORD_KEYS: &[&str] = &[
     "name",
     "source",
     "ref",
-    "sha",
     "resolvedPath",
     "targetPath",
     "installedAt",
 ];
 const SOURCE_KEYS: &[&str] = &[
-    "type", "repo", "url", "path", "package", "ref", "sha", "version", "registry",
+    "type", "repo", "url", "path", "package", "ref", "version", "registry",
 ];
 type NestedOrder = fn(&str) -> Option<&'static [&'static str]>;
 
@@ -276,7 +275,6 @@ mod tests {
                 "installedAt": "2026-01-01T00:00:00.000Z",
                 "name": "custom",
                 "ref": "v1",
-                "sha": "abc",
                 "source": { "path": "custom", "type": "path" },
                 "targetPath": "/modules/custom",
             }]),
@@ -294,7 +292,6 @@ mod tests {
         "path": "custom"
       },
       "ref": "v1",
-      "sha": "abc",
       "targetPath": "/modules/custom",
       "installedAt": "2026-01-01T00:00:00.000Z"
     }

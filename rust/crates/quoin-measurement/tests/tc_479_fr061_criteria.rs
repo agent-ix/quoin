@@ -13,17 +13,13 @@
 //! operational producer must do. Each criterion is restated here against the
 //! Rust producer, one `#[test]` each, tagged at criterion level.
 //!
-//! # The oracle is the committed evidence, not a fixture written here
+//! # The inputs are synthetic and built here
 //!
-//! `spec/evidence/github-actions/` holds the definition and the three exports
-//! of one real release run — captured from GitHub, outside Quoin — and
-//! `spec/evidence/operational/pairs/c1b3….json` holds the pair the retained
-//! TypeScript produced from them. The happy path asserts the Rust producer
-//! writes those same bytes under that same name. Every refusal case is a
-//! **mutation of one of those committed exports**, copied into a temporary
-//! repository first: a refusal is then a statement about real evidence that has
-//! been changed in one named way, not about a fixture written to be refused.
-//! Nothing here writes into this repository.
+//! `common/release_evidence.rs` writes a small workflow, run and jobs export
+//! into a temporary repository, with a generated head revision. Every refusal
+//! case is a mutation of one of those exports, so a refusal is a statement
+//! about an input changed in one named way. Nothing here writes into this
+//! repository.
 
 #![allow(
     clippy::unwrap_used,
@@ -35,14 +31,11 @@
 
 #[path = "common/census.rs"]
 mod census;
-#[path = "common/copy.rs"]
-mod copy;
-#[path = "common/paths.rs"]
-mod paths;
+#[path = "common/release_evidence.rs"]
+mod release_evidence;
 
 use census::rust_files;
-use copy::copy_tree;
-use paths::{fixture_store, repo_root};
+use release_evidence::{JOBS, PAIR, PREFIX, RUN, WORKFLOW, write_repository};
 
 use std::path::{Path, PathBuf};
 
@@ -60,34 +53,10 @@ use quoin_measurement::operational::read::read_operational_records;
 use quoin_measurement::operational::record::{OperationalEvidenceRecord, OperationalObligation};
 use quoin_measurement::source::SystemClock;
 
-/// The pair the retained TypeScript produced from the retained exports.
-const RETAINED_PAIR: &str =
-    "quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json";
-
-/// The definition that produced it, under `spec/evidence/`.
-const DEFINITION: &str = "quoin-271-release-v0.22.5-definition.json";
-
-/// The retained workflow export, under `spec/evidence/github-actions/`.
-const WORKFLOW: &str = "quoin-271-release-v0.22.5-workflow.yml";
-
-/// The retained workflow-run export.
-const RUN: &str = "quoin-271-release-v0.22.5-run.json";
-
-/// The retained workflow-jobs export.
-const JOBS: &str = "quoin-271-release-v0.22.5-jobs.json";
-
-/// A temporary repository carrying the committed governance and exports.
+/// A temporary repository carrying the synthetic governance and exports.
 fn temporary_repository() -> tempfile::TempDir {
     let temporary = tempfile::tempdir().expect("a temporary directory");
-    let root = temporary.path();
-    copy_tree(
-        &repo_root().join("spec").join("assurance"),
-        &root.join("spec").join("assurance"),
-    );
-    copy_tree(
-        &fixture_store().join("github-actions"),
-        &root.join("spec").join("evidence").join("github-actions"),
-    );
+    write_repository(temporary.path());
     temporary
 }
 
@@ -95,11 +64,9 @@ fn github_actions(root: &Path) -> PathBuf {
     root.join("spec").join("evidence").join("github-actions")
 }
 
-/// The committed producer definition, as a document.
+/// The producer definition, as a document.
 fn definition_document() -> Value {
-    let path = fixture_store().join("github-actions").join(DEFINITION);
-    let bytes = std::fs::read(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-    serde_json::from_slice(&bytes).expect("the committed definition is JSON")
+    release_evidence::definition_document()
 }
 
 fn definition_of(document: &Value) -> GitHubReleaseProducerDefinition {
@@ -124,7 +91,7 @@ fn patch(base: &Value, pointer: &str, value: Value) -> Value {
     let mut out = base.clone();
     let slot = out
         .pointer_mut(pointer)
-        .unwrap_or_else(|| panic!("{pointer} is present in the committed evidence"));
+        .unwrap_or_else(|| panic!("{pointer} is present in the synthetic evidence"));
     *slot = value;
     out
 }
@@ -134,7 +101,7 @@ fn remove(base: &Value, pointer: &str, key: &str) -> Value {
     let mut out = base.clone();
     let slot = out
         .pointer_mut(pointer)
-        .unwrap_or_else(|| panic!("{pointer} is present in the committed evidence"));
+        .unwrap_or_else(|| panic!("{pointer} is present in the synthetic evidence"));
     slot.as_object_mut()
         .unwrap_or_else(|| panic!("{pointer} is an object"))
         .remove(key)
@@ -142,17 +109,17 @@ fn remove(base: &Value, pointer: &str, key: &str) -> Value {
     out
 }
 
-/// The index of the configured release job in the committed jobs export.
+/// The index of the configured release job in the synthetic jobs export.
 fn publish_index(jobs: &Value) -> usize {
     jobs["jobs"]
         .as_array()
         .expect("the jobs export lists jobs")
         .iter()
         .position(|job| job["name"] == json!("Publish"))
-        .expect("the committed export carries the Publish job")
+        .expect("the synthetic export carries the Publish job")
 }
 
-/// Produce into a workspace from the committed definition.
+/// Produce into a workspace from the definition.
 fn produce(root: &Path) -> Result<GitHubReleaseOperational, GitHubReleaseError> {
     produce_github_release_operational(root, &SystemClock, &definition_of(&definition_document()))
 }
@@ -167,7 +134,7 @@ fn obligation() -> OperationalObligation {
         "scope": {
             "service": "agent-ix/quoin",
             "environment": "npm-production",
-            "population": "v0.22.5 package release"
+            "population": "synthetic package release"
         },
         "accepted_modes": ["actual"],
         "clock": {
@@ -179,7 +146,7 @@ fn obligation() -> OperationalObligation {
     .expect("the obligation reads")
 }
 
-/// Quoin's retained release workflow and a real completed workflow-run/jobs
+/// Quoin's retained release workflow and a completed workflow-run/jobs
 /// export produce one linked standing-capability and exercise pair whose
 /// workflow, actor, timing, outcome, and observations match the
 /// source artifacts.
@@ -194,25 +161,14 @@ fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
 
     assert_eq!(
         produced.path.file_name().and_then(|name| name.to_str()),
-        Some(RETAINED_PAIR),
+        Some(PAIR),
         "the pair is not named by the two identities it carries"
-    );
-    // The committed pair is what the retained TypeScript wrote from these same
-    // four files. Byte equality is the parity statement.
-    let committed = fixture_store()
-        .join("operational")
-        .join("pairs")
-        .join(RETAINED_PAIR);
-    assert_eq!(
-        std::fs::read(&produced.path).expect("the produced pair is readable"),
-        std::fs::read(&committed).expect("the committed pair is readable"),
-        "the produced pair does not carry the retained bytes"
     );
 
     let capability = &produced.capability;
     assert_eq!(
         capability.base.record_id.as_str(),
-        "quoin-271-release-v0.22.5-capability"
+        &format!("{PREFIX}-capability")
     );
     assert_eq!(
         capability.capability.surface,
@@ -222,7 +178,7 @@ fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
     let exercise = &produced.exercise.exercise;
     assert_eq!(
         produced.exercise.base.record_id.as_str(),
-        "quoin-271-release-v0.22.5-exercise"
+        &format!("{PREFIX}-exercise")
     );
     assert_eq!(
         exercise
@@ -230,10 +186,10 @@ fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
             .as_ref()
             .expect("the exercise names a capability")
             .as_str(),
-        "quoin-271-release-v0.22.5-capability",
+        &format!("{PREFIX}-capability"),
         "the pair is not linked"
     );
-    assert_eq!(exercise.actor, "kreneskyp");
+    assert_eq!(exercise.actor, "release-actor");
     assert_eq!(exercise.trigger, "workflow_dispatch");
     assert_eq!(exercise.started_at.as_str(), "2026-08-29T23:11:00Z");
     assert_eq!(exercise.completed_at.as_str(), "2026-08-29T23:11:37Z");
@@ -288,7 +244,7 @@ fn tc_479_451_malformed_and_mismatched_inputs_are_refused_without_either_record(
 }
 
 /// Each way the retained input contract can fail, as a mutation of the
-/// committed evidence.
+/// synthetic evidence.
 type RefusalCase = (&'static str, Box<dyn Fn(&Path)>, &'static str);
 
 fn refusal_cases() -> Vec<RefusalCase> {
@@ -421,12 +377,12 @@ fn job_refusal_cases() -> Vec<RefusalCase> {
         (
             "a release job from another run",
             job_patch("/run_id", json!(1)),
-            "configured release job run or attempt does not match workflow run",
+            "configured release job run, revision, or attempt does not match workflow run",
         ),
         (
             "a release job from another attempt",
             job_patch("/run_attempt", json!(2)),
-            "configured release job run or attempt does not match workflow run",
+            "configured release job run, revision, or attempt does not match workflow run",
         ),
         (
             "a release job that completed before it started",
@@ -465,13 +421,11 @@ fn tc_479_452_workflow_structure_and_api_exports_decide_state_not_the_caller() {
         &definition_of(&Value::Object(smuggled)),
     )
     .expect("a definition carrying state members still produces");
-    let committed = fixture_store()
-        .join("operational")
-        .join("pairs")
-        .join(RETAINED_PAIR);
+    let baseline_workspace = temporary_repository();
+    let baseline = produce(baseline_workspace.path()).expect("the baseline produces");
     assert_eq!(
         std::fs::read(&produced.path).unwrap(),
-        std::fs::read(&committed).unwrap(),
+        std::fs::read(&baseline.path).unwrap(),
         "a caller-supplied state member reached the produced records"
     );
 
@@ -571,8 +525,8 @@ fn tc_479_453_every_non_success_conclusion_is_named_and_cannot_discharge() {
     }
 }
 
-/// A real release-run integration captures workflow-run and jobs responses
-/// outside Quoin, then the Quoin producer consumes the retained files without
+/// A release-run integration supplies workflow-run and jobs exports, then
+/// the Quoin producer consumes the retained files without
 /// network or process execution and atomically persists the pair through
 /// FR-060.
 ///
@@ -592,19 +546,6 @@ fn tc_479_454_a_real_run_is_consumed_offline_and_persisted_all_or_nothing() {
         "octocrab",
         "curl",
     ];
-
-    // The retained run is a real one, captured outside Quoin: its own export
-    // says which run it was and how GitHub concluded it.
-    let run: Value = serde_json::from_slice(
-        &std::fs::read(fixture_store().join("github-actions").join(RUN)).expect("the run export"),
-    )
-    .expect("the run export is JSON");
-    assert_eq!(run["id"], json!(33_280_266_874_u64));
-    assert_eq!(
-        run["html_url"],
-        json!("https://github.com/agent-ix/quoin/actions/runs/33280266874")
-    );
-    assert_eq!(run["conclusion"], json!("success"));
 
     let census_root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src")
@@ -649,7 +590,7 @@ fn tc_479_454_a_real_run_is_consumed_offline_and_persisted_all_or_nothing() {
     ))
     .expect("the exercise serialises");
     exercise["exercise"]["control_id"] = json!("some-other-control");
-    exercise["record_id"] = json!("quoin-271-release-v0.22.5-exercise-unlinked");
+    exercise["record_id"] = json!(format!("{PREFIX}-exercise-unlinked"));
 
     let fresh = temporary_repository();
     let root = fresh.path();

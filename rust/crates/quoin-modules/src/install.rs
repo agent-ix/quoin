@@ -188,7 +188,7 @@ impl<'a> ModuleInstaller<'a> {
                 let url = source.git_url().ok_or(ModulesError::UnsupportedSource {
                     source_type: source.type_name(),
                 })?;
-                let revision = Revision::of(source.pinned_sha(), source.requested_ref());
+                let revision = Revision::of(source.requested_ref());
                 let resolved = self.resolver.resolve(&url, revision, source.subdir())?;
                 Ok(ResolvedSource {
                     dir: resolved.dir,
