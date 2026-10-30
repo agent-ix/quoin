@@ -53,23 +53,10 @@ pub enum JevErrorCode {
     /// the documented shape -- a malformed request body, a line that is not
     /// valid JSON, or a line missing a required field.
     CassetteInvalid,
-    /// A cassette line's recorded `model` does not match the model the caller
-    /// pinned this record or replay session to. Checked eagerly over every
-    /// line when the cassette is loaded, and on every fresh answer before
-    /// record mode appends it, so a version-skewed cassette fails to load
-    /// rather than silently scoring some fraction of a run against a
-    /// different model than the rest (PLAT-977, PLAT-978).
-    CassetteModelMismatch,
     /// A request made during replay matches no line the cassette holds. The
     /// cassette never invents an answer; a miss is a fixture/cassette drift
     /// to fix, not a case to fall through to the network.
     CassetteMiss,
-    /// A System One response named a model other than the one the caller
-    /// pinned [`crate::lens::run`] to, so it was refused before anything was
-    /// scored (PLAT-978). Distinct from [`Self::CassetteModelMismatch`]: that
-    /// code is a cassette file refusing to load; this one is the response in
-    /// hand -- live or replayed -- refusing to be scored.
-    ModelMismatch,
     /// A span ballot (`span_ballot::SpanBallot`) was built with no candidate
     /// span left to offer (PLAT-980).
     SpanBallotEmpty,
@@ -95,9 +82,7 @@ impl JevErrorCode {
             Self::SchemaUnavailable => "JEV_SCHEMA_UNAVAILABLE",
             Self::SchemaUnreadable => "JEV_SCHEMA_UNREADABLE",
             Self::CassetteInvalid => "JEV_CASSETTE_INVALID",
-            Self::CassetteModelMismatch => "JEV_CASSETTE_MODEL_MISMATCH",
             Self::CassetteMiss => "JEV_CASSETTE_MISS",
-            Self::ModelMismatch => "JEV_MODEL_MISMATCH",
             Self::SpanBallotEmpty => "JEV_SPAN_BALLOT_EMPTY",
             Self::SpanBallotTooLarge => "JEV_SPAN_BALLOT_TOO_LARGE",
         }
@@ -118,9 +103,7 @@ impl JevErrorCode {
             Self::SchemaUnavailable,
             Self::SchemaUnreadable,
             Self::CassetteInvalid,
-            Self::CassetteModelMismatch,
             Self::CassetteMiss,
-            Self::ModelMismatch,
             Self::SpanBallotEmpty,
             Self::SpanBallotTooLarge,
         ]
@@ -203,10 +186,6 @@ pub fn classify(error: &typesafe_sdk_error::Error) -> JevError {
             (
                 crate::cassette::INVALID_PREFIX,
                 JevErrorCode::CassetteInvalid,
-            ),
-            (
-                crate::cassette::MODEL_MISMATCH_PREFIX,
-                JevErrorCode::CassetteModelMismatch,
             ),
         ];
         for (prefix, code) in PREFIXED {
@@ -311,20 +290,6 @@ mod tests {
         let classified = classify(&error);
         assert_eq!(classified.code, JevErrorCode::CassetteInvalid);
         assert_eq!(&*classified.message, "request body is not a JSON object");
-    }
-
-    /// Provenance: PLAT-977. A fresh answer from a model other than the
-    /// pinned one, refused inside record mode, reaches the caller as
-    /// `CassetteModelMismatch`.
-    #[test]
-    fn a_cassette_model_mismatch_message_classifies_by_its_own_code() {
-        let error = typesafe_sdk_error::Error::Invalid(format!(
-            "{}answered by jev-2.0.0",
-            crate::cassette::MODEL_MISMATCH_PREFIX
-        ));
-        let classified = classify(&error);
-        assert_eq!(classified.code, JevErrorCode::CassetteModelMismatch);
-        assert_eq!(&*classified.message, "answered by jev-2.0.0");
     }
 
     /// Provenance: PLAT-977. An ordinary `Invalid` message, carrying no

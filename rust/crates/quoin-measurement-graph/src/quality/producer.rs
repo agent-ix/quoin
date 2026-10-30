@@ -9,7 +9,7 @@ use std::num::NonZeroU64;
 
 use serde::Deserialize;
 
-use crate::scalars::{NonEmptyText, RevisionIdentity, Sha256Reference};
+use crate::scalars::{NonEmptyText, RevisionIdentity, ScorerOutputPath};
 use crate::wire::{GraphQualityDefinitionVersion, MeasurementPlanRef};
 
 /// The four languages a parser grammar may be pinned for.
@@ -53,8 +53,9 @@ pub struct Producer {
     pub producer_contract_version: NonZeroU64,
     /// The pinned grammars, at least one.
     pub parser_grammars: Vec<ParserGrammar>,
-    /// The digest of the configuration it ran under.
-    pub configuration_digest: Sha256Reference,
+    /// The repository-relative path of the configuration file at
+    /// `source_revision`, which git addresses.
+    pub configuration_ref: ScorerOutputPath,
     /// The revision of the measured source.
     pub source_revision: RevisionIdentity,
     /// The revision of the measured corpus.
@@ -88,6 +89,4 @@ impl MeasurementPlanReference {
 pub struct RawScorerOutput {
     /// The relative, non-drive-qualified path.
     pub path: crate::scalars::ScorerOutputPath,
-    /// The digest of its bytes.
-    pub digest: Sha256Reference,
 }

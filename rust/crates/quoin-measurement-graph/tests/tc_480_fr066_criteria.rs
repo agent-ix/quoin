@@ -12,15 +12,13 @@
 //!
 //! `tests/graph-adapters.test.ts` was deleted in the same commit as
 //! `src/measurement/graph-adapters.ts`. It carried twelve
-//! criterion-tagged assertions. `tc_475_parity.rs` proves this crate answers
-//! what the retained module answered on 89 captured cases, but it is tagged
-//! `FR-066-AC-1` only — a corpus-wide agreement gate is not a per-criterion
-//! one. This file is: one test per criterion, named by the criterion, so a
-//! criterion cannot be lost without a named test disappearing with it.
+//! criterion-tagged assertions: one test per criterion, named by the
+//! criterion, so a criterion cannot be lost without a named test disappearing
+//! with it.
 //!
 //! # Where the inputs come from
 //!
-//! `tests/goldens/graph-adapter-verdicts.json` — the committed capture, not a
+//! `tests/fixtures/graph-adapter-cases.json` — the committed case inputs, not a
 //! shape this file invented. Where a criterion needs an input the capture does
 //! not hold (a permuted census, a deleted attestation member), the base case is
 //! taken from the capture and mutated **here**, in Rust. No node process is
@@ -45,7 +43,7 @@ use quoin_measurement_graph::assurance::premise::{
 use quoin_measurement_graph::quality::adapt::{AdaptGraphQualityInput, TranscribedCollection};
 use quoin_measurement_graph::{
     GraphAdapterError, GraphAdapterErrorCode, adapt_graph_quality_observation,
-    adapt_quire_assurance, graph_quality_observation_id,
+    adapt_quire_assurance,
 };
 use serde_json::Value;
 
@@ -54,7 +52,7 @@ use serde_json::Value;
 /// Every captured case, by name.
 fn cases() -> BTreeMap<String, Value> {
     let path =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/goldens/graph-adapter-verdicts.json");
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/graph-adapter-cases.json");
     let text = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("{} is readable: {error}", path.display()));
     let golden: Value = serde_json::from_str(&text).expect("the capture is JSON");
@@ -100,7 +98,6 @@ fn plan(value: &Value) -> MeasurementPlan {
         path: value["path"].as_str().expect("a path").to_owned(),
         owner: None,
         action: None,
-        preregistration: None,
         ground_truth_kind: None,
         statistical_design: None,
         objective: None,
@@ -164,17 +161,6 @@ fn delete_at(value: &mut Value, path: &[&str]) {
         object.remove(*last).is_some(),
         "the base case carries no `{last}` to delete"
     );
-}
-
-/// Re-mint the observation identity a mutated record must now declare, so that
-/// a mutation is measured for what it changed rather than for the identity it
-/// invalidated.
-fn remint(record: &mut Value) {
-    record["observation_id"] = Value::Null;
-    let object = record.as_object_mut().expect("a record object");
-    object.remove("observation_id");
-    let id = graph_quality_observation_id(record).expect("the identity is computable");
-    record["observation_id"] = Value::String(id.to_stored());
 }
 
 /// Every observation the transcription produced, keyed
@@ -312,41 +298,29 @@ fn tc_480_021_every_quire_collection_passes_through_untranslated() {
     );
 }
 
-/// The graph-quality schema is closed and the observation identity is the
-/// canonical digest of the record without it.
+/// The graph-quality schema is closed and the observation id is the
+/// producer's, taken as stated.
 ///
 /// Trace: FR-066-AC-4
 /// Provenance: quoin#480
 #[test]
-fn tc_480_022_the_schema_is_closed_and_the_identity_is_canonical() {
-    // The identity is computed over canonical bytes: member order in does not
-    // change the digest out.
-    let sorted = graph_quality_observation_id(&serde_json::json!({
-        "a": [{ "z": 2, "a": 1 }],
-        "": "bmp",
-        "𐀀": "astral",
-        "observation_id": format!("sha256:{}", "a".repeat(64)),
-    }))
-    .expect("an identity");
-    let permuted = graph_quality_observation_id(&serde_json::json!({
-        "observation_id": format!("sha256:{}", "b".repeat(64)),
-        "𐀀": "astral",
-        "a": [{ "a": 1, "z": 2 }],
-        "": "bmp",
-    }))
-    .expect("an identity");
+fn tc_480_022_the_schema_is_closed_and_the_observation_id_is_taken_as_stated() {
+    // Any non-empty producer-assigned observation id is admitted, and the
+    // collection is named from it.
+    let mut stated = case("quality/measured");
+    stated["record"]["observation_id"] =
+        Value::String("0192f3a0-7b1c-7d4e-8a21-5c3b9e0d1f42".to_owned());
+    let transcribed = adapt_quality(&stated).expect("a producer-assigned id is admitted");
     assert_eq!(
-        sorted.to_stored(),
-        permuted.to_stored(),
-        "the identity ignores member order and the declared identity itself"
+        transcribed.collection().collection_id.as_str(),
+        "graph-quality-0192f3a0-7b1c-7d4e-8a21-5c3b9e0d1f42"
     );
 
-    // A record that declares an identity it does not have is refused.
+    // An empty one is not an id.
+    let mut empty = case("quality/measured");
+    empty["record"]["observation_id"] = Value::String(String::new());
     assert_eq!(
-        refusal(
-            &case("quality/observation-id-disagrees"),
-            "a disagreeing observation_id"
-        ),
+        refusal(&empty, "an empty observation_id"),
         GraphAdapterErrorCode::InvalidObservation,
     );
     // A record carrying a member the schema does not declare is refused.
@@ -356,12 +330,12 @@ fn tc_480_022_the_schema_is_closed_and_the_identity_is_canonical() {
     );
 }
 
-/// The scorer bytes are retained exactly and a digest mismatch is refused.
+/// The scorer bytes are retained exactly and an attachment with no type is refused.
 ///
 /// Trace: FR-066-AC-5
 /// Provenance: quoin#480
 #[test]
-fn tc_480_023_scorer_bytes_are_retained_and_a_mismatch_refused() {
+fn tc_480_023_scorer_bytes_are_retained_and_an_untyped_attachment_refused() {
     let base = case("quality/measured");
     let bytes = scorer_bytes(&base["scorerBytes"]);
     let transcribed = adapt_quality(&base).expect("the captured base record is admissible");
@@ -391,10 +365,6 @@ fn tc_480_023_scorer_bytes_are_retained_and_a_mismatch_refused() {
     );
 
     assert_eq!(
-        refusal(&case("quality/digest-mismatch"), "a digest mismatch"),
-        GraphAdapterErrorCode::AttachmentDigestMismatch,
-    );
-    assert_eq!(
         refusal(&case("quality/no-media-type"), "an attachment with no type"),
         GraphAdapterErrorCode::AttachmentMissing,
     );
@@ -407,18 +377,16 @@ fn tc_480_023_scorer_bytes_are_retained_and_a_mismatch_refused() {
 /// Provenance: quoin#480
 #[test]
 fn tc_480_024_every_attestation_and_producer_field_is_required() {
-    /// Sixteen of the nineteen attestation paths `graph-adapters.test.ts`
+    /// Fourteen of the nineteen attestation paths `graph-adapters.test.ts`
     /// deleted — `verificationStack.toolchains.{node,rust,python}` are no
     /// longer independently required (PLAT-930, `tc_480_031` below).
-    const ATTESTATION: [&[&str]; 16] = [
+    const ATTESTATION: [&[&str]; 14] = [
         &["subject"],
         &["scope"],
         &["timestamp"],
         &["environment"],
         &["verificationStack"],
         &["verificationStack", "schemaVersion"],
-        &["verificationStack", "lockDigest"],
-        &["verificationStack", "executableDigest"],
         &["verificationStack", "buildProfile"],
         &["verificationStack", "toolchains"],
         // `toolchains.{node,rust,python}` are deliberately absent from this
@@ -457,7 +425,7 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
         &["producer", "parser_grammars", "0", "language"],
         &["producer", "parser_grammars", "0", "grammar"],
         &["producer", "parser_grammars", "0", "revision"],
-        &["producer", "configuration_digest"],
+        &["producer", "configuration_ref"],
         &["producer", "source_revision"],
         &["producer", "corpus_revision"],
         &["producer", "scorer_version"],
@@ -491,7 +459,6 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
         } else {
             delete_at(&mut mutated["record"], path);
         }
-        remint(&mut mutated["record"]);
         assert_eq!(
             refusal(&mutated, &format!("record without {}", path.join("."))),
             GraphAdapterErrorCode::InvalidObservation,
@@ -582,7 +549,6 @@ fn tc_480_026_the_census_maps_bijectively_under_every_permutation() {
             rewritten.insert((*member).to_owned(), census[*member].clone());
         }
         mutated["record"]["population"]["census"] = Value::Object(rewritten);
-        remint(&mut mutated["record"]);
         let transcribed = adapt_quality(&mutated).expect("a permuted census is still admissible");
         assert_eq!(
             quoin_store::canonical_json(transcribed.document()).expect("canonical text"),
@@ -739,7 +705,6 @@ fn tc_480_028_each_not_computed_state_is_retained_distinctly() {
         population["unsupported_files"] = Value::from(0);
         population["unreadable_files"] = Value::from(4);
     }
-    remint(&mut unreadable["record"]);
 
     let inputs = [
         ("quality/empty-population", case("quality/empty-population")),
@@ -892,7 +857,7 @@ fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() 
     ];
 
     /// Below this the census is reading an empty tree and proving nothing.
-    const SOURCE_FLOOR: usize = 20;
+    const SOURCE_FLOOR: usize = 18;
 
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut measured = 0_usize;

@@ -40,11 +40,9 @@
 //! plan's id and `definition_version` is a run. The rule is applied to every
 //! run against its own history, so a run that regressed stays visible even
 //! when a later one passed; and a regressed run with the candidate's own
-//! apparatus — the same source revision, configuration, tool, corpus and
-//! verification stack — means the same thing was re-run until it passed,
-//! which is `rerun_until_pass`. A changed protected apparatus does not make
-//! it a different run: editing the answer key between a failed run and a
-//! pass is the rerun this rule exists to catch.
+//! apparatus — the same source revision, tool and corpus — means the same thing
+//! was re-run until it passed, which is `rerun_until_pass`, whatever protected
+//! set either run recorded.
 //!
 //! # Protected apparatus
 //!
@@ -86,9 +84,6 @@ struct Run<'a> {
     /// The protected apparatus the collection recorded for the plan, read
     /// whatever the plan declares today; `None` when it recorded none.
     apparatus: Option<&'a ResolvedApparatus>,
-    /// Whether the caller found this run's recorded protected-apparatus
-    /// digests to disagree with the committed source they claim (PLAT-985).
-    apparatus_forged: bool,
     slices: Vec<(&'a MeasurementObservation, Result<Estimate, Reason>)>,
 }
 
@@ -139,7 +134,7 @@ pub fn verify(
     if order == OrderSource::GitShallow {
         check.findings.push(plan_level(Reason::OrderUnattested));
     }
-    check.findings.extend(tamper::findings(&check.runs, tamper));
+    check.findings.extend(tamper::findings(tamper));
     match (check.rule, design.estimator) {
         (None, _) => check.findings.push(plan_level(Reason::NoDecisionRule)),
         (_, None) => check.findings.push(plan_level(Reason::NoEstimator)),
@@ -156,7 +151,7 @@ pub fn verify(
                 if index == last {
                     decisions = outcome.decisions;
                     check.candidate_checks(last, &regressed, &outcome.priors, collections);
-                    let found = apparatus::findings(plan, &check.runs);
+                    let found = apparatus::findings(plan, &check.runs, tamper.movement);
                     check.findings.extend(found);
                 }
             }
@@ -198,7 +193,6 @@ fn runs<'a>(
             collection: ranked.collection,
             intake: ranked.intake,
             apparatus: ranked.collection.protected_apparatus_of(plan.id.as_str()),
-            apparatus_forged: ranked.apparatus_forged,
             slices: observations_of(plan, ranked.collection)
                 .into_iter()
                 .map(|observation| {
@@ -518,20 +512,12 @@ fn baseline(
 }
 
 /// Whether two collections were produced by the same apparatus: source
-/// revision, configuration, tool, corpus and verification stack.
+/// revision, tool and corpus.
 fn same_apparatus(left: &MeasurementCollection, right: &MeasurementCollection) -> bool {
-    let stack = |collection: &MeasurementCollection| {
-        collection
-            .verification_stack
-            .as_ref()
-            .map(|stack| (stack.lock_digest.clone(), stack.executable_digest.clone()))
-    };
     left.source_revision == right.source_revision
-        && left.config_digest == right.config_digest
         && left.tool_identity == right.tool_identity
         && left.tool_version == right.tool_version
         && left.corpus_revision == right.corpus_revision
-        && stack(left) == stack(right)
 }
 
 fn plan_level(reason: Reason) -> Finding {

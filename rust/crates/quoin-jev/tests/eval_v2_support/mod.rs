@@ -15,7 +15,7 @@
 //!   hold the committed corpus equal to its rebuild.
 //! - [`corpus`] reads and validates `fixtures/eval-v2/corpus.json` and the
 //!   optional external corpus, materializes by-reference rows from a local
-//!   checkout, and holds the held-out seal.
+//!   checkout, and holds the held-out access gate (a flag and a log, no hash).
 //! - [`criterion_defects`] defines the five criterion-soundness checks once:
 //!   the corpus header, the label passes and the soundness variants read it.
 //! - [`keys`] names every question key and its answer space.
@@ -30,7 +30,7 @@
 //! - [`units`] cuts one named item out of a Rust or Python file, and splits a
 //!   body into functions or branches for fan-out, by one rule in both.
 //! - [`fixtures`] holds the synthetic rows the offline tests and the
-//!   request-digest pins share.
+//!   preflight share.
 //! - [`preflight`] is every check a run passes before its first request.
 //! - [`patch`] applies a mutation's unified diff to a by-reference file.
 //! - [`variants`] holds the experiment variants, one module per question:

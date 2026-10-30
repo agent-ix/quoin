@@ -86,20 +86,29 @@ fn load(metric: &str) -> Result<Vec<MeasurementPlan>, MeasurementError> {
     load_plans(repository(metric).path())
 }
 
+/// No collection here protects apparatus, so git is never asked.
+#[derive(Debug)]
+struct NoGit;
+
+impl quoin_measurement::PathMovement for NoGit {
+    fn changed(&self, _before: &str, _after: &str, _paths: &[String]) -> Option<Vec<String>> {
+        None
+    }
+}
+
 fn load_plans(root: &Path) -> Result<Vec<MeasurementPlan>, MeasurementError> {
     load_measurement_plans(&DiskMeasurement::new(root), PlanLoadOptions::default())
 }
 
 /// Write `candidate` through the real `write_measurement_collection`,
-/// declaring the protected plan document at its digest (PLAT-975).
+/// declaring the protected plan document by name.
 fn write(root: &Path, candidate: &Value) -> Result<std::path::PathBuf, MeasurementError> {
     let path = "spec/assurance/MP-900.md";
     let mut candidate = candidate.clone();
-    candidate["verificationStack"]["artifacts"][path] = json!(
-        quoin_store::digest_file_sha256(&root.join(path))
-            .expect("the plan is digestible")
-            .to_stored()
-    );
+    candidate["verificationStack"]["artifacts"]
+        .as_array_mut()
+        .expect("the artifact list")
+        .push(json!(path));
     write_measurement_collection(root, &from_serde(&candidate).expect("crosses"))
 }
 
@@ -185,14 +194,11 @@ fn collection(id: &str, observations: &[Value]) -> Value {
         "scope": { "cases": 15 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
-        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": "2026-09-23T00:00:00.000Z",
         "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
-            "lockDigest": format!("sha256:{}", "1".repeat(64)),
-            "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
             "toolchains": { "node": "22.15.0", "rust": "0.0.0", "python": "3.10.12" },
             "sources": {
@@ -203,7 +209,7 @@ fn collection(id: &str, observations: &[Value]) -> Value {
                 },
             },
             "capabilities": ["fixture.capability"],
-            "artifacts": { "config": format!("sha256:{}", "3".repeat(64)) },
+            "artifacts": ["config"],
         },
         "observations": observations,
         "rawEvidence": { "payload": [1, 2] },
@@ -335,7 +341,7 @@ fn tc_1016_005_compare_leaves_item_rows_out() {
     let mut after_observations = with_items(13, "MP-900");
     after_observations[1]["dimensions"]["actual"] = json!("gap");
     let after = intake(&plans, &collection("run-b", &after_observations)).unwrap();
-    let comparisons = compare_measurement_collections(&before, &after).unwrap();
+    let comparisons = compare_measurement_collections(&before, &after, &NoGit).unwrap();
     let metrics: Vec<&str> = comparisons.iter().map(|row| row.metric.as_str()).collect();
     assert_eq!(metrics, [METRIC]);
 }

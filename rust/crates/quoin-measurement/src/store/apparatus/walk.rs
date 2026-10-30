@@ -8,7 +8,6 @@
 //! module past the 700-line ceiling (quoin#464): this is the part that touches
 //! the filesystem, and [`super`] is the part that decides what a write records.
 
-use std::error::Error as _;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
@@ -57,7 +56,7 @@ impl Walk<'_> {
             let (on_disk, found) = self.descend(self.entry.as_str(), false)?;
             let path = self.entry.as_str().to_owned();
             return match found {
-                Kind::File => self.digest(&on_disk, path),
+                Kind::File => self.check_regular(&on_disk, path),
                 Kind::Directory => Err(self.refuse(
                     MeasurementErrorCode::ApparatusUnresolved,
                     format!("names a directory, not a file; protect it as `{path}/**`"),
@@ -101,7 +100,7 @@ impl Walk<'_> {
                     Kind::Directory => pending.push((dir.join(&name), child)),
                     Kind::File => {
                         seen += 1;
-                        self.digest(&dir.join(&name), child)?;
+                        self.check_regular(&dir.join(&name), child)?;
                     }
                     Kind::Other => {
                         return Err(self.refuse(
@@ -182,34 +181,40 @@ impl Walk<'_> {
             .map_err(|detail| self.refuse(MeasurementErrorCode::ApparatusUnreadable, detail))
     }
 
-    /// Digest one resolved file into the set under its repository-relative
-    /// path.
+    /// Check one resolved file is a regular file, and add it to the set under
+    /// its repository-relative path.
     ///
     /// A path a stored record could not hold is refused before the file is
     /// opened: writing it would store a record the reader refuses forever.
-    fn digest(&mut self, path: &Path, relative: String) -> Result<(), MeasurementError> {
+    /// The file is never opened (FR-110-AC-10): one `symlink_metadata` look
+    /// says whether it is a symlink or some other non-regular file (a FIFO
+    /// included, which an open could block on), and no byte is read.
+    fn check_regular(&mut self, path: &Path, relative: String) -> Result<(), MeasurementError> {
         if let Some(reason) = unrecordable_apparatus_path(&relative) {
             return Err(self.refuse(
                 MeasurementErrorCode::ApparatusUnreadable,
                 format!("`{relative}` cannot be recorded in a collection: {reason}"),
             ));
         }
-        let digest = quoin_store::digest_file_sha256(path).map_err(|error| {
-            let cause = error
-                .source()
-                .map_or_else(String::new, |source| format!(": {source}"));
-            let code = match error {
-                quoin_store::StoreError::DigestSourceIsSymlink { .. } => {
-                    MeasurementErrorCode::ApparatusSymlink
-                }
-                _ => MeasurementErrorCode::ApparatusUnreadable,
-            };
+        let metadata = std::fs::symlink_metadata(path).map_err(|error| {
             self.refuse(
-                code,
-                format!("`{relative}` cannot be digested: {error}{cause}"),
+                MeasurementErrorCode::ApparatusUnreadable,
+                format!("`{relative}` cannot be read: {error}"),
             )
         })?;
-        if self.files.insert(relative, digest).is_none() {
+        if metadata.file_type().is_symlink() {
+            return Err(self.refuse(
+                MeasurementErrorCode::ApparatusSymlink,
+                format!("`{relative}` is a symlink"),
+            ));
+        }
+        if !metadata.file_type().is_file() {
+            return Err(self.refuse(
+                MeasurementErrorCode::ApparatusUnreadable,
+                format!("`{relative}` is not a regular file"),
+            ));
+        }
+        if self.files.insert(relative) {
             self.spent.files += 1;
         }
         if self.files.len() > self.limits.plan_files {

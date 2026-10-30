@@ -41,8 +41,6 @@ pub struct MeasurementCollectionReference {
     pub tool_identity: String,
     /// Which version of that tool.
     pub tool_version: String,
-    /// The digest of the configuration it ran under.
-    pub config_digest: String,
     /// The revision of the measured source.
     pub source_revision: String,
     /// The measured corpus revision, when the collection states one.
@@ -62,7 +60,6 @@ impl MeasurementCollectionReference {
             timestamp: collection.timestamp.as_str().to_owned(),
             tool_identity: collection.tool_identity.as_str().to_owned(),
             tool_version: collection.tool_version.as_str().to_owned(),
-            config_digest: collection.config_digest.as_str().to_owned(),
             source_revision: collection.source_revision.as_str().to_owned(),
             corpus_revision: collection.corpus_revision.clone(),
             corpus_gaps: gap_count(collection),
@@ -73,7 +70,7 @@ impl MeasurementCollectionReference {
     /// `renderReference` (`report.ts:349-360`).
     fn rendered(&self) -> String {
         format!(
-            "{} — {} {}; source {}; corpus {}; gaps {}; config {}; record {}",
+            "{} — {} {}; source {}; corpus {}; gaps {}; record {}",
             self.collection_id,
             self.tool_identity,
             self.tool_version,
@@ -81,7 +78,6 @@ impl MeasurementCollectionReference {
             self.corpus_revision.as_deref().unwrap_or("n/a"),
             self.corpus_gaps
                 .map_or_else(|| "not_computed".to_owned(), js_f64_string),
-            self.config_digest,
             self.path
         )
     }
@@ -178,7 +174,11 @@ pub fn comparison_for<S: MeasurementSource + ?Sized>(
         status: MeasurementComparisonStatus::Compared,
         before: Some(MeasurementCollectionReference::of(repo, before)?),
         after: Some(after_reference),
-        comparisons: crate::compare::compare_measurement_collections(before, after)?,
+        comparisons: crate::compare::compare_measurement_collections(
+            before,
+            after,
+            &crate::movement::GitPathMovement::new(repo),
+        )?,
     })
 }
 
@@ -285,7 +285,6 @@ struct ReferenceWire<'a> {
     timestamp: &'a str,
     tool_identity: &'a str,
     tool_version: &'a str,
-    config_digest: &'a str,
     source_revision: &'a str,
     /// `?? null`: stated as `null`, not dropped.
     corpus_revision: Option<&'a str>,
@@ -302,7 +301,6 @@ impl<'a> ReferenceWire<'a> {
             timestamp: &reference.timestamp,
             tool_identity: &reference.tool_identity,
             tool_version: &reference.tool_version,
-            config_digest: &reference.config_digest,
             source_revision: &reference.source_revision,
             corpus_revision: reference.corpus_revision.as_deref(),
             corpus_gaps: reference.corpus_gaps,

@@ -3,7 +3,7 @@
 //! Every FR-067 acceptance criterion the deleted `tests/graph-portfolio.test.ts`
 //! carried, restated against this crate, plus StR-007-VC-1.
 //!
-//! Trace: FR-067-AC-4, FR-067-AC-5, FR-067-AC-6, FR-067-AC-7, FR-067-AC-8
+//! Trace: FR-067-AC-1, FR-067-AC-2, FR-067-AC-3, FR-067-AC-4, FR-067-AC-5, FR-067-AC-6, FR-067-AC-7, FR-067-AC-8
 //! Trace: FR-067-AC-9, FR-067-AC-10, FR-067-AC-11
 //! Trace: StR-007-VC-1
 //! Provenance: quoin#480
@@ -11,11 +11,11 @@
 //! # Why this file exists
 //!
 //! `tests/graph-portfolio.test.ts` was deleted in the same commit as
-//! `src/measurement/graph-portfolio.ts`. `tc_476_graph_portfolio.rs`
-//! proves this crate's report is the retained module's bytes over one committed
-//! tree, and is tagged `FR-067-AC-1`, `-AC-2` and `-AC-3` for the three
-//! properties that tree exercises. The other eight criteria had no Rust home.
-//! They do now, one test each, named by the criterion.
+//! `src/measurement/graph-portfolio.ts`. The golden-capture suites that once
+//! carried `FR-067-AC-1`, `-AC-2` and `-AC-3` were TypeScript-parity ceremony
+//! and are gone; those three criteria are asserted here as behaviour, one test
+//! each, over inputs built in this file. The other eight criteria had no Rust
+//! home and have one test each, named by the criterion.
 //!
 //! # Where the inputs come from
 //!
@@ -67,12 +67,9 @@ use serde_json::{Value, json};
 /// Each compatibility premise, and the mutation that breaks exactly it.
 type Mutation = (GraphCompatibilityCode, fn(&mut Value));
 
-/// The retained scorer bytes every template collection carries, and the digest
-/// they actually hash to — `scorer.rs` re-checks it, so the pair must be real.
+/// The retained scorer bytes every template collection carries.
 const SCORER_BASE64: &str =
     "eyJzY29yZXMiOlswLjgsMC45LDAuNV0sIm5vdGUiOiJncmFwaCBzY29yZXIgb3V0cHV0In0=";
-const SCORER_DIGEST: &str =
-    "sha256:35977f285a45f1c57dbb3b437bb61c3ac788011232225eec65d0bdb6a9309c47";
 
 /// The active plan every repository in this file governs its evidence by.
 fn plan() -> MeasurementPlan {
@@ -94,7 +91,6 @@ fn plan() -> MeasurementPlan {
         path: "spec/assurance/10-graph.md".to_owned(),
         owner: Some("assurance-team".to_owned()),
         action: Some("repair retained evidence".to_owned()),
-        preregistration: None,
         ground_truth_kind: None,
         statistical_design: None,
         objective: None,
@@ -113,7 +109,6 @@ fn collection_json(id: &str, timestamp: &str) -> Value {
         "subject": "quoin",
         "toolIdentity": "agent-ix/quire-code-rs",
         "toolVersion": "1.0.0",
-        "configDigest": "sha256:cfg-one",
         "timestamp": timestamp,
         "sourceRevision": "d".repeat(40),
         "corpusRevision": "e".repeat(40),
@@ -163,13 +158,12 @@ fn collection_json(id: &str, timestamp: &str) -> Value {
         ],
         "rawEvidence": {
             "producer": {
-                "observation_id": format!("sha256:{}", format!("{id:0<64}").chars().take(64).collect::<String>()),
+                "observation_id": format!("obs-{id}"),
                 "producer": { "extractor_revision": "v1.2.3", "scorer_version": "v0.4.0" },
                 "population": { "state": "measured" },
-                "raw_scorer_output": { "digest": SCORER_DIGEST, "path": "out/scores.json" },
+                "raw_scorer_output": { "path": "out/scores.json" },
             },
             "scorer": {
-                "digest": SCORER_DIGEST,
                 "bytesBase64": SCORER_BASE64,
                 "mediaType": "application/json",
             },
@@ -251,6 +245,158 @@ fn one(root: &str, collections: Vec<MeasurementCollection>) -> GraphPortfolioRep
 fn build(inputs: &[GraphPortfolioRepositoryInput]) -> GovernedGraphPortfolioReport {
     build_governed_graph_portfolio_from(inputs)
         .unwrap_or_else(|error| panic!("the governed projection refused: {error}"))
+}
+
+// ------------------------------------------------- the reading itself
+
+/// The current row carries the active plan, its definition, the producer
+/// tuple, the source and corpus revisions, the population identity and the
+/// producer-assigned observation id.
+///
+/// Trace: FR-067-AC-1
+#[test]
+fn tc_480_050_the_current_row_carries_the_plan_the_producer_and_the_observation_id() {
+    let report = build(&[one(
+        "/repos/a",
+        vec![collection("a-1", "2026-02-01T00:00:00Z")],
+    )]);
+    let repository = &report.repositories[0];
+    assert_eq!(
+        repository
+            .graph_quality
+            .plan
+            .as_ref()
+            .map(|plan| plan.id.as_str()),
+        Some("gp-graph"),
+        "the active plan is reported"
+    );
+    let current = repository
+        .graph_quality
+        .current
+        .as_ref()
+        .expect("a readable repository has a current reading");
+    let plan = current.plan.as_ref().expect("the reading names its plan");
+    assert_eq!(plan.id, "gp-graph");
+    assert_eq!(plan.definition_version, "gq-1");
+    assert_eq!(current.tool_identity, "agent-ix/quire-code-rs");
+    assert_eq!(current.tool_version, "1.0.0");
+    assert_eq!(current.source_revision, "d".repeat(40));
+    assert_eq!(
+        current.corpus_revision.as_deref(),
+        Some("e".repeat(40).as_str())
+    );
+    assert!(
+        current.population_identity.is_some(),
+        "the population identity"
+    );
+    assert_eq!(
+        current.observation_id.as_deref(),
+        Some("obs-a-1"),
+        "the producer-assigned observation id is reported as stated"
+    );
+    let json = canonical_graph_portfolio_json(&report).expect("canonical JSON");
+    assert!(
+        json.contains("v1.2.3") && json.contains("v0.4.0"),
+        "the complete producer tuple reaches the report"
+    );
+}
+
+/// History keeps every structurally readable collection in timestamp then id
+/// order, including one the active plan no longer governs.
+///
+/// Trace: FR-067-AC-2
+#[test]
+fn tc_480_051_history_keeps_every_readable_collection_in_order() {
+    let stale = collection_with("h-mid", "2026-02-01T00:00:00Z", |value| {
+        for observation in value["observations"].as_array_mut().unwrap() {
+            observation["definitionVersion"] = json!("gq-0");
+        }
+    });
+    let report = build(&[one(
+        "/repos/a",
+        vec![
+            collection("h-new", "2026-03-01T00:00:00Z"),
+            stale,
+            collection("h-old", "2026-01-01T00:00:00Z"),
+        ],
+    )]);
+    let history = &report.repositories[0].graph_quality.history;
+    let ids: Vec<&str> = history.iter().map(|row| row.id.as_str()).collect();
+    assert_eq!(ids, ["h-old", "h-mid", "h-new"]);
+    let availabilities: Vec<&str> = history
+        .iter()
+        .map(|row| row.availability.as_str())
+        .collect();
+    assert_eq!(
+        availabilities,
+        ["available", "incompatible", "available"],
+        "the record the active plan no longer governs is kept, and says so"
+    );
+
+    // Equal timestamps are ordered by id.
+    let tied = build(&[one(
+        "/repos/b",
+        vec![
+            collection("t-b", "2026-01-01T00:00:00Z"),
+            collection("t-a", "2026-01-01T00:00:00Z"),
+        ],
+    )]);
+    let ids: Vec<&str> = tied.repositories[0]
+        .graph_quality
+        .history
+        .iter()
+        .map(|row| row.id.as_str())
+        .collect();
+    assert_eq!(ids, ["t-a", "t-b"]);
+}
+
+/// Every measure/dimension/key partition is its own row in the text and the
+/// JSON, and nothing is summed or averaged across them.
+///
+/// Trace: FR-067-AC-3
+#[test]
+fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
+    let report = build(&[
+        one("/repos/a", vec![collection("p-1", "2026-02-01T00:00:00Z")]),
+        one("/repos/b", vec![collection("p-2", "2026-02-01T00:00:00Z")]),
+    ]);
+    for repository in &report.repositories {
+        let current = repository.graph_quality.current.as_ref().expect("current");
+        let identities: BTreeSet<(&str, &str, &str)> = current
+            .partitions
+            .iter()
+            .map(|partition| {
+                (
+                    partition.identity.measure.as_str(),
+                    partition.identity.dimension.as_str(),
+                    partition.identity.key.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            identities,
+            BTreeSet::from([
+                ("census", "language", "rust"),
+                ("census", "node_kind", "function"),
+            ]),
+            "two partitions, neither merged into the other"
+        );
+    }
+    let text = render_governed_graph_portfolio(&report).expect("rendered text");
+    for needle in ["census/node_kind/function", "census/language/rust"] {
+        assert!(
+            text.contains(needle),
+            "{needle} is a row of its own:\n{text}"
+        );
+    }
+    let json = canonical_graph_portfolio_json(&report).expect("canonical JSON");
+    assert!(json.contains("function") && json.contains("rust"));
+    for sum in ["0.75", "0.375"] {
+        assert!(
+            !text.contains(sum) && !json.contains(sum),
+            "{sum}: a sum or average across partitions or repositories appeared"
+        );
+    }
 }
 
 // ------------------------------------------------------------- the gates
@@ -344,15 +490,12 @@ fn tc_480_041_every_compatibility_premise_blocks_a_delta_independently() {
         );
     }
 
-    let mutations: [Mutation; 7] = [
+    let mutations: [Mutation; 6] = [
         (GraphCompatibilityCode::PlanChanged, |value| {
             value["observations"][0]["planId"] = Value::String("gp-other".to_owned());
         }),
         (GraphCompatibilityCode::DefinitionChanged, |value| {
             value["observations"][0]["definitionVersion"] = Value::String("gq-2".to_owned());
-        }),
-        (GraphCompatibilityCode::ConfigurationChanged, |value| {
-            value["configDigest"] = Value::String("sha256:changed".to_owned());
         }),
         (GraphCompatibilityCode::ToolChanged, |value| {
             value["toolVersion"] = Value::String("changed".to_owned());
@@ -449,12 +592,12 @@ fn retired_plan_evidence_is_reported_incomparable() {
     );
 }
 
-/// The retained producer and scorer identities reach every view.
+/// The producer's observation id reaches every view.
 ///
 /// Trace: FR-067-AC-6
 /// Provenance: quoin#480
 #[test]
-fn tc_480_042_raw_identities_reach_every_view() {
+fn tc_480_042_the_observation_id_reaches_every_view() {
     let report = build(&[one(
         "/repos/a",
         vec![
@@ -466,34 +609,19 @@ fn tc_480_042_raw_identities_reach_every_view() {
     assert_eq!(quality.history.len(), 2, "both readings are historical");
     for row in &quality.history {
         assert_eq!(
-            row.scorer_digest.as_deref(),
-            Some(SCORER_DIGEST),
-            "{}: the history row carries the retained scorer digest",
-            row.id
-        );
-        assert!(
-            row.producer_record_digest
-                .as_deref()
-                .is_some_and(|digest| digest.starts_with("sha256:")),
-            "{}: the history row carries the producer record digest",
+            row.observation_id.as_deref(),
+            Some(format!("obs-{}", row.id).as_str()),
+            "{}: the history row carries the producer's observation id",
             row.id
         );
     }
     let comparison = quality.comparison.as_ref().expect("a comparison");
-    assert_eq!(
-        comparison.before.scorer_digest.as_deref(),
-        Some(SCORER_DIGEST)
-    );
     assert!(
-        comparison
-            .after
-            .producer_record_digest
-            .as_deref()
-            .is_some_and(|digest| digest.starts_with("sha256:")),
+        comparison.after.observation_id.is_some(),
         "the compared reading carries its producer identity"
     );
     let current = quality.current.as_ref().expect("a current reading");
-    assert_eq!(current.scorer_digest.as_deref(), Some(SCORER_DIGEST));
+    assert!(current.observation_id.is_some());
 }
 
 /// Structural report objects are carried unchanged, and an absent input is
@@ -661,34 +789,6 @@ fn tc_480_044_corruption_is_a_local_gap() {
             .map(|row| row.id.as_str()),
         Some("other"),
         "one repository's corruption does not hide another's evidence"
-    );
-
-    // Retained bytes that do not hash to the digest the producer declared are
-    // not a current reading, and say so.
-    let corrupt = build(&[one(
-        "/repos/c",
-        vec![collection_with(
-            "bad-attachment",
-            "2026-08-31T00:00:00Z",
-            |value| {
-                value["rawEvidence"]["scorer"]["bytesBase64"] =
-                    Value::String("Y2hhbmdlZA==".to_owned());
-            },
-        )],
-    )]);
-    assert!(
-        corrupt.repositories[0].graph_quality.current.is_none(),
-        "a corrupt attachment is not a current reading"
-    );
-    assert!(
-        corrupt.repositories[0].gaps.iter().any(|gap| {
-            gap.availability == GapAvailability::Unreadable
-                && gap
-                    .path
-                    .as_deref()
-                    .is_some_and(|path| path.contains("bad-attachment"))
-        }),
-        "the corrupt attachment is a gap naming the record it is in"
     );
 }
 
@@ -872,7 +972,7 @@ fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
     /// The modules that are `graph-portfolio.ts`. `loader` and `structural` are
     /// deliberately absent: they are `graph-portfolio-load.ts`, the one part
     /// that is *allowed* to read bytes and to call FR-062.
-    const PROJECTION_MODULES: [&str; 14] = [
+    const PROJECTION_MODULES: [&str; 13] = [
         "availability.rs",
         "build.rs",
         "compare.rs",
@@ -885,7 +985,6 @@ fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
         "render.rs",
         "render_json.rs",
         "report.rs",
-        "scorer.rs",
         "text.rs",
     ];
 
@@ -902,7 +1001,7 @@ fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
     ];
 
     /// Below this the census is reading an empty tree.
-    const SOURCE_FLOOR: usize = 14;
+    const SOURCE_FLOOR: usize = 13;
 
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut measured = 0_usize;
@@ -934,10 +1033,10 @@ fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
 }
 
 /// The captured producer record, adapted by FR-066: the collection it becomes,
-/// the plan it was governed by, and the two identities it declared.
-fn adapted_producer_evidence() -> (MeasurementCollection, MeasurementPlan, String, String) {
+/// the plan it was governed by, and the observation id it declared.
+fn adapted_producer_evidence() -> (MeasurementCollection, MeasurementPlan, String) {
     let capture =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/goldens/graph-adapter-verdicts.json");
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/graph-adapter-cases.json");
     let golden: Value = serde_json::from_str(
         &std::fs::read_to_string(&capture)
             .unwrap_or_else(|error| panic!("{}: unreadable: {error}", capture.display())),
@@ -973,7 +1072,6 @@ fn adapted_producer_evidence() -> (MeasurementCollection, MeasurementPlan, Strin
         path: "spec/assurance/MP-001-graph-quality.md".to_owned(),
         owner: Some("assurance-team".to_owned()),
         action: Some("repair retained evidence".to_owned()),
-        preregistration: None,
         ground_truth_kind: None,
         statistical_design: None,
         objective: None,
@@ -1002,15 +1100,10 @@ fn adapted_producer_evidence() -> (MeasurementCollection, MeasurementPlan, Strin
         .as_str()
         .expect("the record declares its identity")
         .to_owned();
-    let declared_scorer = input["record"]["raw_scorer_output"]["digest"]
-        .as_str()
-        .expect("the record declares its scorer digest")
-        .to_owned();
     (
         transcribed.collection().clone(),
         producer_plan,
         declared_identity,
-        declared_scorer,
     )
 }
 
@@ -1021,7 +1114,7 @@ fn adapted_producer_evidence() -> (MeasurementCollection, MeasurementPlan, Strin
 /// Provenance: quoin#480
 #[test]
 fn tc_480_048_adapted_evidence_reaches_the_portfolio_intact() {
-    let (adapted, producer_plan, declared_identity, declared_scorer) = adapted_producer_evidence();
+    let (adapted, producer_plan, declared_identity) = adapted_producer_evidence();
     let snapshot = PortfolioCollectionSnapshot {
         root: PathBuf::from("/repos/a"),
         collections: vec![adapted.clone()],
@@ -1049,14 +1142,9 @@ fn tc_480_048_adapted_evidence_reaches_the_portfolio_intact() {
         .as_ref()
         .expect("the adapted evidence is a current reading");
     assert_eq!(
-        current.producer_record_digest.as_deref(),
+        current.observation_id.as_deref(),
         Some(declared_identity.as_str()),
         "the producer's own record identity survives both halves unchanged"
-    );
-    assert_eq!(
-        current.scorer_digest.as_deref(),
-        Some(declared_scorer.as_str()),
-        "the retained scorer identity survives both halves unchanged"
     );
     assert!(
         current.partitions.len() > 1,

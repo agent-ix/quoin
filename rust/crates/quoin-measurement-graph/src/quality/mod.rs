@@ -7,7 +7,6 @@
 //! (`src/measurement/graph-adapters.ts:269-680`).
 
 pub mod adapt;
-pub mod identity;
 pub mod normalize;
 pub mod population;
 pub mod producer;
@@ -18,7 +17,7 @@ use serde::Deserialize as _;
 use serde_json::Value;
 
 use crate::error::{GraphAdapterError, GraphAdapterErrorCode, Result};
-use crate::scalars::Sha256Reference;
+use crate::scalars::NonEmptyText;
 use crate::wire::{GraphQualityRecordType, SchemaVersion1};
 use population::Population;
 use producer::{MeasurementPlanReference, Producer, RawScorerOutput};
@@ -35,8 +34,9 @@ pub struct GraphQualityObservationV1 {
     pub schema_version: SchemaVersion1,
     /// Always `graph_quality_observation`.
     pub record_type: GraphQualityRecordType,
-    /// The record's own identity, which [`identity`] re-derives.
-    pub observation_id: Sha256Reference,
+    /// The record's identity: an opaque unique string (a UUID) the producer
+    /// assigned, taken as stated and never derived from the record's content.
+    pub observation_id: NonEmptyText,
     /// What produced it.
     pub producer: Producer,
     /// Which plan it is against.

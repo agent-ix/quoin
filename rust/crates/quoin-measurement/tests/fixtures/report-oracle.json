@@ -1,7 +1,5 @@
 {
-  "produced_by": "src/measurement/intervention-report.ts, src/measurement/operational-report.ts",
-  "produced_from_revision": "a2b5dfc0bff556baec8e1a417678985846fd235d",
-  "capture_script": "eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-measurement/oracle/capture-report-oracle.mjs",
+  "produced_by": "TypeScript src/measurement/intervention-report.ts and operational-report.ts (deleted at quoin#479); a frozen capture, node not re-run",
   "intervention": [
     {
       "name": "empty",
@@ -294,7 +292,7 @@
           }
         }
       ],
-      "rendered": "## Intervention experiments\n\n### p-beta\n\n#### Claims\n\n- the larger model lowers latency\n\n#### Evidence\n\n- t1/budget: baseline 1e+21, treatment 1e-7, effect unquantified usd\n- t1/flaky: baseline true, treatment null, effect null boolean\n- t1/pass_rate: baseline 0.5, treatment 1, effect 0.5 ratio\n- t2/latency_ms: baseline 120, treatment 95.5, effect -24.5 ms\n- a/first.json \u2014 sha256:aa; 1 bytes; application/json\n- b/second.json \u2014 sha256:bb; 2 bytes; application/json\n\n#### Counterevidence\n\n- confounder: machine load (unknown)\n- interaction: cache warms across arms (uncontrolled)\n- interaction: unknown coupling (unknown)\n\n#### Gaps\n\n- no third arm\n\n#### Owner\n\nqa\n\n#### Actions\n\n- repeat at scale\n"
+      "rendered": "## Intervention experiments\n\n### p-beta\n\n#### Claims\n\n- the larger model lowers latency\n\n#### Evidence\n\n- t1/budget: baseline 1e+21, treatment 1e-7, effect unquantified usd\n- t1/flaky: baseline true, treatment null, effect null boolean\n- t1/pass_rate: baseline 0.5, treatment 1, effect 0.5 ratio\n- t2/latency_ms: baseline 120, treatment 95.5, effect -24.5 ms\n- a/first.json — sha256:aa; 1 bytes; application/json\n- b/second.json — sha256:bb; 2 bytes; application/json\n\n#### Counterevidence\n\n- confounder: machine load (unknown)\n- interaction: cache warms across arms (uncontrolled)\n- interaction: unknown coupling (unknown)\n\n#### Gaps\n\n- no third arm\n\n#### Owner\n\nqa\n\n#### Actions\n\n- repeat at scale\n"
     },
     {
       "name": "single_bare",
@@ -1012,7 +1010,7 @@
           }
         }
       ],
-      "rendered": "## Intervention experiments\n\n### p-zulu\n\n#### Claims\n\n- nothing was established\n\n#### Evidence\n\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\nNo declared gaps.\n\n#### Owner\n\nqa\n\n#### Actions\n\n\n### p-alpha\n\n#### Claims\n\n- nothing was established\n\n#### Evidence\n\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\nNo declared gaps.\n\n#### Owner\n\nqa\n\n#### Actions\n\n\n### p-beta\n\n#### Claims\n\n- the larger model lowers latency\n\n#### Evidence\n\n- t1/budget: baseline 1e+21, treatment 1e-7, effect unquantified usd\n- t1/flaky: baseline true, treatment null, effect null boolean\n- t1/pass_rate: baseline 0.5, treatment 1, effect 0.5 ratio\n- t2/latency_ms: baseline 120, treatment 95.5, effect -24.5 ms\n- a/first.json \u2014 sha256:aa; 1 bytes; application/json\n- b/second.json \u2014 sha256:bb; 2 bytes; application/json\n\n#### Counterevidence\n\n- confounder: machine load (unknown)\n- interaction: cache warms across arms (uncontrolled)\n- interaction: unknown coupling (unknown)\n\n#### Gaps\n\n- no third arm\n\n#### Owner\n\nqa\n\n#### Actions\n\n- repeat at scale\n"
+      "rendered": "## Intervention experiments\n\n### p-zulu\n\n#### Claims\n\n- nothing was established\n\n#### Evidence\n\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\nNo declared gaps.\n\n#### Owner\n\nqa\n\n#### Actions\n\n\n### p-alpha\n\n#### Claims\n\n- nothing was established\n\n#### Evidence\n\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\nNo declared gaps.\n\n#### Owner\n\nqa\n\n#### Actions\n\n\n### p-beta\n\n#### Claims\n\n- the larger model lowers latency\n\n#### Evidence\n\n- t1/budget: baseline 1e+21, treatment 1e-7, effect unquantified usd\n- t1/flaky: baseline true, treatment null, effect null boolean\n- t1/pass_rate: baseline 0.5, treatment 1, effect 0.5 ratio\n- t2/latency_ms: baseline 120, treatment 95.5, effect -24.5 ms\n- a/first.json — sha256:aa; 1 bytes; application/json\n- b/second.json — sha256:bb; 2 bytes; application/json\n\n#### Counterevidence\n\n- confounder: machine load (unknown)\n- interaction: cache warms across arms (uncontrolled)\n- interaction: unknown coupling (unknown)\n\n#### Gaps\n\n- no third arm\n\n#### Owner\n\nqa\n\n#### Actions\n\n- repeat at scale\n"
     }
   ],
   "operational": [
@@ -1145,7 +1143,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-available\n\n#### Claims\n\n- release control release-gate is available for quoin\n\n#### Evidence\n\n- surface gh workflow; coverage all releases\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-available\n\n#### Claims\n\n- release control release-gate is available for quoin\n\n#### Evidence\n\n- surface gh workflow; coverage all releases\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     },
     {
       "name": "capability_unknown",
@@ -1267,7 +1265,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-unknown\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n- capability state is unknown for release-gate\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-unknown\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n- capability state is unknown for release-gate\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     },
     {
       "name": "capability_unavailable",
@@ -1390,7 +1388,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-unavailable\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\n- release-gate capability is unavailable\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-unavailable\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate capability is unavailable\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     },
     {
       "name": "capability_not_applicable",
@@ -1513,7 +1511,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-not-applicable\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\n- release-gate capability is not_applicable\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-not-applicable\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate capability is not_applicable\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     },
     {
       "name": "exercise_succeeded_clock_met",
@@ -1643,7 +1641,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-met\n\n#### Claims\n\n- release control release-gate was exercised successfully\n\n#### Evidence\n\n- actual exercise completed 2026-03-01T00:05:00.000Z; clock met\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-met\n\n#### Claims\n\n- release control release-gate was exercised successfully\n\n#### Evidence\n\n- actual exercise completed 2026-03-01T00:05:00.000Z; clock met\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     },
     {
       "name": "exercise_succeeded_clock_not_applicable",
@@ -1770,7 +1768,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-na\n\n#### Claims\n\n- release control release-gate was exercised successfully\n\n#### Evidence\n\n- actual exercise completed 2026-03-01T00:05:00.000Z; clock not_applicable\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-na\n\n#### Claims\n\n- release control release-gate was exercised successfully\n\n#### Evidence\n\n- actual exercise completed 2026-03-01T00:05:00.000Z; clock not_applicable\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     },
     {
       "name": "exercise_open",
@@ -1896,7 +1894,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-open\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n- release-gate exercise is partial; clock open\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-open\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n- release-gate exercise is partial; clock open\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     },
     {
       "name": "exercise_missed",
@@ -2024,7 +2022,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-missed\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\n- release-gate exercise is failed; clock missed\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-missed\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate exercise is failed; clock missed\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     },
     {
       "name": "exercise_succeeded_but_clock_missed",
@@ -2152,7 +2150,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-succeeded-missed\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\n- release-gate exercise is succeeded; clock missed\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-succeeded-missed\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate exercise is succeeded; clock missed\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     },
     {
       "name": "ordering",
@@ -2519,7 +2517,7 @@
           ]
         }
       ],
-      "rendered": "## Operational evidence\n\n### op-c\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\n- release-gate exercise is failed; clock missed\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n\n### op-a\n\n#### Claims\n\n- release control release-gate is available for quoin\n\n#### Evidence\n\n- surface gh workflow; coverage all releases\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n\n### op-b\n\n#### Claims\n\n- release control release-gate was exercised successfully\n\n#### Evidence\n\n- actual exercise completed 2026-03-01T00:05:00.000Z; clock met\n- a/workflow.yaml \u2014 sha256:aa\n- z/run.json \u2014 sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+      "rendered": "## Operational evidence\n\n### op-c\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate exercise is failed; clock missed\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n\n### op-a\n\n#### Claims\n\n- release control release-gate is available for quoin\n\n#### Evidence\n\n- surface gh workflow; coverage all releases\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n\n### op-b\n\n#### Claims\n\n- release control release-gate was exercised successfully\n\n#### Evidence\n\n- actual exercise completed 2026-03-01T00:05:00.000Z; clock met\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
     }
   ]
 }

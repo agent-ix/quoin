@@ -66,7 +66,7 @@ use std::collections::BTreeMap;
 use engineering_assurance::measurement::{Direction, Objective};
 use quoin_store::JsonValue;
 
-use crate::compare::incomplete;
+use crate::compare::{PathMovement, incomplete};
 pub use crate::report::gate::GateOutcome;
 use crate::report::gate::gate;
 use crate::types::collection::MeasurementCollection;
@@ -105,6 +105,9 @@ pub enum InconclusiveReason {
     /// In a protected series, the newest collection, or one behind an earlier
     /// value, recorded no protected apparatus (PLAT-975).
     ApparatusUnrecorded,
+    /// Git could not say whether the protected files differ between the two
+    /// collections' source revisions (FR-110).
+    ApparatusUnverifiable,
     /// A `gate` plan states no `statistical_design.decision_rule` (PLAT-958
     /// part 2). `objective.bound` is informational only and is never a
     /// substitute.
@@ -134,7 +137,7 @@ pub enum InconclusiveReason {
 
 impl InconclusiveReason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 17] = [
         Self::NoCurrentValue,
         Self::PlanMismatch,
         Self::DefinitionMismatch,
@@ -145,6 +148,7 @@ impl InconclusiveReason {
         Self::NoBound,
         Self::ApparatusChanged,
         Self::ApparatusUnrecorded,
+        Self::ApparatusUnverifiable,
         Self::NoDecisionRule,
         Self::ConstantPredictorUnsupported,
         Self::ExternalReferenceUnsupplied,
@@ -167,6 +171,7 @@ impl InconclusiveReason {
             Self::NoBound => "no_bound",
             Self::ApparatusChanged => "apparatus_changed",
             Self::ApparatusUnrecorded => "apparatus_unrecorded",
+            Self::ApparatusUnverifiable => "apparatus_unverifiable",
             Self::NoDecisionRule => "no_decision_rule",
             Self::ConstantPredictorUnsupported => "constant_predictor_unsupported",
             Self::ExternalReferenceUnsupplied => "external_reference_unsupplied",
@@ -203,6 +208,9 @@ impl InconclusiveReason {
                 "an earlier value was measured with a different protected apparatus"
             }
             Self::ApparatusUnrecorded => "a collection recorded no protected apparatus",
+            Self::ApparatusUnverifiable => {
+                "git cannot say whether the protected files differ between the source revisions"
+            }
             Self::NoDecisionRule => "the plan states no decision rule",
             Self::ConstantPredictorUnsupported => {
                 "the rule's constant-predictor baseline needs per-item answers no collection carries"
@@ -384,12 +392,13 @@ pub fn stage_verdict(
     observation: Option<&MeasurementObservation>,
     collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
+    movement: Option<&dyn PathMovement>,
 ) -> Option<StageVerdict> {
     let objective = plan.objective?;
     match plan.stage {
         MeasurementStage::Ratchet => Some(StageVerdict::Ratchet {
             objective,
-            outcome: ratchet(plan, objective, observation, collection, earlier),
+            outcome: ratchet(plan, objective, observation, collection, earlier, movement),
         }),
         MeasurementStage::Target => Some(StageVerdict::Target {
             objective,
@@ -397,7 +406,7 @@ pub fn stage_verdict(
         }),
         MeasurementStage::Gate => Some(StageVerdict::Gate {
             objective,
-            outcome: gate(plan, observation, collection, earlier),
+            outcome: gate(plan, observation, collection, earlier, movement),
         }),
         MeasurementStage::Observe
         | MeasurementStage::Baseline
@@ -493,6 +502,7 @@ fn ratchet(
     observation: Option<&MeasurementObservation>,
     collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
+    movement: Option<&dyn PathMovement>,
 ) -> RatchetOutcome {
     let (observation, current) = match usable(plan, observation) {
         Ok(found) => found,
@@ -501,7 +511,7 @@ fn ratchet(
     let Some(current_badness) = badness(objective, current) else {
         return RatchetOutcome::Inconclusive(InconclusiveReason::NoBound);
     };
-    if let Err(reason) = same_apparatus(plan, observation, collection, earlier) {
+    if let Err(reason) = same_apparatus(plan, observation, collection, earlier, movement) {
         return RatchetOutcome::Inconclusive(reason);
     }
     let best = earlier_values(plan, observation.dimensions.entries(), earlier)
@@ -544,11 +554,17 @@ pub(super) fn same_apparatus(
     observation: &MeasurementObservation,
     collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
+    movement: Option<&dyn PathMovement>,
 ) -> Result<(), InconclusiveReason> {
     let plan_id = plan.id.as_str();
     let own = collection.and_then(|found| found.protected_apparatus_of(plan_id));
-    let theirs: Vec<_> = earlier_values(plan, observation.dimensions.entries(), earlier)
-        .map(|(_, found)| found.protected_apparatus_of(plan_id))
+    let behind: Vec<&MeasurementCollection> =
+        earlier_values(plan, observation.dimensions.entries(), earlier)
+            .map(|(_, found)| found)
+            .collect();
+    let theirs: Vec<_> = behind
+        .iter()
+        .map(|found| found.protected_apparatus_of(plan_id))
         .collect();
     if plan.protected_apparatus.is_none() && own.is_none() && theirs.iter().all(Option::is_none) {
         return Ok(());
@@ -559,6 +575,28 @@ pub(super) fn same_apparatus(
     }
     if theirs.iter().any(|set| *set != Some(own)) {
         return Err(InconclusiveReason::ApparatusChanged);
+    }
+    // The same set of paths is not the same files: git says whether any of
+    // them differ between the two source revisions (FR-110).
+    let (Some(movement), Some(newest)) = (movement, collection) else {
+        return Ok(());
+    };
+    let paths: Vec<String> = own.iter().cloned().collect();
+    for earlier in behind {
+        if earlier.source_revision == newest.source_revision {
+            continue;
+        }
+        match movement.changed(
+            earlier.source_revision.as_str(),
+            newest.source_revision.as_str(),
+            &paths,
+        ) {
+            None => return Err(InconclusiveReason::ApparatusUnverifiable),
+            Some(changed) if !changed.is_empty() => {
+                return Err(InconclusiveReason::ApparatusChanged);
+            }
+            Some(_) => {}
+        }
     }
     Ok(())
 }

@@ -4,17 +4,10 @@
 //!
 //! # Parse, don't validate
 //!
-//! `quoin_store::RawFileSha256Digest::parse_stored` is the in-repo model: it
-//! returns the type, and holding the type *is* the proof. Every constructor
-//! here does the same. The retained TypeScript instead validates with
-//! predicates and keeps passing the `string` around
-//! (`store.ts:104-109`'s `safeId`, `validate.ts:118-124`'s digest regexes), so
-//! every consumer re-checks or forgets to.
-//!
-//! `RawFileSha256Digest` is used directly for the three digest-bearing fields
-//! rather than wrapped again — `verificationStack.lockDigest`,
-//! `.executableDigest` and each `.artifacts` member all carry the
-//! `sha256:<64 hex>` spelling that type already owns.
+//! Every constructor here returns the type, and holding the type *is* the
+//! proof. The retained TypeScript instead validates with predicates and keeps
+//! passing the `string` around (`store.ts:104-109`'s `safeId`), so every
+//! consumer re-checks or forgets to.
 
 use std::fmt;
 

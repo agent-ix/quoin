@@ -94,6 +94,9 @@ pub enum Reason {
     /// In a protected series, a run — the candidate or an earlier one —
     /// recorded no protected apparatus (PLAT-975).
     ApparatusUnrecorded,
+    /// Git was asked whether the protected files differ between a run's
+    /// source revision and the candidate's and could not answer (FR-110).
+    ApparatusUnverifiable,
     /// The plan's rule states an `interval_level` and the candidate's
     /// observation states no `interval` (EA-26, FR-108-AC-12).
     IntervalUnstated,
@@ -125,12 +128,6 @@ pub enum Reason {
     ApparatusEdit,
     /// The claimed verdict is not the checker's.
     ClaimedVerdictDisagrees,
-    /// A collection's recorded protected-apparatus digest for this plan does
-    /// not match `git show <sourceRevision>:<path>` — the file's actual
-    /// bytes at the commit the collection claims to be from. A collection
-    /// written by hand, rather than through intake's own resolver, can state
-    /// any digest it likes; this is the check that catches it (PLAT-985).
-    ApparatusForged,
     /// A collection that measured this plan was added to the store and later
     /// removed, so it no longer appears among the runs counted — detected
     /// from the store's git history, not from anything a producer states
@@ -170,6 +167,7 @@ impl Reason {
         Self::SliceMissing,
         Self::ObservationMissing,
         Self::ApparatusUnrecorded,
+        Self::ApparatusUnverifiable,
         Self::RuleNotMet,
         Self::ValueDisagreesWithRows,
         Self::PopulationBelowMinimum,
@@ -178,7 +176,6 @@ impl Reason {
         Self::RerunUntilPass,
         Self::ApparatusEdit,
         Self::ClaimedVerdictDisagrees,
-        Self::ApparatusForged,
         Self::CollectionDeleted,
         Self::CollectionEdited,
         Self::DefinitionChangedWithoutVersionBump,
@@ -209,6 +206,7 @@ impl Reason {
             Self::SliceMissing => "slice_missing",
             Self::ObservationMissing => "observation_missing",
             Self::ApparatusUnrecorded => "apparatus_unrecorded",
+            Self::ApparatusUnverifiable => "apparatus_unverifiable",
             Self::IntervalUnstated => "interval_unstated",
             Self::RuleNotMet => "rule_not_met",
             Self::ValueDisagreesWithRows => "value_disagrees_with_rows",
@@ -220,7 +218,6 @@ impl Reason {
             Self::RerunUntilPass => "rerun_until_pass",
             Self::ApparatusEdit => "apparatus_edit",
             Self::ClaimedVerdictDisagrees => "claimed_verdict_disagrees",
-            Self::ApparatusForged => "apparatus_forged",
             Self::CollectionDeleted => "collection_deleted",
             Self::CollectionEdited => "collection_edited",
             Self::DefinitionChangedWithoutVersionBump => "definition_changed_without_version_bump",
@@ -271,6 +268,7 @@ impl Reason {
             | Self::SliceMissing
             | Self::ObservationMissing
             | Self::ApparatusUnrecorded
+            | Self::ApparatusUnverifiable
             | Self::IntervalUnstated => Verdict::Inconclusive,
             Self::RuleNotMet
             | Self::ValueDisagreesWithRows
@@ -282,7 +280,6 @@ impl Reason {
             | Self::RerunUntilPass
             | Self::ApparatusEdit
             | Self::ClaimedVerdictDisagrees
-            | Self::ApparatusForged
             | Self::CollectionDeleted
             | Self::CollectionEdited
             | Self::DefinitionChangedWithoutVersionBump => Verdict::Reject,
