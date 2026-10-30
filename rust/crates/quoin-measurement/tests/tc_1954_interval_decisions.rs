@@ -547,7 +547,13 @@ fn tc_1960_a_relative_margin_is_applied_in_verify() {
 /// stage verdict over them.
 fn gate_outcome(plan: &MeasurementPlan, runs: &[MeasurementCollection]) -> GateOutcome {
     let (newest, earlier) = runs.split_last().expect("at least one run");
-    match stage_verdict(plan, newest.observations.first(), Some(newest), earlier) {
+    match stage_verdict(
+        plan,
+        newest.observations.first(),
+        Some(newest),
+        earlier,
+        None,
+    ) {
         Some(StageVerdict::Gate { outcome, .. }) => outcome,
         other => panic!("a gate plan states a gate verdict, not {other:?}"),
     }

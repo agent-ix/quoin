@@ -31,7 +31,7 @@ mod population;
 pub(crate) mod read;
 mod stack;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use quoin_store::{JsonObject, JsonValue};
 
@@ -100,7 +100,6 @@ fn parse_stored_measurement_collection(
     let subject = read::non_empty(object, "subject", CODE, "collection")?;
     let tool_identity = read::non_empty(object, "toolIdentity", CODE, "collection")?;
     let tool_version = read::non_empty(object, "toolVersion", CODE, "collection")?;
-    let config_digest = read::non_empty(object, "configDigest", CODE, "collection")?;
     let timestamp = read::non_empty(object, "timestamp", CODE, "collection")?;
     let source_revision = read::non_empty(object, "sourceRevision", CODE, "collection")?;
 
@@ -127,12 +126,9 @@ fn parse_stored_measurement_collection(
     // The stack's own failure is kept alongside the parse instead of `?`-ing
     // immediately, so a caller checking further collection-level rules can
     // still see the observations read below (PLAT-929, review finding #5(a)
-    // on quoin#580). `configDigest`'s shape rides along in the same call
-    // (PLAT-939): it is a collection-envelope member, not a `verificationStack`
-    // one, but it is checked at the same schemaVersion-2 gate as `lockDigest`
-    // and `executableDigest`.
+    // on quoin#580).
     let (verification_stack, stack_error) = if schema_version == MEASUREMENT_SCHEMA_VERSION {
-        match stack::verification_stack(object.get("verificationStack"), config_digest.as_str()) {
+        match stack::verification_stack(object.get("verificationStack")) {
             Ok(stack) => (Some(stack), None),
             Err(error) => (None, Some(error)),
         }
@@ -168,7 +164,6 @@ fn parse_stored_measurement_collection(
             scope: object.get("scope").cloned().unwrap_or(JsonValue::Null),
             tool_identity,
             tool_version,
-            config_digest,
             timestamp,
             source_revision,
             corpus_revision: read::string(object, "corpusRevision").map(str::to_owned),
@@ -297,43 +292,6 @@ pub fn measurement_collection(
         for (code, finding) in interval::findings(observation, population_plan) {
             typed.push(code);
             findings.push(format!("{code}: {finding}"));
-        }
-    }
-
-    // PLAT-936: tamper evidence, not an ordering proof. A plan that declares a
-    // `preregistration` block asserts that its own "Comparison and
-    // Enforcement" section reads today the way it did when the digest was
-    // recorded; this is the one place that assertion is checked, and only for
-    // a *new* collection — `stored_measurement_collection` never reaches this
-    // function, so historical evidence is unaffected. Residual gaps this does
-    // not close (reporting only a favourable pre-registered variant, a
-    // repeated re-run, editing an unprotected input such as the baseline
-    // instead of the bar text) are exactly what PLAT-935's design research
-    // found this class of check cannot buy, and nothing here claims
-    // otherwise.
-    //
-    // Run once per distinct metric actually referenced by an observation, not
-    // once per observation: two observations against the same gate plan (e.g.
-    // different dimensions) share one preregistration, and duplicating an
-    // identical finding for each would misreport how many distinct problems a
-    // candidate has (review finding #3 on quoin#583).
-    let mut checked_metrics = BTreeSet::new();
-    for observation in &collection.observations {
-        let metric = observation.metric.as_str();
-        if !checked_metrics.insert(metric) {
-            continue;
-        }
-        let Some(plan) = by_metric.get(metric) else {
-            continue;
-        };
-        if let Some(preregistration) = &plan.preregistration
-            && !preregistration.matches()
-        {
-            findings.push(format!(
-                "metric `{metric}` plan {} bar text no longer matches its pre-registered digest \
-                 {}; the \"Comparison and Enforcement\" section was edited since it was recorded",
-                plan.id, preregistration.declared_digest
-            ));
         }
     }
 

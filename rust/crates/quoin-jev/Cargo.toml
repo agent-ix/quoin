@@ -37,8 +37,7 @@ quoin-modules = { workspace = true }
 # literals in two crates.
 quoin-measurement = { workspace = true }
 # The cassette's request key (PLAT-977) is the canonical JSON text of
-# `{state, questions}` from this crate's own `canonicalize_jcs`, rather than a
-# second, hand-rolled canonicalizer.
+# `{state, questions}` through this crate's own `canonical_json`.
 quoin-store = { workspace = true }
 # `corpus_check`'s "N of M" prose scan (PLAT-933) -- already a workspace
 # dependency (see the pin's own comment in the root `Cargo.toml`), so this

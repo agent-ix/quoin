@@ -218,12 +218,6 @@ fn compatibility_reasons(
     )?;
     mismatch(
         &mut reasons,
-        GraphCompatibilityCode::ConfigurationChanged,
-        &JsonValue::string(before.config_digest.as_str()),
-        &JsonValue::string(after.config_digest.as_str()),
-    )?;
-    mismatch(
-        &mut reasons,
         GraphCompatibilityCode::ToolChanged,
         &JsonValue::string(format!(
             "{}@{}",

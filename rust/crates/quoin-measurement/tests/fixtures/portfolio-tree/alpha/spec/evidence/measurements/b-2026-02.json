@@ -1,6 +1,5 @@
 {
   "collectionId": "b-2026-02",
-  "configDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "corpusRevision": "corpus-two",
   "environment": {
     "ci": "true"
@@ -80,15 +79,13 @@
   "toolIdentity": "quoin",
   "toolVersion": "0.9.0",
   "verificationStack": {
-    "artifacts": {
-      "quoin-core": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
-    },
+    "artifacts": [
+      "quoin-core"
+    ],
     "buildProfile": "release",
     "capabilities": [
       "measure"
     ],
-    "executableDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
-    "lockDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "schemaVersion": "verification-stack-attestation-v1",
     "sources": {
       "quoin": {

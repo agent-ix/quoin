@@ -18,9 +18,8 @@
 //! [`quoin_measurement::Rfc3339DateTime`], unified on the permissive RFC 3339
 //! reading by quoin#440 — and the Stage 6 plan §5 forbids a seventh. So a
 //! timestamp V8's heuristic accepts and RFC 3339 does not is newly refused.
-//! That is declared in `tests/tc_475_parity.rs` and measured against the
-//! oracle, not assumed: an attestation whose instant cannot be re-read the same
-//! way by a second implementation is not an attestation of *when*.
+//! An attestation whose instant cannot be re-read the same way by a second
+//! implementation is not an attestation of *when*.
 //!
 //! # `Toolchains` is a divergence this crate cannot measure
 //!
@@ -32,8 +31,8 @@
 //! touches every language, and there is deliberately no sentinel spelling of
 //! "not applicable" alongside the real absence.
 //!
-//! Unlike the timestamp divergence above, this one is **not** declared in
-//! `tests/tc_475_parity.rs` against a captured verdict, because there is
+//! Unlike the timestamp divergence above, this one is **not** measured
+//! against a captured verdict, because there is
 //! nothing left to capture one from: quoin#480 (commit `eb0ca08`) deleted
 //! `graph-adapters.ts` and its oracle capture script months before PLAT-930
 //! was filed, and the retired TypeScript governed graph portfolio has run
@@ -52,7 +51,7 @@ use quoin_measurement::Rfc3339DateTime;
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::scalars::{FullRevision, NonEmptyText, Sha256Reference};
+use crate::scalars::{FullRevision, NonEmptyText};
 use crate::wire::{CleanSourceState, ReleaseProfile, VerificationStackVersion};
 
 /// The three language toolchains a producer pins.
@@ -91,10 +90,6 @@ pub struct SourceAttestation {
 pub struct VerificationStack {
     /// Always `verification-stack-attestation-v1`.
     pub schema_version: VerificationStackVersion,
-    /// The dependency lock's digest.
-    pub lock_digest: Sha256Reference,
-    /// The measured executable's digest.
-    pub executable_digest: Sha256Reference,
     /// Always `release`.
     pub build_profile: ReleaseProfile,
     /// The pinned toolchains.
@@ -103,8 +98,8 @@ pub struct VerificationStack {
     pub sources: BTreeMap<String, SourceAttestation>,
     /// The capabilities the producer exercised, non-empty.
     pub capabilities: Vec<NonEmptyText>,
-    /// Every produced artifact and its digest.
-    pub artifacts: BTreeMap<String, Sha256Reference>,
+    /// Every produced artifact's name (FR-044-AC-13).
+    pub artifacts: Vec<NonEmptyText>,
 }
 
 /// One producer invocation's subject, scope, instant and stack.

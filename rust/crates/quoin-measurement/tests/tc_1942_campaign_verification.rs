@@ -911,14 +911,13 @@ fn tc_1942_direct_process_and_checker_publish_protected_collection() {
         ("/subject", json!("wrong-subject")),
         ("/scope/campaign", json!("wrong-campaign")),
         ("/sourceRevision", json!("wrong-revision")),
-        ("/configDigest", json!(format!("sha256:{}", "0".repeat(64)))),
         (
             "/verificationStack/sources/fictional~1source/revision",
             json!("wrong-revision"),
         ),
         (
-            "/verificationStack/artifacts/campaign~1procedure.json",
-            json!(format!("sha256:{}", "0".repeat(64))),
+            "/verificationStack/artifacts/0",
+            json!("campaign/wrong-artifact.json"),
         ),
     ] {
         let mut collection: serde_json::Value =
@@ -1001,12 +1000,15 @@ fn tc_1942_rehashed_producer_arguments_do_not_replay() {
     collection["rawEvidence"]["requestDigest"] = json!(new_request_digest);
     collection["rawEvidence"]["resultDigest"] = json!(new_result_digest);
     let artifacts = collection["verificationStack"]["artifacts"]
-        .as_object_mut()
+        .as_array_mut()
         .expect("attestation artifacts");
     let old_result_key = format!("spec/evidence/campaigns/results/{old_result_digest}.json");
     let new_result_key = format!("spec/evidence/campaigns/results/{new_result_digest}.json");
-    assert!(artifacts.remove(&old_result_key).is_some());
-    artifacts.insert(new_result_key, json!(format!("sha256:{new_result_digest}")));
+    let old_position = artifacts
+        .iter()
+        .position(|name| name == &json!(old_result_key))
+        .expect("the old result is an attested artifact");
+    artifacts[old_position] = json!(new_result_key);
     let collection_bytes = serde_json::to_vec(&collection).expect("rehashed collection JSON");
     let new_collection_digest = digest_bytes_sha256(&collection_bytes).as_hex().to_owned();
     fs::write(collection_path, collection_bytes).expect("substituted collection");

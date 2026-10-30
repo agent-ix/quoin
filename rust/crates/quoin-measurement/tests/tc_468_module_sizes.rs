@@ -68,7 +68,6 @@ const NAMED_OVER_SOFT_CEILING: &[&str] = &[
     "campaign/run/domain.rs",
     "report/verdict.rs",
     "store/apparatus/walk.rs",
-    "validate/stack.rs",
     // PLAT-985: leaf re-scoring's reporting was already here; four new
     // tamper checks (forged apparatus, deleted/edited collections, a
     // definition changed without a version bump) added the `TamperFacts`

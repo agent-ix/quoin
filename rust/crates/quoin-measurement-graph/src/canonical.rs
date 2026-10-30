@@ -23,17 +23,13 @@
 //! premise comparison, for the duplicate-partition key and for the observation
 //! sort order.
 //!
-//! [`compact_bytes`] is the identity form `graphQualityObservationId` digests.
-//! See [`crate::quality::identity`] for the one measured difference between it
-//! and the retained spelling.
-//!
 //! Each has a `stored_*` twin for a value that is already a
 //! [`quoin_store::JsonValue`] — the governed graph portfolio (quoin#476) holds
 //! opaque analyses in that form — so the bridge is crossed only where a
 //! crossing is actually needed.
 
 use quoin_measurement::json_bridge;
-use quoin_store::{JsonValue, canonical_bytes, canonical_json, canonical_json_bytes};
+use quoin_store::{JsonValue, canonical_json, canonical_json_bytes};
 use serde_json::Value;
 
 use crate::error::{GraphAdapterError, GraphAdapterErrorCode, Result};
@@ -105,13 +101,4 @@ pub fn stored_pretty_bytes(value: &JsonValue) -> Result<Vec<u8>> {
 /// As [`pretty_text`].
 pub fn pretty_text_trimmed(value: &Value) -> Result<String> {
     Ok(pretty_text(value)?.trim_end().to_owned())
-}
-
-/// The RFC 8785 compact canonical bytes.
-///
-/// # Errors
-///
-/// As [`pretty_text`].
-pub fn compact_bytes(value: &Value) -> Result<Vec<u8>> {
-    Ok(canonical_bytes(&store_value(value)?)?)
 }

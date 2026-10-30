@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `quoin measurement verify` catches four kinds of tamper that its own
-//! read of the current store, alone, cannot see: a protected-apparatus
-//! digest forged by hand rather than resolved by intake, a protected
+//! `quoin measurement verify` catches three kinds of tamper that its own
+//! read of the current store, alone, cannot see: a protected
 //! apparatus genuinely edited between two real runs, a collection deleted
 //! after being counted, and a collection's stored file edited after the
 //! commit that added it (PLAT-985).
@@ -95,15 +94,11 @@ fn record(repo: &Path, name: &str, timestamp: &str) {
     )
     .unwrap();
     collection["timestamp"] = json!(timestamp);
+    // The revision the run was made at: git compares the protected files
+    // between two such revisions.
+    collection["sourceRevision"] = json!(git_output(repo, &["rev-parse", "HEAD"]));
     let stack = collection["verificationStack"].as_object_mut().unwrap();
     stack.remove("protectedApparatus");
-    // The fixture's hand-pasted `artifacts` digest for the plan document is
-    // stale once a test has edited the plan file: intake's own truth-check
-    // (`declared`/PLAT-931) refuses a stated digest that disagrees with the
-    // real file, so this recomputes it the way `--digest-from-file` would.
-    let plan_bytes = std::fs::read(repo.join("spec/assurance/MP-961-gate.md")).unwrap();
-    let plan_digest = quoin_store::digest_bytes_sha256(&plan_bytes).to_stored();
-    stack["artifacts"]["spec/assurance/MP-961-gate.md"] = json!(plan_digest);
     let input = repo.join("input.json");
     std::fs::write(&input, collection.to_string()).unwrap();
     let output = quoin(
@@ -139,62 +134,6 @@ fn reasons(verdict: &Value) -> Vec<String> {
 
 const MEASUREMENTS: &str = "spec/evidence/measurements";
 
-/// A hand-written collection — never passed through `quoin measurement
-/// record`, which always resolves `protectedApparatus` itself from the real
-/// file — can state any digest it likes for the plan document it protects.
-/// `quoin measurement verify` catches the forgery by checking the recorded
-/// digest against `git show <sourceRevision>:<path>`, the file's real bytes
-/// at the commit the collection claims to be from.
-///
-/// Trace: FR-108-AC-9
-/// Provenance: PLAT-985
-#[test]
-fn tc_985_101_a_forged_protected_apparatus_digest_is_rejected() {
-    let repo = tempfile::tempdir().unwrap();
-    init_with_plan(repo.path(), "MP-961-gate.md");
-    let plan_commit = git_output(repo.path(), &["rev-parse", "HEAD"]);
-
-    // A collection nobody's intake ever wrote: hand-assembled from the
-    // fixture accepted collection, claiming the plan commit as its source
-    // revision and a digest for the protected file that is not its real
-    // sha256.
-    let mut collection: Value = serde_json::from_str(
-        &std::fs::read_to_string(fixtures().join("right/accept/1.json")).unwrap(),
-    )
-    .unwrap();
-    collection["collectionId"] = json!("tamper-forged");
-    collection["sourceRevision"] = json!(plan_commit);
-    let wrong_digest = format!("sha256:{}", "f".repeat(64));
-    collection["verificationStack"]["protectedApparatus"]["MP-961"]["spec/assurance/MP-961-gate.md"] =
-        json!(wrong_digest);
-    collection["verificationStack"]["artifacts"]["spec/assurance/MP-961-gate.md"] =
-        json!(wrong_digest);
-
-    let measurements = repo.path().join(MEASUREMENTS);
-    std::fs::create_dir_all(&measurements).unwrap();
-    std::fs::write(
-        measurements.join("tamper-forged.json"),
-        collection.to_string(),
-    )
-    .unwrap();
-    git(
-        repo.path(),
-        &["add", &format!("{MEASUREMENTS}/tamper-forged.json")],
-    );
-    git(
-        repo.path(),
-        &["commit", "--quiet", "-m", "hand-written collection"],
-    );
-
-    let (status, payload, _) = verdict(repo.path(), "MP-961");
-    assert_eq!(status, Some(1));
-    assert_eq!(payload["verdict"], "reject");
-    assert!(
-        reasons(&payload).contains(&"apparatus_forged".to_owned()),
-        "{payload}"
-    );
-}
-
 /// A protected apparatus genuinely edited between two real runs — recorded
 /// honestly by `quoin measurement record` each time, from the disk as it
 /// stood — is `apparatus_edit`: FR-110's own mechanism (PLAT-975), exercised
@@ -219,7 +158,7 @@ fn tc_985_102_a_real_apparatus_edit_between_two_runs_is_rejected_end_to_end() {
     git(repo.path(), &["commit", "--quiet", "-m", "first run"]);
 
     // The plan document is its own protected apparatus; editing it changes
-    // the digest the next `record` resolves, without bumping
+    // the file git finds changed between the two runs, without bumping
     // `definition_version`.
     let plan_path = repo.path().join("spec/assurance/MP-961-gate.md");
     let plan_text = std::fs::read_to_string(&plan_path).unwrap();
@@ -435,8 +374,7 @@ fn tc_985_106_a_source_revision_spelled_as_a_git_option_is_never_an_option() {
     .unwrap();
     collection["collectionId"] = json!("tamper-option");
     collection["sourceRevision"] = json!(format!("--output={}", written.display()));
-    collection["verificationStack"]["protectedApparatus"]["MP-961"] =
-        json!({ "x": format!("sha256:{}", "f".repeat(64)) });
+    collection["verificationStack"]["protectedApparatus"]["MP-961"] = json!(["x"]);
     let measurements = repo.path().join(MEASUREMENTS);
     std::fs::create_dir_all(&measurements).unwrap();
     std::fs::write(
@@ -656,7 +594,6 @@ fn tc_985_112_honest_history_raises_no_tamper_reason() {
     let (_, payload, stderr) = verdict(repo.path(), "MP-961");
     let reasons = reasons(&payload);
     for tamper in [
-        "apparatus_forged",
         "collection_deleted",
         "collection_edited",
         "definition_changed_without_version_bump",

@@ -68,27 +68,13 @@ pub struct Ranked<'a> {
     /// Its position in an order the producer cannot choose — lower is
     /// earlier, equal is a tie — or `None` when nothing attests one.
     pub intake: Option<u64>,
-    /// Whether this collection's recorded protected-apparatus digests for
-    /// the plan being verified disagree with `git show
-    /// <sourceRevision>:<path>` — the file's actual bytes at the commit the
-    /// collection claims to be from. The caller alone has git, so it checks
-    /// this and hands over the answer; `false` when nothing was checked, so
-    /// a caller with no git access reports no forgery rather than a false
-    /// one (PLAT-985).
-    pub apparatus_forged: bool,
 }
 
 impl<'a> Ranked<'a> {
-    /// A ranked collection with no tamper facts recorded — the common case
-    /// for a caller with no git access to check them, and for a test that is
-    /// not itself exercising PLAT-985's tamper checks.
+    /// A ranked collection at an intake position.
     #[must_use]
     pub const fn new(collection: &'a MeasurementCollection, intake: Option<u64>) -> Self {
-        Self {
-            collection,
-            intake,
-            apparatus_forged: false,
-        }
+        Self { collection, intake }
     }
 }
 
@@ -115,6 +101,11 @@ pub struct TamperFacts<'a> {
     /// `definition_change_without_version_bump`, applied by the caller over
     /// the plan document's git history, which this crate cannot read.
     pub definition_changed_without_version_bump: bool,
+    /// Where git is asked whether a run's protected files differ from the
+    /// candidate's between their `sourceRevision`s (FR-110). Absent when the
+    /// caller has no git: nothing is then found, and no digest is recorded
+    /// or compared either way.
+    pub movement: Option<&'a dyn crate::compare::PathMovement>,
 }
 
 /// One reason, and where it was found.

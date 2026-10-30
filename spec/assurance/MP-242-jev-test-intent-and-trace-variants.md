@@ -180,7 +180,7 @@ A malformed response is never scored as unanswered.
 
 `rust/crates/quoin-jev/tests/live_eval_v2.rs` (`live-api` feature) with
 `QUOIN_JEV_VARIANTS=T0,T0-RT,T1,T2,TC-RT,TC-RC,TC-RTC` and
-`QUOIN_JEV_SPLIT=dev`, with `QUOIN_JEV_CASSETTE` and `QUOIN_JEV_MODEL` set. The
+`QUOIN_JEV_SPLIT=dev`, with `QUOIN_JEV_CASSETTE` set. The
 runner refuses to start a live run that selects any of MP-242's own variants
 (T0-RT, T1, T2 and the three TC variants) without a cassette
 (`intent::require_cassette`). T0 alone does not need one: it is PLAT-1027's
@@ -229,8 +229,7 @@ in the default gate. It checks:
 
 ## Environment and Sampling
 
-The whole dev split, one pass per variant. The model is pinned by
-`QUOIN_JEV_MODEL`, and the run records which model answered every request.
+The whole dev split, one pass per variant. The run records which model answered every request.
 Replications are reported as replications and are not pooled.
 
 ## Interpretation

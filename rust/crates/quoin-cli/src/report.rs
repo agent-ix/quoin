@@ -191,7 +191,7 @@ fn render_series(metric: &str, payload: &serde_json::Value) -> Result<String, St
                 .and_then(serde_json::Value::as_object)
                 .ok_or_else(|| "series entry has no observation".to_owned())?;
             lines.push(format!(
-                "- {} {} {} {} (source {}, tool {} {}, corpus {}, gaps {}, config {})",
+                "- {} {} {} {} (source {}, tool {} {}, corpus {}, gaps {})",
                 value(row, "timestamp"),
                 value(observation, "state"),
                 value(observation, "value"),
@@ -201,7 +201,6 @@ fn render_series(metric: &str, payload: &serde_json::Value) -> Result<String, St
                 value(row, "toolVersion"),
                 value(row, "corpusRevision"),
                 value(row, "corpusGaps"),
-                value(row, "configDigest"),
             ));
         }
     }
@@ -334,7 +333,6 @@ mod tests {
             "toolVersion": [1, null, ["x", { "nested": true }]],
             "corpusRevision": null,
             "corpusGaps": ["gap", null],
-            "configDigest": "cfg",
             "observation": {
                 "state": { "kind": "observed" },
                 "value": [1, null, ["nested", "value"]],
@@ -344,7 +342,7 @@ mod tests {
 
         assert_eq!(
             render_series("coverage", &payload).expect("series payload renders"),
-            "# coverage series\n\n- 2026,09 [object Object] 1,,nested,value percent (source [object Object], tool quoin 1,,x,[object Object], corpus null, gaps gap,, config cfg)\n"
+            "# coverage series\n\n- 2026,09 [object Object] 1,,nested,value percent (source [object Object], tool quoin 1,,x,[object Object], corpus null, gaps gap,)\n"
         );
     }
 }

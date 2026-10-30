@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! PLAT-975: a plan's protected apparatus is resolved and digested when a
+//! PLAT-975: a plan's protected apparatus is resolved (paths only) when a
 //! collection is written, and a comparison, a ratchet verdict and the
-//! verdict checker each refuse to measure across a change to it.
+//! verdict checker each refuse to measure across a change to it, as git
+//! reports it between the collections' source revisions (FR-110).
 //!
 //! Every repository here is a real temporary directory, every collection is
 //! written through `write_measurement_collection` and read back through the
@@ -33,9 +34,9 @@ use quoin_measurement::types::comparison::{ComparisonReasonCode, ComparisonStatu
 use quoin_measurement::types::ids::CollectionId;
 use quoin_measurement::types::plan::MeasurementPlan;
 use quoin_measurement::{
-    MeasurementError, OrderSource, Ranked, Reason, TamperFacts, Verdict, build_measurement_report,
-    compare_measurement_collections, stored_measurement_collection, verify,
-    write_measurement_collection,
+    GitPathMovement, MeasurementError, OrderSource, PathMovement, Ranked, Reason, TamperFacts,
+    Verdict, build_measurement_report, compare_measurement_collections,
+    stored_measurement_collection, verify, write_measurement_collection,
 };
 use serde_json::{Value, json};
 
@@ -87,24 +88,65 @@ fn write(root: &Path, relative: &str, contents: &str) {
     std::fs::write(path, contents).unwrap();
 }
 
-fn digest(root: &Path, relative: &str) -> String {
-    quoin_store::digest_file_sha256(&root.join(relative))
-        .unwrap()
-        .to_stored()
+/// What git is told to report: the named paths differ between the two
+/// source revisions. A test double for [`PathMovement`]; the report-driven
+/// tests below use a real git repository instead.
+#[derive(Debug)]
+struct Differ(Vec<&'static str>);
+
+impl PathMovement for Differ {
+    fn changed(&self, _before: &str, _after: &str, paths: &[String]) -> Option<Vec<String>> {
+        Some(
+            paths
+                .iter()
+                .filter(|path| self.0.contains(&path.as_str()))
+                .cloned()
+                .collect(),
+        )
+    }
 }
 
-/// The digest of every named file as it reads now, plus the `config` label
-/// every fixture collection carries.
-fn artifacts(root: &Path, names: &[&str]) -> Value {
-    let mut map = serde_json::Map::new();
-    map.insert(
-        "config".to_owned(),
-        json!(format!("sha256:{}", "3".repeat(64))),
-    );
-    for name in names {
-        map.insert((*name).to_owned(), json!(digest(root, name)));
+/// A git that cannot answer.
+#[derive(Debug)]
+struct Mute;
+
+impl PathMovement for Mute {
+    fn changed(&self, _before: &str, _after: &str, _paths: &[String]) -> Option<Vec<String>> {
+        None
     }
-    Value::Object(map)
+}
+
+/// The source revision a run at `minute` claims, distinct per minute.
+fn revision_at(minute: u8) -> String {
+    format!("{minute:040x}")
+}
+
+/// Commit everything under `root` and return the new revision.
+fn commit_all(root: &Path) -> String {
+    let git = |args: &[&str]| {
+        let output = std::process::Command::new("git")
+            .current_dir(root)
+            .args(["-c", "user.name=t", "-c", "user.email=t@t.invalid"])
+            .args(args)
+            .output()
+            .expect("git runs");
+        assert!(output.status.success(), "git {args:?}: {output:?}");
+        String::from_utf8(output.stdout).unwrap().trim().to_owned()
+    };
+    if !root.join(".git").exists() {
+        git(&["init", "-q"]);
+    }
+    git(&["add", "-A"]);
+    git(&["commit", "-q", "--allow-empty", "-m", "x"]);
+    git(&["rev-parse", "HEAD"])
+}
+
+/// The named files, plus the `config` label every fixture collection
+/// carries.
+fn artifacts(_root: &Path, names: &[&str]) -> Value {
+    let mut list = vec![json!("config")];
+    list.extend(names.iter().map(|name| json!(name)));
+    Value::Array(list)
 }
 
 /// Every file the plan protects, plus the unprotected tool.
@@ -117,6 +159,11 @@ const ALL_FILES: [&str; 4] = [
 
 /// A new collection of `matched` of 10 passing, at minute `minute`.
 fn candidate(id: &str, minute: u8, matched: u32, artifacts: &Value) -> Value {
+    candidate_at(id, minute, matched, artifacts, &"a".repeat(40))
+}
+
+/// As [`candidate`], at source revision `revision`.
+fn candidate_at(id: &str, minute: u8, matched: u32, artifacts: &Value, revision: &str) -> Value {
     json!({
         "schemaVersion": 2,
         "collectionId": id,
@@ -124,14 +171,11 @@ fn candidate(id: &str, minute: u8, matched: u32, artifacts: &Value) -> Value {
         "scope": { "cases": 10 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1",
-        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": format!("2026-09-22T00:{minute:02}:00.000Z"),
-        "sourceRevision": "a".repeat(40),
+        "sourceRevision": revision,
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
-            "lockDigest": format!("sha256:{}", "1".repeat(64)),
-            "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
             "toolchains": { "rust": "0.0.0" },
             "sources": {
@@ -162,11 +206,16 @@ fn publish(root: &Path, value: &Value) -> Result<PathBuf, MeasurementError> {
     write_measurement_collection(root, &from_serde(value).unwrap())
 }
 
-/// Publish a run whose artifacts map declares every file as it reads now.
+/// Publish a run whose artifact list names every file.
 fn publish_run(root: &Path, id: &str, minute: u8, matched: u32) {
+    publish_run_at(root, id, minute, matched, &"a".repeat(40));
+}
+
+/// As [`publish_run`], at source revision `revision`.
+fn publish_run_at(root: &Path, id: &str, minute: u8, matched: u32, revision: &str) {
     publish(
         root,
-        &candidate(id, minute, matched, &artifacts(root, &ALL_FILES)),
+        &candidate_at(id, minute, matched, &artifacts(root, &ALL_FILES), revision),
     )
     .unwrap_or_else(|error| panic!("{id} is admitted: {error}"));
 }
@@ -194,7 +243,11 @@ fn reasons(rows: &[quoin_measurement::MeasurementComparison]) -> Vec<ComparisonR
     rows[0].reasons.iter().map(|reason| reason.code).collect()
 }
 
-fn checked(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Vec<Reason> {
+fn checked(
+    plan: &MeasurementPlan,
+    collections: &[MeasurementCollection],
+    movement: Option<&dyn PathMovement>,
+) -> Vec<Reason> {
     let ranked: Vec<Ranked<'_>> = (0_u64..)
         .zip(collections)
         .map(|(intake, collection)| Ranked::new(collection, Some(intake)))
@@ -202,14 +255,21 @@ fn checked(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Vec
     verify(
         plan,
         &ranked,
-        TamperFacts::default(),
+        TamperFacts {
+            movement,
+            ..TamperFacts::default()
+        },
         OrderSource::CallerSupplied,
         None,
     )
     .reasons
 }
 
-fn verdict_of(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Verdict {
+fn verdict_of(
+    plan: &MeasurementPlan,
+    collections: &[MeasurementCollection],
+    movement: Option<&dyn PathMovement>,
+) -> Verdict {
     let ranked: Vec<Ranked<'_>> = (0_u64..)
         .zip(collections)
         .map(|(intake, collection)| Ranked::new(collection, Some(intake)))
@@ -217,7 +277,10 @@ fn verdict_of(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> 
     verify(
         plan,
         &ranked,
-        TamperFacts::default(),
+        TamperFacts {
+            movement,
+            ..TamperFacts::default()
+        },
         OrderSource::CallerSupplied,
         None,
     )
@@ -307,7 +370,7 @@ type Case = (&'static str, fn(&Path));
 /// Trace: FR-110-AC-2
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_002_intake_records_the_resolved_set_it_digested_itself() {
+fn tc_975_002_intake_records_the_resolved_set_it_resolved_itself() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
@@ -315,14 +378,14 @@ fn tc_975_002_intake_records_the_resolved_set_it_digested_itself() {
     let bytes = stored_bytes(root, "run-1");
     assert_eq!(
         bytes["verificationStack"]["protectedApparatus"],
-        json!({ "MP-975": {
-            "harness/answers.json": digest(root, "harness/answers.json"),
-            "labels/a.json": digest(root, "labels/a.json"),
-            "labels/nested/.hidden": digest(root, "labels/nested/.hidden"),
-        }}),
+        json!({ "MP-975": [
+            "harness/answers.json",
+            "labels/a.json",
+            "labels/nested/.hidden",
+        ]}),
         "every file under `labels/**`, the dotfile included, and nothing unprotected"
     );
-    // Every protected file is a digested artifact, never a label.
+    // Every protected file is a local file, never a label.
     assert_eq!(
         bytes["verificationStack"].get("unverifiedArtifacts"),
         Some(&json!(["config"]))
@@ -410,14 +473,13 @@ fn tc_975_004_a_symlink_is_refused_and_never_followed() {
     }
 }
 
-/// A producer-supplied artifacts map can omit a file; intake resolves the set
-/// itself and refuses a map that leaves a protected file out or states it at
-/// another digest.
+/// A producer-supplied artifact list can omit a file; intake resolves the set
+/// itself and refuses a list that leaves a protected file out.
 ///
 /// Trace: FR-110-AC-3
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_005_an_artifacts_map_that_omits_a_protected_file_is_refused() {
+fn tc_975_005_an_artifact_list_that_omits_a_protected_file_is_refused() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     let error = publish(
@@ -444,15 +506,6 @@ fn tc_975_005_an_artifacts_map_that_omits_a_protected_file_is_refused() {
         "{error}"
     );
 
-    let mut wrong = artifacts(root, &ALL_FILES);
-    wrong["harness/answers.json"] = json!(format!("sha256:{}", "9".repeat(64)));
-    let error = publish(root, &candidate("run-1", 1, 9, &wrong))
-        .expect_err("a disagreeing digest is refused");
-    assert_eq!(
-        error.code(),
-        MeasurementErrorCode::CollectionInvalid,
-        "{error}"
-    );
     assert_eq!(stored_count(root), 0);
 }
 
@@ -498,17 +551,31 @@ fn tc_975_006_an_unreadable_protected_file_is_refused() {
 fn tc_975_007_an_edited_protected_file_refuses_the_delta() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    publish_run(root, "run-1", 1, 8);
-    write(root, "harness/answers.json", "{\"answers\":[1,2,4]}");
-    publish_run(root, "run-2", 2, 8);
+    publish_run_at(root, "run-1", 1, 8, &revision_at(1));
+    publish_run_at(root, "run-2", 2, 8, &revision_at(2));
 
     let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
+    let git = Differ(vec!["harness/answers.json"]);
+    let rows = compare_measurement_collections(&collections[0], &collections[1], &git).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
     assert_eq!(rows[0].status, ComparisonStatus::Incomparable);
     assert_eq!(rows[0].delta, None);
     assert!(rows[0].reasons[0].blocking);
     assert!(rows[0].reasons[0].message.contains("harness/answers.json"));
+
+    // Git that cannot say is never a silent pass (FR-110).
+    let rows = compare_measurement_collections(&collections[0], &collections[1], &Mute).unwrap();
+    assert_eq!(
+        reasons(&rows),
+        [ComparisonReasonCode::ApparatusUnverifiable]
+    );
+    assert_eq!(rows[0].delta, None);
+    assert!(rows[0].reasons[0].blocking);
+
+    // The positive control: git reports no protected file moved.
+    let rows =
+        compare_measurement_collections(&collections[0], &collections[1], &Differ(vec![])).unwrap();
+    assert_eq!(reasons(&rows), []);
 }
 
 /// Trace: FR-110-AC-4
@@ -539,13 +606,15 @@ fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
     )
     .unwrap();
     let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
+    let rows =
+        compare_measurement_collections(&collections[0], &collections[1], &Differ(vec![])).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
     assert!(rows[0].reasons[0].message.contains("labels/b.json"));
     assert_eq!(rows[0].delta, None);
 
     // And removed: the reverse comparison names the same file.
-    let rows = compare_measurement_collections(&collections[1], &collections[0]).unwrap();
+    let rows =
+        compare_measurement_collections(&collections[1], &collections[0], &Differ(vec![])).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 }
 
@@ -555,12 +624,12 @@ fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
 fn tc_975_009_an_unprotected_artifact_moving_is_reported_and_does_not_block() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    publish_run(root, "run-1", 1, 8);
-    write(root, "dist/tool", "tool v2");
-    publish_run(root, "run-2", 2, 8);
+    publish_run_at(root, "run-1", 1, 8, &revision_at(1));
+    publish_run_at(root, "run-2", 2, 8, &revision_at(2));
 
     let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
+    let git = Differ(vec!["dist/tool"]);
+    let rows = compare_measurement_collections(&collections[0], &collections[1], &git).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ArtifactChanged]);
     assert!(!rows[0].reasons[0].blocking);
     assert!(rows[0].reasons[0].message.contains("dist/tool"));
@@ -577,10 +646,8 @@ fn tc_975_009_an_unprotected_artifact_moving_is_reported_and_does_not_block() {
 fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
     let temporary = repository("");
     let root = temporary.path();
-    publish_run(root, "run-1", 1, 8);
-    write(root, "harness/answers.json", "{\"answers\":[9]}");
-    write(root, "dist/tool", "tool v2");
-    publish_run(root, "run-2", 2, 8);
+    publish_run_at(root, "run-1", 1, 8, &revision_at(1));
+    publish_run_at(root, "run-2", 2, 8, &revision_at(2));
 
     assert_eq!(
         stored_bytes(root, "run-1")["verificationStack"].get("protectedApparatus"),
@@ -588,7 +655,8 @@ fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
         "no protecting plan, no record"
     );
     let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
+    let git = Differ(vec!["harness/answers.json", "dist/tool"]);
+    let rows = compare_measurement_collections(&collections[0], &collections[1], &git).unwrap();
     assert_eq!(reasons(&rows), []);
     assert_eq!(rows[0].status, ComparisonStatus::Comparable);
 }
@@ -604,14 +672,19 @@ fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
 fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    publish_run(root, "baseline", 1, 8);
-    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
+    publish_run_at(root, "baseline", 1, 8, &revision_at(1));
 
-    let regenerated = candidate("baseline", 1, 8, &artifacts(root, &ALL_FILES));
+    let regenerated = candidate_at(
+        "baseline",
+        1,
+        8,
+        &artifacts(root, &ALL_FILES),
+        &revision_at(9),
+    );
     let error = publish(root, &regenerated).expect_err("the stored baseline is write-once");
     assert_eq!(error.code(), MeasurementErrorCode::CollectionIdCollision);
-    publish_run(root, "baseline-regenerated", 2, 8);
-    publish_run(root, "run", 3, 8);
+    publish_run_at(root, "baseline-regenerated", 2, 8, &revision_at(2));
+    publish_run_at(root, "run", 3, 8, &revision_at(3));
 
     let collections = stored(root);
     let by_id = |id: &str| {
@@ -620,7 +693,8 @@ fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
             .find(|collection| collection.collection_id.as_str() == id)
             .unwrap()
     };
-    let rows = compare_measurement_collections(by_id("baseline"), by_id("run")).unwrap();
+    let git = Differ(vec!["harness/answers.json"]);
+    let rows = compare_measurement_collections(by_id("baseline"), by_id("run"), &git).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
     assert_eq!(rows[0].delta, None);
 }
@@ -644,18 +718,19 @@ fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
         .unwrap()
         .remove("protectedApparatus");
     let unrecorded = stored_measurement_collection(&from_serde(&unrecorded).unwrap()).unwrap();
-    let rows = compare_measurement_collections(&unrecorded, recorded).unwrap();
+    let rows = compare_measurement_collections(&unrecorded, recorded, &Differ(vec![])).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 
     let mut unverified = stored_bytes(root, "run-1");
     unverified["verificationStack"]["unverifiedArtifacts"] = json!(["harness/answers.json"]);
     let unverified = stored_measurement_collection(&from_serde(&unverified).unwrap()).unwrap();
-    let rows = compare_measurement_collections(&unverified, recorded).unwrap();
+    let rows = compare_measurement_collections(&unverified, recorded, &Differ(vec![])).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 
     // The positive control: the same two runs as written compare.
     let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
+    let rows =
+        compare_measurement_collections(&collections[0], &collections[1], &Differ(vec![])).unwrap();
     assert_eq!(reasons(&rows), []);
 }
 
@@ -667,24 +742,22 @@ fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
 fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    publish_run(root, "run-1", 1, 9);
-    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
-    publish_run(root, "run-2", 2, 9);
+    publish_run_at(root, "run-1", 1, 9, &revision_at(1));
+    publish_run_at(root, "run-2", 2, 9, &revision_at(2));
     let plan = plan_of(root);
     let collections = stored(root);
+    let git = Differ(vec!["harness/answers.json"]);
     assert_eq!(
-        checked(&plan, &collections),
-        [Reason::NoPrior, Reason::ApparatusEdit],
-        "the earlier run is not a usable baseline, and the unversioned change rejects"
+        checked(&plan, &collections, Some(&git)),
+        [Reason::ApparatusEdit],
+        "the unversioned change rejects"
     );
-    assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
+    assert_eq!(verdict_of(&plan, &collections, Some(&git)), Verdict::Reject);
 
-    // The positive control: the same runs over one apparatus are accepted.
-    let same = repository(PROTECTED);
-    publish_run(same.path(), "run-1", 1, 9);
-    publish_run(same.path(), "run-2", 2, 9);
+    // The positive control: git reports nothing moved.
+    let quiet = Differ(vec![]);
     assert_eq!(
-        verdict_of(&plan_of(same.path()), &stored(same.path())),
+        verdict_of(&plan, &collections, Some(&quiet)),
         Verdict::Accept
     );
 }
@@ -704,11 +777,12 @@ fn tc_975_014_an_apparatus_edit_under_a_declared_control_also_rejects() {
     publish(root, &candidate("run-2", 2, 9, &artifacts(root, &names))).unwrap();
     let plan = plan_of(root);
     let collections = stored(root);
+    let git = Differ(vec![]);
     assert_eq!(
-        checked(&plan, &collections),
+        checked(&plan, &collections, Some(&git)),
         [Reason::NoPrior, Reason::ApparatusEdit]
     );
-    assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
+    assert_eq!(verdict_of(&plan, &collections, Some(&git)), Verdict::Reject);
 }
 
 /// Trace: FR-110-AC-7
@@ -724,7 +798,7 @@ fn tc_975_015_a_candidate_with_no_record_under_a_protecting_plan_is_inconclusive
         .unwrap()
         .remove("protectedApparatus");
     let unrecorded = stored_measurement_collection(&from_serde(&bytes).unwrap()).unwrap();
-    let reasons = checked(&plan_of(root), &[unrecorded]);
+    let reasons = checked(&plan_of(root), &[unrecorded], None);
     assert!(
         reasons.contains(&Reason::ApparatusUnrecorded),
         "{reasons:?}"
@@ -748,17 +822,22 @@ fn ratchet_outcome(root: &Path) -> RatchetOutcome {
 fn tc_975_016_a_ratchet_does_not_hold_against_another_apparatus() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    publish_run(root, "run-1", 1, 9);
+    let first = commit_all(root);
+    publish_run_at(root, "run-1", 1, 9, &first);
     write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
-    publish_run(root, "run-2", 2, 9);
+    let second = commit_all(root);
+    publish_run_at(root, "run-2", 2, 9, &second);
     assert_eq!(
         ratchet_outcome(root),
         RatchetOutcome::Inconclusive(InconclusiveReason::ApparatusChanged)
     );
 
     let same = repository(PROTECTED);
-    publish_run(same.path(), "run-1", 1, 9);
-    publish_run(same.path(), "run-2", 2, 9);
+    let first = commit_all(same.path());
+    write(same.path(), "dist/tool", "tool v2");
+    let second = commit_all(same.path());
+    publish_run_at(same.path(), "run-1", 1, 9, &first);
+    publish_run_at(same.path(), "run-2", 2, 9, &second);
     assert!(matches!(
         ratchet_outcome(same.path()),
         RatchetOutcome::Held { .. }
@@ -775,7 +854,8 @@ fn tc_975_017_a_malformed_stored_record_is_refused_on_read() {
     for malformed in [
         json!([]),
         json!({ "MP-975": {} }),
-        json!({ "MP-975": { "harness/answers.json": "not a digest" } }),
+        json!({ "MP-975": { "harness/answers.json": "not a list" } }),
+        json!({ "MP-975": [7] }),
     ] {
         let mut bytes = stored_bytes(root, "run-1");
         bytes["verificationStack"]["protectedApparatus"] = malformed.clone();
@@ -803,16 +883,15 @@ fn tc_985_001_protected_apparatus_key_shapes_are_validated_on_read() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
-    let digest = format!("sha256:{}", "0".repeat(64));
     for malformed in [
         // An empty plan-id key.
-        json!({ "": { "harness/answers.json": digest } }),
+        json!({ "": ["harness/answers.json"] }),
         // A `<directory>/**` glob where a resolved record must name one file.
-        json!({ "MP-975": { "labels/**": digest } }),
+        json!({ "MP-975": ["labels/**"] }),
         // An absolute path.
-        json!({ "MP-975": { "/etc/passwd": digest } }),
+        json!({ "MP-975": ["/etc/passwd"] }),
         // A `..` segment.
-        json!({ "MP-975": { "harness/../../../etc/passwd": digest } }),
+        json!({ "MP-975": ["harness/../../../etc/passwd"] }),
     ] {
         let mut bytes = stored_bytes(root, "run-1");
         bytes["verificationStack"]["protectedApparatus"] = malformed.clone();
@@ -836,7 +915,7 @@ fn tc_975_018_a_candidate_stating_a_computed_member_is_refused() {
     for (member, stated) in [
         (
             "protectedApparatus",
-            json!({ "MP-975": { "harness/answers.json": format!("sha256:{}", "0".repeat(64)) } }),
+            json!({ "MP-975": ["harness/answers.json"] }),
         ),
         ("unverifiedArtifacts", json!(["config"])),
     ] {
@@ -862,17 +941,20 @@ fn tc_975_018_a_candidate_stating_a_computed_member_is_refused() {
 fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    publish_run(root, "run-1", 1, 9);
+    let first = commit_all(root);
+    publish_run_at(root, "run-1", 1, 9, &first);
     write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
-    publish_run(root, "run-2", 2, 9);
+    let second = commit_all(root);
+    publish_run_at(root, "run-2", 2, 9, &second);
     write(root, "spec/assurance/MP-975.md", &plan_document(""));
     let plan = plan_of(root);
     assert!(plan.protected_apparatus.is_none());
     let collections = stored(root);
-    let verdict = verdict_of(&plan, &collections);
+    let git = GitPathMovement::new(root);
+    let verdict = verdict_of(&plan, &collections, Some(&git));
     assert_ne!(verdict, Verdict::Accept);
     assert_eq!(verdict, Verdict::Reject);
-    assert!(checked(&plan, &collections).contains(&Reason::ApparatusEdit));
+    assert!(checked(&plan, &collections, Some(&git)).contains(&Reason::ApparatusEdit));
     let outcome = ratchet_outcome(root);
     assert!(
         !matches!(outcome, RatchetOutcome::Held { .. }),
@@ -887,8 +969,8 @@ fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
     // not a pass either.
     publish_run(root, "run-3", 3, 9);
     let collections = stored(root);
-    assert!(checked(&plan, &collections).contains(&Reason::ApparatusUnrecorded));
-    assert_ne!(verdict_of(&plan, &collections), Verdict::Accept);
+    assert!(checked(&plan, &collections, Some(&git)).contains(&Reason::ApparatusUnrecorded));
+    assert_ne!(verdict_of(&plan, &collections, Some(&git)), Verdict::Accept);
     assert_eq!(
         ratchet_outcome(root),
         RatchetOutcome::Inconclusive(InconclusiveReason::ApparatusUnrecorded)
@@ -915,9 +997,9 @@ fn tc_975_020_an_uncommitted_answer_key_edit_then_a_pass_is_a_rerun() {
     publish_run(root, "run-2", 2, 9);
     let plan = plan_of(root);
     let collections = stored(root);
-    let reasons = checked(&plan, &collections);
+    let reasons = checked(&plan, &collections, None);
     assert!(reasons.contains(&Reason::RerunUntilPass), "{reasons:?}");
-    assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
+    assert_eq!(verdict_of(&plan, &collections, None), Verdict::Reject);
 }
 
 /// Trace: FR-110-AC-6

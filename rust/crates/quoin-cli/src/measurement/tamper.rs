@@ -5,7 +5,7 @@
 //!
 //! `quoin-measurement`'s checker is pure and reads no git; [`super::intake_order`]
 //! already crosses that line once, for the intake order itself, because only
-//! this binary has git. These four checks are the same kind of fact,
+//! this binary has git. These three checks are the same kind of fact,
 //! gathered the same way, and handed to `measurement.verify` alongside the
 //! order:
 //!
@@ -14,8 +14,6 @@
 //! - a collection's stored file changed after intake added it — by a later
 //!   commit, by a delete and re-add under the same id, or in the uncommitted
 //!   work tree ([`deleted_and_edited`]'s `edited`);
-//! - a collection's recorded protected-apparatus digest disagreeing with
-//!   `git show <sourceRevision>:<path>` ([`forged_apparatus`]);
 //! - the plan's own document changed its objective, estimator, decision rule
 //!   or protected apparatus across two revisions — committed, or the work
 //!   tree against the last commit — that share a `definition_version`
@@ -257,81 +255,6 @@ fn plan_ids_of(bytes: &[u8]) -> BTreeSet<String> {
         .filter_map(serde_json::Value::as_str)
         .map(str::to_owned)
         .collect()
-}
-
-/// Every currently-stored collection id whose recorded protected-apparatus
-/// digest for `plan_id` disagrees with `git show <sourceRevision>:<path>` —
-/// the file's actual bytes at the commit the collection claims to be from
-/// (PLAT-985, from Peter's PLAT-985 review comment: a collection committed by
-/// hand can carry a forged `verificationStack.protectedApparatus`).
-///
-/// Scoped to `plan_id` alone: intake resolves apparatus per plan a
-/// collection governs, and checking only the plan being verified keeps this
-/// bounded by that plan's own protected set rather than every plan every
-/// collection in the store ever named. The `git show` calls this spends are
-/// still bounded overall by intake's own resolver ceilings
-/// (`MAX_PROTECTED_FILES`, `MAX_TOTAL_PROTECTED_FILES`), which is what stops
-/// a plan's own recorded set — and so this walk — from growing unbounded.
-///
-/// A `sourceRevision` git cannot resolve leaves the collection unattested
-/// rather than forged (FR-108 "Known limits"): a squash-merged branch's
-/// commits are legitimately absent from a fresh clone.
-pub(super) fn forged_apparatus(repo: &str, plan_id: &str) -> Vec<String> {
-    let mut forged = Vec::new();
-    let Ok(entries) = std::fs::read_dir(Path::new(repo).join(MEASUREMENTS_DIRECTORY)) else {
-        return forged;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(std::ffi::OsStr::to_str) != Some("json") {
-            continue;
-        }
-        let Some(id) = path
-            .file_stem()
-            .and_then(std::ffi::OsStr::to_str)
-            .map(str::to_owned)
-        else {
-            continue;
-        };
-        let Ok(bytes) = std::fs::read(&path) else {
-            continue;
-        };
-        let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
-            continue;
-        };
-        let Some(revision) = value
-            .get("sourceRevision")
-            .and_then(serde_json::Value::as_str)
-        else {
-            continue;
-        };
-        let Some(protected) = value
-            .pointer(&format!(
-                "/verificationStack/protectedApparatus/{}",
-                plan_id.replace('~', "~0").replace('/', "~1")
-            ))
-            .and_then(serde_json::Value::as_object)
-        else {
-            continue;
-        };
-        for (file_path, recorded) in protected {
-            let Some(recorded) = recorded.as_str() else {
-                forged.push(id.clone());
-                break;
-            };
-            // The revision, or the path within it, not being reachable is
-            // unattested rather than forged (a shallow clone, most often).
-            let Some(committed) = show(repo, revision, file_path) else {
-                continue;
-            };
-            let actual = quoin_store::digest_bytes_sha256(&committed).to_stored();
-            if actual != recorded {
-                forged.push(id.clone());
-                break;
-            }
-        }
-    }
-    forged
 }
 
 /// Whether `plan_id`'s document changed its objective, estimator, decision

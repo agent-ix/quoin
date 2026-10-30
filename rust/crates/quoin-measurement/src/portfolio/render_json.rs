@@ -257,7 +257,6 @@ struct CollectionRefWire<'a> {
     source_revision: &'a str,
     tool_identity: &'a str,
     tool_version: &'a str,
-    config_digest: &'a str,
     /// Spread in only when truthy, so absent rather than `null`.
     #[serde(skip_serializing_if = "Option::is_none")]
     corpus_revision: Option<&'a str>,
@@ -277,7 +276,6 @@ impl<'a> CollectionRefWire<'a> {
             source_revision: &reference.source_revision,
             tool_identity: &reference.tool_identity,
             tool_version: &reference.tool_version,
-            config_digest: &reference.config_digest,
             corpus_revision: reference.corpus_revision.as_deref(),
             unverified_artifacts: &reference.unverified_artifacts,
         }

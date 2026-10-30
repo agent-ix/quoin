@@ -117,14 +117,11 @@ fn collection(observations: &[Value]) -> Value {
         "scope": { "cases": 1 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
-        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": "2026-09-22T00:00:00.000Z",
         "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
-            "lockDigest": format!("sha256:{}", "1".repeat(64)),
-            "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
             "toolchains": { "node": "22.15.0", "rust": "0.0.0", "python": "3.10.12" },
             "sources": {
@@ -135,7 +132,7 @@ fn collection(observations: &[Value]) -> Value {
                 },
             },
             "capabilities": ["fixture.capability"],
-            "artifacts": { "config": format!("sha256:{}", "3".repeat(64)) },
+            "artifacts": ["config"],
         },
         "observations": observations,
         "rawEvidence": { "payload": [1, 2] },
@@ -153,19 +150,18 @@ fn intake(
     .map(|admitted| admitted.collection_id.as_str().to_owned())
 }
 
-/// Write `candidate` into `root`, declaring the protected plan document at
-/// its digest as `verificationStack.artifacts` must (PLAT-975).
+/// Write `candidate` into `root`, declaring the protected plan document by
+/// name in `verificationStack.artifacts`.
 fn write_collection(
     root: &Path,
     candidate: &Value,
 ) -> Result<std::path::PathBuf, quoin_measurement::MeasurementError> {
     let path = "spec/assurance/MP-900.md";
     let mut candidate = candidate.clone();
-    candidate["verificationStack"]["artifacts"][path] = json!(
-        quoin_store::digest_file_sha256(&root.join(path))
-            .expect("the plan is digestible")
-            .to_stored()
-    );
+    candidate["verificationStack"]["artifacts"]
+        .as_array_mut()
+        .expect("the artifact list")
+        .push(json!(path));
     write_measurement_collection(
         root,
         &from_serde(&candidate).expect("the candidate crosses"),

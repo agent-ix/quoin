@@ -26,6 +26,7 @@ use std::collections::BTreeMap;
 use engineering_assurance::measurement::{Baseline, Comparator, DecisionRule, RuleReference};
 use quoin_store::JsonValue;
 
+use crate::compare::PathMovement;
 use crate::interval::{self, Decided, Refusal};
 use crate::report::verdict::{InconclusiveReason, earlier_values, same_apparatus, usable};
 use crate::types::collection::MeasurementCollection;
@@ -95,6 +96,7 @@ pub(super) fn gate(
     observation: Option<&MeasurementObservation>,
     collection: Option<&MeasurementCollection>,
     earlier: &[MeasurementCollection],
+    movement: Option<&dyn PathMovement>,
 ) -> GateOutcome {
     let (observation, current) = match usable(plan, observation) {
         Ok(found) => found,
@@ -110,7 +112,7 @@ pub(super) fn gate(
         RuleReference::Threshold(_) => Ok(None),
         RuleReference::Baseline { baseline, .. } => {
             let slice = observation.dimensions.entries();
-            same_apparatus(plan, observation, collection, earlier)
+            same_apparatus(plan, observation, collection, earlier, movement)
                 .and_then(|()| gate_baseline(plan, rule, baseline, slice, earlier))
                 .map(Some)
         }

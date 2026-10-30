@@ -12,13 +12,12 @@
 //! being told about the attachment.
 //!
 //! 1. the record satisfies `graph-quality-observation-v1`;
-//! 2. its `observation_id` re-derives from its own content;
-//! 3. the scorer attachment has a media type;
-//! 4. the attachment's digest is the one the record claims;
-//! 5. the attestation satisfies its contract, instant included;
-//! 6. exactly one active plan governs the observed definition version;
-//! 7. the transcription states no partition twice;
-//! 8. the collection satisfies the measurement contract.
+//! 2. the scorer attachment has a media type;
+//! 3. the attachment has the byte length the record declares;
+//! 4. the attestation satisfies its contract, instant included;
+//! 5. exactly one active plan governs the observed definition version;
+//! 6. the transcription states no partition twice;
+//! 7. the collection satisfies the measurement contract.
 //!
 //! # One check is unrepresentable rather than absent
 //!
@@ -29,7 +28,6 @@
 //! as an empty `Uint8Array` is.
 
 use quoin_measurement::{MeasurementCollection, MeasurementPlan, json_bridge, validate};
-use quoin_store::digest_bytes_sha256;
 use serde_json::{Value, json};
 
 use crate::attestation::InvocationAttestation;
@@ -120,32 +118,10 @@ pub fn adapt_graph_quality_observation(
 ) -> Result<TranscribedCollection> {
     let record = super::parse(input.record)?;
 
-    let expected = super::identity::graph_quality_observation_id(input.record)?;
-    if record.observation_id != expected {
-        return Err(GraphAdapterError::new(
-            GraphAdapterErrorCode::InvalidObservation,
-            format!(
-                "observation_id expected {expected}; observed {}",
-                record.observation_id
-            ),
-        ));
-    }
-
     if input.scorer_media_type.is_empty() {
         return Err(GraphAdapterError::new(
             GraphAdapterErrorCode::AttachmentMissing,
             "scorer attachment media type is required",
-        ));
-    }
-    let observed_digest = digest_bytes_sha256(input.scorer_bytes);
-    if observed_digest != *record.raw_scorer_output.digest.digest() {
-        return Err(GraphAdapterError::new(
-            GraphAdapterErrorCode::AttachmentDigestMismatch,
-            format!(
-                "raw_scorer_output.digest expected {}; observed {}",
-                record.raw_scorer_output.digest,
-                observed_digest.to_stored()
-            ),
         ));
     }
 
@@ -161,7 +137,7 @@ pub fn adapt_graph_quality_observation(
 
     let collection = json!({
         "schemaVersion": quoin_measurement::MEASUREMENT_SCHEMA_VERSION,
-        "collectionId": format!("graph-quality-{}", record.observation_id.as_hex()),
+        "collectionId": format!("graph-quality-{}", record.observation_id.as_str()),
         "subject": attestation.subject.as_str(),
         // The three opaque members are taken from the *received* document
         // rather than re-serialized from the parsed one. They are opaque by
@@ -173,7 +149,6 @@ pub fn adapt_graph_quality_observation(
         "scope": member(input.attestation, "scope"),
         "toolIdentity": TOOL_IDENTITY,
         "toolVersion": record.producer.extractor_revision.as_str(),
-        "configDigest": record.producer.configuration_digest.to_stored(),
         "timestamp": attestation.timestamp.as_str(),
         "sourceRevision": record.producer.source_revision.as_str(),
         "corpusRevision": record.producer.corpus_revision.as_str(),
@@ -184,7 +159,6 @@ pub fn adapt_graph_quality_observation(
             "producer": input.record,
             "scorer": {
                 "path": record.raw_scorer_output.path.as_str(),
-                "digest": record.raw_scorer_output.digest.to_stored(),
                 "mediaType": input.scorer_media_type,
                 "bytesBase64": base64::encode(input.scorer_bytes),
             },

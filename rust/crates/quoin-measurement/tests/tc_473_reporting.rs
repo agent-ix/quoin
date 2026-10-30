@@ -54,7 +54,7 @@ const ORACLE: &str = include_str!("fixtures/portfolio-oracle.json");
 /// The anti-vacuity floor for each case list. A capture that lost its cases
 /// would otherwise pass every comparison below by comparing nothing.
 const REPORT_CASE_FLOOR: usize = 5;
-const COMPARISON_CASE_FLOOR: usize = 4;
+const COMPARISON_CASE_FLOOR: usize = 3;
 const SERIES_CASE_FLOOR: usize = 4;
 /// The portfolio walk's floor is its location list: the report is one value,
 /// so the thing that can silently shrink is what it was built over.

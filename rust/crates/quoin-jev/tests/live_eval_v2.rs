@@ -18,7 +18,7 @@
 //!
 //! | env | meaning |
 //! | --- | --- |
-//! | `QUOIN_JEV_VARIANTS` | comma-separated variant ids; default every registered one. Each `variant@version` must match its request-digest pin and be within the 5-version dev cap (`eval_v2_support::preflight`) |
+//! | `QUOIN_JEV_VARIANTS` | comma-separated variant ids; default every registered one. Each `variant@version` must be within the 5-version dev cap (`eval_v2_support::preflight`) |
 //! | `QUOIN_JEV_SPLIT` | `dev` (default) or `heldout` |
 //! | `QUOIN_JEV_HELDOUT` | must be `1` for `heldout`; every variant must be covered by `fixtures/eval-v2/heldout-selection.json`, and the run is logged before any number prints |
 //! | `QUOIN_JEV_HELDOUT_RERUN` | a reason; required to run a variant version already on the held-out log |
@@ -26,7 +26,6 @@
 //! | `QUOIN_JEV_EXTERNAL_ONLY` | `1` skips the in-repo corpus, so the report covers the external rows alone; needs `QUOIN_JEV_EXTERNAL_CORPUS` |
 //! | `QUOIN_JEV_CASSETTE` | a cassette file (PLAT-977): answers are recorded there, and re-grading replays them |
 //! | `QUOIN_JEV_CASSETTE_MODE` | `record` (default: replay what is on file, call live for the rest) or `replay` (no network, no key) |
-//! | `QUOIN_JEV_MODEL` | the pinned model; required with a cassette, and when set every answer must come from it |
 //! | `QUOIN_JEV_INTENT_OUT` | dev only: a file to write one JSON line per row per T variant (every variant grading `test_asserts_intent`): `variant@version`, row id, the assertions T3 or T4 listed with each one's `P`, the clauses T4 asked about with each one's `P`, the derived prediction and confidence, and the truth label |
 //!
 //! With no cassette the run goes through `quoin_jev::client::production`,
@@ -89,13 +88,10 @@ fn live_config() -> typesafe_sdk_config::Config {
 
 /// The client: production, a recording cassette over production's transport,
 /// or a replaying cassette with no network at all.
-fn client(model: Option<&str>) -> Client {
+fn client() -> Client {
     let Some(path) = env("QUOIN_JEV_CASSETTE") else {
         return quoin_jev::client::production(live_config()).expect("builds a real transport");
     };
-    let model = model.unwrap_or_else(|| {
-        panic!("QUOIN_JEV_CASSETTE needs QUOIN_JEV_MODEL: a cassette is pinned to one model")
-    });
     match env("QUOIN_JEV_CASSETTE_MODE")
         .as_deref()
         .unwrap_or("record")
@@ -106,12 +102,12 @@ fn client(model: Option<&str>) -> Client {
                 "replay-sends-no-request",
             )]))
             .expect("a fixed key resolves");
-            let cassette = Cassette::replay(&path, model).unwrap_or_else(|error| panic!("{error}"));
+            let cassette = Cassette::replay(&path).unwrap_or_else(|error| panic!("{error}"));
             quoin_jev::client::with_transport(config, Arc::new(cassette))
         }
         "record" => {
             let delegate = Reqwest::new().expect("builds a real transport");
-            let cassette = Cassette::record(&path, Arc::new(delegate), model)
+            let cassette = Cassette::record(&path, Arc::new(delegate))
                 .unwrap_or_else(|error| panic!("{error}"));
             quoin_jev::client::with_transport(live_config(), Arc::new(cassette))
         }
@@ -339,8 +335,7 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         env("QUOIN_JEV_CASSETTE").as_deref(),
     )
     .unwrap_or_else(|error| panic!("{error}"));
-    let model = env("QUOIN_JEV_MODEL");
-    let client = client(model.as_deref());
+    let client = client();
 
     // The held-out split is spent the moment the first answer exists, so the
     // spend is begun before any request is sent. A run that stops part way,
@@ -397,12 +392,4 @@ async fn tc_1027_run_variants_over_corpus_v2() {
         "{}",
         eval_v2_support::variants::severity::render_bars(&rows, &output, &variants)
     );
-
-    if let Some(model) = &model {
-        let others: Vec<&String> = output.models.keys().filter(|seen| *seen != model).collect();
-        assert!(
-            others.is_empty(),
-            "answers came from {others:?}, not the pinned {model}"
-        );
-    }
 }

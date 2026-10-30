@@ -2,13 +2,13 @@
 // Copyright (C) 2026 Agent-IX
 //! Reconstruct collection context from the definition and exact source inventory.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use engineering_assurance::campaign::{CampaignAttempt, CampaignDefinition, CampaignMember};
 use engineering_assurance::producer_execution::InputBinding;
 use serde_json::{Value, json};
 
-use super::{EvidenceError, MeasurementPlan, canonical_digest};
+use super::{EvidenceError, MeasurementPlan};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum CollectionObservationState {
@@ -31,8 +31,6 @@ pub(super) fn check_collection_context(
     result_digest: &str,
     source_inputs: &[InputBinding],
 ) -> Result<CollectionObservationState, EvidenceError> {
-    let source_graph_digest =
-        canonical_digest(&definition.source_graph).map_err(|_| EvidenceError::Contradiction)?;
     let scope = json!({
         "campaign": definition.id,
         "member": member.name,
@@ -43,11 +41,9 @@ pub(super) fn check_collection_context(
     let producer_name = text(producer, "name")?;
     let producer_version = text(producer, "version")?;
     let source_revision = text(producer, "sourceRevision")?;
-    let executable_digest = text(producer, "executableDigest")?;
     let stack = collection
         .get("verificationStack")
         .ok_or(EvidenceError::Contradiction)?;
-    let expected_graph_digest = format!("sha256:{}", source_graph_digest.as_str());
     if collection.get("schemaVersion") != Some(&json!(crate::MEASUREMENT_SCHEMA_VERSION))
         || collection.get("subject") != Some(&json!(definition.subject_name))
         || collection.get("scope") != Some(&scope)
@@ -56,10 +52,7 @@ pub(super) fn check_collection_context(
         || collection.get("toolIdentity") != Some(&json!(producer_name))
         || collection.get("toolVersion") != Some(&json!(producer_version))
         || collection.get("sourceRevision") != Some(&json!(source_revision))
-        || collection.get("configDigest") != Some(&json!(expected_graph_digest))
         || stack.get("schemaVersion") != Some(&json!("verification-stack-attestation-v1"))
-        || stack.get("lockDigest") != Some(&json!(expected_graph_digest))
-        || stack.get("executableDigest") != Some(&json!(format!("sha256:{executable_digest}")))
         || stack.get("buildProfile") != Some(&json!("release"))
         || stack.get("capabilities") != Some(&json!(["campaign.direct-process"]))
     {
@@ -160,10 +153,9 @@ fn expected_artifacts(
     plan: &MeasurementPlan,
     source_inputs: &[InputBinding],
     result_digest: &str,
-) -> Result<BTreeMap<String, String>, EvidenceError> {
-    let mut artifacts = BTreeMap::from([(
-        format!("spec/evidence/campaigns/results/{result_digest}.json"),
-        format!("sha256:{result_digest}"),
+) -> Result<Vec<String>, EvidenceError> {
+    let mut artifacts = BTreeSet::from([format!(
+        "spec/evidence/campaigns/results/{result_digest}.json"
     )]);
     let mut protected = BTreeSet::new();
     if let Some(apparatus) = &plan.protected_apparatus {
@@ -183,11 +175,7 @@ fn expected_artifacts(
         }
     }
     for path in protected {
-        let input = source_inputs
-            .iter()
-            .find(|input| input.path == path)
-            .ok_or(EvidenceError::Contradiction)?;
-        artifacts.insert(path.to_owned(), format!("sha256:{}", input.digest.as_str()));
+        artifacts.insert(path.to_owned());
     }
-    Ok(artifacts)
+    Ok(artifacts.into_iter().collect())
 }

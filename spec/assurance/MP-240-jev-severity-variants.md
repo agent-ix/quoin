@@ -86,8 +86,7 @@ ECE, no-defect recall and the per-class table are reported and not gated.
 
 `rust/crates/quoin-jev/tests/live_eval_v2.rs` (`live-api` feature), with
 `QUOIN_JEV_VARIANTS=S0,S1,S1-RT,S1-RC,S2,S2-RT,S2-RC,S2M,S2M-RT,S2M-RC,S3` and
-`QUOIN_JEV_SPLIT=dev`, through a recording cassette with the model pinned
-(`QUOIN_JEV_MODEL`). The runner sends each distinct request once per run.
+`QUOIN_JEV_SPLIT=dev`, through a recording cassette. The runner sends each distinct request once per run.
 `S2M` reuses `S2`'s answer, so it costs nothing extra. The offline tests
 `tc_1028_severity_variants.rs` run in the default gate. They check the S1 rule
 branch by branch, the S2/S2M distribution reading, S3's mapping, and the

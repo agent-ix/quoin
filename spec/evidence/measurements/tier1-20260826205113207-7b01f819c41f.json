@@ -1,6 +1,5 @@
 {
   "collectionId": "tier1-20260826205113207-7b01f819c41f",
-  "configDigest": "sha256:fba2468b01d6b4c5ce5e580195ace46d8322923436d5cfecb5a72a6186bd6a84",
   "corpusRevision": "70e20db26a7de76abbb6b9be4a67d343e22ee7b5",
   "environment": {
     "languages": "n/a,python,rust,typescript",

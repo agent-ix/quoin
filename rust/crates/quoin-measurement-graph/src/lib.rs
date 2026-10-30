@@ -42,8 +42,7 @@
 //! `graph_quality`, across many repositories. It is the **governed sibling** of
 //! [`quoin_measurement::portfolio`]: that view reports what each repository
 //! measured and how stale the reading is; this one additionally holds every
-//! reading to the active plan and re-checks the retained scorer attachment
-//! against the digest its producer declared.
+//! reading to the active plan.
 //!
 //! | retained TypeScript | here |
 //! | --- | --- |
@@ -54,7 +53,6 @@
 //! | `graph-portfolio.ts:209-268`, `772-838` | [`mapping`] |
 //! | `graph-portfolio.ts:270-296`, `410-565` | [`build`] |
 //! | `graph-portfolio.ts:567-641`, `757-779` | [`history`] |
-//! | `graph-portfolio.ts:795-836` | [`scorer`] |
 //! | `graph-portfolio.ts:298-324`, `519-556`, `643-712` | [`compare`] |
 //! | `graph-portfolio.ts:326-329` | [`render_json`] |
 //! | `graph-portfolio.ts:331-408` | [`render`] |
@@ -99,9 +97,8 @@
 //! # What is deliberately absent
 //!
 //! - **No canonicalizer and no digest.** The bytes are
-//!   [`quoin_store::canonical_json`] and [`quoin_store::canonical_bytes`]'s and
-//!   the sha256 is [`quoin_store::digest_bytes_sha256`]'s (quoin#484). See
-//!   [`canonical`] and [`quality::identity`].
+//!   [`quoin_store::canonical_json`] and [`quoin_store::canonical_bytes`]'s
+//!   (quoin#484). See [`canonical`].
 //! - **No second `serde_json` ↔ [`quoin_store::JsonValue`] crossing.**
 //!   [`quoin_measurement::json_bridge`] is the workspace's one crossing.
 //!   [`canonical`] and [`quality::adapt`] both call it.
@@ -111,43 +108,14 @@
 //!   [`quoin_quire::validate_assurance`] (quoin#474) and the transcribed
 //!   collection by [`quoin_measurement::validate::measurement_collection`].
 //! - **No `bool`-returning validator.** Every check mints the type that proves
-//!   it, which is the `parse, don't validate` rule
-//!   [`quoin_store::RawFileSha256Digest::parse_stored`] models.
+//!   it, which is the `parse, don't validate` rule.
 //!
-//! # Declared divergences
+//! # The TypeScript is gone
 //!
-//! Every place the two implementations would answer differently is declared in
-//! this crate's `DIVERGENCE.md`, which is the index over the module
-//! documentation below and over `DECLARED_DIVERGENCES` in
-//! `tests/tc_475_parity.rs`.
-//!
-//! The port is not bit-identical to the retained modules on every input. The
-//! places it is not are stated, measured against a captured TypeScript oracle,
-//! and asserted to have *actually fired* wherever firing is observable: the
-//! base64 decoder's strictness (quoin#465, see [`base64`]), `Date.parse`'s
-//! implementation-defined heuristic (see [`attestation`] and [`order`]), and a
-//! non-string `dimensions` member (see [`history::partition_identity`]).
-//!
-//! A third difference — the observation identity sorts member names by UTF-16
-//! code unit where the retained module sorts by code point (see
-//! [`quality::identity`]) — is **not** declared, because a declaration that
-//! cannot fire is a licence rather than a measurement. It is proved unreachable
-//! instead: every member name an admissible record may carry is schema-fixed
-//! ASCII, and `tests/tc_475_parity.rs` measures that over the corpus.
-//!
-//! quoin#477 adds one more of each. Declared: the sentence a graph refusal
-//! carries when an operating system or a schema validator wrote it
-//! (`DIVERGENCE.md` §9), which `tests/tc_477_graph_loader.rs` compares by
-//! verdict rather than by byte. Proved unreachable rather than declared: the
-//! `portfolio omitted resolved repository` refusal `graph-portfolio-load.ts:74`
-//! throws (`DIVERGENCE.md` §10).
-//!
-//! # The TypeScript is retained
-//!
-//! This is a port wave. `src/measurement/graph-adapters.ts` is untouched, and
-//! it is not a runtime oracle: the corpus under `tests/corpus/` was captured
-//! from it once and committed, per the retire-after-parity rule. The cutover is W11 and the
-//! deletion is W12.
+//! `src/measurement/graph-adapters.ts` and `graph-portfolio.ts` were deleted at
+//! quoin#480. This crate is the only implementation, and no oracle or parity
+//! suite remains; the `graph-portfolio.ts:` line references in the module
+//! documentation are history, not a contract.
 
 pub mod adapter;
 pub mod assurance;
@@ -170,7 +138,6 @@ pub mod render;
 pub mod render_json;
 pub mod report;
 pub mod scalars;
-pub mod scorer;
 pub mod structural;
 pub mod text;
 pub mod wire;
@@ -185,7 +152,6 @@ pub use quality::GraphQualityObservationV1;
 pub use quality::adapt::{
     AdaptGraphQualityInput, TranscribedCollection, adapt_graph_quality_observation,
 };
-pub use quality::identity::graph_quality_observation_id;
 
 pub use build::build_governed_graph_portfolio_from;
 pub use compare::compare_graph_quality_collections;
