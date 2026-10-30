@@ -58,10 +58,6 @@ accepts. `tests/tc_470_formats.rs` asserts the pattern and the registered check
 accept the same set, including the `…t…z` case that separated them, so the two
 expressions cannot drift apart again.
 
-**Measured:** a scan of every `.json` under `spec/evidence/` for a lowercase `t`
-separator or a trailing lowercase `z` returns nothing. No retained verdict in
-this repository moves.
-
 **Scope:** intervention only. The operational schema is vendored verbatim and
 was already permissive.
 
@@ -69,9 +65,7 @@ was already permissive.
 
 `immutableVersion` is an exact semantic version in both measurement schemas.
 The retained `sha256:`/`blake3:` and 40-character git-revision alternatives
-are gone: Quoin records no digest or revision. This moves the recorded ajv
-verdict for the corpus mutation `set/producer.tool_version=git-sha1` from valid
-to invalid, declared in `DECLARED_DIVERGENCES`.
+are gone: Quoin records no digest or revision.
 
 ## §4 — `format` asserts here only where ajv asserted it
 
@@ -109,8 +103,9 @@ length in `src/validator.rs`:
 
 None of the three changes a verdict, and **the verdict is the contractual
 half**. Error count, message text and order are explicitly not contractual for
-this port. `tests/tc_470_parity.rs` measures verdicts only, on 125 corpus
-documents, and asserts §1 and §2 are the only entries where the two disagree.
+this port. No recorded ajv output is kept: the retired validator's captured verdicts were
+deleted, and the verdict contract is asserted by the schema tests against this
+crate's live behaviour.
 
 ## §6 — `quoin-jsonschema` holds no RFC 3339 grammar
 
@@ -159,21 +154,8 @@ recorded as a ruling like §1 and §2, one delta per schema:
   intervention schema:
   `tc_470_the_operational_schema_carries_exactly_the_one_recorded_delta`.
 
-`tests/goldens/ajv-verdicts.json` is **not** amended: it stays a byte-literal
-capture of the documents ajv judged and the verdicts it returned. ajv ran
-against schemas whose root is `additionalProperties: false`, so writing
-`strength` into those documents would have left the golden recording `valid`
-verdicts ajv never gave (ajv would refuse the amended documents as carrying an
-undeclared member). Instead `tc_470_parity.rs`'s `with_strength` and
-`tc_470_formats.rs`'s `retained_base` apply this delta visibly at test time —
-each family's one admissible value, added to every captured object — so the
-parity census still turns on the one thing each rung changed. Refusal of a
-missing or foreign `strength` is asserted by `quoin-measurement`'s
-`tc_479_109` and `tc_479_309`, not by the parity census.
+`tc_470_formats.rs`'s `retained_base` applies this delta visibly at test time,
+adding each family's one admissible value to the fixture record. Refusal of a
+missing or foreign `strength` is asserted by `quoin-measurement`'s `tc_479_109`
+and `tc_479_309`.
 
-`tests/fixtures/report-oracle.json` (`tc_469_reports.rs`) and the retained
-corpus records under `spec/evidence/interventions/` and
-`spec/evidence/operational/pairs/` were amended to carry `strength`. A
-structural diff of the report oracle against its pre-PLAT-972 capture shows
-only added `strength` members (5 intervention, 12 operational records); no
-rendered text, verdict or other member moved.

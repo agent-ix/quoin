@@ -42,11 +42,9 @@ caps the value walk's recursion depth at 19 instead of at the dimension count,
 which the statement alone controls — a stack overflow is no more of a diagnostic
 than a heap exhaustion.
 
-**The difference is refusal versus exhaustion, not two different answers.** For
-every space below the ceiling the two sides agree exactly, and the golden corpus
-is the evidence.
+**The difference is refusal versus exhaustion, not two different answers.**
 
-**Must-have-fired:** `tc_382_002_a_demand_past_the_ceiling_is_refused_where_the_retained_side_exhausts_the_heap`
+**Must-have-fired:** `tc_382_002_a_demand_past_the_ceiling_is_refused`
 asserts the refusal _and_ its code, and then asserts that a space under the
 ceiling still computes. If the ceiling were ever removed, the first assertion
 fails and this section stops being true out loud rather than quietly.
@@ -74,8 +72,7 @@ Note what is **not** a divergence here. The retained guard is
 header parses to `Infinity` and is therefore _not a combinatorial obligation at
 all_. This crate reproduces that exactly by reading the digits as an `f64`
 first — Rust and ECMAScript both round decimal to the nearest double — rather
-than approximating the boundary with a digit count. The golden corpus carries
-the case (`an-infinite-strength-is-not-a-space`).
+than approximating the boundary with a digit count.
 
 **Must-have-fired:** `tc_382_003_a_strength_above_u64_saturates_and_that_cannot_be_observed`
 asserts that the saturation actually happened (so the test cannot pass by the
@@ -109,34 +106,6 @@ capture script rather than to the algebra: an object _literal_ spelling
 configurations out of a parsed run record, so the oracle captures the parsed
 spelling; `oracle/capture-combinatorial.mjs` says so at the case.
 
-**Must-have-fired:** `tc_382_004_an_inherited_property_name_is_not_a_divergence_because_the_value_guard_catches_it`,
-plus the two captured cases in the golden corpus.
+**Must-have-fired:** `tc_382_004_an_inherited_property_name_is_an_ordinary_dimension`.
 
 ---
-
-## What the fixture covers, and what it cannot
-
-`tests/goldens/combinatorial.json` holds 31 cases, captured once by
-`oracle/capture-combinatorial.mjs` and committed. **No test spawns node**
-.
-
-It covers every `parseSpace` refusal path (no header, an unanchored header, no
-whitespace after `over`, strength `0`, an infinite strength, fewer than two
-multi-valued dimensions, empty parentheses); value trimming with the ECMAScript
-whitespace set including U+FEFF; exclusion parsing (a one-clause list, a clause
-with no `=`, a value containing `=`, two clause lists, a three-clause exclusion
-that cannot forbid a pair); 2-way and 3-way demand; a partial configuration; an
-undeclared value; gap ordering above the BMP; and three identifier shapes that
-mean something to JavaScript.
-
-It **cannot** cover the resource ceiling of §1, because the retained side
-answers it by dying, and it cannot cover the saturation of §2, because the
-retained side holds the number as a double. Both are handled as declared
-divergences with must-have-fired assertions above. Widening the fixture until
-those looked covered would have produced a corpus that agrees with itself.
-
-What no fixture of any size can cover is a statement about _all_ spaces — that a
-full factorial run always closes every gap, that adding a configuration never
-removes coverage, that no excluded combination is ever demanded. Those are in
-`tests/tc_382_properties.rs` as `proptest` properties, each with an anti-vacuity
-assertion that fails at zero.

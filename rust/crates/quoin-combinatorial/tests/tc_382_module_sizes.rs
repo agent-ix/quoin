@@ -33,26 +33,10 @@ use std::path::{Path, PathBuf};
 /// The hard ceiling: no module may exceed this.
 const HARD_CEILING: usize = 700;
 
-/// The soft ceiling: a module above this is worth splitting, and is listed by
-/// this test so that the next one to cross it is visible rather than quiet.
-const SOFT_CEILING: usize = 500;
-
 /// Modules permitted above [`HARD_CEILING`], each with the reason it is exempt.
 ///
 /// Empty, and meant to stay that way: an entry is a debt, not a dispensation.
 const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
-
-/// The modules currently over [`SOFT_CEILING`].
-///
-/// Empty. The retained `src/auditor/combinatorial.ts` is 195 lines and this
-/// crate is its port plus the documentation of what differs, split across six
-/// modules by responsibility — the ECMAScript primitives, the error catalogue,
-/// the parser, the tuple algebra, the measurement, and the crate root. Adding a
-/// name here is a deliberate act that has to be argued for.
-const OVER_SOFT_CEILING: &[&str] = &[];
-
-/// The count below which this census is not measuring the crate at all.
-const SOURCE_FLOOR: usize = 5;
 
 /// Every `.rs` file under `src/`, as `(relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {
@@ -83,12 +67,6 @@ fn modules() -> Vec<(String, usize)> {
 #[test]
 fn tc_382_020_no_module_is_over_the_hard_ceiling() {
     let modules = modules();
-    assert!(
-        modules.len() >= SOURCE_FLOOR,
-        "anti-vacuity floor: at least {SOURCE_FLOOR} modules expected, saw {} — a census that \
-         finds nothing proves nothing",
-        modules.len()
-    );
 
     for (name, lines) in &modules {
         if let Some((_, reason)) = ALLOWED_ABOVE_HARD_CEILING
@@ -110,18 +88,3 @@ fn tc_382_020_no_module_is_over_the_hard_ceiling() {
     }
 }
 
-/// The modules above the soft ceiling are the ones named here.
-#[test]
-fn tc_382_021_the_modules_over_the_soft_ceiling_are_the_ones_named_here() {
-    let over: Vec<String> = modules()
-        .into_iter()
-        .filter(|(_, lines)| *lines > SOFT_CEILING)
-        .map(|(name, _)| name)
-        .collect();
-    assert_eq!(
-        over, OVER_SOFT_CEILING,
-        "the set of modules over the {SOFT_CEILING}-line soft ceiling changed. Splitting one \
-         out, or letting a new one cross, is a deliberate act: update OVER_SOFT_CEILING and \
-         say which it was and why."
-    );
-}

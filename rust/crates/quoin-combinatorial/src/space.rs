@@ -80,7 +80,7 @@ string_newtype!(DimensionValue);
 /// above the dimension count identically on both sides — and
 /// [`CoverageResult::strength`](crate::CoverageResult), which the auditor
 /// interpolates only inside a `covered < demanded` branch that a zero demand
-/// set cannot enter. `tests/tc_382_parity.rs` proves the unreachability rather
+/// set cannot enter. `tests/tc_382_bounds.rs` proves the unreachability rather
 /// than declaring the difference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]

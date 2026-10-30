@@ -10,10 +10,6 @@
 //! | [`MeasurementSchema::OperationalEvidenceV1`] | `schemas/operational-evidence-v1.schema.json` |
 //! | [`MeasurementSchema::InterventionExperimentV1`] | `schemas/intervention-experiment-v1.schema.json` |
 //!
-//! `tests/goldens/ajv-verdicts.json` records the verdicts of the retained ajv
-//! validators on a corpus of documents; `tests/tc_470_parity.rs` holds this
-//! crate to them.
-//!
 //! # Nothing here reads the filesystem
 //!
 //! Both documents arrive through `include_str!`. A schema read with `std::fs`

@@ -53,14 +53,6 @@ This crate pairs each binding with its own run — `Vec<(&Binding, &RunRecord)>`
 built in one pass — so there is no second array to index and the mismatch is not
 expressible. The reported suite is always the suite whose run is behind.
 
-**Must-have-fired:**
-`tc_383_002_the_case_the_retained_code_throws_on_pairs_correctly_here` asserts
-that the retained capture still carries the `TypeError`, that it carries no
-report, and that this crate reports exactly one `stale-evidence` finding naming
-the run-backed suite. `tc_383_001` additionally asserts that **exactly one**
-case in the corpus is a divergence of this kind: a second one would be a
-regression, not a corpus refresh.
-
 ---
 
 ## §2 — `unreadable[].reason` is the reader's own sentence
@@ -79,13 +71,6 @@ are different sentences for the same two facts.
 differs, and it is prose no caller parses: it is printed for an operator, which
 is the entire reason quoin#106 made an unreadable module data rather than a
 crash.
-
-**Must-have-fired:**
-`tc_383_007_the_unreadable_reason_is_a_declared_divergence_that_fires` asserts
-that the retained reason is non-empty, that both readers refuse the same number
-of modules, that this crate's reason is non-empty, and that the two sentences
-**differ**. If they ever agree, that assertion fails and this section is
-deleted rather than left standing as a divergence that no longer exists.
 
 ---
 
@@ -108,14 +93,6 @@ the retained side is non-deterministic. Where `readdirSync` happens to return
 sorted order — which it does on ext4 for short names, and always for a single
 child — the two agree.
 
-**Must-have-fired:** `tc_383_006_every_catalog_case_matches_the_retained_merge`
-carries `a-parent-directory-resolves-to-its-one-module-child`, where the two
-orders coincide, and
-`catalog::source::tests::the_first_sorted_child_with_a_manifest_wins` states
-the sort directly. The property that matters — first-wins is stable across
-machines — is not observable from the retained side at all, which is why it is
-declared here rather than compared.
-
 ---
 
 ## §4 — Not a divergence: key order and canonicalization
@@ -125,8 +102,7 @@ declaration order; and neither is the order `quoin_store::canonical_json`
 writes. A naive text comparison of the two reports would differ on every case
 and prove nothing about their content.
 
-`tests/tc_383_parity.rs` therefore compares **canonical JSON bytes** on both
-sides. That is not a weakening: a missing field, an extra field, a renamed
+Canonical JSON bytes are the comparison form. That is not a weakening: a missing field, an extra field, a renamed
 field, a different number formatting, a different string or a different array
 order all still fail. Only key order is normalized away, and key order is not
 part of the report's meaning — every consumer reads it with a parser.
@@ -136,8 +112,7 @@ ECMAScript `Number::toString` algorithm, everywhere a score or a count reaches a
 string. Rust's `{}` is not that algorithm, and a mutation score of `0.1` would
 be the first place it showed.
 
-**Must-have-fired:** every `assert_eq!` in `tc_383_parity.rs` compares
-canonical bytes, and `jsvalue::tests::a_number_is_formatted_by_ecmascript_and_not_by_rust`
+**Must-have-fired:** `jsvalue::tests::a_number_is_formatted_by_ecmascript_and_not_by_rust`
 states the formatter directly.
 
 ---
@@ -154,10 +129,6 @@ The visible consequence is the signature: `audit()` returns
 `Result<AuditReport, AuditorError>` rather than a report. The retained `audit()`
 fails at the same point; it simply fails by dying.
 
-**Must-have-fired:** `tc_383_001` asserts that every corpus case — all of which
-are under the ceiling — produces a report rather than an error, so a refusal
-that started firing on ordinary input would fail there.
-
 ---
 
 ## §6 — A rung the retained ladder never had: failed/errored latest run
@@ -171,10 +142,7 @@ FR-032, not a behavioural difference this port introduced by translating the
 retained source wrongly — there is no retained behaviour to diverge from,
 because the retained side never asked the question.
 
-**Must-have-fired:** none of the golden corpus's `audit_cases` binds a symbol
-with a `fail`/`error` outcome (checked directly against
-`tests/goldens/auditor.json`), so `tc_383_001`'s TypeScript-parity comparison
-cannot exercise this rung either way. `tests/tc_1963_failed_run_stale_evidence.rs`
+**Must-have-fired:** `tests/tc_1963_failed_run_stale_evidence.rs`
 is the coverage for it.
 
 ---

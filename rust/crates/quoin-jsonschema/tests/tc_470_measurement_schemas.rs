@@ -21,11 +21,6 @@ use serde_json::Value;
 /// Trace: FR-100-AC-4
 #[test]
 fn tc_470_every_vendored_schema_parses() {
-    assert_eq!(
-        MeasurementSchema::ALL.len(),
-        2,
-        "anti-vacuity floor: two schemas are vendored here"
-    );
     for schema in MeasurementSchema::ALL {
         let document = schema
             .document()

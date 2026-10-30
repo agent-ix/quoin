@@ -27,8 +27,7 @@ third:
 ajv with `allErrors: true` and the `jsonschema` crate walk a failing document
 differently, and both orders are incidental to their implementations rather than
 stated by Draft 2020-12. Promising an order would be promising a property
-neither library documents. No test in this crate asserts any of the three —
-`tests/tc_474_assurance_parity.rs` reads only `oracle_valid`.
+neither library documents. No test in this crate asserts any of the three.
 
 `Error::AssuranceContract` still carries one line per failing instance path in
 `<path>: <reason>` form, because that is the shape `ContractViolation.errors`
@@ -71,18 +70,9 @@ must not have. Only the ~15-line proof token is local.
 
 ## 4. Declared verdict divergences: none
 
-`tests/tc_474_assurance_parity.rs::DECLARED_DIVERGENCES` is **empty**, and that
-is a measured result rather than an absence of measurement: an undeclared
-disagreement fails the test, and a declared one that stopped disagreeing fails
-it too.
-
-The corpus is 209 documents — two base exports produced by the linked engine
-over the committed fixture corpora, each put through a fixed named mutation
-ladder — of which ajv accepts 28 and refuses 181. Both bases carry both
-verdicts. The ladder deliberately includes every arm of the only lookahead in
-the document (`locator.path`'s `^(?!/)(?!.*(?:^|/)\.\.(?:/|$)).+$`), including
-three arms that must be **accepted**, so a regex that refused everything could
-not pass as agreement.
+No recorded ajv verdict is kept: the retired oracle's captured corpus was
+deleted, and this crate's verdicts are asserted against the schema itself in
+`tests/tc_474_assurance_schema.rs`.
 
 ## 5. `validate_assurance` is the weaker of the two readers
 
