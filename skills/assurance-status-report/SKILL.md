@@ -83,9 +83,8 @@ engine revisions, clean state, and required capabilities before attributing a
 measurement to it.
 
 Record the exact collection id, timestamp, source revision, corpus revision,
-tool identity/version, configuration digest, definition version, and population
-identity supporting each reported value. If the repository has a verification
-stack attestation, report its lock and executable digests.
+tool identity/version, definition version, and population identity supporting
+each reported value.
 
 Do not regenerate evidence merely to answer a status question. A new run changes
 the evidence state and requires separate authorization.

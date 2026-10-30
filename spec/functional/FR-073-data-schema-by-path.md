@@ -29,7 +29,7 @@ build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
 - If an object carries `schema` together with any other key, then Quoin SHALL reject it as ambiguous.
 - If the referenced file is missing, unreadable, not JSON, or not a JSON Schema 2020-12 document with an `$id`, then Quoin SHALL reject the manifest naming the path and the reason.
 - If the path escapes the module root by `..` or by symlink, then Quoin SHALL reject the manifest naming the path.
-- Every `$ref` in the referenced schema SHALL resolve within the module's shipped bundle, whose base is `https://schemas.agent-ix.org/<org>/<repo>/` and carries no module version, or the semantic-core bundle `https://schemas.agent-ix.org/semantic-core/<semantic.semantic_core>/`.
+- Every `$ref` in the referenced schema SHALL resolve within the module's shipped bundle, whose base is `https://schemas.agent-ix.org/<org>/<repo>/` and carries no module version, or the semantic-core bundle `https://schemas.agent-ix.org/semantic-core/<version>/`.
 - If a `$ref` names an unshipped file or forms a cycle that the resolver cannot close, then Quoin SHALL reject the manifest naming the `$ref`. A semantic-core `$ref` resolves against the shipped bundle by file name; its version segment is not compared with `semantic.semantic_core` (CR note, 2026-10-29, PLAT-1221).
 - Quoin SHALL ship the semantic-core JSON Schema bundle at each supported version so resolution needs no network read.
 - Where a module declares a `semantic` block and an object type still carries an inline `data_schema`, Quoin SHALL emit a `warning` `semantic.inline-data-schema` naming the object type and the migration (FR-074).

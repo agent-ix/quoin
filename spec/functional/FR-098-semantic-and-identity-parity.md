@@ -23,8 +23,8 @@ difference is exempt. No digest is computed or compared anywhere in the port.
 - The retained TypeScript entry point for the capability under port.
 - The `quoin-core` operation replacing it.
 - Golden corpora: `tests/fixtures`, this repository's own `spec/`, `plan/` and
-  `reviews/` trees, and one external spec corpus pinned by repository and
-  revision in the checked-in differential manifest.
+  `reviews/` trees, and one external spec corpus named by repository in the
+  checked-in differential manifest.
 - Every canonical record in each reachable store, where the
   reachable set is the evidence store root under the caller-selected
   configuration root together with each store root named in the checked-in store

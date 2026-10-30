@@ -14,7 +14,7 @@ protected_apparatus:
   - spec/evidence/github-actions/quoin-271-release-v0.22.5-jobs.json
 negative_controls:
   - kind: apparatus-edit
-    description: the retained workflow bytes and the run and jobs payloads the pair is parsed from are digested; an edit to any of them without a new definition version rejects
+    description: the retained workflow bytes and the run and jobs payloads the pair is parsed from are protected apparatus; an edit to any of them without a new definition version rejects
   - kind: stale-evidence
     description: the exercise is bound to one immutable source revision and run id; it is not presented as evidence for any other revision
 relationships: []

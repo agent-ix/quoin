@@ -33,7 +33,7 @@ The population is every dev row that:
 - is in mode `RC` (requirement plus code) or `RTC` (the full triple), and
 - carries truth for `code_exceeds_requirement`.
 
-No row is excluded by hand. A row the loader excludes (digest mismatch, patch
+No row is excluded by hand. A row the loader excludes (a patch
 that does not apply) is listed with its reason at the top of the report and is
 not in the population. The corpus had not landed when this plan was written,
 so its size and class balance are unknown here. **A truth group with fewer than 10 rows of a class a bar needs is not

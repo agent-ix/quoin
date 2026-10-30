@@ -261,7 +261,7 @@ concordance index goes to held-out. Ties are broken by higher RTC high recall,
 then by higher RTC margin, then by the lower Bar D sign-test p-value,
 then by the fixed order S1, S2, S2M, S3. The
 winning family's registered versions at selection time run once on held-out,
-in every mode it covers, under the harness's held-out seal and run log. The
+in every mode it covers, under the harness's held-out run log. The
 same four bars are reported there once. The choice is committed first as
 this plan's single entry in `fixtures/eval-v2/heldout-selection.json`
 (`rust/crates/quoin-jev/tests/fixtures/eval-v2/heldout-selection.json`)

@@ -13,7 +13,7 @@ protected_apparatus:
   - bench/guidance-independent-review-v1.json
 negative_controls:
   - kind: apparatus-edit
-    description: the evaluator contract and the review evidence are digested with every collection; an edit to either without a new definition version rejects
+    description: the evaluator contract and the review evidence are protected apparatus; an edit to either without a new definition version rejects
   - kind: selective-reporting
     description: every reviewed diagnostic record is in the denominator; a step cannot be reported only when its replay was informative
 relationships: []
@@ -35,9 +35,8 @@ Steps whose canonical replay yields the cited causal channel and a cause-disting
 
 ## Collection Procedure
 
-Retained raw findings, action-template digests, evaluator contract, and stack attestation identify every observation.
+Retained raw findings, action templates and evaluator contract identify every observation.
 
-BLOCKED-BY QSL-1276 (owner: planner titan:QSL:plan): Quire export locator statement_hash. The retained `sha256:` finding ids, `statement_hash` members and guidance `recordId`/`selectedRecordIds` in these records are minted by the Quire export; they are removed with QSL-1276, not here.
 
 ## Environment and Sampling
 

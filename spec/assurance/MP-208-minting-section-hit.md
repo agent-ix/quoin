@@ -29,12 +29,12 @@ case, mode, and language dimensions.
 
 ## Collection Procedure
 
-Retain raw coverage payloads, case inventory, declaration digest, engine,
+Retain raw coverage payloads, case inventory, declaration, engine,
 scorer and corpus revisions, configuration, and timestamp.
 
 ## Environment and Sampling
 
-Use the pinned corpus and declared modules; include absent-section controls.
+Use the corpus and declared modules; include absent-section controls.
 
 ## Interpretation
 

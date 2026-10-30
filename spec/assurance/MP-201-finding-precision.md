@@ -19,7 +19,7 @@ each labelled defect family.
 
 ## Population
 
-Include findings emitted for one family over the pinned labelled corpus. Keep
+Include findings emitted for one family over the labelled corpus. Keep
 families separate and report unadjudicated findings.
 
 ## Measure Definition
@@ -30,11 +30,11 @@ families separate and report unadjudicated findings.
 ## Collection Procedure
 
 Retain finding loci, labels, raw outputs, scorer revision, tools, engine,
-declaration digest, corpus revision, configuration, and timestamp.
+declaration, corpus revision, configuration, and timestamp.
 
 ## Environment and Sampling
 
-Use the pinned corpus and unchanged label set. Live-repository samples are
+Use the corpus and unchanged label set. Live-repository samples are
 reported separately with adjudication coverage.
 
 ## Interpretation

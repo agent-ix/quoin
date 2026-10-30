@@ -14,7 +14,7 @@ protected_apparatus:
   - skills/spec-criterion-strength-analysis/assets/question-set.json
 negative_controls:
   - kind: apparatus-edit
-    description: the fixture corpus, its FR-context sidecar and the question set are digested with every collection; an edit to any of them without a new definition version rejects
+    description: the fixture corpus, its FR-context sidecar and the question set are protected apparatus; an edit to any of them without a new definition version rejects
   - kind: suppressed-observation
     description: a transport failure aborts the pass and is never scored, so a fixture the lens fails to answer cannot be quietly left out of the denominator
 relationships: []

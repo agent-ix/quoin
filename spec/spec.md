@@ -95,7 +95,7 @@ uses as its authoring contract. It installs user and community modules through
 hands their lifecycle to `ix-flow`.
 
 `quoin` declares its default module set in the committed `default-modules.yaml` as
-pinned `git-subdir` sources and auto-installs that set on first catalog access
+`git-subdir` sources and auto-installs that set on first catalog access
 into the shared `~/.ix/filament/modules` store that `quire` also reads — so
 authoring and validation see one identical catalog, and repeated work stays local.
 

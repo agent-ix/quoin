@@ -68,7 +68,7 @@ against source before changing a rule.
 ## Evidence Policy
 
 Retain the active plans, source and corpus revisions, tool and engine identity,
-configuration digest, full raw payload, per-family counts, gap count, comparison
+configuration, full raw payload, per-family counts, gap count, comparison
 reasons, and tickets created from confirmed findings.
 
 ## Measurement Ownership

@@ -11,7 +11,7 @@ relationships:
     type: "verifies"
 ---
 
-# IT-001: Default module set reconciles from pinned git tags, then serves offline
+# IT-001: Default module set reconciles from git sources, then serves offline
 
 ## Objective
 

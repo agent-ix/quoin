@@ -13,7 +13,7 @@ protected_apparatus:
   - bench/guidance-independent-review-v1.json
 negative_controls:
   - kind: apparatus-edit
-    description: the evaluator contract and the review evidence naming each failure and control fixture are digested with every collection; an edit to either without a new definition version rejects
+    description: the evaluator contract and the review evidence naming each failure and control fixture are protected apparatus; an edit to either without a new definition version rejects
   - kind: selective-reporting
     description: every reviewed remedy record is in the denominator; a remedy cannot be reported only when its repair succeeded
 relationships: []
@@ -37,7 +37,6 @@ Remedies whose failure fixture reports the family, repaired control does not, an
 
 The exact failure/control identities and producer stack are retained in review evidence and measurement v2.
 
-BLOCKED-BY QSL-1276 (owner: planner titan:QSL:plan): Quire export locator statement_hash. The retained `sha256:` finding ids, `statement_hash` members and guidance `recordId`/`selectedRecordIds` in these records are minted by the Quire export; they are removed with QSL-1276, not here.
 
 ## Interpretation
 

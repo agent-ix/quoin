@@ -20,7 +20,7 @@ quire clauses evaluate \
   --format json > binding.json
 ```
 
-The report binds the exact ClauseSet version and content digest. Use `quire
+The report binds the exact ClauseSet version. Use `quire
 clauses diff` to review changes between exact versions.
 
 ## 2. Account for discharge

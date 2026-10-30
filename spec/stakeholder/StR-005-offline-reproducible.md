@@ -25,7 +25,7 @@ upstream changes or connectivity.
 Authors run the write-validate loop many times per session, often offline or
 behind restricted networks. If every catalog access re-fetched modules, the loop
 would be slow and could silently change behaviour when an upstream module moved.
-Declaring the default set at pinned versions and installing it once gives every
+Declaring the default set and installing it once gives every
 author the same vocabulary deterministically, and keeps subsequent work entirely
 local.
 

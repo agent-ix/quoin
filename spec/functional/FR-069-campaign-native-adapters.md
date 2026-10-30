@@ -78,7 +78,7 @@ recorded on any of these paths.
 | FR-069-CON-1 | An adapter SHALL execute no producer, spawn no process, and perform no network request. | Architecture | Inspection |
 | FR-069-CON-2 | An adapter SHALL introduce no new record family and SHALL change no stored schema. | Compatibility | Test |
 | FR-069-CON-3 | An adapter SHALL NOT recover a verdict from unstructured console output. | Responsibility | Inspection |
-| FR-069-CON-4 | Every added adapter SHALL name a real producer and a pinned real sample. | Integrity | Test |
+| FR-069-CON-4 | Every added adapter SHALL name a real producer and a real sample. | Integrity | Test |
 
 ## Acceptance Criteria
 
@@ -90,7 +90,7 @@ recorded on any of these paths.
 | FR-069-AC-4 | An unknown protocol, an unknown schema version, an unknown status, a missing required field, malformed JSON, and an empty result set are each refused with a message naming the line or case. | Property (TC-1331) |
 | FR-069-AC-5 | Both adapters are selectable by name and by declared tool, and appear in the adapter listing. | Test (TC-1332) |
 | FR-069-AC-6 | `quoin evidence record` prints every unrepresented result in both human and JSON output (CON-2). | Test (TC-1333) |
-| FR-069-AC-7 | The inventory names, for every scope item, a real producer and a verdict, and every added adapter names its pinned sample (CON-4). | Test (TC-1334) |
+| FR-069-AC-7 | The inventory names, for every scope item, a real producer and a verdict, and every added adapter names its sample (CON-4). | Test (TC-1334) |
 | FR-069-AC-8 | Static boundaries prove neither adapter spawns a process, performs network work, or scrapes console text for a verdict (CON-1, CON-3). | Inspection (TC-1335) |
 | FR-069-AC-9 | A pinned real conformance row retains every supplied trace id and its order in `RunEntry.traceIds`; legacy rows omitting the field remain readable without trace ids. | Test (TC-1585) |
 | FR-069-AC-10 | A supplied non-array, empty array, non-string id, empty or whitespace-only id, or duplicate id fails naming the line and `trace_ids`; a valid preceding row causes no partial evidence write. | Test (TC-1586, TC-1588) |

@@ -42,7 +42,7 @@ the conclusion that they qualify.
 - **Primary risk:** ambiguous treatment attribution or unverifiable raw evidence can
   make a technically valid record materially misleading.
 - **Mitigation:** require treatment-linked observations, reproducible randomized
-  assignment, explicit attribution limits, and digest verification at intake.
+  assignment, and explicit attribution limits.
 
 ## Acceptance Examples (Illustrative)
 
