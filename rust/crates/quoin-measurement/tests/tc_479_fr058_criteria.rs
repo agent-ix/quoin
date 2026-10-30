@@ -479,7 +479,6 @@ fn tc_479_254_the_producer_spawns_nothing_and_persists_through_the_intake() {
         "tokio",
     ];
 
-
     let producer_modules = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src")
         .join("intervention")
