@@ -388,7 +388,7 @@ mod tests {
     /// `tc_447_320` drives it to a different failure, so without this pair a
     /// reader that refused every binding would look identical.
     ///
-    /// BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
+    /// BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): `ClauseSetDigest`
     ///
     /// Trace: FR-046-AC-1
     /// Provenance: quoin#502

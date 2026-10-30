@@ -165,7 +165,8 @@ fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
         );
     }
     for receipt in [verify(&base_input()), verify(&two_proofs())] {
-        let text = String::from_utf8(canonical_bytes(&receipt.to_json().unwrap()).unwrap()).unwrap();
+        let text =
+            String::from_utf8(canonical_bytes(&receipt.to_json().unwrap()).unwrap()).unwrap();
         for claim in claims {
             assert!(
                 !text.contains(claim),
