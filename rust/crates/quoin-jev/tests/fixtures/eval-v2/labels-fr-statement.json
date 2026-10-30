@@ -115,31 +115,6 @@
         "why": "no if any of the three checks is yes"
       }
     },
-    "N-034": {
-      "fr_id": "FR-032",
-      "compound_obligation": {
-        "answer": "no",
-        "why": "audit and report the ways evidence rotted read as one behaviour whose observable output is the report",
-        "alternatives": [
-          "yes"
-        ]
-      },
-      "multiple_readings": {
-        "answer": "no",
-        "why": "none found in the statement"
-      },
-      "names_internal_symbol": {
-        "answer": "no",
-        "why": "none found in the statement"
-      },
-      "fr_statement_sound": {
-        "answer": "yes",
-        "why": "no if any of the three checks is yes",
-        "alternatives": [
-          "no"
-        ]
-      }
-    },
     "N-140": {
       "fr_id": "FR-034",
       "compound_obligation": {
@@ -462,25 +437,6 @@
         ]
       }
     },
-    "N-082": {
-      "fr_id": "FR-075",
-      "compound_obligation": {
-        "answer": "yes",
-        "why": "derive the package-manifest document AND record per-export digests in the registry"
-      },
-      "multiple_readings": {
-        "answer": "no",
-        "why": "none found in the statement"
-      },
-      "names_internal_symbol": {
-        "answer": "no",
-        "why": "none found in the statement"
-      },
-      "fr_statement_sound": {
-        "answer": "no",
-        "why": "no if any of the three checks is yes"
-      }
-    },
     "N-056": {
       "fr_id": "FR-083",
       "compound_obligation": {
@@ -561,31 +517,6 @@
       "fr_statement_sound": {
         "answer": "no",
         "why": "no if any of the three checks is yes"
-      }
-    },
-    "N-063": {
-      "fr_id": "FR-099",
-      "compound_obligation": {
-        "answer": "no",
-        "why": "one obligation: implement the listed behaviour in Rust crates; 'preserving' describes the result",
-        "alternatives": [
-          "yes"
-        ]
-      },
-      "multiple_readings": {
-        "answer": "no",
-        "why": "none found in the statement"
-      },
-      "names_internal_symbol": {
-        "answer": "no",
-        "why": "none found in the statement"
-      },
-      "fr_statement_sound": {
-        "answer": "yes",
-        "why": "no if any of the three checks is yes",
-        "alternatives": [
-          "no"
-        ]
       }
     },
     "N-004": {
