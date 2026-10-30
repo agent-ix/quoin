@@ -49,6 +49,7 @@ semver = { workspace = true }
 time = { workspace = true }
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 quoin-semantic = { workspace = true }
 quoin-validators = { workspace = true }
 serde = { workspace = true }

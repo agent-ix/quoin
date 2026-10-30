@@ -48,6 +48,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 # `json_bridge` is the one `serde_json::Value` <-> `quoin_store::JsonValue`
 # crossing in the workspace, and the parity test compares canonical bytes.
 quoin-measurement = { workspace = true }

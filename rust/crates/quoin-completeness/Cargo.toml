@@ -46,3 +46,4 @@ schema = ["dep:schemars"]
 # that a pin moves up and never down; 3.27.0 is API-compatible for the
 # `TempDir`/`NamedTempFile` use here.
 tempfile = "=3.27.0"
+ix-trace-rs = { workspace = true }

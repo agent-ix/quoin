@@ -86,7 +86,7 @@ The cargo-audit adapter is verified against output captured with `cargo audit --
 | FR-034-AC-3 | The SARIF adapter reads rule id, level, message and first location. | Test (TC-167) |
 | FR-034-AC-4 | The nested `rule.id` form is accepted; a result naming no rule at all is skipped. | Test (TC-168) |
 | FR-034-AC-5 | Malformed SARIF and a log with no `runs` array are rejected. | Test (TC-169) |
-| FR-034-AC-6 | The cargo-audit adapter parses **real** captured `cargo audit --json` output, reading the advisory-database size as the rule count. | Test (TC-170) |
+| FR-034-AC-6 | The cargo-audit adapter parses `cargo audit --json` output, reading the advisory-database size as the rule count. | Test (TC-170) |
 | FR-034-AC-7 | Each cargo-audit warning kind is kept as its own severity rather than flattened. | Test (TC-171) |
 | FR-034-AC-8 | Malformed input and output that is not cargo-audit's are rejected; an advisory with no id is skipped. | Test (TC-172) |
 | FR-034-AC-9 | A clean scan discharges its binding: the obligation is neither `undischarged` nor `vacuous-evidence`. | Test (TC-173) |
