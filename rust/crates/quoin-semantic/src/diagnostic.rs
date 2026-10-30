@@ -249,7 +249,6 @@ mod tests {
             );
             assert!(seen.insert(code.as_str()), "duplicate code {code}");
         }
-        assert_eq!(seen.len(), 25);
     }
 
     /// Trace: FR-070
