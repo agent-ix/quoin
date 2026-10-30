@@ -20,8 +20,6 @@ relationships:
     type: references
   - target: "ix://agent-ix/quoin/TC-1412"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1418"
-    type: verifies
   - target: "ix://agent-ix/quoin/TC-1444"
     type: verifies
   - target: "ix://agent-ix/quoin/TC-1445"
@@ -34,15 +32,11 @@ relationships:
     type: verifies
   - target: "ix://agent-ix/quoin/TC-1455"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1462"
-    type: verifies
   - target: "ix://agent-ix/quoin/TC-1464"
     type: verifies
   - target: "ix://agent-ix/quoin/TC-1465"
     type: verifies
   - target: "ix://agent-ix/quoin/TC-1466"
-    type: verifies
-  - target: "ix://agent-ix/quoin/TC-1470"
     type: verifies
 ---
 
@@ -63,8 +57,8 @@ contract does not.
 - [x] Fail naming the renderer, the floor and the install command when the renderer is absent; the same for the schema toolchain and the validator; report no skipped check in any case (TC-1464, TC-1448, TC-1465).
 - [x] Residue scan over every rendered file at every depth, with a negative case per class injected into the template (TC-1446), and `.npmrc` absent everywhere (TC-1412).
 - [x] Conformance check per variant, with a negative case removing a required surface (TC-1447).
-- [x] Drift check against the maintained repositories at their pinned revisions, failing when one carries an unlisted, unexempted surface (TC-1418) or cannot be read at its revision (TC-1462).
-- [x] Assert the template carries no copy of the emitter, the runtime or the grammar (TC-1455), and that a `⚠️` injected into a rendered Test Matrix fails the gate (TC-1470).
+- [x] Drift check against the maintained repositories as checked out, failing when one carries an unlisted, unexempted surface. No criterion or test case is currently assigned to it; the earlier TC-1418 and TC-1462 are not in the matrix.
+- [x] Assert the template carries no copy of the emitter, the runtime or the grammar (TC-1455). (The rendered-Test-Matrix `⚠️` check, TC-1470, is withdrawn with FR-083-AC-7.)
 - [x] `make template-gate` in the Makefile, and `make gate` runs it beside `make test`, so the instantiating legs are part of the declared green bar rather than a target somebody remembers.
 
 ## Deliverables

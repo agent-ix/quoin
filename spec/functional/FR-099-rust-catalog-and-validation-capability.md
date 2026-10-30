@@ -65,9 +65,9 @@ store.
   reimplemented only to the extent [FR-022](./FR-022-self-update.md) already
   requires.
 - Module reconcile SHALL remain idempotent and SHALL perform no git or network
-  access when every declared module is already materialized at the commit id its
-  declaration names (NFR-010 requires that `ref` to be a full commit id; a tag
-  or branch name is refused, not materialized).
+  access when every declared module is already materialized under the `ref` its
+  declaration names (NFR-010: that `ref` is a tag or branch name, and neither
+  is refused).
 - If a module manifest declares an unknown key, then the Rust manifest reader
   SHALL refuse it, preserving the existing strict-parsing behaviour.
 - Quoin SHALL keep exactly one catalog and one module store across the port and
@@ -123,7 +123,7 @@ refusal and are never reported as an empty but successful catalog.
 | FR-099-AC-7 | The Rust skill tests read the shipped Markdown skills and fail on a planted vocabulary drift, and the binary resolves the skills root from an argument, an environment value and its embedded fallback. | Test (TC-1631) |
 | FR-099-AC-8 | `package.json` declares no dependency on `@agent-ix/ix-cli-core`, and each imported symbol recorded in the baseline inventory has a named Rust implementation and a test; the gate reads the inventory rather than a hard-coded count. | Test (TC-1632) |
 | FR-099-AC-9 | Every asset under `skills/**/workflow-assets/**` carries a recorded disposition that distinguishes the first-party invariant shim from the vendored bundle, and an unclassified asset fails the gate. | Test (TC-1683) |
-| FR-099-AC-10 | The ix-flow child process is spawned through the same hardened path as `quoin-core`: real-path resolution, a resolution diagnostic when the executable cannot be resolved, a declared output ceiling, a timeout, and exit, signal and spawn-failure reported as three distinct outcomes. | Test (TC-1696) |
+| FR-099-AC-10 | The ix-flow child process is spawned through one hardened path: real-path resolution, a resolution diagnostic when the executable cannot be resolved, a declared output ceiling, a timeout, and exit, signal and spawn-failure reported as three distinct outcomes. | Test (TC-1696) |
 | FR-099-AC-11 | A partially materialized module root is refused rather than served, so an interrupted checkout cannot satisfy the already-materialized path. | Test (TC-1697) |
 | FR-099-AC-12 | Duplicate type detection folds case under the same rule the resolver uses, so no two declarations are distinct to the duplicate gate and identical to the resolver. | Test (TC-1698) |
 

@@ -108,7 +108,7 @@ pub struct Unreadable {
 /// what `src/assurance/graph.ts` already returns to every consumer, and the
 /// difftest compares canonical stdout bytes, so a renamed key here is a
 /// difference. The **request** is new surface minted at this boundary, and it
-/// follows the boundary's own convention (`expect_protocol`, `obligation_id`).
+/// follows the boundary's own convention (`obligation_id`).
 ///
 /// # Why the two assessments are type parameters
 ///
