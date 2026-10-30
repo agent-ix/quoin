@@ -35,8 +35,7 @@
 //! # No live oracle runs from here
 //!
 //! The retire-after-parity rule forbids a Rust test spawning node, pnpm or tsx. The capture is a
-//! committed golden carrying the ajv version, the node version, the engine pin
-//! and the quoin revision it was taken at; this test reads that file and
+//! committed golden carrying the ajv version and the node version it was taken with; this test reads that file and
 //! nothing else.
 //!
 //! Trace: FR-099-AC-2

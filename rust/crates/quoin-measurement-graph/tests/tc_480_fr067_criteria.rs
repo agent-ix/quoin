@@ -110,7 +110,6 @@ fn collection_json(id: &str, timestamp: &str) -> Value {
         "toolIdentity": "agent-ix/quire-code-rs",
         "toolVersion": "1.0.0",
         "timestamp": timestamp,
-        "corpusRevision": "e".repeat(40),
         "scope": { "corpus": "spec" },
         "environment": { "ci": "true" },
         "observations": [
@@ -249,7 +248,7 @@ fn build(inputs: &[GraphPortfolioRepositoryInput]) -> GovernedGraphPortfolioRepo
 // ------------------------------------------------- the reading itself
 
 /// The current row carries the active plan, its definition, the producer
-/// tuple, the source and corpus revisions, the population identity and the
+/// tuple, the source revision, the population identity and the
 /// producer-assigned observation id.
 ///
 /// Trace: FR-067-AC-1
@@ -279,10 +278,6 @@ fn tc_480_050_the_current_row_carries_the_plan_the_producer_and_the_observation_
     assert_eq!(plan.definition_version, "gq-1");
     assert_eq!(current.tool_identity, "agent-ix/quire-code-rs");
     assert_eq!(current.tool_version, "1.0.0");
-    assert_eq!(
-        current.corpus_revision.as_deref(),
-        Some("e".repeat(40).as_str())
-    );
     assert!(
         current.population_identity.is_some(),
         "the population identity"
@@ -488,7 +483,7 @@ fn tc_480_041_every_compatibility_premise_blocks_a_delta_independently() {
         );
     }
 
-    let mutations: [Mutation; 6] = [
+    let mutations: [Mutation; 5] = [
         (GraphCompatibilityCode::PlanChanged, |value| {
             value["observations"][0]["planId"] = Value::String("gp-other".to_owned());
         }),
@@ -497,9 +492,6 @@ fn tc_480_041_every_compatibility_premise_blocks_a_delta_independently() {
         }),
         (GraphCompatibilityCode::ToolChanged, |value| {
             value["toolVersion"] = Value::String("changed".to_owned());
-        }),
-        (GraphCompatibilityCode::CorpusChanged, |value| {
-            value["corpusRevision"] = Value::String("changed".to_owned());
         }),
         (GraphCompatibilityCode::PopulationChanged, |value| {
             value["observations"][0]["population"]["identity"] = json!({ "files": ["other.rs"] });

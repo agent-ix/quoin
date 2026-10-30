@@ -13,10 +13,10 @@ use quoin_store::{JsonObject, JsonValue};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::types::collection::{
-    BuildProfile, CleanSourceState, ResolvedApparatus, SourceAttestation,
-    VERIFICATION_STACK_SCHEMA_VERSION, VerificationStackAttestation, unrecordable_apparatus_path,
+    BuildProfile, ResolvedApparatus, VERIFICATION_STACK_SCHEMA_VERSION,
+    VerificationStackAttestation, unrecordable_apparatus_path,
 };
-use crate::types::ids::{FullGitRevision, NonEmptyText};
+use crate::types::ids::NonEmptyText;
 use crate::validate::read;
 
 /// The code every refusal in this module carries.
@@ -53,7 +53,6 @@ pub(crate) fn verification_stack(
     // than fixing them one round trip at a time (PLAT-929).
     let mut findings = Vec::new();
     let build_profile = note(&mut findings, build_profile(object));
-    let sources = note(&mut findings, sources(object));
     let capabilities = note(&mut findings, capabilities(object));
     let artifacts = note(&mut findings, artifacts(object));
     let unverified_artifacts = note(&mut findings, unverified_artifacts(object));
@@ -72,7 +71,6 @@ pub(crate) fn verification_stack(
     (|| {
         Some(VerificationStackAttestation {
             build_profile: build_profile?,
-            sources: sources?,
             capabilities: capabilities?,
             artifacts: artifacts?,
             unverified_artifacts: unverified_artifacts?,
@@ -86,8 +84,8 @@ pub(crate) fn verification_stack(
 ///
 /// Unlike a `?`, this lets every member be checked even after an earlier one
 /// fails (PLAT-929): a failing member's own findings are kept when it has
-/// any (so an internally-accumulating check like
-/// [`sources`] does not lose all but one of its own problems), and its
+/// any (so an internally-accumulating check does not
+/// lose all but one of its own problems), and its
 /// subject otherwise.
 fn note<T>(findings: &mut Vec<String>, result: Result<T, MeasurementError>) -> Option<T> {
     match result {
@@ -116,66 +114,6 @@ fn build_profile(object: &JsonObject) -> Result<Option<BuildProfile>, Measuremen
                 refuse("verificationStack.buildProfile must be debug, release, or absent")
             }),
     }
-}
-
-fn sources(object: &JsonObject) -> Result<BTreeMap<String, SourceAttestation>, MeasurementError> {
-    let non_empty = "verificationStack.sources must be a non-empty object";
-    let Some(JsonValue::Object(sources)) = object.get("sources") else {
-        return Err(refuse(non_empty));
-    };
-    if sources.is_empty() {
-        return Err(refuse(non_empty));
-    }
-
-    // Every named source is checked, even after an earlier one fails, so
-    // several malformed sources are named individually rather than only the
-    // first (PLAT-929).
-    let mut findings = Vec::new();
-    let mut out = BTreeMap::new();
-    for (name, value) in sources.iter() {
-        match source_attestation(name, value) {
-            Ok(source) => {
-                out.insert(name.clone(), source);
-            }
-            Err(error) => findings.push(error.subject().to_owned()),
-        }
-    }
-    if findings.is_empty() {
-        Ok(out)
-    } else {
-        Err(MeasurementError::with_findings(
-            CODE,
-            "verificationStack.sources is invalid",
-            findings,
-        ))
-    }
-}
-
-/// One named entry of `verificationStack.sources`.
-fn source_attestation(
-    name: &str,
-    value: &JsonValue,
-) -> Result<SourceAttestation, MeasurementError> {
-    let unclean = format!("verificationStack.sources.{name} is not a clean full-SHA source");
-    let source = read::object(value, CODE, &unclean)?;
-    let revision = read::string(source, "revision").map_or_else(
-        || Err(refuse(unclean.clone())),
-        |text| FullGitRevision::parse(text, CODE, &unclean),
-    )?;
-    if read::string(source, "sourceState") != Some(CleanSourceState::AS_STR) {
-        return Err(refuse(unclean));
-    }
-    let remote = read::string(source, "remote")
-        .filter(|text| !text.is_empty())
-        .map_or_else(
-            || Err(refuse(unclean)),
-            |text| NonEmptyText::parse(text, CODE, "remote"),
-        )?;
-    Ok(SourceAttestation {
-        revision,
-        source_state: CleanSourceState,
-        remote,
-    })
 }
 
 fn capabilities(object: &JsonObject) -> Result<Vec<NonEmptyText>, MeasurementError> {

@@ -26,7 +26,7 @@ relationships:
 ## Objective
 
 Implement issue #288 as a reproducible, read-only census and semantic type-fit review of the entire
-pinned default-module corpus. Publish canonical JSON and generated Markdown/SpecReview projections,
+default-module corpus. Publish canonical JSON and generated Markdown/SpecReview projections,
 then stop at any recommendation that would activate a breaking contract, compiler, schema, migration,
 publication, enforcement, retirement, database, API, UI, or conflicting feature-work change.
 
@@ -66,7 +66,7 @@ publication, enforcement, retirement, database, API, UI, or conflicting feature-
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `default-modules.yaml` | Branch-local bytes, ordered declarations and declared refs.                                                     |
 | Default module sources | Canonical repository/subdirectory and exact inspected content/commit; disagreement is retained.                                         |
-| Quire                  | CLI and engine identity plus pinned `quire-rs#385` corpus revision; parsing failures remain records.                                    |
+| Quire                  | CLI and engine identity plus the `quire-rs#385` corpus; parsing failures remain records.                                    |
 | Semantic architecture  | PR #311 merged; its decisions guide classification while downstream changes remain gated. |
 | Core-data census       | Merged `filament-core-data#10` commit and its contract inventory, linked rather than copied.                                            |
 
@@ -97,7 +97,7 @@ default-modules.yaml + resolved module sources + Quire/core-data evidence
 2. Implement pure identity, inventory, scoring, reconciliation, and serialization functions in that order.
 3. Run the pure functions against fixture modules, including duplicate names, placeholder schemas,
    malformed/untyped Markdown, absent instances, provenance drift, and output tampering.
-4. Run the read-only audit against all 10 pinned default modules and retain canonical artifacts.
+4. Run the read-only audit against all 10 default modules and retain canonical artifacts.
 5. Generate report and SpecReview from the canonical object, validate all artifacts, and reconcile counts.
 6. Run a fresh census, full repository gates, `/code-review`, and `/gap-analysis`; fix all findings.
 7. Open a stacked PR and stop for #289 approval and any major-interference recommendation.

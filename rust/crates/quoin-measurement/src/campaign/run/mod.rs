@@ -72,10 +72,9 @@ pub enum InputSource {
 /// A declared runtime environment variable derived from verified sources.
 #[derive(Clone, Debug)]
 pub enum EnvironmentSource {
-    /// Exact clean commit revision of one campaign repository.
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision, the only revision the campaign carries.
+    /// Exact commit revision of one campaign repository.
     SourceRevision(String),
-    /// The literal `clean`, granted only after source verification.
-    CleanSourceState,
 }
 
 /// Machine-selected bindings for one named campaign member.
@@ -89,8 +88,6 @@ pub struct RunMemberBindings {
     pub inputs: Vec<SelectedInput>,
     /// Caller-provided RFC 3339 UTC timestamp for collections.
     pub timestamp: String,
-    /// Exact remote display names for the source graph's repositories.
-    pub source_remotes: BTreeMap<String, String>,
     /// Runtime environment values selected from checked source identities.
     pub environment_sources: BTreeMap<String, EnvironmentSource>,
 }

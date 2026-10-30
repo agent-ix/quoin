@@ -117,8 +117,7 @@ both ways from the identical responses.
 
 **The record backing this table was withdrawn, 2026-09-23.**
 `spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json` did not
-carry `rawEvidence` and recorded a dirty `quire-rs` source rather than a
-clean full-SHA one -- both refused by the ported intake validator, so it was
+carry `rawEvidence` -- refused by the ported intake validator, so it was
 removed rather than backfilled with data not actually measured
 (agent-ix/quoin#607). Its bytes remain in git history (#575).
 The numbers below are unbacked by a retained record until a fresh `v3` run

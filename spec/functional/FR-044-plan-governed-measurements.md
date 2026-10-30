@@ -28,7 +28,7 @@ hand-typed measurement value.
 The Tier-1 benchmark previously appended a benchmark-specific JSONL envelope.
 It preserved history but could not answer which plans governed the values,
 could not serve other producers, and could not render current QA state. A bare
-delta across changed definitions or configurations is confident misinformation.
+delta across changed definitions is confident misinformation.
 
 ## Acceptance Criteria
 

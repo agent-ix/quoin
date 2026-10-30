@@ -26,6 +26,7 @@ pub struct Producer {
     // BLOCKED-BY QSL-1300 (owner: planner titan:QSL:plan): graph-quality-observation-v1 requires producer.source_revision (additionalProperties false).
     pub source_revision: RevisionIdentity,
     /// The revision of the measured corpus.
+    // BLOCKED-BY QSL-1300 (owner: planner titan:QSL:plan): graph-quality-observation-v1 requires producer.corpus_revision (additionalProperties false).
     pub corpus_revision: RevisionIdentity,
     /// The scorer's revision.
     pub scorer_version: RevisionIdentity,

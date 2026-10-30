@@ -9,7 +9,7 @@
 //! asserted against the error catalogue itself.
 //!
 //! A FINDING is not an error here and never reaches this file. An unbound
-//! obligation, a stale statement hash, a mocked binding, a vacuous scan — all
+//! obligation, a mocked binding, a vacuous scan — all
 //! of those are the audit's ANSWER, reported inside the report, exactly as
 //! `src/auditor/audit.ts` reported them. `quoin evidence audit` exits 0 with a
 //! full report of violations; only a refusal to compute one arrives here.

@@ -150,7 +150,6 @@ pub fn adapt_graph_quality_observation(
         "toolIdentity": TOOL_IDENTITY,
         "toolVersion": record.producer.extractor_revision.as_str(),
         "timestamp": attestation.timestamp.as_str(),
-        "corpusRevision": record.producer.corpus_revision.as_str(),
         "environment": member(input.attestation, "environment"),
         "verificationStack": member(input.attestation, "verificationStack"),
         "observations": observations,

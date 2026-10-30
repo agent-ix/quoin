@@ -214,9 +214,6 @@ pub(crate) struct CollectionSummaryWire<'a> {
     timestamp: &'a str,
     tool_identity: &'a str,
     tool_version: &'a str,
-    /// Assigned from an optional member, so absent rather than `null`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    corpus_revision: Option<&'a str>,
     path: &'a str,
     /// Absent when there is nothing unverified, matching every other
     /// optional member here — never an empty array (PLAT-969).
@@ -232,7 +229,6 @@ impl<'a> CollectionSummaryWire<'a> {
             timestamp: &summary.timestamp,
             tool_identity: &summary.tool_identity,
             tool_version: &summary.tool_version,
-            corpus_revision: summary.corpus_revision.as_deref(),
             path: &summary.path,
             unverified_artifacts: &summary.unverified_artifacts,
         }

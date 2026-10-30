@@ -16,8 +16,7 @@ relationships:
 
 ## Status
 
-**done** — exact Git-tree, installed-byte, registry, Quoin, Quire, corpus, and core-data identities
-are retained; equal installed/canonical bytes reconcile and all manifest-version disagreements remain findings.
+**done** — installed, registry, Quoin, Quire, corpus, and core-data identities are reported; equal installed/canonical bytes reconcile and all manifest-version disagreements remain findings.
 
 ## Scope
 

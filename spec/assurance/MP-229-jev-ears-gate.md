@@ -274,8 +274,7 @@ requests.
 
 **The record backing this table was withdrawn, 2026-09-23.**
 `spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json` did not
-carry `rawEvidence` and recorded `verificationStack.sources.quire-rs` as
-`dirty` -- both refused by the ported
+carry `rawEvidence` -- refused by the ported
 intake validator, so the file was never an admissible collection and was
 removed rather than backfilled with data not actually measured (agent-ix/quoin#607).
 Its bytes remain in git history (#575). The numbers below are

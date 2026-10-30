@@ -244,6 +244,7 @@ fn fixture_with_producer(producer: &str) -> (tempfile::TempDir, CampaignDefiniti
     let definition = serde_json::from_value(json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-input-origins", "subjectName":"fictional-subject", "subjectVersion":"1",
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision and CampaignSource.digest.
         "sourceGraph":[{"repository":"fictional/source","revision":revision,"digest":digest}],
         "members":[
             {"name":"prepare","planId":"MP-PREP","definitionVersion":"v1","required":true,
@@ -267,6 +268,7 @@ fn bindings(
     let contract = |kind: &str| ContractBinding {
         kind: kind.to_owned(),
         version: "1".to_owned(),
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.revision.
         revision: revision.to_owned(),
         // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
         digest: ContentDigest::of_bytes(kind.as_bytes()),
@@ -275,6 +277,7 @@ fn bindings(
         producer: ProducerDescriptor {
             name: name.to_owned(),
             version: "1".to_owned(),
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.source_revision.
             source_revision: revision.to_owned(),
             executable: python.to_str().expect("UTF-8 Python path").to_owned(),
             // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
@@ -356,10 +359,6 @@ fn runtime(repo: &Path, revision: &str, prepare: bool) -> RunMemberBindings {
         checker: Some(bindings(repo, revision, "fictional-checker", true)),
         inputs,
         timestamp: "2026-09-24T00:00:00Z".to_owned(),
-        source_remotes: BTreeMap::from([(
-            "fictional/source".to_owned(),
-            "https://example.invalid/fictional.git".to_owned(),
-        )]),
         environment_sources: BTreeMap::new(),
     }
 }

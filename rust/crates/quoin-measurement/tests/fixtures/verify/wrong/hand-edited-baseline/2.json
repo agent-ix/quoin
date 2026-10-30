@@ -45,13 +45,6 @@
         "spec/assurance/MP-961-prior.md"
       ]
     },
-    "schemaVersion": "verification-stack-attestation-v1",
-    "sources": {
-      "fixture": {
-        "remote": "https://example.invalid/fixture",
-        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "sourceState": "clean"
-      }
-    }
+    "schemaVersion": "verification-stack-attestation-v1"
   }
 }

@@ -4,9 +4,8 @@
 //!
 //! `renderPortfolioReportJson` (`portfolio.ts:219-221`) is `canonicalJson`
 //! over the whole portfolio object, so every member of `portfolio.ts:29-70` is
-//! stated here — including the three that are absent rather than `null`:
-//! a collection reference's `corpusRevision` (`portfolio.ts:327-329`), and a
-//! plan's `owner` and `action` (`plans.ts:77-80`).
+//! stated here — including the two that are absent rather than `null`:
+//! a plan's `owner` and `action` (`plans.ts:77-80`).
 
 use serde::Serialize;
 
@@ -256,11 +255,8 @@ struct CollectionRefWire<'a> {
     timestamp: &'a str,
     tool_identity: &'a str,
     tool_version: &'a str,
-    /// Spread in only when truthy, so absent rather than `null`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    corpus_revision: Option<&'a str>,
-    /// Absent when there is nothing unverified (PLAT-969), matching
-    /// `corpus_revision` above rather than an empty array.
+    /// Absent when there is nothing unverified (PLAT-969), rather than an
+    /// empty array.
     #[serde(skip_serializing_if = "<[_]>::is_empty")]
     unverified_artifacts: &'a [String],
 }
@@ -274,7 +270,6 @@ impl<'a> CollectionRefWire<'a> {
             timestamp: &reference.timestamp,
             tool_identity: &reference.tool_identity,
             tool_version: &reference.tool_version,
-            corpus_revision: reference.corpus_revision.as_deref(),
             unverified_artifacts: &reference.unverified_artifacts,
         }
     }

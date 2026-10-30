@@ -181,9 +181,6 @@ pub struct PortfolioCollectionRef {
     pub tool_identity: String,
     /// Which version of that tool.
     pub tool_version: String,
-    /// The measured corpus revision, when the collection states a non-empty
-    /// one — `portfolio.ts:327-329` spreads it only when it is truthy.
-    pub corpus_revision: Option<String>,
     /// `verificationStack.artifacts` names with no local filesystem entry,
     /// sorted; empty when there are none or no verification stack at all
     /// (PLAT-969's ruling — see [`crate::report::build::CollectionSummary`]).

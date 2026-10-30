@@ -93,9 +93,9 @@ pub(super) fn run_member(
                     attempt.reason = Some("environment_source_missing".to_owned());
                     return Ok(unretained(attempt));
                 };
+                // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision.
                 source.revision.clone()
             }
-            EnvironmentSource::CleanSourceState => "clean".to_owned(),
         };
         bindings.environment.insert(name.clone(), value);
     }

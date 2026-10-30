@@ -379,7 +379,7 @@ fn tc_480_023_scorer_bytes_are_retained_and_an_untyped_attachment_refused() {
 fn tc_480_024_every_attestation_and_producer_field_is_required() {
     /// The attestation paths `graph-adapters.test.ts` deleted that remain
     /// required.
-    const ATTESTATION: [&[&str]; 13] = [
+    const ATTESTATION: [&[&str]; 10] = [
         &["subject"],
         &["scope"],
         &["timestamp"],
@@ -388,24 +388,6 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
         &["verificationStack", "schemaVersion"],
         &["verificationStack", "buildProfile"],
         &["verificationStack", "sources"],
-        &[
-            "verificationStack",
-            "sources",
-            "agent-ix/quire-code-rs",
-            "revision",
-        ],
-        &[
-            "verificationStack",
-            "sources",
-            "agent-ix/quire-code-rs",
-            "sourceState",
-        ],
-        &[
-            "verificationStack",
-            "sources",
-            "agent-ix/quire-code-rs",
-            "remote",
-        ],
         &["verificationStack", "capabilities"],
         &["verificationStack", "artifacts"],
     ];

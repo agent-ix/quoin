@@ -4,7 +4,6 @@
 		"numerator": 7370,
 		"denominator": 7501,
 		"unit": "documents",
-		"populationId": "pop:cafc3ffdf1b73a29",
 		"methodId": "engine-structural-v1",
 		"excluded": {
 			"could-not-run": 0,
@@ -20,7 +19,6 @@
 		"numerator": 1,
 		"denominator": 155,
 		"unit": "documents",
-		"populationId": "pop:cafc3ffdf1b73a29",
 		"methodId": "properties-form-census-v1",
 		"excluded": {
 			"not-applicable": 7432

@@ -194,8 +194,6 @@ def semantic_module(semantic_block: dict[str, Any]) -> dict[str, Any]:
     """The `module` block `extract_semantic` takes, derived from the manifest."""
     return {
         "contractVersion": semantic_block["contract_version"],
-        # BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream module-manifest schema requires `semantic_core`
-        "semanticCore": semantic_block["semantic_core"],
         "package": semantic_block["package"],
         "exports": semantic_block["exports"],
         "imports": semantic_block["imports"],

@@ -136,6 +136,7 @@ fn fixture() -> tempfile::TempDir {
     let definition = json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-campaign", "subjectName":"fictional-subject", "subjectVersion":"1",
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision and CampaignSource.digest.
         "sourceGraph":[{"repository":"fictional/source","revision":revision,"digest":source_digest}],
         "members":[{
             "name":"one", "group":"fixture", "planId":"MP-FIXTURE",
@@ -208,6 +209,7 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
     let definition = json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-campaign", "subjectName":"fictional-subject", "subjectVersion":"1",
+        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision and CampaignSource.digest.
         "sourceGraph":[{"repository":"fictional/source","revision":revision,"digest":source_digest}],
         "members":[{"name":"one","planId":"MP-FIXTURE","definitionVersion":"v1","required":true}],
         "completionRule":"all_required"
@@ -222,6 +224,7 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
     let python_digest = sha256_hex(&fs::read(&python).expect("Python bytes"));
     let contract = |kind: &str| {
         json!({
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.revision and ContractBinding.digest.
             "kind":kind, "version":"1", "revision":revision,
             "digest":sha256_hex(kind.as_bytes())
         })
@@ -232,6 +235,7 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
         "members":{"one":{
             "producer":{
                 "producer":{
+                    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.source_revision and ProducerDescriptor.executable_digest.
                     "name":"fictional-tool", "version":"1", "sourceRevision":revision,
                     "executable":python, "executableDigest":python_digest
                 },
@@ -249,8 +253,7 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
                 "responseAdapter":contract("quoin.process-evidence-adapter"),
                 "exitCodes":{"kind":"any"}
             },
-            "checker":null,"inputs":[],"timestamp":"2026-09-24T00:00:00Z",
-            "sourceRemotes":{"fictional/source":"https://example.invalid/source.git"}
+            "checker":null,"inputs":[],"timestamp":"2026-09-24T00:00:00Z"
         }}
     });
     let config_path = repo.path().join("config.json");

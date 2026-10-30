@@ -44,6 +44,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 
+[dev-dependencies]
+quoin-quire-types = { workspace = true }
+
 # The one-time oracle captures live under `oracle/` rather than `examples/` so
 # they are visibly the thing the retire-after-parity rule deletes at the cutover, not part of the
 # crate's own surface. Cargo needs the path stated because the directory is not

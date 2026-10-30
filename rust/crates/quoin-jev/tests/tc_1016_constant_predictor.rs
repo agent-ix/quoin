@@ -129,7 +129,6 @@ fn collection(id: &str, observations: Vec<MeasurementObservation>) -> Measuremen
         tool_identity: text("quoin-jev"),
         tool_version: text("0.0.0"),
         timestamp: text("2026-09-23T00:00:00Z"),
-        corpus_revision: None,
         environment: quoin_store::JsonObject::new(),
         verification_stack: None,
         observations,

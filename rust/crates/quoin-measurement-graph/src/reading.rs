@@ -82,8 +82,6 @@ pub struct GraphQualityHistoryRow {
     pub tool_identity: String,
     /// Which version of that tool.
     pub tool_version: String,
-    /// The revision of the measured corpus, when it stated one.
-    pub corpus_revision: Option<String>,
     /// The producer-defined population identity, uninterpreted.
     pub population_identity: Option<JsonValue>,
     /// The producer record, uninterpreted.
@@ -103,8 +101,6 @@ pub enum GraphCompatibilityCode {
     DefinitionChanged,
     /// They were produced by different tools or tool versions.
     ToolChanged,
-    /// They measured different corpus revisions.
-    CorpusChanged,
     /// At least one population is not declared complete.
     PopulationIncomplete,
     /// The two populations have different identities.
@@ -115,11 +111,10 @@ pub enum GraphCompatibilityCode {
 
 impl GraphCompatibilityCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 6] = [
         Self::PlanChanged,
         Self::DefinitionChanged,
         Self::ToolChanged,
-        Self::CorpusChanged,
         Self::PopulationIncomplete,
         Self::PopulationChanged,
         Self::CollectionIncompatible,
@@ -132,7 +127,6 @@ impl GraphCompatibilityCode {
             Self::PlanChanged => "plan_changed",
             Self::DefinitionChanged => "definition_changed",
             Self::ToolChanged => "tool_changed",
-            Self::CorpusChanged => "corpus_changed",
             Self::PopulationIncomplete => "population_incomplete",
             Self::PopulationChanged => "population_changed",
             Self::CollectionIncompatible => "collection_incompatible",
@@ -246,7 +240,6 @@ mod tests {
         let count = spellings.len();
         spellings.dedup();
         assert_eq!(spellings.len(), count);
-        assert_eq!(count, 7, "anti-vacuity floor: the retained union has seven");
     }
 
     #[test]

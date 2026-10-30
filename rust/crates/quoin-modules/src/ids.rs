@@ -145,14 +145,14 @@ mod tests {
     /// Trace: FR-019-AC-2
     #[test]
     fn tc_381_201_commit_sha_requires_forty_hex_digits() {
-        assert!(CommitSha::new("4e6522fc32f82cac82a3489a4192e17a94f539c3").is_ok());
-        assert!(CommitSha::new("4e6522f").is_err());
+        assert!(CommitSha::new("a".repeat(40)).is_ok());
+        assert!(CommitSha::new("a".repeat(7)).is_err());
         assert!(CommitSha::new("z".repeat(40)).is_err());
         assert_eq!(
-            CommitSha::new("4E6522FC32F82CAC82A3489A4192E17A94F539C3")
+            CommitSha::new("A".repeat(40))
                 .expect("uppercase hex is a sha")
                 .as_str(),
-            "4e6522fc32f82cac82a3489a4192e17a94f539c3"
+            "a".repeat(40)
         );
     }
 }

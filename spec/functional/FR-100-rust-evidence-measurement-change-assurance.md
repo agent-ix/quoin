@@ -28,7 +28,7 @@ measurement model and consuming shared assurance capability from
 - The existing evidence, measurement, intervention, operational and
   change-assurance records under the evidence store root.
 - Producer-supplied evidence documents and their declared adapters.
-- The governed corpus pins and the completed module set.
+- The enumerated corpus and the completed module set.
 - `engineering-assurance`'s published capability for advisory floors, package
   audit, bounded producer execution, evaluation and evidence reporting, and
   corpus accounting.

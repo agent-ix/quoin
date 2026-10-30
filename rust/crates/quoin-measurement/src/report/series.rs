@@ -27,8 +27,6 @@ pub struct SeriesPoint {
     pub tool_version: String,
     /// The producing tool's identity.
     pub tool_identity: String,
-    /// The measured corpus revision, when the collection states one.
-    pub corpus_revision: Option<String>,
     /// The collection's stated corpus gap count, when it states one.
     pub corpus_gaps: Option<f64>,
     /// The observation itself.
@@ -64,7 +62,6 @@ fn points_of<'a>(
             timestamp: collection.timestamp.as_str().to_owned(),
             tool_version: collection.tool_version.as_str().to_owned(),
             tool_identity: collection.tool_identity.as_str().to_owned(),
-            corpus_revision: collection.corpus_revision.clone(),
             corpus_gaps: gaps,
             observation: observation.clone(),
         })
@@ -94,9 +91,6 @@ struct SeriesPointWire<'a> {
     timestamp: &'a str,
     tool_version: &'a str,
     tool_identity: &'a str,
-    /// `?? null`: stated as `null`, not dropped.
-    corpus_revision: Option<&'a str>,
-    /// As `corpus_revision`.
     corpus_gaps: Option<f64>,
     observation: ObservationWire,
 }
@@ -108,7 +102,6 @@ impl<'a> SeriesPointWire<'a> {
             timestamp: &point.timestamp,
             tool_version: &point.tool_version,
             tool_identity: &point.tool_identity,
-            corpus_revision: point.corpus_revision.as_deref(),
             corpus_gaps: point.corpus_gaps,
             observation: ObservationWire::of(&point.observation)?,
         })

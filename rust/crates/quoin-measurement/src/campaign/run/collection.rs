@@ -3,8 +3,8 @@
 //! Typed campaign `MeasurementCollection` emission.
 
 use super::{
-    AttemptEvidence, BTreeMap, CampaignDefinition, CampaignRunError, MeasurementPlan, OrderSource,
-    Path, ProcessEvidenceObservation, ProducerExecutionResult, Ranked, Retained, RunMemberBindings,
+    AttemptEvidence, CampaignDefinition, CampaignRunError, MeasurementPlan, OrderSource, Path,
+    ProcessEvidenceObservation, ProducerExecutionResult, Ranked, Retained, RunMemberBindings,
     TamperFacts, Verdict, VerifiedSource, read_bounded, verify,
 };
 use serde::Serialize;
@@ -23,7 +23,7 @@ struct CollectionPayload<'a> {
     tool_version: &'a str,
     timestamp: &'a str,
     environment: CollectionEnvironment<'a>,
-    verification_stack: CollectionStack<'a>,
+    verification_stack: CollectionStack,
     observations: Vec<CollectionObservation<'a>>,
     raw_evidence: CollectionRawEvidence,
 }
@@ -44,20 +44,11 @@ struct CollectionEnvironment<'a> {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CollectionStack<'a> {
+struct CollectionStack {
     schema_version: &'static str,
     build_profile: &'static str,
-    sources: BTreeMap<String, CollectionSource<'a>>,
     capabilities: [&'static str; 1],
     artifacts: Vec<String>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct CollectionSource<'a> {
-    remote: &'a str,
-    revision: &'a str,
-    source_state: &'static str,
 }
 
 #[derive(Serialize)]
@@ -126,21 +117,6 @@ pub(super) fn publish_collection(
         .position(|candidate| candidate.name == member.name)
         .unwrap_or(0);
     let collection_id = format!("campaign-{run_id}-m{position}-{}", attempt.index);
-    let mut sources = BTreeMap::new();
-    for source in &definition.source_graph {
-        let remote = runtime
-            .source_remotes
-            .get(&source.repository)
-            .ok_or_else(|| CampaignRunError::binding("source remote missing".to_owned()))?;
-        sources.insert(
-            source.repository.clone(),
-            CollectionSource {
-                remote,
-                revision: &source.revision,
-                source_state: "clean",
-            },
-        );
-    }
     let input_origins = from_runtime(runtime, procedure)
         .map_err(|error| CampaignRunError::binding(error.to_string()))?;
     let artifacts: Vec<String> = protected_artifacts(plan, plan_source)?
@@ -166,7 +142,6 @@ pub(super) fn publish_collection(
         verification_stack: CollectionStack {
             schema_version: "verification-stack-attestation-v1",
             build_profile: "release",
-            sources,
             capabilities: ["campaign.direct-process"],
             artifacts,
         },

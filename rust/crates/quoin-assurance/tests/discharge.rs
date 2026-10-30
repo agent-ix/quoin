@@ -45,12 +45,7 @@ use quoin_quire_types::ClauseBindingReport;
 ///
 /// Written out rather than re-derived: a test that serialises the report a
 /// second time agrees with itself no matter what the wire spellings say.
-// BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
-const EVERY_STATE_DOCUMENT: &str = r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"example.invalid","id":"synthetic-widget-rules","version":"1.0.0"},"clauseSetDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","context":{"deployment":"test","product":"widget"},"asOf":"2026-08-15T00:00:00.000Z","binding":{"direct":[{"clauseId":"SYN-001","force":"mandatory","state":"direct","expectedOutputs":["test-result"],"fact":{"kind":"direct","clauseId":"SYN-001","evidenceRefs":["evidence://run/one"],"attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"dispositions":[{"clauseId":"SYN-002","force":"recommended","state":"disposition","expectedOutputs":["review-record"],"fact":{"kind":"disposition","clauseId":"SYN-002","decision":"temporary_exception","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/temporary_exception","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-003","force":"mandatory","state":"disposition","expectedOutputs":["decision-record"],"fact":{"kind":"disposition","clauseId":"SYN-003","decision":"accepted_risk","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/accepted_risk","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-006","force":"permitted","state":"disposition","expectedOutputs":["delegation-record"],"fact":{"kind":"disposition","clauseId":"SYN-006","decision":"delegated","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/delegated","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"open":[{"clauseId":"SYN-007","force":"mandatory","state":"open","expectedOutputs":["open-record"],"reason":"no discharge fact"}]},"unresolved":[{"clauseId":"SYN-004","force":"mandatory","state":"unresolved","expectedOutputs":["environment-record"],"reason":"environment is not known"}],"notBinding":[{"clauseId":"SYN-005","force":"permitted","state":"not_binding","expectedOutputs":[]}],"unusedFacts":[{"clauseId":"SYN-004","kind":"direct","reason":"unresolved"},{"clauseId":"SYN-005","kind":"direct","reason":"not_binding"},{"clauseId":"SYN-999","kind":"direct","reason":"unknown_clause"}]}"#;
-
-fn digest() -> String {
-    format!("sha256:{}", "a".repeat(64))
-}
+const EVERY_STATE_DOCUMENT: &str = r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"example.invalid","id":"synthetic-widget-rules","version":"1.0.0"},"context":{"deployment":"test","product":"widget"},"asOf":"2026-08-15T00:00:00.000Z","binding":{"direct":[{"clauseId":"SYN-001","force":"mandatory","state":"direct","expectedOutputs":["test-result"],"fact":{"kind":"direct","clauseId":"SYN-001","evidenceRefs":["evidence://run/one"],"attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"dispositions":[{"clauseId":"SYN-002","force":"recommended","state":"disposition","expectedOutputs":["review-record"],"fact":{"kind":"disposition","clauseId":"SYN-002","decision":"temporary_exception","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/temporary_exception","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-003","force":"mandatory","state":"disposition","expectedOutputs":["decision-record"],"fact":{"kind":"disposition","clauseId":"SYN-003","decision":"accepted_risk","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/accepted_risk","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-006","force":"permitted","state":"disposition","expectedOutputs":["delegation-record"],"fact":{"kind":"disposition","clauseId":"SYN-006","decision":"delegated","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/delegated","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"open":[{"clauseId":"SYN-007","force":"mandatory","state":"open","expectedOutputs":["open-record"],"reason":"no discharge fact"}]},"unresolved":[{"clauseId":"SYN-004","force":"mandatory","state":"unresolved","expectedOutputs":["environment-record"],"reason":"environment is not known"}],"notBinding":[{"clauseId":"SYN-005","force":"permitted","state":"not_binding","expectedOutputs":[]}],"unusedFacts":[{"clauseId":"SYN-004","kind":"direct","reason":"unresolved"},{"clauseId":"SYN-005","kind":"direct","reason":"not_binding"},{"clauseId":"SYN-999","kind":"direct","reason":"unknown_clause"}]}"#;
 
 fn binding() -> ClauseBindingReport {
     serde_json::from_value(serde_json::json!({
@@ -60,8 +55,6 @@ fn binding() -> ClauseBindingReport {
             "id": "synthetic-widget-rules",
             "version": "1.0.0"
         },
-        // BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
-        "clauseSetDigest": digest(),
         "context": { "product": "widget", "deployment": "test" },
         "clauses": [
             {"clauseId": "SYN-001", "force": "mandatory", "outcome": "binding",
@@ -350,10 +343,9 @@ fn tc_1130_every_population_renders_deterministically_and_without_a_score() {
 
     // The literal, not a re-derivation: every heading, every row, the blank
     // lines between them, and the single trailing newline.
-    let expected = format!(
+    let expected = String::from(
         "# Clause discharge: example.invalid/synthetic-widget-rules@1.0.0\n\
          \n\
-         - Clause-set digest: `{}`\n\
          - Evaluated as of: `2026-08-15T00:00:00.000Z`\n\
          \n\
          ## Direct evidence\n\
@@ -375,7 +367,6 @@ fn tc_1130_every_population_renders_deterministically_and_without_a_score() {
          ## Not binding\n\
          \n\
          - `SYN-005` — permitted; no declared outputs\n",
-        digest()
     );
     assert_eq!(rendered, expected);
     assert!(!rendered.to_lowercase().contains("score"));
@@ -392,8 +383,6 @@ fn tc_1130_every_population_renders_deterministically_and_without_a_score() {
         binding: serde_json::from_value(serde_json::json!({
             "schemaVersion": "clause-binding-v1",
             "clauseSet": {"authority": "example.invalid", "id": "empty", "version": "1.0.0"},
-            // BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
-            "clauseSetDigest": digest(),
             "context": {},
             "clauses": []
         }))
@@ -510,8 +499,6 @@ fn every_state_binding() -> ClauseBindingReport {
             "id": "synthetic-widget-rules",
             "version": "1.0.0"
         },
-        // BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
-        "clauseSetDigest": digest(),
         "context": { "product": "widget", "deployment": "test" },
         "clauses": [
             {"clauseId": "SYN-001", "force": "mandatory", "outcome": "binding",
@@ -669,8 +656,6 @@ fn forged_report() -> serde_json::Value {
         "schemaVersion": "clause-discharge-v1",
         "clauseSet": {"authority": "example.invalid", "id": "synthetic-widget-rules",
                       "version": "1.0.0"},
-        // BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
-        "clauseSetDigest": digest(),
         "context": {},
         "asOf": "2026-08-15T00:00:00.000Z",
         "binding": {

@@ -164,7 +164,6 @@ fn parse_stored_measurement_collection(
             tool_identity,
             tool_version,
             timestamp,
-            corpus_revision: read::string(object, "corpusRevision").map(str::to_owned),
             environment,
             verification_stack,
             observations,

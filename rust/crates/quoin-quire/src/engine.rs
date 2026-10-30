@@ -10,8 +10,8 @@
 //! 1. **Payload shape.** quoin vendored five JSON Schemas out of quire-rs and
 //!    validated every payload against them, because a subprocess hands back
 //!    text and TypeScript erases at runtime. The vendored copy could drift from
-//!    what quire actually emits, so the file recorded a source revision and a
-//!    SHA-256 per schema and asserted them on every test run.
+//!    what quire actually emits, so the file kept a copy of each schema and
+//!    asserted it on every test run.
 //! 2. **A version premise.** `minimumCli: "0.21.0"` — the oldest CLI that emits
 //!    the described shapes — checked by parsing `quire --version`.
 //! 3. **A capability premise, badly.** Its own comment records that
@@ -24,7 +24,7 @@
 //! 1. **Dissolved.** The types a payload is read into are the engine's own
 //!    (`quire_rs::CoverageReport`, `quire_rs::ClauseBindingReport`,
 //!    `quire_rs::AssuranceExport`). There is no second declaration to drift
-//!    from, so there is nothing for a hash to pin. The concrete drift the hash
+//!    from, so there is nothing to compare. The concrete drift a comparison
 //!    could *not* catch is on record: the `implements` field was in the
 //!    published schema from CR-080 and missing from `src/quire/types.ts` until
 //!    CR-083 — the vendored contract and its types had drifted in the one

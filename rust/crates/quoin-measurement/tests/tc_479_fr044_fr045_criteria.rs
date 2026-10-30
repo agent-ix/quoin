@@ -192,18 +192,10 @@ fn new_collection_json() -> Value {
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
         "timestamp": "2026-08-26T00:00:00.000Z",
-        "corpusRevision": "cccccccccccccccc",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
             "buildProfile": "release",
-            "sources": {
-                "fixture": {
-                    "revision": "a".repeat(40),
-                    "sourceState": "clean",
-                    "remote": "https://example.invalid/fixture",
-                },
-            },
             "capabilities": ["fixture.capability"],
             "artifacts": ["config"],
         },
@@ -1286,7 +1278,7 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
         "finding_recall [language=rust, tier=2] | ap-recall (spec/assurance/10-recall.md) | observe | 1e+21 ratio |",
         "unmeasured_metric | ap-unmeasured (spec/assurance/50-unmeasured.md) | gate | not_computed: no record |",
         "Corpus gaps: 3",
-        "2026-03-01T00:00:00.000Z — quoin 0.9.1; corpus n/a",
+        "2026-03-01T00:00:00.000Z — quoin 0.9.1",
         "- unmeasured_metric: no collection has computed this authored plan.",
     ] {
         assert!(

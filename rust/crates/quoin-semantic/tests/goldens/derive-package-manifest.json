@@ -208,13 +208,13 @@
         "imports": [
           {
             "packageIdentity": "agent-ix/a",
-            "versionConstraint": "=2.0.0",
+            "versionConstraint": "2.0.0",
             "exports": [],
             "capabilities": []
           },
           {
             "packageIdentity": "agent-ix/z",
-            "versionConstraint": "=1.0.0",
+            "versionConstraint": "1.0.0",
             "exports": [],
             "capabilities": []
           }
@@ -379,7 +379,7 @@
         "imports": [
           {
             "packageIdentity": "agent-ix/other",
-            "versionConstraint": "=0.9.0",
+            "versionConstraint": "0.9.0",
             "exports": [],
             "capabilities": []
           }

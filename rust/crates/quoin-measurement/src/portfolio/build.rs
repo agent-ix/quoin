@@ -207,12 +207,6 @@ fn collection_ref(
         timestamp: collection.timestamp.as_str().to_owned(),
         tool_identity: collection.tool_identity.as_str().to_owned(),
         tool_version: collection.tool_version.as_str().to_owned(),
-        // `? { corpusRevision } : {}` — a stated empty string is as absent as
-        // an absent member, because both are falsy.
-        corpus_revision: collection
-            .corpus_revision
-            .clone()
-            .filter(|revision| !revision.is_empty()),
         unverified_artifacts: collection
             .verification_stack
             .as_ref()

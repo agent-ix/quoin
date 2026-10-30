@@ -49,7 +49,6 @@ struct MemberBindingWire {
     #[serde(default)]
     inputs: Vec<SelectedInputWire>,
     timestamp: String,
-    source_remotes: BTreeMap<String, String>,
     #[serde(default)]
     environment_sources: BTreeMap<String, EnvironmentSourceWire>,
 }
@@ -79,6 +78,7 @@ struct ProcedureBindingWire {
 struct ProducerWire {
     name: String,
     version: String,
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.source_revision.
     source_revision: String,
     executable: String,
     // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
@@ -90,6 +90,7 @@ struct ProducerWire {
 struct ContractWire {
     kind: String,
     version: String,
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.revision.
     revision: String,
     // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
     digest: String,
@@ -197,7 +198,6 @@ enum InputSourceWire {
 )]
 enum EnvironmentSourceWire {
     SourceRevision { repository: String },
-    CleanSourceState,
 }
 
 impl ContractWire {
@@ -205,6 +205,7 @@ impl ContractWire {
         Ok(ContractBinding {
             kind: self.kind,
             version: self.version,
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.revision.
             revision: self.revision,
             // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
             digest: parse_digest(&self.digest)?,
@@ -217,6 +218,7 @@ impl ProducerWire {
         Ok(ProducerDescriptor {
             name: self.name,
             version: self.version,
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.source_revision.
             source_revision: self.source_revision,
             executable: self.executable,
             // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
@@ -333,7 +335,6 @@ impl MemberBindingWire {
                     EnvironmentSourceWire::SourceRevision { repository } => {
                         EnvironmentSource::SourceRevision(repository)
                     }
-                    EnvironmentSourceWire::CleanSourceState => EnvironmentSource::CleanSourceState,
                 };
                 (name, source)
             })
@@ -346,7 +347,6 @@ impl MemberBindingWire {
                 .transpose()?,
             inputs,
             timestamp: self.timestamp,
-            source_remotes: self.source_remotes,
             environment_sources,
         })
     }
@@ -428,7 +428,6 @@ mod tests {
                         }
                     }],
                     "timestamp": "2026-01-01T00:00:00Z",
-                    "sourceRemotes": {"fixture": "https://example.invalid/fixture"},
                     "environmentSources": {
                         "SOURCE_REVISION": {"kind": "source_revision", "repository": "fixture"}
                     }

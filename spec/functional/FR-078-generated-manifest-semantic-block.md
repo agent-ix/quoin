@@ -39,7 +39,7 @@ prevent.
 
 ## Behavior
 
-- The rendered `semantic` block SHALL carry `contract_version`, `semantic_core`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture`, and `legacy_forms`.
+- The rendered `semantic` block SHALL carry `contract_version`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture`, and `legacy_forms`.
 - The rendered `semantic.contract_version` SHALL be `1.0.0`, the version FR-070 defines.
 - The rendered `semantic.semantic_core` SHALL be present only because the upstream schema requires it; the template takes no input for it. BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream module-manifest schema requires `semantic_core` (an `x.y.z` string) in the `semantic` block, so a manifest without it is rejected; Quoin reads no value from it.
 - The rendered `semantic.package` SHALL be `<org>/<repo>` built from the template inputs.
@@ -49,7 +49,7 @@ prevent.
 - Where `semantic.legacy_forms` is `warning`, the rendered manifest SHALL omit `sweep_report`, which FR-074 requires only under `error`.
 - The rendered manifest SHALL carry, for every exported type, `data_schema` as a `{schema}` mapping whose `schema` is the repository-relative path of an emitted file.
 - The rendered manifest SHALL carry `data_schema: {type: object}` for no exported type.
-- When `imported_modules` is non-empty, the rendered `semantic.imports` SHALL map each imported package identity to its exact version.
+- When `imported_modules` is non-empty, the rendered `semantic.imports` SHALL map each imported package identity to its declared version requirement.
 - When `imported_modules` is empty, the rendered `semantic.imports` SHALL be an empty mapping rather than an absent key.
 - The rendered manifest SHALL declare each exported type name exactly once across `artifact_types` and `object_types`, so that a type name identifies one declaration.
 - If two entries of `imported_modules` name the same `<org>/<repo>`, then the template SHALL abort rendering naming the package identity, rather than collapsing them to whichever came last.
@@ -67,7 +67,7 @@ prevent.
 | FR-078-AC-1 | Each rendered variant's `semantic` block carries the nine keys above and no other, and validates against the published module-manifest schema. | Test (TC-1417) |
 | FR-078-AC-2 | Every exported type of every rendered variant has `data_schema: {schema}` naming an emitted file. | Test (TC-1410) |
 | FR-078-AC-3 | No exported type of any rendered variant carries `data_schema: {type: object}`. | Test (TC-1409) |
-| FR-078-AC-5 | A mixed-variant rendering with two imported modules yields two `semantic.imports` entries carrying exact versions; an object-variant rendering with none yields `imports: {}`. | Test (TC-1402) |
+| FR-078-AC-5 | A mixed-variant rendering with two imported modules yields two `semantic.imports` entries carrying the declared version requirements; an object-variant rendering with none yields `imports: {}`. | Test (TC-1402) |
 | FR-078-AC-6 | The rendered `semantic.exports` and the rendered manifest's declared type names are the same set. | Test (TC-1417) |
 | FR-078-AC-7 | No exported type name appears in more than one declaration of a rendered manifest, in any variant. | Test (TC-1458) |
 | FR-078-AC-8 | Two `imported_modules` entries naming the same package identity abort rendering naming that identity. | Test (TC-1459) |

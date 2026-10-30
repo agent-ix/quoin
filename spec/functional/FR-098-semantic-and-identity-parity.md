@@ -114,7 +114,7 @@ differential run whose compared population is empty each block cutover.
 | FR-098-AC-7 | Withdrawn: there is no differential run whose population could be zero, and no cutover gate it could satisfy (id not reused). | Withdrawn (TC-1624) |
 | FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test (TC-1692) |
 | FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test (TC-1693) |
-| FR-098-AC-10 | Record identifiers produced by the Rust implementation are opaque UUIDs not derived from content, and files are named `<recordId>.json`. Withdrawn: the clause that read legacy `sha256:<hex>` identifiers and `sha256-<hex>.json` file names as opaque strings; nothing of that kind remains. | Test (TC-1694) |
+| FR-098-AC-10 | Withdrawn: the identifier format is stated once in the Behavior clause, and no legacy identifier form remains (id not reused). | Withdrawn (TC-1694) |
 | FR-098-AC-11 | After a capability cuts over, the native fixture suite spawns no retained implementation for that capability and compares against committed fixtures. | Test (TC-1695) |
 
 ## Dependencies

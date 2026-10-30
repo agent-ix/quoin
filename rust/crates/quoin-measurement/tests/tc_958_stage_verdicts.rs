@@ -119,13 +119,6 @@ fn collection_json(id: &str, timestamp: &str, observations: &[Value]) -> Value {
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
             "buildProfile": "release",
-            "sources": {
-                "fixture": {
-                    "revision": "a".repeat(40),
-                    "sourceState": "clean",
-                    "remote": "https://example.invalid/fixture",
-                },
-            },
             "capabilities": ["fixture.capability"],
             "artifacts": ["config"],
         },

@@ -135,7 +135,6 @@ fn tc_381_235_registry_bytes_match_the_typescript_writer() {
             path: "/p".to_owned(),
         },
         r#ref: None,
-        sha: None,
         resolved_path: "/p".to_owned(),
         target_path: "/t/m".to_owned(),
         installed_at: "2026-01-02T03:04:05.678Z".to_owned(),
@@ -153,12 +152,11 @@ fn tc_381_235_registry_bytes_match_the_typescript_writer() {
 #[test]
 fn tc_381_239_registry_bytes_match_with_every_optional_field_present() {
     // `tc_381_235` writes a record whose every optional field is absent, so it
-    // pins nothing about where `ref` and `sha` go or whether they
-    // appear at all — exactly the keys a serde attribute could reorder or drop
+    // pins nothing about where `ref` goes or whether it
+    // appears at all — exactly the keys a serde attribute could reorder or drop
     // without any golden noticing. This is that record with all of them set.
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("registry.json");
-    let sha = "978111c6884ccc0f5e6ca100fb17be5361a98713";
     let mut registry = ModuleRegistry::new();
     registry.upsert(InstalledModule {
         name: quoin_modules::ModuleName::new("m").expect("legal name"),
@@ -166,11 +164,10 @@ fn tc_381_239_registry_bytes_match_with_every_optional_field_present() {
             url: "https://github.com/acme/widgets.git".to_owned(),
             path: "modules/m".to_owned(),
             r#ref: Some("v1.2.3".to_owned()),
-            sha: Some(sha.to_owned()),
+            sha: None,
         },
         r#ref: Some("v1.2.3".to_owned()),
-        sha: Some(quoin_modules::CommitSha::new(sha).expect("full sha")),
-        resolved_path: "/c/978111c/modules/m".to_owned(),
+        resolved_path: "/c/widgets/modules/m".to_owned(),
         target_path: "/t/m".to_owned(),
         installed_at: "2026-01-02T03:04:05.678Z".to_owned(),
     });

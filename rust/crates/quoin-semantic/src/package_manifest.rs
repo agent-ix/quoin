@@ -42,7 +42,8 @@ pub struct DerivedImport {
     /// The imported package's identity.
     #[serde(rename = "packageIdentity")]
     pub package_identity: String,
-    /// `=<version>`: the contract admits only exact pins.
+    /// The declared version, as written: the contract accepts any valid
+    /// version requirement, and a plain version is one.
     #[serde(rename = "versionConstraint")]
     pub version_constraint: String,
     /// Always empty: the `semantic` block does not name per-import exports.
@@ -147,7 +148,7 @@ pub fn derive_package_manifest(module: &SemanticModule) -> DerivedPackageManifes
             .iter()
             .map(|(identity, version)| DerivedImport {
                 package_identity: identity.as_str().to_owned(),
-                version_constraint: format!("={version}"),
+                version_constraint: version.to_string(),
                 exports: Vec::new(),
                 capabilities: Vec::new(),
             }),

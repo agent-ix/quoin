@@ -10,7 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use engineering_assurance::measurement::ApparatusPath;
 use quoin_store::{JsonObject, JsonValue};
 
-use crate::types::ids::{FullGitRevision, NonEmptyText};
+use crate::types::ids::NonEmptyText;
 use crate::types::observation::MeasurementObservation;
 
 /// The schema version new collections must carry.
@@ -51,36 +51,11 @@ impl BuildProfile {
     }
 }
 
-/// One source repository, pinned at a clean full revision.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct SourceAttestation {
-    /// The full git revision the source was at.
-    pub revision: FullGitRevision,
-    /// Always `clean`: a dirty tree is not an attestation.
-    pub source_state: CleanSourceState,
-    /// Where the source came from.
-    pub remote: NonEmptyText,
-}
-
-/// The only source state an attestation may carry.
-///
-/// A unit type rather than a `bool` or a `String`: `validate.ts:143` accepts
-/// exactly `"clean"`, so there is one inhabitant and holding it is the proof.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
-pub struct CleanSourceState;
-
-impl CleanSourceState {
-    /// The wire spelling.
-    pub const AS_STR: &'static str = "clean";
-}
-
 /// The immutable identity of everything that produced a collection.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerificationStackAttestation {
     /// Which build the executable came from, when declared.
     pub build_profile: Option<BuildProfile>,
-    /// Every source repository, non-empty.
-    pub sources: BTreeMap<String, SourceAttestation>,
     /// The capabilities the producer exercised, non-empty.
     pub capabilities: Vec<NonEmptyText>,
     /// Every produced artifact's name, non-empty and unique (FR-044-AC-13).
@@ -162,8 +137,6 @@ pub struct MeasurementCollection {
     /// nothing more, and narrowing it to an RFC 3339 value here would refuse
     /// retained evidence this port must keep reading.
     pub timestamp: NonEmptyText,
-    /// The revision of the measured corpus, when there is one.
-    pub corpus_revision: Option<String>,
     /// The environment the producer reported.
     ///
     /// `types.ts:37` declares `Record<string, string>` and `validate.ts:86`

@@ -82,4 +82,4 @@ a shuffled directory order and produces the same bytes.
 
 ## Dependencies
 
-- **Upstream**: [FR-084](../functional/FR-084-pin-and-enumerate-the-governed-corpus.md), [FR-085](../functional/FR-085-resolve-the-completed-module-set.md)
+- **Upstream**: [FR-084](../functional/FR-084-enumerate-the-governed-corpus.md) (corpus enumeration only; nothing is pinned), [FR-085](../functional/FR-085-resolve-the-completed-module-set.md)

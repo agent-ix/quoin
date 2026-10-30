@@ -6,7 +6,7 @@
 //!
 //! `analysis.ts` passes eight different kinds of identifier through functions
 //! that all take `string`: an artifact id, an obligation id, a suite name, a
-//! document path, a relation kind, an author, a commit and a statement hash.
+//! document path, a relation kind, an author and a commit.
 //! `verdictFor(report, obligation, gaps)` and
 //! `selectedCorpusEdges(export, selection, requirementIds, allArtifactIds, …)`
 //! are both call sites where two same-typed arguments could be transposed

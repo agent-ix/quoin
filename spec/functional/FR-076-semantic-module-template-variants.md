@@ -32,7 +32,7 @@ and the mapping declarations it needs.
 - `org`, `repo_name`, `description`, `module_name`, `package_name`, `author`, `email`, `version`
 - `module_kind`, one of `artifact`, `object`, `mixed`
 - `generated_targets`, a subset of the filament-core-data target registry
-- `imported_modules`, zero or more `<org>/<repo>@<exact-version>` references
+- `imported_modules`, zero or more `<org>/<repo>@<version>` references
 - `license`, defaulting to `AGPL-3.0-or-later`
 
 ## Outputs
@@ -52,7 +52,7 @@ and the mapping declarations it needs.
 - The template SHALL render the full licence text of the `license` value it accepts.
 - If `license` names anything other than an AGPL-3.0-or-later identifier, then the template SHALL abort rendering naming the value, rather than rendering a repository whose licence declarations disagree.
 - If `module_kind` names a value outside `artifact`, `object`, and `mixed`, then the template SHALL abort rendering naming the value.
-- If an entry of `imported_modules` is not of the `<org>/<repo>@<exact-version>` form, then the template SHALL abort rendering naming the entry.
+- If an entry of `imported_modules` is not of the `<org>/<repo>@<version>` form, then the template SHALL abort rendering naming the entry.
 - If an entry of `generated_targets` is outside the filament-core-data target registry, then the template SHALL abort rendering naming the entry.
 - The template SHALL accept every input as an argument, so that a rendering needs no terminal.
 - Where the template is run interactively, it SHALL prompt for the same inputs it accepts as arguments.

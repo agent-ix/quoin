@@ -112,5 +112,5 @@ check that never executed.
 
 ## Dependencies
 
-- **Upstream**: [FR-074](./FR-074-legacy-authoring-forms.md) declares the classifier this reuses; [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md) supplies the population; [FR-085](./FR-085-resolve-the-completed-module-set.md) supplies the resolved module set.
+- **Upstream**: [FR-074](./FR-074-legacy-authoring-forms.md) declares the classifier this reuses; [FR-084](./FR-084-enumerate-the-governed-corpus.md) supplies the population; [FR-085](./FR-085-resolve-the-completed-module-set.md) supplies the resolved module set.
 - **Downstream**: [FR-089](./FR-089-partition-every-failure.md), [FR-090](./FR-090-publish-rates-with-unit-population-and-method.md)

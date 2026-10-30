@@ -83,4 +83,4 @@ measurement that can write is a measurement that can destroy the evidence it was
 
 ## Dependencies
 
-- **Downstream**: [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md) and [FR-085](./FR-085-resolve-the-completed-module-set.md) run inside this envelope.
+- **Downstream**: [FR-084](./FR-084-enumerate-the-governed-corpus.md) and [FR-085](./FR-085-resolve-the-completed-module-set.md) run inside this envelope.

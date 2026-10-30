@@ -58,7 +58,7 @@ AGPL_IDENTIFIERS = {"AGPL-3.0-or-later", "AGPL-3.0+"}
 SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 SLUG = re.compile(r"^[a-z][a-z0-9-]*[a-z0-9]$")
 PY_IDENT = re.compile(r"^[a-z][a-z0-9_]*$")
-IMPORT_REF = re.compile(r"^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*@\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
+IMPORT_REF = re.compile(r"^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*@[\^~<>=]*\d[0-9A-Za-z.*,<>=^~+-]*$")
 
 
 def fail(message):
@@ -129,8 +129,8 @@ def main():
         if not IMPORT_REF.match(entry):
             fail(
                 "imported_modules entry %r is not of the form "
-                "<org>/<repo>@<exact-version>. An import without an exact version "
-                "resolves differently on two machines." % entry
+                "<org>/<repo>@<version-requirement>. An import without a version "
+                "requirement resolves differently on two machines." % entry
             )
         identity = entry.split("@", 1)[0]
         if identity in seen:

@@ -40,7 +40,7 @@
 //! plan's id and `definition_version` is a run. The rule is applied to every
 //! run against its own history, so a run that regressed stays visible even
 //! when a later one passed; and a regressed run with the candidate's own
-//! apparatus — the same source revision, tool and corpus — means the same thing
+//! apparatus — the same tool — means the same thing
 //! was re-run until it passed, which is `rerun_until_pass`, whatever protected
 //! set either run recorded.
 //!
@@ -511,12 +511,9 @@ fn baseline(
     Ok((Some(value), prior))
 }
 
-/// Whether two collections were produced by the same apparatus: tool and
-/// corpus.
+/// Whether two collections were produced by the same apparatus: the tool.
 fn same_apparatus(left: &MeasurementCollection, right: &MeasurementCollection) -> bool {
-    left.tool_identity == right.tool_identity
-        && left.tool_version == right.tool_version
-        && left.corpus_revision == right.corpus_revision
+    left.tool_identity == right.tool_identity && left.tool_version == right.tool_version
 }
 
 fn plan_level(reason: Reason) -> Finding {

@@ -6,6 +6,8 @@ a fact about bytes should not need a wheel to check.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 
@@ -58,11 +60,15 @@ def test_no_export_carries_the_placeholder_contract(manifest, helpers):
 
 
 @pytest.mark.trace("FR-001-AC-8")
-def test_imports_are_a_mapping_to_exact_versions(semantic_block):
+def test_imports_are_a_mapping_to_version_requirements(semantic_block):
     imports = semantic_block["imports"]
     assert isinstance(imports, dict)
     for identity, version in imports.items():
         assert identity.count("/") == 1, identity
-        assert (
-            version.count(".") >= 2
-        ), f"{identity} is pinned to {version!r}, not exact"
+        # Any valid version requirement is accepted (1.2.3, ^1.2, >=1 <2, 1.x);
+        # a hash, digest or revision is not a version requirement.
+        assert isinstance(version, str) and version.strip(), identity
+        assert re.search(r"[0-9*xX]", version), f"{identity}: {version!r}"
+        assert not re.search(
+            r"sha\d*[:-]|blake|[0-9a-f]{40}", version, re.IGNORECASE
+        ), f"{identity}: {version!r} carries a hash, digest or revision"

@@ -59,7 +59,7 @@ fn plan_document(extra: &str) -> String {
          \x20\x20- spec/assurance/MP-900.md\n\
          negative_controls:\n\
          \x20\x20- kind: apparatus-edit\n\
-         \x20\x20\x20\x20description: the plan document is digested with every collection\n\
+         \x20\x20\x20\x20description: the plan document defines the measurement\n\
          {extra}\
          ---\n\
          \n\
@@ -143,13 +143,6 @@ fn collection(observations: &[Value]) -> Value {
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
             "buildProfile": "release",
-            "sources": {
-                "fixture": {
-                    "revision": "a".repeat(40),
-                    "sourceState": "clean",
-                    "remote": "https://example.invalid/fixture",
-                },
-            },
             "capabilities": ["fixture.capability"],
             "artifacts": ["config"],
         },

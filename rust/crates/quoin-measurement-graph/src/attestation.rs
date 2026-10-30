@@ -27,20 +27,8 @@ use quoin_measurement::Rfc3339DateTime;
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::scalars::{FullRevision, NonEmptyText};
-use crate::wire::{CleanSourceState, ReleaseProfile, VerificationStackVersion};
-
-/// One source repository, pinned at a clean full revision.
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "camelCase")]
-pub struct SourceAttestation {
-    /// The full revision the source was at.
-    pub revision: FullRevision,
-    /// Always `clean`: a dirty tree is not an attestation.
-    pub source_state: CleanSourceState,
-    /// Where the source came from.
-    pub remote: NonEmptyText,
-}
+use crate::scalars::NonEmptyText;
+use crate::wire::{ReleaseProfile, VerificationStackVersion};
 
 /// The immutable identity of everything that produced a collection.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
@@ -50,8 +38,9 @@ pub struct VerificationStack {
     pub schema_version: VerificationStackVersion,
     /// Always `release`.
     pub build_profile: ReleaseProfile,
-    /// Every source repository.
-    pub sources: BTreeMap<String, SourceAttestation>,
+    /// The producer's own statement of its sources: opaque here, neither read
+    /// nor validated nor reported by Quoin.
+    pub sources: Value,
     /// The capabilities the producer exercised, non-empty.
     pub capabilities: Vec<NonEmptyText>,
     /// Every produced artifact's name (FR-044-AC-13).

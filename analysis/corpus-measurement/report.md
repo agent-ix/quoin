@@ -4,7 +4,6 @@
 normalized or migrated, and no schema was weakened to lower a count. Findings
 here feed a later normalization campaign that this ticket does not perform.
 
-Population identifier: `pop:cafc3ffdf1b73a29`
 Corpus identifier: `ix-workspace-2026-09-04`
 Run duration: 40.0 s
 
@@ -130,7 +129,7 @@ beside the rule in `src/measurement/classify-rules.ts`:
   archetype, and `Traces To` cells holding an em dash where an id is required.
   Sampled `agent-duncan`, `catalog-service`, `cloud-manager-ui-services`.
 - **stale-module** — `AssuranceProfile` documents in `quire-rs` carrying a
-  `concern` property the pinned archetype does not admit. Sampled `AP-201`.
+  `concern` property the archetype does not admit. Sampled `AP-201`.
 
 None is a rule defect, so no rule was widened. All are deferred to the corpus
 normalization campaign with the owning repository named.
@@ -140,13 +139,13 @@ normalization campaign with the owning repository named.
 The tool-defect ledger declares five entries, each citing a repository and
 issue. One covers the entire population:
 
-**`agent-ix/quire-rs#405` — the pinned module set is not closed.**
+**`agent-ix/quire-rs#405` — the module set is not closed.**
 `IX_FILAMENT_MODULES_PATH` adds to the default install root rather than
 replacing it, and resolution is first-wins. Every module in this run is
 therefore reported twice, and which copy answered a given document is not
-determined by the pin.
+determined.
 
-**The verdicts above stand. Their attribution to the pinned contract revisions
+**The verdicts above stand. Their attribution to specific contract revisions
 does not.** That is stated here rather than implied away, because a rate that
 cannot be tied to the contracts it claims to measure is a number, not a
 measurement — and nothing in the engine's output says so on its own.

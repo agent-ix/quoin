@@ -32,11 +32,11 @@ written by the emit driver rather than authored.
 
 ## Subtasks
 
-- [x] Render `semantic` with `contract_version`, `semantic_core`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture: additive`, `legacy_forms: warning`, and no `sweep_report` (TC-1417).
+- [x] Render `semantic` with `contract_version`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture: additive`, `legacy_forms: warning`, and no `sweep_report` (TC-1417).
 - [x] Render `artifact_types` for the artifact variant, `object_types` for the object variant, and both for mixed, each with `data_schema: { schema: <path> }` and `body_extraction` locators.
 - [x] Rewrite the `schema:` path lines textually from the emitted files so comments and YAML anchors survive regeneration.
 - [x] Assert the rendered `exports` and the declared type names are the same set, and that no type name appears twice (TC-1468, TC-1458).
-- [x] Map each imported package identity to its exact version, and refuse two entries naming the same identity (TC-1459).
+- [x] Map each imported package identity to its declared version requirement, and refuse two entries naming the same identity (TC-1459).
 - [x] Validate the rendered manifest against the published module-manifest schema (TC-1417) and assert each `data_schema.schema` names an emitted file (TC-1410).
 
 ## Deliverables

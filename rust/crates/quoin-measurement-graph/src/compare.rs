@@ -230,12 +230,6 @@ fn compatibility_reasons(
             after.tool_version.as_str()
         )),
     )?;
-    mismatch(
-        &mut reasons,
-        GraphCompatibilityCode::CorpusChanged,
-        &corpus_revision(before),
-        &corpus_revision(after),
-    )?;
     if !complete(a) || !complete(b) {
         let code = GraphCompatibilityCode::PopulationIncomplete;
         reasons.push(GraphCompatibilityReason {
@@ -253,14 +247,6 @@ fn compatibility_reasons(
         &population_identity(b),
     )?;
     Ok(reasons)
-}
-
-/// `before.corpusRevision ?? null` as a JSON value.
-fn corpus_revision(collection: &MeasurementCollection) -> JsonValue {
-    collection
-        .corpus_revision
-        .as_ref()
-        .map_or(JsonValue::Null, JsonValue::string)
 }
 
 /// `row.population?.identity ?? null` as a JSON value.

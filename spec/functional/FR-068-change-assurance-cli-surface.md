@@ -111,8 +111,8 @@ receipt is retained on any of these paths.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-068-AC-1 | `write-record` writes an explicit record body, retains it at its `(record_id, revision)` path, and reports id, revision and path; a body carrying a `digest` or an undeclared field is refused with exit 2 and nothing is retained. | Test (TC-1317) |
-| FR-068-AC-2 | `prepare-attestation` derives only media type and size for the retained output from the named file and the caller's flag, and refuses a body that supplies `retained_output` or `digest`. | Test (TC-1318) |
+| FR-068-AC-1 | `write-record` writes an explicit record body, retains it at its `(record_id, revision)` path, and reports id, revision and path; a body carrying an undeclared field is refused with exit 2 and nothing is retained. | Test (TC-1317) |
+| FR-068-AC-2 | `prepare-attestation` derives only media type and size for the retained output from the named file and the caller's flag, and refuses a body that supplies `retained_output`. | Test (TC-1318) |
 | FR-068-AC-3 | `intake` retains exact attestation and output bytes atomically; a contradicting size is refused, an identical re-intake is idempotent, and an `attestation_id` collision with differing bytes is refused. | Test (TC-1319) |
 | FR-068-AC-4 | `receipt` builds its verification input only from the named record, parents, explicit selections, decision history, and audits; an unselected stored attestation changes no receipt field. | Test (TC-1320) |
 | FR-068-AC-5 | `unavailable`, `not_computed`, and missing evidence appear as their own receipt outcomes and reasons and are never converted to a pass or a failure. | Property (TC-1321) |

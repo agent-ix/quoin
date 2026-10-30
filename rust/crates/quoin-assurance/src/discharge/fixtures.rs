@@ -5,14 +5,9 @@
 //! own the code each one exercises.
 //!
 //! One clause-binding report, one attestation and one direct fact, exactly as
-//! they stood in `discharge.rs` before the split — `digest()` is read by both
-//! [`super::parse`]'s and [`super::build`]'s tests, so it has one definition.
+//! they stood in `discharge.rs` before the split.
 
 use super::BuildDischargeRequest;
-
-pub(super) fn digest() -> String {
-    format!("sha256:{}", "a".repeat(64))
-}
 
 pub(super) fn binding() -> quoin_quire_types::ClauseBindingReport {
     serde_json::from_value(serde_json::json!({
@@ -22,8 +17,6 @@ pub(super) fn binding() -> quoin_quire_types::ClauseBindingReport {
             "id": "synthetic-widget-rules",
             "version": "1.0.0"
         },
-        // BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
-        "clauseSetDigest": digest(),
         "context": { "product": "widget", "deployment": "test" },
         "clauses": [
             {"clauseId": "SYN-001", "force": "mandatory", "outcome": "binding",
