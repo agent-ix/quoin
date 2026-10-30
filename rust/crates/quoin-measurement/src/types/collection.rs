@@ -51,24 +51,6 @@ impl BuildProfile {
     }
 }
 
-/// The three language toolchains a collection may pin.
-///
-/// A collection rarely touches every language: a measurement that only ran
-/// Rust has nothing true to say about `node` or `python`. Each member is
-/// therefore `Option` rather than a placeholder string — `None` means "not
-/// applicable" (PLAT-930). There is deliberately no second, sentinel spelling
-/// of the same absence (a literal `"not-applicable"` string); that would just
-/// give a caller two ways to say one thing.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Toolchains {
-    /// The Node.js toolchain, when this measurement touched it.
-    pub node: Option<NonEmptyText>,
-    /// The Rust toolchain, when this measurement touched it.
-    pub rust: Option<NonEmptyText>,
-    /// The Python toolchain, when this measurement touched it.
-    pub python: Option<NonEmptyText>,
-}
-
 /// One source repository, pinned at a clean full revision.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceAttestation {
@@ -97,8 +79,6 @@ impl CleanSourceState {
 pub struct VerificationStackAttestation {
     /// Which build the executable came from, when declared.
     pub build_profile: Option<BuildProfile>,
-    /// The pinned toolchains, when declared.
-    pub toolchains: Option<Toolchains>,
     /// Every source repository, non-empty.
     pub sources: BTreeMap<String, SourceAttestation>,
     /// The capabilities the producer exercised, non-empty.

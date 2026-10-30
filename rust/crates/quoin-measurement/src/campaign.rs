@@ -23,10 +23,7 @@ pub mod run;
 pub mod source;
 #[cfg(feature = "campaign")]
 pub mod store;
-#[cfg(feature = "campaign")]
-pub mod verify;
-
-/// The version of Quoin's independent campaign-verdict document.
+/// The version of the campaign-verdict document.
 pub const CAMPAIGN_VERDICT_SCHEMA: &str = "quoin.campaign-verdict/v1";
 
 /// The three outcomes that can be granted to a campaign or member.

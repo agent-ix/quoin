@@ -1,16 +1,14 @@
 {
   "provenance": {
-    "engine": "quire 0.32.0 (cli 813019d8, engine 0.46.0@42326bbd)",
+    "engine": "quire 0.32.0 (engine 0.46.0)",
     "tool": {
       "schemaVersion": "quire-tool-provenance-v1",
       "cli": {
         "version": "0.32.0",
-        "sourceRevision": "813019d872af7fc6d2469b5afad52f86f16915b4",
         "sourceState": "clean"
       },
       "engine": {
         "version": "0.46.0",
-        "sourceRevision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
         "sourceState": "clean"
       },
       "capabilities": [
@@ -32,62 +30,45 @@
     },
     "verification_stack": {
       "schemaVersion": "verification-stack-attestation-v1",
-      "lockDigest": "sha256:e5164dacf5bdf95c68f992750e90dd68911d9d310d9a72293eeeba28c65fefd8",
-      "executableDigest": "sha256:f9384d09c7dad33aa5920abb33269cc20ef57daccf87b0f1b14e0a7335079a59",
       "buildProfile": "release",
-      "toolchains": {
-        "node": "22.15.0",
-        "rust": "1.98.1",
-        "python": "3.10.12"
-      },
       "sources": {
         "quire": {
-          "revision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quire-rs"
         },
         "quire-cli": {
-          "revision": "813019d872af7fc6d2469b5afad52f86f16915b4",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quire-cli"
         },
         "qa-corpus": {
-          "revision": "7442f2770880a4ade303fb23d725804bdef454db",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/qa-corpus"
         },
         "filament-ide-rs": {
-          "revision": "546e7943ee5a8fe552242cbb19d12aa902536652",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/filament-ide-rs"
         },
         "spec-artifacts-process": {
-          "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/spec-artifacts-process"
         },
         "spec-artifacts-iso": {
-          "revision": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/spec-artifacts-iso"
         },
         "engineering-assurance": {
-          "revision": "8ea16ce240934aa2c31c1cc3f781b7eb0f8c73ba",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/engineering-assurance"
         },
         "quoin": {
-          "revision": "7ced73f050415350247c827543f00ada92966c6f",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quoin"
         },
         "quoin-benchmark-corpus": {
-          "revision": "090f731ceb21f88a48136a363444b1a6a2bb62cf",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quoin"
         },
         "quoin-qa-external": {
-          "revision": "d3ed56a9f89710ed55ef72bf0e37d090bf994fad",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quoin"
         }
@@ -107,65 +88,10 @@
         "specific_shaped",
         "suspicions",
         "unmatched_tags"
-      ],
-      "artifacts": {
-        ".node-version": "sha256:e1677620f62097e30fac6695180333d8eb9ead4fe5b1d1d6e01b76e049780059",
-        ".npmrc": "sha256:cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca",
-        "package.json": "sha256:4496d70e053a3df6d70ef237d93e5a3a0e6af0566e2b50aac6973f642ff55a36",
-        "pnpm-lock.yaml": "sha256:12f2579ce0697073e6d6d806d9d9856b7d7c838ce06acd712f0da55941c34bc8",
-        "Makefile": "sha256:921f27a9184cfa6ace984c536da91e422f888634ba4771a6b028c916c5489f82",
-        ".github/workflows/build-test.yml": "sha256:df2f1f6fa1ac1670e6f54b4e9f415a62f0eae28e63bcc4f16cc9e0b42852a9c5",
-        "scripts/check-tool-drift.mjs": "sha256:bea47cdcb071b08af9465caddcf8352eccec17f28c0b15f461850f461e4d088b",
-        "scripts/check-tool-drift-selftest.mjs": "sha256:7fccc2e588b1f7aa8897cdce337ea9c0c0aa73f2b4687923d01731dea26ca448",
-        "scripts/verification-stack.mjs": "sha256:9882cfd3aa6390d1b31386f145f6e9eb5ef81ad6c2e2a4f8b581b6fdb3b031c7",
-        "scripts/verification-stack-selftest.mjs": "sha256:c0def043b0e8eb8b8e25b070ad89c3f081d6f216383035ab5928779c7b7162b9",
-        "scripts/copy-schemas.mjs": "sha256:99a960974e18612c0e6c50cbdf3a1c979c30f7ab3fd024cd84891c1419ac4818",
-        "scripts/verify-span-breadth.mjs": "sha256:4ab0f359688e093c48414bdfec6e4d3915f8580ee652a31f796e4cc7c81e8869",
-        "scripts/bench-tier1.mjs": "sha256:fe6356a91e94b6fca311dfc7995459b91f21e240c5e55017dfca6f7e6c6e0388",
-        "scripts/battletest.mjs": "sha256:3737ea8c096ede3dd19cf22bdac6d52ac6d36d772e5a0045541be2dbb6caab61",
-        "scripts/lib/tier2-baseline.mjs": "sha256:5331db28179a1d14da68ed9213664cce3188432ca5b77bdd85b9fedfaeedf8ee",
-        "rust/crates/quoin-quire/schemas/assurance-v1.schema.json": "sha256:441e1b8324fe64e234a007216b11867ec937ac4779fcebcdd84b30fa064367e5",
-        "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
-        "bench/tier1-mapping.json": "sha256:186e282f4197894f96e51e2dfe9fc6420f222512159abfd84be8be7c5c6ea90a",
-        "bench/guidance-evaluator-contract-v1.json": "sha256:5fe64c0ff4594d8ae3a30795601f62e84764621c2005a174f0698ba75b52ce48",
-        "bench/guidance-independent-review-v1.json": "sha256:69213dc1d6ce937e85d77d58b493667a0fa07a69943138270b9e96367e91f9f8",
-        "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
-        "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-        "bench/span-breadth-v1-labels.json": "sha256:c9075193691de2dab3672cf89d313658c289fb526f7e19dc150c902eac3abf0d",
-        "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
-        "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
-        "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
-        "corpus/config/duplicate-census.json": "sha256:c239628c3332baec64c72a9e3d66494d2a6d42dd05e27ac6b33ad49e82a4f38e",
-        "corpus/config/external-channel.json": "sha256:74103cf74e7eceb69d3bb993074a7929025e7cff0cff4c993be3c7e4873050b5",
-        "scripts/verification-relock.mjs": "sha256:5ff0482cf082991a9ff8a6428ee3916e3b34629a3aa56daae75da0d973a15a99",
-        "scripts/verification-relock-selftest.mjs": "sha256:22e3faabb992a4e2b0dd11c1b0d1973603bf9d77c674590713411eae6183cff3",
-        "scripts/verification-declarations.mjs": "sha256:5dad3d7168f6b311789496f76824dc3d73074cf1ddb90409906d8cfe726f0748",
-        "scripts/verification-declarations-selftest.mjs": "sha256:ea689a5d3785487fc81084429706ca0d19b7e50cf15b2e3f9fead1a9b58b1213",
-        "scripts/verification-object-integrity-selftest.mjs": "sha256:0033792fd5ba2760fe84fae0627ec493cb70732ba99245e6dbba432ab591b63d",
-        "scripts/workspace-policy-selftest.mjs": "sha256:cf5f40c996f6107619f54563cc504132e20858182c7b86f9fbeb3adc1ba65214"
-      }
+      ]
     },
-    "corpus": "7442f2770880a4ade303fb23d725804bdef454db",
-    "corpus_input": "sha256:4a806b0807eaf4c5a866ee478335c243856b5f98e701be2f9164c0c01cf271b8",
     "declaration": {
-      "root": "corpus/modules",
-      "digest": "sha256:9d71672f25c3df799536d090a72f22a85a6d51c6fc269af7cd241aef99319591",
-      "modules": {
-        "ecosystem": "sha256:1e4ac802a01f9923033e1f63ecdf5c48e0f8ba477cbe168914230f03630dff97",
-        "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
-        "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-        "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
-        "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-        "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
-        "variants/optional-target-section": "sha256:1a801dd51c8af35c159216eeeb166fd4d602c4e9a64c8ff13a77067c0cd5b20f",
-        "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb",
-        "variants/reference-status-column": "sha256:462f6cb713ee474e1769222e05e0a4524f7b5b00648227e5623b29d252b349a8",
-        "variants/reference-status-column-explicit": "sha256:90f3322462e35e1f070169911bd43d8e6c25be6b3807b6a44beeb2756a7d9048"
-      },
-      "sources": {
-        "spec-artifacts-process": "995288d609a47ab5a25f300ac0fa600d390b348c",
-        "spec-artifacts-iso": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217"
-      }
+      "root": "corpus/modules"
     }
   },
   "bounds": {
@@ -336,7 +262,7 @@
       {
         "mode": "detection",
         "case": "test-name-id-in-fn-name",
-        "source": "CR-034 (LANDED, cf7b4e2) — regression pin, 3952/3960 sites bind",
+        "source": "CR-034 (LANDED) — regression pin, 3952/3960 sites bind",
         "cells": {
           "python": {
             "state": "out-of-scope",
@@ -3370,12 +3296,6 @@
         "retainedRulings": 0,
         "ambiguous": [],
         "unresolved": [],
-        "unadjudicatedFindingIds": [
-          "sha256:049eaa9a2f6234d61e96123d85de3ca0ff7257cc95a6584688255627f737e5c0",
-          "sha256:5cab4743ea483fe34ae84cb8aa080e6bef96142621fe0983e5e3614337bb3d59",
-          "sha256:5dff42b3ac6f6c657e84f17f6d272265528d194dd4925b8bf64a1a45d58656fd",
-          "sha256:a1bbcb18a9f8b9815441de8881624e737bf76f40754c4c11069cc9bd19615dfb"
-        ],
         "rulings": 899
       }
     },
@@ -3397,116 +3317,6 @@
         "retainedRulings": 0,
         "ambiguous": [],
         "unresolved": [],
-        "unadjudicatedFindingIds": [
-          "sha256:04698614923adea1c0e692489f40543d859dc277c758368cc8bc51e77c79b1c0",
-          "sha256:05d837c56e800e3d9146ee49b2655b35fbdd6f9112ae0408ba4f4978c87a7d49",
-          "sha256:062e700c03e9739d02ffbc276960f4cbfbaf7e86b9efa498d638a32cccc308b6",
-          "sha256:08181eae91c14368f02b48af052b0110facb21046662a5c089d4e0c0bd10f330",
-          "sha256:0876be89874ab3d97fbf75400c3ed91b945434d1e5b0de180b15c305f5b708c2",
-          "sha256:0a4a8a4c03e69399976bc5bed42bcf3a3621e965258f46c251044d33700e6db0",
-          "sha256:0b5d273fa1d56c785f511c4caf81f544b4078975c05339e03d41868f5a6852c0",
-          "sha256:0d1240218043dd74d4a7a6cce52bda2978c83ab46bc5cbad48f397c4bd01d25d",
-          "sha256:12dbcb857737e91d250dc8134ced79820406a6e7dae0883de49fd19420510c58",
-          "sha256:13fd26f63419718e40ea64a4474d514d935415f88391b4cd932e6b188d2d989e",
-          "sha256:150a2fdef8ed40aff9173a0c94bc114dab38e688756b54fdfa4a976b8e934d8f",
-          "sha256:156dd85f7b2cbf237fab76a22d5e7c9e770a7dc8f833cc7c9104defee8d2a174",
-          "sha256:178875bdf7dc9217469cca6cf602f9738a6579343d933c5645a0bf185382a741",
-          "sha256:18014c133823ac0afc952bf6d8b10c608aba81dbf88fa45caa8d8d52dacb981d",
-          "sha256:20bbdde9d1fb88a6986d396041a720d7c7be37e125bd0a13800899ecd180f31d",
-          "sha256:218ac2d5efaa04e524ac45e25a6f2da633c462eaa14beaee41300ecd65fba214",
-          "sha256:2305a83ca1659cd8d233a98eda84ea7a8fb09be00b6e3e517dd3589709ce290f",
-          "sha256:29739efcd042a4db6a725583a3ff8c111fd5272fd2ae3c4f0b57a593d1626890",
-          "sha256:2a0879dfe25414d406bf2f5337fa3cdcfbd83cd33df9f52bda3613411ea53e61",
-          "sha256:2dd3b378a704d2ad57d435efef04a1bbecafb19985835e757ea72dba87e56b9e",
-          "sha256:2ea50ee5763b1606657af8965a6c32b2288f983f4ba61d875d4bb191ebbe5134",
-          "sha256:2f04894f46ed26ed1972e2bef63ca62c646116963fdc7697ba7da8082c487776",
-          "sha256:31bda4f59bf18393d5551627c269929b26bc94c263b640a09b401090d0c1964f",
-          "sha256:32f39196e6ea6ba272599b98fe78b74d02231273d68cf5ca07a331ce0cbcb118",
-          "sha256:333ea855d9407c5747a8a547065a5d314020b27d2312e6bc5d990653c665873a",
-          "sha256:35f72ad831a69a31cffd7a68fe17e4a9001c51bb3576750388b346c95c2015a4",
-          "sha256:39aea7f31d14382428b91a4f4f2b7bf63c3b3fd089948ec573540efde1a55f49",
-          "sha256:3aa509ac4c82431123e213debdcc8983b8243497496d9a5a50262fe5411e1ef0",
-          "sha256:3b427511fdd775114ef819e04f988a9ed6085b0d0c66b3bb7eb20b8a0e7fd622",
-          "sha256:3dd26dcf2666f9f27a1ec87c544418173725eee942ed076da5f70450778c3b79",
-          "sha256:40013f7ad56201e7ccebea0f93c1535d3a4ed058c664d7f209ddcb2d14ff1c2a",
-          "sha256:40c2abe72cf6ac5592ae378b6d7560aea4c6d45660ec58062795c6ff2347eee1",
-          "sha256:42cde644c4207a6e0014eecc3a5ccbb32e76f26587068ed7ddeaf384a1204899",
-          "sha256:440e05bd416be113776221854011096bc47bb84cdb994ffe031fbe2a7758b7a4",
-          "sha256:478443fe7cc9533edb19731ae945bdcd3e610e42658daea34ace50aa07a0b9b2",
-          "sha256:496336a21448c2cd10ab7eb227c2337f263e0d532dd73936760e2937f9494b61",
-          "sha256:4c8694eb8e686ba2da5b3e6c28d5b97478ec9453e424f2d2689c71a0e1144067",
-          "sha256:4eda8bf00d89ec9f67abf4fdd1f62ad535430227d140013eec2c6c0341c0fdfc",
-          "sha256:527be0eecf9c14a765ba60b4d5917b29060726a774bdccd7946cbdc9e9d9d204",
-          "sha256:54aab8e26fe433b800ec7b5feedb2808370942c2133a751769f18ba9ecbe1f56",
-          "sha256:559a9e5e19f7a48f45fd89bbf66c8851dd62942b3a33f5e14fbe11ab30af2034",
-          "sha256:576223252aff03e0b3175c63e5c9d49e838c7ee9a0d3804b5dbcc6bebf7fc04d",
-          "sha256:58f490593ba76eee9d93f9c78d6cafd6a8d70a91e570d2483356bfd0ec778e78",
-          "sha256:590bd40aea1c80bc910b3e749bfdbf1ba5bcaf0ad2e700c34d22bc54ffea6f49",
-          "sha256:59dcf2756bf8630ac31457b90044a82d74960ebef432f011c124ba9476fa9ecc",
-          "sha256:63e03f75f0cd8c24087b98fcc460acdf6c52b0fd41f64bf1a14ac88b74b39fe7",
-          "sha256:644da133d76898969c4e859d355f5615c6c7b18cb513d44af0844690a8ee5b90",
-          "sha256:648d17c341b003b2952745dd2e3db6641a1f07f02b2718a0c1d360f98111f0eb",
-          "sha256:67d7a550885c5b272d1bdf39ab2f633716b144cdd3cfc3fd388ce66405e8acd6",
-          "sha256:724f0002103d52bdf0764991e5fdc4e4f6000558befd847b5478247567229828",
-          "sha256:74a626eeaae9c9da3090577a1fe7b0ee6d35513c2ad8004a0a885c1926cf05ff",
-          "sha256:77020974e4218f372d4790c97e09925bdc53c4bc550472f50abd64b3d866e818",
-          "sha256:783e76029b3d08cd732eb20ce4ccdda3be70d7cb911f697c7d4ef55daad480e3",
-          "sha256:794f2099e91f8a9362c4365ad2a1e549df1523039fb797d165b5e8174b62e2b0",
-          "sha256:79f3904581b9b31962c0306897b4c83ce77e23d45c21796c55d07e2979f54ef7",
-          "sha256:7c8f594ef4b3302b20262831ad8cf0c41541fd867739413f6408f5031706f888",
-          "sha256:7ca6d85d9a4890aba65651d8ec14d5b93e09aab94b0ef4d863efc240845a6b3b",
-          "sha256:82b94f40c0296228504b01a518491762cf5b251fc3591d012f0d710e22bb6b14",
-          "sha256:8c53a3ea7fef4109d8d45b4c0190a0bc2a1ff8e5e5407ac2e27d09badc7baecf",
-          "sha256:8ca7cbe27c81f145911befb71d3a6262d8ad2e7aeff6efcb4ab7813f234cae1a",
-          "sha256:8f1630ca1190f5f8ca1bdfeb3daac0bf44484416f7d5c8c2590ddb1adefc4a2a",
-          "sha256:93874b66eb44252ca0fb62781bd4e47b6c303ca8c3e10008307d9578de912faa",
-          "sha256:945c5bf44d9efad08e06c3d7254ea4ef6a50183c66f1b68032cc4b7d3d883db6",
-          "sha256:94d2832c1768b47a3252252ac2e0547b2ef1fc2315e85d4f12b7a7c9f68abbbb",
-          "sha256:964c900a383a96d466116c8bf9bc1c117ade25ff212e971deabda5bb49a2f534",
-          "sha256:985479d61e6c67a5f327b120955eba2d4a24cd052a5db62a5f478b270094ac38",
-          "sha256:9abfdbfa429aeec4ee323e9eba7e33ed220ef954b4b90fd977c3d6a39fb3da8e",
-          "sha256:9b7fd8788c6e141dc8f1d3014555822676646b9c7836438bc97f81b8e4fe7a4d",
-          "sha256:a0be97f26e6168c3f765a5921c959b3ed6dcfe5eb27c8e04f88b76be278249d8",
-          "sha256:a1212f36c6f51e040dfbe1a9c23935eda6af4d34ee3867ff0da1f032c228b13d",
-          "sha256:a9ad5a78015d0f6cbe22278e808352764ac5b4b060dd7a5cbb48867609367318",
-          "sha256:aa90103616049e14eda6795f456d4b39d039110d84da4e68b527939472779b21",
-          "sha256:acf2b05c423d2a9efba478af39d42236323143add44bdecdb1ed34480271b8cf",
-          "sha256:b1ee3edb023d144a073660be86a8987f4e94db28dab9f391649f2d327ee8ee5e",
-          "sha256:b7e0fbb1d8d3863cb73f3135aed64280cf91a40f4c7f7e1436d18e418a5fa6f1",
-          "sha256:b81edd495c81e7eda7fe8e385431eb816544cfabbedfe39b1027bab078fe98e3",
-          "sha256:b89c43be3d65cc19607d0b57d4ac0a79842ca007d0c7974b47eaab875be79543",
-          "sha256:b8f7fdf7f842e647fbbbe8da3dbcfdb9ba481003e47bcfffa1d823b900557d4d",
-          "sha256:bbda9276172da96a6c664f68b556172c126e838836208899aa83a861a498fb4a",
-          "sha256:c0352470f1920aff5df2c5966c2852efdbddbcd6d5aa26381b0b361d63078266",
-          "sha256:c402f40b3ef5f361b8c1f3af0acd159b29d426cf247f5cdcf98fde286240578b",
-          "sha256:c49f4ea63e8a34f47fee57141dea0c9eff86f6725ff6da6dcf56afe8f3f3fccd",
-          "sha256:c4cf037ca2f05d034b61ad6ead1eec7370e5d7278891c33b2fd593155249a4e8",
-          "sha256:c4d72f1b0bb0a206756c5159acbce46fe55bd58a6f72800e2af32e829757d01f",
-          "sha256:c555736f8768b0ea5cb87820d3c20e4d5990f8bbefde6b8bcacf4f9494a8ebeb",
-          "sha256:cb7d7e86b021d74c11d5c544e02e05513463deef28552ec1e172bb89dd92ea8e",
-          "sha256:cbba1200fb0cfc1c728685257237d93d57898a996a4d25262fa014477a0b0642",
-          "sha256:d3d53e6b5b14370079643e74601b6e8d21a0e6eadc7f1dd54a637e9059189756",
-          "sha256:d44d8b1880a12838f3e1f590228597524d761514309daa3699bbe922d212ca06",
-          "sha256:d530f770d8f4eb4c19983154bf9a0667dd5916407cabc0b57e8b211670612f8a",
-          "sha256:d7e8a043d906cf4508c1c7a2a297dd690060a93535b101af897f0ae5b5690dcb",
-          "sha256:dd673cf07f85ef396db20936052ef4e4e8513ca9c6935555f4b5477e58c249f1",
-          "sha256:dfefff51e17bc4965611712b231d0c19e65e55d2211dfe65a1b1100a88a1ac72",
-          "sha256:e59f9727df97413daa5ab0772d231bf40cf1f7fcd8a51c58b88dd5c885498ab0",
-          "sha256:e5d2d9c0671bcd5f80a7812e4c533f37af75ebebe1f071f20fccd5968a287dc5",
-          "sha256:e89187ebd6e20c325b4a2bbd5e0a4c7e2600adf93c0c81951910884ebcd7611d",
-          "sha256:e9a663d13dc039f4f55b3463658871b654367c551055f16611f0d86502f9be35",
-          "sha256:eda7659f3065f46cebf356c741e68ff0908a2bf36a483f0bf97a30f777182bcd",
-          "sha256:eeace748daf1388a9d40bc2a35c4589880b26d5c3b3b61718aa9698e705b1202",
-          "sha256:ef91865c71e48070da3a35229c509b34974c2d59a36aabf3fb51616e52e3606a",
-          "sha256:f2493c81f709b5a461bcbe190d755d4d0cebee10c9c975dfde2c50be6c5634c9",
-          "sha256:f5a908efa198c690f6b48e9e6fed8fce780f624125fd631e9a1831c93742879a",
-          "sha256:f6b2be7f9e9c631ed0c6d1c8547c05e2cceb88af59c26288df01c5d1ae6e3ad3",
-          "sha256:f92b681eed5df33a891a8422b92bfc8da0fe6226ffc04b6bb7456a469445ec13",
-          "sha256:f9f6e878e4d6df1ac3dd6c26d0533782706c441e28c23ffbf9b8331a467bb52d",
-          "sha256:fcb59cdd69ef47eb075193582b7a7e3d0a49e04cdf19a4fda8ac6679552b9779",
-          "sha256:fe4187e5953475649ec0cb741fb238fa7ba0e4ebd9e3a79d9e70bb8828b5c073",
-          "sha256:ff48153abfa5da9a932c5857fccb61be3fcea5c0226ed314a47483a79ed28405"
-        ],
         "rulings": 8
       }
     },
@@ -3687,35 +3497,15 @@
     "rubric_version": "advisory-finding-rubric-v1",
     "population": {
       "source": {
-        "revision": "73b0d5d",
-        "report_digest": "sha256:a4799ec9a20ab526b03daf9140ed2d5668f107ac6ba9972252882de7ab56dcca",
         "provenance": {
-          "engine": "quire 0.30.2 (engine 9126463)",
-          "corpus": "c359c1a2030a8c39579c9be2661775f728c9dff4",
-          "corpus_input": "sha256:5cd185bde9333ce3789fbfd4c09d4028d0dab6dd6cb1aab939f00659fc539291",
+          "engine": "quire 0.30.2",
           "declaration": {
-            "root": "corpus/modules",
-            "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
-            "modules": {
-              "ecosystem": "sha256:1e4ac802a01f9923033e1f63ecdf5c48e0f8ba477cbe168914230f03630dff97",
-              "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
-              "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-              "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
-              "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-              "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
-              "variants/optional-target-section": "sha256:1a801dd51c8af35c159216eeeb166fd4d602c4e9a64c8ff13a77067c0cd5b20f",
-              "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
-            },
-            "sources": {
-              "spec-artifacts-process": "995288d609a47ab5a25f300ac0fa600d390b348c",
-              "spec-artifacts-iso": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217"
-            }
+            "root": "corpus/modules"
           }
         }
       },
       "selection": "Every finding in a source-report advisory family not governed by a compatible per-case, scoped, or standing ruling.",
-      "count": 108,
-      "digest": "sha256:dd9533344090240acb0b0ea1aa80b04a37a599040a5f584425bb74696fc2ac2c"
+      "count": 108
     },
     "dispositions": {
       "correct": 108,
@@ -4061,8 +3851,6 @@
     "rate": 1
   },
   "guidance_quality": {
-    "contractDigest": "sha256:4c7cdecc3be4da71c9a7b9ade09ed61d2e7dffc993a79305f82b142ed1dcc350",
-    "evidenceDigest": "sha256:c180e7949607743ba253c0b19e5bba4792a6c9c1574920faf31b13b1eba1025d",
     "selectedRecords": 72,
     "correctness": {
       "definitionVersion": "guidance.correctness-v1",
@@ -5952,7 +5740,7 @@
       }
     },
     "producerVersions": [
-      "0.32.0 (engine 42326bbdf8f6641203eebf7a5faaa2b22bc19b0f)"
+      "0.32.0"
     ],
     "rate": 0
   },
@@ -5980,7 +5768,7 @@
       }
     ],
     "producerVersions": [
-      "0.32.0 (engine 42326bbdf8f6641203eebf7a5faaa2b22bc19b0f)"
+      "0.32.0"
     ]
   },
   "span_breadth": {
@@ -6028,8 +5816,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6058,7 +5845,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6093,8 +5879,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6123,7 +5908,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6158,8 +5942,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6188,7 +5971,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6223,8 +6005,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6253,7 +6034,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6288,8 +6068,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6318,7 +6097,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6353,8 +6131,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6383,7 +6160,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6418,8 +6194,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6448,7 +6223,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6483,8 +6257,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6510,8 +6283,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -6536,7 +6308,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6571,8 +6342,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6598,8 +6368,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -6624,7 +6393,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6659,8 +6427,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6686,8 +6453,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -6716,7 +6482,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6751,8 +6516,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6778,8 +6542,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -6808,7 +6571,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6843,8 +6605,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6870,8 +6631,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -6900,7 +6660,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -6935,8 +6694,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -6962,8 +6720,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -6992,7 +6749,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7027,8 +6783,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7057,7 +6812,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7092,8 +6846,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7122,7 +6875,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7157,8 +6909,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7187,7 +6938,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7222,8 +6972,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7252,7 +7001,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7287,8 +7035,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7317,7 +7064,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7352,8 +7098,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7382,7 +7127,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7417,8 +7161,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7444,8 +7187,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -7474,7 +7216,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7509,8 +7250,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7536,8 +7276,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -7566,7 +7305,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7601,8 +7339,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7628,8 +7365,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -7658,7 +7394,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7693,8 +7428,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7720,8 +7454,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -7750,7 +7483,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7785,8 +7517,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7812,8 +7543,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -7842,7 +7572,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7877,8 +7606,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7904,8 +7632,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -7934,7 +7661,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -7969,8 +7695,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -7996,8 +7721,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -8026,7 +7750,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8061,8 +7784,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8088,8 +7810,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -8118,7 +7839,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8153,8 +7873,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8183,7 +7902,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8218,8 +7936,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8248,7 +7965,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8283,8 +7999,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8313,7 +8028,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8348,8 +8062,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8378,7 +8091,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8413,8 +8125,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8443,7 +8154,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8478,8 +8188,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8508,7 +8217,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8543,8 +8251,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8570,8 +8277,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -8596,7 +8302,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8631,8 +8336,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8658,8 +8362,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -8684,7 +8387,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8719,8 +8421,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8746,8 +8447,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -8772,7 +8472,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8807,8 +8506,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "1f26b4f4af194153ee03affe2763b14975d77fdc70f3f660ca809eb3b34762f2"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 37,
@@ -8834,8 +8532,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "5047032620daffcdba06de30ac7baee70cb6b20358f43c63549644e8ea825bd9"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 36,
@@ -8864,7 +8561,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8899,8 +8595,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -8926,8 +8621,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -8952,7 +8646,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -8987,8 +8680,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "fb73fd26392bf441096c40d5c3ab0608a5f932e015a16839b71f8c02ac744a93"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 36,
@@ -9017,7 +8709,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9052,8 +8743,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "fb73fd26392bf441096c40d5c3ab0608a5f932e015a16839b71f8c02ac744a93"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 36,
@@ -9082,7 +8772,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9114,7 +8803,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9146,7 +8834,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9178,7 +8865,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9213,8 +8899,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "d9ccea59ebc1b761518b02a8ed0f90542140f87eec7968b08a019e3d8cb3ef5a"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -9230,7 +8915,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9265,8 +8949,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -9295,7 +8978,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9330,8 +9012,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -9360,7 +9041,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9395,8 +9075,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -9425,7 +9104,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9460,8 +9138,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -9490,7 +9167,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9525,8 +9201,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -9555,7 +9230,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9590,8 +9264,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -9620,7 +9293,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9655,8 +9327,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -9685,7 +9356,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9720,8 +9390,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -9750,7 +9419,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9785,8 +9453,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -9815,7 +9482,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9850,8 +9516,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Telepathy",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "d9ccea59ebc1b761518b02a8ed0f90542140f87eec7968b08a019e3d8cb3ef5a"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -9867,7 +9532,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9902,8 +9566,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "d9ccea59ebc1b761518b02a8ed0f90542140f87eec7968b08a019e3d8cb3ef5a"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -9919,7 +9582,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9951,7 +9613,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -9983,7 +9644,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10018,8 +9678,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10048,7 +9707,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10083,8 +9741,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10113,7 +9770,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10148,8 +9804,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10178,7 +9833,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10213,8 +9867,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10243,7 +9896,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10278,8 +9930,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10308,7 +9959,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10343,8 +9993,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10373,7 +10022,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10408,8 +10056,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10435,8 +10082,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -10465,7 +10111,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10500,8 +10145,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10527,8 +10171,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -10557,7 +10200,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10592,8 +10234,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10619,8 +10260,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -10649,7 +10289,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10684,8 +10323,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10711,8 +10349,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -10741,7 +10378,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10776,8 +10412,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10803,8 +10438,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -10833,7 +10467,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10868,8 +10501,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10895,8 +10527,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -10925,7 +10556,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -10960,8 +10590,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -10987,8 +10616,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11017,7 +10645,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11052,8 +10679,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11079,8 +10705,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11109,7 +10734,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11144,8 +10768,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11171,8 +10794,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11201,7 +10823,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11236,8 +10857,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11263,8 +10883,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11293,7 +10912,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11328,8 +10946,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11355,8 +10972,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11385,7 +11001,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11420,8 +11035,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11447,8 +11061,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11477,7 +11090,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11512,8 +11124,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11539,8 +11150,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11569,7 +11179,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11604,8 +11213,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11631,8 +11239,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11661,7 +11268,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11696,8 +11302,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11723,8 +11328,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11753,7 +11357,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11788,8 +11391,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11815,8 +11417,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11845,7 +11446,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11880,8 +11480,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11907,8 +11506,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -11937,7 +11535,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -11972,8 +11569,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -11999,8 +11595,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -12029,7 +11624,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12064,8 +11658,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12091,8 +11684,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -12121,7 +11713,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12156,8 +11747,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12183,8 +11773,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -12213,7 +11802,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12248,8 +11836,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12275,8 +11862,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -12305,7 +11891,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12340,8 +11925,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12367,8 +11951,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -12397,7 +11980,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12432,8 +12014,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12459,8 +12040,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -12489,7 +12069,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12524,8 +12103,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12551,8 +12129,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -12581,7 +12158,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12616,8 +12192,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12646,7 +12221,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12681,8 +12255,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12711,7 +12284,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12746,8 +12318,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12776,7 +12347,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12811,8 +12381,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12841,7 +12410,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12876,8 +12444,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12906,7 +12473,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -12941,8 +12507,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -12971,7 +12536,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13006,8 +12570,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -13033,8 +12596,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Inspection",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -13055,7 +12617,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13090,8 +12651,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -13117,8 +12677,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Inspection",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -13139,7 +12698,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13174,8 +12732,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -13201,8 +12758,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Inspection",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -13223,7 +12779,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13258,8 +12813,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -13285,8 +12839,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -13307,7 +12860,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13342,8 +12894,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -13369,8 +12920,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -13391,7 +12941,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13426,8 +12975,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -13453,8 +13001,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -13475,7 +13022,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13510,8 +13056,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -13535,7 +13080,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13570,8 +13114,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -13595,7 +13138,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13630,8 +13172,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -13655,7 +13196,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13687,7 +13227,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13719,7 +13258,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13751,7 +13289,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13783,7 +13320,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13815,7 +13351,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13847,7 +13382,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13879,7 +13413,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13911,7 +13444,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13943,7 +13475,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -13975,7 +13506,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14007,7 +13537,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14039,7 +13568,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14071,7 +13599,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14103,7 +13630,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14135,7 +13661,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14167,7 +13692,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14202,8 +13726,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14232,7 +13755,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14267,8 +13789,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14297,7 +13818,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14332,8 +13852,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14362,7 +13881,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14397,8 +13915,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14427,7 +13944,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14462,8 +13978,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14492,7 +14007,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14527,8 +14041,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14557,7 +14070,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14592,8 +14104,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14622,7 +14133,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14657,8 +14167,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14687,7 +14196,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14722,8 +14230,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14752,7 +14259,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14787,8 +14293,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14817,7 +14322,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14852,8 +14356,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14882,7 +14385,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14917,8 +14419,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -14947,7 +14448,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -14982,8 +14482,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15012,7 +14511,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15047,8 +14545,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15077,7 +14574,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15112,8 +14608,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15142,7 +14637,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15177,8 +14671,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15207,7 +14700,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15242,8 +14734,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15272,7 +14763,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15307,8 +14797,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15337,7 +14826,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15372,8 +14860,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "12671017989d8c835aa0db9c69678949108d9afdeb764813b7810d3c031b77b3"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 46,
@@ -15402,7 +14889,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15437,8 +14923,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "12671017989d8c835aa0db9c69678949108d9afdeb764813b7810d3c031b77b3"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 46,
@@ -15467,7 +14952,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15502,8 +14986,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15529,8 +15012,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -15555,7 +15037,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15590,8 +15071,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15617,8 +15097,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -15643,7 +15122,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15678,8 +15156,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15705,8 +15182,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -15731,7 +15207,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15766,8 +15241,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15793,8 +15267,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -15819,7 +15292,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15854,8 +15326,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15881,8 +15352,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -15907,7 +15377,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -15942,8 +15411,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -15969,8 +15437,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -15995,7 +15462,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16030,8 +15496,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -16060,7 +15525,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16095,8 +15559,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "aa45dc1957e9a2d06118584242b5e4bcf79996d8b17b68b8fc869ba2f63d5b0e"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -16117,7 +15580,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16152,8 +15614,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "aa45dc1957e9a2d06118584242b5e4bcf79996d8b17b68b8fc869ba2f63d5b0e"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -16174,7 +15635,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16209,8 +15669,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -16236,8 +15695,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -16262,7 +15720,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16297,8 +15754,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -16324,8 +15780,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -16350,7 +15805,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16385,8 +15839,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -16412,8 +15865,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -16438,7 +15890,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16473,8 +15924,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -16500,8 +15950,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -16526,7 +15975,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16561,8 +16009,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -16588,8 +16035,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -16614,7 +16060,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16649,8 +16094,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -16676,8 +16120,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -16702,7 +16145,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16762,7 +16204,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16822,7 +16263,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16882,7 +16322,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -16921,8 +16360,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "c6d61360e9dda45d2a561ef002bb4308264a1b0768eb5923db6c3efed66994de"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 49,
@@ -16948,8 +16386,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -16974,7 +16411,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17013,8 +16449,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "ce17e35b3515a978da3abab21bfe3e681ccdd573e4dee2176eb515ec60dd7150"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -17040,8 +16475,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17066,7 +16500,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17105,8 +16538,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "f367f556701b6ab50cee0ee9417136f9c5e6e50b45b3bf6a765cae4cfc91660a"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 48,
@@ -17132,8 +16564,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17158,7 +16589,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17197,8 +16627,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "c6d61360e9dda45d2a561ef002bb4308264a1b0768eb5923db6c3efed66994de"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 49,
@@ -17224,8 +16653,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17250,7 +16678,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17289,8 +16716,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "ce17e35b3515a978da3abab21bfe3e681ccdd573e4dee2176eb515ec60dd7150"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 41,
@@ -17316,8 +16742,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17342,7 +16767,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17381,8 +16805,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "f367f556701b6ab50cee0ee9417136f9c5e6e50b45b3bf6a765cae4cfc91660a"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 48,
@@ -17408,8 +16831,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17434,7 +16856,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17469,8 +16890,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17488,8 +16908,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17514,7 +16933,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17549,8 +16967,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17568,8 +16985,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17594,7 +17010,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17629,8 +17044,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17648,8 +17062,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17674,7 +17087,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17709,8 +17121,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17728,8 +17139,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17754,7 +17164,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17789,8 +17198,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17808,8 +17216,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17834,7 +17241,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17869,8 +17275,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17888,8 +17293,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -17914,7 +17318,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -17949,8 +17352,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 54,
@@ -17976,8 +17378,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18002,7 +17403,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18037,8 +17437,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 54,
@@ -18064,8 +17463,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18090,7 +17488,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18125,8 +17522,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 54,
@@ -18152,8 +17548,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18178,7 +17573,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18213,8 +17607,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 54,
@@ -18240,8 +17633,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18266,7 +17658,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18301,8 +17692,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 54,
@@ -18328,8 +17718,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18354,7 +17743,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18389,8 +17777,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 54,
@@ -18416,8 +17803,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18442,7 +17828,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18477,8 +17862,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "f0435e8437fedf296bc08399d6876e2b1092bf99b546f31b514ebebfe6e3d00e"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18499,7 +17883,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18534,8 +17917,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "f0435e8437fedf296bc08399d6876e2b1092bf99b546f31b514ebebfe6e3d00e"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18556,7 +17938,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18591,8 +17972,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -18618,8 +17998,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18644,7 +18023,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18679,8 +18057,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": {
                   "end": 39,
@@ -18706,8 +18083,7 @@
                 "obligation": {
                   "criticality": null,
                   "method": "Test",
-                  "source": "acceptance-criterion",
-                  "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                  "source": "acceptance-criterion"
                 },
                 "oracle": null,
                 "precondition": null,
@@ -18732,7 +18108,6 @@
         ],
         "engine": {
           "cli": "0.32.0",
-          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
             "assurance_export.v1",
@@ -18810,7 +18185,7 @@
     },
     "malformed": [],
     "producerVersions": [
-      "0.32.0 (engine 42326bbdf8f6641203eebf7a5faaa2b22bc19b0f)"
+      "0.32.0"
     ]
   },
   "grounding_quality_payload": {
@@ -18826,8 +18201,7 @@
             "obligation": {
               "criticality": null,
               "method": "Test",
-              "source": "acceptance-criterion",
-              "statement_hash": "4ce5ca207a1f2622b8508ff39672e8ed08caa8784fb16d61d8ea1cef730bd0e6"
+              "source": "acceptance-criterion"
             },
             "oracle": {
               "end": 70,
@@ -18858,8 +18232,7 @@
             "obligation": {
               "criticality": null,
               "method": "Test",
-              "source": "acceptance-criterion",
-              "statement_hash": "0c7b625d5c8a37b0e0eaec415fff43113185bd5a3aacf4e668f1394e744e7c68"
+              "source": "acceptance-criterion"
             },
             "oracle": {
               "end": 59,
@@ -18890,8 +18263,7 @@
             "obligation": {
               "criticality": null,
               "method": "Test",
-              "source": "acceptance-criterion",
-              "statement_hash": "679d3cbac95848f8e5fa5119e2d6b37b132557ad1d19694bc99c8934ab682191"
+              "source": "acceptance-criterion"
             },
             "oracle": {
               "end": 61,
@@ -18917,8 +18289,7 @@
             "obligation": {
               "criticality": null,
               "method": "Test",
-              "source": "acceptance-criterion",
-              "statement_hash": "311af5de3278af13f6108f8b329f24d151f0cdcc7c1932b0bf1d654b68c3b598"
+              "source": "acceptance-criterion"
             },
             "oracle": {
               "end": 115,
@@ -18940,8 +18311,7 @@
             "obligation": {
               "criticality": null,
               "method": "Test",
-              "source": "acceptance-criterion",
-              "statement_hash": "fb35d86111df97fb3948685ced2bee3b69e25cfadcf2662d7c69f2a16f831763"
+              "source": "acceptance-criterion"
             },
             "oracle": null,
             "precondition": null,
@@ -18957,7 +18327,6 @@
     ],
     "engine": {
       "cli": "0.32.0",
-      "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
       "capabilities": [
         "action_guidance.structured",
         "assurance_export.v1",
@@ -19160,12 +18529,6 @@
             "retainedRulings": 0,
             "ambiguous": [],
             "unresolved": [],
-            "unadjudicatedFindingIds": [
-              "sha256:049eaa9a2f6234d61e96123d85de3ca0ff7257cc95a6584688255627f737e5c0",
-              "sha256:5cab4743ea483fe34ae84cb8aa080e6bef96142621fe0983e5e3614337bb3d59",
-              "sha256:5dff42b3ac6f6c657e84f17f6d272265528d194dd4925b8bf64a1a45d58656fd",
-              "sha256:a1bbcb18a9f8b9815441de8881624e737bf76f40754c4c11069cc9bd19615dfb"
-            ],
             "rulings": 899
           }
         },
@@ -19187,10 +18550,6 @@
             "retainedRulings": 0,
             "ambiguous": [],
             "unresolved": [],
-            "unadjudicatedFindingIds": [
-              "sha256:12dbcb857737e91d250dc8134ced79820406a6e7dae0883de49fd19420510c58",
-              "sha256:29739efcd042a4db6a725583a3ff8c111fd5272fd2ae3c4f0b57a593d1626890"
-            ],
             "rulings": 8
           }
         },
@@ -19285,40 +18644,6 @@
             "retainedRulings": 0,
             "ambiguous": [],
             "unresolved": [],
-            "unadjudicatedFindingIds": [
-              "sha256:062e700c03e9739d02ffbc276960f4cbfbaf7e86b9efa498d638a32cccc308b6",
-              "sha256:0876be89874ab3d97fbf75400c3ed91b945434d1e5b0de180b15c305f5b708c2",
-              "sha256:20bbdde9d1fb88a6986d396041a720d7c7be37e125bd0a13800899ecd180f31d",
-              "sha256:218ac2d5efaa04e524ac45e25a6f2da633c462eaa14beaee41300ecd65fba214",
-              "sha256:2ea50ee5763b1606657af8965a6c32b2288f983f4ba61d875d4bb191ebbe5134",
-              "sha256:2f04894f46ed26ed1972e2bef63ca62c646116963fdc7697ba7da8082c487776",
-              "sha256:31bda4f59bf18393d5551627c269929b26bc94c263b640a09b401090d0c1964f",
-              "sha256:35f72ad831a69a31cffd7a68fe17e4a9001c51bb3576750388b346c95c2015a4",
-              "sha256:40c2abe72cf6ac5592ae378b6d7560aea4c6d45660ec58062795c6ff2347eee1",
-              "sha256:67d7a550885c5b272d1bdf39ab2f633716b144cdd3cfc3fd388ce66405e8acd6",
-              "sha256:77020974e4218f372d4790c97e09925bdc53c4bc550472f50abd64b3d866e818",
-              "sha256:79f3904581b9b31962c0306897b4c83ce77e23d45c21796c55d07e2979f54ef7",
-              "sha256:7ca6d85d9a4890aba65651d8ec14d5b93e09aab94b0ef4d863efc240845a6b3b",
-              "sha256:8c53a3ea7fef4109d8d45b4c0190a0bc2a1ff8e5e5407ac2e27d09badc7baecf",
-              "sha256:8f1630ca1190f5f8ca1bdfeb3daac0bf44484416f7d5c8c2590ddb1adefc4a2a",
-              "sha256:93874b66eb44252ca0fb62781bd4e47b6c303ca8c3e10008307d9578de912faa",
-              "sha256:a0be97f26e6168c3f765a5921c959b3ed6dcfe5eb27c8e04f88b76be278249d8",
-              "sha256:acf2b05c423d2a9efba478af39d42236323143add44bdecdb1ed34480271b8cf",
-              "sha256:b1ee3edb023d144a073660be86a8987f4e94db28dab9f391649f2d327ee8ee5e",
-              "sha256:bbda9276172da96a6c664f68b556172c126e838836208899aa83a861a498fb4a",
-              "sha256:c49f4ea63e8a34f47fee57141dea0c9eff86f6725ff6da6dcf56afe8f3f3fccd",
-              "sha256:c4cf037ca2f05d034b61ad6ead1eec7370e5d7278891c33b2fd593155249a4e8",
-              "sha256:cb7d7e86b021d74c11d5c544e02e05513463deef28552ec1e172bb89dd92ea8e",
-              "sha256:cbba1200fb0cfc1c728685257237d93d57898a996a4d25262fa014477a0b0642",
-              "sha256:d44d8b1880a12838f3e1f590228597524d761514309daa3699bbe922d212ca06",
-              "sha256:d530f770d8f4eb4c19983154bf9a0667dd5916407cabc0b57e8b211670612f8a",
-              "sha256:eda7659f3065f46cebf356c741e68ff0908a2bf36a483f0bf97a30f777182bcd",
-              "sha256:f2493c81f709b5a461bcbe190d755d4d0cebee10c9c975dfde2c50be6c5634c9",
-              "sha256:f5a908efa198c690f6b48e9e6fed8fce780f624125fd631e9a1831c93742879a",
-              "sha256:f6b2be7f9e9c631ed0c6d1c8547c05e2cceb88af59c26288df01c5d1ae6e3ad3",
-              "sha256:f9f6e878e4d6df1ac3dd6c26d0533782706c441e28c23ffbf9b8331a467bb52d",
-              "sha256:ff48153abfa5da9a932c5857fccb61be3fcea5c0226ed314a47483a79ed28405"
-            ],
             "rulings": 8
           }
         },
@@ -19476,46 +18801,6 @@
             "retainedRulings": 0,
             "ambiguous": [],
             "unresolved": [],
-            "unadjudicatedFindingIds": [
-              "sha256:04698614923adea1c0e692489f40543d859dc277c758368cc8bc51e77c79b1c0",
-              "sha256:05d837c56e800e3d9146ee49b2655b35fbdd6f9112ae0408ba4f4978c87a7d49",
-              "sha256:08181eae91c14368f02b48af052b0110facb21046662a5c089d4e0c0bd10f330",
-              "sha256:0b5d273fa1d56c785f511c4caf81f544b4078975c05339e03d41868f5a6852c0",
-              "sha256:0d1240218043dd74d4a7a6cce52bda2978c83ab46bc5cbad48f397c4bd01d25d",
-              "sha256:13fd26f63419718e40ea64a4474d514d935415f88391b4cd932e6b188d2d989e",
-              "sha256:150a2fdef8ed40aff9173a0c94bc114dab38e688756b54fdfa4a976b8e934d8f",
-              "sha256:156dd85f7b2cbf237fab76a22d5e7c9e770a7dc8f833cc7c9104defee8d2a174",
-              "sha256:2305a83ca1659cd8d233a98eda84ea7a8fb09be00b6e3e517dd3589709ce290f",
-              "sha256:2a0879dfe25414d406bf2f5337fa3cdcfbd83cd33df9f52bda3613411ea53e61",
-              "sha256:2dd3b378a704d2ad57d435efef04a1bbecafb19985835e757ea72dba87e56b9e",
-              "sha256:32f39196e6ea6ba272599b98fe78b74d02231273d68cf5ca07a331ce0cbcb118",
-              "sha256:333ea855d9407c5747a8a547065a5d314020b27d2312e6bc5d990653c665873a",
-              "sha256:42cde644c4207a6e0014eecc3a5ccbb32e76f26587068ed7ddeaf384a1204899",
-              "sha256:440e05bd416be113776221854011096bc47bb84cdb994ffe031fbe2a7758b7a4",
-              "sha256:478443fe7cc9533edb19731ae945bdcd3e610e42658daea34ace50aa07a0b9b2",
-              "sha256:496336a21448c2cd10ab7eb227c2337f263e0d532dd73936760e2937f9494b61",
-              "sha256:4c8694eb8e686ba2da5b3e6c28d5b97478ec9453e424f2d2689c71a0e1144067",
-              "sha256:527be0eecf9c14a765ba60b4d5917b29060726a774bdccd7946cbdc9e9d9d204",
-              "sha256:54aab8e26fe433b800ec7b5feedb2808370942c2133a751769f18ba9ecbe1f56",
-              "sha256:59dcf2756bf8630ac31457b90044a82d74960ebef432f011c124ba9476fa9ecc",
-              "sha256:63e03f75f0cd8c24087b98fcc460acdf6c52b0fd41f64bf1a14ac88b74b39fe7",
-              "sha256:644da133d76898969c4e859d355f5615c6c7b18cb513d44af0844690a8ee5b90",
-              "sha256:648d17c341b003b2952745dd2e3db6641a1f07f02b2718a0c1d360f98111f0eb",
-              "sha256:724f0002103d52bdf0764991e5fdc4e4f6000558befd847b5478247567229828",
-              "sha256:794f2099e91f8a9362c4365ad2a1e549df1523039fb797d165b5e8174b62e2b0",
-              "sha256:82b94f40c0296228504b01a518491762cf5b251fc3591d012f0d710e22bb6b14",
-              "sha256:8ca7cbe27c81f145911befb71d3a6262d8ad2e7aeff6efcb4ab7813f234cae1a",
-              "sha256:964c900a383a96d466116c8bf9bc1c117ade25ff212e971deabda5bb49a2f534",
-              "sha256:b7e0fbb1d8d3863cb73f3135aed64280cf91a40f4c7f7e1436d18e418a5fa6f1",
-              "sha256:b81edd495c81e7eda7fe8e385431eb816544cfabbedfe39b1027bab078fe98e3",
-              "sha256:c402f40b3ef5f361b8c1f3af0acd159b29d426cf247f5cdcf98fde286240578b",
-              "sha256:c4d72f1b0bb0a206756c5159acbce46fe55bd58a6f72800e2af32e829757d01f",
-              "sha256:dfefff51e17bc4965611712b231d0c19e65e55d2211dfe65a1b1100a88a1ac72",
-              "sha256:e59f9727df97413daa5ab0772d231bf40cf1f7fcd8a51c58b88dd5c885498ab0",
-              "sha256:ef91865c71e48070da3a35229c509b34974c2d59a36aabf3fb51616e52e3606a",
-              "sha256:fcb59cdd69ef47eb075193582b7a7e3d0a49e04cdf19a4fda8ac6679552b9779",
-              "sha256:fe4187e5953475649ec0cb741fb238fa7ba0e4ebd9e3a79d9e70bb8828b5c073"
-            ],
             "rulings": 8
           }
         },
@@ -19700,44 +18985,6 @@
             "retainedRulings": 0,
             "ambiguous": [],
             "unresolved": [],
-            "unadjudicatedFindingIds": [
-              "sha256:0a4a8a4c03e69399976bc5bed42bcf3a3621e965258f46c251044d33700e6db0",
-              "sha256:178875bdf7dc9217469cca6cf602f9738a6579343d933c5645a0bf185382a741",
-              "sha256:18014c133823ac0afc952bf6d8b10c608aba81dbf88fa45caa8d8d52dacb981d",
-              "sha256:39aea7f31d14382428b91a4f4f2b7bf63c3b3fd089948ec573540efde1a55f49",
-              "sha256:3aa509ac4c82431123e213debdcc8983b8243497496d9a5a50262fe5411e1ef0",
-              "sha256:3b427511fdd775114ef819e04f988a9ed6085b0d0c66b3bb7eb20b8a0e7fd622",
-              "sha256:3dd26dcf2666f9f27a1ec87c544418173725eee942ed076da5f70450778c3b79",
-              "sha256:40013f7ad56201e7ccebea0f93c1535d3a4ed058c664d7f209ddcb2d14ff1c2a",
-              "sha256:4eda8bf00d89ec9f67abf4fdd1f62ad535430227d140013eec2c6c0341c0fdfc",
-              "sha256:559a9e5e19f7a48f45fd89bbf66c8851dd62942b3a33f5e14fbe11ab30af2034",
-              "sha256:576223252aff03e0b3175c63e5c9d49e838c7ee9a0d3804b5dbcc6bebf7fc04d",
-              "sha256:58f490593ba76eee9d93f9c78d6cafd6a8d70a91e570d2483356bfd0ec778e78",
-              "sha256:590bd40aea1c80bc910b3e749bfdbf1ba5bcaf0ad2e700c34d22bc54ffea6f49",
-              "sha256:74a626eeaae9c9da3090577a1fe7b0ee6d35513c2ad8004a0a885c1926cf05ff",
-              "sha256:783e76029b3d08cd732eb20ce4ccdda3be70d7cb911f697c7d4ef55daad480e3",
-              "sha256:7c8f594ef4b3302b20262831ad8cf0c41541fd867739413f6408f5031706f888",
-              "sha256:945c5bf44d9efad08e06c3d7254ea4ef6a50183c66f1b68032cc4b7d3d883db6",
-              "sha256:94d2832c1768b47a3252252ac2e0547b2ef1fc2315e85d4f12b7a7c9f68abbbb",
-              "sha256:985479d61e6c67a5f327b120955eba2d4a24cd052a5db62a5f478b270094ac38",
-              "sha256:9abfdbfa429aeec4ee323e9eba7e33ed220ef954b4b90fd977c3d6a39fb3da8e",
-              "sha256:9b7fd8788c6e141dc8f1d3014555822676646b9c7836438bc97f81b8e4fe7a4d",
-              "sha256:a1212f36c6f51e040dfbe1a9c23935eda6af4d34ee3867ff0da1f032c228b13d",
-              "sha256:a9ad5a78015d0f6cbe22278e808352764ac5b4b060dd7a5cbb48867609367318",
-              "sha256:aa90103616049e14eda6795f456d4b39d039110d84da4e68b527939472779b21",
-              "sha256:b89c43be3d65cc19607d0b57d4ac0a79842ca007d0c7974b47eaab875be79543",
-              "sha256:b8f7fdf7f842e647fbbbe8da3dbcfdb9ba481003e47bcfffa1d823b900557d4d",
-              "sha256:c0352470f1920aff5df2c5966c2852efdbddbcd6d5aa26381b0b361d63078266",
-              "sha256:c555736f8768b0ea5cb87820d3c20e4d5990f8bbefde6b8bcacf4f9494a8ebeb",
-              "sha256:d3d53e6b5b14370079643e74601b6e8d21a0e6eadc7f1dd54a637e9059189756",
-              "sha256:d7e8a043d906cf4508c1c7a2a297dd690060a93535b101af897f0ae5b5690dcb",
-              "sha256:dd673cf07f85ef396db20936052ef4e4e8513ca9c6935555f4b5477e58c249f1",
-              "sha256:e5d2d9c0671bcd5f80a7812e4c533f37af75ebebe1f071f20fccd5968a287dc5",
-              "sha256:e89187ebd6e20c325b4a2bbd5e0a4c7e2600adf93c0c81951910884ebcd7611d",
-              "sha256:e9a663d13dc039f4f55b3463658871b654367c551055f16611f0d86502f9be35",
-              "sha256:eeace748daf1388a9d40bc2a35c4589880b26d5c3b3b61718aa9698e705b1202",
-              "sha256:f92b681eed5df33a891a8422b92bfc8da0fe6226ffc04b6bb7456a469445ec13"
-            ],
             "rulings": 8
           }
         },

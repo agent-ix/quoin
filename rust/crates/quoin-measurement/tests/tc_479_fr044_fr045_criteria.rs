@@ -214,7 +214,6 @@ fn new_collection_json() -> Value {
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
             "buildProfile": "release",
-            "toolchains": { "node": "22.15.0", "rust": "0.0.0", "python": "3.10.12" },
             "sources": {
                 "fixture": {
                     "revision": "a".repeat(40),
@@ -453,9 +452,7 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
     );
 }
 
-/// A schema-v2 attestation that carries no `toolchains` member at all is
-/// refused; omitting one language inside it is accepted as "not applicable"
-/// (PLAT-930).
+/// A new collection must carry a release build profile.
 ///
 /// `tests/measurement.test.ts:131`, which carried no criterion tag. **No
 /// FR-044 criterion's text names `verificationStack`**: AC-1's member census
@@ -467,59 +464,9 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
 /// Trace: FR-044-AC-1
 /// Provenance: quoin#479, PLAT-930
 #[test]
-fn tc_479_003_a_new_collection_requires_toolchains_and_a_release_build_but_not_every_language() {
+fn tc_479_003_a_new_collection_requires_a_release_build() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
-
-    let mut drifted = new_collection_json();
-    delete_at(&mut drifted, &["verificationStack", "toolchains"]);
-    let refusal = validate::measurement_collection(
-        &from_serde(&drifted).expect("the drifted case crosses the bridge"),
-        &plans,
-    )
-    .expect_err("an attestation with no `toolchains` member at all is refused");
-    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
-    assert!(
-        refusal
-            .to_string()
-            .contains("verificationStack.toolchains must be present"),
-        "the refusal must say the `toolchains` member itself is missing; it said {refusal}"
-    );
-
-    // A measurement rarely touches every language: omitting one is "not
-    // applicable" for it, not a refusal. Each is tried on its own, so this is
-    // three acceptances rather than one presence check on the object.
-    for toolchain in ["node", "rust", "python"] {
-        let mut partial = new_collection_json();
-        delete_at(
-            &mut partial,
-            &["verificationStack", "toolchains", toolchain],
-        );
-        let admitted = validate::measurement_collection(
-            &from_serde(&partial).expect("the partial case crosses the bridge"),
-            &plans,
-        )
-        .unwrap_or_else(|error| {
-            panic!("an attestation with no `{toolchain}` identity must be admitted: {error}")
-        });
-        let toolchains = admitted
-            .verification_stack
-            .as_ref()
-            .expect("the attestation is still parsed")
-            .toolchains
-            .as_ref()
-            .expect("the toolchains member itself is still present");
-        let observed = match toolchain {
-            "node" => &toolchains.node,
-            "rust" => &toolchains.rust,
-            "python" => &toolchains.python,
-            _ => unreachable!("the loop only names the three languages above"),
-        };
-        assert!(
-            observed.is_none(),
-            "`{toolchain}` was omitted, so it must read as not applicable, not invented"
-        );
-    }
 
     // A build profile other than release is a new collection's own refusal,
     // and so is its absence — `tests/measurement.test.ts:141-152`.
@@ -544,68 +491,6 @@ fn tc_479_003_a_new_collection_requires_toolchains_and_a_release_build_but_not_e
             "{profile:?}: the refusal must name the profile it wanted; it said {refusal}"
         );
     }
-}
-
-/// Omitting a toolchain identity is "not applicable" (`tc_479_003`), but a
-/// genuinely malformed one — present and the wrong shape — is still refused.
-///
-/// PLAT-930: `Option<NonEmptyText>` gives absence exactly one spelling. An
-/// empty string is not that spelling; it is a value someone supplied and got
-/// wrong, and it must be named rather than silently treated as "not
-/// applicable" too.
-///
-/// Trace: FR-044-AC-1
-/// Provenance: PLAT-930
-#[test]
-fn tc_479_018_a_malformed_toolchain_identity_is_still_refused() {
-    let temporary = planned_repository();
-    let plans = authored_plans(temporary.path());
-
-    for (toolchain, malformed) in [
-        ("node", Value::String(String::new())),
-        ("rust", Value::Number(1.into())),
-        ("python", Value::Array(Vec::new())),
-    ] {
-        let mut candidate = new_collection_json();
-        candidate["verificationStack"]["toolchains"][toolchain] = malformed.clone();
-        let refusal = validate::measurement_collection(
-            &from_serde(&candidate).expect("the malformed case crosses the bridge"),
-            &plans,
-        )
-        .err()
-        .unwrap_or_else(|| {
-            panic!("a malformed `{toolchain}` identity ({malformed:?}) was admitted")
-        });
-        assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
-        assert!(
-            refusal
-                .to_string()
-                .contains(&format!("verificationStack.toolchains.{toolchain}")),
-            "the refusal must name the malformed identity; it said {refusal}"
-        );
-    }
-
-    // `null` is explicit absence, not malformed — it is accepted exactly as
-    // an omitted key is, and reads back as not applicable.
-    let mut explicit_null = new_collection_json();
-    explicit_null["verificationStack"]["toolchains"]["node"] = Value::Null;
-    let admitted = validate::measurement_collection(
-        &from_serde(&explicit_null).expect("the null case crosses the bridge"),
-        &plans,
-    )
-    .expect("an explicit `null` toolchain identity is accepted as not applicable");
-    assert!(
-        admitted
-            .verification_stack
-            .as_ref()
-            .expect("the attestation is parsed")
-            .toolchains
-            .as_ref()
-            .expect("the toolchains member is present")
-            .node
-            .is_none(),
-        "an explicit `null` must read as not applicable, not as an empty identity"
-    );
 }
 
 /// Two independent defects in the intake's own checks — beyond
@@ -648,34 +533,6 @@ fn tc_479_020_a_bad_build_profile_and_an_unplanned_metric_are_both_named_in_one_
         "the SAME refusal must also name the unplanned metric, not just the build profile; \
          got {:?}",
         refusal.findings()
-    );
-}
-
-/// An empty `toolchains` object satisfies "the member is present" but names
-/// no language, which would let an attestation claim zero pinned toolchains —
-/// exactly the gap PLAT-930's optional fields opened. It is refused, the same
-/// as an omitted `toolchains` member.
-///
-/// Trace: FR-044-AC-1
-/// Provenance: PLAT-930
-#[test]
-fn tc_479_021_an_empty_toolchains_object_names_no_language_and_is_refused() {
-    let temporary = planned_repository();
-    let plans = authored_plans(temporary.path());
-
-    let mut candidate = new_collection_json();
-    candidate["verificationStack"]["toolchains"] = json!({});
-    let refusal = validate::measurement_collection(
-        &from_serde(&candidate).expect("the candidate crosses the bridge"),
-        &plans,
-    )
-    .expect_err("a toolchains object naming no language is refused, not treated as present");
-    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
-    assert!(
-        refusal
-            .to_string()
-            .contains("verificationStack.toolchains must name at least one language"),
-        "the refusal must say no language was named; it said {refusal}"
     );
 }
 
@@ -739,13 +596,12 @@ fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one
 /// Trace: FR-044-AC-1
 /// Provenance: quoin#479
 #[test]
-fn tc_479_004_historical_evidence_reads_before_the_profile_and_toolchain_fields() {
+fn tc_479_004_historical_evidence_reads_before_the_profile_field() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
 
     let mut historical = new_collection_json();
     delete_at(&mut historical, &["verificationStack", "buildProfile"]);
-    delete_at(&mut historical, &["verificationStack", "toolchains"]);
     let stored = from_serde(&historical).expect("the historical case crosses the bridge");
 
     let read_back = validate::stored_measurement_collection(&stored)
@@ -756,8 +612,8 @@ fn tc_479_004_historical_evidence_reads_before_the_profile_and_toolchain_fields(
         .as_ref()
         .expect("the attestation it does carry is still parsed");
     assert!(
-        stack.build_profile.is_none() && stack.toolchains.is_none(),
-        "the two absent members must read as absent, not as invented defaults"
+        stack.build_profile.is_none(),
+        "the absent member must read as absent, not as an invented default"
     );
 
     assert!(

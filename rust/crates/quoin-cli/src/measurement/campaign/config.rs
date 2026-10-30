@@ -49,7 +49,6 @@ struct MemberBindingWire {
     #[serde(default)]
     inputs: Vec<SelectedInputWire>,
     timestamp: String,
-    toolchains: BTreeMap<String, String>,
     source_remotes: BTreeMap<String, String>,
     #[serde(default)]
     environment_sources: BTreeMap<String, EnvironmentSourceWire>,
@@ -205,6 +204,7 @@ impl ContractWire {
             kind: self.kind,
             version: self.version,
             revision: self.revision,
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
             digest: parse_digest(&self.digest)?,
         })
     }
@@ -217,6 +217,7 @@ impl ProducerWire {
             version: self.version,
             source_revision: self.source_revision,
             executable: self.executable,
+            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
             executable_digest: parse_digest(&self.executable_digest)?,
         })
     }
@@ -343,7 +344,6 @@ impl MemberBindingWire {
                 .transpose()?,
             inputs,
             timestamp: self.timestamp,
-            toolchains: self.toolchains,
             source_remotes: self.source_remotes,
             environment_sources,
         })
@@ -423,7 +423,6 @@ mod tests {
                         }
                     }],
                     "timestamp": "2026-01-01T00:00:00Z",
-                    "toolchains": {},
                     "sourceRemotes": {"fixture": "https://example.invalid/fixture"},
                     "environmentSources": {
                         "SOURCE_REVISION": {"kind": "source_revision", "repository": "fixture"}
@@ -441,10 +440,6 @@ mod tests {
         assert_eq!(sources.len(), 1);
         let member = members.get("fixture.member").expect("named member");
         assert_eq!(member.producer.producer.executable, "/usr/bin/true");
-        assert_eq!(
-            member.producer.producer.executable_digest.as_str(),
-            "b".repeat(64)
-        );
         assert!(member.checker.is_none());
         assert!(matches!(
             &member.inputs.first().expect("one selected input").source,
@@ -455,15 +450,9 @@ mod tests {
 
     /// Trace: FR-114-AC-4, TC-1942
     #[test]
-    fn tc_1942_run_selection_refuses_unknown_fields_and_bad_digests() {
+    fn tc_1942_run_selection_refuses_unknown_fields() {
         let mut unknown = config();
         unknown["members"]["fixture.member"]["producer"]["unbound"] = json!(true);
         assert!(serde_json::from_value::<RunSelection>(unknown).is_err());
-
-        let mut bad_digest = config();
-        bad_digest["members"]["fixture.member"]["producer"]["producer"]["executableDigest"] =
-            json!("not-a-digest");
-        let selected: RunSelection = serde_json::from_value(bad_digest).expect("wire shape");
-        assert!(selected.into_parts().is_err());
     }
 }

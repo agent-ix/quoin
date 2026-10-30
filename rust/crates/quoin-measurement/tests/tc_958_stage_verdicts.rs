@@ -120,7 +120,6 @@ fn collection_json(id: &str, timestamp: &str, observations: &[Value]) -> Value {
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
             "buildProfile": "release",
-            "toolchains": { "node": "22.15.0", "rust": "0.0.0", "python": "3.10.12" },
             "sources": {
                 "fixture": {
                     "revision": "a".repeat(40),
