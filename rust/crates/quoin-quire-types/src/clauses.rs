@@ -53,7 +53,7 @@ use serde::{Deserialize, Serialize};
 /// refusal lives on the type that deserialises the report, which is the same
 /// place, expressed once.
 ///
-/// BLOCKED-BY QSL-1279 / QSL-1276 part 2 (quire-rs rev bump) (owner: planner titan:QSL:plan): ClauseSetDigest
+/// BLOCKED-BY QSL-1279 / QSL-1276 part 2 (quire-rs rev bump) (owner: planner titan:QSL:plan): `ClauseSetDigest`
 ///
 /// Trace: FR-046-AC-1
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
