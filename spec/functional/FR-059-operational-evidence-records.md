@@ -425,8 +425,8 @@ or aggregate one record's strength against another's.
   completion and an `observed_at` no later than the deadline. A declared gap
   SHALL NOT override the status deterministically derived from these timestamps.
 - A `not_applicable` clock SHALL carry no start, deadline, or completion timestamp.
-- Each `(kind, identity)` version pin SHALL be unique. For a pin control, at least
-  one version pin kind SHALL match the `control_kind` prefix.
+- Each `(kind, identity)` version reference SHALL be unique. For a pin control, at least
+  one version reference kind SHALL match the `control_kind` prefix.
 - When `capability_record_id` is present, it SHALL resolve to a standing-capability
   record with the same control id, control kind, subject, and deployed scope.
 - Every raw-evidence path SHALL be a normalized relative path within the evidence

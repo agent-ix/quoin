@@ -91,7 +91,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-081: Generated public repository and packaging baseline](./FR-081-generated-public-repository-baseline.md)
 - [FR-082: Generated governance tree validates as rendered](./FR-082-generated-governance-tree.md)
 - [FR-083: Template render self-tests and module conformance gate](./FR-083-template-render-self-tests.md)
-- [FR-084: Pin and enumerate the governed corpus](./FR-084-pin-and-enumerate-the-governed-corpus.md) — ⛔ **Withdrawn** (#388)
+- [FR-084: Enumerate the governed corpus](./FR-084-pin-and-enumerate-the-governed-corpus.md) — ⛔ **Withdrawn** (#388)
 - [FR-085: Resolve the completed module set and its contract surfaces](./FR-085-resolve-the-completed-module-set.md) — ⛔ **Withdrawn** (#388)
 - [FR-086: Assign exactly one measurement state to every corpus document](./FR-086-assign-one-measurement-state-per-document.md) — ⛔ **Withdrawn** (#388)
 - [FR-087: Evaluate declared Markdown mappings and validate the extracted record](./FR-087-evaluate-declared-markdown-mappings.md) — ⛔ **Withdrawn** (#388)

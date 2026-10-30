@@ -17,8 +17,7 @@ relationships:
 
 The CLI SHALL lazily reconcile the default module set into
 `~/.ix/filament/modules` on first `catalog` or `write` access — installing each
-module idempotently and performing no git work once a module is installed and
-pinned — and SHALL expose a `plugin ensure-defaults` command as an explicit entry
+module idempotently and performing no git work once a module is installed — and SHALL expose a `plugin ensure-defaults` command as an explicit entry
 point that performs the same install and reports the resulting registry for
 external tools such as `quire validate`.
 
@@ -37,7 +36,7 @@ external tools such as `quire validate`.
 - On first `catalog`/`write` access, the CLI SHALL reconcile the default set into
   the shared store.
 - Reconciliation SHALL be idempotent and SHALL skip git work for a module that is
-  already installed and pinned.
+  already installed, by name.
 - `plugin ensure-defaults` SHALL run the reconcile explicitly and report the
   installed module names so external tools can trigger the bootstrap directly.
 

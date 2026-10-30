@@ -1,6 +1,6 @@
 ---
 id: FR-084
-title: "Pin and enumerate the governed corpus"
+title: "Enumerate the governed corpus"
 type: FR
 relationships:
   - target: "ix://agent-ix/quoin/US-022"
@@ -9,7 +9,7 @@ relationships:
     type: "depends_on"
 ---
 
-# FR-084: Pin and enumerate the governed corpus
+# FR-084: Enumerate the governed corpus
 
 > **⛔ Withdrawn — 2026-09-12.** This requirement is withdrawn and is not
 > implemented. Its gate, [quoin#291](https://github.com/agent-ix/quoin/issues/291)

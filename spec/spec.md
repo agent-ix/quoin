@@ -293,7 +293,7 @@ index; the files are authoritative.
 
 ### Integration Tests
 
-- [IT-001](./integration/IT-001-default-module-reconcile.md) — default module set reconciles from pinned git tags, then serves offline.
+- [IT-001](./integration/IT-001-default-module-reconcile.md) — default module set reconciles from git, then serves offline.
 - [IT-002](./integration/IT-002-github-plugin-install.md) — community plugin installs from a GitHub source into the catalog.
 
 ### Verification Layers
@@ -311,9 +311,9 @@ Three layers verify this specification, each named in the requirements above:
 ## Module Store
 
 `quoin` declares its public default `spec-artifacts-*` and `spec-objects-*`
-modules in the committed `default-modules.yaml` as pinned `git-subdir` sources,
+modules in the committed `default-modules.yaml` as `git-subdir` sources named by repository,
 and installs that set on first catalog access into the Filament module store —
-lazily, idempotently, and (once pinned and installed) entirely offline. The
+lazily, idempotently, and (once installed) entirely offline. The
 install is triggered by the `catalog` and `write` commands and on demand via
 `quoin plugin ensure-defaults`, the explicit entry point external tools such as
 `quire validate` use to bootstrap the set. Private modules, including
