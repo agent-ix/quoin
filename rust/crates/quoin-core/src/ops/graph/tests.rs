@@ -37,8 +37,6 @@ use crate::protocol::Response;
 
 use super::{MAX_SCALAR_BYTES, change_impact, fan_out};
 
-const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-
 /// A tree of files, and nothing else, standing in for the filesystem.
 struct FakeTree(BTreeMap<PathBuf, String>);
 
@@ -67,7 +65,6 @@ fn export() -> Value {
         "format": "quire-assurance",
         "format_version": 1,
         "modules": modules(),
-        "source": { "repository": "agent-ix/example", "revision": REVISION },
         "artifacts": [{
             "id": "FR-001",
             "artifact_type": "FR",
@@ -99,7 +96,6 @@ fn audit() -> Value {
     json!({
         "format": "quoin-audit-envelope",
         "format_version": 1,
-        "source": { "repository": "agent-ix/example", "revision": REVISION },
         "export": premises(),
         "report": { "findings": [], "healthy": ["FR-001-AC-1"], "unevaluated": [] },
     })
@@ -111,7 +107,6 @@ fn bindings() -> Value {
         "bindings": [{
             "obligation": "FR-001-AC-1",
             "suite": "unit",
-            "commit": REVISION,
             "symbols": ["fan-out test"],
         }],
     })
@@ -176,7 +171,6 @@ fn the_two_spellings_render_one_report() {
     let markdown = fan_out(&request(false), &grant).unwrap();
     let canonical = fan_out(&request(true), &grant).unwrap();
     assert!(rendered(&markdown).contains("Suite"));
-    assert!(rendered(&markdown).contains(REVISION));
     assert!(!rendered(&markdown).starts_with('{'));
     assert!(rendered(&canonical).starts_with('{'));
 }

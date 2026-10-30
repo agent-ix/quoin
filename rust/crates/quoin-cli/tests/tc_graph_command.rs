@@ -22,8 +22,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
-const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-
 struct Fixture {
     root: PathBuf,
     export: PathBuf,
@@ -46,10 +44,6 @@ impl Fixture {
         let export = root.join("inputs/assurance.json");
         let premises = root.join("inputs/premises.json");
         let audit = root.join("inputs/audit.json");
-        let source = serde_json::json!({
-            "repository": "agent-ix/example",
-            "revision": REVISION,
-        });
         let modules = serde_json::json!([
             {
                 "name": "example",
@@ -85,7 +79,6 @@ impl Fixture {
             "format": "quire-assurance",
             "format_version": 1,
             "modules": modules,
-            "source": source,
             "artifacts": [{
                 "id": "FR-001",
                 "artifact_type": "FR",
@@ -107,7 +100,6 @@ impl Fixture {
         let audit_value = serde_json::json!({
             "format": "quoin-audit-envelope",
             "format_version": 1,
-            "source": source,
             "export": premises_value,
             "report": { "findings": [], "healthy": ["FR-001-AC-1"], "unevaluated": [] },
         });
@@ -121,7 +113,6 @@ impl Fixture {
                 "bindings": [{
                     "obligation": "FR-001-AC-1",
                     "suite": "unit",
-                    "commit": REVISION,
                     "symbols": ["fan-out test"],
                 }],
             }),

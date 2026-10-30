@@ -20,7 +20,7 @@
 
 use serde_json::Value;
 
-use crate::ids::{Commit, ObligationId, SuiteId};
+use crate::ids::{ObligationId, SuiteId};
 use crate::json as reader;
 
 /// One obligation bound to one suite.
@@ -30,8 +30,6 @@ pub struct Binding {
     pub obligation: ObligationId,
     /// The suite that carries it.
     pub suite: SuiteId,
-    /// The commit it was bound at.
-    pub commit: Commit,
     /// The symbols it names.
     pub symbols: Vec<String>,
 }
@@ -95,11 +93,6 @@ fn parse_binding(value: &Value, at: &str) -> std::result::Result<Binding, String
         "obligation",
     )?;
     let suite = non_empty(&prefix, reader::member(object, &prefix, "suite")?, "suite")?;
-    let commit = non_empty(
-        &prefix,
-        reader::member(object, &prefix, "commit")?,
-        "commit",
-    )?;
     let mut symbols = Vec::new();
     for (index, symbol) in reader::array(
         reader::member(object, &prefix, "symbols")?,
@@ -113,7 +106,6 @@ fn parse_binding(value: &Value, at: &str) -> std::result::Result<Binding, String
     Ok(Binding {
         obligation: ObligationId::new(obligation),
         suite: SuiteId::new(suite),
-        commit: Commit::new(commit),
         symbols,
     })
 }
@@ -148,11 +140,7 @@ fn canonicalize(mut bindings: Vec<Binding>) -> Vec<Binding> {
             .sort_by(|left, right| crate::ids::compare_text(left, right));
     }
     bindings.sort_by(|left, right| {
-        (&left.obligation, &left.suite, &left.commit).cmp(&(
-            &right.obligation,
-            &right.suite,
-            &right.commit,
-        ))
+        (&left.obligation, &left.suite).cmp(&(&right.obligation, &right.suite))
     });
     bindings
 }

@@ -12,7 +12,7 @@ pub mod binding;
 pub mod premises;
 pub mod report;
 
-pub use audit::{AuditEnvelope, SourceIdentity};
+pub use audit::AuditEnvelope;
 pub use binding::{Binding, BindingInput};
 pub use premises::{AcceptedPremises, ModulePremise, SchemaPremise};
 pub use report::{

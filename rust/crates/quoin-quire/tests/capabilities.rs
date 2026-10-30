@@ -348,15 +348,12 @@ fn tc_379_115_an_assurance_export_builds_and_reads_back_under_its_own_premises()
     let outcome = assurance::build(&assurance::Request {
         scope: fixture_scope(),
         modules: fixture_modules(),
-        repository: ids::RepositoryId::new("agent-ix/quoin").expect("non-empty"),
-        revision: ids::RevisionId::new("0".repeat(40)).expect("40 hex"),
     })
     .expect("the fixture corpus exports");
 
     let export = &outcome.export;
     assert_eq!(export.format, "quire-assurance");
     assert_eq!(export.format_version, 1);
-    assert_eq!(export.source.repository, "agent-ix/quoin");
     assert!(
         export.artifacts.len() >= 2,
         "the FR and the matrix are artifacts: {:?}",

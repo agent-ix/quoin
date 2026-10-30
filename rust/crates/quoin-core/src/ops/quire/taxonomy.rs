@@ -82,8 +82,6 @@ const fn core_code(code: ErrorCode) -> Option<CoreErrorCode> {
         ErrorCode::PathEscapesRoot
         | ErrorCode::ContextEntryMalformed
         | ErrorCode::ContextKeyDuplicated
-        | ErrorCode::RepositoryEmpty
-        | ErrorCode::RevisionMalformed
         | ErrorCode::PayloadNotJson
         | ErrorCode::PayloadShape => CoreErrorCode::BadRequest,
 
@@ -122,7 +120,7 @@ mod tests {
     fn the_error_mapping_covers_every_quire_code() {
         assert_eq!(
             ErrorCode::all().len(),
-            23,
+            21,
             "quoin-quire gained or lost an error code; map it in map_error deliberately"
         );
 
@@ -144,8 +142,6 @@ mod tests {
             ErrorCode::PathEscapesRoot,
             ErrorCode::ContextEntryMalformed,
             ErrorCode::ContextKeyDuplicated,
-            ErrorCode::RepositoryEmpty,
-            ErrorCode::RevisionMalformed,
             ErrorCode::PayloadNotJson,
             ErrorCode::PayloadShape,
         ];

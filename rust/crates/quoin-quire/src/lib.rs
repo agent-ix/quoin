@@ -66,7 +66,7 @@ mod testing;
 pub use error::{Error, ErrorCode, Result};
 pub use ids::{
     ClauseSetAuthority, ClauseSetId, ClauseSetRef, ClauseSetVersion, DocumentPath, ModuleRoot,
-    RepositoryId, RevisionId, ScopeRoot,
+    ScopeRoot,
 };
 pub use modules::{ModuleSelection, Notice, NoticeKind};
 pub use payload::{ClauseBindingPayload, CoveragePayload, PayloadLimit};
@@ -104,7 +104,7 @@ pub mod model {
     pub use quire_rs::obligation::{CriterionObligation, Obligation};
     pub use quire_rs::symbols::trace::{BindingCensus, UnmatchedTag};
     pub use quire_rs::{
-        AcceptedAssurancePremises, AssuranceError, AssuranceExport, AssuranceSource, ClauseBinding,
+        AcceptedAssurancePremises, AssuranceError, AssuranceExport, ClauseBinding,
         ClauseBindingReport, ClauseForce, ClauseSet, ClauseSetDiff, ClauseSetKey, CoverageReport,
     };
 }

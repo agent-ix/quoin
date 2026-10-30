@@ -7,7 +7,7 @@
 //! Every `z.string().regex(...)` and `z.string().min(1)` in
 //! `src/measurement/graph-adapters.ts` becomes a newtype here whose only
 //! constructor is its parser. A field typed
-//! [`FullRevision`] cannot hold something that is not one, so no consumer
+//! [`NonEmptyText`] cannot hold something that is not one, so no consumer
 //! re-checks and no branch can forget to.
 //!
 //! Each carries `#[serde(try_from = "String")]`, so the check happens during
@@ -83,10 +83,6 @@ scalar!(
     NonEmptyText,
     "A `z.string().min(1)` value: at least one character."
 );
-scalar!(
-    FullRevision,
-    "A `^[0-9a-f]{40}$` value: the revision that quire-rs `assurance-v1` `sourcePremise` requires (required, additionalProperties false). Quoin reads it from the export and records nothing. BLOCKED-BY PLAT-1226 (owner: planner titan:QSL:plan): quire-rs assurance-v1 sourcePremise.revision"
-);
 scalar!(RevisionIdentity, "A full revision or a semantic version.");
 scalar!(
     LocatorPath,
@@ -110,23 +106,6 @@ impl NonEmptyText {
             return Err(malformed("expected at least one character"));
         }
         Ok(Self(value.to_owned()))
-    }
-}
-
-impl FullRevision {
-    /// Read a full git revision.
-    ///
-    /// # Errors
-    ///
-    /// [`MalformedScalar`] for anything but 40 lowercase hexadecimal characters.
-    pub fn parse(value: &str) -> Parsed<Self> {
-        if is_lower_hex(value, 40) {
-            Ok(Self(value.to_owned()))
-        } else {
-            Err(malformed(format!(
-                "expected a 40-character revision, got `{value}`"
-            )))
-        }
     }
 }
 
