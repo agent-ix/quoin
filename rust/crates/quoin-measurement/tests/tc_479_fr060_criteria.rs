@@ -33,13 +33,13 @@
 
 #[path = "common/census.rs"]
 mod census;
-#[path = "common/paths.rs"]
-mod paths;
+#[path = "common/copy.rs"]
+mod copy;
 #[path = "common/release_evidence.rs"]
 mod release_evidence;
 
 use census::rust_files;
-use paths::repo_root;
+use copy::copy_tree;
 use release_evidence::{JOBS, PREFIX, RUN, WORKFLOW, write_repository};
 
 use std::path::{Path, PathBuf};
@@ -65,12 +65,6 @@ use quoin_measurement::{
 };
 use quoin_store::StoreError;
 use quoin_store::store::write_new_or_identical;
-
-/// A retained measurement collection, for the no-migration criterion.
-const RETAINED_COLLECTION: &str = "tier1-20260829134513176-99c26bc4589f.json";
-
-/// A retained intervention record, for the no-migration criterion.
-const RETAINED_INTERVENTION: &str = "quoin-270-cli-eval-sentinel-contract.json";
 
 /// The three exports both records reference.
 fn retained_paths() -> Vec<String> {
@@ -1116,18 +1110,12 @@ fn tc_479_410_the_operational_modules_hold_no_control_path() {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_411_existing_collections_and_interventions_read_beside_operational_records() {
-    let workspace = temporary_repository();
+    let workspace = tempfile::tempdir().expect("a writable workspace");
     let root = workspace.path();
-    let evidence = repo_root().join("spec").join("evidence");
-    for (directory, name) in [
-        ("measurements", RETAINED_COLLECTION),
-        ("interventions", RETAINED_INTERVENTION),
-    ] {
-        let target = root.join("spec").join("evidence").join(directory);
-        std::fs::create_dir_all(&target).expect("a writable destination");
-        std::fs::copy(evidence.join(directory).join(name), target.join(name))
-            .expect("a copied retained file");
-    }
+    let fixture_spec =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/portfolio-tree/alpha/spec");
+    copy_tree(&fixture_spec, &root.join("spec"));
+    write_repository(root);
 
     let (capability, exercise) = pair_records();
     write_operational_pair(root, &SystemClock, &capability, &exercise)
@@ -1137,7 +1125,7 @@ fn tc_479_411_existing_collections_and_interventions_read_beside_operational_rec
         .expect("the pre-operational evidence reads without migration");
     assert_eq!(
         report.corpus_gaps,
-        Some(0.0),
+        Some(3.0),
         "the retained collection's stated bounds did not survive"
     );
     assert_eq!(report.interventions.len(), 1);

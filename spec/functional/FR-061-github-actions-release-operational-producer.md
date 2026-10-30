@@ -69,7 +69,7 @@ FR-060 intake boundary.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-061-AC-1 | A release workflow and a completed workflow-run/jobs export produce one linked standing-capability and exercise pair whose workflow, actor, timing, outcome, and observations match the source artifacts. | Test (TC-1244) |
-| FR-061-AC-2 | Missing or malformed YAML/JSON, a workflow/path/event mismatch, or an absent, duplicate, unstarted, or incomplete release job is refused without either operational record. | Test (TC-1245) |
+| FR-061-AC-2 | Missing or malformed YAML/JSON, a workflow/path/event mismatch, a release-job run-id, attempt, or `head_sha` mismatch, or an absent, duplicate, unstarted, or incomplete release job is refused without either operational record. | Test (TC-1245) |
 | FR-061-AC-3 | Capability state is derived from the parsed workflow and exercise state and clock status are derived from the retained API exports; caller-supplied replacements cannot change them. | Test (TC-1246) |
 | FR-061-AC-4 | Every non-success GitHub conclusion remains a named non-success exercise and cannot discharge the clocked release obligation. | Test (TC-1247) |
 | FR-061-AC-5 | The Quoin producer consumes the retained workflow-run and jobs files without network or process execution and atomically persists the pair through FR-060. | Test (TC-1248) |
@@ -77,8 +77,9 @@ FR-060 intake boundary.
 ## Constraints
 
 - Tests SHALL build their workflow-run and workflow-jobs exports in the test, labelled
-  synthetic, with generated values; no export of a real run, and no head revision, is
-  committed to the repository.
+  synthetic, with generated `head_sha` values; no export of a real run or fixed head
+  revision is committed to the repository. The producer compares the run and job
+  `head_sha` values and persists neither.
 - The producer is a retained-evidence adapter, not a GitHub client or release runner.
 - The initial producer supports GitHub Actions release workflows only; FR-059 and
   FR-060 remain engine-independent for other deployment surfaces and producers.

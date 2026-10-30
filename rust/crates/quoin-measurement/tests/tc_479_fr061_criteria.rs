@@ -146,18 +146,17 @@ fn obligation() -> OperationalObligation {
     .expect("the obligation reads")
 }
 
-/// Quoin's retained release workflow and a completed workflow-run/jobs
-/// export produce one linked standing-capability and exercise pair whose
-/// workflow, actor, timing, outcome, and observations match the
-/// source artifacts.
+/// Quoin's release workflow and synthetic workflow-run/jobs exports produce
+/// one linked standing-capability and exercise pair whose workflow, actor,
+/// timing, outcome, and observations match the input data.
 ///
 /// Trace: FR-061-AC-1
 /// Provenance: quoin#479
 #[test]
-fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
+fn tc_479_450_synthetic_release_inputs_produce_one_exact_linked_pair() {
     let workspace = temporary_repository();
     let root = workspace.path();
-    let produced = produce(root).expect("the retained release evidence produces a pair");
+    let produced = produce(root).expect("synthetic release evidence produces a pair");
 
     assert_eq!(
         produced.path.file_name().and_then(|name| name.to_str()),
@@ -208,9 +207,9 @@ fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
     assert_eq!(read_operational_records(root).expect("read back").len(), 2);
 }
 
-/// Missing or malformed YAML/JSON, a workflow/path/event mismatch, or
-/// an absent, duplicate, unstarted, or incomplete release job is refused
-/// without either operational record.
+/// Missing or malformed YAML/JSON, a workflow/path/event mismatch, or an
+/// absent, duplicate, unstarted, incomplete, or mismatched release job is
+/// refused without either operational record.
 ///
 /// Trace: FR-061-AC-2
 /// Provenance: quoin#479
@@ -377,12 +376,17 @@ fn job_refusal_cases() -> Vec<RefusalCase> {
         (
             "a release job from another run",
             job_patch("/run_id", json!(1)),
-            "configured release job run, revision, or attempt does not match workflow run",
+            "configured release job run or attempt does not match workflow run",
         ),
         (
             "a release job from another attempt",
             job_patch("/run_attempt", json!(2)),
-            "configured release job run, revision, or attempt does not match workflow run",
+            "configured release job run or attempt does not match workflow run",
+        ),
+        (
+            "a release job from another revision",
+            job_patch("/head_sha", json!("synthetic-different-head")),
+            "configured release job revision does not match workflow run",
         ),
         (
             "a release job that completed before it started",
@@ -525,15 +529,15 @@ fn tc_479_453_every_non_success_conclusion_is_named_and_cannot_discharge() {
     }
 }
 
-/// A release-run integration supplies workflow-run and jobs exports, then
-/// the Quoin producer consumes the retained files without
+/// A release-run integration supplies synthetic workflow-run and jobs exports,
+/// then the Quoin producer consumes the files without
 /// network or process execution and atomically persists the pair through
 /// FR-060.
 ///
 /// Trace: FR-061-AC-5
 /// Provenance: quoin#479
 #[test]
-fn tc_479_454_a_real_run_is_consumed_offline_and_persisted_all_or_nothing() {
+fn tc_479_454_synthetic_exports_are_consumed_offline_and_persisted_all_or_nothing() {
     /// The producer reads files. Anything here would be Quoin running the
     /// release rather than recording one somebody else ran.
     const FORBIDDEN: [&str; 8] = [

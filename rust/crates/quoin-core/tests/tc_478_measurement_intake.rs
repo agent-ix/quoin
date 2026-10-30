@@ -20,10 +20,10 @@
 //!
 //! # Where the inputs come from
 //!
-//! Nothing below writes its own fixture and then reads it back. Every candidate
-//! is a document this repository already retains — the committed collection
-//! fixture under `quoin-measurement/tests/fixtures/`, the retained intervention
-//! record and the retained producer definition — copied into a temporary tree so the store may be written to.
+//! Nothing below writes its own fixture and then reads it back. Each candidate
+//! comes from the committed measurement-store fixtures, copied into a temporary
+//! tree so the store may be written to. The release-producer inputs are
+//! synthetic and built in the test.
 //! A self-written candidate would prove only that the boundary agrees with this
 //! file.
 
@@ -129,8 +129,8 @@ fn directory(path: &Path) -> &str {
         .unwrap_or_else(|| panic!("{} has no parent directory", path.display()))
 }
 
-/// A workspace holding this repository's governing plans and the retained
-/// evidence directories named, and no published record of its own.
+/// A workspace holding this repository's governing plans and selected evidence
+/// fixtures, and no published record of its own.
 ///
 /// Not a copy of the whole of `spec/`: the retained measurements alone are
 /// tens of megabytes, and none of the routes below reads them. What is copied
@@ -143,7 +143,9 @@ fn workspace(evidence: &[&str]) -> tempfile::TempDir {
     );
     for name in evidence {
         copy_tree(
-            &repo().join("spec/evidence").join(name),
+            &repo()
+                .join("tests/fixtures/evidence/measurement-store")
+                .join(name),
             &temporary.path().join("spec/evidence").join(name),
         );
     }
@@ -196,9 +198,10 @@ fn tc_478_100_a_collection_is_published_under_measurements() {
 fn tc_478_101_an_intervention_record_is_published_under_interventions() {
     let temporary = workspace(&["agent-evals"]);
     let root = temporary.path();
-    let candidate = read_json(
-        &repo().join("spec/evidence/interventions/quoin-270-cli-eval-sentinel-contract.json"),
-    );
+    let candidate = read_json(&repo().join(
+        "tests/fixtures/evidence/measurement-store/interventions/\
+             quoin-270-cli-eval-sentinel-contract.json",
+    ));
     assert_eq!(candidate["record_type"], "intervention_experiment");
 
     let path = published(&run(
@@ -224,8 +227,9 @@ fn tc_478_101_an_intervention_record_is_published_under_interventions() {
 fn tc_478_103_the_agent_eval_producer_publishes_an_intervention() {
     let temporary = workspace(&["agent-evals"]);
     let root = temporary.path();
-    let definition =
-        read_json(&repo().join("spec/evidence/agent-evals/quoin-270-sentinel-definition.json"));
+    let definition = read_json(&repo().join(
+        "tests/fixtures/evidence/measurement-store/agent-evals/quoin-270-sentinel-definition.json",
+    ));
 
     let path = published(&run(
         "measurement.produce_agent_eval_intervention",
