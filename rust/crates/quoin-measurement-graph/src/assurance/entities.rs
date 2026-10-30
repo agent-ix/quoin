@@ -54,7 +54,15 @@ pub struct Obligation {
     pub document: NonEmptyText,
     /// The statement itself.
     pub statement: NonEmptyText,
-    /// The digest of that statement.
+    /// The digest of that statement, as quire-rs emits it on the export.
+    ///
+    /// BLOCKED-BY quire-rs-statement-hash (owner: planner titan:QSL:plan):
+    /// `quire_rs` still writes `statement_hash` on every exported obligation
+    /// and this struct is `deny_unknown_fields`, so removing the field here
+    /// would refuse every real export. quoin reads nothing from it (no ticket
+    /// yet; file one against quire-rs). Remove together with the quire-rs
+    /// field and the `statement_hash` member of the graph-loader-tree export
+    /// fixture.
     pub statement_hash: BareDigest,
     /// The verification method, when declared.
     #[serde(default, deserialize_with = "absent_or")]

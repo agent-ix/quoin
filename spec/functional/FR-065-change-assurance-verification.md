@@ -165,7 +165,6 @@ When no invalid check exists, any incomplete check SHALL dominate `valid`.
         "result_unavailable",
         "result_not_computed",
         "evidence_stale",
-        "evidence_suspect",
         "evidence_vacuous",
         "evidence_unrelated",
         "audit_finding",
@@ -278,7 +277,7 @@ For each selected attestation Quoin SHALL:
 3. require producer result `passed`; and
 4. join the proof's declared obligation ids to the retained FR-032 audit report.
 
-Each FR-032 stale, suspect, or vacuous finding SHALL map to its named invalid
+Each FR-032 stale or vacuous finding SHALL map to its named invalid
 reason. A failed result and every other FR-032 defect finding SHALL be invalid.
 An unavailable or not-computed result, missing evidence, or FR-032
 `not-evaluated` state SHALL be incomplete. The receipt SHALL retain every exact
@@ -332,7 +331,7 @@ authenticity, signature, or non-repudiation.
 | FR-065-AC-2 | Valid, invalid, and incomplete remain distinct; any invalid check dominates incomplete, any incomplete check dominates valid, and an empty reason set is permitted only for valid. | Property (TC-1282) |
 | FR-065-AC-3 | Exactly one proof receipt is emitted per reviewed proof in id order; missing selection is incomplete, duplicate or unknown-proof selection is invalid, and unselected stored attestations do not affect the result. | Property (TC-1283) |
 | FR-065-AC-4 | Changing record digest, candidate revision, proof id, argv/cwd, tool identity, or configuration independently makes the selected attestation invalid and names the mismatched premise. | Property (TC-1284) |
-| FR-065-AC-5 | Passed evidence can discharge only when its exact retained bytes verify and all owning obligations are healthy; failed, stale, suspect, vacuous, unrelated, output-mismatched, or other defect evidence is invalid. | Property (TC-1285) |
+| FR-065-AC-5 | Passed evidence can discharge only when its exact retained bytes verify and all owning obligations are healthy; failed, stale, vacuous, unrelated, output-mismatched, or other defect evidence is invalid. | Property (TC-1285) |
 | FR-065-AC-6 | A missing attestation or output, unavailable or not-computed result, or audit not-evaluated state is incomplete and never valid or numeric zero. | Test (TC-1286) |
 | FR-065-AC-7 | Exactly one intact matching human `approved` event permits review validity; missing history/event is incomplete; duplicate matching decisions, broken chain, mismatched event, rejection, or revise request are invalid. | Integration (TC-1287) |
 | FR-065-AC-8 | Incomplete/truncated impact evidence and every non-resolved unknown remain named and force incomplete verification while preserving an advisory workflow's ability to continue. | Test (TC-1288) |

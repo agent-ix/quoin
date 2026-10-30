@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The three `graph.*` routes, each driven through the production runtime.
+//! The two `graph.*` routes, each driven through the production runtime.
 //!
 //! # Why by name, through the runtime
 //!
-//! `graph.fan_out`, `graph.churn` and `graph.change_impact` take the SAME
+//! `graph.fan_out` and `graph.change_impact` take the SAME
 //! request apart from the two change-impact members, so a swapped match arm in
-//! `dispatch` would answer every one of them with a well-formed report of the
+//! `dispatch` would answer both of them with a well-formed report of the
 //! wrong view and leave every unit test green — the condition
 //! `tc_447_operation_census.rs` exists to make impossible. Each route is
 //! therefore run by its own name here and asserted on the one member only its
@@ -120,11 +120,6 @@ fn tc_500_300_each_route_answers_with_its_own_view() {
             "graph.fan_out",
             report(&run("graph.fan_out", &request(true).to_string())),
             "fan-out",
-        ),
-        (
-            "graph.churn",
-            report(&run("graph.churn", &request(true).to_string())),
-            "churn",
         ),
         (
             "graph.change_impact",

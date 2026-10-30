@@ -118,7 +118,7 @@ fn tc_447_402_one_open_leaf_opens_every_ancestor_up_to_the_claim() {
             obligation("FR-001-AC-1", "It holds."),
             obligation("FR-001-AC-2", "It holds."),
         ],
-        vec![finding("FR-001-AC-2", "suspect-link")],
+        vec![finding("FR-001-AC-2", "vacuous-evidence")],
     ));
 
     let claim = &result.claims[0];

@@ -45,7 +45,7 @@ use serde::{Deserialize, Serialize};
 
 use quoin_graph_analysis::{
     ArtifactId, GraphAnalysis, GraphAnalysisInput, GraphInputReader, GraphLoadOptions,
-    RelationKind, analyze_change_impact, analyze_churn, analyze_fan_out, load_graph_analysis_input,
+    RelationKind, analyze_change_impact, analyze_fan_out, load_graph_analysis_input,
     render_graph_analysis, render_graph_analysis_json,
 };
 
@@ -76,25 +76,6 @@ pub fn fan_out(
     let input = load(&request, capabilities, op)?;
     render(
         &GraphAnalysis::from(analyze_fan_out(&input)),
-        request.json,
-        op,
-    )
-}
-
-/// Answer a `graph.churn`: which retained obligations were re-affirmed, by whom.
-///
-/// # Errors
-///
-/// As [`fan_out`].
-pub fn churn(
-    request: &serde_json::Value,
-    capabilities: &Capabilities<'_>,
-) -> Result<Response, CoreError> {
-    let op = "graph.churn";
-    let request: ViewRequest = read_view(request, op)?;
-    let input = load(&request, capabilities, op)?;
-    render(
-        &GraphAnalysis::from(analyze_churn(&input)),
         request.json,
         op,
     )

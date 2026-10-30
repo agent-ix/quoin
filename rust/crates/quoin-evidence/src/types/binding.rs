@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::ids::{Commit, ObligationId, StatementHash, SuiteId, SymbolId};
+use crate::ids::{Commit, ObligationId, SuiteId, SymbolId};
 
 /// Separation facts carried by one evidence relationship.
 ///
@@ -49,35 +49,14 @@ impl EvidenceLineage {
     }
 }
 
-/// Someone re-affirming a binding after the statement it was made against
-/// changed.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct Affirmation {
-    /// Who affirmed.
-    pub who: String,
-    /// The commit they affirmed at.
-    pub commit: Commit,
-    /// Why, when they said.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub note: Option<String>,
-}
-
 /// One obligation bound to the evidence that discharges it.
 ///
-/// [`Binding::statement_hash_at_binding`] is the entire suspect mechanism:
-/// suspect detection is `current != statement_hash_at_binding` against the
-/// obligation quire re-derives today. quire computes the hash; quoin only ever
-/// compares.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Binding {
     /// The obligation id the matrix keys on.
     pub obligation: ObligationId,
-    /// The statement hash as it stood when the binding was first made.
-    pub statement_hash_at_binding: StatementHash,
     /// The suite that discharged it.
     pub suite: SuiteId,
     /// The commit of the run that first discharged it.
@@ -87,9 +66,6 @@ pub struct Binding {
     /// Separation facts, for profile-selected independence checks.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lineage: Option<EvidenceLineage>,
-    /// Re-affirmations recorded after a statement changed.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub affirmations: Option<Vec<Affirmation>>,
 }
 
 /// The unified binding graph.

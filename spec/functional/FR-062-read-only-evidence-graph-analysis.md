@@ -18,11 +18,11 @@ relationships:
 
 ## Description
 
-When a caller selects `fan-out`, `change-impact`, or `churn`, `quoin` SHALL
+When a caller selects `fan-out` or `change-impact`, `quoin` SHALL
 derive one deterministic `GraphAnalysisReport` from a validated Quire assurance
 export, the retained evidence store, and the existing auditor verdicts. The
-three views SHALL be available through `quoin graph fan-out`,
-`quoin graph change-impact`, and `quoin graph churn`, with `--json` exposing the
+two views SHALL be available through `quoin graph fan-out` and
+`quoin graph change-impact`, with `--json` exposing the
 same report model as the human rendering.
 
 Every graph subcommand SHALL require `--export <json>` naming the existing
@@ -43,7 +43,7 @@ completeness state.
   accepted against the required `--premises <json>` input under its format,
   module-version, and module-schema premises, carrying the pinned source
   revision, live obligations, artifacts, and corpus relationships.
-- [FR-030](./FR-030-evidence-store.md) bindings and their affirmation history.
+- [FR-030](./FR-030-evidence-store.md) bindings.
 - [FR-032](./FR-032-evidence-auditor.md) verdicts supplied through required
   `--audit <json>`, used without reinterpretation. The accepted audit envelope
   SHALL carry `format: "quoin-audit-envelope"`, `format_version: 1`, the source
@@ -79,10 +79,6 @@ the exact relationship path from a requested seed, its live obligations, their
 bound suites, and the auditor verdict for each binding. The report SHALL also
 carry the exact relationship-kind selection used for the closure.
 
-`churn` rows SHALL carry every live obligation, its owning requirement, sorted
-bound suites, the sorted unique reaffirmation events retained for that
-obligation, and the event count.
-
 ## Behavior
 
 ### Fan-out
@@ -112,19 +108,6 @@ reached requirement to its live obligations and current suite bindings. The
 view SHALL label those joins as change exposure. It SHALL copy each FR-032
 auditor verdict separately and SHALL NOT turn a supported binding into suspect
 merely because it is reachable.
-
-### Reaffirmation churn
-
-The engine SHALL include every live obligation, including those with zero
-reaffirmations. One explicit affirmation applied to several suite bindings is
-one event, deduplicated by `(obligation, who, commit, note-or-empty)`. The suites
-affected by that event remain visible on the row. Rows sort by descending event
-count and then obligation id.
-
-The report SHALL describe this count as retained reaffirmation history, not as
-a complete Git history or proof that a statement is unstable. Affirmations for
-an obligation absent from the accepted export SHALL be reported as gaps rather
-than folded into a live row.
 
 ### Availability and rendering
 
@@ -159,13 +142,18 @@ returned.
 | FR-062-AC-3 | Change impact records its default or replacement relationship-kind selection, computes the reverse transitive dependency closure from every requested requirement, terminates on cycles, retains shared dependents, and selects the lexicographically first shortest path deterministically. | Test (TC-1251) |
 | FR-062-AC-4 | Every reached StR, US, FR, or NFR requirement is joined to all of its live obligations and bound suites with depth and path, while an unknown or non-requirement requested id is reported and returns no partial closure for that seed. | Test (TC-1252) |
 | FR-062-AC-5 | Each impacted binding carries its unchanged FR-032 verdict in a field distinct from change exposure; reachability alone never changes the verdict (CON-3). | Test (TC-1253) |
-| FR-062-AC-6 | Churn deduplicates one affirmation copied across several suite bindings by `(obligation, who, commit, note-or-empty)` while retaining every affected suite on the row. | Test (TC-1254) |
-| FR-062-AC-7 | Churn includes live obligations with zero events and sorts rows by descending event count then obligation id; affirmation history for an absent obligation is reported as a gap. | Test (TC-1255) |
+| FR-062-AC-6 | Withdrawn (CR note, 2026-10-29): required churn to deduplicate affirmation events. The store keeps no affirmations and the churn view is removed. | Withdrawn (TC-1254) |
+| FR-062-AC-7 | Withdrawn (CR note, 2026-10-29): required churn rows and affirmation-history gaps. The churn view is removed. | Withdrawn (TC-1255) |
 | FR-062-AC-8 | Every view carries the exact accepted source revision and export/module premises; repeated analysis over identical accepted inputs preserves those fields byte-for-byte. | Test (TC-1256) |
 | FR-062-AC-9 | Invalid inputs, absent or unreadable required `--export`/`--premises`/`--audit` paths, rejected premises, and mismatched audit identity fail before rows; absent, unreadable, incomplete, and empty retained inputs produce distinct report states and reasons, never an invented healthy zero. | Test (TC-1257) |
 | FR-062-AC-10 | Reordered equivalent inputs produce byte-identical JSON, and human and JSON renderings are projections of the same sorted report object. | Test (TC-1258) |
-| FR-062-AC-11 | Static boundaries and a non-JSON command-path regression prove the three views execute and write nothing, disable the inherited update check, and consume no frontmatter reader or independently built graph (CON-1, CON-4). | Inspection (TC-1259) |
+| FR-062-AC-11 | Static boundaries and a non-JSON command-path regression prove the two views execute and write nothing, disable the inherited update check, and consume no frontmatter reader or independently built graph (CON-1, CON-4). | Inspection (TC-1259) |
 | FR-062-AC-12 | Existing evidence audit, assurance-case, and measurement reports remain byte-compatible when graph analysis is not invoked, and graph reports contain no derived score or threshold label (CON-2). | Test (TC-1260) |
+
+> **CR note (2026-10-29, PLAT-1213):** The reaffirmation-churn view is removed
+> with the affirmation history it counted (FR-030 CR note). `quoin graph churn`
+> and the `graph.churn` operation are gone; FR-062-AC-6 and FR-062-AC-7 are
+> withdrawn, with TC-1254 and TC-1255. The ids are not reused.
 
 ## Dependencies
 

@@ -31,7 +31,7 @@ use std::path::{Path, PathBuf};
 
 use quoin_graph_analysis::{
     ArtifactId, GraphAnalysisInput, GraphError, GraphInput, GraphInputReader, GraphLoadOptions,
-    OsGraphInputReader, analyze_change_impact, analyze_churn, analyze_fan_out,
+    OsGraphInputReader, analyze_change_impact, analyze_fan_out,
     load_graph_analysis_input,
 };
 use quoin_store::JsonValue;
@@ -227,7 +227,6 @@ fn admitted<R: GraphInputReader>(
         path: Some(ready.export.to_string_lossy().into_owned()),
         premises: opaque(&loaded.premises)?,
         fan_out: opaque(&analyze_fan_out(loaded))?,
-        churn: opaque(&analyze_churn(loaded))?,
         change_impact: None,
     })
 }
@@ -243,7 +242,6 @@ fn with_change_impact(
         path,
         premises,
         fan_out,
-        churn,
         change_impact: _,
     } = graph
     else {
@@ -261,7 +259,6 @@ fn with_change_impact(
         path,
         premises,
         fan_out,
-        churn,
         change_impact: analyses,
     })
 }

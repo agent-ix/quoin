@@ -45,7 +45,6 @@ pub const OPERATIONS: &[&str] = &[
     "config.resolve_org",
     "config.unresolved_org_message",
     "core.ping",
-    "evidence.affirm",
     "evidence.audit_inputs",
     "evidence.gc",
     "evidence.inspect_mocks",
@@ -59,7 +58,6 @@ pub const OPERATIONS: &[&str] = &[
     "evidence.trust_assessments",
     "evidence.trust_decision",
     "graph.change_impact",
-    "graph.churn",
     "graph.fan_out",
     "matrix.build",
     "measurement.build_comparison",
@@ -146,7 +144,6 @@ pub fn dispatch(
         "evidence.parse_lineage" => crate::ops::evidence::parse_lineage(request),
         "evidence.parse_policy" => crate::ops::evidence::parse_policy(request),
         "evidence.gc" => crate::ops::evidence::gc(request, capabilities),
-        "evidence.affirm" => crate::ops::evidence::affirm_binding(request, capabilities),
         "evidence.record" => crate::ops::evidence::record(request, capabilities),
         "evidence.trust_decision" => crate::ops::evidence::trust_decision(request, capabilities),
         "evidence.trust_assessments" => {
@@ -181,7 +178,6 @@ pub fn dispatch(
         "catalog.load" => crate::ops::catalog::load(request, capabilities),
         "catalog.methods" => crate::ops::catalog::methods(request, capabilities),
         "graph.fan_out" => crate::ops::graph::fan_out(request, capabilities),
-        "graph.churn" => crate::ops::graph::churn(request, capabilities),
         "graph.change_impact" => crate::ops::graph::change_impact(request, capabilities),
         "measurement.build_graph_portfolio" => {
             crate::ops::measurement::build_graph_portfolio(request)
@@ -970,10 +966,6 @@ mod tests {
     /// as one population, so a bound listed in neither still fails.
     fn census_of_the_evidence_domain() -> Vec<(&'static str, usize)> {
         vec![
-            (
-                "ops::evidence::MAX_AFFIRM_BYTES",
-                crate::ops::evidence::MAX_AFFIRM_BYTES,
-            ),
             (
                 "ops::evidence::MAX_ASSURANCE_RECORD_BYTES",
                 crate::ops::evidence::MAX_ASSURANCE_RECORD_BYTES,

@@ -155,8 +155,6 @@ reasons! {
     ResultNotComputed => "result_not_computed", true;
     /// The auditor found the evidence stale.
     EvidenceStale => "evidence_stale", false;
-    /// The auditor found the evidence link suspect.
-    EvidenceSuspect => "evidence_suspect", false;
     /// The auditor found the evidence vacuous.
     EvidenceVacuous => "evidence_vacuous", false;
     /// The auditor found the evidence unrelated to its obligation.
@@ -267,7 +265,7 @@ mod tests {
 
     #[test]
     fn the_reason_vocabulary_is_closed_and_round_trips() {
-        assert_eq!(Reason::ALL.len(), 38);
+        assert_eq!(Reason::ALL.len(), 37);
         for reason in Reason::ALL {
             assert_eq!(Reason::parse(reason.as_str()), Some(*reason));
         }

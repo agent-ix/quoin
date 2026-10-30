@@ -238,7 +238,6 @@ fn graph_of(injected: &Injected, name: &str) -> InjectedStructuralGraph {
             path,
             premises: stored(&member("premises").unwrap_or(Value::Null)),
             fan_out: stored(&member("fanOut").unwrap_or(Value::Null)),
-            churn: stored(&member("churn").unwrap_or(Value::Null)),
             change_impact: member("changeImpact").map(|rows| {
                 rows.as_array()
                     .unwrap_or_else(|| panic!("{name}: changeImpact is not an array"))

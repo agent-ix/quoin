@@ -236,7 +236,6 @@ fn tc_455_only_intact_bytes_and_a_healthy_audit_discharge_a_proof() {
     for scenario in [
         "output-bytes-differ",
         "audit-found-stale-evidence",
-        "audit-found-a-suspect-link",
         "audit-found-vacuous-evidence",
         "audit-found-it-undischarged",
     ] {
@@ -497,7 +496,7 @@ fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
 
 /// Trace: FR-065-AC-2
 ///
-/// The reason census. 34 of the 38 reasons the vocabulary declares are reached
+/// The reason census. 33 of the 37 reasons the vocabulary declares are reached
 /// by the captured scenarios, and every one of them is reached in a receipt
 /// this crate produced rather than only in the oracle's. So this asserts the
 /// exact figure rather than a floor, and a port that quietly stopped emitting
@@ -515,7 +514,7 @@ fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
 /// emitted them, so there is nothing here to replay. `tests/tc_964_apparatus.rs`
 /// is the hand-built suite that reaches all three.
 #[test]
-fn tc_455_thirty_four_of_the_thirty_eight_reasons_are_reached() {
+fn tc_455_thirty_three_of_the_thirty_seven_reasons_are_reached() {
     let mut reached: std::collections::BTreeSet<&'static str> = std::collections::BTreeSet::new();
     for (_, _, _, produced) in replayed() {
         let Some(produced) = produced else { continue };
@@ -544,7 +543,7 @@ fn tc_455_thirty_four_of_the_thirty_eight_reasons_are_reached() {
             }
         }
     }
-    assert_eq!(Reason::ALL.len(), 38, "the vocabulary is closed at 38");
+    assert_eq!(Reason::ALL.len(), 37, "the vocabulary is closed at 37");
     let unreached: Vec<&str> = Reason::ALL
         .iter()
         .map(|reason| reason.as_str())
@@ -569,7 +568,7 @@ fn tc_455_thirty_four_of_the_thirty_eight_reasons_are_reached() {
 /// The census above records that one of the thirty-five reasons never appears
 /// in a receipt. Until quoin#457 the recorded explanation was a defect in the
 /// retained TypeScript (`DIVERGENCE.md` §4) — an explanation that stops being
-/// checkable the moment that tree is deleted, which would leave "34 of 35" as
+/// checkable the moment that tree is deleted, which would leave "33 of 37" as
 /// an assertion nothing could falsify.
 ///
 /// The port inherited the defect faithfully, so it can be restated as a

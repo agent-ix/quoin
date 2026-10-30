@@ -313,9 +313,9 @@ pub struct EvidenceIndexEntry {
 
 /// Where one evidence reference stands.
 ///
-/// **Not a new vocabulary.** `quoin_finding_types::FindingKind::STALE_EVIDENCE`,
-/// `VACUOUS_EVIDENCE` and `SUSPECT_LINK` are the auditor's own spellings for
-/// exactly these conditions, and this enum's wire form reuses them verbatim —
+/// **Not a new vocabulary.** `quoin_finding_types::FindingKind::STALE_EVIDENCE`
+/// and `VACUOUS_EVIDENCE` are the auditor's own spellings for exactly these
+/// conditions, and this enum's wire form reuses them verbatim —
 /// `tc_1925_reuses_the_auditors_own_evidence_vocabulary` holds the property. A
 /// claim citing evidence the auditor has already flagged reports the SAME
 /// word a `quoin audit` run would, rather than a second opinion spelled
@@ -332,9 +332,6 @@ pub enum EvidenceRefState {
     /// `quoin_finding_types::FindingKind::VACUOUS_EVIDENCE`.
     #[serde(rename = "vacuous-evidence")]
     Vacuous,
-    /// `quoin_finding_types::FindingKind::SUSPECT_LINK`.
-    #[serde(rename = "suspect-link")]
-    Suspect,
 }
 
 #[cfg(test)]
@@ -361,7 +358,6 @@ mod tests {
         let cases = [
             (EvidenceRefState::Stale, FindingKind::STALE_EVIDENCE),
             (EvidenceRefState::Vacuous, FindingKind::VACUOUS_EVIDENCE),
-            (EvidenceRefState::Suspect, FindingKind::SUSPECT_LINK),
         ];
         for (state, expected) in cases {
             let wire = serde_json::to_value(state).expect("the state serialises");

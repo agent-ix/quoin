@@ -120,7 +120,7 @@ pub(super) fn request(
 
 /// [`request`], with an evidence index the caller states explicitly — for the
 /// PLAT-966 cases that need the claim's citation to read as unresolved,
-/// stale, vacuous or suspect rather than resolved.
+/// stale or vacuous rather than resolved.
 pub(super) fn request_with_evidence(
     argument: serde_json::Value,
     decisions: Vec<serde_json::Value>,

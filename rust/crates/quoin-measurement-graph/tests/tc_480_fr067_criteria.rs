@@ -504,7 +504,6 @@ fn tc_480_042_raw_identities_reach_every_view() {
 #[test]
 fn tc_480_043_structural_objects_are_carried_and_absences_are_explicit() {
     let fan_out_value = json!({ "rows": [{ "id": "FR-001", "count": 2 }], "type": "fan-out" });
-    let churn_value = json!({ "availability": "unknown", "type": "churn" });
     let impact_value = json!({ "affected": ["TC-001"], "seed": "FR-001", "type": "change-impact" });
     let stored = |value: &Value| from_serde(value).expect("an opaque analysis crosses the bridge");
 
@@ -512,7 +511,6 @@ fn tc_480_043_structural_objects_are_carried_and_absences_are_explicit() {
         path: Some("/repos/a/graph/export.json".to_owned()),
         premises: stored(&json!({ "revision": "a" })),
         fan_out: stored(&fan_out_value),
-        churn: stored(&churn_value),
         change_impact: Some(vec![stored(&impact_value)]),
     };
     let report = build(&[repository("/repos/a", Vec::new(), Vec::new(), graph)]);
@@ -521,7 +519,6 @@ fn tc_480_043_structural_objects_are_carried_and_absences_are_explicit() {
             ref path,
             ref premises,
             ref fan_out,
-            ref churn,
             ref change_impact,
         } => {
             assert_eq!(path.as_deref(), Some("/repos/a/graph/export.json"));
@@ -531,7 +528,6 @@ fn tc_480_043_structural_objects_are_carried_and_absences_are_explicit() {
                 stored(&fan_out_value),
                 "fan-out is carried unchanged"
             );
-            assert_eq!(*churn, stored(&churn_value), "churn is carried unchanged");
             match *change_impact {
                 ChangeImpact::Analyses(ref rows) => {
                     assert_eq!(rows.as_slice(), &[stored(&impact_value)][..]);

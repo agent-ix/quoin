@@ -608,7 +608,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -616,8 +615,7 @@
             ]
           }
         ],
-        "created": true,
-        "suspect": false
+        "created": true
       }
     },
     {
@@ -627,7 +625,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -636,7 +633,6 @@
           },
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-B",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -644,8 +640,7 @@
             ]
           }
         ],
-        "created": true,
-        "suspect": false
+        "created": true
       }
     },
     {
@@ -655,7 +650,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "dddddddddddddddddddddddddddddddddddddddd",
             "symbols": [
@@ -664,27 +658,7 @@
             ]
           }
         ],
-        "created": false,
-        "suspect": false
-      }
-    },
-    {
-      "name": "bind-marks-suspect-on-a-changed-hash",
-      "kind": "bind",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ]
-          }
-        ],
-        "created": false,
-        "suspect": true
+        "created": false
       }
     },
     {
@@ -694,7 +668,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -702,8 +675,7 @@
             ]
           }
         ],
-        "created": false,
-        "suspect": false
+        "created": false
       }
     },
     {
@@ -713,7 +685,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -724,130 +695,7 @@
             }
           }
         ],
-        "created": false,
-        "suspect": false
-      }
-    },
-    {
-      "name": "affirm-every-binding-for-the-obligation",
-      "kind": "affirm",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h9",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ],
-            "affirmations": [
-              {
-                "who": "peter",
-                "commit": "ffffffffffffffffffffffffffffffffffffffff",
-                "note": "read the new statement"
-              }
-            ]
-          },
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h9",
-            "suite": "SUITE-B",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ],
-            "affirmations": [
-              {
-                "who": "peter",
-                "commit": "ffffffffffffffffffffffffffffffffffffffff",
-                "note": "read the new statement"
-              }
-            ]
-          }
-        ],
-        "found": true
-      }
-    },
-    {
-      "name": "affirm-narrowed-to-one-suite",
-      "kind": "affirm",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ]
-          },
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h9",
-            "suite": "SUITE-B",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ],
-            "affirmations": [
-              {
-                "who": "peter",
-                "commit": "ffffffffffffffffffffffffffffffffffffffff",
-                "note": "read the new statement"
-              }
-            ]
-          }
-        ],
-        "found": true
-      }
-    },
-    {
-      "name": "affirm-finds-nothing",
-      "kind": "affirm",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ]
-          }
-        ],
-        "found": false
-      }
-    },
-    {
-      "name": "affirm-appends-to-existing-affirmations",
-      "kind": "affirm",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h9",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ],
-            "affirmations": [
-              {
-                "who": "ann",
-                "commit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-              },
-              {
-                "who": "peter",
-                "commit": "ffffffffffffffffffffffffffffffffffffffff",
-                "note": "read the new statement"
-              }
-            ]
-          }
-        ],
-        "found": true
+        "created": false
       }
     },
     {
@@ -949,7 +797,7 @@
         "files": [
           {
             "path": "bindings.json",
-            "text": "{\n  \"bindings\": [\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"lineage\": {\n        \"actor\": \"alice\"\n      },\n      \"obligation\": \"FR-001-AC-1\",\n      \"statementHashAtBinding\": \"sha256:h1\",\n      \"suite\": \"SUITE-A\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-001-AC-1\",\n      \"statementHashAtBinding\": \"sha256:h1\",\n      \"suite\": \"SUITE-Z\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-002-AC-1\",\n      \"statementHashAtBinding\": \"sha256:h1\",\n      \"suite\": \"SUITE-B\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    }\n  ],\n  \"schemaVersion\": 1\n}\n"
+            "text": "{\n  \"bindings\": [\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"lineage\": {\n        \"actor\": \"alice\"\n      },\n      \"obligation\": \"FR-001-AC-1\",\n      \"suite\": \"SUITE-A\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-001-AC-1\",\n      \"suite\": \"SUITE-Z\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-002-AC-1\",\n      \"suite\": \"SUITE-B\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    }\n  ],\n  \"schemaVersion\": 1\n}\n"
           }
         ]
       }

@@ -132,7 +132,7 @@ fn canonical_of<T: serde::Serialize>(value: &T) -> String {
 /// deleted `tests/auditor.test.ts` carried are restated here, each on the
 /// golden case that decides it (quoin#501).
 ///
-/// Trace: FR-032-AC-1, FR-032-AC-2, FR-032-AC-3, FR-032-AC-4, FR-032-AC-5
+/// Trace: FR-032-AC-1, FR-032-AC-3, FR-032-AC-4, FR-032-AC-5
 /// Trace: FR-032-AC-6, FR-032-AC-7, FR-032-AC-9, FR-032-AC-10
 /// Trace: FR-032-AC-14, FR-032-AC-15, FR-032-AC-16, FR-032-CON-3
 /// Trace: FR-039-AC-1, FR-039-AC-2, FR-039-AC-3, FR-039-AC-4, FR-039-AC-5
@@ -144,7 +144,7 @@ fn canonical_of<T: serde::Serialize>(value: &T) -> String {
 fn tc_383_001_every_audit_case_matches_the_retained_report() {
     let golden = golden();
     assert!(
-        golden.audit_cases.len() >= 25,
+        golden.audit_cases.len() >= 24,
         "anti-vacuity floor: the audit corpus must not shrink to nothing, saw {}",
         golden.audit_cases.len()
     );
@@ -175,8 +175,8 @@ fn tc_383_001_every_audit_case_matches_the_retained_report() {
     }
 
     assert!(
-        compared >= 24,
-        "anti-vacuity floor: at least 24 cases must be compared against a report, saw {compared}"
+        compared >= 23,
+        "anti-vacuity floor: at least 23 cases must be compared against a report, saw {compared}"
     );
     assert_eq!(
         diverged, 1,

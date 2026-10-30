@@ -36,7 +36,6 @@ fn unbound(id: &str) -> Value {
     json!({
         "id": id,
         "statement": "The system shall do the thing.",
-        "statement_hash": "sha256:0000",
     })
 }
 

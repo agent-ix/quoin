@@ -23,7 +23,7 @@ use quoin_evidence::trust::assess_trust;
 use quoin_evidence::types::{
     Binding, FindingRecord, MockInspectionRecord, STORE_SCHEMA_VERSION, TrustDecision,
 };
-use quoin_evidence::{Commit, ObligationId, StatementHash, SuiteId};
+use quoin_evidence::{Commit, ObligationId, SuiteId};
 
 use crate::capabilities::{Capabilities, EvidenceHost};
 use crate::error::{CoreError, CoreErrorCode};
@@ -158,22 +158,20 @@ fn record_scan(
                 .map_err(|e| map_error(&e, op))?
                 .bindings;
             for id in &ids {
-                let Some(obligation) = request.obligations.iter().find(|o| &o.id == id) else {
+                if !request.obligations.iter().any(|o| &o.id == id) {
                     unknown.push(id.clone());
                     continue;
-                };
+                }
                 let outcome = bind(
                     &bindings,
                     &Binding {
                         obligation: ObligationId::new(id),
-                        statement_hash_at_binding: StatementHash::new(&obligation.statement_hash),
                         suite: SuiteId::new(&request.suite),
                         commit: Commit::new(&request.commit),
                         // A scan binds no symbol: it has none. The record is
                         // the evidence.
                         symbols: Vec::new(),
                         lineage: request.lineage.clone(),
-                        affirmations: None,
                     },
                 );
                 bindings = outcome.bindings;
@@ -224,7 +222,6 @@ fn record_entries(
         value(&RecordPayload::Run {
             run_path: absolute(&root, &outcome.run_path),
             bound: outcome.bound,
-            suspect: outcome.suspect,
             unmatched: outcome.unmatched,
             unrepresented: unrepresented.clone(),
         })

@@ -133,20 +133,12 @@ producer_id!(
     RelationKind
 );
 producer_id!(
-    /// Who re-affirmed a binding.
-    Author
-);
-producer_id!(
     /// A commit, as the bindings store recorded it.
     ///
     /// Not [`Revision`]: the bindings store's `commit` carries no shape
     /// constraint at any boundary the retained implementation checks, and
     /// giving it one here would refuse stores that already exist.
     Commit
-);
-producer_id!(
-    /// The statement hash a binding was made against.
-    StatementHash
 );
 
 /// An identifier a boundary in this crate refuses to accept malformed.

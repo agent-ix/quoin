@@ -314,7 +314,7 @@ fn index_evidence(
 ///
 /// One reason per failing reference, in the claim's authored `evidence_refs`
 /// order. Each reference is a separate gap, and stopping at the first would
-/// let an earlier stale reference hide a later suspect one until the first
+/// let an earlier stale reference hide a later vacuous one until the first
 /// was fixed and the view re-run.
 fn claim_backing_reasons(
     top_claim: &TopClaim,
@@ -331,7 +331,6 @@ fn claim_backing_reasons(
                 None => "does not resolve in the evidence store",
                 Some(EvidenceRefState::Stale) => "is stale",
                 Some(EvidenceRefState::Vacuous) => "is vacuous",
-                Some(EvidenceRefState::Suspect) => "is suspect",
                 Some(EvidenceRefState::Resolved) => return None,
             };
             Some(format!(
@@ -737,16 +736,15 @@ mod tests {
     }
 
     /// A claim citing evidence the auditor already flagged is unbacked, and
-    /// the reason names the auditor's own word for each of the three states.
+    /// the reason names the auditor's own word for each of the two states.
     ///
     /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
     #[test]
-    fn tc_1925_a_claim_citing_stale_vacuous_or_suspect_evidence_is_unbacked() {
+    fn tc_1925_a_claim_citing_stale_or_vacuous_evidence_is_unbacked() {
         let cases = [
             (EvidenceRefState::Stale, "is stale"),
             (EvidenceRefState::Vacuous, "is vacuous"),
-            (EvidenceRefState::Suspect, "is suspect"),
         ];
         for (state, expected_tail) in cases {
             let view = build_authored_argument_view(&request_with_evidence(
@@ -770,7 +768,7 @@ mod tests {
     }
 
     /// Every failing reference is reported, in authored order: an earlier
-    /// stale reference does not hide a later suspect one, and a resolved
+    /// stale reference does not hide a later vacuous one, and a resolved
     /// reference between them contributes nothing.
     ///
     /// Trace: FR-047-AC-8
@@ -783,7 +781,7 @@ mod tests {
             serde_json::json!([
                 "evidence://widget/stale",
                 CLAIM_EVIDENCE_REF,
-                "evidence://widget/suspect",
+                "evidence://widget/vacuous",
                 "evidence://widget/missing"
             ]),
         );
@@ -793,8 +791,8 @@ mod tests {
             state: EvidenceRefState::Stale,
         });
         evidence.push(EvidenceIndexEntry {
-            reference: "evidence://widget/suspect".to_owned(),
-            state: EvidenceRefState::Suspect,
+            reference: "evidence://widget/vacuous".to_owned(),
+            state: EvidenceRefState::Vacuous,
         });
         let view = build_authored_argument_view(&request_with_evidence(
             with(&argument(), "top_claim", claim),
@@ -808,7 +806,7 @@ mod tests {
             view.top_claim.reasons,
             vec![
                 "the top claim's evidence reference evidence://widget/stale is stale".to_owned(),
-                "the top claim's evidence reference evidence://widget/suspect is suspect"
+                "the top claim's evidence reference evidence://widget/vacuous is vacuous"
                     .to_owned(),
                 "the top claim's evidence reference evidence://widget/missing does not resolve in the evidence store"
                     .to_owned(),
