@@ -18,6 +18,7 @@ pub fn render_discharge_report(report: &DischargeReport) -> String {
             report.clause_set.authority, report.clause_set.id, report.clause_set.version
         ),
         String::new(),
+        // BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
         format!("- Clause-set digest: `{}`", report.clause_set_digest),
         format!("- Evaluated as of: `{}`", report.as_of),
         String::new(),

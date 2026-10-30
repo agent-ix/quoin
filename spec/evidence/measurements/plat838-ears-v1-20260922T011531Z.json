@@ -127,7 +127,6 @@
     "m6_corpus": "rust/crates/quoin-jev/tests/fixtures/ears-m6-corpus.json",
     "variant": "v1"
   },
-  "sourceRevision": "55d79ef1138d4e0c426c6ffda0f140a6a983a6d1",
   "subject": "Jev EARS semantic lens evaluation (PLAT-838)",
   "timestamp": "2026-09-22T01:15:31Z",
   "toolIdentity": "quoin-jev tests/live_ears_semantic.rs (the_ears_lens_gate_mp_229)",

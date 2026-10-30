@@ -154,7 +154,6 @@
       "full-battery"
     ]
   },
-  "sourceRevision": "7b42ade336d94c6e2db19bc173a9b0f436733111",
   "subject": "Jev gap-analysis semantic lens evaluation (PLAT-839)",
   "timestamp": "2026-09-22T02:19:33Z",
   "toolIdentity": "quoin-jev tests/live_gap_semantic.rs (the_lens_beats_doing_nothing)",

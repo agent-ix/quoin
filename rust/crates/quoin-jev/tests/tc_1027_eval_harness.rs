@@ -1408,8 +1408,7 @@ fn tc_1027_the_preflight_runs_heldout_only_for_the_committed_selection() {
     std::fs::write(
         &selection,
         json!({"schema": corpus::SELECTION_SCHEMA, "selections": [
-            {"mp": "MP-240", "variant": "S2", "version": 1, "selected_at_commit": "abc1234",
-             "dev_evidence": "reviews/dev.md", "baselines": ["S0@v1"]}
+            {"mp": "MP-240", "variant": "S2", "version": 1, "dev_evidence": "reviews/dev.md", "baselines": ["S0@v1"]}
         ]})
         .to_string(),
     )

@@ -629,8 +629,8 @@ mod tests {
             manifest
                 .lines()
                 .map(|line| {
-                    if line.trim_start().starts_with("semantic_core:") {
-                        "  not_a_semantic_key: 1"
+                    if line.trim_start().starts_with("package:") && line.starts_with("  ") {
+                        "  package: NOT A PACKAGE"
                     } else {
                         line
                     }
@@ -640,12 +640,14 @@ mod tests {
         )
         .unwrap();
         let error = home.gate().validate_installed().unwrap_err();
+        let crate::error::ModulesError::SemanticContractViolation { name, report, .. } = &error
+        else {
+            panic!("expected a contract violation: {error}");
+        };
+        assert_eq!(name.as_str(), "alpha");
         assert!(
-            matches!(
-                error,
-                crate::error::ModulesError::SemanticContractViolation { .. }
-            ),
-            "{error}"
+            report.contains("semantic.package"),
+            "the refusal names the tampered key, not just a failure: {report}"
         );
     }
 

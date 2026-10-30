@@ -352,6 +352,7 @@ mod tests {
         serde_json::json!({
             "schemaVersion": "clause-binding-v1",
             "clauseSet": { "authority": "quire", "id": "spec", "version": "1" },
+            // BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
             "clauseSetDigest":
                 "sha256:0000000000000000000000000000000000000000000000000000000000000000",
             "context": {},
@@ -386,6 +387,8 @@ mod tests {
     /// report. The well-formed [`binding`] above is the accepting control —
     /// `tc_447_320` drives it to a different failure, so without this pair a
     /// reader that refused every binding would look identical.
+    ///
+    /// BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
     ///
     /// Trace: FR-046-AC-1
     /// Provenance: quoin#502

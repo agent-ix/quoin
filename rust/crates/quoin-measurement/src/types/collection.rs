@@ -162,8 +162,6 @@ pub struct MeasurementCollection {
     /// nothing more, and narrowing it to an RFC 3339 value here would refuse
     /// retained evidence this port must keep reading.
     pub timestamp: NonEmptyText,
-    /// The revision of the measured source.
-    pub source_revision: NonEmptyText,
     /// The revision of the measured corpus, when there is one.
     pub corpus_revision: Option<String>,
     /// The environment the producer reported.

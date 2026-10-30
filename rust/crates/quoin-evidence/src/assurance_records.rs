@@ -155,23 +155,15 @@ pub fn list_operational_evidence_records<S: EvidenceSource + ?Sized>(
 }
 
 /// Whether `value` is a record id this store addresses: a lowercase
-/// hyphenated UUID, or a legacy `sha256:<64 lowercase hex>` identifier, which
-/// is an opaque string here.
+/// hyphenated UUID.
 #[must_use]
 pub fn is_record_id(value: &str) -> bool {
-    is_uuid(value) || legacy_hex(value).is_some()
+    is_uuid(value)
 }
 
 fn is_lower_hex(text: &str) -> bool {
     text.bytes()
         .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-}
-
-/// The hex of a legacy `sha256:<64 lowercase hex>` identifier.
-fn legacy_hex(value: &str) -> Option<&str> {
-    value
-        .strip_prefix("sha256:")
-        .filter(|hex| hex.len() == 64 && is_lower_hex(hex))
 }
 
 /// A lowercase hyphenated UUID: 8-4-4-4-12 hexadecimal characters.
@@ -184,24 +176,19 @@ fn is_uuid(value: &str) -> bool {
             .all(|(group, length)| group.len() == length && is_lower_hex(group))
 }
 
-/// The file stem a record id is stored under: the id itself for a UUID, and
-/// the id without its `sha256:` prefix, behind `sha256-`, for a legacy one.
+/// The file stem a record id is stored under: the id itself.
 ///
 /// # Errors
 ///
-/// [`EvidenceError::InvalidRecord`] when `record_id` is neither shape.
+/// [`EvidenceError::InvalidRecord`] when `record_id` is not a UUID.
 pub fn record_file_stem(record_id: &str) -> Result<String, EvidenceError> {
     if is_uuid(record_id) {
         return Ok(record_id.to_owned());
     }
-    legacy_hex(record_id)
-        .map(|hex| format!("sha256-{hex}"))
-        .ok_or_else(|| {
-            EvidenceError::invalid(
-                "assurance record",
-                "recordId: must be a UUID or a legacy sha256:<64 lowercase hex> identifier",
-            )
-        })
+    Err(EvidenceError::invalid(
+        "assurance record",
+        "recordId: must be a UUID",
+    ))
 }
 
 fn record_path(family: &str, record_id: &str) -> Result<String, EvidenceError> {
@@ -222,7 +209,7 @@ fn split_record_id(input: &Value) -> Result<(Option<String>, Value), EvidenceErr
         Some(text) if is_record_id(text) => Ok((Some(text.to_owned()), Value::Object(rest))),
         _ => Err(EvidenceError::invalid(
             "assurance record",
-            "recordId: must be a UUID or a legacy sha256:<64 lowercase hex> identifier",
+            "recordId: must be a UUID",
         )),
     }
 }
@@ -289,11 +276,6 @@ fn list_records<S: EvidenceSource + ?Sized>(
         };
         if is_uuid(stem) {
             ids.push(stem.to_owned());
-        } else if let Some(hex) = stem.strip_prefix("sha256-")
-            && hex.len() == 64
-            && is_lower_hex(hex)
-        {
-            ids.push(format!("sha256:{hex}"));
         }
     }
     ids.sort();

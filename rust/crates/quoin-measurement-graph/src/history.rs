@@ -116,7 +116,6 @@ pub fn history_row(
         plan,
         tool_identity: collection.tool_identity.as_str().to_owned(),
         tool_version: collection.tool_version.as_str().to_owned(),
-        source_revision: collection.source_revision.as_str().to_owned(),
         corpus_revision: collection.corpus_revision.clone(),
         population_identity: observations
             .first()

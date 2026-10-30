@@ -70,33 +70,17 @@ use quoin_measurement::portfolio::{
     RepositoryStatus, StoreState, build_portfolio_report, build_portfolio_report_from_collections,
     render_portfolio_report, render_portfolio_report_json,
 };
-use quoin_measurement::report::comparison::{
-    MeasurementCollectionReference, MeasurementComparisonReport, MeasurementComparisonStatus,
-};
 use quoin_measurement::report::{
-    build_measurement_report, comparison_for, render_measurement_comparison,
-    render_measurement_report, render_measurement_report_json,
+    build_measurement_report, render_measurement_report, render_measurement_report_json,
 };
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::store::{
     measurements_root, read_measurement_collection_results, write_measurement_collection,
 };
 use quoin_measurement::types::collection::MeasurementCollection;
-use quoin_measurement::types::comparison::{
-    ComparisonReasonCode, ComparisonStatus, MeasurementComparison,
-};
+use quoin_measurement::types::comparison::{ComparisonReasonCode, ComparisonStatus};
 use quoin_measurement::types::plan::MeasurementPlan;
-use quoin_measurement::{PathMovement, compare_measurement_collections, validate};
-
-/// No collection here protects apparatus, so git is never asked.
-#[derive(Debug)]
-struct NoGit;
-
-impl PathMovement for NoGit {
-    fn changed(&self, _before: &str, _after: &str, _paths: &[String]) -> Option<Vec<String>> {
-        None
-    }
-}
+use quoin_measurement::{compare_measurement_collections, validate};
 use serde_json::{Value, json};
 
 // ------------------------------------------------------- the committed tree
@@ -208,7 +192,6 @@ fn new_collection_json() -> Value {
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
         "timestamp": "2026-08-26T00:00:00.000Z",
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
         "corpusRevision": "cccccccccccccccc",
         "environment": { "runner": "test" },
         "verificationStack": {
@@ -391,7 +374,7 @@ fn tc_479_001_an_unplanned_observation_is_refused_naming_the_metric() {
 fn tc_479_002_every_member_the_criterion_names_is_required() {
     /// The eleven members the criterion enumerates, each named the way the
     /// wire spells it. A numeric step indexes the observation list.
-    const REQUIRED: [&[&str]; 11] = [
+    const REQUIRED: [&[&str]; 10] = [
         &["schemaVersion"],
         &["collectionId"],
         &["subject"],
@@ -399,7 +382,6 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
         &["toolIdentity"],
         &["toolVersion"],
         &["timestamp"],
-        &["sourceRevision"],
         &["environment"],
         &["observations"],
         &["rawEvidence"],
@@ -447,7 +429,7 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
         "every member the criterion names must be measured, not a subset"
     );
     assert!(
-        measured >= 13,
+        measured >= 12,
         "the census measured {measured} members, below the criterion's own count"
     );
 }
@@ -1056,8 +1038,8 @@ fn tc_479_006_a_moved_definition_refuses_a_delta_and_an_incomplete_population_do
     after_json["observations"][0]["value"] = json!(0.75);
     let after = admit(&after_json);
 
-    let rows = compare_measurement_collections(&before, &after, &NoGit)
-        .expect("the two collections compare");
+    let rows =
+        compare_measurement_collections(&before, &after).expect("the two collections compare");
     assert_eq!(rows.len(), 1, "one slice on each side is one compared row");
     let row = &rows[0];
     assert_eq!(row.status, ComparisonStatus::Incomparable);
@@ -1090,7 +1072,7 @@ fn tc_479_006_a_moved_definition_refuses_a_delta_and_an_incomplete_population_do
     let mut incomplete = new_collection_json();
     incomplete["collectionId"] = json!("run-003");
     incomplete["observations"][0]["population"]["complete"] = json!(false);
-    let rows = compare_measurement_collections(&before, &admit(&incomplete), &NoGit)
+    let rows = compare_measurement_collections(&before, &admit(&incomplete))
         .expect("the incomplete pair compares");
     assert_eq!(rows[0].status, ComparisonStatus::Incomparable);
     assert_eq!(rows[0].delta, None);
@@ -1129,8 +1111,8 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     });
     let after = admit(&after_json);
 
-    let rows = compare_measurement_collections(&before, &after, &NoGit)
-        .expect("the two collections compare");
+    let rows =
+        compare_measurement_collections(&before, &after).expect("the two collections compare");
     assert_eq!(rows.len(), 1);
     let row = &rows[0];
     assert_eq!(row.status, ComparisonStatus::Comparable);
@@ -1161,7 +1143,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     let mut retooled = new_collection_json();
     retooled["collectionId"] = json!("run-003");
     retooled["toolVersion"] = json!("fixture 2 (engine a2)");
-    let rows = compare_measurement_collections(&before, &admit(&retooled), &NoGit)
+    let rows = compare_measurement_collections(&before, &admit(&retooled))
         .expect("the retooled pair compares");
     assert!(
         rows[0]
@@ -1180,7 +1162,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     // every status is checked, not the two this test happened to produce.
     assert_eq!(
         ComparisonReasonCode::ALL.len(),
-        7,
+        6,
         "every reason code is measured, not a subset"
     );
     for code in ComparisonReasonCode::ALL {
@@ -1222,8 +1204,8 @@ fn tc_479_008_a_metric_in_only_one_collection_is_not_computed() {
     after_json["observations"][0]["planId"] = json!("MP-002");
     let after = admit(&after_json);
 
-    let rows = compare_measurement_collections(&before, &after, &NoGit)
-        .expect("the two collections compare");
+    let rows =
+        compare_measurement_collections(&before, &after).expect("the two collections compare");
     assert_eq!(rows.len(), 2, "neither side's slice is dropped");
     let dropped = rows
         .iter()
@@ -1304,7 +1286,7 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
         "finding_recall [language=rust, tier=2] | ap-recall (spec/assurance/10-recall.md) | observe | 1e+21 ratio |",
         "unmeasured_metric | ap-unmeasured (spec/assurance/50-unmeasured.md) | gate | not_computed: no record |",
         "Corpus gaps: 3",
-        "2026-03-01T00:00:00.000Z — quoin 0.9.1; source revision-three; corpus n/a",
+        "2026-03-01T00:00:00.000Z — quoin 0.9.1; corpus n/a",
         "- unmeasured_metric: no collection has computed this authored plan.",
     ] {
         assert!(
@@ -1312,115 +1294,6 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
             "the report must state {literal:?}; it said:\n{rendered}"
         );
     }
-}
-
-/// The comparison view renders the report object it is handed and nothing it
-/// went and computed for itself.
-///
-/// FR-044-AC-4: "JSON, series, and since-revision views read the same store and
-/// accept no typed value."
-///
-/// Trace: FR-044-AC-4
-/// Provenance: quoin#479
-#[test]
-fn tc_479_010_the_comparison_view_renders_the_report_object_it_is_handed() {
-    // The object `tests/measurement.test.ts:252-288` built by hand, restated.
-    // Nothing here reads a store: that is the point — the renderer is handed a
-    // report and must render exactly it.
-    let reference = |id: &str, timestamp: &str, tool_version: &str, revision: &str| {
-        MeasurementCollectionReference {
-            collection_id: id.to_owned(),
-            timestamp: timestamp.to_owned(),
-            tool_identity: "fixture".to_owned(),
-            tool_version: tool_version.to_owned(),
-            source_revision: revision.to_owned(),
-            corpus_revision: Some("corpus-a".to_owned()),
-            corpus_gaps: Some(0.0),
-            path: format!("/repo/{id}.json"),
-        }
-    };
-    let report = MeasurementComparisonReport {
-        status: MeasurementComparisonStatus::Compared,
-        before: Some(reference("run-001", "2026-08-26T00:00:00Z", "1", "before")),
-        after: Some(reference("run-002", "2026-08-26T01:00:00Z", "2", "after")),
-        comparisons: vec![MeasurementComparison {
-            metric: "quality.example".to_owned(),
-            dimensions: std::collections::BTreeMap::new(),
-            before: Some(0.5),
-            after: Some(0.75),
-            delta: Some(0.25),
-            status: ComparisonStatus::Comparable,
-            reasons: Vec::new(),
-        }],
-    };
-
-    let rendered = render_measurement_comparison(&report).expect("the comparison renders");
-    for literal in [
-        "# QA measurement comparison",
-        "| quality.example | comparable | 0.5 | 0.75 | 0.25 |",
-        "fixture 2; source after; corpus corpus-a; gaps 0",
-    ] {
-        assert!(
-            rendered.contains(literal),
-            "the comparison must state {literal:?}; it said:\n{rendered}"
-        );
-    }
-    assert_eq!(
-        render_measurement_comparison(&report).expect("the comparison renders again"),
-        rendered,
-        "two renders of one report object must be byte-identical"
-    );
-}
-
-/// A missing baseline is `not_computed` and still carries the current
-/// collection's provenance.
-///
-/// `tests/measurement.test.ts:298`, which carried no criterion tag. It is the
-/// since-revision view FR-044-AC-4 names, refusing rather than inventing a
-/// baseline, so it is tagged there.
-///
-/// Trace: FR-044-AC-4
-/// Provenance: quoin#479
-#[test]
-fn tc_479_011_a_missing_baseline_is_not_computed_with_current_provenance() {
-    // `delta` holds exactly one collection, so no revision but its own can be
-    // a baseline.
-    let delta = repo_in_tree("delta");
-    let report = comparison_for(&DiskMeasurement::new(&delta), &delta, "missing")
-        .expect("a missing baseline is a report, not an error");
-
-    assert_eq!(
-        report.status,
-        MeasurementComparisonStatus::NotComputed(
-            "no baseline measurement collection for source revision missing".to_owned()
-        ),
-        "the refusal must name the revision it looked for"
-    );
-    assert!(
-        report.before.is_none(),
-        "a baseline that does not exist is absent, not invented"
-    );
-    assert!(
-        report.comparisons.is_empty(),
-        "nothing is compared against a baseline that was not found"
-    );
-    let after = report
-        .after
-        .as_ref()
-        .expect("the current collection's provenance survives the refusal");
-    assert_eq!(after.collection_id, "d-2025-11");
-    assert_eq!(after.tool_identity, "quoin");
-    assert_eq!(after.source_revision, "revision-one");
-
-    let rendered = render_measurement_comparison(&report).expect("the comparison renders");
-    assert!(
-        rendered.contains("Before: not_computed — no baseline"),
-        "the human view must state the absence; it said:\n{rendered}"
-    );
-    assert!(
-        rendered.contains("d-2025-11"),
-        "the human view must still carry the current provenance"
-    );
 }
 
 /// Repeated repository locations produce one report entry.
@@ -1480,7 +1353,6 @@ fn tc_479_012_repeated_repository_locations_produce_one_report_entry() {
         .as_ref()
         .expect("a present store has a latest collection");
     assert_eq!(latest.id, "c-2026-03");
-    assert_eq!(latest.source_revision, "revision-three");
 
     // An explicit `not_computed` row, rather than an omitted metric.
     let measurements = alpha_entry

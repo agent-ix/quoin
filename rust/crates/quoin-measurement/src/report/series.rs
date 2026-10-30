@@ -23,8 +23,6 @@ use crate::types::observation::MeasurementObservation;
 pub struct SeriesPoint {
     /// When the collection was produced.
     pub timestamp: String,
-    /// The revision of the measured source.
-    pub source_revision: String,
     /// The producing tool's version.
     pub tool_version: String,
     /// The producing tool's identity.
@@ -64,7 +62,6 @@ fn points_of<'a>(
         .filter(move |observation| observation.metric.as_str() == metric)
         .map(move |observation| SeriesPoint {
             timestamp: collection.timestamp.as_str().to_owned(),
-            source_revision: collection.source_revision.as_str().to_owned(),
             tool_version: collection.tool_version.as_str().to_owned(),
             tool_identity: collection.tool_identity.as_str().to_owned(),
             corpus_revision: collection.corpus_revision.clone(),
@@ -95,7 +92,6 @@ pub fn render_series_json(points: &[SeriesPoint]) -> Result<String, MeasurementE
 #[serde(rename_all = "camelCase")]
 struct SeriesPointWire<'a> {
     timestamp: &'a str,
-    source_revision: &'a str,
     tool_version: &'a str,
     tool_identity: &'a str,
     /// `?? null`: stated as `null`, not dropped.
@@ -110,7 +106,6 @@ impl<'a> SeriesPointWire<'a> {
     fn of(point: &'a SeriesPoint) -> Result<Self, MeasurementError> {
         Ok(Self {
             timestamp: &point.timestamp,
-            source_revision: &point.source_revision,
             tool_version: &point.tool_version,
             tool_identity: &point.tool_identity,
             corpus_revision: point.corpus_revision.as_deref(),

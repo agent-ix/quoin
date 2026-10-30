@@ -2,8 +2,8 @@
 // Copyright (C) 2026 Agent-IX
 //! PLAT-975: a plan's protected apparatus is resolved (paths only) when a
 //! collection is written, and a comparison, a ratchet verdict and the
-//! verdict checker each refuse to measure across a change to it, as git
-//! reports it between the collections' source revisions (FR-110).
+//! verdict checker each refuse to measure across a change to the recorded
+//! set (FR-110).
 //!
 //! Every repository here is a real temporary directory, every collection is
 //! written through `write_measurement_collection` and read back through the
@@ -34,9 +34,9 @@ use quoin_measurement::types::comparison::{ComparisonReasonCode, ComparisonStatu
 use quoin_measurement::types::ids::CollectionId;
 use quoin_measurement::types::plan::MeasurementPlan;
 use quoin_measurement::{
-    GitPathMovement, MeasurementError, OrderSource, PathMovement, Ranked, Reason, TamperFacts,
-    Verdict, build_measurement_report, compare_measurement_collections,
-    stored_measurement_collection, verify, write_measurement_collection,
+    MeasurementError, OrderSource, Ranked, Reason, TamperFacts, Verdict, build_measurement_report,
+    compare_measurement_collections, stored_measurement_collection, verify,
+    write_measurement_collection,
 };
 use serde_json::{Value, json};
 
@@ -88,59 +88,6 @@ fn write(root: &Path, relative: &str, contents: &str) {
     std::fs::write(path, contents).unwrap();
 }
 
-/// What git is told to report: the named paths differ between the two
-/// source revisions. A test double for [`PathMovement`]; the report-driven
-/// tests below use a real git repository instead.
-#[derive(Debug)]
-struct Differ(Vec<&'static str>);
-
-impl PathMovement for Differ {
-    fn changed(&self, _before: &str, _after: &str, paths: &[String]) -> Option<Vec<String>> {
-        Some(
-            paths
-                .iter()
-                .filter(|path| self.0.contains(&path.as_str()))
-                .cloned()
-                .collect(),
-        )
-    }
-}
-
-/// A git that cannot answer.
-#[derive(Debug)]
-struct Mute;
-
-impl PathMovement for Mute {
-    fn changed(&self, _before: &str, _after: &str, _paths: &[String]) -> Option<Vec<String>> {
-        None
-    }
-}
-
-/// The source revision a run at `minute` claims, distinct per minute.
-fn revision_at(minute: u8) -> String {
-    format!("{minute:040x}")
-}
-
-/// Commit everything under `root` and return the new revision.
-fn commit_all(root: &Path) -> String {
-    let git = |args: &[&str]| {
-        let output = std::process::Command::new("git")
-            .current_dir(root)
-            .args(["-c", "user.name=t", "-c", "user.email=t@t.invalid"])
-            .args(args)
-            .output()
-            .expect("git runs");
-        assert!(output.status.success(), "git {args:?}: {output:?}");
-        String::from_utf8(output.stdout).unwrap().trim().to_owned()
-    };
-    if !root.join(".git").exists() {
-        git(&["init", "-q"]);
-    }
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "--allow-empty", "-m", "x"]);
-    git(&["rev-parse", "HEAD"])
-}
-
 /// The named files, plus the `config` label every fixture collection
 /// carries.
 fn artifacts(_root: &Path, names: &[&str]) -> Value {
@@ -159,11 +106,6 @@ const ALL_FILES: [&str; 4] = [
 
 /// A new collection of `matched` of 10 passing, at minute `minute`.
 fn candidate(id: &str, minute: u8, matched: u32, artifacts: &Value) -> Value {
-    candidate_at(id, minute, matched, artifacts, &"a".repeat(40))
-}
-
-/// As [`candidate`], at source revision `revision`.
-fn candidate_at(id: &str, minute: u8, matched: u32, artifacts: &Value, revision: &str) -> Value {
     json!({
         "schemaVersion": 2,
         "collectionId": id,
@@ -172,7 +114,6 @@ fn candidate_at(id: &str, minute: u8, matched: u32, artifacts: &Value, revision:
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1",
         "timestamp": format!("2026-09-22T00:{minute:02}:00.000Z"),
-        "sourceRevision": revision,
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
@@ -207,14 +148,22 @@ fn publish(root: &Path, value: &Value) -> Result<PathBuf, MeasurementError> {
 
 /// Publish a run whose artifact list names every file.
 fn publish_run(root: &Path, id: &str, minute: u8, matched: u32) {
-    publish_run_at(root, id, minute, matched, &"a".repeat(40));
-}
-
-/// As [`publish_run`], at source revision `revision`.
-fn publish_run_at(root: &Path, id: &str, minute: u8, matched: u32, revision: &str) {
     publish(
         root,
-        &candidate_at(id, minute, matched, &artifacts(root, &ALL_FILES), revision),
+        &candidate(id, minute, matched, &artifacts(root, &ALL_FILES)),
+    )
+    .unwrap_or_else(|error| panic!("{id} is admitted: {error}"));
+}
+
+/// Publish a run whose artifact list also names the new file `labels/b.json`,
+/// which this adds under the protected `labels/` directory entry.
+fn publish_run_with_extra_label(root: &Path, id: &str, minute: u8, matched: u32) {
+    write(root, "labels/b.json", "[\"b\"]");
+    let mut names = ALL_FILES.to_vec();
+    names.push("labels/b.json");
+    publish(
+        root,
+        &candidate(id, minute, matched, &artifacts(root, &names)),
     )
     .unwrap_or_else(|error| panic!("{id} is admitted: {error}"));
 }
@@ -242,11 +191,7 @@ fn reasons(rows: &[quoin_measurement::MeasurementComparison]) -> Vec<ComparisonR
     rows[0].reasons.iter().map(|reason| reason.code).collect()
 }
 
-fn checked(
-    plan: &MeasurementPlan,
-    collections: &[MeasurementCollection],
-    movement: Option<&dyn PathMovement>,
-) -> Vec<Reason> {
+fn checked(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Vec<Reason> {
     let ranked: Vec<Ranked<'_>> = (0_u64..)
         .zip(collections)
         .map(|(intake, collection)| Ranked::new(collection, Some(intake)))
@@ -254,21 +199,14 @@ fn checked(
     verify(
         plan,
         &ranked,
-        TamperFacts {
-            movement,
-            ..TamperFacts::default()
-        },
+        TamperFacts::default(),
         OrderSource::CallerSupplied,
         None,
     )
     .reasons
 }
 
-fn verdict_of(
-    plan: &MeasurementPlan,
-    collections: &[MeasurementCollection],
-    movement: Option<&dyn PathMovement>,
-) -> Verdict {
+fn verdict_of(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Verdict {
     let ranked: Vec<Ranked<'_>> = (0_u64..)
         .zip(collections)
         .map(|(intake, collection)| Ranked::new(collection, Some(intake)))
@@ -276,10 +214,7 @@ fn verdict_of(
     verify(
         plan,
         &ranked,
-        TamperFacts {
-            movement,
-            ..TamperFacts::default()
-        },
+        TamperFacts::default(),
         OrderSource::CallerSupplied,
         None,
     )
@@ -293,7 +228,7 @@ fn verdict_of(
 #[test]
 fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
     let temporary = repository(&format!(
-        "{PROTECTED}negative_controls:\n  - kind: apparatus-edit\n    description: the answer key is digested\n"
+        "{PROTECTED}negative_controls:\n  - kind: apparatus-edit\n    description: the answer key is protected\n"
     ));
     let plan = plan_of(temporary.path());
     let protected = plan.protected_apparatus.expect("the list loads");
@@ -547,39 +482,6 @@ fn tc_975_006_an_unreadable_protected_file_is_refused() {
 /// Trace: FR-110-AC-4
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_007_an_edited_protected_file_refuses_the_delta() {
-    let temporary = repository(PROTECTED);
-    let root = temporary.path();
-    publish_run_at(root, "run-1", 1, 8, &revision_at(1));
-    publish_run_at(root, "run-2", 2, 8, &revision_at(2));
-
-    let collections = stored(root);
-    let git = Differ(vec!["harness/answers.json"]);
-    let rows = compare_measurement_collections(&collections[0], &collections[1], &git).unwrap();
-    assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
-    assert_eq!(rows[0].status, ComparisonStatus::Incomparable);
-    assert_eq!(rows[0].delta, None);
-    assert!(rows[0].reasons[0].blocking);
-    assert!(rows[0].reasons[0].message.contains("harness/answers.json"));
-
-    // Git that cannot say is never a silent pass (FR-110).
-    let rows = compare_measurement_collections(&collections[0], &collections[1], &Mute).unwrap();
-    assert_eq!(
-        reasons(&rows),
-        [ComparisonReasonCode::ApparatusUnverifiable]
-    );
-    assert_eq!(rows[0].delta, None);
-    assert!(rows[0].reasons[0].blocking);
-
-    // The positive control: git reports no protected file moved.
-    let rows =
-        compare_measurement_collections(&collections[0], &collections[1], &Differ(vec![])).unwrap();
-    assert_eq!(reasons(&rows), []);
-}
-
-/// Trace: FR-110-AC-4
-/// Provenance: PLAT-975
-#[test]
 fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
@@ -605,30 +507,36 @@ fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
     )
     .unwrap();
     let collections = stored(root);
-    let rows =
-        compare_measurement_collections(&collections[0], &collections[1], &Differ(vec![])).unwrap();
+    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
     assert!(rows[0].reasons[0].message.contains("labels/b.json"));
     assert_eq!(rows[0].delta, None);
 
     // And removed: the reverse comparison names the same file.
-    let rows =
-        compare_measurement_collections(&collections[1], &collections[0], &Differ(vec![])).unwrap();
+    let rows = compare_measurement_collections(&collections[1], &collections[0]).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 }
 
 /// Trace: FR-110-AC-4
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_009_an_unprotected_artifact_moving_is_reported_and_does_not_block() {
+fn tc_975_009_an_unprotected_artifact_stated_by_one_side_is_reported_and_does_not_block() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    publish_run_at(root, "run-1", 1, 8, &revision_at(1));
-    publish_run_at(root, "run-2", 2, 8, &revision_at(2));
+    publish_run(root, "run-1", 1, 8);
+    let without_tool: Vec<&str> = ALL_FILES
+        .iter()
+        .copied()
+        .filter(|name| *name != "dist/tool")
+        .collect();
+    publish(
+        root,
+        &candidate("run-2", 2, 8, &artifacts(root, &without_tool)),
+    )
+    .unwrap();
 
     let collections = stored(root);
-    let git = Differ(vec!["dist/tool"]);
-    let rows = compare_measurement_collections(&collections[0], &collections[1], &git).unwrap();
+    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ArtifactChanged]);
     assert!(!rows[0].reasons[0].blocking);
     assert!(rows[0].reasons[0].message.contains("dist/tool"));
@@ -637,7 +545,7 @@ fn tc_975_009_an_unprotected_artifact_moving_is_reported_and_does_not_block() {
 }
 
 /// A plan that protects nothing is compared and stored exactly as before
-/// PLAT-975: no record, and an artifact moving is not reported.
+/// PLAT-975: no record, and an artifact list is not reported on.
 ///
 /// Trace: FR-110-AC-2, FR-110-AC-4
 /// Provenance: PLAT-975
@@ -645,8 +553,8 @@ fn tc_975_009_an_unprotected_artifact_moving_is_reported_and_does_not_block() {
 fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
     let temporary = repository("");
     let root = temporary.path();
-    publish_run_at(root, "run-1", 1, 8, &revision_at(1));
-    publish_run_at(root, "run-2", 2, 8, &revision_at(2));
+    publish_run(root, "run-1", 1, 8);
+    publish_run(root, "run-2", 2, 8);
 
     assert_eq!(
         stored_bytes(root, "run-1")["verificationStack"].get("protectedApparatus"),
@@ -654,8 +562,7 @@ fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
         "no protecting plan, no record"
     );
     let collections = stored(root);
-    let git = Differ(vec!["harness/answers.json", "dist/tool"]);
-    let rows = compare_measurement_collections(&collections[0], &collections[1], &git).unwrap();
+    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
     assert_eq!(reasons(&rows), []);
     assert_eq!(rows[0].status, ComparisonStatus::Comparable);
 }
@@ -671,19 +578,13 @@ fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
 fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    publish_run_at(root, "baseline", 1, 8, &revision_at(1));
+    publish_run(root, "baseline", 1, 8);
 
-    let regenerated = candidate_at(
-        "baseline",
-        1,
-        8,
-        &artifacts(root, &ALL_FILES),
-        &revision_at(9),
-    );
+    let regenerated = candidate("baseline", 1, 9, &artifacts(root, &ALL_FILES));
     let error = publish(root, &regenerated).expect_err("the stored baseline is write-once");
     assert_eq!(error.code(), MeasurementErrorCode::CollectionIdCollision);
-    publish_run_at(root, "baseline-regenerated", 2, 8, &revision_at(2));
-    publish_run_at(root, "run", 3, 8, &revision_at(3));
+    publish_run(root, "baseline-regenerated", 2, 8);
+    publish_run_with_extra_label(root, "run", 3, 8);
 
     let collections = stored(root);
     let by_id = |id: &str| {
@@ -692,8 +593,7 @@ fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
             .find(|collection| collection.collection_id.as_str() == id)
             .unwrap()
     };
-    let git = Differ(vec!["harness/answers.json"]);
-    let rows = compare_measurement_collections(by_id("baseline"), by_id("run"), &git).unwrap();
+    let rows = compare_measurement_collections(by_id("baseline"), by_id("run")).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
     assert_eq!(rows[0].delta, None);
 }
@@ -717,19 +617,18 @@ fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
         .unwrap()
         .remove("protectedApparatus");
     let unrecorded = stored_measurement_collection(&from_serde(&unrecorded).unwrap()).unwrap();
-    let rows = compare_measurement_collections(&unrecorded, recorded, &Differ(vec![])).unwrap();
+    let rows = compare_measurement_collections(&unrecorded, recorded).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 
     let mut unverified = stored_bytes(root, "run-1");
     unverified["verificationStack"]["unverifiedArtifacts"] = json!(["harness/answers.json"]);
     let unverified = stored_measurement_collection(&from_serde(&unverified).unwrap()).unwrap();
-    let rows = compare_measurement_collections(&unverified, recorded, &Differ(vec![])).unwrap();
+    let rows = compare_measurement_collections(&unverified, recorded).unwrap();
     assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
 
     // The positive control: the same two runs as written compare.
     let collections = stored(root);
-    let rows =
-        compare_measurement_collections(&collections[0], &collections[1], &Differ(vec![])).unwrap();
+    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
     assert_eq!(reasons(&rows), []);
 }
 
@@ -741,22 +640,23 @@ fn tc_975_012_a_missing_record_or_an_unverified_protected_name_blocks() {
 fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    publish_run_at(root, "run-1", 1, 9, &revision_at(1));
-    publish_run_at(root, "run-2", 2, 9, &revision_at(2));
+    publish_run(root, "run-1", 1, 9);
+    publish_run_with_extra_label(root, "run-2", 2, 9);
     let plan = plan_of(root);
     let collections = stored(root);
-    let git = Differ(vec!["harness/answers.json"]);
     assert_eq!(
-        checked(&plan, &collections, Some(&git)),
-        [Reason::ApparatusEdit],
+        checked(&plan, &collections),
+        [Reason::NoPrior, Reason::ApparatusEdit],
         "the unversioned change rejects"
     );
-    assert_eq!(verdict_of(&plan, &collections, Some(&git)), Verdict::Reject);
+    assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
 
-    // The positive control: git reports nothing moved.
-    let quiet = Differ(vec![]);
+    // The positive control: the same set on both runs is accepted.
+    let same = repository(PROTECTED);
+    publish_run(same.path(), "run-1", 1, 9);
+    publish_run(same.path(), "run-2", 2, 9);
     assert_eq!(
-        verdict_of(&plan, &collections, Some(&quiet)),
+        verdict_of(&plan_of(same.path()), &stored(same.path())),
         Verdict::Accept
     );
 }
@@ -766,22 +666,18 @@ fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
 #[test]
 fn tc_975_014_an_apparatus_edit_under_a_declared_control_also_rejects() {
     let temporary = repository(&format!(
-        "{PROTECTED}negative_controls:\n  - kind: apparatus-edit\n    description: the answer key is digested\n"
+        "{PROTECTED}negative_controls:\n  - kind: apparatus-edit\n    description: the answer key is protected\n"
     ));
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
-    write(root, "labels/b.json", "[\"b\"]");
-    let mut names = ALL_FILES.to_vec();
-    names.push("labels/b.json");
-    publish(root, &candidate("run-2", 2, 9, &artifacts(root, &names))).unwrap();
+    publish_run_with_extra_label(root, "run-2", 2, 9);
     let plan = plan_of(root);
     let collections = stored(root);
-    let git = Differ(vec![]);
     assert_eq!(
-        checked(&plan, &collections, Some(&git)),
+        checked(&plan, &collections),
         [Reason::NoPrior, Reason::ApparatusEdit]
     );
-    assert_eq!(verdict_of(&plan, &collections, Some(&git)), Verdict::Reject);
+    assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
 }
 
 /// Trace: FR-110-AC-7
@@ -797,7 +693,7 @@ fn tc_975_015_a_candidate_with_no_record_under_a_protecting_plan_is_inconclusive
         .unwrap()
         .remove("protectedApparatus");
     let unrecorded = stored_measurement_collection(&from_serde(&bytes).unwrap()).unwrap();
-    let reasons = checked(&plan_of(root), &[unrecorded], None);
+    let reasons = checked(&plan_of(root), &[unrecorded]);
     assert!(
         reasons.contains(&Reason::ApparatusUnrecorded),
         "{reasons:?}"
@@ -821,22 +717,17 @@ fn ratchet_outcome(root: &Path) -> RatchetOutcome {
 fn tc_975_016_a_ratchet_does_not_hold_against_another_apparatus() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    let first = commit_all(root);
-    publish_run_at(root, "run-1", 1, 9, &first);
-    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
-    let second = commit_all(root);
-    publish_run_at(root, "run-2", 2, 9, &second);
+    publish_run(root, "run-1", 1, 9);
+    publish_run_with_extra_label(root, "run-2", 2, 9);
     assert_eq!(
         ratchet_outcome(root),
         RatchetOutcome::Inconclusive(InconclusiveReason::ApparatusChanged)
     );
 
     let same = repository(PROTECTED);
-    let first = commit_all(same.path());
+    publish_run(same.path(), "run-1", 1, 9);
     write(same.path(), "dist/tool", "tool v2");
-    let second = commit_all(same.path());
-    publish_run_at(same.path(), "run-1", 1, 9, &first);
-    publish_run_at(same.path(), "run-2", 2, 9, &second);
+    publish_run(same.path(), "run-2", 2, 9);
     assert!(matches!(
         ratchet_outcome(same.path()),
         RatchetOutcome::Held { .. }
@@ -940,20 +831,16 @@ fn tc_975_018_a_candidate_stating_a_computed_member_is_refused() {
 fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
-    let first = commit_all(root);
-    publish_run_at(root, "run-1", 1, 9, &first);
-    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
-    let second = commit_all(root);
-    publish_run_at(root, "run-2", 2, 9, &second);
+    publish_run(root, "run-1", 1, 9);
+    publish_run_with_extra_label(root, "run-2", 2, 9);
     write(root, "spec/assurance/MP-975.md", &plan_document(""));
     let plan = plan_of(root);
     assert!(plan.protected_apparatus.is_none());
     let collections = stored(root);
-    let git = GitPathMovement::new(root);
-    let verdict = verdict_of(&plan, &collections, Some(&git));
+    let verdict = verdict_of(&plan, &collections);
     assert_ne!(verdict, Verdict::Accept);
     assert_eq!(verdict, Verdict::Reject);
-    assert!(checked(&plan, &collections, Some(&git)).contains(&Reason::ApparatusEdit));
+    assert!(checked(&plan, &collections).contains(&Reason::ApparatusEdit));
     let outcome = ratchet_outcome(root);
     assert!(
         !matches!(outcome, RatchetOutcome::Held { .. }),
@@ -968,8 +855,8 @@ fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
     // not a pass either.
     publish_run(root, "run-3", 3, 9);
     let collections = stored(root);
-    assert!(checked(&plan, &collections, Some(&git)).contains(&Reason::ApparatusUnrecorded));
-    assert_ne!(verdict_of(&plan, &collections, Some(&git)), Verdict::Accept);
+    assert!(checked(&plan, &collections).contains(&Reason::ApparatusUnrecorded));
+    assert_ne!(verdict_of(&plan, &collections), Verdict::Accept);
     assert_eq!(
         ratchet_outcome(root),
         RatchetOutcome::Inconclusive(InconclusiveReason::ApparatusUnrecorded)
@@ -996,9 +883,9 @@ fn tc_975_020_an_uncommitted_answer_key_edit_then_a_pass_is_a_rerun() {
     publish_run(root, "run-2", 2, 9);
     let plan = plan_of(root);
     let collections = stored(root);
-    let reasons = checked(&plan, &collections, None);
+    let reasons = checked(&plan, &collections);
     assert!(reasons.contains(&Reason::RerunUntilPass), "{reasons:?}");
-    assert_eq!(verdict_of(&plan, &collections, None), Verdict::Reject);
+    assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
 }
 
 /// Trace: FR-110-AC-6

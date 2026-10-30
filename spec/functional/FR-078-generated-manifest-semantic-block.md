@@ -41,7 +41,7 @@ prevent.
 
 - The rendered `semantic` block SHALL carry `contract_version`, `semantic_core`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture`, and `legacy_forms`.
 - The rendered `semantic.contract_version` SHALL be `1.0.0`, the version FR-070 defines.
-- The rendered `semantic.semantic_core` SHALL be the semantic-core version the template takes as its input.
+- The rendered `semantic.semantic_core` SHALL be present only because the upstream schema requires it; the template takes no input for it. BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream module-manifest schema requires `semantic_core` (an `x.y.z` string) in the `semantic` block, so a manifest without it is rejected; Quoin reads no value from it.
 - The rendered `semantic.package` SHALL be `<org>/<repo>` built from the template inputs.
 - The rendered `semantic.exports` SHALL name exactly the types the rendered manifest declares.
 - The rendered `semantic.legacy_forms` SHALL be `warning`.

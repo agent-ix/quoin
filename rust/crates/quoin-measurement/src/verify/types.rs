@@ -101,11 +101,6 @@ pub struct TamperFacts<'a> {
     /// `definition_change_without_version_bump`, applied by the caller over
     /// the plan document's git history, which this crate cannot read.
     pub definition_changed_without_version_bump: bool,
-    /// Where git is asked whether a run's protected files differ from the
-    /// candidate's between their `sourceRevision`s (FR-110). Absent when the
-    /// caller has no git: nothing is then found, and no digest is recorded
-    /// or compared either way.
-    pub movement: Option<&'a dyn crate::compare::PathMovement>,
 }
 
 /// One reason, and where it was found.

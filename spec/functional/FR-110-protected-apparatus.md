@@ -19,19 +19,17 @@ When a `MeasurementPlan` declares `protected_apparatus`
 (engineering-assurance FR-024), Quoin SHALL resolve every entry to files when
 it writes a collection the plan governs, SHALL record the resolved path set
 in the stored collection, and SHALL refuse a delta, a ratchet floor, or a
-checker baseline across two collections whose recorded path sets differ or
-whose protected files differ byte for byte between the two collections'
-`sourceRevision`s. No digest is computed, recorded or compared; git, which
-already addresses content, answers whether a file changed.
+checker baseline across two collections whose recorded path sets differ.
+Nothing is computed over file content, and no revision is recorded or
+compared.
 
 ## Rationale
 
 An answer key edited between a baseline and a new run still produced a
 delta, a ratchet `held`, and a checker `accept`. The producer's own list of
 files could leave the edited file out of it, so Quoin resolves the protected
-set itself, records the paths, and asks git whether those paths differ
-between the two collections' source revisions (`git diff --quiet <revA>
-<revB> -- <paths>`), never the repository as it reads today.
+set itself and records the paths, and compares the recorded sets, never the
+repository as it reads today.
 
 ## Inputs
 
@@ -49,8 +47,8 @@ between the two collections' source revisions (`git diff --quiet <revA>
   `artifact_changed` (not blocking).
 - The ratchet inconclusive reasons `apparatus_changed` and
   `apparatus_unrecorded`.
-- The checker reasons `apparatus_unrecorded` and `apparatus_unverifiable`
-  (inconclusive) and `apparatus_edit` (reject).
+- The checker reasons `apparatus_unrecorded` (inconclusive) and
+  `apparatus_edit` (reject).
 
 ## Behavior
 
@@ -116,16 +114,12 @@ between the two collections' source revisions (`git diff --quiet <revA>
   reason `apparatus_changed` — the delta `null`, the status `incomparable` —
   when the plan's recorded sets differ: a path present on one side only (a
   file added under or removed from a directory entry), a set recorded on one
-  side only, a protected path either side lists in `unverifiedArtifacts`, or
-  a protected path whose bytes differ between the two collections'
-  `sourceRevision`s as git reports them. The caller gathers that git fact
-  (the comparison itself runs no git); where git cannot answer, the reason is
-  `apparatus_unverifiable` (blocking), never a silent pass. The message names
-  the paths.
+  side only, or a protected path either side lists in `unverifiedArtifacts`.
+  The message names the paths.
 - When either side recorded a set for the slice's plan, comparison SHALL add
   the non-blocking reason `artifact_changed`, naming each
   `verificationStack.artifacts` entry outside the protected set that one side
-  alone states or whose bytes differ between the two source revisions.
+  alone states.
 - Comparison reads no plan and runs no git. Two collections that both recorded no set are
   not compared on apparatus, and comparison output for them is unchanged.
 
@@ -147,14 +141,11 @@ between the two collections' source revisions (`git diff --quiet <revA>
   today, and a series is protected as above.
 - In a protected series, a run SHALL be a baseline only for a run that
   recorded the same set.
-- An earlier run that recorded a set different from the candidate's, or whose
-  protected files differ from the candidate's between their source revisions,
-  SHALL be the finding `apparatus_edit` (reject). An earlier run, or a candidate, that
-  recorded no set SHALL be `apparatus_unrecorded` (inconclusive). Where git is
-  asked and cannot answer, the finding is `apparatus_unverifiable`
-  (inconclusive), never a pass.
+- An earlier run that recorded a set different from the candidate's SHALL be
+  the finding `apparatus_edit` (reject). An earlier run, or a candidate, that
+  recorded no set SHALL be `apparatus_unrecorded` (inconclusive).
 - `rerun_until_pass` SHALL ignore the protected set: a regressed run followed
-  by a pass of the same source revision, tool and corpus is a rerun
+  by a pass of the same tool and corpus is a rerun
   (`rerun_until_pass`), whatever protected set either recorded.
 
 ### Why a changed set rejects
@@ -180,10 +171,10 @@ and never rejects.
 | FR-110-AC-1 | `protected_apparatus` and `negative_controls` load as engineering-assurance's types; an unsafe or `**` entry, an empty or repeated list, an unknown control kind, an `apparatus-edit` control with no `protected_apparatus`, and a `gate` plan missing either list refuse the plan load as `QM-PLAN-INVALID` naming the member; a `gate` plan stating both loads. | Test (TC-1810) |
 | FR-110-AC-2 | A written collection records, under the plan's id, every file its entries resolve to — every file under a directory entry, dotfiles and nested files included — as a sorted path list; no protected path is in `unverifiedArtifacts`; with no protecting plan the member is absent. A candidate stating `protectedApparatus` or `unverifiedArtifacts` is `QM-COLLECTION-INVALID` and writes nothing. | Test (TC-1811, TC-1819, TC-1827) |
 | FR-110-AC-3 | A missing protected file, a missing or empty directory entry, a file entry naming a directory, and a case-only name difference are `QM-APPARATUS-UNRESOLVED`; a symlinked entry, ancestor, or file under a directory entry is `QM-APPARATUS-SYMLINK`; a socket under a directory entry or an unlistable directory is `QM-APPARATUS-UNREADABLE`; an artifact list omitting a resolved file is `QM-APPARATUS-UNDECLARED` naming it; none writes a collection. | Test (TC-1812..TC-1815) |
-| FR-110-AC-4 | Comparing two stored collections, an edited protected file (git reports the bytes differ between the source revisions), a file added under or removed from a directory entry, a record on one side only, and a protected path listed as unverified each add blocking `apparatus_changed` with a `null` delta and `incomparable` status, naming the path; a moved unprotected artifact adds only non-blocking `artifact_changed` with the delta kept; under a plan that protects nothing, neither reason appears. | Test (TC-1816..TC-1819, TC-1821) |
+| FR-110-AC-4 | Comparing two stored collections, a file added under or removed from a directory entry, a record on one side only, and a protected path listed as unverified each add blocking `apparatus_changed` with a `null` delta and `incomparable` status, naming the path; an unprotected artifact stated by one side alone adds only non-blocking `artifact_changed` with the delta kept; under a plan that protects nothing, neither reason appears. | Test (TC-1816..TC-1819, TC-1821) |
 | FR-110-AC-5 | A baseline stored before the apparatus was edited cannot be rewritten under its id, and a new run is `apparatus_changed` against it even when a regenerated baseline was stored beside the run. | Test (TC-1820) |
 | FR-110-AC-6 | A ratchet whose earlier value was measured with a different recorded set is `inconclusive` (`apparatus_changed`), and one whose newest collection recorded none is `inconclusive` (`apparatus_unrecorded`), including after the list is removed from the plan; over one set it is `held`. | Test (TC-1825, TC-1828, TC-1830) |
-| FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_edit` (reject) with or without an `apparatus-edit` control, and `apparatus_unrecorded` (inconclusive) when it recorded no set; removing the list from the plan still rejects the changed series; a regressed run followed by a pass of the same source revision, tool and corpus is `rerun_until_pass`; the same runs over one set are accepted. | Test (TC-1822..TC-1824, TC-1828, TC-1829) |
+| FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_edit` (reject) with or without an `apparatus-edit` control, and `apparatus_unrecorded` (inconclusive) when it recorded no set; removing the list from the plan still rejects the changed series; a regressed run followed by a pass of the same tool and corpus is `rerun_until_pass`; the same runs over one set are accepted. | Test (TC-1822..TC-1824, TC-1828, TC-1829) |
 | FR-110-AC-8 | A stored `protectedApparatus` that is not an object, holds an empty plan entry, or holds a value that is not a path list is refused on read as `QM-COLLECTION-INVALID` naming the member. An empty plan-id key, and a path key that is not a valid single-file `ApparatusPath` (a `<directory>/**` entry, an absolute path, or a `..` segment among them), are refused the same way, and intake refuses to resolve a protected file whose path such a key could not hold as `QM-APPARATUS-UNREADABLE`. | Test (TC-1826, TC-1833, TC-1838) |
 | FR-110-AC-9 | One plan's resolved set past its limit (50,000 files) is `QM-APPARATUS-TOO-LARGE`; each path segment is matched exactly against the directory listing, so a case-only difference names no file on any filesystem. | Test (TC-1831, TC-1832) |
 | FR-110-AC-10 | A protected file is never opened and none of its bytes is read: one `symlink_metadata` look refuses a symlink as `QM-APPARATUS-SYMLINK` and any other non-regular file, a FIFO included, as `QM-APPARATUS-UNREADABLE`, without blocking. One write's directory walks, summed across every plan it governs, are refused as `QM-APPARATUS-TOO-LARGE` past 100,000 directories visited, counting empty ones, even when they resolve to no file; the files every plan one write governs resolve to, summed, are refused the same way past 200,000. | Test (TC-1834..TC-1837) |
@@ -192,9 +183,8 @@ and never rejects.
 
 - **FR-110-CON-1**: Comparison stays verdict-free (FR-107-CON-1): it withholds
   a delta and passes no judgement.
-- **FR-110-CON-2**: Every comparison reads the sets the collections recorded
-  and the bytes git holds at their source revisions, never the work tree at
-  comparison time.
+- **FR-110-CON-2**: Every comparison reads the sets the collections recorded,
+  never the work tree at comparison time.
 - **FR-110-CON-3**: The entry grammar, list rules and control kinds are
   engineering-assurance's; Quoin states none of them a second time.
 

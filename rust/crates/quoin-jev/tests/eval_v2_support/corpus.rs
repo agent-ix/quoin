@@ -1006,8 +1006,6 @@ pub(crate) struct Selection {
     pub(crate) variant: String,
     /// The chosen version. Only this version may run.
     pub(crate) version: u32,
-    /// The commit at which the selection was made.
-    pub(crate) selected_at_commit: String,
     /// Where the dev evidence for the choice is (a report path or PR).
     pub(crate) dev_evidence: String,
     /// Variant labels (`id@vN`) run beside it as the MP's comparison, e.g.
@@ -1050,7 +1048,6 @@ pub(crate) fn parse_selection(text: &str) -> Result<SelectionFile, String> {
         for (field, value) in [
             ("mp", &selection.mp),
             ("variant", &selection.variant),
-            ("selected_at_commit", &selection.selected_at_commit),
             ("dev_evidence", &selection.dev_evidence),
         ] {
             if value.trim().is_empty() {

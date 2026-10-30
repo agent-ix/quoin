@@ -31,14 +31,7 @@
         "sourceRoots": [
           "schemas/"
         ],
-        "imports": [
-          {
-            "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.1.0",
-            "exports": [],
-            "capabilities": []
-          }
-        ],
+        "imports": [],
         "exports": [],
         "profiles": [
           {
@@ -88,14 +81,7 @@
         "sourceRoots": [
           "schemas/"
         ],
-        "imports": [
-          {
-            "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.1.0",
-            "exports": [],
-            "capabilities": []
-          }
-        ],
+        "imports": [],
         "exports": [
           {
             "name": "alpha",
@@ -164,14 +150,7 @@
         "sourceRoots": [
           "schemas/"
         ],
-        "imports": [
-          {
-            "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.1.0",
-            "exports": [],
-            "capabilities": []
-          }
-        ],
+        "imports": [],
         "exports": [],
         "profiles": [
           {
@@ -227,12 +206,6 @@
           "schemas/"
         ],
         "imports": [
-          {
-            "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.1.0",
-            "exports": [],
-            "capabilities": []
-          },
           {
             "packageIdentity": "agent-ix/a",
             "versionConstraint": "=2.0.0",
@@ -294,14 +267,7 @@
         "sourceRoots": [
           "schemas/"
         ],
-        "imports": [
-          {
-            "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.1.0",
-            "exports": [],
-            "capabilities": []
-          }
-        ],
+        "imports": [],
         "exports": [],
         "profiles": [
           {
@@ -353,14 +319,7 @@
         "sourceRoots": [
           "schemas/"
         ],
-        "imports": [
-          {
-            "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.1.0",
-            "exports": [],
-            "capabilities": []
-          }
-        ],
+        "imports": [],
         "exports": [],
         "profiles": [
           {
@@ -418,12 +377,6 @@
           "schemas/"
         ],
         "imports": [
-          {
-            "packageIdentity": "agent-ix/semantic-core",
-            "versionConstraint": "=0.1.0",
-            "exports": [],
-            "capabilities": []
-          },
           {
             "packageIdentity": "agent-ix/other",
             "versionConstraint": "=0.9.0",

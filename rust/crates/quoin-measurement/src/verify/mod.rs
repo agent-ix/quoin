@@ -151,7 +151,7 @@ pub fn verify(
                 if index == last {
                     decisions = outcome.decisions;
                     check.candidate_checks(last, &regressed, &outcome.priors, collections);
-                    let found = apparatus::findings(plan, &check.runs, tamper.movement);
+                    let found = apparatus::findings(plan, &check.runs);
                     check.findings.extend(found);
                 }
             }
@@ -511,11 +511,10 @@ fn baseline(
     Ok((Some(value), prior))
 }
 
-/// Whether two collections were produced by the same apparatus: source
-/// revision, tool and corpus.
+/// Whether two collections were produced by the same apparatus: tool and
+/// corpus.
 fn same_apparatus(left: &MeasurementCollection, right: &MeasurementCollection) -> bool {
-    left.source_revision == right.source_revision
-        && left.tool_identity == right.tool_identity
+    left.tool_identity == right.tool_identity
         && left.tool_version == right.tool_version
         && left.corpus_revision == right.corpus_revision
 }

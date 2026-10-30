@@ -29,7 +29,7 @@ the emitter leaves relative, and render deterministically.
 
 ## Inputs
 
-- `typespec/main.tsp`, importing `@agent-ix/semantic-core` at the version the manifest declares
+- `typespec/main.tsp`, importing `@agent-ix/semantic-core`
 - `typespec/tspconfig.yaml`, selecting the official `@typespec/json-schema` emitter
 - The manifest `version`
 

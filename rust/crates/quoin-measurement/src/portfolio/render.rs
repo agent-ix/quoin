@@ -152,8 +152,7 @@ fn readable(repository: &PortfolioRepositoryReport) -> Result<Vec<String>, Measu
     ));
     if let Some(collection) = latest {
         lines.push(format!(
-            "Provenance: source {}; corpus {}; tool {} {}{}",
-            collection.source_revision,
+            "Provenance: corpus {}; tool {} {}{}",
             collection.corpus_revision.as_deref().unwrap_or("n/a"),
             collection.tool_identity,
             collection.tool_version,

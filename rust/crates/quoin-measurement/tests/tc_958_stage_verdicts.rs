@@ -115,7 +115,6 @@ fn collection_json(id: &str, timestamp: &str, observations: &[Value]) -> Value {
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
         "timestamp": timestamp,
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",

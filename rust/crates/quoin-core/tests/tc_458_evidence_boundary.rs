@@ -268,8 +268,8 @@ fn tc_458_080_trust_decision_is_assessed_before_it_is_stored() {
     let context = json!({
         "name": "ripgrep",
         "version": "14.0.0",
-        "configurationDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-        "validationCorpusDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "configuration": "config-a",
+        "validationCorpus": "corpus-a",
         "inputContract": "utf-8 text",
         "environment": "linux-x86_64",
     });
@@ -290,7 +290,7 @@ fn tc_458_080_trust_decision_is_assessed_before_it_is_stored() {
             "input-contract",
             "environment",
         ],
-        "validationEvidence": [{"id": "EV-1", "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}],
+        "validationEvidence": [{"id": "EV-1", "reference": "evidence/ev-1"}],
         "limitations": [],
         "owner": "peter",
         "decidedAt": "2026-01-01T00:00:00Z",
@@ -420,6 +420,59 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
     // one that somehow accepted it would file it under `experiments/`.
     reported_store_family(dir.path(), payload["path"].as_str().unwrap(), "operational");
     assert_eq!(payload["created"], true);
+}
+
+/// Trace: FR-098-AC-10
+///
+/// Publishing an assurance record again under the `recordId` it was given is
+/// idempotent at the boundary: the same record, `created` false, one file.
+#[test]
+fn tc_458_115_republishing_under_the_assigned_record_id_is_idempotent() {
+    let dir = repo();
+    let document = |record_id: Option<&str>| {
+        let mut document = json!({
+            "schemaVersion": "experiment-record-v1",
+            "subject": {"kind": "requirement", "id": "FR-001", "sourceRevision": commit('b')},
+            "recordedAt": "2026-01-01T00:00:00Z",
+            "hypothesis": "the adapter reads real output",
+            "design": {
+                "timeBox": "1d",
+                "corpusRefs": ["corpus/a"],
+                "comparisonMethod": "A/B",
+                "decisionRule": "p<0.05",
+            },
+            "result": {"status": "supported", "summary": "it did", "evidenceRefs": ["runs/SUITE-A"]},
+            "producerProvenance": {
+                "schemaVersion": "producer-provenance-v1",
+                "identity": "quoin",
+                "version": "0.1.0",
+                "sourceRevision": commit('a'),
+                "sourceState": "clean",
+                "capabilities": ["record"],
+                "artifacts": [{ "name": "report.json" }],
+            },
+        });
+        if let Some(id) = record_id {
+            document["recordId"] = json!(id);
+        }
+        document
+    };
+    let first = ok(&run(
+        "evidence.record_experiment",
+        &json!({"repo": dir.path(), "document": document(None)}),
+    ));
+    assert_eq!(first["created"], true);
+    let id = first["record"]["recordId"]
+        .as_str()
+        .or_else(|| first["record_id"].as_str())
+        .expect("the assigned record id")
+        .to_owned();
+    let again = ok(&run(
+        "evidence.record_experiment",
+        &json!({"repo": dir.path(), "document": document(Some(&id))}),
+    ));
+    assert_eq!(again["created"], false, "{again}");
+    assert_eq!(again["path"], first["path"]);
 }
 
 ///

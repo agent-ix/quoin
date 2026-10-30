@@ -94,9 +94,6 @@ pub enum Reason {
     /// In a protected series, a run — the candidate or an earlier one —
     /// recorded no protected apparatus (PLAT-975).
     ApparatusUnrecorded,
-    /// Git was asked whether the protected files differ between a run's
-    /// source revision and the candidate's and could not answer (FR-110).
-    ApparatusUnverifiable,
     /// The plan's rule states an `interval_level` and the candidate's
     /// observation states no `interval` (EA-26, FR-108-AC-12).
     IntervalUnstated,
@@ -151,7 +148,7 @@ impl Reason {
     /// [`Ord`], and `verify` sorts a verdict's `reasons` by it, so declaration
     /// order is the wire order. Place a new reason beside the ones it belongs
     /// with rather than at the end.
-    pub const ALL: [Self; 33] = [
+    pub const ALL: [Self; 32] = [
         Self::NoDecisionRule,
         Self::NoEstimator,
         Self::NoCollections,
@@ -167,7 +164,6 @@ impl Reason {
         Self::SliceMissing,
         Self::ObservationMissing,
         Self::ApparatusUnrecorded,
-        Self::ApparatusUnverifiable,
         Self::RuleNotMet,
         Self::ValueDisagreesWithRows,
         Self::PopulationBelowMinimum,
@@ -206,7 +202,6 @@ impl Reason {
             Self::SliceMissing => "slice_missing",
             Self::ObservationMissing => "observation_missing",
             Self::ApparatusUnrecorded => "apparatus_unrecorded",
-            Self::ApparatusUnverifiable => "apparatus_unverifiable",
             Self::IntervalUnstated => "interval_unstated",
             Self::RuleNotMet => "rule_not_met",
             Self::ValueDisagreesWithRows => "value_disagrees_with_rows",
@@ -268,7 +263,6 @@ impl Reason {
             | Self::SliceMissing
             | Self::ObservationMissing
             | Self::ApparatusUnrecorded
-            | Self::ApparatusUnverifiable
             | Self::IntervalUnstated => Verdict::Inconclusive,
             Self::RuleNotMet
             | Self::ValueDisagreesWithRows

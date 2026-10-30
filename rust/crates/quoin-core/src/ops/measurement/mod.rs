@@ -42,7 +42,7 @@
 //! `assurance.build_case` hands its caller a case and `assurance.render_case`
 //! takes one back, because `quoin_assurance::RenderableCase` is
 //! `Deserialize`. The measurement report types are not: `MeasurementReport`,
-//! `MeasurementComparisonReport`, `PortfolioReport` and
+//! `PortfolioReport` and
 //! `GovernedGraphPortfolioReport` derive `Clone, Debug, PartialEq` and nothing
 //! else, and their canonical JSON is produced by private wire structs inside
 //! each crate's `render_json` module.
@@ -80,13 +80,12 @@ use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
 pub use self::wire::{
-    AgentEvalRequest, ComparisonRequest, GitHubReleaseRequest, GraphPortfolioRequest,
-    MAX_ASSURANCE_DOCUMENT_BYTES, MAX_COLLECTION_BYTES, MAX_GRAPH_MAPPING_BYTES,
-    MAX_INTERVENTION_RECORD_BYTES, MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES,
-    MAX_PORTFOLIO_ROOTS_BYTES, MAX_PRODUCER_DEFINITION_BYTES, MAX_RECORD_ID_BYTES,
-    MAX_RETAINED_EXPORT_BYTES, MAX_REVISION_BYTES, MAX_VERIFY_REQUEST_BYTES,
-    MAX_WORKFLOW_YAML_BYTES, PathPayload, PortfolioRequest, RecordRequest, RenderedPayload,
-    RepoRequest, SeriesRequest, VerifyRequest,
+    AgentEvalRequest, GitHubReleaseRequest, GraphPortfolioRequest, MAX_ASSURANCE_DOCUMENT_BYTES,
+    MAX_COLLECTION_BYTES, MAX_GRAPH_MAPPING_BYTES, MAX_INTERVENTION_RECORD_BYTES,
+    MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES, MAX_PORTFOLIO_ROOTS_BYTES,
+    MAX_PRODUCER_DEFINITION_BYTES, MAX_RECORD_ID_BYTES, MAX_RETAINED_EXPORT_BYTES,
+    MAX_VERIFY_REQUEST_BYTES, MAX_WORKFLOW_YAML_BYTES, PathPayload, PortfolioRequest,
+    RecordRequest, RenderedPayload, RepoRequest, SeriesRequest, VerifyRequest,
 };
 
 pub use self::portfolio::{
@@ -94,9 +93,7 @@ pub use self::portfolio::{
 };
 pub use self::produce::{produce_agent_eval_intervention, produce_github_release_operational};
 pub use self::record::record;
-pub use self::report::{
-    build_comparison, build_report, build_series, render_comparison, render_report,
-};
+pub use self::report::{build_report, build_series, render_report};
 // `ops::change_assurance` reuses this mapping to resolve a
 // `change_assurance.receipt` plan link through `quoin-measurement`'s own
 // plan intake (PLAT-997), rather than restating `MeasurementErrorCode`'s

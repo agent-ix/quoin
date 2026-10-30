@@ -26,27 +26,21 @@ pub enum ComparisonReasonCode {
     /// a directory entry, or only one side recorded the set (PLAT-975).
     ApparatusChanged,
     /// A `verificationStack.artifacts` entry the plan does not protect is
-    /// stated by one side alone or differs between the two source revisions.
+    /// stated by one side alone.
     /// Not blocking: reported beside the delta, and only for a slice whose
     /// plan protects apparatus on at least one side (PLAT-975).
     ArtifactChanged,
-    /// Both collections recorded protected files, and git could not say
-    /// whether those files differ between the two source revisions (an
-    /// unknown revision, a shallow clone, no repository). Blocking: never a
-    /// silent pass (FR-110).
-    ApparatusUnverifiable,
 }
 
 impl ComparisonReasonCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 6] = [
         Self::DefinitionChanged,
         Self::IncompletePopulation,
         Self::PopulationChanged,
         Self::ToolChanged,
         Self::ApparatusChanged,
         Self::ArtifactChanged,
-        Self::ApparatusUnverifiable,
     ];
 
     /// The stable wire spelling.
@@ -59,7 +53,6 @@ impl ComparisonReasonCode {
             Self::ToolChanged => "tool_changed",
             Self::ApparatusChanged => "apparatus_changed",
             Self::ArtifactChanged => "artifact_changed",
-            Self::ApparatusUnverifiable => "apparatus_unverifiable",
         }
     }
 
@@ -78,10 +71,7 @@ impl ComparisonReasonCode {
     #[must_use]
     pub const fn is_blocking(self) -> bool {
         match self {
-            Self::DefinitionChanged
-            | Self::IncompletePopulation
-            | Self::ApparatusChanged
-            | Self::ApparatusUnverifiable => true,
+            Self::DefinitionChanged | Self::IncompletePopulation | Self::ApparatusChanged => true,
             Self::PopulationChanged | Self::ToolChanged | Self::ArtifactChanged => false,
         }
     }

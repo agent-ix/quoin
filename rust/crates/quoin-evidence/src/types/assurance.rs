@@ -134,8 +134,7 @@ pub struct ExperimentRecordInput {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ExperimentRecord {
-    /// The record's opaque UUID, not derived from its content (a legacy
-    /// `sha256:<64 lowercase hex>` identifier is read as an opaque string).
+    /// The record's opaque UUID, not derived from its content.
     pub record_id: String,
     /// The producer-supplied fields.
     #[serde(flatten)]
@@ -212,8 +211,7 @@ pub struct OperationalEvidenceRecordInput {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct OperationalEvidenceRecord {
-    /// The record's opaque UUID, not derived from its content (a legacy
-    /// `sha256:<64 lowercase hex>` identifier is read as an opaque string).
+    /// The record's opaque UUID, not derived from its content.
     pub record_id: String,
     /// The producer-supplied fields.
     #[serde(flatten)]

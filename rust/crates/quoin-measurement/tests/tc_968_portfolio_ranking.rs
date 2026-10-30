@@ -95,7 +95,6 @@ fn collection(timestamp: &str) -> CollectionSummary {
         timestamp: timestamp.to_owned(),
         tool_identity: "fixture".to_owned(),
         tool_version: "1".to_owned(),
-        source_revision: "a".repeat(40),
         corpus_revision: None,
         path: "spec/evidence/measurements/run-1.json".to_owned(),
         unverified_artifacts: Vec::new(),

@@ -257,11 +257,10 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
         }
         seen.push(&collection.collection_id);
         lines.push(format!(
-            "- {} — {} {}; source {}; corpus {}{}",
+            "- {} — {} {}; corpus {}{}",
             collection.timestamp,
             collection.tool_identity,
             collection.tool_version,
-            collection.source_revision,
             collection.corpus_revision.as_deref().unwrap_or("n/a"),
             unverified_artifacts_suffix(&collection.unverified_artifacts),
         ));

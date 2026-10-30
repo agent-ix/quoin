@@ -101,7 +101,6 @@ fn parse_stored_measurement_collection(
     let tool_identity = read::non_empty(object, "toolIdentity", CODE, "collection")?;
     let tool_version = read::non_empty(object, "toolVersion", CODE, "collection")?;
     let timestamp = read::non_empty(object, "timestamp", CODE, "collection")?;
-    let source_revision = read::non_empty(object, "sourceRevision", CODE, "collection")?;
 
     let Some(JsonValue::Array(raw_observations)) = object.get("observations") else {
         return Err(refuse("collection requires at least one observation"));
@@ -165,7 +164,6 @@ fn parse_stored_measurement_collection(
             tool_identity,
             tool_version,
             timestamp,
-            source_revision,
             corpus_revision: read::string(object, "corpusRevision").map(str::to_owned),
             environment,
             verification_stack,

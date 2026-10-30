@@ -118,7 +118,6 @@ fn collection(observations: &[Value]) -> Value {
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
         "timestamp": "2026-09-22T00:00:00.000Z",
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",

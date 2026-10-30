@@ -48,7 +48,7 @@ use quoin_semantic::schema::{SchemaValidator, SchemaValidatorExt, read_json};
 use quoin_semantic::sweep::{PropertiesForm, classify_artifact, classify_properties};
 use quoin_semantic::{
     CompatibilityPosture, LegacyForms, MappingName, ModuleName, ModuleVersion, ObjectTypeName,
-    PackageIdentity, SemanticBlock, SemanticCoreVersion, SemanticModule,
+    PackageIdentity, SemanticBlock, SemanticModule,
 };
 use serde_json::Value;
 
@@ -349,11 +349,6 @@ fn assert_block(id: &str, expected: &Value, block: &SemanticBlock) {
         "{id}: contract_version"
     );
     assert_eq!(
-        text(expected, "semantic_core"),
-        block.semantic_core.as_str(),
-        "{id}: semantic_core"
-    );
-    assert_eq!(
         text(expected, "package"),
         block.package.as_str(),
         "{id}: package"
@@ -495,7 +490,6 @@ fn module_from(golden_module: &Value) -> SemanticModule {
         ),
         block: SemanticBlock {
             contract_version: text(block, "contract_version").into(),
-            semantic_core: SemanticCoreVersion::new(text(block, "semantic_core")),
             package: PackageIdentity::new(text(block, "package")),
             exports: block
                 .get("exports")

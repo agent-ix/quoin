@@ -30,10 +30,9 @@
 //! anything reading that history; branch protection on the store's branch is
 //! what closes that, not this module.
 //!
-//! Any value read from a collection file (`sourceRevision` above all) is
-//! attacker-controlled: it reaches git only after `--end-of-options`, so a
-//! revision spelled like `--output=<file>` is a revision git cannot resolve,
-//! never an option.
+//! Any value read from a collection file is attacker-controlled: it reaches
+//! git only after `--end-of-options`, so a revision spelled like
+//! `--output=<file>` is a revision git cannot resolve, never an option.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;

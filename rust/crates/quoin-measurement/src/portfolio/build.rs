@@ -187,11 +187,7 @@ fn loaded(
             (Some(before), Some(after)) => Some(PortfolioComparison {
                 before: collection_ref(root, before)?,
                 after: collection_ref(root, after)?,
-                observations: crate::compare::compare_measurement_collections(
-                    before,
-                    after,
-                    &crate::movement::GitPathMovement::new(root),
-                )?,
+                observations: crate::compare::compare_measurement_collections(before, after)?,
             }),
             _ => None,
         },
@@ -209,7 +205,6 @@ fn collection_ref(
         id: collection.collection_id.as_str().to_owned(),
         path: measurement_path(repo, &id).to_string_lossy().into_owned(),
         timestamp: collection.timestamp.as_str().to_owned(),
-        source_revision: collection.source_revision.as_str().to_owned(),
         tool_identity: collection.tool_identity.as_str().to_owned(),
         tool_version: collection.tool_version.as_str().to_owned(),
         // `? { corpusRevision } : {}` — a stated empty string is as absent as

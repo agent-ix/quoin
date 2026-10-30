@@ -22,7 +22,6 @@ struct CollectionPayload<'a> {
     tool_identity: &'a str,
     tool_version: &'a str,
     timestamp: &'a str,
-    source_revision: &'a str,
     environment: CollectionEnvironment<'a>,
     verification_stack: CollectionStack<'a>,
     observations: Vec<CollectionObservation<'a>>,
@@ -160,7 +159,6 @@ pub(super) fn publish_collection(
         tool_identity: &result.producer.name,
         tool_version: &result.producer.version,
         timestamp: &runtime.timestamp,
-        source_revision: &result.producer.source_revision,
         environment: CollectionEnvironment {
             campaign: &definition.id,
             member: &member.name,

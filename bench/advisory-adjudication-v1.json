@@ -10,16 +10,10 @@
   },
   "population": {
     "source": {
-      "revision": "73b0d5d",
       "provenance": {
         "engine": "quire 0.30.2 (engine 9126463)",
-        "corpus": "c359c1a2030a8c39579c9be2661775f728c9dff4",
         "declaration": {
-          "root": "corpus/modules",
-          "sources": {
-            "spec-artifacts-process": "995288d609a47ab5a25f300ac0fa600d390b348c",
-            "spec-artifacts-iso": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217"
-          }
+          "root": "corpus/modules"
         }
       }
     },

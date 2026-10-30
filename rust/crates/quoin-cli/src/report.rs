@@ -23,7 +23,6 @@ pub(crate) fn command() -> Command {
         .arg(repeated("graph-premises"))
         .arg(repeated("graph-audit"))
         .arg(repeated("changed"))
-        .arg(Arg::new("since").long("since"))
         .arg(Arg::new("series").long("series"))
         .arg(
             Arg::new("format")
@@ -39,7 +38,6 @@ fn repeated(name: &'static str) -> Arg {
 
 /// Execute a parsed report command.
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
-    let since = arguments.get_one::<String>("since");
     let series = arguments.get_one::<String>("series");
     let portfolio = values(arguments, "portfolio");
     let graph_exports = values(arguments, "graph-export");
@@ -50,15 +48,12 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         || !graph_premises.is_empty()
         || !graph_audits.is_empty()
         || !changed.is_empty();
-    if since.is_some() && series.is_some() {
-        return Err("--since and --series are mutually exclusive".to_owned());
-    }
     if graph_selected && portfolio.is_empty() {
         return Err("graph portfolio mappings require --portfolio".to_owned());
     }
     if !portfolio.is_empty() {
-        if since.is_some() || series.is_some() {
-            return Err("--portfolio cannot be combined with --since or --series".to_owned());
+        if series.is_some() {
+            return Err("--portfolio cannot be combined with --series".to_owned());
         }
         let request = portfolio_request(
             &portfolio,
@@ -90,14 +85,6 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
             &serde_json::json!({ "repo": repo, "metric": metric }),
         )?;
         return series_response(response, metric, json(arguments));
-    }
-    if let Some(before_revision) = since {
-        return present(
-            "measurement.build_comparison",
-            "measurement.render_comparison",
-            &serde_json::json!({ "repo": repo, "before_revision": before_revision }),
-            json(arguments),
-        );
     }
     present(
         "measurement.build_report",
@@ -191,12 +178,11 @@ fn render_series(metric: &str, payload: &serde_json::Value) -> Result<String, St
                 .and_then(serde_json::Value::as_object)
                 .ok_or_else(|| "series entry has no observation".to_owned())?;
             lines.push(format!(
-                "- {} {} {} {} (source {}, tool {} {}, corpus {}, gaps {})",
+                "- {} {} {} {} (tool {} {}, corpus {}, gaps {})",
                 value(row, "timestamp"),
                 value(observation, "state"),
                 value(observation, "value"),
                 value(observation, "unit"),
-                value(row, "sourceRevision"),
                 value(row, "toolIdentity"),
                 value(row, "toolVersion"),
                 value(row, "corpusRevision"),
@@ -328,7 +314,6 @@ mod tests {
     fn tc_373_series_human_output_matches_javascript_string_coercion() {
         let payload = serde_json::json!([{
             "timestamp": ["2026", "09"],
-            "sourceRevision": { "hash": "abc" },
             "toolIdentity": "quoin",
             "toolVersion": [1, null, ["x", { "nested": true }]],
             "corpusRevision": null,
@@ -342,7 +327,7 @@ mod tests {
 
         assert_eq!(
             render_series("coverage", &payload).expect("series payload renders"),
-            "# coverage series\n\n- 2026,09 [object Object] 1,,nested,value percent (source [object Object], tool quoin 1,,x,[object Object], corpus null, gaps gap,)\n"
+            "# coverage series\n\n- 2026,09 [object Object] 1,,nested,value percent (tool quoin 1,,x,[object Object], corpus null, gaps gap,)\n"
         );
     }
 }

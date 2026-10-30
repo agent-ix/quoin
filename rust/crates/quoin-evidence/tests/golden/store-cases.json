@@ -15,16 +15,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -38,7 +38,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -61,16 +61,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -84,7 +84,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": ["unit suites only"],
@@ -107,8 +107,8 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -122,7 +122,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -145,16 +145,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -168,7 +168,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -191,16 +191,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "2.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -214,7 +214,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -237,16 +237,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit5",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -260,7 +260,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -283,16 +283,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:cc",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-b",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -306,7 +306,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -329,16 +329,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:dd",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-b",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -352,7 +352,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -375,16 +375,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml-2",
           "environment": "ci"
         },
@@ -398,7 +398,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -421,16 +421,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "laptop"
         },
@@ -444,7 +444,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -467,16 +467,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "2.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "laptop"
         },
@@ -490,7 +490,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -513,8 +513,8 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci",
           "adapter": {
@@ -525,8 +525,8 @@
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci",
           "adapter": {
@@ -545,7 +545,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -568,8 +568,8 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci",
           "adapter": {
@@ -580,8 +580,8 @@
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci",
           "adapter": {
@@ -600,7 +600,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -623,8 +623,8 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci",
           "adapter": {
@@ -635,8 +635,8 @@
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -651,7 +651,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -674,8 +674,8 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci",
           "adapter": {
@@ -686,8 +686,8 @@
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -701,7 +701,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -724,16 +724,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -746,7 +746,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -769,16 +769,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -793,7 +793,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -816,16 +816,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -833,7 +833,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -856,16 +856,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -883,7 +883,7 @@
       }
     },
     {
-      "name": "trust-evidence-without-digest-or-reference",
+      "name": "trust-evidence-without-reference",
       "kind": "trust",
       "input": {
         "schemaVersion": 1,
@@ -897,16 +897,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -942,16 +942,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -988,16 +988,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -1011,7 +1011,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -1034,16 +1034,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -1057,7 +1057,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -1080,16 +1080,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -1103,7 +1103,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -1126,16 +1126,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -1149,7 +1149,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -1172,16 +1172,16 @@
         "acceptedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
         "observedContext": {
           "name": "junit",
           "version": "1.0",
-          "configurationDigest": "sha256:aa",
-          "validationCorpusDigest": "sha256:bb",
+          "configuration": "config-a",
+          "validationCorpus": "corpus-a",
           "inputContract": "junit-xml",
           "environment": "ci"
         },
@@ -1195,7 +1195,7 @@
         "validationEvidence": [
           {
             "id": "V-1",
-            "digest": "sha256:abcdef"
+            "reference": "evidence/v-1"
           }
         ],
         "limitations": [],
@@ -1862,16 +1862,16 @@
           "acceptedContext": {
             "name": "junit",
             "version": "1.0",
-            "configurationDigest": "sha256:aa",
-            "validationCorpusDigest": "sha256:bb",
+            "configuration": "config-a",
+            "validationCorpus": "corpus-a",
             "inputContract": "junit-xml",
             "environment": "ci"
           },
           "observedContext": {
             "name": "junit",
             "version": "1.0",
-            "configurationDigest": "sha256:aa",
-            "validationCorpusDigest": "sha256:bb",
+            "configuration": "config-a",
+            "validationCorpus": "corpus-a",
             "inputContract": "junit-xml",
             "environment": "ci"
           },
@@ -1885,7 +1885,7 @@
           "validationEvidence": [
             {
               "id": "V-1",
-              "digest": "sha256:abcdef"
+              "reference": "evidence/v-1"
             }
           ],
           "limitations": [],

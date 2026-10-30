@@ -1,17 +1,14 @@
 {
   "schemaVersion": "guidance-independent-review-v1",
   "populationSource": {
-    "corpusRevision": "7442f2770880a4ade303fb23d725804bdef454db",
     "producer": {
       "schemaVersion": "quire-tool-provenance-v1",
       "cli": {
         "version": "0.32.0",
-        "sourceRevision": "813019d872af7fc6d2469b5afad52f86f16915b4",
         "sourceState": "clean"
       },
       "engine": {
         "version": "0.46.0",
-        "sourceRevision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
         "sourceState": "clean"
       },
       "capabilities": [

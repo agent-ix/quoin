@@ -139,6 +139,42 @@ fn two_proofs() -> VerificationInput {
     input
 }
 
+/// Trace: FR-065-AC-12
+///
+/// The receipt's own vocabulary. Every reason this family can record, and
+/// every word of a receipt it produces, is checked against the claims a
+/// receipt is not allowed to make: a receipt says what the evidence shows,
+/// and never that anybody was authenticated, authorized or signed anything.
+#[test]
+fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
+    let claims = [
+        "authentication",
+        "authenticity",
+        "authorization",
+        "authorized",
+        "non_repudiation",
+        "nonrepudiation",
+        "signature",
+        "signed",
+    ];
+    for reason in Reason::ALL {
+        assert!(
+            !claims.contains(&reason.as_str()),
+            "`{}` claims more than a verification can know",
+            reason.as_str()
+        );
+    }
+    for receipt in [verify(&base_input()), verify(&two_proofs())] {
+        let text = String::from_utf8(canonical_bytes(&receipt.to_json().unwrap()).unwrap()).unwrap();
+        for claim in claims {
+            assert!(
+                !text.contains(claim),
+                "a receipt names `{claim}`, which a receipt cannot establish"
+            );
+        }
+    }
+}
+
 /// Trace: FR-065-AC-2
 ///
 /// The three outcomes stay distinct and the precedence is fixed: any invalid

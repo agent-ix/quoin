@@ -31,7 +31,6 @@ and the mapping declarations it needs.
 
 - `org`, `repo_name`, `description`, `module_name`, `package_name`, `author`, `email`, `version`
 - `module_kind`, one of `artifact`, `object`, `mixed`
-- `semantic_core_version`, the exact `@agent-ix/semantic-core` version to import
 - `generated_targets`, a subset of the filament-core-data target registry
 - `imported_modules`, zero or more `<org>/<repo>@<exact-version>` references
 - `license`, defaulting to `AGPL-3.0-or-later`

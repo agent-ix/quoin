@@ -26,9 +26,7 @@ use std::path::Path;
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::store::read_measurement_collection_results;
-use quoin_measurement::{
-    GitPathMovement, OrderSource, Ranked, TamperFacts, Verdict, verdict_json, verify as check,
-};
+use quoin_measurement::{OrderSource, Ranked, TamperFacts, Verdict, verdict_json, verify as check};
 
 use crate::error::{CoreError, CoreErrorCode};
 use crate::protocol::Response;
@@ -115,12 +113,10 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
     };
     let deleted_collections = naming_plan(&request.deleted);
     let edited_collections = naming_plan(&request.edited_collections);
-    let movement = GitPathMovement::new(Path::new(&request.repo));
     let tamper = TamperFacts {
         deleted_collections: &deleted_collections,
         edited_collections: &edited_collections,
         definition_changed_without_version_bump: request.definition_changed_without_version_bump,
-        movement: Some(&movement),
     };
     let verdict = check(plan, &ranked, tamper, order, claimed);
     let payload = verdict_json(&verdict).map_err(|error| map_measurement(&error, OP))?;

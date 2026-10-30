@@ -4897,7 +4897,6 @@
     "corpora": 97,
     "findings": 487
   },
-  "sourceRevision": "ba6a356a0fe4e94f3e831b5418ad4cee7f8b154b+working-tree:61d365380522369b",
   "subject": "tier-1 controlled corpus",
   "timestamp": "2026-08-26T18:46:15.876Z",
   "toolIdentity": "quoin bench-tier1",

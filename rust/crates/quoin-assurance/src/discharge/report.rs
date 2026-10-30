@@ -423,6 +423,8 @@ pub struct DischargeReport {
     /// Copied from the binding report.
     pub clause_set: ClauseSetKey,
     /// Copied from the binding report.
+    ///
+    /// BLOCKED-BY QSL-1279 (owner: planner titan:QSL:plan): ClauseSetDigest
     pub clause_set_digest: String,
     /// A copy of the binding report's context, ordered so the serialised
     /// document is byte-stable.

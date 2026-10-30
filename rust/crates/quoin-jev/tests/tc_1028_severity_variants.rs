@@ -884,7 +884,7 @@ fn selection_file(entries: &Value) -> Result<corpus::SelectionFile, String> {
 
 fn selection_entry(mp: &str, variant: &str, version: u32) -> Value {
     json!({"mp": mp, "variant": variant, "version": version,
-           "selected_at_commit": "358870db", "dev_evidence": "reviews/dev.md",
+           "dev_evidence": "reviews/dev.md",
            "baselines": ["S0@v1"]})
 }
 

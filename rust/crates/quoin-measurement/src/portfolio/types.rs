@@ -177,8 +177,6 @@ pub struct PortfolioCollectionRef {
     pub path: String,
     /// When it was produced.
     pub timestamp: String,
-    /// The revision of the measured source.
-    pub source_revision: String,
     /// Which tool produced it.
     pub tool_identity: String,
     /// Which version of that tool.

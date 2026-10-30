@@ -254,7 +254,6 @@ struct CollectionRefWire<'a> {
     id: &'a str,
     path: &'a str,
     timestamp: &'a str,
-    source_revision: &'a str,
     tool_identity: &'a str,
     tool_version: &'a str,
     /// Spread in only when truthy, so absent rather than `null`.
@@ -273,7 +272,6 @@ impl<'a> CollectionRefWire<'a> {
             id: &reference.id,
             path: &reference.path,
             timestamp: &reference.timestamp,
-            source_revision: &reference.source_revision,
             tool_identity: &reference.tool_identity,
             tool_version: &reference.tool_version,
             corpus_revision: reference.corpus_revision.as_deref(),

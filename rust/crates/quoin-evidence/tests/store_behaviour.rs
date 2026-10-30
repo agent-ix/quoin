@@ -118,8 +118,8 @@ fn context(name: &str) -> ProducerContext {
     ProducerContext {
         name: name.to_owned(),
         version: "1.0".to_owned(),
-        configuration_digest: "sha256:aa".to_owned(),
-        validation_corpus_digest: "sha256:bb".to_owned(),
+        configuration: "config-a".to_owned(),
+        validation_corpus: "corpus-a".to_owned(),
         input_contract: "junit-xml".to_owned(),
         environment: "ci".to_owned(),
         adapter: None,
@@ -147,8 +147,7 @@ fn decision(id: &str) -> TrustDecision {
         ],
         validation_evidence: vec![TrustEvidenceReference {
             id: "V-1".to_owned(),
-            digest: Some("sha256:abcdef".to_owned()),
-            reference: None,
+            reference: Some("evidence/v-1".to_owned()),
         }],
         limitations: Vec::new(),
         owner: "peter".to_owned(),
@@ -760,25 +759,6 @@ fn tc_456_244_a_record_whose_stored_id_disagrees_with_its_path_is_refused() {
         .unwrap_err()
         .to_string();
     assert!(error.contains("does not match path"), "{error}");
-}
-
-/// Trace: FR-048-AC-2
-#[test]
-fn tc_456_245_a_legacy_identifier_is_read_as_an_opaque_string() {
-    let mut store = MemoryEvidence::new();
-    let stored = write_experiment_record(&mut store, &experiment()).unwrap();
-    let text = store.read(&stored.path).unwrap().unwrap();
-    let legacy = format!("sha256:{}", "7".repeat(64));
-    store
-        .write(
-            &format!("experiments/sha256-{}.json", "7".repeat(64)),
-            text.replace(&stored.record.record_id, &legacy).as_bytes(),
-        )
-        .unwrap();
-    let read = read_experiment_record(&store, &legacy)
-        .unwrap()
-        .expect("the legacy record is readable");
-    assert_eq!(read.record_id, legacy, "the identifier is left unchanged");
 }
 
 // ---------------------------------------------------------------- FR-093 -----

@@ -9,7 +9,7 @@
 //! `quoin module install`: the file must sit inside the module root (no `..`,
 //! no symlink escape), be a JSON Schema 2020-12 document with an `$id`, and
 //! every `$ref` it carries must resolve inside the shipped bundle or the
-//! vendored semantic-core bundle at the version the manifest records. **No
+//! vendored semantic-core bundle. **No
 //! network read, ever.**
 
 use std::collections::BTreeSet;
@@ -19,7 +19,7 @@ use serde_json::Value;
 
 use crate::contract::SEMANTIC_CORE_BASE;
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic};
-use crate::ids::{ObjectTypeName, PackageIdentity, SemanticCoreVersion};
+use crate::ids::{ObjectTypeName, PackageIdentity};
 
 const PACKAGE_BASE: &str = "https://schemas.agent-ix.org/";
 const DIALECT_2020_12: &str = "https://json-schema.org/draft/2020-12/schema";
@@ -67,8 +67,6 @@ pub struct ResolveContext {
     pub module_root: PathBuf,
     /// `<org>/<repo>` from `semantic.package`.
     pub package_identity: PackageIdentity,
-    /// `semantic.semantic_core`.
-    pub semantic_core: SemanticCoreVersion,
     /// The object type being resolved.
     pub object_type: ObjectTypeName,
     /// The directory holding the vendored semantic-core bundle.
@@ -409,20 +407,14 @@ impl RefWalker<'_> {
                 if !core_path.exists() {
                     self.push(
                         DiagnosticCode::SchemaRefUnshipped,
-                        format!(
-                            "$ref {url} names no file in the vendored semantic-core {} bundle",
-                            self.ctx.semantic_core
-                        ),
+                        format!("$ref {url} names no file in the vendored semantic-core bundle"),
                     );
                     continue;
                 }
                 let Ok(bytes) = std::fs::read(&core_path) else {
                     self.push(
                         DiagnosticCode::SchemaRefUnshipped,
-                        format!(
-                            "$ref {url} names no file in the vendored semantic-core {} bundle",
-                            self.ctx.semantic_core
-                        ),
+                        format!("$ref {url} names no file in the vendored semantic-core bundle"),
                     );
                     continue;
                 };

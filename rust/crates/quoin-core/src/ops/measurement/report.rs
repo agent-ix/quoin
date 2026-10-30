@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The single-store reports: the plan report, the comparison, and one metric's
+//! The single-store reports: the plan report and one metric's
 //! series.
 //!
 //! Five routes over one store. Each `build_*` answers with the canonical JSON
@@ -12,9 +12,8 @@
 use std::path::PathBuf;
 
 use quoin_measurement::{
-    DiskMeasurement, build_measurement_report, comparison_for, render_measurement_comparison,
-    render_measurement_comparison_json, render_measurement_report, render_measurement_report_json,
-    render_series_json, series_for,
+    DiskMeasurement, build_measurement_report, render_measurement_report,
+    render_measurement_report_json, render_series_json, series_for,
 };
 
 use crate::error::CoreError;
@@ -22,8 +21,7 @@ use crate::protocol::Response;
 
 use super::taxonomy::map_measurement;
 use super::wire::{
-    ComparisonRequest, MAX_ASSURANCE_DOCUMENT_BYTES, MAX_METRIC_NAME_BYTES, MAX_REVISION_BYTES,
-    RepoRequest, SeriesRequest,
+    MAX_ASSURANCE_DOCUMENT_BYTES, MAX_METRIC_NAME_BYTES, RepoRequest, SeriesRequest,
 };
 use super::{bound, bound_field, document, parse, rendered, string_len};
 
@@ -55,45 +53,6 @@ pub fn render_report(request: &serde_json::Value) -> Result<Response, CoreError>
     let report = build_measurement_report(&DiskMeasurement::new(&repo), &repo)
         .map_err(|e| map_measurement(&e, OP))?;
     let markdown = render_measurement_report(&report).map_err(|e| map_measurement(&e, OP))?;
-    rendered(markdown, OP)
-}
-
-/// Answer a `measurement.build_comparison`.
-///
-/// # Errors
-///
-/// - [`crate::error::CoreErrorCode::BadRequest`] when stdin is not a
-///   [`ComparisonRequest`].
-/// - [`crate::error::CoreErrorCode::Refused`] when a ceiling is exceeded, or
-///   when the store cannot be read.
-pub fn build_comparison(request: &serde_json::Value) -> Result<Response, CoreError> {
-    const OP: &str = "measurement.build_comparison";
-    let (repo, revision) = locate_revision(request, OP)?;
-    let comparison = comparison_for(&DiskMeasurement::new(&repo), &repo, &revision)
-        .map_err(|e| map_measurement(&e, OP))?;
-    let canonical =
-        render_measurement_comparison_json(&comparison).map_err(|e| map_measurement(&e, OP))?;
-    document(&canonical, OP)
-}
-
-/// Answer a `measurement.render_comparison`.
-///
-/// Not named in quoin#478's list of eleven, and required by it: the ticket asks
-/// for twelve entries, and `src/commands/report.ts`'s `--since` path in `human`
-/// format calls `renderMeasurementComparison`. A `build_comparison` with no
-/// `render_comparison` would be the one build/render pair of the four left
-/// half-wired, and the rewire could not be completed without it.
-///
-/// # Errors
-///
-/// As [`build_comparison`].
-pub fn render_comparison(request: &serde_json::Value) -> Result<Response, CoreError> {
-    const OP: &str = "measurement.render_comparison";
-    let (repo, revision) = locate_revision(request, OP)?;
-    let comparison = comparison_for(&DiskMeasurement::new(&repo), &repo, &revision)
-        .map_err(|e| map_measurement(&e, OP))?;
-    let markdown =
-        render_measurement_comparison(&comparison).map_err(|e| map_measurement(&e, OP))?;
     rendered(markdown, OP)
 }
 
@@ -132,20 +91,4 @@ fn locate(request: &serde_json::Value, op: &'static str) -> Result<PathBuf, Core
     bound(request, op, MAX_ASSURANCE_DOCUMENT_BYTES)?;
     let request: RepoRequest = parse(request, op)?;
     Ok(PathBuf::from(request.repo))
-}
-
-/// Bound and parse a request that names one store and one earlier revision.
-fn locate_revision(
-    request: &serde_json::Value,
-    op: &'static str,
-) -> Result<(PathBuf, String), CoreError> {
-    bound(request, op, MAX_ASSURANCE_DOCUMENT_BYTES)?;
-    bound_field(
-        op,
-        "before_revision",
-        string_len(request, "before_revision"),
-        MAX_REVISION_BYTES,
-    )?;
-    let request: ComparisonRequest = parse(request, op)?;
-    Ok((PathBuf::from(request.repo), request.before_revision))
 }

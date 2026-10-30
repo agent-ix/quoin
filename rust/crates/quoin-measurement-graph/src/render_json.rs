@@ -206,7 +206,6 @@ struct HistoryRowWire<'a> {
     plan: Option<PlanRefWire<'a>>,
     tool_identity: &'a str,
     tool_version: &'a str,
-    source_revision: &'a str,
     /// `| null`.
     corpus_revision: Option<&'a str>,
     /// `unknown`, assigned `?? null`, so stated as `null` when absent.
@@ -230,7 +229,6 @@ impl<'a> HistoryRowWire<'a> {
             plan: row.plan.as_ref().map(PlanRefWire::of),
             tool_identity: &row.tool_identity,
             tool_version: &row.tool_version,
-            source_revision: &row.source_revision,
             corpus_revision: row.corpus_revision.as_deref(),
             population_identity: opaque(row.population_identity.as_ref())?,
             producer: opaque(row.producer.as_ref())?,

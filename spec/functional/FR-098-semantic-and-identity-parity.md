@@ -55,11 +55,9 @@ difference is exempt. No digest is computed or compared anywhere in the port.
   store identity and atomic-write operations only in `quoin-store`.
 - Outside the enumerated PLAT-989 transition, that path SHALL produce the same
   bytes as the retained implementation for the same input. Record identifiers
-  are opaque, time-ordered UUIDs (v7) assigned when a record is written, and a
-  record is stored as `<recordId>.json`; an identifier is never derived from
-  content. Existing stored records keep their current identifiers and file
-  names, which are read as opaque strings and never recomputed; legacy digest
-  members inside them are ignored on read and never written.
+  are opaque random UUIDs (v4) assigned once when a record is written, stored,
+  and compared as exact strings, and a record is stored as `<recordId>.json`;
+  an identifier is never derived from content.
 - Quoin SHALL port the retained strict JSON parser's refusal boundary — its
   refusal of a UTF-8 byte-order mark, of non-fatal UTF-8 and of trailing content
   — and SHALL compare those refusals as part of parity, because they guard
@@ -116,7 +114,7 @@ differential run whose compared population is empty each block cutover.
 | FR-098-AC-7 | Withdrawn: there is no differential run whose population could be zero, and no cutover gate it could satisfy (id not reused). | Withdrawn (TC-1624) |
 | FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test (TC-1692) |
 | FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test (TC-1693) |
-| FR-098-AC-10 | Record identifiers produced by the Rust implementation are opaque UUIDs not derived from content, files are named `<recordId>.json`, and legacy `sha256:<hex>` identifiers and `sha256-<hex>.json` file names in existing stores are read as opaque strings and left unchanged; the transition is reported under NFR-025. | Test (TC-1694) |
+| FR-098-AC-10 | Record identifiers produced by the Rust implementation are opaque UUIDs not derived from content, and files are named `<recordId>.json`. Withdrawn: the clause that read legacy `sha256:<hex>` identifiers and `sha256-<hex>.json` file names as opaque strings; nothing of that kind remains. | Test (TC-1694) |
 | FR-098-AC-11 | After a capability cuts over, the native fixture suite spawns no retained implementation for that capability and compares against committed fixtures. | Test (TC-1695) |
 
 ## Dependencies

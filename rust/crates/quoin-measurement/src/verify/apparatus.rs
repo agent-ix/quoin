@@ -5,7 +5,7 @@
 //! Split from [`super`] so the checker stays under this crate's module-size
 //! ceiling.
 //!
-//! Each run carries the resolved (path, digest) set its collection recorded
+//! Each run carries the resolved set of paths its collection recorded
 //! at intake, read whatever the plan declares today: deleting the plan's
 //! `protected_apparatus` list must not switch protection off for runs that
 //! were recorded under it. A series is protected when the plan declares a
@@ -14,9 +14,8 @@
 //! (engineering-assurance FR-024), so within a protected series:
 //!
 //! - a run is a baseline only for runs that recorded the same set;
-//! - an earlier run that recorded a different set than the candidate, or
-//!   whose protected files differ from the candidate's between their source
-//!   revisions as git reports (FR-110), is `apparatus_edit`: the stored data contradicts the version bump FR-024
+//! - an earlier run that recorded a different set than the candidate is
+//!   `apparatus_edit`: the stored data contradicts the version bump FR-024
 //!   makes unconditional, so it rejects whether or not the plan declares the
 //!   `apparatus-edit` negative control;
 //! - a run, earlier or the candidate, that recorded no set is
@@ -25,8 +24,7 @@
 //! A plan that never protected anything has no recorded set on any run, so
 //! nothing here changes its verdict.
 
-use crate::compare::PathMovement;
-use crate::types::collection::{MeasurementCollection, ResolvedApparatus};
+use crate::types::collection::MeasurementCollection;
 use crate::types::plan::MeasurementPlan;
 
 use super::{Finding, Reason, Run};
@@ -38,11 +36,7 @@ pub(super) fn protected(plan: &MeasurementPlan, runs: &[Run<'_>]) -> bool {
 }
 
 /// The apparatus findings for the candidate, the last of `runs`.
-pub(super) fn findings(
-    plan: &MeasurementPlan,
-    runs: &[Run<'_>],
-    movement: Option<&dyn PathMovement>,
-) -> Vec<Finding> {
+pub(super) fn findings(plan: &MeasurementPlan, runs: &[Run<'_>]) -> Vec<Finding> {
     let Some((candidate, history)) = runs.split_last() else {
         return Vec::new();
     };
@@ -61,39 +55,10 @@ pub(super) fn findings(
     };
     for run in history {
         match run.apparatus {
-            Some(theirs) if theirs == own => {
-                match moved(run.collection, candidate.collection, own, movement) {
-                    Some(true) => out.push(at(Reason::ApparatusEdit, run.collection)),
-                    Some(false) => {}
-                    None => out.push(at(Reason::ApparatusUnverifiable, run.collection)),
-                }
-            }
+            Some(theirs) if theirs == own => {}
             Some(_) => out.push(at(Reason::ApparatusEdit, run.collection)),
             None => out.push(at(Reason::ApparatusUnrecorded, run.collection)),
         }
     }
     out
-}
-
-/// Whether git reports a protected file differing between the two
-/// collections' source revisions (FR-110). `Some(false)` only when the
-/// caller supplied no git; `None` when git was asked and cannot answer,
-/// which is `apparatus_unverifiable`, never a pass.
-fn moved(
-    earlier: &MeasurementCollection,
-    candidate: &MeasurementCollection,
-    protected: &ResolvedApparatus,
-    movement: Option<&dyn PathMovement>,
-) -> Option<bool> {
-    let Some(movement) = movement else {
-        return Some(false);
-    };
-    let paths: Vec<String> = protected.iter().cloned().collect();
-    movement
-        .changed(
-            earlier.source_revision.as_str(),
-            candidate.source_revision.as_str(),
-            &paths,
-        )
-        .map(|changed| !changed.is_empty())
 }

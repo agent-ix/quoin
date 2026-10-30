@@ -193,12 +193,16 @@ fn write_procedures(repo: &Path) {
 }
 
 fn fixture() -> (tempfile::TempDir, CampaignDefinition, String) {
+    fixture_with_producer(PRODUCER)
+}
+
+fn fixture_with_producer(producer: &str) -> (tempfile::TempDir, CampaignDefinition, String) {
     let repo = tempfile::tempdir().expect("source repository");
     git(repo.path(), &["init", "-q"]);
     fs::create_dir_all(repo.path().join("campaign")).expect("campaign directory");
     fs::create_dir_all(repo.path().join("spec/assurance")).expect("plan directory");
     fs::write(repo.path().join("source.txt"), "tracked source bytes\n").expect("source");
-    fs::write(repo.path().join("campaign/producer.py"), PRODUCER).expect("producer");
+    fs::write(repo.path().join("campaign/producer.py"), producer).expect("producer");
     fs::write(repo.path().join("campaign/checker.py"), CHECKER).expect("checker");
     for (id, metric, procedure) in [
         ("MP-PREP", "fictional.prepare.score", "prepare.json"),
@@ -442,5 +446,149 @@ fn tc_1947_selected_input_at_a_tracked_path_is_refused() {
     assert_eq!(
         fs::read(repo.path().join("source.txt")).expect("tracked source"),
         b"tracked source bytes\n"
+    );
+}
+
+/// Runs the two-member campaign with `producer` as the producer script and
+/// `tune` applied to the prepare member's bindings, returning the run.
+#[cfg(target_os = "linux")]
+fn run_with(
+    producer: &str,
+    run_id: &str,
+    tune: impl FnOnce(&mut RunMemberBindings),
+    cancellation: &quoin_measurement::campaign::run::CampaignCancellation,
+) -> (
+    tempfile::TempDir,
+    engineering_assurance::campaign::CampaignRun,
+) {
+    let (repo, definition, revision) = fixture_with_producer(producer);
+    let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);
+    let mut prepare = runtime(repo.path(), &revision, true);
+    tune(&mut prepare);
+    let selections = BTreeMap::from([
+        ("prepare".to_owned(), prepare),
+        ("consume".to_owned(), runtime(repo.path(), &revision, false)),
+    ]);
+    let run = quoin_measurement::campaign::run::run_campaign_with_cancellation(
+        repo.path(),
+        &definition,
+        run_id,
+        &checkouts,
+        &selections,
+        cancellation,
+    )
+    .expect("a terminal producer state is retained, not an error");
+    (repo, run)
+}
+
+/// Every retained attempt carries the status and none minted a Collection.
+#[cfg(target_os = "linux")]
+fn assert_first_attempt(
+    run: &engineering_assurance::campaign::CampaignRun,
+    status: engineering_assurance::campaign::CampaignAttemptStatus,
+) {
+    assert_eq!(run.verdict, CampaignVerdict::Inconclusive, "{run:?}");
+    let attempts = run.attempts.as_ref().expect("attempts");
+    assert_eq!(attempts[0].status, status, "{:?}", attempts[0]);
+    for attempt in attempts {
+        assert!(attempt.collection_id.is_none(), "{attempt:?}");
+    }
+}
+
+/// Trace: FR-114-AC-2. Provenance: PLAT-1043, TC-1941.
+/// A producer past its deadline is retained as timed out, with no Collection.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_timed_out_producer_is_retained() {
+    let (_repo, run) = run_with(
+        "import time\ntime.sleep(10)\n",
+        "fixture-timeout",
+        |prepare| prepare.producer.budget.timeout_millis = 200,
+        &quoin_measurement::campaign::run::CampaignCancellation::new(),
+    );
+    assert_first_attempt(
+        &run,
+        engineering_assurance::campaign::CampaignAttemptStatus::TimedOut,
+    );
+}
+
+/// Trace: FR-114-AC-2. Provenance: PLAT-1043, TC-1941.
+/// A descendant that escapes the observed process group is retained as a
+/// containment failure, with no Collection.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_escaped_descendant_containment_failure_is_retained() {
+    let escaping = "import os\nimport subprocess\nimport sys\nimport time\nif sys.argv[1:] == ['escape-child']:\n    os.setsid()\n    time.sleep(10)\nelse:\n    child = subprocess.Popen([sys.executable, 'campaign/producer.py', 'escape-child'])\n    child.wait()\n";
+    let (_repo, run) = run_with(
+        escaping,
+        "fixture-escaped-descendant",
+        |_| {},
+        &quoin_measurement::campaign::run::CampaignCancellation::new(),
+    );
+    assert_first_attempt(
+        &run,
+        engineering_assurance::campaign::CampaignAttemptStatus::ContainmentFailure,
+    );
+}
+
+/// Trace: FR-114-AC-2. Provenance: PLAT-1043, TC-1941.
+/// A caller cancelling the registered Event-bound process is retained as
+/// cancelled, with no Collection.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1941_live_event_cancellation_is_retained() {
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    let control = Arc::new(quoin_measurement::campaign::run::CampaignCancellation::new());
+    let cancelling = Arc::clone(&control);
+    let canceller = std::thread::spawn(move || {
+        assert!(
+            cancelling.wait_for_active(Duration::from_secs(30)),
+            "request registered"
+        );
+        assert!(cancelling.cancel(), "Event-bound token accepted");
+    });
+    let (_repo, run) = run_with(
+        "import time\ntime.sleep(20)\n",
+        "fixture-live-cancellation",
+        |prepare| {
+            prepare.producer.cancellation = CancellationBinding::Event {
+                authority: "fictional-campaign".to_owned(),
+                event_id: "cancel-current-run".to_owned(),
+            };
+        },
+        &control,
+    );
+    canceller.join().expect("canceller completed");
+    assert_first_attempt(
+        &run,
+        engineering_assurance::campaign::CampaignAttemptStatus::Cancelled,
+    );
+}
+
+/// Trace: FR-114-AC-3. Provenance: PLAT-1043, TC-1944.
+/// A producer that wrote none of its required outputs leaves the campaign
+/// inconclusive and mints no Collection.
+#[cfg(target_os = "linux")]
+#[test]
+fn tc_1944_no_collection_when_the_producer_yields_none() {
+    let (repo, run) = run_with(
+        "import sys\nsys.stdout.write('ok')\n",
+        "fixture-no-output",
+        |_| {},
+        &quoin_measurement::campaign::run::CampaignCancellation::new(),
+    );
+    assert_ne!(run.verdict, CampaignVerdict::Accepted, "{run:?}");
+    let attempts = run.attempts.as_ref().expect("attempts");
+    assert!(
+        attempts.iter().all(|a| a.collection_id.is_none()),
+        "{attempts:?}"
+    );
+    assert!(
+        !repo.path().join("spec/evidence/measurements").exists()
+            || fs::read_dir(repo.path().join("spec/evidence/measurements"))
+                .map(|d| d.count() == 0)
+                .unwrap_or(true)
     );
 }

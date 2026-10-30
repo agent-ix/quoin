@@ -82,8 +82,6 @@ pub struct GraphQualityHistoryRow {
     pub tool_identity: String,
     /// Which version of that tool.
     pub tool_version: String,
-    /// The revision of the measured source.
-    pub source_revision: String,
     /// The revision of the measured corpus, when it stated one.
     pub corpus_revision: Option<String>,
     /// The producer-defined population identity, uninterpreted.

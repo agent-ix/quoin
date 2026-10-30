@@ -285,9 +285,9 @@
       "err": "invalid trust decision: validationEvidence: must not be empty"
     },
     {
-      "name": "trust-evidence-without-digest-or-reference",
+      "name": "trust-evidence-without-reference",
       "kind": "trust",
-      "err": "invalid trust decision: validationEvidence.0: validation evidence needs digest or reference"
+      "err": "invalid trust decision: validationEvidence.0: validation evidence needs a reference"
     },
     {
       "name": "trust-evidence-with-reference-only",
@@ -823,7 +823,7 @@
         "files": [
           {
             "path": "trust/ETD-1.json",
-            "text": "{\n  \"acceptedContext\": {\n    \"configurationDigest\": \"sha256:aa\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpusDigest\": \"sha256:bb\",\n    \"version\": \"1.0\"\n  },\n  \"decidedAt\": \"2026-01-01T00:00:00Z\",\n  \"decision\": \"relied-upon\",\n  \"id\": \"ETD-1\",\n  \"limitations\": [],\n  \"observedContext\": {\n    \"configurationDigest\": \"sha256:aa\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpusDigest\": \"sha256:bb\",\n    \"version\": \"1.0\"\n  },\n  \"owner\": \"peter\",\n  \"revalidateOn\": [\n    \"producer-version\",\n    \"configuration\",\n    \"validation-corpus\",\n    \"input-contract\",\n    \"environment\"\n  ],\n  \"schemaVersion\": 1,\n  \"use\": {\n    \"id\": \"U-1\",\n    \"intendedFunction\": \"transcribe junit\",\n    \"permittedDecisions\": [\n      \"record-run\",\n      \"report-coverage\"\n    ]\n  },\n  \"validationEvidence\": [\n    {\n      \"digest\": \"sha256:abcdef\",\n      \"id\": \"V-1\"\n    }\n  ]\n}\n"
+            "text": "{\n  \"acceptedContext\": {\n    \"configuration\": \"config-a\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpus\": \"corpus-a\",\n    \"version\": \"1.0\"\n  },\n  \"decidedAt\": \"2026-01-01T00:00:00Z\",\n  \"decision\": \"relied-upon\",\n  \"id\": \"ETD-1\",\n  \"limitations\": [],\n  \"observedContext\": {\n    \"configuration\": \"config-a\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpus\": \"corpus-a\",\n    \"version\": \"1.0\"\n  },\n  \"owner\": \"peter\",\n  \"revalidateOn\": [\n    \"producer-version\",\n    \"configuration\",\n    \"validation-corpus\",\n    \"input-contract\",\n    \"environment\"\n  ],\n  \"schemaVersion\": 1,\n  \"use\": {\n    \"id\": \"U-1\",\n    \"intendedFunction\": \"transcribe junit\",\n    \"permittedDecisions\": [\n      \"record-run\",\n      \"report-coverage\"\n    ]\n  },\n  \"validationEvidence\": [\n    {\n      \"id\": \"V-1\",\n      \"reference\": \"evidence/v-1\"\n    }\n  ]\n}\n"
           }
         ]
       }

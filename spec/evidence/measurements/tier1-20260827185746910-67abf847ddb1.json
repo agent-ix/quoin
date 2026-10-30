@@ -45699,8 +45699,7 @@
               "obligation": {
                 "criticality": null,
                 "method": "Test",
-                "source": "acceptance-criterion",
-                "statement_hash": "4ce5ca207a1f2622b8508ff39672e8ed08caa8784fb16d61d8ea1cef730bd0e6"
+                "source": "acceptance-criterion"
               },
               "oracle": {
                 "end": 70,
@@ -45735,8 +45734,7 @@
               "obligation": {
                 "criticality": null,
                 "method": "Test",
-                "source": "acceptance-criterion",
-                "statement_hash": "0c7b625d5c8a37b0e0eaec415fff43113185bd5a3aacf4e668f1394e744e7c68"
+                "source": "acceptance-criterion"
               },
               "oracle": {
                 "end": 59,
@@ -45771,8 +45769,7 @@
               "obligation": {
                 "criticality": null,
                 "method": "Test",
-                "source": "acceptance-criterion",
-                "statement_hash": "679d3cbac95848f8e5fa5119e2d6b37b132557ad1d19694bc99c8934ab682191"
+                "source": "acceptance-criterion"
               },
               "oracle": {
                 "end": 61,
@@ -45802,8 +45799,7 @@
               "obligation": {
                 "criticality": null,
                 "method": "Test",
-                "source": "acceptance-criterion",
-                "statement_hash": "311af5de3278af13f6108f8b329f24d151f0cdcc7c1932b0bf1d654b68c3b598"
+                "source": "acceptance-criterion"
               },
               "oracle": {
                 "end": 115,
@@ -45829,8 +45825,7 @@
               "obligation": {
                 "criticality": null,
                 "method": "Test",
-                "source": "acceptance-criterion",
-                "statement_hash": "fb35d86111df97fb3948685ced2bee3b69e25cfadcf2662d7c69f2a16f831763"
+                "source": "acceptance-criterion"
               },
               "oracle": null,
               "precondition": null,
@@ -45890,8 +45885,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -45953,8 +45947,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46016,8 +46009,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46079,8 +46071,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46142,8 +46133,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46205,8 +46195,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46268,8 +46257,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46331,8 +46319,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46358,8 +46345,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -46416,8 +46402,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46443,8 +46428,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -46501,8 +46485,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46532,8 +46515,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -46595,8 +46577,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46626,8 +46607,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -46689,8 +46669,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46720,8 +46699,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -46783,8 +46761,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46814,8 +46791,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -46877,8 +46853,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -46940,8 +46915,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47003,8 +46977,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47066,8 +47039,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47129,8 +47101,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47192,8 +47163,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47255,8 +47225,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47286,8 +47255,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -47349,8 +47317,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47380,8 +47347,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -47443,8 +47409,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47474,8 +47439,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -47537,8 +47501,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47568,8 +47531,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -47631,8 +47593,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47662,8 +47623,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -47725,8 +47685,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47756,8 +47715,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -47819,8 +47777,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47850,8 +47807,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -47913,8 +47869,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -47944,8 +47899,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -48007,8 +47961,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48070,8 +48023,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48133,8 +48085,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48196,8 +48147,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48259,8 +48209,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48322,8 +48271,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48385,8 +48333,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48412,8 +48359,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -48470,8 +48416,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48497,8 +48442,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -48555,8 +48499,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48582,8 +48525,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -48640,8 +48582,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "1f26b4f4af194153ee03affe2763b14975d77fdc70f3f660ca809eb3b34762f2"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 37,
@@ -48671,8 +48612,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "5047032620daffcdba06de30ac7baee70cb6b20358f43c63549644e8ea825bd9"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 36,
@@ -48734,8 +48674,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -48761,8 +48700,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -48819,8 +48757,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "fb73fd26392bf441096c40d5c3ab0608a5f932e015a16839b71f8c02ac744a93"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 36,
@@ -48882,8 +48819,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "fb73fd26392bf441096c40d5c3ab0608a5f932e015a16839b71f8c02ac744a93"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 36,
@@ -49019,8 +48955,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "d9ccea59ebc1b761518b02a8ed0f90542140f87eec7968b08a019e3d8cb3ef5a"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -49071,8 +49006,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49134,8 +49068,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49197,8 +49130,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49260,8 +49192,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49323,8 +49254,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49386,8 +49316,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49449,8 +49378,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49508,8 +49436,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Telepathy",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "d9ccea59ebc1b761518b02a8ed0f90542140f87eec7968b08a019e3d8cb3ef5a"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -49556,8 +49483,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "d9ccea59ebc1b761518b02a8ed0f90542140f87eec7968b08a019e3d8cb3ef5a"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -49660,8 +49586,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49723,8 +49648,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49786,8 +49710,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49849,8 +49772,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49912,8 +49834,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -49975,8 +49896,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50038,8 +49958,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50069,8 +49988,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50132,8 +50050,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50163,8 +50080,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50226,8 +50142,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50257,8 +50172,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50320,8 +50234,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50351,8 +50264,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50414,8 +50326,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50445,8 +50356,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50508,8 +50418,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50539,8 +50448,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50602,8 +50510,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50633,8 +50540,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50696,8 +50602,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50727,8 +50632,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50790,8 +50694,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50821,8 +50724,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50884,8 +50786,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -50915,8 +50816,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -50978,8 +50878,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51009,8 +50908,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51072,8 +50970,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51103,8 +51000,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51166,8 +51062,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51197,8 +51092,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51260,8 +51154,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51291,8 +51184,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51354,8 +51246,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51385,8 +51276,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51448,8 +51338,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51479,8 +51368,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51542,8 +51430,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51573,8 +51460,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51636,8 +51522,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51667,8 +51552,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51730,8 +51614,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51761,8 +51644,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51824,8 +51706,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51855,8 +51736,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -51918,8 +51798,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -51949,8 +51828,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -52012,8 +51890,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52043,8 +51920,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -52106,8 +51982,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52137,8 +52012,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -52200,8 +52074,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52231,8 +52104,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "4d487e9b53af3da4adb48635e6459c97662aec84934b0fd0adbbf04bf9416994"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -52294,8 +52166,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52357,8 +52228,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52420,8 +52290,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52483,8 +52352,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52546,8 +52414,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52609,8 +52476,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52672,8 +52538,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52699,8 +52564,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Inspection",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -52756,8 +52620,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52783,8 +52646,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Inspection",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -52840,8 +52702,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52867,8 +52728,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Inspection",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -52924,8 +52784,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -52951,8 +52810,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -53008,8 +52866,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53035,8 +52892,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -53092,8 +52948,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53119,8 +52974,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "5e07e5688c7aec8fb6eca5ec67373b7aa35f679380e8722d3769105398143897"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -53176,8 +53030,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53234,8 +53087,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53292,8 +53144,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53454,8 +53305,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53517,8 +53367,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53580,8 +53429,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53643,8 +53491,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53706,8 +53553,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53769,8 +53615,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53832,8 +53677,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53895,8 +53739,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -53958,8 +53801,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54021,8 +53863,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54084,8 +53925,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54147,8 +53987,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54210,8 +54049,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54273,8 +54111,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54336,8 +54173,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54399,8 +54235,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54462,8 +54297,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54525,8 +54359,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54588,8 +54421,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54615,8 +54447,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -54673,8 +54504,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54700,8 +54530,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -54758,8 +54587,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54785,8 +54613,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -54843,8 +54670,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54870,8 +54696,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -54928,8 +54753,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -54955,8 +54779,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -55013,8 +54836,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -55040,8 +54862,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -55098,8 +54919,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -55161,8 +54981,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -55188,8 +55007,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -55246,8 +55064,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -55273,8 +55090,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -55331,8 +55147,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -55358,8 +55173,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -55416,8 +55230,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -55443,8 +55256,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -55501,8 +55313,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -55528,8 +55339,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -55586,8 +55396,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -55613,8 +55422,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -55845,8 +55653,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "c6d61360e9dda45d2a561ef002bb4308264a1b0768eb5923db6c3efed66994de"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 49,
@@ -55872,8 +55679,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -55930,8 +55736,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "ce17e35b3515a978da3abab21bfe3e681ccdd573e4dee2176eb515ec60dd7150"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -55957,8 +55762,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56015,8 +55819,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "f367f556701b6ab50cee0ee9417136f9c5e6e50b45b3bf6a765cae4cfc91660a"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 48,
@@ -56042,8 +55845,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56100,8 +55902,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "c6d61360e9dda45d2a561ef002bb4308264a1b0768eb5923db6c3efed66994de"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 49,
@@ -56127,8 +55928,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56185,8 +55985,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "ce17e35b3515a978da3abab21bfe3e681ccdd573e4dee2176eb515ec60dd7150"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 41,
@@ -56212,8 +56011,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56270,8 +56068,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "f367f556701b6ab50cee0ee9417136f9c5e6e50b45b3bf6a765cae4cfc91660a"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 48,
@@ -56297,8 +56094,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56351,8 +56147,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56372,8 +56167,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56426,8 +56220,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56447,8 +56240,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56501,8 +56293,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56522,8 +56313,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56576,8 +56366,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56597,8 +56386,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56651,8 +56439,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56672,8 +56459,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56726,8 +56512,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "032709b07ca4dd1b1b1e5e730c9aa316cb4f8572db311200f41f36aef8186619"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56747,8 +56532,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56805,8 +56589,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 54,
@@ -56832,8 +56615,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56890,8 +56672,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 54,
@@ -56917,8 +56698,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -56975,8 +56755,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 54,
@@ -57002,8 +56781,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -57060,8 +56838,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 54,
@@ -57087,8 +56864,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -57145,8 +56921,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 54,
@@ -57172,8 +56947,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -57230,8 +57004,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "7044a8321dae78610820b786031aaa4179052dc591c83e9216ec7c490c2f3f4f"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 54,
@@ -57257,8 +57030,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -57315,8 +57087,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -57342,8 +57113,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -57400,8 +57170,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "32dd8d084eeee7362bdf218bbc318da875db12d3aef134ad041c91b967172d48"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": {
                     "end": 39,
@@ -57427,8 +57196,7 @@
                   "obligation": {
                     "criticality": null,
                     "method": "Test",
-                    "source": "acceptance-criterion",
-                    "statement_hash": "9071b9e8d92341272b91cb81cb8564181fd63e977849762396dd6346bfb99a01"
+                    "source": "acceptance-criterion"
                   },
                   "oracle": null,
                   "precondition": null,
@@ -59459,7 +59227,6 @@
     "corpora": 158,
     "findings": 473
   },
-  "sourceRevision": "6d593977fbaf3262f0feba2fcc65d23ab600e30a+working-tree:c79792f4f67cc0ad",
   "subject": "tier-1 controlled corpus",
   "timestamp": "2026-08-27T18:57:46.910Z",
   "toolIdentity": "quoin bench-tier1",

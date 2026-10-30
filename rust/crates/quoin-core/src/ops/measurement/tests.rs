@@ -26,11 +26,9 @@ use crate::error::CoreErrorCode;
 use super::record::Intake;
 use super::wire::{
     MAX_COLLECTION_BYTES, MAX_GRAPH_MAPPING_BYTES, MAX_INTERVENTION_RECORD_BYTES,
-    MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES, MAX_RECORD_ID_BYTES, MAX_REVISION_BYTES,
+    MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES, MAX_RECORD_ID_BYTES,
 };
-use super::{
-    build_graph_portfolio, build_series, produce_agent_eval_intervention, record, render_comparison,
-};
+use super::{build_graph_portfolio, build_series, produce_agent_eval_intervention, record};
 
 /// The `record_type` member alone decides which intake accepts a candidate,
 /// and an unrecognised or absent one is a collection — the retained
@@ -97,7 +95,7 @@ fn a_record_past_its_intakes_ceiling_is_refused_before_the_store_is_opened() {
 /// Provenance: quoin#478
 #[test]
 fn a_field_past_its_ceiling_is_refused_and_named() {
-    let cases: [(&str, &str, usize, crate::error::CoreError); 4] = [
+    let cases: [(&str, &str, usize, crate::error::CoreError); 3] = [
         (
             "measurement.build_series",
             "metric",
@@ -105,16 +103,6 @@ fn a_field_past_its_ceiling_is_refused_and_named() {
             build_series(&json!({
                 "repo": "/nonexistent/quoin-478",
                 "metric": "m".repeat(MAX_METRIC_NAME_BYTES + 1),
-            }))
-            .unwrap_err(),
-        ),
-        (
-            "measurement.render_comparison",
-            "before_revision",
-            MAX_REVISION_BYTES,
-            render_comparison(&json!({
-                "repo": "/nonexistent/quoin-478",
-                "before_revision": "r".repeat(MAX_REVISION_BYTES + 1),
             }))
             .unwrap_err(),
         ),
@@ -141,7 +129,7 @@ fn a_field_past_its_ceiling_is_refused_and_named() {
     ];
     // The anti-vacuity floor: a refactor that stopped constructing cases would
     // otherwise leave this test asserting over an empty population.
-    assert_eq!(cases.len(), 4, "every field ceiling has a case here");
+    assert_eq!(cases.len(), 3, "every field ceiling has a case here");
 
     for (op, field, limit, error) in cases {
         assert_eq!(error.code, CoreErrorCode::Refused, "{op}/{field}");

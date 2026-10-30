@@ -260,7 +260,6 @@ mod tests {
             tool_identity: text("test"),
             tool_version: text("0.0.0"),
             timestamp: text("2026-09-23T00:00:00Z"),
-            source_revision: text("0000000000000000000000000000000000000000"),
             corpus_revision: None,
             environment: JsonObject::new(),
             verification_stack: None,

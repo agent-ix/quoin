@@ -60,7 +60,6 @@ pub const OPERATIONS: &[&str] = &[
     "graph.change_impact",
     "graph.fan_out",
     "matrix.build",
-    "measurement.build_comparison",
     "measurement.build_graph_portfolio",
     "measurement.build_portfolio",
     "measurement.build_report",
@@ -68,7 +67,6 @@ pub const OPERATIONS: &[&str] = &[
     "measurement.produce_agent_eval_intervention",
     "measurement.produce_github_release_operational",
     "measurement.record",
-    "measurement.render_comparison",
     "measurement.render_graph_portfolio",
     "measurement.render_portfolio",
     "measurement.render_report",
@@ -169,8 +167,6 @@ pub fn dispatch(
         }
         "measurement.build_report" => crate::ops::measurement::build_report(request),
         "measurement.render_report" => crate::ops::measurement::render_report(request),
-        "measurement.build_comparison" => crate::ops::measurement::build_comparison(request),
-        "measurement.render_comparison" => crate::ops::measurement::render_comparison(request),
         "measurement.build_series" => crate::ops::measurement::build_series(request),
         "measurement.build_portfolio" => crate::ops::measurement::build_portfolio(request),
         "measurement.render_portfolio" => crate::ops::measurement::render_portfolio(request),
@@ -1070,10 +1066,6 @@ mod tests {
             (
                 "ops::measurement::MAX_RETAINED_EXPORT_BYTES",
                 crate::ops::measurement::MAX_RETAINED_EXPORT_BYTES,
-            ),
-            (
-                "ops::measurement::MAX_REVISION_BYTES",
-                crate::ops::measurement::MAX_REVISION_BYTES,
             ),
             (
                 "ops::measurement::MAX_VERIFY_REQUEST_BYTES",

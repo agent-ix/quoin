@@ -58,19 +58,6 @@ fn git(repo: &Path, arguments: &[&str]) {
     assert!(status.success(), "git {arguments:?}");
 }
 
-fn git_output(repo: &Path, arguments: &[&str]) -> String {
-    let output = Command::new("git")
-        .env("GIT_CONFIG_GLOBAL", "/dev/null")
-        .env("GIT_CONFIG_NOSYSTEM", "1")
-        .arg("-C")
-        .arg(repo)
-        .args(arguments)
-        .output()
-        .unwrap();
-    assert!(output.status.success(), "git {arguments:?}");
-    String::from_utf8_lossy(&output.stdout).trim().to_owned()
-}
-
 fn init_with_plan(repo: &Path, plan_file: &str) {
     let assurance = repo.join("spec").join("assurance");
     std::fs::create_dir_all(&assurance).unwrap();
@@ -94,9 +81,6 @@ fn record(repo: &Path, name: &str, timestamp: &str) {
     )
     .unwrap();
     collection["timestamp"] = json!(timestamp);
-    // The revision the run was made at: git compares the protected files
-    // between two such revisions.
-    collection["sourceRevision"] = json!(git_output(repo, &["rev-parse", "HEAD"]));
     let stack = collection["verificationStack"].as_object_mut().unwrap();
     stack.remove("protectedApparatus");
     let input = repo.join("input.json");
@@ -133,61 +117,6 @@ fn reasons(verdict: &Value) -> Vec<String> {
 }
 
 const MEASUREMENTS: &str = "spec/evidence/measurements";
-
-/// A protected apparatus genuinely edited between two real runs — recorded
-/// honestly by `quoin measurement record` each time, from the disk as it
-/// stood — is `apparatus_edit`: FR-110's own mechanism (PLAT-975), exercised
-/// here through the real intake-then-verify CLI path rather than a unit
-/// test's `Ranked` construction.
-///
-/// Trace: FR-110-AC-7
-/// Provenance: PLAT-975, PLAT-985
-#[test]
-fn tc_985_102_a_real_apparatus_edit_between_two_runs_is_rejected_end_to_end() {
-    let repo = tempfile::tempdir().unwrap();
-    init_with_plan(repo.path(), "MP-961-gate.md");
-
-    record(repo.path(), "1.json", "2026-09-01T00:00:00Z");
-    git(
-        repo.path(),
-        &[
-            "add",
-            &format!("{MEASUREMENTS}/verify-rerun-regressed.json"),
-        ],
-    );
-    git(repo.path(), &["commit", "--quiet", "-m", "first run"]);
-
-    // The plan document is its own protected apparatus; editing it changes
-    // the file git finds changed between the two runs, without bumping
-    // `definition_version`.
-    let plan_path = repo.path().join("spec/assurance/MP-961-gate.md");
-    let plan_text = std::fs::read_to_string(&plan_path).unwrap();
-    std::fs::write(
-        &plan_path,
-        format!("{plan_text}\nEdited after the first run.\n"),
-    )
-    .unwrap();
-    git(repo.path(), &["add", "spec"]);
-    git(
-        repo.path(),
-        &["commit", "--quiet", "-m", "edit the answer key"],
-    );
-
-    record(repo.path(), "2.json", "2026-09-02T00:00:00Z");
-    git(
-        repo.path(),
-        &["add", &format!("{MEASUREMENTS}/verify-rerun-pass.json")],
-    );
-    git(repo.path(), &["commit", "--quiet", "-m", "second run"]);
-
-    let (status, payload, _) = verdict(repo.path(), "MP-961");
-    assert_eq!(status, Some(1));
-    assert_eq!(payload["verdict"], "reject");
-    assert!(
-        reasons(&payload).contains(&"apparatus_edit".to_owned()),
-        "{payload}"
-    );
-}
 
 /// A collection once counted and later removed from the store is not simply
 /// gone: `quoin measurement verify` reads the store's git history and
@@ -353,43 +282,6 @@ fn rewrite(repo: &Path, id: &str, edit: impl FnOnce(&mut Value)) {
         serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
     edit(&mut collection);
     std::fs::write(&path, collection.to_string()).unwrap();
-}
-
-/// A `sourceRevision` read from a hand-written collection is attacker
-/// input: spelled as a git option (`--output=<file>`), it must reach git as
-/// a revision git cannot resolve, never as an option that writes a file.
-///
-/// Trace: FR-108-AC-9
-/// Provenance: PLAT-985
-#[test]
-fn tc_985_106_a_source_revision_spelled_as_a_git_option_is_never_an_option() {
-    let repo = tempfile::tempdir().unwrap();
-    init_with_plan(repo.path(), "MP-961-gate.md");
-    let target = tempfile::tempdir().unwrap();
-    let written = target.path().join("written");
-
-    let mut collection: Value = serde_json::from_str(
-        &std::fs::read_to_string(fixtures().join("right/accept/1.json")).unwrap(),
-    )
-    .unwrap();
-    collection["collectionId"] = json!("tamper-option");
-    collection["sourceRevision"] = json!(format!("--output={}", written.display()));
-    collection["verificationStack"]["protectedApparatus"]["MP-961"] = json!(["x"]);
-    let measurements = repo.path().join(MEASUREMENTS);
-    std::fs::create_dir_all(&measurements).unwrap();
-    std::fs::write(
-        measurements.join("tamper-option.json"),
-        collection.to_string(),
-    )
-    .unwrap();
-    commit_all(repo.path(), "hand-written collection");
-
-    let _ = quoin(repo.path(), &["measurement", "verify", "--plan", "MP-961"]);
-    assert_eq!(
-        std::fs::read_dir(target.path()).unwrap().count(),
-        0,
-        "git was handed the revision as an option and wrote a file"
-    );
 }
 
 /// Deleting a collection and re-adding a different file under the same id,

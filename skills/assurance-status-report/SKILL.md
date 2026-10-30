@@ -72,17 +72,16 @@ Use existing machine-readable interfaces:
 ```bash
 quoin report --format json
 quoin report --series METRIC --format json
-quoin report --since FULL_BASELINE_REVISION --format json
 quire provenance --json
 ```
 
 Use `quoin report` to discover active MeasurementPlans and retained values. Use
-the series or comparison view for historical values; do not scrape rendered
+the series view for historical values; do not scrape rendered
 human output when JSON exists. Confirm Quire's provenance schema, full CLI and
 engine revisions, clean state, and required capabilities before attributing a
 measurement to it.
 
-Record the exact collection id, timestamp, source revision, corpus revision,
+Record the exact collection id, timestamp, corpus revision,
 tool identity/version, definition version, and population identity supporting
 each reported value.
 

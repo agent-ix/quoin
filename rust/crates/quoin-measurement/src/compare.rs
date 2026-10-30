@@ -23,11 +23,8 @@
 //! collections is `apparatus_changed` and blocks the delta, as a moved
 //! definition does. Movement in an artifact the plan does not protect is
 //! `artifact_changed`, reported beside the delta and not blocking. Both read
-//! only what each collection recorded when it was written, plus what git says
-//! about those paths between the two source revisions (FR-110). The
-//! comparison itself runs no git: the caller hands in a [`PathMovement`], and
-//! where it cannot answer the reason is `apparatus_unverifiable`, never a
-//! silent pass. No digest is recorded or compared.
+//! only what each collection recorded when it was written (FR-110). The
+//! comparison runs no git and records no revision.
 
 use std::collections::BTreeSet;
 
@@ -57,9 +54,7 @@ use crate::types::observation::{
 pub fn compare_measurement_collections(
     before: &MeasurementCollection,
     after: &MeasurementCollection,
-    movement: &dyn PathMovement,
 ) -> Result<Vec<MeasurementComparison>, StoreError> {
-    let moved = moved_paths(before, after, movement);
     let mut keys: Vec<String> = Vec::new();
     for observation in before.observations.iter().chain(&after.observations) {
         if constant_predictor_governed_metric(observation.metric.as_str()).is_some() {
@@ -82,7 +77,7 @@ pub fn compare_measurement_collections(
         let Some(sample) = left.or(right) else {
             continue;
         };
-        out.push(compare_one(before, after, sample, left, right, &moved));
+        out.push(compare_one(before, after, sample, left, right));
     }
     Ok(out)
 }
@@ -94,7 +89,6 @@ fn compare_one(
     sample: &MeasurementObservation,
     left: Option<&MeasurementObservation>,
     right: Option<&MeasurementObservation>,
-    moved: &Moved,
 ) -> MeasurementComparison {
     // `compare.ts:19` takes the left sample when there is one, the right
     // otherwise; the caller has already resolved that.
@@ -129,19 +123,10 @@ fn compare_one(
         before.protected_apparatus_of(a.plan_id.as_str()),
         after.protected_apparatus_of(b.plan_id.as_str()),
     );
-    if let Some(change) = apparatus_change(before, after, protected, moved) {
+    if let Some(change) = apparatus_change(before, after, protected) {
         reasons.push(ComparisonReason::new(
             ComparisonReasonCode::ApparatusChanged,
             format!("{metric}: protected apparatus changed: {change}"),
-        ));
-    }
-    if let Some(paths) = unverifiable(protected, moved) {
-        reasons.push(ComparisonReason::new(
-            ComparisonReasonCode::ApparatusUnverifiable,
-            format!(
-                "{metric}: git cannot say whether the protected files differ between the two \
-                 source revisions: {paths}"
-            ),
         ));
     }
     if incomplete(a) || incomplete(b) {
@@ -169,7 +154,7 @@ fn compare_one(
         ));
     }
 
-    if let Some(artifacts) = unprotected_movement(before, after, protected, moved) {
+    if let Some(artifacts) = unprotected_movement(before, after, protected) {
         reasons.push(ComparisonReason::new(
             ComparisonReasonCode::ArtifactChanged,
             format!("{metric}: unprotected artifacts moved: {artifacts}"),
@@ -196,75 +181,12 @@ fn compare_one(
     }
 }
 
-/// What git says about the paths either collection names, computed once per
-/// comparison.
-enum Moved {
-    /// The paths git reports differing between the two source revisions.
-    Known(BTreeSet<String>),
-    /// Git could not answer.
-    Unknown,
-}
-
-/// Where git is asked whether named paths differ between two revisions.
-///
-/// A seam, so the comparison stays free of I/O (FR-110-CON-1): the caller
-/// that holds the repository supplies the answer.
-pub trait PathMovement: std::fmt::Debug {
-    /// The members of `paths` whose bytes differ between the two source
-    /// revisions, or `None` when git cannot say.
-    fn changed(
-        &self,
-        before_revision: &str,
-        after_revision: &str,
-        paths: &[String],
-    ) -> Option<Vec<String>>;
-}
-
-/// Every protected path and every artifact name either collection states,
-/// asked of `movement` once, when either collection recorded protected files.
-fn moved_paths(
-    before: &MeasurementCollection,
-    after: &MeasurementCollection,
-    movement: &dyn PathMovement,
-) -> Moved {
-    let stacks = [before, after].map(|collection| collection.verification_stack.as_ref());
-    let protects = stacks
-        .iter()
-        .flatten()
-        .any(|stack| !stack.protected_apparatus.is_empty());
-    if !protects || before.source_revision == after.source_revision {
-        return Moved::Known(BTreeSet::new());
-    }
-    let paths: BTreeSet<String> = stacks
-        .iter()
-        .flatten()
-        .flat_map(|stack| {
-            stack
-                .protected_apparatus
-                .values()
-                .flatten()
-                .chain(&stack.artifacts)
-        })
-        .cloned()
-        .collect();
-    let paths: Vec<String> = paths.into_iter().collect();
-    match movement.changed(
-        before.source_revision.as_str(),
-        after.source_revision.as_str(),
-        &paths,
-    ) {
-        Some(changed) => Moved::Known(changed.into_iter().collect()),
-        None => Moved::Unknown,
-    }
-}
-
 /// How the plan's recorded protected apparatus differs between the two
 /// collections, rendered, or `None` when it does not (PLAT-975).
 ///
 /// The comparison is over what each collection **recorded** when it was
-/// written, never the disk as it reads now: a file edited between the two
-/// source revisions (as git reports), a file added under or removed from a
-/// directory entry, a set recorded on only one side, and a protected path
+/// written, never the disk as it reads now: a file added under or removed from
+/// a directory entry, a set recorded on only one side, and a protected path
 /// either side lists in `unverifiedArtifacts` are each a change. Two
 /// collections that both recorded nothing for the plan are not compared on
 /// apparatus at all — this layer reads no plan, so it cannot tell that from a
@@ -274,7 +196,6 @@ fn apparatus_change(
     before: &MeasurementCollection,
     after: &MeasurementCollection,
     protected: (Option<&ResolvedApparatus>, Option<&ResolvedApparatus>),
-    moved: &Moved,
 ) -> Option<String> {
     let (left, right) = match protected {
         (None, None) => return None,
@@ -283,14 +204,6 @@ fn apparatus_change(
         (Some(left), Some(right)) => (left, right),
     };
     let mut changes = Vec::new();
-    let edited: Vec<&str> = match moved {
-        Moved::Known(moved_paths) => left
-            .intersection(right)
-            .filter(|path| moved_paths.contains(*path))
-            .map(String::as_str)
-            .collect(),
-        Moved::Unknown => Vec::new(),
-    };
     let added: Vec<&str> = right.difference(left).map(String::as_str).collect();
     let removed: Vec<&str> = left.difference(right).map(String::as_str).collect();
     let unverified: Vec<&str> = [before, after]
@@ -303,7 +216,6 @@ fn apparatus_change(
         .into_iter()
         .collect();
     for (label, paths) in [
-        ("edited", edited),
         ("added", added),
         ("removed", removed),
         ("listed as unverified", unverified),
@@ -315,25 +227,8 @@ fn apparatus_change(
     (!changes.is_empty()).then(|| changes.join("; "))
 }
 
-/// The protected paths both sides recorded, rendered, when git could not say
-/// whether they differ; `None` when git answered or nothing is shared.
-fn unverifiable(
-    protected: (Option<&ResolvedApparatus>, Option<&ResolvedApparatus>),
-    moved: &Moved,
-) -> Option<String> {
-    let (Some(left), Some(right)) = protected else {
-        return None;
-    };
-    if !matches!(moved, Moved::Unknown) {
-        return None;
-    }
-    let shared: Vec<&str> = left.intersection(right).map(String::as_str).collect();
-    (!shared.is_empty()).then(|| shared.join(", "))
-}
-
 /// The `verificationStack.artifacts` names the plan does not protect that
-/// only one side states or that differ between the two source revisions,
-/// rendered, or `None` (PLAT-975).
+/// only one side states, rendered, or `None` (PLAT-975).
 ///
 /// Only asked when at least one side recorded protected apparatus for the
 /// plan: "unprotected" means something only against a declared protected
@@ -343,7 +238,6 @@ fn unprotected_movement(
     before: &MeasurementCollection,
     after: &MeasurementCollection,
     protected: (Option<&ResolvedApparatus>, Option<&ResolvedApparatus>),
-    moved: &Moved,
 ) -> Option<String> {
     let (left, right) = protected;
     if left.is_none() && right.is_none() {
@@ -361,14 +255,8 @@ fn unprotected_movement(
     };
     let (earlier, later) = (names(before), names(after));
     let stated_by_one: BTreeSet<&String> = earlier.symmetric_difference(&later).collect();
-    let both = earlier.intersection(&later);
-    let changed = match moved {
-        Moved::Known(changed) => both.filter(|name| changed.contains(*name)).collect(),
-        Moved::Unknown => BTreeSet::new(),
-    };
     let artifacts: Vec<&str> = stated_by_one
         .into_iter()
-        .chain(changed)
         .filter(|name| !is_protected(name))
         .map(String::as_str)
         .collect::<BTreeSet<_>>()

@@ -17,7 +17,6 @@ PACKAGE_NAME = "{{ cookiecutter.package_name }}"
 MODULE_KIND = "{{ cookiecutter.module_kind }}"
 LICENSE = "{{ cookiecutter.license }}"
 VERSION = "{{ cookiecutter.version }}"
-SEMANTIC_CORE = "{{ cookiecutter.semantic_core_version }}"
 GENERATED_TARGETS = "{{ cookiecutter.generated_targets }}"
 IMPORTED_MODULES = "{{ cookiecutter.imported_modules }}"
 NAV_CATEGORY_ORDER = "{{ cookiecutter.nav_category_order }}"
@@ -99,13 +98,8 @@ def main():
             "importable package directory." % PACKAGE_NAME
         )
 
-    # The two versions this template takes as inputs are checked here.
-    for name, value in (
-        ("version", VERSION),
-        ("semantic_core_version", SEMANTIC_CORE),
-    ):
-        if not SEMVER.match(value):
-            fail("%s %r is not an exact semantic version." % (name, value))
+    if not SEMVER.match(VERSION):
+        fail("version %r is not an exact semantic version." % VERSION)
 
     if not NAV_CATEGORY_ORDER.isdigit():
         fail(

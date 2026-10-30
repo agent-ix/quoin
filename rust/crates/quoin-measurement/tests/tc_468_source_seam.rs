@@ -37,7 +37,6 @@ const COLLECTION: &str = r#"{
   "toolIdentity": "quoin",
   "toolVersion": "0.1.0",
   "timestamp": "2026-01-01T00:00:00Z",
-  "sourceRevision": "r",
   "environment": {},
   "rawEvidence": [],
   "observations": [

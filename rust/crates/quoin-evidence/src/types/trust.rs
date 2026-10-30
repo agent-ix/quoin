@@ -27,10 +27,10 @@ pub struct ProducerContext {
     pub name: String,
     /// Its exact version.
     pub version: String,
-    /// A digest over the configuration it ran under.
-    pub configuration_digest: String,
-    /// A digest over the corpus its validation was measured on.
-    pub validation_corpus_digest: String,
+    /// The configuration it ran under, by name.
+    pub configuration: String,
+    /// The corpus its validation was measured on, by name.
+    pub validation_corpus: String,
     /// The input contract it was validated against.
     pub input_contract: String,
     /// The environment it was validated in.
@@ -47,11 +47,11 @@ pub struct ProducerContext {
 pub enum TrustTrigger {
     /// The producer's version changed.
     ProducerVersion,
-    /// The configuration digest changed.
+    /// The configuration changed.
     Configuration,
     /// The adapter changed.
     Adapter,
-    /// The validation corpus digest changed.
+    /// The validation corpus changed.
     ValidationCorpus,
     /// The input contract changed.
     InputContract,
@@ -87,9 +87,6 @@ impl std::fmt::Display for TrustTrigger {
 pub struct TrustEvidenceReference {
     /// The evidence's own id.
     pub id: String,
-    /// A digest over it, `<algorithm>:<hex>`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub digest: Option<String>,
     /// Where it can be found.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reference: Option<String>,

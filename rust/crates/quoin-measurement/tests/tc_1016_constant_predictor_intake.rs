@@ -86,16 +86,6 @@ fn load(metric: &str) -> Result<Vec<MeasurementPlan>, MeasurementError> {
     load_plans(repository(metric).path())
 }
 
-/// No collection here protects apparatus, so git is never asked.
-#[derive(Debug)]
-struct NoGit;
-
-impl quoin_measurement::PathMovement for NoGit {
-    fn changed(&self, _before: &str, _after: &str, _paths: &[String]) -> Option<Vec<String>> {
-        None
-    }
-}
-
 fn load_plans(root: &Path) -> Result<Vec<MeasurementPlan>, MeasurementError> {
     load_measurement_plans(&DiskMeasurement::new(root), PlanLoadOptions::default())
 }
@@ -195,7 +185,6 @@ fn collection(id: &str, observations: &[Value]) -> Value {
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
         "timestamp": "2026-09-23T00:00:00.000Z",
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
@@ -340,7 +329,7 @@ fn tc_1016_005_compare_leaves_item_rows_out() {
     let mut after_observations = with_items(13, "MP-900");
     after_observations[1]["dimensions"]["actual"] = json!("gap");
     let after = intake(&plans, &collection("run-b", &after_observations)).unwrap();
-    let comparisons = compare_measurement_collections(&before, &after, &NoGit).unwrap();
+    let comparisons = compare_measurement_collections(&before, &after).unwrap();
     let metrics: Vec<&str> = comparisons.iter().map(|row| row.metric.as_str()).collect();
     assert_eq!(metrics, [METRIC]);
 }

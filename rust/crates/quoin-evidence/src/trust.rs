@@ -103,15 +103,10 @@ pub fn validate_trust_decision(decision: &TrustDecision) -> Result<(), EvidenceE
     }
     for (index, evidence) in decision.validation_evidence.iter().enumerate() {
         non_empty(&mut clauses, "validationEvidence.id", &evidence.id);
-        if evidence.digest.is_none() && evidence.reference.is_none() {
+        if evidence.reference.is_none() {
             clauses.push(format!(
-                "validationEvidence.{index}: validation evidence needs digest or reference"
+                "validationEvidence.{index}: validation evidence needs a reference"
             ));
-        }
-        if let Some(digest) = &evidence.digest
-            && !is_algorithm_digest(digest)
-        {
-            clauses.push("validationEvidence.digest: must be <algorithm>:<hex>".to_owned());
         }
         if let Some(reference) = &evidence.reference {
             non_empty(&mut clauses, "validationEvidence.reference", reference);
@@ -189,16 +184,12 @@ fn differs(trigger: TrustTrigger, accepted: &ProducerContext, observed: &Produce
         TrustTrigger::ProducerVersion => {
             accepted.name != observed.name || accepted.version != observed.version
         }
-        TrustTrigger::Configuration => {
-            accepted.configuration_digest != observed.configuration_digest
-        }
+        TrustTrigger::Configuration => accepted.configuration != observed.configuration,
         // Structural equality, matching the retained `JSON.stringify` compare:
         // an absent adapter on one side and a present one on the other is a
         // difference, which is the case the trigger exists for.
         TrustTrigger::Adapter => accepted.adapter != observed.adapter,
-        TrustTrigger::ValidationCorpus => {
-            accepted.validation_corpus_digest != observed.validation_corpus_digest
-        }
+        TrustTrigger::ValidationCorpus => accepted.validation_corpus != observed.validation_corpus,
         TrustTrigger::InputContract => accepted.input_contract != observed.input_contract,
         TrustTrigger::Environment => accepted.environment != observed.environment,
     }
@@ -209,13 +200,13 @@ fn context_clauses(clauses: &mut Vec<String>, path: &str, context: &ProducerCont
     non_empty(clauses, &format!("{path}.version"), &context.version);
     non_empty(
         clauses,
-        &format!("{path}.configurationDigest"),
-        &context.configuration_digest,
+        &format!("{path}.configuration"),
+        &context.configuration,
     );
     non_empty(
         clauses,
-        &format!("{path}.validationCorpusDigest"),
-        &context.validation_corpus_digest,
+        &format!("{path}.validationCorpus"),
+        &context.validation_corpus,
     );
     non_empty(
         clauses,
@@ -249,19 +240,4 @@ fn has_duplicates<T: Clone + Ord>(values: &[T]) -> bool {
     let before = sorted.len();
     sorted.dedup();
     sorted.len() != before
-}
-
-/// `<algorithm>:<hex>`, the retained `/^[a-z0-9]+:[a-f0-9]+$/`.
-fn is_algorithm_digest(value: &str) -> bool {
-    let Some((algorithm, hex)) = value.split_once(':') else {
-        return false;
-    };
-    !algorithm.is_empty()
-        && algorithm
-            .bytes()
-            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit())
-        && !hex.is_empty()
-        && hex
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
