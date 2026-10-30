@@ -436,7 +436,7 @@ fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
     )
     .unwrap();
     assert_eq!(outcome.unmatched, vec!["FR-404-AC-1".to_owned()]);
-    assert!(outcome.bound.is_empty());
+    assert_eq!(outcome.bound.len(), 0);
 }
 
 /// Trace: FR-030-AC-8
@@ -496,9 +496,9 @@ fn tc_456_207_gc_deletes_only_unreferenced_older_runs_and_dry_run_changes_nothin
 fn tc_456_208_an_unrecorded_store_reads_as_an_empty_graph_not_an_error() {
     let store = MemoryEvidence::new();
     let graph = read_bindings(&store).unwrap();
-    assert!(graph.bindings.is_empty());
+    assert_eq!(graph.bindings.len(), 0);
     assert_eq!(graph.schema_version, STORE_SCHEMA_VERSION);
-    assert!(list_recorded_suites(&store).unwrap().is_empty());
+    assert_eq!(list_recorded_suites(&store).unwrap().len(), 0);
 }
 
 /// Trace: FR-030-AC-10, FR-030-CON-2
@@ -548,7 +548,7 @@ fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
             ObligationId::new("FR-038-AC-2")
         ]
     );
-    assert!(outcome.unmatched.is_empty());
+    assert_eq!(outcome.unmatched.len(), 0);
 }
 
 /// Trace: FR-030-AC-15
@@ -599,7 +599,7 @@ fn tc_456_212_a_completed_empty_inspection_is_recorded_and_read_at_the_exact_com
         "a record at another commit must not be read as this one's"
     );
     let (none, _) = mock_inspection_input(&store, None).unwrap();
-    assert!(none.is_empty());
+    assert_eq!(none.len(), 0);
 }
 
 // ---------------------------------------------------------------- FR-031 -----
@@ -709,7 +709,7 @@ fn tc_456_222_the_newest_record_is_the_newest_by_timestamp_not_by_filename() {
         COMMIT,
         "records are not ordered by timestamp"
     );
-    assert!(skipped.is_empty());
+    assert_eq!(skipped.len(), 0);
 }
 
 /// Trace: FR-031-AC-2
@@ -911,7 +911,7 @@ fn tc_456_262_an_unobserved_decision_is_neither_accepted_nor_rejected() {
     unobserved.observed_context = None;
     let assessment = assess_trust(&unobserved).unwrap();
     assert_eq!(assessment.status, TrustStatus::Unobserved);
-    assert!(assessment.triggered_by.is_empty());
+    assert_eq!(assessment.triggered_by.len(), 0);
 }
 
 /// Trace: FR-093-AC-5

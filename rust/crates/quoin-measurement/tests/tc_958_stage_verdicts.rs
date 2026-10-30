@@ -958,7 +958,7 @@ fn tc_958_016_a_slice_the_newest_collection_drops_is_reported_inconclusive() {
 
     // Nothing dropped: no such member, and no such attention item.
     let steady = steady_report(&plans);
-    assert!(steady.vanished_slices.is_empty());
+    assert_eq!(steady.vanished_slices.len(), 0);
     let json_text = render_measurement_report_json(&steady).expect("the JSON renders");
     assert!(!json_text.contains("vanishedSlices"), "{json_text}");
 }

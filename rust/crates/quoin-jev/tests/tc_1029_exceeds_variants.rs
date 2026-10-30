@@ -228,7 +228,7 @@ fn tc_1029_clauses_are_capped_without_dropping_text() {
         clauses[11],
         "Rule number 12 holds. Rule number 13 holds. Rule number 14 holds. Rule number 15 holds."
     );
-    assert!(requirement_clauses("  \n ", Some("...")).is_empty());
+    assert_eq!(requirement_clauses("  \n ", Some("...")).len(), 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -886,7 +886,7 @@ fn tc_1029_e0_rc_is_e0s_question_alone() {
     );
     let row = rc_row();
     assert!(exceeds::E0_RC.applies_to(&row));
-    assert!(wording_violations(&exceeds::E0_RC, &row).is_empty());
+    assert_eq!(wording_violations(&exceeds::E0_RC, &row).len(), 0);
     let state = serde_json::to_value(&(exceeds::E0_RC.asks)(&row)[0].request.state).unwrap();
     assert!(state.get("test_body").is_none() && state.get("symbol_body").is_some());
 }

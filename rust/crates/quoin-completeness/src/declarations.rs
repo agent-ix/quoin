@@ -436,8 +436,8 @@ mod tests {
             "name: x\nversion: 1.0.0\n",
         );
         let loaded = load_vocabulary_coverage(&[temp.path().to_path_buf()]);
-        assert!(loaded.declarations.is_empty());
-        assert!(loaded.unresolved.is_empty());
+        assert_eq!(loaded.declarations.len(), 0);
+        assert_eq!(loaded.unresolved.len(), 0);
     }
 
     /// Trace: FR-037

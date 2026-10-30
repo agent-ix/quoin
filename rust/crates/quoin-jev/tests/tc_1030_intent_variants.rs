@@ -520,8 +520,8 @@ fn tc_1030_t1_and_t2_ask_the_same_thing_with_or_without_code() {
     let (rt, rtc, rc) = (&rows[0], &rows[2], &rows[3]);
     for variant in [T1, T2] {
         assert_eq!(question_text(&variant, rt), question_text(&variant, rtc));
-        assert!(wording_violations(&variant, rt).is_empty());
-        assert!(wording_violations(&variant, rtc).is_empty());
+        assert_eq!(wording_violations(&variant, rt).len(), 0);
+        assert_eq!(wording_violations(&variant, rtc).len(), 0);
         assert!(!variant.applies_to(rc));
         let with_code = serde_json::to_value(&(variant.asks)(rtc)[0].request.state).unwrap();
         assert_eq!(with_code["symbol_body"], CODE_BODY);
@@ -693,7 +693,7 @@ fn tc_1030_t0_rt_is_t0_with_only_the_code_references_removed() {
          behaviour, not against other things the system does."
     );
     let rows = corpus_rows();
-    assert!(wording_violations(&T0_RT, &rows[0]).is_empty());
+    assert_eq!(wording_violations(&T0_RT, &rows[0]).len(), 0);
     assert!(!T0_RT.applies_to(&rows[2]));
     let everywhere = Variant {
         modes: &Mode::ALL,
@@ -757,7 +757,7 @@ async fn tc_1030_tc_gates_the_other_variants_report() {
         |gate: Gate| -> Vec<&str> { split[&gate].iter().map(|r| r.row_id.as_str()).collect() };
     assert_eq!(ids(Gate::TraceRight), ["EV2-0101", "EV2-0103"]);
     assert_eq!(ids(Gate::TraceWrong), ["EV2-0102"]);
-    assert!(ids(Gate::NoTraceJudgment).is_empty());
+    assert_eq!(ids(Gate::NoTraceJudgment).len(), 0);
 
     let report = render_gated_run(&rows, &output, &variants);
     println!("{report}");

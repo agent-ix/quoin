@@ -198,7 +198,7 @@ fn tc_380_replay_reports_the_fixture_as_internally_consistent() {
     assert_eq!(report.retained_outputs_verified, 4);
     assert_eq!(report.raw_outputs_digested, 4);
     assert!(report.integrity_findings.is_empty());
-    assert!(report.proto_member_files.is_empty());
+    assert_eq!(report.proto_member_files.len(), 0);
     // Self-consistency is NOT the gate. No oracle was supplied, so nothing was
     // compared, and a report that compared nothing must never claim PASS.
     assert!(!report.oracle_supplied);

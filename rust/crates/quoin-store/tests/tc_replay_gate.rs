@@ -136,8 +136,8 @@ fn tc_380_a_faithful_oracle_compares_every_entity_and_the_gate_passes() {
     assert_eq!(report.raw_outputs_digested, 4);
     assert_eq!(report.store_entities_walked(), 11);
     assert_eq!(report.oracle_comparisons_performed, 11);
-    assert!(report.oracle_entries_unmatched.is_empty());
-    assert!(report.store_entries_unmatched.is_empty());
+    assert_eq!(report.oracle_entries_unmatched.len(), 0);
+    assert_eq!(report.store_entries_unmatched.len(), 0);
     assert!(report.divergences.is_empty());
     assert!(report.gate_passes());
 }

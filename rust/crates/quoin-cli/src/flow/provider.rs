@@ -750,7 +750,7 @@ mod tests {
         ] {
             let (mut output, mut errors) = (Vec::new(), Vec::new());
             assert_ne!(serve(input.as_bytes(), &mut output, &mut errors), 0);
-            assert!(output.is_empty());
+            assert_eq!(output.len(), 0);
             let diagnostics: Value = serde_json::from_slice(&errors).expect("diagnostics");
             assert!(diagnostics[0]["code"].is_string());
         }
@@ -761,7 +761,7 @@ mod tests {
             serve(extra.to_string().as_bytes(), &mut output, &mut errors),
             0
         );
-        assert!(output.is_empty());
+        assert_eq!(output.len(), 0);
     }
 
     /// Trace: FR-021-AC-5
@@ -774,7 +774,7 @@ mod tests {
             serve(input.to_string().as_bytes(), &mut output, &mut errors),
             0
         );
-        assert!(errors.is_empty());
+        assert_eq!(errors.len(), 0);
         let result: Value = serde_json::from_slice(&output).expect("provider payload");
         assert_eq!(result["protocol"], "quoin.workflow-invariants-result/v1");
         assert_eq!(

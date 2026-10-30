@@ -57,7 +57,7 @@ fn tc_452_610_a_module_without_a_semantic_block_reads_clean_and_unjudged() {
     // all is nothing to read, not an empty block to validate.
     let bare = json!({ "name": "m", "version": "0.1.0" });
     let bare_result = read_semantic_block(&bare, scratch.path(), &validators);
-    assert!(bare_result.diagnostics.is_empty());
+    assert_eq!(bare_result.diagnostics.len(), 0);
     assert!(bare_result.module.is_none());
 }
 
@@ -88,10 +88,10 @@ fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
     assert_eq!(block.package.as_str(), "agent-ix/spec-objects-fixture");
     assert_eq!(block.compatibility_posture, CompatibilityPosture::Additive);
     assert_eq!(block.legacy_forms, LegacyForms::Warning);
-    assert!(block.exports.is_empty());
+    assert_eq!(block.exports.len(), 0);
     assert!(block.imports.is_empty());
-    assert!(block.targets.is_empty());
-    assert!(block.mappings.is_empty());
+    assert_eq!(block.targets.len(), 0);
+    assert_eq!(block.mappings.len(), 0);
     assert_eq!(block.sweep_report, None);
 }
 

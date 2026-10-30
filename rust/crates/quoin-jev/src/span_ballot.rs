@@ -492,8 +492,8 @@ mod tests {
     /// Provenance: PLAT-980
     #[test]
     fn an_empty_text_has_no_candidates() {
-        assert!(candidate_spans("", Granularity::Clause).is_empty());
-        assert!(candidate_spans(" . , ;\n", Granularity::Clause).is_empty());
+        assert_eq!(candidate_spans("", Granularity::Clause).len(), 0);
+        assert_eq!(candidate_spans(" . , ;\n", Granularity::Clause).len(), 0);
     }
 
     /// Provenance: PLAT-980. The question's closed label set is exactly the

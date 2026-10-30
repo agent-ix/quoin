@@ -345,7 +345,7 @@ fn tc_968_006_no_objective_is_listed_unranked_not_scored() {
         "2026-01-01T00:00:00.000Z",
     );
     let ranking = rank_portfolio(&report).expect("the ranking builds");
-    assert!(ranking.ranked.is_empty());
+    assert_eq!(ranking.ranked.len(), 0);
     assert_eq!(ranking.unranked.len(), 1);
     assert_eq!(ranking.unranked[0].plan_id, "MP-plain");
     assert_eq!(ranking.unranked[0].reason, UnrankedReason::NoObjective);
@@ -369,7 +369,7 @@ fn tc_968_007_objective_with_no_bound_is_unranked() {
         "2026-01-01T00:00:00.000Z",
     );
     let ranking = rank_portfolio(&report).expect("the ranking builds");
-    assert!(ranking.ranked.is_empty());
+    assert_eq!(ranking.ranked.len(), 0);
     assert_eq!(ranking.unranked[0].reason, UnrankedReason::NoBound);
 }
 
@@ -391,7 +391,7 @@ fn tc_968_008_no_current_estimate_is_unranked() {
     repository.measurements.as_mut().unwrap().current[0].observation = None;
     let report = report(vec![repository], "2026-01-01T00:00:00.000Z");
     let ranking = rank_portfolio(&report).expect("the ranking builds");
-    assert!(ranking.ranked.is_empty());
+    assert_eq!(ranking.ranked.len(), 0);
     assert_eq!(
         ranking.unranked[0].reason,
         UnrankedReason::NoCurrentEstimate

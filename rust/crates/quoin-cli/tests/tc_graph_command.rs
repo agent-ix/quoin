@@ -198,12 +198,12 @@ fn tc_1650_fan_out_reaches_real_fixture_inputs_in_json_and_human_forms() {
     assert_eq!(report["state"], "complete");
     assert_eq!(report["rows"][0]["suite"], "unit");
     assert_eq!(report["rows"][0]["obligationCount"], 1);
-    assert!(stderr(&json).is_empty());
+    assert_eq!(stderr(&json).len(), 0);
 
     let human = fixture.graph("fan-out", false, &[]);
     assert!(human.status.success(), "stderr: {}", stderr(&human));
     assert!(stdout(&human).contains("| Suite | Live obligations | Count | Unresolved |"));
-    assert!(stderr(&human).is_empty());
+    assert_eq!(stderr(&human).len(), 0);
 }
 
 /// Trace: FR-062, FR-062-AC-1, TC-1650
@@ -218,12 +218,12 @@ fn tc_1650_churn_reaches_real_fixture_inputs_in_json_and_human_forms() {
     assert_eq!(report["state"], "complete");
     assert_eq!(report["rows"][0]["obligation"], "FR-001-AC-1");
     assert_eq!(report["rows"][0]["eventCount"], 0);
-    assert!(stderr(&json).is_empty());
+    assert_eq!(stderr(&json).len(), 0);
 
     let human = fixture.graph("churn", false, &[]);
     assert!(human.status.success(), "stderr: {}", stderr(&human));
     assert!(stdout(&human).contains("## Retained reaffirmation history"));
-    assert!(stderr(&human).is_empty());
+    assert_eq!(stderr(&human).len(), 0);
 }
 
 /// Trace: FR-062, FR-062-AC-1, TC-1650
@@ -239,12 +239,12 @@ fn tc_1650_change_impact_reaches_real_fixture_inputs_in_json_and_human_forms() {
     assert_eq!(report["requested"], serde_json::json!(["FR-001"]));
     assert_eq!(report["rows"][0]["requirement"], "FR-001");
     assert_eq!(report["rows"][0]["depth"], 0);
-    assert!(stderr(&json).is_empty());
+    assert_eq!(stderr(&json).len(), 0);
 
     let human = fixture.graph("change-impact", false, &["--requirement", "FR-001"]);
     assert!(human.status.success(), "stderr: {}", stderr(&human));
     assert!(stdout(&human).contains("## Change impact"));
-    assert!(stderr(&human).is_empty());
+    assert_eq!(stderr(&human).len(), 0);
 }
 
 /// Trace: FR-062, FR-102, TC-1650
@@ -264,7 +264,7 @@ fn tc_1650_graph_refusal_keeps_stdout_empty_and_diagnostics_on_stderr() {
         .output()
         .expect("the native quoin binary runs");
     assert_eq!(output.status.code(), Some(2));
-    assert!(stdout(&output).is_empty());
+    assert_eq!(stdout(&output).len(), 0);
     let diagnostics: serde_json::Value =
         serde_json::from_str(&stderr(&output)).expect("refusal diagnostics are canonical JSON");
     assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");

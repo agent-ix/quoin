@@ -369,7 +369,7 @@ fn tc_1035_equivalent_rust_and_python_shapes_split_alike() {
         };
         let rust_shape = shape(split_units("src/a.rs", rust));
         assert_eq!(rust_shape, shape(split_units("a.py", python)), "{python}");
-        assert!(!rust_shape.is_empty());
+        assert_ne!(rust_shape.len(), 0);
     }
 }
 

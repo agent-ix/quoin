@@ -403,7 +403,7 @@ mod tests {
             strings_at(Some(&serde_json::json!(["a", 1, "b"]))),
             vec!["a".to_owned(), "b".to_owned()]
         );
-        assert!(strings_at(Some(&serde_json::json!(7))).is_empty());
-        assert!(strings_at(None).is_empty());
+        assert_eq!(strings_at(Some(&serde_json::json!(7))).len(), 0);
+        assert_eq!(strings_at(None).len(), 0);
     }
 }

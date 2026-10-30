@@ -242,7 +242,7 @@ mod tests {
         // The distinction the record type exists to make: a tool that ran and
         // listed nothing is a finding about the build, not an unreadable file.
         let result = parse_sbom(r#"{"bomFormat":"CycloneDX","components":[]}"#).unwrap();
-        assert!(result.entries.is_empty());
+        assert_eq!(result.entries.len(), 0);
     }
 
     /// Zero entries is a real finding about the consumer's build; a file the

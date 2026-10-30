@@ -1048,7 +1048,7 @@ async fn tc_1027_per_unit_fan_out_asks_each_unit_and_rolls_up() {
     let state = serde_json::to_value(&asks[2].request.state).unwrap();
     assert_eq!(state["symbol_body"], "_ => Ok(())");
     assert_eq!(state["code_unit"], "match arm _");
-    assert!(wording_violations(&PER_UNIT, rc).is_empty());
+    assert_eq!(wording_violations(&PER_UNIT, rc).len(), 0);
 
     let (client, fake) = fake_client(0.2);
     let output = variant::run(&client, &file.rows, &[&PER_UNIT])

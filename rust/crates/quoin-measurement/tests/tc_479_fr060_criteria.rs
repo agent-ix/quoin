@@ -448,7 +448,7 @@ fn tc_479_402_governing_definition_refusals_name_the_versions_and_write_nothing(
              MeasurementPlan exists"
         ]
     );
-    assert!(json_files(&operational_root(ungoverned.path())).is_empty());
+    assert_eq!(json_files(&operational_root(ungoverned.path())).len(), 0);
 
     // Plans exist, but none names this definition.
     let workspace = temporary_repository();
@@ -476,7 +476,7 @@ fn tc_479_402_governing_definition_refusals_name_the_versions_and_write_nothing(
         finding.ends_with("; observed github-actions.release-operational-v3"),
         "the refusal must name the observed definition: {finding}"
     );
-    assert!(json_files(&operational_root(root)).is_empty());
+    assert_eq!(json_files(&operational_root(root)).len(), 0);
 }
 
 /// Repeating an identical record id and canonical payload is byte-idempotent
@@ -519,7 +519,7 @@ fn tc_479_403_identical_bytes_are_idempotent_standalone_and_inside_a_pair() {
     }
     assert_eq!(std::fs::read(&pair).unwrap(), pair_bytes);
     assert_eq!(json_files(&operational_pairs_root(root)).len(), 1);
-    assert!(json_files(&operational_root(root)).is_empty());
+    assert_eq!(json_files(&operational_root(root)).len(), 0);
     assert_eq!(read_operational_records(root).expect("read back").len(), 2);
 }
 
@@ -592,7 +592,7 @@ fn tc_479_404_one_logical_id_cannot_be_retained_twice_and_a_stale_lock_fails_clo
     let error = write_operational_record(root, &clock, &capability)
         .expect_err("a held lock refuses the writer");
     assert_eq!(error.code(), InterventionRefusalCode::IntakeBusy);
-    assert!(json_files(&operational_root(root)).is_empty());
+    assert_eq!(json_files(&operational_root(root)).len(), 0);
 }
 
 /// Standing capabilities and succeeded, failed, partial, and aborted exercises
@@ -1231,7 +1231,7 @@ fn tc_479_411_existing_collections_and_interventions_read_beside_operational_rec
     );
     assert_eq!(report.interventions.len(), 1);
     assert_eq!(report.operational.len(), 2);
-    assert!(!report.plans.is_empty());
+    assert_ne!(report.plans.len(), 0);
 
     let human = render_measurement_report(&report).expect("the report renders");
     for heading in [

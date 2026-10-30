@@ -102,10 +102,11 @@ fn a_document_of_another_type_is_skipped_and_a_bad_stage_is_refused() {
             "---\ntype: AssuranceProfile\nid: AP-1\n---\n",
         )
         .with_document("assurance/b.md", "# no frontmatter\n");
-    assert!(
+    assert_eq!(
         load_measurement_plans(&other, PlanLoadOptions::default())
             .unwrap()
-            .is_empty()
+            .len(),
+        0
     );
 
     let bad = MemoryMeasurement::new()
