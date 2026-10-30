@@ -11,11 +11,10 @@ use std::num::NonZeroU64;
 
 use serde::Deserialize;
 
-use crate::scalars::{ArtifactUuid, BareDigest, LocatorPath, NonEmptyText};
+use crate::scalars::{ArtifactUuid, LocatorPath, NonEmptyText};
 use crate::wire::{NullableText, absent_or};
 
-/// Where a fact was observed: a relative path, a 1-based line, and the digest
-/// of the file it was read from.
+/// Where a fact was observed: a relative path and a 1-based line.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Locator {
@@ -23,8 +22,6 @@ pub struct Locator {
     pub path: LocatorPath,
     /// The 1-based line. `z.number().int().min(1)` is a [`NonZeroU64`].
     pub line: NonZeroU64,
-    /// The digest of the file the fact was read from.
-    pub digest: BareDigest,
 }
 
 /// One spec artifact the export declares.
@@ -54,8 +51,6 @@ pub struct Obligation {
     pub document: NonEmptyText,
     /// The statement itself.
     pub statement: NonEmptyText,
-    /// The digest of that statement.
-    pub statement_hash: BareDigest,
     /// The verification method, when declared.
     #[serde(default, deserialize_with = "absent_or")]
     pub method: Option<NonEmptyText>,
@@ -113,8 +108,8 @@ pub enum SymbolCapability {
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Symbol {
-    /// Its identity, a bare digest.
-    pub id: BareDigest,
+    /// Its identity.
+    pub id: NonEmptyText,
     /// The language it was extracted from.
     pub language: SymbolLanguage,
     /// What kind of symbol it is.

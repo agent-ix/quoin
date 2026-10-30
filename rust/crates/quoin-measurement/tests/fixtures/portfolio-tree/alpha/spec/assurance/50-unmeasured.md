@@ -10,7 +10,7 @@ protected_apparatus:
   - spec/assurance/50-unmeasured.md
 negative_controls:
   - kind: apparatus-edit
-    description: the plan document is digested with every collection
+    description: the plan document
 owner: qa
 action: review
 ---

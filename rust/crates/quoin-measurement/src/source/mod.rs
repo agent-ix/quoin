@@ -28,21 +28,10 @@
 //!   the lexical guards of `intervention.ts:179-190` before it reaches a
 //!   source.
 //!
-//! # `raw_evidence_file` is a host capability, not a hash function
+//! # `raw_evidence_file` is a host capability
 //!
-//! The retained `rawEvidenceFor` reads the file and hashes the bytes
-//! (`intervention.ts:116-124`). Hashing is `quoin-store`'s, and it stays
-//! `quoin-store`'s: the digest is taken by the source that owns the bytes,
-//! through a `quoin-store` entry point, and neither host here grows a private
-//! `sha2` dependency (FR-100-CON-4, Stage 6 plan §13.2).
-//!
-//! [`DiskMeasurement`] has a path and uses [`quoin_store::digest_file_sha256`],
-//! which keeps that function's symlink, file-type, size and short-read guards.
-//! [`MemoryMeasurement`] has only bytes and uses
-//! [`quoin_store::digest_bytes_sha256`] (quoin#484). Until that existed there
-//! was no public bytes-wise sha256 at all and the in-memory host refused with
-//! [`MeasurementErrorCode::RawEvidenceUnavailable`] rather than mint a second
-//! one; it now refuses only for a path it was never given.
+//! It reports the size of a retained file and that the file exists. The
+//! source that owns the bytes answers; no digest is taken or recorded.
 //!
 //! # Why the clock is here too
 //!
@@ -65,8 +54,6 @@
 
 mod disk;
 mod memory;
-
-use quoin_store::RawFileSha256Digest;
 
 use crate::error::MeasurementError;
 use crate::raw_evidence::RawEvidencePath;
@@ -117,8 +104,6 @@ impl Clock for SystemClock {
 pub struct RawEvidenceFile {
     /// The file's size in bytes.
     pub size_bytes: u64,
-    /// Its sha256 digest, in the `sha256:<64 hex>` spelling.
-    pub digest: RawFileSha256Digest,
 }
 
 /// Where measurement inputs are read from.
@@ -205,7 +190,7 @@ pub trait MeasurementSource {
     /// read as UTF-8.
     fn raw_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError>;
 
-    /// The size and sha256 digest of one retained raw-evidence file.
+    /// The size of one retained raw-evidence file.
     ///
     /// # Errors
     ///
@@ -224,7 +209,7 @@ pub trait MeasurementSource {
     /// GitHub exports this way, after accounting for them with
     /// [`raw_evidence_file`](Self::raw_evidence_file). Separate from that
     /// method because a producer needs the *content* and the accounting needs
-    /// only the size and the digest, and a 15 MiB export should not be held in
+    /// only the size, and a 15 MiB export should not be held in
     /// memory to be measured.
     ///
     /// # Errors

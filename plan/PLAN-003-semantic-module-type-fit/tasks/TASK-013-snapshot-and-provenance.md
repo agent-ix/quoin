@@ -16,12 +16,11 @@ relationships:
 
 ## Status
 
-**done** — exact Git-tree, installed-byte, registry, Quoin, Quire, corpus, and core-data identities
-are retained; equal installed/canonical bytes reconcile and all manifest-version disagreements remain findings.
+**done** — installed, registry, Quoin, Quire, corpus, and core-data identities are reported; equal installed/canonical bytes reconcile and all manifest-version disagreements remain findings.
 
 ## Scope
 
-Implement canonical paths/digests, Quoin/tool/external evidence identities, ordered module-source
+Implement canonical paths, Quoin/tool/external evidence identities, ordered module-source
 resolution, inspected-content identity, and typed provenance conflicts without mutating checkouts or registries.
 
 ## Exit criteria

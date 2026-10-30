@@ -49,7 +49,7 @@ rewritten.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-074-AC-1 | Quoin's pinned copy of the unmodified config-service FR-006 (free-column table `Column \| Type \| Constraints`) has an expected single `semantic.legacy-properties-form` warning naming `free-column-table` and the locus, and its `properties` extraction fixture is byte-identical to today's. | Test |
+| FR-074-AC-1 | Quoin's copy of the unmodified config-service FR-006 (free-column table `Column \| Type \| Constraints`) has an expected single `semantic.legacy-properties-form` warning naming `free-column-table` and the locus, and its `properties` extraction fixture is byte-identical to today's. | Test |
 | FR-074-AC-2 | A bullet-list Properties section has the expected warning with form `bullet-list`; a mixed section names the first block's form. | Test |
 | FR-074-AC-3 | With `semantic.legacy_forms: error` and a valid `sweep_report`, the artifact's expected diagnostic is an error; with `legacy_forms: error` and no report, or a report for another package or version, the manifest is rejected at install naming the report. | Test |
 | FR-074-AC-4 | The authoring pack shows the migration example once. | Test |

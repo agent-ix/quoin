@@ -77,7 +77,6 @@ fn input() -> Value {
         "obligations": [{
             "id": "FR-001-AC-1",
             "statement": "The parser rejects an unterminated string.",
-            "statement_hash": "a1b2c3",
         }],
         "bindings": [],
         "runs": [],
@@ -110,12 +109,10 @@ fn tc_501_602_advise_answers_one_row_per_obligation_through_the_binary() {
             {
                 "id": "FR-001-AC-1",
                 "statement": "The parser rejects an unterminated string.",
-                "statement_hash": "a1b2c3",
             },
             {
                 "id": "FR-002-AC-1",
                 "statement": "The renderer emits stable output.",
-                "statement_hash": "d4e5f6",
             },
         ],
     });

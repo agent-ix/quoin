@@ -355,8 +355,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [],
@@ -384,8 +383,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -395,8 +393,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -440,7 +437,6 @@
             "document": "FR-001",
             "id": "FR-001-AC-1",
             "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "method": "Vibes"
           }
         ],
@@ -528,7 +524,6 @@
             "document": "FR-001",
             "id": "FR-001-AC-1",
             "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "method": "Inspection"
           }
         ],
@@ -539,8 +534,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -628,81 +622,6 @@
       "threw": null
     },
     {
-      "name": "a-reworded-statement-makes-one-binding-suspect",
-      "input": {
-        "obligations": [
-          {
-            "source": "spec/fr.md",
-            "document": "FR-001",
-            "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-          }
-        ],
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "suite": "unit",
-            "symbols": [
-              "test_records"
-            ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          },
-          {
-            "obligation": "FR-001-AC-1",
-            "suite": "zebra",
-            "symbols": [
-              "test_records"
-            ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-          }
-        ],
-        "runs": [
-          {
-            "schemaVersion": 1,
-            "suite": "unit",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "timestamp": "2026-01-01T00:00:00Z",
-            "tool": "jest@30",
-            "entries": [
-              {
-                "symbol": "test_records",
-                "outcome": "pass"
-              }
-            ]
-          },
-          {
-            "schemaVersion": 1,
-            "suite": "zebra",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "timestamp": "2026-01-01T00:00:00Z",
-            "tool": "jest@30",
-            "entries": [
-              {
-                "symbol": "test_records",
-                "outcome": "pass"
-              }
-            ]
-          }
-        ]
-      },
-      "report": {
-        "findings": [
-          {
-            "kind": "suspect-link",
-            "obligation": "FR-001-AC-1",
-            "severity": "high",
-            "summary": "FR-001-AC-1 was reworded after its evidence was bound in unit (bound against bbbbbbbbbbbb…, now aaaaaaaaaaaa…). Re-affirm or re-verify."
-          }
-        ],
-        "healthy": [],
-        "unevaluated": []
-      },
-      "threw": null
-    },
-    {
       "name": "a-binding-with-no-record-at-all-is-stale",
       "input": {
         "obligations": [
@@ -710,8 +629,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -721,8 +639,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": []
@@ -749,8 +666,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -758,8 +674,7 @@
             "obligation": "FR-001-AC-1",
             "suite": "scan",
             "symbols": [],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [],
@@ -790,8 +705,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -799,8 +713,7 @@
             "obligation": "FR-001-AC-1",
             "suite": "scan",
             "symbols": [],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [],
@@ -841,8 +754,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -852,8 +764,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -898,8 +809,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -909,8 +819,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -969,8 +878,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -980,8 +888,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           },
           {
             "obligation": "FR-001-AC-1",
@@ -989,8 +896,7 @@
             "symbols": [
               "it_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1054,8 +960,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -1065,8 +970,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1110,8 +1014,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -1122,8 +1025,7 @@
               "test_records",
               "test_other"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1166,8 +1068,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -1177,8 +1078,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1223,8 +1123,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -1232,8 +1131,7 @@
             "obligation": "FR-001-AC-1",
             "suite": "aaa-scan",
             "symbols": [],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           },
           {
             "obligation": "FR-001-AC-1",
@@ -1241,8 +1139,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1287,8 +1184,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "2-way over os(linux|mac) arch(x64|arm64)",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "2-way over os(linux|mac) arch(x64|arm64)"
           }
         ],
         "bindings": [
@@ -1298,8 +1194,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1347,8 +1242,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "2-way over os(linux|mac) arch(x64|arm64)",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "2-way over os(linux|mac) arch(x64|arm64)"
           }
         ],
         "bindings": [
@@ -1361,8 +1255,7 @@
               "c",
               "d"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1430,7 +1323,6 @@
             "document": "FR-001",
             "id": "FR-001-AC-1",
             "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "method": "unit-testing"
           }
         ],
@@ -1441,8 +1333,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1540,7 +1431,6 @@
             "document": "FR-001",
             "id": "FR-001-AC-1",
             "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "method": "Inspection"
           }
         ],
@@ -1551,8 +1441,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1645,7 +1534,6 @@
             "document": "FR-001",
             "id": "FR-001-AC-1",
             "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "criticality": "P0",
             "method": "unit-testing"
           }
@@ -1657,8 +1545,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1759,7 +1646,6 @@
             "document": "FR-001",
             "id": "FR-001-AC-1",
             "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "criticality": "P0"
           }
         ],
@@ -1770,8 +1656,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1821,7 +1706,6 @@
             "document": "FR-001",
             "id": "FR-001-AC-1",
             "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "criticality": "P0"
           }
         ],
@@ -1832,8 +1716,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -1882,8 +1765,7 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [
@@ -1893,8 +1775,7 @@
             "symbols": [
               "test_records"
             ],
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "commit": "cccccccccccccccccccccccccccccccccccccccc"
           }
         ],
         "runs": [
@@ -2077,22 +1958,19 @@
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "𐀀",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           },
           {
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "�",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           },
           {
             "source": "spec/fr.md",
             "document": "FR-001",
             "id": "FR-001-AC-1",
-            "statement": "The system shall record the result.",
-            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "statement": "The system shall record the result."
           }
         ],
         "bindings": [],
@@ -2789,8 +2667,7 @@
           "symbols": [
             "test_records"
           ],
-          "commit": "cccccccccccccccccccccccccccccccccccccccc",
-          "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "commit": "cccccccccccccccccccccccccccccccccccccccc"
         }
       ],
       "runs": [
@@ -2822,8 +2699,7 @@
             "a",
             "b"
           ],
-          "commit": "cccccccccccccccccccccccccccccccccccccccc",
-          "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "commit": "cccccccccccccccccccccccccccccccccccccccc"
         }
       ],
       "runs": [

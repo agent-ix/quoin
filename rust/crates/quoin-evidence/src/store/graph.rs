@@ -4,11 +4,10 @@
 //! The binding graph and the two operations over it.
 
 use crate::error::EvidenceError;
-use crate::ids::{ObligationId, StatementHash, SuiteId};
 use crate::paths::bindings_path;
 use crate::source::EvidenceSource;
 use crate::store::codec::{canonical_bytes_of, decode};
-use crate::types::{Affirmation, Binding, BindingsFile, STORE_SCHEMA_VERSION};
+use crate::types::{Binding, BindingsFile, STORE_SCHEMA_VERSION};
 
 /// The binding graph. An absent file reads as an empty graph, not an error.
 ///
@@ -72,8 +71,6 @@ pub struct BindOutcome {
     pub bindings: Vec<Binding>,
     /// Whether this `(obligation, suite)` had no binding before.
     pub created: bool,
-    /// Whether the stamped hash disagrees with the one just supplied.
-    pub suspect: bool,
 }
 
 /// Bind an obligation to the run that discharged it.
@@ -86,9 +83,6 @@ pub struct BindOutcome {
 /// and `insufficient-multiplicity` counted distinct suites across a set that
 /// could never hold more than one, so the finding could not be cleared by any
 /// amount of evidence (agent-ix/quoin#102).
-///
-/// **Auto-bind, explicit affirmation.** First discharge binds without asking;
-/// what stays explicit is re-affirmation after a statement changes.
 #[must_use]
 pub fn bind(existing: &[Binding], next: &Binding) -> BindOutcome {
     let found = existing
@@ -96,22 +90,15 @@ pub fn bind(existing: &[Binding], next: &Binding) -> BindOutcome {
         .position(|b| b.obligation == next.obligation && b.suite == next.suite);
     let mut bindings = existing.to_vec();
     let Some(index) = found else {
-        let mut created = next.clone();
-        created.affirmations = None;
-        bindings.push(created);
+        bindings.push(next.clone());
         return BindOutcome {
             bindings,
             created: true,
-            suspect: false,
         };
     };
     let Some(prior) = bindings.get_mut(index) else {
         unreachable!("the index came from this same slice")
     };
-    // The hash is NOT overwritten on re-discharge. Re-running a test does not
-    // re-affirm a reworded requirement — if it did, the suspect state would
-    // clear itself on the next CI run and the detector would never fire.
-    let suspect = prior.statement_hash_at_binding != next.statement_hash_at_binding;
     prior.commit = next.commit.clone();
     prior.symbols.clone_from(&next.symbols);
     // Lineage describes the CURRENT relationship. Omission on a new record
@@ -121,62 +108,5 @@ pub fn bind(existing: &[Binding], next: &Binding) -> BindOutcome {
     BindOutcome {
         bindings,
         created: false,
-        suspect,
-    }
-}
-
-/// What [`affirm`] did.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AffirmOutcome {
-    /// The graph after the affirmation.
-    pub bindings: Vec<Binding>,
-    /// Whether any binding matched.
-    pub found: bool,
-}
-
-/// Record a re-affirmation, clearing suspicion.
-///
-/// Affirms **every** binding for the obligation, not the first one found. The
-/// judgement being recorded is "I have read the new statement and the evidence
-/// still discharges it", and that is a judgement about the requirement rather
-/// than about one suite — affirming only the first would leave a sibling suite
-/// suspect for a reason nobody could act on. `suite` narrows it when the
-/// reviewer means only one.
-#[must_use]
-pub fn affirm(
-    existing: &[Binding],
-    obligation: &ObligationId,
-    suite: Option<&SuiteId>,
-    current_hash: &StatementHash,
-    affirmation: &Affirmation,
-) -> AffirmOutcome {
-    let mut bindings = existing.to_vec();
-    let mut found = false;
-    for binding in &mut bindings {
-        if &binding.obligation != obligation {
-            continue;
-        }
-        if suite.is_some_and(|wanted| &binding.suite != wanted) {
-            continue;
-        }
-        found = true;
-        // Affirming moves the hash forward: the reviewer has read the new
-        // statement and says the evidence still discharges it.
-        binding.statement_hash_at_binding = current_hash.clone();
-        binding
-            .affirmations
-            .get_or_insert_with(Vec::new)
-            .push(affirmation.clone());
-    }
-    if found {
-        AffirmOutcome {
-            bindings,
-            found: true,
-        }
-    } else {
-        AffirmOutcome {
-            bindings: existing.to_vec(),
-            found: false,
-        }
     }
 }

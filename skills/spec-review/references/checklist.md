@@ -50,8 +50,7 @@ and implementation instructions before they become code.
 
 Search for hash, digest, SHA, checksum, pin, manifest, ledger, provenance,
 attestation, receipt, relocation, inventory, and recorded/reviewed revision uses;
-inspect the surrounding requirement rather than treating a keyword alone as a
-finding. Apply the proof-binding exception below. For every violation, record a
+a keyword alone is not a finding, but a requirement that instructs any of them is. For every violation, record a
 P0 finding with `Severity: high`, a FAIL verdict in the review summary, the exact
 artifact/criterion references, and removal as the required correction. A valid
 review document does not make a failing spec ready for implementation.
@@ -59,7 +58,6 @@ review document does not make a failing spec ready for implementation.
 - [ ] No requirement, criterion, test case, ADR or instruction creates, keeps or checks a hash, digest, SHA, checksum, pin, checksum catalog, manifest, ledger, inventory, provenance record, attestation, receipt, relocation map, ID-block table or recorded/reviewed revision.
 - [ ] No test case counts, hashes or scans files, fixtures, versions, spec text or source text.
 - [ ] No exact tool or toolchain version pinned in prose. Package versions live in `Cargo.toml` / `package.json` and their lockfiles only; a report may name the app version it ran.
-- [ ] The only digest allowed is a canonical identity digest that binds a proof to the exact content it proved, and only where trust and provenance are the feature.
 - [ ] Existing use, another repo's format, or "a test needs it" is not a justification. Do not propose a new exception, an "informational" carve-out, or a replacement check; the finding is the removal.
 
 ## Cross-Referencing

@@ -209,7 +209,7 @@ instance-location order with parent-level keywords last.
 
 Concretely, `semantic-block/many-faults`:
 
-- ajv: `additionalProperties`, `/contract_version pattern`, `/semantic_core pattern`, `/package pattern`, `/exports/0 minLength`, `/exports/1 minLength`, `/exports uniqueItems`, `/targets/0 enum`, `/compatibility_posture enum`, `/legacy_forms enum`
+- ajv: `additionalProperties`, `/contract_version pattern`, `/package pattern`, `/exports/0 minLength`, `/exports/1 minLength`, `/exports uniqueItems`, `/targets/0 enum`, `/compatibility_posture enum`, `/legacy_forms enum`
 - `jsonschema`: `/compatibility_posture enum`, `/contract_version pattern`, `/exports uniqueItems`, `/exports/0 minLength`, `/exports/1 minLength`, `/legacy_forms enum`, `/package pattern`, `/semantic_core pattern`, `/targets/0 enum`, `additionalProperties`
 
 **Order is not even stable across `jsonschema` releases.** On

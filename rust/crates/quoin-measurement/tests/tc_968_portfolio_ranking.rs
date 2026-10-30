@@ -62,7 +62,6 @@ fn plan(id: &str, objective: Option<Objective>) -> MeasurementPlan {
         path: format!("spec/assurance/{id}.md"),
         owner: None,
         action: None,
-        preregistration: None,
         ground_truth_kind: None,
         statistical_design: None,
         objective,
@@ -96,9 +95,6 @@ fn collection(timestamp: &str) -> CollectionSummary {
         timestamp: timestamp.to_owned(),
         tool_identity: "fixture".to_owned(),
         tool_version: "1".to_owned(),
-        config_digest: format!("sha256:{}", "a".repeat(64)),
-        source_revision: "a".repeat(40),
-        corpus_revision: None,
         path: "spec/evidence/measurements/run-1.json".to_owned(),
         unverified_artifacts: Vec::new(),
     }

@@ -37,7 +37,7 @@ a reachable public module repository — for example
 ## Inputs
 
 A single `github://` source argument naming the module repository, monorepo
-subdirectory, and pinned ref, for example
+subdirectory, and ref, for example
 `github:agent-ix/spec-objects-security//spec_objects_security@<ref>`.
 
 ## Test Procedure

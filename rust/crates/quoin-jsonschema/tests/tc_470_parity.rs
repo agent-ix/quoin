@@ -38,7 +38,7 @@
 //! must move in. An entry that disagrees without being listed fails, and a
 //! listed entry that has stopped disagreeing fails too.
 //!
-//! Trace: FR-100-AC-4, FR-098
+//! Trace: FR-100-AC-4, FR-098-AC-11
 
 #![allow(
     clippy::unwrap_used,
@@ -60,10 +60,10 @@ const CORPUS_FLOOR: usize = 100;
 
 /// The corpus entries where the Rust verdict deliberately differs from ajv's.
 ///
-/// `(mutation, ajv verdict, Rust verdict, the ruling)`. Every entry is one of
-/// the two deltas recorded in `DIVERGENCE.md`, and both are intervention-only:
-/// the operational schema is vendored verbatim, so its `blake3:` alternative
-/// and its permissive `date-time` are unchanged.
+/// `(mutation, ajv verdict, Rust verdict, the ruling)`. Every entry is a
+/// delta recorded in `DIVERGENCE.md`. The `date-time` entries are
+/// intervention-only: the operational schema's permissive `date-time` is
+/// unchanged. The tool-version entry applies to every schema.
 const DECLARED_DIVERGENCES: &[(&str, bool, bool, &str)] = &[
     (
         "set/observed_at=lowercase-t-and-z",
@@ -83,11 +83,13 @@ const DECLARED_DIVERGENCES: &[(&str, bool, bool, &str)] = &[
         true,
         "quoin#440: RFC 3339 §5.6 permits lowercase z",
     ),
+    // Removed when the deferred evidence/ceremony PR regenerates
+    // `ajv-verdicts.json`, after which ajv and this crate agree again.
     (
-        "set/producer.tool_version=blake3-prefixed",
+        "set/producer.tool_version=git-sha1",
         true,
         false,
-        "quoin#409: blake3: has no producer and no instance",
+        "a tool identity is an exact semantic version; a bare git revision is not one",
     ),
 ];
 
@@ -156,7 +158,7 @@ fn validators() -> BTreeMap<&'static str, MeasurementValidator> {
 /// Every corpus document gets the same verdict from both validators, except
 /// the declared divergences, which move in the declared direction.
 ///
-/// Trace: FR-100-AC-4, FR-098
+/// Trace: FR-100-AC-4, FR-098-AC-11
 #[test]
 fn tc_470_ajv_and_jsonschema_agree_on_every_verdict() {
     let goldens = goldens();
@@ -181,9 +183,11 @@ fn tc_470_ajv_and_jsonschema_agree_on_every_verdict() {
         let document = with_strength(schema, &entry["document"]);
         let rust_valid = validator.is_valid(&document);
 
-        let declared = DECLARED_DIVERGENCES
-            .iter()
-            .find(|(name, ..)| *name == mutation && schema == "intervention_experiment_v1");
+        let declared = DECLARED_DIVERGENCES.iter().find(|(name, ..)| {
+            *name == mutation
+                && (schema == "intervention_experiment_v1"
+                    || *name == "set/producer.tool_version=git-sha1")
+        });
         if let Some((name, expect_ajv, expect_rust, ruling)) = declared {
             assert_eq!(
                 (ajv_valid, rust_valid),

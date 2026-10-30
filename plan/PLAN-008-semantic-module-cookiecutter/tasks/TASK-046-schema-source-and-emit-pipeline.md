@@ -47,8 +47,8 @@ every `$id` and `$ref`, and records the toolchain that produced the bytes.
 
 - [x] `typespec/main.tsp`: `@jsonSchema` base carrying the manifest version, one model per exported type, every grammar item a reference to semantic-core rather than a redeclaration (TC-1416).
 - [x] `typespec/tspconfig.yaml`: the official `@typespec/json-schema` emitter, sealed object schemas.
-- [x] `scripts/generate-schemas.mjs`: compile into a scratch directory, filter to this module's namespace, absolutize relative references against this module's base, the semantic-core base, or an imported module's base at its exact version, and fail naming a reference that matches none (TC-1457).
-- [x] Record the compiler, emitter and semantic-core versions in `schemas/toolchain.json`.
+- [x] `scripts/generate-schemas.mjs`: compile into a scratch directory, filter to this module's namespace, absolutize relative references against this module's base, the semantic-core base, or an imported module's base at its declared version, and fail naming a reference that matches none (TC-1457).
+- [x] Record the compiler and emitter versions in `schemas/toolchain.json`.
 - [x] `--check` mode: write nothing, exit non-zero listing every difference (TC-1414).
 - [x] Fail naming both values when the `@jsonSchema` base and the manifest version disagree, leaving the committed output untouched (TC-1415).
 - [x] Fail carrying the compiler diagnostics when `tsp compile` fails (TC-1449).

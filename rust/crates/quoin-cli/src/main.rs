@@ -37,7 +37,7 @@ use std::io::Write as _;
 use clap::{Arg, ArgAction, ArgMatches, Command, error::ErrorKind};
 use ix_cli_kit::exit::Outcome;
 use quoin_core::capabilities::Capabilities;
-use quoin_core::ops::graph::{change_impact, churn, fan_out};
+use quoin_core::ops::graph::{change_impact, fan_out};
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_graph_analysis::OsGraphInputReader;
 
@@ -50,7 +50,7 @@ const EXIT_COMMAND_FAILURE: u8 = 1;
 /// usage, parse, or integrity error — exits 2, so a consumer can tell a
 /// refused document from a verified-and-rejected one.
 const EXIT_DOCUMENT_REFUSED: u8 = Outcome::Refused.code();
-const GRAPH_DESCRIPTION: &str = "Analyze an existing, accepted Quire assurance export together with retained\nQuoin evidence and an existing FR-032 audit. These commands run no producer,\nsuite, Quire, Git, or network operation and write nothing.\n\nSubcommands:\n  quoin graph fan-out\n  quoin graph change-impact\n  quoin graph churn";
+const GRAPH_DESCRIPTION: &str = "Analyze an existing, accepted Quire assurance export together with retained\nQuoin evidence and an existing FR-032 audit. These commands run no producer,\nsuite, Quire, Git, or network operation and write nothing.\n\nSubcommands:\n  quoin graph fan-out\n  quoin graph change-impact";
 
 #[derive(Debug)]
 struct ShellError {
@@ -291,7 +291,6 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     let capabilities = Capabilities::with_graph(&reader);
     let response = match view {
         "fan-out" => fan_out(&request, &capabilities),
-        "churn" => churn(&request, &capabilities),
         "change-impact" => change_impact(&request, &capabilities),
         _ => Err(quoin_core::error::CoreError::new(
             quoin_core::error::CoreErrorCode::BadUsage,
@@ -378,7 +377,6 @@ fn command() -> Command {
             Command::new("graph")
                 .about("Read-only evidence graph views")
                 .subcommand(graph_view("fan-out"))
-                .subcommand(graph_view("churn"))
                 .subcommand(
                     graph_view("change-impact")
                         .arg(
@@ -575,12 +573,12 @@ mod tests {
         "quoin catalog validate",
         "quoin change-assurance",
         "quoin change-assurance intake",
+        "quoin change-assurance prepare-attestation",
         "quoin change-assurance receipt",
         "quoin change-assurance recover",
         "quoin change-assurance schema",
-        "quoin change-assurance seal-attestation",
-        "quoin change-assurance seal-record",
         "quoin change-assurance verify-receipt",
+        "quoin change-assurance write-record",
         "quoin completeness",
         "quoin config",
         "quoin config doctor",
@@ -589,7 +587,6 @@ mod tests {
         "quoin config set",
         "quoin discharge",
         "quoin evidence",
-        "quoin evidence affirm",
         "quoin evidence audit",
         "quoin evidence gc",
         "quoin evidence inspect-mocks",
@@ -599,13 +596,11 @@ mod tests {
         "quoin evidence trust",
         "quoin graph",
         "quoin graph change-impact",
-        "quoin graph churn",
         "quoin graph fan-out",
         "quoin matrix",
         "quoin measurement",
         "quoin measurement campaign",
         "quoin measurement campaign run",
-        "quoin measurement campaign verify",
         "quoin measurement intervention",
         "quoin measurement operational-release",
         "quoin measurement record",

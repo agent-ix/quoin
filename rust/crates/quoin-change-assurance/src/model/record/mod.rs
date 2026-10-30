@@ -5,9 +5,8 @@
 //! A faithful port of `validateRecordShape` and `normalizeRecord`
 //! (`src/change-assurance/records.ts:212-442`). The record is a **closed**
 //! shape at every depth: `exact` refuses an undeclared member as firmly as it
-//! refuses an absent one, because a record is named by the digest of its own
-//! bytes and a member the reader silently dropped is a member the digest
-//! covered.
+//! refuses an absent one, so a member the reader would silently drop (a
+//! `digest`, for one) is refused instead.
 //!
 //! Parsing and validating are one pass here rather than two. The oracle
 //! validates a `unknown` and then asserts the type; this module builds the
@@ -30,12 +29,12 @@ pub use self::normalize::normalize_record;
 use self::read::read_record;
 use self::write::write_record;
 
-use quoin_store::{CanonicalDigest, JsonValue};
+use quoin_store::JsonValue;
 
 use crate::error::{ChangeAssuranceError, FieldFailure, Subject};
 use crate::ids::{
-    ArtifactDigest, ImpactIdentity, NonEmptyText, ObligationId, ProofId, RecordId, Revision, RunId,
-    SourceId, StatementId,
+    ImpactIdentity, NonEmptyText, ObligationId, ProofId, RecordId, Revision, RunId, SourceId,
+    StatementId,
 };
 use crate::model::json::{Fields, object, string_values};
 
@@ -261,8 +260,6 @@ pub struct SourceConnection {
     pub kind: SourceKind,
     /// The revision of it that was read.
     pub revision: NonEmptyText,
-    /// Its digest at that revision, as its producer computed it.
-    pub digest: ArtifactDigest,
 }
 
 /// What the impact analysis saw.
@@ -272,8 +269,6 @@ pub struct ImpactSnapshot {
     pub identity: ImpactIdentity,
     /// The revision it ran at.
     pub revision: NonEmptyText,
-    /// The digest of its output, as the analysis computed it.
-    pub digest: ArtifactDigest,
     /// Whether it saw everything in scope.
     pub completeness: Completeness,
     /// Whether its output was cut short.
@@ -308,8 +303,8 @@ pub struct ProofObligation {
     pub command: CommandBinding,
     /// The tool that must have produced it.
     pub tool_identity: NonEmptyText,
-    /// The configuration that tool must have run under.
-    pub configuration_digest: ArtifactDigest,
+    /// The configuration reference that tool must have run under.
+    pub configuration_ref: NonEmptyText,
 }
 
 /// Something the review did not settle.
@@ -348,41 +343,16 @@ pub struct ReviewWorkflow {
     pub run_id: RunId,
 }
 
-/// A sealed change-assurance record.
+/// A change-assurance record.
 ///
-/// Every value of this type has passed the v1 schema *and* carries a `digest`
-/// that its own canonical bytes reproduce.
+/// Every value of this type has passed the v1 schema. A record is addressed by
+/// `(record_id, revision)`; nothing about it is derived from its content.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ChangeAssuranceRecord {
     /// Identity, constant across revisions.
     pub record_id: RecordId,
     /// This revision's number, from one.
     pub revision: Revision,
-    /// The previous revision's digest; absent exactly at revision one.
-    pub parent_digest: Option<CanonicalDigest>,
-    /// This record's own digest.
-    pub digest: CanonicalDigest,
-    /// What the record is about.
-    pub subject: RecordSubject,
-    /// The artifacts it is connected to, in `source_id` order.
-    pub source_connections: Vec<SourceConnection>,
-    /// What the impact analysis saw.
-    pub impact_snapshot: ImpactSnapshot,
-    /// The reviewed definition.
-    pub definition: Definition,
-    /// The review workflow binding.
-    pub review_workflow: ReviewWorkflow,
-}
-
-/// A record read but not yet sealed: everything but the `digest`.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct UnsealedRecord {
-    /// Identity, constant across revisions.
-    pub record_id: RecordId,
-    /// This revision's number, from one.
-    pub revision: Revision,
-    /// The previous revision's digest; absent exactly at revision one.
-    pub parent_digest: Option<CanonicalDigest>,
     /// What the record is about.
     pub subject: RecordSubject,
     /// The artifacts it is connected to, in `source_id` order.
@@ -397,64 +367,18 @@ pub struct UnsealedRecord {
 
 pub(super) const SUBJECT: Subject = Subject::Record;
 
-impl UnsealedRecord {
-    /// Read and validate the unsealed shape.
-    ///
-    /// # Errors
-    ///
-    /// Every refusal `validateRecordShape(value, false)` produces.
-    pub fn from_json(value: &JsonValue) -> Result<Self, ChangeAssuranceError> {
-        read_record(value, None)
-    }
-
-    /// The JSON form, without a `digest` member.
-    ///
-    /// # Errors
-    ///
-    /// Refuses only if a count has no finite double, which a `u64` always has.
-    pub fn to_json(&self) -> Result<JsonValue, ChangeAssuranceError> {
-        write_record(
-            &self.record_id,
-            self.revision,
-            self.parent_digest.as_ref(),
-            None,
-            &self.subject,
-            &self.source_connections,
-            &self.impact_snapshot,
-            &self.definition,
-            &self.review_workflow,
-        )
-    }
-
-    /// Attach a digest, producing the sealed record.
-    #[must_use]
-    pub fn seal_with(self, digest: CanonicalDigest) -> ChangeAssuranceRecord {
-        ChangeAssuranceRecord {
-            record_id: self.record_id,
-            revision: self.revision,
-            parent_digest: self.parent_digest,
-            digest,
-            subject: self.subject,
-            source_connections: self.source_connections,
-            impact_snapshot: self.impact_snapshot,
-            definition: self.definition,
-            review_workflow: self.review_workflow,
-        }
-    }
-}
-
 impl ChangeAssuranceRecord {
-    /// Read and validate the sealed shape, **without** checking the digest.
+    /// Read and validate a record.
     ///
-    /// [`crate::records::verify_change_record`] is the entry point that also
-    /// checks it; this is deliberately not public, so no caller can obtain a
-    /// record whose digest was never verified.
-    pub(crate) fn read_sealed(value: &JsonValue) -> Result<Self, ChangeAssuranceError> {
-        let digest = Fields::read(value, SUBJECT, "record")?.digest("digest")?;
-        Ok(read_record(value, Some(&digest))?.seal_with(digest))
+    /// # Errors
+    ///
+    /// Every refusal of the v1 schema, including an undeclared member such as
+    /// a `digest`.
+    pub fn from_json(value: &JsonValue) -> Result<Self, ChangeAssuranceError> {
+        read_record(value)
     }
 
-    /// The JSON form, `digest` included.
+    /// The JSON form.
     ///
     /// # Errors
     ///
@@ -463,8 +387,6 @@ impl ChangeAssuranceRecord {
         write_record(
             &self.record_id,
             self.revision,
-            self.parent_digest.as_ref(),
-            Some(&self.digest),
             &self.subject,
             &self.source_connections,
             &self.impact_snapshot,

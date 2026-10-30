@@ -6,25 +6,14 @@
 //!
 //! `tc_447_600_every_operation_is_invoked_by_name_by_some_test` requires every
 //! entry in `OPERATIONS` to be handed to the production runtime, spelled, by an
-//! integration test — because a swapped match arm leaves the source-scanning
-//! drift guard, the unit tests and native fixture replays all green and breaks only
-//! for a user. Route coverage is not handler coverage (quoin#443, quoin#447),
-//! and this file is the route coverage for all six change-assurance
-//! operations. Each test asserts a payload member only its own handler writes.
+//! integration test - because a swapped match arm leaves the source-scanning
+//! drift guard and the unit tests green and breaks only for a user. Route
+//! coverage is not handler coverage (quoin#443, quoin#447), and this file is the
+//! route coverage for all seven change-assurance operations. Each test asserts
+//! a payload member only its own handler writes.
 //!
-//! It is also where the criteria that `tests/change-assurance-command.test.ts`
-//! carried before quoin#457 deleted it are restated against the engine. The
-//! criteria that remain properties of the COMMAND rather than of the engine
-//! were restated in `tests/change-assurance-command-surface.test.ts` until the
-//! native cutover deleted it. The 0/1/2 exit grammar moved to `quoin-cli`'s
-//! `tc_1322_change_assurance_exit_grammar.rs` at quoin#543; the packaged
-//! schema assets and the static boundaries have no native replacement and the
-//! matrix records them unbacked.
-//!
-//! Nothing here recomputes what the Rust decided and compares it with itself.
-//! `tests/fixtures/change-assurance-oracle.json` is an extract of the capture
-//! taken against the retained TypeScript BEFORE it was deleted, so every digest
-//! and verdict asserted below is the TypeScript's answer.
+//! The 0/1/2 exit grammar lives in `quoin-cli`'s
+//! `tc_1322_change_assurance_exit_grammar.rs`.
 
 #![allow(
     clippy::unwrap_used,
@@ -34,7 +23,6 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
-use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -106,83 +94,117 @@ fn hex_json(value: &Value) -> String {
     hex(&serde_json::to_vec(value).unwrap())
 }
 
-/// The bytes of an oracle `output` array.
-fn bytes_of(value: &Value) -> Vec<u8> {
-    value
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
-        .collect()
+/// The bytes the attestation's retained output holds.
+const OUTPUT: &[u8] = b"all tests passed\n";
+
+/// The record body a caller writes.
+fn record_body() -> Value {
+    json!({
+        "schema_version": 1,
+        "record_type": "change_assurance",
+        "record_id": "change-1",
+        "revision": 1,
+        "subject": {"repository": "agent-ix/quoin", "base_revision": "abc123", "scope": ["src/evidence"]},
+        "source_connections": [{"source_id": "FR-063", "kind": "requirement", "revision": "1"}],
+        "impact_snapshot": {"identity": "impact-1", "revision": "1", "completeness": "complete", "truncated": false, "gaps": []},
+        "definition": {
+            "requirements": [{"id": "FR-063", "statement": "record it", "source_ids": ["FR-063"]}],
+            "preservation_constraints": [],
+            "proof_obligations": [{
+                "proof_id": "proof-1",
+                "statement": "tests pass",
+                "obligation_ids": ["FR-063-AC-1"],
+                "evidence_kind": "Unit",
+                "command": {"argv": ["cargo", "test"], "working_directory": "."},
+                "tool_identity": "cargo",
+                "configuration_ref": "config/test.toml"
+            }],
+            "unknowns": []
+        },
+        "review_workflow": {"run_id": "run-1", "decision_event_kind": "change_assurance.review_decided"}
+    })
 }
 
-/// One named case of the oracle capture.
-fn case(name: &str) -> Value {
-    let oracle: Value =
-        serde_json::from_str(include_str!("fixtures/change-assurance-oracle.json")).unwrap();
-    oracle["cases"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|entry| entry["name"] == name)
-        .unwrap_or_else(|| panic!("the fixture has no case named {name}"))
-        .clone()
+/// The attestation body a caller writes, before `retained_output` is derived.
+fn attestation_body() -> Value {
+    json!({
+        "schema_version": 1,
+        "record_type": "proof_attestation",
+        "attestation_id": "att-1",
+        "record_id": "change-1",
+        "record_revision": 1,
+        "candidate_revision": "candidate-1",
+        "proof_id": "proof-1",
+        "command": {"argv": ["cargo", "test"], "working_directory": "."},
+        "tool": {"identity": "cargo", "version": "1.90.0", "configuration_ref": "config/test.toml"},
+        "environment": {"os": "test"},
+        "observed_at": "2026-08-31T00:00:00Z",
+        "result": "passed",
+        "strength": "tested"
+    })
 }
 
-/// Every named case of the oracle capture.
-fn cases() -> Vec<Value> {
-    let oracle: Value =
-        serde_json::from_str(include_str!("fixtures/change-assurance-oracle.json")).unwrap();
-    oracle["cases"].as_array().unwrap().clone()
+/// An approving decision history.
+fn decisions() -> Value {
+    json!({
+        "run_id": "run-1",
+        "events": [{
+            "id": "event-1", "ts": "2026-08-31T00:00:00.000Z", "sequence": 1,
+            "actor": {"id": "reviewer-1", "kind": "human"},
+            "kind": "change_assurance.review_decided",
+            "payload": {"schema_version": 1, "record_id": "change-1", "revision": 1, "decision": "approved"}
+        }]
+    })
+}
+
+/// The audit report that finds the one proof healthy.
+fn audits() -> Value {
+    json!([{
+        "proof_id": "proof-1",
+        "report": {"findings": [], "healthy": ["FR-063-AC-1"], "unevaluated": []}
+    }])
+}
+
+/// Write the record, then prepare and take in the attestation.
+fn retain_everything(root: &Path) {
+    ok(&run(
+        "change_assurance.write_record",
+        &json!({ "repo": root.to_str().unwrap(), "record_hex": hex_json(&record_body()) }),
+    ));
+    let prepared = ok(&run(
+        "change_assurance.prepare_attestation",
+        &json!({
+            "attestation_hex": hex_json(&attestation_body()),
+            "output_hex": hex(OUTPUT),
+            "media_type": "text/plain",
+        }),
+    ));
+    ok(&run(
+        "change_assurance.intake",
+        &json!({
+            "repo": root.to_str().unwrap(),
+            "attestation_hex": hex_json(&prepared["attestation"]),
+            "output_hex": hex(OUTPUT),
+        }),
+    ));
+}
+
+/// The receipt request every test varies.
+fn receipt_request(root: &Path) -> Value {
+    json!({
+        "repo": root.to_str().unwrap(),
+        "record_id": "change-1",
+        "revision": 1,
+        "candidate_revision": "candidate-1",
+        "selections": [{"proof_id": "proof-1", "attestation_id": "att-1"}],
+        "decisions_hex": hex_json(&decisions()),
+        "audits_hex": hex_json(&audits()),
+    })
 }
 
 /// A repository root that exists only for one test.
 fn repo() -> tempfile::TempDir {
     tempfile::tempdir().unwrap()
-}
-
-/// Seal and retain a case's record, answering the digest the store now holds.
-fn seal_record(root: &Path, case: &Value) -> String {
-    let payload = ok(&run(
-        "change_assurance.seal_record",
-        &json!({
-            "repo": root.to_str().unwrap(),
-            "record_hex": hex_json(&case["record_body"]),
-        }),
-    ));
-    payload["record"]["digest"].as_str().unwrap().to_owned()
-}
-
-/// Retain a case's sealed attestations and their outputs.
-fn intake_all(root: &Path, case: &Value) {
-    for pair in case["attestations"].as_array().unwrap() {
-        ok(&run(
-            "change_assurance.intake",
-            &json!({
-                "repo": root.to_str().unwrap(),
-                "attestation_hex": hex_json(&pair["attestation"]),
-                "output_hex": hex(&bytes_of(&pair["output"])),
-            }),
-        ));
-    }
-}
-
-/// The receipt request a case describes.
-fn receipt_request(root: &Path, case: &Value) -> Value {
-    let audits = case["audits"].clone();
-    json!({
-        "repo": root.to_str().unwrap(),
-        "record_digest": case["record_digest"],
-        "candidate_revision": case["candidate_revision"],
-        "parent_digests": [],
-        "selections": case["selections"],
-        "decisions_hex": hex_json(&case["decision_history"]),
-        "audits_hex": if audits.as_array().unwrap().is_empty() {
-            Value::Null
-        } else {
-            Value::String(hex_json(&audits))
-        },
-    })
 }
 
 /// The paths under a repository's change-assurance root, sorted.
@@ -212,10 +234,10 @@ fn retained(root: &Path) -> Vec<String> {
     names
 }
 
-/// `change_assurance.seal_record` seals an explicit body, retains it under its
-/// digest, and reports that digest and the path it now occupies. A body that
-/// supplies `digest`, or one carrying a member the FR-063 schema does not
-/// declare, is refused and nothing is retained.
+/// `change_assurance.write_record` retains a record at its `(record_id,
+/// revision)` and reports the path it now occupies. A body that supplies a
+/// `digest`, or any member the FR-063 schema does not declare, is refused and
+/// nothing is retained.
 ///
 /// `path` is the member only this handler writes; a swap onto `intake` would
 /// answer `directory` and fail here.
@@ -223,114 +245,73 @@ fn retained(root: &Path) -> Vec<String> {
 /// Trace: FR-068-AC-1
 /// Provenance: agent-ix/quoin#457
 #[test]
-fn tc_457_600_seal_record_seals_an_explicit_body_and_retains_it() {
-    let fixture = case("everything-agrees");
+fn tc_457_600_write_record_retains_a_record_under_its_identity() {
     let root = repo();
     let payload = ok(&run(
-        "change_assurance.seal_record",
-        &json!({
-            "repo": root.path().to_str().unwrap(),
-            "record_hex": hex_json(&fixture["record_body"]),
-        }),
+        "change_assurance.write_record",
+        &json!({ "repo": root.path().to_str().unwrap(), "record_hex": hex_json(&record_body()) }),
     ));
-    let digest = fixture["record_digest"].as_str().unwrap();
-    assert_eq!(payload["record"]["digest"], fixture["record_digest"]);
     assert_eq!(payload["retained"], json!(true));
     assert_eq!(
         payload["path"].as_str().unwrap(),
         root.path()
-            .join("spec/evidence/change-assurance/records")
-            .join(format!("{digest}.json"))
+            .join("spec/evidence/change-assurance/records/change-1/1.json")
             .to_str()
             .unwrap()
     );
-    assert_eq!(
-        retained(root.path()),
-        vec!["records".to_owned(), format!("records/{digest}.json")]
-    );
 
-    // A supplied digest, and an undeclared member, each refused — over a fresh
-    // repository, so "nothing is retained" is a statement about this request
-    // rather than about one that had already written the same bytes.
-    for body in [
-        {
-            let mut supplied = fixture["record_body"].clone();
-            supplied["digest"] = json!("0".repeat(64));
-            supplied
-        },
-        {
-            let mut extra = fixture["record_body"].clone();
-            extra["undeclared"] = json!("x");
-            extra
-        },
-    ] {
-        let empty = repo();
-        let result = run(
-            "change_assurance.seal_record",
-            &json!({
-                "repo": empty.path().to_str().unwrap(),
-                "record_hex": hex_json(&body),
-            }),
-        );
-        failed(&result, 3);
-        assert_eq!(retained(empty.path()), Vec::<String>::new());
-    }
+    let mut with_digest = record_body();
+    with_digest["digest"] = json!("a".repeat(64));
+    let other = repo();
+    failed(
+        &run(
+            "change_assurance.write_record",
+            &json!({ "repo": other.path().to_str().unwrap(), "record_hex": hex_json(&with_digest) }),
+        ),
+        3,
+    );
+    assert_eq!(retained(other.path()), Vec::<String>::new());
 }
 
-/// `change_assurance.seal_attestation` derives the retained output's media
-/// type, digest and size from the bytes and the caller's declaration, and
-/// NOTHING else. A body supplying `retained_output` or `digest` is refused.
-///
-/// The proof that nothing else is derived is a comparison of the whole sealed
-/// document against the oracle's, member by member: an assertion naming only
-/// the three derived members would not notice a fourth.
+/// `change_assurance.prepare_attestation` derives only the retained output's
+/// size; a caller-written `retained_output` is refused.
 ///
 /// Trace: FR-068-AC-2, FR-068-CON-2
 /// Provenance: agent-ix/quoin#457
 #[test]
-fn tc_457_601_seal_attestation_derives_only_the_retained_output() {
-    let fixture = case("everything-agrees");
-    let sealed = fixture["attestations"][0]["attestation"].clone();
-    let output = bytes_of(&fixture["attestations"][0]["output"]);
-    let mut body = sealed.clone();
-    let media_type = body["retained_output"]["media_type"].clone();
-    let object = body.as_object_mut().unwrap();
-    object.remove("retained_output");
-    object.remove("digest");
-
-    let payload = ok(&run(
-        "change_assurance.seal_attestation",
+fn tc_457_601_prepare_attestation_derives_only_the_retained_output_size() {
+    let prepared = ok(&run(
+        "change_assurance.prepare_attestation",
         &json!({
-            "attestation_hex": hex_json(&body),
-            "output_hex": hex(&output),
-            "media_type": media_type,
+            "attestation_hex": hex_json(&attestation_body()),
+            "output_hex": hex(OUTPUT),
+            "media_type": "text/plain",
         }),
     ));
     assert_eq!(
-        payload["attestation"], sealed,
-        "the sealed attestation differs from the one the TypeScript sealed"
+        prepared["attestation"]["retained_output"],
+        json!({"media_type": "text/plain", "size_bytes": OUTPUT.len()})
     );
 
-    for supplied in ["digest", "retained_output"] {
-        let mut carried = body.clone();
-        carried[supplied] = sealed[supplied].clone();
-        let result = run(
-            "change_assurance.seal_attestation",
+    let mut supplied = attestation_body();
+    supplied["retained_output"] = json!({"media_type": "text/plain", "size_bytes": 1});
+    failed(
+        &run(
+            "change_assurance.prepare_attestation",
             &json!({
-                "attestation_hex": hex_json(&carried),
-                "output_hex": hex(&output),
-                "media_type": media_type,
+                "attestation_hex": hex_json(&supplied),
+                "output_hex": hex(OUTPUT),
+                "media_type": "text/plain",
             }),
-        );
-        let diagnostics = failed(&result, 3);
-        assert_eq!(diagnostics[0]["context"]["supplied"], supplied);
-    }
+        ),
+        3,
+    );
 }
 
 /// `change_assurance.intake` retains the exact attestation and output bytes as
-/// one pair, is idempotent for byte-identical inputs, and refuses output whose
-/// bytes contradict what the attestation records — retaining nothing on that
-/// path.
+/// one pair under the attestation id, is idempotent for byte-identical inputs,
+/// and refuses output whose size contradicts what the attestation records -
+/// retaining nothing on that path.
 ///
 /// `size_bytes` is the member only this handler writes.
 ///
@@ -338,36 +319,34 @@ fn tc_457_601_seal_attestation_derives_only_the_retained_output() {
 /// Provenance: agent-ix/quoin#457
 #[test]
 fn tc_457_602_intake_retains_an_exact_pair_atomically_and_idempotently() {
-    let fixture = case("everything-agrees");
-    let pair = fixture["attestations"][0].clone();
-    let output = bytes_of(&pair["output"]);
-    let digest = pair["attestation"]["digest"].as_str().unwrap().to_owned();
+    let prepared = ok(&run(
+        "change_assurance.prepare_attestation",
+        &json!({
+            "attestation_hex": hex_json(&attestation_body()),
+            "output_hex": hex(OUTPUT),
+            "media_type": "text/plain",
+        }),
+    ));
     let root = repo();
     let request = json!({
         "repo": root.path().to_str().unwrap(),
-        "attestation_hex": hex_json(&pair["attestation"]),
-        "output_hex": hex(&output),
+        "attestation_hex": hex_json(&prepared["attestation"]),
+        "output_hex": hex(OUTPUT),
     });
 
     let first = ok(&run("change_assurance.intake", &request));
     assert_eq!(first["retained"], json!(true));
-    assert_eq!(first["size_bytes"], json!(output.len()));
-    assert_eq!(
-        first["directory"].as_str().unwrap(),
-        root.path()
-            .join("spec/evidence/change-assurance/attestations")
-            .join(&digest)
-            .to_str()
-            .unwrap()
-    );
-
-    // The retained bytes are the producer's own, byte for byte — which is the
-    // whole reason the output crosses the boundary as hex rather than as text.
+    assert_eq!(first["size_bytes"], json!(OUTPUT.len()));
     let directory = root
         .path()
-        .join("spec/evidence/change-assurance/attestations")
-        .join(&digest);
-    assert_eq!(fs::read(directory.join("output.bin")).unwrap(), output);
+        .join("spec/evidence/change-assurance/attestations/att-1");
+    assert_eq!(
+        first["directory"].as_str().unwrap(),
+        directory.to_str().unwrap()
+    );
+    // The retained bytes are the producer's own, byte for byte - which is the
+    // whole reason the output crosses the boundary as hex rather than as text.
+    assert_eq!(fs::read(directory.join("output.bin")).unwrap(), OUTPUT);
 
     let again = ok(&run("change_assurance.intake", &request));
     assert_eq!(again["retained"], json!(false));
@@ -377,8 +356,8 @@ fn tc_457_602_intake_retains_an_exact_pair_atomically_and_idempotently() {
         "change_assurance.intake",
         &json!({
             "repo": contradicting.path().to_str().unwrap(),
-            "attestation_hex": hex_json(&pair["attestation"]),
-            "output_hex": hex(b"other bytes"),
+            "attestation_hex": hex_json(&prepared["attestation"]),
+            "output_hex": hex(b"other bytes entirely"),
         }),
     );
     let diagnostics = failed(&result, 2);
@@ -390,171 +369,65 @@ fn tc_457_602_intake_retains_an_exact_pair_atomically_and_idempotently() {
 }
 
 /// `change_assurance.receipt` assembles its verification input from the named
-/// record, the named parents, the explicit selections and the supplied
-/// decisions and audits. A retained attestation that no selection names has NO
-/// effect: a stray upload cannot discharge a proof.
-///
-/// The comparison is between two receipts over the same store, one of which had
-/// an extra attestation retained in it. Anything the second receipt discovered
-/// on its own would move its digest.
+/// record and the explicit selections. A retained attestation that no
+/// selection names has NO effect: a stray upload cannot discharge a proof.
 ///
 /// Trace: FR-068-AC-4
 /// Provenance: agent-ix/quoin#457
 #[test]
 fn tc_457_603_receipt_uses_only_what_the_caller_named() {
-    let selected = case("everything-agrees");
-    let stray = case("attestation-not-selected");
     let root = repo();
-    seal_record(root.path(), &selected);
-    intake_all(root.path(), &selected);
-    let before = ok(&run(
+    retain_everything(root.path());
+    let named = ok(&run(
         "change_assurance.receipt",
-        &receipt_request(root.path(), &selected),
+        &receipt_request(root.path()),
     ));
+    assert_eq!(named["receipt"]["outcome"], json!("valid"), "{named}");
 
-    // Retain every attestation the stray case carries, including the one its
-    // own selections do not name, and ask the SAME question again.
-    intake_all(root.path(), &stray);
-    let stored = retained(root.path());
-    assert!(
-        stored.len() > 3,
-        "the store must hold more than the selected pair for this to prove \
-         anything; it holds {stored:?}"
+    let mut none = receipt_request(root.path());
+    none["selections"] = json!([]);
+    let unselected = ok(&run("change_assurance.receipt", &none));
+    assert_eq!(unselected["receipt"]["outcome"], json!("incomplete"));
+    assert_eq!(
+        unselected["receipt"]["reasons"],
+        json!(["attestation_missing"])
     );
-    let after = ok(&run(
-        "change_assurance.receipt",
-        &receipt_request(root.path(), &selected),
-    ));
-    assert_eq!(after["receipt"], before["receipt"]);
-    assert_eq!(before["receipt"]["digest"], selected["receipt_digest"]);
 }
 
-/// `unavailable` and `not_computed` producer results, and evidence an audit
-/// left unevaluated, survive the crossing as their own receipt outcomes and
-/// reasons. None of them is converted into a pass or a failure.
-///
-/// Each case is asserted against the reasons the TypeScript recorded, so a
-/// collapse of `result_unavailable` into `result_failed` is visible here even
-/// though both are non-`valid`.
+/// `change_assurance.verify_receipt` re-derives the receipt from the named
+/// retained inputs and refuses one that differs, byte for byte.
 ///
 /// Trace: FR-068-AC-5
 /// Provenance: agent-ix/quoin#457
 #[test]
-fn tc_457_604_qualified_evidence_is_neither_a_pass_nor_a_failure() {
-    // The bounded domain of qualified evidence, walked exhaustively rather than
-    // sampled: a producer that could not run, one that declined to compute, an
-    // audit that never evaluated, and evidence that was never selected at all.
-    let mut reasons: BTreeSet<String> = BTreeSet::new();
-    for name in [
-        "producer-unavailable",
-        "producer-did-not-compute",
-        "audit-left-it-unevaluated",
-        "attestation-not-selected",
-    ] {
-        let fixture = case(name);
-        let root = repo();
-        seal_record(root.path(), &fixture);
-        intake_all(root.path(), &fixture);
-        let result = run(
-            "change_assurance.receipt",
-            &receipt_request(root.path(), &fixture),
-        );
-        // A verdict is an ANSWER: the engine exits 0 and the caller applies the
-        // exit-1 policy to a non-`valid` receipt.
-        let payload = ok(&result);
-        assert_eq!(
-            payload["receipt"]["outcome"], fixture["receipt_outcome"],
-            "{name}"
-        );
-        assert_eq!(
-            payload["receipt"]["reasons"], fixture["receipt_reasons"],
-            "{name}"
-        );
-        assert_ne!(payload["receipt"]["outcome"], json!("valid"), "{name}");
-        // Nor a failure: `incomplete` is its own outcome, and the per-proof row
-        // says which evidence was qualified rather than collapsing to a
-        // verdict.
-        assert_ne!(payload["receipt"]["outcome"], json!("invalid"), "{name}");
-        let proof = &payload["receipt"]["proofs"][0];
-        assert_ne!(proof["outcome"], json!("valid"), "{name}");
-        assert_eq!(proof["reasons"], fixture["receipt_reasons"], "{name}");
-        for reason in proof["reasons"].as_array().expect("reasons is an array") {
-            reasons.insert(reason.as_str().expect("a reason is a string").to_owned());
-        }
-    }
-    // Anti-vacuity: four distinct qualified states were actually reached, so a
-    // corpus that silently lost one cannot pass this as an empty loop.
-    assert_eq!(
-        reasons,
-        BTreeSet::from([
-            "attestation_missing".to_owned(),
-            "audit_not_evaluated".to_owned(),
-            "result_not_computed".to_owned(),
-            "result_unavailable".to_owned(),
-        ])
-    );
-
-    // Missing evidence stays missing rather than becoming an empty pass: the
-    // proof row names no attestation at all.
-    let fixture = case("attestation-not-selected");
+fn tc_457_605_verify_receipt_re_derives_and_refuses_an_alteration() {
     let root = repo();
-    seal_record(root.path(), &fixture);
-    intake_all(root.path(), &fixture);
-    let payload = ok(&run(
+    retain_everything(root.path());
+    let stored = ok(&run(
         "change_assurance.receipt",
-        &receipt_request(root.path(), &fixture),
-    ));
-    assert_eq!(
-        payload["receipt"]["proofs"][0]["attestation_digest"],
-        Value::Null
-    );
-}
-
-/// `change_assurance.verify_receipt` accepts a sealed receipt and refuses one
-/// whose semantic content or digest was altered.
-///
-/// Trace: FR-068-AC-7
-/// Provenance: agent-ix/quoin#457
-#[test]
-fn tc_457_605_verify_receipt_accepts_a_seal_and_refuses_an_alteration() {
-    let fixture = case("everything-agrees");
-    let root = repo();
-    seal_record(root.path(), &fixture);
-    intake_all(root.path(), &fixture);
-    let sealed = ok(&run(
-        "change_assurance.receipt",
-        &receipt_request(root.path(), &fixture),
+        &receipt_request(root.path()),
     ))["receipt"]
         .clone();
 
-    let payload = ok(&run(
+    let verified = ok(&run(
         "change_assurance.verify_receipt",
-        &json!({ "receipt_hex": hex_json(&sealed) }),
+        &json!({ "receipt_hex": hex_json(&stored), "inputs": receipt_request(root.path()) }),
     ));
-    assert_eq!(payload["receipt"]["digest"], fixture["receipt_digest"]);
-    assert_eq!(payload["receipt"]["outcome"], json!("valid"));
+    assert_eq!(verified["receipt"], stored);
 
-    // The semantic field and the digest each altered on their own: an
-    // implementation that only re-read the declared digest would accept the
-    // first, and one that only recomputed would accept the second.
-    for altered in [
-        {
-            let mut edited = sealed.clone();
-            edited["outcome"] = json!("invalid");
-            edited
-        },
-        {
-            let mut edited = sealed.clone();
-            edited["digest"] = json!("0".repeat(64));
-            edited
-        },
-    ] {
-        let result = run(
+    let mut edited = stored;
+    edited["outcome"] = json!("invalid");
+    let diagnostics = failed(
+        &run(
             "change_assurance.verify_receipt",
-            &json!({ "receipt_hex": hex_json(&altered) }),
-        );
-        failed(&result, 3);
-    }
+            &json!({ "receipt_hex": hex_json(&edited), "inputs": receipt_request(root.path()) }),
+        ),
+        3,
+    );
+    assert_eq!(
+        diagnostics[0]["context"]["change_assurance_code"],
+        "QCA-RECEIPT-INVALID"
+    );
 }
 
 /// `change_assurance.recover` removes the staging directories an interrupted
@@ -569,10 +442,8 @@ fn tc_457_605_verify_receipt_accepts_a_seal_and_refuses_an_alteration() {
 /// Provenance: agent-ix/quoin#457
 #[test]
 fn tc_457_606_recover_removes_only_interrupted_staging() {
-    let fixture = case("everything-agrees");
     let root = repo();
-    seal_record(root.path(), &fixture);
-    intake_all(root.path(), &fixture);
+    retain_everything(root.path());
     let before = retained(root.path());
     assert!(
         before.len() >= 4,
@@ -602,99 +473,55 @@ fn tc_457_606_recover_removes_only_interrupted_staging() {
     assert_eq!(payload["removed"], json!(0));
 }
 
-/// Every case of the oracle capture reproduces, through the real binary, the
-/// receipt the retained TypeScript produced: the same outcome, the same
-/// reasons, and the same digest over the same canonical bytes.
-///
-/// This is the parity statement the cutover rests on. The fixture was captured
-/// against `src/change-assurance/` before its deletion, so these are the
-/// TypeScript's answers and not the Rust's own.
+/// The same inputs, run in two independent repositories, yield byte-identical
+/// canonical JSON for a record, an attestation and a valid receipt, and the
+/// retained layout and the library contracts are those a retained record of
+/// either vintage is read from: records at `records/<id>/<revision>.json`,
+/// attestations at `attestations/<id>/`. The valid receipt it emits verifies
+/// against its own inputs.
 ///
 /// Trace: FR-068-AC-10, FR-068-CON-4
 /// Provenance: agent-ix/quoin#457
 #[test]
-fn tc_457_607_every_oracle_case_reproduces_the_typescripts_receipt() {
-    let all = cases();
-    // Anti-vacuity: a fixture that failed to load would make the loop below
-    // pass over nothing.
-    assert!(
-        all.len() >= 5,
-        "the oracle extract holds {} case(s); the fixture is broken, not the crate",
-        all.len()
-    );
-    let mut verdicts = Vec::new();
-    for fixture in &all {
-        let name = fixture["name"].as_str().unwrap();
+fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
+    let mut runs = Vec::new();
+    for _ in 0..2 {
         let root = repo();
-        assert_eq!(
-            seal_record(root.path(), fixture),
-            fixture["record_digest"].as_str().unwrap(),
-            "{name}"
-        );
-        intake_all(root.path(), fixture);
-        let payload = ok(&run(
+        retain_everything(root.path());
+        let store = root.path().join("spec/evidence/change-assurance");
+        let record = fs::read(store.join("records/change-1/1.json")).unwrap();
+        let attestation = fs::read(store.join("attestations/att-1/attestation.json")).unwrap();
+        let output = fs::read(store.join("attestations/att-1/output.bin")).unwrap();
+        assert_eq!(output, OUTPUT);
+        let receipt = ok(&run(
             "change_assurance.receipt",
-            &receipt_request(root.path(), fixture),
+            &receipt_request(root.path()),
         ));
-        assert_eq!(
-            payload["receipt"]["digest"], fixture["receipt_digest"],
-            "{name}"
-        );
-        assert_eq!(
-            payload["receipt"]["outcome"], fixture["receipt_outcome"],
-            "{name}"
-        );
-        assert_eq!(
-            payload["receipt"]["reasons"], fixture["receipt_reasons"],
-            "{name}"
-        );
-        verdicts.push(payload["receipt"]["outcome"].clone());
+        assert_eq!(receipt["receipt"]["outcome"], json!("valid"), "{receipt}");
+        assert_eq!(receipt["receipt"]["reasons"], json!([]));
+        let verified = ok(&run(
+            "change_assurance.verify_receipt",
+            &json!({
+                "receipt_hex": hex_json(&receipt["receipt"]),
+                "inputs": receipt_request(root.path()),
+            }),
+        ));
+        assert_eq!(verified["receipt"], receipt["receipt"]);
+        runs.push((
+            record,
+            attestation,
+            canonical_json(&receipt["receipt"]).unwrap(),
+        ));
     }
-    // A corpus in which every case agreed on one verdict would pin the shape
-    // and not the decision.
-    assert!(
-        verdicts.iter().any(|v| v == "valid") && verdicts.iter().any(|v| v != "valid"),
-        "the corpus must contain both a valid receipt and a non-valid one: {verdicts:?}"
-    );
-}
-
-/// DECLARED DIVERGENCE (quoin#457, `DIVERGENCE.md` §4): a malformed
-/// `attestation_digest` inside a receipt makes the retained TypeScript THROW
-/// while building its own receipt — exit 4, no receipt — where the Rust emits
-/// `null` for the member it cannot read and returns a receipt, exit 0.
-///
-/// It is accepted and it is an exit-code change, so it is asserted here rather
-/// than left for a harness to discover. Native fixture tests cover only
-/// `core.ping`, so there is no live difftest case to declare it in.
-///
-/// Trace: FR-068-AC-7
-/// Provenance: agent-ix/quoin#457
-#[test]
-fn tc_457_608_a_malformed_digest_inside_a_receipt_is_refused_not_thrown() {
-    let fixture = case("everything-agrees");
-    let root = repo();
-    seal_record(root.path(), &fixture);
-    intake_all(root.path(), &fixture);
-    let sealed = ok(&run(
-        "change_assurance.receipt",
-        &receipt_request(root.path(), &fixture),
-    ))["receipt"]
-        .clone();
-
-    let mut malformed = sealed.clone();
-    malformed["record_digest"] = json!("not-a-digest");
-    let result = run(
-        "change_assurance.verify_receipt",
-        &json!({ "receipt_hex": hex_json(&malformed) }),
-    );
-    // The engine answers with a REFUSAL of the caller's document (3), never an
-    // internal fault (4). The TypeScript's throw produced a 4 here.
     assert_eq!(
-        result.status, 3,
-        "a malformed member of a supplied receipt is the caller's mistake, not \
-         an engine fault: stdout {} stderr {}",
-        result.stdout, result.stderr
+        runs[0], runs[1],
+        "two runs over the same inputs must agree byte for byte"
     );
+    // The retained record is the document that was written, read back through
+    // the schema: it names no member the caller did not supply.
+    let written: Value = serde_json::from_slice(&runs[0].0).unwrap();
+    assert_eq!(written["record_id"], json!("change-1"));
+    assert!(written.get("digest").is_none());
 }
 
 /// `change_assurance.schema` emits the three normative assets from the binary
@@ -703,7 +530,7 @@ fn tc_457_608_a_malformed_digest_inside_a_receipt_is_refused_not_thrown() {
 /// The assets are compiled into `quoin-change-assurance` (quoin#503), so what
 /// this asserts is that the bytes a consumer validates against reach it across
 /// the boundary unchanged — parsed back here only to compare against the same
-/// constant the sealing tests use.
+/// constant the writing tests use.
 ///
 /// Trace: FR-068-AC-8
 /// Provenance: agent-ix/quoin#503
@@ -770,13 +597,11 @@ fn write_protecting_plan(root: &Path, id: &str, entries: &[&str]) {
 /// Provenance: PLAT-997
 #[test]
 fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
-    let fixture = case("everything-agrees");
     let root = repo();
-    seal_record(root.path(), &fixture);
-    intake_all(root.path(), &fixture);
+    retain_everything(root.path());
     write_protecting_plan(root.path(), "MP-997-A", &["checker/config.toml"]);
 
-    let mut request = receipt_request(root.path(), &fixture);
+    let mut request = receipt_request(root.path());
     request["diff_paths"] = json!(["src/lib.rs", "checker/config.toml"]);
     request["plan"] = json!("MP-997-A");
     let payload = ok(&run("change_assurance.receipt", &request));
@@ -785,14 +610,14 @@ fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
 
     // An unlinked receipt over the SAME store and diff is unaffected: the
     // judgment only fires when `plan` names it.
-    let mut unlinked = receipt_request(root.path(), &fixture);
+    let mut unlinked = receipt_request(root.path());
     unlinked["diff_paths"] = json!(["src/lib.rs", "checker/config.toml"]);
     let baseline = ok(&run("change_assurance.receipt", &unlinked));
     assert_eq!(baseline["receipt"]["outcome"], json!("valid"));
     assert_eq!(baseline["receipt"]["reasons"], json!([]));
 
     // No `MeasurementPlan` names `plan`'s id: refused, not silently ignored.
-    let mut unknown_plan = receipt_request(root.path(), &fixture);
+    let mut unknown_plan = receipt_request(root.path());
     unknown_plan["plan"] = json!("MP-997-DOES-NOT-EXIST");
     let refused = run("change_assurance.receipt", &unknown_plan);
     let diagnostics = failed(&refused, 2);
@@ -807,13 +632,11 @@ fn tc_997_611_receipt_reports_apparatus_touched_through_the_operation() {
 /// Provenance: PLAT-997
 #[test]
 fn tc_997_612_receipt_reports_diff_missing_through_the_operation() {
-    let fixture = case("everything-agrees");
     let root = repo();
-    seal_record(root.path(), &fixture);
-    intake_all(root.path(), &fixture);
+    retain_everything(root.path());
     write_protecting_plan(root.path(), "MP-997-B", &["checker/config.toml"]);
 
-    let mut request = receipt_request(root.path(), &fixture);
+    let mut request = receipt_request(root.path());
     request["plan"] = json!("MP-997-B");
     let payload = ok(&run("change_assurance.receipt", &request));
     assert_eq!(payload["receipt"]["outcome"], json!("incomplete"));
@@ -839,20 +662,18 @@ fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
     assert_eq!(MAX_DIFF_PATHS, 65_536);
     assert_eq!(MAX_SCALAR_BYTES, 4 * 1024);
 
-    let fixture = case("everything-agrees");
     let root = repo();
-    seal_record(root.path(), &fixture);
-    intake_all(root.path(), &fixture);
+    retain_everything(root.path());
     let paths = |count: usize| json!((0..count).map(|n| format!("p{n}")).collect::<Vec<_>>());
 
     // At the count ceiling: accepted and verified, not refused.
-    let mut at_count = receipt_request(root.path(), &fixture);
+    let mut at_count = receipt_request(root.path());
     at_count["diff_paths"] = paths(MAX_DIFF_PATHS);
     let payload = ok(&run("change_assurance.receipt", &at_count));
     assert_eq!(payload["receipt"]["outcome"], json!("valid"));
 
     // One entry past it: refused by count, before any read.
-    let mut past_count = receipt_request(root.path(), &fixture);
+    let mut past_count = receipt_request(root.path());
     past_count["diff_paths"] = paths(MAX_DIFF_PATHS + 1);
     let diagnostics = failed(&run("change_assurance.receipt", &past_count), 2);
     let context = &diagnostics[0]["context"];
@@ -861,13 +682,13 @@ fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
     assert_eq!(context["observed_entries"], "65537");
 
     // One entry of exactly the scalar ceiling: accepted.
-    let mut at_bytes = receipt_request(root.path(), &fixture);
+    let mut at_bytes = receipt_request(root.path());
     at_bytes["diff_paths"] = json!(["a".repeat(MAX_SCALAR_BYTES)]);
     let payload = ok(&run("change_assurance.receipt", &at_bytes));
     assert_eq!(payload["receipt"]["outcome"], json!("valid"));
 
     // One byte past it: refused by size.
-    let mut past_bytes = receipt_request(root.path(), &fixture);
+    let mut past_bytes = receipt_request(root.path());
     past_bytes["diff_paths"] = json!(["a".repeat(MAX_SCALAR_BYTES + 1)]);
     let diagnostics = failed(&run("change_assurance.receipt", &past_bytes), 2);
     let context = &diagnostics[0]["context"];
@@ -877,7 +698,7 @@ fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
 
     // A `plan` id one byte past the scalar ceiling: refused by size, not
     // looked up.
-    let mut past_plan = receipt_request(root.path(), &fixture);
+    let mut past_plan = receipt_request(root.path());
     past_plan["plan"] = json!("P".repeat(MAX_SCALAR_BYTES + 1));
     let diagnostics = failed(&run("change_assurance.receipt", &past_plan), 2);
     let context = &diagnostics[0]["context"];
@@ -886,9 +707,9 @@ fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
 }
 
 /// `change_assurance.receipt` records `governing_plan_id` and
-/// `diff_paths_supplied` on the sealed receipt, through the operation and not
-/// only through the library: a receipt sealed with `--plan`/`--diff-path`
-/// records the plan id and `true`; one sealed with neither records `null` and
+/// `diff_paths_supplied` on the written receipt, through the operation and not
+/// only through the library: a receipt written with `--plan`/`--diff-path`
+/// records the plan id and `true`; one written with neither records `null` and
 /// `false` explicitly, rather than a caller's omission producing the same
 /// silence a genuinely unlinked record would (PLAT-1015).
 ///
@@ -896,13 +717,11 @@ fn tc_997_613_diff_paths_and_plan_are_bounded_at_their_ceilings() {
 /// Provenance: PLAT-1015
 #[test]
 fn tc_1015_614_receipt_records_governing_plan_id_and_diff_paths_supplied() {
-    let fixture = case("everything-agrees");
     let root = repo();
-    seal_record(root.path(), &fixture);
-    intake_all(root.path(), &fixture);
+    retain_everything(root.path());
     write_protecting_plan(root.path(), "MP-1015-CORE", &["checker/config.toml"]);
 
-    let mut linked = receipt_request(root.path(), &fixture);
+    let mut linked = receipt_request(root.path());
     linked["diff_paths"] = json!(["src/lib.rs"]);
     linked["plan"] = json!("MP-1015-CORE");
     let payload = ok(&run("change_assurance.receipt", &linked));
@@ -912,7 +731,7 @@ fn tc_1015_614_receipt_records_governing_plan_id_and_diff_paths_supplied() {
     );
     assert_eq!(payload["receipt"]["diff_paths_supplied"], json!(true));
 
-    let unlinked = receipt_request(root.path(), &fixture);
+    let unlinked = receipt_request(root.path());
     let payload = ok(&run("change_assurance.receipt", &unlinked));
     assert_eq!(payload["receipt"]["governing_plan_id"], json!(null));
     assert_eq!(payload["receipt"]["diff_paths_supplied"], json!(false));

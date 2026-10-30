@@ -36,9 +36,9 @@ relationships:
 
 Issue: `agent-ix/quoin#307`, under EPIC `agent-ix/quoin#286`. Reviews: SR-128..135
 under `spec/reviews/module-cookiecutter-*.md`. Upstream: the semantic-module
-contract (`agent-ix/quoin#293`, merged `3e842ce`), filament-core-data ADR-0005,
+contract (`agent-ix/quoin#293`, merged), filament-core-data ADR-0005,
 `@agent-ix/semantic-core` 0.1.0. Ground truth: the two completed hand migrations,
-`spec-objects-business#4` (`567e5c4`) and `spec-artifacts-iso#34` (`6686f11`).
+`spec-objects-business#4` and `spec-artifacts-iso#34`.
 
 ## Requirements Summary
 
@@ -56,7 +56,7 @@ contract (`agent-ix/quoin#293`, merged `3e842ce`), filament-core-data ADR-0005,
 - [x] **FR-080:** The rendered suite treats the engine as a hard dependency and fails, naming `make dev-quire`, rather than skipping.
 - [x] **FR-081:** Public AGPL baseline: one licence identifier, the ownership and guidance files, matching Python and npm payloads, no credential, no private publication default.
 - [x] **FR-082:** The rendered `spec/` tree validates as rendered, with a Test Matrix drawn from the archetype's vocabulary and honest `🚧` rows.
-- [x] **FR-083:** Quoin's gate renders every variant into a temporary directory, checks it against a declared conformance contract, and fails on drift from the maintained repositories at pinned revisions.
+- [x] **FR-083:** Quoin's gate renders every variant into a temporary directory, checks it against a declared conformance contract, and fails on drift from the maintained repositories as checked out.
 
 ### Non-Functional Requirements
 
@@ -111,8 +111,8 @@ here is what makes the template verified rather than merely written.
 | Skeletons and fixtures      | `tests/semantic-module-template.test.ts` | TC-1411, TC-1420..TC-1426                                     |
 | Rendered suite behaviour    | `tests/semantic-module-template.test.ts` | TC-1427..TC-1431, TC-1450, TC-1460, TC-1469                   |
 | Packaging baseline          | `tests/semantic-module-template.test.ts` | TC-1432..TC-1438                                              |
-| Governance tree             | `tests/semantic-module-template.test.ts` | TC-1439..TC-1443, TC-1461, TC-1470                            |
-| Gate, conformance and drift | `tests/semantic-module-template.test.ts` | TC-1418, TC-1444..TC-1448, TC-1462..TC-1465                   |
+| Governance tree             | `tests/semantic-module-template.test.ts` | TC-1439..TC-1443, TC-1461 (TC-1470 withdrawn)                |
+| Gate, conformance and drift | `tests/semantic-module-template.test.ts` | TC-1444..TC-1448, TC-1463..TC-1465                            |
 
 ## Out of Scope
 

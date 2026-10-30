@@ -23,7 +23,7 @@
 
 use std::path::{Path, PathBuf};
 
-use quoin_store::store::write_content_addressed;
+use quoin_store::store::write_new_or_identical;
 use quoin_store::{JsonValue, canonical_json_bytes, parse_strict_json};
 
 use crate::common::wire_enum::wire_enum;
@@ -42,7 +42,7 @@ wire_enum! {
     pub enum InterventionRefusalCode {
         /// The record did not validate against the intervention schema.
         InvalidRecord => "invalid_record",
-        /// A referenced raw evidence file does not match its recorded digest.
+        /// A referenced raw evidence file does not match its recorded size.
         RawEvidenceMismatch => "raw_evidence_mismatch",
         /// No governing measurement plan admits this record.
         GoverningPlanAbsent => "governing_plan_absent",
@@ -192,7 +192,7 @@ pub fn write_intervention_record(
     // and it is what keeps a member this crate does not model from being
     // dropped on the way to disk.
     let bytes = canonical_json_bytes(candidate).map_err(MeasurementError::from)?;
-    write_content_addressed(&path, &bytes).map_err(|error| {
+    write_new_or_identical(&path, &bytes).map_err(|error| {
         let store: MeasurementError = error.into();
         match store.code() {
             MeasurementErrorCode::CollectionIdCollision => InterventionIntakeError::new(

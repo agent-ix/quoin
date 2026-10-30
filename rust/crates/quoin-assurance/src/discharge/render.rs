@@ -18,7 +18,6 @@ pub fn render_discharge_report(report: &DischargeReport) -> String {
             report.clause_set.authority, report.clause_set.id, report.clause_set.version
         ),
         String::new(),
-        format!("- Clause-set digest: `{}`", report.clause_set_digest),
         format!("- Evaluated as of: `{}`", report.as_of),
         String::new(),
     ];

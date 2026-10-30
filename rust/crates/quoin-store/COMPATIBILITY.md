@@ -1,64 +1,21 @@
-# quoin-store — frozen compatibility surface and the cutover gate
+# quoin-store - frozen compatibility surface
 
 `agent-ix/quoin#380`, under EPIC `#373`.
 
-This crate produces bytes and digests that **already exist on disk**. A digest
-here is not a checksum, it is an _identifier_: a change-assurance record is
-filed under its own digest and an attestation references its retained output by
-digest. A value this crate computes differently from the TypeScript it replaces
-is evidence that can no longer be found by the name it was filed under, with no
-migration back.
+This crate produces bytes that **already exist on disk**. A value this crate
+canonicalizes differently from the TypeScript it replaces is a change to
+retained evidence, not a change to code. Everything below is therefore frozen.
 
-Everything below is therefore frozen: changing one is changing retained
-evidence, not changing code.
+**What this crate does and does not do.** It parses stored documents,
+canonicalizes values, and writes bytes a caller hands it (`write_atomic`,
+`write_canonical`). It hashes no
+change-assurance record, attestation or receipt: those are addressed by
+`(record_id, revision)` or an assigned identity, and git history is the tamper
+evidence (FR-063, FR-064, FR-065).
 
-**What this crate does and does not do.** It is a _reader and verifier_. It
-parses stored documents, canonicalizes values, computes digests, replays a
-store against the TypeScript oracle, and writes bytes a caller hands it
-(`write_atomic`, `write_canonical`, `write_content_addressed`). It does **not**
-implement the change-assurance _writers_: nothing in `src/` seals a record,
-publishes an attestation pair, or files either under its digest.
-`store::record_path` and `store::attestation_path` compute the layout's paths
-and are called by no writer in this crate — `grep -rn 'record_path\|attestation_path' src/`
-finds only their definitions.
-
-**What is asserted, and by what.** Items 1-11 below are asserted by this
-crate's tests (`tests/tc_jcs_adversarial.rs`,
-`tests/tc_change_assurance_store.rs`, the unit tests in `src/json/`, and the
-oracle case corpus in `oracle/cases.mjs`) and by the
-differential replay. Items 12 and 13 are _descriptions of the retained layout
-and of the retained TypeScript writer's behaviour_, not assertions about this
-crate; each says below exactly how far this crate's tests reach. Where an item
-is not asserted, it says so rather than implying otherwise.
-
----
-
-## The hard gate
-
-**No cutover may depend on this crate until every digest in every reachable
-store has been replayed through both implementations with zero mismatches.**
-
-The Rust half runs at `HEAD`:
-
-```bash
-# Rust half — the comparison. Exit status is the gate.
-cargo run --release --bin quoin-store-replay -- \
-  --oracle <oracle.ndjson> <repo> [<repo> ...]
-```
-
-The TypeScript half is **not** reproducible at `HEAD` and is not meant to be.
-`oracle/capture-store-oracle.mjs` was deleted by quoin#508 under the cutover
-convention (see _Regenerating the fixtures_ below).
-
-The gate is the _number_, not the tool: a run reports digests replayed and
-mismatches, and only `mismatches = 0` clears it. A mismatch is never reconciled
-by adjusting the Rust until it agrees — it is reported, and a person decides.
-
-A run reports the population it compared, and **the compared population is part
-of the gate**: `gate_passes()` requires a non-zero comparison count equal to the
-store entities walked, with no unmatched entry on either side. A run that
-compared nothing reports `GATE: FAIL`, never `PASS` (`FR-098-CON-3`,
-`FR-098-AC-7`).
+**What is asserted, and by what.** The serializations below are asserted by
+`tests/tc_jcs_adversarial.rs`, the unit tests in `src/json/`, and the authored
+case corpus in `oracle/cases.mjs`.
 
 ---
 
@@ -71,13 +28,13 @@ There are **two** canonical serializations and they are not interchangeable.
 | shape            | compact, no whitespace                              | 2-space indent, `": "` separator |
 | trailing newline | no                                                  | yes                              |
 | member order     | UTF-16 code unit                                    | ECMAScript own-property order    |
-| used for         | digest bytes; the `change-assurance` family on disk | every other store file           |
+| used for         | the `change-assurance` family on disk               | every other store file           |
 
 1. **`STORE_SCHEMA_VERSION == 1`.**
 2. **JCS member order is UTF-16 code unit order.** Not Unicode scalar order.
    `U+10000` (surrogate pair `D800 DC00`) sorts _before_ `U+FFFD`; Rust's
    `str: Ord` puts it after. A `BTreeMap`-ordered port silently reverses those
-   two members and changes the digest.
+   two members and changes the bytes.
 3. **The pretty form's member order is ECMAScript own-property order.**
    `sortKeys` re-inserts sorted names into a fresh JavaScript object, and
    insertion hoists **array-index** names — the canonical decimal spelling of
@@ -99,86 +56,28 @@ There are **two** canonical serializations and they are not interchangeable.
    (compared after unescaping), unescaped C0 controls in strings, unpaired
    surrogate escapes, numbers that overflow to an infinity, and trailing content.
 
-## Frozen: the digests
-
-9. **Two algorithms, because Quoin has two.** Change-assurance digests are
-   **blake3**, stored as 64 lowercase hex characters with **no prefix**.
-   Measurement raw evidence and contract pins are **sha256**, stored
-   **`sha256:`-prefixed**. In the retained stores those two are told apart only
-   by the presence of that prefix. This crate makes the algorithm part of the
-   type instead.
-10. **A sealed record's digest is taken over the record with its top-level
-    `digest` member removed** — and only the top-level one. A nested member
-    named `digest` stays in the hashed bytes.
-
-## Frozen: the layout
-
-11. `store_root(repo) == <repo>/spec/evidence`. Used, not asserted: every test
-    that builds a store path goes through `store_root`, and the replay finds
-    nothing outside it, but no test pins the literal layout string.
-12. `change-assurance/records/<digest>.json` — one sealed record, JCS bytes.
-    The _bytes on disk_ are asserted: `tc_change_assurance_store.rs` reads the
-    fixture's records and checks they are byte-identical to this crate's JCS
-    serialization, and the replay above did the same over the production
-    instances. What is **not** asserted is that this crate writes them: it has
-    no record writer. Its only file-writing canonicalizer, `write_canonical`,
-    emits the _pretty_ form, which is the correct form for every other store
-    file and the wrong form for this family. `record_path` computes the path and
-    nothing in `src/` calls it.
-13. `change-assurance/attestations/<digest>/{attestation.json,output.bin}` —
-    in the retained TypeScript the pair is made visible by a single directory
-    rename, so a half-pair is never observable
-    (`src/change-assurance/store.ts`). **This crate does not implement that
-    publish step and no test here asserts it.** It reads the pair, verifies the
-    attestation against the retained output's raw-bytes digest, and reports a
-    mismatch; producing the pair remains the TypeScript writer's job.
-
 ---
 
-## Digest domains
+## Layout
 
-Three, as separate types with no `From`, no `Into`, no shared trait yielding a
-value another accepts, and no constructor that converts between them. Passing
-one where another belongs does not compile.
+`store_root(repo) == <repo>/spec/evidence`.
 
-| type                  | algorithm | digest _of_                                                                          | stored as      |
-| --------------------- | --------- | ------------------------------------------------------------------------------------ | -------------- |
-| `RawBytesDigest`      | blake3    | a producer's retained output bytes, exactly as supplied                              | bare hex       |
-| `CanonicalDigest`     | blake3    | the RFC 8785 canonical bytes of a JSON value                                         | bare hex       |
-| `RawFileSha256Digest` | sha256    | a file's complete bytes on disk, in the _measurement raw-evidence_ role specifically | `sha256:<hex>` |
+`change-assurance/records/<record_id>/<revision>.json` holds one record, in JCS
+bytes. A successor revision is a new file; the predecessor is never replaced.
 
-These are this crate's three domains, not the tree's. The retained TypeScript
-uses sha256 for at least two further roles that this crate does not model:
-assurance-record identity and file names (`src/evidence/assurance-records.ts`)
-and schema pinning (`src/quire/contract.ts`). See the module documentation of
-`src/digest.rs`.
-
-`quire-protocol`'s `FR-201-canonical-identity-domain` is the rule this follows:
-a digest over raw bytes and a digest over canonical bytes are **not
-substitutable**, even under the same algorithm and even when, for a given input,
-they are the same 64 characters — which for the first two they are, whenever the
-raw bytes happen to be canonical bytes. Nothing in the value tells you which
-question it answers. That is why the type does.
+`change-assurance/attestations/<attestation_id>/{attestation.json,output.bin}`
+is made visible by a single directory rename, so a half pair is never
+observable. Files written under the previous content-named layout are not read.
 
 ## Deliberate behaviour changes
 
-Three, each a hardening rather than a format change. None alters any byte or any
-digest of an input both implementations accept.
+Every write this crate offers is crash-atomic: temporary in the destination
+directory, `fsync`, rename, `fsync` the directory. `write_new_or_identical`
+publishes with `hard_link` rather than `rename`, so a concurrent writer's
+differing bytes are refused rather than clobbered. Asserted by
+`tests/tc_store_durability.rs`.
 
-1. **Every write this crate offers is crash-atomic.** Temporary in the
-   destination directory, `fsync`, rename, `fsync` the directory. The oracle's
-   `writeCanonical` is a plain `writeFileSync`; its change-assurance writer was
-   already atomic. `write_content_addressed` publishes with `hard_link` rather
-   than `rename`, so a concurrent writer's differing bytes are refused rather
-   than clobbered. Asserted by `tests/tc_store_durability.rs`.
-2. **`digest_file_sha256` refuses** a symbolic link, a non-regular file, a file
-   over `MAX_DIGESTED_FILE_BYTES` (256 MiB), and a file whose length changed
-   between the stat and the read. The TypeScript it replaces
-   (`rawEvidenceFor`, `src/measurement/intervention.ts:115`) is a bare
-   `readFileSync` with none of those guards, so a symlink pointing anywhere is
-   digested happily. **This can make an input that previously digested now
-   refuse.**
-3. **`__proto__` is kept.** See below.
+---
 
 ## Known divergence: `__proto__` in the pretty form
 
@@ -189,92 +88,21 @@ assigns members into it, so `out["__proto__"] = v` reaches the
 `JSON.parse` keeps `__proto__` as an own property (it uses `CreateDataProperty`,
 not assignment), so `readJson` → `writeCanonical` on a store file containing one
 destroys it with no diagnostic. `canonicalizeJcs` is unaffected — it never
-assigns into an object — so **no digest is involved**.
+assigns into an object — so the JCS bytes are unaffected.
 
 This crate keeps the member. Reproducing a prototype-pollution artefact in a
 language with no prototypes would be encoding a defect as a contract.
 
 The divergence is declared in `oracle/cases.mjs` and asserted, in both
 directions, by `tc_380_proto_member_is_data_in_rust_and_deleted_by_the_typescript_pretty_form`.
-The replay reports how many store files carry such a member. **At the
-2026-09-12 run, across 464 files in 90 stores: zero.** The divergence is
-therefore currently unreachable in practice. If a future run reports a non-zero
-count, that is data loss that has already happened and it must be investigated
-before cutover, not reconciled here.
 
-## Known divergence: nesting depth
-
-The reader and both writers are recursive and Rust does not grow the stack, so
-this crate refuses past `json::MAX_NESTING_DEPTH` (1,000) with
-`StoreError::JsonNestingTooDeep` rather than aborting the process on a stack
-overflow. The oracle has no stated bound: it refuses by exhausting V8's stack,
-at a threshold that varies between runs (measured on node 22.15.0: 5,119-6,143
-for `parseStrictJson`, 2,943 for the JCS path, 2,573 for the pretty path).
-
-A fixed number cannot equal a varying one, so the residual band is declared
-rather than hidden: **for documents nested deeper than 1,000 and no deeper than
-the oracle's own threshold, the oracle accepts and this crate refuses.** That is
-the safe direction — this crate never accepts a document the oracle refuses —
-and the band is unreachable in retained evidence. The full measurement is in the
-documentation of `json::MAX_NESTING_DEPTH`; the refusal is asserted by
-`tc_380_nesting_past_the_budget_is_refused_rather_than_overflowing`,
-`tc_380_nesting_at_the_budget_is_accepted`, and
-`tc_380_both_writers_refuse_past_the_budget_they_share_with_the_parser`.
-
-## Known divergence: `assertValidUnicode` has no counterpart
-
-`src/store/integrity.ts:211` exports `assertValidUnicode(value: string)`, which
-walks a string's UTF-16 code units and throws `IntegrityError` on a lone high or
-lone low surrogate. **This crate has no such function, and will not grow one.**
-
-The reason is that the condition it checks cannot be constructed here. A
-JavaScript string is a sequence of UTF-16 code units with no well-formedness
-requirement, so `"\uD800"` is an ordinary value that any code path may hold and
-hand to a serializer; the check exists because that is true. A Rust `String` is
-guaranteed well-formed UTF-8, and an unpaired surrogate has no UTF-8 encoding,
-so no `JsonValue::String` can carry one and no serializer needs to be defended
-against one. A function taking `&str` and looking for a lone surrogate would be
-a check over an empty population — the failure the retire-after-parity rule names by name.
-
-The refusal has not been dropped, it has moved to where the condition can
-actually occur: the **parser**, reading `\uD800` in the source text, where
-`json::parse` refuses it. That is stated in `src/json/value.rs`, which records
-both removed-by-construction refusals (non-finite numbers and lone surrogates)
-in the same place.
-
-The consequence for the published npm surface is that `assertValidUnicode` is a
-TypeScript-only export with no engine operation behind it. It is not a decision
-the boundary can be asked to take, because the boundary carries documents as
-bytes and the strict parser already refuses the escape.
+---
 
 ---
 
 ## The fixtures are frozen; they are not regenerated
 
-The captured fixtures — `tests/fixtures/jcs-oracle.json` and
-`tests/fixtures/change-assurance-store/` — are committed so **no TypeScript runs
-as a test oracle** (EPIC #373 AC-5). They are **frozen**. A test that disagrees
-with one is a parity finding to adjudicate, never a fixture to regenerate.
-
-The capture scripts that produced them —
-`oracle/capture-cases.mjs` and `oracle/build-change-assurance-fixture.mjs` —
-were deleted from `HEAD` by quoin#508. This is the convention, not an omission:
-**a capture script is deleted together with the TypeScript it captured.** Once
-its sources are gone it can regenerate nothing, so keeping it at `HEAD`
-advertises a recipe that cannot run.
-
-`oracle/cases.mjs` is kept. It is not a capture script: it is the authored
-adversarial case corpus, pure data with no imports, and it is the statement of
-intent that `tests/tc_jcs_adversarial.rs` reads the captured answers against.
-
-**Provenance without the script.** A golden's provenance is the pair it carries —
-`produced_by_digest` (a SHA-256 of the captured source) and
-`produced_from_revision` (a git SHA) — and that pair is verifiable in a bare
-clone, with no Node and no capture script:
-
-```bash
-git show <produced_from_revision>:<produced_by> | sha256sum   # == produced_by_digest
-```
-
-Where a golden names a `capture_script` it names it as `<revision>:<path>`, which
-`git show` resolves directly.
+`tests/fixtures/jcs-oracle.json` is committed so **no TypeScript runs as a test
+oracle** (EPIC #373 AC-5). A test that disagrees with it is a parity finding to
+adjudicate, never a fixture to regenerate. `oracle/cases.mjs` is the authored
+adversarial case corpus, pure data with no imports.

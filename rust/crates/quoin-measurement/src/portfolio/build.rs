@@ -205,16 +205,8 @@ fn collection_ref(
         id: collection.collection_id.as_str().to_owned(),
         path: measurement_path(repo, &id).to_string_lossy().into_owned(),
         timestamp: collection.timestamp.as_str().to_owned(),
-        source_revision: collection.source_revision.as_str().to_owned(),
         tool_identity: collection.tool_identity.as_str().to_owned(),
         tool_version: collection.tool_version.as_str().to_owned(),
-        config_digest: collection.config_digest.as_str().to_owned(),
-        // `? { corpusRevision } : {}` — a stated empty string is as absent as
-        // an absent member, because both are falsy.
-        corpus_revision: collection
-            .corpus_revision
-            .clone()
-            .filter(|revision| !revision.is_empty()),
         unverified_artifacts: collection
             .verification_stack
             .as_ref()

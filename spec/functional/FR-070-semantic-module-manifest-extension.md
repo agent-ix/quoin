@@ -17,7 +17,7 @@ relationships:
 
 Where a module declares semantic types, its manifest SHALL carry one optional
 `semantic` block, versioned independently of `manifest_version`, that names the
-semantic-core version it imports, the package identity it exports, and the
+package identity it exports and the
 mappings it uses, so that Quire, Quoin, and the compiler read one boundary.
 
 ## Rationale
@@ -32,8 +32,8 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 ## Behavior
 
 - The `semantic` block SHALL be optional, so a manifest without it loads exactly as today.
-- The `semantic` block SHALL admit exactly these keys: `contract_version` (semver, `1.0.0` for this specification), `semantic_core` (the exact `@agent-ix/semantic-core` version), `package` (an IR `packageIdentity`, `<org>/<repo>`), `exports` (object-type names published as semantic types), `imports` (other modules' `package` identities with exact versions), `targets` (values from the filament-core-data declared target registry: `common.schema.json` `target` together with its `representationFormat` values, as vendored), `mappings` (named representation mappings, FR-071..073), `compatibility_posture` (`strict`, `additive`, or `declared-lossy`, default `additive`), `legacy_forms` (`warning` or `error`, default `warning`, FR-074), and `sweep_report` (relative path, FR-074).
-- The `semantic` block SHALL require `contract_version`, `semantic_core`, and `package`.
+- The `semantic` block SHALL admit exactly these keys: `contract_version` (semver, `1.0.0` for this specification), `semantic_core` (an `x.y.z` string that Quoin does not read; BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream module-manifest schema requires `semantic_core` (an `x.y.z` string) in the `semantic` block, so a manifest without it is rejected; Quoin reads no value from it), `package` (an IR `packageIdentity`, `<org>/<repo>`), `exports` (object-type names published as semantic types), `imports` (other modules' `package` identities with exact versions), `targets` (values from the filament-core-data declared target registry: `common.schema.json` `target` together with its `representationFormat` values, as published), `mappings` (named representation mappings, FR-071..073), `compatibility_posture` (`strict`, `additive`, or `declared-lossy`, default `additive`), `legacy_forms` (`warning` or `error`, default `warning`, FR-074), and `sweep_report` (relative path, FR-074).
+- The `semantic` block SHALL require `contract_version` and `package`.
 - The module-manifest JSON Schema, owned by filament-core-service (`agent-ix/filament-core-service#21`), SHALL publish the block with `additionalProperties: false`.
 - Quoin SHALL take that schema from the published `@agent-ix/semantic-schema` package at the version its lockfile records, and the Quire output schemas from the linked `quire-rs` engine (FR-029).
 - When `quoin module install` meets an unknown key inside `semantic`, Quoin SHALL reject the manifest with a diagnostic naming the key rather than degrading to an empty model.
@@ -42,7 +42,7 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 - When `semantic.targets` names a value outside the target registry, Quoin SHALL reject the manifest naming the value.
 - When `semantic.package` is not of the `<org>/<repo>` form, Quoin SHALL reject the manifest naming the value.
 - When two installed modules declare the same `semantic.package`, Quoin SHALL reject the module being installed, naming both modules; catalog load order is the sorted module-root path order (FR-009).
-- Quoin SHALL expose the loaded block through the authoring pack (`quoin write`) so an author sees the semantic-core version, package identity, and schema paths in force.
+- Quoin SHALL expose the loaded block through the authoring pack (`quoin write`) so an author sees the package identity, and schema paths in force.
 - Quire SHALL apply the same block schema at artifact-validation time and report an invalid block as a document-level diagnostic (`agent-ix/quire-rs#388`).
 
 ## Constraints
@@ -64,7 +64,7 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 | ID | Criteria | Verification |
 |---|---|---|
 | FR-070-AC-1 | Every installed default module manifest loads unchanged with no `semantic` block. | Test |
-| FR-070-AC-2 | A manifest with `semantic: { contract_version: "1.0.0", semantic_core: "0.1.0", package: "agent-ix/spec-objects-business" }` loads and the pack reports those values. | Test |
+| FR-070-AC-2 | A manifest with `semantic: { contract_version: "1.0.0", package: "agent-ix/spec-objects-business" }` (plus the key the upstream schema requires, PLAT-1221) loads and the pack reports the contract version and package. Quoin reports no `semantic_core` value. | Test |
 | FR-070-AC-3 | A `semantic` block with an unknown key `foo` is rejected naming `foo`; every key in the admitted list is accepted. | Test |
 | FR-070-AC-4 | `exports: [endpoint]` on a module without an `endpoint` object type is rejected naming `endpoint`. | Test |
 | FR-070-AC-5 | `contract_version: "2.0.0"` is rejected before any other semantic key is read. | Test |

@@ -113,12 +113,6 @@ fn tc_502_010_coverage_derives_the_obligations_the_repository_states() {
     assert_eq!(obligations[0]["method"], "Test");
     assert_eq!(obligations[0]["target_ids"], json!(["TC-001"]));
     assert!(
-        obligations[0]["statement_hash"]
-            .as_str()
-            .is_some_and(|hash| hash.len() == 64),
-        "the statement hash is what suspect-link detection compares"
-    );
-    assert!(
         payload.get("shapes").is_none(),
         "this name must not reach the properties handler"
     );

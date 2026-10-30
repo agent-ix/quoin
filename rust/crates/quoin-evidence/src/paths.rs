@@ -31,10 +31,10 @@ pub const MOCK_INSPECTIONS_DIR: &str = "mock-inspections";
 /// Where use-specific evidence-producer reliance decisions live.
 pub const TRUST_DIR: &str = "trust";
 
-/// Where content-addressed experiment records live (FR-048).
+/// Where append-only experiment records live (FR-048).
 pub const EXPERIMENTS_DIR: &str = "experiments";
 
-/// Where content-addressed operational evidence records live (FR-048).
+/// Where append-only operational evidence records live (FR-048).
 pub const OPERATIONAL_EVIDENCE_DIR: &str = "operational";
 
 /// The authored suite registry.
@@ -85,13 +85,13 @@ pub fn suite_dir(family: &str, suite: &SuiteId) -> String {
     format!("{family}/{suite}")
 }
 
-/// A content-addressed record's file, `sha256-<64 hex>.json`.
+/// An assurance record's file, `<stem>.json`.
 ///
-/// The hex without its `sha256:` prefix, because a colon is not a portable
-/// file-name character and the retained store already made that choice.
+/// The stem is the record id (a UUID); see
+/// [`crate::assurance_records::record_file_stem`].
 #[must_use]
-pub fn assurance_record_path(family: &str, hex: &str) -> String {
-    format!("{family}/sha256-{hex}.json")
+pub fn assurance_record_path(family: &str, stem: &str) -> String {
+    format!("{family}/{stem}.json")
 }
 
 fn record_path(family: &str, suite: &SuiteId, commit: &Commit) -> String {
@@ -128,8 +128,8 @@ mod tests {
             "trust/ETD-12.json"
         );
         assert_eq!(
-            assurance_record_path("experiments", &"a".repeat(64)),
-            format!("experiments/sha256-{}.json", "a".repeat(64))
+            assurance_record_path("experiments", "0b9a7a52-8f0c-4d0e-9d57-3f1b2c6a1e44"),
+            "experiments/0b9a7a52-8f0c-4d0e-9d57-3f1b2c6a1e44.json"
         );
     }
 }

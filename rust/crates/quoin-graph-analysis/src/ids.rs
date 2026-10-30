@@ -6,7 +6,7 @@
 //!
 //! `analysis.ts` passes eight different kinds of identifier through functions
 //! that all take `string`: an artifact id, an obligation id, a suite name, a
-//! document path, a relation kind, an author, a commit and a statement hash.
+//! document path, a relation kind, an author and a commit.
 //! `verdictFor(report, obligation, gaps)` and
 //! `selectedCorpusEdges(export, selection, requirementIds, allArtifactIds, …)`
 //! are both call sites where two same-typed arguments could be transposed
@@ -133,10 +133,6 @@ producer_id!(
     RelationKind
 );
 producer_id!(
-    /// Who re-affirmed a binding.
-    Author
-);
-producer_id!(
     /// A commit, as the bindings store recorded it.
     ///
     /// Not [`Revision`]: the bindings store's `commit` carries no shape
@@ -144,17 +140,11 @@ producer_id!(
     /// giving it one here would refuse stores that already exist.
     Commit
 );
-producer_id!(
-    /// The statement hash a binding was made against.
-    StatementHash
-);
 
 /// An identifier a boundary in this crate refuses to accept malformed.
 ///
 /// The constructor is `parse`, it returns the type or the reason, and there is
 /// no `bool` anywhere: the proof that the text is well-formed *is* the value.
-/// `RawFileSha256Digest::parse_stored` (`quoin-store/src/digest.rs`) is the
-/// in-repo model.
 macro_rules! checked_id {
     ($(#[$meta:meta])* $name:ident, $check:expr, $what:literal) => {
         $(#[$meta])*

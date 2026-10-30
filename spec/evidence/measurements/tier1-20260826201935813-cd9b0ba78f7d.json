@@ -1,11 +1,9 @@
 {
   "collectionId": "tier1-20260826201935813-cd9b0ba78f7d",
-  "configDigest": "sha256:d8ca08f94af83403fee5649f4efd17ccb9f6f0a3e2c8f98e1312b69080a95049",
   "corpusRevision": "e897576643938c0c8a1288d54288398d90bbd75a",
   "environment": {
     "languages": "n/a,python,rust,typescript",
-    "runner": "tier-1",
-    "scorerDigest": "sha256:3eda9913b37259e2c3bb1779eb27d10c8856735ed31ab828b8ca59aab57d1872"
+    "runner": "tier-1"
   },
   "observations": [
     {
@@ -4833,17 +4831,7 @@
     "positional": 35,
     "provenance": {
       "corpus": "e897576643938c0c8a1288d54288398d90bbd75a",
-      "corpus_input": "sha256:b0c05893272d5ed4038e70faa49fd31d5ba4cbebe8140ab449c0a50813703c64",
       "declaration": {
-        "digest": "sha256:d8ca08f94af83403fee5649f4efd17ccb9f6f0a3e2c8f98e1312b69080a95049",
-        "modules": {
-          "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
-          "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
-          "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-          "variants/no-implements-declaration": "sha256:b2928e02205acfe202489f508065be134fb829ddecf01a4a883caf9467ac28dd",
-          "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-          "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf"
-        },
         "root": "corpus/modules",
         "sources": {
           "spec-artifacts-iso": "3d871962b66db99a1854f40466e94ebabc7a6115",
@@ -4940,7 +4928,6 @@
     "corpora": 117,
     "findings": 591
   },
-  "sourceRevision": "bb1373028e36d9e1d00f0a5092127ab31cc9b63f+working-tree:3eda9913b37259e2",
   "subject": "tier-1 controlled corpus",
   "timestamp": "2026-08-26T20:19:35.813Z",
   "toolIdentity": "quoin bench-tier1",

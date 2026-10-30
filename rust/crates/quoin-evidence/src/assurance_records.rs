@@ -1,19 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Content-addressed, append-only experiment and operational records (FR-048).
+//! Append-only experiment and operational records (FR-048).
 //!
-//! # Identity is the digest, and the digest is the file name
+//! # Identity is an opaque UUID, and the UUID is the file name
 //!
-//! A record's id is `sha256:` over the canonical JSON of the record *before*
-//! the id was added, and its path is `sha256-<hex>.json`. Two consequences the
-//! rest of this module exists to keep: a record cannot be edited without
-//! changing where it lives, and publishing the same input twice is a no-op
-//! rather than a rewrite.
-//!
-//! The digest itself is [`quoin_store::digest_assurance_record`]. FR-100-CON-4
-//! puts sha256 record identity in `quoin-store` and nowhere else, so this
-//! module computes none of it.
+//! A record's id is an opaque UUID that is not derived from its content
+//! (FR-098), and its path is `<recordId>.json`. A new record is given a
+//! fresh UUID; a record published again with the `recordId` it was given is
+//! idempotent when the bytes are the same and a named refusal when they are
+//! not, and nothing is ever overwritten. Tampering is visible in git history;
+//! nothing here recomputes an identity from content.
 //!
 //! # Validation is hand-written, and that is the point
 //!
@@ -45,6 +42,9 @@ const RECORDED_AT_GRAMMAR: InstantGrammar = InstantGrammar::ZonedInstant;
 
 /// Publish one experiment record, append-only.
 ///
+/// `input` may carry a `recordId` assigned by an earlier publish, which makes
+/// publishing it again idempotent; without one a fresh UUID is minted.
+///
 /// # Errors
 ///
 /// [`EvidenceError::InvalidRecord`] when the input does not validate,
@@ -55,11 +55,13 @@ pub fn write_experiment_record<S: EvidenceSource + ?Sized>(
     source: &mut S,
     input: &Value,
 ) -> Result<StoredAssuranceRecord<ExperimentRecord>, EvidenceError> {
-    let parsed: ExperimentRecordInput = validated(input, "experiment record", experiment_shape)?;
+    let (assigned, input) = split_record_id(input)?;
+    let parsed: ExperimentRecordInput = validated(&input, "experiment record", experiment_shape)?;
     publish(
         source,
         EXPERIMENTS_DIR,
         "experiment record",
+        assigned,
         parsed,
         |id, input| ExperimentRecord {
             record_id: id,
@@ -77,12 +79,14 @@ pub fn write_operational_evidence_record<S: EvidenceSource + ?Sized>(
     source: &mut S,
     input: &Value,
 ) -> Result<StoredAssuranceRecord<OperationalEvidenceRecord>, EvidenceError> {
+    let (assigned, input) = split_record_id(input)?;
     let parsed: OperationalEvidenceRecordInput =
-        validated(input, "operational evidence record", operational_shape)?;
+        validated(&input, "operational evidence record", operational_shape)?;
     publish(
         source,
         OPERATIONAL_EVIDENCE_DIR,
         "operational evidence record",
+        assigned,
         parsed,
         |id, input| OperationalEvidenceRecord {
             record_id: id,
@@ -96,7 +100,7 @@ pub fn write_operational_evidence_record<S: EvidenceSource + ?Sized>(
 /// # Errors
 ///
 /// [`EvidenceError::RecordIntegrity`] when the stored id disagrees with the
-/// path or with the content's digest.
+/// path it was read from.
 pub fn read_experiment_record<S: EvidenceSource + ?Sized>(
     source: &S,
     record_id: &str,
@@ -105,7 +109,7 @@ pub fn read_experiment_record<S: EvidenceSource + ?Sized>(
         source,
         EXPERIMENTS_DIR,
         record_id,
-        |record: &ExperimentRecord| (&record.record_id, &record.input),
+        |record: &ExperimentRecord| &record.record_id,
     )
 }
 
@@ -122,7 +126,7 @@ pub fn read_operational_evidence_record<S: EvidenceSource + ?Sized>(
         source,
         OPERATIONAL_EVIDENCE_DIR,
         record_id,
-        |record: &OperationalEvidenceRecord| (&record.record_id, &record.input),
+        |record: &OperationalEvidenceRecord| &record.record_id,
     )
 }
 
@@ -148,47 +152,80 @@ pub fn list_operational_evidence_records<S: EvidenceSource + ?Sized>(
     list_records(source, OPERATIONAL_EVIDENCE_DIR)
 }
 
-/// `sha256:<64 lowercase hex>` — the only id shape a record path accepts.
+/// Whether `value` is a record id this store addresses: a lowercase
+/// hyphenated UUID.
 #[must_use]
 pub fn is_record_id(value: &str) -> bool {
-    value.strip_prefix("sha256:").is_some_and(|hex| {
-        hex.len() == 64
-            && hex
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-    })
+    is_uuid(value)
+}
+
+fn is_lower_hex(text: &str) -> bool {
+    text.bytes()
+        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+/// A lowercase hyphenated UUID: 8-4-4-4-12 hexadecimal characters.
+fn is_uuid(value: &str) -> bool {
+    let groups: Vec<&str> = value.split('-').collect();
+    groups.len() == 5
+        && groups
+            .iter()
+            .zip([8_usize, 4, 4, 4, 12])
+            .all(|(group, length)| group.len() == length && is_lower_hex(group))
+}
+
+/// The file stem a record id is stored under: the id itself.
+///
+/// # Errors
+///
+/// [`EvidenceError::InvalidRecord`] when `record_id` is not a UUID.
+pub fn record_file_stem(record_id: &str) -> Result<String, EvidenceError> {
+    if is_uuid(record_id) {
+        return Ok(record_id.to_owned());
+    }
+    Err(EvidenceError::invalid(
+        "assurance record",
+        "recordId: must be a UUID",
+    ))
 }
 
 fn record_path(family: &str, record_id: &str) -> Result<String, EvidenceError> {
-    let hex = record_id.strip_prefix("sha256:").filter(|hex| {
-        hex.len() == 64
-            && hex
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-    });
-    hex.map(|hex| assurance_record_path(family, hex))
-        .ok_or_else(|| {
-            EvidenceError::invalid(
-                "assurance record",
-                "recordId: must be sha256:<64 lowercase hex>",
-            )
-        })
+    record_file_stem(record_id).map(|stem| assurance_record_path(family, &stem))
+}
+
+/// The record id an input carries, when it carries one, and the input without
+/// it. The shape check below then sees only the producer's own members.
+fn split_record_id(input: &Value) -> Result<(Option<String>, Value), EvidenceError> {
+    let Some(object) = input.as_object() else {
+        return Ok((None, input.clone()));
+    };
+    let mut rest = object.clone();
+    let Some(assigned) = rest.remove("recordId") else {
+        return Ok((None, input.clone()));
+    };
+    match assigned.as_str() {
+        Some(text) if is_record_id(text) => Ok((Some(text.to_owned()), Value::Object(rest))),
+        _ => Err(EvidenceError::invalid(
+            "assurance record",
+            "recordId: must be a UUID",
+        )),
+    }
 }
 
 fn publish<S, I, R, F>(
     source: &mut S,
     family: &str,
     label: &'static str,
+    assigned: Option<String>,
     input: I,
     build: F,
 ) -> Result<StoredAssuranceRecord<R>, EvidenceError>
 where
     S: EvidenceSource + ?Sized,
-    I: Serialize,
     R: Serialize,
     F: FnOnce(String, I) -> R,
 {
-    let identity = identify(label, &input)?;
+    let identity = assigned.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let record = build(identity.clone(), input);
     let path = record_path(family, &identity)?;
     let bytes = canonical_bytes_of(label, &record)?;
@@ -200,54 +237,25 @@ where
     })
 }
 
-/// `sha256:` over the canonical JSON of the input, via `quoin-store`.
-fn identify<I: Serialize>(label: &'static str, input: &I) -> Result<String, EvidenceError> {
-    let text = serde_json::to_string(input).map_err(|error| EvidenceError::Canonicalization {
-        what: label,
-        detail: error.to_string(),
-    })?;
-    let value = quoin_store::parse_strict_json_str(&text).map_err(|error| {
-        EvidenceError::Canonicalization {
-            what: label,
-            detail: error.to_string(),
-        }
-    })?;
-    quoin_store::digest_assurance_record(&value)
-        .map(|id| id.to_stored())
-        .map_err(|error| EvidenceError::Canonicalization {
-            what: label,
-            detail: error.to_string(),
-        })
-}
-
-fn read_checked<S, R, F, I>(
+fn read_checked<S, R, F>(
     source: &S,
     family: &str,
     record_id: &str,
-    split: F,
+    stored: F,
 ) -> Result<Option<R>, EvidenceError>
 where
     S: EvidenceSource + ?Sized,
     R: DeserializeOwned,
-    F: Fn(&R) -> (&String, &I),
-    I: Serialize,
+    F: Fn(&R) -> &String,
 {
     let path = record_path(family, record_id)?;
     let Some(text) = source.read(&path)? else {
         return Ok(None);
     };
     let record: R = decode(&path, &text)?;
-    let (stored_id, input) = split(&record);
-    if stored_id != record_id {
+    if stored(&record) != record_id {
         return Err(EvidenceError::RecordIntegrity {
             what: "record id does not match path",
-            path,
-            note: "",
-        });
-    }
-    if identify("assurance record", input)? != *stored_id {
-        return Err(EvidenceError::RecordIntegrity {
-            what: "record digest does not match content",
             path,
             note: "",
         });
@@ -261,18 +269,11 @@ fn list_records<S: EvidenceSource + ?Sized>(
 ) -> Result<Vec<String>, EvidenceError> {
     let mut ids = Vec::new();
     for name in source.list_files(family)? {
-        let Some(hex) = name
-            .strip_prefix("sha256-")
-            .and_then(|rest| rest.strip_suffix(".json"))
-        else {
+        let Some(stem) = name.strip_suffix(".json") else {
             continue;
         };
-        if hex.len() == 64
-            && hex
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-        {
-            ids.push(format!("sha256:{hex}"));
+        if is_uuid(stem) {
+            ids.push(stem.to_owned());
         }
     }
     ids.sort();
@@ -456,20 +457,9 @@ fn subject_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
     let Some(subject) = object_at("subject", value.unwrap_or(&Value::Null), clauses) else {
         return;
     };
-    exact(
-        subject,
-        "subject",
-        &["kind", "id", "sourceRevision"],
-        &[],
-        clauses,
-    );
+    exact(subject, "subject", &["kind", "id"], &[], clauses);
     string_value("subject.kind", subject.get("kind"), clauses);
     string_value("subject.id", subject.get("id"), clauses);
-    string_value(
-        "subject.sourceRevision",
-        subject.get("sourceRevision"),
-        clauses,
-    );
 }
 
 fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
@@ -483,10 +473,6 @@ fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
             "schemaVersion",
             "identity",
             "version",
-            "sourceRevision",
-            "sourceState",
-            "executableDigest",
-            "configurationDigest",
             "capabilities",
             "artifacts",
         ],
@@ -501,27 +487,6 @@ fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
     );
     string_value("producerProvenance.identity", root.get("identity"), clauses);
     string_value("producerProvenance.version", root.get("version"), clauses);
-    string_value(
-        "producerProvenance.sourceRevision",
-        root.get("sourceRevision"),
-        clauses,
-    );
-    literal(
-        root.get("sourceState"),
-        "producerProvenance.sourceState",
-        &["clean", "dirty"],
-        clauses,
-    );
-    sha256_value(
-        "producerProvenance.executableDigest",
-        root.get("executableDigest"),
-        clauses,
-    );
-    sha256_value(
-        "producerProvenance.configurationDigest",
-        root.get("configurationDigest"),
-        clauses,
-    );
     strings(
         "producerProvenance.capabilities",
         root.get("capabilities"),
@@ -535,9 +500,8 @@ fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
                 let Some(artifact) = object_at(&label, item, clauses) else {
                     continue;
                 };
-                exact(artifact, &label, &["name", "digest"], &[], clauses);
+                exact(artifact, &label, &["name"], &[], clauses);
                 string_value("artifact.name", artifact.get("name"), clauses);
-                sha256_value("artifact.digest", artifact.get("digest"), clauses);
             }
         }
         _ => clauses.push("producerProvenance.artifacts: must be an array".to_owned()),
@@ -632,10 +596,4 @@ fn instant(name: &str, value: Option<&Value>, clauses: &mut Vec<String>) -> Opti
         return None;
     };
     Some(read.into())
-}
-
-fn sha256_value(name: &str, value: Option<&Value>, clauses: &mut Vec<String>) {
-    if !value.and_then(Value::as_str).is_some_and(is_record_id) {
-        clauses.push(format!("{name}: must be sha256:<64 lowercase hex>"));
-    }
 }

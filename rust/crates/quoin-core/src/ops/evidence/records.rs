@@ -4,7 +4,7 @@
 //! The `evidence` operations that WRITE a record.
 //!
 //! Transcribing a suite run or a finding-shaped scan, a trust decision, a mock
-//! inspection and the two content-addressed assurance families. Each one
+//! inspection and the two append-only assurance families. Each one
 //! acquires the store through the granted [`EvidenceHost`] and hands back the
 //! absolute path of what it wrote.
 
@@ -23,7 +23,7 @@ use quoin_evidence::trust::assess_trust;
 use quoin_evidence::types::{
     Binding, FindingRecord, MockInspectionRecord, STORE_SCHEMA_VERSION, TrustDecision,
 };
-use quoin_evidence::{Commit, ObligationId, StatementHash, SuiteId};
+use quoin_evidence::{Commit, ObligationId, SuiteId};
 
 use crate::capabilities::{Capabilities, EvidenceHost};
 use crate::error::{CoreError, CoreErrorCode};
@@ -158,22 +158,20 @@ fn record_scan(
                 .map_err(|e| map_error(&e, op))?
                 .bindings;
             for id in &ids {
-                let Some(obligation) = request.obligations.iter().find(|o| &o.id == id) else {
+                if !request.obligations.iter().any(|o| &o.id == id) {
                     unknown.push(id.clone());
                     continue;
-                };
+                }
                 let outcome = bind(
                     &bindings,
                     &Binding {
                         obligation: ObligationId::new(id),
-                        statement_hash_at_binding: StatementHash::new(&obligation.statement_hash),
                         suite: SuiteId::new(&request.suite),
                         commit: Commit::new(&request.commit),
                         // A scan binds no symbol: it has none. The record is
                         // the evidence.
                         symbols: Vec::new(),
                         lineage: request.lineage.clone(),
-                        affirmations: None,
                     },
                 );
                 bindings = outcome.bindings;
@@ -224,7 +222,6 @@ fn record_entries(
         value(&RecordPayload::Run {
             run_path: absolute(&root, &outcome.run_path),
             bound: outcome.bound,
-            suspect: outcome.suspect,
             unmatched: outcome.unmatched,
             unrepresented: unrepresented.clone(),
         })
@@ -355,7 +352,7 @@ pub fn record_operational(
     assurance_record(request, capabilities, AssuranceFamily::Operational)
 }
 
-/// Which content-addressed assurance family a record belongs to.
+/// Which append-only assurance family a record belongs to.
 ///
 /// The two operations share one request shape, one ceiling and one payload
 /// shape, and differ only in which writer they call and which directory the
@@ -398,7 +395,7 @@ impl AssuranceFamily {
     }
 }
 
-/// Publish one content-addressed assurance record, experiment or operational.
+/// Publish one append-only assurance record, experiment or operational.
 fn assurance_record(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,

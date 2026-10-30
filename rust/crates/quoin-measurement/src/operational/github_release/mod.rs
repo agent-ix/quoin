@@ -43,8 +43,8 @@ use crate::intervention::intake::InterventionIntakeError;
 use crate::json_bridge::to_serde;
 use crate::operational::intake::write_operational_pair;
 use crate::operational::record::{
-    CapabilityStatus, ClockSupport, OperationalConfiguration, OperationalExerciseRecord,
-    OperationalScope, StandingCapability, StandingCapabilityRecord,
+    CapabilityStatus, ClockSupport, OperationalExerciseRecord, OperationalScope,
+    StandingCapability, StandingCapabilityRecord,
 };
 use crate::raw_evidence::{RawEvidencePath, raw_evidence_for};
 use crate::source::{Clock, DiskMeasurement, MeasurementSource};
@@ -74,8 +74,6 @@ pub struct GitHubReleaseProducerDefinition {
     pub producer: Producer,
     /// Where the control is observed.
     pub scope: OperationalScope,
-    /// What the control runs under.
-    pub configuration: OperationalConfiguration,
     /// The state transition the control supports.
     pub supported_transition: String,
     /// Who may use it.
@@ -224,8 +222,8 @@ fn read_export(
 
 /// `github-release-operational.ts:216-223`: account for the file, then read it.
 ///
-/// The accounting is not incidental — it is what puts the file's size and
-/// digest under the same guards the record's `raw_evidence` is checked against,
+/// The accounting is not incidental — it is what puts the file's size
+/// under the same guards the record's `raw_evidence` is checked against,
 /// so a producer cannot read a file the record could not then reference.
 fn retained_text(
     source: &DiskMeasurement,

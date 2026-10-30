@@ -7,15 +7,13 @@
 //!
 //! # The availability ladder
 //!
-//! A reading is `available` only if it survives four questions, asked in this
+//! A reading is `available` only if it survives three questions, asked in this
 //! order because a later one presumes the earlier answered:
 //!
-//! 1. Does the retained scorer attachment hash to its declared digest?
-//!    A contradiction here is `unreadable` (`graph-portfolio.ts:600-602`).
-//! 2. Is the producer record and scorer identity there at all? `unknown`.
-//! 3. Do this collection's own graph partitions agree on plan, definition
+//! 1. Is the producer record there at all? `unknown`.
+//! 2. Do this collection's own graph partitions agree on plan, definition
 //!    version and population identity? `incompatible`.
-//! 4. Does that plan match the repository's *active* `graph_quality` plan?
+//! 3. Does that plan match the repository's *active* `graph_quality` plan?
 //!    `incompatible`.
 //!
 //! The order is load-bearing and is the retained `if`/`else if` chain, not a
@@ -37,14 +35,13 @@ use crate::order::compare_text;
 use crate::reading::{
     GraphPartitionRow, GraphQualityHistoryRow, HistoryPlanRef, PartitionIdentity,
 };
-use crate::scorer::{ScorerIntegrityFailure, integrity_failure};
 
 /// The metric this whole crate is about. `graph-portfolio.ts:462`.
 pub const GRAPH_QUALITY_METRIC: &str = "graph_quality";
 
-/// The sentence stated when the producer record or scorer identity is absent.
+/// The sentence stated when the producer record is absent.
 /// `graph-portfolio.ts:612-613`.
-const NO_PRODUCER_IDENTITY: &str = "raw producer record or scorer identity is unavailable";
+const NO_PRODUCER_IDENTITY: &str = "raw producer record is unavailable";
 
 /// The sentence stated when a collection's own partitions disagree.
 /// `graph-portfolio.ts:616-617`.
@@ -93,23 +90,13 @@ pub fn history_row(
     let raw = record(Some(&collection.raw_evidence));
     let producer_record = record(member(raw, "producer"));
     let producer = member(producer_record, "producer");
-    let producer_record_digest = string_field(producer_record, "observation_id");
-    let scorer = record(member(raw, "scorer"));
-    let scorer_digest = string_field(scorer, "digest").or_else(|| {
-        string_field(
-            record(member(producer_record, "raw_scorer_output")),
-            "digest",
-        )
-    });
+    let observation_id = string_field(producer_record, "observation_id");
     let plan = observations.first().map(|first| HistoryPlanRef {
         id: first.plan_id.as_str().to_owned(),
         definition_version: first.definition_version.as_str().to_owned(),
     });
-    let attachment_failure = integrity_failure(producer_record, scorer);
     let (availability, reason) = availability_of(
-        attachment_failure.as_ref(),
-        producer_record_digest.as_deref(),
-        scorer_digest.as_deref(),
+        observation_id.as_deref(),
         producer,
         &observations,
         plan.as_ref(),
@@ -129,16 +116,12 @@ pub fn history_row(
         plan,
         tool_identity: collection.tool_identity.as_str().to_owned(),
         tool_version: collection.tool_version.as_str().to_owned(),
-        config_digest: collection.config_digest.as_str().to_owned(),
-        source_revision: collection.source_revision.as_str().to_owned(),
-        corpus_revision: collection.corpus_revision.clone(),
         population_identity: observations
             .first()
             .and_then(|first| first.population.as_ref())
             .and_then(|population| population.identity.clone()),
         producer: producer.cloned(),
-        producer_record_digest,
-        scorer_digest,
+        observation_id,
         partitions,
     })
 }
@@ -155,32 +138,16 @@ pub fn history_row(
               not exist and hide the order, which is the load-bearing part"
 )]
 fn availability_of(
-    attachment_failure: Option<&ScorerIntegrityFailure>,
-    producer_record_digest: Option<&str>,
-    scorer_digest: Option<&str>,
+    observation_id: Option<&str>,
     producer: Option<&JsonValue>,
     observations: &[&MeasurementObservation],
     plan: Option<&HistoryPlanRef>,
     active_plan: Option<&MeasurementPlan>,
 ) -> Result<(HistoryAvailability, Option<String>), GraphAdapterError> {
-    if let Some(failure @ ScorerIntegrityFailure::Unreadable { .. }) = attachment_failure {
-        return Ok((
-            HistoryAvailability::Unreadable,
-            Some(failure.reason().to_owned()),
-        ));
-    }
-    if producer_record_digest.is_none()
-        || scorer_digest.is_none()
-        || producer.is_none()
-        || attachment_failure.is_some()
-    {
+    if observation_id.is_none() || producer.is_none() {
         return Ok((
             HistoryAvailability::Unknown,
-            Some(
-                attachment_failure
-                    .map_or(NO_PRODUCER_IDENTITY, ScorerIntegrityFailure::reason)
-                    .to_owned(),
-            ),
+            Some(NO_PRODUCER_IDENTITY.to_owned()),
         ));
     }
     if !self_consistent(observations)? {
@@ -258,7 +225,7 @@ fn partition_row(row: &MeasurementObservation) -> GraphPartitionRow {
 /// The retained `row.dimensions?.measure ?? "unknown"` reads a member declared
 /// `Record<string, string>` and nothing validates that declaration, so a
 /// non-string member reaches the renderer in TypeScript and is refused here.
-/// That divergence is declared in `DIVERGENCE.md` §2 and is why this reads
+/// That divergence is why this reads
 /// through [`quoin_store::JsonValue::as_str`] rather than through
 /// `js_string`: a number here would be a *different measure name* in the
 /// partition key, not merely a different rendering.

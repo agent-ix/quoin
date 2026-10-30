@@ -4,7 +4,7 @@
 //! Deterministic repository QA-gate validators for quoin.
 //!
 //! Stage 2 of the Rust burn-down (quoin#377, parent quoin#373): the port of
-//! `src/validators/` at quoin `4d27dcf`. One capability today — [`inspect_empty_gates`],
+//! `src/validators/`. One capability today — [`inspect_empty_gates`],
 //! which finds a declared, wired shell gate that counts forbidden matches but
 //! never asserts the count (quoin#224).
 //!

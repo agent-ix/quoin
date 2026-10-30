@@ -59,10 +59,6 @@ pub struct DischargeAttestation {
     /// When it stops being current. An instant, strictly after
     /// [`DischargeAttestation::attested_at`].
     pub expires_at: String,
-    /// The revision the attestation is about.
-    pub source_revision: String,
-    /// `sha256:<64 lowercase hex>`.
-    pub evidence_digest: String,
 }
 
 /// The one door: every read of an attestation runs [`parse_attestation`].
@@ -424,8 +420,6 @@ pub struct DischargeReport {
     pub schema_version: DischargeSchemaVersion,
     /// Copied from the binding report.
     pub clause_set: ClauseSetKey,
-    /// Copied from the binding report.
-    pub clause_set_digest: String,
     /// A copy of the binding report's context, ordered so the serialised
     /// document is byte-stable.
     pub context: BTreeMap<String, String>,

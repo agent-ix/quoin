@@ -7,14 +7,12 @@
 //! `model/record`) so that module stays under the 700-line hard ceiling after
 //! PLAT-972 added the `strength` member; nothing here changed behaviour.
 
-/// Whether `version` is one of the three immutable spellings the oracle admits.
+/// Whether `version` is an exact semantic version, the one spelling the
+/// schema admits for a tool identity.
 ///
-/// `^(?:v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|[a-f0-9]{64})$`.
+/// `^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$`.
 #[must_use]
 pub fn is_an_immutable_version(version: &str) -> bool {
-    if is_lowercase_hex(version, 40) || is_lowercase_hex(version, 64) {
-        return true;
-    }
     let core = version.strip_prefix('v').unwrap_or(version);
     let (numbers, suffix) = match core.find(['-', '+']) {
         Some(at) => {
@@ -43,13 +41,6 @@ pub fn is_an_immutable_version(version: &str) -> bool {
                     .all(|byte| byte.is_ascii_alphanumeric() || byte == b'.' || byte == b'-')
         }
     }
-}
-
-fn is_lowercase_hex(value: &str, length: usize) -> bool {
-    value.len() == length
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 /// Whether `observed` is both the oracle's timestamp shape and an instant a
@@ -172,13 +163,13 @@ mod tests {
     use super::{is_a_real_instant, is_an_immutable_version};
 
     #[test]
-    fn immutable_versions_are_releases_commits_and_digests_and_nothing_else() {
+    fn a_tool_version_is_an_exact_semantic_version_and_nothing_else() {
         assert!(is_an_immutable_version("1.2.3"));
         assert!(is_an_immutable_version("v1.2.3"));
         assert!(is_an_immutable_version("1.2.3-rc.1"));
         assert!(is_an_immutable_version("1.2.3+build.5"));
-        assert!(is_an_immutable_version(&"a".repeat(40)));
-        assert!(is_an_immutable_version(&"0".repeat(64)));
+        assert!(!is_an_immutable_version(&"a".repeat(40)));
+        assert!(!is_an_immutable_version(&"0".repeat(64)));
         assert!(!is_an_immutable_version("latest"));
         assert!(!is_an_immutable_version("main"));
         assert!(!is_an_immutable_version("1.2"));

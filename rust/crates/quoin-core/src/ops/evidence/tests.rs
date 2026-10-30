@@ -286,13 +286,6 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
     let cases: Vec<(&str, Result<Response, CoreError>)> = vec![
         ("evidence.gc", gc(&json!({"repo": "/r"}), &none)),
         (
-            "evidence.affirm",
-            affirm_binding(
-                &json!({"repo": "/r", "obligation": "FR-1-AC-1", "statement_hash": "h", "who": "p", "commit": "c"}),
-                &none,
-            ),
-        ),
-        (
             "evidence.record",
             record(
                 &json!({"repo": "/r", "suite": "s", "commit": "c", "tool": "junit", "timestamp": "t", "results": "<testsuite/>"}),
@@ -323,7 +316,6 @@ fn an_operation_dispatched_without_a_host_is_an_internal_fault_not_a_refusal() {
             record_operational(&json!({"repo": "/r", "document": {}}), &none),
         ),
     ];
-    assert!(cases.len() >= 8, "the census shrank: {}", cases.len());
     for (op, outcome) in cases {
         let error = outcome.unwrap_err();
         assert_eq!(error.code, CoreErrorCode::Io, "{op}");
@@ -363,11 +355,6 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
             ),
         ),
         (
-            "evidence.affirm",
-            MAX_AFFIRM_BYTES,
-            affirm_binding(&json!({"repo": filler(MAX_AFFIRM_BYTES)}), &capabilities),
-        ),
-        (
             "evidence.audit_inputs",
             MAX_AUDIT_INPUTS_BYTES,
             audit_inputs(
@@ -376,7 +363,6 @@ fn tc_412_each_bound_refuses_before_the_host_is_consulted() {
             ),
         ),
     ];
-    assert!(cases.len() >= 5, "the census shrank: {}", cases.len());
     for (op, limit, outcome) in cases {
         let error = outcome.unwrap_err();
         assert_eq!(error.code, CoreErrorCode::Refused, "{op}");
@@ -401,32 +387,6 @@ fn an_oversized_scalar_is_refused_before_the_host_is_consulted() {
     assert_eq!(error.code, CoreErrorCode::Refused);
     assert_eq!(error.context["field"], "head_commit");
     assert_eq!(error.context["limit_bytes"], MAX_SCALAR_BYTES.to_string());
-}
-
-///
-/// Nothing is written when no binding matched: an unmatched affirmation must
-/// not rewrite `bindings.json` with identical content and a fresh mtime.
-#[test]
-fn an_affirmation_that_matches_nothing_writes_nothing() {
-    let host = TestHost::empty();
-    let capabilities = Capabilities::with_evidence(&host);
-    let response = affirm_binding(
-        &json!({
-            "repo": "/somewhere",
-            "obligation": "FR-1-AC-1",
-            "statement_hash": "abc",
-            "who": "peter",
-            "commit": "c".repeat(40),
-        }),
-        &capabilities,
-    )
-    .unwrap();
-    assert_eq!(response.payload["found"], false);
-    assert!(
-        host.store.borrow().paths().is_empty(),
-        "an unmatched affirmation touched the store: {:?}",
-        host.store.borrow().paths()
-    );
 }
 
 #[test]

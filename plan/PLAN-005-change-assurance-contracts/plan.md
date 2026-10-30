@@ -27,11 +27,11 @@ three-state outcomes without running proofs or making identity claims.
 ### User requirement
 
 - [x] **US-017:** Reviewers can verify candidate evidence against the exact
-      approved definition without treating hashes as signatures.
+      approved definition without any hash.
 
 ### Functional requirements
 
-- [x] **FR-063:** Parse, canonicalize, seal, retain, and verify revisioned
+- [x] **FR-063:** Parse, canonicalize, retain, and verify revisioned
       `ChangeAssuranceRecord` values.
 - [x] **FR-064:** Validate and atomically retain producer `ProofAttestation`
       values with exact output bytes.
@@ -41,7 +41,7 @@ three-state outcomes without running proofs or making identity claims.
 ## Dependency Graph
 
 - `FR-063 canonical integrity -> FR-064, FR-065`
-  Reason: all three record families share the raw JSON, RFC 8785, BLAKE3, digest,
+  Reason: all three record families share the raw JSON, RFC 8785,
   and identity primitives.
 - `FR-063 lineage/event validation + FR-064 attestation intake -> FR-065`
   Reason: receipt checks consume retained parents, exact workflow decisions,
@@ -50,12 +50,12 @@ three-state outcomes without running proofs or making identity claims.
   Reason: this lane extends existing retained-evidence storage and consumes the
   existing auditor verdict without replacing it.
 - `ix-flow FR-013/018 -> FR-063, FR-065`
-  Reason: ix-flow owns event hashes and history; Quoin receives and verifies
+  Reason: ix-flow owns event history; Quoin receives and orders by sequence
   retained event data only.
 
 ### Shared dependencies
 
-One strict raw-JSON/JCS/BLAKE3 module owns parsing, canonical bytes, digest
+One strict raw-JSON/JCS module owns parsing, canonical bytes,
 verification, closed schema validation, and deterministic ordering. No existing
 generic sorted-JSON helper may substitute for RFC 8785.
 
@@ -74,9 +74,9 @@ are adapted from existing auditor types rather than re-evaluated.
 - [x] **TC-1262 / FR-063-AC-2:** Collection properties preserve empties and reject duplicate identities.
 - [x] **TC-1263 / FR-063-AC-3:** Requirements and proofs retain exact reviewed premises.
 - [x] **TC-1264 / FR-063-AC-4:** Incomplete impact and unknown states stay visible.
-- [x] **TC-1265 / FR-063-AC-5:** RFC 8785 vectors and pinned BLAKE3 digests agree.
-- [x] **TC-1266 / FR-063-AC-6:** Mutating every semantic leaf invalidates the digest.
-- [x] **TC-1267 / FR-063-AC-7:** Malformed raw JSON, Unicode, numbers, ordering, and digest encodings fail closed.
+- [ ] **TC-1265 / FR-063-AC-5:** Withdrawn: no record digest.
+- [ ] **TC-1266 / FR-063-AC-6:** Withdrawn: no record digest.
+- [x] **TC-1267 / FR-063-AC-7:** Withdrawn: no digest encoding; malformed raw JSON, Unicode and numbers fail closed under FR-063-AC-1/2.
 - [x] **TC-1268 / FR-063-AC-8:** Genesis and strict N-1 lineage rules hold under generated chains.
 - [x] **TC-1269 / FR-063-AC-9:** Successors preserve exact parent paths and bytes.
 - [x] **TC-1270 / FR-063-AC-10:** Only one exact integrity-valid human decision binds.
@@ -86,8 +86,8 @@ are adapted from existing auditor types rather than re-evaluated.
 
 - [x] **TC-1272 / FR-064-AC-1:** Closed schema requires every attestation field.
 - [x] **TC-1273 / FR-064-AC-2:** Four producer results remain distinct facts.
-- [x] **TC-1274 / FR-064-AC-3:** Exact output digest/size mismatch leaves no artifacts.
-- [x] **TC-1275 / FR-064-AC-4:** JCS/BLAKE3 vectors and semantic mutations verify.
+- [x] **TC-1274 / FR-064-AC-3:** Output size mismatch leaves no artifacts.
+- [ ] **TC-1275 / FR-064-AC-4:** Withdrawn: no attestation digest.
 - [x] **TC-1276 / FR-064-AC-5:** Missing fields are independently refused.
 - [x] **TC-1277 / FR-064-AC-6:** Pair persistence is idempotent, crash-atomic, recoverable, and collision-safe.
 - [x] **TC-1278 / FR-064-AC-7:** Unavailable diagnostics persist while absence remains absent.
@@ -105,7 +105,7 @@ are adapted from existing auditor types rather than re-evaluated.
 - [x] **TC-1287 / FR-065-AC-7:** Event history, uniqueness, decisions, and integrity classify correctly.
 - [x] **TC-1288 / FR-065-AC-8:** Impact gaps and unresolved unknowns force incomplete.
 - [x] **TC-1289 / FR-065-AC-9:** Exact FR-032 finding kinds and obligation ids survive mapping.
-- [x] **TC-1290 / FR-065-AC-10:** Input permutations yield byte-identical receipts and digests.
+- [x] **TC-1290 / FR-065-AC-10:** Input permutations yield byte-identical receipts.
 - [x] **TC-1291 / FR-065-AC-11:** Existing outputs remain byte-identical and verification stays read-only.
 - [x] **TC-1292 / FR-065-AC-12:** Static/golden evidence excludes identity and signature claims.
 
@@ -113,7 +113,7 @@ are adapted from existing auditor types rather than re-evaluated.
 
 ### Track A: Critical Path (serial)
 
-- **A1 = TASK-025** Strict canonical integrity core — Hard; exit: official JCS vectors, raw malformed inputs, and semantic mutations pass.
+- **A1 = TASK-025** Strict canonical core — Hard; exit: official JCS vectors and raw malformed inputs pass.
 - **A2 = TASK-026** Record lineage and decision validation — Hard; exit: retained chains and exact human decisions classify without side effects.
 - **A3 = TASK-029** Receipt integrations — Hard; exit: ix-flow and FR-032 retained inputs produce exact three-state proof/review checks.
 - **A4 = TASK-030** Determinism and compatibility — Medium; exit: permutations are byte-identical and prior evidence/report goldens do not move.

@@ -34,7 +34,7 @@ different span is `wrong-span`; no spans where loci are expected is
 ## Collection Procedure
 
 Retain the controlled labels, raw `quire properties --json` payload, producer
-version, named expected-versus-observed misses, source revision, and timestamp.
+version, named expected-versus-observed misses, and timestamp.
 
 ## Environment and Sampling
 

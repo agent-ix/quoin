@@ -285,9 +285,9 @@
       "err": "invalid trust decision: validationEvidence: must not be empty"
     },
     {
-      "name": "trust-evidence-without-digest-or-reference",
+      "name": "trust-evidence-without-reference",
       "kind": "trust",
-      "err": "invalid trust decision: validationEvidence.0: validation evidence needs digest or reference"
+      "err": "invalid trust decision: validationEvidence.0: validation evidence needs a reference"
     },
     {
       "name": "trust-evidence-with-reference-only",
@@ -608,7 +608,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -616,8 +615,7 @@
             ]
           }
         ],
-        "created": true,
-        "suspect": false
+        "created": true
       }
     },
     {
@@ -627,7 +625,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -636,7 +633,6 @@
           },
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-B",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -644,8 +640,7 @@
             ]
           }
         ],
-        "created": true,
-        "suspect": false
+        "created": true
       }
     },
     {
@@ -655,7 +650,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "dddddddddddddddddddddddddddddddddddddddd",
             "symbols": [
@@ -664,27 +658,7 @@
             ]
           }
         ],
-        "created": false,
-        "suspect": false
-      }
-    },
-    {
-      "name": "bind-marks-suspect-on-a-changed-hash",
-      "kind": "bind",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ]
-          }
-        ],
-        "created": false,
-        "suspect": true
+        "created": false
       }
     },
     {
@@ -694,7 +668,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -702,8 +675,7 @@
             ]
           }
         ],
-        "created": false,
-        "suspect": false
+        "created": false
       }
     },
     {
@@ -713,7 +685,6 @@
         "bindings": [
           {
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
             "suite": "SUITE-A",
             "commit": "cccccccccccccccccccccccccccccccccccccccc",
             "symbols": [
@@ -724,130 +695,7 @@
             }
           }
         ],
-        "created": false,
-        "suspect": false
-      }
-    },
-    {
-      "name": "affirm-every-binding-for-the-obligation",
-      "kind": "affirm",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h9",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ],
-            "affirmations": [
-              {
-                "who": "peter",
-                "commit": "ffffffffffffffffffffffffffffffffffffffff",
-                "note": "read the new statement"
-              }
-            ]
-          },
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h9",
-            "suite": "SUITE-B",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ],
-            "affirmations": [
-              {
-                "who": "peter",
-                "commit": "ffffffffffffffffffffffffffffffffffffffff",
-                "note": "read the new statement"
-              }
-            ]
-          }
-        ],
-        "found": true
-      }
-    },
-    {
-      "name": "affirm-narrowed-to-one-suite",
-      "kind": "affirm",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ]
-          },
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h9",
-            "suite": "SUITE-B",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ],
-            "affirmations": [
-              {
-                "who": "peter",
-                "commit": "ffffffffffffffffffffffffffffffffffffffff",
-                "note": "read the new statement"
-              }
-            ]
-          }
-        ],
-        "found": true
-      }
-    },
-    {
-      "name": "affirm-finds-nothing",
-      "kind": "affirm",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h1",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ]
-          }
-        ],
-        "found": false
-      }
-    },
-    {
-      "name": "affirm-appends-to-existing-affirmations",
-      "kind": "affirm",
-      "ok": {
-        "bindings": [
-          {
-            "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": "sha256:h9",
-            "suite": "SUITE-A",
-            "commit": "cccccccccccccccccccccccccccccccccccccccc",
-            "symbols": [
-              "t1"
-            ],
-            "affirmations": [
-              {
-                "who": "ann",
-                "commit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-              },
-              {
-                "who": "peter",
-                "commit": "ffffffffffffffffffffffffffffffffffffffff",
-                "note": "read the new statement"
-              }
-            ]
-          }
-        ],
-        "found": true
+        "created": false
       }
     },
     {
@@ -949,7 +797,7 @@
         "files": [
           {
             "path": "bindings.json",
-            "text": "{\n  \"bindings\": [\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"lineage\": {\n        \"actor\": \"alice\"\n      },\n      \"obligation\": \"FR-001-AC-1\",\n      \"statementHashAtBinding\": \"sha256:h1\",\n      \"suite\": \"SUITE-A\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-001-AC-1\",\n      \"statementHashAtBinding\": \"sha256:h1\",\n      \"suite\": \"SUITE-Z\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-002-AC-1\",\n      \"statementHashAtBinding\": \"sha256:h1\",\n      \"suite\": \"SUITE-B\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    }\n  ],\n  \"schemaVersion\": 1\n}\n"
+            "text": "{\n  \"bindings\": [\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"lineage\": {\n        \"actor\": \"alice\"\n      },\n      \"obligation\": \"FR-001-AC-1\",\n      \"suite\": \"SUITE-A\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-001-AC-1\",\n      \"suite\": \"SUITE-Z\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-002-AC-1\",\n      \"suite\": \"SUITE-B\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    }\n  ],\n  \"schemaVersion\": 1\n}\n"
           }
         ]
       }
@@ -975,7 +823,7 @@
         "files": [
           {
             "path": "trust/ETD-1.json",
-            "text": "{\n  \"acceptedContext\": {\n    \"configurationDigest\": \"sha256:aa\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpusDigest\": \"sha256:bb\",\n    \"version\": \"1.0\"\n  },\n  \"decidedAt\": \"2026-01-01T00:00:00Z\",\n  \"decision\": \"relied-upon\",\n  \"id\": \"ETD-1\",\n  \"limitations\": [],\n  \"observedContext\": {\n    \"configurationDigest\": \"sha256:aa\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpusDigest\": \"sha256:bb\",\n    \"version\": \"1.0\"\n  },\n  \"owner\": \"peter\",\n  \"revalidateOn\": [\n    \"producer-version\",\n    \"configuration\",\n    \"validation-corpus\",\n    \"input-contract\",\n    \"environment\"\n  ],\n  \"schemaVersion\": 1,\n  \"use\": {\n    \"id\": \"U-1\",\n    \"intendedFunction\": \"transcribe junit\",\n    \"permittedDecisions\": [\n      \"record-run\",\n      \"report-coverage\"\n    ]\n  },\n  \"validationEvidence\": [\n    {\n      \"digest\": \"sha256:abcdef\",\n      \"id\": \"V-1\"\n    }\n  ]\n}\n"
+            "text": "{\n  \"acceptedContext\": {\n    \"configuration\": \"config-a\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpus\": \"corpus-a\",\n    \"version\": \"1.0\"\n  },\n  \"decidedAt\": \"2026-01-01T00:00:00Z\",\n  \"decision\": \"relied-upon\",\n  \"id\": \"ETD-1\",\n  \"limitations\": [],\n  \"observedContext\": {\n    \"configuration\": \"config-a\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpus\": \"corpus-a\",\n    \"version\": \"1.0\"\n  },\n  \"owner\": \"peter\",\n  \"revalidateOn\": [\n    \"producer-version\",\n    \"configuration\",\n    \"validation-corpus\",\n    \"input-contract\",\n    \"environment\"\n  ],\n  \"schemaVersion\": 1,\n  \"use\": {\n    \"id\": \"U-1\",\n    \"intendedFunction\": \"transcribe junit\",\n    \"permittedDecisions\": [\n      \"record-run\",\n      \"report-coverage\"\n    ]\n  },\n  \"validationEvidence\": [\n    {\n      \"id\": \"V-1\",\n      \"reference\": \"evidence/v-1\"\n    }\n  ]\n}\n"
           }
         ]
       }
@@ -1008,8 +856,7 @@
         "schemaVersion": "experiment-record-v1",
         "subject": {
           "kind": "requirement",
-          "id": "FR-001",
-          "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          "id": "FR-001"
         },
         "recordedAt": "2026-01-01T00:00:00Z",
         "hypothesis": "the adapter reads real output",
@@ -1032,17 +879,12 @@
           "schemaVersion": "producer-provenance-v1",
           "identity": "quoin",
           "version": "0.1.0",
-          "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "sourceState": "clean",
-          "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-          "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
           "capabilities": [
             "record"
           ],
           "artifacts": [
             {
-              "name": "report.json",
-              "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              "name": "report.json"
             }
           ]
         }
@@ -1079,11 +921,6 @@
       "err": "recordedAt must be an ISO-8601 instant"
     },
     {
-      "name": "assurance-experiment-bad-digest",
-      "kind": "assurance",
-      "err": "producerProvenance.executableDigest must be sha256:<64 lowercase hex>"
-    },
-    {
       "name": "assurance-experiment-not-an-object",
       "kind": "assurance",
       "err": "experiment record must be an object"
@@ -1095,8 +932,7 @@
         "schemaVersion": "operational-evidence-record-v1",
         "subject": {
           "kind": "service",
-          "id": "quoin-core",
-          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          "id": "quoin-core"
         },
         "recordedAt": "2026-01-01T00:00:00Z",
         "window": {
@@ -1120,17 +956,12 @@
           "schemaVersion": "producer-provenance-v1",
           "identity": "quoin",
           "version": "0.1.0",
-          "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "sourceState": "clean",
-          "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-          "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
           "capabilities": [
             "record"
           ],
           "artifacts": [
             {
-              "name": "report.json",
-              "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              "name": "report.json"
             }
           ]
         }
@@ -1153,8 +984,7 @@
         "schemaVersion": "operational-evidence-record-v1",
         "subject": {
           "kind": "service",
-          "id": "quoin-core",
-          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          "id": "quoin-core"
         },
         "recordedAt": "2026-01-01T00:00:00Z",
         "window": {
@@ -1177,17 +1007,12 @@
           "schemaVersion": "producer-provenance-v1",
           "identity": "quoin",
           "version": "0.1.0",
-          "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "sourceState": "clean",
-          "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-          "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
           "capabilities": [
             "record"
           ],
           "artifacts": [
             {
-              "name": "report.json",
-              "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              "name": "report.json"
             }
           ]
         }

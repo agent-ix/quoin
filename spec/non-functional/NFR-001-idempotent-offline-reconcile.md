@@ -15,7 +15,7 @@ relationships:
 ## Statement
 
 Default-module reconciliation SHALL be idempotent and SHALL perform no network or
-git work once each module is installed and pinned, so that repeated `catalog` and
+git work once each module is installed, so that repeated `catalog` and
 `write` invocations remain offline-safe.
 
 ## Scope

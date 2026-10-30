@@ -7,8 +7,6 @@
 
 use std::collections::BTreeMap;
 
-use quoin_store::digest_bytes_sha256;
-
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::raw_evidence::RawEvidencePath;
 
@@ -151,7 +149,6 @@ impl MeasurementSource for MemoryMeasurement {
             // the UTF-16 length JavaScript's `.length` would give: `"é"` is one
             // unit and two bytes, and `statSync().size` is bytes on both sides.
             size_bytes: u64::try_from(bytes.len()).unwrap_or(u64::MAX),
-            digest: digest_bytes_sha256(bytes),
         })
     }
 

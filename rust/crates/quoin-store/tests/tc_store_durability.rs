@@ -20,8 +20,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use quoin_store::parse_strict_json;
 use quoin_store::store::{
-    recover_orphaned_temporaries, store_root, write_atomic, write_canonical,
-    write_content_addressed,
+    recover_orphaned_temporaries, store_root, write_atomic, write_canonical, write_new_or_identical,
 };
 
 fn scratch(name: &str) -> PathBuf {
@@ -223,7 +222,7 @@ fn tc_380_concurrent_content_addressed_writers_refuse_rather_than_clobber() {
         let matched = Arc::clone(&matched);
         handles.push(std::thread::spawn(move || {
             let bytes = vec![u8::try_from(writer).unwrap(); 4096];
-            match write_content_addressed(&path, &bytes) {
+            match write_new_or_identical(&path, &bytes) {
                 Ok(true) => written.fetch_add(1, Ordering::Relaxed),
                 // `Ok(false)` means "already present with exactly these
                 // bytes", which cannot happen when every writer's bytes

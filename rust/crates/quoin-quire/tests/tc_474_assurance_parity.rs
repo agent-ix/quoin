@@ -18,7 +18,7 @@
 //! * each base is mutated once per rung of a named ladder — every top-level key
 //!   removed in turn, every key of the first element of every collection
 //!   removed and nulled in turn, an unknown key added at each level, the two
-//!   `const` tags broken, the `revision` and `digest` patterns broken, every arm
+//!   `const` tags broken, the `revision` pattern broken, every arm
 //!   of the `locator.path` traversal lookahead, and the `uuid` format.
 //!
 //! Mutation rather than hand-written fixtures, because a hand-written invalid
@@ -35,8 +35,7 @@
 //! # No live oracle runs from here
 //!
 //! The retire-after-parity rule forbids a Rust test spawning node, pnpm or tsx. The capture is a
-//! committed golden carrying the ajv version, the node version, the engine pin
-//! and the quoin revision it was taken at; this test reads that file and
+//! committed golden carrying the ajv version and the node version it was taken with; this test reads that file and
 //! nothing else.
 //!
 //! Trace: FR-099-AC-2
@@ -58,7 +57,7 @@ use serde_json::Value;
 
 /// The count below which this parity measurement is measuring nothing.
 ///
-/// 217 entries were captured. The floor sits below that so a rung that stops
+/// 209 entries are captured. The floor sits below that so a rung that stops
 /// applying is a red test rather than a silent shrink, and far enough below to
 /// survive a deliberate ladder edit without being re-tuned every time.
 const CORPUS_FLOOR: usize = 180;

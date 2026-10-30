@@ -77,7 +77,7 @@ this step does not audit.
 | --- | --- | --- |
 | `untagged` | The criterion has no test carrying its id | `high` |
 | `tagged-by-ignored-test` | Every test carrying its id is ignored or skipped, so nothing runs for it | `high` |
-| `evidence_status: suspect` | The auditor distrusts the evidence (a changed statement, a mocked confirmation, vacuous or non-independent evidence) | `high` |
+| `evidence_status: suspect` | The auditor distrusts the evidence (a mocked confirmation, vacuous or non-independent evidence) | `high` |
 | `evidence_status: stale` | The bound run is behind HEAD, or its latest run failed | `medium` |
 | `untracked_symbols` | A test tag naming an id no criterion declares — a typo, or a criterion that was renumbered | `medium` |
 

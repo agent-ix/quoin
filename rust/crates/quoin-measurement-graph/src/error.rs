@@ -25,10 +25,7 @@
 //! is this crate's code and [`GraphAdapterErrorCode::retained_spelling`] is the
 //! retained one, `None` for the codes the port added.
 //!
-//! The retained spelling is not decoration. `tests/tc_475_parity.rs` asserts
-//! it against the code the TypeScript oracle actually threw on each corpus
-//! entry, so a refusal here that classifies differently from the retained
-//! refusal is a failure rather than a nuance.
+//! The retained spellings are fixed by `tc_475_002` in this module's tests.
 //!
 //! **Codes are the API. Never rename one, never reuse one.**
 
@@ -49,18 +46,10 @@ pub enum GraphAdapterErrorCode {
     InvalidAttestation,
     /// The scorer attachment's bytes or media type were not supplied.
     AttachmentMissing,
-    /// The scorer attachment's digest disagreed with the record's.
-    AttachmentDigestMismatch,
     /// No single active plan governs the observed definition version.
     InactivePlan,
     /// Two producer facts map to one partition, so one would overwrite the other.
     DuplicatePartition,
-    /// A retained `bytesBase64` attachment is not strict RFC 4648 §4 base64.
-    ///
-    /// Port-only, and a declared divergence: Node's `Buffer.from(x, "base64")`
-    /// silently discards characters outside the alphabet, so it accepts input
-    /// this refuses (quoin#465). See `tests/tc_475_parity.rs`.
-    AttachmentEncodingInvalid,
     /// The transcribed collection was refused by the measurement validator.
     ///
     /// Port-only: the retained adapter lets `MeasurementValidationError`
@@ -89,16 +78,14 @@ pub enum GraphAdapterErrorCode {
 
 impl GraphAdapterErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 14] = [
         Self::UnknownAdapter,
         Self::InvalidPremise,
         Self::InvalidObservation,
         Self::InvalidAttestation,
         Self::AttachmentMissing,
-        Self::AttachmentDigestMismatch,
         Self::InactivePlan,
         Self::DuplicatePartition,
-        Self::AttachmentEncodingInvalid,
         Self::CollectionRefused,
         Self::InvalidRepositoryMapping,
         Self::DuplicateGraphExport,
@@ -117,10 +104,8 @@ impl GraphAdapterErrorCode {
             Self::InvalidObservation => "QMG-INVALID-OBSERVATION",
             Self::InvalidAttestation => "QMG-INVALID-ATTESTATION",
             Self::AttachmentMissing => "QMG-ATTACHMENT-MISSING",
-            Self::AttachmentDigestMismatch => "QMG-ATTACHMENT-DIGEST-MISMATCH",
             Self::InactivePlan => "QMG-INACTIVE-PLAN",
             Self::DuplicatePartition => "QMG-DUPLICATE-PARTITION",
-            Self::AttachmentEncodingInvalid => "QMG-ATTACHMENT-ENCODING-INVALID",
             Self::CollectionRefused => "QMG-COLLECTION-REFUSED",
             Self::InvalidRepositoryMapping => "QMG-INVALID-REPOSITORY-MAPPING",
             Self::DuplicateGraphExport => "QMG-DUPLICATE-GRAPH-EXPORT",
@@ -141,17 +126,13 @@ impl GraphAdapterErrorCode {
             Self::InvalidObservation => Some("invalid_observation"),
             Self::InvalidAttestation => Some("invalid_attestation"),
             Self::AttachmentMissing => Some("attachment_missing"),
-            Self::AttachmentDigestMismatch => Some("attachment_digest_mismatch"),
             Self::InactivePlan => Some("inactive_plan"),
             Self::DuplicatePartition => Some("duplicate_partition"),
             Self::InvalidRepositoryMapping => Some("invalid_repository_mapping"),
             Self::DuplicateGraphExport => Some("duplicate_graph_export"),
             Self::DuplicateGraphPremises => Some("duplicate_graph_premises"),
             Self::DuplicateGraphAudit => Some("duplicate_graph_audit"),
-            Self::AttachmentEncodingInvalid
-            | Self::CollectionRefused
-            | Self::Measurement
-            | Self::Store => None,
+            Self::CollectionRefused | Self::Measurement | Self::Store => None,
         }
     }
 
@@ -239,7 +220,7 @@ mod tests {
         assert_eq!(seen.len(), GraphAdapterErrorCode::ALL.len());
     }
 
-    /// The twelve retained spellings are distinct and are the retained union
+    /// The retained spellings are distinct and are the retained union
     /// of both classes this crate replaces.
     #[test]
     fn tc_475_002_the_retained_spellings_are_the_retained_union() {
@@ -250,7 +231,6 @@ mod tests {
         assert_eq!(
             retained,
             BTreeSet::from([
-                "attachment_digest_mismatch",
                 "attachment_missing",
                 "duplicate_partition",
                 "inactive_plan",

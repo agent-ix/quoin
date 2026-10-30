@@ -13,13 +13,13 @@ pub mod premises;
 pub mod report;
 
 pub use audit::{AuditEnvelope, SourceIdentity};
-pub use binding::{Affirmation, Binding, BindingInput};
+pub use binding::{Binding, BindingInput};
 pub use premises::{AcceptedPremises, ModulePremise, SchemaPremise};
 pub use report::{
-    AuditorVerdict, ChangeImpactAnalysis, ChangeImpactRow, ChurnAnalysis, ChurnEvent, ChurnRow,
-    ExportIdentity, FanOutAnalysis, FanOutRow, GraphAnalysis, GraphAnalysisInput,
-    GraphAnalysisState, GraphGap, GraphGapKind, GraphReportBase, GraphView, ImpactBinding,
-    ImpactObligation, ImpactPath, ImpactPathEdge, OwnedObligation,
+    AuditorVerdict, ChangeImpactAnalysis, ChangeImpactRow, ExportIdentity, FanOutAnalysis,
+    FanOutRow, GraphAnalysis, GraphAnalysisInput, GraphAnalysisState, GraphGap, GraphGapKind,
+    GraphReportBase, GraphView, ImpactBinding, ImpactObligation, ImpactPath, ImpactPathEdge,
+    OwnedObligation,
 };
 
 /// The relationship kinds a change-impact walk uses when the caller names none

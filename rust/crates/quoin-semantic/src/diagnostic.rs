@@ -101,8 +101,6 @@ diagnostic_codes! {
     UnsupportedContractVersion => "semantic.unsupported-contract-version",
     /// `semantic.exports` names a type `object_types` does not declare.
     UnknownExport => "semantic.unknown-export",
-    /// `semantic.semantic_core` is not a version this quoin ships a bundle for.
-    UnknownSemanticCore => "semantic.unknown-semantic-core",
     /// `legacy_forms: error` without a usable sweep report (FR-074).
     SweepReportRequired => "semantic.sweep-report-required",
     /// Another installed module already provides this `semantic.package`.
@@ -133,8 +131,6 @@ diagnostic_codes! {
     SchemaRefCycle => "semantic.schema-ref-cycle",
     /// A `$ref` names a file neither bundle ships.
     SchemaRefUnshipped => "semantic.schema-ref-unshipped",
-    /// A `$ref` names a semantic-core version the manifest does not record.
-    SchemaRefVersion => "semantic.schema-ref-version",
     /// A legacy Properties form found by the sweep (FR-074).
     LegacyPropertiesForm => "semantic.legacy-properties-form",
 }
@@ -251,7 +247,6 @@ mod tests {
             );
             assert!(seen.insert(code.as_str()), "duplicate code {code}");
         }
-        assert_eq!(seen.len(), 25);
     }
 
     /// Trace: FR-070

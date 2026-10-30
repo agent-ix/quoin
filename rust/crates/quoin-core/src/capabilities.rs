@@ -213,7 +213,7 @@ pub trait SemanticHost {
 ///
 /// The seam is the crate's own [`EvidenceStore`] rather than a second trait
 /// restating it: `quoin-change-assurance` already states "where evidence is
-/// kept" once, addressed only by digest, and a parallel declaration here would
+/// kept" once, addressed only by record id, and a parallel declaration here would
 /// be a shape nobody checks against it.
 ///
 /// Implemented for real in `main.rs` over

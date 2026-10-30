@@ -51,12 +51,6 @@ pub struct CollectionSummary {
     pub tool_identity: String,
     /// Which version of that tool.
     pub tool_version: String,
-    /// The digest of the configuration it ran under.
-    pub config_digest: String,
-    /// The revision of the measured source.
-    pub source_revision: String,
-    /// The revision of the measured corpus, when the collection states one.
-    pub corpus_revision: Option<String>,
     /// The collection's path, as [`measurement_path`] spells it.
     pub path: String,
     /// `verificationStack.artifacts` names the collection states with no
@@ -245,9 +239,6 @@ fn summary_of(
         timestamp: collection.timestamp.as_str().to_owned(),
         tool_identity: collection.tool_identity.as_str().to_owned(),
         tool_version: collection.tool_version.as_str().to_owned(),
-        config_digest: collection.config_digest.as_str().to_owned(),
-        source_revision: collection.source_revision.as_str().to_owned(),
-        corpus_revision: collection.corpus_revision.clone(),
         path: measurement_path(repo, &id).to_string_lossy().into_owned(),
         unverified_artifacts: collection
             .verification_stack

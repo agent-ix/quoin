@@ -13,47 +13,27 @@
 //!
 //! The retained schemas are `.passthrough()` (`load.ts:324`, `:335`, `:342`),
 //! so an undeclared member must not be a refusal. It is also never written
-//! back out: no binding reaches any of the three reports, only values derived
-//! from the six fields below. Carrying the rest would be carrying it nowhere.
+//! back out: no binding reaches either report, only values derived
+//! from the fields below. Carrying the rest would be carrying it nowhere.
 //! That is the opposite call from `quoin-finding-types`, and the difference is
 //! whether the producer's bytes are re-emitted.
 
 use serde_json::Value;
 
-use crate::ids::{Author, Commit, ObligationId, StatementHash, SuiteId};
+use crate::ids::{Commit, ObligationId, SuiteId};
 use crate::json as reader;
-
-/// One recorded re-affirmation of a binding.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Affirmation {
-    /// Who affirmed it.
-    pub who: Author,
-    /// At which commit.
-    pub commit: Commit,
-    /// Their note, when they left one.
-    pub note: Option<String>,
-}
 
 /// One obligation bound to one suite.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Binding {
     /// The obligation this binding is for.
     pub obligation: ObligationId,
-    /// The statement hash the binding was made against.
-    pub statement_hash_at_binding: StatementHash,
     /// The suite that carries it.
     pub suite: SuiteId,
     /// The commit it was bound at.
     pub commit: Commit,
     /// The symbols it names.
     pub symbols: Vec<String>,
-    /// The re-affirmation history, when the store recorded one.
-    ///
-    /// `Option` and not an empty `Vec`: `churn` distinguishes "no affirmations
-    /// recorded" from "an affirmations array that is empty" only in that both
-    /// contribute no events, but `canonicalizeBindings` emits the member only
-    /// when it was present (`load.ts:422`) and this type says which it was.
-    pub affirmations: Option<Vec<Affirmation>>,
 }
 
 /// Whether the bindings store could be read, and what it said.
@@ -114,11 +94,6 @@ fn parse_binding(value: &Value, at: &str) -> std::result::Result<Binding, String
         reader::member(object, &prefix, "obligation")?,
         "obligation",
     )?;
-    let statement_hash = non_empty(
-        &prefix,
-        reader::member(object, &prefix, "statementHashAtBinding")?,
-        "statementHashAtBinding",
-    )?;
     let suite = non_empty(&prefix, reader::member(object, &prefix, "suite")?, "suite")?;
     let commit = non_empty(
         &prefix,
@@ -135,51 +110,11 @@ fn parse_binding(value: &Value, at: &str) -> std::result::Result<Binding, String
     {
         symbols.push(reader::text(symbol, &format!("{prefix}symbols.{index}"))?.to_owned());
     }
-    let affirmations = match object.get("affirmations") {
-        None | Some(Value::Null) => None,
-        Some(value) => {
-            let mut entries = Vec::new();
-            for (index, entry) in reader::array(value, &format!("{prefix}affirmations"))?
-                .iter()
-                .enumerate()
-            {
-                entries.push(parse_affirmation(
-                    entry,
-                    &format!("{prefix}affirmations.{index}"),
-                )?);
-            }
-            Some(entries)
-        }
-    };
     Ok(Binding {
         obligation: ObligationId::new(obligation),
-        statement_hash_at_binding: StatementHash::new(statement_hash),
         suite: SuiteId::new(suite),
         commit: Commit::new(commit),
         symbols,
-        affirmations,
-    })
-}
-
-fn parse_affirmation(value: &Value, at: &str) -> std::result::Result<Affirmation, String> {
-    let object = reader::object(value, at)?;
-    let prefix = format!("{at}.");
-    let who = reader::text(
-        reader::member(object, &prefix, "who")?,
-        &format!("{prefix}who"),
-    )?;
-    let commit = reader::text(
-        reader::member(object, &prefix, "commit")?,
-        &format!("{prefix}commit"),
-    )?;
-    let note = match object.get("note") {
-        None | Some(Value::Null) => None,
-        Some(value) => Some(reader::text(value, &format!("{prefix}note"))?.to_owned()),
-    };
-    Ok(Affirmation {
-        who: Author::new(who),
-        commit: Commit::new(commit),
-        note,
     })
 }
 
@@ -197,19 +132,12 @@ fn non_empty(prefix: &str, value: &Value, name: &str) -> std::result::Result<Str
 /// # The tie-break that is not reproduced, and the test that says it cannot
 /// matter
 ///
-/// The retained sort has six levels. Four are plain field comparisons and are
-/// here. The last two compare `JSON.stringify(symbols)` and
-/// `JSON.stringify(affirmations ?? [])` — and `JSON.stringify` on an object
-/// emits members in **JavaScript insertion order**, which for a
-/// `.passthrough()` schema is the order the bytes on disk happened to use. A
-/// Rust type that reproduced that would have to carry the undeclared members
-/// and their file order, to decide a tie between two bindings.
+/// The retained sort has more levels than the fields kept here; the rest compared
+/// `JSON.stringify` of values that no report reads.
 ///
-/// It decides nothing. Binding order is not observable in any of the three
-/// reports: fan-out accumulates into sets, churn keys events by
-/// `(obligation, who, commit, note)` and sorts the suites it unions,
-/// change-impact takes the first binding per `(obligation, suite)` and reads
-/// only `suite` from it. `tc_385_binding_order_is_not_observable.rs` holds that
+/// It decides nothing. Binding order is not observable in either report:
+/// fan-out accumulates into sets, change-impact takes the first binding per
+/// `(obligation, suite)` and reads only `suite` from it. `tc_385_binding_order_is_not_observable.rs` holds that
 /// property over the whole golden corpus by permuting every case's bindings,
 /// which is a stronger statement than reproducing the tie-break would be.
 #[must_use]
@@ -218,32 +146,13 @@ fn canonicalize(mut bindings: Vec<Binding>) -> Vec<Binding> {
         binding
             .symbols
             .sort_by(|left, right| crate::ids::compare_text(left, right));
-        if let Some(affirmations) = binding.affirmations.as_mut() {
-            affirmations.sort_by(|left, right| {
-                (&left.who, &left.commit)
-                    .cmp(&(&right.who, &right.commit))
-                    .then_with(|| {
-                        crate::ids::compare_text(
-                            left.note.as_deref().unwrap_or(""),
-                            right.note.as_deref().unwrap_or(""),
-                        )
-                    })
-            });
-        }
     }
     bindings.sort_by(|left, right| {
-        (
-            &left.obligation,
-            &left.suite,
-            &left.commit,
-            &left.statement_hash_at_binding,
-        )
-            .cmp(&(
-                &right.obligation,
-                &right.suite,
-                &right.commit,
-                &right.statement_hash_at_binding,
-            ))
+        (&left.obligation, &left.suite, &left.commit).cmp(&(
+            &right.obligation,
+            &right.suite,
+            &right.commit,
+        ))
     });
     bindings
 }

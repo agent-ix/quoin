@@ -68,7 +68,7 @@ reads `orderSource` before it trusts `orderAttested`.
 
 ### Tamper facts (PLAT-985)
 
-`quoin measurement verify` also gathers four facts from the store's git
+`quoin measurement verify` also gathers three facts from the store's git
 history, the same way it gathers the intake order — only the caller has git,
 so the checker itself stays pure and takes these as inputs it does not
 compute:
@@ -79,11 +79,6 @@ compute:
 - a collection whose stored file was changed after intake first added it —
   by a later commit, by a delete and re-add under the same id, or by an
   uncommitted edit in the work tree (`collection_edited`);
-- a collection's recorded `verificationStack.protectedApparatus` digest for
-  this plan disagreeing with `git show <sourceRevision>:<path>` — the file's
-  real bytes at the commit the collection claims to be from
-  (`apparatus_forged`), which catches a collection written by hand rather
-  than through intake's own resolver (FR-110);
 - the plan's own document changing its `objective`, `estimator`,
   `decision_rule` or `protected_apparatus` between two revisions that share
   a `definition_version` — adjacent committed revisions, each read at the
@@ -97,8 +92,8 @@ appears among its observations' `planId`s in the content intake first added
 *or* in the last content seen (before removal, or on disk now), so neither an
 edit that moves a run off the plan nor one that corrupts the file before
 deleting it leaves the tampering unattributed. Every value read from a
-collection file — `sourceRevision` above all — reaches git after
-`--end-of-options`, so it is only ever a revision, never an option.
+collection file reaches git after `--end-of-options`, so it is only ever a
+revision, never an option.
 
 Each degrades to "nothing found" rather than an error when git cannot answer
 — outside a work tree, a shallow clone missing the revision in question, or a
@@ -162,7 +157,6 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | `rerun_until_pass` | reject | a regressed run with the candidate's own apparatus preceded it |
 | `apparatus_edit` | reject | an earlier run under the same `definition_version` recorded a different protected apparatus than the candidate (FR-110) |
 | `claimed_verdict_disagrees` | reject | the claimed verdict is not the checker's |
-| `apparatus_forged` | reject | a run's recorded protected-apparatus digest for this plan disagrees with `git show <sourceRevision>:<path>` (PLAT-985) |
 | `collection_deleted` | reject | a collection that measured this plan was added to the store's git history and no longer exists there (PLAT-985) |
 | `collection_edited` | reject | a run's stored file was edited by a commit after the one that first added it (PLAT-985) |
 | `definition_changed_without_version_bump` | reject | the plan's objective, estimator, decision rule or protected apparatus changed between two committed revisions sharing a `definition_version` (PLAT-985) |
@@ -173,13 +167,13 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | --- | --- | --- |
 | FR-108-AC-1 | A `MeasurementPlan`'s `statistical_design.estimator` and `.decision_rule` are read when present, as engineering-assurance's `Estimator` and `DecisionRule`. A value engineering-assurance refuses, a `constant-predictor` baseline under an estimator other than `proportion`, or a comparator that disagrees with the plan's `objective` refuses the plan load as `QM-PLAN-INVALID`, naming the member. | Test (TC-1780, TC-1781) |
 | FR-108-AC-2 | Every collection holding an observation of the plan's metric under the plan's id and `definition_version` is a run, and `collectionsConsidered` counts them whatever else the plan lacks. Runs are ordered by intake position, with unpositioned runs after every positioned one; the stated `timestamp` only breaks ties. The candidate is the last run. The candidate, or a `prior-collection` rule's prior, is `order_unattested` when it shares its intake position with another run or when a run before it states a later timestamp (or one after it an earlier one); a lone run needs no order. A slice an earlier run measured that the candidate lacks is `slice_missing`, and a collection of the candidate's subject and scope, not before it, that carries no observation of the plan is `observation_missing`: a dropped measurement never lets an older pass stand. | Test (TC-1782, TC-1789, TC-1791, TC-1797, TC-1799, TC-1800, TC-1803) |
-| FR-108-AC-3 | The rule is applied to every run against the runs before it; each run it does not hold for is listed in `regressedRuns` and counted. `prior-collection` is the latest earlier usable run's estimate and `best-seen` the maximum (`gt`, `ge`) or minimum (`lt`, `le`) of the earlier usable estimates, each computed from recomputed estimates; a run that is not usable evidence contributes none. From a run before the candidate only `value_disagrees_with_rows`, `population_malformed` and `interval_malformed` are findings; its other shortfalls exclude it from baselines and are otherwise history. `constant-predictor` is computed from the run being decided itself, not from history (PLAT-1016; see the section below), and is `inconclusive` with `constant_predictor_rows_absent` when that run carries no per-item observations for its metric (`constant_predictor_rows_malformed` and `constant_predictor_rows_mismatch` under FR-108-AC-10). `external-reference` is a per-dimension value the checker resolves from a source outside the plan at evaluation time; the checker has none to read, so this baseline is always `inconclusive` with `external_reference_unsupplied`, never computed from history or treated as `no_prior` (PLAT-1032). A regressed run whose source revision, configuration digest, tool, corpus revision and verification-stack lock and executable digests equal the candidate's, followed by a candidate the rule holds for, is `rerun_until_pass`. | Test (TC-1784, TC-1785, TC-1790, TC-1792, TC-1797, TC-1802, TC-1927) |
+| FR-108-AC-3 | The rule is applied to every run against the runs before it; each run it does not hold for is listed in `regressedRuns` and counted. `prior-collection` is the latest earlier usable run's estimate and `best-seen` the maximum (`gt`, `ge`) or minimum (`lt`, `le`) of the earlier usable estimates, each computed from recomputed estimates; a run that is not usable evidence contributes none. From a run before the candidate only `value_disagrees_with_rows`, `population_malformed` and `interval_malformed` are findings; its other shortfalls exclude it from baselines and are otherwise history. `constant-predictor` is computed from the run being decided itself, not from history (PLAT-1016; see the section below), and is `inconclusive` with `constant_predictor_rows_absent` when that run carries no per-item observations for its metric (`constant_predictor_rows_malformed` and `constant_predictor_rows_mismatch` under FR-108-AC-10). `external-reference` is a per-dimension value the checker resolves from a source outside the plan at evaluation time; the checker has none to read, so this baseline is always `inconclusive` with `external_reference_unsupplied`, never computed from history or treated as `no_prior` (PLAT-1032). A regressed run whose tool and corpus revision equal the candidate's, followed by a candidate the rule holds for, is `rerun_until_pass`. | Test (TC-1784, TC-1785, TC-1790, TC-1792, TC-1797, TC-1802, TC-1927) |
 | FR-108-AC-4 | An observation's estimate is recomputed from its `population` — `matched / examined` for `proportion`, `matched` for `count` — and a `proportion` or `count` observation with no `matched` is `population_unstated`. The stored `value` is consistent when it is the recomputed `f64` or lies within half a unit of its last stated decimal (read from its shortest round-trip spelling) of the exact quotient; otherwise the run is `value_disagrees_with_rows`. The rule is applied to the recomputed estimate, never the stored value. A `proportion` whose unit is not `fraction` or `fraction of …` is `unit_unsupported`. `mean`, `median` and `ratio` take the stored value and count the observation as asserted. `observationsRecomputed` and `observationsAsserted` count every run's observations. An incomplete or unstated population, including an unstated `complete`, is `inconclusive`, never `accept`; under a `minimum_population` an `examined` below it, `0` included, is `population_below_minimum`, and with no minimum `examined: 0` is `population_empty`; a population short of `repetitions` or malformed is `reject`. | Test (TC-1782, TC-1784, TC-1786..TC-1788, TC-1793, TC-1794, TC-1798, TC-1801, TC-1804) |
 | FR-108-AC-5 | The verdict is `reject` when any finding's reason is a reject reason, otherwise `inconclusive` when any is an inconclusive reason, otherwise `accept`. A claimed verdict that differs adds `claimed_verdict_disagrees` and the verdict is `reject`. | Test (TC-1783, TC-1789, TC-1795) |
 | FR-108-AC-6 | The result is the `quoin.measurement-verdict.v1` document under Outputs, every member present, and each reason, verdict and order-source spelling round-trips. | Test (TC-1795, TC-1805) |
 | FR-108-AC-7 | `quoin measurement verify` exits 0 on `accept`, and 1 with the complete document on `reject` (`CORE_REJECTED`) or `inconclusive` (`CORE_INCONCLUSIVE`). An unknown plan id, and a collection filed under a name that is not its `collectionId`, are refused (exit 2); an unknown claimed verdict or order source is a bad request (exit 3); each with no verdict. A plan recorded through `quoin measurement record` and verified is accepted; the same store with one observation's stored value edited is rejected with `value_disagrees_with_rows`. | Test (TC-1796, TC-1797, TC-1806) |
 | FR-108-AC-8 | `quoin measurement verify` takes the intake order from `git log --first-parent --diff-filter=A` over the store and reports `orderSource: git-first-parent-add`. Outside a git work tree it reports `none` and says why on stderr; in a shallow clone it reports `git-shallow` and `order_unattested` and says so on stderr; any other git failure fails the command rather than yielding an empty order. | Test (TC-1797, TC-1805) |
-| FR-108-AC-9 | `quoin measurement verify` reads four tamper facts from the store's git history (PLAT-985): a collection this plan governed that was added and later removed (committed, or in the work tree) is `collection_deleted`; a collection's stored file changed after intake added it (a later commit, a delete and re-add under the same id, or an uncommitted edit) is `collection_edited`; each is attributed by the plan ids in its first-added and last-seen content; a run's recorded protected-apparatus digest for this plan disagreeing with `git show <sourceRevision>:<path>` is `apparatus_forged`, and a `sourceRevision` spelled as a git option is never read as one; and the plan's own document changing its `objective`, `estimator`, `decision_rule` or `protected_apparatus` between two revisions sharing a `definition_version` — across a rename, and from the last commit to the work tree — is `definition_changed_without_version_bump`. Each is `false`/empty, not a false positive, when git cannot answer or the history is honest. | Test (TC-1892..TC-1903) |
+| FR-108-AC-9 | `quoin measurement verify` reads three tamper facts from the store's git history (PLAT-985): a collection this plan governed that was added and later removed (committed, or in the work tree) is `collection_deleted`; a collection's stored file changed after intake added it (a later commit, a delete and re-add under the same id, or an uncommitted edit) is `collection_edited`; each is attributed by the plan ids in its first-added and last-seen content; and the plan's own document changing its `objective`, `estimator`, `decision_rule` or `protected_apparatus` between two revisions sharing a `definition_version` — across a rename, and from the last commit to the work tree — is `definition_changed_without_version_bump`. Each is `false`/empty, not a false positive, when git cannot answer or the history is honest. A fourth fact is FR-110's: each earlier run whose protected files differ from the candidate's between their two `sourceRevision`s, as `git diff` reports, is `apparatus_edit`; no digest is recorded or compared. | Test (TC-1892..TC-1903) |
 | FR-108-AC-10 | A `constant-predictor` baseline is computed from the run being decided: every one of its own observations under `{metric}.constant-predictor-item` (`quoin_measurement::constant_predictor_item_metric`) carrying the same `planId`/`definitionVersion`, grouped by their `dimensions.family`. For each family, the best constant's hit count is the maximum, over every label recorded as some item's `dimensions.expected` or a member of its `dimensions.contested`, of the items whose `expected` equals that label or whose `contested` contains it. The baseline is the sum of each family's best-constant hits over the total item count across every family (MP-222/PLAT-932's size-weighted mean of per-family agreement — see the worked example in `engineering_assurance/skeletons/MeasurementPlan.md`). A run with no such observations is `constant_predictor_rows_absent`; one where any such observation lacks a non-empty string `item_id`, `family` or `expected`, states a `contested` that is not an array of strings, or repeats an `item_id` is `constant_predictor_rows_malformed`; one whose item count is not the governed observation's own `population.examined` is `constant_predictor_rows_mismatch` — no baseline is computed from a partial set. Intake admits an item observation under its governed metric's plan (same id, definition and lifecycle checks, no population minimum); a plan whose own `metric` ends in `.constant-predictor-item` is refused as `QM-PLAN-INVALID`; `compare` leaves item observations out. | Test (TC-1915..TC-1924) |
 | FR-108-AC-11 | When the plan's `decision_rule` declares `interval_level`, every run is judged by engineering-assurance's `DecisionRule::holds_on_interval` (engineering-assurance FR-021-AC-14) on that run's own `interval`, the candidate for its slice decision and every earlier run for regression detection under FR-108-AC-3; `DecisionRule::holds` and the point estimate are never used for such a rule. A run the rule does not hold for at its unfavourable bound is regressed exactly as a failing point estimate is, so run 1 failing at its lower bound, the same apparatus re-run, and run 2 passing is `rerun_until_pass`. An earlier run for which `holds_on_interval` gives no answer (no interval, a level below the plan's, or an estimate outside its interval) is regressed, the conservative direction, so an absent or weakened earlier interval cannot let a rerun-until-pass through; it adds no finding of its own except `interval_malformed`. A baseline rule's baseline value remains the earlier runs' point estimates. `method` is never read. Each slice decided on an interval carries in `decisions`, additively, `intervalBound` (`lower` or `upper`), `intervalBoundValue` and `intervalLevel`; other slices carry none, and the verdict document for a plan with no `interval_level` is byte-identical to the one before this criterion. | Test (TC-1954, TC-1955, TC-1956) |
 | FR-108-AC-12 | Under a plan declaring `interval_level`, a candidate with no `interval` is `inconclusive` with `interval_unstated`; one whose `interval` does not satisfy FR-044-AC-10 is `reject` with `interval_malformed`, in any run; one whose `level` is below the plan's is `reject` with `interval_level_short`; the rule is never judged on the point estimate instead. An estimate outside its interval (engineering-assurance's `EstimateOutsideInterval`) is `inconclusive` with `rule_not_evaluable`; it is reached when a recomputed `proportion` or `count` estimate falls outside the stored interval, which FR-108-AC-4's rounding tolerance permits (stored `value` 0.67 inside an interval with `lower` 0.67, recomputed 2/3). The interval requirement does not depend on resolving the baseline: a first candidate under a baseline rule with no interval lists both `interval_unstated` and `no_prior`. A plan whose rule states `interval_level` with an `eq` comparator, at 0 or 1 or outside them, non-numeric or null, refuses the plan load as `QM-PLAN-INVALID` under FR-108-AC-1, naming the member. | Test (TC-1957, TC-1958) |
@@ -291,7 +285,7 @@ not supported.
 - **Prior-collection laundering.** `prior-collection` compares the candidate
   with the latest earlier usable run and nothing else. A producer can lower
   that bar by recording a deliberately poor run under a *different* apparatus
-  (a new source revision is enough) just before the candidate: it is not a
+  (a different tool or corpus is enough) just before the candidate: it is not a
   rerun of the candidate's apparatus, so `rerun_until_pass` does not fire,
   and it becomes the prior. The regression is still listed in
   `regressedRuns` and counted, so it is visible; it is not refused. A plan
@@ -318,15 +312,6 @@ not supported.
   frontmatter so the checker can require the item rows' family set to equal
   it — an engineering-assurance `MeasurementPlan` schema change, not a check
   this crate can make alone.
-- **A forged record naming a source revision this repository never received
-  is unattested, not caught.** `apparatus_forged` needs `git show
-  <sourceRevision>:<path>` to succeed; a `sourceRevision` from a fetch this
-  clone never did, or from another repository entirely, makes the check
-  unable to answer, and it reports nothing rather than guessing. The same is
-  true of `definition_changed_without_version_bump` over a shallow plan
-  history and `collection_edited`/`collection_deleted` in a shallow clone —
-  all four tamper facts need the same full first-parent history the intake
-  order does.
 - **The tamper facts attest the history this clone presents.** A history
   rewritten and force-pushed so the tampering commits never existed leaves
   nothing for any reader of it to find; protection of the store's branch
@@ -354,9 +339,10 @@ not supported.
   `definition_change_without_version_bump` is what
   `definition_changed_without_version_bump` (PLAT-985) applies over the
   plan's git history.
-- FR-110 owns `protected_apparatus` resolution and digesting at intake;
-  `apparatus_forged` (PLAT-985) checks the recorded digest against the
-  store's own git history rather than trusting the record.
+- FR-110 owns `protected_apparatus` resolution at intake and the git
+  comparison of recorded protected sets. `apparatus_forged` and
+  `apparatus_unverifiable` are withdrawn: nothing is recorded over file
+  content, and no revision is compared.
 - `quoin-jev`'s `constant_predictor` module (PLAT-1016) is the reference
   producer for `constant-predictor` baseline item observations; it depends on
   this crate's `MeasurementObservation` type and the `constant_predictor_item_metric`/

@@ -7,7 +7,6 @@
             "artifact_type": "FR",
             "id": "FR-001",
             "locator": {
-              "digest": "01ababababababababababababababababababababababababababababababab",
               "line": 1,
               "path": "FR-001-example.md"
             }
@@ -16,7 +15,6 @@
             "artifact_type": "TestMatrix",
             "id": "TM-001",
             "locator": {
-              "digest": "02ababababababababababababababababababababababababababababababab",
               "line": 1,
               "path": "TM-001-matrix.md"
             }
@@ -56,12 +54,11 @@
             "freshness": "unknown",
             "kind": "verifies",
             "locator": {
-              "digest": "03ababababababababababababababababababababababababababababababab",
               "line": 12,
               "path": "lib/backed.rs"
             },
             "provenance": "canonical",
-            "source": "04ababababababababababababababababababababababababababababababab",
+            "source": "[\"rust\",\"lib/backed.rs\",\"covers_the_round_trip\",\"test_function\"]",
             "target": "TC-001"
           }
         ],
@@ -75,11 +72,10 @@
               "verifies"
             ],
             "container": null,
-            "id": "04ababababababababababababababababababababababababababababababab",
+            "id": "[\"rust\",\"lib/backed.rs\",\"covers_the_round_trip\",\"test_function\"]",
             "kind": "test_function",
             "language": "rust",
             "locator": {
-              "digest": "03ababababababababababababababababababababababababababababababab",
               "line": 12,
               "path": "lib/backed.rs"
             },
@@ -97,7 +93,6 @@
             "artifact_type": "FR",
             "id": "FR-001",
             "locator": {
-              "digest": "01ababababababababababababababababababababababababababababababab",
               "line": 1,
               "path": "FR-001-example.md"
             }
@@ -106,7 +101,6 @@
             "artifact_type": "TestMatrix",
             "id": "TM-001",
             "locator": {
-              "digest": "02ababababababababababababababababababababababababababababababab",
               "line": 1,
               "path": "TM-001-matrix.md"
             }
@@ -139,11 +133,10 @@
               "verifies"
             ],
             "container": null,
-            "id": "04ababababababababababababababababababababababababababababababab",
+            "id": "[\"rust\",\"lib/backed.rs\",\"covers_the_round_trip\",\"test_function\"]",
             "kind": "test_function",
             "language": "rust",
             "locator": {
-              "digest": "03ababababababababababababababababababababababababababababababab",
               "line": 12,
               "path": "lib/backed.rs"
             },

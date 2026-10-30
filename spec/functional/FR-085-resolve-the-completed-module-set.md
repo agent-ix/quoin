@@ -42,9 +42,9 @@ and SHALL refuse to publish a rate when a required module is unresolved.
 
 ## Rationale
 
-The catalog pins in `default-modules.yaml` are the previous release of each module, not the completed
-contract of this wave: `spec-artifacts-iso`'s mappings declaration does not exist at the pinned tag
-at all. Measuring the catalog pin would publish a number about a contract nobody is
+The catalog's default modules are the previous release of each module, not the completed
+contract of this wave: `spec-artifacts-iso`'s mappings declaration does not exist on the default
+branch at all. Measuring the catalog would publish a number about a contract nobody is
 proposing to promote. Naming the required set, and refusing without it, is what stops a run that
 resolved one module from satisfying every criterion.
 
@@ -52,7 +52,6 @@ resolved one module from satisfying every criterion.
 
 - A declared required module set: for each module, a repository path, a revision and the module's
   data subdirectory.
-- The `default-modules.yaml` catalog declaration, read for comparison only.
 
 ## Outputs
 
@@ -72,8 +71,6 @@ resolved one module from satisfying every criterion.
   before reading any corpus document.
 - Where a module publishes no Markdown mappings declaration, the measurement SHALL record
   `mappings: absent` against it.
-- The measurement SHALL record, for each module, whether the revision measured equals the revision
-  pinned for that module in `default-modules.yaml`.
 - The measurement SHALL record every diagnostic the engine emits while loading the module set as a
   module finding rather than as a failure of any corpus document.
 

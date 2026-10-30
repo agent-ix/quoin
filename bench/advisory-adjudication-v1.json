@@ -10,39 +10,19 @@
   },
   "population": {
     "source": {
-      "revision": "73b0d5d",
-      "report_digest": "sha256:a4799ec9a20ab526b03daf9140ed2d5668f107ac6ba9972252882de7ab56dcca",
       "provenance": {
         "engine": "quire 0.30.2 (engine 9126463)",
-        "corpus": "c359c1a2030a8c39579c9be2661775f728c9dff4",
-        "corpus_input": "sha256:5cd185bde9333ce3789fbfd4c09d4028d0dab6dd6cb1aab939f00659fc539291",
         "declaration": {
-          "root": "corpus/modules",
-          "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
-          "modules": {
-            "ecosystem": "sha256:1e4ac802a01f9923033e1f63ecdf5c48e0f8ba477cbe168914230f03630dff97",
-            "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
-            "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-            "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
-            "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-            "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
-            "variants/optional-target-section": "sha256:1a801dd51c8af35c159216eeeb166fd4d602c4e9a64c8ff13a77067c0cd5b20f",
-            "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
-          },
-          "sources": {
-            "spec-artifacts-process": "995288d609a47ab5a25f300ac0fa600d390b348c",
-            "spec-artifacts-iso": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217"
-          }
+          "root": "corpus/modules"
         }
       }
     },
     "selection": "Every finding in a source-report advisory family not governed by a compatible per-case, scoped, or standing ruling.",
-    "count": 108,
-    "digest": "sha256:dd9533344090240acb0b0ea1aa80b04a37a599040a5f584425bb74696fc2ac2c"
+    "count": 108
   },
   "findings": [
     {
-      "id": "sha256:014b7edee3fae04cf854d6a65642372be3cbb17655edb0bbceae560ba7397035",
+      "id": "FND-001",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -89,7 +69,7 @@
       }
     },
     {
-      "id": "sha256:09f69a28ec73d6cb2899f7ddc01d18175d253bd86bbc77373c4418befc776fff",
+      "id": "FND-002",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -136,7 +116,7 @@
       }
     },
     {
-      "id": "sha256:0a7ba2ac15d103a3f6b76c23b7eccacac9af1895f49f8894b244cedffe0fdb79",
+      "id": "FND-003",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -183,7 +163,7 @@
       }
     },
     {
-      "id": "sha256:0fe289bc630217374c1df5ae32f9911bd02cab3d425f7b8d733c28d8647dd2c0",
+      "id": "FND-004",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -230,7 +210,7 @@
       }
     },
     {
-      "id": "sha256:17256d2e2ea4f1deb9075cd747ac3fc6b33376e1b733481cdcb77d98981d8999",
+      "id": "FND-005",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -277,7 +257,7 @@
       }
     },
     {
-      "id": "sha256:181d19cf8394d131d164f7e49eb11f3889dd45e9c125438132f04832913f371b",
+      "id": "FND-006",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -324,7 +304,7 @@
       }
     },
     {
-      "id": "sha256:184ca9110b552087d887759713532911238bdddc9c6ca1e9e56883990a4bb085",
+      "id": "FND-007",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -371,7 +351,7 @@
       }
     },
     {
-      "id": "sha256:1857de95857616cab4d54f6297af99550e7b66821312173e32e177399cb4eff7",
+      "id": "FND-008",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -418,7 +398,7 @@
       }
     },
     {
-      "id": "sha256:1d83b933a9dec52bdb01125fa7494aabc4d5dcfdb9b43305431378823767864c",
+      "id": "FND-009",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -462,7 +442,7 @@
       }
     },
     {
-      "id": "sha256:1e3e2c49e2d0bf47bc6832626eddfe7ce447a453551b55a404b1dd97fb5d525a",
+      "id": "FND-010",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -509,7 +489,7 @@
       }
     },
     {
-      "id": "sha256:1f8f59a615793f962bfe0d985f94cfa9f2d46fa2272e06964bfa2eced3d3cb84",
+      "id": "FND-011",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -556,7 +536,7 @@
       }
     },
     {
-      "id": "sha256:1fd22f2d23797809bed9bc6e208e5a9718fdb8646118ccbaebaf285700e77b3b",
+      "id": "FND-012",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -603,7 +583,7 @@
       }
     },
     {
-      "id": "sha256:22cebabbce96582c4f7184ff30fb5dc7d3db0b35e40c2380d27faa44562a75ac",
+      "id": "FND-013",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -650,7 +630,7 @@
       }
     },
     {
-      "id": "sha256:23b632b2f84f9ca695f6f89239f147ee77a2a8a3fd403f7c413129f608388057",
+      "id": "FND-014",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -697,7 +677,7 @@
       }
     },
     {
-      "id": "sha256:270942c4b7f63c358d4e0b5d3510b349880cc0118a9b6ae45c7a553d178245f8",
+      "id": "FND-015",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -744,7 +724,7 @@
       }
     },
     {
-      "id": "sha256:286a718c1c239de15606149ef526c921fe9912bea982a5eb40a7a393fe4722bb",
+      "id": "FND-016",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -791,7 +771,7 @@
       }
     },
     {
-      "id": "sha256:2f8a8c21514c04362e2d86a1134b7b8ca0d4e36cc7512f6acc8a37e01e9a5c61",
+      "id": "FND-017",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -838,7 +818,7 @@
       }
     },
     {
-      "id": "sha256:2fd6f3a8a8320cd9c4e20b758ba14cffa0456094815e2d703c452204c92def18",
+      "id": "FND-018",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -885,7 +865,7 @@
       }
     },
     {
-      "id": "sha256:3362e4545f919e7896c4d553409e8ad40aeaa527bc7082016dba1d83a259e2fa",
+      "id": "FND-019",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -932,7 +912,7 @@
       }
     },
     {
-      "id": "sha256:380e6da84264ef6827031f7dc09308b11e764512a32ca033b1b47c7234535223",
+      "id": "FND-020",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -979,7 +959,7 @@
       }
     },
     {
-      "id": "sha256:3ab6e5986ae00ad0b40bbf2bb2ea103e2357d7b0c707823099a129d4f48f61eb",
+      "id": "FND-021",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1026,7 +1006,7 @@
       }
     },
     {
-      "id": "sha256:3b3a97be9b9d8269211c06799fee5cc0b865f19a885b6272cdf94351a6fe7f79",
+      "id": "FND-022",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1073,7 +1053,7 @@
       }
     },
     {
-      "id": "sha256:3dc134c3c05cce300826cf1d635992c464b95e4b89551a8eeb23ada8d3a1318a",
+      "id": "FND-023",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1120,7 +1100,7 @@
       }
     },
     {
-      "id": "sha256:3e85b7feee66b7d00a4bac88ad5a1a0dfe18def7f6e3415f1d914ff0b22e2b89",
+      "id": "FND-024",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1167,7 +1147,7 @@
       }
     },
     {
-      "id": "sha256:3f188164790bc0a2113aef7c804fb7aaa6037583b49fa283142e0c49edbbdd1d",
+      "id": "FND-025",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1214,7 +1194,7 @@
       }
     },
     {
-      "id": "sha256:40b220175aab1c4d3eb84ecd0dd7ff75dfc74d49280088c2581233d749bb1566",
+      "id": "FND-026",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1261,7 +1241,7 @@
       }
     },
     {
-      "id": "sha256:42339c7d8fdc2721180425e7fe32f33c52cc440c8f92c599c0bc3f8bc158d7e8",
+      "id": "FND-027",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1308,7 +1288,7 @@
       }
     },
     {
-      "id": "sha256:43169c24294bf71924e882ce29fe24853bdbf4e44339cc8571c6ed6778172f53",
+      "id": "FND-028",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1355,7 +1335,7 @@
       }
     },
     {
-      "id": "sha256:43ab999b695f7ae45e35b67263987e4042be5f151ee2a8a84c089c78900eb999",
+      "id": "FND-029",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1399,7 +1379,7 @@
       }
     },
     {
-      "id": "sha256:46f83a4464fbdeaa7e6fe7fc001dd3a4ea5cec5c62f313af7c7cd15ad17b4660",
+      "id": "FND-030",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1446,7 +1426,7 @@
       }
     },
     {
-      "id": "sha256:47aa5056233fc7117c237bd7a07b5a1aea4f3d350138a0f2910a3a34d1777cab",
+      "id": "FND-031",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1493,7 +1473,7 @@
       }
     },
     {
-      "id": "sha256:4e2c26a4b6ea07eb007cc5142f827e8644ccda505b228f459e71dea58c63b090",
+      "id": "FND-032",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1540,7 +1520,7 @@
       }
     },
     {
-      "id": "sha256:508cfdc86cd0980ab68449e025d95e0c4cc9369d6a1a603e02510d70751e7797",
+      "id": "FND-033",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1587,7 +1567,7 @@
       }
     },
     {
-      "id": "sha256:52bd70c76d10d9ae9536b88018c7c6cece1d14c6490f9007ac99a5f53967760f",
+      "id": "FND-034",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1634,7 +1614,7 @@
       }
     },
     {
-      "id": "sha256:547a230a27802a2bdbdc66e26e1803647d8352c0f794daa0900a152eb441411a",
+      "id": "FND-035",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1681,7 +1661,7 @@
       }
     },
     {
-      "id": "sha256:54ad14c7a8591ff89dd7bddfde5eff2bf4689da109f79fa586f14b18766040bb",
+      "id": "FND-036",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1725,7 +1705,7 @@
       }
     },
     {
-      "id": "sha256:5b55afcbc3af1f8d7bd16c23d87f2952d7410adb58d4bdf453d14a2a8faca9b2",
+      "id": "FND-037",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1772,7 +1752,7 @@
       }
     },
     {
-      "id": "sha256:619e309f36a535e87b9c744b63640dc0a074491e88f840fc03fb512682e0b22c",
+      "id": "FND-038",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1819,7 +1799,7 @@
       }
     },
     {
-      "id": "sha256:62529dce8a623e0f9e58f2684200bbfc322c2931efcbb111c00f1864d87cf0ef",
+      "id": "FND-039",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1866,7 +1846,7 @@
       }
     },
     {
-      "id": "sha256:62e80cd145e78dcd3e41ee300b24a35232fd86ed9d36e0d07e5dfd32bc54a020",
+      "id": "FND-040",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1913,7 +1893,7 @@
       }
     },
     {
-      "id": "sha256:6324e51f5b18e9ba82804bca05e27e09d51dd58da991939f6a63c03f7b2b1a79",
+      "id": "FND-041",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -1960,7 +1940,7 @@
       }
     },
     {
-      "id": "sha256:65583b4929e39ca7e2e1f72eb765c5e4202fcdc80c39ea8e4dda9d0dacd3e4d8",
+      "id": "FND-042",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2007,7 +1987,7 @@
       }
     },
     {
-      "id": "sha256:6b7bb5af8ba65397a68633073aaf313f219595a9c0358d4407c304ed174d0690",
+      "id": "FND-043",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2054,7 +2034,7 @@
       }
     },
     {
-      "id": "sha256:6c54d49e5947a1eddfa6c706566a182f97f91179f1782d39c43e3b1ca0079d93",
+      "id": "FND-044",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2101,7 +2081,7 @@
       }
     },
     {
-      "id": "sha256:701ef3fd9d83d059453c256c4c4cc9eed4ab9596a49b7e6cde416960db9e3548",
+      "id": "FND-045",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2148,7 +2128,7 @@
       }
     },
     {
-      "id": "sha256:71992e0b63abcba32bcaa22170180931441ddb0f5ec7d3ede914b51bcb888fc9",
+      "id": "FND-046",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2195,7 +2175,7 @@
       }
     },
     {
-      "id": "sha256:7b4bcba682ad82e7d271d2c83d4244d8d945cea1ebedf59565cf2857d33d982e",
+      "id": "FND-047",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2242,7 +2222,7 @@
       }
     },
     {
-      "id": "sha256:7d2912e40f3223818d985d8431844183fce2de0879850e8ed9c957140bfb4abd",
+      "id": "FND-048",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2289,7 +2269,7 @@
       }
     },
     {
-      "id": "sha256:7e1fe626806327b314bffc4391bf57b01899d0dc57f6e55828b4bd34b9f286f8",
+      "id": "FND-049",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2336,7 +2316,7 @@
       }
     },
     {
-      "id": "sha256:81aeb511aa2246f3142a6a2e42b192ef4509af92df2693447f16e81231d2bba9",
+      "id": "FND-050",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2383,7 +2363,7 @@
       }
     },
     {
-      "id": "sha256:833b49a8c67dd5556301be84e3a8099fe6f6f5587551d9ac510f48b8ff403e54",
+      "id": "FND-051",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2430,7 +2410,7 @@
       }
     },
     {
-      "id": "sha256:847eb0ea1a0722cb90ea2906c383910f445f06d1964da5a1ab5a1bcda99c4f56",
+      "id": "FND-052",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2477,7 +2457,7 @@
       }
     },
     {
-      "id": "sha256:85b247f3b3167dfbea5e1ab6fdaf02a1952927081d882cb06c64e8cb4a52bec2",
+      "id": "FND-053",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2524,7 +2504,7 @@
       }
     },
     {
-      "id": "sha256:863cbed7bfd4daecd45e36b5445d1f5616a675e0cdac759809f743c75882edd1",
+      "id": "FND-054",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2571,7 +2551,7 @@
       }
     },
     {
-      "id": "sha256:86b5e52460b423acae55c665f3693a3c214b2dc9bf932bdc1d36ef1b56c5741c",
+      "id": "FND-055",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2618,7 +2598,7 @@
       }
     },
     {
-      "id": "sha256:8855d6e7d57b2edcafc0c06252436c792415584a22972d3bf667505b682277e7",
+      "id": "FND-056",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2665,7 +2645,7 @@
       }
     },
     {
-      "id": "sha256:89f00c0430e08fecba911e0ef8420580b0a7e5dc04b774ac8d2570c7bca79d40",
+      "id": "FND-057",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2712,7 +2692,7 @@
       }
     },
     {
-      "id": "sha256:8a005dd23e1e7e456727550cf3f56582b3cfd48fc21d6baaf042515b14e28d39",
+      "id": "FND-058",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2759,7 +2739,7 @@
       }
     },
     {
-      "id": "sha256:8d09845bd4630883cce88a46ad144660633f1c3580891bcf90a7471b5d042c26",
+      "id": "FND-059",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2806,7 +2786,7 @@
       }
     },
     {
-      "id": "sha256:8d5e3825a5a0fd485d8269fa6c6345865d5ef9d77349e3d5772fa27b71ef44e5",
+      "id": "FND-060",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2853,7 +2833,7 @@
       }
     },
     {
-      "id": "sha256:933f4feb3842081409482b8d1f0d69369f263e44b7114b4cf1e4d3198d8cacfb",
+      "id": "FND-061",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2900,7 +2880,7 @@
       }
     },
     {
-      "id": "sha256:93ee0c2d867c96c61596135063f180f484feb242bb384ca83c97dd957b79b745",
+      "id": "FND-062",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2947,7 +2927,7 @@
       }
     },
     {
-      "id": "sha256:9560851ce117356eb15554dbf2c6470b79e51856bc0736f7b1171cc551cedc2c",
+      "id": "FND-063",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -2994,7 +2974,7 @@
       }
     },
     {
-      "id": "sha256:96c92c2338427487d8664a6be9d711c83c050b154d9886cb940f7787498746b4",
+      "id": "FND-064",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3041,7 +3021,7 @@
       }
     },
     {
-      "id": "sha256:9774ac57ce6fc729275d5fb18aa1a79e72003321e032ed5832c1b7cddf51cf89",
+      "id": "FND-065",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3088,7 +3068,7 @@
       }
     },
     {
-      "id": "sha256:97bddd1e218ce12ec4ba39789be81e0de399b360daa579fdb3a2e781b708022e",
+      "id": "FND-066",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3135,7 +3115,7 @@
       }
     },
     {
-      "id": "sha256:97e4a35e5711d059b367d8d11b618c686218a2ce8ace77aa80a618e2bec18ed2",
+      "id": "FND-067",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3182,7 +3162,7 @@
       }
     },
     {
-      "id": "sha256:99df8cd2a7b44610020fb3d9c5ee0cee9d3cda936fe8b97b8efe98e85e61db88",
+      "id": "FND-068",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3229,7 +3209,7 @@
       }
     },
     {
-      "id": "sha256:9ae8e2f5d13bb71bd255b7f2471a7ddc3930ea2cda20432c735f0c57d77f8326",
+      "id": "FND-069",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3276,7 +3256,7 @@
       }
     },
     {
-      "id": "sha256:9c747f45c112b3d47844f51dc8d4f7fb114ccfa4916831b9fb5c46d37a4a8b5b",
+      "id": "FND-070",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3323,7 +3303,7 @@
       }
     },
     {
-      "id": "sha256:9c9d8dd1be2b0c5b512c0f13d984112352d6b92b18b51767a23ac78976c0330c",
+      "id": "FND-071",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3370,7 +3350,7 @@
       }
     },
     {
-      "id": "sha256:a0ed853717ada3a36b2eb90310c4533481b9319e22f5f6d477d7f0cc9d01baa8",
+      "id": "FND-072",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3417,7 +3397,7 @@
       }
     },
     {
-      "id": "sha256:a13c9baa1c6d40613d1301c56f34f35b8ec924848b4023ff0efb77039d516161",
+      "id": "FND-073",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3464,7 +3444,7 @@
       }
     },
     {
-      "id": "sha256:a3db491795697e4a19324cb720a72d15ee0fc4c48a5578ac275119850e7a1276",
+      "id": "FND-074",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3511,7 +3491,7 @@
       }
     },
     {
-      "id": "sha256:aa985ad3136258d0df3e2b0c90b3293cdf1e0726f03fabde9d798e3ab9c003ab",
+      "id": "FND-075",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3558,7 +3538,7 @@
       }
     },
     {
-      "id": "sha256:ac3da8c185cdff524e261455d48d07f2c449e0f651ab20f356acf6f598aaebd4",
+      "id": "FND-076",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3605,7 +3585,7 @@
       }
     },
     {
-      "id": "sha256:aef66842a98915803c08ef01cb8041532dbdb3cad999d078e90f8af6c0cbb082",
+      "id": "FND-077",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3652,7 +3632,7 @@
       }
     },
     {
-      "id": "sha256:af3af30b17475aaaf430ccf9d4d6e97df2ba0aa76855c26019bbfaf427740970",
+      "id": "FND-078",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3699,7 +3679,7 @@
       }
     },
     {
-      "id": "sha256:b3b2f114b2b8a15366c978d96d0925cb0309167301bca0fbe90e706d2b3d2d15",
+      "id": "FND-079",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3746,7 +3726,7 @@
       }
     },
     {
-      "id": "sha256:b7f770f53038076b3420d3957f763adf02783cc38dd4b13e4b9c55d9bd922bf7",
+      "id": "FND-080",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3793,7 +3773,7 @@
       }
     },
     {
-      "id": "sha256:b88d2976d6c29fdb132b0d22cb00486e7823b62e13c20576ed8b924b71bae39e",
+      "id": "FND-081",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3840,7 +3820,7 @@
       }
     },
     {
-      "id": "sha256:ba4d54beef730586e0ce3ecdb750b6c9521a5ffb5f91292e55ef4aafa04f6c1b",
+      "id": "FND-082",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3887,7 +3867,7 @@
       }
     },
     {
-      "id": "sha256:bd3b51d06bb2e5208da72f60f1a45c121e55f701d10c615d4a1412c1db25a12c",
+      "id": "FND-083",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3934,7 +3914,7 @@
       }
     },
     {
-      "id": "sha256:bf91d4697007044cb824d986c58ec12e4d853f3601182eb063bedac7c577ef43",
+      "id": "FND-084",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -3981,7 +3961,7 @@
       }
     },
     {
-      "id": "sha256:c0283a2801600eafbdacb27c8143d0359cf491fb6cb1adcefb878338257cb7c6",
+      "id": "FND-085",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4028,7 +4008,7 @@
       }
     },
     {
-      "id": "sha256:c66b2340f22fdcf592a5224f8c1c6d1427b7f5d7124497d9cb14a051793614f2",
+      "id": "FND-086",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4075,7 +4055,7 @@
       }
     },
     {
-      "id": "sha256:c7e67bbcc81a5223f3307049f839183d40d609cc93ae388d1a43f6d8b02e5ef9",
+      "id": "FND-087",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4122,7 +4102,7 @@
       }
     },
     {
-      "id": "sha256:ca40083cfc49d86bb177f39e89efdfd3a018294be0dac08ff5d69b50be2d74b2",
+      "id": "FND-088",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4169,7 +4149,7 @@
       }
     },
     {
-      "id": "sha256:cd32c60269c2933637bd57ef2d7151aa6b6db49f4f14c1416159c360fc7fd533",
+      "id": "FND-089",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4216,7 +4196,7 @@
       }
     },
     {
-      "id": "sha256:cd4d1c160ed27bccf189c5c56af9d0b924a8e89bf324c4ad553fd1ad042ba1d1",
+      "id": "FND-090",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4263,7 +4243,7 @@
       }
     },
     {
-      "id": "sha256:ce09eb84a9dff3ba79ef296604d01e5b024b8b1d2ed4d5ef9e51a1aab612d983",
+      "id": "FND-091",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4310,7 +4290,7 @@
       }
     },
     {
-      "id": "sha256:d577226454a5fc2bbb808b98dbb6360ab1d24503c2f27004522cff0f526d80f7",
+      "id": "FND-092",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4357,7 +4337,7 @@
       }
     },
     {
-      "id": "sha256:d7e4c39da5a5736463cef10e2bdf8190e84ea4c0fc2b26a32549144eb9d66c10",
+      "id": "FND-093",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4404,7 +4384,7 @@
       }
     },
     {
-      "id": "sha256:d7f719d49a7a614991fd25bf1e915dd729695e913f80303c75f6b44e2dd11d2c",
+      "id": "FND-094",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4451,7 +4431,7 @@
       }
     },
     {
-      "id": "sha256:d828cc1ae08c5c1fd317d2a895981dc2e162e959185514604e2f9180b6d79111",
+      "id": "FND-095",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4498,7 +4478,7 @@
       }
     },
     {
-      "id": "sha256:d8f6692137ca292a59cd08221af440b63de87385446e326aca6fd807eb005fc3",
+      "id": "FND-096",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4545,7 +4525,7 @@
       }
     },
     {
-      "id": "sha256:dab592559540ac13e6125b6c946d5239da307a422b850c6c4b7ecf9cda5e61d6",
+      "id": "FND-097",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4592,7 +4572,7 @@
       }
     },
     {
-      "id": "sha256:dd8538da523eff4ddb65b7ef20e2250cc32cadae0ad55f59bc5f688cd123c84e",
+      "id": "FND-098",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4639,7 +4619,7 @@
       }
     },
     {
-      "id": "sha256:e47be36c4bcee7e51d84c6a625eba6d7cb7536dac6e2e361b309ddb6521faced",
+      "id": "FND-099",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4686,7 +4666,7 @@
       }
     },
     {
-      "id": "sha256:edf2ba32a203ad5997096fb12660951488f0fa94330c964076bb9dcd6c83b39c",
+      "id": "FND-100",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4733,7 +4713,7 @@
       }
     },
     {
-      "id": "sha256:f11034a101c30f87fd92c539a85b4f5eb7da0c4881b19d1050363337599853db",
+      "id": "FND-101",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4780,7 +4760,7 @@
       }
     },
     {
-      "id": "sha256:f15a795ac5e5606e002e46c35bf83e809d12632b07b3350c4a8ebd22e8f02038",
+      "id": "FND-102",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4824,7 +4804,7 @@
       }
     },
     {
-      "id": "sha256:f44077aa990082570cde000dd255cebad83be55e34ebe115b691cd407a854b33",
+      "id": "FND-103",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4871,7 +4851,7 @@
       }
     },
     {
-      "id": "sha256:f58917ff63c4307323b3687ef722786c9bb213677388e95232a9bcf9f4fd031e",
+      "id": "FND-104",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4918,7 +4898,7 @@
       }
     },
     {
-      "id": "sha256:f5a28dafa2af662ba9a1b4341702c145d3410ddd4b7a66436cb95d6ee47b1b65",
+      "id": "FND-105",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -4965,7 +4945,7 @@
       }
     },
     {
-      "id": "sha256:fa1067c55319611916f3b0cf033f4a37f5bc1381ae13674eac3c22f5d5ce783c",
+      "id": "FND-106",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -5012,7 +4992,7 @@
       }
     },
     {
-      "id": "sha256:fa4fc7f1d295e21cea492ebe353544356f20dec1a83a0abd9b95c021525f29ea",
+      "id": "FND-107",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -5059,7 +5039,7 @@
       }
     },
     {
-      "id": "sha256:fcb75f524bf5764d5558d39f9cd5354bf2fa4d0cd0bf7cbd6baec581a3c23e59",
+      "id": "FND-108",
       "finding": {
         "schemaVersion": "finding-envelope-v2",
         "source": {
@@ -5108,7 +5088,7 @@
   ],
   "rulings": [
     {
-      "finding_id": "sha256:014b7edee3fae04cf854d6a65642372be3cbb17655edb0bbceae560ba7397035",
+      "finding_id": "FND-001",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5119,7 +5099,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:09f69a28ec73d6cb2899f7ddc01d18175d253bd86bbc77373c4418befc776fff",
+      "finding_id": "FND-002",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5130,7 +5110,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:0a7ba2ac15d103a3f6b76c23b7eccacac9af1895f49f8894b244cedffe0fdb79",
+      "finding_id": "FND-003",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5141,7 +5121,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:0fe289bc630217374c1df5ae32f9911bd02cab3d425f7b8d733c28d8647dd2c0",
+      "finding_id": "FND-004",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5152,7 +5132,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:17256d2e2ea4f1deb9075cd747ac3fc6b33376e1b733481cdcb77d98981d8999",
+      "finding_id": "FND-005",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5163,7 +5143,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:181d19cf8394d131d164f7e49eb11f3889dd45e9c125438132f04832913f371b",
+      "finding_id": "FND-006",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5174,7 +5154,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:184ca9110b552087d887759713532911238bdddc9c6ca1e9e56883990a4bb085",
+      "finding_id": "FND-007",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5185,7 +5165,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:1857de95857616cab4d54f6297af99550e7b66821312173e32e177399cb4eff7",
+      "finding_id": "FND-008",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5196,7 +5176,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:1d83b933a9dec52bdb01125fa7494aabc4d5dcfdb9b43305431378823767864c",
+      "finding_id": "FND-009",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "Pinned case uncatalogued-verification-method-control contains no TestMatrix document while the test-case declaration selects TestMatrix, so that declaration scans and mints no rows as reported.",
@@ -5207,7 +5187,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:1e3e2c49e2d0bf47bc6832626eddfe7ce447a453551b55a404b1dd97fb5d525a",
+      "finding_id": "FND-010",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5218,7 +5198,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:1f8f59a615793f962bfe0d985f94cfa9f2d46fa2272e06964bfa2eced3d3cb84",
+      "finding_id": "FND-011",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5229,7 +5209,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:1fd22f2d23797809bed9bc6e208e5a9718fdb8646118ccbaebaf285700e77b3b",
+      "finding_id": "FND-012",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5240,7 +5220,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:22cebabbce96582c4f7184ff30fb5dc7d3db0b35e40c2380d27faa44562a75ac",
+      "finding_id": "FND-013",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5251,7 +5231,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:23b632b2f84f9ca695f6f89239f147ee77a2a8a3fd403f7c413129f608388057",
+      "finding_id": "FND-014",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5262,7 +5242,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:270942c4b7f63c358d4e0b5d3510b349880cc0118a9b6ae45c7a553d178245f8",
+      "finding_id": "FND-015",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5273,7 +5253,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:286a718c1c239de15606149ef526c921fe9912bea982a5eb40a7a393fe4722bb",
+      "finding_id": "FND-016",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5284,7 +5264,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:2f8a8c21514c04362e2d86a1134b7b8ca0d4e36cc7512f6acc8a37e01e9a5c61",
+      "finding_id": "FND-017",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5295,7 +5275,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:2fd6f3a8a8320cd9c4e20b758ba14cffa0456094815e2d703c452204c92def18",
+      "finding_id": "FND-018",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5306,7 +5286,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:3362e4545f919e7896c4d553409e8ad40aeaa527bc7082016dba1d83a259e2fa",
+      "finding_id": "FND-019",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5317,7 +5297,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:380e6da84264ef6827031f7dc09308b11e764512a32ca033b1b47c7234535223",
+      "finding_id": "FND-020",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5328,7 +5308,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:3ab6e5986ae00ad0b40bbf2bb2ea103e2357d7b0c707823099a129d4f48f61eb",
+      "finding_id": "FND-021",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:16, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5339,7 +5319,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:3b3a97be9b9d8269211c06799fee5cc0b865f19a885b6272cdf94351a6fe7f79",
+      "finding_id": "FND-022",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5350,7 +5330,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:3dc134c3c05cce300826cf1d635992c464b95e4b89551a8eeb23ada8d3a1318a",
+      "finding_id": "FND-023",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:16, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5361,7 +5341,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:3e85b7feee66b7d00a4bac88ad5a1a0dfe18def7f6e3415f1d914ff0b22e2b89",
+      "finding_id": "FND-024",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5372,7 +5352,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:3f188164790bc0a2113aef7c804fb7aaa6037583b49fa283142e0c49edbbdd1d",
+      "finding_id": "FND-025",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5383,7 +5363,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:40b220175aab1c4d3eb84ecd0dd7ff75dfc74d49280088c2581233d749bb1566",
+      "finding_id": "FND-026",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5394,7 +5374,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:42339c7d8fdc2721180425e7fe32f33c52cc440c8f92c599c0bc3f8bc158d7e8",
+      "finding_id": "FND-027",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5405,7 +5385,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:43169c24294bf71924e882ce29fe24853bdbf4e44339cc8571c6ed6778172f53",
+      "finding_id": "FND-028",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5416,7 +5396,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:43ab999b695f7ae45e35b67263987e4042be5f151ee2a8a84c089c78900eb999",
+      "finding_id": "FND-029",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "Pinned case uncatalogued-verification-method contains no TestMatrix document while the test-case declaration selects TestMatrix, so that declaration scans and mints no rows as reported.",
@@ -5427,7 +5407,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:46f83a4464fbdeaa7e6fe7fc001dd3a4ea5cec5c62f313af7c7cd15ad17b4660",
+      "finding_id": "FND-030",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5438,7 +5418,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:47aa5056233fc7117c237bd7a07b5a1aea4f3d350138a0f2910a3a34d1777cab",
+      "finding_id": "FND-031",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5449,7 +5429,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:4e2c26a4b6ea07eb007cc5142f827e8644ccda505b228f459e71dea58c63b090",
+      "finding_id": "FND-032",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5460,7 +5440,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:508cfdc86cd0980ab68449e025d95e0c4cc9369d6a1a603e02510d70751e7797",
+      "finding_id": "FND-033",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5471,7 +5451,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:52bd70c76d10d9ae9536b88018c7c6cece1d14c6490f9007ac99a5f53967760f",
+      "finding_id": "FND-034",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5482,7 +5462,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:547a230a27802a2bdbdc66e26e1803647d8352c0f794daa0900a152eb441411a",
+      "finding_id": "FND-035",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5493,7 +5473,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:54ad14c7a8591ff89dd7bddfde5eff2bf4689da109f79fa586f14b18766040bb",
+      "finding_id": "FND-036",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "Pinned case obligation-row-states-nothing contains no TestMatrix document while the test-case declaration selects TestMatrix, so that declaration scans and mints no rows as reported.",
@@ -5504,7 +5484,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:5b55afcbc3af1f8d7bd16c23d87f2952d7410adb58d4bdf453d14a2a8faca9b2",
+      "finding_id": "FND-037",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5515,7 +5495,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:619e309f36a535e87b9c744b63640dc0a074491e88f840fc03fb512682e0b22c",
+      "finding_id": "FND-038",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5526,7 +5506,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:62529dce8a623e0f9e58f2684200bbfc322c2931efcbb111c00f1864d87cf0ef",
+      "finding_id": "FND-039",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5537,7 +5517,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:62e80cd145e78dcd3e41ee300b24a35232fd86ed9d36e0d07e5dfd32bc54a020",
+      "finding_id": "FND-040",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5548,7 +5528,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:6324e51f5b18e9ba82804bca05e27e09d51dd58da991939f6a63c03f7b2b1a79",
+      "finding_id": "FND-041",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5559,7 +5539,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:65583b4929e39ca7e2e1f72eb765c5e4202fcdc80c39ea8e4dda9d0dacd3e4d8",
+      "finding_id": "FND-042",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5570,7 +5550,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:6b7bb5af8ba65397a68633073aaf313f219595a9c0358d4407c304ed174d0690",
+      "finding_id": "FND-043",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5581,7 +5561,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:6c54d49e5947a1eddfa6c706566a182f97f91179f1782d39c43e3b1ca0079d93",
+      "finding_id": "FND-044",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5592,7 +5572,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:701ef3fd9d83d059453c256c4c4cc9eed4ab9596a49b7e6cde416960db9e3548",
+      "finding_id": "FND-045",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5603,7 +5583,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:71992e0b63abcba32bcaa22170180931441ddb0f5ec7d3ede914b51bcb888fc9",
+      "finding_id": "FND-046",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5614,7 +5594,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:7b4bcba682ad82e7d271d2c83d4244d8d945cea1ebedf59565cf2857d33d982e",
+      "finding_id": "FND-047",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5625,7 +5605,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:7d2912e40f3223818d985d8431844183fce2de0879850e8ed9c957140bfb4abd",
+      "finding_id": "FND-048",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5636,7 +5616,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:7e1fe626806327b314bffc4391bf57b01899d0dc57f6e55828b4bd34b9f286f8",
+      "finding_id": "FND-049",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5647,7 +5627,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:81aeb511aa2246f3142a6a2e42b192ef4509af92df2693447f16e81231d2bba9",
+      "finding_id": "FND-050",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5658,7 +5638,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:833b49a8c67dd5556301be84e3a8099fe6f6f5587551d9ac510f48b8ff403e54",
+      "finding_id": "FND-051",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5669,7 +5649,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:847eb0ea1a0722cb90ea2906c383910f445f06d1964da5a1ab5a1bcda99c4f56",
+      "finding_id": "FND-052",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5680,7 +5660,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:85b247f3b3167dfbea5e1ab6fdaf02a1952927081d882cb06c64e8cb4a52bec2",
+      "finding_id": "FND-053",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5691,7 +5671,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:863cbed7bfd4daecd45e36b5445d1f5616a675e0cdac759809f743c75882edd1",
+      "finding_id": "FND-054",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5702,7 +5682,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:86b5e52460b423acae55c665f3693a3c214b2dc9bf932bdc1d36ef1b56c5741c",
+      "finding_id": "FND-055",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5713,7 +5693,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:8855d6e7d57b2edcafc0c06252436c792415584a22972d3bf667505b682277e7",
+      "finding_id": "FND-056",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5724,7 +5704,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:89f00c0430e08fecba911e0ef8420580b0a7e5dc04b774ac8d2570c7bca79d40",
+      "finding_id": "FND-057",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5735,7 +5715,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:8a005dd23e1e7e456727550cf3f56582b3cfd48fc21d6baaf042515b14e28d39",
+      "finding_id": "FND-058",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5746,7 +5726,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:8d09845bd4630883cce88a46ad144660633f1c3580891bcf90a7471b5d042c26",
+      "finding_id": "FND-059",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5757,7 +5737,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:8d5e3825a5a0fd485d8269fa6c6345865d5ef9d77349e3d5772fa27b71ef44e5",
+      "finding_id": "FND-060",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5768,7 +5748,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:933f4feb3842081409482b8d1f0d69369f263e44b7114b4cf1e4d3198d8cacfb",
+      "finding_id": "FND-061",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5779,7 +5759,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:93ee0c2d867c96c61596135063f180f484feb242bb384ca83c97dd957b79b745",
+      "finding_id": "FND-062",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5790,7 +5770,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:9560851ce117356eb15554dbf2c6470b79e51856bc0736f7b1171cc551cedc2c",
+      "finding_id": "FND-063",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5801,7 +5781,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:96c92c2338427487d8664a6be9d711c83c050b154d9886cb940f7787498746b4",
+      "finding_id": "FND-064",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5812,7 +5792,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:9774ac57ce6fc729275d5fb18aa1a79e72003321e032ed5832c1b7cddf51cf89",
+      "finding_id": "FND-065",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5823,7 +5803,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:97bddd1e218ce12ec4ba39789be81e0de399b360daa579fdb3a2e781b708022e",
+      "finding_id": "FND-066",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5834,7 +5814,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:97e4a35e5711d059b367d8d11b618c686218a2ce8ace77aa80a618e2bec18ed2",
+      "finding_id": "FND-067",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5845,7 +5825,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:99df8cd2a7b44610020fb3d9c5ee0cee9d3cda936fe8b97b8efe98e85e61db88",
+      "finding_id": "FND-068",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5856,7 +5836,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:9ae8e2f5d13bb71bd255b7f2471a7ddc3930ea2cda20432c735f0c57d77f8326",
+      "finding_id": "FND-069",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5867,7 +5847,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:9c747f45c112b3d47844f51dc8d4f7fb114ccfa4916831b9fb5c46d37a4a8b5b",
+      "finding_id": "FND-070",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5878,7 +5858,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:9c9d8dd1be2b0c5b512c0f13d984112352d6b92b18b51767a23ac78976c0330c",
+      "finding_id": "FND-071",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5889,7 +5869,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:a0ed853717ada3a36b2eb90310c4533481b9319e22f5f6d477d7f0cc9d01baa8",
+      "finding_id": "FND-072",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5900,7 +5880,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:a13c9baa1c6d40613d1301c56f34f35b8ec924848b4023ff0efb77039d516161",
+      "finding_id": "FND-073",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5911,7 +5891,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:a3db491795697e4a19324cb720a72d15ee0fc4c48a5578ac275119850e7a1276",
+      "finding_id": "FND-074",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5922,7 +5902,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:aa985ad3136258d0df3e2b0c90b3293cdf1e0726f03fabde9d798e3ab9c003ab",
+      "finding_id": "FND-075",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5933,7 +5913,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:ac3da8c185cdff524e261455d48d07f2c449e0f651ab20f356acf6f598aaebd4",
+      "finding_id": "FND-076",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5944,7 +5924,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:aef66842a98915803c08ef01cb8041532dbdb3cad999d078e90f8af6c0cbb082",
+      "finding_id": "FND-077",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5955,7 +5935,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:af3af30b17475aaaf430ccf9d4d6e97df2ba0aa76855c26019bbfaf427740970",
+      "finding_id": "FND-078",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5966,7 +5946,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:b3b2f114b2b8a15366c978d96d0925cb0309167301bca0fbe90e706d2b3d2d15",
+      "finding_id": "FND-079",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5977,7 +5957,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:b7f770f53038076b3420d3957f763adf02783cc38dd4b13e4b9c55d9bd922bf7",
+      "finding_id": "FND-080",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5988,7 +5968,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:b88d2976d6c29fdb132b0d22cb00486e7823b62e13c20576ed8b924b71bae39e",
+      "finding_id": "FND-081",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -5999,7 +5979,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:ba4d54beef730586e0ce3ecdb750b6c9521a5ffb5f91292e55ef4aafa04f6c1b",
+      "finding_id": "FND-082",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6010,7 +5990,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:bd3b51d06bb2e5208da72f60f1a45c121e55f701d10c615d4a1412c1db25a12c",
+      "finding_id": "FND-083",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6021,7 +6001,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:bf91d4697007044cb824d986c58ec12e4d853f3601182eb063bedac7c577ef43",
+      "finding_id": "FND-084",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6032,7 +6012,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:c0283a2801600eafbdacb27c8143d0359cf491fb6cb1adcefb878338257cb7c6",
+      "finding_id": "FND-085",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6043,7 +6023,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:c66b2340f22fdcf592a5224f8c1c6d1427b7f5d7124497d9cb14a051793614f2",
+      "finding_id": "FND-086",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6054,7 +6034,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:c7e67bbcc81a5223f3307049f839183d40d609cc93ae388d1a43f6d8b02e5ef9",
+      "finding_id": "FND-087",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:16, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6065,7 +6045,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:ca40083cfc49d86bb177f39e89efdfd3a018294be0dac08ff5d69b50be2d74b2",
+      "finding_id": "FND-088",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6076,7 +6056,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:cd32c60269c2933637bd57ef2d7151aa6b6db49f4f14c1416159c360fc7fd533",
+      "finding_id": "FND-089",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6087,7 +6067,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:cd4d1c160ed27bccf189c5c56af9d0b924a8e89bf324c4ad553fd1ad042ba1d1",
+      "finding_id": "FND-090",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6098,7 +6078,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:ce09eb84a9dff3ba79ef296604d01e5b024b8b1d2ed4d5ef9e51a1aab612d983",
+      "finding_id": "FND-091",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6109,7 +6089,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:d577226454a5fc2bbb808b98dbb6360ab1d24503c2f27004522cff0f526d80f7",
+      "finding_id": "FND-092",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6120,7 +6100,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:d7e4c39da5a5736463cef10e2bdf8190e84ea4c0fc2b26a32549144eb9d66c10",
+      "finding_id": "FND-093",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6131,7 +6111,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:d7f719d49a7a614991fd25bf1e915dd729695e913f80303c75f6b44e2dd11d2c",
+      "finding_id": "FND-094",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6142,7 +6122,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:d828cc1ae08c5c1fd317d2a895981dc2e162e959185514604e2f9180b6d79111",
+      "finding_id": "FND-095",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6153,7 +6133,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:d8f6692137ca292a59cd08221af440b63de87385446e326aca6fd807eb005fc3",
+      "finding_id": "FND-096",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6164,7 +6144,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:dab592559540ac13e6125b6c946d5239da307a422b850c6c4b7ecf9cda5e61d6",
+      "finding_id": "FND-097",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6175,7 +6155,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:dd8538da523eff4ddb65b7ef20e2250cc32cadae0ad55f59bc5f688cd123c84e",
+      "finding_id": "FND-098",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:16, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6186,7 +6166,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:e47be36c4bcee7e51d84c6a625eba6d7cb7536dac6e2e361b309ddb6521faced",
+      "finding_id": "FND-099",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6197,7 +6177,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:edf2ba32a203ad5997096fb12660951488f0fa94330c964076bb9dcd6c83b39c",
+      "finding_id": "FND-100",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6208,7 +6188,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:f11034a101c30f87fd92c539a85b4f5eb7da0c4881b19d1050363337599853db",
+      "finding_id": "FND-101",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6219,7 +6199,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:f15a795ac5e5606e002e46c35bf83e809d12632b07b3350c4a8ebd22e8f02038",
+      "finding_id": "FND-102",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "Pinned case obligation-row-states-nothing-control contains no TestMatrix document while the test-case declaration selects TestMatrix, so that declaration scans and mints no rows as reported.",
@@ -6230,7 +6210,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:f44077aa990082570cde000dd255cebad83be55e34ebe115b691cd407a854b33",
+      "finding_id": "FND-103",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:16, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6241,7 +6221,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:f58917ff63c4307323b3687ef722786c9bb213677388e95232a9bcf9f4fd031e",
+      "finding_id": "FND-104",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6252,7 +6232,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:f5a28dafa2af662ba9a1b4341702c145d3410ddd4b7a66436cb95d6ee47b1b65",
+      "finding_id": "FND-105",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6263,7 +6243,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:fa1067c55319611916f3b0cf033f4a37f5bc1381ae13674eac3c22f5d5ce783c",
+      "finding_id": "FND-106",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6274,7 +6254,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:fa4fc7f1d295e21cea492ebe353544356f20dec1a83a0abd9b95c021525f29ea",
+      "finding_id": "FND-107",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:16, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",
@@ -6285,7 +6265,7 @@
       "follow_up": "reviews/2026-08-27-advisory-corpus-follow-up.md"
     },
     {
-      "finding_id": "sha256:fcb75f524bf5764d5558d39f9cd5354bf2fa4d0cd0bf7cbd6baec581a3c23e59",
+      "finding_id": "FND-108",
       "disposition": "correct",
       "defect_owner": "corpus",
       "rationale": "The pinned criteria declaration bound the extractable criterion at spec/FR-001.md:10, and the source row declares no specific property shape; the reported one-of-one, none-shaped claim is true.",

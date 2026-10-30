@@ -41,7 +41,7 @@ pub struct Finding {
     ///
     /// # Why this is a `String` and not an enum
     ///
-    /// The retained type declares twelve spellings in a closed union, and it
+    /// The retained type declared twelve spellings in a closed union, and it
     /// is tempting to mirror that here — the spellings *are* observable,
     /// because `because` interpolates this value into the payload.
     ///
@@ -58,7 +58,7 @@ pub struct Finding {
     /// finding kind added after this file was written. The difftest case
     /// `assurance/build-case-unknown-finding-kind` holds the property.
     ///
-    /// The twelve the auditor mints today are named by
+    /// The eleven the auditor mints today are named by
     /// [`FindingKind`](crate::FindingKind), for the reader's benefit and not
     /// as a constraint.
     pub kind: String,
@@ -113,7 +113,7 @@ impl Finding {
     /// The four fields every auditor finding carries.
     ///
     /// Severity is taken **by value**, not as an [`Option`]: the retained
-    /// auditor sets it at all twelve construction sites, and a producer path
+    /// auditor sets it at every construction site, and a producer path
     /// that could omit it would be a difference this port introduced.
     pub fn new(
         kind: impl Into<String>,
@@ -138,15 +138,13 @@ impl Finding {
     }
 }
 
-/// The twelve kinds the auditor mints, as a reader's note.
+/// The eleven kinds the auditor mints, as a reader's note.
 ///
 /// Not a type [`Finding::kind`] is constrained to — see the doc there. This is
 /// a list, and its only job is to let the producer spell each kind once.
 pub struct FindingKind;
 
 impl FindingKind {
-    /// The statement changed after the evidence was bound.
-    pub const SUSPECT_LINK: &'static str = "suspect-link";
     /// The evidence is missing, or older than HEAD.
     pub const STALE_EVIDENCE: &'static str = "stale-evidence";
     /// The evidence exists and verified nothing.
@@ -170,9 +168,8 @@ impl FindingKind {
     /// Every test discharging the obligation injects what it verifies.
     pub const MOCKED_CONFIRMATION: &'static str = "mocked-confirmation";
 
-    /// All twelve, in the order `src/auditor/audit.ts:38-50` declares them.
-    pub const ALL: [&'static str; 12] = [
-        Self::SUSPECT_LINK,
+    /// All eleven, in the order `src/auditor/audit.ts:38-50` declares them.
+    pub const ALL: [&'static str; 11] = [
         Self::STALE_EVIDENCE,
         Self::VACUOUS_EVIDENCE,
         Self::COMBINATORIAL_GAP,
@@ -290,11 +287,11 @@ mod tests {
     }
 
     #[test]
-    fn the_twelve_kinds_are_twelve_distinct_spellings() {
+    fn the_eleven_kinds_are_eleven_distinct_spellings() {
         // Anti-vacuity: a list that silently lost an entry to a copy-paste
         // would still be "all of it".
         let distinct: BTreeSet<&str> = FindingKind::ALL.into_iter().collect();
-        assert_eq!(distinct.len(), 12);
+        assert_eq!(distinct.len(), 11);
         assert!(distinct.contains(FindingKind::MOCKED_CONFIRMATION));
     }
 }

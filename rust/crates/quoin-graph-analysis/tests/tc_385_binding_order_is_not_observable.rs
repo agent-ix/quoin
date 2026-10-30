@@ -1,23 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! Nothing any of the three views reports depends on the order the bindings
-//! arrive in.
+//! Nothing either view reports depends on the order the bindings arrive in.
 //!
-//! `canonicalizeBindings` (`load.ts:417`) sorts on six levels. Four are field
-//! comparisons and `model::binding::canonicalize` reproduces them. The last
-//! two compare `JSON.stringify(symbols)` and
-//! `JSON.stringify(affirmations ?? [])`, and `JSON.stringify` emits an
+//! `canonicalizeBindings` (`load.ts:417`) sorts on several levels, and
+//! `model::binding::canonicalize` reproduces the field comparisons. The
+//! remaining level compared `JSON.stringify(symbols)`, which emits an
 //! object's members in JavaScript insertion order — for a `.passthrough()`
 //! schema, the order the bytes on disk happened to use. Reproducing that would
 //! mean carrying every undeclared member of every binding, and its file order,
 //! to break a tie.
 //!
 //! The claim this crate makes instead is stronger than the tie-break: binding
-//! order is not observable at all. Fan-out accumulates into sets, churn keys
-//! its events by `(obligation, who, commit, note)` and sorts the suites it
-//! unions, and change-impact reads only `suite` from the first binding of each
+//! order is not observable at all. Fan-out accumulates into sets, and
+//! change-impact reads only `suite` from the first binding of each
 //! `(obligation, suite)` pair. So this test takes every case in the golden
-//! corpus, permutes its bindings three ways, and asserts all three views come
+//! corpus, permutes its bindings three ways, and asserts both views come
 //! out byte-identical each time.
 //!
 //! That is why this is not an entry in `tc_385_parity.rs`'s
@@ -42,14 +39,14 @@ mod support;
 use quoin_graph_analysis::model::binding::{Binding, BindingInput};
 use quoin_graph_analysis::{
     ArtifactId, GraphAnalysis, GraphAnalysisInput, RelationKind, analyze_change_impact,
-    analyze_churn, analyze_fan_out, render_graph_analysis, render_graph_analysis_json,
+    analyze_fan_out, render_graph_analysis, render_graph_analysis_json,
 };
 use serde_json::Value;
 
 /// The count below which this property is asserted over nothing.
 const PERMUTED_FLOOR: usize = 15;
 
-/// The three views of one input, as `(view, json, markdown)`.
+/// The two views of one input, as `(view, json, markdown)`.
 fn views(
     id: &str,
     input: &GraphAnalysisInput,
@@ -71,7 +68,6 @@ fn views(
         .unwrap_or_else(|error| panic!("{id}: change impact is computable: {error}"));
     [
         ("fan-out", GraphAnalysis::from(analyze_fan_out(input))),
-        ("churn", GraphAnalysis::from(analyze_churn(input))),
         ("change-impact", GraphAnalysis::from(impact)),
     ]
     .into_iter()
@@ -102,7 +98,7 @@ fn permutations(bindings: &[Binding]) -> Vec<(&'static str, Vec<Binding>)> {
     ]
 }
 
-/// Permuting a case's bindings changes none of its three views.
+/// Permuting a case's bindings changes none of its views.
 ///
 /// Trace: FR-062-AC-1
 #[test]

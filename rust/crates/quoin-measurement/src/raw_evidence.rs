@@ -29,7 +29,7 @@
 //! | type | trust |
 //! |---|---|
 //! | [`crate::common::recorded_evidence::RecordedEvidenceReference`] | **as recorded** — read by serde off a stored record, unchecked |
-//! | [`RawEvidenceReference`] | **as verified** — minted by [`raw_evidence_for`] from a path that passed the lexical guards and a digest [`quoin_store`] took itself |
+//! | [`RawEvidenceReference`] | **as verified** — minted by [`raw_evidence_for`] from a path that passed the lexical guards and a file that exists |
 //!
 //! quoin#468 landed a third, `RawEvidenceClaim`, holding bare `String`s for
 //! the same job the recorded reference does, because quoin#469's serde-read
@@ -37,8 +37,6 @@
 //! so the claim is gone and [`verify_raw_evidence_references`] takes the
 //! recorded reference directly — one fewer conversion at every intake, and one
 //! fewer way to spell the same thing.
-
-use quoin_store::RawFileSha256Digest;
 
 use crate::common::recorded_evidence::RecordedEvidenceReference;
 use crate::error::{MeasurementError, MeasurementErrorCode};
@@ -106,7 +104,7 @@ impl std::fmt::Display for RawEvidencePath {
 ///
 /// | type | who makes it | what holding it proves |
 /// | --- | --- | --- |
-/// | `RawEvidenceReference` | [`raw_evidence_for`], from the file | the path is safe, the media type is non-empty, the digest is a sha256 the store itself took |
+/// | `RawEvidenceReference` | [`raw_evidence_for`], from the file | the path is safe, the media type is non-empty, the file exists |
 /// | [`RecordedEvidenceReference`] | serde, from a stored record | nothing — it is what the record *claims* |
 ///
 /// quoin#468 landed a third, `RawEvidenceClaim`, holding bare `String`s for the
@@ -123,8 +121,6 @@ pub struct RawEvidenceReference {
     pub media_type: NonEmptyText,
     /// The file's size in bytes.
     pub size_bytes: u64,
-    /// The file's sha256 digest.
-    pub digest: RawFileSha256Digest,
 }
 
 impl From<RawEvidenceReference> for RecordedEvidenceReference {
@@ -138,7 +134,6 @@ impl From<RawEvidenceReference> for RecordedEvidenceReference {
             path: crate::common::identity::EvidencePath::from_stored(value.path.as_str()),
             media_type: crate::common::identity::MediaType::from_stored(value.media_type.as_str()),
             size_bytes: value.size_bytes,
-            digest: crate::common::identity::Digest::from_stored(value.digest.to_stored()),
         }
     }
 }
@@ -167,7 +162,6 @@ pub fn raw_evidence_for<S: MeasurementSource + ?Sized>(
         path,
         media_type,
         size_bytes: file.size_bytes,
-        digest: file.digest,
     })
 }
 
@@ -193,13 +187,6 @@ pub fn verify_raw_evidence_references<S: MeasurementSource + ?Sized>(
                     findings.push(format!(
                         "/raw_evidence/{index}/size_bytes: expected {}, observed {}",
                         reference.size_bytes, file.size_bytes
-                    ));
-                }
-                let observed = file.digest.to_stored();
-                if observed != reference.digest.as_str() {
-                    findings.push(format!(
-                        "/raw_evidence/{index}/digest: expected {}, observed {observed}",
-                        reference.digest
                     ));
                 }
             }
@@ -302,7 +289,6 @@ mod tests {
             path: "spec/assurance/a.md".to_owned(),
             owner: None,
             action: None,
-            preregistration: None,
             ground_truth_kind: None,
             statistical_design: None,
             objective: None,

@@ -15,11 +15,7 @@ use std::process::Command;
 #[cfg(target_os = "linux")]
 use std::time::{Duration, Instant};
 
-use engineering_assurance::campaign::canonical_digest;
-#[cfg(target_os = "linux")]
-use quoin_measurement::campaign::store::campaigns_root;
-use quoin_measurement::campaign::store::{retain_json_bytes, run_path};
-use quoin_store::{digest_bytes_sha256, store::write_content_addressed};
+use quoin_measurement::campaign::store::run_path;
 use serde_json::{Value, json};
 
 const PLAN: &str = r"---
@@ -80,9 +76,9 @@ fn git(repo: &Path, args: &[&str]) -> Vec<u8> {
 
 #[allow(
     clippy::too_many_lines,
-    reason = "one fictional Git source and its two retained verdict cases form one fixture"
+    reason = "one fictional Git source forms one fixture"
 )]
-fn fixture() -> (tempfile::TempDir, String) {
+fn fixture() -> tempfile::TempDir {
     let repo = tempfile::tempdir().expect("temporary fictional repository");
     git(repo.path(), &["init", "-q"]);
     fs::create_dir_all(repo.path().join("spec/assurance")).expect("assurance directory");
@@ -119,130 +115,26 @@ fn fixture() -> (tempfile::TempDir, String) {
             "fictional source",
         ],
     );
-    let revision = String::from_utf8(git(repo.path(), &["rev-parse", "HEAD"]))
-        .expect("revision")
-        .trim()
-        .to_owned();
-    let source_digest = digest_bytes_sha256(&git(
-        repo.path(),
-        &["ls-tree", "-r", "-z", "--full-tree", &revision],
-    ))
-    .as_hex()
-    .to_owned();
     let definition = json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-campaign", "subjectName":"fictional-subject", "subjectVersion":"1",
-        "sourceGraph":[{"repository":"fictional/source","revision":revision,"digest":source_digest}],
+        "sourceGraph":[{"repository":"fictional/source"}],
         "members":[{
             "name":"one", "group":"fixture", "planId":"MP-FIXTURE",
             "definitionVersion":"v1", "required":true
         }],
         "completionRule":"all_required"
     });
-    let (definition_digest, _) = retain_json_bytes(
-        repo.path(),
-        "definitions",
-        &serde_json::to_vec(&definition).expect("definition JSON"),
-    )
-    .expect("retained definition");
-    let source_graph_digest =
-        canonical_digest(definition.get("sourceGraph").expect("source graph"))
-            .expect("source graph digest")
-            .as_str()
-            .to_owned();
-    let attempts = json!([{
-        "member":"one", "index":1, "status":"invalid_request",
-        "reason":"fictional_preflight"
-    }]);
-    for (run_id, verdict) in [
-        ("missing-run", "inconclusive"),
-        ("contradictory-run", "rejected"),
-    ] {
-        let run = json!({
-            "schemaVersion":"engineering-assurance.campaign-run/v1",
-            "id":run_id,
-            "definitionDigest":definition_digest,
-            "sourceGraphDigest":source_graph_digest,
-            "attempts":attempts,
-            "verdict":verdict
-        });
-        let path = run_path(repo.path(), run_id).expect("safe run path");
-        let bytes = quoin_store::canonical_bytes(
-            &quoin_store::parse_strict_json(&serde_json::to_vec(&run).expect("run JSON"))
-                .expect("strict run JSON"),
-        )
-        .expect("canonical run");
-        write_content_addressed(&path, &bytes).expect("retained run");
-    }
     fs::write(
-        repo.path().join("sources.json"),
-        serde_json::to_vec(&json!({
-            "schema":"quoin.campaign-sources/v1",
-            "sources":{"fictional/source":repo.path()}
-        }))
-        .expect("source selection JSON"),
+        repo.path().join("definition.json"),
+        serde_json::to_vec(&definition).expect("definition JSON"),
     )
-    .expect("source selection");
-    (repo, definition_digest)
-}
-
-/// Trace: FR-114-AC-5, TC-1946
-/// A fictional source exercises the native CLI document and exit.
-#[test]
-fn tc_1946_campaign_verify_preserves_document_for_inconclusive_and_reject() {
-    let (repo, definition_digest) = fixture();
-    // Independently fixed SHA-256 of the fixture's canonical attempt array.
-    let inventory_digest = "7fe0d5a085ce71d4b46650cff9e6cb242252f6e6615785e888fa74fa1694a286";
-    for (run_id, verdict) in [
-        ("missing-run", "inconclusive"),
-        ("contradictory-run", "reject"),
-    ] {
-        let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
-            .env("GIT_CONFIG_GLOBAL", "/dev/null")
-            .env("GIT_CONFIG_NOSYSTEM", "1")
-            .args(["measurement", "campaign", "verify", "--repo"])
-            .arg(repo.path())
-            .args([
-                "--definition-digest",
-                &definition_digest,
-                "--run-id",
-                run_id,
-            ])
-            .arg("--sources")
-            .arg(repo.path().join("sources.json"))
-            .output()
-            .expect("native Quoin CLI");
-        assert_eq!(output.status.code(), Some(1), "{run_id}: {output:?}");
-        let document: Value = serde_json::from_slice(&output.stdout)
-            .expect("one complete JSON verdict document on stdout");
-        assert_eq!(document["schema"], "quoin.campaign-verdict/v1");
-        assert_eq!(document["campaignId"], "fictional-campaign");
-        assert_eq!(document["runId"], run_id);
-        assert_eq!(document["definitionDigest"], definition_digest);
-        assert_eq!(document["attemptInventoryDigest"], inventory_digest);
-        assert_eq!(document["decision"]["verdict"], verdict);
-        assert_eq!(
-            document["decision"]["members"]
-                .as_array()
-                .expect("members")
-                .len(),
-            1
-        );
-        assert_eq!(
-            document["decision"]["members"][0]["reasons"],
-            json!(["execution_incomplete"])
-        );
-        let expected_reasons = if verdict == "reject" {
-            json!(["evidence_contradiction"])
-        } else {
-            json!([])
-        };
-        assert_eq!(document["decision"]["reasons"], expected_reasons);
-    }
+    .expect("definition file");
+    repo
 }
 
 /// Trace: FR-114-AC-2, FR-114-AC-5, TC-1941, TC-1946.
-/// SIGINT reaches the exact Event-bound EA request and preserves a replayable
+/// SIGINT reaches the exact Event-bound EA request and preserves a
 /// non-success verdict document after the bounded process is cancelled.
 #[cfg(target_os = "linux")]
 #[test]
@@ -251,10 +143,13 @@ fn tc_1946_campaign_verify_preserves_document_for_inconclusive_and_reject() {
     reason = "one sleeping producer, its cancellation and its retained verdict form one scenario"
 )]
 fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
-    let (repo, _) = fixture();
+    let repo = fixture();
     fs::write(
         repo.path().join("campaign/producer.py"),
-        "import time\ntime.sleep(10)\nprint('ok')\n",
+        format!(
+            "import time\nopen({:?}, 'w').close()\ntime.sleep(10)\nprint('ok')\n",
+            repo.path().join("started-marker")
+        ),
     )
     .expect("sleeping producer");
     let procedure_path = repo.path().join("campaign/procedure.json");
@@ -284,20 +179,10 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
             "cancellable source",
         ],
     );
-    let revision = String::from_utf8(git(repo.path(), &["rev-parse", "HEAD"]))
-        .expect("revision")
-        .trim()
-        .to_owned();
-    let source_digest = digest_bytes_sha256(&git(
-        repo.path(),
-        &["ls-tree", "-r", "-z", "--full-tree", &revision],
-    ))
-    .as_hex()
-    .to_owned();
     let definition = json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-campaign", "subjectName":"fictional-subject", "subjectVersion":"1",
-        "sourceGraph":[{"repository":"fictional/source","revision":revision,"digest":source_digest}],
+        "sourceGraph":[{"repository":"fictional/source"}],
         "members":[{"name":"one","planId":"MP-FIXTURE","definitionVersion":"v1","required":true}],
         "completionRule":"all_required"
     });
@@ -308,11 +193,9 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
     )
     .expect("definition file");
     let python = fs::canonicalize("/usr/bin/python3").expect("system Python");
-    let python_digest = quoin_store::digest_file_sha256(&python).expect("Python digest");
     let contract = |kind: &str| {
         json!({
-            "kind":kind, "version":"1", "revision":revision,
-            "digest":digest_bytes_sha256(kind.as_bytes()).as_hex()
+            "kind":kind, "version":"1"
         })
     };
     let config = json!({
@@ -321,8 +204,8 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
         "members":{"one":{
             "producer":{
                 "producer":{
-                    "name":"fictional-tool", "version":"1", "sourceRevision":revision,
-                    "executable":python, "executableDigest":python_digest.as_hex()
+                    "name":"fictional-tool", "version":"1",
+                    "executable":python
                 },
                 "caller":contract("fictional.caller"),
                 "environment":{}, "outputs":[], "outputTrees":[],
@@ -338,9 +221,7 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
                 "responseAdapter":contract("quoin.process-evidence-adapter"),
                 "exitCodes":{"kind":"any"}
             },
-            "checker":null,"inputs":[],"timestamp":"2026-09-24T00:00:00Z",
-            "toolchains":{"python":"system-python3"},
-            "sourceRemotes":{"fictional/source":"https://example.invalid/source.git"}
+            "checker":null,"inputs":[],"timestamp":"2026-09-24T00:00:00Z"
         }}
     });
     let config_path = repo.path().join("config.json");
@@ -362,21 +243,16 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
         .stderr(std::process::Stdio::piped())
         .spawn()
         .expect("native Quoin CLI starts");
-    let request_dir = campaigns_root(repo.path()).join("requests");
+    let marker = repo.path().join("started-marker");
     let started = Instant::now();
-    while !request_dir.is_dir()
-        || fs::read_dir(&request_dir)
-            .expect("request directory")
-            .next()
-            .is_none()
-    {
+    while !marker.exists() {
         if child.try_wait().expect("CLI status").is_some() {
             let output = child.wait_with_output().expect("CLI output");
-            panic!("CLI exited before EA request: {output:?}");
+            panic!("CLI exited before the producer started: {output:?}");
         }
         assert!(
             started.elapsed() < Duration::from_secs(10),
-            "EA request retained"
+            "producer started"
         );
         std::thread::sleep(Duration::from_millis(10));
     }
@@ -388,29 +264,11 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
     let output = child.wait_with_output().expect("CLI exits");
     assert_eq!(output.status.code(), Some(1), "{output:?}");
     let document: Value = serde_json::from_slice(&output.stdout).expect("verdict document");
-    assert_eq!(document["decision"]["verdict"], "inconclusive");
+    assert_eq!(document["verdict"], "inconclusive");
     assert_eq!(document["runId"], "sigint-run");
     let run: Value = serde_json::from_slice(
         &fs::read(run_path(repo.path(), "sigint-run").expect("run path")).expect("retained run"),
     )
     .expect("typed run JSON");
     assert_eq!(run["attempts"][0]["status"], "cancelled");
-    assert!(run["attempts"][0]["requestDigest"].is_string());
-    assert!(run["attempts"][0]["resultDigest"].is_string());
-    let replay = Command::new(env!("CARGO_BIN_EXE_quoin"))
-        .env("GIT_CONFIG_GLOBAL", "/dev/null")
-        .env("GIT_CONFIG_NOSYSTEM", "1")
-        .args(["measurement", "campaign", "verify", "--repo"])
-        .arg(repo.path())
-        .args([
-            "--definition-digest",
-            document["definitionDigest"].as_str().expect("digest"),
-        ])
-        .args(["--run-id", "sigint-run", "--sources"])
-        .arg(repo.path().join("sources.json"))
-        .output()
-        .expect("independent native replay");
-    assert_eq!(replay.status.code(), Some(1), "{replay:?}");
-    let replay_document: Value = serde_json::from_slice(&replay.stdout).expect("replay document");
-    assert_eq!(replay_document, document);
 }

@@ -52,14 +52,14 @@ same recorded corpus and module revisions.
 ## Rationale
 
 A census that cannot be re-run is an assertion. The promotion gate this feeds has to be able to
-re-derive the numbers from the pins, and the later normalization campaign has to be able to tell a
+re-derive the numbers from the same inputs, and the later normalization campaign has to be able to tell a
 corpus change from a measurement change.
 
 ## Measurement and Evaluation
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Result artifacts differing between two runs at equal pins | 0 artifacts | 0 artifacts | Repeat run and compare artifact bytes |
+| Result artifacts differing between two runs at equal inputs | 0 artifacts | 0 artifacts | Repeat run and compare artifact bytes |
 | Ordering-dependent fields in result artifacts | 0 fields | 0 fields | Inspection of the emitted ordering contract |
 | Network requests during a measurement run | 0 requests | 0 requests | Run with networking disabled |
 | Repositories excluded from the reproducibility claim without being marked in the record | 0 repositories | 0 repositories | Automated cross-check of the corpus record |
@@ -82,4 +82,4 @@ a shuffled directory order and produces the same bytes.
 
 ## Dependencies
 
-- **Upstream**: [FR-084](../functional/FR-084-pin-and-enumerate-the-governed-corpus.md), [FR-085](../functional/FR-085-resolve-the-completed-module-set.md)
+- **Upstream**: [FR-084](../functional/FR-084-enumerate-the-governed-corpus.md) (corpus enumeration only; nothing is pinned), [FR-085](../functional/FR-085-resolve-the-completed-module-set.md)

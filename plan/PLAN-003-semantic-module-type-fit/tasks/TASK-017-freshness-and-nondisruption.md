@@ -23,7 +23,7 @@ and the path guard rejects production, module, schema, generated, migration, and
 
 ## Scope
 
-Run the retained 10-module audit, repeat it for byte identity, validate every count and digest, run
+Run the retained 10-module audit, repeat it for byte identity, validate every count, run
 the fresh-census comparison, prove read-only input trees, and enforce the changed-path allowlist.
 
 ## Exit criteria

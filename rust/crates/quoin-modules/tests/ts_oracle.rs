@@ -22,7 +22,6 @@ use quoin_modules::{IxHome, Source, parse_source_arg, read_module_name, to_git_u
 use serde_json::Value as Json;
 
 const GOLDENS: &str = include_str!("../../../goldens/ts-oracle.json");
-const DEFAULT_MODULES: &str = include_str!("../../../goldens/default-modules.yaml");
 
 fn section(name: &str) -> Json {
     let all: Json = serde_json::from_str(GOLDENS).expect("committed goldens parse");
@@ -100,41 +99,6 @@ fn tc_381_232_source_validation_accepts_and_refuses_what_the_oracle_did() {
 
 /// Trace: FR-019-AC-2
 #[test]
-fn tc_381_233_the_committed_default_module_set_parses_to_the_same_entries() {
-    let manifest = MarketplaceManifest::from_yaml(DEFAULT_MODULES).expect("default set is valid");
-    let expected = section("default_modules_manifest");
-    let expected = expected["value"].as_object().expect("manifest value");
-    assert_eq!(
-        manifest.name.as_deref(),
-        expected["name"].as_str(),
-        "manifest name"
-    );
-    let expected_entries = expected["entries"].as_array().expect("entries");
-    assert_eq!(
-        manifest.entries.len(),
-        expected_entries.len(),
-        "entry count"
-    );
-    for (actual, expected) in manifest.entries.iter().zip(expected_entries) {
-        assert_eq!(
-            actual.name.as_str(),
-            expected["name"].as_str().expect("name")
-        );
-        assert_eq!(
-            actual.is_enabled(),
-            expected["defaultEnabled"].as_bool().unwrap_or(true)
-        );
-        let actual_source = serde_json::to_value(&actual.source).expect("source serializes");
-        assert_eq!(
-            actual_source, expected["source"],
-            "entry {} source",
-            actual.name
-        );
-    }
-}
-
-/// Trace: FR-019-AC-2
-#[test]
 fn tc_381_234_manifest_refusals_match_the_oracle() {
     let cases = cases("validate_manifest");
     assert!(cases.len() >= 8, "golden set shrank: {}", cases.len());
@@ -171,7 +135,6 @@ fn tc_381_235_registry_bytes_match_the_typescript_writer() {
             path: "/p".to_owned(),
         },
         r#ref: None,
-        sha: None,
         resolved_path: "/p".to_owned(),
         target_path: "/t/m".to_owned(),
         installed_at: "2026-01-02T03:04:05.678Z".to_owned(),
@@ -189,12 +152,11 @@ fn tc_381_235_registry_bytes_match_the_typescript_writer() {
 #[test]
 fn tc_381_239_registry_bytes_match_with_every_optional_field_present() {
     // `tc_381_235` writes a record whose every optional field is absent, so it
-    // pins nothing about where `ref` and `sha` go or whether they
-    // appear at all — exactly the keys a serde attribute could reorder or drop
+    // pins nothing about where `ref` goes or whether it
+    // appears at all — exactly the keys a serde attribute could reorder or drop
     // without any golden noticing. This is that record with all of them set.
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("registry.json");
-    let sha = "978111c6884ccc0f5e6ca100fb17be5361a98713";
     let mut registry = ModuleRegistry::new();
     registry.upsert(InstalledModule {
         name: quoin_modules::ModuleName::new("m").expect("legal name"),
@@ -202,11 +164,10 @@ fn tc_381_239_registry_bytes_match_with_every_optional_field_present() {
             url: "https://github.com/acme/widgets.git".to_owned(),
             path: "modules/m".to_owned(),
             r#ref: Some("v1.2.3".to_owned()),
-            sha: Some(sha.to_owned()),
+            sha: None,
         },
         r#ref: Some("v1.2.3".to_owned()),
-        sha: Some(quoin_modules::CommitSha::new(sha).expect("full sha")),
-        resolved_path: "/c/978111c/modules/m".to_owned(),
+        resolved_path: "/c/widgets/modules/m".to_owned(),
         target_path: "/t/m".to_owned(),
         installed_at: "2026-01-02T03:04:05.678Z".to_owned(),
     });

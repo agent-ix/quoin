@@ -64,14 +64,6 @@
     {
       "name": "host",
       "value": "codex-cli 0.151.0"
-    },
-    {
-      "name": "suite configuration digest",
-      "value": "sha256:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2"
-    },
-    {
-      "name": "fixture digest",
-      "value": "sha256:e78a0dfa8a75b4a66444f4fc65fe80c77f5b7b237ebce0c7375b5e0d9530ffcd"
     }
   ],
   "interactions": [
@@ -93,33 +85,29 @@
   "observed_at": "2026-08-30T17:54:41.378Z",
   "owner": "engineering assurance",
   "producer": {
-    "configuration_digest": "sha256:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2",
+    "configuration_ref": "agent-evals/quoin-270-sentinel-definition.json",
     "definition_version": "cli-agent-evals.sentinel-contract-v1",
     "environment": {
       "baseline_runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
       "cli_agent_evals_version": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
       "codex_cli": "0.151.0",
       "engineering_assurance_revision": "236f420987bdfd5309fb531806a851ddc9f75ae3",
-      "fixture_digest": "sha256:e78a0dfa8a75b4a66444f4fc65fe80c77f5b7b237ebce0c7375b5e0d9530ffcd",
       "fixture_revision": "fixtures-v1",
       "node": "24.15.0",
       "report_schema_version": "cli-agent-evals-report-v1",
       "suite_revision": "suite-v1",
       "treatment_runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
     },
-    "source_revision": "b340140e4fa9667fe39e1843c18b526c820a37be",
     "tool_identity": "quoin-agent-eval-intervention-adapter",
     "tool_version": "0.9.0"
   },
   "raw_evidence": [
     {
-      "digest": "sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076",
       "media_type": "application/json",
       "path": "agent-evals/quoin-270-sentinel-baseline.json",
       "size_bytes": 11305
     },
     {
-      "digest": "sha256:baade4ab1c2e8f3447b4c585c95634884cb2ed1c69a9cf8819d0b495c7f77963",
       "media_type": "application/json",
       "path": "agent-evals/quoin-270-sentinel-treatment.json",
       "size_bytes": 14261
@@ -131,8 +119,7 @@
   "status": "completed",
   "strength": "tested",
   "subject": {
-    "id": "agent-ix/cli-agent-evals",
-    "revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
+    "id": "agent-ix/cli-agent-evals"
   },
   "treatments": [
     {

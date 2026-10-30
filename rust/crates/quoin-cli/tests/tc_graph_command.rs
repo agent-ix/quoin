@@ -22,7 +22,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
-const DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
 struct Fixture {
@@ -90,16 +89,15 @@ impl Fixture {
             "artifacts": [{
                 "id": "FR-001",
                 "artifact_type": "FR",
-                "locator": { "path": "spec/FR-001.md", "line": 1, "digest": DIGEST },
+                "locator": { "path": "spec/FR-001.md", "line": 1 },
             }],
             "obligations": [{
                 "source": "acceptance-criterion",
                 "id": "FR-001-AC-1",
                 "document": "spec/FR-001.md",
                 "statement": "The command reports fan-out.",
-                "statement_hash": DIGEST,
                 "target_ids": ["TC-1249"],
-                "locator": { "path": "spec/FR-001.md", "line": 20, "digest": DIGEST },
+                "locator": { "path": "spec/FR-001.md", "line": 20 },
             }],
             "symbols": [],
             "relation_kinds": relation_kinds,
@@ -122,7 +120,6 @@ impl Fixture {
                 "schemaVersion": 1,
                 "bindings": [{
                     "obligation": "FR-001-AC-1",
-                    "statementHashAtBinding": DIGEST,
                     "suite": "unit",
                     "commit": REVISION,
                     "symbols": ["fan-out test"],
@@ -203,26 +200,6 @@ fn tc_1650_fan_out_reaches_real_fixture_inputs_in_json_and_human_forms() {
     let human = fixture.graph("fan-out", false, &[]);
     assert!(human.status.success(), "stderr: {}", stderr(&human));
     assert!(stdout(&human).contains("| Suite | Live obligations | Count | Unresolved |"));
-    assert_eq!(stderr(&human).len(), 0);
-}
-
-/// Trace: FR-062, FR-062-AC-1, TC-1650
-#[test]
-fn tc_1650_churn_reaches_real_fixture_inputs_in_json_and_human_forms() {
-    let fixture = Fixture::new().expect("fixture files");
-
-    let json = fixture.graph("churn", true, &[]);
-    assert!(json.status.success(), "stderr: {}", stderr(&json));
-    let report = json_stdout(&json);
-    assert_eq!(report["view"], "churn");
-    assert_eq!(report["state"], "complete");
-    assert_eq!(report["rows"][0]["obligation"], "FR-001-AC-1");
-    assert_eq!(report["rows"][0]["eventCount"], 0);
-    assert_eq!(stderr(&json).len(), 0);
-
-    let human = fixture.graph("churn", false, &[]);
-    assert!(human.status.success(), "stderr: {}", stderr(&human));
-    assert!(stdout(&human).contains("## Retained reaffirmation history"));
     assert_eq!(stderr(&human).len(), 0);
 }
 

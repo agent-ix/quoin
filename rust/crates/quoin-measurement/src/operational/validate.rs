@@ -40,8 +40,7 @@ use crate::types::ids::SafeRecordId;
 
 /// A document that is an operational evidence record.
 ///
-/// Modelled on [`quoin_jsonschema::ValidDocument`] and
-/// `quoin_store::RawFileSha256Digest::parse_stored`: constructed in exactly one
+/// Modelled on [`quoin_jsonschema::ValidDocument`]: constructed in exactly one
 /// place, below, and nowhere else.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValidOperationalRecord {

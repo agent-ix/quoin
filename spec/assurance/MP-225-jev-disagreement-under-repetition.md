@@ -27,7 +27,7 @@ Mean over all pairs of passes of the fraction of items whose compared class chan
 ## Collection Procedure
 
 Run the lens's `live-api` test through `quoin_jev::client::production`.
-Retain the raw responses, question set, corpus and context revision, reported
+Retain the raw responses, question set, context, reported
 classifier, token counts and timestamp. Dimension every observation by `lens`
 and `variant`.
 
@@ -42,4 +42,4 @@ The ad-hoc LLM pass measured 17.0% at N=12 (quire-rs PR #482). That figure is a 
 
 ## Comparison and Enforcement
 
-This plan assigns no verdict. Each lens's gate plan (MP-228, MP-229, MP-230) states its bar on this metric. Compare only like lens, variant, corpus revision and question set.
+This plan assigns no verdict. Each lens's gate plan (MP-228, MP-229, MP-230) states its bar on this metric. Compare only like lens, variant and question set.

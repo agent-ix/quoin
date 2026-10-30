@@ -1,11 +1,9 @@
 {
   "collectionId": "tier1-20260826154845940-34aa49383a28",
-  "configDigest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
   "corpusRevision": "1f84c7a39d5fcf80da22debf59ecad1bedbf9d1f",
   "environment": {
     "languages": "python,rust,typescript",
-    "runner": "tier-1",
-    "scorerDigest": "sha256:21b2ec0fc6108f7c244ac643ed6dc56766097f5049402b137107adc6fb25a7e6"
+    "runner": "tier-1"
   },
   "observations": [
     {
@@ -1907,11 +1905,6 @@
     "provenance": {
       "corpus": "1f84c7a39d5fcf80da22debf59ecad1bedbf9d1f",
       "declaration": {
-        "digest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
-        "modules": {
-          "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
-          "variants/no-implements-declaration": "sha256:9faf3f56d877a478b8cd69b41528abbcf6f1ed6c59fe531732a39901fdf2b694"
-        },
         "root": "corpus/modules",
         "sources": {
           "spec-artifacts-iso": "3d871962b66db99a1854f40466e94ebabc7a6115",
@@ -1958,7 +1951,6 @@
     "corpora": 87,
     "findings": 452
   },
-  "sourceRevision": "98fb09f03959905a6d213e8c624cecaa06ab3662",
   "subject": "tier-1 controlled corpus",
   "timestamp": "2026-08-26T15:48:45.940Z",
   "toolIdentity": "quoin bench-tier1",

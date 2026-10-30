@@ -29,7 +29,7 @@ advisory sweep report exists and a human promotes an enforcing module release.
 ## Scope
 
 - Permitted: the `semantic` block and its schema, the mapping contract, golden fixtures, advisory diagnostics, the authoring pack text, Quoin tests, specs, plans, reviews.
-- Prohibited: a required manifest key, an error-severity legacy diagnostic by default, any write to a corpus repository, publishing a generated package, changing a catalog pin.
+- Prohibited: a required manifest key, an error-severity legacy diagnostic by default, any write to a corpus repository, publishing a generated package, changing a catalog entry.
 
 ## Rationale
 

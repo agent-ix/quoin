@@ -1,11 +1,9 @@
 {
   "collectionId": "tier1-20260827033959768-134b2466fc43",
-  "configDigest": "sha256:47c39841678e63cc4046011d0865a8920fab2d624d25e60443de75370808d00b",
   "corpusRevision": "0b2b20c15e297ff97088ed55bf593816346b2706",
   "environment": {
     "languages": "n/a,python,rust,typescript",
-    "runner": "tier-1",
-    "scorerDigest": "sha256:0080ed0c44da7c28d4b5b8e48986d5b158e13d9882e8ba8826797bc2806d1567"
+    "runner": "tier-1"
   },
   "observations": [
     {
@@ -5913,18 +5911,7 @@
     "positional": 46,
     "provenance": {
       "corpus": "0b2b20c15e297ff97088ed55bf593816346b2706",
-      "corpus_input": "sha256:ea93af125658b09cb37903c1ed3894108d1113085af5b76a421bd2e3574be581",
       "declaration": {
-        "digest": "sha256:47c39841678e63cc4046011d0865a8920fab2d624d25e60443de75370808d00b",
-        "modules": {
-          "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
-          "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
-          "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-          "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
-          "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-          "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
-          "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
-        },
         "root": "corpus/modules",
         "sources": {
           "spec-artifacts-iso": "3d871962b66db99a1854f40466e94ebabc7a6115",
@@ -6077,7 +6064,6 @@
     "corpora": 156,
     "findings": 761
   },
-  "sourceRevision": "e57018606f2dd13cd382b8cb2cb7ada7ed27398c+working-tree:0080ed0c44da7c28",
   "subject": "tier-1 controlled corpus",
   "timestamp": "2026-08-27T03:39:59.768Z",
   "toolIdentity": "quoin bench-tier1",

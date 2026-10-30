@@ -50,10 +50,10 @@ Read and validate the `semantic` block and `data_schema` reference form at `quoi
 
 ## Subtasks
 
-- [x] `src/semantic/manifest.ts`: parse the block against the vendored schema; rejections for unknown key, undeclared export, unknown contract version, unknown target, malformed package, duplicate package (sorted root order) (TC-1338..1341, TC-1383).
-- [x] `src/semantic/data-schema.ts`: reference-form resolution, missing/non-JSON/`$id`-less/escape/symlink/ambiguous rejections, `$ref` resolution against the shipped bundle and vendored semantic-core bundle with version and cycle checks, inline-schema warning (TC-1360..1364).
+- [x] `src/semantic/manifest.ts`: parse the block against the published `@agent-ix/semantic-schema` module-manifest schema; rejections for unknown key, undeclared export, unknown contract version, unknown target, malformed package, duplicate package (sorted root order) (TC-1338..1341, TC-1383).
+- [x] `src/semantic/data-schema.ts`: reference-form resolution, missing/non-JSON/`$id`-less/escape/symlink/ambiguous rejections, `$ref` resolution against the shipped bundle and the published semantic-core bundle with cycle checks, inline-schema warning (TC-1360..1364).
 - [x] Wire into `src/commands/module/install.ts`; offline test with network disabled (TC-1365); existing-fixture suite unchanged (TC-1366, TC-1336).
-- [x] `src/write.ts`: report semantic-core version, package, and schema paths (TC-1337).
+- [x] `src/write.ts`: report package and schema paths (TC-1337).
 
 ## Deliverables
 

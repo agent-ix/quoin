@@ -5,7 +5,7 @@
 //! Split from [`super`] so the checker stays under this crate's module-size
 //! ceiling.
 //!
-//! Each run carries the resolved (path, digest) set its collection recorded
+//! Each run carries the resolved set of paths its collection recorded
 //! at intake, read whatever the plan declares today: deleting the plan's
 //! `protected_apparatus` list must not switch protection off for runs that
 //! were recorded under it. A series is protected when the plan declares a

@@ -76,7 +76,7 @@ L2 work; neither Quoin nor Quire takes over the consumer's test execution.
 4. Shared IR, compatibility comparison, and cross-language emitters belong in
    `filament-core-data`.
 5. Database, API, IPC, UI, migration, and application policy remain consumer responsibilities.
-6. Generated output lands with a source digest and is consumer-owned after generation; silent
+6. Generated output lands as ordinary committed source and is consumer-owned after generation; silent
    overwrite is forbidden.
 7. An ownership move requires a reviewed successor ADR. A dependency introduced by code does
    not silently rewrite this allocation.

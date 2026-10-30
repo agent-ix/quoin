@@ -97,8 +97,8 @@ macro_rules! reasons {
 reasons! {
     /// The record did not satisfy its v1 schema.
     SchemaInvalid => "schema_invalid", false;
-    /// The record's stored digest disagreed with its bytes.
-    RecordDigestMismatch => "record_digest_mismatch", false;
+    /// The record read did not carry the id and revision it was asked for.
+    RecordRevisionMismatch => "record_revision_mismatch", false;
     /// A required parent was absent from the chain.
     ParentMissing => "parent_missing", true;
     /// A parent was present and unreadable.
@@ -129,12 +129,12 @@ reasons! {
     AttestationMissing => "attestation_missing", true;
     /// A retained attestation did not satisfy its v1 schema.
     AttestationSchemaInvalid => "attestation_schema_invalid", false;
-    /// A retained attestation's digest did not verify.
-    AttestationDigestMismatch => "attestation_digest_mismatch", false;
+    /// A retained attestation carried a different id than the one selected.
+    AttestationIdMismatch => "attestation_id_mismatch", false;
     /// The attestation's retained output was absent.
     OutputMissing => "output_missing", true;
-    /// The retained output did not reproduce its declared digest or size.
-    OutputDigestMismatch => "output_digest_mismatch", false;
+    /// The retained output did not have its declared size.
+    OutputSizeMismatch => "output_size_mismatch", false;
     /// The attestation was bound to a different record.
     RecordBindingMismatch => "record_binding_mismatch", false;
     /// The attestation was taken at a different candidate revision.
@@ -155,8 +155,6 @@ reasons! {
     ResultNotComputed => "result_not_computed", true;
     /// The auditor found the evidence stale.
     EvidenceStale => "evidence_stale", false;
-    /// The auditor found the evidence link suspect.
-    EvidenceSuspect => "evidence_suspect", false;
     /// The auditor found the evidence vacuous.
     EvidenceVacuous => "evidence_vacuous", false;
     /// The auditor found the evidence unrelated to its obligation.
@@ -267,7 +265,7 @@ mod tests {
 
     #[test]
     fn the_reason_vocabulary_is_closed_and_round_trips() {
-        assert_eq!(Reason::ALL.len(), 38);
+        assert_eq!(Reason::ALL.len(), 37);
         for reason in Reason::ALL {
             assert_eq!(Reason::parse(reason.as_str()), Some(*reason));
         }

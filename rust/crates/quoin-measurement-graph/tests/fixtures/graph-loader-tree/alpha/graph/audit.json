@@ -50,9 +50,9 @@
       },
       {
         "obligation": "FR-001-AC-1",
-        "kind": "suspect-link",
+        "kind": "vacuous-evidence",
         "severity": "medium",
-        "summary": "the hash no longer matches",
+        "summary": "every bound symbol was skipped",
         "nextDiagnosticStep": "re-run the suite"
       }
     ],

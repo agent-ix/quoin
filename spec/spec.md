@@ -57,7 +57,7 @@ This specification governs:
 - The durable semantic-module architecture record that allocates authority and
   ownership across Quire, Quoin, `filament-core-data`, module repositories, and
   consumers without activating compiler, publication, or migration work.
-- Read-only fan-out, change-impact, and reaffirmation-churn views that consume a
+- Read-only fan-out and change-impact views that consume a
   validated, source-grounded Quire assurance export and join it to Quoin's retained
   evidence and existing auditor verdicts without collecting evidence or defining policy.
 
@@ -95,7 +95,7 @@ uses as its authoring contract. It installs user and community modules through
 hands their lifecycle to `ix-flow`.
 
 `quoin` declares its default module set in the committed `default-modules.yaml` as
-pinned `git-subdir` sources and auto-installs that set on first catalog access
+`git-subdir` sources and auto-installs that set on first catalog access
 into the shared `~/.ix/filament/modules` store that `quire` also reads — so
 authoring and validation see one identical catalog, and repeated work stays local.
 
@@ -259,7 +259,7 @@ index; the files are authoritative.
 - [FR-081](./functional/FR-081-generated-public-repository-baseline.md) — generated public repository and packaging baseline.
 - [FR-082](./functional/FR-082-generated-governance-tree.md) — generated governance tree validates as rendered.
 - [FR-083](./functional/FR-083-template-render-self-tests.md) — template render self-tests and module conformance gate.
-- [FR-084](./functional/FR-084-pin-and-enumerate-the-governed-corpus.md) — pin and enumerate the governed corpus. ⛔ **Withdrawn** (#388)
+- [FR-084](./functional/FR-084-enumerate-the-governed-corpus.md) — enumerate the governed corpus. ⛔ **Withdrawn** (#388)
 - [FR-085](./functional/FR-085-resolve-the-completed-module-set.md) — resolve the completed module set and its contract surfaces. ⛔ **Withdrawn** (#388)
 - [FR-086](./functional/FR-086-assign-one-measurement-state-per-document.md) — assign exactly one measurement state to every corpus document. ⛔ **Withdrawn** (#388)
 - [FR-087](./functional/FR-087-evaluate-declared-markdown-mappings.md) — evaluate declared Markdown mappings and validate the extracted record. ⛔ **Withdrawn** (#388)
@@ -293,7 +293,7 @@ index; the files are authoritative.
 
 ### Integration Tests
 
-- [IT-001](./integration/IT-001-default-module-reconcile.md) — default module set reconciles from pinned git tags, then serves offline.
+- [IT-001](./integration/IT-001-default-module-reconcile.md) — default module set reconciles from git, then serves offline.
 - [IT-002](./integration/IT-002-github-plugin-install.md) — community plugin installs from a GitHub source into the catalog.
 
 ### Verification Layers
@@ -311,9 +311,9 @@ Three layers verify this specification, each named in the requirements above:
 ## Module Store
 
 `quoin` declares its public default `spec-artifacts-*` and `spec-objects-*`
-modules in the committed `default-modules.yaml` as pinned `git-subdir` sources,
+modules in the committed `default-modules.yaml` as `git-subdir` sources named by repository,
 and installs that set on first catalog access into the Filament module store —
-lazily, idempotently, and (once pinned and installed) entirely offline. The
+lazily, idempotently, and (once installed) entirely offline. The
 install is triggered by the `catalog` and `write` commands and on demand via
 `quoin plugin ensure-defaults`, the explicit entry point external tools such as
 `quire validate` use to bootstrap the set. Private modules, including

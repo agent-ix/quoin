@@ -89,8 +89,7 @@ pub const MAX_WORKFLOW_YAML_BYTES: usize = 2 * 1024 * 1024;
 
 /// The largest single-store report request, in bytes.
 ///
-/// `measurement.build_report`, `measurement.render_report`,
-/// `measurement.build_comparison`, `measurement.render_comparison` and
+/// `measurement.build_report`, `measurement.render_report` and
 /// `measurement.build_series`. Named for the `MeasurementPlan` and
 /// `AssuranceProfile` documents these routes read; those are frontmatter in
 /// `spec/assurance/` and are read off disk, so this bounds the request that
@@ -117,11 +116,6 @@ pub const MAX_GRAPH_MAPPING_BYTES: usize = 256 * 1024;
 /// A metric is a plan's `metric` frontmatter key — `finding_recall`, not a
 /// document.
 pub const MAX_METRIC_NAME_BYTES: usize = 256;
-
-/// The largest source revision the comparison routes accept, in bytes.
-///
-/// A git revision as a producer recorded it.
-pub const MAX_REVISION_BYTES: usize = 256;
 
 /// The largest record identity a producer definition may carry, in bytes.
 ///
@@ -195,12 +189,6 @@ pub struct VerifyRequest {
     /// access to check.
     #[serde(default)]
     pub edited_collections: Vec<TamperedCollectionRequest>,
-    /// Ids of collections whose recorded protected-apparatus digest for this
-    /// plan disagreed with `git show <sourceRevision>:<path>`, as the caller
-    /// checked (PLAT-985). Empty when the caller has no git access to check,
-    /// or found nothing to disagree.
-    #[serde(default)]
-    pub apparatus_forged: Vec<String>,
     /// Whether the caller found this plan's objective, estimator, decision
     /// rule or protected apparatus changed between two revisions of its
     /// document that share a `definition_version` — committed revisions, and
@@ -223,16 +211,6 @@ pub struct TamperedCollectionRequest {
     /// read. Empty when the caller could not read or parse any of it.
     #[serde(default)]
     pub plan_ids: Vec<String>,
-}
-
-/// A revision to compare the latest collection against.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct ComparisonRequest {
-    /// The repository root holding the measurement store.
-    pub repo: String,
-    /// The earlier source revision.
-    pub before_revision: String,
 }
 
 /// One metric's history.

@@ -21,15 +21,13 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 use crate::contract::{
-    SEMANTIC_CONTRACT, module_manifest_schema_path, semantic_core_dir,
-    shipped_semantic_core_versions, sweep_report_schema_path,
+    SEMANTIC_CONTRACT, module_manifest_schema_path, semantic_core_dir, sweep_report_schema_path,
 };
 use crate::data_schema::{ResolveContext, ResolvedDataSchema, resolve_data_schema};
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic, Severity};
 use crate::error::SemanticError;
 use crate::ids::{
     ContractVersion, MappingName, ModuleName, ModuleVersion, ObjectTypeName, PackageIdentity,
-    SemanticCoreVersion,
 };
 use crate::schema::{
     SchemaError, SchemaErrorParams, SchemaKeyword, SchemaValidator, SchemaValidatorExt, read_json,
@@ -109,8 +107,6 @@ impl LegacyForms {
 pub struct SemanticBlock {
     /// `contract_version`.
     pub contract_version: ContractVersion,
-    /// `semantic_core`.
-    pub semantic_core: SemanticCoreVersion,
     /// `package`.
     pub package: PackageIdentity,
     /// `exports`, in manifest order.
@@ -181,7 +177,6 @@ pub struct SemanticValidators {
     semantic_block: SchemaValidator,
     sweep_report: SchemaValidator,
     semantic_core_dir: PathBuf,
-    shipped_semantic_core: Vec<String>,
 }
 
 impl SemanticValidators {
@@ -209,22 +204,7 @@ impl SemanticValidators {
             semantic_block: SchemaValidator::compile(&manifest_schema_path, block_schema, &[])?,
             sweep_report: SchemaValidator::compile(&sweep_path, &sweep_schema, &[])?,
             semantic_core_dir: semantic_core_dir(semantic_root),
-            shipped_semantic_core: shipped_semantic_core_versions(semantic_root),
         })
-    }
-
-    /// True when `version` is one the loaded bundle ships (its `$id` base).
-    #[must_use]
-    pub fn ships_semantic_core(&self, version: &SemanticCoreVersion) -> bool {
-        self.shipped_semantic_core
-            .iter()
-            .any(|shipped| shipped == version.as_str())
-    }
-
-    /// The semantic-core versions the loaded bundle ships.
-    #[must_use]
-    pub fn shipped_semantic_core_versions(&self) -> &[String] {
-        &self.shipped_semantic_core
     }
 
     /// The compiled `semantic` block validator.
@@ -401,22 +381,6 @@ pub fn read_semantic_block(
         }
     }
 
-    let semantic_core = SemanticCoreVersion::new(
-        raw_map
-            .get("semantic_core")
-            .map_or_else(String::new, stringify),
-    );
-    if !validators.ships_semantic_core(&semantic_core) {
-        diagnostics.push(SemanticDiagnostic::error(
-            DiagnosticCode::UnknownSemanticCore,
-            "semantic.semantic_core",
-            format!(
-                "semantic_core {semantic_core} is not a version this quoin ships ({})",
-                validators.shipped_semantic_core.join(", ")
-            ),
-        ));
-    }
-
     let module_version = ModuleVersion::new(
         manifest_map
             .get("version")
@@ -429,7 +393,6 @@ pub fn read_semantic_block(
                 .get("contract_version")
                 .map_or_else(String::new, stringify),
         ),
-        semantic_core: semantic_core.clone(),
         package: PackageIdentity::new(raw_map.get("package").map_or_else(String::new, stringify)),
         exports,
         imports: raw_map
@@ -487,7 +450,6 @@ pub fn read_semantic_block(
         let ctx = ResolveContext {
             module_root: module_root.to_path_buf(),
             package_identity: block.package.clone(),
-            semantic_core: semantic_core.clone(),
             object_type: name.clone(),
             semantic_core_dir: validators.semantic_core_dir.clone(),
         };
@@ -757,7 +719,7 @@ mod tests {
         assert_eq!(package.message, "semantic.package does not match ^a$");
 
         let other = map_schema_error(&SchemaError {
-            instance_path: "/semantic_core".to_owned(),
+            instance_path: "/other".to_owned(),
             keyword: SchemaKeyword::Pattern,
             params: SchemaErrorParams::Pattern("^a$".to_owned()),
             instance: json!("X"),

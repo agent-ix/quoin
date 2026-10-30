@@ -36,10 +36,8 @@ quoin-modules = { workspace = true }
 # convention are quoin-measurement's, shared rather than duplicated as string
 # literals in two crates.
 quoin-measurement = { workspace = true }
-# The cassette's request key (PLAT-977) hashes the canonical bytes of
-# `{state, questions}` through this crate's own `digest_canonical_value`
-# rather than a second, hand-rolled canonicalizer -- quoin already has exactly
-# one fact called "the canonical hash of a JSON value" and this reuses it.
+# The cassette's request key (PLAT-977) is the canonical JSON text of
+# `{state, questions}` through this crate's own `canonical_json`.
 quoin-store = { workspace = true }
 # `corpus_check`'s "N of M" prose scan (PLAT-933) -- already a workspace
 # dependency (see the pin's own comment in the root `Cargo.toml`), so this

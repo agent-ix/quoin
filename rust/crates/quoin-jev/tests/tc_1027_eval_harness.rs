@@ -5,7 +5,7 @@
 //!
 //! Everything the live runner (`live_eval_v2.rs`) relies on, checked with no
 //! network and no key: the corpus schema and its validator, the external
-//! by-reference path, the held-out seal and its gate, the variant registry
+//! by-reference path, the held-out gate, the variant registry
 //! and its wording rule, the unit splitter, the metrics, and the runner end to
 //! end over a fake Jev transport.
 //!
@@ -43,8 +43,7 @@ use typesafe_sdk_http::{RawResponse, Request, Transport};
 use typesafe_sdk_questions::{Questions, noul, questions};
 
 use eval_v2_support::corpus::{
-    self, CorpusFile, HELDOUT_ENV, Origin, Source, authorize_heldout, heldout_digest,
-    load_external, validate, verify_seal,
+    self, CorpusFile, HELDOUT_ENV, Origin, Source, authorize_heldout, load_external, validate,
 };
 use eval_v2_support::corpus::{KindGroup, TruthKind};
 use eval_v2_support::fixtures::{self, CODE_BODY, corpus_text, row, truth};
@@ -91,12 +90,10 @@ fn print_and_check(source: &Source) {
         problems.len(),
         problems.join("\n  - ")
     );
-    let seal = verify_seal(source).unwrap_or_else(|error| panic!("{error}"));
-    println!("held-out seal holds: {seal}");
 }
 
 /// Provenance: PLAT-1027. Whatever corpus is present validates against the
-/// shared schema, its held-out seal holds, and row ids are unique across
+/// shared schema, and row ids are unique across
 /// sources. PLAT-1025 landed the in-repo corpus, so this runs in the default
 /// gate. It fails when it finds no corpus at all.
 #[test]
@@ -238,8 +235,7 @@ fn tc_1027_validation_names_each_defect() {
         "dev",
         &json!({"compound": truth(&json!(false), "agent_dual", &[])}),
     );
-    referenced_in_repo["ref"] =
-        json!({"repo": "agent-ix/quoin", "commit": "abc", "paths": {}, "sha256": {}});
+    referenced_in_repo["ref"] = json!({"repo": "agent-ix/quoin", "paths": {}});
     let file = parse(&[
         mode_mismatch,
         needs_code,
@@ -270,33 +266,10 @@ fn tc_1027_validation_names_each_defect() {
 }
 
 // ---------------------------------------------------------------------------
-// The held-out seal
+// The held-out gate
 // ---------------------------------------------------------------------------
 
-/// Provenance: PLAT-1027. The seal is sha256 over the RFC 8785 bytes of the
-/// held-out rows alone. The expected digest is the literal
-/// `sha256('[{"id":"H1","split":"heldout"}]')`, not a re-derivation.
-#[test]
-fn tc_1027_the_seal_covers_heldout_rows_only() {
-    let text = r#"{"rows": [ {"split": "heldout", "id": "H1"}, {"split": "dev", "id": "D1"} ]}"#;
-    assert_eq!(
-        heldout_digest(text).unwrap(),
-        "8172870b2749f56bf06605a6a881d30833fd5f1e00e85a4065338bd9a72b9594"
-    );
-    let dev_changed =
-        r#"{"rows": [{"split": "heldout", "id": "H1"}, {"split": "dev", "id": "D2"}]}"#;
-    assert_eq!(
-        heldout_digest(dev_changed).unwrap(),
-        heldout_digest(text).unwrap()
-    );
-    let heldout_changed = r#"{"rows": [{"split": "heldout", "id": "H2"}]}"#;
-    assert_ne!(
-        heldout_digest(heldout_changed).unwrap(),
-        heldout_digest(text).unwrap()
-    );
-}
-
-fn sealed_source(dir: &std::path::Path, seal: Option<&str>) -> Source {
+fn heldout_source(dir: &std::path::Path) -> Source {
     let text = corpus_text(&[
         row(
             "EV2-0001",
@@ -313,36 +286,17 @@ fn sealed_source(dir: &std::path::Path, seal: Option<&str>) -> Source {
     ]);
     let path = dir.join("corpus.json");
     std::fs::write(&path, &text).unwrap();
-    if let Some(seal) = seal {
-        std::fs::write(dir.join(corpus::SEAL_FILE), seal).unwrap();
-    }
     corpus::read_source(&path, Origin::InRepo).unwrap()
 }
 
-/// Provenance: PLAT-1027. A held-out run needs `QUOIN_JEV_HELDOUT=1` AND a
-/// seal that matches; each missing piece is refused on its own.
+/// Provenance: PLAT-1027. A held-out run needs `QUOIN_JEV_HELDOUT=1`.
 #[test]
-fn tc_1027_a_heldout_run_needs_the_flag_and_a_matching_seal() {
-    let dir = tempfile::tempdir().unwrap();
-    let unsealed = sealed_source(dir.path(), None);
-    let digest = heldout_digest(&unsealed.text).unwrap();
-
-    let no_flag = authorize_heldout(None, &[&unsealed]).unwrap_err();
+fn tc_1027_a_heldout_run_needs_the_flag() {
+    let no_flag = authorize_heldout(None).unwrap_err();
     assert!(no_flag.contains(HELDOUT_ENV), "{no_flag}");
-    let wrong_flag = authorize_heldout(Some("yes"), &[&unsealed]).unwrap_err();
+    let wrong_flag = authorize_heldout(Some("yes")).unwrap_err();
     assert!(wrong_flag.contains(HELDOUT_ENV), "{wrong_flag}");
-    let no_seal = authorize_heldout(Some("1"), &[&unsealed]).unwrap_err();
-    assert!(no_seal.contains("not sealed"), "{no_seal}");
-
-    let mismatched = sealed_source(dir.path(), Some(&"0".repeat(64)));
-    let refused = authorize_heldout(Some("1"), &[&mismatched]).unwrap_err();
-    assert!(refused.contains("changed after it was sealed"), "{refused}");
-
-    let sealed = sealed_source(dir.path(), Some(&format!("sha256:{digest}\n")));
-    assert_eq!(
-        authorize_heldout(Some("1"), &[&sealed]).unwrap(),
-        vec![digest]
-    );
+    authorize_heldout(Some("1")).unwrap();
 }
 
 /// Provenance: PLAT-1027. The run log appends one line per held-out run.
@@ -359,7 +313,6 @@ fn tc_1027_a_heldout_run_is_logged_with_its_variants() {
             &corpus::HeldoutRun {
                 unix_seconds: 1,
                 variants,
-                seals: vec!["abc".to_owned()],
                 rows: 3,
                 models: std::collections::BTreeMap::new(),
                 rerun_reason: None,
@@ -384,7 +337,7 @@ const EXTERNAL_SOURCE: &str = "use std::fmt;\n\n/// Adds.\npub fn add(a: u32, b:
 
 const EXTERNAL_PATCH: &str = "--- a/src/lib.rs\n+++ b/src/lib.rs\n@@ -4,3 +4,3 @@\n pub fn add(a: u32, b: u32) -> u32 {\n-    a + b\n+    a * b\n }\n";
 
-fn external_row(id: &str, sha: &str, path: &str, repo: &str) -> Value {
+fn external_row(id: &str, path: &str, repo: &str) -> Value {
     let mut value = row(
         id,
         Mode::ReqTestCode,
@@ -394,9 +347,8 @@ fn external_row(id: &str, sha: &str, path: &str, repo: &str) -> Value {
     value["test"] = json!({"path": path, "fn_name": "adds"});
     value["code"] = json!({"path": path, "symbol": "Adder::add"});
     value["ref"] = json!({
-        "repo": repo, "commit": "deadbeef",
+        "repo": repo,
         "paths": {"test": path, "code": path},
-        "sha256": {"test": sha, "code": sha},
     });
     value["mutation"] = json!({
         "id": "M1", "target": "code", "kind": "swap_operator",
@@ -411,22 +363,18 @@ fn write_external(dir: &std::path::Path, rows: &[Value]) -> std::path::PathBuf {
     corpus
 }
 
-fn external_corpus(dir: &std::path::Path, sha: &str, path: &str) -> std::path::PathBuf {
-    write_external(
-        dir,
-        &[external_row("EVX-0001", sha, path, "agent-ix/sibling")],
-    )
+fn external_corpus(dir: &std::path::Path, path: &str) -> std::path::PathBuf {
+    write_external(dir, &[external_row("EVX-0001", path, "agent-ix/sibling")])
 }
 
 /// A checkout root holding `sibling/src/lib.rs` = [`EXTERNAL_SOURCE`], and
-/// that file's stored sha256.
-fn checkout() -> (tempfile::TempDir, String) {
+/// .
+fn checkout() -> tempfile::TempDir {
     let root = tempfile::tempdir().unwrap();
     let dir = root.path().join("sibling/src");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("lib.rs"), EXTERNAL_SOURCE).unwrap();
-    let sha = quoin_store::digest_bytes_sha256(EXTERNAL_SOURCE.as_bytes()).to_stored();
-    (root, sha)
+    root
 }
 
 /// The one excluded row's reason, after loading `corpus` against `root`.
@@ -438,7 +386,7 @@ fn only_exclusion(corpus: &std::path::Path, root: &std::path::Path) -> String {
 }
 
 /// Provenance: PLAT-1027. An external row is read from the checkout, its
-/// digest checked, its mutation applied, and the named `fn`s cut out — with
+/// mutation applied, and the named `fn`s cut out — with
 /// no body ever stored in quoin.
 #[test]
 fn tc_1027_an_external_row_materializes_from_its_checkout() {
@@ -446,8 +394,7 @@ fn tc_1027_an_external_row_materializes_from_its_checkout() {
     let checkout = root.path().join("sibling/src");
     std::fs::create_dir_all(&checkout).unwrap();
     std::fs::write(checkout.join("lib.rs"), EXTERNAL_SOURCE).unwrap();
-    let sha = quoin_store::digest_bytes_sha256(EXTERNAL_SOURCE.as_bytes()).to_stored();
-    let corpus = external_corpus(root.path(), &sha, "src/lib.rs");
+    let corpus = external_corpus(root.path(), "src/lib.rs");
 
     let source = load_external(Some(&corpus), Some(root.path()))
         .unwrap()
@@ -467,20 +414,17 @@ fn tc_1027_an_external_row_materializes_from_its_checkout() {
     );
 }
 
-/// Provenance: PLAT-1027. A checkout whose bytes differ from the row's
-/// digest, or a path that escapes the repo, excludes that row with its
-/// reason; a missing root fails the whole load (configuration, not data).
+/// Provenance: PLAT-1027. A path that escapes the repo excludes that row
+/// with its reason; a missing root fails the whole load (configuration, not
+/// data).
 #[test]
-fn tc_1027_an_external_row_is_refused_when_its_content_moved() {
-    let (root, _) = checkout();
-    let stale = external_corpus(root.path(), &"a".repeat(64), "src/lib.rs");
-    let reason = only_exclusion(&stale, root.path());
-    assert!(reason.contains("does not match the row's"), "{reason}");
-
-    let no_root = load_external(Some(&stale), None).unwrap_err();
+fn tc_1027_an_external_row_with_an_escaping_path_is_refused() {
+    let root = checkout();
+    let ok = external_corpus(root.path(), "src/lib.rs");
+    let no_root = load_external(Some(&ok), None).unwrap_err();
     assert!(no_root.contains(corpus::EXTERNAL_ROOT_ENV), "{no_root}");
 
-    let escaping = external_corpus(root.path(), &"a".repeat(64), "../../etc/passwd");
+    let escaping = external_corpus(root.path(), "../../etc/passwd");
     let reason = only_exclusion(&escaping, root.path());
     assert!(
         reason.contains("not a plain repo-relative path"),
@@ -493,12 +437,9 @@ fn tc_1027_an_external_row_is_refused_when_its_content_moved() {
 /// the root's parent.
 #[test]
 fn tc_1027_a_repo_name_cannot_escape_the_root() {
-    let (root, sha) = checkout();
+    let root = checkout();
     for repo in ["agent-ix/..", "agent-ix/.", "..", "agent-ix/", "a\\..\\b"] {
-        let corpus = write_external(
-            root.path(),
-            &[external_row("EVX-0001", &sha, "src/lib.rs", repo)],
-        );
+        let corpus = write_external(root.path(), &[external_row("EVX-0001", "src/lib.rs", repo)]);
         let reason = only_exclusion(&corpus, root.path());
         assert!(reason.contains("plain repository name"), "{repo}: {reason}");
     }
@@ -509,7 +450,7 @@ fn tc_1027_a_repo_name_cannot_escape_the_root() {
 #[cfg(unix)]
 #[test]
 fn tc_1027_a_symlink_cannot_escape_the_root() {
-    let (root, sha) = checkout();
+    let root = checkout();
     let outside = tempfile::tempdir().unwrap();
     std::fs::write(outside.path().join("lib.rs"), EXTERNAL_SOURCE).unwrap();
     std::os::unix::fs::symlink(
@@ -519,12 +460,7 @@ fn tc_1027_a_symlink_cannot_escape_the_root() {
     .unwrap();
     let corpus = write_external(
         root.path(),
-        &[external_row(
-            "EVX-0001",
-            &sha,
-            "src/link.rs",
-            "agent-ix/sibling",
-        )],
+        &[external_row("EVX-0001", "src/link.rs", "agent-ix/sibling")],
     );
     let reason = only_exclusion(&corpus, root.path());
     assert!(reason.contains("outside"), "{reason}");
@@ -534,12 +470,12 @@ fn tc_1027_a_symlink_cannot_escape_the_root() {
 /// excluded with its reason and the good ones load; the report lists it.
 #[test]
 fn tc_1027_one_bad_external_row_is_excluded_and_reported() {
-    let (root, sha) = checkout();
+    let root = checkout();
     let corpus = write_external(
         root.path(),
         &[
-            external_row("EVX-0001", &sha, "src/lib.rs", "agent-ix/sibling"),
-            external_row("EVX-0002", &sha, "src/missing.rs", "agent-ix/sibling"),
+            external_row("EVX-0001", "src/lib.rs", "agent-ix/sibling"),
+            external_row("EVX-0002", "src/missing.rs", "agent-ix/sibling"),
         ],
     );
     let source = load_external(Some(&corpus), Some(root.path()))
@@ -562,7 +498,7 @@ const SPEC_FILE: &str = "# FR-002\n\nThe system shall refuse a request\nlarger t
 
 const SPEC_PATCH: &str = "--- a/spec/FR-002.md\n+++ b/spec/FR-002.md\n@@ -3,2 +3,2 @@\n The system shall refuse a request\n-larger than 4096 bytes.\n+larger than 8192 bytes.\n";
 
-fn requirement_mutation_row(sha: &str, statement: &str, with_path: bool) -> Value {
+fn requirement_mutation_row(statement: &str, with_path: bool) -> Value {
     let mut value = row(
         "EVX-0002",
         Mode::Req,
@@ -576,8 +512,7 @@ fn requirement_mutation_row(sha: &str, statement: &str, with_path: bool) -> Valu
     } else {
         json!({})
     };
-    value["ref"] = json!({"repo": "agent-ix/sibling", "commit": "c",
-                          "paths": paths, "sha256": {"requirement": sha}});
+    value["ref"] = json!({"repo": "agent-ix/sibling", "paths": paths});
     value["mutation"] = json!({"id": "M2", "target": "requirement", "kind": "threshold",
                                "description": "4096 becomes 8192", "patch": SPEC_PATCH});
     value
@@ -588,13 +523,12 @@ fn requirement_mutation_row(sha: &str, statement: &str, with_path: bool) -> Valu
 /// row's statement and AC text. Without a requirement path it is refused.
 #[test]
 fn tc_1027_a_requirement_mutation_is_checked_against_the_patched_spec() {
-    let (root, _) = checkout();
+    let root = checkout();
     std::fs::create_dir_all(root.path().join("sibling/spec")).unwrap();
     std::fs::write(root.path().join("sibling/spec/FR-002.md"), SPEC_FILE).unwrap();
-    let sha = quoin_store::digest_bytes_sha256(SPEC_FILE.as_bytes()).to_stored();
 
     let good = "The system shall refuse a request larger than 8192 bytes.";
-    let corpus = write_external(root.path(), &[requirement_mutation_row(&sha, good, true)]);
+    let corpus = write_external(root.path(), &[requirement_mutation_row(good, true)]);
     let source = load_external(Some(&corpus), Some(root.path()))
         .unwrap()
         .unwrap();
@@ -606,14 +540,14 @@ fn tc_1027_a_requirement_mutation_is_checked_against_the_patched_spec() {
     );
 
     let stale = "The system shall refuse a request larger than 4096 bytes.";
-    let corpus = write_external(root.path(), &[requirement_mutation_row(&sha, stale, true)]);
+    let corpus = write_external(root.path(), &[requirement_mutation_row(stale, true)]);
     let reason = only_exclusion(&corpus, root.path());
     assert!(
         reason.contains("does not contain the row's statement"),
         "{reason}"
     );
 
-    let corpus = write_external(root.path(), &[requirement_mutation_row(&sha, good, false)]);
+    let corpus = write_external(root.path(), &[requirement_mutation_row(good, false)]);
     let reason = only_exclusion(&corpus, root.path());
     assert!(
         reason.contains("targets requirement but ref.paths has no such file"),
@@ -1181,7 +1115,7 @@ fn tc_1027_the_wording_rule_ignores_row_content() {
 #[test]
 fn tc_1027_row_ids_are_unique_across_sources_and_prefixed() {
     let dir = tempfile::tempdir().unwrap();
-    let in_repo = sealed_source(dir.path(), None);
+    let in_repo = heldout_source(dir.path());
     let mut external = in_repo.clone();
     external.origin = Origin::External;
     let error = corpus::combined_rows(&[in_repo.clone(), external.clone()], corpus::Split::Dev)
@@ -1312,7 +1246,6 @@ fn tc_1027_a_heldout_rerun_needs_a_reason() {
         &corpus::HeldoutRun {
             unix_seconds: 1,
             variants: labels.clone(),
-            seals: Vec::new(),
             rows: 1,
             models: std::collections::BTreeMap::new(),
             rerun_reason: None,
@@ -1328,7 +1261,6 @@ fn tc_1027_a_heldout_rerun_needs_a_reason() {
         &corpus::HeldoutRun {
             unix_seconds: 2,
             variants: labels.clone(),
-            seals: Vec::new(),
             rows: 1,
             models: std::collections::BTreeMap::new(),
             rerun_reason: Some("service outage mid-run".to_owned()),
@@ -1340,28 +1272,6 @@ fn tc_1027_a_heldout_rerun_needs_a_reason() {
         text.contains("\"rerun_reason\":\"service outage mid-run\""),
         "{text}"
     );
-}
-
-/// Provenance: PLAT-1027 (review finding 10). A source with no held-out rows
-/// needs no seal; one with held-out rows does.
-#[test]
-fn tc_1027_a_source_without_heldout_rows_needs_no_seal() {
-    let dir = tempfile::tempdir().unwrap();
-    let text = corpus_text(&[row(
-        "EV2-0001",
-        Mode::Req,
-        "dev",
-        &json!({"compound": truth(&json!(false), "agent_dual", &[])}),
-    )]);
-    let path = dir.path().join("corpus.json");
-    std::fs::write(&path, text).unwrap();
-    let source = corpus::read_source(&path, Origin::InRepo).unwrap();
-    assert_eq!(
-        verify_seal(&source).unwrap(),
-        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    );
-    let heldout = sealed_source(tempfile::tempdir().unwrap().path(), None);
-    assert!(verify_seal(&heldout).unwrap_err().contains("not sealed"));
 }
 
 /// Provenance: PLAT-1027 (review finding 11). A zero-context insertion
@@ -1460,10 +1370,7 @@ fn tc_1027_the_preflight_refuses_versions_past_the_cap() {
         log: &log,
     };
     let registry: Vec<&Variant> = REGISTRY.iter().collect();
-    assert_eq!(
-        preflight::authorize_run(&gate, &registry, &[]).unwrap(),
-        Vec::<String>::new()
-    );
+    preflight::authorize_run(&gate, &registry, &[]).unwrap();
 
     let s1_rt = variant::resolve("S1-RT").unwrap()[0];
     assert_eq!(preflight::MAX_DEV_VERSIONS, 5);
@@ -1478,14 +1385,11 @@ fn tc_1027_the_preflight_refuses_versions_past_the_cap() {
 /// Provenance: PR #620 re-review finding 5, PLAT-1024 rule 1. On held-out,
 /// the preflight the live runner calls refuses a variant the committed
 /// selection file does not cover, a missing selection file, a missing flag,
-/// and an unexplained rerun; a covered variant over a sealed source passes
-/// and returns the seal.
+/// and an unexplained rerun; a covered variant passes.
 #[test]
 fn tc_1027_the_preflight_runs_heldout_only_for_the_committed_selection() {
     let dir = tempfile::tempdir().unwrap();
-    let unsealed = sealed_source(dir.path(), None);
-    let digest = heldout_digest(&unsealed.text).unwrap();
-    let sealed = sealed_source(dir.path(), Some(&format!("sha256:{digest}\n")));
+    let sealed = heldout_source(dir.path());
     let selection = dir.path().join("selection.json");
     let log = dir.path().join("heldout-runs.jsonl");
     let gate = preflight::RunGate {
@@ -1504,16 +1408,12 @@ fn tc_1027_the_preflight_runs_heldout_only_for_the_committed_selection() {
     std::fs::write(
         &selection,
         json!({"schema": corpus::SELECTION_SCHEMA, "selections": [
-            {"mp": "MP-240", "variant": "S2", "version": 1, "selected_at_commit": "abc1234",
-             "dev_evidence": "reviews/dev.md", "baselines": ["S0@v1"]}
+            {"mp": "MP-240", "variant": "S2", "version": 1, "dev_evidence": "reviews/dev.md", "baselines": ["S0@v1"]}
         ]})
         .to_string(),
     )
     .unwrap();
-    assert_eq!(
-        preflight::authorize_run(&gate, &s2_rt, &[&sealed]).unwrap(),
-        vec![digest.clone()]
-    );
+    preflight::authorize_run(&gate, &s2_rt, &[&sealed]).unwrap();
     let refused = preflight::authorize_run(&gate, &s1, &[&sealed]).unwrap_err();
     assert!(
         refused.contains("S1@v1") && refused.contains("not selected for held-out"),
@@ -1532,7 +1432,6 @@ fn tc_1027_the_preflight_runs_heldout_only_for_the_committed_selection() {
         &corpus::HeldoutRun {
             unix_seconds: 1,
             variants: vec!["S2-RT@v1".to_owned()],
-            seals: vec![digest],
             rows: 1,
             models: std::collections::BTreeMap::new(),
             rerun_reason: None,

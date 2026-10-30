@@ -5,13 +5,11 @@
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use thiserror::Error;
 
 use engineering_assurance::campaign::{
     MeasurementProcedure, ProcedureInputOrigin, ProcedureInputOriginKind,
 };
-use engineering_assurance::producer_execution::InputBinding;
 
 use super::run::{InputSource, RunMemberBindings, SelectedInput};
 
@@ -36,7 +34,7 @@ pub struct InputOriginInventory {
     pub schema: String,
     /// Whether an authored origin policy was enforced.
     pub declaration: OriginDeclaration,
-    /// One role/path/digest/source claim per explicit EA request input.
+    /// One role/path/source claim per explicit EA request input.
     pub inputs: Vec<InputOriginClaim>,
 }
 
@@ -44,7 +42,7 @@ pub struct InputOriginInventory {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InputOriginClaim {
-    /// Exact producer request role, path, bytes and mode.
+    /// Producer request role, path and mode.
     pub binding: InputOriginBinding,
     /// Claimed origin of the exact bytes.
     pub source: OriginSource,
@@ -58,17 +56,7 @@ pub struct InputOriginBinding {
     pub role: String,
     /// Portable relative path staged into EA's invocation root.
     pub path: String,
-    /// Exact byte identity and staged execution mode.
-    pub bytes: InputByteIdentity,
-}
-
-/// Selected byte identity, separate from the role and staging path.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct InputByteIdentity {
-    /// Bare SHA-256 digest of the staged bytes.
-    pub digest: String,
-    /// Whether EA staged the bytes with executable mode.
+    /// Whether EA stages the bytes with executable mode.
     pub executable: bool,
 }
 
@@ -104,15 +92,6 @@ pub enum OriginSource {
 /// A runtime selection did not match the actual EA request inventory.
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum InputOriginError {
-    /// EA request has no input inventory.
-    #[error("EA request inputs missing")]
-    MissingInputs,
-    /// Explicit request and machine-selected input populations differ.
-    #[error("explicit input inventory differs from machine selection")]
-    Inventory,
-    /// One request input lacks a required typed field.
-    #[error("EA request input field missing")]
-    MissingField,
     /// An explicit role or path is duplicated.
     #[error("duplicate explicit producer input role or path")]
     Duplicate,
@@ -180,61 +159,20 @@ pub fn selected_declarations(
     )
 }
 
-/// Bind the machine-selected origins to the exact EA request inputs.
+/// Record the machine-selected origins of the explicit producer inputs.
 ///
 /// # Errors
-/// Refuses an omitted, extra, duplicate, or differently staged explicit input.
+/// Refuses a duplicate role or path, or a claim the authored procedure contradicts.
 pub fn from_runtime(
     runtime: &RunMemberBindings,
-    request: &Value,
-    source_inventory: &[InputBinding],
     procedure: &MeasurementProcedure,
 ) -> Result<InputOriginInventory, InputOriginError> {
-    let observed = request
-        .get("inputs")
-        .and_then(Value::as_array)
-        .ok_or(InputOriginError::MissingInputs)?;
-    let implicit = source_inventory
-        .iter()
-        .map(|binding| serde_json::to_value(binding).map_err(|_| InputOriginError::Inventory))
-        .collect::<Result<Vec<_>, _>>()?;
-    if implicit
-        .iter()
-        .any(|binding| observed.iter().filter(|input| *input == binding).count() != 1)
-    {
-        return Err(InputOriginError::Inventory);
-    }
-    let explicit: Vec<_> = observed
-        .iter()
-        .filter(|input| !implicit.contains(input))
-        .collect();
-    if explicit.len() != runtime.inputs.len() || observed.len() != implicit.len() + explicit.len() {
-        return Err(InputOriginError::Inventory);
-    }
     let mut roles = BTreeSet::new();
     let mut paths = BTreeSet::new();
-    let mut inputs = Vec::with_capacity(explicit.len());
+    let mut inputs = Vec::with_capacity(runtime.inputs.len());
     for selected in &runtime.inputs {
         if !roles.insert(selected.role.as_str()) || !paths.insert(selected.path.as_str()) {
             return Err(InputOriginError::Duplicate);
-        }
-        let request_input = explicit
-            .iter()
-            .find(|input| {
-                input.get("role").and_then(Value::as_str) == Some(&selected.role)
-                    && input.get("path").and_then(Value::as_str) == Some(&selected.path)
-            })
-            .ok_or(InputOriginError::Inventory)?;
-        let digest = request_input
-            .get("digest")
-            .and_then(Value::as_str)
-            .ok_or(InputOriginError::MissingField)?;
-        let executable = request_input
-            .get("executable")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        if executable != selected.executable {
-            return Err(InputOriginError::Inventory);
         }
         let source = match &selected.source {
             InputSource::File(_) => OriginSource::SelectedBytes,
@@ -256,10 +194,7 @@ pub fn from_runtime(
             binding: InputOriginBinding {
                 role: selected.role.clone(),
                 path: selected.path.clone(),
-                bytes: InputByteIdentity {
-                    digest: digest.to_owned(),
-                    executable,
-                },
+                executable: selected.executable,
             },
             source,
         });

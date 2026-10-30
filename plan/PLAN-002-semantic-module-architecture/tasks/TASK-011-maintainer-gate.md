@@ -17,7 +17,7 @@ relationships:
 ## Status
 
 **done** — named active `agent-ix/maintainers` member `kreneskyp` reviewed the gate and admin-merged
-PR #311 as merge commit `4a82644ad3cf75770cc53ef3812e3b13e80b516d`. SR-058 retains the
+PR #311. SR-058 retains the
 decision and its architecture-only scope.
 
 ## Scope

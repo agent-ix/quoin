@@ -20,7 +20,7 @@ quire clauses evaluate \
   --format json > binding.json
 ```
 
-The report binds the exact ClauseSet version and content digest. Use `quire
+The report binds the exact ClauseSet version. Use `quire
 clauses diff` to review changes between exact versions.
 
 ## 2. Account for discharge
@@ -38,9 +38,7 @@ records an authorized decision. Both carry an attestation and expiry.
       "attestedBy": "reviewer-1",
       "authority": "release reviewer",
       "attestedAt": "2026-08-01T00:00:00Z",
-      "expiresAt": "2026-09-01T00:00:00Z",
-      "sourceRevision": "0123456789abcdef",
-      "evidenceDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      "expiresAt": "2026-09-01T00:00:00Z"
     }
   }
 ]
@@ -76,9 +74,7 @@ exactly match the authored participant:
     "decidedBy": "reviewer-1",
     "authority": "may accept or reject this release",
     "decidedAt": "2026-08-01T00:00:00Z",
-    "expiresAt": "2026-09-01T00:00:00Z",
-    "sourceRevision": "0123456789abcdef",
-    "evidenceDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    "expiresAt": "2026-09-01T00:00:00Z"
   }
 ]
 ```
@@ -106,22 +102,17 @@ provenance tuple:
   "schemaVersion": "producer-provenance-v1",
   "identity": "example.invalid/synthetic-runner",
   "version": "1.2.3",
-  "sourceRevision": "0123456789abcdef",
-  "sourceState": "clean",
-  "executableDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  "configurationDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "capabilities": ["synthetic-experiment-v1"],
   "artifacts": [
     {
-      "name": "raw-result.json",
-      "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      "name": "raw-result.json"
     }
   ]
 }
 ```
 
-The writer validates the complete input, derives `recordId` from canonical
-content, and atomically publishes under `spec/evidence/experiments/` or
+The writer validates the complete input, assigns a random UUID `recordId` (or accepts the one the record was given),
+and atomically publishes under `spec/evidence/experiments/` or
 `spec/evidence/operational/`. Repeating identical input is idempotent. Different
 bytes at an existing immutable path are reported and never overwritten.
 

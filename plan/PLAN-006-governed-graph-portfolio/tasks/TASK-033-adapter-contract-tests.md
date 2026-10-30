@@ -44,7 +44,7 @@ the implemented focused suite passes 21/21 tests covering TC-1293..TC-1304.
 ## Scope
 
 Create retained Quire and graph-quality fixtures plus exact TC/AC-tagged tests
-for registry selection, closed schemas, canonical identities, digest checks,
+for registry selection, closed schemas, canonical identities, length checks,
 attestation/plan premises, bijective normalization, state classes, idempotence,
 and static no-execution boundaries.
 

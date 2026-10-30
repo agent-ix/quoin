@@ -29,7 +29,6 @@ schemars = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
-sha2 = { workspace = true }
 
 [features]
 # `quoin-schemas` turns this on to read the wire shapes off the types

@@ -55,8 +55,8 @@ fn request() -> Value {
             { "id": "FR-001-AC-2", "statement": "s", "binders": [], "status": "untagged" },
         ]}],
         "bindings": { "schemaVersion": 1, "bindings": [
-            { "obligation": "FR-001-AC-1", "statementHashAtBinding": "h", "suite": "unit", "commit": "c1", "symbols": ["tc_1"] },
-            { "obligation": "FR-002-AC-1", "statementHashAtBinding": "h", "suite": "unit", "commit": "c0", "symbols": ["tc_2"] },
+            { "obligation": "FR-001-AC-1", "suite": "unit", "commit": "c1", "symbols": ["tc_1"] },
+            { "obligation": "FR-002-AC-1", "suite": "unit", "commit": "c0", "symbols": ["tc_2"] },
         ]},
         "audit": {
             "findings": [{ "kind": "stale-evidence", "obligation": "FR-002-AC-1", "severity": "medium", "summary": "behind HEAD" }],

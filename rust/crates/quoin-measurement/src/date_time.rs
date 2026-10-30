@@ -38,9 +38,8 @@
 //! `quoin-assurance`, `quoin-change-assurance` and `quoin-evidence`, accepting
 //! three different languages, all returning `bool` so every caller re-parses
 //! the string it just validated (Stage 6 plan §13.1). This one returns a
-//! **value**, the way `quoin_store::RawFileSha256Digest::parse_stored` does.
-//! Its eventual home is the shared instant reader that ticket asks for, modelled
-//! on `quoin-store`'s named digest domains; until that exists, this is the one
+//! **value**. Its eventual home is the shared instant reader that ticket asks
+//! for; until that exists, this is the one
 //! grammar in the measurement domain and nothing here may add a second.
 
 use crate::error::{MeasurementError, MeasurementErrorCode};

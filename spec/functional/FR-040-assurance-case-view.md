@@ -33,7 +33,7 @@ collects nothing, and writes nothing to the store.
 
 This is the whole reason to build it, and the reason it is dangerous to build carelessly.
 
-An undischarged obligation, a suspect binding, a claim nothing traces to — each stays in the tree as
+An undischarged obligation, a vacuous binding, a claim nothing traces to — each stays in the tree as
 an **open node**, carrying the auditor's reason verbatim. A case that
 narrows to only what it can prove is indistinguishable, to a reader, from a case that is complete.
 

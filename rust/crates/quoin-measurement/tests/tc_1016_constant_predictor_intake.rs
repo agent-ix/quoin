@@ -53,7 +53,7 @@ fn plan_document(metric: &str) -> String {
          \x20\x20- spec/assurance/MP-900.md\n\
          negative_controls:\n\
          \x20\x20- kind: apparatus-edit\n\
-         \x20\x20\x20\x20description: the plan document is digested with every collection\n\
+         \x20\x20\x20\x20description: the plan document defines the measurement\n\
          ground_truth_kind: human-labelled\n\
          statistical_design:\n\
          \x20\x20population: every labelled case\n\
@@ -91,15 +91,14 @@ fn load_plans(root: &Path) -> Result<Vec<MeasurementPlan>, MeasurementError> {
 }
 
 /// Write `candidate` through the real `write_measurement_collection`,
-/// declaring the protected plan document at its digest (PLAT-975).
+/// declaring the protected plan document by name.
 fn write(root: &Path, candidate: &Value) -> Result<std::path::PathBuf, MeasurementError> {
     let path = "spec/assurance/MP-900.md";
     let mut candidate = candidate.clone();
-    candidate["verificationStack"]["artifacts"][path] = json!(
-        quoin_store::digest_file_sha256(&root.join(path))
-            .expect("the plan is digestible")
-            .to_stored()
-    );
+    candidate["verificationStack"]["artifacts"]
+        .as_array_mut()
+        .expect("the artifact list")
+        .push(json!(path));
     write_measurement_collection(root, &from_serde(&candidate).expect("crosses"))
 }
 
@@ -185,25 +184,13 @@ fn collection(id: &str, observations: &[Value]) -> Value {
         "scope": { "cases": 15 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
-        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": "2026-09-23T00:00:00.000Z",
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
-            "lockDigest": format!("sha256:{}", "1".repeat(64)),
-            "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
-            "toolchains": { "node": "22.15.0", "rust": "0.0.0", "python": "3.10.12" },
-            "sources": {
-                "fixture": {
-                    "revision": "a".repeat(40),
-                    "sourceState": "clean",
-                    "remote": "https://example.invalid/fixture",
-                },
-            },
             "capabilities": ["fixture.capability"],
-            "artifacts": { "config": format!("sha256:{}", "3".repeat(64)) },
+            "artifacts": ["config"],
         },
         "observations": observations,
         "rawEvidence": { "payload": [1, 2] },

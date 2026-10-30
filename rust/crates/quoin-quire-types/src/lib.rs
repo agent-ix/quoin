@@ -60,28 +60,23 @@ pub mod clauses;
 
 pub use clauses::{
     ClauseBinding, ClauseBindingOutcome, ClauseBindingReason, ClauseBindingReport,
-    ClauseBindingSchemaVersion, ClauseForce, ClauseSetDigest, ClauseSetKey, EngineProvenance,
-    MalformedClauseSetDigest,
+    ClauseBindingSchemaVersion, ClauseForce, ClauseSetKey, EngineProvenance,
 };
 
 use serde::{Deserialize, Serialize};
 
 /// One obligation, as quoin reads it off `quire coverage --json`.
 ///
-/// # Two fields of nine
+/// # Two fields of the record
 ///
-/// quire emits `source`, `id`, `document`, `statement`, `statement_hash`,
-/// `method`, `parameters`, `criticality` and `target_ids`. The assurance view
-/// reads `id` (to derive the owning requirement, and as the solution node's
-/// id) and `statement` (as the node's statement). It reads none of the other
-/// seven — not even `document`, which a reader might reasonably expect a view
-/// to cite, and does not.
+/// The assurance view reads `id` (to derive the owning requirement, and as the
+/// solution node's id) and `statement` (as the node's statement). It reads none
+/// of the other fields quire emits — not even `document`, which a reader might
+/// reasonably expect a view to cite, and does not.
 ///
-/// The three required fields here are required for the reason in the module
-/// header: they are read unconditionally, so their absence must be an error
-/// rather than a silent empty. `statement_hash` joined the set when the
-/// evidence store arrived (agent-ix/quoin#456): a binding stamps it, and a
-/// default would make every binding agree with every statement.
+/// The required fields here are required for the reason in the module header:
+/// they are read unconditionally, so their absence must be an error rather than
+/// a silent empty.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Obligation {
@@ -89,12 +84,6 @@ pub struct Obligation {
     pub id: String,
     /// The criterion's statement, in the spec's own words.
     pub statement: String,
-    /// quire's hash of the statement, as it stands at the read.
-    ///
-    /// quoin never computes this and only ever compares it: suspect detection
-    /// is `stamped != current`, so a hash quoin derived itself would compare
-    /// equal to itself and detect nothing.
-    pub statement_hash: String,
     /// Test-case ids the criterion's method cell names, when it names any.
     ///
     /// The indirection an agent-eval report and every other Test-Matrix-keyed

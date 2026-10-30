@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Content-addressed, append-only experiment and operational records (FR-048).
+//! Append-only experiment and operational records (FR-048).
 //!
 //! These carry their own producer-provenance contract and do not alter the
 //! FR-030 run records: the accepted provenance boundary leaves those unchanged
@@ -9,15 +9,13 @@
 
 use serde::{Deserialize, Serialize};
 
-/// One artifact a producer emitted, with its digest.
+/// One artifact a producer emitted, by name.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ProvenanceArtifact {
     /// The artifact's name.
     pub name: String,
-    /// `sha256:<64 lowercase hex>`.
-    pub digest: String,
 }
 
 /// Who produced a record, from what source, with what capability.
@@ -31,29 +29,10 @@ pub struct ProducerProvenance {
     pub identity: String,
     /// Its version.
     pub version: String,
-    /// The source revision it was built from.
-    pub source_revision: String,
-    /// Whether that source tree was clean or dirty.
-    pub source_state: SourceState,
-    /// `sha256:<64 lowercase hex>` over the executable.
-    pub executable_digest: String,
-    /// `sha256:<64 lowercase hex>` over the configuration.
-    pub configuration_digest: String,
     /// The capabilities the producer declared.
     pub capabilities: Vec<String>,
     /// The artifacts it emitted.
     pub artifacts: Vec<ProvenanceArtifact>,
-}
-
-/// Whether a producer's source tree carried uncommitted changes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub enum SourceState {
-    /// No uncommitted changes.
-    Clean,
-    /// Uncommitted changes were present.
-    Dirty,
 }
 
 /// What a record is about.
@@ -65,8 +44,6 @@ pub struct EvidenceSubject {
     pub kind: String,
     /// Its id.
     pub id: String,
-    /// The source revision it was observed at.
-    pub source_revision: String,
 }
 
 /// How an experiment was set up.
@@ -133,14 +110,14 @@ pub struct ExperimentRecordInput {
 
 /// An identified experiment record, as it is written to disk.
 ///
-/// The id is a digest over the canonical JSON of the *input*, so the record on
-/// disk is the input plus one key. `flatten` rather than a nested object for
-/// exactly that reason: a nested input would change every stored byte.
+/// The id is an assigned UUID, so the record on disk is the input plus one
+/// key. `flatten` rather than a nested object for exactly that reason: a
+/// nested input would change every stored byte.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ExperimentRecord {
-    /// `sha256:<64 lowercase hex>` over the canonical JSON of the input.
+    /// The record's opaque UUID, not derived from its content.
     pub record_id: String,
     /// The producer-supplied fields.
     #[serde(flatten)]
@@ -217,14 +194,14 @@ pub struct OperationalEvidenceRecordInput {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct OperationalEvidenceRecord {
-    /// `sha256:<64 lowercase hex>` over the canonical JSON of the input.
+    /// The record's opaque UUID, not derived from its content.
     pub record_id: String,
     /// The producer-supplied fields.
     #[serde(flatten)]
     pub input: OperationalEvidenceRecordInput,
 }
 
-/// The outcome of publishing one content-addressed record.
+/// The outcome of publishing one assurance record.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredAssuranceRecord<T> {
     /// The identified record.

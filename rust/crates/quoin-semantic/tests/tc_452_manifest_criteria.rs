@@ -28,8 +28,8 @@ mod common;
 use std::fs;
 
 use common::{
-    Scratch, codes, errors, message_for, read, rewrite_entity_schema, semantic_root, shipped_core,
-    validators,
+    SCHEMA_REQUIRED_SEMANTIC_CORE, Scratch, codes, errors, message_for, read,
+    rewrite_entity_schema, semantic_root, validators,
 };
 use quoin_semantic::data_schema::DataSchemaForm;
 use quoin_semantic::{CompatibilityPosture, LegacyForms, SEMANTIC_CONTRACT, read_semantic_block};
@@ -77,14 +77,13 @@ fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
     let root = scratch.module_copy("minimal", |manifest, _| {
         manifest["semantic"] = json!({
             "contract_version": "1.0.0",
-            "semantic_core": shipped_core(),
+            "semantic_core": SCHEMA_REQUIRED_SEMANTIC_CORE,
             "package": "agent-ix/spec-objects-fixture",
         });
     });
     assert_eq!(errors(&root, &validators), Vec::<String>::new());
     let block = read(&root, &validators).module.expect("a module").block;
     assert_eq!(block.contract_version.as_str(), "1.0.0");
-    assert_eq!(block.semantic_core.as_str(), shipped_core());
     assert_eq!(block.package.as_str(), "agent-ix/spec-objects-fixture");
     assert_eq!(block.compatibility_posture, CompatibilityPosture::Additive);
     assert_eq!(block.legacy_forms, LegacyForms::Warning);
@@ -119,7 +118,7 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
 
     let admitted = json!({
         "contract_version": "1.0.0",
-        "semantic_core": shipped_core(),
+        "semantic_core": SCHEMA_REQUIRED_SEMANTIC_CORE,
         "package": "agent-ix/spec-objects-fixture",
         "exports": ["entity"],
         "imports": { "agent-ix/spec-artifacts-iso": "0.4.0" },
@@ -255,7 +254,7 @@ fn tc_452_615_an_unregistered_target_and_a_non_org_repo_package_are_refused() {
 }
 
 /// A reference-form `data_schema` resolves to the shipped file, against the
-/// vendored semantic-core bundle at the version the manifest records.
+/// vendored semantic-core bundle.
 ///
 /// Trace: FR-073-AC-1
 /// Provenance: agent-ix/quoin#452
@@ -283,18 +282,14 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
         "{schema}"
     );
     // Resolution is against the shipped bundle: the document's own `$ref`s
-    // name semantic-core at the version the block records, and that version is
-    // one this quoin ships. A resolver that ignored `$ref`s entirely would
+    // name the semantic-core bundle. A resolver that ignored `$ref`s entirely would
     // pass an assertion about `$id` alone.
     let refs = schema.to_string();
     assert!(
-        refs.contains(&format!(
-            "https://schemas.agent-ix.org/semantic-core/{}/FieldDecl.json",
-            module.block.semantic_core
-        )),
+        refs.contains("https://schemas.agent-ix.org/semantic-core/")
+            && refs.contains("/FieldDecl.json"),
         "{refs}"
     );
-    assert!(validators.ships_semantic_core(&module.block.semantic_core));
 }
 
 /// A shipped schema file that does not exist, is not JSON, or is not a JSON
@@ -351,7 +346,7 @@ fn tc_452_617_a_missing_unparsable_or_non_schema_file_is_refused() {
 }
 
 /// A `$ref` to the document's own `$id` is a fragment, not a cycle; a `$ref`
-/// to another semantic-core version, to a file nothing ships, or around a
+/// to a file nothing ships, or around a
 /// cycle is refused.
 ///
 /// The first half is the control. Treating a self-reference as a cycle would
@@ -361,7 +356,7 @@ fn tc_452_617_a_missing_unparsable_or_non_schema_file_is_refused() {
 /// Trace: FR-073-AC-3
 /// Provenance: agent-ix/quoin#452
 #[test]
-fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused() {
+fn tc_452_618_a_self_reference_is_a_fragment_and_the_two_bad_refs_are_refused() {
     let validators = validators();
     let scratch = Scratch::new();
 
@@ -373,21 +368,6 @@ fn tc_452_618_a_self_reference_is_a_fragment_and_the_three_bad_refs_are_refused(
         });
     });
     assert_eq!(errors(&self_ref, &validators), Vec::<String>::new());
-
-    let version = scratch.module_copy("core-version", |_, root| {
-        rewrite_entity_schema(root, |schema| {
-            schema["properties"]["fields"]["items"] = json!({
-                "$ref": "https://schemas.agent-ix.org/semantic-core/0.2.0/FieldDecl.json"
-            });
-        });
-    });
-    assert!(
-        codes(&version, &validators).contains(
-            &"error:semantic.schema-ref-version@object_types[entity].data_schema.schema".to_owned()
-        ),
-        "{:?}",
-        codes(&version, &validators)
-    );
 
     let unshipped = scratch.module_copy("unshipped", |_, root| {
         rewrite_entity_schema(root, |schema| {

@@ -84,7 +84,6 @@ fn rows() -> Vec<Row> {
         "schema": corpus::SCHEMA,
         "sampling_rule": "synthetic",
         "seed": 1,
-        "source_commit": "0000000",
         "rows": [
             row_value("EV2-0001", Mode::ReqTest),
             row_value("EV2-0002", Mode::ReqCode),
@@ -885,7 +884,7 @@ fn selection_file(entries: &Value) -> Result<corpus::SelectionFile, String> {
 
 fn selection_entry(mp: &str, variant: &str, version: u32) -> Value {
     json!({"mp": mp, "variant": variant, "version": version,
-           "selected_at_commit": "358870db", "dev_evidence": "reviews/dev.md",
+           "dev_evidence": "reviews/dev.md",
            "baselines": ["S0@v1"]})
 }
 

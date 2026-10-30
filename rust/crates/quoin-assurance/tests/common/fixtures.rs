@@ -75,9 +75,6 @@ pub(crate) fn obligation(id: &str, statement: &str) -> Obligation {
     Obligation {
         id: id.to_owned(),
         statement: statement.to_owned(),
-        // The assurance view reads neither of these; they carry the fixture
-        // past the required fields quire always emits.
-        statement_hash: format!("sha256:{id}"),
         target_ids: None,
         // The three fields quoin#383 added for the auditor. The assurance view
         // reads none of them either.

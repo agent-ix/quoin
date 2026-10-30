@@ -13,11 +13,9 @@
     "schema_version": 1,
     "record_id": "change-1",
     "revision": 1,
-    "record_digest": "1972d0d5d3ee3fb06a2a8ca2cc97f3e239d956958368d209ebbe0a52f9b61630",
     "decision": "approved"
    },
-   "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
-   "hash": "74354c47c65403264b016c5b804e0fcaf3aee0a5cb69cddfc6e1cbd6f9d350c2"
+   "sequence": 1
   }
  ]
 }

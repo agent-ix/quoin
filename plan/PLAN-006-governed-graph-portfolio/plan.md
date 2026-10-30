@@ -44,7 +44,7 @@ relationships:
 
 - No adapter or report path executes a producer, Quire, Git, network, suite, or
   scorer operation, and portfolio construction performs no write.
-- Canonical identities, attachment digests, population identities, availability
+- Canonical identities, attachment lengths, population identities, availability
   states, and partition boundaries are preserved rather than inferred.
 
 ### The seams
@@ -62,7 +62,7 @@ the stable FR-062 analyzer; all graph traversal stays in #152.
 - [x] **TC-1294:** Quire premise tuple acceptance/refusal before record exposure.
 - [x] **TC-1295:** field-for-field Quire handoff through the injected FR-062 seam.
 - [x] **TC-1296:** closed graph-quality schema and canonical observation id.
-- [x] **TC-1297:** exact scorer-byte digest and raw attachment retention.
+- [x] **TC-1297:** exact scorer-byte length and raw attachment retention.
 - [x] **TC-1298:** independently required invocation-attestation fields.
 - [x] **TC-1299:** active plan id/definition premise checks.
 - [x] **TC-1300:** bijective census normalization.
@@ -73,12 +73,12 @@ the stable FR-062 analyzer; all graph traversal stays in #152.
 
 ### Portfolio unit, property, and integration tests
 
-- [x] **TC-1305:** current graph-quality plan, provenance, population, and digests.
+- [x] **TC-1305:** current graph-quality plan, provenance, and population.
 - [x] **TC-1306:** complete readable history and incompatible historical records.
 - [x] **TC-1307:** partition preservation under permutations with no aggregation.
 - [x] **TC-1308:** availability states remain distinct from measurement state/zero.
 - [x] **TC-1309:** premise-by-premise comparison compatibility.
-- [x] **TC-1310:** raw record/scorer digest resolution in every view.
+- [x] **TC-1310:** raw record/scorer resolution by id in every view.
 - [x] **TC-1311:** byte-equivalent injected FR-062 reports and absent-input states.
 - [x] **TC-1312:** repository-local and collection-local corruption isolation.
 - [x] **TC-1313:** deterministic mapping/seed/store permutations and conflict refusal.

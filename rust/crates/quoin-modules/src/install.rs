@@ -143,7 +143,6 @@ impl<'a> ModuleInstaller<'a> {
             name: name.clone(),
             source: source.clone(),
             r#ref: resolved.requested_ref.clone(),
-            sha: resolved.sha.clone(),
             resolved_path: content_root.to_string_lossy().into_owned(),
             target_path: target.to_string_lossy().into_owned(),
             installed_at: rfc3339_now(),
@@ -170,7 +169,7 @@ impl<'a> ModuleInstaller<'a> {
         })
     }
 
-    /// Resolve a source to a content directory and a pin.
+    /// Resolve a source to a content directory.
     fn resolve(&self, source: &Source) -> Result<ResolvedSource, ModulesError> {
         match source {
             Source::Path { path } => {
@@ -180,7 +179,6 @@ impl<'a> ModuleInstaller<'a> {
                     .map_err(|_| ModulesError::PathSourceNotFound { path: dir.clone() })?;
                 Ok(ResolvedSource {
                     dir,
-                    sha: None,
                     requested_ref: None,
                 })
             }
@@ -194,7 +192,6 @@ impl<'a> ModuleInstaller<'a> {
                 let resolved = self.resolver.resolve(&url, revision, source.subdir())?;
                 Ok(ResolvedSource {
                     dir: resolved.dir,
-                    sha: Some(resolved.sha),
                     requested_ref: resolved.requested_ref,
                 })
             }
@@ -232,7 +229,6 @@ impl<'a> ModuleInstaller<'a> {
 /// A source resolved to a directory, whatever its type.
 struct ResolvedSource {
     dir: PathBuf,
-    sha: Option<crate::ids::CommitSha>,
     requested_ref: Option<String>,
 }
 

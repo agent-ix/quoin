@@ -29,7 +29,7 @@ pub struct QuireAssuranceV1 {
     pub format: QuireAssuranceFormat,
     /// Always `1`.
     pub format_version: FormatVersion1,
-    /// Where the export was taken from.
+    /// Where the export was taken from. BLOCKED-BY PLAT-1226 (owner: planner titan:QSL:plan): quire-rs assurance-v1 sourcePremise.revision
     pub source: SourcePremise,
     /// Which modules were active.
     pub modules: Vec<ModulePremise>,

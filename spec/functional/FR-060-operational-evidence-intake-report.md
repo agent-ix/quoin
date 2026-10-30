@@ -52,8 +52,7 @@ under claims, evidence, counterevidence, gaps, owner, and action.
 - If schema, cross-record, or temporal integrity validation fails, then Quoin SHALL
   refuse the record with stable reason code `invalid_record` plus every failing
   JSON path and reason.
-- If a raw-evidence path is unsafe, absent, has a different byte size, or has a
-  different content digest, then Quoin SHALL refuse the record with stable reason
+- If a raw-evidence path is unsafe, absent, or has a different byte size, then Quoin SHALL refuse the record with stable reason
   code `raw_evidence_mismatch`, identify the path and mismatch, and write no record.
 - If the governing plan is absent, then Quoin SHALL refuse the record by naming the
   requested definition and stable reason code `governing_plan_absent`.
@@ -103,11 +102,11 @@ under claims, evidence, counterevidence, gaps, owner, and action.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-060-AC-1 | Valid intake writes one complete canonical record by one atomic same-directory no-replace publication. | Test (TC-1232) |
-| FR-060-AC-2 | Invalid schema, cross-record, or temporal input returns `invalid_record`; unsafe, missing, wrong-sized, or digest-mismatched raw evidence returns `raw_evidence_mismatch`; both identify every mismatch and write nothing. | Test (TC-1233) |
+| FR-060-AC-2 | Invalid schema, cross-record, or temporal input returns `invalid_record`; unsafe, missing, or wrong-sized raw evidence returns `raw_evidence_mismatch`; both identify every mismatch and write nothing. | Test (TC-1233) |
 | FR-060-AC-3 | An absent governing plan returns `governing_plan_absent`; a mismatch returns `definition_mismatch`; both write nothing and name the requested, expected, and observed definitions that apply. | Test (TC-1234) |
 | FR-060-AC-4 | Repeating an identical record id and canonical payload is byte-idempotent whether the retained record is standalone or a member of an atomic pair. | Test (TC-1235) |
 | FR-060-AC-5 | Reusing a record id for different semantic bytes returns `record_id_collision` without replacement; store-wide serialization prevents standalone/pair writers from retaining that logical id twice, and a stale intake lock fails closed as `intake_busy`. | Test (TC-1236) |
-| FR-060-AC-6 | Standing capabilities and succeeded, failed, partial, and aborted exercises remain independently queryable with their raw-evidence digests. | Test (TC-1237) |
+| FR-060-AC-6 | Standing capabilities and succeeded, failed, partial, and aborted exercises remain independently queryable with their raw-evidence references. | Test (TC-1237) |
 | FR-060-AC-7 | A clocked obligation discharges only from a control-kind, subject, scope, and accepted-mode-matched exercise whose clock start/deadline identify the exact obligation clock condition, whose outcome is `succeeded`, and whose completion falls within that condition; every other case remains a named non-discharge or gap. | Test (TC-1238) |
 | FR-060-AC-8 | The report renders only available capabilities and succeeded, clock-satisfying exercises as their distinct claims and evidence; unavailable, unknown, not-applicable, adverse-outcome, missed, or open states render as counterevidence or gaps beside owner and actions. | Test (TC-1239) |
 | FR-060-AC-9 | Neither human nor JSON output contains an aggregate trust, confidence, or quality score derived from operational records. | Test (TC-1240) |

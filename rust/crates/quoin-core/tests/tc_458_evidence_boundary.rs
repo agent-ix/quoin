@@ -109,7 +109,7 @@ fn reported_store_path(root: &Path, reported: &str, relative: &str) -> PathBuf {
 }
 
 /// As [`reported_store_path`], where only the record's FAMILY is predictable —
-/// a content-addressed record's file name is derived from its own bytes.
+/// an assurance record's file name is its minted UUID.
 fn reported_store_family(root: &Path, reported: &str, family: &str) -> PathBuf {
     let prefix = store_path(root, family);
     let path = Path::new(reported);
@@ -223,46 +223,6 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
 }
 
 ///
-/// `affirm` is the only operation that answers `found`.
-#[test]
-fn tc_458_060_affirm_clears_suspicion_on_a_binding_that_exists() {
-    let dir = repo();
-    write_store(
-        dir.path(),
-        "bindings.json",
-        &json!({
-            "schemaVersion": 1,
-            "bindings": [{
-                "obligation": "FR-1-AC-1",
-                "statementHashAtBinding": "old",
-                "suite": "unit",
-                "commit": commit('a'),
-                "symbols": [],
-            }],
-        })
-        .to_string(),
-    );
-    let payload = ok(&run(
-        "evidence.affirm",
-        &json!({
-            "repo": dir.path(),
-            "obligation": "FR-1-AC-1",
-            "statement_hash": "new",
-            "who": "peter",
-            "commit": commit('b'),
-        }),
-    ));
-    assert_eq!(payload["found"], true);
-    let written: Value =
-        serde_json::from_str(&fs::read_to_string(store_path(dir.path(), "bindings.json")).unwrap())
-            .unwrap();
-    assert_eq!(
-        written["bindings"][0]["affirmations"][0]["who"], "peter",
-        "{written}"
-    );
-}
-
-///
 /// `gc` is the only operation that answers `deleted` — and the divergence this
 /// ticket declares is asserted HERE, through the binary, because the join onto
 /// the store root is what makes the path the caller prints a real one.
@@ -308,8 +268,8 @@ fn tc_458_080_trust_decision_is_assessed_before_it_is_stored() {
     let context = json!({
         "name": "ripgrep",
         "version": "14.0.0",
-        "configurationDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-        "validationCorpusDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "configuration": "config-a",
+        "validationCorpus": "corpus-a",
         "inputContract": "utf-8 text",
         "environment": "linux-x86_64",
     });
@@ -330,7 +290,7 @@ fn tc_458_080_trust_decision_is_assessed_before_it_is_stored() {
             "input-contract",
             "environment",
         ],
-        "validationEvidence": [{"id": "EV-1", "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}],
+        "validationEvidence": [{"id": "EV-1", "reference": "evidence/ev-1"}],
         "limitations": [],
         "owner": "peter",
         "decidedAt": "2026-01-01T00:00:00Z",
@@ -396,15 +356,8 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
         "schemaVersion": "producer-provenance-v1",
         "identity": "quoin",
         "version": "0.1.0",
-        "sourceRevision": commit('a'),
-        "sourceState": "clean",
-        "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-        "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
         "capabilities": ["record"],
-        "artifacts": [{
-            "name": "report.json",
-            "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
-        }],
+        "artifacts": [{ "name": "report.json" }],
     });
 
     let payload = ok(&run(
@@ -413,7 +366,7 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
             "repo": dir.path(),
             "document": {
                 "schemaVersion": "experiment-record-v1",
-                "subject": {"kind": "requirement", "id": "FR-001", "sourceRevision": commit('b')},
+                "subject": {"kind": "requirement", "id": "FR-001" },
                 "recordedAt": "2026-01-01T00:00:00Z",
                 "hypothesis": "the adapter reads real output",
                 "design": {
@@ -435,42 +388,13 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
     let experiment_path = payload["path"].as_str().unwrap().to_owned();
     reported_store_family(dir.path(), &experiment_path, "experiments");
 
-    // Append-only: publishing the same document again finds identical bytes
-    // and says so, rather than reporting a second creation.
-    let payload = ok(&run(
-        "evidence.record_experiment",
-        &json!({
-            "repo": dir.path(),
-            "document": {
-                "schemaVersion": "experiment-record-v1",
-                "subject": {"kind": "requirement", "id": "FR-001", "sourceRevision": commit('b')},
-                "recordedAt": "2026-01-01T00:00:00Z",
-                "hypothesis": "the adapter reads real output",
-                "design": {
-                    "timeBox": "1d",
-                    "corpusRefs": ["corpus/a"],
-                    "comparisonMethod": "A/B",
-                    "decisionRule": "p<0.05",
-                },
-                "result": {
-                    "status": "supported",
-                    "summary": "it did",
-                    "evidenceRefs": ["runs/SUITE-A"],
-                },
-                "producerProvenance": provenance,
-            },
-        }),
-    ));
-    assert_eq!(payload["created"], false);
-    assert_eq!(payload["path"].as_str().unwrap(), experiment_path);
-
     let payload = ok(&run(
         "evidence.record_operational",
         &json!({
             "repo": dir.path(),
             "document": {
                 "schemaVersion": "operational-evidence-record-v1",
-                "subject": {"kind": "service", "id": "quoin-core", "sourceRevision": commit('c')},
+                "subject": {"kind": "service", "id": "quoin-core" },
                 "recordedAt": "2026-01-01T00:00:00Z",
                 "window": {
                     "startedAt": "2026-01-01T00:00:00Z",
@@ -494,6 +418,57 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
     // one that somehow accepted it would file it under `experiments/`.
     reported_store_family(dir.path(), payload["path"].as_str().unwrap(), "operational");
     assert_eq!(payload["created"], true);
+}
+
+/// Publishing an assurance record again under the `recordId` it was given is
+/// idempotent at the boundary: the same record, `created` false, one file.
+///
+/// Trace: FR-048-AC-2
+#[test]
+fn tc_458_115_republishing_under_the_assigned_record_id_is_idempotent() {
+    let dir = repo();
+    let document = |record_id: Option<&str>| {
+        let mut document = json!({
+            "schemaVersion": "experiment-record-v1",
+            "subject": {"kind": "requirement", "id": "FR-001" },
+            "recordedAt": "2026-01-01T00:00:00Z",
+            "hypothesis": "the adapter reads real output",
+            "design": {
+                "timeBox": "1d",
+                "corpusRefs": ["corpus/a"],
+                "comparisonMethod": "A/B",
+                "decisionRule": "p<0.05",
+            },
+            "result": {"status": "supported", "summary": "it did", "evidenceRefs": ["runs/SUITE-A"]},
+            "producerProvenance": {
+                "schemaVersion": "producer-provenance-v1",
+                "identity": "quoin",
+                "version": "0.1.0",
+                "capabilities": ["record"],
+                "artifacts": [{ "name": "report.json" }],
+            },
+        });
+        if let Some(id) = record_id {
+            document["recordId"] = json!(id);
+        }
+        document
+    };
+    let first = ok(&run(
+        "evidence.record_experiment",
+        &json!({"repo": dir.path(), "document": document(None)}),
+    ));
+    assert_eq!(first["created"], true);
+    let id = first["record"]["recordId"]
+        .as_str()
+        .or_else(|| first["record_id"].as_str())
+        .expect("the assigned record id")
+        .to_owned();
+    let again = ok(&run(
+        "evidence.record_experiment",
+        &json!({"repo": dir.path(), "document": document(Some(&id))}),
+    ));
+    assert_eq!(again["created"], false, "{again}");
+    assert_eq!(again["path"], first["path"]);
 }
 
 ///

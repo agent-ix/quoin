@@ -9,7 +9,7 @@
 //! proof's `audit_finding` for it comes from the healthy list not naming it.
 
 use crate::error::{ChangeAssuranceError, Subject};
-use crate::ids::{ArtifactDigest, NonEmptyText};
+use crate::ids::NonEmptyText;
 use crate::model::outcome::Reason;
 use crate::verify::input::RetainedAudit;
 
@@ -25,8 +25,6 @@ pub enum AuditState {
 /// A retained audit narrowed to one proof obligation's evidence.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AdaptedAudit {
-    /// The report's digest.
-    pub report_digest: ArtifactDigest,
     /// Whether the owning obligations were evaluated at all.
     pub state: AuditState,
     /// The findings against the owning obligations.
@@ -39,15 +37,12 @@ pub struct AdaptedAudit {
 ///
 /// # Errors
 ///
-/// Refuses a report digest that is not 64 lowercase hexadecimal characters,
-/// and a finding or healthy entry that is empty.
+/// Refuses a finding or healthy entry that is empty.
 pub fn adapt_audit(
     retained: &RetainedAudit,
     owning: &[String],
 ) -> Result<AdaptedAudit, ChangeAssuranceError> {
     const SUBJECT: Subject = Subject::Receipt;
-    let report_digest =
-        ArtifactDigest::parse(&retained.report_digest, SUBJECT, "FR-032 report digest")?;
     let mut findings = Vec::new();
     for finding in &retained.report.findings {
         NonEmptyText::parse(&finding.obligation, SUBJECT, "FR-032 finding obligation")?;
@@ -74,7 +69,6 @@ pub fn adapt_audit(
         AuditState::Evaluated
     };
     Ok(AdaptedAudit {
-        report_digest,
         state,
         findings,
         healthy_obligation_ids,
@@ -83,13 +77,12 @@ pub fn adapt_audit(
 
 /// The receipt reason one FR-032 finding kind maps to.
 ///
-/// Four kinds have their own reason; everything else is `audit_finding`, so a
+/// Three kinds have their own reason; everything else is `audit_finding`, so a
 /// new auditor finding kind lands in the receipt rather than being dropped.
 #[must_use]
 pub fn map_audit_finding(kind: &str) -> Reason {
     match kind {
         "stale-evidence" => Reason::EvidenceStale,
-        "suspect-link" => Reason::EvidenceSuspect,
         "vacuous-evidence" => Reason::EvidenceVacuous,
         "undischarged" => Reason::EvidenceUnrelated,
         _ => Reason::AuditFinding,

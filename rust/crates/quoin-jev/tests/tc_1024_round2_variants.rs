@@ -1441,7 +1441,7 @@ fn tc_1024_statement_mutants_cost_other_variants_nothing() {
 /// unknown id or a held-out id is refused, never silently dropped.
 #[test]
 fn tc_1024_statement_labels_are_complete_or_refused() {
-    use eval_v2_support::assemble::{fixture_dir, statement_labels, statement_truth};
+    use eval_v2_support::labels::{fixture_dir, statement_labels, statement_truth};
     let read = |name: &str| -> Value {
         serde_json::from_str(&std::fs::read_to_string(fixture_dir().join(name)).unwrap()).unwrap()
     };
@@ -1694,7 +1694,7 @@ fn tc_1024_refusal_mutants_are_dev_and_change_the_criterion() {
 /// refused, never silently dropped.
 #[test]
 fn tc_1024_refusal_labels_are_complete_or_refused() {
-    use eval_v2_support::assemble::{fixture_dir, refusal_labels, refusal_truth};
+    use eval_v2_support::labels::{fixture_dir, refusal_labels, refusal_truth};
     let read = |name: &str| -> Value {
         serde_json::from_str(&std::fs::read_to_string(fixture_dir().join(name)).unwrap()).unwrap()
     };

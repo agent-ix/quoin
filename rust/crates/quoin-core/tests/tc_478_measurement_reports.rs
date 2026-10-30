@@ -137,34 +137,6 @@ fn tc_478_200_the_report_pair_reads_one_store() {
     assert!(markdown.contains("ap-actionability"), "{markdown}");
 }
 
-/// The comparison pair: the same locating request, one earlier revision.
-///
-/// `measurement.render_comparison` is the twelfth route, and the one quoin#478's
-/// list of eleven does not name; `src/commands/report.ts` cannot be rewired
-/// without it.
-///
-/// Trace: FR-096-AC-2
-/// Provenance: quoin#478
-#[test]
-fn tc_478_201_the_comparison_pair_names_both_collections() {
-    let request = json!({
-        "repo": repo(&tree(), "alpha"),
-        "before_revision": "revision-one",
-    })
-    .to_string();
-
-    let comparison = ok(&run("measurement.build_comparison", &request));
-    assert_eq!(comparison["before"]["collectionId"], "a-2026-01");
-    assert_eq!(comparison["after"]["collectionId"], "c-2026-03");
-
-    let markdown = rendered(&run("measurement.render_comparison", &request));
-    assert!(
-        markdown.starts_with("# QA measurement comparison"),
-        "{markdown}"
-    );
-    assert!(markdown.contains("| Metric | Status |"), "{markdown}");
-}
-
 /// A series is one metric's history, oldest first.
 ///
 /// Trace: FR-096-AC-2
@@ -186,7 +158,6 @@ fn tc_478_202_a_series_is_one_metrics_history() {
     for point in points {
         assert_eq!(point["observation"]["metric"], "finding_recall", "{point}");
     }
-    assert_eq!(points[0]["sourceRevision"], "revision-one", "{}", points[0]);
 }
 
 /// The portfolio pair spans several stores, and its repository entries carry no

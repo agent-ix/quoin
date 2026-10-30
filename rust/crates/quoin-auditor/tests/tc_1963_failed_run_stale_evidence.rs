@@ -22,7 +22,7 @@
 )]
 
 use quoin_auditor::audit::{AuditInput, audit};
-use quoin_evidence::ids::{Commit, ObligationId, StatementHash, SuiteId, SymbolId};
+use quoin_evidence::ids::{Commit, ObligationId, SuiteId, SymbolId};
 use quoin_evidence::source::MemoryEvidence;
 use quoin_evidence::store::{latest_runs, write_run};
 use quoin_evidence::types::{Binding, Outcome, RunEntry, RunRecord, STORE_SCHEMA_VERSION};
@@ -31,14 +31,12 @@ use quoin_quire_types::Obligation;
 
 const COMMIT: &str = "deadbeefdead";
 const OLDER_COMMIT: &str = "0000feedface";
-const STATEMENT_HASH: &str = "hash-of-the-statement";
 
-/// One obligation, statement hash matching, so nothing suspect-links.
+/// One obligation.
 fn an_obligation(id: &str) -> Obligation {
     Obligation {
         id: id.to_owned(),
         statement: "the system SHALL do the thing".to_owned(),
-        statement_hash: STATEMENT_HASH.to_owned(),
         target_ids: None,
         method: None,
         criticality: None,
@@ -46,17 +44,14 @@ fn an_obligation(id: &str) -> Obligation {
     }
 }
 
-/// A binding naming one suite and one symbol, unaged (bound at the current
-/// statement hash).
+/// A binding naming one suite and one symbol.
 fn a_binding(obligation: &str, suite: &str, symbol: &str) -> Binding {
     Binding {
         obligation: ObligationId::new(obligation),
-        statement_hash_at_binding: StatementHash::new(STATEMENT_HASH),
         suite: SuiteId::new(suite),
         commit: Commit::new(COMMIT),
         symbols: vec![SymbolId::new(symbol)],
         lineage: None,
-        affirmations: None,
     }
 }
 

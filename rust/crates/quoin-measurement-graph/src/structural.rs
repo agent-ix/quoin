@@ -22,7 +22,7 @@
 //! taken by matching the prose of whichever `fs` error node happened to
 //! produce. [`RecordingReader`] keeps the [`std::io::ErrorKind`] the seam
 //! already reported, so the same distinction is read off a type. See
-//! `DIVERGENCE.md` §9 for the one input on which the two disagree.
+//! the structural graph loader for the one input on which the two disagree.
 
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -31,8 +31,7 @@ use std::path::{Path, PathBuf};
 
 use quoin_graph_analysis::{
     ArtifactId, GraphAnalysisInput, GraphError, GraphInput, GraphInputReader, GraphLoadOptions,
-    OsGraphInputReader, analyze_change_impact, analyze_churn, analyze_fan_out,
-    load_graph_analysis_input,
+    OsGraphInputReader, analyze_change_impact, analyze_fan_out, load_graph_analysis_input,
 };
 use quoin_store::JsonValue;
 use serde::Serialize;
@@ -227,7 +226,6 @@ fn admitted<R: GraphInputReader>(
         path: Some(ready.export.to_string_lossy().into_owned()),
         premises: opaque(&loaded.premises)?,
         fan_out: opaque(&analyze_fan_out(loaded))?,
-        churn: opaque(&analyze_churn(loaded))?,
         change_impact: None,
     })
 }
@@ -243,7 +241,6 @@ fn with_change_impact(
         path,
         premises,
         fan_out,
-        churn,
         change_impact: _,
     } = graph
     else {
@@ -261,7 +258,6 @@ fn with_change_impact(
         path,
         premises,
         fan_out,
-        churn,
         change_impact: analyses,
     })
 }
@@ -271,8 +267,7 @@ fn with_change_impact(
 /// `graph-portfolio-load.ts:135-140` builds this from the export's own source
 /// and the premises document's modules. Both halves are re-read through
 /// [`AcceptedQuirePremises`]'s own contract rather than transcribed member by
-/// member, so the scalars this crate already proved — `FullRevision`,
-/// `BareDigest` — are the ones the adapter compares.
+/// member, so the scalars this crate already proved are the ones the adapter compares.
 fn accepted_premises(loaded: &GraphAnalysisInput) -> Result<AcceptedQuirePremises> {
     let stated = serde_json::json!({
         "source": loaded.assurance.source,

@@ -37,21 +37,12 @@ pub struct PingRequest {
     /// answer across the pipe. Absent is fine.
     #[serde(default)]
     pub echo: Option<String>,
-    /// The protocol revision the caller believes it is speaking. When it
-    /// disagrees with this build's, the answer is still complete — it is how
-    /// the caller learns which revision it is actually talking to — so the
-    /// disagreement is reported as [`ix_cli_kit::exit::Outcome::Partial`], not as a
-    /// failure.
-    #[serde(default)]
-    pub expect_protocol: Option<u32>,
 }
 
 /// The payload `core.ping` writes to stdout.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct PingPayload {
-    /// The protocol revision this build speaks.
-    pub protocol_version: u32,
     /// The `quoin-core` crate version.
     pub core_version: &'static str,
     /// Whatever `echo` held, unchanged.
@@ -82,26 +73,12 @@ pub fn ping(request: &serde_json::Value) -> Result<Response, CoreError> {
     }
 
     let payload = serde_json::to_value(PingPayload {
-        protocol_version: crate::protocol::PROTOCOL_VERSION,
         core_version: env!("CARGO_PKG_VERSION"),
         echo: request.echo,
     })
     .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
 
-    match request.expect_protocol {
-        Some(expected) if expected != crate::protocol::PROTOCOL_VERSION => Ok(Response::partial(
-            payload,
-            &CoreError::new(
-                CoreErrorCode::ProtocolSkew,
-                "caller expects a protocol revision this build does not speak; \
-                 the payload is complete and names the revision it does speak",
-            )
-            .with_context("op", "core.ping")
-            .with_context("expected", expected.to_string())
-            .with_context("actual", crate::protocol::PROTOCOL_VERSION.to_string()),
-        )),
-        _ => Ok(Response::ok(payload)),
-    }
+    Ok(Response::ok(payload))
 }
 
 #[cfg(test)]
@@ -118,7 +95,6 @@ mod tests {
     fn an_empty_request_identifies_the_build() {
         let response = ping(&serde_json::json!({})).unwrap();
         assert_eq!(response.outcome, Outcome::Ok);
-        assert_eq!(response.payload["protocol_version"], 1);
         assert_eq!(response.payload["echo"], serde_json::Value::Null);
         assert_eq!(response.diagnostics.len(), 0);
     }
@@ -127,26 +103,6 @@ mod tests {
     fn the_echo_token_comes_back_unchanged() {
         let response = ping(&serde_json::json!({ "echo": "corr-7" })).unwrap();
         assert_eq!(response.payload["echo"], "corr-7");
-    }
-
-    #[test]
-    fn a_protocol_disagreement_still_returns_a_complete_payload() {
-        // The taxonomy's load-bearing case: exit 1, and stdout is worth
-        // reading anyway — it is how the caller learns the real revision.
-        let response = ping(&serde_json::json!({ "expect_protocol": 99 })).unwrap();
-        assert_eq!(response.outcome, Outcome::Partial);
-        assert_eq!(response.outcome.code(), 1);
-        assert!(response.outcome.carries_payload());
-        assert_eq!(response.payload["protocol_version"], 1);
-        assert_eq!(response.diagnostics.len(), 1);
-        assert_eq!(response.diagnostics[0].code, "CORE_PROTOCOL_SKEW");
-        assert_eq!(response.diagnostics[0].context["actual"], "1");
-    }
-
-    #[test]
-    fn an_agreeing_protocol_expectation_is_a_plain_success() {
-        let response = ping(&serde_json::json!({ "expect_protocol": 1 })).unwrap();
-        assert_eq!(response.outcome, Outcome::Ok);
     }
 
     #[test]

@@ -39,7 +39,7 @@ content-addressed, crash-atomic directory without changing FR-030 storage.
 
 ## Subtasks
 
-- [x] Write result-state, missing-field, digest, idempotence, and collision tests.
+- [x] Write result-state, missing-field, output-size, idempotence, and id-collision tests.
 - [x] Inject failures before the atomic rename and verify cleanup/recovery.
 - [x] Implement the isolated versioned attestation store family.
 

@@ -23,10 +23,7 @@ pub mod run;
 pub mod source;
 #[cfg(feature = "campaign")]
 pub mod store;
-#[cfg(feature = "campaign")]
-pub mod verify;
-
-/// The version of Quoin's independent campaign-verdict document.
+/// The version of the campaign-verdict document.
 pub const CAMPAIGN_VERDICT_SCHEMA: &str = "quoin.campaign-verdict/v1";
 
 /// The three outcomes that can be granted to a campaign or member.
@@ -126,7 +123,7 @@ pub struct MemberOutcome {
     pub attempts: usize,
 }
 
-/// Typed Quoin campaign decision before the wire adds exact digest bindings.
+/// Typed Quoin campaign decision.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CampaignDecision {

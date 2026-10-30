@@ -274,7 +274,6 @@ fn tc_471_raw_evidence_resolution_refuses_every_escape() {
         let followed = raw_evidence_for(&source, "raw/inside.json", "application/json")
             .expect("a symlink inside the store resolves");
         let direct = raw_evidence_for(&source, "raw/run.json", "application/json").unwrap();
-        assert_eq!(followed.digest, direct.digest);
         assert_eq!(followed.size_bytes, direct.size_bytes);
     }
 

@@ -42,13 +42,13 @@ the conclusion that they qualify.
 - **Primary risk:** ambiguous treatment attribution or unverifiable raw evidence can
   make a technically valid record materially misleading.
 - **Mitigation:** require treatment-linked observations, reproducible randomized
-  assignment, explicit attribution limits, and digest verification at intake.
+  assignment, and explicit attribution limits.
 
 ## Acceptance Examples (Illustrative)
 
 ### US-015-EX-1: A repeated experiment supports a causal conclusion
 
-- **Given** a repeated baseline/treatment experiment with pinned inputs and no known
+- **Given** a repeated baseline/treatment experiment with fixed inputs and no known
   confounder
 - **When** the practitioner inspects its retained record
 - **Then** the observed effect, causal conclusion, attribution confidence, and raw

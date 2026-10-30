@@ -34,7 +34,7 @@
 //! # Writes go through `quoin-store`
 //!
 //! [`DiskEvidence`] writes with [`quoin_store::store::write_atomic`] for a
-//! mutable named record and [`quoin_store::store::write_content_addressed`] for
+//! mutable named record and [`quoin_store::store::write_new_or_identical`] for
 //! a retained one (the #394 durability decision). Neither this module nor any
 //! other in this crate opens a file for writing itself.
 
@@ -84,7 +84,7 @@ pub trait EvidenceSource {
     /// [`EvidenceError::StoreIo`] when the write cannot be completed.
     fn write(&mut self, path: &str, bytes: &[u8]) -> Result<(), EvidenceError>;
 
-    /// Publish a content-addressed record, refusing a differing body.
+    /// Publish an append-only record, refusing a differing body.
     ///
     /// Returns `true` when the record was newly written and `false` when the
     /// identical bytes were already there — the append-only publish of FR-048.
@@ -273,10 +273,10 @@ impl EvidenceSource for DiskEvidence {
     }
 
     fn publish(&mut self, path: &str, bytes: &[u8]) -> Result<bool, EvidenceError> {
-        quoin_store::store::write_content_addressed(&self.resolve(path), bytes).map_err(|source| {
+        quoin_store::store::write_new_or_identical(&self.resolve(path), bytes).map_err(|source| {
             if matches!(source, quoin_store::StoreError::ContentCollision { .. }) {
                 EvidenceError::RecordIntegrity {
-                    what: "content-address collision or corrupt immutable record",
+                    what: "conflicting or corrupt immutable record",
                     path: path.to_owned(),
                     note: "; existing bytes were not overwritten",
                 }
@@ -403,7 +403,7 @@ impl EvidenceSource for MemoryEvidence {
         match self.store.get(path) {
             Some(existing) if *existing == incoming => Ok(false),
             Some(_) => Err(EvidenceError::RecordIntegrity {
-                what: "content-address collision or corrupt immutable record",
+                what: "conflicting or corrupt immutable record",
                 path: path.to_owned(),
                 note: "; existing bytes were not overwritten",
             }),

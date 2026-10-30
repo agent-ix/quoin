@@ -29,7 +29,7 @@ corpus where the two can be told apart, grouped by why.
 dance. `store.ts` publishes with `renameSync` after an `existsSync` test;
 `atomic-file.ts`, the newer copy, already knows that rename **replaces** and
 uses `linkSync` instead. Both port to
-`quoin_store::store::write_content_addressed`, so:
+`quoin_store::store::write_new_or_identical`, so:
 
 - **`store.ts`'s rename becomes a link.** A concurrent writer whose differing
   bytes would have been silently clobbered in the window between the test and
@@ -53,15 +53,6 @@ one and keeps the last. No retained collection contains a duplicate name — all
 48 parse — so this is unobservable on the corpus and is a refusal only for
 input the oracle silently reinterprets.
 
-### §1.3 — a single-element array is no longer a digest
-
-`validate.ts:114,144,163` test their patterns against `String(value[key] ?? "")`
-rather than against a string. Every non-string that reaches those lines fails
-the pattern anyway (`String(5)` is `"5"`, `String(null)` is `""`,
-`String({})` is `"[object Object]"`) with one exception: `["sha256:…"]`
-coerces to `"sha256:…"` and is accepted. This crate reads strings as strings
-and refuses it.
-
 ### §1.4 — `parse, don't validate` replaces the assertion functions
 
 `validateStoredMeasurementCollection` and `validateMeasurementCollection` are
@@ -71,7 +62,7 @@ Here they return a `MeasurementCollection`, and identity values
 (`CollectionId`, `NonEmptyText`, `FullGitRevision`, `RawEvidencePath`) are
 newtypes whose existence is the proof. The refusals are the same; what a caller
 holds afterwards is not. This is the Stage 6 plan §13.3 rule, modelled on
-`quoin_store::RawFileSha256Digest::parse_stored`.
+the parse-constructor shape.
 
 The write path still canonicalises the **caller's** value, exactly as
 `store.ts:40` does, so nothing is round-tripped through the typed model on the
@@ -112,9 +103,9 @@ duplicates on `origin/main`. Here the walk is
 discriminator they accept and the record they build. Same inputs, same outputs,
 one implementation.
 
-### §2.3 — no canonicalizer, digest, JSON parser or YAML reader of its own
+### §2.3 — no canonicalizer, JSON parser or YAML reader of its own
 
-Canonical JSON, strict JSON parsing, sha256 file digests and atomic writes are
+Canonical JSON, strict JSON parsing and atomic writes are
 `quoin_store`'s; frontmatter YAML is `quoin_yaml`'s. `tests/tc_468_boundary.rs`
 asserts over this crate's own sources and manifest that no second one appeared
 (FR-100-CON-4, Stage 6 plan §13.2), and that exactly one module reads an
@@ -180,18 +171,6 @@ places; no consumer may match on it, and the codes are the API.
 - `raw_evidence_for` and `verify_raw_evidence_references` take a
   `MeasurementSource` rather than a repository path, which is what lets the
   filesystem half of `resolveRawPath` stay on the source.
-
-## §4 — A gap, named rather than papered over
-
-`MemoryMeasurement::raw_evidence_file` **refuses** with
-`QM-RAW-EVIDENCE-UNAVAILABLE` instead of digesting bytes it holds.
-`quoin-store` exposes sha256 only over a path (`digest_file_sha256`);
-`sha256_hex` is private and `digest_raw_bytes` is blake3, a different domain.
-Adding a `sha2` dependency here to close the gap would be the second sha256 this
-port is forbidden to mint, so the gap is reported instead: a public
-bytes-wise sha256 is owed by `quoin-store` (already listed as a `quoin-store`
-gap in the Stage 6 plan §3). Until it exists, raw-evidence accounting is a
-disk-source capability.
 
 ## §5 — Module tree: where this crate deviates from the Stage 6 plan §12
 
@@ -304,7 +283,7 @@ comparing the two type declarations will find two fields here with no port.
 
 ## §10 — what this wave did not port, and is not pretending to
 
-Three things these four files gesture at are deliberately absent rather than
+Two things these four files gesture at are deliberately absent rather than
 approximated, so that no later wave finds a second implementation to unify:
 
 - **No instant grammar.** `observed_at`, `started_at`, `completed_at` and
@@ -312,10 +291,6 @@ approximated, so that no later wave finds a second implementation to unify:
   already carries six hand-rolled instant validators across four crates,
   accepting three different languages; this crate gets exactly one, in
   `date_time` (quoin#468), and intake parses through it (quoin#471/#472).
-- **No digest parsing.** `Digest` holds the stored spelling.
-  `quoin_store::RawFileSha256Digest::parse_stored` is the right type and
-  verification is quoin#471/#472; this wave reaches outside the crate for
-  nothing.
 - **No schema validation.** `intervention-schema.ts` and
   `operational-schema.ts` are quoin#470.
 
@@ -369,7 +344,7 @@ the validator's own and is not byte-identical to ajv's for every keyword. The
 _set_ of refused records is what is contractual; a message is not, and no
 retained record's acceptance depends on one.
 
-### §11.6 — `write_content_addressed` links and fsyncs; the retained code renames
+### §11.6 — `write_new_or_identical` links and fsyncs; the retained code renames
 
 Same strengthening `store.rs` took in quoin#468, and already declared in §4. The
 operational pair path goes through it too: the write is refused rather than
@@ -409,23 +384,6 @@ retained record back **byte for byte**. Everything below is a difference that
 the one retained production does not exercise.
 
 ## §12 — Wave 4 divergences
-
-### §12.1 — the `blake3:` immutable-version alternative is dropped
-
-`agent-eval-intervention.ts:11-12` admits `blake3:<64 hex>` beside `sha256:`,
-a git object name and a semantic version. `ImmutableVersion` admits the other
-three and refuses that one.
-
-Separating input: `"cli_agent_evals_version": "blake3:<64 hex>"` in a producer
-definition — accepted there, refused here.
-
-**Narrowing, and deliberate.** quoin#409 recorded that no quoin producer emits a
-BLAKE3 digest for this field, the Stage 6 plan §4 rules it dropped rather than
-carried, and nothing in the retained corpus uses it. The crate's
-`tc_468_boundary` census reads the lower-case token as a second hasher, so
-`version.rs` spells the algorithm in upper case and its test builds the prefix
-by concatenation. Held as an assertion —
-`the_dropped_digest_alternative_is_gone` — rather than only as this paragraph.
 
 ### §12.2 — `observed_at` is validated by one RFC 3339 grammar, not two
 
@@ -468,31 +426,6 @@ is the FR-042 boundary and runs first, and it already refuses a report with no
 `results` array. Reachable only by calling `AgentEvalReport::parse` directly,
 which the producer is the only caller of.
 
-### §12.6 — what `digest_file_sha256` refuses that `readFileSync` does not
-
-`intervention.ts:120` digests whatever `readFileSync` returns.
-`quoin_store::digest_file_sha256` (`quoin-store/src/digest.rs:470-514`) stats
-first and refuses three things the retained reader accepts:
-
-- a file larger than `MAX_DIGESTED_FILE_BYTES` (256 MiB),
-- a path that is not a regular file — a FIFO, a device, a socket,
-- a file that shrinks between the stat and the read (a short read).
-
-**The symlink case, honestly:** quoin#407 is filed as a symlink divergence, and
-`digest_file_sha256` does refuse a symlink. On _this_ path it never sees one.
-`DiskMeasurement::resolve_raw_evidence` canonicalises before digesting — it has
-to, because that canonicalisation is how `resolveRawPath`'s escape check is
-performed — so a symlink that stays inside the evidence store is followed by
-both implementations and digests to the same bytes, and one that leaves the
-store is refused earlier and for a different reason. Both halves are asserted in
-`tc_471_raw_evidence_resolution_refuses_every_escape` on a real tree with real
-symlinks. The reachable part of quoin#407 here is the 256 MiB ceiling and the
-non-regular-file refusal; the symlink refusal is unreachable through raw-evidence
-resolution.
-
-Not reconciled. All three refusals are strengthenings on evidence quoin retains
-and digests, and no retained evidence file is affected.
-
 ### §12.7 — the retained record's file name predates the `p-`/`b-` namespacing
 
 Not a port divergence: the two implementations agree, and the store does not.
@@ -516,7 +449,8 @@ paragraph.
 six gated functions — `renderMeasurementReport`, `renderMeasurementReportJson`,
 `renderPortfolioReport`, `renderPortfolioReportJson`, `comparisonFor` and
 `seriesFor` — are byte-identical to the retained TypeScript on the committed
-fixture tree (`tc_473_reporting`, FR-100-AC-4). The divergences below are
+fixture tree when the port landed; that byte comparison and its recorded
+capture have since been deleted. The divergences below are
 therefore either outside those bytes, or reachable only on inputs the fixture
 states cannot occur.
 
@@ -524,7 +458,7 @@ states cannot occur.
 
 `root` and `path` are absolute in both the rendered report and its JSON, so the
 captured bytes would otherwise record whoever's checkout produced them. The
-capture script and `tc_473_reporting` both replace the fixture tree's own
+capture script replaced the fixture tree's own
 absolute root with the token `@@TREE@@` before comparing, and nothing else is
 edited. Neither side canonicalises: node's `path.resolve` absolutises and
 normalises lexically without following symlinks, and

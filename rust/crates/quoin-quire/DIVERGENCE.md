@@ -76,9 +76,9 @@ is a measured result rather than an absence of measurement: an undeclared
 disagreement fails the test, and a declared one that stopped disagreeing fails
 it too.
 
-The corpus is 217 documents — two base exports produced by the linked engine
+The corpus is 209 documents — two base exports produced by the linked engine
 over the committed fixture corpora, each put through a fixed named mutation
-ladder — of which ajv accepts 28 and refuses 189. Both bases carry both
+ladder — of which ajv accepts 28 and refuses 181. Both bases carry both
 verdicts. The ladder deliberately includes every arm of the only lookahead in
 the document (`locator.path`'s `^(?!/)(?!.*(?:^|/)\.\.(?:/|$)).+$`), including
 three arms that must be **accepted**, so a regex that refused everything could

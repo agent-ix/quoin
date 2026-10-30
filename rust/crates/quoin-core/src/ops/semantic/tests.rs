@@ -40,7 +40,6 @@ use crate::error::CoreErrorCode;
 fn block(package: &str) -> SemanticBlock {
     SemanticBlock {
         contract_version: "1.0.0".into(),
-        semantic_core: "0.0.0".into(),
         package: package.into(),
         exports: vec!["Entity".into()],
         imports: BTreeMap::new(),

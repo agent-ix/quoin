@@ -57,12 +57,12 @@ Every criterion in the population gets exactly one of:
 |---|---|
 | `bound` | A passing run backs this criterion, and the auditor found nothing wrong with it. |
 | `stale` | The auditor reports `stale-evidence`: either a binding names a suite with **no recorded run** at all, or its bound run is **behind HEAD**. |
-| `suspect` | The auditor distrusts the binding: `suspect-link` (the statement changed since binding), `mocked-confirmation` (a stand-in for the verified behavior), `insufficient-independence` (a separation-axis violation), or `vacuous-evidence` (every bound symbol was skipped or absent from its run). All four are the auditor's own "claims to exist and does not hold" class. |
+| `suspect` | The auditor distrusts the binding: `mocked-confirmation` (a stand-in for the verified behavior), `insufficient-independence` (a separation-axis violation), or `vacuous-evidence` (every bound symbol was skipped or absent from its run). All three are the auditor's own "claims to exist and does not hold" class. |
 | `undischarged` | No binding exists for this criterion while the store holds bindings for others, or the auditor's remaining finding kinds apply (`undischarged`, `unknown-method`, `method-conformance`, `insufficient-multiplicity`, `insufficient-mutation-score`, `unmeasured-mutation-score`, `combinatorial-gap`), or the criterion has an `unevaluated` entry, or it appears in none of `healthy`/`findings`/`unevaluated`. |
 | `no run evidence` | The evidence store's binding graph is **empty** — no criterion in this run has ever been discharged. |
 
-That is all 12 `FindingKind` values this FR reads
-(`quoin-finding-types::FindingKind::ALL`): `suspect-link`, `mocked-confirmation`,
+That is all 11 `FindingKind` values this FR reads
+(`quoin-finding-types::FindingKind::ALL`): `mocked-confirmation`,
 `insufficient-independence`, and `vacuous-evidence` map to `suspect`;
 `stale-evidence` maps to `stale`; `undischarged`, `unknown-method`,
 `method-conformance`, `insufficient-multiplicity`,
@@ -106,14 +106,13 @@ up in the supplied `AuditReport` (`Finding.obligation` / `healthy` /
 
 1. **`bound`** — the id appears in `AuditReport.healthy`.
 2. **`suspect`** — else, the id has a `Finding` whose `kind` is one of
-   `suspect-link`, `mocked-confirmation`, `insufficient-independence`,
+   `mocked-confirmation`, `insufficient-independence`,
    `vacuous-evidence`.
 3. **`stale`** — else, the id has a `Finding` whose `kind` is `stale-evidence`.
 4. **`undischarged`** — else (any other `Finding` kind, an `unevaluated`
    entry, or absence from all three collections).
 
-This order mirrors `quoin-auditor`'s own ladder (`suspect_link` and
-`mocked-confirmation` are asked before `unrecorded_evidence`/`behind_head`),
+This order mirrors `quoin-auditor`'s own ladder (`mocked-confirmation` is asked before `unrecorded_evidence`/`behind_head`),
 which already prevents an obligation from carrying both a suspect-class and a
 stale-class finding in the common case. The only ladder rung that does not
 stop evaluation once a suspect- or undischarged-class finding has already
@@ -271,7 +270,7 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 | FR-115-AC-1 | `matrix.build` is registered in `quoin-core`'s `OPERATIONS` list and dispatched by an exhaustive `match` arm identically in shape to `assurance.build_case`'s (no capabilities), covered by the existing `the_operations_const_is_every_operation_dispatch_routes` drift test. | Test |
 | FR-115-AC-2 | The request is a `#[serde(deny_unknown_fields)]` struct carrying an optional `coverage`, and required `bindings` (the persisted `BindingsFile` shape) and `audit`; a request missing `bindings` or `audit`, or carrying an unrecognized field, is refused with `CoreErrorCode::BadRequest` naming `op`; a request over `MAX_MATRIX_BUILD_BYTES` is refused with `CoreErrorCode::Refused` naming `op`, `limit_bytes`, `observed_bytes`. | Test |
 | FR-115-AC-3 | When `bindings.bindings` is empty, every criterion's `evidence_status` is `no run evidence`, regardless of what `audit` contains; `evidence_detail` is still computed per AC-9 and is not suppressed by this override. | Test |
-| FR-115-AC-4 | When `bindings.bindings` is non-empty: a criterion whose id is in `audit.healthy` is `bound`; else a criterion with a `suspect-link`, `mocked-confirmation`, `insufficient-independence`, or `vacuous-evidence` finding is `suspect`; else a criterion with a `stale-evidence` finding is `stale`; else (any other finding kind, an `unevaluated` entry, or absence from `healthy`/`findings`/`unevaluated`) is `undischarged`. | Test |
+| FR-115-AC-4 | When `bindings.bindings` is non-empty: a criterion whose id is in `audit.healthy` is `bound`; else a criterion with a `mocked-confirmation`, `insufficient-independence`, or `vacuous-evidence` finding is `suspect`; else a criterion with a `stale-evidence` finding is `stale`; else (any other finding kind, an `unevaluated` entry, or absence from `healthy`/`findings`/`unevaluated`) is `undischarged`. | Test |
 | FR-115-AC-5 | An `audit` naming one obligation id in both `healthy` and a `Finding` or `UnevaluatedCheck` refuses the whole `matrix.build` call with `CoreErrorCode::Refused` (exit 2), `context` carrying `reason: "contradictory-audit"` and the offending id; no partial `MatrixOutput` is emitted. | Test |
 | FR-115-AC-6 | A fixture evidence store holding one passing binding **with a mock inspection recorded at HEAD** (so its obligation reaches `healthy` rather than an `unevaluated` entry), one binding whose run is behind the audited HEAD (`stale-evidence`/`behind_head`), and one criterion with zero bindings (while the store holds the other two) yields three distinct `evidence_status` values (`bound`, `stale`, `undischarged`) in one `matrix.build` call. | Test |
 | FR-115-AC-7 | Each criterion's `static_status` and `binders` are copied verbatim from the supplied `coverage_matrix` criterion, unmodified by evidence computation; a criterion's `evidence_status` never influences its `static_status` or vice versa. A criterion whose upstream obligation record omits `method` renders with `method` omitted, never `null`. | Test |
@@ -296,8 +295,8 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 - **Downstream**: [FR-021](./FR-021-launch-ix-flow-runs.md), narrowed by this
   FR to `review` and `to-plan` only (see its own CR note).
 
-> **CR-001 (2026-09-27, PLAT-1080):** quoin pins quire-rs by git revision
-> — a dependency pin, not a vendored copy — whose
+> **CR-001 (2026-09-27, PLAT-1080):** quoin depends on quire-rs by git revision in `Cargo.toml`
+> — not a vendored copy — whose
 > `CoverageReport` carries `obligations: Vec<Obligation>` and
 > `criteria: Vec<CriteriaCounts>` (per-document property-shape counts) but no
 > `coverage_matrix` field and no per-criterion `binders`/`status`.
@@ -324,7 +323,7 @@ above, and CR-002 for the failed/errored-run check that decision now includes).
 > verbatim (CON-2).
 >
 > **CR-003 (2026-09-28, PLAT-1080):** the wire shape of `coverage`, measured
-> at the pinned quire-rs rather than assumed. `CoverageReport.
+> at the linked quire-rs rather than assumed. `CoverageReport.
 > coverage_matrix` is `Vec<CoverageMatrixRequirement>` with
 > `skip_serializing_if = "Vec::is_empty"`: it serializes as a bare array of
 > `{document, criteria[]}` entries and is omitted entirely when empty. There

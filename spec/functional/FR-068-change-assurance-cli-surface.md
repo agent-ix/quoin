@@ -32,18 +32,19 @@ scheduler for the work an attestation describes.
 
 ## Inputs
 
-- `seal-record`: one JSON change-assurance record body without `digest`, from a
+- `write-record`: one JSON change-assurance record body, from a
   named file or `-` for standard input.
-- `seal-attestation`: one JSON proof-attestation body without `digest` and
-  without `retained_output`, plus `--output`, the path of the retained result
+- `prepare-attestation`: one JSON proof-attestation body without
+   `retained_output`, plus `--output`, the path of the retained result
   file the attestation describes, and `--media-type`, its declared media type.
-- `intake`: `--attestation`, an exact sealed attestation JSON file, and
+- `intake`: `--attestation`, an exact attestation JSON file, and
   `--output`, the exact retained result file it names.
-- `receipt`: `--record`, a stored record digest; `--candidate-revision`;
-  repeated `--select <proof-id>=<attestation-digest>`; repeated
-  `--parent <record-digest>`; `--decisions`, a retained ix-flow decision
+- `receipt`: `--record`, a stored record id, and `--revision`;
+  `--candidate-revision`; repeated `--select <proof-id>=<attestation-id>`;
+  `--decisions`, a retained ix-flow decision
   history file; and optional `--audits`, retained FR-032 audit reports.
-- `verify-receipt`: one sealed receipt JSON file.
+- `verify-receipt`: one receipt JSON file; it re-derives the receipt from the
+  retained inputs the receipt names and compares the two byte for byte.
 - `schema`: an optional `--name` naming one of the three normative assets.
 - `recover`: no input beyond `--repo`.
 
@@ -52,13 +53,13 @@ the working directory.
 
 ## Outputs
 
-- `seal-record` writes the sealed record into the store and reports its digest
-  and retained path.
-- `seal-attestation` emits the sealed attestation JSON on standard output; it
+- `write-record` writes the record into the store at
+  `records/<record_id>/<revision>.json` and reports its id, revision and path.
+- `prepare-attestation` emits the attestation JSON on standard output; it
   writes nothing.
 - `intake` reports the retained attestation directory.
 - `receipt` emits the FR-065 verification receipt.
-- `verify-receipt` reports the verified receipt digest and outcome.
+- `verify-receipt` reports the outcome and whether the re-derived receipt equals the given one.
 - `schema` emits one normative schema, or the three asset names when `--name`
   is omitted.
 - `recover` reports the number of removed staging directories.
@@ -69,16 +70,15 @@ re-serialization would no longer be the file consumers validate against.
 
 ## Behavior
 
-- `seal-attestation` SHALL derive `retained_output.digest` and
-  `retained_output.size_bytes` from the bytes of the named output file and take
+- `prepare-attestation` SHALL derive `retained_output.size_bytes` from the bytes of the named output file and take
   `media_type` from the caller. It SHALL NOT derive any other field.
 - `intake` SHALL retain the exact canonical attestation bytes and the exact
   output bytes as one atomic pair, and SHALL refuse an attestation whose
-  recorded output digest or size does not match the supplied bytes.
+  recorded output size does not match the supplied bytes.
 - Re-running `intake` with byte-identical inputs SHALL succeed and retain
-  nothing new. A digest collision with differing bytes SHALL be refused.
+  nothing new. An `attestation_id` collision with differing bytes SHALL be refused.
 - `receipt` SHALL assemble its FR-065 verification input from the named stored
-  record, the named parents, the explicitly selected attestations and their
+  record revision and its predecessors, the explicitly selected attestations and their
   retained outputs, the supplied decision history, and the supplied audit
   reports. A stored attestation that is not selected SHALL have no effect.
 - `receipt` SHALL preserve `unavailable` and `not_computed` results and missing
@@ -92,9 +92,8 @@ re-serialization would no longer be the file consumers validate against.
 
 ## Error Conditions
 
-A missing, unreadable, or non-JSON input, an input carrying a `digest` the
-caller must not supply, an unknown schema name, a `--select` mapping naming an
-unstored attestation, a record digest naming no stored record, and an output
+A missing, unreadable, or non-JSON input, an input carrying a `digest` member (the schemas have none), an unknown schema name, a `--select` mapping naming an
+unstored attestation, a record id and revision naming no stored record, and an output
 whose bytes contradict the attestation each fail with exit status `2` and a
 message naming the offending input. No partial record, attestation, output, or
 receipt is retained on any of these paths.
@@ -104,7 +103,7 @@ receipt is retained on any of these paths.
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-068-CON-1 | No command SHALL execute the attested command, invoke Git, or perform a network request. The only process any command SHALL start is the `quoin-core` engine that decides the FR-063..FR-065 contracts, reached through the single FR-096 boundary module. (Amended at [quoin#457](https://github.com/agent-ix/quoin/issues/457), which moved those contracts out of TypeScript; before the cutover the surface decided them in process and spawned nothing at all.) | Architecture | Inspection |
-| FR-068-CON-2 | No command SHALL infer a candidate revision, proof id, command binding, tool or configuration identity, result, environment, or decision. Content digests and sizes computed from named bytes are not inferences. | Integrity | Test |
+| FR-068-CON-2 | No command SHALL infer a candidate revision, proof id, command binding, tool or configuration identity, result, environment, or decision. Sizes computed from named bytes are not inferences. | Integrity | Test |
 | FR-068-CON-3 | No command output or help text SHALL make an identity, authorization, non-repudiation, or certification claim. | Responsibility | Inspection |
 | FR-068-CON-4 | The library contracts, stored layout, and schema assets SHALL be unchanged by this surface, and existing retained records SHALL remain readable. | Compatibility | Test |
 
@@ -112,16 +111,16 @@ receipt is retained on any of these paths.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-068-AC-1 | `seal-record` seals an explicit record body, retains it, and reports its digest and path; a body carrying `digest` or an undeclared field is refused with exit 2 and nothing is retained. | Test (TC-1317) |
-| FR-068-AC-2 | `seal-attestation` derives only media type, digest, and size for the retained output from the named file and the caller's flag, and refuses a body that supplies `retained_output` or `digest`. | Test (TC-1318) |
-| FR-068-AC-3 | `intake` retains exact attestation and output bytes atomically; a contradicting digest or size is refused, an identical re-intake is idempotent, and a colliding digest with differing bytes is refused. | Test (TC-1319) |
+| FR-068-AC-1 | `write-record` writes an explicit record body, retains it at its `(record_id, revision)` path, and reports id, revision and path; a body carrying an undeclared field is refused with exit 2 and nothing is retained. | Test (TC-1317) |
+| FR-068-AC-2 | `prepare-attestation` derives only media type and size for the retained output from the named file and the caller's flag, and refuses a body that supplies `retained_output`. | Test (TC-1318) |
+| FR-068-AC-3 | `intake` retains exact attestation and output bytes atomically; a contradicting size is refused, an identical re-intake is idempotent, and an `attestation_id` collision with differing bytes is refused. | Test (TC-1319) |
 | FR-068-AC-4 | `receipt` builds its verification input only from the named record, parents, explicit selections, decision history, and audits; an unselected stored attestation changes no receipt field. | Test (TC-1320) |
 | FR-068-AC-5 | `unavailable`, `not_computed`, and missing evidence appear as their own receipt outcomes and reasons and are never converted to a pass or a failure. | Property (TC-1321) |
 | FR-068-AC-6 | Exit status is 0 for `valid`, 1 for `invalid` and `incomplete`, and 2 for usage, parse, and integrity errors, with the receipt still emitted for the first two. | Test (TC-1322) |
-| FR-068-AC-7 | `verify-receipt` accepts a sealed receipt and refuses one whose semantic field or digest was altered. | Test (TC-1323) |
+| FR-068-AC-7 | `verify-receipt` accepts a receipt that equals, byte for byte, the receipt re-derived from its named retained inputs, and refuses one whose semantic field was altered. | Test (TC-1323) |
 | FR-068-AC-8 | `schema` lists the three normative asset names and emits each by name byte-identically to the packaged asset; an unknown name is refused with exit 2. | Test (TC-1324) |
 | FR-068-AC-9 | `recover` removes only interrupted-intake staging directories, reports the count, and leaves retained records, attestations, and outputs untouched. | Test (TC-1325) |
-| FR-068-AC-10 | Golden fixtures for a sealed record, a sealed attestation, and a valid receipt reproduce byte-identical canonical JSON through the CLI (CON-4). | Integration (TC-1326) |
+| FR-068-AC-10 | Golden fixtures for a record, an attestation, and a valid receipt reproduce byte-identical canonical JSON through the CLI (CON-4). | Integration (TC-1326) |
 | FR-068-AC-11 | Static boundaries prove no command executes an attested command or performs Git or network work, that the one process boundary any command reaches is the FR-096 engine module, and that no output or help text makes an identity, authorization, non-repudiation, or certification claim (CON-1, CON-3). | Inspection (TC-1327) |
 
 ## Dependencies

@@ -7,7 +7,7 @@
 //! carry **two copies of the same write-once dance** on `origin/main` —
 //! `store.ts:35-53` and `atomic-file.ts:12-48` both do exists-check, compare,
 //! `wx` temporary, publish, unlink. Neither is ported as written. Both unify on
-//! [`quoin_store::store::write_content_addressed`], which is the same
+//! [`quoin_store::store::write_new_or_identical`], which is the same
 //! contract plus `fsync` (Stage 6 plan §7, the #394 durability decision) and is
 //! already the write path every other Rust crate in this workspace uses.
 //!

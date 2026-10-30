@@ -30,7 +30,7 @@ are `not_computed`, never zero.
 ## Collection Procedure
 
 Retain harness/model identity, tool calls, token envelope, findings and rulings,
-scope, revisions, configuration, raw evidence, and timestamp.
+scope, configuration, raw evidence, and timestamp.
 
 ## Environment and Sampling
 

@@ -31,7 +31,7 @@ SUITE-001 transcribes 541 vitest results into `runs/SUITE-001/`, and binds
 **zero** obligations:
 
 ```
-{ "runPath": "spec/evidence/runs/SUITE-001/…json", "bound": [], "suspect": [], "unmatched": [] }
+{ "runPath": "spec/evidence/runs/SUITE-001/…json", "bound": [], "unmatched": [] }
 ```
 
 The reason is structural, not a misconfiguration. The junit adapter reads test

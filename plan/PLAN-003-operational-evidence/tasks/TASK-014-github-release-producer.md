@@ -32,12 +32,12 @@ jobs API JSON. It derives and submits one linked `release` capability/exercise p
 - Write TC-1244..TC-1247 with retained public fixtures and generated mismatch and
   adverse-conclusion cases.
 - Parse workflow structure and uniquely select the configured release job.
-- Derive every decision-bearing record field and raw digest from retained bytes;
+- Derive every decision-bearing record field from retained bytes;
   treat every non-success conclusion as visible non-discharging evidence.
 
 ## Exit Criteria
 
 - Workflow, path, event, revision, run, and job mismatches refuse the full pair.
-- Caller-supplied timestamps, conclusions, clock labels, sizes, and digests cannot
+- Caller-supplied timestamps, conclusions, clock labels, and sizes cannot
   replace source-derived values.
 - The adapter contains no GitHub client, dispatch, publication, or process path.

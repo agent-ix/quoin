@@ -49,7 +49,7 @@ Nine module repositories completed their semantic contracts in the current wave 
 `spec-objects-business`, `spec-artifacts-iso`, `spec-objects-enterprise`, `spec-objects-safety`,
 `spec-objects-architecture`, `spec-objects-operational`, `spec-artifacts-app`,
 `spec-objects-security` and `spec-artifacts-process` — and a tenth, `engineering-assurance`, is
-pinned in the catalog beside them. Each of them declares vocabulary, JSON Schemas
+declared in the catalog beside them. Each of them declares vocabulary, JSON Schemas
 and — for the artifact-type modules — Markdown mappings that say how an authored document becomes a
 record. None of that has ever been run against the documents the ecosystem actually contains.
 
@@ -89,7 +89,7 @@ verification criteria.
 
 ### US-022-EX-4: The measurement can be repeated
 
-- **Given** the pins the report records
+- **Given** the module sources the report records
 - **When** somebody else re-runs the measurement from a clean machine
 - **Then** they obtain the same counts
 

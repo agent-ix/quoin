@@ -45,11 +45,7 @@ use quoin_quire_types::ClauseBindingReport;
 ///
 /// Written out rather than re-derived: a test that serialises the report a
 /// second time agrees with itself no matter what the wire spellings say.
-const EVERY_STATE_DOCUMENT: &str = r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"example.invalid","id":"synthetic-widget-rules","version":"1.0.0"},"clauseSetDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","context":{"deployment":"test","product":"widget"},"asOf":"2026-08-15T00:00:00.000Z","binding":{"direct":[{"clauseId":"SYN-001","force":"mandatory","state":"direct","expectedOutputs":["test-result"],"fact":{"kind":"direct","clauseId":"SYN-001","evidenceRefs":["evidence://run/one"],"attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}],"dispositions":[{"clauseId":"SYN-002","force":"recommended","state":"disposition","expectedOutputs":["review-record"],"fact":{"kind":"disposition","clauseId":"SYN-002","decision":"temporary_exception","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/temporary_exception","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}},{"clauseId":"SYN-003","force":"mandatory","state":"disposition","expectedOutputs":["decision-record"],"fact":{"kind":"disposition","clauseId":"SYN-003","decision":"accepted_risk","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/accepted_risk","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}},{"clauseId":"SYN-006","force":"permitted","state":"disposition","expectedOutputs":["delegation-record"],"fact":{"kind":"disposition","clauseId":"SYN-006","decision":"delegated","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/delegated","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}],"open":[{"clauseId":"SYN-007","force":"mandatory","state":"open","expectedOutputs":["open-record"],"reason":"no discharge fact"}]},"unresolved":[{"clauseId":"SYN-004","force":"mandatory","state":"unresolved","expectedOutputs":["environment-record"],"reason":"environment is not known"}],"notBinding":[{"clauseId":"SYN-005","force":"permitted","state":"not_binding","expectedOutputs":[]}],"unusedFacts":[{"clauseId":"SYN-004","kind":"direct","reason":"unresolved"},{"clauseId":"SYN-005","kind":"direct","reason":"not_binding"},{"clauseId":"SYN-999","kind":"direct","reason":"unknown_clause"}]}"#;
-
-fn digest() -> String {
-    format!("sha256:{}", "a".repeat(64))
-}
+const EVERY_STATE_DOCUMENT: &str = r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"example.invalid","id":"synthetic-widget-rules","version":"1.0.0"},"context":{"deployment":"test","product":"widget"},"asOf":"2026-08-15T00:00:00.000Z","binding":{"direct":[{"clauseId":"SYN-001","force":"mandatory","state":"direct","expectedOutputs":["test-result"],"fact":{"kind":"direct","clauseId":"SYN-001","evidenceRefs":["evidence://run/one"],"attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"dispositions":[{"clauseId":"SYN-002","force":"recommended","state":"disposition","expectedOutputs":["review-record"],"fact":{"kind":"disposition","clauseId":"SYN-002","decision":"temporary_exception","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/temporary_exception","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-003","force":"mandatory","state":"disposition","expectedOutputs":["decision-record"],"fact":{"kind":"disposition","clauseId":"SYN-003","decision":"accepted_risk","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/accepted_risk","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}},{"clauseId":"SYN-006","force":"permitted","state":"disposition","expectedOutputs":["delegation-record"],"fact":{"kind":"disposition","clauseId":"SYN-006","decision":"delegated","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/delegated","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z"}}}],"open":[{"clauseId":"SYN-007","force":"mandatory","state":"open","expectedOutputs":["open-record"],"reason":"no discharge fact"}]},"unresolved":[{"clauseId":"SYN-004","force":"mandatory","state":"unresolved","expectedOutputs":["environment-record"],"reason":"environment is not known"}],"notBinding":[{"clauseId":"SYN-005","force":"permitted","state":"not_binding","expectedOutputs":[]}],"unusedFacts":[{"clauseId":"SYN-004","kind":"direct","reason":"unresolved"},{"clauseId":"SYN-005","kind":"direct","reason":"not_binding"},{"clauseId":"SYN-999","kind":"direct","reason":"unknown_clause"}]}"#;
 
 fn binding() -> ClauseBindingReport {
     serde_json::from_value(serde_json::json!({
@@ -59,7 +55,6 @@ fn binding() -> ClauseBindingReport {
             "id": "synthetic-widget-rules",
             "version": "1.0.0"
         },
-        "clauseSetDigest": digest(),
         "context": { "product": "widget", "deployment": "test" },
         "clauses": [
             {"clauseId": "SYN-001", "force": "mandatory", "outcome": "binding",
@@ -84,9 +79,7 @@ fn attestation() -> serde_json::Value {
         "attestedBy": "reviewer-1",
         "authority": "quality-lead",
         "attestedAt": "2026-08-01T00:00:00.000Z",
-        "expiresAt": "2026-09-01T00:00:00.000Z",
-        "sourceRevision": "0123456789abcdef",
-        "evidenceDigest": digest()
+        "expiresAt": "2026-09-01T00:00:00.000Z"
     })
 }
 
@@ -300,17 +293,10 @@ fn tc_1129_duplicate_facts_and_incomplete_attestations_are_rejected() {
     missing_field["attestation"]
         .as_object_mut()
         .unwrap()
-        .remove("sourceRevision");
+        .remove("authority");
     assert_eq!(
         refused(vec![missing_field]),
-        "attestation is missing sourceRevision"
-    );
-
-    let mut bad_digest = direct();
-    bad_digest["attestation"]["evidenceDigest"] = serde_json::json!("not-a-digest");
-    assert_eq!(
-        refused(vec![bad_digest]),
-        "attestation evidenceDigest must be sha256:<64 lowercase hex>"
+        "attestation is missing authority"
     );
 
     let mut rolled_day = direct();
@@ -357,10 +343,9 @@ fn tc_1130_every_population_renders_deterministically_and_without_a_score() {
 
     // The literal, not a re-derivation: every heading, every row, the blank
     // lines between them, and the single trailing newline.
-    let expected = format!(
+    let expected = String::from(
         "# Clause discharge: example.invalid/synthetic-widget-rules@1.0.0\n\
          \n\
-         - Clause-set digest: `{}`\n\
          - Evaluated as of: `2026-08-15T00:00:00.000Z`\n\
          \n\
          ## Direct evidence\n\
@@ -382,7 +367,6 @@ fn tc_1130_every_population_renders_deterministically_and_without_a_score() {
          ## Not binding\n\
          \n\
          - `SYN-005` — permitted; no declared outputs\n",
-        digest()
     );
     assert_eq!(rendered, expected);
     assert!(!rendered.to_lowercase().contains("score"));
@@ -399,7 +383,6 @@ fn tc_1130_every_population_renders_deterministically_and_without_a_score() {
         binding: serde_json::from_value(serde_json::json!({
             "schemaVersion": "clause-binding-v1",
             "clauseSet": {"authority": "example.invalid", "id": "empty", "version": "1.0.0"},
-            "clauseSetDigest": digest(),
             "context": {},
             "clauses": []
         }))
@@ -516,7 +499,6 @@ fn every_state_binding() -> ClauseBindingReport {
             "id": "synthetic-widget-rules",
             "version": "1.0.0"
         },
-        "clauseSetDigest": digest(),
         "context": { "product": "widget", "deployment": "test" },
         "clauses": [
             {"clauseId": "SYN-001", "force": "mandatory", "outcome": "binding",
@@ -668,13 +650,12 @@ fn tc_447_450_a_forged_discharge_report_is_refused_by_the_deserialiser() {
 
 /// A `clause-discharge-v1` document nothing computed: the attestation carries
 /// an empty `authority`, an `attestedAt` that is not an instant, an expiry
-/// before it, an `evidenceDigest` that is not one, and no evidence at all.
+/// before it, and no evidence at all.
 fn forged_report() -> serde_json::Value {
     serde_json::json!({
         "schemaVersion": "clause-discharge-v1",
         "clauseSet": {"authority": "example.invalid", "id": "synthetic-widget-rules",
                       "version": "1.0.0"},
-        "clauseSetDigest": digest(),
         "context": {},
         "asOf": "2026-08-15T00:00:00.000Z",
         "binding": {
@@ -691,9 +672,7 @@ fn forged_report() -> serde_json::Value {
                         "attestedBy": "nobody",
                         "authority": "",
                         "attestedAt": "nope",
-                        "expiresAt": "1999-01-01T00:00:00.000Z",
-                        "sourceRevision": "0123456789abcdef",
-                        "evidenceDigest": "not-a-digest"
+                        "expiresAt": "1999-01-01T00:00:00.000Z"
                     }
                 }
             }],

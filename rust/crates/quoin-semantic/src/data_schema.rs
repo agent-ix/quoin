@@ -9,7 +9,7 @@
 //! `quoin module install`: the file must sit inside the module root (no `..`,
 //! no symlink escape), be a JSON Schema 2020-12 document with an `$id`, and
 //! every `$ref` it carries must resolve inside the shipped bundle or the
-//! vendored semantic-core bundle at the version the manifest records. **No
+//! vendored semantic-core bundle. **No
 //! network read, ever.**
 
 use std::collections::BTreeSet;
@@ -19,7 +19,7 @@ use serde_json::Value;
 
 use crate::contract::SEMANTIC_CORE_BASE;
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic};
-use crate::ids::{ObjectTypeName, PackageIdentity, SemanticCoreVersion};
+use crate::ids::{ObjectTypeName, PackageIdentity};
 
 const PACKAGE_BASE: &str = "https://schemas.agent-ix.org/";
 const DIALECT_2020_12: &str = "https://json-schema.org/draft/2020-12/schema";
@@ -67,8 +67,6 @@ pub struct ResolveContext {
     pub module_root: PathBuf,
     /// `<org>/<repo>` from `semantic.package`.
     pub package_identity: PackageIdentity,
-    /// `semantic.semantic_core`.
-    pub semantic_core: SemanticCoreVersion,
     /// The object type being resolved.
     pub object_type: ObjectTypeName,
     /// The directory holding the vendored semantic-core bundle.
@@ -90,12 +88,6 @@ impl ResolveContext {
             self.package_identity.org(),
             self.package_identity.repo()
         )
-    }
-
-    /// The base URI a semantic-core `$ref` must sit under.
-    #[must_use]
-    pub fn core_base(&self) -> String {
-        format!("{SEMANTIC_CORE_BASE}{}/", self.semantic_core)
     }
 }
 
@@ -341,7 +333,6 @@ pub fn resolve_data_schema(
         ctx,
         locus: &locus,
         base: &base,
-        core_base: ctx.core_base(),
         schema_dir: file.parent().unwrap_or(&ctx.module_root).to_path_buf(),
         visited: BTreeSet::new(),
         stack: Vec::new(),
@@ -363,7 +354,6 @@ struct RefWalker<'a> {
     ctx: &'a ResolveContext,
     locus: &'a str,
     base: &'a str,
-    core_base: String,
     schema_dir: PathBuf,
     visited: BTreeSet<String>,
     stack: Vec<String>,
@@ -408,25 +398,23 @@ impl RefWalker<'_> {
             if url.is_empty() || Some(url) == self_id.as_deref() {
                 continue; // a fragment within this document
             }
-            if let Some(name) = url.strip_prefix(self.core_base.as_str()) {
+            if let Some(name) = url
+                .strip_prefix(SEMANTIC_CORE_BASE)
+                .and_then(|rest| rest.split_once('/'))
+                .map(|(_version, name)| name)
+            {
                 let core_path = self.ctx.semantic_core_dir.join(name);
                 if !core_path.exists() {
                     self.push(
                         DiagnosticCode::SchemaRefUnshipped,
-                        format!(
-                            "$ref {url} names no file in the vendored semantic-core {} bundle",
-                            self.ctx.semantic_core
-                        ),
+                        format!("$ref {url} names no file in the vendored semantic-core bundle"),
                     );
                     continue;
                 }
                 let Ok(bytes) = std::fs::read(&core_path) else {
                     self.push(
                         DiagnosticCode::SchemaRefUnshipped,
-                        format!(
-                            "$ref {url} names no file in the vendored semantic-core {} bundle",
-                            self.ctx.semantic_core
-                        ),
+                        format!("$ref {url} names no file in the vendored semantic-core bundle"),
                     );
                     continue;
                 };
@@ -440,15 +428,6 @@ impl RefWalker<'_> {
                 if !self.walk(&document, &format!("semantic-core/{name}")) {
                     return false;
                 }
-            } else if let Some(rest) = url.strip_prefix(SEMANTIC_CORE_BASE) {
-                let version = rest.split('/').next().unwrap_or("");
-                self.push(
-                    DiagnosticCode::SchemaRefVersion,
-                    format!(
-                        "$ref {url} names semantic-core {version}, manifest records {}",
-                        self.ctx.semantic_core
-                    ),
-                );
             } else if let Some(name) = url.strip_prefix(self.base) {
                 let sibling = self.schema_dir.join(name);
                 if !sibling.exists() || !inside_root(&self.ctx.module_root, &sibling) {

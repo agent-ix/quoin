@@ -39,10 +39,13 @@ workspace = true
 # declaration of it here is how a workspace ends up with two validators that
 # agree by version number rather than by construction.
 quoin-jsonschema = { workspace = true }
-quire-rs = { version = "=0.50.2", git = "https://github.com/agent-ix/quire-rs", rev = "0649f7c0a88ff81f1a75b6754d55bd8cddc937f2" }
+quire-rs = { version = "=0.50.3", git = "https://github.com/agent-ix/quire-rs", rev = "5b4be36d594a488b21c854051f05116eb9302d78" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+quoin-quire-types = { workspace = true }
 
 # The one-time oracle captures live under `oracle/` rather than `examples/` so
 # they are visibly the thing the retire-after-parity rule deletes at the cutover, not part of the

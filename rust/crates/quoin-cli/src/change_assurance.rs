@@ -3,8 +3,8 @@
 
 //! Rust adapters for `quoin change-assurance` (quoin#373, Stage 8).
 //!
-//! The core runtime owns strict document parsing, digest decisions, evidence
-//! storage, and schema assets. This module owns only the retained command
+//! The core runtime owns strict document parsing, evidence storage, and
+//! schema assets. This module owns only the retained command
 //! grammar and presentation.
 
 use std::fmt::Write as _;
@@ -15,7 +15,7 @@ use quoin_core::protocol::Response;
 
 use crate::core_runtime::invoke;
 
-const DESCRIPTION: &str = "Producer-facing surface over the FR-063 record, FR-064 proof attestation,\nretained-output intake, and FR-065 verification receipt contracts (FR-068).\n\nThese commands transcribe and verify what a producer supplies. None of them\nruns the command an attestation describes, invokes Git, or performs a network\nrequest. The only process any of them starts is the quoin-core engine that\ndecides the FR-063..FR-065 contracts (FR-096). Digests establish content integrity and recorded\nactor labels are attribution only; nothing here establishes authorization or\nnon-repudiation, and no output is a certification.\n\nSubcommands:\n  quoin change-assurance seal-record\n  quoin change-assurance seal-attestation\n  quoin change-assurance intake\n  quoin change-assurance receipt\n  quoin change-assurance verify-receipt\n  quoin change-assurance schema\n  quoin change-assurance recover\n\nExit status: 0 for a valid receipt, 1 for an invalid or incomplete one, and 2\nfor a usage, parse, or integrity error.";
+const DESCRIPTION: &str = "Producer-facing surface over the FR-063 record, FR-064 proof attestation,\nretained-output intake, and FR-065 verification receipt contracts (FR-068).\n\nThese commands transcribe and verify what a producer supplies. None of them\nruns the command an attestation describes, invokes Git, or performs a network\nrequest. The only process any of them starts is the quoin-core engine that\ndecides the FR-063..FR-065 contracts (FR-096). Records are addressed by record id and revision and\nattestations by attestation id; recorded actor labels are attribution only, and\nnothing here establishes authorization or non-repudiation, and no output is a\ncertification.\n\nSubcommands:\n  quoin change-assurance write-record\n  quoin change-assurance prepare-attestation\n  quoin change-assurance intake\n  quoin change-assurance receipt\n  quoin change-assurance verify-receipt\n  quoin change-assurance schema\n  quoin change-assurance recover\n\nExit status: 0 for a valid receipt, 1 for an invalid or incomplete one, and 2\nfor a usage, parse, or integrity error.";
 
 /// The change-assurance command grammar.
 pub(crate) fn command() -> Command {
@@ -34,15 +34,15 @@ pub(crate) fn command() -> Command {
                 .arg(json_arg()),
         )
         .subcommand(
-            Command::new("seal-record")
-                .about("Seal an explicit change-assurance record and retain it")
+            Command::new("write-record")
+                .about("Write an explicit change-assurance record and retain it")
                 .arg(Arg::new("input").long("input").required(true))
                 .arg(repo_arg())
                 .arg(json_arg()),
         )
         .subcommand(
-            Command::new("seal-attestation")
-                .about("Seal a proof attestation over an existing result file")
+            Command::new("prepare-attestation")
+                .about("Prepare a proof attestation over an existing result file")
                 .arg(Arg::new("input").long("input").required(true))
                 .arg(Arg::new("output").long("output").required(true))
                 .arg(Arg::new("media-type").long("media-type").required(true))
@@ -50,47 +50,74 @@ pub(crate) fn command() -> Command {
         )
         .subcommand(
             Command::new("intake")
-                .about("Retain an exact sealed attestation and its result bytes")
+                .about("Retain an exact attestation and its result bytes")
                 .arg(Arg::new("attestation").long("attestation").required(true))
                 .arg(Arg::new("output").long("output").required(true))
                 .arg(repo_arg())
                 .arg(json_arg()),
         )
         .subcommand(
-            Command::new("verify-receipt")
-                .about("Re-verify a sealed verification receipt")
-                .arg(Arg::new("input").long("input").required(true))
-                .arg(json_arg()),
+            receipt_inputs_args(
+                Command::new("verify-receipt")
+                    .about(
+                        "Re-derive a receipt from its retained inputs and compare it byte for byte",
+                    )
+                    .arg(Arg::new("input").long("input").required(true)),
+            )
+            .arg(json_arg()),
         )
         .subcommand(
-            Command::new("receipt")
-                .about("Verify a candidate from retained inputs and emit its receipt")
-                .arg(Arg::new("record").long("record").required(true))
-                .arg(
-                    Arg::new("candidate-revision")
-                        .long("candidate-revision")
-                        .required(true),
-                )
-                .arg(Arg::new("parent").long("parent").action(ArgAction::Append))
-                .arg(Arg::new("select").long("select").action(ArgAction::Append))
-                .arg(Arg::new("decisions").long("decisions").required(true))
-                .arg(Arg::new("audits").long("audits"))
-                .arg(
-                    Arg::new("diff-path")
-                        .long("diff-path")
-                        .action(ArgAction::Append)
-                        .help(
-                            "A repository-relative path the candidate change's diff touches \
-                             (repeatable); caller-supplied, not computed from git (FR-111)",
-                        ),
-                )
-                .arg(Arg::new("plan").long("plan").value_name("PLAN_ID").help(
-                    "The MeasurementPlan id to check the change against, resolved through \
-                     quoin-measurement's own plan intake (FR-111)",
-                ))
-                .arg(repo_arg())
-                .arg(json_arg()),
+            receipt_inputs_args(
+                Command::new("receipt")
+                    .about("Verify a candidate from retained inputs and emit its receipt"),
+            )
+            .arg(json_arg()),
         )
+}
+
+/// The retained inputs a receipt is derived from, shared by `receipt` and
+/// `verify-receipt`.
+fn receipt_inputs_args(command: Command) -> Command {
+    command
+        .arg(
+            Arg::new("record")
+                .long("record")
+                .required(true)
+                .value_name("RECORD_ID"),
+        )
+        .arg(
+            Arg::new("revision")
+                .long("revision")
+                .required(true)
+                .value_parser(clap::value_parser!(u64)),
+        )
+        .arg(
+            Arg::new("candidate-revision")
+                .long("candidate-revision")
+                .required(true),
+        )
+        .arg(
+            Arg::new("select")
+                .long("select")
+                .action(ArgAction::Append)
+                .value_name("PROOF_ID=ATTESTATION_ID"),
+        )
+        .arg(Arg::new("decisions").long("decisions").required(true))
+        .arg(Arg::new("audits").long("audits"))
+        .arg(
+            Arg::new("diff-path")
+                .long("diff-path")
+                .action(ArgAction::Append)
+                .help(
+                    "A repository-relative path the candidate change's diff touches \
+                     (repeatable); caller-supplied, not computed from git (FR-111)",
+                ),
+        )
+        .arg(Arg::new("plan").long("plan").value_name("PLAN_ID").help(
+            "The MeasurementPlan id to check the change against, resolved through \
+             quoin-measurement's own plan intake (FR-111)",
+        ))
+        .arg(repo_arg())
 }
 
 /// Execute a parsed change-assurance command.
@@ -101,8 +128,8 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
     match subcommand {
         "recover" => recover(arguments),
         "schema" => schema(arguments),
-        "seal-record" => seal_record(arguments),
-        "seal-attestation" => seal_attestation(arguments),
+        "write-record" => write_record(arguments),
+        "prepare-attestation" => prepare_attestation(arguments),
         "intake" => intake(arguments),
         "verify-receipt" => verify_receipt(arguments),
         "receipt" => receipt(arguments),
@@ -179,59 +206,55 @@ fn schema(arguments: &ArgMatches) -> Result<Response, String> {
     })
 }
 
-fn seal_record(arguments: &ArgMatches) -> Result<Response, String> {
+fn write_record(arguments: &ArgMatches) -> Result<Response, String> {
     let input = bytes_of(&required(arguments, "input")?)?;
     let repo = required(arguments, "repo")?;
     let response = invoke(
-        "change_assurance.seal_record",
+        "change_assurance.write_record",
         &serde_json::json!({ "repo": repo, "record_hex": hex_of(&input) }),
     )?;
     render(response, true, |payload| {
         let record = payload
             .get("record")
             .and_then(serde_json::Value::as_object)
-            .ok_or_else(|| "change_assurance.seal_record did not return record".to_owned())?;
+            .ok_or_else(|| "change_assurance.write_record did not return record".to_owned())?;
         let record_id = record
             .get("record_id")
             .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| "sealed record has no record_id".to_owned())?;
+            .ok_or_else(|| "written record has no record_id".to_owned())?;
         let revision = record
             .get("revision")
             .and_then(serde_json::Value::as_u64)
-            .ok_or_else(|| "sealed record has no revision".to_owned())?;
-        let digest = record
-            .get("digest")
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| "sealed record has no digest".to_owned())?;
+            .ok_or_else(|| "written record has no revision".to_owned())?;
         let path = payload
             .get("path")
             .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| "change_assurance.seal_record did not return path".to_owned())?;
+            .ok_or_else(|| "change_assurance.write_record did not return path".to_owned())?;
         if arguments.get_flag("json") {
             return serde_json::to_string(&serde_json::json!({
-                "digest": digest, "path": path, "record_id": record_id, "revision": revision,
+                "path": path, "record_id": record_id, "revision": revision,
             }))
             .map_err(|error| error.to_string());
         }
         Ok(format!(
-            "sealed {record_id} revision {revision}\n  digest: {digest}\n  retained: {path}"
+            "wrote {record_id} revision {revision}\n  retained: {path}"
         ))
     })
 }
 
-fn seal_attestation(arguments: &ArgMatches) -> Result<Response, String> {
+fn prepare_attestation(arguments: &ArgMatches) -> Result<Response, String> {
     let input = bytes_of(&required(arguments, "input")?)?;
     let output = bytes_of(&required(arguments, "output")?)?;
     let media_type = required(arguments, "media-type")?;
     let response = invoke(
-        "change_assurance.seal_attestation",
+        "change_assurance.prepare_attestation",
         &serde_json::json!({
             "attestation_hex": hex_of(&input), "output_hex": hex_of(&output), "media_type": media_type,
         }),
     )?;
     render(response, true, |payload| {
         serde_json::to_string(payload.get("attestation").ok_or_else(|| {
-            "change_assurance.seal_attestation did not return attestation".to_owned()
+            "change_assurance.prepare_attestation did not return attestation".to_owned()
         })?)
         .map_err(|error| error.to_string())
     })
@@ -273,12 +296,21 @@ fn verify_receipt(arguments: &ArgMatches) -> Result<Response, String> {
     let input = bytes_of(&required(arguments, "input")?)?;
     let response = invoke(
         "change_assurance.verify_receipt",
-        &serde_json::json!({ "receipt_hex": hex_of(&input) }),
+        &serde_json::json!({
+            "receipt_hex": hex_of(&input),
+            "inputs": receipt_inputs(arguments)?,
+        }),
     )?;
     receipt_response(response, arguments.get_flag("json"), true)
 }
 
 fn receipt(arguments: &ArgMatches) -> Result<Response, String> {
+    let response = invoke("change_assurance.receipt", &receipt_inputs(arguments)?)?;
+    receipt_response(response, arguments.get_flag("json"), false)
+}
+
+/// The request body naming the retained inputs a receipt is derived from.
+fn receipt_inputs(arguments: &ArgMatches) -> Result<serde_json::Value, String> {
     let decisions = bytes_of(&required(arguments, "decisions")?)?;
     let audits = arguments
         .get_one::<String>("audits")
@@ -290,51 +322,33 @@ fn receipt(arguments: &ArgMatches) -> Result<Response, String> {
         .flatten()
         .map(|selection| parse_selection(selection))
         .collect::<Result<Vec<_>, _>>()?;
-    let parents = arguments
-        .get_many::<String>("parent")
-        .into_iter()
-        .flatten()
-        .cloned()
-        .collect::<Vec<_>>();
     let diff_paths: Option<Vec<String>> = arguments
         .get_many::<String>("diff-path")
         .map(|values| values.cloned().collect());
-    let response = invoke(
-        "change_assurance.receipt",
-        &serde_json::json!({
-            "repo": required(arguments, "repo")?,
-            "record_digest": required(arguments, "record")?,
-            "candidate_revision": required(arguments, "candidate-revision")?,
-            "parent_digests": parents,
-            "selections": selections,
-            "decisions_hex": hex_of(&decisions),
-            "audits_hex": audits.as_deref().map(hex_of),
-            "diff_paths": diff_paths,
-            "plan": arguments.get_one::<String>("plan"),
-        }),
-    )?;
-    receipt_response(response, arguments.get_flag("json"), false)
+    Ok(serde_json::json!({
+        "repo": required(arguments, "repo")?,
+        "record_id": required(arguments, "record")?,
+        "revision": arguments.get_one::<u64>("revision").copied().ok_or("--revision is required")?,
+        "candidate_revision": required(arguments, "candidate-revision")?,
+        "selections": selections,
+        "decisions_hex": hex_of(&decisions),
+        "audits_hex": audits.as_deref().map(hex_of),
+        "diff_paths": diff_paths,
+        "plan": arguments.get_one::<String>("plan"),
+    }))
 }
 
 fn parse_selection(raw: &str) -> Result<serde_json::Value, String> {
-    let Some((proof_id, digest)) = raw.split_once('=') else {
-        return Err(format!(
-            "--select {raw} must be <proof-id>=<64-character lowercase hex digest>"
-        ));
+    let usage = || format!("--select {raw} must be <proof-id>=<attestation-id>");
+    let Some((proof_id, attestation_id)) = raw.split_once('=') else {
+        return Err(usage());
     };
     let proof_id = proof_id.trim();
-    let digest = digest.trim();
-    if proof_id.is_empty()
-        || digest.len() != 64
-        || !digest
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
-    {
-        return Err(format!(
-            "--select {raw} must be <proof-id>=<64-character lowercase hex digest>"
-        ));
+    let attestation_id = attestation_id.trim();
+    if proof_id.is_empty() || attestation_id.is_empty() {
+        return Err(usage());
     }
-    Ok(serde_json::json!({ "proof_id": proof_id, "attestation_digest": digest }))
+    Ok(serde_json::json!({ "proof_id": proof_id, "attestation_id": attestation_id }))
 }
 
 fn receipt_response(response: Response, json: bool, verified: bool) -> Result<Response, String> {
@@ -352,8 +366,8 @@ fn receipt_response(response: Response, json: bool, verified: bool) -> Result<Re
     let text = if json {
         if verified {
             let fields = [
-                "digest",
-                "record_digest",
+                "record_id",
+                "record_revision",
                 "candidate_revision",
                 "outcome",
                 "reasons",
@@ -383,19 +397,23 @@ fn receipt_response(response: Response, json: bool, verified: bool) -> Result<Re
 }
 
 fn receipt_text(receipt: &serde_json::Value, verified: bool) -> Result<String, String> {
-    let digest = receipt
-        .get("digest")
+    let record_id = receipt
+        .get("record_id")
         .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| "receipt has no digest".to_owned())?;
+        .ok_or_else(|| "receipt has no record_id".to_owned())?;
+    let revision = receipt
+        .get("record_revision")
+        .and_then(serde_json::Value::as_u64)
+        .ok_or_else(|| "receipt has no record_revision".to_owned())?;
     let outcome = receipt
         .get("outcome")
         .and_then(serde_json::Value::as_str)
         .ok_or_else(|| "receipt has no outcome".to_owned())?;
     let mut lines = vec![
         if verified {
-            format!("receipt {digest} verified")
+            format!("receipt for {record_id} revision {revision} verified")
         } else {
-            format!("receipt {digest}")
+            format!("receipt for {record_id} revision {revision}")
         },
         format!("  outcome: {outcome}"),
     ];
@@ -530,14 +548,14 @@ mod tests {
         );
         assert!(
             command()
-                .try_get_matches_from(["change-assurance", "seal-record"])
+                .try_get_matches_from(["change-assurance", "write-record"])
                 .is_err()
         );
         assert!(
             command()
                 .try_get_matches_from([
                     "change-assurance",
-                    "seal-attestation",
+                    "prepare-attestation",
                     "--input",
                     "body.json",
                     "--output",
@@ -553,15 +571,22 @@ mod tests {
                     "change-assurance",
                     "receipt",
                     "--record",
-                    "digest",
+                    "change-1",
+                    "--revision",
+                    "1",
                     "--candidate-revision",
                     "revision",
                     "--decisions",
                     "decisions.json",
                     "--select",
-                    "proof=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "proof=attestation-1",
                 ])
                 .is_ok()
+        );
+        assert!(
+            command()
+                .try_get_matches_from(["change-assurance", "seal-record"])
+                .is_err()
         );
     }
 }

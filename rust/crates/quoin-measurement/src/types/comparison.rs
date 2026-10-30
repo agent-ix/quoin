@@ -15,8 +15,6 @@ use quoin_store::JsonValue;
 pub enum ComparisonReasonCode {
     /// The metric's definition version moved between the two collections.
     DefinitionChanged,
-    /// The producer's configuration digest moved.
-    ConfigurationChanged,
     /// One side's population is incomplete.
     IncompletePopulation,
     /// The populations differ. Not blocking: the delta is shown with a warning.
@@ -27,17 +25,17 @@ pub enum ComparisonReasonCode {
     /// collections: a protected file was edited, added under or removed from
     /// a directory entry, or only one side recorded the set (PLAT-975).
     ApparatusChanged,
-    /// A `verificationStack.artifacts` digest the plan does not protect
-    /// moved. Not blocking: reported beside the delta, and only for a slice
-    /// whose plan protects apparatus on at least one side (PLAT-975).
+    /// A `verificationStack.artifacts` entry the plan does not protect is
+    /// stated by one side alone.
+    /// Not blocking: reported beside the delta, and only for a slice whose
+    /// plan protects apparatus on at least one side (PLAT-975).
     ArtifactChanged,
 }
 
 impl ComparisonReasonCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 6] = [
         Self::DefinitionChanged,
-        Self::ConfigurationChanged,
         Self::IncompletePopulation,
         Self::PopulationChanged,
         Self::ToolChanged,
@@ -50,7 +48,6 @@ impl ComparisonReasonCode {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::DefinitionChanged => "definition_changed",
-            Self::ConfigurationChanged => "configuration_changed",
             Self::IncompletePopulation => "incomplete_population",
             Self::PopulationChanged => "population_changed",
             Self::ToolChanged => "tool_changed",
@@ -74,10 +71,7 @@ impl ComparisonReasonCode {
     #[must_use]
     pub const fn is_blocking(self) -> bool {
         match self {
-            Self::DefinitionChanged
-            | Self::ConfigurationChanged
-            | Self::IncompletePopulation
-            | Self::ApparatusChanged => true,
+            Self::DefinitionChanged | Self::IncompletePopulation | Self::ApparatusChanged => true,
             Self::PopulationChanged | Self::ToolChanged | Self::ArtifactChanged => false,
         }
     }

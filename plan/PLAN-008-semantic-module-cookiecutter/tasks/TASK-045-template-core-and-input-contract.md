@@ -45,14 +45,14 @@ rendering decision: `cookiecutter.json` with the declared inputs, a pre-generati
 hook that refuses every invalid input before writing a file, a post-generation
 hook that prunes the surfaces the chosen variant does not carry, and
 `conformance.yaml` declaring the required surfaces, the residue patterns, the
-pinned maintained repositories and the exemptions.
+maintained repositories and the exemptions.
 
 ## Subtasks
 
-- [x] `cookiecutter.json`: org, repo name, module and package names, description, author, email, version, `module_kind`, licence, semantic-core version, TypeSpec version, Python version, generated targets, imported modules, navigation category, engine floor.
-- [x] `hooks/pre_gen_project.py`: refuse a non-AGPL licence, an unknown `module_kind`, a target outside the filament-core-data registry, an import without an exact version, a duplicate import identity, and a mixed variant with no imports — each naming the value, each before the first write (TC-1404..TC-1407, TC-1453, TC-1454, TC-1459).
+- [x] `cookiecutter.json`: org, repo name, module and package names, description, author, email, version, `module_kind`, licence, TypeSpec version, Python version, generated targets, imported modules, navigation category, engine floor.
+- [x] `hooks/pre_gen_project.py`: refuse a non-AGPL licence, an unknown `module_kind`, a target outside the filament-core-data registry, an import without a version, a duplicate import identity, and a mixed variant with no imports — each naming the value, each before the first write (TC-1404..TC-1407, TC-1453, TC-1454, TC-1459).
 - [x] `hooks/post_gen_project.py`: remove the artifact-only and object-only surfaces the variant does not carry, and print the next commands.
-- [x] `conformance.yaml`: required paths per variant, forbidden globs, residue patterns, maintained repositories pinned by remote and full revision, and a reason for every exemption.
+- [x] `conformance.yaml`: required paths per variant, forbidden globs, residue patterns, maintained repositories named by remote, and a reason for every exemption.
 - [x] Record the declared floor of every external command the template and a rendered repository invoke, in one file (TC-1463).
 - [x] `templates/semantic-module/README.md`: what the template renders, how to render it unattended, and what the maintainer fills in.
 - [x] Exclude the template tree from this repository's prettier, eslint and vitest globs — `{{ ... }}` path segments are not JavaScript and are not this repository's spec.

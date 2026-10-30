@@ -547,8 +547,13 @@ pub(super) fn same_apparatus(
 ) -> Result<(), InconclusiveReason> {
     let plan_id = plan.id.as_str();
     let own = collection.and_then(|found| found.protected_apparatus_of(plan_id));
-    let theirs: Vec<_> = earlier_values(plan, observation.dimensions.entries(), earlier)
-        .map(|(_, found)| found.protected_apparatus_of(plan_id))
+    let behind: Vec<&MeasurementCollection> =
+        earlier_values(plan, observation.dimensions.entries(), earlier)
+            .map(|(_, found)| found)
+            .collect();
+    let theirs: Vec<_> = behind
+        .iter()
+        .map(|found| found.protected_apparatus_of(plan_id))
         .collect();
     if plan.protected_apparatus.is_none() && own.is_none() && theirs.iter().all(Option::is_none) {
         return Ok(());

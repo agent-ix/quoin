@@ -84,7 +84,7 @@ fn row_value(id: &str, ac_text: &str, truth: &Value, source: Option<&str>) -> Va
 fn parse(values: &[Value]) -> Vec<Row> {
     let text = serde_json::to_string(&json!({
         "schema": corpus::SCHEMA, "sampling_rule": "synthetic", "seed": 1,
-        "source_commit": "0000000", "rows": values,
+        "rows": values,
     }))
     .unwrap();
     corpus::parse(&text).unwrap().rows

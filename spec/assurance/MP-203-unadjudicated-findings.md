@@ -30,16 +30,15 @@ count, not a precision estimate.
 
 ## Collection Procedure
 
-Retain normalized finding envelopes, content digests, expectation digests,
-raw output, scorer and corpus revisions, tool configuration, timestamp, rubric
+Retain normalized finding envelopes, raw output, scorer, tool configuration, timestamp, rubric
 version, reviewer, rationale, disagreements, and defect follow-up. Refuse a
 ruling whose finding bytes, metric version, rubric version, or population
 identity changed.
 
 ## Environment and Sampling
 
-Use the complete pinned controlled corpus and fixed adjudication rules. A
-historical adjudication keeps its own source-report digest; it is never silently
+Use the complete controlled corpus and fixed adjudication rules. A
+historical adjudication keeps its own source report; it is never silently
 re-applied to a different normalized finding.
 
 ## Interpretation

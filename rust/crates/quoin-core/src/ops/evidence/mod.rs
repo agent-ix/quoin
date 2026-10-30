@@ -5,8 +5,7 @@
 //! trust and independence judgements read off it (quoin#458, Stage 9).
 //!
 //! Replaces `src/evidence/`'s TypeScript. What it decided — which adapter reads
-//! a producer document, what a run record and a binding look like, when a
-//! binding becomes suspect, which records `gc` may collect, whether a trust
+//! a producer document, what a run record and a binding look like, which records `gc` may collect, whether a trust
 //! decision is still in force and whether two evidence lines are separated —
 //! is decided by `quoin-evidence` and reported through here.
 //!
@@ -67,22 +66,22 @@ use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
 pub use self::wire::{
-    AffirmPayload, AffirmRequest, AssuranceRecordPayload, AssuranceRecordRequest,
-    AuditInputsPayload, AuditInputsRequest, GcPayload, GcRequest, InspectMocksPayload,
-    InspectMocksRequest, MAX_AFFIRM_BYTES, MAX_ASSURANCE_RECORD_BYTES, MAX_AUDIT_INPUTS_BYTES,
-    MAX_GC_BYTES, MAX_INSPECT_MOCKS_BYTES, MAX_PARSE_LINEAGE_BYTES, MAX_PARSE_POLICY_BYTES,
-    MAX_PARSE_RESULTS_BYTES, MAX_RECORD_BYTES, MAX_SCALAR_BYTES, MAX_STORE_FACTS_BYTES,
-    MAX_TRUST_ASSESSMENTS_BYTES, MAX_TRUST_DECISION_BYTES, ParseLineagePayload,
-    ParseLineageRequest, ParsePolicyPayload, ParsePolicyRequest, ParseResultsPayload,
-    ParseResultsRequest, RecordPayload, RecordRequest, RepoRequest, StoreFactsPayload,
-    TrustAssessmentsPayload, TrustDecisionPayload, TrustDecisionRequest, UnrepresentedView,
+    AssuranceRecordPayload, AssuranceRecordRequest, AuditInputsPayload, AuditInputsRequest,
+    GcPayload, GcRequest, InspectMocksPayload, InspectMocksRequest, MAX_ASSURANCE_RECORD_BYTES,
+    MAX_AUDIT_INPUTS_BYTES, MAX_GC_BYTES, MAX_INSPECT_MOCKS_BYTES, MAX_PARSE_LINEAGE_BYTES,
+    MAX_PARSE_POLICY_BYTES, MAX_PARSE_RESULTS_BYTES, MAX_RECORD_BYTES, MAX_SCALAR_BYTES,
+    MAX_STORE_FACTS_BYTES, MAX_TRUST_ASSESSMENTS_BYTES, MAX_TRUST_DECISION_BYTES,
+    ParseLineagePayload, ParseLineageRequest, ParsePolicyPayload, ParsePolicyRequest,
+    ParseResultsPayload, ParseResultsRequest, RecordPayload, RecordRequest, RepoRequest,
+    StoreFactsPayload, TrustAssessmentsPayload, TrustDecisionPayload, TrustDecisionRequest,
+    UnrepresentedView,
 };
 
 pub use self::documents::{parse_lineage, parse_policy, parse_results, store_facts};
 pub use self::records::{
     inspect_mocks, record, record_experiment, record_operational, trust_decision,
 };
-pub use self::store::{affirm_binding, audit_inputs, gc, trust_assessments};
+pub use self::store::{audit_inputs, gc, trust_assessments};
 
 /// One store-relative path as the caller must see it: absolute.
 ///

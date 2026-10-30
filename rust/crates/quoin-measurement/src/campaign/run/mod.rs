@@ -10,10 +10,8 @@ use std::path::{Path, PathBuf};
 use engineering_assurance::campaign::{
     CAMPAIGN_RUN_VERSION, CampaignAttempt, CampaignAttemptStatus, CampaignDefinition,
     CampaignRawArtifact, CampaignRun, CampaignVerdict, MeasurementProcedure, PlanRegistration,
-    ProcedureBindings, SourceTreeBinding, canonical_digest, resolve_procedure, validate_definition,
-    validate_run,
+    ProcedureBindings, SourceTreeBinding, resolve_procedure, validate_definition, validate_run,
 };
-use engineering_assurance::content_digest::ContentDigest;
 use engineering_assurance::producer_execution::{
     InputBinding, ProducerExecutionResult, ProducerExecutionState, ProducerExecutor,
 };
@@ -24,17 +22,14 @@ use super::checker::{
     CHECKER_DEFINITION_PATH, CHECKER_INPUT_PATH, CHECKER_RAW_BUNDLE_PATH, CHECKER_REQUEST_PATH,
     CHECKER_RESULT_PATH, DOMAIN_CHECK_INPUT_SCHEMA, DependencyResultInput, DomainCheckInput,
     DomainVerdictReceipt, RawArtifactInput, assess_receipt, raw_artifact_bundle,
-    staged_dependency_path, staged_dependency_raw_path,
+    staged_dependency_path, staged_dependency_raw_path, staged_dependency_request_path,
 };
 use super::source::{SourceError, VerifiedSource, verify_source_graph};
-use super::store::{
-    CampaignStoreError, read_bounded, read_digest_bytes, read_typed, retain_bytes,
-    retain_json_bytes, retain_value, run_path, typed_from_bytes,
-};
+use super::store::{CampaignStoreError, encode_value, read_bounded, run_path, typed_from_bytes};
 use super::{Attempt, AttemptEvidence, CampaignOutcome, Member, all_required};
 use crate::plans::load_selected_measurement_plans;
 use crate::types::plan::MeasurementPlan;
-use crate::verify::{OrderSource, Ranked, TamperFacts, Verdict, verdict_json, verify};
+use crate::verify::{OrderSource, Ranked, TamperFacts, Verdict, verify};
 
 /// One explicit producer input, selected from a local file or prior artifact.
 #[derive(Clone, Debug)]
@@ -72,15 +67,6 @@ pub enum InputSource {
     },
 }
 
-/// A declared runtime environment variable derived from verified sources.
-#[derive(Clone, Debug)]
-pub enum EnvironmentSource {
-    /// Exact clean commit revision of one campaign repository.
-    SourceRevision(String),
-    /// The literal `clean`, granted only after source verification.
-    CleanSourceState,
-}
-
 /// Machine-selected bindings for one named campaign member.
 #[derive(Clone, Debug)]
 pub struct RunMemberBindings {
@@ -92,12 +78,16 @@ pub struct RunMemberBindings {
     pub inputs: Vec<SelectedInput>,
     /// Caller-provided RFC 3339 UTC timestamp for collections.
     pub timestamp: String,
-    /// Actual Node/Rust/Python toolchain identities under the existing store contract.
-    pub toolchains: BTreeMap<String, String>,
-    /// Exact remote display names for the source graph's repositories.
-    pub source_remotes: BTreeMap<String, String>,
-    /// Runtime environment values selected from checked source identities.
-    pub environment_sources: BTreeMap<String, EnvironmentSource>,
+}
+
+/// One completed invocation and the exact bytes that later members and the
+/// independent checker read.
+struct Retained {
+    attempt: CampaignAttempt,
+    request: Vec<u8>,
+    result: Vec<u8>,
+    artifacts: Vec<(String, Vec<u8>)>,
+    evidence: AttemptEvidence,
 }
 
 /// A campaign cannot be executed or retained faithfully.
@@ -140,15 +130,6 @@ pub enum BindingFailure {
     /// Required configuration or source-bound selection was absent or invalid.
     #[error("invalid campaign binding: {0}")]
     InvalidConfiguration(String),
-    /// Collection intake requires at least one supported, nonempty toolchain identity.
-    #[error("campaign member {member} has invalid toolchain identities")]
-    InvalidToolchains {
-        /// Campaign member whose runtime toolchain inventory is invalid.
-        member: String,
-    },
-    /// A retained request/result/artifact identity differed from the selected bytes.
-    #[error("campaign identity mismatch: {0}")]
-    IdentityMismatch(String),
 }
 
 /// Stable EA execution or staging refusal category.
@@ -174,10 +155,6 @@ impl CampaignRunError {
 
     fn binding(detail: String) -> Self {
         Self::Binding(BindingFailure::InvalidConfiguration(detail))
-    }
-
-    fn identity(detail: String) -> Self {
-        Self::Binding(BindingFailure::IdentityMismatch(detail))
     }
 
     fn execution(detail: String) -> Self {
@@ -294,62 +271,9 @@ pub fn run_campaign_with_cancellation(
             "member binding inventory".to_owned(),
         ));
     }
-    for (member, runtime) in bindings {
-        if !valid_toolchains(&runtime.toolchains) {
-            return Err(CampaignRunError::Binding(
-                BindingFailure::InvalidToolchains {
-                    member: member.clone(),
-                },
-            ));
-        }
-    }
-    let definition_value = serde_json::to_value(definition)
-        .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
-    let definition_digest = canonical_digest(definition)?.as_str().to_owned();
-    let source_graph_digest = canonical_digest(&definition.source_graph)?
-        .as_str()
-        .to_owned();
-    let (retained_digest, _) = retain_value(repo, "definitions", &definition_value)?;
-    if retained_digest != definition_digest {
-        return Err(CampaignRunError::identity(
-            "definition JCS identity".to_owned(),
-        ));
-    }
-    let total_attempts = definition
-        .members
-        .iter()
-        .try_fold(0_usize, |total, member| {
-            let procedure = procedures
-                .get(member.plan_id.as_str())
-                .ok_or_else(|| CampaignRunError::binding("member procedure".to_owned()))?;
-            let repetitions = usize::try_from(procedure.repetitions)
-                .map_err(|_| CampaignRunError::binding("procedure repetitions".to_owned()))?;
-            total
-                .checked_add(repetitions)
-                .ok_or_else(|| CampaignRunError::binding("campaign attempt population".to_owned()))
-        })?;
-    let checkpointed = checkpoint::load_prefix(
-        repo,
-        run_id,
-        &definition_digest,
-        &source_graph_digest,
-        total_attempts,
-    )?;
-    checkpoint::validate_prefix(
-        repo,
-        definition,
-        &definition_digest,
-        run_id,
-        &checkpointed,
-        &plans,
-        &procedures,
-        &sources,
-        own_source,
-    )?;
     let executor =
         ProducerExecutor::new(1).map_err(|error| CampaignRunError::execution(error.to_string()))?;
-    let mut attempts = Vec::new();
-    let mut ordinal = 0_usize;
+    let mut attempts: Vec<Retained> = Vec::new();
     let mut completed = BTreeSet::new();
     while completed.len() < definition.members.len() {
         let Some(member) = definition.members.iter().find(|member| {
@@ -377,56 +301,37 @@ pub fn run_campaign_with_cancellation(
             .get(&procedure.source_repository)
             .ok_or_else(|| CampaignRunError::binding("procedure source".to_owned()))?;
         for index in 1..=procedure.repetitions {
-            ordinal = ordinal
-                .checked_add(1)
-                .ok_or_else(|| CampaignRunError::binding("campaign attempt ordinal".to_owned()))?;
-            if let Some(prior) = checkpointed.get(ordinal - 1) {
-                if prior.member != member.name || prior.index != index {
-                    return Err(CampaignRunError::binding(
-                        "campaign checkpoint schedule".to_owned(),
-                    ));
-                }
-                attempts.push(prior.clone());
-            } else {
-                let attempt = run_member(
-                    repo,
-                    definition,
-                    &definition_digest,
-                    run_id,
-                    member,
-                    plan,
-                    procedure,
-                    runtime,
-                    source,
-                    own_source,
-                    &sources,
-                    &attempts,
-                    &executor,
-                    cancellation,
-                    index,
-                )?;
-                checkpoint::publish(
-                    repo,
-                    run_id,
-                    &definition_digest,
-                    &source_graph_digest,
-                    ordinal,
-                    &attempt,
-                )?;
-                attempts.push(attempt);
-            }
+            let attempt = run_member(
+                repo,
+                definition,
+                run_id,
+                member,
+                plan,
+                procedure,
+                runtime,
+                source,
+                own_source,
+                &sources,
+                &attempts,
+                &executor,
+                cancellation,
+                index,
+            )?;
+            attempts.push(attempt);
         }
         completed.insert(member.name.as_str());
     }
     let views: Vec<Attempt<'_>> = attempts
         .iter()
-        .filter_map(|attempt| {
-            u64::try_from(attempt.index).ok().map(|index| Attempt {
-                member: &attempt.member,
-                index,
-                completed: attempt.status == CampaignAttemptStatus::Completed,
-                evidence: evidence_of_attempt(repo, attempt),
-            })
+        .filter_map(|retained| {
+            u64::try_from(retained.attempt.index)
+                .ok()
+                .map(|index| Attempt {
+                    member: &retained.attempt.member,
+                    index,
+                    completed: retained.attempt.status == CampaignAttemptStatus::Completed,
+                    evidence: retained.evidence,
+                })
         })
         .collect();
     let members: Vec<Member<'_>> = definition
@@ -445,23 +350,21 @@ pub fn run_campaign_with_cancellation(
         CampaignOutcome::Inconclusive => CampaignVerdict::Inconclusive,
     };
     let run = CampaignRun {
-        attempts: Some(attempts),
-        definition_digest,
+        attempts: Some(
+            attempts
+                .iter()
+                .map(|retained| retained.attempt.clone())
+                .collect(),
+        ),
         id: run_id.to_owned(),
         schema_version: CAMPAIGN_RUN_VERSION.to_owned(),
-        source_graph_digest,
         verdict: campaign_verdict,
     };
     validate_run(&run, definition)?;
     let run_value = serde_json::to_value(&run)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
-    let canonical = crate::json_bridge::from_serde(&run_value)
-        .map_err(|error| CampaignRunError::encoding(error.to_string()))
-        .and_then(|value| {
-            quoin_store::canonical_bytes(&value)
-                .map_err(|error| CampaignRunError::encoding(error.to_string()))
-        })?;
-    quoin_store::store::write_content_addressed(&publication_path, &canonical)
+    let canonical = encode_value(repo, &run_value)?;
+    quoin_store::store::write_new_or_identical(&publication_path, &canonical)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
     Ok(run)
 }
@@ -482,13 +385,8 @@ fn load_procedures(
 }
 
 mod cancellation;
-mod checkpoint;
 mod collection;
 mod domain;
-mod evidence;
 mod execution;
-mod preflight;
 pub use cancellation::CampaignCancellation;
-use evidence::evidence_of_attempt;
 use execution::run_member;
-use preflight::valid_toolchains;

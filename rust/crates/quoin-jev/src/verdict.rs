@@ -429,12 +429,8 @@ pub struct FrVerdict {
 /// `answer_space` is tracked in [`FrVerdict::unrecognized`], also never
 /// silently dropped and never folded into [`FrVerdict::sound`].
 ///
-/// Does not check `response.model` against a pin: it records it verbatim in
-/// [`FrVerdict::classifier`]. The pin is checked by [`crate::lens::run`]
-/// before this is called, because a model mismatch refuses the whole
-/// response rather than any one row (PLAT-978; see `run`'s doc). A caller
-/// calling this directly on a response it did not get from `run` owns that
-/// check.
+/// Does not check `response.model` against anything: it records it verbatim
+/// in [`FrVerdict::classifier`].
 #[must_use]
 pub fn extract(
     response: &SystemOneResponse,

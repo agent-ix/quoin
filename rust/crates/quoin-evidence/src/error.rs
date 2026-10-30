@@ -34,7 +34,7 @@ pub enum EvidenceErrorCode {
     InvalidRecord,
     /// A policy names an obligation the corpus does not derive.
     PolicyUnknownObligation,
-    /// A content-addressed record disagrees with its own identity.
+    /// An assurance record disagrees with the identity it is filed under.
     RecordIntegrity,
     /// A value has no canonical spelling, so it has no stored form.
     Canonicalization,
@@ -170,10 +170,10 @@ pub enum EvidenceError {
         /// The unknown obligation ids, sorted, comma separated.
         obligations: String,
     },
-    /// A content-addressed record disagrees with its own identity.
+    /// An assurance record disagrees with the identity it is filed under.
     #[error("{what} at {path}{note}")]
     RecordIntegrity {
-        /// Which disagreement: the id, the digest, or the stored bytes.
+        /// Which disagreement: the id or the stored bytes.
         what: &'static str,
         /// The path holding the record.
         path: String,

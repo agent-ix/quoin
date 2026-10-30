@@ -14,7 +14,7 @@
 //!
 //! # What this crate does NOT own
 //!
-//! Canonical JSON, JCS canonicalization, sha256 record identity, blake3 and
+//! Canonical JSON, JCS canonicalization and
 //! atomic replacement all live in `quoin-store`, and FR-100-CON-4 forbids a
 //! second implementation anywhere — including here. Every byte this crate
 //! writes goes out through `quoin_store`.
@@ -49,6 +49,6 @@ pub mod trust;
 pub mod types;
 
 pub use error::{EvidenceError, EvidenceErrorCode};
-pub use ids::{Commit, ObligationId, ProfileId, StatementHash, SuiteId, SymbolId, TrustDecisionId};
+pub use ids::{Commit, ObligationId, ProfileId, SuiteId, SymbolId, TrustDecisionId};
 pub use source::{DiskEvidence, EvidenceSource, MemoryEvidence};
 pub use types::{Finding, MUTATION_SCORE_METRIC, Outcome, RunEntry, STORE_SCHEMA_VERSION};

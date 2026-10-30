@@ -315,18 +315,6 @@ fn tc_961_006_a_selectively_reported_run_is_rejected_and_the_regression_counted(
     assert_eq!(verdict.counts.collections_considered, 2);
     assert_eq!(verdict.counts.regressed_runs, 1);
     assert_eq!(verdict.regressed_runs, ["verify-rerun-regressed"]);
-    // A regression under a different source revision is history, counted
-    // but not held against a later pass.
-    let mut collections = case("wrong/selectively-reported-run");
-    collections[1].source_revision = quoin_measurement::types::ids::NonEmptyText::parse(
-        "b".repeat(40).as_str(),
-        MeasurementErrorCode::CollectionInvalid,
-        "sourceRevision",
-    )
-    .unwrap();
-    let fixed = checked(&plan("MP-961"), &in_order(&collections), None);
-    assert_eq!(fixed.verdict, Verdict::Accept);
-    assert_eq!(fixed.counts.regressed_runs, 1);
 }
 
 /// Trace: FR-108-AC-4
@@ -523,7 +511,7 @@ fn tc_961_012_intake_order_decides_the_candidate_and_a_tie_is_unattested() {
 #[test]
 fn tc_961_013_baselines_come_from_recomputed_rows_through_eas_rule() {
     let prior = plan("MP-961-prior");
-    // Each run at its own source revision: a fix, not a rerun.
+    // Each run under its own tool version: a different apparatus, not a rerun.
     let honest = |value: f64, matched: f64, id: &str| {
         let text = |value: &str| {
             quoin_measurement::types::ids::NonEmptyText::parse(
@@ -535,7 +523,7 @@ fn tc_961_013_baselines_come_from_recomputed_rows_through_eas_rule() {
         };
         let mut collection = case("wrong/hand-edited-baseline").remove(0);
         collection.collection_id = text(id);
-        collection.source_revision = text(&id.repeat(40));
+        collection.tool_version = text(id);
         collection.observations[0].value = Some(value);
         collection.observations[0].population = Some(population(10.0, matched, Some(true)));
         collection
@@ -748,11 +736,9 @@ fn text(value: &str) -> quoin_measurement::types::ids::NonEmptyText {
     .unwrap()
 }
 
-/// `collection` under another id and source revision: a separate run, not
-/// a rerun of the same apparatus.
+/// `collection` under another id.
 fn renamed(mut collection: MeasurementCollection, id: &str) -> MeasurementCollection {
     collection.collection_id = text(id);
-    collection.source_revision = text(&format!("{id:0>40}"));
     collection
 }
 

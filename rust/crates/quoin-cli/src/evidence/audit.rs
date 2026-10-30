@@ -12,7 +12,7 @@ use crate::core_runtime::invoke;
 
 pub(super) fn command() -> Command {
     Command::new("audit")
-        .about("Audit the evidence store: suspect links, staleness, vacuity")
+        .about("Audit the evidence store: staleness, vacuity")
         .arg(repo_arg())
         .arg(module_arg())
         .arg(Arg::new("strict").long("strict").action(ArgAction::SetTrue))

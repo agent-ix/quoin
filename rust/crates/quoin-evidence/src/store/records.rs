@@ -27,7 +27,7 @@ use crate::types::{FindingRecord, MockInspectionRecord, RunRecord, STORE_SCHEMA_
 /// probability 1/n. That arbitrary choice drove the auditor's freshness and
 /// vacuity checks and `gc`'s retention until agent-ix/quoin#104 fixed it, and
 /// no amount of re-recording could clear the resulting finding because the
-/// ordering is a property of the hashes.
+/// ordering is a property of the random prefix.
 pub(crate) trait StoredRecord {
     /// The family directory this record lives under.
     const FAMILY: &'static str;

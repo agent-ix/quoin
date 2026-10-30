@@ -313,10 +313,6 @@
     "producer": {
       "additionalProperties": false,
       "properties": {
-        "configuration_digest": {
-          "pattern": "^sha256:[a-f0-9]{64}$",
-          "type": "string"
-        },
         "definition_version": {
           "minLength": 1,
           "type": "string"
@@ -341,24 +337,23 @@
           "minProperties": 1,
           "type": "object"
         },
-        "source_revision": {
-          "minLength": 1,
-          "type": "string"
-        },
         "tool_identity": {
           "minLength": 1,
           "type": "string"
         },
+        "configuration_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
         "tool_version": {
-          "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|sha256:[a-f0-9]{64})$",
+          "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?)$",
           "type": "string"
         }
       },
       "required": [
         "tool_identity",
         "tool_version",
-        "configuration_digest",
-        "source_revision",
+        "configuration_ref",
         "environment",
         "definition_version"
       ],
@@ -368,10 +363,6 @@
       "items": {
         "additionalProperties": false,
         "properties": {
-          "digest": {
-            "pattern": "^sha256:[a-f0-9]{64}$",
-            "type": "string"
-          },
           "media_type": {
             "minLength": 1,
             "type": "string"
@@ -388,8 +379,7 @@
         "required": [
           "path",
           "media_type",
-          "size_bytes",
-          "digest"
+          "size_bytes"
         ],
         "type": "object"
       },
@@ -423,15 +413,10 @@
         "id": {
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$",
           "type": "string"
-        },
-        "revision": {
-          "minLength": 1,
-          "type": "string"
         }
       },
       "required": [
-        "id",
-        "revision"
+        "id"
       ],
       "type": "object"
     },

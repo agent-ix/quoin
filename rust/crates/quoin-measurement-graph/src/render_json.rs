@@ -206,18 +206,12 @@ struct HistoryRowWire<'a> {
     plan: Option<PlanRefWire<'a>>,
     tool_identity: &'a str,
     tool_version: &'a str,
-    config_digest: &'a str,
-    source_revision: &'a str,
-    /// `| null`.
-    corpus_revision: Option<&'a str>,
     /// `unknown`, assigned `?? null`, so stated as `null` when absent.
     population_identity: Value,
     /// As `populationIdentity`.
     producer: Value,
     /// `| null`.
-    producer_record_digest: Option<&'a str>,
-    /// `| null`.
-    scorer_digest: Option<&'a str>,
+    observation_id: Option<&'a str>,
     partitions: Vec<PartitionWire<'a>>,
 }
 
@@ -233,13 +227,9 @@ impl<'a> HistoryRowWire<'a> {
             plan: row.plan.as_ref().map(PlanRefWire::of),
             tool_identity: &row.tool_identity,
             tool_version: &row.tool_version,
-            config_digest: &row.config_digest,
-            source_revision: &row.source_revision,
-            corpus_revision: row.corpus_revision.as_deref(),
             population_identity: opaque(row.population_identity.as_ref())?,
             producer: opaque(row.producer.as_ref())?,
-            producer_record_digest: row.producer_record_digest.as_deref(),
-            scorer_digest: row.scorer_digest.as_deref(),
+            observation_id: row.observation_id.as_deref(),
             partitions: row.partitions.iter().map(PartitionWire::of).collect(),
         })
     }
@@ -388,9 +378,6 @@ struct GraphWire<'a> {
     /// As `premises`.
     #[serde(skip_serializing_if = "Option::is_none")]
     fan_out: Option<Value>,
-    /// As `premises`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    churn: Option<Value>,
     /// Stated only by the unavailable variant.
     #[serde(skip_serializing_if = "Option::is_none")]
     reason: Option<&'a str>,
@@ -406,14 +393,12 @@ impl<'a> GraphWire<'a> {
                 ref path,
                 ref premises,
                 ref fan_out,
-                ref churn,
                 ref change_impact,
             } => Self {
                 availability: graph.availability(),
                 path: path.as_deref(),
                 premises: Some(to_serde(premises)?),
                 fan_out: Some(to_serde(fan_out)?),
-                churn: Some(to_serde(churn)?),
                 reason: None,
                 change_impact: to_serde(&change_impact_value(change_impact))?,
             },
@@ -426,7 +411,6 @@ impl<'a> GraphWire<'a> {
                 path: path.as_deref(),
                 premises: None,
                 fan_out: None,
-                churn: None,
                 reason: Some(reason),
                 change_impact: to_serde(&not_applicable(ChangeImpactAbsence::NoAcceptedExport))?,
             },

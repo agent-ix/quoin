@@ -25,7 +25,7 @@ protected_apparatus:
   - spec/assurance/MP-961-gate.md
 negative_controls:
   - kind: apparatus-edit
-    description: the plan document, which states the decision rule the verdict is graded by, is digested with every collection
+    description: the plan document, which states the decision rule the verdict is graded by
 relationships: []
 ---
 

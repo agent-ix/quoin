@@ -293,8 +293,6 @@ fn tc_447_603_a_discharge_is_built_and_then_rendered() {
             "binding": {
                 "schemaVersion": "clause-binding-v1",
                 "clauseSet": { "authority": "quire", "id": "spec", "version": "1" },
-                "clauseSetDigest":
-                    "sha256:0000000000000000000000000000000000000000000000000000000000000000",
                 "context": {},
                 "clauses": [{
                     "clauseId": "C-1",

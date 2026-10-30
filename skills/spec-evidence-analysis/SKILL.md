@@ -55,7 +55,7 @@ against.
 ## Process
 
 1. **Run `quoin advise`.** It carries the obligations (quire-rs FR-053: id,
-   statement, hash, authored method, criticality) *and* the recommendations.
+   statement, authored method, criticality) *and* the recommendations.
    Do not restate either by hand.
 
 2. **Take the deterministic recommendations first.** They come from the

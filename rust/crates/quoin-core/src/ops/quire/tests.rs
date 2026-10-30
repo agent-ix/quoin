@@ -40,8 +40,6 @@ use crate::protocol::Response;
 
 use super::{MAX_SCALAR_BYTES, coverage, properties};
 
-const HASH: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-
 /// What the fake engine was asked, and what it will answer.
 ///
 /// The recorded arguments are half the point: the operation's own contract is
@@ -143,7 +141,6 @@ fn obligation() -> quoin_quire::model::Obligation {
         id: "FR-001-AC-1".to_owned(),
         document: "spec/FR-001.md".to_owned(),
         statement: "The command reports coverage.".to_owned(),
-        statement_hash: HASH.to_owned(),
         method: Some("Test".to_owned()),
         parameters: BTreeMap::from([("threshold".to_owned(), "0.9".to_owned())]),
         criticality: Some("high".to_owned()),
@@ -225,7 +222,6 @@ fn coverage_projects_the_obligations_the_engine_derived() {
     let obligations = payload(&response)["obligations"].as_array().unwrap();
     assert_eq!(obligations.len(), 2);
     assert_eq!(obligations[0]["id"], "FR-001-AC-1");
-    assert_eq!(obligations[0]["statement_hash"], HASH);
     assert_eq!(obligations[0]["target_ids"], json!(["TC-1249"]));
     assert_eq!(obligations[0]["parameters"]["threshold"], "0.9");
     assert!(

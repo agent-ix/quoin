@@ -33,19 +33,18 @@ pub const OPERATIONS: &[&str] = &[
     "catalog.load",
     "catalog.methods",
     "change_assurance.intake",
+    "change_assurance.prepare_attestation",
     "change_assurance.receipt",
     "change_assurance.recover",
     "change_assurance.schema",
-    "change_assurance.seal_attestation",
-    "change_assurance.seal_record",
     "change_assurance.verify_receipt",
+    "change_assurance.write_record",
     "completeness.assess_bundle",
     "completeness.read_frontmatter",
     "completeness.schema_refs",
     "config.resolve_org",
     "config.unresolved_org_message",
     "core.ping",
-    "evidence.affirm",
     "evidence.audit_inputs",
     "evidence.gc",
     "evidence.inspect_mocks",
@@ -59,10 +58,8 @@ pub const OPERATIONS: &[&str] = &[
     "evidence.trust_assessments",
     "evidence.trust_decision",
     "graph.change_impact",
-    "graph.churn",
     "graph.fan_out",
     "matrix.build",
-    "measurement.build_comparison",
     "measurement.build_graph_portfolio",
     "measurement.build_portfolio",
     "measurement.build_report",
@@ -70,7 +67,6 @@ pub const OPERATIONS: &[&str] = &[
     "measurement.produce_agent_eval_intervention",
     "measurement.produce_github_release_operational",
     "measurement.record",
-    "measurement.render_comparison",
     "measurement.render_graph_portfolio",
     "measurement.render_portfolio",
     "measurement.render_report",
@@ -125,16 +121,18 @@ pub fn dispatch(
         "assurance.build_discharge" => crate::ops::assurance::build_discharge(request),
         "assurance.render_discharge" => crate::ops::assurance::render_discharge(request),
         "change_assurance.intake" => crate::ops::change_assurance::intake(request, capabilities),
+        "change_assurance.prepare_attestation" => {
+            crate::ops::change_assurance::prepare_attestation(request)
+        }
         "change_assurance.receipt" => crate::ops::change_assurance::receipt(request, capabilities),
         "change_assurance.recover" => crate::ops::change_assurance::recover(request, capabilities),
         "change_assurance.schema" => crate::ops::change_assurance::schema(request),
-        "change_assurance.seal_attestation" => {
-            crate::ops::change_assurance::seal_attestation(request)
+        "change_assurance.verify_receipt" => {
+            crate::ops::change_assurance::verify_receipt(request, capabilities)
         }
-        "change_assurance.seal_record" => {
-            crate::ops::change_assurance::seal_record(request, capabilities)
+        "change_assurance.write_record" => {
+            crate::ops::change_assurance::write_record(request, capabilities)
         }
-        "change_assurance.verify_receipt" => crate::ops::change_assurance::verify_receipt(request),
         "completeness.assess_bundle" => crate::ops::completeness::assess_bundle(request),
         "completeness.read_frontmatter" => crate::ops::completeness::read_frontmatter(request),
         "completeness.schema_refs" => crate::ops::completeness::schema_refs(request),
@@ -146,7 +144,6 @@ pub fn dispatch(
         "evidence.parse_lineage" => crate::ops::evidence::parse_lineage(request),
         "evidence.parse_policy" => crate::ops::evidence::parse_policy(request),
         "evidence.gc" => crate::ops::evidence::gc(request, capabilities),
-        "evidence.affirm" => crate::ops::evidence::affirm_binding(request, capabilities),
         "evidence.record" => crate::ops::evidence::record(request, capabilities),
         "evidence.trust_decision" => crate::ops::evidence::trust_decision(request, capabilities),
         "evidence.trust_assessments" => {
@@ -170,8 +167,6 @@ pub fn dispatch(
         }
         "measurement.build_report" => crate::ops::measurement::build_report(request),
         "measurement.render_report" => crate::ops::measurement::render_report(request),
-        "measurement.build_comparison" => crate::ops::measurement::build_comparison(request),
-        "measurement.render_comparison" => crate::ops::measurement::render_comparison(request),
         "measurement.build_series" => crate::ops::measurement::build_series(request),
         "measurement.build_portfolio" => crate::ops::measurement::build_portfolio(request),
         "measurement.render_portfolio" => crate::ops::measurement::render_portfolio(request),
@@ -181,7 +176,6 @@ pub fn dispatch(
         "catalog.load" => crate::ops::catalog::load(request, capabilities),
         "catalog.methods" => crate::ops::catalog::methods(request, capabilities),
         "graph.fan_out" => crate::ops::graph::fan_out(request, capabilities),
-        "graph.churn" => crate::ops::graph::churn(request, capabilities),
         "graph.change_impact" => crate::ops::graph::change_impact(request, capabilities),
         "measurement.build_graph_portfolio" => {
             crate::ops::measurement::build_graph_portfolio(request)
@@ -899,12 +893,12 @@ mod tests {
             crate::ops::change_assurance::MAX_SCHEMA_BYTES,
         ),
         (
-            "ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES",
-            crate::ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES,
+            "ops::change_assurance::MAX_PREPARE_ATTESTATION_BYTES",
+            crate::ops::change_assurance::MAX_PREPARE_ATTESTATION_BYTES,
         ),
         (
-            "ops::change_assurance::MAX_SEAL_RECORD_BYTES",
-            crate::ops::change_assurance::MAX_SEAL_RECORD_BYTES,
+            "ops::change_assurance::MAX_WRITE_RECORD_BYTES",
+            crate::ops::change_assurance::MAX_WRITE_RECORD_BYTES,
         ),
         (
             "ops::change_assurance::MAX_VERIFY_RECEIPT_BYTES",
@@ -971,10 +965,6 @@ mod tests {
     fn census_of_the_evidence_domain() -> Vec<(&'static str, usize)> {
         vec![
             (
-                "ops::evidence::MAX_AFFIRM_BYTES",
-                crate::ops::evidence::MAX_AFFIRM_BYTES,
-            ),
-            (
                 "ops::evidence::MAX_ASSURANCE_RECORD_BYTES",
                 crate::ops::evidence::MAX_ASSURANCE_RECORD_BYTES,
             ),
@@ -1031,8 +1021,8 @@ mod tests {
     /// compared against `declared_domain_bounds()` as ONE population, so a
     /// bound listed in none of them still fails.
     ///
-    /// `quoin_store::MAX_DIGESTED_FILE_BYTES` is deliberately absent: it is a
-    /// FILE bound in `quoin-store`, not an `ops::*` request bound, and
+    /// A file-size bound in `quoin-store` is deliberately absent: it is a
+    /// FILE bound, not an `ops::*` request bound, and
     /// `tc_412` compares this census against a scan of the `ops` sources only.
     /// Listing it here would make the two disagree by construction.
     fn census_of_the_measurement_domain() -> Vec<(&'static str, usize)> {
@@ -1076,10 +1066,6 @@ mod tests {
             (
                 "ops::measurement::MAX_RETAINED_EXPORT_BYTES",
                 crate::ops::measurement::MAX_RETAINED_EXPORT_BYTES,
-            ),
-            (
-                "ops::measurement::MAX_REVISION_BYTES",
-                crate::ops::measurement::MAX_REVISION_BYTES,
             ),
             (
                 "ops::measurement::MAX_VERIFY_REQUEST_BYTES",

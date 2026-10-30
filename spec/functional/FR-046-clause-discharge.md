@@ -18,8 +18,7 @@ binding clause into direct evidence, an approved disposition, or open work.
 Unresolved applicability SHALL remain a separate population: it is neither a
 binding clause nor a discharged clause until its missing context is resolved.
 
-Every discharge fact SHALL identify its source revision and evidence digest,
-name the actor and authority making the attestation, and carry an explicit
+Every discharge fact SHALL name the actor and authority making the attestation, and carry an explicit
 validity interval. Expired, future-dated, or incoherent attestations leave the
 clause open. The report SHALL expose every input population without emitting an
 aggregate score.
@@ -28,7 +27,7 @@ aggregate score.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-046-AC-1 | The consumer validates input against the pinned `clause-binding-v1` schema before using it. | Test (TC-1125) |
+| FR-046-AC-1 | The consumer validates input against the `clause-binding-v1` schema before using it. | Test (TC-1125) |
 | FR-046-AC-2 | Every binding clause appears exactly once under direct evidence, approved disposition, or open work, and the result contains no score. | Test (TC-1126) |
 | FR-046-AC-3 | Unresolved and not-binding clauses remain outside the binding partition; facts supplied for them are reported as unused. | Test (TC-1127) |
 | FR-046-AC-4 | Expired, future-dated, or incoherent attestations leave a binding clause open with the reason visible. | Test (TC-1128) |
@@ -47,6 +46,6 @@ aggregate score.
 
 ## Dependencies
 
-- FR-029 supplies the pinned, runtime-validated Quire contract.
+- FR-029 supplies the runtime-validated Quire contract.
 - FR-040 consumes the open/discharged partition when rendering an authored
   argument.

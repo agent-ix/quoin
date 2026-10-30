@@ -1,11 +1,9 @@
 {
   "collectionId": "tier1-20260827050908373-1e1eae826e9e",
-  "configDigest": "sha256:ee889a91c46de7dc6beed616014cbcc1e5dc3c5de014266c679ddca533ffd7b0",
   "corpusRevision": "19b67b687a1a7af5993c5f390611d185af859211",
   "environment": {
     "languages": "n/a,python,rust,typescript",
-    "runner": "tier-1",
-    "scorerDigest": "sha256:51ebc7306aea3249618d971d2388d266b64f96b9efaa7ccfc287c0519f2c8a56"
+    "runner": "tier-1"
   },
   "observations": [
     {
@@ -6014,19 +6012,7 @@
     "positional": 49,
     "provenance": {
       "corpus": "19b67b687a1a7af5993c5f390611d185af859211",
-      "corpus_input": "sha256:91aecfc140ac74fbd8b89fa764a500b5b8d4344212fc39134409fa07c0bd6c5a",
       "declaration": {
-        "digest": "sha256:ee889a91c46de7dc6beed616014cbcc1e5dc3c5de014266c679ddca533ffd7b0",
-        "modules": {
-          "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
-          "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
-          "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-          "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
-          "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-          "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
-          "variants/optional-target-section": "sha256:1a801dd51c8af35c159216eeeb166fd4d602c4e9a64c8ff13a77067c0cd5b20f",
-          "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
-        },
         "root": "corpus/modules",
         "sources": {
           "spec-artifacts-iso": "3d871962b66db99a1854f40466e94ebabc7a6115",
@@ -6186,7 +6172,6 @@
     "corpora": 158,
     "findings": 767
   },
-  "sourceRevision": "5ec109a7743116ebdca8e19a7817a6bf6c86399d+working-tree:51ebc7306aea3249",
   "subject": "tier-1 controlled corpus",
   "timestamp": "2026-08-27T05:09:08.373Z",
   "toolIdentity": "quoin bench-tier1",

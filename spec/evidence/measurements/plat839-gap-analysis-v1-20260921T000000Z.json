@@ -1,6 +1,5 @@
 {
   "collectionId": "plat839-gap-analysis-v1-20260921T000000Z",
-  "configDigest": "sha256:c51df1c1379bda19437128dc5bf0fec088f7f9aef735a63a0d1044e59e7b48f6",
   "corpusRevision": "quoin@7b42ade336d94c6e2db19bc173a9b0f436733111",
   "environment": {
     "runner": "manual single-session live-api run, not CI",
@@ -155,21 +154,18 @@
       "full-battery"
     ]
   },
-  "sourceRevision": "7b42ade336d94c6e2db19bc173a9b0f436733111",
   "subject": "Jev gap-analysis semantic lens evaluation (PLAT-839)",
   "timestamp": "2026-09-22T02:19:33Z",
   "toolIdentity": "quoin-jev tests/live_gap_semantic.rs (the_lens_beats_doing_nothing)",
   "toolVersion": "quoin-jev 0.9.0",
   "verificationStack": {
-    "artifacts": {
-      "gap-semantic-corpus.json": "sha256:a47ec78e68e4242fe99d075aba4751d360dd30f78b4dcc420493091174d5fb8e"
-    },
+    "artifacts": [
+      "gap-semantic-corpus.json"
+    ],
     "buildProfile": "release",
     "capabilities": [
       "network:api.typesafe.ai"
     ],
-    "executableDigest": "sha256:b8d8d79c2df5b3613de551f79907fdeac61bbfc2e247e616d2036e1a80a56e3e",
-    "lockDigest": "sha256:5cf81a7ab30857807647d528efe45be8a9944514f2e20df0db44e7f0865afe65",
     "schemaVersion": "verification-stack-attestation-v1",
     "sources": {
       "quoin": {
@@ -177,11 +173,6 @@
         "revision": "7b42ade336d94c6e2db19bc173a9b0f436733111",
         "sourceState": "clean"
       }
-    },
-    "toolchains": {
-      "node": "n/a -- this evaluation is a pure-Rust measurement path (quoin-jev's own live-api test binary); no Node toolchain was invoked",
-      "python": "n/a -- no Python toolchain was invoked",
-      "rust": "1.94.1"
     }
   }
 }

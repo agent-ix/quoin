@@ -13,7 +13,7 @@ protected_apparatus:
   - bench/guidance-independent-review-v1.json
 negative_controls:
   - kind: apparatus-edit
-    description: the evaluator contract and the independent review evidence are digested with every collection; an edit to either without a new definition version rejects
+    description: the evaluator contract and the independent review evidence are protected apparatus; an edit to either without a new definition version rejects
   - kind: suppressed-observation
     description: sampling is deterministic and consumer-owned, so a producer cannot drop a record with a missing field from the reviewed population
 relationships: []
@@ -27,7 +27,7 @@ Decide whether structured guidance is correct, rather than merely populated.
 
 ## Population
 
-Every record in partitions of five or fewer; otherwise a deterministic five-record content-hash sample plus every distinct action template.
+Every record in partitions of five or fewer; otherwise a deterministic five-record sample plus every distinct action template.
 
 ## Measure Definition
 
@@ -36,6 +36,7 @@ Passing independent reviews divided by selected applicable records. The target i
 ## Collection Procedure
 
 The evaluator contract, review evidence, and producer records are retained together.
+
 
 ## Environment and Sampling
 

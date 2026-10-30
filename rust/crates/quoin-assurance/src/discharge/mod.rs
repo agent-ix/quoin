@@ -17,8 +17,8 @@
 //! a compile-time convenience; the runtime contract is `unknown`. A
 //! `Vec<DischargeFact>` here would delete `parseFact` entirely — the four
 //! rejections `tests/discharge.test.ts` asserts (`kind must be one of …`,
-//! `unknown field inventedScore`, `authority must not be empty`, the digest
-//! rule) are exactly the ones a typed parameter cannot express, and
+//! `unknown field inventedScore`, `authority must not be empty`, the
+//! instant rule) are exactly the ones a typed parameter cannot express, and
 //! `tests/discharge.test.ts` reaches three of them by casting
 //! `as unknown as DischargeFact`. So the input is untyped and the validation
 //! is the port, the same decision [`crate::argument`] records for the same
@@ -34,7 +34,7 @@
 //! reads straight off untrusted stdin for `assurance.render_discharge` and as
 //! the `discharge` field of `assurance.build_authored_argument`. A report
 //! nothing computed — empty `authority`, an `attestedAt` that is not an
-//! instant, an expiry before it, an `evidenceDigest` that is not one, no
+//! instant, an expiry before it, no
 //! evidence at all — was accepted whole, echoed into the emitted view, and
 //! reported `supported`, because `openReasons` only asks whether the `open`
 //! and `unresolved` populations are empty.

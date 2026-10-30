@@ -54,9 +54,6 @@ pub const MAX_TRUST_ASSESSMENTS_BYTES: usize = 8 * 1024;
 /// the request — the host walks it.
 pub const MAX_INSPECT_MOCKS_BYTES: usize = 64 * 1024;
 
-/// The largest `evidence.affirm` request, in bytes.
-pub const MAX_AFFIRM_BYTES: usize = 64 * 1024;
-
 /// The largest `evidence.parse_lineage` request, in bytes.
 ///
 /// Five optional short strings as a JSON document the caller read off disk.
@@ -178,45 +175,6 @@ pub struct GcPayload {
     /// cannot know the root. The join is [`super::absolute`], against the root
     /// [`crate::capabilities::EvidenceHost::store_root`] reports.
     pub deleted: Vec<String>,
-}
-
-/// The request accepted by `evidence.affirm`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct AffirmRequest {
-    /// The repository root.
-    pub repo: String,
-    /// The obligation whose binding is re-affirmed.
-    pub obligation: String,
-    /// One suite, when the reviewer means only one.
-    #[serde(default)]
-    pub suite: Option<String>,
-    /// The statement hash as quire derives it **today**.
-    pub statement_hash: String,
-    /// Who is affirming. Recorded verbatim.
-    pub who: String,
-    /// The commit the affirmation is made at.
-    pub commit: String,
-    /// Why the evidence still holds, when they said.
-    #[serde(default)]
-    pub note: Option<String>,
-}
-
-/// The payload `evidence.affirm` writes to stdout.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct AffirmPayload {
-    /// Whether any binding matched. Nothing is written when none did.
-    pub found: bool,
-    /// The obligation, echoed.
-    pub obligation: String,
-    /// Who affirmed, echoed.
-    pub who: String,
-    /// The commit, echoed.
-    pub commit: String,
-    /// The statement hash now stamped on the binding.
-    pub statement_hash: String,
 }
 
 /// The request accepted by `evidence.parse_lineage`.
@@ -382,8 +340,6 @@ pub enum RecordPayload {
         run_path: String,
         /// Obligations bound for the first time, sorted.
         bound: Vec<ObligationId>,
-        /// Obligations whose statement changed since they were bound, sorted.
-        suspect: Vec<ObligationId>,
         /// Trace ids matching no derived obligation, sorted.
         unmatched: Vec<String>,
         /// Results no run outcome represents.

@@ -6,9 +6,8 @@
 //!
 //! Every `z.string().regex(...)` and `z.string().min(1)` in
 //! `src/measurement/graph-adapters.ts` becomes a newtype here whose only
-//! constructor is its parser, modelled on
-//! [`quoin_store::RawFileSha256Digest::parse_stored`]. A field typed
-//! [`BareDigest`] cannot hold something that is not one, so no consumer
+//! constructor is its parser. A field typed
+//! [`FullRevision`] cannot hold something that is not one, so no consumer
 //! re-checks and no branch can forget to.
 //!
 //! Each carries `#[serde(try_from = "String")]`, so the check happens during
@@ -20,14 +19,9 @@
 //! prefix test. Each is written as the predicate it is: adding a regex
 //! dependency to spell `[0-9a-f]{64}` would put a backtracking engine on an
 //! untrusted-input path to save nine lines.
-//!
-//! The `sha256:`-prefixed pattern is not written here at all —
-//! [`quoin_store::RawFileSha256Digest`] already owns it, and [`Sha256Reference`]
-//! is a thin `Deserialize` shell over its parser.
 
 use std::fmt;
 
-use quoin_store::RawFileSha256Digest;
 use serde::{Deserialize, Serialize};
 
 /// A value that did not satisfy the pattern its field declares.
@@ -90,17 +84,10 @@ scalar!(
     "A `z.string().min(1)` value: at least one character."
 );
 scalar!(
-    BareDigest,
-    "A `^[0-9a-f]{64}$` value: a sha256 with no prefix."
-);
-scalar!(
     FullRevision,
-    "A `^[0-9a-f]{40}$` value: a full git revision."
+    "A `^[0-9a-f]{40}$` value: the revision that quire-rs `assurance-v1` `sourcePremise` requires (required, additionalProperties false). Quoin reads it from the export and records nothing. BLOCKED-BY PLAT-1226 (owner: planner titan:QSL:plan): quire-rs assurance-v1 sourcePremise.revision"
 );
-scalar!(
-    RevisionIdentity,
-    "A full revision, a semantic version, or a `sha256:`-prefixed digest."
-);
+scalar!(RevisionIdentity, "A full revision or a semantic version.");
 scalar!(
     LocatorPath,
     "A relative path with no `..` segment, as a source locator carries."
@@ -123,23 +110,6 @@ impl NonEmptyText {
             return Err(malformed("expected at least one character"));
         }
         Ok(Self(value.to_owned()))
-    }
-}
-
-impl BareDigest {
-    /// Read a bare sha256.
-    ///
-    /// # Errors
-    ///
-    /// [`MalformedScalar`] for anything but 64 lowercase hexadecimal characters.
-    pub fn parse(value: &str) -> Parsed<Self> {
-        if is_lower_hex(value, 64) {
-            Ok(Self(value.to_owned()))
-        } else {
-            Err(malformed(format!(
-                "expected 64 lowercase hexadecimal characters, got `{value}`"
-            )))
-        }
     }
 }
 
@@ -186,22 +156,19 @@ fn is_semantic_version(value: &str) -> bool {
 }
 
 impl RevisionIdentity {
-    /// Read any of the three spellings a producer may pin a revision with.
+    /// Read either spelling a producer may name a revision with.
     ///
     /// # Errors
     ///
-    /// [`MalformedScalar`] when the value is none of a 40-character revision, a
-    /// semantic version with an optional `v` prefix, and a `sha256:`-prefixed
-    /// digest.
+    /// [`MalformedScalar`] when the value is neither a 40-character revision nor a
+    /// semantic version with an optional `v` prefix.
     pub fn parse(value: &str) -> Parsed<Self> {
-        let accepted = is_lower_hex(value, 40)
-            || is_semantic_version(value)
-            || RawFileSha256Digest::parse_stored(value).is_ok();
+        let accepted = is_lower_hex(value, 40) || is_semantic_version(value);
         if accepted {
             Ok(Self(value.to_owned()))
         } else {
             Err(malformed(format!(
-                "expected a revision, a semantic version or a sha256: digest, got `{value}`"
+                "expected a revision or a semantic version, got `{value}`"
             )))
         }
     }
@@ -287,52 +254,5 @@ impl ArtifactUuid {
         } else {
             Err(malformed(format!("`{value}` is not a UUID")))
         }
-    }
-}
-
-/// A `sha256:`-prefixed digest reference, parsed by `quoin-store`.
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Deserialize)]
-#[serde(try_from = "String")]
-pub struct Sha256Reference(RawFileSha256Digest);
-
-impl Sha256Reference {
-    /// The digest.
-    #[must_use]
-    pub const fn digest(&self) -> &RawFileSha256Digest {
-        &self.0
-    }
-
-    /// The stored spelling, `sha256:` prefix included.
-    #[must_use]
-    pub fn to_stored(&self) -> String {
-        self.0.to_stored()
-    }
-
-    /// The bare hex, without the prefix.
-    #[must_use]
-    pub fn as_hex(&self) -> &str {
-        self.0.as_hex()
-    }
-}
-
-impl From<RawFileSha256Digest> for Sha256Reference {
-    fn from(digest: RawFileSha256Digest) -> Self {
-        Self(digest)
-    }
-}
-
-impl TryFrom<String> for Sha256Reference {
-    type Error = MalformedScalar;
-
-    fn try_from(value: String) -> Parsed<Self> {
-        RawFileSha256Digest::parse_stored(&value)
-            .map(Self)
-            .map_err(|error| malformed(error.to_string()))
-    }
-}
-
-impl fmt::Display for Sha256Reference {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.to_stored())
     }
 }

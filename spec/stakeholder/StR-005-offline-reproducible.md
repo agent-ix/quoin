@@ -16,8 +16,8 @@ relationships:
 ## Stakeholder Need
 
 Authors require that once their module set is in place, repeated spec work shall
-run without further network access and shall resolve the same pinned module
-versions every time, so that authoring is fast, reproducible, and unaffected by
+run without further network access and shall resolve the same installed modules
+every time, so that authoring is fast, reproducible, and unaffected by
 upstream changes or connectivity.
 
 ## Rationale
@@ -25,7 +25,7 @@ upstream changes or connectivity.
 Authors run the write-validate loop many times per session, often offline or
 behind restricted networks. If every catalog access re-fetched modules, the loop
 would be slow and could silently change behaviour when an upstream module moved.
-Declaring the default set at pinned versions and installing it once gives every
+Declaring the default set and installing it once gives every
 author the same vocabulary deterministically, and keeps subsequent work entirely
 local.
 

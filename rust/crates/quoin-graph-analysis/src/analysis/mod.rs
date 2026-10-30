@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The three projections, and the head they share.
+//! The two projections, and the head they share.
 //!
 //! Every function here is pure: it takes an in-memory
 //! [`crate::GraphAnalysisInput`] and returns a report. The filesystem is
@@ -17,12 +17,10 @@
 //! nothing is left to Rust's `str: Ord`, which is scalar order and differs
 //! above the BMP.
 
-mod churn;
 pub(crate) mod draft;
 mod fan_out;
 mod impact;
 mod paths;
 
-pub use churn::analyze_churn;
 pub use fan_out::analyze_fan_out;
 pub use impact::analyze_change_impact;

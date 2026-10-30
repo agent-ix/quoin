@@ -183,7 +183,6 @@ fn obligation(source: &quoin_quire::model::Obligation) -> Obligation {
     Obligation {
         id: source.id.clone(),
         statement: source.statement.clone(),
-        statement_hash: source.statement_hash.clone(),
         target_ids: some_unless_empty(source.target_ids.clone(), Vec::is_empty),
         method: source.method.clone(),
         criticality: source.criticality.clone(),

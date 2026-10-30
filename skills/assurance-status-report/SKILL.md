@@ -52,13 +52,12 @@ git status --porcelain
 git remote get-url origin
 ```
 
-Resolve revisions to full 40-character SHAs. Use the canonical remote and a
-versioned, read-only GitHub query to confirm current default-branch and commit
-reachability, for example:
+Use the canonical remote and a versioned, read-only GitHub query to confirm the
+current default branch and commit reachability, for example:
 
 ```bash
 gh api --header 'X-GitHub-Api-Version: 2022-11-28' \
-  repos/OWNER/REPO/commits/FULL_SHA
+  repos/OWNER/REPO/commits/REF
 ```
 
 Validate required response fields rather than assuming a successful command
@@ -72,20 +71,18 @@ Use existing machine-readable interfaces:
 ```bash
 quoin report --format json
 quoin report --series METRIC --format json
-quoin report --since FULL_BASELINE_REVISION --format json
 quire provenance --json
 ```
 
 Use `quoin report` to discover active MeasurementPlans and retained values. Use
-the series or comparison view for historical values; do not scrape rendered
-human output when JSON exists. Confirm Quire's provenance schema, full CLI and
-engine revisions, clean state, and required capabilities before attributing a
+the series view for historical values; do not scrape rendered
+human output when JSON exists. Confirm Quire's provenance schema, CLI and
+engine versions, clean state, and required capabilities before attributing a
 measurement to it.
 
-Record the exact collection id, timestamp, source revision, corpus revision,
-tool identity/version, configuration digest, definition version, and population
-identity supporting each reported value. If the repository has a verification
-stack attestation, report its lock and executable digests.
+Record the exact collection id, timestamp,
+tool identity/version, definition version, and population identity supporting
+each reported value.
 
 Do not regenerate evidence merely to answer a status question. A new run changes
 the evidence state and requires separate authorization.
@@ -95,7 +92,7 @@ the evidence state and requires separate authorization.
 Use versioned read-only GitHub REST or GraphQL queries. For each issue capture at
 least number, title, state, URL, and closed time. For each delivery pull request
 capture state, base/head branches, merge time, merge commit, and URL. Confirm the
-current default-branch SHA separately.
+current default branch separately.
 
 Follow relationships from the target epic and its retained implementation
 comments. Do not equate “mentioned nearby” with “child.” Classify every remaining

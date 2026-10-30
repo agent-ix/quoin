@@ -5,7 +5,7 @@
 //! restated against this crate, plus the FR-067-AC-8 assertion that
 //! `tests/measurement-store-results.test.ts` holds.
 //!
-//! Trace: FR-044-AC-1, FR-044-AC-2, FR-044-AC-3, FR-044-AC-4, FR-044-AC-6
+//! Trace: FR-044-AC-1, FR-044-AC-2, FR-044-AC-3, FR-044-AC-4, FR-044-AC-13
 //! Trace: FR-045-AC-1, FR-045-AC-2, FR-045-AC-3, FR-045-AC-4
 //! Trace: FR-067-AC-8
 //! Provenance: quoin#479
@@ -23,8 +23,8 @@
 //!
 //! # Where the inputs come from
 //!
-//! `tests/fixtures/portfolio-tree/` — the committed tree `tc_473_reporting.rs`
-//! captures the TypeScript's answers over, not a shape this file invented. Its
+//! `tests/fixtures/portfolio-tree/` — the committed tree, not a shape this
+//! file invented. Its
 //! seven repositories already state every population FR-045 names: a current
 //! store (`alpha`), an empty one (`bravo`), an absent one (`charlie`), a stale
 //! one (`delta`), an unreadable collection (`golf`), a location that is not a
@@ -70,21 +70,15 @@ use quoin_measurement::portfolio::{
     RepositoryStatus, StoreState, build_portfolio_report, build_portfolio_report_from_collections,
     render_portfolio_report, render_portfolio_report_json,
 };
-use quoin_measurement::report::comparison::{
-    MeasurementCollectionReference, MeasurementComparisonReport, MeasurementComparisonStatus,
-};
 use quoin_measurement::report::{
-    build_measurement_report, comparison_for, render_measurement_comparison,
-    render_measurement_report, render_measurement_report_json,
+    build_measurement_report, render_measurement_report, render_measurement_report_json,
 };
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::store::{
     measurements_root, read_measurement_collection_results, write_measurement_collection,
 };
 use quoin_measurement::types::collection::MeasurementCollection;
-use quoin_measurement::types::comparison::{
-    ComparisonReasonCode, ComparisonStatus, MeasurementComparison,
-};
+use quoin_measurement::types::comparison::{ComparisonReasonCode, ComparisonStatus};
 use quoin_measurement::types::plan::MeasurementPlan;
 use quoin_measurement::{compare_measurement_collections, validate};
 use serde_json::{Value, json};
@@ -197,26 +191,13 @@ fn new_collection_json() -> Value {
         "scope": { "cases": 1 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
-        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": "2026-08-26T00:00:00.000Z",
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
-        "corpusRevision": "cccccccccccccccc",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
-            "lockDigest": format!("sha256:{}", "1".repeat(64)),
-            "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
-            "toolchains": { "node": "22.15.0", "rust": "0.0.0", "python": "3.10.12" },
-            "sources": {
-                "fixture": {
-                    "revision": "a".repeat(40),
-                    "sourceState": "clean",
-                    "remote": "https://example.invalid/fixture",
-                },
-            },
             "capabilities": ["fixture.capability"],
-            "artifacts": { "config": format!("sha256:{}", "3".repeat(64)) },
+            "artifacts": ["config"],
         },
         "observations": [
             {
@@ -375,7 +356,7 @@ fn tc_479_001_an_unplanned_observation_is_refused_naming_the_metric() {
 /// Every member FR-044-AC-1 names is required, one at a time.
 ///
 /// FR-044-AC-1: "A collection carries schema and collection identity, subject,
-/// scope, tool identity/version, configuration digest, timestamp, source
+/// scope, tool identity/version, timestamp, source
 /// revision, environment, observations with definition version and units, and
 /// attached raw evidence."
 ///
@@ -383,18 +364,16 @@ fn tc_479_001_an_unplanned_observation_is_refused_naming_the_metric() {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_002_every_member_the_criterion_names_is_required() {
-    /// The twelve members the criterion enumerates, each named the way the
+    /// The eleven members the criterion enumerates, each named the way the
     /// wire spells it. A numeric step indexes the observation list.
-    const REQUIRED: [&[&str]; 12] = [
+    const REQUIRED: [&[&str]; 10] = [
         &["schemaVersion"],
         &["collectionId"],
         &["subject"],
         &["scope"],
         &["toolIdentity"],
         &["toolVersion"],
-        &["configDigest"],
         &["timestamp"],
-        &["sourceRevision"],
         &["environment"],
         &["observations"],
         &["rawEvidence"],
@@ -442,14 +421,12 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
         "every member the criterion names must be measured, not a subset"
     );
     assert!(
-        measured >= 14,
+        measured >= 12,
         "the census measured {measured} members, below the criterion's own count"
     );
 }
 
-/// A schema-v2 attestation that carries no `toolchains` member at all is
-/// refused; omitting one language inside it is accepted as "not applicable"
-/// (PLAT-930).
+/// A new collection must carry a release build profile.
 ///
 /// `tests/measurement.test.ts:131`, which carried no criterion tag. **No
 /// FR-044 criterion's text names `verificationStack`**: AC-1's member census
@@ -461,59 +438,9 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
 /// Trace: FR-044-AC-1
 /// Provenance: quoin#479, PLAT-930
 #[test]
-fn tc_479_003_a_new_collection_requires_toolchains_and_a_release_build_but_not_every_language() {
+fn tc_479_003_a_new_collection_requires_a_release_build() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
-
-    let mut drifted = new_collection_json();
-    delete_at(&mut drifted, &["verificationStack", "toolchains"]);
-    let refusal = validate::measurement_collection(
-        &from_serde(&drifted).expect("the drifted case crosses the bridge"),
-        &plans,
-    )
-    .expect_err("an attestation with no `toolchains` member at all is refused");
-    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
-    assert!(
-        refusal
-            .to_string()
-            .contains("verificationStack.toolchains must be present"),
-        "the refusal must say the `toolchains` member itself is missing; it said {refusal}"
-    );
-
-    // A measurement rarely touches every language: omitting one is "not
-    // applicable" for it, not a refusal. Each is tried on its own, so this is
-    // three acceptances rather than one presence check on the object.
-    for toolchain in ["node", "rust", "python"] {
-        let mut partial = new_collection_json();
-        delete_at(
-            &mut partial,
-            &["verificationStack", "toolchains", toolchain],
-        );
-        let admitted = validate::measurement_collection(
-            &from_serde(&partial).expect("the partial case crosses the bridge"),
-            &plans,
-        )
-        .unwrap_or_else(|error| {
-            panic!("an attestation with no `{toolchain}` identity must be admitted: {error}")
-        });
-        let toolchains = admitted
-            .verification_stack
-            .as_ref()
-            .expect("the attestation is still parsed")
-            .toolchains
-            .as_ref()
-            .expect("the toolchains member itself is still present");
-        let observed = match toolchain {
-            "node" => &toolchains.node,
-            "rust" => &toolchains.rust,
-            "python" => &toolchains.python,
-            _ => unreachable!("the loop only names the three languages above"),
-        };
-        assert!(
-            observed.is_none(),
-            "`{toolchain}` was omitted, so it must read as not applicable, not invented"
-        );
-    }
 
     // A build profile other than release is a new collection's own refusal,
     // and so is its absence — `tests/measurement.test.ts:141-152`.
@@ -538,111 +465,6 @@ fn tc_479_003_a_new_collection_requires_toolchains_and_a_release_build_but_not_e
             "{profile:?}: the refusal must name the profile it wanted; it said {refusal}"
         );
     }
-}
-
-/// Omitting a toolchain identity is "not applicable" (`tc_479_003`), but a
-/// genuinely malformed one — present and the wrong shape — is still refused.
-///
-/// PLAT-930: `Option<NonEmptyText>` gives absence exactly one spelling. An
-/// empty string is not that spelling; it is a value someone supplied and got
-/// wrong, and it must be named rather than silently treated as "not
-/// applicable" too.
-///
-/// Trace: FR-044-AC-1
-/// Provenance: PLAT-930
-#[test]
-fn tc_479_018_a_malformed_toolchain_identity_is_still_refused() {
-    let temporary = planned_repository();
-    let plans = authored_plans(temporary.path());
-
-    for (toolchain, malformed) in [
-        ("node", Value::String(String::new())),
-        ("rust", Value::Number(1.into())),
-        ("python", Value::Array(Vec::new())),
-    ] {
-        let mut candidate = new_collection_json();
-        candidate["verificationStack"]["toolchains"][toolchain] = malformed.clone();
-        let refusal = validate::measurement_collection(
-            &from_serde(&candidate).expect("the malformed case crosses the bridge"),
-            &plans,
-        )
-        .err()
-        .unwrap_or_else(|| {
-            panic!("a malformed `{toolchain}` identity ({malformed:?}) was admitted")
-        });
-        assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
-        assert!(
-            refusal
-                .to_string()
-                .contains(&format!("verificationStack.toolchains.{toolchain}")),
-            "the refusal must name the malformed identity; it said {refusal}"
-        );
-    }
-
-    // `null` is explicit absence, not malformed — it is accepted exactly as
-    // an omitted key is, and reads back as not applicable.
-    let mut explicit_null = new_collection_json();
-    explicit_null["verificationStack"]["toolchains"]["node"] = Value::Null;
-    let admitted = validate::measurement_collection(
-        &from_serde(&explicit_null).expect("the null case crosses the bridge"),
-        &plans,
-    )
-    .expect("an explicit `null` toolchain identity is accepted as not applicable");
-    assert!(
-        admitted
-            .verification_stack
-            .as_ref()
-            .expect("the attestation is parsed")
-            .toolchains
-            .as_ref()
-            .expect("the toolchains member is present")
-            .node
-            .is_none(),
-        "an explicit `null` must read as not applicable, not as an empty identity"
-    );
-}
-
-/// Two independent defects inside `verificationStack` are both named by one
-/// call, not discovered one round trip at a time.
-///
-/// PLAT-929: an evaluator who fixed a malformed `lockDigest`, resubmitted, and
-/// was then told `executableDigest` was ALSO wrong is the exact failure mode
-/// this closes — every member of the attestation is checked regardless of an
-/// earlier member's outcome, and every failure lands in one refusal.
-///
-/// Trace: FR-044-AC-1
-/// Provenance: PLAT-929
-#[test]
-fn tc_479_019_two_verification_stack_defects_are_both_named_in_one_refusal() {
-    let temporary = planned_repository();
-    let plans = authored_plans(temporary.path());
-
-    let mut candidate = new_collection_json();
-    candidate["verificationStack"]["lockDigest"] = json!("not-a-digest");
-    candidate["verificationStack"]["executableDigest"] = json!("also-not-a-digest");
-    let refusal = validate::measurement_collection(
-        &from_serde(&candidate).expect("the candidate crosses the bridge"),
-        &plans,
-    )
-    .expect_err("two malformed digests are refused");
-    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
-    assert!(
-        refusal
-            .findings()
-            .iter()
-            .any(|finding| finding.contains("lockDigest")),
-        "the one refusal must name `lockDigest`, got {:?}",
-        refusal.findings()
-    );
-    assert!(
-        refusal
-            .findings()
-            .iter()
-            .any(|finding| finding.contains("executableDigest")),
-        "the SAME refusal must also name `executableDigest`, not just the first defect found; \
-         got {:?}",
-        refusal.findings()
-    );
 }
 
 /// Two independent defects in the intake's own checks — beyond
@@ -688,39 +510,11 @@ fn tc_479_020_a_bad_build_profile_and_an_unplanned_metric_are_both_named_in_one_
     );
 }
 
-/// An empty `toolchains` object satisfies "the member is present" but names
-/// no language, which would let an attestation claim zero pinned toolchains —
-/// exactly the gap PLAT-930's optional fields opened. It is refused, the same
-/// as an omitted `toolchains` member.
-///
-/// Trace: FR-044-AC-1
-/// Provenance: PLAT-930
-#[test]
-fn tc_479_021_an_empty_toolchains_object_names_no_language_and_is_refused() {
-    let temporary = planned_repository();
-    let plans = authored_plans(temporary.path());
-
-    let mut candidate = new_collection_json();
-    candidate["verificationStack"]["toolchains"] = json!({});
-    let refusal = validate::measurement_collection(
-        &from_serde(&candidate).expect("the candidate crosses the bridge"),
-        &plans,
-    )
-    .expect_err("a toolchains object naming no language is refused, not treated as present");
-    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
-    assert!(
-        refusal
-            .to_string()
-            .contains("verificationStack.toolchains must name at least one language"),
-        "the refusal must say no language was named; it said {refusal}"
-    );
-}
-
 /// A `verificationStack` defect that fails the stack's own parse (as opposed
 /// to one merely holding a wrong-but-well-formed value, `tc_479_020`'s case)
 /// must not swallow every collection-level check below it.
 ///
-/// PLAT-929: an evaluator who fixed a malformed `lockDigest` (which refuses
+/// PLAT-929: an evaluator who fixed a malformed `artifacts` list (which refuses
 /// inside `stack::verification_stack` itself, not merely inside
 /// `measurement_collection`'s own checks) and resubmitted, only to be told an
 /// unplanned metric was ALSO wrong, is the exact two-round-trip failure this
@@ -735,19 +529,19 @@ fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one
     let plans = authored_plans(temporary.path());
 
     let mut candidate = new_collection_json();
-    candidate["verificationStack"]["lockDigest"] = json!("not-a-digest");
+    candidate["verificationStack"]["artifacts"] = json!(["config", "config"]);
     candidate["observations"][0]["metric"] = json!("quality.unplanned");
     let refusal = validate::measurement_collection(
         &from_serde(&candidate).expect("the candidate crosses the bridge"),
         &plans,
     )
-    .expect_err("a malformed lockDigest and an unplanned metric are each refused");
+    .expect_err("a duplicated artifact and an unplanned metric are each refused");
     assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
     assert!(
         refusal
             .findings()
             .iter()
-            .any(|finding| finding.contains("lockDigest")),
+            .any(|finding| finding.contains("artifacts")),
         "the one refusal must name the stack's own defect, got {:?}",
         refusal.findings()
     );
@@ -776,13 +570,12 @@ fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one
 /// Trace: FR-044-AC-1
 /// Provenance: quoin#479
 #[test]
-fn tc_479_004_historical_evidence_reads_before_the_profile_and_toolchain_fields() {
+fn tc_479_004_historical_evidence_reads_before_the_profile_field() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
 
     let mut historical = new_collection_json();
     delete_at(&mut historical, &["verificationStack", "buildProfile"]);
-    delete_at(&mut historical, &["verificationStack", "toolchains"]);
     let stored = from_serde(&historical).expect("the historical case crosses the bridge");
 
     let read_back = validate::stored_measurement_collection(&stored)
@@ -793,8 +586,8 @@ fn tc_479_004_historical_evidence_reads_before_the_profile_and_toolchain_fields(
         .as_ref()
         .expect("the attestation it does carry is still parsed");
     assert!(
-        stack.build_profile.is_none() && stack.toolchains.is_none(),
-        "the two absent members must read as absent, not as invented defaults"
+        stack.build_profile.is_none(),
+        "the absent member must read as absent, not as an invented default"
     );
 
     assert!(
@@ -893,67 +686,6 @@ fn tc_479_005_a_collection_lands_atomically_and_an_identical_rewrite_is_idempote
     );
 }
 
-/// A named `verificationStack.artifacts` entry that resolves to a real local
-/// file under `repo` is truth-checked automatically, not merely trusted
-/// because it has the right shape.
-///
-/// PLAT-931: server-side verification is not opt-in — no `--digest-from-file`
-/// flag is passed here at all. `write_measurement_collection` is the intake
-/// every caller of `measurement.record` goes through, so this is the real
-/// path, not the CLI convenience layered on top of it.
-///
-/// Trace: FR-044-AC-1, FR-044-AC-6
-/// Provenance: PLAT-931
-#[test]
-fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
-    let temporary = planned_repository();
-    let root = temporary.path();
-    let matching = "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d";
-    std::fs::create_dir_all(root.join("dist"))
-        .unwrap_or_else(|error| panic!("cannot create the local artifact fixture dir: {error}"));
-    std::fs::write(root.join("dist/quoin"), b"artifact bytes")
-        .unwrap_or_else(|error| panic!("cannot write the local artifact fixture: {error}"));
-
-    // A submitted digest that matches the local bytes is admitted.
-    let mut agreeing = new_collection_json();
-    agreeing["verificationStack"]["artifacts"] = json!({ "dist/quoin": matching });
-    write_measurement_collection(
-        root,
-        &from_serde(&agreeing).expect("the agreeing case crosses the bridge"),
-    )
-    .expect("a submitted digest matching the local file is admitted");
-
-    // A submitted digest that disagrees with the local bytes is refused,
-    // without ever being told to check by a flag.
-    let mut disagreeing = new_collection_json();
-    disagreeing["collectionId"] = json!("run-002");
-    disagreeing["verificationStack"]["artifacts"] =
-        json!({ "dist/quoin": format!("sha256:{}", "9".repeat(64)) });
-    let refusal = write_measurement_collection(
-        root,
-        &from_serde(&disagreeing).expect("the disagreeing case crosses the bridge"),
-    )
-    .expect_err("a submitted digest that disagrees with the local file is refused");
-    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
-    assert!(
-        refusal.to_string().contains("artifacts.dist/quoin"),
-        "the refusal must name the artifact; it said {refusal}"
-    );
-
-    // A name with no filesystem entry under the repository is an artifact
-    // label, not a local file (FR-044-AC-6): the fixture's own `config` is
-    // one. Its submitted digest is checked for shape only.
-    let mut unreachable = new_collection_json();
-    unreachable["collectionId"] = json!("run-003");
-    unreachable["verificationStack"]["artifacts"] =
-        json!({ "no-such-file": format!("sha256:{}", "9".repeat(64)) });
-    write_measurement_collection(
-        root,
-        &from_serde(&unreachable).expect("the unreachable case crosses the bridge"),
-    )
-    .expect("an artifact name with no local entry is a label, admitted on shape");
-}
-
 /// Write `artifacts` into an otherwise admissible collection under `root`.
 fn publish_with_artifacts(
     root: &Path,
@@ -990,13 +722,12 @@ fn stored_collections(root: &Path) -> Vec<String> {
 /// PLAT-969 each of these was skipped and the record was admitted with its
 /// digest unchecked.
 ///
-/// Trace: FR-044-AC-6
+/// Trace: FR-044-AC-13
 /// Provenance: PLAT-969
 #[test]
 fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
     let temporary = planned_repository();
     let root = temporary.path();
-    let digest = format!("sha256:{}", "9".repeat(64));
     for name in [
         "../outside",
         "/etc/hostname",
@@ -1004,7 +735,7 @@ fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
         "dist\\quoin",
         "./dist",
     ] {
-        let refusal = publish_with_artifacts(root, json!({ name: digest }))
+        let refusal = publish_with_artifacts(root, json!([name]))
             .expect_err("an unsafe artifact name is refused");
         assert_eq!(
             refusal.code(),
@@ -1023,7 +754,7 @@ fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
 
 /// A name that resolves to an entry under the repository which cannot be
 /// digested refuses the publish, naming the artifact and the path. A
-/// directory and a symlink are both entries `digest_file_sha256` declines;
+/// directory and a symlink are both entries the bounded regular-file read declines;
 /// before PLAT-969 each was skipped and the record admitted unchecked.
 ///
 /// Two vacuous rewrites of the guard this test also has to catch: pinning
@@ -1039,13 +770,12 @@ fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
 /// wrongly treats as absent because its *target* is missing, even though the
 /// link itself is there and `symlink_metadata` sees it.
 ///
-/// Trace: FR-044-AC-6
+/// Trace: FR-044-AC-13
 /// Provenance: PLAT-969
 #[test]
 fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish() {
     let temporary = planned_repository();
     let root = temporary.path();
-    let digest = format!("sha256:{}", "9".repeat(64));
     std::fs::create_dir_all(root.join("dist/quoin")).expect("the directory fixture");
     std::fs::write(root.join("target.bin"), b"artifact bytes").expect("the link target");
     std::os::unix::fs::symlink(root.join("target.bin"), root.join("linked.bin"))
@@ -1065,7 +795,7 @@ fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish
         // target is missing.
         "dangling.bin",
     ] {
-        let refusal = publish_with_artifacts(root, json!({ name: digest }))
+        let refusal = publish_with_artifacts(root, json!([name]))
             .expect_err("an entry that cannot be digested is refused");
         assert_eq!(
             refusal.code(),
@@ -1098,7 +828,7 @@ fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish
             .expect("permissions restored so the temp dir can be cleaned up");
     } else {
         let name = "restricted/artifact.bin";
-        let refusal = publish_with_artifacts(root, json!({ name: digest }))
+        let refusal = publish_with_artifacts(root, json!([name]))
             .expect_err("a name behind an unsearchable directory is refused");
         assert_eq!(
             refusal.code(),
@@ -1124,13 +854,12 @@ fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish
 /// /elsewhere` digested a file outside the repository and `dist -> /missing`
 /// `lstat`-ed as `NotFound` and passed as a label.
 ///
-/// Trace: FR-044-AC-6
+/// Trace: FR-044-AC-13
 /// Provenance: PLAT-969
 #[test]
 fn tc_969_004_a_symlinked_path_component_refuses_before_digest_or_label() {
     let temporary = planned_repository();
     let root = temporary.path();
-    let digest = format!("sha256:{}", "9".repeat(64));
 
     // `dist` points at a real directory outside `root`, holding a file that
     // would digest happily if the link were followed.
@@ -1143,7 +872,7 @@ fn tc_969_004_a_symlinked_path_component_refuses_before_digest_or_label() {
     std::os::unix::fs::symlink(elsewhere.path(), root.join("dist"))
         .expect("the live symlinked component");
 
-    let refusal = publish_with_artifacts(root, json!({ "dist/quoin": digest }))
+    let refusal = publish_with_artifacts(root, json!(["dist/quoin"]))
         .expect_err("a live symlinked component is refused, not followed");
     assert_eq!(refusal.code(), MeasurementErrorCode::ArtifactUnreadable);
     let said = refusal.to_string();
@@ -1161,7 +890,7 @@ fn tc_969_004_a_symlinked_path_component_refuses_before_digest_or_label() {
     std::os::unix::fs::symlink(root.join("nowhere"), root.join("stray"))
         .expect("the dangling symlinked component");
 
-    let refusal = publish_with_artifacts(root, json!({ "stray/quoin": digest }))
+    let refusal = publish_with_artifacts(root, json!(["stray/quoin"]))
         .expect_err("a dangling symlinked component is refused, not admitted as a label");
     assert_eq!(refusal.code(), MeasurementErrorCode::ArtifactUnreadable);
     let said = refusal.to_string();
@@ -1185,7 +914,7 @@ fn tc_969_004_a_symlinked_path_component_refuses_before_digest_or_label() {
 /// and a collection with nothing unverified states nothing, not an empty
 /// array.
 ///
-/// Trace: FR-044-AC-6
+/// Trace: FR-044-AC-13
 /// Provenance: PLAT-969
 #[test]
 fn tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not() {
@@ -1194,15 +923,8 @@ fn tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not
     std::fs::create_dir_all(root.join("dist")).expect("the artifact dir");
     std::fs::write(root.join("dist/quoin"), b"artifact bytes").expect("the digested artifact");
 
-    let path = publish_with_artifacts(
-        root,
-        json!({
-            "dist/quoin": "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d",
-            "no-such-file": format!("sha256:{}", "9".repeat(64)),
-            "another-label": format!("sha256:{}", "8".repeat(64)),
-        }),
-    )
-    .expect("a digested artifact beside two labels is admitted");
+    let path = publish_with_artifacts(root, json!(["dist/quoin", "no-such-file", "another-label"]))
+        .expect("a digested artifact beside two labels is admitted");
 
     let stored: Value = serde_json::from_str(
         &std::fs::read_to_string(&path).expect("the published collection is readable"),
@@ -1219,9 +941,7 @@ fn tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not
     // empty `unverifiedArtifacts` array, an absent member.
     let mut all_digested = new_collection_json();
     all_digested["collectionId"] = json!("run-002");
-    all_digested["verificationStack"]["artifacts"] = json!({
-        "dist/quoin": "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d",
-    });
+    all_digested["verificationStack"]["artifacts"] = json!(["dist/quoin"]);
     let path = write_measurement_collection(
         root,
         &from_serde(&all_digested).expect("the all-digested case crosses the bridge"),
@@ -1245,24 +965,21 @@ fn tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not
 /// but could not verify, beside that collection's provenance — in the
 /// rendered text and in the JSON view alike (PLAT-969).
 ///
-/// Trace: FR-044-AC-6
+/// Trace: FR-044-AC-13
 /// Provenance: PLAT-969
 #[test]
 fn tc_969_006_the_report_shows_an_unverified_artifact_next_to_its_provenance() {
     let temporary = planned_repository();
     let root = temporary.path();
-    publish_with_artifacts(
-        root,
-        json!({ "no-such-file": format!("sha256:{}", "9".repeat(64)) }),
-    )
-    .expect("a label-only artifact is admitted");
+    publish_with_artifacts(root, json!(["no-such-file"]))
+        .expect("a label-only artifact is admitted");
 
     let source = DiskMeasurement::new(root);
     let report = build_measurement_report(&source, root).expect("the report builds");
 
     let rendered = render_measurement_report(&report).expect("the report renders");
     assert!(
-        rendered.contains("digest not checked: no-such-file"),
+        rendered.contains("not found locally: no-such-file"),
         "the rendered report must show the unverified artifact next to the collection's \
          provenance; it rendered:\n{rendered}"
     );
@@ -1281,7 +998,7 @@ fn tc_969_006_the_report_shows_an_unverified_artifact_next_to_its_provenance() {
 /// A publish whose every artifact is a readable local file with a matching
 /// digest, beside a label with no local entry, is admitted and lands.
 ///
-/// Trace: FR-044-AC-6
+/// Trace: FR-044-AC-13
 /// Provenance: PLAT-969
 #[test]
 fn tc_969_003_a_publish_whose_every_local_artifact_is_readable_is_admitted() {
@@ -1291,131 +1008,24 @@ fn tc_969_003_a_publish_whose_every_local_artifact_is_readable_is_admitted() {
     std::fs::write(root.join("dist/quoin"), b"artifact bytes").expect("the first artifact");
     std::fs::write(root.join("Makefile"), b"").expect("the second artifact");
 
-    let written = publish_with_artifacts(
-        root,
-        json!({
-            "dist/quoin": "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d",
-            "Makefile": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-            "config": format!("sha256:{}", "3".repeat(64)),
-        }),
-    )
-    .expect("readable, matching artifacts are admitted");
+    let written = publish_with_artifacts(root, json!(["dist/quoin", "Makefile", "config"]))
+        .expect("readable, matching artifacts are admitted");
     assert!(written.is_file(), "{} was not written", written.display());
     assert_eq!(stored_collections(root), vec!["run-001.json".to_owned()]);
 }
 
-/// `configDigest` is not a member of `verificationStack` itself, but it is
-/// checked for sha256 shape at the same schemaVersion-2 gate as `lockDigest`
-/// and `executableDigest`, and it joins the same accumulation rather than
-/// hiding behind whichever defect the code happens to check first.
+/// A moved definition blocks the delta, and so does an incomplete population.
 ///
-/// PLAT-939: `configDigest` was accepted on any non-empty string, unlike its
-/// two `verificationStack` siblings, which already required a full sha256
-/// digest (PLAT-929/930/931). Closing that gap, without starting to enforce
-/// it retroactively on schemaVersion 1's historical evidence, is this test.
-///
-/// Trace: FR-044-AC-1
-/// Provenance: PLAT-939
-#[test]
-fn tc_479_024_config_digest_must_be_a_full_sha256_digest() {
-    let temporary = planned_repository();
-    let plans = authored_plans(temporary.path());
-
-    let mut malformed = new_collection_json();
-    malformed["configDigest"] = json!("not-a-digest");
-    let refusal = validate::measurement_collection(
-        &from_serde(&malformed).expect("the malformed case crosses the bridge"),
-        &plans,
-    )
-    .expect_err("a configDigest that is not a full sha256 digest is refused");
-    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
-    assert!(
-        refusal
-            .findings()
-            .iter()
-            .any(|finding| finding == "collection.configDigest must be a full sha256 digest"),
-        "the refusal must name `collection.configDigest`, not `verificationStack.configDigest` — \
-         configDigest lives on the collection envelope, not inside verificationStack; got {:?}",
-        refusal.findings()
-    );
-
-    // It joins the same accumulation as its `verificationStack` siblings
-    // (PLAT-929's rule, extended to this member), rather than only the first
-    // defect surfacing.
-    let mut two_defects = new_collection_json();
-    two_defects["configDigest"] = json!("not-a-digest");
-    two_defects["verificationStack"]["lockDigest"] = json!("also-not-a-digest");
-    let refusal = validate::measurement_collection(
-        &from_serde(&two_defects).expect("the two-defect case crosses the bridge"),
-        &plans,
-    )
-    .expect_err("a malformed configDigest and a malformed lockDigest are both refused");
-    assert!(
-        refusal
-            .findings()
-            .iter()
-            .any(|finding| finding == "collection.configDigest must be a full sha256 digest"),
-        "the one refusal must name `collection.configDigest`, got {:?}",
-        refusal.findings()
-    );
-    assert!(
-        refusal
-            .findings()
-            .iter()
-            .any(|finding| finding.contains("lockDigest")),
-        "the SAME refusal must also name `lockDigest`, not just the first defect found; got {:?}",
-        refusal.findings()
-    );
-
-    // schemaVersion 1 is historical, read-only evidence: it never required
-    // `verificationStack`, and this fix does not start requiring
-    // `configDigest`'s shape there either — only new (schemaVersion 2)
-    // collections are checked, exactly as `lockDigest` and `executableDigest`
-    // already are.
-    let historical = json!({
-        "schemaVersion": 1,
-        "collectionId": "historical-001",
-        "subject": "fixture",
-        "scope": {},
-        "toolIdentity": "fixture producer",
-        "toolVersion": "fixture 1",
-        "configDigest": "not-a-digest",
-        "timestamp": "2026-01-01T00:00:00.000Z",
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
-        "environment": {},
-        "rawEvidence": [],
-        "observations": [
-            {
-                "metric": "quality.example",
-                "planId": "MP-001",
-                "definitionVersion": "quality.example-v1",
-                "state": "measured",
-                "value": 0.5,
-                "unit": "fraction",
-                "shape": "ratio",
-            },
-        ],
-    });
-    validate::stored_measurement_collection(
-        &from_serde(&historical).expect("the historical case crosses the bridge"),
-    )
-    .expect("a schemaVersion-1 collection keeps accepting any non-empty configDigest");
-}
-
-/// A moved definition and a moved producer configuration each block the delta,
-/// and the refusal names both.
-///
-/// FR-044-AC-3: "Comparison refuses changed definitions, changed producer
-/// configuration, and incomplete populations with actionable reasons […]".
+/// FR-044-AC-3: "Comparison refuses changed definitions and incomplete
+/// populations with actionable reasons […]".
 ///
 /// Trace: FR-044-AC-3
 /// Provenance: quoin#479
 #[test]
-fn tc_479_006_a_moved_definition_and_configuration_refuse_a_delta_and_name_both() {
+fn tc_479_006_a_moved_definition_refuses_a_delta_and_an_incomplete_population_does_too() {
     let before = admit(&new_collection_json());
     let mut after_json = new_collection_json();
     after_json["collectionId"] = json!("run-002");
-    after_json["configDigest"] = json!(format!("sha256:{}", "b".repeat(64)));
     after_json["observations"][0]["definitionVersion"] = json!("quality.example-v2");
     after_json["observations"][0]["value"] = json!(0.75);
     let after = admit(&after_json);
@@ -1431,11 +1041,8 @@ fn tc_479_006_a_moved_definition_and_configuration_refuse_a_delta_and_name_both(
             .iter()
             .map(|reason| reason.code)
             .collect::<Vec<_>>(),
-        vec![
-            ComparisonReasonCode::DefinitionChanged,
-            ComparisonReasonCode::ConfigurationChanged,
-        ],
-        "both causes must be named, in the order the oracle names them"
+        vec![ComparisonReasonCode::DefinitionChanged],
+        "the cause must be named"
     );
     let said = row
         .reasons
@@ -1444,16 +1051,16 @@ fn tc_479_006_a_moved_definition_and_configuration_refuse_a_delta_and_name_both(
         .collect::<Vec<_>>()
         .join(" ");
     assert!(
-        said.contains("quality.example") && said.contains("config"),
+        said.contains("quality.example"),
         "the reasons must be actionable — they said {said:?}"
     );
     assert!(
         row.reasons.iter().all(|reason| reason.blocking),
-        "a definition or configuration move blocks; neither is advisory"
+        "a definition move blocks; it is not advisory"
     );
 
     // The third refusal the criterion names, on its own: an incomplete
-    // population blocks even when definition and configuration agree.
+    // population blocks even when the definition agrees.
     let mut incomplete = new_collection_json();
     incomplete["collectionId"] = json!("run-003");
     incomplete["observations"][0]["population"]["complete"] = json!(false);
@@ -1547,7 +1154,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
     // every status is checked, not the two this test happened to produce.
     assert_eq!(
         ComparisonReasonCode::ALL.len(),
-        7,
+        6,
         "every reason code is measured, not a subset"
     );
     for code in ComparisonReasonCode::ALL {
@@ -1671,8 +1278,7 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
         "finding_recall [language=rust, tier=2] | ap-recall (spec/assurance/10-recall.md) | observe | 1e+21 ratio |",
         "unmeasured_metric | ap-unmeasured (spec/assurance/50-unmeasured.md) | gate | not_computed: no record |",
         "Corpus gaps: 3",
-        "2026-03-01T00:00:00.000Z — quoin 0.9.1; source revision-three; corpus n/a; config \
-         sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "2026-03-01T00:00:00.000Z — quoin 0.9.1",
         "- unmeasured_metric: no collection has computed this authored plan.",
     ] {
         assert!(
@@ -1680,116 +1286,6 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
             "the report must state {literal:?}; it said:\n{rendered}"
         );
     }
-}
-
-/// The comparison view renders the report object it is handed and nothing it
-/// went and computed for itself.
-///
-/// FR-044-AC-4: "JSON, series, and since-revision views read the same store and
-/// accept no typed value."
-///
-/// Trace: FR-044-AC-4
-/// Provenance: quoin#479
-#[test]
-fn tc_479_010_the_comparison_view_renders_the_report_object_it_is_handed() {
-    // The object `tests/measurement.test.ts:252-288` built by hand, restated.
-    // Nothing here reads a store: that is the point — the renderer is handed a
-    // report and must render exactly it.
-    let reference = |id: &str, timestamp: &str, tool_version: &str, revision: &str| {
-        MeasurementCollectionReference {
-            collection_id: id.to_owned(),
-            timestamp: timestamp.to_owned(),
-            tool_identity: "fixture".to_owned(),
-            tool_version: tool_version.to_owned(),
-            config_digest: "config-a".to_owned(),
-            source_revision: revision.to_owned(),
-            corpus_revision: Some("corpus-a".to_owned()),
-            corpus_gaps: Some(0.0),
-            path: format!("/repo/{id}.json"),
-        }
-    };
-    let report = MeasurementComparisonReport {
-        status: MeasurementComparisonStatus::Compared,
-        before: Some(reference("run-001", "2026-08-26T00:00:00Z", "1", "before")),
-        after: Some(reference("run-002", "2026-08-26T01:00:00Z", "2", "after")),
-        comparisons: vec![MeasurementComparison {
-            metric: "quality.example".to_owned(),
-            dimensions: std::collections::BTreeMap::new(),
-            before: Some(0.5),
-            after: Some(0.75),
-            delta: Some(0.25),
-            status: ComparisonStatus::Comparable,
-            reasons: Vec::new(),
-        }],
-    };
-
-    let rendered = render_measurement_comparison(&report).expect("the comparison renders");
-    for literal in [
-        "# QA measurement comparison",
-        "| quality.example | comparable | 0.5 | 0.75 | 0.25 |",
-        "fixture 2; source after; corpus corpus-a; gaps 0; config config-a",
-    ] {
-        assert!(
-            rendered.contains(literal),
-            "the comparison must state {literal:?}; it said:\n{rendered}"
-        );
-    }
-    assert_eq!(
-        render_measurement_comparison(&report).expect("the comparison renders again"),
-        rendered,
-        "two renders of one report object must be byte-identical"
-    );
-}
-
-/// A missing baseline is `not_computed` and still carries the current
-/// collection's provenance.
-///
-/// `tests/measurement.test.ts:298`, which carried no criterion tag. It is the
-/// since-revision view FR-044-AC-4 names, refusing rather than inventing a
-/// baseline, so it is tagged there.
-///
-/// Trace: FR-044-AC-4
-/// Provenance: quoin#479
-#[test]
-fn tc_479_011_a_missing_baseline_is_not_computed_with_current_provenance() {
-    // `delta` holds exactly one collection, so no revision but its own can be
-    // a baseline.
-    let delta = repo_in_tree("delta");
-    let report = comparison_for(&DiskMeasurement::new(&delta), &delta, "missing")
-        .expect("a missing baseline is a report, not an error");
-
-    assert_eq!(
-        report.status,
-        MeasurementComparisonStatus::NotComputed(
-            "no baseline measurement collection for source revision missing".to_owned()
-        ),
-        "the refusal must name the revision it looked for"
-    );
-    assert!(
-        report.before.is_none(),
-        "a baseline that does not exist is absent, not invented"
-    );
-    assert!(
-        report.comparisons.is_empty(),
-        "nothing is compared against a baseline that was not found"
-    );
-    let after = report
-        .after
-        .as_ref()
-        .expect("the current collection's provenance survives the refusal");
-    assert_eq!(after.collection_id, "d-2025-11");
-    assert_eq!(after.tool_identity, "quoin");
-    assert_eq!(after.source_revision, "revision-one");
-
-    let rendered = render_measurement_comparison(&report).expect("the comparison renders");
-    assert!(
-        rendered.contains("Before: not_computed — no baseline"),
-        "the human view must state the absence; it said:\n{rendered}"
-    );
-    assert!(
-        rendered.contains("d-2025-11"),
-        "the human view must still carry the current provenance"
-    );
 }
 
 /// Repeated repository locations produce one report entry.
@@ -1849,7 +1345,6 @@ fn tc_479_012_repeated_repository_locations_produce_one_report_entry() {
         .as_ref()
         .expect("a present store has a latest collection");
     assert_eq!(latest.id, "c-2026-03");
-    assert_eq!(latest.source_revision, "revision-three");
 
     // An explicit `not_computed` row, rather than an omitted metric.
     let measurements = alpha_entry

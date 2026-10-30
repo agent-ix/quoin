@@ -4,8 +4,7 @@
 //! quoin FR-111).
 //!
 //! `quoin-measurement`'s FR-110 resolves a `MeasurementPlan`'s
-//! `protected_apparatus` at intake and compares the *recorded* (path, digest)
-//! set across stored collections — it never looks at a diff, because a
+//! `protected_apparatus` at intake — it never looks at a diff, because a
 //! collection has none. Change-assurance verifies a proposed change instead,
 //! and a change has exactly the thing a collection does not: a diff. This
 //! module is the other half of FR-110's promise, applied to that diff: when

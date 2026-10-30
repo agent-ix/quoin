@@ -45,7 +45,7 @@ pub mod package_manifest;
 pub mod schema;
 pub mod sweep;
 
-pub use contract::{SEMANTIC_CONTRACT, SemanticContract, shipped_semantic_core_versions};
+pub use contract::{SEMANTIC_CONTRACT, SemanticContract};
 pub use data_schema::{
     DataSchemaForm, ResolveContext, ResolvedDataSchema, classify_data_schema, resolve_data_schema,
 };
@@ -54,7 +54,6 @@ pub use embedded::materialize_embedded_contract;
 pub use error::{SemanticError, SemanticErrorCode};
 pub use ids::{
     ContractVersion, MappingName, ModuleName, ModuleVersion, ObjectTypeName, PackageIdentity,
-    SemanticCoreVersion,
 };
 pub use manifest::{
     CompatibilityPosture, LegacyForms, SemanticBlock, SemanticModule, SemanticReadResult,
@@ -62,8 +61,8 @@ pub use manifest::{
     read_semantic_block,
 };
 pub use package_manifest::{
-    SEMANTIC_CORE_PACKAGE, derive_package_manifest, mapping_identity, resolve_imports,
-    type_identity, validate_package_manifest,
+    derive_package_manifest, mapping_identity, resolve_imports, type_identity,
+    validate_package_manifest,
 };
 pub use sweep::{
     CorpusRoot, FormFinding, LEGACY_MIGRATION_EXAMPLE, LegacyFormDiagnostic, PropertiesForm,

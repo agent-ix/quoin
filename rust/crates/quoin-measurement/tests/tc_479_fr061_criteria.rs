@@ -61,7 +61,8 @@ use quoin_measurement::operational::record::{OperationalEvidenceRecord, Operatio
 use quoin_measurement::source::SystemClock;
 
 /// The pair the retained TypeScript produced from the retained exports.
-const RETAINED_PAIR: &str = "c1b30a188d4d03bbe316e0fdb7582eff3fa314c55268a5f71f81f99f8ea2acf8.json";
+const RETAINED_PAIR: &str =
+    "quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json";
 
 /// The definition that produced it, under `spec/evidence/`.
 const DEFINITION: &str = "quoin-271-release-v0.22.5-definition.json";
@@ -168,8 +169,7 @@ fn obligation() -> OperationalObligation {
     serde_json::from_value(json!({
         "control_kind": "release",
         "subject": {
-            "id": "agent-ix/quoin",
-            "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
+            "id": "agent-ix/quoin"
         },
         "scope": {
             "service": "agent-ix/quoin",
@@ -188,7 +188,7 @@ fn obligation() -> OperationalObligation {
 
 /// Quoin's retained release workflow and a real completed workflow-run/jobs
 /// export produce one linked standing-capability and exercise pair whose
-/// workflow, revision, actor, timing, outcome, and observations match the
+/// workflow, actor, timing, outcome, and observations match the
 /// source artifacts.
 ///
 /// Trace: FR-061-AC-1
@@ -227,10 +227,6 @@ fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
         capability.capability.surface,
         ".github/workflows/release.yml"
     );
-    assert_eq!(
-        capability.base.subject.revision.as_str(),
-        "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
-    );
 
     let exercise = &produced.exercise.exercise;
     assert_eq!(
@@ -257,10 +253,7 @@ fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
             "job Publish concluded success"
         ]
     );
-    assert_eq!(
-        exercise.state_before["source_revision"],
-        json!("a9808be18b61f8e4d44e3b74de27e90f17c5c76b")
-    );
+    assert!(exercise.state_before.is_empty());
     assert_eq!(
         produced.exercise.base.observed_at.as_str(),
         "2026-08-29T23:11:38Z"
@@ -268,7 +261,7 @@ fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
     assert_eq!(read_operational_records(root).expect("read back").len(), 2);
 }
 
-/// Missing or malformed YAML/JSON, a workflow/path/event/revision mismatch, or
+/// Missing or malformed YAML/JSON, a workflow/path/event mismatch, or
 /// an absent, duplicate, unstarted, or incomplete release job is refused
 /// without either operational record.
 ///
@@ -368,20 +361,12 @@ fn export_refusal_cases() -> Vec<RefusalCase> {
         (
             "a run against a different workflow path",
             run_patch("/path", json!(".github/workflows/build-test.yml")),
-            "workflow run path, event, or immutable source revision mismatch",
+            "workflow run path or event mismatch",
         ),
         (
             "a run from a different event",
             run_patch("/event", json!("push")),
-            "workflow run path, event, or immutable source revision mismatch",
-        ),
-        (
-            "a run at a different source revision",
-            run_patch(
-                "/head_sha",
-                json!("0000000000000000000000000000000000000000"),
-            ),
-            "workflow run path, event, or immutable source revision mismatch",
+            "workflow run path or event mismatch",
         ),
         (
             "a run that has not finished",

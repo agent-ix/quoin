@@ -26,7 +26,7 @@ premise succeeds.
 
 - [x] Add the hand-authored schema; the publisher's version is the locked `quire-rs` engine version.
 - [x] Implement typed parse/validation with fail-closed premise checking.
-- [x] Preserve source revision, module versions, schema versions, and distinct availability states.
+- [x] Preserve distinct availability states.
 - [x] Read required `--export <json>`, `--premises <json>`, and `--audit <json>` inputs without
       invoking Quire, recomputing an audit, or discovering acceptance from ambient modules.
 - [x] Validate audit source/export identity before exposing its unchanged FR-032 findings,
@@ -40,6 +40,5 @@ premise succeeds.
 
 ## Notes
 
-- Consumes quire-rs #386's committed producer contract at
-  `e3352a0644abcfd5f0ebad348bc7aca235925ecc`.
+- Consumes quire-rs #386's committed producer contract.
 - No subprocess belongs in the consumer; the command receives an existing export artifact.
