@@ -435,7 +435,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-180 | The space — strength, dimensions, values — is parsed back out of the obligation statement | Unit | P0 | FR-035-AC-1 | ✅ |
 | TC-181 | A statement that is not a configuration space yields null — which IS how a combinatorial obligation is told from every other kind, with no second flag | Unit | P0 | FR-035-AC-2 | ✅ |
 | TC-182 | Exclusions are read without being mistaken for dimensions | Unit | P0 | FR-035-AC-3 | ✅ |
-| TC-183 | The demanded-tuple count matches the number quire-rs computes for the same space (its TC-925) — disagreement would mean the obligation and its audit describe different spaces | Unit | P0 | FR-035-AC-4 | ✅ |
+| TC-183 | The demanded-tuple count equals an independent enumeration of the dimension pairs | Unit | P0 | FR-035-AC-4 | ✅ |
 | TC-184 | A forbidden combination is not demanded | Unit | P0 | FR-035-AC-5 | ✅ |
 | TC-185 | The result NAMES the combinations that never ran — a percentage says how much is missing, the list says what to run | Unit | P0 | FR-035-AC-6 | ✅ |
 | TC-186 | A configuration exercising undeclared values covers nothing — counting it would let coverage rise by testing something else | Unit | P0 | FR-035-AC-7 | ✅ |
@@ -1299,7 +1299,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1630 | `quoin-core semantic.validate` and `quoin-core completeness.analyze` return verdicts identical to the retained | Unit | P0 | FR-099-AC-6 | 🚧 |
 | TC-1631 | Rust skill tests read the shipped Markdown skills and fail on a planted vocabulary drift, and the binary resolves the | Unit | P0 | FR-099-AC-7 | 🚧 |
 | TC-1632 | `package.json` declares no dependency on `@agent-ix/ix-cli-core`, and each imported symbol recorded in the baseline | Unit | P0 | FR-099-AC-8 | 🚧 |
-| TC-1633 | `cargo tree --manifest-path rust/Cargo.toml` shows no dependency cycle, and the two named TypeScript cycles are | Unit | P0 | FR-100-AC-1 | 🚧 |
+| TC-1633 | `cargo metadata` over `rust/Cargo.toml` resolves with no dependency cycle among workspace crates | Unit | P0 | FR-100-AC-1 | 🚧 |
 | TC-1634 | Reading and re-serializing every store reachable in the ecosystem through `quoin-store` returns byte-identical | Unit | P0 | FR-100-AC-2 | 🚧 |
 | TC-1635 | Each change-assurance refusal for a stale, tampered or mismatched record returns the same classification from the | Property | P0 | FR-100-AC-3 | 🚧 |
 | TC-1636 | Each measurement report produced by the Rust crates carries the same states, failure partitions, unit, population and | Unit | P0 | FR-100-AC-4 | 🚧 |

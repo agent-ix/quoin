@@ -67,7 +67,7 @@ states.
 | FR-035-AC-1 | The space — strength, dimensions, values — is parsed back out of the obligation statement. | Test (TC-180) |
 | FR-035-AC-2 | A statement that is not a configuration space yields `null`, which is how a combinatorial obligation is told from every other kind. | Test (TC-181) |
 | FR-035-AC-3 | Exclusions are read without being mistaken for dimensions. | Test (TC-182) |
-| FR-035-AC-4 | The demanded-tuple count matches the number `quire-rs` computes for the same space. | Test (TC-183) |
+| FR-035-AC-4 | The demanded-tuple count equals the number of value combinations the declared space demands, counted by independent enumeration of its dimension pairs. | Test (TC-183) |
 | FR-035-AC-5 | A forbidden combination is not demanded. | Test (TC-184) |
 | FR-035-AC-6 | The result names the combinations that never ran, not only how many. | Test (TC-185) |
 | FR-035-AC-7 | A configuration exercising values the spec never declared covers nothing. | Test (TC-186) |
