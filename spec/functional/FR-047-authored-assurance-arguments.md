@@ -16,7 +16,7 @@ relationships:
 Quoin SHALL render the module-owned `AssuranceArgument` contract without
 manufacturing, narrowing, or rewriting its top claim. Each authored
 sufficiency criterion becomes supported only through a current decision that
-names the decision maker, authority, source revision, evidence digest, and
+names the decision maker, authority, source revision, and
 evidence references.
 
 Assumptions, participants, authority, independence, challenges, accepted
@@ -40,7 +40,7 @@ reference and which condition failed.
 | FR-047-AC-2 | A criterion without an explicit sufficiency decision remains open even when evidence references exist elsewhere. | Test (TC-1132) |
 | FR-047-AC-3 | Expired or future decisions and accepted assumptions whose review is due reopen their branch and the top claim. | Test (TC-1133) |
 | FR-047-AC-4 | A resolved challenge requires resolution references; accepted risk additionally requires a current expiry. | Test (TC-1134) |
-| FR-047-AC-5 | The closed authored contract, decision shape, uniqueness, timestamps, and digests are validated before rendering. | Test (TC-1135) |
+| FR-047-AC-5 | The closed authored contract, decision shape, uniqueness, and timestamps are validated before rendering. | Test (TC-1135) |
 | FR-047-AC-6 | Markdown and JSON preserve every open reason and render unchanged input deterministically. | Test (TC-1136) |
 | FR-047-AC-7 | An authored instant naming a day, hour, minute or second that does not exist is refused, rather than rolled forward into a different instant that then decides a reported status. | Test (TC-1712) |
 | FR-047-AC-8 | The top claim is reported unbacked — kept open, with a stated reason — when it has no evidence references, when a cited reference does not resolve in the caller's evidence index, or when a cited reference is recorded stale, vacuous, or suspect; every failing reference is reported, and an evidence index naming one reference twice is refused. | Test (TC-1925) |

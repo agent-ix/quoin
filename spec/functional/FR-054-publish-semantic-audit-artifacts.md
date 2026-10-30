@@ -40,7 +40,7 @@ canonical data set prevents the prose report, tickets, and future automation fro
 | FR-054-AC-2 | Every ledger row has a stable id, severity, status, confidence, affected qualified types/modules/repositories, evidence references, rationale, and recommended next decision or ticket boundary. | Test (TC-1178) |
 | FR-054-AC-3 | Repository impact records every default module and each affected Quoin, Quire, Filament, compiler, generated-package, database, API, CLI, and UI boundary as `none`, `candidate`, `required`, or `unknown`, with effort, risk, dependency, wave, confidence, and rationale. | Test (TC-1179) |
 | FR-054-AC-4 | A validated `SpecReview` and generated `report.md` summarize the canonical JSON, link every finding and denominator, and contain no independently maintained score or finding. | Test (TC-1180) |
-| FR-054-AC-5 | The summary manifest records artifact schema versions and SHA-256 digests and fails validation when an artifact is missing, unreferenced, stale, or disagrees with a declared count. | Test (TC-1181) |
+| FR-054-AC-5 | The summary manifest records artifact schema versions and fails validation when an artifact is missing, unreferenced, stale, or disagrees with a declared count. | Test (TC-1181) |
 | FR-054-AC-6 | Re-running against identical inputs yields byte-identical canonical JSON and report content except for a separately identified run timestamp field excluded from content identity. | Test (TC-1182) |
 
 ## Constraints

@@ -38,8 +38,6 @@ pub struct SufficiencyDecision {
     pub expires_at: String,
     /// The revision the decision was made over.
     pub source_revision: String,
-    /// `sha256:<64 lowercase hex>`.
-    pub evidence_digest: String,
     /// Why, when the decider gave a reason. Omitted when absent, never null.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rationale: Option<String>,

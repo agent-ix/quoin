@@ -37,12 +37,12 @@ review. The audit must distinguish what Quoin requested from the exact bytes it 
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-051-AC-1 | The snapshot records the audit timestamp, Quoin repository commit and cleanliness, `default-modules.yaml` content digest, and Quoin package version. | Test (TC-1156) |
+| FR-051-AC-1 | The snapshot records the audit timestamp, Quoin repository commit and cleanliness, and Quoin package version. | Test (TC-1156) |
 | FR-051-AC-2 | Every `default-modules.yaml` entry records its name, source kind, canonical repository and subdirectory, requested version/ref, and resolved full commit SHA. | Test (TC-1157) |
-| FR-051-AC-3 | Every inspected module records its content digest, manifest-declared name/version, source path, source commit when available, and checkout cleanliness when applicable. | Test (TC-1158) |
-| FR-051-AC-4 | The snapshot records the Quire CLI and engine identities, the pinned `quire-rs#385` corpus revision, and the `filament-core-data#10` census revision. | Test (TC-1159) |
+| FR-051-AC-3 | Every inspected module records its manifest-declared name/version, source path, source commit when available, and checkout cleanliness when applicable. | Test (TC-1158) |
+| FR-051-AC-4 | The snapshot records the Quire CLI and engine identities, the `quire-rs#385` corpus revision, and the `filament-core-data#10` census revision. | Test (TC-1159) |
 | FR-051-AC-5 | A disagreement among requested ref, resolved SHA, installed content, manifest identity, or canonical source is retained as a typed `provenance-conflict` with both values and blocks a clean audit verdict. | Test (TC-1160) |
-| FR-051-AC-6 | Entries are ordered by their declaration order and identities use repository-relative POSIX paths and lowercase hexadecimal digests so equal inputs serialize byte-identically. | Test (TC-1161) |
+| FR-051-AC-6 | Entries are ordered by their declaration order and identities use repository-relative POSIX paths so equal inputs serialize byte-identically. | Test (TC-1161) |
 
 ## Constraints
 

@@ -81,7 +81,6 @@ pub(super) fn parse_attestation(
             "attestedAt",
             "expiresAt",
             "sourceRevision",
-            "evidenceDigest",
         ],
     )?;
     let attested_by = string_value("attestedBy", attestation.get("attestedBy"))?;
@@ -91,32 +90,13 @@ pub(super) fn parse_attestation(
     let expires_at = string_value("expiresAt", attestation.get("expiresAt"))?;
     instant("attestedAt", &attested_at)?;
     instant("expiresAt", &expires_at)?;
-    let evidence_digest = string_value("evidenceDigest", attestation.get("evidenceDigest"))?;
-    if !is_sha256_digest(&evidence_digest) {
-        return reject("attestation evidenceDigest must be sha256:<64 lowercase hex>");
-    }
     Ok(DischargeAttestation {
         attested_by,
         authority,
         attested_at,
         expires_at,
         source_revision,
-        evidence_digest,
     })
-}
-
-/// `/^sha256:[0-9a-f]{64}$/`, without a regex engine.
-///
-/// Lowercase only: `is_ascii_hexdigit` would accept `SHA` in uppercase hex and
-/// silently widen the digest alphabet on a field whose whole job is identity.
-fn is_sha256_digest(value: &str) -> bool {
-    let Some(hex) = value.strip_prefix("sha256:") else {
-        return false;
-    };
-    hex.len() == 64
-        && hex
-            .bytes()
-            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
 }
 
 /// `currentAttestation(attestation, asOf)`: `None` when the attestation is
@@ -287,8 +267,7 @@ fn one_of<T: Copy>(
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::super::fixtures::digest;
-    use super::{instant, is_sha256_digest, string_value};
+    use super::{instant, string_value};
 
     /// `currentAttestation` orders instants, so `instant()` must return the
     /// same NUMBER `Date.parse` does, not merely agree about validity.
@@ -343,15 +322,5 @@ mod tests {
                 .0,
             "authority must not be empty"
         );
-    }
-
-    /// Trace: FR-046-AC-1, FR-046-AC-5
-    /// Provenance: agent-ix/quoin#447
-    #[test]
-    fn tc_447_432_the_digest_alphabet_is_lowercase_hex_only() {
-        assert!(is_sha256_digest(&digest()));
-        assert!(!is_sha256_digest(&format!("sha256:{}", "A".repeat(64))));
-        assert!(!is_sha256_digest(&format!("sha256:{}", "a".repeat(63))));
-        assert!(!is_sha256_digest("not-a-digest"));
     }
 }
