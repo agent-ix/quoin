@@ -93,11 +93,6 @@
         "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "sourceState": "clean"
       }
-    },
-    "toolchains": {
-      "node": "22.11.0",
-      "python": "3.13.1",
-      "rust": "1.90.0"
     }
   }
 }

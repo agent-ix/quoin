@@ -56271,11 +56271,6 @@
             "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27",
             "sourceState": "clean"
           }
-        },
-        "toolchains": {
-          "node": "22.15.0",
-          "python": "3.10.12",
-          "rust": "1.94.1"
         }
       }
     },
@@ -58466,11 +58461,6 @@
         "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27",
         "sourceState": "clean"
       }
-    },
-    "toolchains": {
-      "node": "22.15.0",
-      "python": "3.10.12",
-      "rust": "1.94.1"
     }
   }
 }

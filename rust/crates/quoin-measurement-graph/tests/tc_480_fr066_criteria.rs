@@ -377,10 +377,9 @@ fn tc_480_023_scorer_bytes_are_retained_and_an_untyped_attachment_refused() {
 /// Provenance: quoin#480
 #[test]
 fn tc_480_024_every_attestation_and_producer_field_is_required() {
-    /// Fourteen of the nineteen attestation paths `graph-adapters.test.ts`
-    /// deleted — `verificationStack.toolchains.{node,rust,python}` are no
-    /// longer independently required (PLAT-930, `tc_480_031` below).
-    const ATTESTATION: [&[&str]; 14] = [
+    /// The attestation paths `graph-adapters.test.ts` deleted that remain
+    /// required.
+    const ATTESTATION: [&[&str]; 13] = [
         &["subject"],
         &["scope"],
         &["timestamp"],
@@ -388,12 +387,6 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
         &["verificationStack"],
         &["verificationStack", "schemaVersion"],
         &["verificationStack", "buildProfile"],
-        &["verificationStack", "toolchains"],
-        // `toolchains.{node,rust,python}` are deliberately absent from this
-        // list: PLAT-930 made each optional (a measurement rarely touches
-        // every language), so omitting one is admitted, not refused. See
-        // `tc_480_031` below for that acceptance, and for the still-refused
-        // case of omitting all three at once.
         &["verificationStack", "sources"],
         &[
             "verificationStack",
@@ -417,14 +410,10 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
         &["verificationStack", "artifacts"],
     ];
 
-    /// The ten producer paths it deleted.
-    const PRODUCER: [&[&str]; 10] = [
+    /// The producer paths it deleted that remain required.
+    const PRODUCER: [&[&str]; 6] = [
         &["producer", "extractor_revision"],
         &["producer", "producer_contract_version"],
-        &["producer", "parser_grammars"],
-        &["producer", "parser_grammars", "0", "language"],
-        &["producer", "parser_grammars", "0", "grammar"],
-        &["producer", "parser_grammars", "0", "revision"],
         &["producer", "configuration_ref"],
         &["producer", "source_revision"],
         &["producer", "corpus_revision"],
@@ -878,39 +867,6 @@ fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() 
     assert!(
         measured >= SOURCE_FLOOR,
         "the census read {measured} adapter modules, below the floor of {SOURCE_FLOOR}"
-    );
-}
-
-/// Omitting one `verificationStack.toolchains` language is admitted as "not
-/// applicable" (PLAT-930), but an object naming none of the three is refused
-/// exactly as an absent `toolchains` member is — the same rule
-/// `quoin-measurement`'s own type enforces, applied here because
-/// `InvocationAttestation::parse` is a second, independent production path
-/// that reads the identical business rule (review finding #2 and #3 on
-/// quoin#580).
-///
-/// Trace: FR-066-AC-6
-/// Provenance: PLAT-930
-#[test]
-fn tc_480_031_a_toolchain_language_may_be_omitted_but_not_all_three() {
-    let base = case("quality/measured");
-
-    for language in ["node", "rust", "python"] {
-        let mut admitted = base.clone();
-        delete_at(
-            &mut admitted["attestation"],
-            &["verificationStack", "toolchains", language],
-        );
-        adapt_quality(&admitted).unwrap_or_else(|error| {
-            panic!("an attestation with no `{language}` identity must be admitted: {error}")
-        });
-    }
-
-    let mut empty = base.clone();
-    empty["attestation"]["verificationStack"]["toolchains"] = serde_json::json!({});
-    assert_eq!(
-        refusal(&empty, "an empty toolchains object"),
-        GraphAdapterErrorCode::InvalidAttestation,
     );
 }
 

@@ -185,7 +185,7 @@ fn parse_stored_measurement_collection(
 ///
 /// Everything [`stored_measurement_collection`] refuses, plus a schema version
 /// other than [`MEASUREMENT_SCHEMA_VERSION`], a build profile other than
-/// release, absent toolchains, a stated `verificationStack.unverifiedArtifacts`
+/// release, a stated `verificationStack.unverifiedArtifacts`
 /// or `.protectedApparatus` (both computed by intake), and any observation
 /// whose metric has no active plan at the observation's own definition
 /// version (an item row, PLAT-1016, answers to its governed metric's plan).
@@ -244,18 +244,6 @@ pub fn measurement_collection(
                             .to_owned(),
                     );
                 }
-                if stack.toolchains.is_none() {
-                    findings.push(
-                        "verificationStack.toolchains must be present; mark a language not \
-                         used as absent or null rather than omitting the whole member"
-                            .to_owned(),
-                    );
-                }
-                // `stack::verification_stack` already refuses a `toolchains`
-                // object present with every language absent, so this check
-                // (an omitted `toolchains` member entirely) is no longer
-                // vacuous the way it was before that refusal existed (review
-                // finding #3 on quoin#580).
             }
         },
     }

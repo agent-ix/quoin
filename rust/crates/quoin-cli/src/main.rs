@@ -605,7 +605,6 @@ mod tests {
         "quoin measurement",
         "quoin measurement campaign",
         "quoin measurement campaign run",
-        "quoin measurement campaign verify",
         "quoin measurement intervention",
         "quoin measurement operational-release",
         "quoin measurement record",

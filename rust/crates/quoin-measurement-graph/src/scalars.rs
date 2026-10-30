@@ -7,7 +7,7 @@
 //! Every `z.string().regex(...)` and `z.string().min(1)` in
 //! `src/measurement/graph-adapters.ts` becomes a newtype here whose only
 //! constructor is its parser. A field typed
-//! [`BareDigest`] cannot hold something that is not one, so no consumer
+//! [`FullRevision`] cannot hold something that is not one, so no consumer
 //! re-checks and no branch can forget to.
 //!
 //! Each carries `#[serde(try_from = "String")]`, so the check happens during
@@ -84,10 +84,6 @@ scalar!(
     "A `z.string().min(1)` value: at least one character."
 );
 scalar!(
-    BareDigest,
-    "A `^[0-9a-f]{64}$` value: a sha256 with no prefix."
-);
-scalar!(
     FullRevision,
     "A `^[0-9a-f]{40}$` value: a full git revision."
 );
@@ -114,23 +110,6 @@ impl NonEmptyText {
             return Err(malformed("expected at least one character"));
         }
         Ok(Self(value.to_owned()))
-    }
-}
-
-impl BareDigest {
-    /// Read a bare sha256.
-    ///
-    /// # Errors
-    ///
-    /// [`MalformedScalar`] for anything but 64 lowercase hexadecimal characters.
-    pub fn parse(value: &str) -> Parsed<Self> {
-        if is_lower_hex(value, 64) {
-            Ok(Self(value.to_owned()))
-        } else {
-            Err(malformed(format!(
-                "expected 64 lowercase hexadecimal characters, got `{value}`"
-            )))
-        }
     }
 }
 
