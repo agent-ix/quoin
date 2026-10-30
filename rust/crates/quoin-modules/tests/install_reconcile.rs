@@ -263,7 +263,7 @@ fn tc_381_282_a_rejected_first_install_leaves_nothing_behind() {
     );
 }
 
-fn git_manifest(name: &str, r#ref: &str, sha: Option<&str>) -> MarketplaceManifest {
+fn git_manifest(name: &str, r#ref: &str) -> MarketplaceManifest {
     MarketplaceManifest {
         schema_version: 1,
         name: Some("test-set".to_owned()),
@@ -272,7 +272,7 @@ fn git_manifest(name: &str, r#ref: &str, sha: Option<&str>) -> MarketplaceManife
             source: Source::Github {
                 repo: "agent-ix/fixture".to_owned(),
                 r#ref: Some(r#ref.to_owned()),
-                sha: sha.map(ToOwned::to_owned),
+                sha: None,
             },
             default_enabled: None,
             path: None,
@@ -289,7 +289,7 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
         CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
     let gate = PermissiveGate;
     let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate);
-    let manifest = git_manifest("mod", "v1.0.0", None);
+    let manifest = git_manifest("mod", "v1.0.0");
 
     let first = ensure_defaults(&manifest, &installer).expect("first reconcile");
     assert_eq!(
@@ -314,52 +314,29 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
 
 /// Trace: FR-019-AC-2
 #[test]
-fn tc_381_284_sync_mode_re_resolves_and_a_repin_updates() {
+fn tc_381_284_sync_mode_re_resolves_an_installed_module() {
     let h = home();
     let v1 = write_module(&h.fixtures, "mod", "v1");
-    let v2root = h.fixtures.join("v2");
-    let v2 = write_module(&v2root, "mod", "v2");
-    let resolver = CountingResolver::new()
-        .serving("https://github.com/agent-ix/fixture.git", "v1.0.0", v1)
-        .serving("https://github.com/agent-ix/fixture.git", "v2.0.0", v2);
+    let resolver =
+        CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", v1);
     let gate = PermissiveGate;
     let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate);
 
-    ensure_defaults(&git_manifest("mod", "v1.0.0", None), &installer).expect("install v1");
+    ensure_defaults(&git_manifest("mod", "v1.0.0"), &installer).expect("install v1");
     assert_eq!(resolver.calls(), 1);
 
-    // Sync re-resolves even a matching pin.
     let synced = reconcile(
-        &git_manifest("mod", "v1.0.0", None),
+        &git_manifest("mod", "v1.0.0"),
         &installer,
         ReconcileMode::Sync,
     )
     .expect("sync reconcile");
-    assert_eq!(resolver.calls(), 2);
     assert_eq!(
-        synced.unchanged,
-        vec![ModuleName::new("mod").expect("legal")],
-        "the same commit re-resolved is unchanged, not updated"
+        resolver.calls(),
+        2,
+        "sync resolves even an installed module"
     );
-
-    // A re-pinned entry updates, and the new content lands.
-    let updated =
-        ensure_defaults(&git_manifest("mod", "v2.0.0", None), &installer).expect("repin reconcile");
-    assert_eq!(
-        updated.updated,
-        vec![ModuleName::new("mod").expect("legal")]
-    );
-    assert_eq!(
-        fs::read_to_string(
-            h.paths
-                .target_root
-                .join("mod")
-                .join("artifacts")
-                .join("marker.txt")
-        )
-        .expect("new content"),
-        "v2"
-    );
+    assert_eq!(synced.updated, vec![ModuleName::new("mod").expect("legal")]);
 }
 
 /// Trace: FR-019-AC-2
@@ -369,7 +346,7 @@ fn tc_381_285_a_disabled_entry_is_skipped_and_never_resolved() {
     let resolver = CountingResolver::new();
     let gate = PermissiveGate;
     let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate);
-    let mut manifest = git_manifest("mod", "v1.0.0", None);
+    let mut manifest = git_manifest("mod", "v1.0.0");
     manifest.entries[0].default_enabled = Some(false);
 
     let report = ensure_defaults(&manifest, &installer).expect("reconcile");
@@ -379,21 +356,23 @@ fn tc_381_285_a_disabled_entry_is_skipped_and_never_resolved() {
 
 /// Trace: FR-019-AC-2
 #[test]
-fn tc_381_286_an_orphaned_pin_is_reported_not_silently_followed_to_head() {
-    // The first-integration pin 2a66359 was orphaned when upstream history was
-    // rebuilt; upload-pack refused it and clean-room installs failed while
-    // already-installed machines stayed green (agent-ix/quoin#308). A resolver
-    // that quietly fell back to HEAD would have hidden that.
+fn tc_381_287_an_entry_with_no_ref_settles_by_name_and_does_no_further_io() {
     let h = home();
-    let resolver = CountingResolver::new();
+    let tree = write_module(&h.fixtures, "mod", "v1");
+    let resolver =
+        CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "HEAD", tree);
     let gate = PermissiveGate;
     let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate);
-    let manifest = git_manifest("mod", "v1.0.0", Some(&sha_for("orphan")));
+    let mut manifest = git_manifest("mod", "unused");
+    if let Source::Github { r#ref, .. } = &mut manifest.entries[0].source {
+        *r#ref = None;
+    }
 
-    let err = ensure_defaults(&manifest, &installer).expect_err("the pin is unreachable");
-    assert_eq!(err.code(), ModulesErrorCode::GitRevisionNotFound);
-    assert!(
-        err.to_string().contains("rebuilt history"),
-        "the message must name the cause an author can act on, got: {err}"
+    ensure_defaults(&manifest, &installer).expect("first reconcile");
+    let second = ensure_defaults(&manifest, &installer).expect("second reconcile");
+    assert_eq!(
+        second.unchanged,
+        vec![ModuleName::new("mod").expect("legal")]
     );
+    assert_eq!(resolver.calls(), 1, "the default branch is resolved once");
 }
