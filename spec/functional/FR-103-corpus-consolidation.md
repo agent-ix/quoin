@@ -39,8 +39,6 @@ read but not retire, and SHALL change no accepted-corpus byte.
   sources belong to the repository the submodule points at, and SHALL treat the
   question of whether this programme has any scope over `agent-ix/qa-corpus` as
   an open owner ruling rather than assuming either answer.
-- Quoin SHALL pin the submodule to an exact revision and SHALL report a
-  submodule revision change as a corpus identity change rather than absorbing it.
 - Quoin SHALL obtain corpus accounting from `engineering-assurance` rather than
   implementing a local equivalent, and if `engineering-assurance` does not supply
   it, then Quoin SHALL file a gap ticket in `engineering-assurance`.

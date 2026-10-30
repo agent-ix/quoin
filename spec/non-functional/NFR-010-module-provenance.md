@@ -12,4 +12,26 @@ relationships:
 
 # NFR-010: Withdrawn
 
-Withdrawn. The id is not reused.
+> **⛔ Withdrawn.** The id is not reused.
+
+## Statement
+
+Withdrawn.
+
+## Scope
+
+- Withdrawn.
+
+## Measurement and Evaluation
+
+| Metric | Target | Threshold | Method |
+| --- | --- | --- | --- |
+| Withdrawn | n/a | n/a | n/a |
+
+## Verification
+
+Withdrawn.
+
+## Dependencies
+
+- **Upstream**: [StR-001](../stakeholder/StR-001-standalone-cli.md) standalone CLI.
