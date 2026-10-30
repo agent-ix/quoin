@@ -83,6 +83,8 @@ const DECLARED_DIVERGENCES: &[(&str, bool, bool, &str)] = &[
         true,
         "quoin#440: RFC 3339 §5.6 permits lowercase z",
     ),
+    // Removed when the deferred evidence/ceremony PR regenerates
+    // `ajv-verdicts.json`, after which ajv and this crate agree again.
     (
         "set/producer.tool_version=git-sha1",
         true,

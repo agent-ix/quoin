@@ -85,7 +85,7 @@ scalar!(
 );
 scalar!(
     FullRevision,
-    "A `^[0-9a-f]{40}$` value: a full git revision."
+    "A `^[0-9a-f]{40}$` value: the revision that quire-rs `assurance-v1` `sourcePremise` requires (required, additionalProperties false). Quoin reads it from the export and records nothing."
 );
 scalar!(RevisionIdentity, "A full revision or a semantic version.");
 scalar!(

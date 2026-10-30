@@ -123,7 +123,7 @@ pub struct MemberOutcome {
     pub attempts: usize,
 }
 
-/// Typed Quoin campaign decision before the wire adds exact digest bindings.
+/// Typed Quoin campaign decision.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CampaignDecision {
