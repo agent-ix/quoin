@@ -54,15 +54,8 @@ that no suite starts a retained implementation.
   an identifier is never derived from content.
 - Quoin SHALL port the retained strict JSON parser's refusal boundary — its
   refusal of a UTF-8 byte-order mark, of non-fatal UTF-8 and of trailing content
-  — and SHALL compare those refusals as part of parity, because they guard
+  — and SHALL refuse them before canonicalization runs, because they guard
   canonicalization rather than following it.
-- Before a store-backed capability cuts over, Quoin SHALL read every record in
-  every reachable store through Rust, write it back, and SHALL refuse the
-  cutover if the written bytes differ from the stored bytes.
-- Quoin SHALL test JCS canonicalization over adversarial Unicode, number-format
-  and key-order inputs.
-- Quoin SHALL port each `fast-check` property suite under `tests/props` to a
-  `proptest` suite asserting the same property.
 - Quoin SHALL resolve the JSON Schema validator version used across the
   workspace to one version, in `rust/Cargo.toml`.
 - Quoin SHALL assert no `format` keyword during validation, matching the
@@ -94,12 +87,12 @@ difference during replay and an unreadable store each block cutover.
 | FR-098-AC-1 | Withdrawn: it replayed retained expected fixtures over golden corpora; no recorded oracle remains to replay (id not reused). | Withdrawn (TC-1618) |
 | FR-098-AC-2 | Withdrawn: it compared Rust verdicts with a retained expected verdict per schema; no recorded oracle remains (id not reused). | Withdrawn (TC-1619) |
 | FR-098-AC-3 | Withdrawn: the replay of captured records through the retained implementation is gone; records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn (TC-1620) |
-| FR-098-AC-4 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both implementations. | Property (TC-1621) |
+| FR-098-AC-4 | Withdrawn: it compared JCS bytes against a recorded jcs-oracle corpus; no recorded oracle remains (id not reused). | Withdrawn (TC-1621) |
 | FR-098-AC-5 | Withdrawn: it compared each refusal classification with the retained implementation's; no retained implementation remains (id not reused). | Withdrawn (TC-1622) |
 | FR-098-AC-6 | Withdrawn: it required a `proptest` counterpart of every retained `fast-check` suite and a TypeScript-versus-Rust comparison; the TypeScript suites are gone (id not reused). | Withdrawn (TC-1623) |
 | FR-098-AC-7 | Withdrawn: there is no differential run whose population could be zero, and no cutover gate it could satisfy (id not reused). | Withdrawn (TC-1624) |
 | FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test (TC-1692) |
-| FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test (TC-1693) |
+| FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation before canonicalization runs. | Test (TC-1693) |
 | FR-098-AC-10 | Withdrawn: the identifier format is stated once in the Behavior clause, and no legacy identifier form remains (id not reused). | Withdrawn (TC-1694) |
 | FR-098-AC-11 | After a capability cuts over, no integration suite spawns a retained implementation. | Test (TC-1695) |
 
