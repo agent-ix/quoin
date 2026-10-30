@@ -312,9 +312,9 @@ person's identity, authority, possession of a key, or non-repudiation.
 | FR-063-AC-2 | Requirements and proof obligations are non-empty; meaningful empty preservation and unknown arrays remain present; duplicate identities are refused before the record is written. | Property (TC-1262) |
 | FR-063-AC-3 | Every requirement retains its reviewed statement, and every proof fixes its owning evidence obligations, literal argv, repository-relative cwd, evidence kind, tool identity, and configuration reference. | Test (TC-1263) |
 | FR-063-AC-4 | An incomplete or truncated impact snapshot and each open, accepted, deferred, or resolved unknown remain explicit rather than becoming a completeness claim. | Test (TC-1264) |
-| FR-063-AC-5 | Withdrawn: a record carries no digest, so no digest vector remains (id not reused). | Test (TC-1265) |
-| FR-063-AC-6 | Withdrawn: there is no stored digest for a leaf change to invalidate; tampering is visible in git history (id not reused). | Property (TC-1266) |
-| FR-063-AC-7 | Withdrawn: there is no digest form to refuse; duplicate names, lone surrogates, non-I-JSON numbers and a byte-order mark are refused under AC-1 and AC-2 (id not reused). | Property (TC-1267) |
+| FR-063-AC-5 | Withdrawn: a record carries no digest, so no digest vector remains (id not reused). | Withdrawn (TC-1265) |
+| FR-063-AC-6 | Withdrawn: there is no stored digest for a leaf change to invalidate; tampering is visible in git history (id not reused). | Withdrawn (TC-1266) |
+| FR-063-AC-7 | Withdrawn: there is no digest form to refuse; duplicate names, lone surrogates, non-I-JSON numbers and a byte-order mark are refused under AC-1 and AC-2 (id not reused). | Withdrawn (TC-1267) |
 | FR-063-AC-8 | Revision 1 has no predecessor; a successor requires retained revision N-1 of the same record id; a missing, skipped, or cross-record predecessor fails lineage verification. | Property (TC-1268) |
 | FR-063-AC-9 | Writing a successor leaves the predecessor's path and bytes unchanged, and rejected or revise-requested records remain addressable by `(record_id, revision)` (CON-2). | Integration (TC-1269) |
 | FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, or revision cannot approve it. | Integration (TC-1270) |

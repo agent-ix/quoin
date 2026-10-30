@@ -276,7 +276,7 @@ fn tc_457_600_write_record_retains_a_record_under_its_identity() {
 /// `change_assurance.prepare_attestation` derives only the retained output's
 /// size; a caller-written `retained_output` is refused.
 ///
-/// Trace: FR-068-AC-2
+/// Trace: FR-068-AC-2, FR-068-CON-2
 /// Provenance: agent-ix/quoin#457
 #[test]
 fn tc_457_601_prepare_attestation_derives_only_the_retained_output_size() {
@@ -471,6 +471,50 @@ fn tc_457_606_recover_removes_only_interrupted_staging() {
         &json!({ "repo": root.path().to_str().unwrap() }),
     ));
     assert_eq!(payload["removed"], json!(0));
+}
+
+/// The same inputs, run in two independent repositories, yield byte-identical
+/// canonical JSON for a record, an attestation and a valid receipt, and the
+/// retained layout and the library contracts are those a retained record of
+/// either vintage is read from: records at `records/<id>/<revision>.json`,
+/// attestations at `attestations/<id>/`. The valid receipt it emits verifies
+/// against its own inputs.
+///
+/// Trace: FR-068-AC-10, FR-068-CON-4
+/// Provenance: agent-ix/quoin#457
+#[test]
+fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
+    let mut runs = Vec::new();
+    for _ in 0..2 {
+        let root = repo();
+        retain_everything(root.path());
+        let store = root.path().join("spec/evidence/change-assurance");
+        let record = fs::read(store.join("records/change-1/1.json")).unwrap();
+        let attestation = fs::read(store.join("attestations/att-1/attestation.json")).unwrap();
+        let output = fs::read(store.join("attestations/att-1/output.bin")).unwrap();
+        assert_eq!(output, OUTPUT);
+        let receipt = ok(&run(
+            "change_assurance.receipt",
+            &receipt_request(root.path()),
+        ));
+        assert_eq!(receipt["receipt"]["outcome"], json!("valid"), "{receipt}");
+        assert_eq!(receipt["receipt"]["reasons"], json!([]));
+        let verified = ok(&run(
+            "change_assurance.verify_receipt",
+            &json!({
+                "receipt_hex": hex_json(&receipt["receipt"]),
+                "inputs": receipt_request(root.path()),
+            }),
+        ));
+        assert_eq!(verified["receipt"], receipt["receipt"]);
+        runs.push((record, attestation, canonical_json(&receipt["receipt"]).unwrap()));
+    }
+    assert_eq!(runs[0], runs[1], "two runs over the same inputs must agree byte for byte");
+    // The retained record is the document that was written, read back through
+    // the schema: it names no member the caller did not supply.
+    let written: Value = serde_json::from_slice(&runs[0].0).unwrap();
+    assert_eq!(written["record_id"], json!("change-1"));
+    assert!(written.get("digest").is_none());
 }
 
 /// `change_assurance.schema` emits the three normative assets from the binary

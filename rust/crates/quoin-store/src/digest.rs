@@ -5,12 +5,15 @@
 //! Change-assurance records, attestations and receipts are addressed by
 //! `(record_id, revision)` or an assigned identity, never by content, so this
 //! crate computes no digest over them and holds no second algorithm for them.
+//! Experiment and operational records carry an opaque UUID, not a digest of
+//! their content.
 //!
-//! What remains is the sha256 the measurement and evidence crates still call
-//! (`digest_file_sha256`, `digest_bytes_sha256`, `digest_assurance_record`,
-//! the record file-name helpers). Each is removed together with its last
-//! caller, which lives in `quoin-measurement`, `quoin-measurement-graph`,
-//! `quoin-evidence` and `quoin-cli` (PLAT-1201); `sha256_hex` is the one call
+//! BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): `digest_file_sha256`,
+//! `digest_bytes_sha256`, `digest_record_file_name` and
+//! `digest_record_pair_file_name` stay until their last callers in
+//! `quoin-measurement` (`source/`, `campaign/`, `operational/paths.rs`), the
+//! `tc_1942`/`tc_1946`/`tc_1947` tests and `quoin-cli` are removed by the
+//! measurement-digest PRs that stack on this one; `sha256_hex` is the one call
 //! site so that removal is a single edit here.
 //!
 //! [`read_regular_file_bounded`] is not a digest: it is the no-follow,
@@ -19,8 +22,6 @@
 use std::fmt;
 
 use crate::error::StoreError;
-use crate::json::canonical::canonical_bytes;
-use crate::json::value::JsonValue;
 
 /// The one sha256 call site. Private on purpose.
 fn sha256_hex(bytes: &[u8]) -> String {
@@ -44,9 +45,6 @@ pub enum DigestDomain {
     /// Over the complete bytes of a file on disk, under SHA-256, as
     /// measurement records reference them.
     RawFileSha256,
-    /// Over the RFC 8785 bytes of a record, under SHA-256: the identity an
-    /// experiment or operational record carries as its own `recordId`.
-    AssuranceRecordSha256,
     /// Over a record identity's UTF-8 bytes, under SHA-256: the file name an
     /// operational record or record pair is stored under.
     RecordFileNameSha256,
@@ -54,9 +52,8 @@ pub enum DigestDomain {
 
 impl DigestDomain {
     /// Every domain, in declaration order.
-    pub const ALL: [Self; 3] = [
+    pub const ALL: [Self; 2] = [
         Self::RawFileSha256,
-        Self::AssuranceRecordSha256,
         Self::RecordFileNameSha256,
     ];
 
@@ -65,7 +62,6 @@ impl DigestDomain {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::RawFileSha256 => "quoin.raw-file-sha256",
-            Self::AssuranceRecordSha256 => "quoin.assurance-record-sha256",
             Self::RecordFileNameSha256 => "quoin.record-file-name-sha256",
         }
     }
@@ -158,63 +154,6 @@ impl fmt::Display for RawFileSha256Digest {
     }
 }
 
-/// An assurance record's own identity: SHA-256 over the evidence store's
-/// canonical JSON text of the record without its `recordId`.
-///
-/// Minted only by [`digest_assurance_record`]. This is the domain
-/// `src/evidence/assurance-records.ts` computes as
-/// `createHash("sha256").update(canonicalJson(input))`, stores as
-/// `record.recordId`, checks back on read, and names the file
-/// `sha256-<64 hex>.json` from. The canonical text includes its trailing
-/// newline, because that is what the retained implementation hashes — dropping
-/// it would rename every record in every store (NFR-025).
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub struct AssuranceRecordId(String);
-
-impl AssuranceRecordId {
-    /// This value's domain. Always [`DigestDomain::AssuranceRecordSha256`].
-    pub const DOMAIN: DigestDomain = DigestDomain::AssuranceRecordSha256;
-
-    /// Read a stored id, which carries its `sha256:` prefix.
-    ///
-    /// # Errors
-    ///
-    /// Refuses a value that does not carry the `sha256:` prefix, and one whose
-    /// remainder is not exactly 64 lowercase hexadecimal characters.
-    pub fn parse_stored(value: &str) -> Result<Self, StoreError> {
-        let Some(hex) = value.strip_prefix("sha256:") else {
-            return Err(StoreError::DigestMalformed {
-                value: value.to_owned(),
-            });
-        };
-        parse_stored_hex(hex).map(Self)
-    }
-
-    /// The bare hex, without the prefix — what the file name carries.
-    #[must_use]
-    pub fn as_hex(&self) -> &str {
-        &self.0
-    }
-
-    /// The stored spelling, `sha256:` prefix included.
-    #[must_use]
-    pub fn to_stored(&self) -> String {
-        format!("sha256:{}", self.0)
-    }
-
-    /// This value's domain.
-    #[must_use]
-    pub const fn domain(&self) -> DigestDomain {
-        Self::DOMAIN
-    }
-}
-
-impl fmt::Display for AssuranceRecordId {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.to_stored())
-    }
-}
-
 /// The basename a record is stored under, a SHA-256 over its identity string.
 ///
 /// `src/measurement/operational.ts:459` names an operational record file
@@ -224,8 +163,8 @@ impl fmt::Display for AssuranceRecordId {
 /// caller holding one is holding a name that was derived, not assembled.
 ///
 /// Stored **bare**: it is a file name, so it carries no `sha256:` prefix and
-/// has no `to_stored` — the absence is the difference from
-/// [`AssuranceRecordId`], which is a prefixed member *inside* a record.
+/// has no `to_stored`. A record's own identity is a different thing: an opaque
+/// UUID.
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct RecordFileName(String);
 
@@ -272,17 +211,6 @@ pub fn digest_record_pair_file_name(first: &str, second: &str) -> RecordFileName
     joined.push(0);
     joined.extend_from_slice(second.as_bytes());
     RecordFileName(sha256_hex(&joined))
-}
-
-/// Compute an assurance record's identity over shared RFC 8785 bytes.
-///
-/// Pass the record WITHOUT `recordId`, which cannot identify itself. The pretty
-/// store representation is display/storage only; it is not identity input.
-///
-/// # Errors
-/// As [`canonical_bytes`].
-pub fn digest_assurance_record(value: &JsonValue) -> Result<AssuranceRecordId, StoreError> {
-    canonical_bytes(value).map(|bytes| AssuranceRecordId(sha256_hex(&bytes)))
 }
 
 /// Digest a file's complete bytes under SHA-256, with the guards a digest over
@@ -505,45 +433,8 @@ mod tests {
     )]
     use ix_trace_rs::trace;
 
-    use super::{
-        AssuranceRecordId, DigestDomain, digest_assurance_record, digest_bytes_sha256,
-        digest_file_sha256, digest_opened_file, open_for_digest,
-    };
+    use super::{digest_bytes_sha256, digest_file_sha256, digest_opened_file, open_for_digest};
     use crate::error::StoreErrorCode;
-    use crate::json::parse::parse_strict_json_str;
-
-    #[trace("FR-100-AC-11")]
-    #[test]
-    fn plat_989_assurance_identity_uses_rfc8785_bytes() {
-        let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
-        // Independently specified compact RFC text, including exact whitespace.
-        assert_eq!(
-            digest_assurance_record(&value).unwrap().as_hex(),
-            super::sha256_hex(br#"{"a":[true,null],"b":1}"#)
-        );
-    }
-
-    #[trace("FR-100-AC-11")]
-    #[test]
-    fn tc_456_assurance_record_ids_use_jcs_and_keep_their_stored_spelling() {
-        let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
-        let id = digest_assurance_record(&value).unwrap();
-        assert_eq!(id.domain(), DigestDomain::AssuranceRecordSha256);
-        assert_eq!(id.to_stored(), format!("sha256:{}", id.as_hex()));
-        assert_ne!(
-            id.as_hex(),
-            super::sha256_hex(
-                crate::json::pretty::canonical_json(&value)
-                    .unwrap()
-                    .as_bytes()
-            )
-        );
-        assert_eq!(
-            AssuranceRecordId::parse_stored(&id.to_stored()).unwrap(),
-            id
-        );
-        assert!(AssuranceRecordId::parse_stored(id.as_hex()).is_err());
-    }
 
     /// Trace: FR-098-CON-1
     #[test]

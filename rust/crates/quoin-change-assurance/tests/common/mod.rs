@@ -136,3 +136,36 @@ pub(crate) fn base_input() -> VerificationInput {
         governing_plan: None,
     }
 }
+
+/// `value` with the member `name` set to `replacement`.
+pub(crate) fn replacing(value: &JsonValue, name: &str, replacement: JsonValue) -> JsonValue {
+    let mut members = value.as_object().unwrap().clone();
+    members.set(name, replacement);
+    JsonValue::Object(members)
+}
+
+/// `value` without the member `name`.
+pub(crate) fn without(value: &JsonValue, name: &str) -> JsonValue {
+    let mut members = value.as_object().unwrap().clone();
+    members.remove(name);
+    JsonValue::Object(members)
+}
+
+/// The member `name` of an object.
+pub(crate) fn member<'a>(value: &'a JsonValue, name: &str) -> &'a JsonValue {
+    value
+        .as_object()
+        .unwrap_or_else(|_| panic!("expected an object to read {name} from"))
+        .get(name)
+        .unwrap_or_else(|| panic!("no member {name}"))
+}
+
+/// The names of an object's members.
+pub(crate) fn names(value: &JsonValue) -> Vec<String> {
+    value
+        .as_object()
+        .unwrap()
+        .names()
+        .map(str::to_owned)
+        .collect()
+}

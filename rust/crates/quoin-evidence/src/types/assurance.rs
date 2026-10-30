@@ -140,7 +140,8 @@ pub struct ExperimentRecordInput {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ExperimentRecord {
-    /// `sha256:<64 lowercase hex>` over the canonical JSON of the input.
+    /// The record's opaque UUID, not derived from its content (a legacy
+    /// `sha256:<64 lowercase hex>` identifier is read as an opaque string).
     pub record_id: String,
     /// The producer-supplied fields.
     #[serde(flatten)]
@@ -217,14 +218,15 @@ pub struct OperationalEvidenceRecordInput {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct OperationalEvidenceRecord {
-    /// `sha256:<64 lowercase hex>` over the canonical JSON of the input.
+    /// The record's opaque UUID, not derived from its content (a legacy
+    /// `sha256:<64 lowercase hex>` identifier is read as an opaque string).
     pub record_id: String,
     /// The producer-supplied fields.
     #[serde(flatten)]
     pub input: OperationalEvidenceRecordInput,
 }
 
-/// The outcome of publishing one content-addressed record.
+/// The outcome of publishing one assurance record.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredAssuranceRecord<T> {
     /// The identified record.

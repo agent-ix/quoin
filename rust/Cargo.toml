@@ -149,6 +149,8 @@ sha2 = "=0.10.9"
 # the same =2.0.20 independently, for an unrelated reason — the two branches
 # converge here; whoever merges second should not read it as drift.
 thiserror = "=2.0.20"
+# Opaque record identities (FR-098-AC-10); `v4` is random, never content-derived.
+uuid = { version = "=1.26.1", features = ["v4"] }
 # The regex engine the advisor's ~60-entry characteristic table is written
 # against (quoin#383) and the three the combinatorial parser uses (quoin#382).
 # Already in the graph transitively, so this pin adds a direct edge and no new

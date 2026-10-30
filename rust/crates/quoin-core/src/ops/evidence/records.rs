@@ -4,7 +4,7 @@
 //! The `evidence` operations that WRITE a record.
 //!
 //! Transcribing a suite run or a finding-shaped scan, a trust decision, a mock
-//! inspection and the two content-addressed assurance families. Each one
+//! inspection and the two append-only assurance families. Each one
 //! acquires the store through the granted [`EvidenceHost`] and hands back the
 //! absolute path of what it wrote.
 
@@ -355,7 +355,7 @@ pub fn record_operational(
     assurance_record(request, capabilities, AssuranceFamily::Operational)
 }
 
-/// Which content-addressed assurance family a record belongs to.
+/// Which append-only assurance family a record belongs to.
 ///
 /// The two operations share one request shape, one ceiling and one payload
 /// shape, and differ only in which writer they call and which directory the
@@ -398,7 +398,7 @@ impl AssuranceFamily {
     }
 }
 
-/// Publish one content-addressed assurance record, experiment or operational.
+/// Publish one append-only assurance record, experiment or operational.
 fn assurance_record(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,

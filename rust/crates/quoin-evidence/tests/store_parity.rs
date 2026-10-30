@@ -380,55 +380,44 @@ fn tc_456_101_every_ported_behaviour_family_is_represented() {
     }
 }
 
-/// Literal migration vectors: parity of validated fields alone cannot verify
-/// record identities, paths, or successful lookup by the published identity.
+/// A record's identity is an opaque UUID that is not derived from its content,
+/// its file is named from that UUID, and it is read back by that UUID.
 #[trace("FR-100-AC-11")]
 #[test]
-fn plat_989_assurance_ids_and_paths_use_the_declared_rfc8785_identity() {
-    let vectors: Value =
-        serde_json::from_str(include_str!("golden/plat-989-assurance-identity.json")).unwrap();
+fn plat_989_assurance_ids_are_opaque_uuids_and_name_the_file() {
     let (corpus, _) = load();
-    for vector in vectors.as_array().unwrap() {
-        let name = vector["case"].as_str().unwrap();
+    for name in ["assurance-experiment-valid", "assurance-operational-valid"] {
         let case = corpus.cases.iter().find(|case| case.name == name).unwrap();
         let mut store = MemoryEvidence::new();
-        let expected = vector["rfc8785_id"].as_str().unwrap();
-        let legacy = vector["legacy_id"].as_str().unwrap();
-        let (id, path, found) = if case.input["record"] == "experiment" {
-            let stored = write_experiment_record(&mut store, &case.input["value"]).unwrap();
-            let found = quoin_evidence::assurance_records::read_experiment_record(&store, expected)
-                .unwrap()
-                .is_some();
-            assert!(
-                quoin_evidence::assurance_records::read_experiment_record(&store, legacy)
-                    .unwrap()
-                    .is_none()
-            );
-            (stored.record.record_id, stored.path, found)
-        } else {
-            let stored =
-                write_operational_evidence_record(&mut store, &case.input["value"]).unwrap();
-            let found = quoin_evidence::assurance_records::read_operational_evidence_record(
-                &store, expected,
-            )
-            .unwrap()
-            .is_some();
-            assert!(
-                quoin_evidence::assurance_records::read_operational_evidence_record(&store, legacy)
-                    .unwrap()
-                    .is_none()
-            );
-            (stored.record.record_id, stored.path, found)
+        let experiment = case.input["record"] == "experiment";
+        let publish = |store: &mut MemoryEvidence| {
+            if experiment {
+                let stored = write_experiment_record(store, &case.input["value"]).unwrap();
+                (stored.record.record_id, stored.path)
+            } else {
+                let stored = write_operational_evidence_record(store, &case.input["value"]).unwrap();
+                (stored.record.record_id, stored.path)
+            }
         };
-        assert_eq!(id, expected, "{name}");
-        assert_ne!(
-            id, legacy,
-            "{name}: the legacy identity must not pass unnoticed"
-        );
-        assert!(path.ends_with(&format!(
-            "sha256-{}.json",
-            expected.strip_prefix("sha256:").unwrap()
-        )));
+        let (id, path) = publish(&mut store);
+        let groups: Vec<usize> = id.split('-').map(str::len).collect();
+        assert_eq!(groups, [8, 4, 4, 4, 12], "{name}: {id} is not a UUID");
+        assert!(path.ends_with(&format!("{id}.json")), "{name}: {path}");
+
+        // Not derived from content: the same input published again, without
+        // the id it was given, is a different record.
+        let (other, _) = publish(&mut store);
+        assert_ne!(id, other, "{name}: the identity must not follow the content");
+
+        let found = if experiment {
+            quoin_evidence::assurance_records::read_experiment_record(&store, &id)
+                .unwrap()
+                .is_some()
+        } else {
+            quoin_evidence::assurance_records::read_operational_evidence_record(&store, &id)
+                .unwrap()
+                .is_some()
+        };
         assert!(found, "{name}: published identity cannot be read back");
     }
 }

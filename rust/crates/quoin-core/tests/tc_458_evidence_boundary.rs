@@ -109,7 +109,7 @@ fn reported_store_path(root: &Path, reported: &str, relative: &str) -> PathBuf {
 }
 
 /// As [`reported_store_path`], where only the record's FAMILY is predictable —
-/// a content-addressed record's file name is derived from its own bytes.
+/// an assurance record's file name is its minted UUID.
 fn reported_store_family(root: &Path, reported: &str, family: &str) -> PathBuf {
     let prefix = store_path(root, family);
     let path = Path::new(reported);

@@ -17,14 +17,13 @@ workspace = true
 [dependencies]
 thiserror = { workspace = true }
 quire-canonical = { workspace = true }
-# The one remaining sha256 call site (`digest.rs::sha256_hex`), serving the
-# measurement crates until PLAT-1201 removes their callers; taken from
-# `[workspace.dependencies]` so there is one pin in one place.
+# The sha256 helper `digest.rs::sha256_hex` serves the measurement crates until
+# their callers are removed (see the marker in `digest.rs`).
 sha2 = { workspace = true }
 
 # Unix only: the Windows release target has neither flag, and takes its own
 # path in `digest_file_sha256`. Already resolves once in the graph (aws-lc-sys's
-# build dependency), so a direct pin here adds no second version. Needed for
+# build dependency), so depending on it directly adds no second version. Needed for
 # `O_NOFOLLOW`/`O_NONBLOCK` on the open call `digest_file_sha256` makes: std
 # exposes neither flag constant, and `OpenOptionsExt::custom_flags` needs one to
 # pass (PLAT-985, quoin#600 review — the resolver's stat-then-read race).

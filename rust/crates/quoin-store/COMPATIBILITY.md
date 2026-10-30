@@ -8,7 +8,7 @@ retained evidence, not a change to code. Everything below is therefore frozen.
 
 **What this crate does and does not do.** It parses stored documents,
 canonicalizes values, and writes bytes a caller hands it (`write_atomic`,
-`write_canonical`, `write_content_addressed`). It hashes no
+`write_canonical`). It hashes no
 change-assurance record, attestation or receipt: those are addressed by
 `(record_id, revision)` or an assigned identity, and git history is the tamper
 evidence (FR-063, FR-064, FR-065).

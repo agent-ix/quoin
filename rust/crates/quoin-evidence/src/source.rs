@@ -84,7 +84,7 @@ pub trait EvidenceSource {
     /// [`EvidenceError::StoreIo`] when the write cannot be completed.
     fn write(&mut self, path: &str, bytes: &[u8]) -> Result<(), EvidenceError>;
 
-    /// Publish a content-addressed record, refusing a differing body.
+    /// Publish an append-only record, refusing a differing body.
     ///
     /// Returns `true` when the record was newly written and `false` when the
     /// identical bytes were already there — the append-only publish of FR-048.

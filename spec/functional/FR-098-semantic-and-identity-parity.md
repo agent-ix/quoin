@@ -101,7 +101,7 @@ differential run whose compared population is empty each block cutover.
 |----|-----------|------|------------|
 | FR-098-CON-1 | Cutover SHALL NOT change an existing identity domain except the enumerated PLAT-989 assurance identity transition under NFR-025. | Data Integrity | Test |
 | FR-098-CON-2 | Quoin SHALL delegate RFC 8785 encoding to quire-canonical and retain store identity and atomic-write logic only in quoin-store. | Architecture | Test |
-| FR-098-CON-3 | A differential run over an empty population SHALL NOT be recorded as parity evidence. | Reporting | Test |
+| FR-098-CON-3 | Withdrawn: the differential replay over captured records is gone with the retained implementation it compared against; no parity evidence is recorded, so there is nothing for an empty population to be recorded as (id not reused). | Reporting | Withdrawn |
 
 ## Acceptance Criteria
 
@@ -109,11 +109,11 @@ differential run whose compared population is empty each block cutover.
 |----|----------|--------------|
 | FR-098-AC-1 | Native Rust tests replay retained expected fixtures over the golden corpora and report the compared population count with each run. | Test (TC-1618) |
 | FR-098-AC-2 | For every schema in the corpus, Rust returns the retained expected verdict, and diagnostics agree as normalized instance-location, keyword and schema-path tuples. | Property (TC-1619) |
-| FR-098-AC-3 | Reading and re-writing every captured record in every reachable store through Rust yields zero byte differences outside the exact PLAT-989 transition mapping reported under NFR-025; a planted single-byte difference outside that mapping makes the replay fail. | Test (TC-1620) |
+| FR-098-AC-3 | Withdrawn: the replay of captured records through the retained implementation is gone; records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn (TC-1620) |
 | FR-098-AC-4 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both implementations. | Property (TC-1621) |
 | FR-098-AC-5 | Each ported refusal path returns the same non-success classification from the Rust implementation as from the retained one. | Property (TC-1622) |
 | FR-098-AC-6 | Every `tests/props` property has a `proptest` counterpart asserting the same property, and a property holding in TypeScript and violated in Rust fails the run. | Test (TC-1623) |
-| FR-098-AC-7 | A differential run whose compared population is zero is reported as inconclusive and refuses to satisfy a cutover gate. | Test (TC-1624) |
+| FR-098-AC-7 | Withdrawn: there is no differential run whose population could be zero, and no cutover gate it could satisfy (id not reused). | Withdrawn (TC-1624) |
 | FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test (TC-1692) |
 | FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test (TC-1693) |
 | FR-098-AC-10 | Record identifiers produced by the Rust implementation are opaque UUIDs not derived from content, files are named `<recordId>.json`, and legacy `sha256:<hex>` identifiers and `sha256-<hex>.json` file names in existing stores are read as opaque strings and left unchanged; the transition is reported under NFR-025. | Test (TC-1694) |
