@@ -31,8 +31,7 @@ use crate::error::{CoreError, CoreErrorCode};
 ///   model, an unknown archetype, a clause set that is not loaded: fixing any
 ///   of them means changing the repository, not the request.
 /// - **`BadRequest` (3)** — the caller's own spelling. A malformed context
-///   entry, a duplicated context key, an empty repository identity, a revision
-///   that is not 40 hex digits, a payload that is not JSON or not the declared
+///   entry, a duplicated context key, a payload that is not JSON or not the declared
 ///   shape.
 /// - **`Io` → Internal (4)** — a filesystem call failed under us, a payload
 ///   outgrew its ceiling, or quoin's own vendored `assurance-v1` schema will

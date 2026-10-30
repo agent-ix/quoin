@@ -29,7 +29,7 @@ premise succeeds.
 - [x] Preserve distinct availability states.
 - [x] Read required `--export <json>`, `--premises <json>`, and `--audit <json>` inputs without
       invoking Quire, recomputing an audit, or discovering acceptance from ambient modules.
-- [x] Validate audit source/export identity before exposing its unchanged FR-032 findings,
+- [x] Validate audit export premises before exposing its unchanged FR-032 findings,
       healthy obligations, and unevaluated checks.
 - [x] Cover repeated valid import and every invalid/unavailable input class.
 
