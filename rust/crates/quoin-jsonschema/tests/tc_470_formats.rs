@@ -244,7 +244,7 @@ fn tc_470_a_schema_that_does_not_compile_names_itself() {
         error.to_string().contains("vendored.json"),
         "a compile failure must say which document: {error}"
     );
-    assert!(error.errors().is_empty());
+    assert_eq!(error.errors().len(), 0);
 }
 
 /// Every error code round-trips through its wire spelling.

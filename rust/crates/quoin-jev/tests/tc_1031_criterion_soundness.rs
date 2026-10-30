@@ -250,7 +250,7 @@ fn tc_1031_the_checks_match_the_corpus_keys() {
     );
     for variant in [K1, K2] {
         assert_eq!(variant.modes, [Mode::Req]);
-        assert!(variant.references.is_empty());
+        assert_eq!(variant.references.len(), 0);
         assert_eq!(variant.grades, GRADES);
         assert!(variant::REGISTRY.iter().any(|v| v.id == variant.id));
     }

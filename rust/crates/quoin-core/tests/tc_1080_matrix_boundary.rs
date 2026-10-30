@@ -75,7 +75,7 @@ fn tc_1080_100_two_runs_over_one_input_emit_identical_canonical_bytes() {
     let first = run("matrix.build", &stdin);
     let second = run("matrix.build", &stdin);
     assert_eq!(first.status, 0, "{:?}", first.diagnostics);
-    assert!(first.diagnostics.is_empty());
+    assert_eq!(first.diagnostics.len(), 0);
     assert_eq!(first.stdout, second.stdout);
     assert_eq!(
         first.stdout,

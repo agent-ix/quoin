@@ -583,7 +583,7 @@ mod tests {
         // The message is prose, but it must never be empty: an empty
         // `Display` is how a typed error degrades into "something failed".
         for sample in &samples {
-            assert!(!sample.to_string().is_empty());
+            assert_ne!(sample.to_string().len(), 0);
         }
     }
 }

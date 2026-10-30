@@ -219,7 +219,7 @@ fn tc_1024_t3_extracts_failure_points() {
     // A test whose only check is `.expect(..)` has no assertion: `no`, no
     // call.
     let expect_only = "fn t() {\n    validator().expect(\"the schema compiles\");\n}";
-    assert!(extract_assertions("tests/t.rs", expect_only).is_empty());
+    assert_eq!(extract_assertions("tests/t.rs", expect_only).len(), 0);
     let row = row_with("EV2-0013", Mode::ReqTest, Some(expect_only));
     assert!((T3.asks)(&row).is_empty());
     assert_eq!((T3.derive)(&row, &[])["test_asserts_intent"].answer, "no");
@@ -350,7 +350,7 @@ fn tc_1024_t3_extracts_script_assertions() {
     // A string holding `expect(` lists nothing, so the row is `no` with no
     // call.
     let in_string = "test('x', () => {\n  log(\"expect(a).toBe(1)\");\n});";
-    assert!(extract_assertions("src/x.test.ts", in_string).is_empty());
+    assert_eq!(extract_assertions("src/x.test.ts", in_string).len(), 0);
 }
 
 /// Provenance: PLAT-1024, MP-242 round 2, T3 v4 (RES-31). A TypeScript row
@@ -531,7 +531,7 @@ fn tc_1024_t3_never_mentions_code() {
     assert!(!T3.applies_to(r) && T3.applies_to(rt) && !T3.applies_to(rc) && T3.applies_to(rtc));
     let code_words = Regex::new(r"(?i)\bcode\b|symbol_|implementation").unwrap();
     for row in [rt, rtc] {
-        assert!(wording_violations(&T3, row).is_empty());
+        assert_eq!(wording_violations(&T3, row).len(), 0);
         let text = question_text(&T3, row);
         assert!(!code_words.is_match(&text), "{text}");
     }
@@ -607,7 +607,7 @@ fn tc_1024_t4_cuts_a_criterion_into_clauses() {
         criterion_clauses(&many),
         ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8; P9; P10"]
     );
-    assert!(criterion_clauses(" ; . ").is_empty());
+    assert_eq!(criterion_clauses(" ; . ").len(), 0);
 }
 
 /// `(per-clause P, expected answer, confidence, ordinal)`.
@@ -725,7 +725,7 @@ async fn tc_1024_t4_row_is_asked_per_clause_and_dumped() {
     );
     let keys: Vec<&String> = asks[0].request.questions.keys().collect();
     assert_eq!(keys, ["C1", "C2", "C3"]);
-    assert!(wording_violations(&T4, &row).is_empty());
+    assert_eq!(wording_violations(&T4, &row).len(), 0);
 
     let config =
         quoin_jev::config::resolve(&Fixed::new(&[("TYPESAFE_API_KEY", "sk_test_key")])).unwrap();
@@ -1279,7 +1279,7 @@ fn tc_1024_statement_variants_ask_only_about_a_unit() {
         assert_eq!(asks.len(), 1);
         let state = serde_json::to_value(&asks[0].request.state).unwrap();
         assert_eq!(state[STATEMENT_FIELD], "`quoin` SHALL read SBOMs.");
-        assert!(wording_violations(variant, &fr).is_empty());
+        assert_eq!(wording_violations(variant, &fr).len(), 0);
     }
 }
 

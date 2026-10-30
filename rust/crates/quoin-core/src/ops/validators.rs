@@ -303,7 +303,7 @@ mod tests {
         let response = run(&serde_json::json!({ "files": {} })).unwrap();
         assert_eq!(response.outcome, Outcome::Ok);
         assert_eq!(response.payload["findings"], serde_json::json!([]));
-        assert!(response.diagnostics.is_empty());
+        assert_eq!(response.diagnostics.len(), 0);
     }
 
     /// The load-bearing decision of this module, asserted rather than only

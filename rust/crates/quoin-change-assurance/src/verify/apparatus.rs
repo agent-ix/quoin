@@ -157,15 +157,18 @@ mod tests {
     #[test]
     fn a_diff_outside_every_entry_is_clean() {
         let protected = apparatus(&["checker/config.toml", "tests/fixtures/harness/**"]);
-        assert!(judged(&protected, &["src/lib.rs"]).is_empty());
+        assert_eq!(judged(&protected, &["src/lib.rs"]).len(), 0);
         // A sibling sharing the directory's prefix is not under it.
-        assert!(judged(&protected, &["tests/fixtures/harness-old/run.rs"]).is_empty());
+        assert_eq!(
+            judged(&protected, &["tests/fixtures/harness-old/run.rs"]).len(),
+            0
+        );
         // A file entry names that file only, not a directory of that name.
-        assert!(judged(&protected, &["checker/config.toml.bak"]).is_empty());
+        assert_eq!(judged(&protected, &["checker/config.toml.bak"]).len(), 0);
         // Matching is case-sensitive, as FR-110's resolution is.
-        assert!(judged(&protected, &["Checker/config.toml"]).is_empty());
+        assert_eq!(judged(&protected, &["Checker/config.toml"]).len(), 0);
         // An empty diff touched nothing; it was still retained and compared.
-        assert!(judged(&protected, &[]).is_empty());
+        assert_eq!(judged(&protected, &[]).len(), 0);
     }
 
     #[test]

@@ -54,8 +54,8 @@ fn tc_379_100_the_incident_payload_is_read_whole() {
         .engine
         .as_ref()
         .expect("the payload carries provenance");
-    assert!(!provenance.cli.is_empty());
-    assert!(!provenance.engine.is_empty());
+    assert_ne!(provenance.cli.len(), 0);
+    assert_ne!(provenance.engine.len(), 0);
 }
 
 /// Trace: NFR-025

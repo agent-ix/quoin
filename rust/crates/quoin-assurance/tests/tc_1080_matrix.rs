@@ -392,7 +392,7 @@ fn tc_1080_008_an_absent_matrix_renders_its_reason() {
     }))
     .unwrap();
     let output = build(&request).unwrap();
-    assert!(output.requirements.is_empty());
+    assert_eq!(output.requirements.len(), 0);
     assert_eq!(output.reason.as_deref(), Some(EMPTY_REASON));
     let rendered = render_markdown(&output);
     assert_eq!(rendered, format!("# Test Matrix\n\n{EMPTY_REASON}\n"));

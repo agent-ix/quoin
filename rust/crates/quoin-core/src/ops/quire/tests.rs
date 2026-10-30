@@ -369,7 +369,7 @@ fn an_absent_module_list_is_ambient_discovery() {
         &Capabilities::with_quire(&engine),
     );
     assert_eq!(response.unwrap().outcome.code(), 0);
-    assert!(engine.seen.borrow()[0].modules.is_empty());
+    assert_eq!(engine.seen.borrow()[0].modules.len(), 0);
 }
 
 /// `quire.properties` answers with the shape MAP `quoin advise` built by hand,

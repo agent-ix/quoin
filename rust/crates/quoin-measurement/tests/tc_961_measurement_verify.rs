@@ -244,7 +244,7 @@ fn tc_961_002_a_malformed_estimator_or_rule_refuses_the_plan_load() {
 fn tc_961_003_a_consistent_collection_is_accepted_and_its_estimate_recomputed() {
     let verdict = check("MP-961", "right/accept", Some(Verdict::Accept));
     assert_eq!(verdict.verdict, Verdict::Accept);
-    assert!(verdict.reasons.is_empty());
+    assert_eq!(verdict.reasons.len(), 0);
     assert_eq!(verdict.candidate.as_deref(), Some("verify-accept"));
     assert_eq!(verdict.decisions.len(), 1);
     assert_eq!(verdict.decisions[0].estimate.value, 0.9);

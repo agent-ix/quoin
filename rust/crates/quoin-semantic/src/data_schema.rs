@@ -519,6 +519,6 @@ mod tests {
     fn tc_378_053_a_ref_that_is_not_a_string_is_not_collected() {
         let mut refs = Vec::new();
         collect_refs(&json!({"$ref": 7}), &mut refs);
-        assert!(refs.is_empty());
+        assert_eq!(refs.len(), 0);
     }
 }

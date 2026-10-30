@@ -165,7 +165,7 @@ mod tests {
         std::fs::write(core.join("note.txt"), "not json")?;
         assert_eq!(shipped_semantic_core_versions(&root), vec!["7.7.7"]);
         std::fs::remove_dir_all(&root)?;
-        assert!(shipped_semantic_core_versions(&root).is_empty());
+        assert_eq!(shipped_semantic_core_versions(&root).len(), 0);
         Ok(())
     }
 }

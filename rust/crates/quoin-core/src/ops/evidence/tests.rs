@@ -251,11 +251,9 @@ fn audit_inputs_answers_vacuity_and_independence_alongside_the_records() {
     let vacuous = response.payload["vacuous_scan_suites"].as_array().unwrap();
     assert_eq!(vacuous.len(), 1, "{vacuous:?}");
     assert_eq!(vacuous[0], "scan-suite");
-    assert!(
-        response.payload["independence"]
-            .as_array()
-            .unwrap()
-            .is_empty()
+    assert_eq!(
+        response.payload["independence"].as_array().unwrap().len(),
+        0
     );
 }
 

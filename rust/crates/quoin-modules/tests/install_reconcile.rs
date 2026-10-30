@@ -174,7 +174,7 @@ fn tc_381_280_install_lists_and_removes_a_path_module() {
 
     let name = ModuleName::new("spec-objects-business").expect("legal name");
     installer.remove(&name).expect("remove succeeds");
-    assert!(installer.list().expect("list").is_empty());
+    assert_eq!(installer.list().expect("list").len(), 0);
     assert!(!target.exists());
     assert_eq!(
         installer.remove(&name).expect_err("already removed").code(),
@@ -255,11 +255,12 @@ fn tc_381_282_a_rejected_first_install_leaves_nothing_behind() {
         other => panic!("expected a contract violation, got {other}"),
     }
     assert!(!h.paths.target_root.join("mod").exists());
-    assert!(
+    assert_eq!(
         ModuleRegistry::read(&h.paths.registry_path)
             .expect("registry")
             .plugins
-            .is_empty()
+            .len(),
+        0
     );
 }
 

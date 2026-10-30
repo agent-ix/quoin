@@ -96,7 +96,7 @@ mod tests {
         let response = ping(&serde_json::json!({})).unwrap();
         assert_eq!(response.outcome, Outcome::Ok);
         assert_eq!(response.payload["echo"], serde_json::Value::Null);
-        assert!(response.diagnostics.is_empty());
+        assert_eq!(response.diagnostics.len(), 0);
     }
 
     #[test]

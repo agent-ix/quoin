@@ -252,7 +252,7 @@ mod tests {
     fn no_two_codes_share_one_spelling() {
         let spellings: BTreeSet<&str> = EvidenceErrorCode::ALL.iter().map(|c| c.as_str()).collect();
         assert_eq!(spellings.len(), EvidenceErrorCode::ALL.len());
-        assert!(!EvidenceErrorCode::ALL.is_empty());
+        assert_ne!(EvidenceErrorCode::ALL.len(), 0);
     }
 
     #[test]

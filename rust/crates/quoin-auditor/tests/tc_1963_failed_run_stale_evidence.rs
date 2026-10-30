@@ -341,7 +341,7 @@ fn tc_1963_two_runs_fail_then_newer_pass_stays_healthy() {
 
     let mut skipped = Vec::new();
     let runs = latest_runs(&store, &mut skipped).expect("the store reads back what it holds");
-    assert!(skipped.is_empty());
+    assert_eq!(skipped.len(), 0);
     assert_eq!(runs.len(), 1);
 
     let input = an_input(vec![obligation], vec![binding], runs);
@@ -352,7 +352,7 @@ fn tc_1963_two_runs_fail_then_newer_pass_stays_healthy() {
         "the newer, passing run must decide, not the older failing one: {:?}",
         report.healthy
     );
-    assert!(stale_findings(&report, "FR-905-AC-1").is_empty());
+    assert_eq!(stale_findings(&report, "FR-905-AC-1").len(), 0);
 }
 
 /// A run that is both behind HEAD and failing reports only the high
@@ -476,5 +476,5 @@ fn tc_1963_the_index_keeps_the_last_run_supplied_for_a_suite_reciprocal() {
         "the LAST-supplied, passing run must decide: {:?}",
         report.healthy
     );
-    assert!(stale_findings(&report, "FR-908-AC-1").is_empty());
+    assert_eq!(stale_findings(&report, "FR-908-AC-1").len(), 0);
 }

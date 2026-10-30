@@ -88,7 +88,7 @@ fn tc_380_an_interrupted_write_leaves_no_torn_record_and_no_orphaned_temporary()
 
     // The next run recovers the orphan, and recovery is idempotent.
     assert_eq!(recover_orphaned_temporaries(&records).unwrap(), 1);
-    assert!(temporaries_in(&records).is_empty());
+    assert_eq!(temporaries_in(&records).len(), 0);
     assert_eq!(recover_orphaned_temporaries(&records).unwrap(), 0);
     assert_eq!(std::fs::read(&record).unwrap(), complete);
 
@@ -147,7 +147,7 @@ fn tc_380_a_reader_racing_a_writer_never_observes_a_torn_record() {
     reader.join().expect("the reader saw only complete records");
 
     assert!(reads.load(Ordering::Relaxed) > 0, "the reader never ran");
-    assert!(temporaries_in(&records).is_empty());
+    assert_eq!(temporaries_in(&records).len(), 0);
     std::fs::remove_dir_all(&scratch).ok();
 }
 
@@ -196,7 +196,7 @@ fn tc_380_concurrent_writes_to_one_store_root_keep_every_completed_record() {
             parse_strict_json(&bytes).expect("every completed record parses");
         }
     }
-    assert!(temporaries_in(&root).is_empty());
+    assert_eq!(temporaries_in(&root).len(), 0);
     std::fs::remove_dir_all(&scratch).ok();
 }
 
@@ -250,6 +250,6 @@ fn tc_380_concurrent_content_addressed_writers_refuse_rather_than_clobber() {
         bytes.iter().all(|byte| *byte == bytes[0]),
         "the published bytes are one writer's, not a mixture"
     );
-    assert!(temporaries_in(&root).is_empty());
+    assert_eq!(temporaries_in(&root).len(), 0);
     std::fs::remove_dir_all(&scratch).ok();
 }
