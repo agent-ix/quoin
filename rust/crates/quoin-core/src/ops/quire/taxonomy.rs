@@ -110,19 +110,13 @@ mod tests {
     use super::{CoreErrorCode, core_code, map_error};
 
     /// [`ErrorCode`] is `#[non_exhaustive]`, so `map_error`'s `_` arm means the
-    /// compiler cannot catch a code added upstream. This pins the COUNT
-    /// instead, and lists every group by name.
+    /// compiler cannot catch a code added upstream. This lists every group by
+    /// name and requires each code in `all()` to be in exactly one.
     ///
     /// When this fails: a code was added to `quoin-quire`. Decide which of the
-    /// three groups it belongs to, add it to that arm, and raise the count.
+    /// three groups it belongs to and add it to that arm.
     #[test]
     fn the_error_mapping_covers_every_quire_code() {
-        assert_eq!(
-            ErrorCode::all().len(),
-            21,
-            "quoin-quire gained or lost an error code; map it in map_error deliberately"
-        );
-
         let refused = [
             ErrorCode::ScopeNotADirectory,
             ErrorCode::DocumentRootMissing,

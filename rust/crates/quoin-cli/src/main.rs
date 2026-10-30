@@ -444,7 +444,7 @@ fn graph_view(name: &'static str) -> Command {
                 .long("audit")
                 .value_name("JSON")
                 .required(true)
-                .help("Source-bound FR-032 audit-envelope JSON"),
+                .help("FR-032 audit-envelope JSON"),
         )
         .arg(
             Arg::new("json")

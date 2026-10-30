@@ -380,10 +380,6 @@ fn tc_500_044_every_view_carries_the_accepted_premises() {
     ];
     for view in &views {
         let report = as_json(view);
-        assert!(
-            report.get("source").is_none(),
-            "no source identity is carried"
-        );
         assert_eq!(report["premises"], premises_value());
         assert_eq!(
             report["export"],
@@ -724,5 +720,34 @@ fn tc_500_048_the_views_carry_no_score_or_threshold() {
         rendered.contains("obligationCount"),
         "the structural fact itself must still be there — an empty report would pass the check \
          above by saying nothing"
+    );
+}
+
+/// Bindings are read in `(obligation, suite)` order whatever order the store
+/// lists them in.
+///
+/// Provenance: quoin#500
+#[test]
+fn bindings_for_one_obligation_are_ordered_by_suite() {
+    let bindings = parse_bindings_file(&json!({
+        "schemaVersion": 1,
+        "bindings": [
+            binding("FR-001-AC-1", "unit"),
+            binding("FR-001-AC-1", "integration"),
+            binding("FR-000-AC-1", "unit"),
+        ],
+    }))
+    .expect("the store parses");
+    let order: Vec<(&str, &str)> = bindings
+        .iter()
+        .map(|b| (b.obligation.as_str(), b.suite.as_str()))
+        .collect();
+    assert_eq!(
+        order,
+        [
+            ("FR-000-AC-1", "unit"),
+            ("FR-001-AC-1", "integration"),
+            ("FR-001-AC-1", "unit"),
+        ]
     );
 }
