@@ -294,7 +294,6 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
         )),
         "{refs}"
     );
-    assert!(validators.ships_semantic_core(&module.block.semantic_core));
 }
 
 /// A shipped schema file that does not exist, is not JSON, or is not a JSON

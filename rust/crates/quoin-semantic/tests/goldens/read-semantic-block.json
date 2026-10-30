@@ -1,7 +1,7 @@
 {
   "source": "src/semantic/manifest.ts readSemanticBlock()",
   "counts": {
-    "total": 23
+    "total": 22
   },
   "cases": [
     {
@@ -375,44 +375,6 @@
         }
       ],
       "module": null
-    },
-    {
-      "id": "unknown-semantic-core",
-      "manifest": {
-        "manifest_version": "1.0.0",
-        "name": "x",
-        "version": "0.1.0",
-        "semantic": {
-          "contract_version": "1.0.0",
-          "semantic_core": "9.9.9",
-          "package": "a/b"
-        }
-      },
-      "files": {},
-      "diagnostics": [
-        {
-          "code": "semantic.unknown-semantic-core",
-          "severity": "error",
-          "path": "semantic.semantic_core",
-          "message": "semantic_core 9.9.9 is not a version this quoin ships (0.3.2)"
-        }
-      ],
-      "module": {
-        "name": "x",
-        "version": "0.1.0",
-        "block": {
-          "contract_version": "1.0.0",
-          "semantic_core": "9.9.9",
-          "package": "a/b",
-          "exports": [],
-          "imports": {},
-          "targets": [],
-          "mappings": [],
-          "compatibility_posture": "additive",
-          "legacy_forms": "warning"
-        },
-        "dataSchemas": {}
-      }
     },
     {
       "id": "export-not-in-object-types",

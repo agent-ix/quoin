@@ -101,8 +101,6 @@ diagnostic_codes! {
     UnsupportedContractVersion => "semantic.unsupported-contract-version",
     /// `semantic.exports` names a type `object_types` does not declare.
     UnknownExport => "semantic.unknown-export",
-    /// `semantic.semantic_core` is not a version this quoin ships a bundle for.
-    UnknownSemanticCore => "semantic.unknown-semantic-core",
     /// `legacy_forms: error` without a usable sweep report (FR-074).
     SweepReportRequired => "semantic.sweep-report-required",
     /// Another installed module already provides this `semantic.package`.

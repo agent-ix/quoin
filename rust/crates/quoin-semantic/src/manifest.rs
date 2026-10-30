@@ -213,14 +213,6 @@ impl SemanticValidators {
         })
     }
 
-    /// True when `version` is one the loaded bundle ships (its `$id` base).
-    #[must_use]
-    pub fn ships_semantic_core(&self, version: &SemanticCoreVersion) -> bool {
-        self.shipped_semantic_core
-            .iter()
-            .any(|shipped| shipped == version.as_str())
-    }
-
     /// The semantic-core versions the loaded bundle ships.
     #[must_use]
     pub fn shipped_semantic_core_versions(&self) -> &[String] {
@@ -406,17 +398,6 @@ pub fn read_semantic_block(
             .get("semantic_core")
             .map_or_else(String::new, stringify),
     );
-    if !validators.ships_semantic_core(&semantic_core) {
-        diagnostics.push(SemanticDiagnostic::error(
-            DiagnosticCode::UnknownSemanticCore,
-            "semantic.semantic_core",
-            format!(
-                "semantic_core {semantic_core} is not a version this quoin ships ({})",
-                validators.shipped_semantic_core.join(", ")
-            ),
-        ));
-    }
-
     let module_version = ModuleVersion::new(
         manifest_map
             .get("version")
