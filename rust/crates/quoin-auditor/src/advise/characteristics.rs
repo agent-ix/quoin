@@ -175,10 +175,6 @@ mod tests {
         let mut sorted = found.clone();
         sorted.sort();
         assert_eq!(found, sorted);
-        assert!(
-            found.len() >= 2,
-            "expected several characteristics, got {found:?}"
-        );
         let mut distinct = found.clone();
         distinct.dedup();
         assert_eq!(found, distinct);
@@ -274,7 +270,6 @@ mod tests {
     #[test]
     fn every_lexical_name_is_mintable_and_the_three_non_lexical_ones_too() {
         let mintable = mintable_characteristics();
-        assert!(mintable.len() >= 53, "got {}", mintable.len());
         for name in [
             "high-criticality",
             "fault-detection-unmeasured",

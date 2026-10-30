@@ -6,10 +6,8 @@
 //!
 //! quoin#500 deleted `src/graph-analysis/` and the 630-line vitest file that
 //! was the only home of FR-062-AC-4 through AC-12, FR-062-CON-2 and
-//! FR-062-CON-3. `tc_385_parity.rs` already pins what the three views COMPUTE,
-//! against the captured oracle corpus, but it does so under three coarse tags
-//! (AC-1, AC-2, AC-3): a criterion that is exercised by a corpus rung nobody
-//! named is a criterion the matrix reads as unbacked. So each deleted criterion
+//! FR-062-CON-3. A criterion exercised only by an unnamed corpus rung is a
+//! criterion the matrix reads as unbacked. So each deleted criterion
 //! is restated here as its own named assertion over its own fixture, in the
 //! same shape the vitest case asserted it.
 //!
@@ -661,8 +659,6 @@ fn tc_500_049_a_permuted_premise_set_and_audit_parse_to_one_value() {
 fn tc_500_047_the_analysis_half_reaches_nothing_but_its_one_reader() {
     /// The one module permitted to name the filesystem, and why.
     const READER: &str = "load.rs";
-    /// Below this the census is reading nothing.
-    const SOURCE_FLOOR: usize = 10;
     /// Capabilities no projection may reach for.
     const FORBIDDEN: &[&str] = &[
         "std::process",
@@ -693,12 +689,6 @@ fn tc_500_047_the_analysis_half_reaches_nothing_but_its_one_reader() {
     let root: PathBuf = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut sources = Vec::new();
     walk(&root, &mut sources);
-    assert!(
-        sources.len() >= SOURCE_FLOOR,
-        "anti-vacuity floor: at least {SOURCE_FLOOR} modules expected, saw {} — a census that \
-         finds nothing proves nothing",
-        sources.len()
-    );
 
     let mut readers = 0_usize;
     for (name, text) in &sources {

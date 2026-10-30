@@ -6,7 +6,6 @@
   ],
   "baseline": {
     "configuration": {
-      "runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
       "sentinel_match": "substring"
     },
     "id": "substring-detector",
@@ -88,15 +87,9 @@
     "configuration_ref": "agent-evals/quoin-270-sentinel-definition.json",
     "definition_version": "cli-agent-evals.sentinel-contract-v1",
     "environment": {
-      "baseline_runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
-      "cli_agent_evals_version": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
       "codex_cli": "0.151.0",
-      "engineering_assurance_revision": "236f420987bdfd5309fb531806a851ddc9f75ae3",
-      "fixture_revision": "fixtures-v1",
       "node": "24.15.0",
-      "report_schema_version": "cli-agent-evals-report-v1",
-      "suite_revision": "suite-v1",
-      "treatment_runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
+      "report_schema_version": "cli-agent-evals-report-v1"
     },
     "tool_identity": "quoin-agent-eval-intervention-adapter",
     "tool_version": "0.9.0"
@@ -124,7 +117,6 @@
   "treatments": [
     {
       "configuration": {
-        "runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
         "sentinel_match": "standalone-terminal-line"
       },
       "id": "standalone-detector",

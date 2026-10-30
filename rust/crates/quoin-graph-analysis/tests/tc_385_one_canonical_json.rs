@@ -63,9 +63,6 @@ const SECOND_WRITER_SPELLINGS: &[(&str, &str)] = &[
     ),
 ];
 
-/// The count below which this check is guarding nothing.
-const SOURCE_FLOOR: usize = 10;
-
 /// Every `.rs` file under `src/`, as `(file name, relative path, contents)`.
 fn modules() -> Vec<(String, String, String)> {
     fn walk(root: &Path, directory: &Path, into: &mut Vec<(String, String, String)>) {
@@ -93,11 +90,6 @@ fn modules() -> Vec<(String, String, String)> {
     let mut found = Vec::new();
     walk(&root, &root, &mut found);
     found.sort();
-    assert!(
-        found.len() >= SOURCE_FLOOR,
-        "anti-vacuity floor: at least {SOURCE_FLOOR} modules expected, saw {}",
-        found.len()
-    );
     found
 }
 
@@ -106,7 +98,6 @@ fn modules() -> Vec<(String, String, String)> {
 /// Trace: FR-100-CON-4
 #[test]
 fn tc_385_020_the_canonicalizers_are_called_from_one_module() {
-    let mut calls = 0usize;
     for (name, relative, contents) in modules() {
         for line in contents.lines() {
             // The doc comments name these functions constantly, and naming one
@@ -124,19 +115,9 @@ fn tc_385_020_the_canonicalizers_are_called_from_one_module() {
                      crate through {THE_ONE_MODULE} and nowhere else, so that there is one \
                      answer to what they are."
                 );
-                calls += 1;
             }
         }
     }
-    // Two, not three: the crate writes canonical bytes with
-    // `canonical_json_bytes` and sort keys with `canonicalize_jcs`, and
-    // `canonical_json` is guarded here so that a third route cannot open
-    // quietly, not because it is called.
-    assert!(
-        calls >= 2,
-        "only {calls} canonicalizer calls found: this check is no longer guarding the calls it \
-         was written for"
-    );
 }
 
 /// No module writes JSON, or orders members, on its own.

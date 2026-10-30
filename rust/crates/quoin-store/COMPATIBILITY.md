@@ -14,8 +14,7 @@ change-assurance record, attestation or receipt: those are addressed by
 evidence (FR-063, FR-064, FR-065).
 
 **What is asserted, and by what.** The serializations below are asserted by
-`tests/tc_jcs_adversarial.rs`, the unit tests in `src/json/`, and the authored
-case corpus in `oracle/cases.mjs`.
+`tests/tc_jcs_adversarial.rs` and the unit tests in `src/json/`.
 
 ---
 
@@ -93,16 +92,8 @@ assigns into an object — so the JCS bytes are unaffected.
 This crate keeps the member. Reproducing a prototype-pollution artefact in a
 language with no prototypes would be encoding a defect as a contract.
 
-The divergence is declared in `oracle/cases.mjs` and asserted, in both
-directions, by `tc_380_proto_member_is_data_in_rust_and_deleted_by_the_typescript_pretty_form`.
+The behaviour is asserted by `tc_380_proto_member_is_kept_as_data`.
 
 ---
 
 ---
-
-## The fixtures are frozen; they are not regenerated
-
-`tests/fixtures/jcs-oracle.json` is committed so **no TypeScript runs as a test
-oracle** (EPIC #373 AC-5). A test that disagrees with it is a parity finding to
-adjudicate, never a fixture to regenerate. `oracle/cases.mjs` is the authored
-adversarial case corpus, pure data with no imports.

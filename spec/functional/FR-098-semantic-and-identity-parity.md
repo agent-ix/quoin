@@ -14,9 +14,7 @@ relationships:
 Quoin SHALL preserve the observable semantics of every ported capability,
 including each refusal and non-success path, and SHALL produce byte-identical
 canonical serializations from the Rust implementation and the implementation
-it replaces, compared byte for byte, except for the explicit PLAT-989 RFC 8785
-and record-identity transition defined by FR-100-AC-10/11 and NFR-025. No other
-difference is exempt. No digest is computed or compared anywhere in the port.
+it replaces, compared byte for byte. No difference is exempt. No digest is computed or compared anywhere in the port.
 
 ## Inputs
 
@@ -53,8 +51,8 @@ difference is exempt. No digest is computed or compared anywhere in the port.
   and unavailable hosts.
 - Quoin SHALL obtain RFC 8785 encoding from `quire-canonical` and implement
   store identity and atomic-write operations only in `quoin-store`.
-- Outside the enumerated PLAT-989 transition, that path SHALL produce the same
-  bytes as the retained implementation for the same input. Record identifiers
+- That path SHALL produce the same bytes as the retained implementation for
+  the same input. Record identifiers
   are opaque random UUIDs (v4) assigned once when a record is written, stored,
   and compared as exact strings, and a record is stored as `<recordId>.json`;
   an identifier is never derived from content.
@@ -64,14 +62,12 @@ difference is exempt. No digest is computed or compared anywhere in the port.
   canonicalization rather than following it.
 - Before a store-backed capability cuts over, Quoin SHALL read every record in
   every reachable store through Rust, write it back, and SHALL refuse the
-  cutover if the written bytes differ from the stored bytes outside the exact
-  PLAT-989 transition mapping enumerated under NFR-025.
+  cutover if the written bytes differ from the stored bytes.
 - Quoin SHALL test JCS canonicalization over adversarial Unicode, number-format
   and key-order inputs.
 - Quoin SHALL port each `fast-check` property suite under `tests/props` to a
   `proptest` suite asserting the same property.
-- If Rust disagrees with a retained expected fixture outside the explicit
-  PLAT-989 transition on any golden input, then
+- If Rust disagrees with a retained expected fixture on any golden input, then
   Quoin SHALL refuse the cutover and SHALL name the differing input, the
   operation and both results.
 - Quoin SHALL resolve the JSON Schema validator version used across the
@@ -89,15 +85,14 @@ difference is exempt. No digest is computed or compared anywhere in the port.
 ## Error Conditions
 
 A differing canonical result, a differing exit status, a differing normalized
-diagnostic tuple, any unlisted byte difference during replay outside the
-PLAT-989 transition, an unreadable store and a
+diagnostic tuple, any byte difference during replay, an unreadable store and a
 differential run whose compared population is empty each block cutover.
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
-| FR-098-CON-1 | Cutover SHALL NOT change an existing identity domain except the enumerated PLAT-989 assurance identity transition under NFR-025. | Data Integrity | Test |
+| FR-098-CON-1 | Cutover SHALL NOT change an existing identity domain. | Data Integrity | Test |
 | FR-098-CON-2 | Quoin SHALL delegate RFC 8785 encoding to quire-canonical and retain store identity and atomic-write logic only in quoin-store. | Architecture | Test |
 | FR-098-CON-3 | Withdrawn: the differential replay over captured records is gone with the retained implementation it compared against; no parity evidence is recorded, so there is nothing for an empty population to be recorded as (id not reused). | Reporting | Withdrawn |
 

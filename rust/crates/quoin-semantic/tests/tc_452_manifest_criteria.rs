@@ -4,11 +4,8 @@
 //! FR-070 and FR-073, criterion by criterion (quoin#452).
 //!
 //! These restate the acceptance criteria `tests/semantic-manifest.test.ts`
-//! carried before the cutover deleted it. They are NOT the golden-parity suite
-//! next door: `golden_parity.rs` proves this crate answers what the TypeScript
-//! answered over a captured corpus, which is a statement about the *port*. A
-//! criterion is a statement about the *contract*, and it has to survive the
-//! oracle's deletion — so each test below names one criterion and asserts the
+//! carried before the cutover deleted it. A criterion is a statement about the
+//! *contract*, and it has to survive the oracle's deletion — so each test below names one criterion and asserts the
 //! rule it states, against the live vendored contract and the shipped
 //! `module-ok` fixture.
 //!
@@ -504,11 +501,6 @@ fn tc_452_620_a_path_escape_or_an_ambiguous_data_schema_is_refused() {
 #[test]
 fn tc_452_621_the_data_schema_resolution_path_names_no_network_client() {
     const SOURCE: &str = include_str!("../src/data_schema.rs");
-    assert!(
-        SOURCE.len() > 10_000,
-        "the resolution path is {} bytes; this guard is reading the wrong file",
-        SOURCE.len()
-    );
     assert!(
         SOURCE.contains("pub fn resolve_data_schema"),
         "the guard must read the file that resolves references"

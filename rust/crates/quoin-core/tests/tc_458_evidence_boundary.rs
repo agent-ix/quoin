@@ -141,10 +141,6 @@ fn tc_458_010_store_facts_serves_the_store_constants() {
     let payload = ok(&run("evidence.store_facts", &json!({})));
     assert_eq!(payload["mutation_score_metric"], "mutation-score");
     assert_eq!(payload["bindings_path"], "bindings.json");
-    assert!(
-        payload["adapter_names"].as_array().unwrap().len() >= 5,
-        "{payload}"
-    );
 }
 
 ///

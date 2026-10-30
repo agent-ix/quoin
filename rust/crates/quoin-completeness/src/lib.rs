@@ -15,10 +15,9 @@
 //!
 //! # Parity with the TypeScript it replaces
 //!
-//! The TypeScript is the oracle and was consulted once:
-//! `scripts/capture-semantic-goldens.mjs` (itself deleted at the quoin#452
-//! cutover) recorded its answers into
-//! `tests/goldens/`. The tests read those files and never invoke Node.
+//! The TypeScript was the oracle; it and its capture script were deleted at
+//! the quoin#452 cutover, and the recorded goldens with the replay tests that
+//! read them. Nothing here invokes Node or reads a recorded answer.
 //!
 //! This crate compiles no JSON Schema, so the ajv/`jsonschema` divergence
 //! recorded in `../quoin-semantic/DIVERGENCE.md` does not reach it. The one

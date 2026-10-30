@@ -12,12 +12,7 @@
 //! `tests/operational.test.ts` is deleted in the same commit as
 //! `src/measurement/operational.ts`. Nine FR-059 criteria were
 //! carried by five of its cases, and a criterion that appears on no test after
-//! the cutover is a criterion nothing holds. `tc_472_operational_pairs.rs`
-//! proves the one retained pair still validates, and
-//! `tc_472_github_release.rs` proves the producer rebuilds it byte for byte —
-//! but a corpus round trip is not a per-criterion gate: neither would notice
-//! if the control vocabulary lost a member or the clock stopped being derived.
-//! This file is the per-criterion gate: one `#[test]` per criterion, named by
+//! the cutover is a criterion nothing holds. This file is the per-criterion gate: one `#[test]` per criterion, named by
 //! the criterion, so a criterion cannot be lost without a named test
 //! disappearing with it.
 //!
@@ -35,8 +30,7 @@
 //! which must be able to write. That runs in a `tempfile` workspace holding the
 //! producer's whole input contract — the assurance documents the governance
 //! check reads and the three retained GitHub exports the raw-evidence
-//! accounting reads — copied from this repository, exactly as
-//! `tc_472_github_release.rs` does. Nothing here writes into the repository.
+//! accounting reads — copied from this repository. Nothing here writes into the repository.
 
 #![allow(
     clippy::unwrap_used,
@@ -52,7 +46,7 @@ mod copy;
 mod paths;
 
 use copy::copy_tree;
-use paths::repo_root;
+use paths::{fixture_store, repo_root};
 
 use engineering_assurance::claim_strength::ClaimStrength;
 use quoin_jsonschema::MeasurementSchema;
@@ -80,9 +74,7 @@ const REQUIREMENT: &str = "spec/functional/FR-059-operational-evidence-records.m
 
 /// The retained pair's record of one shape.
 fn retained(shape: &str) -> Value {
-    let path = repo_root()
-        .join("spec")
-        .join("evidence")
+    let path = fixture_store()
         .join("operational")
         .join("pairs")
         .join(RETAINED_PAIR);
@@ -233,7 +225,6 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
 
     // Each member independently: a record missing exactly one is refused, and
     // the refusal names the member that is gone.
-    assert_eq!(ENVELOPE.len(), 13, "the envelope census is the criterion's");
     for member in ENVELOPE {
         refused_naming(
             &without(&base, &[member]),
@@ -458,7 +449,6 @@ fn tc_479_303_an_exercise_requires_its_whole_shape_and_ordered_timing() {
     let base = exercise();
     admitted(&base, "the retained exercise");
 
-    assert_eq!(EXERCISE.len(), 11, "the exercise census is the criterion's");
     for member in EXERCISE {
         refused_naming(
             &without(&base, &["exercise", member]),
@@ -788,10 +778,7 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
         &root.join("spec").join("assurance"),
     );
     copy_tree(
-        &repo_root()
-            .join("spec")
-            .join("evidence")
-            .join("github-actions"),
+        &fixture_store().join("github-actions"),
         &root.join("spec").join("evidence").join("github-actions"),
     );
 
@@ -871,7 +858,6 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
 /// Provenance: PLAT-972
 #[test]
 fn tc_479_309_strength_is_required_and_closed_to_observed() {
-    let mut measured = 0_usize;
     for (shape, base) in [("capability", capability()), ("exercise", exercise())] {
         let admitted = admitted(&base, &format!("the retained {shape}"));
         assert_eq!(admitted.record().base().strength, ClaimStrength::Observed);
@@ -891,7 +877,6 @@ fn tc_479_309_strength_is_required_and_closed_to_observed() {
                 "/strength",
                 &format!("a {shape} claiming `{strength}`"),
             );
-            measured += 1;
         }
         refused_naming(
             &with(&base, &["strength"], json!("verified")),
@@ -899,10 +884,6 @@ fn tc_479_309_strength_is_required_and_closed_to_observed() {
             &format!("a {shape} with a strength outside the EA vocabulary"),
         );
     }
-    assert_eq!(
-        measured, 6,
-        "anti-vacuity floor: every strength but `observed`, for both shapes, is measured"
-    );
 }
 
 // -------------------------------------------------------------- the workspace

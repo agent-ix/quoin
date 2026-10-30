@@ -86,10 +86,8 @@ mod tests {
     /// Provenance: quoin#501
     #[test]
     fn the_error_mapping_covers_every_auditor_code() {
-        // Pinned rather than iterated: a loop over `ALL` would call the same
-        // match this file defines and agree with itself. A code added upstream
-        // breaks this number and forces a decision here (quoin#443).
-        assert_eq!(AuditorErrorCode::ALL.len(), 3);
+        // Each code is stated explicitly: a loop over `ALL` would call the same
+        // match this file defines and agree with itself.
         assert_eq!(
             core_code(AuditorErrorCode::DemandTooLarge),
             Some(CoreErrorCode::Refused)

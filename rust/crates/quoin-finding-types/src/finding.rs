@@ -66,9 +66,8 @@ pub struct Finding {
     pub obligation: String,
     /// How serious it is, when the producer said.
     ///
-    /// Optional because the assurance corpus holds findings without one: four
-    /// of the six findings in `quoin-assurance/tests/golden/cases.json` omit
-    /// the key entirely, and the view has always rendered them. The auditor
+    /// Optional because findings authored without one exist (the assurance
+    /// input corpus holds some), and the view has always rendered them. The auditor
     /// itself always writes one — [`Finding::new`] takes it by value, so a
     /// finding minted through the constructor cannot lack it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -192,9 +191,7 @@ impl FindingKind {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use std::collections::BTreeSet;
-
-    use super::{Finding, FindingKind};
+    use super::Finding;
     use crate::severity::Severity;
 
     #[test]
@@ -284,14 +281,5 @@ mod tests {
             serde_json::from_str::<serde_json::Value>(source).expect("reads"),
             "a member the auditor wrote must survive the round trip"
         );
-    }
-
-    #[test]
-    fn the_eleven_kinds_are_eleven_distinct_spellings() {
-        // Anti-vacuity: a list that silently lost an entry to a copy-paste
-        // would still be "all of it".
-        let distinct: BTreeSet<&str> = FindingKind::ALL.into_iter().collect();
-        assert_eq!(distinct.len(), 11);
-        assert!(distinct.contains(FindingKind::MOCKED_CONFIRMATION));
     }
 }

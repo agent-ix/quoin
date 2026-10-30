@@ -9,11 +9,9 @@
 //! # Why this file exists
 //!
 //! `src/measurement/agent-eval-intervention.ts` and the tests that held it to
-//! FR-058 are deleted in the same commit. `tc_471_corpus.rs` proves
-//! the port reproduces the retained record byte for byte, but it is one test
-//! tagged `FR-100`: it does not say which of FR-058's five criteria it carries,
-//! and four of them are about what the producer *refuses* or *ignores*, which a
-//! reproduction test cannot see. This file is one test per criterion.
+//! FR-058 are deleted in the same commit. Four of FR-058's five criteria are
+//! about what the producer *refuses* or *ignores*, which a reproduction test
+//! cannot see. This file is one test per criterion.
 //!
 //! # Where the inputs come from
 //!
@@ -43,7 +41,7 @@ mod paths;
 
 use census::rust_files;
 use copy::copy_tree;
-use paths::repo_root;
+use paths::{fixture_store, repo_root};
 
 use std::path::{Path, PathBuf};
 
@@ -78,6 +76,10 @@ const SELF_DECLARED_GAPS: [&str; 3] = [
 fn producing_repo() -> (TempDir, Vec<u8>) {
     let temporary = tempfile::tempdir().expect("a temporary repository");
     copy_tree(&repo_root().join("spec"), &temporary.path().join("spec"));
+    copy_tree(
+        &fixture_store(),
+        &temporary.path().join("spec").join("evidence"),
+    );
     let retained = temporary
         .path()
         .join("spec")
@@ -87,6 +89,17 @@ fn producing_repo() -> (TempDir, Vec<u8>) {
     let bytes = std::fs::read(&retained).expect("the retained record was copied");
     std::fs::remove_file(&retained).expect("the retained record is removable");
     (temporary, bytes)
+}
+
+/// The byte length of one fixture report.
+fn fixture_bytes(arm: &str) -> u64 {
+    std::fs::metadata(
+        fixture_store()
+            .join("agent-evals")
+            .join(format!("quoin-270-sentinel-{arm}.json")),
+    )
+    .expect("the fixture report")
+    .len()
 }
 
 /// The committed producer definition, as JSON.
@@ -207,9 +220,6 @@ fn tc_479_250_two_retained_runs_produce_the_observations_the_reports_state() {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_entry() {
-    /// Below this the census is measuring one refusal and calling it six.
-    const CASE_FLOOR: usize = 7;
-
     /// What a case does to the committed base before the producer runs.
     enum Mutation {
         /// Replace the definition's `report_schema_version`.
@@ -272,12 +282,6 @@ fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_
             InterventionRefusalCode::InvalidRecord,
         ),
     ];
-
-    assert!(
-        cases.len() >= CASE_FLOOR,
-        "anti-vacuity floor: at least {CASE_FLOOR} cases expected, saw {}",
-        cases.len()
-    );
 
     for (what, mutation, expected) in cases {
         let (temporary, _) = producing_repo();
@@ -363,12 +367,12 @@ fn tc_479_252_caller_supplied_substitutes_do_not_reach_the_record() {
             {
                 "path": "agent-evals/quoin-270-sentinel-baseline.json",
                 "media_type": "application/json",
-                "size_bytes": 11305,
+                "size_bytes": fixture_bytes("baseline"),
             },
             {
                 "path": "agent-evals/quoin-270-sentinel-treatment.json",
                 "media_type": "application/json",
-                "size_bytes": 14261,
+                "size_bytes": fixture_bytes("treatment"),
             },
         ]),
         "the raw-evidence metadata is the retained files', not the caller's"

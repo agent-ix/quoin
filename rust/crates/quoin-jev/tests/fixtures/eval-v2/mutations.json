@@ -354,33 +354,6 @@
       "breaks_stated_behaviour": true
     },
     {
-      "id": "M-VIOL-18",
-      "slot": "VIOL-18",
-      "kind": "violating_code",
-      "source": "N-089",
-      "modes": [
-        "RTC"
-      ],
-      "target": "code",
-      "file": "rust/crates/quoin-combinatorial/src/space.rs",
-      "find": "    let strength = Strength::parse_digits(captured.get(1)?.as_str())?;",
-      "replace": "    let strength = Strength::parse_digits(\"1\")?;",
-      "description": "Hardcodes the parsed strength to 1 regardless of the digits captured from the obligation statement, contradicting AC-1's requirement that the strength be parsed back out of the statement; a `2-way` obligation becomes a `1-way` demand, so tc_382_004's single-dimension configuration is wrongly reported as covering a tuple.",
-      "outcome": "caught",
-      "patch": "diff --git a/rust/crates/quoin-combinatorial/src/space.rs b/rust/crates/quoin-combinatorial/src/space.rs\nindex e9a5d584..adacd276 100644\n--- a/rust/crates/quoin-combinatorial/src/space.rs\n+++ b/rust/crates/quoin-combinatorial/src/space.rs\n@@ -237,7 +237,7 @@ fn exclusion() -> &'static Regex {\n #[must_use]\n pub fn parse_space(statement: &str) -> Option<ConfigurationSpace> {\n     let captured = header().captures(statement)?;\n-    let strength = Strength::parse_digits(captured.get(1)?.as_str())?;\n+    let strength = Strength::parse_digits(\"1\")?;\n \n     // Dimensions are read from the part before any `excluding[...]`, so an\n     // exclusion naming `dim=value` is never mistaken for a dimension.\n",
-      "owning_test": {
-        "filter": "tc_382_004_an_inherited_property_name_is_not_a_divergence_because_the_value_guard_catches_it",
-        "name": "tc_382_004_an_inherited_property_name_is_not_a_divergence_because_the_value_guard_catches_it",
-        "package": "quoin-combinatorial",
-        "selector": [
-          "--test",
-          "tc_382_parity"
-        ]
-      },
-      "failure": "assertion",
-      "breaks_stated_behaviour": true
-    },
-    {
       "id": "M-VIOL-19",
       "slot": "VIOL-19",
       "kind": "violating_code",
@@ -579,33 +552,6 @@
       "breaks_stated_behaviour": true
     },
     {
-      "id": "M-VIOL-27",
-      "slot": "VIOL-27",
-      "kind": "violating_code",
-      "source": "N-025",
-      "modes": [
-        "RTC"
-      ],
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/package_manifest.rs",
-      "find": "pub fn mapping_identity(package: &PackageIdentity, name: &str) -> String {\n    format!(\"ix://{}/{}/mapping/{name}\", package.org(), package.repo())\n}",
-      "replace": "pub fn mapping_identity(package: &PackageIdentity, name: &str) -> String {\n    format!(\"ix://{}/{}/mapping/{name}\", package.repo(), package.org())\n}",
-      "description": "Swaps the org and repo segments of the derived `ix://<org>/<repo>/mapping/<name>` identity, contradicting FR-075's identity scheme and failing tc_378_108's oracle-matched mapping identities.",
-      "outcome": "caught",
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/package_manifest.rs b/rust/crates/quoin-semantic/src/package_manifest.rs\nindex 12c6e69f..a8bc6fe5 100644\n--- a/rust/crates/quoin-semantic/src/package_manifest.rs\n+++ b/rust/crates/quoin-semantic/src/package_manifest.rs\n@@ -40,7 +40,7 @@ pub fn type_identity(package: &PackageIdentity, name: &ObjectTypeName) -> String\n /// `ix://<org>/<repo>/mapping/<name>`.\n #[must_use]\n pub fn mapping_identity(package: &PackageIdentity, name: &str) -> String {\n-    format!(\"ix://{}/{}/mapping/{name}\", package.org(), package.repo())\n+    format!(\"ix://{}/{}/mapping/{name}\", package.repo(), package.org())\n }\n \n /// One `imports[]` entry of the derived manifest.\n",
-      "owning_test": {
-        "filter": "tc_378_108_identities_match_the_oracle",
-        "name": "tc_378_108_identities_match_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "failure": "assertion",
-      "breaks_stated_behaviour": true
-    },
-    {
       "id": "M-VIOL-28",
       "slot": "VIOL-28",
       "kind": "violating_code",
@@ -682,34 +628,6 @@
         "package": "quoin-evidence",
         "selector": [
           "--lib"
-        ]
-      },
-      "failure": "assertion",
-      "breaks_stated_behaviour": true
-    },
-    {
-      "id": "M-VIOL-31",
-      "slot": "VIOL-31",
-      "kind": "violating_code",
-      "source": "N-131",
-      "modes": [
-        "RTC",
-        "RC"
-      ],
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/data_schema.rs",
-      "find": "    if !extra.is_empty() || !has_schema || !has_digest {",
-      "replace": "    if !extra.is_empty() && !has_schema && !has_digest {",
-      "description": "Changes the reference-vs-invalid gate from OR to AND, so a data_schema with only one of `schema`/`digest` present (or with extra keys but both present) is wrongly classified Reference instead of Invalid, contradicting FR-073's requirement that the reference form carries both the relative path and the digest with no ambiguity.",
-      "outcome": "caught",
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/data_schema.rs b/rust/crates/quoin-semantic/src/data_schema.rs\nindex 9d57ffa2..acec2322 100644\n--- a/rust/crates/quoin-semantic/src/data_schema.rs\n+++ b/rust/crates/quoin-semantic/src/data_schema.rs\n@@ -132,7 +132,7 @@ pub fn classify_data_schema(\n         .filter(|k| k.as_str() != \"schema\" && k.as_str() != \"digest\")\n         .map(String::as_str)\n         .collect();\n-    if !extra.is_empty() || !has_schema || !has_digest {\n+    if !extra.is_empty() && !has_schema && !has_digest {\n         let detail = if extra.is_empty() {\n             \"missing schema or digest\".to_owned()\n         } else {\n",
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
         ]
       },
       "failure": "assertion",
@@ -1159,31 +1077,6 @@
       "target": "code"
     },
     {
-      "id": "M-ADD-14",
-      "slot": "ADD-14",
-      "kind": "additive_code",
-      "source": "N-025",
-      "modes": [
-        "RTC"
-      ],
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/package_manifest.rs",
-      "find": "pub fn mapping_identity(package: &PackageIdentity, name: &str) -> String {\n    format!(\"ix://{}/{}/mapping/{name}\", package.org(), package.repo())\n}",
-      "replace": "pub fn mapping_identity(package: &PackageIdentity, name: &str) -> String {\n    if name.is_empty() {\n        return format!(\"ix://{}/{}/mapping/_unnamed\", package.org(), package.repo());\n    }\n    format!(\"ix://{}/{}/mapping/{name}\", package.org(), package.repo())\n}",
-      "description": "Adds an unstated special case that substitutes '_unnamed' for an empty mapping name, which FR-075 never states and which the owning test's golden names (always non-empty) never exercise, so tc_378_108 still passes.",
-      "outcome": "survived",
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/package_manifest.rs b/rust/crates/quoin-semantic/src/package_manifest.rs\nindex 12c6e69f..a4c1499d 100644\n--- a/rust/crates/quoin-semantic/src/package_manifest.rs\n+++ b/rust/crates/quoin-semantic/src/package_manifest.rs\n@@ -40,6 +40,9 @@ pub fn type_identity(package: &PackageIdentity, name: &ObjectTypeName) -> String\n /// `ix://<org>/<repo>/mapping/<name>`.\n #[must_use]\n pub fn mapping_identity(package: &PackageIdentity, name: &str) -> String {\n+    if name.is_empty() {\n+        return format!(\"ix://{}/{}/mapping/_unnamed\", package.org(), package.repo());\n+    }\n     format!(\"ix://{}/{}/mapping/{name}\", package.org(), package.repo())\n }\n \n",
-      "owning_test": {
-        "filter": "tc_378_108_identities_match_the_oracle",
-        "name": "tc_378_108_identities_match_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      }
-    },
-    {
       "id": "M-ADD-15",
       "slot": "ADD-15",
       "kind": "additive_code",
@@ -1432,32 +1325,6 @@
       },
       "patch": "diff --git a/rust/crates/quoin-evidence/src/adapters/agent_eval.rs b/rust/crates/quoin-evidence/src/adapters/agent_eval.rs\nindex 24c9aaa4..da4d4853 100644\n--- a/rust/crates/quoin-evidence/src/adapters/agent_eval.rs\n+++ b/rust/crates/quoin-evidence/src/adapters/agent_eval.rs\n@@ -48,6 +48,9 @@ pub fn parse_agent_eval(raw: &str) -> Result<AdapterResult, EvidenceError> {\n         if id.is_empty() {\n             continue;\n         }\n+        if result.get(\"skipped\") == Some(&Value::Bool(true)) {\n+            continue;\n+        }\n         let mut entry = RunEntry::new(\n             id,\n             // `ok` is the suite's own verdict over `repeats` runs — a scenario\n",
       "outcome": "survived"
-    },
-    {
-      "id": "M-SADD-05",
-      "slot": "SADD-05",
-      "kind": "additive_code",
-      "source": "N-034",
-      "modes": [
-        "RC"
-      ],
-      "target": "code",
-      "file": "rust/crates/quoin-auditor/src/audit/mod.rs",
-      "find": "    let mut obligations: Vec<&quoin_quire_types::Obligation> = input.obligations.iter().collect();\n    obligations.sort_by(|left, right| js::compare(&left.id, &right.id));\n\n    let mut findings: Vec<Finding> = Vec::new();\n",
-      "replace": "    let mut obligations: Vec<&quoin_quire_types::Obligation> = input.obligations.iter().collect();\n    obligations.sort_by(|left, right| js::compare(&left.id, &right.id));\n\n    if obligations.len() > 100_000 {\n        return Err(AuditorError::new(\n            crate::error::AuditorErrorCode::DemandTooLarge,\n            \"the obligation catalog carries more than 100,000 obligations\",\n        ));\n    }\n\n    let mut findings: Vec<Finding> = Vec::new();\n",
-      "description": "Adds an unstated refusal when the obligation catalog exceeds 100,000 entries, a cap FR-032-AC-1 never mentions; no parity fixture carries anywhere near that many obligations, so the retained-report parity comparison is unaffected.",
-      "owning_test": {
-        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-auditor/src/audit/mod.rs b/rust/crates/quoin-auditor/src/audit/mod.rs\nindex 9c2437b1..bf1b5388 100644\n--- a/rust/crates/quoin-auditor/src/audit/mod.rs\n+++ b/rust/crates/quoin-auditor/src/audit/mod.rs\n@@ -151,6 +151,13 @@ pub fn audit(input: &AuditInput) -> Result<AuditReport, AuditorError> {\n     let mut obligations: Vec<&quoin_quire_types::Obligation> = input.obligations.iter().collect();\n     obligations.sort_by(|left, right| js::compare(&left.id, &right.id));\n \n+    if obligations.len() > 100_000 {\n+        return Err(AuditorError::new(\n+            crate::error::AuditorErrorCode::DemandTooLarge,\n+            \"the obligation catalog carries more than 100,000 obligations\",\n+        ));\n+    }\n+\n     let mut findings: Vec<Finding> = Vec::new();\n     let mut healthy: Vec<String> = Vec::new();\n     let mut unevaluated: Vec<UnevaluatedCheck> = Vec::new();\n",
-      "outcome": "dropped",
-      "drop_reason": "superseded: a size ceiling, which the code_exceeds_requirement rule excludes (PR #628 review finding 6)"
     },
     {
       "id": "M-SADD-06",
@@ -1835,36 +1702,6 @@
       "pair_outcome_weakened_test": null
     },
     {
-      "id": "M-WEAK-09",
-      "slot": "WEAK-09",
-      "kind": "test_weakening",
-      "source": "N-089",
-      "modes": [
-        "RTC"
-      ],
-      "target": "test",
-      "file": "rust/crates/quoin-combinatorial/tests/tc_382_parity.rs",
-      "find": "    assert!(\n        covered.is_empty(),\n        \"MUST HAVE FIRED: only one dimension is present, so no 2-way tuple exists\"\n    );",
-      "replace": "    assert!(\n        covered.len() <= 1,\n        \"MUST HAVE FIRED: only one dimension is present, so no 2-way tuple exists\"\n    );",
-      "description": "Loosens the exact `covered.is_empty()` check to `covered.len() <= 1`, so the test no longer decisively verifies that no 2-way tuple is covered when only one dimension is present, and would also pass against a mutant that wrongly parses the space's strength as 1.",
-      "pair": "M-VIOL-18",
-      "weakening": "loosened",
-      "all_assertions_removed": false,
-      "owning_test": {
-        "filter": "tc_382_004_an_inherited_property_name_is_not_a_divergence_because_the_value_guard_catches_it",
-        "name": "tc_382_004_an_inherited_property_name_is_not_a_divergence_because_the_value_guard_catches_it",
-        "package": "quoin-combinatorial",
-        "selector": [
-          "--test",
-          "tc_382_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-combinatorial/tests/tc_382_parity.rs b/rust/crates/quoin-combinatorial/tests/tc_382_parity.rs\nindex 09017f52..06bbc291 100644\n--- a/rust/crates/quoin-combinatorial/tests/tc_382_parity.rs\n+++ b/rust/crates/quoin-combinatorial/tests/tc_382_parity.rs\n@@ -386,7 +386,7 @@ fn tc_382_004_an_inherited_property_name_is_not_a_divergence_because_the_value_g\n     config.insert(DimensionName::new(\"b\"), DimensionValue::new(\"3\"));\n     let covered = covered_by(&space, &config).expect(\"a small space computes\");\n     assert!(\n-        covered.is_empty(),\n+        covered.len() <= 1,\n         \"MUST HAVE FIRED: only one dimension is present, so no 2-way tuple exists\"\n     );\n }\n",
-      "pair_outcome_original_test": "caught",
-      "pair_outcome_weakened_test": "survived",
-      "outcome": "survived"
-    },
-    {
       "id": "M-WEAK-10",
       "slot": "WEAK-10",
       "kind": "test_weakening",
@@ -2041,38 +1878,6 @@
       "pair_outcome_original_test": "caught",
       "pair_outcome_weakened_test": "survived",
       "outcome": "survived"
-    },
-    {
-      "id": "M-WEAK-16",
-      "slot": "WEAK-16",
-      "kind": "test_weakening",
-      "source": "N-131",
-      "modes": [
-        "RTC",
-        "RT"
-      ],
-      "target": "test",
-      "file": "rust/crates/quoin-semantic/tests/golden_parity.rs",
-      "find": "        assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");",
-      "replace": "        assert!(!form.as_str().is_empty(), \"{id}: form\");",
-      "description": "Replaces the exact expected-vs-actual form comparison with a non-empty check, so the test no longer catches a misclassified data_schema form (e.g. Invalid reported as Reference).",
-      "pair": "M-VIOL-31",
-      "weakening": "loosened",
-      "all_assertions_removed": false,
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/tests/golden_parity.rs b/rust/crates/quoin-semantic/tests/golden_parity.rs\nindex e8931268..d0aec2f5 100644\n--- a/rust/crates/quoin-semantic/tests/golden_parity.rs\n+++ b/rust/crates/quoin-semantic/tests/golden_parity.rs\n@@ -674,7 +674,7 @@ fn tc_378_109_classify_data_schema_matches_the_oracle() {\n         let id = text(case, \"id\");\n         let value = case.get(\"value\").cloned().unwrap_or(Value::Null);\n         let (form, diagnostics) = classify_data_schema(&value, \"object_types[x].data_schema\");\n-        assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n+        assert!(!form.as_str().is_empty(), \"{id}: form\");\n \n         let expected = count_diagnostics(array(case, \"diagnostics\"));\n         let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n",
-      "pair_outcome_original_test": "caught",
-      "pair_outcome_weakened_test": "caught",
-      "outcome": "dropped",
-      "drop_reason": "superseded by M-RWEAK-002: the weakened test still caught its pair (PR #628 review finding 3)"
     },
     {
       "id": "M-WEAK-17",
@@ -2292,23 +2097,6 @@
       "requirement_effect": "narrowed"
     },
     {
-      "id": "M-REQ-08",
-      "slot": "REQ-08",
-      "kind": "requirement_text",
-      "source": "N-035",
-      "modes": [
-        "RT"
-      ],
-      "target": "requirement",
-      "file": "spec/functional/FR-098-semantic-and-identity-parity.md",
-      "find": "is refused by the Rust implementation with the same classification, before canonicalization runs.",
-      "replace": "is accepted by the Rust implementation with a lenient-parse warning, before canonicalization runs.",
-      "description": "FR-098-AC-9 now says a document the oracle refuses (BOM, non-fatal UTF-8, trailing content) is instead accepted with a warning, but the unchanged test tc_380 still asserts parse_strict_json_str's acceptance agrees exactly with each case's oracle verdict and that at least 25 cases in the suite are refusals.",
-      "divergence_kind": "test_stronger_than_requirement",
-      "outcome": "dropped",
-      "drop_reason": "find is not once inside the shown body"
-    },
-    {
       "id": "M-REQ-09",
       "slot": "REQ-09",
       "kind": "requirement_text",
@@ -2470,18 +2258,6 @@
       "requirement_effect_note": "the changed requirement contradicts what the unchanged test asserts"
     },
     {
-      "id": "M-REQ-16",
-      "slot": "REQ-16",
-      "kind": "requirement_text",
-      "source": "N-123",
-      "modes": [
-        "RT"
-      ],
-      "outcome": "dropped",
-      "drop_reason": "not authored: NFR-009-AC-1 (no ac_text; statement used) states the single skill tree under skills/<name>/SKILL.md and the ban on per-agent duplicated skill bodies. The owning test tc_383_004_every_characteristic_case_matches instead replays a golden corpus of statement-characteristic-mining cases (characteristics_of) shared across nearly twenty unrelated AC trace tags; it asserts nothing about a skill tree, agent install paths or duplicated skill bodies, so there is no shared value/condition to invert.",
-      "target": "requirement"
-    },
-    {
       "id": "M-SREQ-01",
       "slot": "SREQ-01",
       "kind": "requirement_text",
@@ -2508,33 +2284,6 @@
       "outcome": "n/a",
       "requirement_effect": "demands_unchecked",
       "requirement_effect_note": "the changed requirement contradicts what the unchanged test asserts"
-    },
-    {
-      "id": "M-SREQ-02",
-      "slot": "SREQ-02",
-      "kind": "requirement_text",
-      "source": "N-063",
-      "modes": [
-        "RT"
-      ],
-      "target": "requirement",
-      "file": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
-      "find": "with `quire-rs` consumed as a Cargo dependency",
-      "replace": "with `quire-rs` invoked as a standalone CLI process, never linked as a Cargo dependency",
-      "description": "Changed the integration mode from a linked Cargo dependency to a standalone CLI invocation; the unchanged test only asserts the golden capture's `engine` provenance field is a non-empty string, so it never verifies which integration mode actually produced the verdict.",
-      "divergence_kind": "test_weaker_than_requirement",
-      "owning_test": {
-        "filter": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "name": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "package": "quoin-quire",
-        "selector": [
-          "--test",
-          "tc_474_assurance_parity"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-099-rust-catalog-and-validation-capability.md b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\nindex ef0551dd..546de174 100644\n--- a/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n+++ b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n@@ -118,7 +118,7 @@ refusal and are never reported as an empty but successful catalog.\n | ID | Criteria | Verification |\n |----|----------|--------------|\n | FR-099-AC-1 | `quoin-core validators.run` returns the same verdict and non-success classification as the retained validator path over the golden corpus. | Test (TC-1625) |\n-| FR-099-AC-2 | `quoin-core quire.validate` returns the same verdict as the retained `src/quire` adapter for every corpus document, with `quire-rs` consumed as a Cargo dependency. | Test (TC-1626) |\n+| FR-099-AC-2 | `quoin-core quire.validate` returns the same verdict as the retained `src/quire` adapter for every corpus document, with `quire-rs` invoked as a standalone CLI process, never linked as a Cargo dependency. | Test (TC-1626) |\n | FR-099-AC-3 | `quoin-core catalog.list` assembles a catalog identical to the retained catalog for the same configuration root, resolves a type case-insensitively, and reports a planted duplicate type rather than selecting one. | Test (TC-1627) |\n | FR-099-AC-4 | A second reconcile over an already-materialized configuration root performs no git or network access and yields a catalog identical to the first. | Test (TC-1628) |\n | FR-099-AC-5 | A manifest carrying an unknown key is refused by the Rust reader with the same classification as the retained reader. | Test (TC-1629) |\n",
-      "outcome": "n/a",
-      "requirement_effect": "demands_unchecked"
     },
     {
       "id": "M-SREQ-03",
@@ -2616,33 +2365,6 @@
       "outcome": "n/a",
       "requirement_effect": "demands_unchecked",
       "requirement_effect_note": "the changed requirement contradicts what the unchanged test asserts"
-    },
-    {
-      "id": "M-SREQ-06",
-      "slot": "SREQ-06",
-      "kind": "requirement_text",
-      "source": "N-117",
-      "modes": [
-        "RT"
-      ],
-      "target": "requirement",
-      "file": "spec/functional/FR-018-map-plugin-sources.md",
-      "find": "A bare argument maps to a path source",
-      "replace": "A bare argument containing no colon maps to a path source",
-      "description": "Added a no-colon condition restricting the rule to truly bare arguments; the unchanged test asserts that colon-containing arguments with an unrecognized two-letter scheme (e.g. `xy:rest`) are also mapped unchanged to a path source, a case the narrowed wording no longer covers.",
-      "divergence_kind": "test_stronger_than_requirement",
-      "owning_test": {
-        "filter": "tc_446_061_an_unknown_prefix_is_kept_rather_than_stripped",
-        "name": "tc_446_061_an_unknown_prefix_is_kept_rather_than_stripped",
-        "package": "quoin-modules",
-        "selector": [
-          "--test",
-          "tc_446_source_arg_properties"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-018-map-plugin-sources.md b/spec/functional/FR-018-map-plugin-sources.md\nindex 7ec1408e..c015b633 100644\n--- a/spec/functional/FR-018-map-plugin-sources.md\n+++ b/spec/functional/FR-018-map-plugin-sources.md\n@@ -45,7 +45,7 @@ source; `github:<owner>/<repo>//<subdir>[@<ref>]` to a git-subdir source;\n | FR-018-AC-2 | `github:<owner>/<repo>[@<ref>]` maps to a GitHub source with optional ref                         | Test (ts_oracle.rs, tc_446_source_arg_properties.rs) |\n | FR-018-AC-3 | `github:<owner>/<repo>//<subdir>[@<ref>]` maps to a git-subdir source                             | Test (ts_oracle.rs, tc_446_source_arg_properties.rs) |\n | FR-018-AC-4 | `package:<pkg>[@<ver>]`, including a scoped package, maps to an npm source split on the final `@` | Test (ts_oracle.rs, tc_446_source_arg_properties.rs) |\n-| FR-018-AC-5 | A bare argument maps to a path source                                                             | Test (ts_oracle.rs, tc_446_source_arg_properties.rs, index.test.ts) |\n+| FR-018-AC-5 | A bare argument containing no colon maps to a path source                                                             | Test (ts_oracle.rs, tc_446_source_arg_properties.rs, index.test.ts) |\n \n ## Dependencies\n \n",
-      "outcome": "n/a",
-      "requirement_effect": "narrowed"
     },
     {
       "id": "M-SREQ-07",
@@ -2879,34 +2601,6 @@
         "pass_b": {
           "answer": "yes",
           "why": "baseline figure given as 'a small subset' with no number"
-        }
-      }
-    },
-    {
-      "id": "M-CRIT-08",
-      "slot": "CRIT-08",
-      "kind": "criterion",
-      "source": "N-040",
-      "modes": [
-        "R"
-      ],
-      "target": "requirement",
-      "defect": "compound",
-      "file": "spec/functional/FR-027-store-the-authoring-organization.md",
-      "find": "and is reported with source `env`",
-      "replace": "and is reported with source `env`, and quoin SHALL also record the resolution timestamp",
-      "description": "Folded in a second, independently verifiable requirement (recording the resolution timestamp) alongside the original env-source reporting requirement.",
-      "owning_test": null,
-      "patch": "diff --git a/spec/functional/FR-027-store-the-authoring-organization.md b/spec/functional/FR-027-store-the-authoring-organization.md\nindex dfdf8f11..bb95102e 100644\n--- a/spec/functional/FR-027-store-the-authoring-organization.md\n+++ b/spec/functional/FR-027-store-the-authoring-organization.md\n@@ -74,7 +74,7 @@ organization, and a configuration file is the opposite of an invention.\n | ----------- | --------------------------------------------------------------------------------------------------- | ----------------------------------- |\n | FR-027-AC-1 | A stored organization is used ahead of the `origin` remote and reported with source `config`        | Test (ts_oracle.rs, tc_446_org_parity.rs, config_service.rs) |\n | FR-027-AC-2 | `--org` takes precedence over a stored organization                                                 | Test (tc_446_org_parity.rs)         |\n-| FR-027-AC-3 | `QUOIN_ORG` layers over a stored organization and is reported with source `env`                     | Test (ts_oracle.rs, tc_446_org_parity.rs, config_service.rs) |\n+| FR-027-AC-3 | `QUOIN_ORG` layers over a stored organization and is reported with source `env`, and quoin SHALL also record the resolution timestamp                     | Test (ts_oracle.rs, tc_446_org_parity.rs, config_service.rs) |\n | FR-027-AC-4 | With nothing stored, resolution falls through to the remote, and to unresolved when there is none   | Test (ts_oracle.rs, tc_446_org_parity.rs) |\n | FR-027-AC-5 | A malformed stored configuration leaves resolution to continue rather than failing the command      | Test (ts_oracle.rs, tc_446_org_parity.rs, config_service.rs) |\n | FR-027-AC-6 | The declared schema is strict, so storing an unrecognized key is rejected                           | Test (config-schema.test.ts)        |\n",
-      "outcome": "n/a",
-      "meets_definition": {
-        "pass_a": {
-          "answer": "yes",
-          "why": "'is reported with source `env`, and quoin SHALL also record the resolution timestamp' joins two separate behaviours"
-        },
-        "pass_b": {
-          "answer": "yes",
-          "why": "'reported with source env, and quoin SHALL also record the resolution timestamp' are two outcomes"
         }
       }
     },
@@ -5989,33 +5683,6 @@
       "outcome": "n/a"
     },
     {
-      "id": "M-SSWAP-05",
-      "slot": "SSWAP-05",
-      "kind": "trace_swap",
-      "source": "N-082",
-      "modes": [
-        "RC"
-      ],
-      "target": "trace",
-      "partner_req_id": "FR-062",
-      "partner_crit_id": "FR-062-CON-1",
-      "file": null,
-      "find": null,
-      "replace": null,
-      "patch": "--- a/requirement\n+++ b/requirement\n@@ -1,7 +1,4 @@\n {\n- \"ac_id\": null,\n- \"ac_text\": null,\n- \"context\": \"FR-075: Semantic package manifest derivation and registry pins (spec/functional/FR-075-semantic-package-exports-and-locks.md)\",\n- \"fr_id\": \"FR-075\",\n- \"statement\": \"Where a module declares a `semantic` block, Quoin SHALL derive the module's\\n`filament-core-data` package-manifest document and record per-export schema\\ndigests in the installed-module registry, so that dynamic use and static\\ngenerated use share one identity graph.\"\n+ \"fr_id\": \"FR-062\",\n+ \"ac_id\": \"FR-062-CON-1\"\n }",
-      "description": "Trace swap: the code is shown against FR-062 (FR-062-CON-1), a requirement whose tests live in another crate, instead of FR-075. No file changes; the patch records the requirement substitution.",
-      "owning_test": {
-        "filter": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "name": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "outcome": "n/a"
-    },
-    {
       "id": "M-SSWAP-06",
       "slot": "SSWAP-06",
       "kind": "trace_swap",
@@ -6371,33 +6038,6 @@
         "selector": [
           "--test",
           "tc_452_semantic_boundary"
-        ]
-      },
-      "outcome": "n/a"
-    },
-    {
-      "id": "M-SWAP-14",
-      "slot": "SWAP-14",
-      "kind": "trace_swap",
-      "source": "N-030",
-      "modes": [
-        "RC"
-      ],
-      "target": "trace",
-      "partner_req_id": "FR-018",
-      "partner_crit_id": "FR-018-AC-1",
-      "file": null,
-      "find": null,
-      "replace": null,
-      "patch": "--- a/requirement\n+++ b/requirement\n@@ -1,7 +1,4 @@\n {\n- \"ac_id\": null,\n- \"ac_text\": null,\n- \"context\": \"FR-040: Assurance case as a read-only view over the store (spec/functional/FR-040-assurance-case-view.md)\",\n- \"fr_id\": \"FR-040\",\n- \"statement\": \"**A pile of green evidence is not an argument.** A matrix of ✅ says every row has something attached\\nto it; it does not say why the thing anyone actually cares about is true.\\n\\nThe internal structured argument view does: a **claim** is supported by explicit reasoning over\\nsub-claims, whose leaves are **evidence**. *\\\"StR-004 holds because these\\nrequirements refine it, each verified by a stated method, with evidence that is fresh.\\\"*\\n\\nThis is a project-owned representation. It does not claim conformance with or\\nexport to an external assurance-argument notation.\\n\\n`quoin assurance` renders that from data the program already holds — the trace graph, the obligations\\n`quire` mints, and the auditor's verdict on each binding. It is **strictly a view**: it runs nothing,\\ncollects nothing, and writes nothing to the store.\\n\\n### Gaps are nodes, not omissions\\n\\nThis is the whole reason to build it, and the reason it is dangerous to build carelessly.\\n\\nAn undischarged obligation, a suspect binding, a claim nothing traces to — each stays in the tree as\\nan **open node**, carrying the auditor's reason verbatim. A case that\\nnarrows to only what it can prove is indistinguishable, to a reader, from a case that is complete.\\n\\nAn assurance case is the single most tempting artefact in the system to quietly narrow, because the\\nnarrowed version looks better and no check anywhere would object. So the view's contract is the\\nopposite: **a claim with no sub-claim and no obligation is `open`**, not vacuously supported, and a\\nrequirement carrying obligations that no claim reaches gets its own section rather than being left\\nout of the drawing.\\n\\nThat section earned itself on the first run. Over this repository it reported **15 requirements\\nreachable from no claim**, of which seven had been added during this program and eight predate it\\n(`agent-ix/quoin#136`).\\n\\n### The auditor's verdict, not a second opinion\\n\\nWhether an evidence leaf is supported comes from `audit()` (FR-032). Re-deriving freshness or\\nsuspicion here would be a second answer to a question that already has one, and the two would\\ndisagree the first time either changed.\\n\\n### The decomposition is read in the direction the corpus writes it\\n\\nDocuments declare their own upward edges — an FR says it `traces_to` an StR, never the reverse — so\\nthe parent→child map is built by inverting what each child declares. The verbs are the corpus's:\\n`traces_to`, `refines`, `implements`, `derives_from`, `mitigates`, `satisfies`.\\n\\nAn obligation's owner is derived from its **id** (`FR-001-AC-3` → `FR-001`) rather than from an edge.\\nObligations are minted from a document's own tables, so the ownership is not in question, and an edge\\nfor it would be a second thing to keep in agreement.\\n\\n### The claim type is a parameter, never a constant\\n\\n`StR` is the default. A safety bundle argues from a declared **hazard** and a security bundle from a\\n**threat**, and that vocabulary is module data — a built-in `StR` would make this view useless to\\nexactly the bundles that need an assurance case most.\\n\\n### A shared sub-claim belongs to both claims\\n\\nCycle prevention and \\\"already rendered somewhere\\\" are different questions, and one visited-set cannot\\nanswer both. Sharing it put a requirement refining two claims under the first only, and made the\\nsecond report *\\\"no sub-claim and no obligation traces to this claim\\\"* — false, in an assurance case,\\nabout the edge its author had written (`SR-007` FND-001). Cycles are prevented per **path**; being\\nrendered elsewhere is not a reason to omit.\\n\\n### Deterministic, because it is a view\\n\\nRe-rendering unchanged inputs produces byte-identical output, so a diff means the evidence moved and\\nnot that somebody re-ran the command. The mermaid graph obeys three authoring rules, each of which\\notherwise yields a diagram that **fails to draw** rather than one that draws wrongly: ids are\\nsanitised (`FR-001-AC-1` reads as an edge fragment), labels are quoted (a `(` in a statement ends the\\nnode shape early), and `;` is replaced (it terminates the statement).\\n\\nA fourth rule governs the label's length rather than its punctuation, and it fails the other way —\\nquietly. Labels are truncated on a **code-point** boundary, not on a UTF-16 code unit. Truncating by\\ncode unit splits a surrogate pair, and the result is a string that is not well-formed UTF-16: it\\ndraws, and it draws a replacement character. Measured over this repository's own 991 obligations, 835\\nlabels are truncated and two carry an astral character, the nearest sitting six characters short of\\nthe boundary — so this was a defect waiting on one spec edit rather than a hypothetical\\n(`agent-ix/quoin#432`).\\n\\n### Reading the bundle\\n\\nThe upward edges live in each document's frontmatter, and no `quire` surface exposes the bundle graph\\nas data — `coverage --json` carries obligations with their document, statement and method, and no\\nrelationships. The reader FR-037 introduced is therefore **generalized and shared**, not duplicated:\\ntwo readers over the same files drift, and the second gets written by whoever needs a field the first\\ndoes not expose. `agent-ix/quire-rs#179` is where this stops being necessary.\"\n+ \"fr_id\": \"FR-018\",\n+ \"ac_id\": \"FR-018-AC-1\"\n }",
-      "description": "Trace swap: the code is shown against FR-018 (FR-018-AC-1), a requirement whose tests live in another crate, instead of FR-040. No file changes; the patch records the requirement substitution.",
-      "owning_test": {
-        "filter": "tc_447_500_the_port_reproduces_every_captured_typescript_verdict",
-        "name": "tc_447_500_the_port_reproduces_every_captured_typescript_verdict",
-        "package": "quoin-assurance",
-        "selector": [
-          "--test",
-          "tc_447_golden_corpus"
         ]
       },
       "outcome": "n/a"
@@ -6829,225 +6469,6 @@
         ]
       },
       "patch": "diff --git a/rust/crates/quoin-evidence/src/mock_inspection.rs b/rust/crates/quoin-evidence/src/mock_inspection.rs\nindex 82f29e11..b4feb39c 100644\n--- a/rust/crates/quoin-evidence/src/mock_inspection.rs\n+++ b/rust/crates/quoin-evidence/src/mock_inspection.rs\n@@ -94,6 +94,7 @@ pub fn inspect_mock_injections<S: EvidenceSource + ?Sized>(\n     let mut found: Vec<MockInjection> = Vec::new();\n     for path in source.source_files()? {\n         let text = source.source_text(&path)?;\n+        eprintln!(\"quoin-evidence: scanning {path}\");\n         let markers = test_markers(&text, extension_of(&path));\n         if markers.is_empty() {\n             continue;\n",
-      "outcome": "survived"
-    },
-    {
-      "id": "M-TVIOL-025",
-      "slot": "TVIOL-025",
-      "kind": "violating_code",
-      "source": "N-074",
-      "modes": [
-        "RC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-completeness/src/assess.rs",
-      "find": "        if !first.eq_ignore_ascii_case(value) {",
-      "replace": "        if !first.to_lowercase().contains(value.to_lowercase().as_str()) {",
-      "description": "Weakens the first-cell match from exact case-insensitive equality to substring containment, so a table row whose first cell merely mentions the value's name anywhere excuses it; this re-opens exactly the false-justification case the requirement calls out -- a value name occurring in passing is no longer refused as a mention rather than a justification.",
-      "breaks_stated_behaviour": true,
-      "stated_behaviour_broken": "and a mention is not a justification",
-      "owning_test": {
-        "filter": "tc_378_300_written_reason_matches_the_oracle",
-        "name": "tc_378_300_written_reason_matches_the_oracle",
-        "package": "quoin-completeness",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-completeness/src/assess.rs b/rust/crates/quoin-completeness/src/assess.rs\nindex 65e1d20f..ea651b20 100644\n--- a/rust/crates/quoin-completeness/src/assess.rs\n+++ b/rust/crates/quoin-completeness/src/assess.rs\n@@ -336,7 +336,7 @@ pub fn written_reason_for(value: &str, body: &str) -> Option<String> {\n             continue;\n         }\n         let Some(first) = cells.first() else { continue };\n-        if !first.eq_ignore_ascii_case(value) {\n+        if !first.to_lowercase().contains(value.to_lowercase().as_str()) {\n             continue;\n         }\n         for cell in cells.iter().skip(1) {\n",
-      "outcome": "survived"
-    },
-    {
-      "id": "M-TVIOL-026",
-      "slot": "TVIOL-026",
-      "kind": "violating_code",
-      "source": "N-074",
-      "modes": [
-        "RC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-completeness/src/assess.rs",
-      "find": "        let cells: Vec<String> = fields\n            .get(1..fields.len() - 1)\n            .unwrap_or_default()",
-      "replace": "        let cells: Vec<String> = fields\n            .get(0..fields.len())\n            .unwrap_or_default()",
-      "description": "Stops dropping the empty leading and trailing fields a Markdown row's boundary pipes produce, so the first real cell -- the one meant to name the excused value -- is always the empty string instead; no row can ever match `value` by name again, so `written_reason_for` never finds a written reason for any excused characteristic.",
-      "breaks_stated_behaviour": true,
-      "stated_behaviour_broken": "in a table row naming the value",
-      "owning_test": {
-        "filter": "tc_378_300_written_reason_matches_the_oracle",
-        "name": "tc_378_300_written_reason_matches_the_oracle",
-        "package": "quoin-completeness",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-completeness/src/assess.rs b/rust/crates/quoin-completeness/src/assess.rs\nindex 65e1d20f..d6fd2bd4 100644\n--- a/rust/crates/quoin-completeness/src/assess.rs\n+++ b/rust/crates/quoin-completeness/src/assess.rs\n@@ -321,7 +321,7 @@ pub fn written_reason_for(value: &str, body: &str) -> Option<String> {\n             continue;\n         }\n         let cells: Vec<String> = fields\n-            .get(1..fields.len() - 1)\n+            .get(0..fields.len())\n             .unwrap_or_default()\n             .iter()\n             .map(|cell| {\n",
-      "outcome": "caught",
-      "failure": "assertion"
-    },
-    {
-      "id": "M-TADD-049",
-      "slot": "TADD-049",
-      "kind": "additive_code",
-      "source": "N-074",
-      "modes": [
-        "RC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-completeness/src/assess.rs",
-      "find": "pub fn written_reason_for(value: &str, body: &str) -> Option<String> {\n    for line in body.split('\\n') {",
-      "replace": "pub fn written_reason_for(value: &str, body: &str) -> Option<String> {\n    static LOOKUPS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);\n    LOOKUPS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);\n    for line in body.split('\\n') {",
-      "description": "Adds a process-wide counter that increments on every `written_reason_for` lookup, a side effect the requirement does not state; the owning golden-parity test only compares the returned reason string against each corpus case's oracle value, never this counter.",
-      "owning_test": {
-        "filter": "tc_378_300_written_reason_matches_the_oracle",
-        "name": "tc_378_300_written_reason_matches_the_oracle",
-        "package": "quoin-completeness",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-completeness/src/assess.rs b/rust/crates/quoin-completeness/src/assess.rs\nindex 65e1d20f..74ea8a59 100644\n--- a/rust/crates/quoin-completeness/src/assess.rs\n+++ b/rust/crates/quoin-completeness/src/assess.rs\n@@ -308,6 +308,8 @@ pub fn assess_vocabulary(\n /// safety — and a mention is not a justification.\n #[must_use]\n pub fn written_reason_for(value: &str, body: &str) -> Option<String> {\n+    static LOOKUPS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);\n+    LOOKUPS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);\n     for line in body.split('\\n') {\n         let trimmed = line.trim();\n         if !trimmed.starts_with('|') {\n",
-      "outcome": "survived"
-    },
-    {
-      "id": "M-TADD-050",
-      "slot": "TADD-050",
-      "kind": "additive_code",
-      "source": "N-074",
-      "modes": [
-        "RC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-completeness/src/assess.rs",
-      "find": "pub fn written_reason_for(value: &str, body: &str) -> Option<String> {\n    for line in body.split('\\n') {",
-      "replace": "pub fn written_reason_for(value: &str, body: &str) -> Option<String> {\n    if value.eq_ignore_ascii_case(\"quoin-internal-diagnostic-marker\") {\n        return Some(\"diagnostic marker value, never a real characteristic\".to_owned());\n    }\n    for line in body.split('\\n') {",
-      "description": "Adds a hard-coded short-circuit that returns a fixed diagnostic reason whenever `value` is the literal `quoin-internal-diagnostic-marker`, a characteristic name the ISO 25010 vocabulary never contains; the golden corpus never calls `written_reason_for` with that value, so the addition changes nothing it observes.",
-      "owning_test": {
-        "filter": "tc_378_300_written_reason_matches_the_oracle",
-        "name": "tc_378_300_written_reason_matches_the_oracle",
-        "package": "quoin-completeness",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-completeness/src/assess.rs b/rust/crates/quoin-completeness/src/assess.rs\nindex 65e1d20f..026255b8 100644\n--- a/rust/crates/quoin-completeness/src/assess.rs\n+++ b/rust/crates/quoin-completeness/src/assess.rs\n@@ -308,6 +308,9 @@ pub fn assess_vocabulary(\n /// safety — and a mention is not a justification.\n #[must_use]\n pub fn written_reason_for(value: &str, body: &str) -> Option<String> {\n+    if value.eq_ignore_ascii_case(\"quoin-internal-diagnostic-marker\") {\n+        return Some(\"diagnostic marker value, never a real characteristic\".to_owned());\n+    }\n     for line in body.split('\\n') {\n         let trimmed = line.trim();\n         if !trimmed.starts_with('|') {\n",
-      "outcome": "survived"
-    },
-    {
-      "id": "M-TVIOL-028",
-      "slot": "TVIOL-028",
-      "kind": "violating_code",
-      "source": "N-082",
-      "modes": [
-        "RC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/contract.rs",
-      "find": "/// The filament-core-data package-manifest schema's path.\n#[must_use]\npub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n    schema_dir(semantic_root)\n        .join(\"filament-core-data\")\n        .join(\"package-manifest.schema.json\")\n}",
-      "replace": "/// The filament-core-data package-manifest schema's path.\n#[must_use]\npub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n    schema_dir(semantic_root)\n        .join(\"filament-core-data\")\n        .join(\"common.schema.json\")\n}",
-      "description": "Points the package-manifest schema path at the vendored `common.schema.json` instead, so the module's filament-core-data package-manifest document is validated against the wrong committed schema entirely; the golden corpus's per-document verdicts then diverge from the oracle.",
-      "breaks_stated_behaviour": true,
-      "stated_behaviour_broken": "derive the module's `filament-core-data` package-manifest document",
-      "owning_test": {
-        "filter": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "name": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/contract.rs b/rust/crates/quoin-semantic/src/contract.rs\nindex 1232d804..1443db87 100644\n--- a/rust/crates/quoin-semantic/src/contract.rs\n+++ b/rust/crates/quoin-semantic/src/contract.rs\n@@ -172,7 +172,7 @@ pub fn semantic_core_dir(semantic_root: &Path) -> PathBuf {\n pub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n     schema_dir(semantic_root)\n         .join(\"filament-core-data\")\n-        .join(\"package-manifest.schema.json\")\n+        .join(\"common.schema.json\")\n }\n \n /// The filament-core-data common schema's path.\n",
-      "outcome": "caught",
-      "failure": "assertion"
-    },
-    {
-      "id": "M-TVIOL-029",
-      "slot": "TVIOL-029",
-      "kind": "violating_code",
-      "source": "N-082",
-      "modes": [
-        "RC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/contract.rs",
-      "find": "/// The filament-core-data package-manifest schema's path.\n#[must_use]\npub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n    schema_dir(semantic_root)\n        .join(\"filament-core-data\")\n        .join(\"package-manifest.schema.json\")\n}",
-      "replace": "/// The filament-core-data package-manifest schema's path.\n#[must_use]\npub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n    schema_dir(semantic_root)\n        .join(\"package-manifest.schema.json\")\n}",
-      "description": "Drops the `filament-core-data` path segment, so the package-manifest schema is looked up directly under the semantic root's schema directory where it was never materialized and cannot be read at all; dynamic use and static generated use no longer share any resolvable identity graph.",
-      "breaks_stated_behaviour": true,
-      "stated_behaviour_broken": "share one identity graph",
-      "owning_test": {
-        "filter": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "name": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/contract.rs b/rust/crates/quoin-semantic/src/contract.rs\nindex 1232d804..04b36648 100644\n--- a/rust/crates/quoin-semantic/src/contract.rs\n+++ b/rust/crates/quoin-semantic/src/contract.rs\n@@ -171,7 +171,6 @@ pub fn semantic_core_dir(semantic_root: &Path) -> PathBuf {\n #[must_use]\n pub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n     schema_dir(semantic_root)\n-        .join(\"filament-core-data\")\n         .join(\"package-manifest.schema.json\")\n }\n \n",
-      "outcome": "caught",
-      "failure": "assertion"
-    },
-    {
-      "id": "M-TADD-053",
-      "slot": "TADD-053",
-      "kind": "additive_code",
-      "source": "N-082",
-      "modes": [
-        "RC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/contract.rs",
-      "find": "/// The filament-core-data package-manifest schema's path.\n#[must_use]\npub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n    schema_dir(semantic_root)\n        .join(\"filament-core-data\")\n        .join(\"package-manifest.schema.json\")\n}",
-      "replace": "/// The filament-core-data package-manifest schema's path.\n#[must_use]\npub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n    if semantic_root.as_os_str().is_empty() {\n        return PathBuf::from(\"filament-core-data\").join(\"package-manifest.schema.json\");\n    }\n    schema_dir(semantic_root)\n        .join(\"filament-core-data\")\n        .join(\"package-manifest.schema.json\")\n}",
-      "description": "Adds a special-cased fallback path returned when `semantic_root` is exactly the empty path, a branch the requirement never mentions; the owning test always resolves a real materialized semantic root, so it never triggers.",
-      "owning_test": {
-        "filter": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "name": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/contract.rs b/rust/crates/quoin-semantic/src/contract.rs\nindex 1232d804..b7c6e1a3 100644\n--- a/rust/crates/quoin-semantic/src/contract.rs\n+++ b/rust/crates/quoin-semantic/src/contract.rs\n@@ -170,6 +170,9 @@ pub fn semantic_core_dir(semantic_root: &Path) -> PathBuf {\n /// The filament-core-data package-manifest schema's path.\n #[must_use]\n pub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n+    if semantic_root.as_os_str().is_empty() {\n+        return PathBuf::from(\"filament-core-data\").join(\"package-manifest.schema.json\");\n+    }\n     schema_dir(semantic_root)\n         .join(\"filament-core-data\")\n         .join(\"package-manifest.schema.json\")\n",
-      "outcome": "survived"
-    },
-    {
-      "id": "M-TADD-054",
-      "slot": "TADD-054",
-      "kind": "additive_code",
-      "source": "N-082",
-      "modes": [
-        "RC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/contract.rs",
-      "find": "/// The filament-core-data package-manifest schema's path.\n#[must_use]\npub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n    schema_dir(semantic_root)\n        .join(\"filament-core-data\")\n        .join(\"package-manifest.schema.json\")\n}",
-      "replace": "/// The filament-core-data package-manifest schema's path.\n#[must_use]\npub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n    let path = schema_dir(semantic_root)\n        .join(\"filament-core-data\")\n        .join(\"package-manifest.schema.json\");\n    eprintln!(\"quoin-semantic: package manifest schema path resolved to {}\", path.display());\n    path\n}",
-      "description": "Adds a diagnostic `eprintln!` of the resolved schema path on every call; the requirement says nothing about logging and the owning test only inspects the schema bytes and validator verdicts, never stderr.",
-      "owning_test": {
-        "filter": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "name": "tc_378_102_package_manifest_schema_reaches_exact_verdict_parity",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/contract.rs b/rust/crates/quoin-semantic/src/contract.rs\nindex 1232d804..a354343e 100644\n--- a/rust/crates/quoin-semantic/src/contract.rs\n+++ b/rust/crates/quoin-semantic/src/contract.rs\n@@ -170,9 +170,11 @@ pub fn semantic_core_dir(semantic_root: &Path) -> PathBuf {\n /// The filament-core-data package-manifest schema's path.\n #[must_use]\n pub fn package_manifest_schema_path(semantic_root: &Path) -> PathBuf {\n-    schema_dir(semantic_root)\n+    let path = schema_dir(semantic_root)\n         .join(\"filament-core-data\")\n-        .join(\"package-manifest.schema.json\")\n+        .join(\"package-manifest.schema.json\");\n+    eprintln!(\"quoin-semantic: package manifest schema path resolved to {}\", path.display());\n+    path\n }\n \n /// The filament-core-data common schema's path.\n",
       "outcome": "survived"
     },
     {
@@ -7817,63 +7238,6 @@
       "pair": "M-TPVIOL-010",
       "outcome": "dropped",
       "drop_reason": "not authored: Paired violating mutation M-TPVIOL-010 was skipped (no production code embodies this filesystem census to violate), so there is no pair for a weakened test to newly tolerate; no test_weakening is authored either."
-    },
-    {
-      "id": "M-TPVIOL-013",
-      "slot": "TPVIOL-013",
-      "kind": "violating_code",
-      "source": "N-067",
-      "modes": [],
-      "pair_only": true,
-      "target": "code",
-      "file": "rust/crates/quoin-config/src/org.rs",
-      "find": "        let Ok(common) = fs::read_to_string(git_dir.join(\"commondir\")) else {\n            return Some(git_dir);\n        };",
-      "replace": "        let _ = fs::read_to_string(git_dir.join(\"commondir\"));\n        return Some(git_dir);",
-      "description": "In resolve_git_dir, ignores the worktree/submodule commondir pointer and always returns the immediate gitdir, so a worktree no longer resolves the org its main checkout's shared config holds.",
-      "breaks_stated_behaviour": true,
-      "stated_behaviour_broken": "resolves the organization its main checkout does",
-      "owning_test": {
-        "filter": "tc_381_105_worktree_gitdir_resolves_the_main_checkouts_org",
-        "name": "tc_381_105_worktree_gitdir_resolves_the_main_checkouts_org",
-        "package": "quoin-config",
-        "selector": [
-          "--test",
-          "ts_oracle"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-config/src/org.rs b/rust/crates/quoin-config/src/org.rs\nindex 518f7806..9c0a1089 100644\n--- a/rust/crates/quoin-config/src/org.rs\n+++ b/rust/crates/quoin-config/src/org.rs\n@@ -323,9 +323,8 @@ pub fn resolve_git_dir(repo_root: &Path) -> Option<PathBuf> {\n         let git_dir = resolve_against(&base, Path::new(target));\n         // `commondir` is how a worktree names the checkout that owns the\n         // config; its absence means this gitdir holds the config itself.\n-        let Ok(common) = fs::read_to_string(git_dir.join(\"commondir\")) else {\n-            return Some(git_dir);\n-        };\n+        let _ = fs::read_to_string(git_dir.join(\"commondir\"));\n+        return Some(git_dir);\n         let common = common.trim();\n         if common.is_empty() {\n             return Some(git_dir);\n",
-      "outcome": "dropped",
-      "drop_reason": "compile_error"
-    },
-    {
-      "id": "M-TWEAK-021",
-      "slot": "TWEAK-021",
-      "kind": "test_weakening",
-      "source": "N-067",
-      "modes": [
-        "RT"
-      ],
-      "target": "test",
-      "file": "rust/crates/quoin-config/tests/ts_oracle.rs",
-      "find": "    assert_eq!(resolved.source, OrgSource::Git);\n    assert_eq!(\n        resolved.org.as_ref().map(quoin_config::OrgName::as_str),\n        Some(\"acme\")\n    );",
-      "replace": "    let _ = resolved;",
-      "description": "Deletes both assertions on the resolved org and its source, so the test no longer checks that a worktree's gitdir resolves the main checkout's org.",
-      "pair": "M-TPVIOL-013",
-      "weakening": "removed",
-      "all_assertions_removed": true,
-      "owning_test": {
-        "filter": "tc_381_105_worktree_gitdir_resolves_the_main_checkouts_org",
-        "name": "tc_381_105_worktree_gitdir_resolves_the_main_checkouts_org",
-        "package": "quoin-config",
-        "selector": [
-          "--test",
-          "ts_oracle"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-config/tests/ts_oracle.rs b/rust/crates/quoin-config/tests/ts_oracle.rs\nindex f19963ea..f0eb58fe 100644\n--- a/rust/crates/quoin-config/tests/ts_oracle.rs\n+++ b/rust/crates/quoin-config/tests/ts_oracle.rs\n@@ -283,11 +283,7 @@ fn tc_381_105_worktree_gitdir_resolves_the_main_checkouts_org() {\n         &RuntimeContext::new(),\n         &mut log,\n     );\n-    assert_eq!(resolved.source, OrgSource::Git);\n-    assert_eq!(\n-        resolved.org.as_ref().map(quoin_config::OrgName::as_str),\n-        Some(\"acme\")\n-    );\n+    let _ = resolved;\n }\n \n /// Trace: FR-025-AC-8\n",
-      "pair_outcome_original_test": "dropped",
-      "pair_outcome_weakened_test": null,
-      "outcome": "survived"
     },
     {
       "id": "M-TPVIOL-014",
@@ -9861,206 +9225,6 @@
       "outcome": "survived"
     },
     {
-      "id": "M-TVIOL-045",
-      "slot": "TVIOL-045",
-      "kind": "violating_code",
-      "source": "N-131",
-      "modes": [
-        "RTC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/data_schema.rs",
-      "find": "    if !has_schema && !has_digest {",
-      "replace": "    if !has_schema || !has_digest {",
-      "description": "Changes the inline-form gate from AND to OR, so a value carrying only one of `schema`/`digest` (missing the other) is now classified Inline instead of falling through to the ambiguous-reference Invalid check, contradicting FR-073's requirement that the reference form is `{ schema, digest }` with neither optional; fails tc_378_109's golden-parity check for the \"reference-missing-digest\" and \"reference-missing-schema\" cases.",
-      "breaks_stated_behaviour": true,
-      "stated_behaviour_broken": "data_schema SHALL reference the module's emitted JSON Schema by relative path and SHA-256 digest instead of carrying an inline schema",
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/data_schema.rs b/rust/crates/quoin-semantic/src/data_schema.rs\nindex 9d57ffa2..970e75dd 100644\n--- a/rust/crates/quoin-semantic/src/data_schema.rs\n+++ b/rust/crates/quoin-semantic/src/data_schema.rs\n@@ -124,7 +124,7 @@ pub fn classify_data_schema(\n     };\n     let has_schema = object.contains_key(\"schema\");\n     let has_digest = object.contains_key(\"digest\");\n-    if !has_schema && !has_digest {\n+    if !has_schema || !has_digest {\n         return (DataSchemaForm::Inline, Vec::new());\n     }\n     let extra: Vec<&str> = object\n",
-      "outcome": "caught",
-      "failure": "assertion"
-    },
-    {
-      "id": "M-TADD-080",
-      "slot": "TADD-080",
-      "kind": "additive_code",
-      "source": "N-131",
-      "modes": [
-        "RTC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/data_schema.rs",
-      "find": "    let has_schema = object.contains_key(\"schema\");\n    let has_digest = object.contains_key(\"digest\");",
-      "replace": "    if object.contains_key(\"quoinDebugOnly\") {\n        return (\n            DataSchemaForm::Invalid,\n            vec![SemanticDiagnostic::error(\n                DiagnosticCode::DataSchemaShape,\n                locus,\n                \"data_schema carries a reserved quoinDebugOnly key\",\n            )],\n        );\n    }\n    let has_schema = object.contains_key(\"schema\");\n    let has_digest = object.contains_key(\"digest\");",
-      "description": "Adds an unstated refusal for a reserved `quoinDebugOnly` key on the `data_schema` object, a decision FR-073 never names. None of the ten golden corpus cases in classify-data-schema.json carry this key, so tc_378_109 is unaffected.",
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/data_schema.rs b/rust/crates/quoin-semantic/src/data_schema.rs\nindex 9d57ffa2..cd34fb08 100644\n--- a/rust/crates/quoin-semantic/src/data_schema.rs\n+++ b/rust/crates/quoin-semantic/src/data_schema.rs\n@@ -122,6 +122,16 @@ pub fn classify_data_schema(\n             )],\n         );\n     };\n+    if object.contains_key(\"quoinDebugOnly\") {\n+        return (\n+            DataSchemaForm::Invalid,\n+            vec![SemanticDiagnostic::error(\n+                DiagnosticCode::DataSchemaShape,\n+                locus,\n+                \"data_schema carries a reserved quoinDebugOnly key\",\n+            )],\n+        );\n+    }\n     let has_schema = object.contains_key(\"schema\");\n     let has_digest = object.contains_key(\"digest\");\n     if !has_schema && !has_digest {\n",
-      "outcome": "survived"
-    },
-    {
-      "id": "M-TADD-081",
-      "slot": "TADD-081",
-      "kind": "additive_code",
-      "source": "N-131",
-      "modes": [
-        "RTC"
-      ],
-      "testless": false,
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/data_schema.rs",
-      "find": "    let has_schema = object.contains_key(\"schema\");\n    let has_digest = object.contains_key(\"digest\");",
-      "replace": "    if object.contains_key(\"quoinForceReference\") {\n        return (DataSchemaForm::Reference, Vec::new());\n    }\n    let has_schema = object.contains_key(\"schema\");\n    let has_digest = object.contains_key(\"digest\");",
-      "description": "Adds an unstated bypass: a `data_schema` object carrying a `quoinForceReference` key is always classified Reference with no diagnostics, regardless of whether `schema`/`digest` are present. None of the ten golden corpus cases carry this key, so tc_378_109 is unaffected.",
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/data_schema.rs b/rust/crates/quoin-semantic/src/data_schema.rs\nindex 9d57ffa2..6740221c 100644\n--- a/rust/crates/quoin-semantic/src/data_schema.rs\n+++ b/rust/crates/quoin-semantic/src/data_schema.rs\n@@ -122,6 +122,9 @@ pub fn classify_data_schema(\n             )],\n         );\n     };\n+    if object.contains_key(\"quoinForceReference\") {\n+        return (DataSchemaForm::Reference, Vec::new());\n+    }\n     let has_schema = object.contains_key(\"schema\");\n     let has_digest = object.contains_key(\"digest\");\n     if !has_schema && !has_digest {\n",
-      "outcome": "survived"
-    },
-    {
-      "id": "M-TWEAK-041",
-      "slot": "TWEAK-041",
-      "kind": "test_weakening",
-      "source": "N-131",
-      "modes": [
-        "RTC"
-      ],
-      "target": "test",
-      "file": "rust/crates/quoin-semantic/tests/golden_parity.rs",
-      "find": "        assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n\n        let expected = count_diagnostics(array(case, \"diagnostics\"));\n        let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n            *counts\n                .entry((\n                    d.code.as_str().to_owned(),\n                    d.severity.as_str().to_owned(),\n                    d.path.clone(),\n                ))\n                .or_insert(0) += 1;\n            counts\n        });\n        assert_eq!(expected, actual, \"{id}: diagnostics\");",
-      "replace": "        if !id.starts_with(\"reference-missing\") {\n            assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n        }\n\n        let expected = count_diagnostics(array(case, \"diagnostics\"));\n        let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n            *counts\n                .entry((\n                    d.code.as_str().to_owned(),\n                    d.severity.as_str().to_owned(),\n                    d.path.clone(),\n                ))\n                .or_insert(0) += 1;\n            counts\n        });\n        if !id.starts_with(\"reference-missing\") {\n            assert_eq!(expected, actual, \"{id}: diagnostics\");\n        }",
-      "description": "Skips both the form and diagnostics comparisons for any golden case whose id starts with \"reference-missing\" (exactly the two cases M-TVIOL-045 misclassifies as Inline), while every other of the ten golden cases is still checked in full.",
-      "pair": "M-TVIOL-045",
-      "weakening": "loosened",
-      "all_assertions_removed": false,
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/tests/golden_parity.rs b/rust/crates/quoin-semantic/tests/golden_parity.rs\nindex e8931268..3bb87910 100644\n--- a/rust/crates/quoin-semantic/tests/golden_parity.rs\n+++ b/rust/crates/quoin-semantic/tests/golden_parity.rs\n@@ -674,7 +674,9 @@ fn tc_378_109_classify_data_schema_matches_the_oracle() {\n         let id = text(case, \"id\");\n         let value = case.get(\"value\").cloned().unwrap_or(Value::Null);\n         let (form, diagnostics) = classify_data_schema(&value, \"object_types[x].data_schema\");\n-        assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n+        if !id.starts_with(\"reference-missing\") {\n+            assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n+        }\n \n         let expected = count_diagnostics(array(case, \"diagnostics\"));\n         let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n@@ -687,7 +689,9 @@ fn tc_378_109_classify_data_schema_matches_the_oracle() {\n                 .or_insert(0) += 1;\n             counts\n         });\n-        assert_eq!(expected, actual, \"{id}: diagnostics\");\n+        if !id.starts_with(\"reference-missing\") {\n+            assert_eq!(expected, actual, \"{id}: diagnostics\");\n+        }\n     }\n }\n \n",
-      "pair_outcome_original_test": "caught",
-      "pair_outcome_weakened_test": "survived",
-      "outcome": "survived"
-    },
-    {
-      "id": "M-TPVIOL-027",
-      "slot": "TPVIOL-027",
-      "kind": "violating_code",
-      "source": "N-131",
-      "modes": [],
-      "pair_only": true,
-      "target": "code",
-      "file": "rust/crates/quoin-semantic/src/data_schema.rs",
-      "find": ".filter(|k| k.as_str() != \"schema\" && k.as_str() != \"digest\")",
-      "replace": ".filter(|k| k.as_str() != \"schema\" || k.as_str() != \"digest\")",
-      "description": "Changes the extra-keys filter from AND to OR, so `schema` and `digest` themselves are always counted as \"extra\" (no key can equal both strings at once), making every reference-shaped value with `schema`/`digest` present classify as Invalid — contradicting FR-073's requirement that a well-formed `{ schema, digest }` reference is accepted; fails tc_378_109 on the \"reference\" and \"reference-with-extra\" golden cases.",
-      "breaks_stated_behaviour": true,
-      "stated_behaviour_broken": "data_schema SHALL reference the module's emitted JSON Schema by relative path and SHA-256 digest instead of carrying an inline schema",
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/src/data_schema.rs b/rust/crates/quoin-semantic/src/data_schema.rs\nindex 9d57ffa2..a8ed61dd 100644\n--- a/rust/crates/quoin-semantic/src/data_schema.rs\n+++ b/rust/crates/quoin-semantic/src/data_schema.rs\n@@ -129,7 +129,7 @@ pub fn classify_data_schema(\n     }\n     let extra: Vec<&str> = object\n         .keys()\n-        .filter(|k| k.as_str() != \"schema\" && k.as_str() != \"digest\")\n+        .filter(|k| k.as_str() != \"schema\" || k.as_str() != \"digest\")\n         .map(String::as_str)\n         .collect();\n     if !extra.is_empty() || !has_schema || !has_digest {\n",
-      "outcome": "caught",
-      "failure": "assertion"
-    },
-    {
-      "id": "M-TWEAK-042",
-      "slot": "TWEAK-042",
-      "kind": "test_weakening",
-      "source": "N-131",
-      "modes": [
-        "RTC"
-      ],
-      "target": "test",
-      "file": "rust/crates/quoin-semantic/tests/golden_parity.rs",
-      "find": "        assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n\n        let expected = count_diagnostics(array(case, \"diagnostics\"));\n        let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n            *counts\n                .entry((\n                    d.code.as_str().to_owned(),\n                    d.severity.as_str().to_owned(),\n                    d.path.clone(),\n                ))\n                .or_insert(0) += 1;\n            counts\n        });\n        assert_eq!(expected, actual, \"{id}: diagnostics\");",
-      "replace": "        if !id.starts_with(\"reference\") {\n            assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n        }\n\n        let expected = count_diagnostics(array(case, \"diagnostics\"));\n        let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n            *counts\n                .entry((\n                    d.code.as_str().to_owned(),\n                    d.severity.as_str().to_owned(),\n                    d.path.clone(),\n                ))\n                .or_insert(0) += 1;\n            counts\n        });\n        if !id.starts_with(\"reference\") {\n            assert_eq!(expected, actual, \"{id}: diagnostics\");\n        }",
-      "description": "Skips both the form and diagnostics comparisons for every golden case whose id starts with \"reference\" (the four cases M-TPVIOL-027 corrupts: reference, reference-missing-digest, reference-missing-schema, reference-with-extra), while the six non-reference cases are still checked in full.",
-      "pair": "M-TPVIOL-027",
-      "weakening": "loosened",
-      "all_assertions_removed": false,
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/tests/golden_parity.rs b/rust/crates/quoin-semantic/tests/golden_parity.rs\nindex e8931268..72134e4a 100644\n--- a/rust/crates/quoin-semantic/tests/golden_parity.rs\n+++ b/rust/crates/quoin-semantic/tests/golden_parity.rs\n@@ -674,7 +674,9 @@ fn tc_378_109_classify_data_schema_matches_the_oracle() {\n         let id = text(case, \"id\");\n         let value = case.get(\"value\").cloned().unwrap_or(Value::Null);\n         let (form, diagnostics) = classify_data_schema(&value, \"object_types[x].data_schema\");\n-        assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n+        if !id.starts_with(\"reference\") {\n+            assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n+        }\n \n         let expected = count_diagnostics(array(case, \"diagnostics\"));\n         let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n@@ -687,7 +689,9 @@ fn tc_378_109_classify_data_schema_matches_the_oracle() {\n                 .or_insert(0) += 1;\n             counts\n         });\n-        assert_eq!(expected, actual, \"{id}: diagnostics\");\n+        if !id.starts_with(\"reference\") {\n+            assert_eq!(expected, actual, \"{id}: diagnostics\");\n+        }\n     }\n }\n \n",
-      "pair_outcome_original_test": "caught",
-      "pair_outcome_weakened_test": "survived",
-      "outcome": "survived"
-    },
-    {
-      "id": "M-RWEAK-002",
-      "slot": "RWEAK-002",
-      "kind": "test_weakening",
-      "source": "N-131",
-      "modes": [
-        "RTC",
-        "RT"
-      ],
-      "replaces": "M-WEAK-16",
-      "target": "test",
-      "file": "rust/crates/quoin-semantic/tests/golden_parity.rs",
-      "find": "        assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n\n        let expected = count_diagnostics(array(case, \"diagnostics\"));\n        let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n            *counts\n                .entry((\n                    d.code.as_str().to_owned(),\n                    d.severity.as_str().to_owned(),\n                    d.path.clone(),\n                ))\n                .or_insert(0) += 1;\n            counts\n        });\n        assert_eq!(expected, actual, \"{id}: diagnostics\");",
-      "replace": "        let skip = matches!(\n            id,\n            \"reference-missing-digest\" | \"reference-missing-schema\" | \"reference-with-extra\"\n        );\n        if !skip {\n            assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n        }\n\n        let expected = count_diagnostics(array(case, \"diagnostics\"));\n        let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n            *counts\n                .entry((\n                    d.code.as_str().to_owned(),\n                    d.severity.as_str().to_owned(),\n                    d.path.clone(),\n                ))\n                .or_insert(0) += 1;\n            counts\n        });\n        if !skip {\n            assert_eq!(expected, actual, \"{id}: diagnostics\");\n        }",
-      "description": "Skips both the form and diagnostics comparisons for exactly the three golden ids M-VIOL-31's AND-gate mutant misclassifies as Reference instead of Invalid (reference-missing-digest, reference-missing-schema, reference-with-extra), naming them by an explicit `matches!` list rather than a prefix test; the other seven golden cases remain checked in full.",
-      "pair": "M-VIOL-31",
-      "weakening": "loosened",
-      "all_assertions_removed": false,
-      "owning_test": {
-        "filter": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "name": "tc_378_109_classify_data_schema_matches_the_oracle",
-        "package": "quoin-semantic",
-        "selector": [
-          "--test",
-          "golden_parity"
-        ]
-      },
-      "patch": "diff --git a/rust/crates/quoin-semantic/tests/golden_parity.rs b/rust/crates/quoin-semantic/tests/golden_parity.rs\nindex e8931268..fc2e0a9c 100644\n--- a/rust/crates/quoin-semantic/tests/golden_parity.rs\n+++ b/rust/crates/quoin-semantic/tests/golden_parity.rs\n@@ -674,7 +674,13 @@ fn tc_378_109_classify_data_schema_matches_the_oracle() {\n         let id = text(case, \"id\");\n         let value = case.get(\"value\").cloned().unwrap_or(Value::Null);\n         let (form, diagnostics) = classify_data_schema(&value, \"object_types[x].data_schema\");\n-        assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n+        let skip = matches!(\n+            id,\n+            \"reference-missing-digest\" | \"reference-missing-schema\" | \"reference-with-extra\"\n+        );\n+        if !skip {\n+            assert_eq!(text(case, \"form\"), form.as_str(), \"{id}: form\");\n+        }\n \n         let expected = count_diagnostics(array(case, \"diagnostics\"));\n         let actual = diagnostics.iter().fold(BTreeMap::new(), |mut counts, d| {\n@@ -687,7 +693,9 @@ fn tc_378_109_classify_data_schema_matches_the_oracle() {\n                 .or_insert(0) += 1;\n             counts\n         });\n-        assert_eq!(expected, actual, \"{id}: diagnostics\");\n+        if !skip {\n+            assert_eq!(expected, actual, \"{id}: diagnostics\");\n+        }\n     }\n }\n \n",
-      "pair_outcome_original_test": "caught",
-      "pair_outcome_weakened_test": "survived",
-      "outcome": "survived"
-    },
-    {
       "id": "M-TADD-082",
       "slot": "TADD-082",
       "kind": "additive_code",
@@ -10919,84 +10083,6 @@
       "outcome": "n/a"
     },
     {
-      "id": "M-FRS-04",
-      "slot": "FRS-04",
-      "kind": "fr_statement",
-      "source": "N-034",
-      "modes": [
-        "RC"
-      ],
-      "target": "requirement",
-      "defect": "compound_obligation",
-      "file": "spec/functional/FR-032-evidence-auditor.md",
-      "find": "report the ways evidence has rotted, without running anything.",
-      "replace": "report the ways evidence has rotted, without running anything, and SHALL delete every binding it reports as stale.",
-      "description": "FR-032 statement: Adds an independent obligation (delete stale bindings) joined with 'and SHALL'.",
-      "owning_test": {
-        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\nindex d185336e..435f1e21 100644\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n `quoin` SHALL audit the evidence store against the obligations of the day and\n-report the ways evidence has rotted, without running anything.\n+report the ways evidence has rotted, without running anything, and SHALL delete every binding it reports as stale.\n \n A trace link is currently a string match that never expires. Evidence rots in\n three ways, none of them detected before this:\n",
-      "outcome": "n/a"
-    },
-    {
-      "id": "M-FRS-05",
-      "slot": "FRS-05",
-      "kind": "fr_statement",
-      "source": "N-034",
-      "modes": [
-        "RC"
-      ],
-      "target": "requirement",
-      "defect": "multiple_readings",
-      "file": "spec/functional/FR-032-evidence-auditor.md",
-      "find": "`quoin` SHALL audit the evidence store against the obligations of the day and",
-      "replace": "`quoin` SHALL only audit the evidence store against the obligations of the day and",
-      "description": "FR-032 statement: Scope-ambiguous 'only': either quoin may do nothing but audit (never modify), or it audits the evidence store and no other store; two different behaviours.",
-      "owning_test": {
-        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\nindex d185336e..d8a9dbcf 100644\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -15,7 +15,7 @@ relationships:\n \n ## Description\n \n-`quoin` SHALL audit the evidence store against the obligations of the day and\n+`quoin` SHALL only audit the evidence store against the obligations of the day and\n report the ways evidence has rotted, without running anything.\n \n A trace link is currently a string match that never expires. Evidence rots in\n",
-      "outcome": "n/a"
-    },
-    {
-      "id": "M-FRS-06",
-      "slot": "FRS-06",
-      "kind": "fr_statement",
-      "source": "N-034",
-      "modes": [
-        "RC"
-      ],
-      "target": "requirement",
-      "defect": "names_internal_symbol",
-      "file": "spec/functional/FR-032-evidence-auditor.md",
-      "find": "report the ways evidence has rotted, without running anything.",
-      "replace": "return an `AuditReport` from `audit(&AuditInput)`, without running anything.",
-      "description": "FR-032 statement: Replaces the observable report with internal identifiers `AuditReport`, `audit` and `AuditInput` (quoin-auditor/src/audit).",
-      "owning_test": {
-        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\nindex d185336e..6debefd5 100644\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -16,7 +16,7 @@ relationships:\n ## Description\n \n `quoin` SHALL audit the evidence store against the obligations of the day and\n-report the ways evidence has rotted, without running anything.\n+return an `AuditReport` from `audit(&AuditInput)`, without running anything.\n \n A trace link is currently a string match that never expires. Evidence rots in\n three ways, none of them detected before this:\n",
-      "outcome": "n/a"
-    },
-    {
       "id": "M-FRS-07",
       "slot": "FRS-07",
       "kind": "fr_statement",
@@ -11533,84 +10619,6 @@
       "outcome": "n/a"
     },
     {
-      "id": "M-FRS-29",
-      "slot": "FRS-29",
-      "kind": "fr_statement",
-      "source": "N-063",
-      "modes": [
-        "RT"
-      ],
-      "target": "requirement",
-      "defect": "compound_obligation",
-      "file": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
-      "find": "reached through the `quoin-core` boundary, preserving one catalog and one module",
-      "replace": "reached through the `quoin-core` boundary, and SHALL publish each crate to crates.io, preserving one catalog and one module",
-      "description": "FR-099 statement: Adds an independent obligation (publish each crate) joined with 'and SHALL'.",
-      "owning_test": {
-        "filter": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "name": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "package": "quoin-quire",
-        "selector": [
-          "--test",
-          "tc_474_assurance_parity"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-099-rust-catalog-and-validation-capability.md b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\nindex ef0551dd..ef63a312 100644\n--- a/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n+++ b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n@@ -23,7 +23,7 @@ relationships:\n \n Quoin SHALL implement its Quire adapter, validators, semantic and completeness\n analysis, configuration, plugin, module and catalog behaviour in Rust crates\n-reached through the `quoin-core` boundary, preserving one catalog and one module\n+reached through the `quoin-core` boundary, and SHALL publish each crate to crates.io, preserving one catalog and one module\n store.\n \n ## Inputs\n",
-      "outcome": "n/a"
-    },
-    {
-      "id": "M-FRS-30",
-      "slot": "FRS-30",
-      "kind": "fr_statement",
-      "source": "N-063",
-      "modes": [
-        "RT"
-      ],
-      "target": "requirement",
-      "defect": "multiple_readings",
-      "file": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
-      "find": "configuration, plugin, module and catalog behaviour in Rust crates",
-      "replace": "configuration, plugin, module and/or catalog behaviour in Rust crates",
-      "description": "FR-099 statement: 'and/or' makes it unclear whether all the listed behaviour must be in Rust or any subset suffices; two different behaviours.",
-      "owning_test": {
-        "filter": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "name": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "package": "quoin-quire",
-        "selector": [
-          "--test",
-          "tc_474_assurance_parity"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-099-rust-catalog-and-validation-capability.md b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\nindex ef0551dd..522e8279 100644\n--- a/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n+++ b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n@@ -22,7 +22,7 @@ relationships:\n ## Description\n \n Quoin SHALL implement its Quire adapter, validators, semantic and completeness\n-analysis, configuration, plugin, module and catalog behaviour in Rust crates\n+analysis, configuration, plugin, module and/or catalog behaviour in Rust crates\n reached through the `quoin-core` boundary, preserving one catalog and one module\n store.\n \n",
-      "outcome": "n/a"
-    },
-    {
-      "id": "M-FRS-31",
-      "slot": "FRS-31",
-      "kind": "fr_statement",
-      "source": "N-063",
-      "modes": [
-        "RT"
-      ],
-      "target": "requirement",
-      "defect": "names_internal_symbol",
-      "file": "spec/functional/FR-099-rust-catalog-and-validation-capability.md",
-      "find": "Quoin SHALL implement its Quire adapter, validators, semantic and completeness",
-      "replace": "Quoin SHALL implement `Provenance::current`, `check_premise`, validators, semantic and completeness",
-      "description": "FR-099 statement: Replaces the observable 'Quire adapter' with internal identifiers `Provenance::current` and `check_premise` (quoin-quire/src/engine.rs).",
-      "owning_test": {
-        "filter": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "name": "tc_474_023_the_verdict_capture_records_its_provenance",
-        "package": "quoin-quire",
-        "selector": [
-          "--test",
-          "tc_474_assurance_parity"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-099-rust-catalog-and-validation-capability.md b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\nindex ef0551dd..136d946c 100644\n--- a/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n+++ b/spec/functional/FR-099-rust-catalog-and-validation-capability.md\n@@ -21,7 +21,7 @@ relationships:\n \n ## Description\n \n-Quoin SHALL implement its Quire adapter, validators, semantic and completeness\n+Quoin SHALL implement `Provenance::current`, `check_premise`, validators, semantic and completeness\n analysis, configuration, plugin, module and catalog behaviour in Rust crates\n reached through the `quoin-core` boundary, preserving one catalog and one module\n store.\n",
-      "outcome": "n/a"
-    },
-    {
       "id": "M-FRS-32",
       "slot": "FRS-32",
       "kind": "fr_statement",
@@ -12041,57 +11049,6 @@
         ]
       },
       "patch": "diff --git a/spec/functional/FR-034-finding-shaped-evidence.md b/spec/functional/FR-034-finding-shaped-evidence.md\n--- a/spec/functional/FR-034-finding-shaped-evidence.md\n+++ b/spec/functional/FR-034-finding-shaped-evidence.md\n@@ -82,7 +82,7 @@\n \n | ID | Criteria | Verification |\n |----|----------|--------------|\n-| FR-034-AC-1 | A SARIF run with an empty `results` array is read as a scan that executed, reporting the tool and how many rules it evaluated. | Test (TC-165) |\n+| FR-034-AC-1 | A SARIF run with unusual contents is read as a scan that executed, reporting the tool and how many rules it evaluated. | Test (TC-165) |\n | FR-034-AC-2 | A SARIF log whose `runs` array is empty is **rejected** — it proves no scan executed. | Test (TC-166) |\n | FR-034-AC-3 | The SARIF adapter reads rule id, level, message and first location. | Test (TC-167) |\n | FR-034-AC-4 | The nested `rule.id` form is accepted; a result naming no rule at all is skipped. | Test (TC-168) |\n",
-      "outcome": "n/a"
-    },
-    {
-      "id": "M-ACR-12",
-      "slot": "ACR-12",
-      "kind": "ac_refusal",
-      "source": "N-034",
-      "modes": [
-        "RC"
-      ],
-      "target": "requirement",
-      "defect": "domain_unbounded",
-      "file": "spec/functional/FR-032-evidence-auditor.md",
-      "find": "An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed",
-      "replace": "An obligation in a good state",
-      "description": "FR-032-AC-1: Three stated conditions on the obligation become 'in a good state': a vague qualifier with no condition or example.",
-      "owning_test": {
-        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -106,7 +106,7 @@\n \n | ID | Criteria | Verification |\n |----|----------|--------------|\n-| FR-032-AC-1 | An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed produces no finding and is reported healthy. | Test (TC-137) |\n+| FR-032-AC-1 | An obligation in a good state produces no finding and is reported healthy. | Test (TC-137) |\n | FR-032-AC-2 | A statement reworded after binding produces a high-severity suspect-link finding naming both hashes. | Test (TC-138) |\n | FR-032-AC-3 | A binding naming a suite with no recorded run is high severity, while a run merely behind HEAD is medium. | Test (TC-139) |\n | FR-032-AC-4 | Vacuity fires when every bound symbol was skipped or absent from the run, and does not fire when at least one passed. | Test (TC-140) |\n",
-      "outcome": "n/a"
-    },
-    {
-      "id": "M-ACR-13",
-      "slot": "ACR-13",
-      "kind": "ac_refusal",
-      "source": "N-069",
-      "modes": [
-        "RTC"
-      ],
-      "target": "requirement",
-      "defect": "domain_unbounded",
-      "file": "spec/functional/FR-019-manage-plugin-registry.md",
-      "find": "a missing or empty name raises an error",
-      "replace": "a bad name raises an error",
-      "description": "FR-019-AC-2: The error clause's stated cases (missing or empty name) become 'a bad name': a vague qualifier with no condition or example.",
-      "owning_test": {
-        "filter": "tc_381_210_option_like_fields_are_refused",
-        "name": "source::tests::tc_381_210_option_like_fields_are_refused",
-        "package": "quoin-modules",
-        "selector": [
-          "--lib"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-019-manage-plugin-registry.md b/spec/functional/FR-019-manage-plugin-registry.md\n--- a/spec/functional/FR-019-manage-plugin-registry.md\n+++ b/spec/functional/FR-019-manage-plugin-registry.md\n@@ -45,7 +45,7 @@\n | ID          | Criteria                                                                                                         | Verification                                       |\n | ----------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |\n | FR-019-AC-1 | `plugin install <path-source>` materializes the module, records it, and reports it                               | Test (install_reconcile.rs, core-modules.test.ts, cli.test.ts, index.test.ts) |\n-| FR-019-AC-2 | A module name is read from a root or single-nested `manifest.yaml`; a missing or empty name raises an error      | Test (ts_oracle.rs, install_reconcile.rs)          |\n+| FR-019-AC-2 | A module name is read from a root or single-nested `manifest.yaml`; a bad name raises an error      | Test (ts_oracle.rs, install_reconcile.rs)          |\n | FR-019-AC-3 | `plugin list` prints the registry's plugins                                                                      | Test (cli.test.ts)                                 |\n | FR-019-AC-4 | `plugin remove <name>` deletes the module directory and drops its registry entry; a missing name raises an error | Test (install_reconcile.rs, cli.test.ts)           |\n \n",
       "outcome": "n/a"
     },
     {
@@ -12646,32 +11603,6 @@
       "description": "NFR-021-AC-3: Digest equality between two runs becomes a fact about the dependency graph.",
       "owning_test": null,
       "patch": "diff --git a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n--- a/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n+++ b/spec/non-functional/NFR-021-reproducible-corpus-measurement.md\n@@ -77,7 +77,7 @@\n | --- | --- | --- |\n | NFR-021-AC-1 | Two runs over the same recorded corpus and module revisions produce artifacts whose SHA-256 digests are equal, excluding the run manifest's timestamp field. | Test (TC-1557) |\n | NFR-021-AC-2 | No emitted collection depends on filesystem enumeration order; every collection carries a declared ordering key. | Test (TC-1558) |\n-| NFR-021-AC-3 | A run executed with networking disabled over the fixture corpus produces the same artifact digests as a run with networking available. | Test (TC-1559) |\n+| NFR-021-AC-3 | The crate graph carries no networking dependency, so no run over the fixture corpus reaches the network. | Test (TC-1559) |\n | NFR-021-AC-4 | Every repository outside the reproducibility claim is marked `clean: false` or `stable: false` in the corpus record. | Test (TC-1584) |\n \n ## Dependencies\n",
-      "outcome": "n/a"
-    },
-    {
-      "id": "M-ACR-40",
-      "slot": "ACR-40",
-      "kind": "ac_refusal",
-      "source": "N-034",
-      "modes": [
-        "RC"
-      ],
-      "target": "requirement",
-      "defect": "static_or_demonstration",
-      "file": "spec/functional/FR-032-evidence-auditor.md",
-      "find": "An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed produces no finding and is reported healthy.",
-      "replace": "An operator runs the auditor on a repository whose obligations all pass, opens the report, sees no findings, and marks each obligation healthy.",
-      "description": "FR-032-AC-1: The input/output behaviour becomes an end-to-end narrative of an operator's steps.",
-      "owning_test": {
-        "filter": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "name": "tc_383_001_every_audit_case_matches_the_retained_report",
-        "package": "quoin-auditor",
-        "selector": [
-          "--test",
-          "tc_383_parity"
-        ]
-      },
-      "patch": "diff --git a/spec/functional/FR-032-evidence-auditor.md b/spec/functional/FR-032-evidence-auditor.md\n--- a/spec/functional/FR-032-evidence-auditor.md\n+++ b/spec/functional/FR-032-evidence-auditor.md\n@@ -106,7 +106,7 @@\n \n | ID | Criteria | Verification |\n |----|----------|--------------|\n-| FR-032-AC-1 | An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed produces no finding and is reported healthy. | Test (TC-137) |\n+| FR-032-AC-1 | An operator runs the auditor on a repository whose obligations all pass, opens the report, sees no findings, and marks each obligation healthy. | Test (TC-137) |\n | FR-032-AC-2 | A statement reworded after binding produces a high-severity suspect-link finding naming both hashes. | Test (TC-138) |\n | FR-032-AC-3 | A binding naming a suite with no recorded run is high severity, while a run merely behind HEAD is medium. | Test (TC-139) |\n | FR-032-AC-4 | Vacuity fires when every bound symbol was skipped or absent from the run, and does not fire when at least one passed. | Test (TC-140) |\n",
       "outcome": "n/a"
     }
   ]

@@ -23,8 +23,7 @@ that would fail if it stopped being true.
 ## §1 — `headCommit` staleness: the retained code throws where this one answers
 
 **Input that separates them:** an obligation bound to two suites, one backed by
-a finding-shaped scan and one by a run, with `headCommit` set. The corpus case
-is `a-scan-only-binding-beside-a-run-throws-in-the-retained-code`.
+a finding-shaped scan and one by a run, with `headCommit` set.
 
 `src/auditor/audit.ts:412-419`:
 
@@ -53,20 +52,12 @@ This crate pairs each binding with its own run — `Vec<(&Binding, &RunRecord)>`
 built in one pass — so there is no second array to index and the mismatch is not
 expressible. The reported suite is always the suite whose run is behind.
 
-**Must-have-fired:**
-`tc_383_002_the_case_the_retained_code_throws_on_pairs_correctly_here` asserts
-that the retained capture still carries the `TypeError`, that it carries no
-report, and that this crate reports exactly one `stale-evidence` finding naming
-the run-backed suite. `tc_383_001` additionally asserts that **exactly one**
-case in the corpus is a divergence of this kind: a second one would be a
-regression, not a corpus refresh.
-
 ---
 
 ## §2 — `unreadable[].reason` is the reader's own sentence
 
 **Input that separates them:** any module whose `manifest.yaml` is missing or
-malformed. The corpus case is `a-malformed-manifest-is-reported-not-thrown`.
+malformed.
 
 `src/method-catalog.ts` records `cause.message` from whatever threw. Under Node
 that is `ENOENT: no such file or directory, open '…'` for a missing file and
@@ -79,13 +70,6 @@ are different sentences for the same two facts.
 differs, and it is prose no caller parses: it is printed for an operator, which
 is the entire reason quoin#106 made an unreadable module data rather than a
 crash.
-
-**Must-have-fired:**
-`tc_383_007_the_unreadable_reason_is_a_declared_divergence_that_fires` asserts
-that the retained reason is non-empty, that both readers refuse the same number
-of modules, that this crate's reason is non-empty, and that the two sentences
-**differ**. If they ever agree, that assertion fails and this section is
-deleted rather than left standing as a divergence that no longer exists.
 
 ---
 
@@ -108,14 +92,6 @@ the retained side is non-deterministic. Where `readdirSync` happens to return
 sorted order — which it does on ext4 for short names, and always for a single
 child — the two agree.
 
-**Must-have-fired:** `tc_383_006_every_catalog_case_matches_the_retained_merge`
-carries `a-parent-directory-resolves-to-its-one-module-child`, where the two
-orders coincide, and
-`catalog::source::tests::the_first_sorted_child_with_a_manifest_wins` states
-the sort directly. The property that matters — first-wins is stable across
-machines — is not observable from the retained side at all, which is why it is
-declared here rather than compared.
-
 ---
 
 ## §4 — Not a divergence: key order and canonicalization
@@ -125,8 +101,7 @@ declaration order; and neither is the order `quoin_store::canonical_json`
 writes. A naive text comparison of the two reports would differ on every case
 and prove nothing about their content.
 
-`tests/tc_383_parity.rs` therefore compares **canonical JSON bytes** on both
-sides. That is not a weakening: a missing field, an extra field, a renamed
+Canonical JSON bytes are the comparison form. That is not a weakening: a missing field, an extra field, a renamed
 field, a different number formatting, a different string or a different array
 order all still fail. Only key order is normalized away, and key order is not
 part of the report's meaning — every consumer reads it with a parser.
@@ -136,8 +111,7 @@ ECMAScript `Number::toString` algorithm, everywhere a score or a count reaches a
 string. Rust's `{}` is not that algorithm, and a mutation score of `0.1` would
 be the first place it showed.
 
-**Must-have-fired:** every `assert_eq!` in `tc_383_parity.rs` compares
-canonical bytes, and `jsvalue::tests::a_number_is_formatted_by_ecmascript_and_not_by_rust`
+**Must-have-fired:** `jsvalue::tests::a_number_is_formatted_by_ecmascript_and_not_by_rust`
 states the formatter directly.
 
 ---
@@ -154,10 +128,6 @@ The visible consequence is the signature: `audit()` returns
 `Result<AuditReport, AuditorError>` rather than a report. The retained `audit()`
 fails at the same point; it simply fails by dying.
 
-**Must-have-fired:** `tc_383_001` asserts that every corpus case — all of which
-are under the ceiling — produces a report rather than an error, so a refusal
-that started firing on ordinary input would fail there.
-
 ---
 
 ## §6 — A rung the retained ladder never had: failed/errored latest run
@@ -171,10 +141,7 @@ FR-032, not a behavioural difference this port introduced by translating the
 retained source wrongly — there is no retained behaviour to diverge from,
 because the retained side never asked the question.
 
-**Must-have-fired:** none of the golden corpus's `audit_cases` binds a symbol
-with a `fail`/`error` outcome (checked directly against
-`tests/goldens/auditor.json`), so `tc_383_001`'s TypeScript-parity comparison
-cannot exercise this rung either way. `tests/tc_1963_failed_run_stale_evidence.rs`
+**Must-have-fired:** `tests/tc_1963_failed_run_stale_evidence.rs`
 is the coverage for it.
 
 ---
@@ -189,14 +156,11 @@ is the coverage for it.
 - **`healthy`.** The retained source pushes it as the last statement of the loop
   body, so the one silent `continue` — `runBindings.length === 0` at
   `audit.ts:413` — leaves an obligation neither healthy nor found. `Pass` here
-  carries a `completed` flag for that exact reason, and
-  `a-scan-backed-binding-is-not-stale` is the corpus case that holds it in
-  place. Inferring "healthy" from "no finding" reports a stronger result than
+  carries a `completed` flag for that exact reason. Inferring "healthy" from "no finding" reports a stronger result than
   the retained code does.
 - **String ordering.** `js::compare` is UTF-16 code-unit order, which is what
   `Array.prototype.sort` and `<` give in JavaScript, and it is not Rust's
-  `str: Ord`. The corpus case
-  `obligations-and-findings-sort-by-code-unit-not-by-locale` separates the two.
+  `str: Ord`.
 - **`String(...)` coercion** of eight manifest fields. A YAML author writing
   `name: 1.0` gets `"1"` on both sides. See `src/jsvalue.rs`.
 - **The regex table.** Every retained `/…/i` without the `u` flag is compiled
@@ -204,10 +168,9 @@ is the coverage for it.
   as in JavaScript. The three patterns that also carry `\s` or `≤`/`≥` are
   assembled with `(?i-u:…)` around the ASCII parts only, with
   `quoin_combinatorial::js::JS_WHITESPACE_CLASS` in place of `\s`, preserving
-  match extents. `a-non-ascii-neighbour-is-not-a-word-character-to-a-unicode-less-regexp`
-  is the corpus case that separates ASCII `\w` from Unicode `\w`.
+  match extents.
 - **`Severity`.** An open newtype, not a closed enum, and `Finding.severity` is
-  `Option`. `quoin-assurance`'s captured corpus carries `severity: "error"` and
+  `Option`. `quoin-assurance`'s inputs carry `severity: "error"` and
   findings with no `severity` key at all, and a TypeScript union is not a
   runtime check: where the retained data is wider than the declared type, the
   retained data wins.
@@ -215,7 +178,7 @@ is the coverage for it.
   `IndependenceAssessment`s and this port does too, but it is carried in
   `quoin_finding_types::AuditReport::other` rather than declared as a typed
   field. Declaring it made the workspace gate refuse
-  `quoin-graph-analysis`'s captured corpus, which holds
+  `quoin-graph-analysis`'s inputs, which hold
   `independence: [{"obligation": "…", "axes": ["author"]}]` — not an assessment
   at all, and accepted by every retained reader because nothing between the
   producer and the view validates the member. Same ruling as `Severity`: where

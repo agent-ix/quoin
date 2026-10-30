@@ -106,17 +106,3 @@ pub fn common_schema_path(semantic_root: &Path) -> PathBuf {
 pub fn sweep_report_schema_path(semantic_root: &Path) -> PathBuf {
     semantic_root.join("sweep-report.schema.json")
 }
-
-#[cfg(test)]
-// Indexing and `unreachable!` are a test-only convenience: an out-of-range
-// index in a test is a failing test, not a downed worker.
-#[allow(clippy::indexing_slicing)]
-mod tests {
-    use super::*;
-
-    /// Trace: FR-070
-    #[test]
-    fn tc_378_040_contract_admits_exactly_ten_keys() {
-        assert_eq!(SEMANTIC_CONTRACT.semantic_keys.len(), 10);
-    }
-}

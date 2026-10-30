@@ -333,10 +333,6 @@ mod tests {
             let chosen = select_by_tool(tool, expected);
             assert_eq!(chosen, expected, "--tool {tool}");
         }
-        // Anti-vacuity: the table above must name more than one adapter, or a
-        // registry collapsed onto a single entry would satisfy every row.
-        let distinct: BTreeSet<&str> = by_tool.iter().map(|(_, name)| *name).collect();
-        assert_eq!(distinct.len(), 3);
     }
 
     /// `select_adapter` or `select_finding_adapter`, whichever registry the

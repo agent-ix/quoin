@@ -5,12 +5,10 @@
   "producer": {
     "schemaVersion": "quire-tool-provenance-v1",
     "cli": {
-      "version": "0.32.0",
-      "sourceState": "clean"
+      "version": "0.32.0"
     },
     "engine": {
-      "version": "0.46.0",
-      "sourceState": "clean"
+      "version": "0.46.0"
     },
     "capabilities": [
       "action_guidance.structured",

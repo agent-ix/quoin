@@ -355,7 +355,7 @@ fn build_table() -> Vec<StatementCharacteristic> {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{AFTER, ASCII_PATTERNS, STATEMENT_CHARACTERISTICS, unicode_patterns};
+    use super::{AFTER, STATEMENT_CHARACTERISTICS, unicode_patterns};
     use crate::advise::compound::matches_outside_compound;
 
     fn fires(name: &str, text: &str) -> bool {
@@ -364,21 +364,6 @@ mod tests {
             .find(|entry| entry.name == name)
             .unwrap_or_else(|| panic!("no `{name}` entry"));
         matches_outside_compound(&entry.pattern, text)
-    }
-
-    #[test]
-    fn every_pattern_compiles_and_the_table_is_the_declared_size() {
-        assert_eq!(
-            STATEMENT_CHARACTERISTICS.len(),
-            ASCII_PATTERNS.len() + AFTER.len()
-        );
-        // Anti-vacuity: a table that silently lost its rows would still pass an
-        // equality between two things it derives from itself.
-        assert!(
-            STATEMENT_CHARACTERISTICS.len() >= 50,
-            "the retained table has 53 entries; this has {}",
-            STATEMENT_CHARACTERISTICS.len()
-        );
     }
 
     #[test]

@@ -25,9 +25,6 @@ FR-018.
 | `src/finding.rs`            | `EmptyGateFinding`, `GateReport`, `Verdict` — the emitted payload        |
 | `src/gates.rs`              | the algorithm: claim, wiring, unasserted count                           |
 | `src/repo.rs`               | the walk, and the `.sh` / wiring classification                          |
-| `tests/golden/`             | the corpus, the expectations, and their provenance                       |
-| `tests/golden_parity.rs`    | verdict parity against that corpus                                       |
-| `tools/generate-oracle.mts` | the capture script that produced the expectations, and its vitest config |
 
 ## Boundary
 
@@ -49,16 +46,6 @@ unusable root, `QV-E002` for an unlistable directory, `QV-E003` for an unreadabl
 file. **Nothing degrades to an empty result**: an empty report means the
 validator walked the whole tree and found nothing, which is the property the
 TypeScript could not state because it let raw `fs` exceptions escape.
-
-## The oracle
-
-`tests/golden/expected.json` was captured **once** from the retained TypeScript
-and is the only oracle these tests consult. No test here executes Node.
-
-`tools/generate-oracle.mts` is that capture. It is a **script, not a test**: it
-is off the `*.test.ts` suffix, `vite.config.ts` excludes `rust/**`, and it
-writes nothing unless `QUOIN_ORACLE_WRITE=1` is set. Run without that variable
-it re-derives the verdicts and asserts they still match the committed bytes.
 
 ## Gates
 

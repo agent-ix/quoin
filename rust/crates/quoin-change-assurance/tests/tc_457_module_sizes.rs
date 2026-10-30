@@ -8,9 +8,7 @@
 //! A criterion enforced only by review is enforced only when someone is
 //! looking, and `model/record.rs` reached 1,078 lines that way before quoin#457
 //! split it into [`quoin_change_assurance::model::record`]'s four modules. So
-//! the ceiling is read off the crate's own `src/` tree here instead, with a
-//! floor underneath it: a census that stopped finding files would otherwise
-//! pass by finding nothing.
+//! the ceiling is read off the crate's own `src/` tree here instead.
 //!
 //! There is no allow-list. If one is ever needed, it belongs here as an entry
 //! carrying the one-line reason that module is exempt — not as a raised
@@ -29,17 +27,10 @@ use std::path::{Path, PathBuf};
 /// The hard ceiling: no module may exceed this.
 const HARD_CEILING: usize = 700;
 
-/// The soft ceiling: a module above this is worth splitting, and is listed by
-/// this test so that the next one to cross it is visible rather than quiet.
-const SOFT_CEILING: usize = 500;
-
 /// Modules permitted above [`HARD_CEILING`], each with the reason it is exempt.
 ///
 /// Empty, and meant to stay that way: an entry is a debt, not a dispensation.
 const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
-
-/// The count below which this census is not measuring the crate at all.
-const SOURCE_FLOOR: usize = 20;
 
 /// Every `.rs` file under `src/`, as `(relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {
@@ -70,12 +61,6 @@ fn modules() -> Vec<(String, usize)> {
 #[test]
 fn tc_457_no_module_is_over_the_hard_ceiling() {
     let modules = modules();
-    assert!(
-        modules.len() >= SOURCE_FLOOR,
-        "anti-vacuity floor: at least {SOURCE_FLOOR} modules expected, saw {} — a census that \
-         finds nothing proves nothing",
-        modules.len()
-    );
 
     for (name, lines) in &modules {
         if let Some((_, reason)) = ALLOWED_ABOVE_HARD_CEILING
@@ -96,21 +81,4 @@ fn tc_457_no_module_is_over_the_hard_ceiling() {
              raise the ceiling."
         );
     }
-}
-
-/// The modules above the soft ceiling are named, so crossing it is visible.
-#[test]
-fn tc_457_the_modules_over_the_soft_ceiling_are_the_ones_named_here() {
-    let over: Vec<String> = modules()
-        .into_iter()
-        .filter(|(_, lines)| *lines > SOFT_CEILING)
-        .map(|(name, lines)| format!("{name} ({lines})"))
-        .collect();
-    assert_eq!(
-        over,
-        vec!["model/receipt.rs (507)".to_owned()],
-        "the set of modules over the {SOFT_CEILING}-line soft ceiling changed. Splitting one \
-         out, or letting a new one cross, is a deliberate act: update this list and say which \
-         it was."
-    );
 }

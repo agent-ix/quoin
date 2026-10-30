@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The captured oracle corpus, and the one way to turn a case into inputs.
+//! The input corpus, and the one way to turn a case into inputs.
 //!
-//! `tests/goldens/graph-analysis.json` was written once by a capture script
-//! run against the retained `src/graph-analysis/`. Both are deleted at HEAD
-//! (quoin#500) and neither was ever consulted at test time. Two
-//! tests read the corpus, so the reading lives here rather than twice.
+//! `tests/goldens/graph-analysis.json` holds the analysis inputs only; no
+//! recorded output is kept.
 //!
 //! Provenance: quoin#385, quoin#500
 

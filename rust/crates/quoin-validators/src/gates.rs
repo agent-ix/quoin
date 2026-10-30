@@ -102,7 +102,7 @@ pub fn inspect_empty_gates(repo: &Path) -> Result<Vec<EmptyGateFinding>, Validat
 /// The analysis itself, over whatever [`RepoSource`] supplies the bytes: a
 /// directory on disk ([`DiskRepo`], via [`inspect_empty_gates`]) or a snapshot
 /// the caller already read ([`crate::MemoryRepo`], via `quoin-core`'s
-/// `validators.run`). There is one copy of it, so the golden corpus and the
+/// `validators.run`). There is one copy of it, so the library and the
 /// boundary cannot drift apart (quoin#412).
 ///
 /// Classification stays here rather than with the caller: a caller that

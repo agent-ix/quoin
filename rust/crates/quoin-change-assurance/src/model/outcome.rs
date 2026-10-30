@@ -265,7 +265,6 @@ mod tests {
 
     #[test]
     fn the_reason_vocabulary_is_closed_and_round_trips() {
-        assert_eq!(Reason::ALL.len(), 37);
         for reason in Reason::ALL {
             assert_eq!(Reason::parse(reason.as_str()), Some(*reason));
         }

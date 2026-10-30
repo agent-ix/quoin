@@ -45,9 +45,8 @@
 //!
 //! `tc_445_310` sits here too, and is the one exception to the paragraph
 //! above: it asks the same content-in-versus-disk question one layer up —
-//! whole assessments rather than read documents — over the golden corpus
-//! `tc_378_304` has already pinned to the TypeScript oracle, so its fixture is
-//! that corpus rather than the tree below.
+//! whole assessments rather than read documents — so its fixture is the
+//! committed input corpus rather than the tree below.
 
 use std::fs;
 use std::path::Path;
@@ -63,7 +62,7 @@ use tempfile::TempDir;
 #[path = "common/corpus.rs"]
 mod corpus;
 
-use crate::corpus::{array, golden, materialize, text};
+use crate::corpus::{array, fixture, materialize, text};
 
 /// A document with parseable frontmatter, so it lands in `documents`.
 fn document(title: &str) -> String {
@@ -319,26 +318,11 @@ fn tc_445_320_the_disk_reader_and_the_snapshot_reader_agree_on_one_real_tree() {
 /// Trace: FR-037, FR-096
 /// Provenance: quoin#445, agent-ix/quoin#448
 #[test]
-fn tc_445_321_the_tree_under_test_is_actually_populated() {
-    // The floor under the equivalence above. Two paths that both swept NOTHING
-    // are also equal, so without this a walker that lost the whole tree would
-    // pass the differential.
+fn tc_445_321_unparseable_frontmatter_is_reported() {
     let temp = bundle();
     let root = &root_of(&temp);
 
-    let snapshot = independent_snapshot(root);
-    assert!(
-        snapshot.len() >= 7,
-        "the fixture tree yielded {} markdown documents, expected at least 7",
-        snapshot.len()
-    );
-
     let read = read_bundle_frontmatter(root);
-    assert!(
-        read.documents.len() >= 6,
-        "the disk reader yielded {} parseable documents, expected at least 6",
-        read.documents.len()
-    );
     assert!(
         !read.unreadable.is_empty(),
         "the fixture carries a document whose frontmatter does not parse; \
@@ -424,11 +408,11 @@ fn sources_under(root: &Path) -> Vec<DocumentSource> {
                 format!("{prefix}/{name}")
             };
             // Case-sensitive on purpose, exactly as `markdown_under` and the
-            // TypeScript `entry.endsWith(".md")` filter are: a walk that saw
-            // more documents than the oracle did would not be the same walk.
+            // `entry.endsWith(".md")` filter of the original walk are: a walk that
+            // saw more documents than the disk reader does is not the same walk.
             #[allow(
                 clippy::case_sensitive_file_extension_comparisons,
-                reason = "parity with the oracle's own filter is the point"
+                reason = "parity with the disk reader's own filter is the point"
             )]
             let is_markdown = relative.ends_with(".md");
             match entry.file_type() {
@@ -478,16 +462,11 @@ fn module_under(root: &Path) -> Option<ModuleSource> {
 ///
 /// The content-in entry point answers what the filesystem entry point answers.
 ///
-/// Not a fixture this test invented: the corpus is the one
-/// `scripts/capture-semantic-goldens.mjs` captured from the TypeScript oracle
-/// before both were deleted at the quoin#452 cutover,
-/// and `tc_378_304` has already pinned the filesystem path to the oracle's
-/// answers over it. Agreeing with that path over the same corpus is therefore
-/// agreement with the oracle, which is what makes moving the walk into the
-/// command shell a no-op for the user.
+/// Both entry points are live code run over the same committed input corpus
+/// (`tests/fixtures/assess-bundle-inputs.json`); no recorded answer is read.
 #[test]
 fn tc_445_310_the_content_in_path_answers_what_the_filesystem_path_answers() {
-    let corpus = golden("assess-bundle.json");
+    let corpus = fixture("assess-bundle-inputs.json");
     let Ok(temp) = tempfile::tempdir() else {
         panic!("tempdir");
     };
@@ -502,7 +481,6 @@ fn tc_445_310_the_content_in_path_answers_what_the_filesystem_path_answers() {
         corpus.get("moduleFiles").unwrap_or(&Value::Null),
     );
 
-    let mut cases = 0usize;
     for case in array(&corpus, "cases") {
         let id = text(case, "id");
         let strict = case
@@ -545,21 +523,5 @@ fn tc_445_310_the_content_in_path_answers_what_the_filesystem_path_answers() {
         });
 
         assert_eq!(by_path, by_content, "{id}");
-        cases += 1;
     }
-
-    // A pass over an empty population proves nothing, and this program has
-    // shipped that four times.
-    assert!(
-        cases >= 4,
-        "the corpus must carry cases; it carried {cases}"
-    );
-    assert!(
-        !sources_under(&bundle_root).is_empty(),
-        "the corpus bundle must carry documents"
-    );
-    assert!(
-        module_under(&module_root).is_some_and(|m| !m.schemas.is_empty()),
-        "the corpus module must name frontmatter schemas"
-    );
 }

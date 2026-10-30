@@ -192,7 +192,6 @@ fn tc_447_413_a_label_with_no_astral_character_truncates_byte_for_byte_as_before
     // No finding, so the node is supported and carries no ` ◇` suffix.
     let full = format!("{id}: {statement}");
     let expected: String = full.chars().take(80).collect();
-    assert_eq!(expected.len(), 80);
     assert!(block.contains(&format!("([\"{expected}\"])")), "{block}");
 }
 

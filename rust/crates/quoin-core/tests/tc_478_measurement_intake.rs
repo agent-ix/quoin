@@ -137,7 +137,7 @@ fn directory(path: &Path) -> &str {
 /// evidence directories named, and no published record of its own.
 ///
 /// Not a copy of the whole of `spec/`: the retained measurements alone are
-/// tens of megabytes, and none of the routes below reads them. What is copied
+/// none of the routes below reads them. What is copied
 /// is exactly the producer's and the intake's input contract.
 fn workspace(evidence: &[&str]) -> tempfile::TempDir {
     let temporary = tempfile::tempdir().expect("a temporary directory");
@@ -147,7 +147,9 @@ fn workspace(evidence: &[&str]) -> tempfile::TempDir {
     );
     for name in evidence {
         copy_tree(
-            &repo().join("spec/evidence").join(name),
+            &repo()
+                .join("tests/fixtures/evidence/measurement-store")
+                .join(name),
             &temporary.path().join("spec/evidence").join(name),
         );
     }
@@ -201,7 +203,7 @@ fn tc_478_101_an_intervention_record_is_published_under_interventions() {
     let temporary = workspace(&["agent-evals"]);
     let root = temporary.path();
     let candidate = read_json(
-        &repo().join("spec/evidence/interventions/quoin-270-cli-eval-sentinel-contract.json"),
+        &repo().join("tests/fixtures/evidence/measurement-store/interventions/quoin-270-cli-eval-sentinel-contract.json"),
     );
     assert_eq!(candidate["record_type"], "intervention_experiment");
 
@@ -234,7 +236,7 @@ fn tc_478_102_an_operational_record_is_published_under_operational() {
     let temporary = workspace(&["github-actions"]);
     let root = temporary.path();
     let pair = read_json(&repo().join(
-        "spec/evidence/operational/pairs/\
+        "tests/fixtures/evidence/measurement-store/operational/pairs/\
          quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json",
     ));
     let candidate = pair["records"][0].clone();
@@ -269,8 +271,9 @@ fn tc_478_102_an_operational_record_is_published_under_operational() {
 fn tc_478_103_the_agent_eval_producer_publishes_an_intervention() {
     let temporary = workspace(&["agent-evals"]);
     let root = temporary.path();
-    let definition =
-        read_json(&repo().join("spec/evidence/agent-evals/quoin-270-sentinel-definition.json"));
+    let definition = read_json(&repo().join(
+        "tests/fixtures/evidence/measurement-store/agent-evals/quoin-270-sentinel-definition.json",
+    ));
 
     let path = published(&run(
         "measurement.produce_agent_eval_intervention",
@@ -302,7 +305,7 @@ fn tc_478_104_the_release_producer_publishes_an_operational_pair() {
     let temporary = workspace(&["github-actions"]);
     let root = temporary.path();
     let definition = read_json(
-        &repo().join("spec/evidence/github-actions/quoin-271-release-v0.22.5-definition.json"),
+        &repo().join("tests/fixtures/evidence/measurement-store/github-actions/quoin-271-release-v0.22.5-definition.json"),
     );
 
     let path = published(&run(

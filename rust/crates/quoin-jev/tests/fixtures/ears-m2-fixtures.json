@@ -606,26 +606,6 @@
       }
     },
     {
-      "fixture_id": "EARS-FIX-031",
-      "confidence": "clean",
-      "statement_id": "FR-084",
-      "statement_type": "FR",
-      "statement_text": "While a repository's working tree is dirty, the measurement SHALL record `clean: false` against that repository, because its measured documents are not the documents at the recorded commit.",
-      "engine_naive_pattern": "state_driven",
-      "engine_naive_pattern_method": "mechanical: leading trigger keyword -> pattern (When->event_driven, While->state_driven, If..then->unwanted_behaviour, Where->optional_feature, none->ubiquitous)",
-      "provenance": "real",
-      "source_repo": "quoin",
-      "source_path": "spec/functional/FR-084-pin-and-enumerate-the-governed-corpus.md",
-      "labeller": "agent",
-      "labels": {
-        "true_pattern": "state_driven",
-        "response_measurable": true,
-        "has_defect": false,
-        "defect_kind": null,
-        "note": "Sustained state, exact recorded value."
-      }
-    },
-    {
       "fixture_id": "EARS-FIX-032",
       "confidence": "clean",
       "statement_id": "FR-086",

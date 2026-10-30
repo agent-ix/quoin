@@ -85,7 +85,7 @@ impl MeasurementShape {
 /// observation it read. Both see **every** stored member, so a model that kept
 /// only the four named ones would compare and re-serialise a different value
 /// than the oracle does. The retained corpus is not hypothetical about this —
-/// 25 of the 14,644 observations under `spec/evidence/measurements/` carry
+/// observations under `spec/evidence/measurements/` carry
 /// `exclusions` and `namedMisses` — so the rest is kept verbatim rather than
 /// dropped (quoin#473).
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -133,8 +133,8 @@ impl MeasurementPopulation {
 ///
 /// `report.ts:202-204` re-serialises the observation it read, and
 /// `JSON.stringify` drops an absent member while emitting a stated empty
-/// object as `{}`. The two are therefore different bytes, and 305 of the
-/// 14,644 observations under `spec/evidence/measurements/` state no
+/// object as `{}`. The two are therefore different bytes, and observations
+/// under `spec/evidence/measurements/` state no
 /// `dimensions` at all — so a model that could not tell them apart would
 /// render a byte the oracle does not (quoin#473).
 ///

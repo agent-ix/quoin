@@ -118,10 +118,8 @@ pub struct TopClaim {
     /// this field existed still parses — and the VIEW, not the parser, is
     /// what turns an empty or unresolved list into an open reason.
     ///
-    /// Omitted when empty: the golden corpus (`tc_447_500`) compares this
-    /// type's serialisation against a TypeScript oracle that predates this
-    /// field entirely, and an argument authored with no `evidence_refs` must
-    /// still reproduce that oracle's bytes exactly.
+    /// Omitted when empty: an argument authored with no `evidence_refs` must
+    /// still serialise to the bytes it did before this field existed.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub evidence_refs: Vec<String>,
 }

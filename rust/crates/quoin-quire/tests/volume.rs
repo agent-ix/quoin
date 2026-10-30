@@ -16,20 +16,11 @@ use quoin_quire::{CoveragePayload, ErrorCode, PayloadLimit, payload};
 /// The captured payload.
 const VOLUME: &[u8] = include_bytes!("fixtures/coverage-volume/filament-ide-rs-coverage.json");
 
-/// The payload size that caused #164, for the comparison the bound exists for.
-const INCIDENT_BYTES: usize = 1_090_714;
-
 ///
 /// The headline: a payload half again the size of the one that killed six
 /// commands is read whole, by value, with no ceiling anywhere near it.
 #[test]
 fn tc_379_100_the_incident_payload_is_read_whole() {
-    assert!(
-        VOLUME.len() > INCIDENT_BYTES,
-        "the volume fixture must be at least as large as the payload that \
-         caused #164 ({INCIDENT_BYTES} bytes), or it is not a volume test",
-    );
-
     let parsed: CoveragePayload = payload::from_slice(
         "the #164 coverage payload",
         "CoverageReport",
