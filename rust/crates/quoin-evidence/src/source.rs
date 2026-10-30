@@ -21,7 +21,7 @@
 //! # Two path spaces, said out loud
 //!
 //! Store paths ([`EvidenceSource::read`] and friends) are **store-root
-//! relative**, `/`-separated: `runs/SUITE-1/0123456789ab.json`. The root is
+//! relative**, `/`-separated: `runs/SUITE-1/<record-name>.json`. The root is
 //! `quoin-store`'s ([`quoin_store::store::store_root`]) and never appears here.
 //!
 //! Repository paths ([`EvidenceSource::source_files`],
@@ -455,18 +455,15 @@ mod tests {
     #[test]
     fn listing_separates_files_from_sub_directories() {
         let source = MemoryEvidence::new()
-            .with_file("runs/SUITE-1/aaaaaaaaaaaa.json", "{}")
-            .with_file("runs/SUITE-2/bbbbbbbbbbbb.json", "{}")
+            .with_file("runs/SUITE-1/first.json", "{}")
+            .with_file("runs/SUITE-2/second.json", "{}")
             .with_file("bindings.json", "{}")
             .with_file("runs/SUITE-1/notes.txt", "");
         assert_eq!(
             source.list_directories("runs").unwrap(),
             ["SUITE-1", "SUITE-2"]
         );
-        assert_eq!(
-            source.list_files("runs/SUITE-1").unwrap(),
-            ["aaaaaaaaaaaa.json"]
-        );
+        assert_eq!(source.list_files("runs/SUITE-1").unwrap(), ["first.json"]);
         assert_eq!(source.list_files("").unwrap(), ["bindings.json"]);
     }
 

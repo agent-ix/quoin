@@ -98,7 +98,7 @@ impl RunEntry {
 /// partial run must never be able to masquerade as a full one. Re-runs at the
 /// same timestamp are last-write-wins.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct RunRecord {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
@@ -127,7 +127,14 @@ pub struct RunRecord {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{Outcome, RunEntry};
+    use super::{Outcome, RunEntry, RunRecord};
+
+    /// Trace: FR-030-AC-1, FR-030-AC-13
+    #[test]
+    fn run_reader_refuses_unmodeled_record_fields() {
+        let text = r#"{"schemaVersion":1,"suite":"SUITE-001","tool":"runner 1","timestamp":"2026-08-17T00:00:00Z","entries":[],"retiredMember":true}"#;
+        assert!(serde_json::from_str::<RunRecord>(text).is_err());
+    }
 
     #[test]
     fn an_absent_optional_is_omitted_and_never_written_as_null() {

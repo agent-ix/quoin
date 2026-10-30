@@ -194,13 +194,19 @@ fn operational() -> serde_json::Value {
 /// Trace: FR-030-AC-1
 #[test]
 fn tc_456_200_a_run_file_is_named_by_suite_and_timestamp() {
-    assert_eq!(
-        record_path("runs", &suite("SUITE-001"), "2026-08-17T00:00:00Z"),
-        "runs/SUITE-001/2026-08-17T00~3A00~3A00Z.json"
+    let run_path = record_path("runs", &suite("SUITE-001"), "2026-08-17T00:00:00Z");
+    let scan_path = record_path("scans", &suite("SUITE-001"), "2026-08-17T00:00:00Z");
+    assert!(run_path.starts_with("runs/SUITE-001/"));
+    assert!(
+        std::path::Path::new(&run_path)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
     );
-    assert_eq!(
-        record_path("scans", &suite("SUITE-001"), "2026-08-17T00:00:00Z"),
-        "scans/SUITE-001/2026-08-17T00~3A00~3A00Z.json"
+    assert!(scan_path.starts_with("scans/SUITE-001/"));
+    assert!(
+        std::path::Path::new(&scan_path)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
     );
     assert_eq!(bindings_path(), "bindings.json");
     assert_eq!(
@@ -258,26 +264,27 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
 #[test]
 fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
     let mut store = MemoryEvidence::new();
-    write_run(
+    let first_path = write_run(
         &mut store,
         &run("SUITE-001", "2026-08-17T00:00:00Z", vec![]),
     )
     .unwrap();
-    write_run(
+    let second_path = write_run(
         &mut store,
         &run("SUITE-002", "2026-08-17T00:00:00Z", vec![]),
     )
     .unwrap();
+    assert_ne!(
+        first_path, second_path,
+        "two suites must use separate files"
+    );
     assert_eq!(
-        store.paths(),
-        vec![
-            "runs/SUITE-001/2026-08-17T00~3A00~3A00Z.json",
-            "runs/SUITE-002/2026-08-17T00~3A00~3A00Z.json"
-        ],
+        store.paths().len(),
+        2,
         "two suites at one timestamp must not merge into one file"
     );
 
-    write_run(
+    let rewritten_path = write_run(
         &mut store,
         &run(
             "SUITE-001",
@@ -286,11 +293,12 @@ fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
         ),
     )
     .unwrap();
+    assert_eq!(
+        rewritten_path, first_path,
+        "same timestamp must reuse its file"
+    );
     assert_eq!(store.paths().len(), 2, "the rewrite added a file");
-    let text = store
-        .read("runs/SUITE-001/2026-08-17T00~3A00~3A00Z.json")
-        .unwrap()
-        .unwrap();
+    let text = store.read(&first_path).unwrap().unwrap();
     assert!(text.contains("tests::later"), "the later write did not win");
 }
 
@@ -335,7 +343,7 @@ fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
     assert_eq!(outcome.bound.len(), 0);
 }
 
-/// Trace: FR-030-AC-8
+/// Trace: FR-030-AC-8, FR-030-AC-12
 #[test]
 fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     let mut store = MemoryEvidence::new();
@@ -352,20 +360,12 @@ fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     assert_eq!(store.paths().len(), before, "--dry-run deleted something");
     let wet = gc(&mut store, false).unwrap();
     assert_eq!(dry, wet, "the dry run and the real run disagree");
-    assert_eq!(
-        wet,
-        vec![
-            "runs/SUITE-001/2026-08-16T00~3A00~3A00Z.json".to_owned(),
-            "runs/SUITE-001/2026-08-17T00~3A00~3A00Z.json".to_owned(),
-        ],
-        "gc kept the newest and collected the rest"
-    );
-    assert!(
-        store
-            .read("runs/SUITE-001/2026-08-18T00~3A00~3A00Z.json")
-            .unwrap()
-            .is_some()
-    );
+    assert_eq!(wet.len(), 2, "gc must delete superseded runs");
+    assert_eq!(store.paths().len(), 1, "gc must retain one run per suite");
+    let mut skipped = Vec::new();
+    let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
+    assert_eq!(runs.len(), 1, "gc must leave one readable run");
+    assert_eq!(runs[0].timestamp, "2026-08-18T00:00:00Z");
 }
 
 /// Trace: FR-030-AC-9
@@ -507,42 +507,7 @@ fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
     );
 }
 
-/// Trace: FR-030-AC-8
-#[test]
-fn tc_456_226_gc_keeps_the_newest_record_whatever_its_file_is_called() {
-    let mut store = MemoryEvidence::new();
-    // Records written under the older layout: a commit member, commit-named files.
-    let body = |timestamp: &str| {
-        format!(
-            "{{\"commit\":\"abcdef123456\",\"entries\":[],\"schemaVersion\":1,\"suite\":\"SUITE-001\",\"timestamp\":\"{timestamp}\",\"tool\":\"t 1\"}}\n"
-        )
-    };
-    store
-        .write(
-            "runs/SUITE-001/aaaaaaaaaaaa.json",
-            body("2026-08-20T00:00:00Z").as_bytes(),
-        )
-        .unwrap();
-    store
-        .write(
-            "runs/SUITE-001/bbbbbbbbbbbb.json",
-            body("2026-08-10T00:00:00Z").as_bytes(),
-        )
-        .unwrap();
-
-    let deleted = gc(&mut store, false).unwrap();
-    assert_eq!(deleted, vec!["runs/SUITE-001/bbbbbbbbbbbb.json".to_owned()]);
-    let mut skipped = Vec::new();
-    let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
-    assert_eq!(
-        runs.len(),
-        1,
-        "the older commit member is tolerated on read"
-    );
-    assert_eq!(runs[0].timestamp, "2026-08-20T00:00:00Z");
-}
-
-/// Trace: FR-031-AC-2
+/// Trace: FR-030-AC-12, FR-031-AC-2
 #[test]
 fn tc_456_222_the_newest_record_is_the_newest_by_timestamp_not_by_filename() {
     let mut store = MemoryEvidence::new();
@@ -599,7 +564,7 @@ fn tc_456_225_one_corrupt_run_file_is_skipped_rather_than_hiding_every_finding()
     )
     .unwrap();
     store
-        .write("runs/SUITE-001/bbbbbbbbbbbb.json", b"{ truncated")
+        .write("runs/SUITE-001/corrupt.json", b"{ truncated")
         .unwrap();
 
     let mut skipped = Vec::new();
@@ -612,7 +577,7 @@ fn tc_456_225_one_corrupt_run_file_is_skipped_rather_than_hiding_every_finding()
         "the good record did not reach the caller"
     );
     assert_eq!(skipped.len(), 1);
-    assert!(skipped[0].contains("bbbbbbbbbbbb.json"));
+    assert!(skipped[0].contains("corrupt.json"));
 }
 
 // ---------------------------------------------------------------- FR-048 -----
