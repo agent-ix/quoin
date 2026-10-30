@@ -77,7 +77,7 @@ weak module or type partition — cannot be met by an aggregate that is printed 
   count.
 - The measurement SHALL state, for every published rate, the population identifier that names the
   corpus identifier, each repository's resolved commit, each module's resolved commit, the engine
-  source revision and the state filter the denominator was drawn from.
+  version and the state filter the denominator was drawn from.
 - The measurement SHALL key every by-type breakdown on the pair of module name and type name.
 - The measurement SHALL exclude `could-not-run` and `not-applicable` outcomes from both the numerator
   and the denominator of a pass rate.

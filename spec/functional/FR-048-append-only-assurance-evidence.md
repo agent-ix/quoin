@@ -15,9 +15,9 @@ relationships:
 
 Quoin SHALL store experiment records and operational evidence records as
 append-only JSON artifacts. Each record SHALL carry its own
-complete `producer-provenance-v1` tuple: producer identity and version, source
-revision and clean/dirty state, executable and configuration identity,
-capabilities, and source-artifact references.
+complete `producer-provenance-v1` tuple: producer identity and version,
+capabilities, and source-artifact references. A record names no source
+revision and no clean/dirty state.
 
 The record identifier SHALL be an opaque UUID not derived from content, per
 FR-098-AC-10. Publication SHALL be atomic within the

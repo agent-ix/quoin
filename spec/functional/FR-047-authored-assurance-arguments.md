@@ -16,7 +16,7 @@ relationships:
 Quoin SHALL render the module-owned `AssuranceArgument` contract without
 manufacturing, narrowing, or rewriting its top claim. Each authored
 sufficiency criterion becomes supported only through a current decision that
-names the decision maker, authority, source revision, and
+names the decision maker, authority, and
 evidence references.
 
 Assumptions, participants, authority, independence, challenges, accepted

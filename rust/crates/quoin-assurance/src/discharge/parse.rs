@@ -75,17 +75,10 @@ pub(super) fn parse_attestation(
     exact(
         attestation,
         "attestation",
-        &[
-            "attestedBy",
-            "authority",
-            "attestedAt",
-            "expiresAt",
-            "sourceRevision",
-        ],
+        &["attestedBy", "authority", "attestedAt", "expiresAt"],
     )?;
     let attested_by = string_value("attestedBy", attestation.get("attestedBy"))?;
     let authority = string_value("authority", attestation.get("authority"))?;
-    let source_revision = string_value("sourceRevision", attestation.get("sourceRevision"))?;
     let attested_at = string_value("attestedAt", attestation.get("attestedAt"))?;
     let expires_at = string_value("expiresAt", attestation.get("expiresAt"))?;
     instant("attestedAt", &attested_at)?;
@@ -95,7 +88,6 @@ pub(super) fn parse_attestation(
         authority,
         attested_at,
         expires_at,
-        source_revision,
     })
 }
 

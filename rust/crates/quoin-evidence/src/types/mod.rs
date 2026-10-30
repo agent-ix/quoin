@@ -25,7 +25,7 @@ pub use assurance::{
     EvidenceSubject, ExperimentDesign, ExperimentRecord, ExperimentRecordInput, ExperimentResult,
     ExperimentStatus, Observation, ObservationWindow, OperationalEvidenceRecord,
     OperationalEvidenceRecordInput, OperationalOutcome, ProducerProvenance, ProvenanceArtifact,
-    SourceState, StoredAssuranceRecord,
+    StoredAssuranceRecord,
 };
 pub use binding::{Binding, BindingsFile, EvidenceLineage};
 pub use independence::{

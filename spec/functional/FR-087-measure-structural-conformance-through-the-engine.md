@@ -81,7 +81,7 @@ a statement about the real contract, and makes everything the engine cannot do v
 - The measurement SHALL record a diagnostic of severity `warning` as an advisory finding against its
   document and SHALL NOT count it as a failure, because a module that declares a check advisory has
   not asked for it to be enforced.
-- The measurement SHALL record the engine's version and source revision alongside the outcomes.
+- The measurement SHALL record the engine's version alongside the outcomes.
 
 ## Constraints
 
@@ -102,7 +102,7 @@ a statement about the real contract, and makes everything the engine cannot do v
 | FR-087-AC-5 | A document the engine reports only warnings against records `pass` and carries those warnings as advisory findings. | Test (TC-1522) |
 | FR-087-AC-6 | A document carrying three engine errors records all three in one evaluation record. | Test (TC-1523) |
 | FR-087-AC-7 | Changing only the module declaration in the resolved set changes the recorded outcome of an unchanged document. | Test (TC-1524) |
-| FR-087-AC-8 | The evaluation output names the engine version and source revision the outcomes were produced by. | Test (TC-1572) |
+| FR-087-AC-8 | The evaluation output names the engine version the outcomes were produced by. | Test (TC-1572) |
 | FR-087-AC-9 | No source file of the measurement parses a module's `mappings.yaml` parse rules or builds a semantic record from Markdown. | Inspection |
 
 ## Dependencies

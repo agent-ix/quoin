@@ -457,20 +457,9 @@ fn subject_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
     let Some(subject) = object_at("subject", value.unwrap_or(&Value::Null), clauses) else {
         return;
     };
-    exact(
-        subject,
-        "subject",
-        &["kind", "id", "sourceRevision"],
-        &[],
-        clauses,
-    );
+    exact(subject, "subject", &["kind", "id"], &[], clauses);
     string_value("subject.kind", subject.get("kind"), clauses);
     string_value("subject.id", subject.get("id"), clauses);
-    string_value(
-        "subject.sourceRevision",
-        subject.get("sourceRevision"),
-        clauses,
-    );
 }
 
 fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
@@ -484,8 +473,6 @@ fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
             "schemaVersion",
             "identity",
             "version",
-            "sourceRevision",
-            "sourceState",
             "capabilities",
             "artifacts",
         ],
@@ -500,17 +487,6 @@ fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
     );
     string_value("producerProvenance.identity", root.get("identity"), clauses);
     string_value("producerProvenance.version", root.get("version"), clauses);
-    string_value(
-        "producerProvenance.sourceRevision",
-        root.get("sourceRevision"),
-        clauses,
-    );
-    literal(
-        root.get("sourceState"),
-        "producerProvenance.sourceState",
-        &["clean", "dirty"],
-        clauses,
-    );
     strings(
         "producerProvenance.capabilities",
         root.get("capabilities"),

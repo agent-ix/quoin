@@ -80,8 +80,7 @@ pub(super) fn decision() -> serde_json::Value {
         "decidedBy": "reviewer-900",
         "authority": "may accept or reject this synthetic release",
         "decidedAt": "2026-08-01T00:00:00.000Z",
-        "expiresAt": "2026-09-01T00:00:00.000Z",
-        "sourceRevision": "0123456789abcdef"
+        "expiresAt": "2026-09-01T00:00:00.000Z"
     })
 }
 

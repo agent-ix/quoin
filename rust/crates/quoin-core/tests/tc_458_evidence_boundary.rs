@@ -356,8 +356,6 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
         "schemaVersion": "producer-provenance-v1",
         "identity": "quoin",
         "version": "0.1.0",
-        "sourceRevision": commit('a'),
-        "sourceState": "clean",
         "capabilities": ["record"],
         "artifacts": [{ "name": "report.json" }],
     });
@@ -368,7 +366,7 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
             "repo": dir.path(),
             "document": {
                 "schemaVersion": "experiment-record-v1",
-                "subject": {"kind": "requirement", "id": "FR-001", "sourceRevision": commit('b')},
+                "subject": {"kind": "requirement", "id": "FR-001" },
                 "recordedAt": "2026-01-01T00:00:00Z",
                 "hypothesis": "the adapter reads real output",
                 "design": {
@@ -396,7 +394,7 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
             "repo": dir.path(),
             "document": {
                 "schemaVersion": "operational-evidence-record-v1",
-                "subject": {"kind": "service", "id": "quoin-core", "sourceRevision": commit('c')},
+                "subject": {"kind": "service", "id": "quoin-core" },
                 "recordedAt": "2026-01-01T00:00:00Z",
                 "window": {
                     "startedAt": "2026-01-01T00:00:00Z",
@@ -432,7 +430,7 @@ fn tc_458_115_republishing_under_the_assigned_record_id_is_idempotent() {
     let document = |record_id: Option<&str>| {
         let mut document = json!({
             "schemaVersion": "experiment-record-v1",
-            "subject": {"kind": "requirement", "id": "FR-001", "sourceRevision": commit('b')},
+            "subject": {"kind": "requirement", "id": "FR-001" },
             "recordedAt": "2026-01-01T00:00:00Z",
             "hypothesis": "the adapter reads real output",
             "design": {
@@ -446,8 +444,6 @@ fn tc_458_115_republishing_under_the_assigned_record_id_is_idempotent() {
                 "schemaVersion": "producer-provenance-v1",
                 "identity": "quoin",
                 "version": "0.1.0",
-                "sourceRevision": commit('a'),
-                "sourceState": "clean",
                 "capabilities": ["record"],
                 "artifacts": [{ "name": "report.json" }],
             },

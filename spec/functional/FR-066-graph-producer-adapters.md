@@ -50,12 +50,12 @@ The invocation attestation supplies facts absent from the producer record. It
 contains no observation value, population count, result, or verdict.
 
 `graph-quality-observation-v1` carries `schemaVersion`, `observationId`,
-`toolVersion`, `configRef`, `sourceRevision`, `corpusRevision`, `planId`,
+`toolVersion`, `configRef`, `sourceRevision` (BLOCKED-BY QSL-1276 (owner: planner titan:QSL:plan): the external quire-code-rs `graph-quality-observation-v1` schema requires `producer.source_revision` with `additionalProperties: false`, and quoin's `Producer` is `deny_unknown_fields`, so dropping the field would reject the producer's own output; Quoin reads nothing from it), `corpusRevision`, `planId`,
 `definitionVersion`, one complete `populationIdentity`, census facts, and
 either measured quality facts or one `empty`, `unreadable`, or `unsupported`
 state. Its `observationId` is an opaque, producer-assigned unique string (a UUID),
 never derived from the record's content; `configRef` is the repository-relative
-path of the configuration file at `sourceRevision`, which git addresses. The scorer attachment names a media type and carries its bytes.
+path of the configuration file. The scorer attachment names a media type and carries its bytes.
 
 ## Outputs
 

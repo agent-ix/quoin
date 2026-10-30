@@ -75,7 +75,6 @@ const DECISION_KEYS: [&str; 10] = [
     "authority",
     "decidedAt",
     "expiresAt",
-    "sourceRevision",
     "rationale",
 ];
 
@@ -124,7 +123,6 @@ pub(super) fn parse_sufficiency_decision(
         authority: string_at(decision, "authority")?,
         decided_at,
         expires_at,
-        source_revision: string_at(decision, "sourceRevision")?,
         rationale: optional_string_at(decision, "rationale")?,
     })
 }

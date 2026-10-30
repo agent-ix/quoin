@@ -160,8 +160,6 @@ fn provenance() -> serde_json::Value {
         "schemaVersion": "producer-provenance-v1",
         "identity": "quoin",
         "version": "0.1.0",
-        "sourceRevision": "a".repeat(40),
-        "sourceState": "clean",
         "capabilities": ["record"],
         "artifacts": [{ "name": "report.json" }],
     })
@@ -170,7 +168,7 @@ fn provenance() -> serde_json::Value {
 fn experiment() -> serde_json::Value {
     json!({
         "schemaVersion": "experiment-record-v1",
-        "subject": { "kind": "requirement", "id": "FR-001", "sourceRevision": "b".repeat(40) },
+        "subject": { "kind": "requirement", "id": "FR-001" },
         "recordedAt": "2026-01-01T00:00:00Z",
         "hypothesis": "the adapter reads real output",
         "design": {
@@ -187,7 +185,7 @@ fn experiment() -> serde_json::Value {
 fn operational() -> serde_json::Value {
     json!({
         "schemaVersion": "operational-evidence-record-v1",
-        "subject": { "kind": "service", "id": "quoin-core", "sourceRevision": "c".repeat(40) },
+        "subject": { "kind": "service", "id": "quoin-core" },
         "recordedAt": "2026-01-01T00:00:00Z",
         "window": { "startedAt": "2026-01-01T00:00:00Z", "endedAt": "2026-01-02T00:00:00Z" },
         "environment": "production",

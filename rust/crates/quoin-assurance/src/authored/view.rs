@@ -36,8 +36,6 @@ pub struct SufficiencyDecision {
     pub decided_at: String,
     /// When it stops being current. An instant, and after `decided_at`.
     pub expires_at: String,
-    /// The revision the decision was made over.
-    pub source_revision: String,
     /// Why, when the decider gave a reason. Omitted when absent, never null.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rationale: Option<String>,

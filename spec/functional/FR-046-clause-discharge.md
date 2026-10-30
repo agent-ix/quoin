@@ -18,8 +18,7 @@ binding clause into direct evidence, an approved disposition, or open work.
 Unresolved applicability SHALL remain a separate population: it is neither a
 binding clause nor a discharged clause until its missing context is resolved.
 
-Every discharge fact SHALL identify its source revision,
-name the actor and authority making the attestation, and carry an explicit
+Every discharge fact SHALL name the actor and authority making the attestation, and carry an explicit
 validity interval. Expired, future-dated, or incoherent attestations leave the
 clause open. The report SHALL expose every input population without emitting an
 aggregate score.

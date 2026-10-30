@@ -29,25 +29,10 @@ pub struct ProducerProvenance {
     pub identity: String,
     /// Its version.
     pub version: String,
-    /// The source revision it was built from.
-    pub source_revision: String,
-    /// Whether that source tree was clean or dirty.
-    pub source_state: SourceState,
     /// The capabilities the producer declared.
     pub capabilities: Vec<String>,
     /// The artifacts it emitted.
     pub artifacts: Vec<ProvenanceArtifact>,
-}
-
-/// Whether a producer's source tree carried uncommitted changes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub enum SourceState {
-    /// No uncommitted changes.
-    Clean,
-    /// Uncommitted changes were present.
-    Dirty,
 }
 
 /// What a record is about.
@@ -59,8 +44,6 @@ pub struct EvidenceSubject {
     pub kind: String,
     /// Its id.
     pub id: String,
-    /// The source revision it was observed at.
-    pub source_revision: String,
 }
 
 /// How an experiment was set up.

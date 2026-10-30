@@ -856,8 +856,7 @@
         "schemaVersion": "experiment-record-v1",
         "subject": {
           "kind": "requirement",
-          "id": "FR-001",
-          "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          "id": "FR-001"
         },
         "recordedAt": "2026-01-01T00:00:00Z",
         "hypothesis": "the adapter reads real output",
@@ -880,8 +879,6 @@
           "schemaVersion": "producer-provenance-v1",
           "identity": "quoin",
           "version": "0.1.0",
-          "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "sourceState": "clean",
           "capabilities": [
             "record"
           ],
@@ -935,8 +932,7 @@
         "schemaVersion": "operational-evidence-record-v1",
         "subject": {
           "kind": "service",
-          "id": "quoin-core",
-          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          "id": "quoin-core"
         },
         "recordedAt": "2026-01-01T00:00:00Z",
         "window": {
@@ -960,8 +956,6 @@
           "schemaVersion": "producer-provenance-v1",
           "identity": "quoin",
           "version": "0.1.0",
-          "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "sourceState": "clean",
           "capabilities": [
             "record"
           ],
@@ -990,8 +984,7 @@
         "schemaVersion": "operational-evidence-record-v1",
         "subject": {
           "kind": "service",
-          "id": "quoin-core",
-          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          "id": "quoin-core"
         },
         "recordedAt": "2026-01-01T00:00:00Z",
         "window": {
@@ -1014,8 +1007,6 @@
           "schemaVersion": "producer-provenance-v1",
           "identity": "quoin",
           "version": "0.1.0",
-          "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "sourceState": "clean",
           "capabilities": [
             "record"
           ],

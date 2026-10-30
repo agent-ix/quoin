@@ -59,8 +59,6 @@ pub struct DischargeAttestation {
     /// When it stops being current. An instant, strictly after
     /// [`DischargeAttestation::attested_at`].
     pub expires_at: String,
-    /// The revision the attestation is about.
-    pub source_revision: String,
 }
 
 /// The one door: every read of an attestation runs [`parse_attestation`].
