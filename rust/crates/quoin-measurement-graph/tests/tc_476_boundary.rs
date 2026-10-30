@@ -206,4 +206,3 @@ fn tc_476_023_every_ported_entry_point_is_still_exported() {
          which it is deleted (quoin#480)"
     );
 }
-

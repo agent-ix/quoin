@@ -19,8 +19,7 @@ relationships:
 Quoin SHALL leave every existing stored evidence byte and every accepted-corpus
 byte unchanged across the port, including cutovers, reverts and deletion changes.
 Record identifiers are opaque and are not derived from content; existing
-identifiers are preserved unchanged, and the PLAT-989 identity transition below
-is the only bounded exception.
+identifiers are preserved unchanged.
 
 ## Scope
 
@@ -29,13 +28,10 @@ is the only bounded exception.
   with each store root named in the checked-in store inventory, and every
   accepted-corpus byte reachable from the governed corpus. An absent store
   inventory refuses the read-back rather than narrowing its population.
-- Identity transition: newly written experiment and operational assurance
-  records take an opaque UUID (v4) `recordId` and a `<recordId>.json` name, not
-  an identifier derived from content. Only the resulting `recordId` values,
-  basenames and references to those identifiers are exempt from the byte-immutability check, which applies to pre-existing records. Record schemas and all other fields retain their existing
-  contract. This transition does not authorize rewriting an existing stored
-  file; existing identifiers are read as opaque strings.
-- Transition accounting: the read-back lists the newly written records separately from the pre-existing population; every reachable record remains in the reported population.
+- Record identity: a record takes an opaque UUID (v4) `recordId` and a
+  `<recordId>.json` name, not an identifier derived from content. Existing
+  identifiers are read as opaque strings and no existing stored file is
+  rewritten.
 - Operational context: each cutover change, each revert of a cutover, each
   deletion change, and the corpus consolidation.
 - Not applied to: the contents of the `corpus/` submodule, which belong to
@@ -63,7 +59,7 @@ a claimed reversibility is not reversibility.
 
 | Metric | Target | Threshold | Method |
 |--------|--------|-----------|--------|
-| Unlisted record identity changes across a cutover | 0 | 0 | Test |
+| Existing record identity changes across a cutover | 0 | 0 | Test |
 | Existing evidence-file bytes changed by a cutover | 0 | 0 | Test |
 | Accepted-corpus bytes changed across the port | 0 | 0 | Test |
 | Stores whose read-and-re-serialize round trip is not byte-identical | 0 | 0 | Test |
@@ -96,9 +92,3 @@ inconclusive rather than as clean.
 
 - **Upstream**: [FR-098](../functional/FR-098-semantic-and-identity-parity.md) and [FR-100](../functional/FR-100-rust-evidence-measurement-change-assurance.md), which implement the single canonicalization path.
 - **Downstream**: [FR-103](../functional/FR-103-corpus-consolidation.md), whose consolidation this bounds.
-
-> **PLAT-989 authorization (2026-10-05):** The operator approved the bounded
-> identity transition stated in Scope and reflected in the metrics and read-back
-> criteria above. Legacy identities are left as they are and read as opaque strings. The
-> prohibition on modifying existing evidence or governed corpus bytes remain
-> in force.

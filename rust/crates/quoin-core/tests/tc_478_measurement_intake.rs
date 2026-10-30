@@ -271,8 +271,9 @@ fn tc_478_102_an_operational_record_is_published_under_operational() {
 fn tc_478_103_the_agent_eval_producer_publishes_an_intervention() {
     let temporary = workspace(&["agent-evals"]);
     let root = temporary.path();
-    let definition =
-        read_json(&repo().join("tests/fixtures/evidence/measurement-store/agent-evals/quoin-270-sentinel-definition.json"));
+    let definition = read_json(&repo().join(
+        "tests/fixtures/evidence/measurement-store/agent-evals/quoin-270-sentinel-definition.json",
+    ));
 
     let path = published(&run(
         "measurement.produce_agent_eval_intervention",

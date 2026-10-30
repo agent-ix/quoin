@@ -96,8 +96,7 @@ fn temporary_repository() -> tempfile::TempDir {
         &root.join("spec").join("assurance"),
     );
     copy_tree(
-        &fixture_store()
-            .join("github-actions"),
+        &fixture_store().join("github-actions"),
         &root.join("spec").join("evidence").join("github-actions"),
     );
     temporary
@@ -272,7 +271,6 @@ fn tc_479_400_valid_intake_publishes_one_complete_canonical_record() {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_401_invalid_records_and_mismatched_raw_evidence_write_nothing() {
-
     let cases = intake_refusal_cases();
     for (label, candidate, code, finding) in &cases {
         let workspace = temporary_repository();
@@ -389,8 +387,7 @@ fn tc_479_402_governing_definition_refusals_name_the_versions_and_write_nothing(
     // admit the record against.
     let ungoverned = tempfile::tempdir().expect("a temporary directory");
     copy_tree(
-        &fixture_store()
-            .join("github-actions"),
+        &fixture_store().join("github-actions"),
         &ungoverned
             .path()
             .join("spec")
@@ -613,7 +610,6 @@ fn tc_479_405_capabilities_and_every_exercise_outcome_stay_queryable() {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_406_discharge_requires_full_identity_mode_success_and_a_met_clock() {
-
     let (capability, exercise) = pair_records();
     let valid = validate_operational_record(&exercise).expect("the committed exercise");
     assert_eq!(

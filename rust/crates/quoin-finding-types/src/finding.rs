@@ -283,5 +283,4 @@ mod tests {
             "a member the auditor wrote must survive the round trip"
         );
     }
-
 }

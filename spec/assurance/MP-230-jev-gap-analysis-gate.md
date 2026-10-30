@@ -86,7 +86,5 @@ Any bar unmet, or resting on a `not_computed` value, is NO-GO. A lens whose
 gate plan is missing or backdated is NO-GO by refusal per AP-202's
 Exceptions, independent of any number.
 
-The measured verdict this plan produced, and the observations it was computed
-from, are recorded as a measurement collection under
-`spec/evidence/measurements/`, not restated here — this plan defines the
-rule, not one run's result.
+This plan defines the rule, not one run's result; no run's verdict or
+observations are restated here.

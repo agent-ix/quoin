@@ -431,4 +431,3 @@ fn tc_456_006_corpus_covers_every_registered_adapter() {
         "some golden case belongs to no parity test"
     );
 }
-

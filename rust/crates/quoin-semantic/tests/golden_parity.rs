@@ -313,7 +313,6 @@ fn tc_378_103_read_semantic_block_matches_the_oracle() {
             ),
         }
     }
-
 }
 
 fn count_diagnostics(diagnostics: &[Value]) -> BTreeMap<(String, String, String), usize> {

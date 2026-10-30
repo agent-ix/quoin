@@ -142,9 +142,8 @@ cannot see what the engine saw -- not because the engine was wrong. Quoting
 this number as an engine defect rate is a misreport. It remains barred, per
 **Comparison and Enforcement**.
 
-An earlier `v1`-only measurement of this metric is recorded at
-`spec/evidence/measurements/plat838-ears-v1-20260922T011531Z.json` (forward
-40.0% over a 20-statement pool). It was fed into a `v3` verdict, which
+An earlier `v1`-only measurement of this metric (forward
+40.0% over a 20-statement pool) was fed into a `v3` verdict, which
 MP-229 now forbids.
 
 ## Comparison and Enforcement

@@ -24,30 +24,18 @@ FR-006).
 | SUITE-002 | Spec validation gate | `make validate` | quire-cli | Static |
 | SUITE-003 | Agent evals | `make evals` | cli-agent-evals | Eval |
 
-## What the store discharges today, and what it does not
+## What the store discharges
 
-**Nothing, yet — and that is recorded rather than dressed up.** A run of
-SUITE-001 transcribes 541 vitest results into `runs/SUITE-001/`, and binds
-**zero** obligations:
+The junit adapter reads test **names**, and quoin's trace ids live in source
+comments (`// Trace: FR-002-AC-1`) where `quire coverage` reads them off symbols.
+A junit report carries no symbol, so a SUITE-001 run binds no obligation.
 
-```
-{ "runPath": "spec/evidence/runs/SUITE-001/…json", "bound": [], "unmatched": [] }
-```
-
-The reason is structural, not a misconfiguration. The junit adapter reads test
-**names**, and quoin's trace ids live in source comments (`// Trace: FR-002-AC-1`)
-where `quire coverage` reads them off symbols. A junit report carries no symbol,
-so there is nothing for an obligation id to match.
-
-So the audit reports **341 undischarged** obligations and **0 healthy**.
-
-Closing the binding gap needs one of two things, and neither is invented here:
+Closing that gap needs one of two things, and neither is invented here:
 
 - test names that carry their trace id, the way the Rust corpus writes
   `fn tc_744_…`; or
 - an adapter that reads the symbol tags rather than the report, which is the
   same join `quire coverage` already performs.
 
-Recording a store that discharges nothing is still worth doing: the run
-directory and the suite ids exist now, and the next
-person meets a store with real data in it rather than an absent directory.
+No run record is kept in this repository; a run is transcribed by the consumer's
+CI when it executes a suite.

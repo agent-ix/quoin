@@ -166,9 +166,7 @@ pub(super) fn check_job(
     let same_run = positive_safe_integer(job.get("run_id"), "job.run_id")? == identity.id
         && positive_integer(job.get("run_attempt"), "job.run_attempt")? == identity.attempt;
     if !same_run {
-        return input(
-            "configured release job run or attempt does not match workflow run",
-        );
+        return input("configured release job run or attempt does not match workflow run");
     }
     let started = instant(
         Some(&Value::String(started_at.to_owned())),

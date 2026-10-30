@@ -93,6 +93,17 @@ fn producing_repo() -> (TempDir, Vec<u8>) {
     (temporary, bytes)
 }
 
+/// The byte length of one fixture report.
+fn fixture_bytes(arm: &str) -> u64 {
+    std::fs::metadata(
+        fixture_store()
+            .join("agent-evals")
+            .join(format!("quoin-270-sentinel-{arm}.json")),
+    )
+    .expect("the fixture report")
+    .len()
+}
+
 /// The committed producer definition, as JSON.
 fn definition_json(repo: &Path) -> Value {
     let raw = std::fs::read_to_string(
@@ -274,7 +285,6 @@ fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_
         ),
     ];
 
-
     for (what, mutation, expected) in cases {
         let (temporary, _) = producing_repo();
         let repo = temporary.path();
@@ -359,12 +369,12 @@ fn tc_479_252_caller_supplied_substitutes_do_not_reach_the_record() {
             {
                 "path": "agent-evals/quoin-270-sentinel-baseline.json",
                 "media_type": "application/json",
-                "size_bytes": 11305,
+                "size_bytes": fixture_bytes("baseline"),
             },
             {
                 "path": "agent-evals/quoin-270-sentinel-treatment.json",
                 "media_type": "application/json",
-                "size_bytes": 14261,
+                "size_bytes": fixture_bytes("treatment"),
             },
         ]),
         "the raw-evidence metadata is the retained files', not the caller's"

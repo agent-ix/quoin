@@ -97,11 +97,7 @@ fn tc_378_300_written_reason_matches_the_oracle() {
         let expected = case.get("reason").and_then(Value::as_str);
         let actual = written_reason_for(text(case, "value"), text(case, "body"));
         assert_eq!(expected, actual.as_deref(), "{id}");
-        if expected.is_some() {
-        } else {
-        }
     }
-    // A check over an empty population is not evidence: both outcomes must occur.
 }
 
 /// The four verdict criteria the deleted `tests/completeness.test.ts` carried:

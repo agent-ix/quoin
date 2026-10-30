@@ -31,9 +31,8 @@ fn tc_382_002_a_demand_past_the_ceiling_is_refused() {
     }
     let space = parse_space(&statement).expect("thirty binary dimensions are a space");
 
-    let error = demanded_tuples(&space).expect_err(
-        "a 2^30 demand has to be refused rather than become an unbounded allocation",
-    );
+    let error = demanded_tuples(&space)
+        .expect_err("a 2^30 demand has to be refused rather than become an unbounded allocation");
     assert_eq!(error.code, CombinatorialErrorCode::DemandTooLarge);
     assert_eq!(error.code.as_str(), "QCB-DEMAND-TOO-LARGE");
 

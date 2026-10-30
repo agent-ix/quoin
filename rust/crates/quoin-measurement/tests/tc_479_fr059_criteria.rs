@@ -784,8 +784,7 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
         &root.join("spec").join("assurance"),
     );
     copy_tree(
-        &fixture_store()
-            .join("github-actions"),
+        &fixture_store().join("github-actions"),
         &root.join("spec").join("evidence").join("github-actions"),
     );
 

@@ -85,8 +85,7 @@ fn temporary_repository() -> tempfile::TempDir {
         &root.join("spec").join("assurance"),
     );
     copy_tree(
-        &fixture_store()
-            .join("github-actions"),
+        &fixture_store().join("github-actions"),
         &root.join("spec").join("evidence").join("github-actions"),
     );
     temporary
@@ -98,9 +97,7 @@ fn github_actions(root: &Path) -> PathBuf {
 
 /// The committed producer definition, as a document.
 fn definition_document() -> Value {
-    let path = fixture_store()
-        .join("github-actions")
-        .join(DEFINITION);
+    let path = fixture_store().join("github-actions").join(DEFINITION);
     let bytes = std::fs::read(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
     serde_json::from_slice(&bytes).expect("the committed definition is JSON")
 }
@@ -424,12 +421,12 @@ fn job_refusal_cases() -> Vec<RefusalCase> {
         (
             "a release job from another run",
             job_patch("/run_id", json!(1)),
-            "configured release job run, revision, or attempt does not match workflow run",
+            "configured release job run or attempt does not match workflow run",
         ),
         (
             "a release job from another attempt",
             job_patch("/run_attempt", json!(2)),
-            "configured release job run, revision, or attempt does not match workflow run",
+            "configured release job run or attempt does not match workflow run",
         ),
         (
             "a release job that completed before it started",

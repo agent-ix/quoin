@@ -9,14 +9,14 @@ metric: release_operational_evidence
 definition_version: github-actions.release-operational-v2
 ground_truth_kind: mechanical
 protected_apparatus:
-  - spec/evidence/github-actions/quoin-271-release-v0.22.5-workflow.yml
-  - spec/evidence/github-actions/quoin-271-release-v0.22.5-run.json
-  - spec/evidence/github-actions/quoin-271-release-v0.22.5-jobs.json
+  - tests/fixtures/evidence/measurement-store/github-actions/quoin-271-release-v0.22.5-workflow.yml
+  - tests/fixtures/evidence/measurement-store/github-actions/quoin-271-release-v0.22.5-run.json
+  - tests/fixtures/evidence/measurement-store/github-actions/quoin-271-release-v0.22.5-jobs.json
 negative_controls:
   - kind: apparatus-edit
     description: the retained workflow bytes and the run and jobs payloads the pair is parsed from are protected apparatus; an edit to any of them without a new definition version rejects
   - kind: stale-evidence
-    description: the exercise is bound to one immutable source revision and run id; it is not presented as evidence for any other revision
+    description: the exercise is bound to one run id; it is not presented as evidence for any other run
 relationships: []
 ---
 
@@ -30,7 +30,7 @@ successful exercise of that capability for the v0.22.5 npm release.
 ## Population
 
 The version-controlled Quoin `release.yml` workflow and GitHub Actions run
-33280266874, manually dispatched against the v0.22.5 source revision.
+33280266874, manually dispatched for the v0.22.5 release.
 
 ## Measure Definition
 
@@ -42,8 +42,7 @@ declared ten-minute operational clock.
 ## Collection Procedure
 
 Retrieve the workflow-run and jobs REST responses outside Quoin and retain their
-exact payload bytes beside the workflow bytes from the run's immutable source
-revision. Quoin only parses those retained artifacts and never contacts GitHub,
+exact payload bytes beside the workflow bytes the run executed. Quoin only parses those retained artifacts and never contacts GitHub,
 dispatches a workflow, or publishes a package.
 
 ## Environment and Sampling
@@ -56,10 +55,9 @@ or an estimate of future release success.
 
 The pair demonstrates that the configured manual release surface existed and
 that its Publish job succeeded for v0.22.5 within the declared clock. It does not
-establish release availability for other revisions or ecosystems.
+establish release availability for other releases or ecosystems.
 
 ## Comparison and Enforcement
 
-Accept only the configured workflow path, `workflow_dispatch` event, immutable
-source revision, completed run, and exactly one started and completed Publish
+Accept only the configured workflow path, `workflow_dispatch` event, completed run, and exactly one started and completed Publish
 job. Preserve non-success conclusions as non-discharging evidence.

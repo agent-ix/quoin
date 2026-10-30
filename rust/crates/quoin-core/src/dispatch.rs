@@ -654,7 +654,6 @@ mod tests {
                  bounds uncensused"
             );
         }
-
     }
 
     /// Every `"…" =>` arm of `dispatch`'s match, read out of this file's own
