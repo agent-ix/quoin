@@ -14,8 +14,6 @@ use super::{
     build_authored_argument_view,
 };
 
-pub(super) const DIGEST: &str =
-    "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 pub(super) const CRITERION: &str = "Every binding synthetic clause has a current disposition.";
 pub(super) const AS_OF: &str = "2026-08-15T00:00:00.000Z";
 /// The top claim's own citation in [`argument`] — deliberately the same
@@ -83,8 +81,7 @@ pub(super) fn decision() -> serde_json::Value {
         "authority": "may accept or reject this synthetic release",
         "decidedAt": "2026-08-01T00:00:00.000Z",
         "expiresAt": "2026-09-01T00:00:00.000Z",
-        "sourceRevision": "0123456789abcdef",
-        "evidenceDigest": DIGEST
+        "sourceRevision": "0123456789abcdef"
     })
 }
 

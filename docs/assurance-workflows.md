@@ -39,8 +39,7 @@ records an authorized decision. Both carry an attestation and expiry.
       "authority": "release reviewer",
       "attestedAt": "2026-08-01T00:00:00Z",
       "expiresAt": "2026-09-01T00:00:00Z",
-      "sourceRevision": "0123456789abcdef",
-      "evidenceDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      "sourceRevision": "0123456789abcdef"
     }
   }
 ]
@@ -77,8 +76,7 @@ exactly match the authored participant:
     "authority": "may accept or reject this release",
     "decidedAt": "2026-08-01T00:00:00Z",
     "expiresAt": "2026-09-01T00:00:00Z",
-    "sourceRevision": "0123456789abcdef",
-    "evidenceDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    "sourceRevision": "0123456789abcdef"
   }
 ]
 ```

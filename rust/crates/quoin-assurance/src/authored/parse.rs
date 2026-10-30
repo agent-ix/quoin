@@ -65,8 +65,8 @@ pub(super) fn evaluate_challenge(
     })
 }
 
-/// The ten required keys of a sufficiency decision, plus the one optional.
-const DECISION_KEYS: [&str; 11] = [
+/// The nine required keys of a sufficiency decision, plus the one optional.
+const DECISION_KEYS: [&str; 10] = [
     "reasoningId",
     "criterion",
     "state",
@@ -76,7 +76,6 @@ const DECISION_KEYS: [&str; 11] = [
     "decidedAt",
     "expiresAt",
     "sourceRevision",
-    "evidenceDigest",
     "rationale",
 ];
 
@@ -116,10 +115,6 @@ pub(super) fn parse_sufficiency_decision(
     let expires_at = string_at(decision, "expiresAt")?;
     instant_or_reject("decidedAt", &decided_at)?;
     instant_or_reject("expiresAt", &expires_at)?;
-    let evidence_digest = string_at(decision, "evidenceDigest")?;
-    if !is_sha256_digest(&evidence_digest) {
-        return reject("decision evidenceDigest must be sha256:<64 lowercase hex>");
-    }
     Ok(SufficiencyDecision {
         reasoning_id: string_at(decision, "reasoningId")?,
         criterion: string_at(decision, "criterion")?,
@@ -130,24 +125,8 @@ pub(super) fn parse_sufficiency_decision(
         decided_at,
         expires_at,
         source_revision: string_at(decision, "sourceRevision")?,
-        evidence_digest,
         rationale: optional_string_at(decision, "rationale")?,
     })
-}
-
-/// `/^sha256:[0-9a-f]{64}$/`, without a regex engine.
-///
-/// Lowercase only, and exactly 64: an uppercase digest is a different string
-/// to every consumer that compares digests as text, and accepting both here
-/// would put the normalisation decision in the wrong place.
-fn is_sha256_digest(value: &str) -> bool {
-    let Some(hex) = value.strip_prefix("sha256:") else {
-        return false;
-    };
-    hex.len() == 64
-        && hex
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 /// `currentDecision(decision, asOf)`: the reason it is not current, or none.
@@ -193,29 +172,11 @@ mod tests {
     /// Trace: FR-047-AC-5
     /// Provenance: quoin#445
     #[test]
-    fn tc_1135_validates_the_decision_maker_timestamps_and_digest() {
-        let cases: [(serde_json::Value, &str); 5] = [
+    fn tc_1135_validates_the_decision_maker_and_timestamps() {
+        let cases: [(serde_json::Value, &str); 3] = [
             (
                 with(&decision(), "decidedBy", serde_json::json!("nobody-900")),
                 "sufficiency decision maker nobody-900 is not a declared participant",
-            ),
-            (
-                with(
-                    &decision(),
-                    "evidenceDigest",
-                    serde_json::json!("sha256:zz"),
-                ),
-                "decision evidenceDigest must be sha256:<64 lowercase hex>",
-            ),
-            (
-                // Uppercase hex is a DIFFERENT string to every consumer that
-                // compares digests as text.
-                with(
-                    &decision(),
-                    "evidenceDigest",
-                    serde_json::json!(format!("sha256:{}", "B".repeat(64))),
-                ),
-                "decision evidenceDigest must be sha256:<64 lowercase hex>",
             ),
             (
                 with(&decision(), "decidedAt", serde_json::json!("2026-08-01")),

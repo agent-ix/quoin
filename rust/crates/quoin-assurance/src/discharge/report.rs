@@ -61,8 +61,6 @@ pub struct DischargeAttestation {
     pub expires_at: String,
     /// The revision the attestation is about.
     pub source_revision: String,
-    /// `sha256:<64 lowercase hex>`.
-    pub evidence_digest: String,
 }
 
 /// The one door: every read of an attestation runs [`parse_attestation`].

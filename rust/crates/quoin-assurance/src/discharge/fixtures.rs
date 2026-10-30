@@ -40,8 +40,7 @@ pub(super) fn attestation() -> serde_json::Value {
         "authority": "quality-lead",
         "attestedAt": "2026-08-01T00:00:00.000Z",
         "expiresAt": "2026-09-01T00:00:00.000Z",
-        "sourceRevision": "0123456789abcdef",
-        "evidenceDigest": digest()
+        "sourceRevision": "0123456789abcdef"
     })
 }
 
