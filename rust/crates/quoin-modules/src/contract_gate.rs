@@ -640,14 +640,15 @@ mod tests {
         )
         .unwrap();
         let error = home.gate().validate_installed().unwrap_err();
-        let crate::error::ModulesError::SemanticContractViolation { name, report, .. } = &error
-        else {
-            panic!("expected a contract violation: {error}");
-        };
-        assert_eq!(name.as_str(), "alpha");
+        assert_eq!(
+            error.code(),
+            crate::error::ModulesErrorCode::SemanticContractViolation
+        );
+        let message = error.to_string();
+        assert!(message.contains("module alpha rejected"), "{message}");
         assert!(
-            report.contains("semantic.package"),
-            "the refusal names the tampered key, not just a failure: {report}"
+            message.contains("semantic.package"),
+            "the refusal names the tampered key, not just a failure: {message}"
         );
     }
 

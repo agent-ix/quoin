@@ -485,11 +485,11 @@ fn run_with(
 #[cfg(target_os = "linux")]
 fn assert_first_attempt(
     run: &engineering_assurance::campaign::CampaignRun,
-    status: engineering_assurance::campaign::CampaignAttemptStatus,
+    status: &engineering_assurance::campaign::CampaignAttemptStatus,
 ) {
     assert_eq!(run.verdict, CampaignVerdict::Inconclusive, "{run:?}");
     let attempts = run.attempts.as_ref().expect("attempts");
-    assert_eq!(attempts[0].status, status, "{:?}", attempts[0]);
+    assert_eq!(&attempts[0].status, status, "{:?}", attempts[0]);
     for attempt in attempts {
         assert!(attempt.collection_id.is_none(), "{attempt:?}");
     }
@@ -508,7 +508,7 @@ fn tc_1941_timed_out_producer_is_retained() {
     );
     assert_first_attempt(
         &run,
-        engineering_assurance::campaign::CampaignAttemptStatus::TimedOut,
+        &engineering_assurance::campaign::CampaignAttemptStatus::TimedOut,
     );
 }
 
@@ -527,7 +527,7 @@ fn tc_1941_escaped_descendant_containment_failure_is_retained() {
     );
     assert_first_attempt(
         &run,
-        engineering_assurance::campaign::CampaignAttemptStatus::ContainmentFailure,
+        &engineering_assurance::campaign::CampaignAttemptStatus::ContainmentFailure,
     );
 }
 
@@ -563,7 +563,7 @@ fn tc_1941_live_event_cancellation_is_retained() {
     canceller.join().expect("canceller completed");
     assert_first_attempt(
         &run,
-        engineering_assurance::campaign::CampaignAttemptStatus::Cancelled,
+        &engineering_assurance::campaign::CampaignAttemptStatus::Cancelled,
     );
 }
 
@@ -588,7 +588,6 @@ fn tc_1944_no_collection_when_the_producer_yields_none() {
     assert!(
         !repo.path().join("spec/evidence/measurements").exists()
             || fs::read_dir(repo.path().join("spec/evidence/measurements"))
-                .map(|d| d.count() == 0)
-                .unwrap_or(true)
+                .map_or(true, |d| d.count() == 0)
     );
 }
