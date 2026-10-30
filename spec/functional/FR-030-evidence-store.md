@@ -27,6 +27,8 @@ binding to nothing while matrices read as covered**
 
 ### Governing principle: store only what cannot be recomputed
 
+> BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash
+
 Run outcomes, hash-at-binding and affirmations are facts
 about the past — nothing can re-derive them tomorrow. **Obligations are not.**
 They are re-derived live from quire ([FR-053](ix://agent-ix/quire-rs/FR-053))
@@ -80,7 +82,7 @@ clear itself on the next CI run and the detector would never fire.
 ## Outputs
 
 - `spec/evidence/runs/<SUITE-N>/<commit12>.json` — one run of one suite
-- `spec/evidence/bindings.json` — obligation → hash-at-binding → evidence
+- `spec/evidence/bindings.json` — obligation → hash-at-binding → evidence (BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash)
 
 ## Behavior
 
@@ -110,7 +112,7 @@ clear itself on the next CI run and the detector would never fire.
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-030-CON-1 | quoin SHALL NOT execute a consumer's suite. It transcribes; the consumer's CI runs (ADR-0011 invariant 1). | Architecture | Inspection |
-| FR-030-CON-2 | The store SHALL NOT persist an obligation's statement, document or method — only its id and hash. Anything re-derivable is re-derived, so the store cannot disagree with the spec. | Architecture | Test |
+| FR-030-CON-2 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: The store SHALL NOT persist an obligation's statement, document or method — only its id and hash. Anything re-derivable is re-derived, so the store cannot disagree with the spec. | Architecture | Test |
 | FR-030-CON-3 | The store SHALL NOT contain a database or a derived index. Files only. | Architecture | Inspection |
 
 ### A tool reports the id it knows
@@ -145,13 +147,13 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-1 | The store root is `spec/evidence/`, and a run path is `runs/<SUITE-N>/<commit12>.json`. | Test (TC-119) |
 | FR-030-AC-2 | Writes are canonical and byte-identical across repeated serialization of the same record. | Test (TC-120) |
 | FR-030-AC-3 | Two suites at one commit produce two files, and a re-run at the same commit is last-write-wins with one file retained. | Test (TC-121) |
-| FR-030-AC-4 | A passing symbol binds its obligation with the hash as it stands now; a failing or skipped symbol binds nothing while its run is still recorded. | Test (TC-122) |
-| FR-030-AC-5 | A reworded statement makes an existing binding suspect, and re-recording the same passing run does not overwrite the hash. | Test (TC-123) |
-| FR-030-AC-6 | Affirmation moves the hash forward and records who and at which commit; affirming an unknown obligation reports rather than inventing a binding. | Test (TC-124) |
+| FR-030-AC-4 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: A passing symbol binds its obligation with the hash as it stands now; a failing or skipped symbol binds nothing while its run is still recorded. | Test (TC-122) |
+| FR-030-AC-5 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: A reworded statement makes an existing binding suspect, and re-recording the same passing run does not overwrite the hash. | Test (TC-123) |
+| FR-030-AC-6 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: Affirmation moves the hash forward and records who and at which commit; affirming an unknown obligation reports rather than inventing a binding. | Test (TC-124) |
 | FR-030-AC-7 | A trace id no obligation states is reported as unmatched rather than silently dropped. | Test (TC-125) |
 | FR-030-AC-8 | `gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. The command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why. | Test (TC-126, TC-263) |
 | FR-030-AC-9 | An absent store reads as an empty binding graph, an empty run list and an empty collection. | Test (TC-127) |
-| FR-030-AC-10 | No obligation statement, document or method appears anywhere in the written store — only the id and hash (CON-2). | Test (TC-128) |
+| FR-030-AC-10 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: No obligation statement, document or method appears anywhere in the written store — only the id and hash (CON-2). | Test (TC-128) |
 | FR-030-AC-11 | A binding is keyed on `(obligation, suite)`: a second suite discharging the same obligation **appends** a binding rather than replacing the first, re-discharging the same suite merges into its own binding, and affirmation clears every suite's suspicion unless narrowed to one. The graph is cross-suite, so the file must be able to hold two. | Test (TC-129) |
 | FR-030-AC-12 | The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. Two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine. | Test (TC-130) |
 | FR-030-AC-13 | A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph is not, because reading an empty graph would report every obligation as undischarged. | Test (TC-131) |

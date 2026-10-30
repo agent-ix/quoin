@@ -101,8 +101,8 @@ different from the answer being yes.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-032-AC-1 | An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed produces no finding and is reported healthy. | Test (TC-137) |
-| FR-032-AC-2 | A statement reworded after binding produces a high-severity suspect-link finding naming both hashes. | Test (TC-138) |
+| FR-032-AC-1 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: An obligation whose binding hash matches, whose suite has a run at HEAD, and whose symbols passed produces no finding and is reported healthy. | Test (TC-137) |
+| FR-032-AC-2 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: A statement reworded after binding produces a high-severity suspect-link finding naming both hashes. | Test (TC-138) |
 | FR-032-AC-3 | A binding naming a suite with no recorded run is high severity, while a run merely behind HEAD is medium. | Test (TC-139) |
 | FR-032-AC-4 | Vacuity fires when every bound symbol was skipped or absent from the run, and does not fire when at least one passed. | Test (TC-140) |
 | FR-032-AC-5 | An obligation with no binding is reported undischarged at medium severity. | Test (TC-141) |

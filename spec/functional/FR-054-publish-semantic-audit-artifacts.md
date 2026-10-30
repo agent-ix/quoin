@@ -19,7 +19,8 @@ relationships:
 > ([quoin#524](https://github.com/agent-ix/quoin/pull/524)), and its retained output
 > is deleted by quoin#654. Nothing in quoin produces or reads the audit any more.
 >
-> The text below is retained unchanged. It describes what was required, not what
+> The text below is retained as written, except that the digest and hash members
+> were removed from it by this change. It describes what was required, not what
 > is required.
 
 ## Description
