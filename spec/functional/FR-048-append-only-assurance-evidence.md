@@ -14,15 +14,15 @@ relationships:
 ## Description
 
 Quoin SHALL store experiment records and operational evidence records as
-content-addressed, append-only JSON artifacts. Each record SHALL carry its own
+append-only JSON artifacts. Each record SHALL carry its own
 complete `producer-provenance-v1` tuple: producer identity and version, source
-revision and clean/dirty state, executable and configuration digests,
-capabilities, and source-artifact digests.
+revision and clean/dirty state, executable and configuration identity,
+capabilities, and source-artifact references.
 
-The record identifier SHALL be the SHA-256 digest of canonical record content
-before the identifier is attached. Publication SHALL be atomic within the
-destination directory. Re-publishing identical bytes is idempotent; different
-bytes at an existing immutable path are reported and never overwritten.
+The record identifier SHALL be an opaque UUID not derived from content, per
+FR-098-AC-10. Publication SHALL be atomic within the
+destination directory. Re-publishing the same record is idempotent; a different
+file at an existing immutable path is reported and never overwritten.
 
 This requirement does not retrofit FR-030 run records. The accepted boundary
 binds the existing FR-044 producer tuple to measurement collections and the new
@@ -34,11 +34,11 @@ separate versioned decision and migration plan.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-048-AC-1 | Every experiment and operational record carries the complete closed producer-provenance contract. | Test (TC-1137) |
-| FR-048-AC-2 | Canonical content determines the record id; identical publication is idempotent and byte-stable. | Test (TC-1138) |
+| FR-048-AC-2 | The record id is an opaque UUID not derived from content (FR-098-AC-10); re-publishing the same record is idempotent and byte-stable. | Test (TC-1138) |
 | FR-048-AC-3 | Invalid or incomplete provenance is rejected before any record is published. | Test (TC-1139) |
-| FR-048-AC-4 | A different file at an immutable record path is never overwritten and produces a named integrity error. | Test (TC-1140) |
+| FR-048-AC-4 | A different file at an immutable record path is never overwritten and produces a named error. | Test (TC-1140) |
 | FR-048-AC-5 | Operational evidence records bind a subject, environment, ordered time window, observations, interpretations, raw evidence, and outcome. | Test (TC-1141) |
-| FR-048-AC-6 | Reads recompute content identity, detect tampering, and do not read or write FR-030 run-record paths. | Test (TC-1142) |
+| FR-048-AC-6 | Reads do not read or write FR-030 run-record paths. | Test (TC-1142) |
 | FR-048-AC-7 | `quoin evidence record-experiment` and `record-operational` accept JSON files or stdin and report the immutable id, path, and whether publication created a file. | Test (TC-1143) |
 
 ## Constraints
@@ -54,9 +54,6 @@ separate versioned decision and migration plan.
 - FR-030 supplies the evidence-store root and canonical serialization rules.
 - FR-044 remains the measurement-collection provenance boundary.
 
-> **PLAT-989 change note (2026-10-05):** Canonical record content for new
-> identities means RFC 8785 bytes from `quire-canonical`, excluding `recordId`.
-> The indented store representation remains a storage/display format. This
-> changes experiment and operational record identities, paths and citations.
-> The operator approved this identity change on 2026-10-05; preservation of
-> legacy identities is not required. No record fields or schema versions change.
+> **Change note (strict digest removal):** Record identity is an opaque UUID per
+> FR-098-AC-10; legacy content-derived identifiers are read as opaque strings.
+> Tamper detection by recomputing identity is withdrawn; git records any edit.
