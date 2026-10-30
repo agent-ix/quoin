@@ -281,8 +281,14 @@ fn tc_480_050_the_current_row_carries_the_plan_the_producer_and_the_observation_
     assert_eq!(current.tool_identity, "agent-ix/quire-code-rs");
     assert_eq!(current.tool_version, "1.0.0");
     assert_eq!(current.source_revision, "d".repeat(40));
-    assert_eq!(current.corpus_revision.as_deref(), Some("e".repeat(40).as_str()));
-    assert!(current.population_identity.is_some(), "the population identity");
+    assert_eq!(
+        current.corpus_revision.as_deref(),
+        Some("e".repeat(40).as_str())
+    );
+    assert!(
+        current.population_identity.is_some(),
+        "the population identity"
+    );
     assert_eq!(
         current.observation_id.as_deref(),
         Some("obs-a-1"),
@@ -317,7 +323,10 @@ fn tc_480_051_history_keeps_every_readable_collection_in_order() {
     let history = &report.repositories[0].graph_quality.history;
     let ids: Vec<&str> = history.iter().map(|row| row.id.as_str()).collect();
     assert_eq!(ids, ["h-old", "h-mid", "h-new"]);
-    let availabilities: Vec<&str> = history.iter().map(|row| row.availability.as_str()).collect();
+    let availabilities: Vec<&str> = history
+        .iter()
+        .map(|row| row.availability.as_str())
+        .collect();
     assert_eq!(
         availabilities,
         ["available", "incompatible", "available"],
@@ -375,7 +384,10 @@ fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
     }
     let text = render_governed_graph_portfolio(&report).expect("rendered text");
     for needle in ["census/node_kind/function", "census/language/rust"] {
-        assert!(text.contains(needle), "{needle} is a row of its own:\n{text}");
+        assert!(
+            text.contains(needle),
+            "{needle} is a row of its own:\n{text}"
+        );
     }
     let json = canonical_graph_portfolio_json(&report).expect("canonical JSON");
     assert!(json.contains("function") && json.contains("rust"));

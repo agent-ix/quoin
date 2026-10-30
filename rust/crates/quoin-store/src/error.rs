@@ -132,7 +132,10 @@ impl StoreErrorCode {
     /// Recover a code from its stable spelling.
     #[must_use]
     pub fn from_code(code: &str) -> Option<Self> {
-        Self::ALL.iter().copied().find(|known| known.as_str() == code)
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|known| known.as_str() == code)
     }
 }
 

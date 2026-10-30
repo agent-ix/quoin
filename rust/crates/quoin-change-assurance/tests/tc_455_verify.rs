@@ -458,6 +458,21 @@ fn tc_455_absent_evidence_is_incomplete_rather_than_invalid() {
     }
 }
 
+/// The review check's outcome and reason spellings for one input.
+fn review(input: &VerificationInput) -> (Outcome, Vec<&'static str>) {
+    let receipt = verify(input);
+    (
+        receipt.checks.review.outcome,
+        receipt
+            .checks
+            .review
+            .reasons
+            .iter()
+            .map(|reason| reason.as_str())
+            .collect::<Vec<_>>(),
+    )
+}
+
 /// Trace: FR-065-AC-7
 /// Trace: FR-063-AC-10
 ///
@@ -467,19 +482,6 @@ fn tc_455_absent_evidence_is_incomplete_rather_than_invalid() {
 /// revision request each fail on their own.
 #[test]
 fn tc_455_review_validity_needs_one_intact_human_approval() {
-    let review = |input: &VerificationInput| {
-        let receipt = verify(input);
-        (
-            receipt.checks.review.outcome,
-            receipt
-                .checks
-                .review
-                .reasons
-                .iter()
-                .map(|reason| reason.as_str())
-                .collect::<Vec<_>>(),
-        )
-    };
     let approved = event(1, "human", KIND, "change-1", 1, "approved");
     assert_eq!(
         review(&with_decision(std::slice::from_ref(&approved))),

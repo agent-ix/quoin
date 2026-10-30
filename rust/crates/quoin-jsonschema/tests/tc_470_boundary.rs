@@ -77,8 +77,14 @@ fn tc_470_no_second_grammar_hasher_or_canonicalizer_appeared() {
             "quoin_measurement::date_time",
         ),
         (["RFC", "3339"].concat(), "quoin_measurement::date_time"),
-        (["sha", "2::"].concat(), "no hasher belongs here; identity is assigned, not hashed"),
-        (["blake", "3::"].concat(), "no hasher belongs here; identity is assigned, not hashed"),
+        (
+            ["sha", "2::"].concat(),
+            "no hasher belongs here; identity is assigned, not hashed",
+        ),
+        (
+            ["blake", "3::"].concat(),
+            "no hasher belongs here; identity is assigned, not hashed",
+        ),
         (
             ["serde_json::to_", "string"].concat(),
             "quoin_store::canonical_json",
