@@ -3,7 +3,7 @@
 //! Every FR-067 acceptance criterion the deleted `tests/graph-portfolio.test.ts`
 //! carried, restated against this crate, plus StR-007-VC-1.
 //!
-//! Trace: FR-067-AC-4, FR-067-AC-5, FR-067-AC-6, FR-067-AC-7, FR-067-AC-8
+//! Trace: FR-067-AC-1, FR-067-AC-2, FR-067-AC-3, FR-067-AC-4, FR-067-AC-5, FR-067-AC-6, FR-067-AC-7, FR-067-AC-8
 //! Trace: FR-067-AC-9, FR-067-AC-10, FR-067-AC-11
 //! Trace: StR-007-VC-1
 //! Provenance: quoin#480
@@ -11,11 +11,11 @@
 //! # Why this file exists
 //!
 //! `tests/graph-portfolio.test.ts` was deleted in the same commit as
-//! `src/measurement/graph-portfolio.ts`. `tc_476_graph_portfolio.rs`
-//! proves this crate's report is the retained module's bytes over one committed
-//! tree, and is tagged `FR-067-AC-1`, `-AC-2` and `-AC-3` for the three
-//! properties that tree exercises. The other eight criteria had no Rust home.
-//! They do now, one test each, named by the criterion.
+//! `src/measurement/graph-portfolio.ts`. The golden-capture suites that once
+//! carried `FR-067-AC-1`, `-AC-2` and `-AC-3` were TypeScript-parity ceremony
+//! and are gone; those three criteria are asserted here as behaviour, one test
+//! each, over inputs built in this file. The other eight criteria had no Rust
+//! home and have one test each, named by the criterion.
 //!
 //! # Where the inputs come from
 //!
@@ -245,6 +245,146 @@ fn one(root: &str, collections: Vec<MeasurementCollection>) -> GraphPortfolioRep
 fn build(inputs: &[GraphPortfolioRepositoryInput]) -> GovernedGraphPortfolioReport {
     build_governed_graph_portfolio_from(inputs)
         .unwrap_or_else(|error| panic!("the governed projection refused: {error}"))
+}
+
+// ------------------------------------------------- the reading itself
+
+/// The current row carries the active plan, its definition, the producer
+/// tuple, the source and corpus revisions, the population identity and the
+/// producer-assigned observation id.
+///
+/// Trace: FR-067-AC-1
+#[test]
+fn tc_480_050_the_current_row_carries_the_plan_the_producer_and_the_observation_id() {
+    let report = build(&[one(
+        "/repos/a",
+        vec![collection("a-1", "2026-02-01T00:00:00Z")],
+    )]);
+    let repository = &report.repositories[0];
+    assert_eq!(
+        repository
+            .graph_quality
+            .plan
+            .as_ref()
+            .map(|plan| plan.id.as_str()),
+        Some("gp-graph"),
+        "the active plan is reported"
+    );
+    let current = repository
+        .graph_quality
+        .current
+        .as_ref()
+        .expect("a readable repository has a current reading");
+    let plan = current.plan.as_ref().expect("the reading names its plan");
+    assert_eq!(plan.id, "gp-graph");
+    assert_eq!(plan.definition_version, "gq-1");
+    assert_eq!(current.tool_identity, "agent-ix/quire-code-rs");
+    assert_eq!(current.tool_version, "1.0.0");
+    assert_eq!(current.source_revision, "d".repeat(40));
+    assert_eq!(current.corpus_revision.as_deref(), Some("e".repeat(40).as_str()));
+    assert!(current.population_identity.is_some(), "the population identity");
+    assert_eq!(
+        current.observation_id.as_deref(),
+        Some("obs-a-1"),
+        "the producer-assigned observation id is reported as stated"
+    );
+    let json = canonical_graph_portfolio_json(&report).expect("canonical JSON");
+    assert!(
+        json.contains("v1.2.3") && json.contains("v0.4.0"),
+        "the complete producer tuple reaches the report"
+    );
+}
+
+/// History keeps every structurally readable collection in timestamp then id
+/// order, including one the active plan no longer governs.
+///
+/// Trace: FR-067-AC-2
+#[test]
+fn tc_480_051_history_keeps_every_readable_collection_in_order() {
+    let stale = collection_with("h-mid", "2026-02-01T00:00:00Z", |value| {
+        for observation in value["observations"].as_array_mut().unwrap() {
+            observation["definitionVersion"] = json!("gq-0");
+        }
+    });
+    let report = build(&[one(
+        "/repos/a",
+        vec![
+            collection("h-new", "2026-03-01T00:00:00Z"),
+            stale,
+            collection("h-old", "2026-01-01T00:00:00Z"),
+        ],
+    )]);
+    let history = &report.repositories[0].graph_quality.history;
+    let ids: Vec<&str> = history.iter().map(|row| row.id.as_str()).collect();
+    assert_eq!(ids, ["h-old", "h-mid", "h-new"]);
+    let availabilities: Vec<&str> = history.iter().map(|row| row.availability.as_str()).collect();
+    assert_eq!(
+        availabilities,
+        ["available", "incompatible", "available"],
+        "the record the active plan no longer governs is kept, and says so"
+    );
+
+    // Equal timestamps are ordered by id.
+    let tied = build(&[one(
+        "/repos/b",
+        vec![
+            collection("t-b", "2026-01-01T00:00:00Z"),
+            collection("t-a", "2026-01-01T00:00:00Z"),
+        ],
+    )]);
+    let ids: Vec<&str> = tied.repositories[0]
+        .graph_quality
+        .history
+        .iter()
+        .map(|row| row.id.as_str())
+        .collect();
+    assert_eq!(ids, ["t-a", "t-b"]);
+}
+
+/// Every measure/dimension/key partition is its own row in the text and the
+/// JSON, and nothing is summed or averaged across them.
+///
+/// Trace: FR-067-AC-3
+#[test]
+fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
+    let report = build(&[
+        one("/repos/a", vec![collection("p-1", "2026-02-01T00:00:00Z")]),
+        one("/repos/b", vec![collection("p-2", "2026-02-01T00:00:00Z")]),
+    ]);
+    for repository in &report.repositories {
+        let current = repository.graph_quality.current.as_ref().expect("current");
+        let identities: BTreeSet<(&str, &str, &str)> = current
+            .partitions
+            .iter()
+            .map(|partition| {
+                (
+                    partition.identity.measure.as_str(),
+                    partition.identity.dimension.as_str(),
+                    partition.identity.key.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            identities,
+            BTreeSet::from([
+                ("census", "language", "rust"),
+                ("census", "node_kind", "function"),
+            ]),
+            "two partitions, neither merged into the other"
+        );
+    }
+    let text = render_governed_graph_portfolio(&report).expect("rendered text");
+    for needle in ["census/node_kind/function", "census/language/rust"] {
+        assert!(text.contains(needle), "{needle} is a row of its own:\n{text}");
+    }
+    let json = canonical_graph_portfolio_json(&report).expect("canonical JSON");
+    assert!(json.contains("function") && json.contains("rust"));
+    for sum in ["0.75", "0.375"] {
+        assert!(
+            !text.contains(sum) && !json.contains(sum),
+            "{sum}: a sum or average across partitions or repositories appeared"
+        );
+    }
 }
 
 // ------------------------------------------------------------- the gates
