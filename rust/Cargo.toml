@@ -128,10 +128,6 @@ schemars = { version = "=1.2.2", features = ["derive"] }
 # cut.
 serde_json = "=1.0.151"
 time = { version = "=0.3.55", features = ["formatting"] }
-# SHA-256, used only by quoin-quire-types. 0.10.9 and not 0.11.0 because
-# `quire-rs` depends on 0.10.9 and `multiple-versions = "deny"` forbids
-# carrying both; when quire-rs advances, this moves with it.
-sha2 = "=0.10.9"
 # Raised from =2.0.18 by quoin#378: `saphyr` (the YAML 1.2 core-schema reader
 # quoin-yaml wraps) requires ^2.0.20, and `multiple-versions = "deny"` in
 # deny.toml forbids carrying both. `feat/381-config-modules` raises this pin to
