@@ -9,15 +9,13 @@
 
 use serde::{Deserialize, Serialize};
 
-/// One artifact a producer emitted, with its digest.
+/// One artifact a producer emitted, by name.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ProvenanceArtifact {
     /// The artifact's name.
     pub name: String,
-    /// `sha256:<64 lowercase hex>`.
-    pub digest: String,
 }
 
 /// Who produced a record, from what source, with what capability.
@@ -35,10 +33,6 @@ pub struct ProducerProvenance {
     pub source_revision: String,
     /// Whether that source tree was clean or dirty.
     pub source_state: SourceState,
-    /// `sha256:<64 lowercase hex>` over the executable.
-    pub executable_digest: String,
-    /// `sha256:<64 lowercase hex>` over the configuration.
-    pub configuration_digest: String,
     /// The capabilities the producer declared.
     pub capabilities: Vec<String>,
     /// The artifacts it emitted.

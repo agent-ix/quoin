@@ -72,7 +72,7 @@ observable. Files written under the previous content-named layout are not read.
 ## Deliberate behaviour changes
 
 Every write this crate offers is crash-atomic: temporary in the destination
-directory, `fsync`, rename, `fsync` the directory. `write_content_addressed`
+directory, `fsync`, rename, `fsync` the directory. `write_new_or_identical`
 publishes with `hard_link` rather than `rename`, so a concurrent writer's
 differing bytes are refused rather than clobbered. Asserted by
 `tests/tc_store_durability.rs`.

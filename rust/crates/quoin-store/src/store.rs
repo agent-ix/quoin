@@ -88,7 +88,7 @@ pub fn fsync_directory(path: &Path) -> Result<(), StoreError> {
 /// returns, but its *directory entry* is not — only the `fsync` of the parent
 /// makes the name survive a crash, and that fsync belongs to the caller that
 /// knows which directory finally holds the name. Every caller here is inside
-/// [`write_atomic`] or [`write_content_addressed`], both of which end with
+/// [`write_atomic`] or [`write_new_or_identical`], both of which end with
 /// [`fsync_directory`]; exporting it would let a caller believe a file is
 /// durable when a crash can still lose its name.
 fn write_durable_new(path: &Path, bytes: &[u8]) -> Result<(), StoreError> {
@@ -178,7 +178,7 @@ pub fn write_canonical(path: &Path, value: &JsonValue) -> Result<(), StoreError>
 /// Refuses with [`StoreError::ContentCollision`] when `path` already holds
 /// bytes that differ from `bytes`, and on any I/O failure along the
 /// write-temporary, link, compare path.
-pub fn write_content_addressed(path: &Path, bytes: &[u8]) -> Result<bool, StoreError> {
+pub fn write_new_or_identical(path: &Path, bytes: &[u8]) -> Result<bool, StoreError> {
     let parent = path.parent().unwrap_or_else(|| Path::new("."));
     fs::create_dir_all(parent).map_err(io("create directory", parent))?;
     let temporary = temporary_beside(path);
@@ -275,7 +275,7 @@ mod tests {
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
     use super::{
-        STORE_SCHEMA_VERSION, read_bytes, write_atomic, write_content_addressed, write_durable_new,
+        STORE_SCHEMA_VERSION, read_bytes, write_atomic, write_new_or_identical, write_durable_new,
     };
     use crate::error::StoreErrorCode;
 
@@ -328,9 +328,9 @@ mod tests {
     fn tc_380_content_addressed_write_refuses_differing_bytes() {
         let dir = scratch().join("content");
         let path = dir.join("d.json");
-        assert!(write_content_addressed(&path, b"body").expect("write"));
-        assert!(!write_content_addressed(&path, b"body").expect("idempotent"));
-        let error = write_content_addressed(&path, b"other").expect_err("collision");
+        assert!(write_new_or_identical(&path, b"body").expect("write"));
+        assert!(!write_new_or_identical(&path, b"body").expect("idempotent"));
+        let error = write_new_or_identical(&path, b"other").expect_err("collision");
         assert_eq!(error.code(), StoreErrorCode::ContentCollision);
         std::fs::remove_dir_all(&dir).ok();
     }

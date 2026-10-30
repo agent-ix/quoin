@@ -71,7 +71,7 @@ use quoin_measurement::{
     render_measurement_report_json,
 };
 use quoin_store::StoreError;
-use quoin_store::store::write_content_addressed;
+use quoin_store::store::write_new_or_identical;
 
 /// The one pair `spec/evidence/operational/pairs/` retains.
 const RETAINED_PAIR: &str =
@@ -255,11 +255,11 @@ fn tc_479_400_valid_intake_publishes_one_complete_canonical_record() {
 
     // No-replace: different bytes at the same destination are refused and the
     // retained bytes do not move.
-    let refused = write_content_addressed(&path, b"{}").expect_err("a replacement is refused");
+    let refused = write_new_or_identical(&path, b"{}").expect_err("a replacement is refused");
     assert!(matches!(refused, StoreError::ContentCollision { .. }));
     assert_eq!(std::fs::read(&path).unwrap(), retained);
     assert!(
-        !write_content_addressed(&path, &retained).expect("identical bytes are idempotent"),
+        !write_new_or_identical(&path, &retained).expect("identical bytes are idempotent"),
         "republishing identical bytes reported a new write"
     );
 

@@ -1033,8 +1033,8 @@ mod tests {
     /// compared against `declared_domain_bounds()` as ONE population, so a
     /// bound listed in none of them still fails.
     ///
-    /// `quoin_store::MAX_DIGESTED_FILE_BYTES` is deliberately absent: it is a
-    /// FILE bound in `quoin-store`, not an `ops::*` request bound, and
+    /// A file-size bound in `quoin-store` is deliberately absent: it is a
+    /// FILE bound, not an `ops::*` request bound, and
     /// `tc_412` compares this census against a scan of the `ops` sources only.
     /// Listing it here would make the two disagree by construction.
     fn census_of_the_measurement_domain() -> Vec<(&'static str, usize)> {

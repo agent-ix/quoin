@@ -29,7 +29,7 @@ corpus where the two can be told apart, grouped by why.
 dance. `store.ts` publishes with `renameSync` after an `existsSync` test;
 `atomic-file.ts`, the newer copy, already knows that rename **replaces** and
 uses `linkSync` instead. Both port to
-`quoin_store::store::write_content_addressed`, so:
+`quoin_store::store::write_new_or_identical`, so:
 
 - **`store.ts`'s rename becomes a link.** A concurrent writer whose differing
   bytes would have been silently clobbered in the window between the test and
@@ -344,7 +344,7 @@ the validator's own and is not byte-identical to ajv's for every keyword. The
 _set_ of refused records is what is contractual; a message is not, and no
 retained record's acceptance depends on one.
 
-### §11.6 — `write_content_addressed` links and fsyncs; the retained code renames
+### §11.6 — `write_new_or_identical` links and fsyncs; the retained code renames
 
 Same strengthening `store.rs` took in quoin#468, and already declared in §4. The
 operational pair path goes through it too: the write is refused rather than

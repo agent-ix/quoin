@@ -153,8 +153,6 @@ producer_id!(
 ///
 /// The constructor is `parse`, it returns the type or the reason, and there is
 /// no `bool` anywhere: the proof that the text is well-formed *is* the value.
-/// `RawFileSha256Digest::parse_stored` (`quoin-store/src/digest.rs`) is the
-/// in-repo model.
 macro_rules! checked_id {
     ($(#[$meta:meta])* $name:ident, $check:expr, $what:literal) => {
         $(#[$meta])*

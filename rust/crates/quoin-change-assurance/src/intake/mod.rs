@@ -15,7 +15,7 @@
 //!
 //! # What is new here, and what is not
 //!
-//! Record storage is [`quoin_store::store::write_content_addressed`] and
+//! Record storage is [`quoin_store::store::write_new_or_identical`] and
 //! nothing more: one file at `records/<record_id>/<revision>.json`, written to
 //! a temporary and hard-linked into place so that a losing racer compares
 //! rather than clobbers. A successor revision is a new file.

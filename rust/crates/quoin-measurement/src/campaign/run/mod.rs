@@ -385,7 +385,7 @@ pub fn run_campaign_with_cancellation(
     let run_value = serde_json::to_value(&run)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
     let canonical = encode_value(repo, &run_value)?;
-    quoin_store::store::write_content_addressed(&publication_path, &canonical)
+    quoin_store::store::write_new_or_identical(&publication_path, &canonical)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
     Ok(run)
 }

@@ -61,9 +61,9 @@ fn sources() -> Vec<(String, String)> {
 fn tc_468_no_second_hasher_serializer_or_yaml_reader_appeared() {
     // (token, what owns it instead)
     let forbidden: [(String, &str); 6] = [
-        (["sha", "2::"].concat(), "quoin_store::digest_file_sha256"),
-        (["Sha", "256::"].concat(), "quoin_store::digest_file_sha256"),
-        (["blake", "3"].concat(), "quoin_store::digest_raw_bytes"),
+        (["sha", "2::"].concat(), "no hasher belongs here; identity is assigned, not hashed"),
+        (["Sha", "256::"].concat(), "no hasher belongs here; identity is assigned, not hashed"),
+        (["blake", "3"].concat(), "no hasher belongs here; identity is assigned, not hashed"),
         (
             ["serde_json::to_", "string"].concat(),
             "quoin_store::canonical_json",

@@ -34,7 +34,7 @@
 //! # Writes go through `quoin-store`
 //!
 //! [`DiskEvidence`] writes with [`quoin_store::store::write_atomic`] for a
-//! mutable named record and [`quoin_store::store::write_content_addressed`] for
+//! mutable named record and [`quoin_store::store::write_new_or_identical`] for
 //! a retained one (the #394 durability decision). Neither this module nor any
 //! other in this crate opens a file for writing itself.
 
@@ -273,7 +273,7 @@ impl EvidenceSource for DiskEvidence {
     }
 
     fn publish(&mut self, path: &str, bytes: &[u8]) -> Result<bool, EvidenceError> {
-        quoin_store::store::write_content_addressed(&self.resolve(path), bytes).map_err(|source| {
+        quoin_store::store::write_new_or_identical(&self.resolve(path), bytes).map_err(|source| {
             if matches!(source, quoin_store::StoreError::ContentCollision { .. }) {
                 EvidenceError::RecordIntegrity {
                     what: "content-address collision or corrupt immutable record",

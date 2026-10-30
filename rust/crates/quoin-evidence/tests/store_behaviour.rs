@@ -168,10 +168,8 @@ fn provenance() -> serde_json::Value {
         "version": "0.1.0",
         "sourceRevision": "a".repeat(40),
         "sourceState": "clean",
-        "executableDigest": format!("sha256:{}", "1".repeat(64)),
-        "configurationDigest": format!("sha256:{}", "2".repeat(64)),
         "capabilities": ["record"],
-        "artifacts": [{ "name": "report.json", "digest": format!("sha256:{}", "3".repeat(64)) }],
+        "artifacts": [{ "name": "report.json" }],
     })
 }
 
@@ -818,7 +816,8 @@ fn tc_456_240_an_assurance_record_is_identified_by_an_opaque_uuid() {
 fn tc_456_241_invalid_provenance_is_refused_before_any_record_is_published() {
     let mut store = MemoryEvidence::new();
     let mut bad = experiment();
-    bad["producerProvenance"]["executableDigest"] = json!("sha256:not-hex");
+    // A digest member is no part of the contract: it is refused by name.
+    bad["producerProvenance"]["executableDigest"] = json!(format!("sha256:{}", "1".repeat(64)));
     let error = write_experiment_record(&mut store, &bad)
         .unwrap_err()
         .to_string();

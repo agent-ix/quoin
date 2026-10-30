@@ -51,22 +51,20 @@ pub enum StoreErrorCode {
     JsonNumberNotFinite,
     /// A document nested deeper than the canonicalizers will read or write.
     JsonNestingTooDeep,
-    /// A digest string was not exactly 64 lowercase hexadecimal characters.
-    DigestMalformed,
     /// A value that must be a JSON object was not one.
     NotAnObject,
     /// A filesystem operation failed.
     Io,
     /// A content-addressed path already held different bytes.
     ContentCollision,
-    /// A path offered for digesting was a symbolic link.
-    DigestSourceIsSymlink,
-    /// A path offered for digesting was not a regular file.
-    DigestSourceNotRegularFile,
-    /// A file offered for digesting exceeded the ceiling.
-    DigestSourceTooLarge,
-    /// A file changed size while it was being digested.
-    DigestSourceChangedWhileReading,
+    /// A path offered for a bounded read was a symbolic link.
+    ReadSourceIsSymlink,
+    /// A path offered for a bounded read was not a regular file.
+    ReadSourceNotRegularFile,
+    /// A file offered for a bounded read exceeded the limit.
+    ReadSourceTooLarge,
+    /// A file changed size while it was being read.
+    ReadSourceChangedWhileReading,
 }
 
 impl StoreErrorCode {
@@ -90,14 +88,13 @@ impl StoreErrorCode {
         Self::JsonInvalidLiteral,
         Self::JsonNumberNotFinite,
         Self::JsonNestingTooDeep,
-        Self::DigestMalformed,
         Self::NotAnObject,
         Self::Io,
         Self::ContentCollision,
-        Self::DigestSourceIsSymlink,
-        Self::DigestSourceNotRegularFile,
-        Self::DigestSourceTooLarge,
-        Self::DigestSourceChangedWhileReading,
+        Self::ReadSourceIsSymlink,
+        Self::ReadSourceNotRegularFile,
+        Self::ReadSourceTooLarge,
+        Self::ReadSourceChangedWhileReading,
     ];
 
     /// The stable wire spelling of this code.
@@ -122,14 +119,13 @@ impl StoreErrorCode {
             Self::JsonInvalidLiteral => "QSTORE-JSON-INVALID-LITERAL",
             Self::JsonNumberNotFinite => "QSTORE-JSON-NUMBER-NOT-FINITE",
             Self::JsonNestingTooDeep => "QSTORE-JSON-NESTING-TOO-DEEP",
-            Self::DigestMalformed => "QSTORE-DIGEST-MALFORMED",
             Self::NotAnObject => "QSTORE-NOT-AN-OBJECT",
             Self::Io => "QSTORE-IO",
             Self::ContentCollision => "QSTORE-CONTENT-COLLISION",
-            Self::DigestSourceIsSymlink => "QSTORE-DIGEST-SOURCE-SYMLINK",
-            Self::DigestSourceNotRegularFile => "QSTORE-DIGEST-SOURCE-NOT-REGULAR-FILE",
-            Self::DigestSourceTooLarge => "QSTORE-DIGEST-SOURCE-TOO-LARGE",
-            Self::DigestSourceChangedWhileReading => "QSTORE-DIGEST-SOURCE-CHANGED",
+            Self::ReadSourceIsSymlink => "QSTORE-READ-SOURCE-SYMLINK",
+            Self::ReadSourceNotRegularFile => "QSTORE-READ-SOURCE-NOT-REGULAR-FILE",
+            Self::ReadSourceTooLarge => "QSTORE-READ-SOURCE-TOO-LARGE",
+            Self::ReadSourceChangedWhileReading => "QSTORE-READ-SOURCE-CHANGED",
         }
     }
 
@@ -293,13 +289,6 @@ pub enum StoreError {
         offset: Offset,
     },
 
-    /// A digest string was not exactly 64 lowercase hexadecimal characters.
-    #[error("digest must be exactly 64 lowercase hexadecimal characters, got {value:?}")]
-    DigestMalformed {
-        /// The rejected text.
-        value: String,
-    },
-
     /// A value that must be a JSON object was not one.
     #[error("expected a JSON object, found {found}")]
     NotAnObject {
@@ -326,39 +315,39 @@ pub enum StoreError {
         path: PathBuf,
     },
 
-    /// A path offered for digesting was a symbolic link.
+    /// A path offered for a bounded read was a symbolic link.
     ///
-    /// A digest names bytes. A link names whatever it currently points at, so
-    /// digesting through one records an identity the link can change later.
-    #[error("{path} is a symbolic link; a digest source must be the file itself")]
-    DigestSourceIsSymlink {
+    /// A link names whatever it currently points at, which can change after
+    /// the read, so a source must be the file itself.
+    #[error("{path} is a symbolic link; a read source must be the file itself")]
+    ReadSourceIsSymlink {
         /// The offered path.
         path: PathBuf,
     },
 
-    /// A path offered for digesting was not a regular file.
-    #[error("{path} is not a regular file ({kind}); it has no stable bytes to digest")]
-    DigestSourceNotRegularFile {
+    /// A path offered for a bounded read was not a regular file.
+    #[error("{path} is not a regular file ({kind}); it has no stable bytes to read")]
+    ReadSourceNotRegularFile {
         /// The offered path.
         path: PathBuf,
         /// What it was instead.
         kind: &'static str,
     },
 
-    /// A file offered for digesting exceeded the ceiling.
-    #[error("{path} is {size} bytes, over the {limit}-byte digest ceiling")]
-    DigestSourceTooLarge {
+    /// A file offered for a bounded read exceeded the limit.
+    #[error("{path} is {size} bytes, over the {limit}-byte limit")]
+    ReadSourceTooLarge {
         /// The offered path.
         path: PathBuf,
         /// Its size.
         size: u64,
-        /// The ceiling.
+        /// The limit.
         limit: u64,
     },
 
-    /// A file changed size while it was being digested.
+    /// A file changed size while it was being read.
     #[error("{path} held {expected} bytes when opened and {actual} when read")]
-    DigestSourceChangedWhileReading {
+    ReadSourceChangedWhileReading {
         /// The offered path.
         path: PathBuf,
         /// The size reported before the read.
@@ -391,15 +380,14 @@ impl StoreError {
             Self::JsonInvalidLiteral { .. } => StoreErrorCode::JsonInvalidLiteral,
             Self::JsonNumberNotFinite { .. } => StoreErrorCode::JsonNumberNotFinite,
             Self::JsonNestingTooDeep { .. } => StoreErrorCode::JsonNestingTooDeep,
-            Self::DigestMalformed { .. } => StoreErrorCode::DigestMalformed,
             Self::NotAnObject { .. } => StoreErrorCode::NotAnObject,
             Self::Io { .. } => StoreErrorCode::Io,
             Self::ContentCollision { .. } => StoreErrorCode::ContentCollision,
-            Self::DigestSourceIsSymlink { .. } => StoreErrorCode::DigestSourceIsSymlink,
-            Self::DigestSourceNotRegularFile { .. } => StoreErrorCode::DigestSourceNotRegularFile,
-            Self::DigestSourceTooLarge { .. } => StoreErrorCode::DigestSourceTooLarge,
-            Self::DigestSourceChangedWhileReading { .. } => {
-                StoreErrorCode::DigestSourceChangedWhileReading
+            Self::ReadSourceIsSymlink { .. } => StoreErrorCode::ReadSourceIsSymlink,
+            Self::ReadSourceNotRegularFile { .. } => StoreErrorCode::ReadSourceNotRegularFile,
+            Self::ReadSourceTooLarge { .. } => StoreErrorCode::ReadSourceTooLarge,
+            Self::ReadSourceChangedWhileReading { .. } => {
+                StoreErrorCode::ReadSourceChangedWhileReading
             }
         }
     }

@@ -13,9 +13,7 @@
 //! ```
 //!
 //! This is that mapping written over the refusal's structure instead of over
-//! its prose, one arm per message the oracle can throw. The correspondence is
-//! not left to inspection: `tests/tc_455_classification.rs` drives the same
-//! inputs through both trees and compares the reason.
+//! its prose, one arm per message the oracle can throw.
 
 use crate::error::{ChangeAssuranceError, LineageFailure};
 use crate::model::outcome::Reason;

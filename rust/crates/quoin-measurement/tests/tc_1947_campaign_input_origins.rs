@@ -24,8 +24,17 @@ use engineering_assurance::producer_execution::{
 use quoin_measurement::campaign::run::{
     InputSource, RunMemberBindings, SelectedInput, run_campaign,
 };
-use quoin_store::digest_bytes_sha256;
 use serde_json::{Value, json};
+
+/// Lowercase hex digest of `bytes`, from EA's own `ContentDigest`.
+///
+/// BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA validates
+/// `CampaignSource.digest`, `ProducerDescriptor.executable_digest` and
+/// `ContractBinding.digest` against a real digest, so the fixture must supply
+/// one; the value comes from EA, not from quoin.
+fn sha256_hex(bytes: &[u8]) -> String {
+    engineering_assurance::content_digest::ContentDigest::of_bytes(bytes).into_hex()
+}
 
 fn git(root: &Path, args: &[&str]) -> Vec<u8> {
     let output = Command::new("git")
@@ -227,8 +236,7 @@ fn fixture() -> (tempfile::TempDir, CampaignDefinition, String) {
         repo.path(),
         &["ls-tree", "-r", "-z", "--full-tree", &revision],
     );
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest is validated against the manifest by EA.
-    let digest = digest_bytes_sha256(&manifest).as_hex().to_owned();
+    let digest = sha256_hex(&manifest);
     let definition = serde_json::from_value(json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-input-origins", "subjectName":"fictional-subject", "subjectVersion":"1",

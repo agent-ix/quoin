@@ -506,8 +506,6 @@ fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
             "version",
             "sourceRevision",
             "sourceState",
-            "executableDigest",
-            "configurationDigest",
             "capabilities",
             "artifacts",
         ],
@@ -533,16 +531,6 @@ fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
         &["clean", "dirty"],
         clauses,
     );
-    sha256_value(
-        "producerProvenance.executableDigest",
-        root.get("executableDigest"),
-        clauses,
-    );
-    sha256_value(
-        "producerProvenance.configurationDigest",
-        root.get("configurationDigest"),
-        clauses,
-    );
     strings(
         "producerProvenance.capabilities",
         root.get("capabilities"),
@@ -556,9 +544,8 @@ fn provenance_shape(value: Option<&Value>, clauses: &mut Vec<String>) {
                 let Some(artifact) = object_at(&label, item, clauses) else {
                     continue;
                 };
-                exact(artifact, &label, &["name", "digest"], &[], clauses);
+                exact(artifact, &label, &["name"], &[], clauses);
                 string_value("artifact.name", artifact.get("name"), clauses);
-                sha256_value("artifact.digest", artifact.get("digest"), clauses);
             }
         }
         _ => clauses.push("producerProvenance.artifacts: must be an array".to_owned()),
@@ -653,17 +640,4 @@ fn instant(name: &str, value: Option<&Value>, clauses: &mut Vec<String>) -> Opti
         return None;
     };
     Some(read.into())
-}
-
-// BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): the producer-provenance
-// `executableDigest`, `configurationDigest` and artifact `digest` members are a
-// digest-valued data contract outside record identity; removing them changes
-// the record schema and its producers.
-fn sha256_value(name: &str, value: Option<&Value>, clauses: &mut Vec<String>) {
-    if !value
-        .and_then(Value::as_str)
-        .is_some_and(|text| legacy_hex(text).is_some())
-    {
-        clauses.push(format!("{name}: must be sha256:<64 lowercase hex>"));
-    }
 }

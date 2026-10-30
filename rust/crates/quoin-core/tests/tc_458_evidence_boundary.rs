@@ -398,13 +398,8 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
         "version": "0.1.0",
         "sourceRevision": commit('a'),
         "sourceState": "clean",
-        "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-        "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
         "capabilities": ["record"],
-        "artifacts": [{
-            "name": "report.json",
-            "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
-        }],
+        "artifacts": [{ "name": "report.json" }],
     });
 
     let payload = ok(&run(

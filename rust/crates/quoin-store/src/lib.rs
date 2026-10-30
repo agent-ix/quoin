@@ -7,8 +7,7 @@
 //! # Layout
 //!
 //! * [`json`] - the strict I-JSON reader and the two canonical writers.
-//! * [`digest`] - the sha256 helpers the measurement crates still call, and the
-//!   bounded no-follow file read (see that module for what remains and why).
+//! * [`bounded_read`] - the bounded, no-follow read of one regular file.
 //! * [`store`] - store paths, [`store::STORE_SCHEMA_VERSION`], and durable
 //!   atomic writes.
 //! * [`error`] - one error enum, one stable code per refusal.
@@ -41,16 +40,12 @@
 //!    precision beyond 2^53 is already lost in retained evidence.
 //! 7. **No Unicode normalization**, ever, on member names or string values.
 
-pub mod digest;
+pub mod bounded_read;
 pub mod error;
 pub mod json;
 pub mod store;
 
-pub use digest::{
-    DigestDomain, MAX_DIGESTED_FILE_BYTES, RawFileSha256Digest, RecordFileName, digest_bytes_sha256,
-    digest_file_sha256, digest_record_file_name, digest_record_pair_file_name,
-    read_regular_file_bounded,
-};
+pub use bounded_read::read_regular_file_bounded;
 pub use error::{StoreError, StoreErrorCode};
 pub use json::canonical::{canonical_bytes, canonicalize_jcs};
 pub use json::parse::{parse_strict_json, parse_strict_json_str};
