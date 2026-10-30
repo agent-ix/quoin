@@ -120,7 +120,7 @@ fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
 
     let json = invoke(&home, &["catalog", "list", "--json"]);
     assert!(json.status.success(), "stderr: {}", text(&json.stderr));
-    assert!(json.stderr.is_empty());
+    assert_eq!(json.stderr.len(), 0);
     let catalog: serde_json::Value =
         serde_json::from_slice(&json.stdout).expect("catalog JSON is emitted");
     let modules = catalog
@@ -134,8 +134,8 @@ fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
 
     let human = invoke(&home, &["catalog", "list"]);
     assert!(human.status.success(), "stderr: {}", text(&human.stderr));
-    assert!(human.stderr.is_empty());
-    assert!(human.stdout.is_empty());
+    assert_eq!(human.stderr.len(), 0);
+    assert_eq!(human.stdout.len(), 0);
 }
 
 /// The shipped command, rather than the retired protocol executable, discovers

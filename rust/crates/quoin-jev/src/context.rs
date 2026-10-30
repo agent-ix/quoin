@@ -493,7 +493,7 @@ mod tests {
         let text = "d".repeat(DEFAULT_MAX_PROSE_BYTES);
         let context = context(Some(text.clone()));
         let bounded = context.bound(&ContextPolicy::default());
-        assert!(bounded.bounds().is_empty());
+        assert_eq!(bounded.bounds().len(), 0);
         let value = state(&context, &ContextPolicy::default());
         assert_eq!(value["description"], Value::from(text));
         assert_eq!(value["statement"], "The system SHALL do a thing.");
@@ -651,7 +651,7 @@ mod tests {
         let text = "x".repeat(10_340);
         let context = context(Some(text.clone()));
         let policy = ContextPolicy::default().with_max_prose_bytes(usize::MAX);
-        assert!(context.bound(&policy).bounds().is_empty());
+        assert_eq!(context.bound(&policy).bounds().len(), 0);
         assert_eq!(state(&context, &policy)["description"], Value::from(text));
     }
 

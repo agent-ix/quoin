@@ -351,7 +351,7 @@ mod tests {
     #[test]
     fn a_one_clause_exclusion_is_dropped_rather_than_narrowing_a_dimension() {
         let space = parse_space("2-way over a(1|2) b(3|4) excluding[a=1]").unwrap();
-        assert!(space.exclusions().is_empty());
+        assert_eq!(space.exclusions().len(), 0);
     }
 
     #[test]

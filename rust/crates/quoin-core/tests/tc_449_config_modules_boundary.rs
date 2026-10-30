@@ -33,7 +33,7 @@ fn run(op: &str, request: &Value) -> Response {
 /// The payload of a run that must have succeeded outright.
 fn ok(result: Response) -> Value {
     assert_eq!(result.outcome, Outcome::Ok, "{:?}", result.diagnostics);
-    assert!(result.diagnostics.is_empty());
+    assert_eq!(result.diagnostics.len(), 0);
     result.payload
 }
 

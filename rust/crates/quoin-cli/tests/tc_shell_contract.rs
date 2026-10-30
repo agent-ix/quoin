@@ -29,7 +29,7 @@ fn text(bytes: &[u8]) -> String {
 fn tc_1650_root_help_is_a_successful_stdout_catalogue() {
     let output = invoke(&["--help"]);
     assert!(output.status.success(), "stderr: {}", text(&output.stderr));
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr.len(), 0);
     let stdout = text(&output.stdout);
     assert!(stdout.starts_with("Spec-driven development for Claude Code"));
     assert!(stdout.contains("VERSION\n  @agent-ix/quoin/"));
@@ -47,7 +47,7 @@ fn tc_1650_root_help_is_a_successful_stdout_catalogue() {
 fn tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue() {
     let output = invoke(&["not-a-command"]);
     assert_eq!(output.status.code(), Some(2));
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout.len(), 0);
     let stderr = text(&output.stderr);
     assert_eq!(
         stderr,
@@ -63,7 +63,7 @@ fn tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue() {
 fn tc_1650_nested_unknown_command_keeps_the_oclif_path_identity() {
     let output = invoke(&["catalog", "not-a-command", "--format", "json"]);
     assert_eq!(output.status.code(), Some(2));
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout.len(), 0);
     assert_eq!(
         text(&output.stderr),
         " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"

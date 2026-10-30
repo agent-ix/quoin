@@ -244,12 +244,12 @@ mod tests {
         // U+FEFF: JavaScript trims it, Rust keeps it. A naive port ACCEPTS an
         // owner the retained implementation refuses.
         assert!(js_trim_is_empty("\u{FEFF}"));
-        assert!(!"\u{FEFF}".trim().is_empty());
+        assert_ne!("\u{FEFF}".trim().len(), 0);
 
         // U+0085: JavaScript keeps it, Rust trims it. A naive port REFUSES an
         // owner the retained implementation accepts.
         assert!(!js_trim_is_empty("\u{0085}"));
-        assert!("\u{0085}".trim().is_empty());
+        assert_eq!("\u{0085}".trim().len(), 0);
 
         // Where they agree, they agree.
         assert!(js_trim_is_empty(" \t\n\u{00A0}\u{3000}"));

@@ -452,7 +452,7 @@ fn tc_379_117_a_document_outside_the_scope_is_refused() {
 #[test]
 fn tc_379_118_the_published_capabilities_reach_a_payload() {
     let provenance = engine::Provenance::current();
-    assert!(!provenance.capabilities.is_empty());
+    assert_ne!(provenance.capabilities.len(), 0);
     for token in ["binding_census", "assurance_export.v1", "clause_sets"] {
         assert!(
             provenance.capabilities.iter().any(|c| c == token),

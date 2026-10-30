@@ -359,7 +359,7 @@ fn tc_382_003_a_strength_above_u64_saturates_and_that_cannot_be_observed() {
         result.covered >= result.demanded,
         "MUST HAVE FIRED: with a zero demand the finding branch is unreachable, which is the proof"
     );
-    assert!(result.gaps.is_empty());
+    assert_eq!(result.gaps.len(), 0);
 }
 
 /// Declared non-divergence: JavaScript's inherited property names.

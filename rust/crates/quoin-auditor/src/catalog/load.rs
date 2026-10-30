@@ -281,7 +281,7 @@ verification_catalog:
         let source = MemoryModuleCatalogSource::new().with_module("/bad", "a: [1,\nb: 2\n");
         let catalog = load_method_catalog(&source);
         assert_eq!(catalog.unreadable.len(), 1);
-        assert!(catalog.methods.is_empty());
+        assert_eq!(catalog.methods.len(), 0);
     }
 
     #[test]
@@ -302,8 +302,8 @@ verification_catalog:
             .with_module("/plain", "name: plain\n")
             .with_module("/scalar", "just-a-string\n");
         let catalog = load_method_catalog(&source);
-        assert!(catalog.methods.is_empty());
-        assert!(catalog.unreadable.is_empty());
+        assert_eq!(catalog.methods.len(), 0);
+        assert_eq!(catalog.unreadable.len(), 0);
     }
 
     #[test]

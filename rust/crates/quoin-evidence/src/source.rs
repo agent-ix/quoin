@@ -448,8 +448,8 @@ mod tests {
     fn an_absent_store_path_reads_as_none_not_as_an_error() {
         let source = MemoryEvidence::new();
         assert_eq!(source.read("bindings.json").unwrap(), None);
-        assert!(source.list_files("runs/SUITE-1").unwrap().is_empty());
-        assert!(source.list_directories("runs").unwrap().is_empty());
+        assert_eq!(source.list_files("runs/SUITE-1").unwrap().len(), 0);
+        assert_eq!(source.list_directories("runs").unwrap().len(), 0);
     }
 
     #[test]

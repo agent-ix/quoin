@@ -120,7 +120,7 @@ mod tests {
         assert_eq!(response.outcome, Outcome::Ok);
         assert_eq!(response.payload["protocol_version"], 1);
         assert_eq!(response.payload["echo"], serde_json::Value::Null);
-        assert!(response.diagnostics.is_empty());
+        assert_eq!(response.diagnostics.len(), 0);
     }
 
     #[test]

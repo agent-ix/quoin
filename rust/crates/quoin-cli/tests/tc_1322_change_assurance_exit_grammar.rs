@@ -162,7 +162,7 @@ fn tc_1322_an_edited_receipt_exits_two_on_both_refusal_paths() {
         "stderr: {}",
         text(&precedence.stderr)
     );
-    assert!(precedence.stdout.is_empty());
+    assert_eq!(precedence.stdout.len(), 0);
     assert!(text(&precedence.stderr).contains("outcome disagrees with reason precedence"));
 
     let mut seal = receipt();
@@ -174,7 +174,7 @@ fn tc_1322_an_edited_receipt_exits_two_on_both_refusal_paths() {
         "stderr: {}",
         text(&seal.stderr)
     );
-    assert!(seal.stdout.is_empty());
+    assert_eq!(seal.stdout.len(), 0);
     assert!(text(&seal.stderr).contains("digest mismatch"));
 }
 

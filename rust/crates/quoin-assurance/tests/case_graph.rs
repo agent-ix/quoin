@@ -264,7 +264,7 @@ fn tc_447_406_a_refinement_cycle_terminates_without_dropping_a_shared_child() {
     let claim = &result.claims[0];
     assert_eq!(claim.children[0].id, "FR-001");
     assert_eq!(claim.children[0].children[0].id, "FR-002");
-    assert!(claim.children[0].children[0].children.is_empty());
+    assert_eq!(claim.children[0].children[0].children.len(), 0);
 }
 
 /// Trace: FR-040-AC-6
@@ -280,7 +280,7 @@ fn tc_447_407_the_claim_type_comes_from_the_caller_and_never_from_a_constant() {
     ];
 
     let with_default = build_case(&input(documents.clone(), vec![], vec![]));
-    assert!(with_default.claims.is_empty());
+    assert_eq!(with_default.claims.len(), 0);
 
     let mut hazard = input(documents, vec![], vec![]);
     hazard.claim_types = Some(vec!["hazard".to_owned()]);
@@ -291,7 +291,7 @@ fn tc_447_407_the_claim_type_comes_from_the_caller_and_never_from_a_constant() {
     // `mitigates` is a downward edge like `traces_to`: the hazard bundle's own
     // vocabulary reaches the requirement, rather than the requirement being
     // reported unreachable under a claim that names it.
-    assert!(with_hazard.unreachable.is_empty());
+    assert_eq!(with_hazard.unreachable.len(), 0);
 }
 
 /// Trace: FR-040-AC-13
@@ -309,7 +309,7 @@ fn tc_447_408_the_machine_readable_reason_is_present_exactly_when_nothing_is_a_c
     searched.claim_types = Some(vec!["hazard".to_owned()]);
     let empty = build_case(&searched);
 
-    assert!(empty.claims.is_empty());
+    assert_eq!(empty.claims.len(), 0);
     // The whole sentence, including the SEARCHED types as the caller spelled
     // them: the reader of the JSON needs to see that `hazard` argued nothing.
     assert_eq!(

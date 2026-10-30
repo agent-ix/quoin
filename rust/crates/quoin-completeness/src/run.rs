@@ -185,7 +185,7 @@ mod tests {
             module_roots: Vec::new(),
         });
         assert_eq!(assessment.verdict, Verdict::Unchecked);
-        assert!(assessment.vocabularies.is_empty());
+        assert_eq!(assessment.vocabularies.len(), 0);
     }
 
     /// Trace: FR-037
@@ -196,7 +196,7 @@ mod tests {
             strict: false,
             module_roots: Vec::new(),
         });
-        assert!(assessment.unreadable.is_empty());
+        assert_eq!(assessment.unreadable.len(), 0);
         assert_eq!(assessment.verdict, Verdict::Unchecked);
     }
 

@@ -61,7 +61,7 @@ fn the_labels_say_they_are_agent_labelled() {
             "no stated labelling rule for {question}"
         );
     }
-    assert!(!file.unit.is_empty());
+    assert_ne!(file.unit.len(), 0);
 }
 
 /// Provenance: PLAT-1014. A label the lens could never emit makes every
