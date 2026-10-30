@@ -37,6 +37,8 @@ Remedies whose failure fixture reports the family, repaired control does not, an
 
 The exact failure/control identities and producer stack are retained in review evidence and measurement v2.
 
+BLOCKED-BY QSL-1276 (owner: planner titan:QSL:plan): Quire export locator statement_hash. The retained `sha256:` finding ids, `statement_hash` members and guidance `recordId`/`selectedRecordIds` in these records are minted by the Quire export; they are removed with QSL-1276, not here.
+
 ## Interpretation
 
 The proof establishes the banked repair, not every possible user edit.

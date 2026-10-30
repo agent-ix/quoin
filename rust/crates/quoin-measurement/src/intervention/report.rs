@@ -242,8 +242,8 @@ pub fn render_intervention_report(entries: &[InterventionReportEntry]) -> String
         }
         lines.extend(entry.evidence.raw_evidence.iter().map(|raw| {
             format!(
-                "- {} — {}; {} bytes; {}",
-                raw.path, raw.digest, raw.size_bytes, raw.media_type
+                "- {} — {} bytes; {}",
+                raw.path, raw.size_bytes, raw.media_type
             )
         }));
         lines.push(String::new());

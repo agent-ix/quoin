@@ -315,7 +315,7 @@ fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_
     }
 }
 
-/// The observation timestamp and raw-evidence media type, byte size, and digest
+/// The observation timestamp and raw-evidence media type and byte size
 /// are computed from the exact unmodified reports; caller-supplied substitutes
 /// cannot change them.
 ///
@@ -343,7 +343,6 @@ fn tc_479_252_caller_supplied_substitutes_do_not_reach_the_record() {
         "path": "agent-evals/quoin-270-sentinel-baseline.json",
         "media_type": "text/plain",
         "size_bytes": 1,
-        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     }]);
 
     let produced = produce(repo, &value).expect("the substitutes are ignored, not refused");
@@ -365,13 +364,11 @@ fn tc_479_252_caller_supplied_substitutes_do_not_reach_the_record() {
                 "path": "agent-evals/quoin-270-sentinel-baseline.json",
                 "media_type": "application/json",
                 "size_bytes": 11305,
-                "digest": "sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076",
             },
             {
                 "path": "agent-evals/quoin-270-sentinel-treatment.json",
                 "media_type": "application/json",
                 "size_bytes": 14261,
-                "digest": "sha256:baade4ab1c2e8f3447b4c585c95634884cb2ed1c69a9cf8819d0b495c7f77963",
             },
         ]),
         "the raw-evidence metadata is the retained files', not the caller's"

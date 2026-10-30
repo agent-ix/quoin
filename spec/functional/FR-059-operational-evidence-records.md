@@ -52,7 +52,6 @@ or aggregate one record's strength against another's.
     "producer",
     "strength",
     "scope",
-    "configuration",
     "owner",
     "gaps",
     "actions",
@@ -80,20 +79,14 @@ or aggregate one record's strength against another's.
         "appeal",
         "abstention",
         "safe_fallback",
-        "policy_pin",
-        "prompt_pin",
-        "model_pin",
-        "tool_pin",
-        "data_pin",
         "reporting"
       ]
     },
     "subject": {
       "type": "object",
-      "required": ["id", "revision"],
+      "required": ["id"],
       "properties": {
-        "id": { "$ref": "#/$defs/identity" },
-        "revision": { "type": "string", "minLength": 1 }
+        "id": { "$ref": "#/$defs/identity" }
       },
       "additionalProperties": false
     },
@@ -103,7 +96,6 @@ or aggregate one record's strength against another's.
         "tool_identity",
         "tool_version",
         "configuration_ref",
-        "source_revision",
         "environment",
         "definition_version"
       ],
@@ -111,7 +103,6 @@ or aggregate one record's strength against another's.
         "tool_identity": { "type": "string", "minLength": 1 },
         "tool_version": { "$ref": "#/$defs/immutable_version" },
         "configuration_ref": { "type": "string", "minLength": 1 },
-        "source_revision": { "type": "string", "minLength": 1 },
         "environment": {
           "type": "object",
           "minProperties": 1,
@@ -138,29 +129,6 @@ or aggregate one record's strength against another's.
         "service": { "$ref": "#/$defs/identity" },
         "environment": { "type": "string", "minLength": 1 },
         "population": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": false
-    },
-    "configuration": {
-      "type": "object",
-      "required": ["version_pins"],
-      "properties": {
-        "version_pins": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["kind", "identity", "revision"],
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["policy", "prompt", "model", "tool", "data"]
-              },
-              "identity": { "$ref": "#/$defs/identity" },
-              "revision": { "type": "string", "minLength": 1 }
-            },
-            "additionalProperties": false
-          }
-        }
       },
       "additionalProperties": false
     },
@@ -329,34 +297,6 @@ or aggregate one record's strength against another's.
           }
         }
       ]
-    },
-    {
-      "if": {
-        "type": "object",
-        "properties": {
-          "control_kind": {
-            "enum": [
-              "policy_pin",
-              "prompt_pin",
-              "model_pin",
-              "tool_pin",
-              "data_pin"
-            ]
-          }
-        },
-        "required": ["control_kind"]
-      },
-      "then": {
-        "properties": {
-          "configuration": {
-            "type": "object",
-            "properties": {
-              "version_pins": { "type": "array", "minItems": 1 }
-            },
-            "required": ["version_pins"]
-          }
-        }
-      }
     }
   ],
   "$defs": {
@@ -425,8 +365,6 @@ or aggregate one record's strength against another's.
   completion and an `observed_at` no later than the deadline. A declared gap
   SHALL NOT override the status deterministically derived from these timestamps.
 - A `not_applicable` clock SHALL carry no start, deadline, or completion timestamp.
-- Each `(kind, identity)` version reference SHALL be unique. For a pin control, at least
-  one version reference kind SHALL match the `control_kind` prefix.
 - When `capability_record_id` is present, it SHALL resolve to a standing-capability
   record with the same control id, control kind, subject, and deployed scope.
 - Every raw-evidence path SHALL be a normalized relative path within the evidence
@@ -439,12 +377,12 @@ or aggregate one record's strength against another's.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-059-AC-1 | The envelope requires version, record and subject identities, observation timestamp, deployed scope, shape, control kind, governance fields, raw evidence, and every unchanged FR-044 producer-tuple field. | Test (TC-1223) |
-| FR-059-AC-2 | The control vocabulary admits releases, flags, canary and shadow deployment, rollback and kill, override and appeal, abstention and fallback, reporting, and policy, prompt, model, tool, and data pinning. | Test (TC-1224) |
+| FR-059-AC-2 | The control vocabulary admits releases, flags, canary and shadow deployment, rollback and kill, override and appeal, abstention and fallback, reporting. | Test (TC-1224) |
 | FR-059-AC-3 | A standing-capability record requires its control surface, availability state, authorized roles, coverage, limitations, supported transitions, and an explicit clock-support choice; supported clocks require start event, completion event, and positive deadline, while unsupported clocks exclude them. | Test (TC-1225) |
 | FR-059-AC-4 | An exercise record requires actual-or-drill mode, ordered start and completion timestamps, actor, trigger, outcome, before/after state, at least one observation, and clock applicability. | Test (TC-1226) |
 | FR-059-AC-5 | Exactly one shape payload is present: standing capability excludes exercise data, and exercise excludes capability data. | Test (TC-1227) |
 | FR-059-AC-6 | An `operational_with_clock` exercise requires ordered start and deadline timestamps and a status consistent with completion and immutable observation time; a not-applicable clock requires `not_applicable` status and no clock timestamps. | Test (TC-1228) |
-| FR-059-AC-7 | Each policy, prompt, model, tool, or data version record carries at least one matching typed identity and revision, with no duplicate kind/identity key. | Test (TC-1229) |
+| FR-059-AC-7 | Withdrawn: a version pin recorded a typed `(kind, identity, revision)` and required a matching pin for each `*_pin` control. A recorded revision is a pin; the pins, the `*_pin` control kinds and the `configuration` member are removed with their duplicate and kind-match checks, with no replacement contract (id not reused). | Withdrawn |
 | FR-059-AC-8 | Succeeded, failed, partial, and aborted exercises all validate as retained outcomes. | Test (TC-1230) |
 | FR-059-AC-9 | Gaps, owner, actions, and at least one safe raw-evidence reference with media type and byte size are retained; invalid capability links and undeclared fields are refused. | Test (TC-1231) |
 | FR-059-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `observed` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test (TC-1883) |

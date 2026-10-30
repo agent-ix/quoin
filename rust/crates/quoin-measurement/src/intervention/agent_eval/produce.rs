@@ -167,11 +167,6 @@ fn validate_definition(
         &definition.cli_agent_evals_version,
         "cli_agent_evals_version",
     )?;
-    ImmutableVersion::parse(definition.subject.revision.as_str(), "subject.revision")?;
-    ImmutableVersion::parse(
-        definition.producer.source_revision.as_str(),
-        "producer.source_revision",
-    )?;
     let baseline = definition.baseline_evidence_path.as_str();
     let treatment = definition.treatment_evidence_path.as_str();
     if baseline.is_empty() || treatment.is_empty() || baseline == treatment {

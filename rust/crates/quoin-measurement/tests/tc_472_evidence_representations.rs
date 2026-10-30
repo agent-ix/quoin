@@ -6,8 +6,8 @@
 //!
 //! A pointer at a retained evidence file is one concept at two trust levels:
 //! **as recorded** — read by serde off a stored record, unchecked — and **as
-//! verified** — minted from a path that passed the lexical guards and a digest
-//! `quoin_store` took itself. Both are needed, because intake's whole job is
+//! verified** — minted from a path that passed the lexical guards and a file
+//! that exists. Both are needed, because intake's whole job is
 //! comparing the first against the second.
 //!
 //! A third is not. quoin#468 landed one anyway (`RawEvidenceClaim`, bare
@@ -20,8 +20,8 @@
 //!
 //! "Do not add a third" enforced by review is enforced only when someone is
 //! looking. So the crate's own `src/` tree is read here: every `struct`
-//! declaring all four members a retained-evidence pointer carries — a path, a
-//! media type, a size in bytes and a digest — is found by name, and the set
+//! declaring all the members a retained-evidence pointer carries — a path, a
+//! media type, and a size in bytes — is found by name, and the set
 //! must be exactly the two below.
 //!
 //! # The anti-vacuity floor
@@ -46,25 +46,16 @@ const REPRESENTATIONS: [&str; 2] = ["RawEvidenceReference", "RecordedEvidenceRef
 /// The members that together make a declaration a retained-evidence pointer.
 ///
 /// quoin#471 landed a second census over the same concept and matched on these
-/// two rather than on all four of `path`, `media_type`, `size_bytes` and
-/// `digest`. Two is the stronger net and it is the one kept: a future type
-/// that pointed at a retained file with only a path and a digest would slip
-/// through a four-member match, and pointing at a retained file is exactly
-/// what this census exists to count. It still excludes the near miss the
-/// four-member spelling was written to exclude — `RawEvidenceFile` carries a
-/// size and a digest but no path, and is a *file*, not a reference to one.
+/// two rather than on all three of `path`, `media_type` and `size_bytes`. Two
+/// is the stronger net and it is the one kept: pointing at a retained file is
+/// exactly what this census exists to count. It still excludes the near miss
+/// — `RawEvidenceFile` carries a size but no path, and is a *file*, not a
+/// reference to one.
 ///
 /// # These are member *names*, not substrings (quoin#473)
 ///
-/// As landed, the census asked whether the declaration body contained the text
-/// `"digest:"`, which every `config_digest:` member also contains. Wave 6
-/// tripped it with six measurement-collection references — a collection is
-/// identified by its file path and the digest of the *configuration* that
-/// produced it, and is not a retained evidence file. The match is on the
-/// parsed member name now, which is a stricter net and not a looser one: a
-/// type declaring `digest` still matches, and one declaring only
-/// `config_digest` no longer pretends to.
-const MEMBERS: [&str; 2] = ["path", "digest"];
+/// The match is on the parsed member name, not a substring of the body.
+const MEMBERS: [&str; 2] = ["path", "size_bytes"];
 
 /// The count below which this census is not reading the crate at all.
 const SOURCE_FLOOR: usize = 20;

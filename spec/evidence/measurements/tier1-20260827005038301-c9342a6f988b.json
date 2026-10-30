@@ -3,8 +3,7 @@
   "corpusRevision": "c5adeccb1a4b1bd09cbb1a0f6970fae5f011dbbc",
   "environment": {
     "languages": "n/a,python,rust,typescript",
-    "runner": "tier-1",
-    "scorerDigest": "sha256:947c9573a8e816419ea581f7d3c379deb71aabc4895123f18a0bdcffca1f1eef"
+    "runner": "tier-1"
   },
   "observations": [
     {
@@ -5901,17 +5900,7 @@
     "positional": 46,
     "provenance": {
       "corpus": "c5adeccb1a4b1bd09cbb1a0f6970fae5f011dbbc",
-      "corpus_input": "sha256:2e5b799af473bcb74614c8013b86e7de9e40f794882429168bcc4dcc4edeaecb",
       "declaration": {
-        "digest": "sha256:fba2468b01d6b4c5ce5e580195ace46d8322923436d5cfecb5a72a6186bd6a84",
-        "modules": {
-          "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
-          "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
-          "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-          "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
-          "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-          "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf"
-        },
         "root": "corpus/modules",
         "sources": {
           "spec-artifacts-iso": "3d871962b66db99a1854f40466e94ebabc7a6115",

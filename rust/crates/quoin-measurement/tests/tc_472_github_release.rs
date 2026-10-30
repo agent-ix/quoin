@@ -47,7 +47,8 @@ use quoin_measurement::source::SystemClock;
 const RETAINED_WORKFLOW_EXPORTS: usize = 1;
 
 /// The pair the retained TypeScript produced from the retained exports.
-const RETAINED_PAIR: &str = "c1b30a188d4d03bbe316e0fdb7582eff3fa314c55268a5f71f81f99f8ea2acf8.json";
+const RETAINED_PAIR: &str =
+    "quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json";
 
 /// The definition that produced it.
 const DEFINITION: &str = "github-actions/quoin-271-release-v0.22.5-definition.json";
@@ -182,7 +183,7 @@ fn tc_472_the_producer_rebuilds_the_committed_pair_byte_for_byte() {
     assert_eq!(
         produced.path.file_name().and_then(|name| name.to_str()),
         Some(RETAINED_PAIR),
-        "the pair is named by the digest of the two record identities, and the name moved"
+        "the pair is named by the two record identities, and the name moved"
     );
     let written = std::fs::read(&produced.path).expect("the produced pair is readable");
     assert_eq!(

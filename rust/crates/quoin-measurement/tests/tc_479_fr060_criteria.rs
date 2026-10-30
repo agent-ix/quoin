@@ -74,7 +74,8 @@ use quoin_store::StoreError;
 use quoin_store::store::write_content_addressed;
 
 /// The one pair `spec/evidence/operational/pairs/` retains.
-const RETAINED_PAIR: &str = "c1b30a188d4d03bbe316e0fdb7582eff3fa314c55268a5f71f81f99f8ea2acf8.json";
+const RETAINED_PAIR: &str =
+    "quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json";
 
 /// A retained measurement collection, for the no-migration criterion.
 const RETAINED_COLLECTION: &str = "tier1-20260829134513176-99c26bc4589f.json";
@@ -82,20 +83,11 @@ const RETAINED_COLLECTION: &str = "tier1-20260829134513176-99c26bc4589f.json";
 /// A retained intervention record, for the no-migration criterion.
 const RETAINED_INTERVENTION: &str = "quoin-270-cli-eval-sentinel-contract.json";
 
-/// The three retained exports both records reference, with their digests.
-const RETAINED_DIGESTS: [(&str, &str); 3] = [
-    (
-        "github-actions/quoin-271-release-v0.22.5-workflow.yml",
-        "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
-    ),
-    (
-        "github-actions/quoin-271-release-v0.22.5-run.json",
-        "sha256:a3a3eea43f6f17fc9851a50aa6853aa1d67a77ad91c6b4ddc1922aa03c4acaaf",
-    ),
-    (
-        "github-actions/quoin-271-release-v0.22.5-jobs.json",
-        "sha256:adb0e51b5212d9ff4f01238a26040f8ea893c75f6bc02cfbc4b7d98552182e92",
-    ),
+/// The three retained exports both records reference.
+const RETAINED_PATHS: [&str; 3] = [
+    "github-actions/quoin-271-release-v0.22.5-workflow.yml",
+    "github-actions/quoin-271-release-v0.22.5-run.json",
+    "github-actions/quoin-271-release-v0.22.5-jobs.json",
 ];
 
 /// A temporary repository carrying the committed governance and raw evidence.
@@ -186,8 +178,7 @@ fn obligation() -> Value {
     json!({
         "control_kind": "release",
         "subject": {
-            "id": "agent-ix/quoin",
-            "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
+            "id": "agent-ix/quoin"
         },
         "scope": {
             "service": "agent-ix/quoin",
@@ -281,7 +272,7 @@ fn tc_479_400_valid_intake_publishes_one_complete_canonical_record() {
 }
 
 /// Invalid schema, cross-record, or temporal input returns `invalid_record`;
-/// unsafe, missing, wrong-sized, or digest-mismatched raw evidence returns
+/// unsafe, missing, or wrong-sized raw evidence returns
 /// `raw_evidence_mismatch`; both identify every mismatch and write nothing.
 ///
 /// Trace: FR-060-AC-2
@@ -332,12 +323,6 @@ fn intake_refusal_cases() -> Vec<(&'static str, Value, InterventionRefusalCode, 
             "/control_kind",
         ),
         (
-            "a pin control kind with no matching pin",
-            patch(&capability, "/control_kind", json!("model_pin")),
-            InvalidRecord,
-            "/configuration/version_pins: model_pin requires a matching pin kind",
-        ),
-        (
             "an unsupported clock still carrying its bounds",
             patch(
                 &capability,
@@ -374,16 +359,6 @@ fn intake_refusal_cases() -> Vec<(&'static str, Value, InterventionRefusalCode, 
             exercise.clone(),
             InvalidRecord,
             "/exercise/capability_record_id: linked capability does not match",
-        ),
-        (
-            "a raw-evidence digest that is not the file's",
-            patch(
-                &capability,
-                "/raw_evidence/0/digest",
-                json!("sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
-            ),
-            RawEvidenceMismatch,
-            "/raw_evidence/0/digest: expected",
         ),
         (
             "a raw-evidence size that is not the file's",
@@ -596,7 +571,7 @@ fn tc_479_404_one_logical_id_cannot_be_retained_twice_and_a_stale_lock_fails_clo
 }
 
 /// Standing capabilities and succeeded, failed, partial, and aborted exercises
-/// remain independently queryable with their raw-evidence digests.
+/// remain independently queryable with their raw-evidence references.
 ///
 /// Trace: FR-060-AC-6
 /// Provenance: quoin#479
@@ -628,17 +603,17 @@ fn tc_479_405_capabilities_and_every_exercise_outcome_stay_queryable() {
         "every record must remain independently queryable"
     );
     for record in &records {
-        let claimed: Vec<(&str, &str)> = record
+        let claimed: Vec<&str> = record
             .record()
             .base()
             .raw_evidence
             .iter()
-            .map(|item| (item.path.as_str(), item.digest.as_str()))
+            .map(|item| item.path.as_str())
             .collect();
         assert_eq!(
             claimed,
-            RETAINED_DIGESTS.to_vec(),
-            "{} lost its raw-evidence digests",
+            RETAINED_PATHS.to_vec(),
+            "{} lost its raw-evidence references",
             record.record_id()
         );
     }

@@ -46,8 +46,7 @@ render the record under claims, evidence, counterevidence, gaps, owner, and acti
 - If schema or cross-record integrity validation fails, then Quoin SHALL refuse the
   record with stable reason code `invalid_record` plus every failing JSON path and
   reason.
-- If a raw-evidence path is unsafe, absent, has a different byte size, or has a
-  different content digest, then Quoin SHALL refuse the record with stable reason
+- If a raw-evidence path is unsafe, absent, or has a different byte size, then Quoin SHALL refuse the record with stable reason
   code `raw_evidence_mismatch`, identify the path and mismatch, and write no record.
 - If the governing plan is absent, then Quoin SHALL refuse the record by naming
   the requested definition and stable reason code `governing_plan_absent`.
@@ -84,12 +83,12 @@ render the record under claims, evidence, counterevidence, gaps, owner, and acti
 | FR-057-AC-3 | An absent governing plan returns `governing_plan_absent`; a mismatch returns `definition_mismatch`; both write nothing and name the requested, expected, and observed definitions that apply. | Test (TC-1206) |
 | FR-057-AC-4 | Repeating an identical record id and canonical payload is byte-idempotent. | Test (TC-1207) |
 | FR-057-AC-5 | Reusing a record id for different semantic bytes returns `record_id_collision` without replacing the retained entry. | Test (TC-1208) |
-| FR-057-AC-6 | Completed, failed, inconclusive, and `cause_not_established` records remain independently queryable with their raw-evidence digests. | Test (TC-1209) |
+| FR-057-AC-6 | Completed, failed, inconclusive, and `cause_not_established` records remain independently queryable with their raw-evidence references. | Test (TC-1209) |
 | FR-057-AC-7 | The report renders conclusion statements as claims and measured effects plus raw references as evidence. | Test (TC-1210) |
 | FR-057-AC-8 | Uncontrolled or unknown interactions and confounders render as counterevidence; declared gaps render separately beside owner and actions. | Test (TC-1211) |
 | FR-057-AC-9 | Neither human nor JSON output contains an aggregate trust, confidence, or quality score derived from experiment records. | Test (TC-1212) |
 | FR-057-AC-10 | Re-rendering an unchanged store is byte-identical, and human and JSON views expose the same claims, evidence, counterevidence, gaps, owners, and actions. | Test (TC-1213) |
-| FR-057-AC-11 | Unsafe, missing, wrong-sized, or digest-mismatched raw evidence returns `raw_evidence_mismatch`, identifies each mismatch, and writes no record. | Test (TC-1216) |
+| FR-057-AC-11 | Unsafe, missing, or wrong-sized raw evidence returns `raw_evidence_mismatch`, identifies each mismatch, and writes no record. | Test (TC-1216) |
 
 ## Constraints
 

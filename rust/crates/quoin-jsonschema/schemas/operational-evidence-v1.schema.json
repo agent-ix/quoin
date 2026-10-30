@@ -14,7 +14,6 @@
     "producer",
     "strength",
     "scope",
-    "configuration",
     "owner",
     "gaps",
     "actions",
@@ -42,20 +41,14 @@
         "appeal",
         "abstention",
         "safe_fallback",
-        "policy_pin",
-        "prompt_pin",
-        "model_pin",
-        "tool_pin",
-        "data_pin",
         "reporting"
       ]
     },
     "subject": {
       "type": "object",
-      "required": ["id", "revision"],
+      "required": ["id"],
       "properties": {
-        "id": { "$ref": "#/$defs/identity" },
-        "revision": { "type": "string", "minLength": 1 }
+        "id": { "$ref": "#/$defs/identity" }
       },
       "additionalProperties": false
     },
@@ -64,16 +57,14 @@
       "required": [
         "tool_identity",
         "tool_version",
-        "configuration_digest",
-        "source_revision",
+        "configuration_ref",
         "environment",
         "definition_version"
       ],
       "properties": {
         "tool_identity": { "type": "string", "minLength": 1 },
         "tool_version": { "$ref": "#/$defs/immutable_version" },
-        "configuration_digest": { "$ref": "#/$defs/digest" },
-        "source_revision": { "type": "string", "minLength": 1 },
+        "configuration_ref": { "type": "string", "minLength": 1 },
         "environment": {
           "type": "object",
           "minProperties": 1,
@@ -100,30 +91,6 @@
         "service": { "$ref": "#/$defs/identity" },
         "environment": { "type": "string", "minLength": 1 },
         "population": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": false
-    },
-    "configuration": {
-      "type": "object",
-      "required": ["version_pins"],
-      "properties": {
-        "version_pins": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["kind", "identity", "revision", "digest"],
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["policy", "prompt", "model", "tool", "data"]
-              },
-              "identity": { "$ref": "#/$defs/identity" },
-              "revision": { "type": "string", "minLength": 1 },
-              "digest": { "$ref": "#/$defs/digest" }
-            },
-            "additionalProperties": false
-          }
-        }
       },
       "additionalProperties": false
     },
@@ -252,12 +219,11 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["path", "media_type", "size_bytes", "digest"],
+        "required": ["path", "media_type", "size_bytes"],
         "properties": {
           "path": { "type": "string", "minLength": 1 },
           "media_type": { "type": "string", "minLength": 1 },
-          "size_bytes": { "type": "integer", "minimum": 0 },
-          "digest": { "$ref": "#/$defs/raw_digest" }
+          "size_bytes": { "type": "integer", "minimum": 0 }
         },
         "additionalProperties": false
       }
@@ -293,34 +259,6 @@
           }
         }
       ]
-    },
-    {
-      "if": {
-        "type": "object",
-        "properties": {
-          "control_kind": {
-            "enum": [
-              "policy_pin",
-              "prompt_pin",
-              "model_pin",
-              "tool_pin",
-              "data_pin"
-            ]
-          }
-        },
-        "required": ["control_kind"]
-      },
-      "then": {
-        "properties": {
-          "configuration": {
-            "type": "object",
-            "properties": {
-              "version_pins": { "type": "array", "minItems": 1 }
-            },
-            "required": ["version_pins"]
-          }
-        }
-      }
     }
   ],
   "$defs": {
@@ -328,17 +266,9 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
     },
-    "digest": {
-      "type": "string",
-      "pattern": "^(sha256|blake3):[a-f0-9]{64}$"
-    },
-    "raw_digest": {
-      "type": "string",
-      "pattern": "^sha256:[a-f0-9]{64}$"
-    },
     "immutable_version": {
       "type": "string",
-      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|(sha256|blake3):[a-f0-9]{64})$"
+      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40})$"
     },
     "clock": {
       "type": "object",

@@ -19,7 +19,7 @@
 //! the caller's `unknown` and returns nothing, so every caller keeps handling
 //! the loosely-typed object it passed in. Here it returns an
 //! [`InterventionExperimentRecord`], the way
-//! `quoin_store::RawFileSha256Digest::parse_stored` returns the digest. What is
+//! a parse constructor returns its value. What is
 //! refused is the same; what a caller holds afterwards is not.
 //!
 //! # The schema is compiled once

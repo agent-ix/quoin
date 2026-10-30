@@ -53,14 +53,13 @@ pub enum MeasurementErrorCode {
     DefinitionMismatch,
     /// A raw-evidence reference's path is not a safe store-relative path.
     RawEvidencePathUnsafe,
-    /// A raw-evidence reference's size or digest disagreed with the file.
+    /// A raw-evidence reference's size disagreed with the file.
     RawEvidenceMismatch,
     /// This source has no bytes for the named retained file.
     ///
     /// Raised by [`crate::source::MemoryMeasurement`] for a path it was never
     /// given. It is deliberately *not* raised merely because the host is
-    /// in-memory: since quoin#484 `quoin-store` exposes a bytes-wise sha256,
-    /// so an in-memory host digests what it holds instead of declining to.
+    /// in-memory.
     RawEvidenceUnavailable,
     /// A value was not a date-time this crate's RFC 3339 grammar accepts.
     DateTimeInvalid,
@@ -346,11 +345,11 @@ mod tests {
         let error = MeasurementError::with_findings(
             MeasurementErrorCode::RawEvidenceMismatch,
             "records",
-            vec!["/raw_evidence/0/digest: expected a, observed b".to_owned()],
+            vec!["/raw_evidence/0/size_bytes: expected 1, observed 2".to_owned()],
         );
         assert_eq!(
             error.to_string(),
-            "QM-RAW-EVIDENCE-MISMATCH: records: /raw_evidence/0/digest: expected a, observed b"
+            "QM-RAW-EVIDENCE-MISMATCH: records: /raw_evidence/0/size_bytes: expected 1, observed 2"
         );
     }
 }

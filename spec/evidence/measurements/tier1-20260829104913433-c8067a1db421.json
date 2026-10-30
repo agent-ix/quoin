@@ -3,8 +3,7 @@
   "corpusRevision": "ff2bd8e692d8104d73dc546736c66194caed772a",
   "environment": {
     "languages": "n/a,python,rust,typescript",
-    "runner": "tier-1",
-    "scorerDigest": "sha256:650c4f1d153bdf1002473c31df62f9ead79f6f11467764345891da865fdf8756"
+    "runner": "tier-1"
   },
   "observations": [
     {
@@ -3672,8 +3671,6 @@
         "complete": true,
         "examined": 67,
         "identity": {
-          "contractDigest": "sha256:14b28633c9e573dbb0b778b62a05770e03a988bb570dec6a2df7d009400a216c",
-          "evidenceDigest": "sha256:beaa3ae43ff8900f683afbc1362057b00645c910a79e0babdb30216a42cf5671",
           "namedMisses": []
         },
         "matched": 67
@@ -3691,8 +3688,6 @@
         "complete": true,
         "examined": 33,
         "identity": {
-          "contractDigest": "sha256:14b28633c9e573dbb0b778b62a05770e03a988bb570dec6a2df7d009400a216c",
-          "evidenceDigest": "sha256:beaa3ae43ff8900f683afbc1362057b00645c910a79e0babdb30216a42cf5671",
           "namedMisses": []
         },
         "matched": 33
@@ -3710,8 +3705,6 @@
         "complete": true,
         "examined": 34,
         "identity": {
-          "contractDigest": "sha256:14b28633c9e573dbb0b778b62a05770e03a988bb570dec6a2df7d009400a216c",
-          "evidenceDigest": "sha256:beaa3ae43ff8900f683afbc1362057b00645c910a79e0babdb30216a42cf5671",
           "namedMisses": []
         },
         "matched": 34
@@ -12979,24 +12972,11 @@
       "metric_version": "finding.precision.advisory-v1",
       "population": {
         "count": 108,
-        "digest": "sha256:dd9533344090240acb0b0ea1aa80b04a37a599040a5f584425bb74696fc2ac2c",
         "selection": "Every finding in a source-report advisory family not governed by a compatible per-case, scoped, or standing ruling.",
         "source": {
           "provenance": {
             "corpus": "c359c1a2030a8c39579c9be2661775f728c9dff4",
-            "corpus_input": "sha256:5cd185bde9333ce3789fbfd4c09d4028d0dab6dd6cb1aab939f00659fc539291",
             "declaration": {
-              "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
-              "modules": {
-                "ecosystem": "sha256:1e4ac802a01f9923033e1f63ecdf5c48e0f8ba477cbe168914230f03630dff97",
-                "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
-                "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-                "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
-                "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-                "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
-                "variants/optional-target-section": "sha256:1a801dd51c8af35c159216eeeb166fd4d602c4e9a64c8ff13a77067c0cd5b20f",
-                "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
-              },
               "root": "corpus/modules",
               "sources": {
                 "spec-artifacts-iso": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217",
@@ -13005,7 +12985,6 @@
             },
             "engine": "quire 0.30.2 (engine 9126463)"
           },
-          "report_digest": "sha256:a4799ec9a20ab526b03daf9140ed2d5668f107ac6ba9972252882de7ab56dcca",
           "revision": "73b0d5d"
         }
       },
@@ -43480,7 +43459,6 @@
       }
     },
     "guidance_quality": {
-      "contractDigest": "sha256:14b28633c9e573dbb0b778b62a05770e03a988bb570dec6a2df7d009400a216c",
       "correctness": {
         "definitionVersion": "guidance.correctness-v1",
         "denominator": 67,
@@ -43495,7 +43473,6 @@
         "numerator": 34,
         "rate": 1
       },
-      "evidenceDigest": "sha256:beaa3ae43ff8900f683afbc1362057b00645c910a79e0babdb30216a42cf5671",
       "repairSuccess": {
         "definitionVersion": "guidance.repair-success-v1",
         "denominator": 33,
@@ -56165,19 +56142,7 @@
     ],
     "provenance": {
       "corpus": "ff2bd8e692d8104d73dc546736c66194caed772a",
-      "corpus_input": "sha256:00f0e4762776009508ef57f13b1e0738aff31cf6002a8fdbc5806046a9a63193",
       "declaration": {
-        "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
-        "modules": {
-          "ecosystem": "sha256:1e4ac802a01f9923033e1f63ecdf5c48e0f8ba477cbe168914230f03630dff97",
-          "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
-          "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-          "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
-          "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-          "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
-          "variants/optional-target-section": "sha256:1a801dd51c8af35c159216eeeb166fd4d602c4e9a64c8ff13a77067c0cd5b20f",
-          "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
-        },
         "root": "corpus/modules",
         "sources": {
           "spec-artifacts-iso": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217",
