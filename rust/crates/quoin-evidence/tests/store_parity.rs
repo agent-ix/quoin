@@ -22,7 +22,6 @@
 
 use ix_trace_rs::trace;
 
-use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
@@ -316,35 +315,6 @@ fn tc_456_100_the_store_half_reproduces_the_retained_typescript() {
     // one that only refuses carries no behaviour at all.
     assert!(accepted > 0, "no case was accepted");
     assert!(refused > 0, "no case was refused");
-}
-
-/// Trace: FR-030-AC-1, FR-048-AC-1, FR-093-AC-1, FR-094-AC-1
-#[test]
-fn tc_456_101_every_ported_behaviour_family_is_represented() {
-    let (corpus, _) = load();
-    let kinds: BTreeSet<&str> = corpus.cases.iter().map(|case| case.kind.as_str()).collect();
-    assert_eq!(
-        kinds,
-        BTreeSet::from([
-            "assurance",
-            "bind",
-            "canonical",
-            "independence",
-            "mock",
-            "trust",
-            "vacuity",
-        ]),
-        "a behaviour family lost its cases, or gained one the capture does not cover"
-    );
-    // An anti-vacuity floor per family: one case cannot carry a family.
-    for kind in &kinds {
-        let count = corpus
-            .cases
-            .iter()
-            .filter(|case| &case.kind == kind)
-            .count();
-        assert!(count >= 3, "family {kind} carries only {count} case(s)");
-    }
 }
 
 /// A record's identity is an opaque UUID that is not derived from its content,

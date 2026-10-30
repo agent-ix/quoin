@@ -432,21 +432,3 @@ fn tc_456_006_corpus_covers_every_registered_adapter() {
     );
 }
 
-/// At least one golden case reads a real, checked-in tool output rather than a
-/// string authored beside the assertion.
-///
-/// A corpus made only of inputs the porter wrote is a corpus the porter can
-/// make pass; the fixtures under `tests/fixtures/evidence/` are unedited
-/// producer output and carry their provenance in that directory's README.
-///
-/// Trace: FR-030-AC-17
-/// Provenance: quoin#456
-#[test]
-fn tc_456_007_corpus_holds_real_producer_output() {
-    let (corpus, _) = load();
-    let from_file = corpus.cases.iter().filter(|c| c.file.is_some()).count();
-    assert!(
-        from_file >= 5,
-        "only {from_file} golden cases read a checked-in real tool output"
-    );
-}

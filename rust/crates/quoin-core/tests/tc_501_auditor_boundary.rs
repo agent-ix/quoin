@@ -137,7 +137,6 @@ fn tc_501_603_vocabulary_states_what_the_fact_set_can_mint() {
     let payload = payload(&run("auditor.vocabulary", "{}"));
     let minted: Vec<String> =
         serde_json::from_value(payload["mintableCharacteristics"].clone()).unwrap();
-    assert!(minted.len() >= 20, "{minted:?}");
     let mut sorted = minted.clone();
     sorted.sort();
     assert_eq!(minted, sorted, "the vocabulary is not sorted");

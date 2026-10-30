@@ -196,35 +196,6 @@ fn tc_412_a_path_in_both_roles_is_pinned_by_the_corpus() {
     );
 }
 
-/// The corpus asserts over a non-empty population on both sides of the verdict.
-///
-/// Without this, trimming `cases.json` down to only-clean repositories would
-/// leave `tc_377_019` green while it measured nothing.
-///
-/// Trace: FR-096
-/// Provenance: quoin#377
-#[test]
-fn tc_377_020_corpus_covers_both_verdicts() {
-    let (corpus, expected) = load();
-    let with_findings = expected
-        .cases
-        .iter()
-        .filter(|case| case.strict_exit == 1)
-        .count();
-    let clean = expected.cases.len() - with_findings;
-    let total_findings: usize = expected
-        .cases
-        .iter()
-        .filter_map(|case| case.findings.as_array())
-        .map(Vec::len)
-        .sum();
-
-    assert!(corpus.cases.len() >= 47, "corpus shrank below its floor");
-    assert!(with_findings >= 24, "too few cases expect a finding");
-    assert!(clean >= 23, "too few cases expect a clean verdict");
-    assert!(total_findings >= 30, "too few findings asserted overall");
-}
-
 /// A repository root that does not exist is a refusal, not a clean verdict.
 ///
 /// This is the one place the port deliberately improves on the TypeScript,

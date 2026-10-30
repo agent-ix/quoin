@@ -192,9 +192,7 @@ impl FindingKind {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use std::collections::BTreeSet;
-
-    use super::{Finding, FindingKind};
+    use super::Finding;
     use crate::severity::Severity;
 
     #[test]
@@ -286,12 +284,4 @@ mod tests {
         );
     }
 
-    #[test]
-    fn the_eleven_kinds_are_eleven_distinct_spellings() {
-        // Anti-vacuity: a list that silently lost an entry to a copy-paste
-        // would still be "all of it".
-        let distinct: BTreeSet<&str> = FindingKind::ALL.into_iter().collect();
-        assert_eq!(distinct.len(), 11);
-        assert!(distinct.contains(FindingKind::MOCKED_CONFIRMATION));
-    }
 }

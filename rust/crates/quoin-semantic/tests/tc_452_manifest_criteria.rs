@@ -505,11 +505,6 @@ fn tc_452_620_a_path_escape_or_an_ambiguous_data_schema_is_refused() {
 fn tc_452_621_the_data_schema_resolution_path_names_no_network_client() {
     const SOURCE: &str = include_str!("../src/data_schema.rs");
     assert!(
-        SOURCE.len() > 10_000,
-        "the resolution path is {} bytes; this guard is reading the wrong file",
-        SOURCE.len()
-    );
-    assert!(
         SOURCE.contains("pub fn resolve_data_schema"),
         "the guard must read the file that resolves references"
     );

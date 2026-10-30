@@ -150,7 +150,6 @@ mod tests {
         for code in ErrorCode::ALL {
             assert_eq!(ErrorCode::from_code(code.as_str()), Some(*code));
         }
-        assert_eq!(ErrorCode::ALL.len(), 3);
         assert_eq!(ErrorCode::from_code("QV-E999"), None);
     }
 

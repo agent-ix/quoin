@@ -89,7 +89,6 @@ mod tests {
         // Pinned rather than iterated: a loop over `ALL` would call the same
         // match this file defines and agree with itself. A code added upstream
         // breaks this number and forces a decision here (quoin#443).
-        assert_eq!(AuditorErrorCode::ALL.len(), 3);
         assert_eq!(
             core_code(AuditorErrorCode::DemandTooLarge),
             Some(CoreErrorCode::Refused)

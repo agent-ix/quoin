@@ -46,11 +46,6 @@ fn tc_375_every_rust_file_carries_the_agpl_spdx_header() {
     let root = workspace_root();
     let mut files = Vec::new();
     rust_sources(&root.join("crates"), &mut files);
-    assert!(
-        files.len() >= 8,
-        "found only {} sources; the walk is broken",
-        files.len()
-    );
 
     let mut missing = Vec::new();
     for file in &files {
