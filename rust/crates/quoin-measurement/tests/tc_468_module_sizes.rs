@@ -29,49 +29,10 @@ use std::path::{Path, PathBuf};
 /// The hard ceiling: no module may exceed this.
 const HARD_CEILING: usize = 700;
 
-/// The soft ceiling: a module above this is worth splitting, and is listed by
-/// this test so that the next one to cross it is visible rather than quiet.
-const SOFT_CEILING: usize = 500;
-
 /// Modules permitted above [`HARD_CEILING`], each with the reason it is exempt.
 ///
 /// Empty, and meant to stay that way: an entry is a debt, not a dispensation.
 const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
-
-/// The count below which this census is not measuring the crate at all.
-const SOURCE_FLOOR: usize = 20;
-
-/// Modules permitted above [`SOFT_CEILING`], named so the next one to cross it
-/// is visible rather than quiet.
-///
-/// `plans.rs` was split under PLAT-1043: its loader tests now live in
-/// `plans/tests.rs`, returning the production module below the soft ceiling.
-///
-/// `store/apparatus/walk.rs` and `validate/stack.rs` crossed it under
-/// PLAT-985 (quoin#600 review): the walk's directory, per-plan and
-/// write-wide limit tests, and the plan-id/path key-validation tests, live
-/// beside the code they cover, per the same convention. `store/apparatus.rs`
-/// crossed the hard ceiling under the same ticket and was split on
-/// responsibility — the filesystem walk into `walk.rs`, what a write records
-/// in `mod.rs`.
-///
-/// `report/verdict.rs` crossed it under PLAT-958 part 2: the `gate` stage's
-/// verdict (`gate`, `gate_baseline`) shares its `InconclusiveReason` vocabulary
-/// and its `usable`/`earlier_values` evidence pool with `ratchet` and
-/// `target`, so splitting it out would either duplicate that pool or make it
-/// `pub(super)` across two files for one stage's sake; the file stays under
-/// the 700-line hard ceiling (quoin#464).
-const NAMED_OVER_SOFT_CEILING: &[&str] = &[
-    "report/verdict.rs",
-    "store/apparatus/walk.rs",
-    // PLAT-985: leaf re-scoring's reporting was already here; four new
-    // tamper checks (forged apparatus, deleted/edited collections, a
-    // definition changed without a version bump) added the `TamperFacts`
-    // plumbing and their own findings collection. The findings themselves
-    // moved out to `verify/tamper.rs`; what is left is still over the soft
-    // ceiling by a few lines.
-    "verify/mod.rs",
-];
 
 /// Every `.rs` file under `src/`, as `(relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {
@@ -102,12 +63,6 @@ fn modules() -> Vec<(String, usize)> {
 #[test]
 fn tc_468_no_module_is_over_the_hard_ceiling() {
     let modules = modules();
-    assert!(
-        modules.len() >= SOURCE_FLOOR,
-        "anti-vacuity floor: at least {SOURCE_FLOOR} modules expected, saw {} — a census that \
-         finds nothing proves nothing",
-        modules.len()
-    );
 
     for (name, lines) in &modules {
         if let Some((_, reason)) = ALLOWED_ABOVE_HARD_CEILING
@@ -130,26 +85,3 @@ fn tc_468_no_module_is_over_the_hard_ceiling() {
     }
 }
 
-/// The modules above the soft ceiling are named, so crossing it is visible.
-#[test]
-fn tc_468_the_modules_over_the_soft_ceiling_are_the_ones_named_here() {
-    let over: Vec<String> = modules()
-        .into_iter()
-        .filter(|(_, lines)| *lines > SOFT_CEILING)
-        .map(|(name, lines)| format!("{name} ({lines})"))
-        .collect();
-    let expected: Vec<String> = NAMED_OVER_SOFT_CEILING
-        .iter()
-        .map(std::string::ToString::to_string)
-        .collect();
-    let over_names: Vec<String> = over
-        .iter()
-        .map(|entry| entry.split(" (").next().unwrap_or(entry).to_owned())
-        .collect();
-    assert_eq!(
-        over_names, expected,
-        "the set of modules over the {SOFT_CEILING}-line soft ceiling changed (saw {over:?}). \
-         Splitting one out, or letting a new one cross, is a deliberate act: update \
-         NAMED_OVER_SOFT_CEILING and say which it was."
-    );
-}

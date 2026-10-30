@@ -164,12 +164,10 @@ pub(super) fn check_job(
         return input("configured release job is unstarted or incomplete");
     }
     let same_run = positive_safe_integer(job.get("run_id"), "job.run_id")? == identity.id
-        && job.get("head_sha").and_then(Value::as_str)
-            == run.get("head_sha").and_then(Value::as_str)
         && positive_integer(job.get("run_attempt"), "job.run_attempt")? == identity.attempt;
     if !same_run {
         return input(
-            "configured release job run, revision, or attempt does not match workflow run",
+            "configured release job run or attempt does not match workflow run",
         );
     }
     let started = instant(

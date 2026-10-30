@@ -195,14 +195,10 @@ fn read_retained<S: MeasurementSource + ?Sized>(
     Ok(source.raw_evidence_text(&reference.path)?)
 }
 
-/// The producer as recorded: the definition's, with the two versions this
-/// production was run at recorded into its environment.
+/// The producer as recorded: the definition's, with the report-schema version
+/// this production read recorded into its environment.
 fn producer(definition: &AgentEvalInterventionDefinition) -> crate::common::producer::Producer {
     let mut producer = definition.producer.clone();
-    producer.environment.insert(
-        "cli_agent_evals_version".to_owned(),
-        EnvironmentValue::String(definition.cli_agent_evals_version.clone()),
-    );
     producer.environment.insert(
         "report_schema_version".to_owned(),
         EnvironmentValue::String(definition.report_schema_version.clone()),

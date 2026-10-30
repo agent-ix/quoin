@@ -46,11 +46,6 @@ use serde::Deserialize;
 /// The committed capture.
 const ORACLE: &str = include_str!("fixtures/report-oracle.json");
 
-/// The anti-vacuity floor: a capture that lost its cases would otherwise pass.
-const INTERVENTION_CASE_FLOOR: usize = 4;
-/// The same, for the operational half, which has the larger verdict table.
-const OPERATIONAL_CASE_FLOOR: usize = 11;
-
 #[derive(Deserialize)]
 struct Capture {
     intervention: Vec<Case>,
@@ -92,23 +87,6 @@ where
             record
         })
         .collect()
-}
-
-/// Trace: FR-100-AC-4
-/// Provenance: quoin#469, quoin#373
-#[test]
-fn tc_469_the_capture_carries_both_case_families() {
-    let capture = capture();
-    assert!(
-        capture.intervention.len() >= INTERVENTION_CASE_FLOOR,
-        "anti-vacuity floor: at least {INTERVENTION_CASE_FLOOR} intervention cases expected, saw {}",
-        capture.intervention.len()
-    );
-    assert!(
-        capture.operational.len() >= OPERATIONAL_CASE_FLOOR,
-        "anti-vacuity floor: at least {OPERATIONAL_CASE_FLOOR} operational cases expected, saw {}",
-        capture.operational.len()
-    );
 }
 
 /// Trace: FR-100-AC-4

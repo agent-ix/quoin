@@ -85,13 +85,6 @@
     "capabilities": [
       "measure"
     ],
-    "schemaVersion": "verification-stack-attestation-v1",
-    "sources": {
-      "quoin": {
-        "remote": "git@github.com:agent-ix/quoin.git",
-        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "sourceState": "clean"
-      }
-    }
+    "schemaVersion": "verification-stack-attestation-v1"
   }
 }

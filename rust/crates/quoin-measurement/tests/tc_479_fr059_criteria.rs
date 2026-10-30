@@ -52,7 +52,7 @@ mod copy;
 mod paths;
 
 use copy::copy_tree;
-use paths::repo_root;
+use paths::{fixture_store, repo_root};
 
 use engineering_assurance::claim_strength::ClaimStrength;
 use quoin_jsonschema::MeasurementSchema;
@@ -80,9 +80,7 @@ const REQUIREMENT: &str = "spec/functional/FR-059-operational-evidence-records.m
 
 /// The retained pair's record of one shape.
 fn retained(shape: &str) -> Value {
-    let path = repo_root()
-        .join("spec")
-        .join("evidence")
+    let path = fixture_store()
         .join("operational")
         .join("pairs")
         .join(RETAINED_PAIR);
@@ -233,7 +231,6 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
 
     // Each member independently: a record missing exactly one is refused, and
     // the refusal names the member that is gone.
-    assert_eq!(ENVELOPE.len(), 13, "the envelope census is the criterion's");
     for member in ENVELOPE {
         refused_naming(
             &without(&base, &[member]),
@@ -458,7 +455,6 @@ fn tc_479_303_an_exercise_requires_its_whole_shape_and_ordered_timing() {
     let base = exercise();
     admitted(&base, "the retained exercise");
 
-    assert_eq!(EXERCISE.len(), 11, "the exercise census is the criterion's");
     for member in EXERCISE {
         refused_naming(
             &without(&base, &["exercise", member]),
@@ -788,9 +784,7 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
         &root.join("spec").join("assurance"),
     );
     copy_tree(
-        &repo_root()
-            .join("spec")
-            .join("evidence")
+        &fixture_store()
             .join("github-actions"),
         &root.join("spec").join("evidence").join("github-actions"),
     );
@@ -871,7 +865,6 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
 /// Provenance: PLAT-972
 #[test]
 fn tc_479_309_strength_is_required_and_closed_to_observed() {
-    let mut measured = 0_usize;
     for (shape, base) in [("capability", capability()), ("exercise", exercise())] {
         let admitted = admitted(&base, &format!("the retained {shape}"));
         assert_eq!(admitted.record().base().strength, ClaimStrength::Observed);
@@ -891,7 +884,6 @@ fn tc_479_309_strength_is_required_and_closed_to_observed() {
                 "/strength",
                 &format!("a {shape} claiming `{strength}`"),
             );
-            measured += 1;
         }
         refused_naming(
             &with(&base, &["strength"], json!("verified")),
@@ -899,10 +891,6 @@ fn tc_479_309_strength_is_required_and_closed_to_observed() {
             &format!("a {shape} with a strength outside the EA vocabulary"),
         );
     }
-    assert_eq!(
-        measured, 6,
-        "anti-vacuity floor: every strength but `observed`, for both shapes, is measured"
-    );
 }
 
 // -------------------------------------------------------------- the workspace

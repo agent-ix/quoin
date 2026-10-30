@@ -49,17 +49,17 @@
         {
           "media_type": "application/yaml",
           "path": "github-actions/quoin-271-release-v0.22.5-workflow.yml",
-          "size_bytes": 6651
+          "size_bytes": 6006
         },
         {
           "media_type": "application/json",
           "path": "github-actions/quoin-271-release-v0.22.5-run.json",
-          "size_bytes": 11898
+          "size_bytes": 11385
         },
         {
           "media_type": "application/json",
           "path": "github-actions/quoin-271-release-v0.22.5-jobs.json",
-          "size_bytes": 13166
+          "size_bytes": 11924
         }
       ],
       "record_id": "quoin-271-release-v0.22.5-capability",
@@ -130,17 +130,17 @@
         {
           "media_type": "application/yaml",
           "path": "github-actions/quoin-271-release-v0.22.5-workflow.yml",
-          "size_bytes": 6651
+          "size_bytes": 6006
         },
         {
           "media_type": "application/json",
           "path": "github-actions/quoin-271-release-v0.22.5-run.json",
-          "size_bytes": 11898
+          "size_bytes": 11385
         },
         {
           "media_type": "application/json",
           "path": "github-actions/quoin-271-release-v0.22.5-jobs.json",
-          "size_bytes": 13166
+          "size_bytes": 11924
         }
       ],
       "record_id": "quoin-271-release-v0.22.5-exercise",

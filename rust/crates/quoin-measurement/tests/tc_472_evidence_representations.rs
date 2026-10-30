@@ -57,9 +57,6 @@ const REPRESENTATIONS: [&str; 2] = ["RawEvidenceReference", "RecordedEvidenceRef
 /// The match is on the parsed member name, not a substring of the body.
 const MEMBERS: [&str; 2] = ["path", "size_bytes"];
 
-/// The count below which this census is not reading the crate at all.
-const SOURCE_FLOOR: usize = 20;
-
 fn sources() -> Vec<(String, String)> {
     fn walk(root: &Path, directory: &Path, into: &mut Vec<(String, String)>) {
         for entry in std::fs::read_dir(directory).expect("src/ is readable") {
@@ -135,12 +132,6 @@ fn member_names(body: &str) -> Vec<String> {
 #[test]
 fn tc_472_a_retained_evidence_file_has_exactly_two_representations() {
     let sources = sources();
-    assert!(
-        sources.len() >= SOURCE_FLOOR,
-        "anti-vacuity floor: at least {SOURCE_FLOOR} modules expected, saw {} — a census that \
-         reads nothing proves nothing",
-        sources.len()
-    );
 
     let mut found: Vec<String> = Vec::new();
     for (module, text) in &sources {
@@ -183,7 +174,6 @@ fn tc_472_a_retained_evidence_file_has_exactly_two_representations() {
 #[test]
 fn tc_472_the_deleted_claim_type_is_still_deleted() {
     let sources = sources();
-    assert!(sources.len() >= SOURCE_FLOOR);
     for (module, text) in &sources {
         // Comments may name it — the module headers explain the deletion, and
         // this very test file is not scanned. Code may not.

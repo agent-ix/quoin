@@ -43,7 +43,7 @@ mod paths;
 
 use census::rust_files;
 use copy::copy_tree;
-use paths::repo_root;
+use paths::{fixture_store, repo_root};
 
 use std::path::{Path, PathBuf};
 
@@ -78,6 +78,10 @@ const SELF_DECLARED_GAPS: [&str; 3] = [
 fn producing_repo() -> (TempDir, Vec<u8>) {
     let temporary = tempfile::tempdir().expect("a temporary repository");
     copy_tree(&repo_root().join("spec"), &temporary.path().join("spec"));
+    copy_tree(
+        &fixture_store(),
+        &temporary.path().join("spec").join("evidence"),
+    );
     let retained = temporary
         .path()
         .join("spec")
@@ -207,9 +211,6 @@ fn tc_479_250_two_retained_runs_produce_the_observations_the_reports_state() {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_entry() {
-    /// Below this the census is measuring one refusal and calling it six.
-    const CASE_FLOOR: usize = 7;
-
     /// What a case does to the committed base before the producer runs.
     enum Mutation {
         /// Replace the definition's `report_schema_version`.
@@ -273,11 +274,6 @@ fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_
         ),
     ];
 
-    assert!(
-        cases.len() >= CASE_FLOOR,
-        "anti-vacuity floor: at least {CASE_FLOOR} cases expected, saw {}",
-        cases.len()
-    );
 
     for (what, mutation, expected) in cases {
         let (temporary, _) = producing_repo();

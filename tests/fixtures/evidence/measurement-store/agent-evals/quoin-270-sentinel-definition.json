@@ -1,6 +1,5 @@
 {
   "report_schema_version": "cli-agent-evals-report-v1",
-  "cli_agent_evals_version": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
   "record_id": "quoin-270-cli-eval-sentinel-contract",
   "subject": {
     "id": "agent-ix/cli-agent-evals"
@@ -11,12 +10,7 @@
     "configuration_ref": "agent-evals/quoin-270-sentinel-definition.json",
     "environment": {
       "node": "24.15.0",
-      "codex_cli": "0.151.0",
-      "suite_revision": "suite-v1",
-      "fixture_revision": "fixtures-v1",
-      "engineering_assurance_revision": "236f420987bdfd5309fb531806a851ddc9f75ae3",
-      "baseline_runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
-      "treatment_runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
+      "codex_cli": "0.151.0"
     },
     "definition_version": "cli-agent-evals.sentinel-contract-v1"
   },
@@ -37,7 +31,6 @@
     "id": "substring-detector",
     "population": "EA-001 existing-profile live Codex samples",
     "configuration": {
-      "runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
       "sentinel_match": "substring"
     }
   },
@@ -45,7 +38,6 @@
     "id": "standalone-detector",
     "population": "EA-001 existing-profile live Codex samples",
     "configuration": {
-      "runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
       "sentinel_match": "standalone-terminal-line"
     }
   },

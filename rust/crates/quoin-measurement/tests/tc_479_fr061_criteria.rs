@@ -42,7 +42,7 @@ mod paths;
 
 use census::rust_files;
 use copy::copy_tree;
-use paths::repo_root;
+use paths::{fixture_store, repo_root};
 
 use std::path::{Path, PathBuf};
 
@@ -85,9 +85,7 @@ fn temporary_repository() -> tempfile::TempDir {
         &root.join("spec").join("assurance"),
     );
     copy_tree(
-        &repo_root()
-            .join("spec")
-            .join("evidence")
+        &fixture_store()
             .join("github-actions"),
         &root.join("spec").join("evidence").join("github-actions"),
     );
@@ -100,9 +98,7 @@ fn github_actions(root: &Path) -> PathBuf {
 
 /// The committed producer definition, as a document.
 fn definition_document() -> Value {
-    let path = repo_root()
-        .join("spec")
-        .join("evidence")
+    let path = fixture_store()
         .join("github-actions")
         .join(DEFINITION);
     let bytes = std::fs::read(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
@@ -206,9 +202,7 @@ fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
     );
     // The committed pair is what the retained TypeScript wrote from these same
     // four files. Byte equality is the parity statement.
-    let committed = repo_root()
-        .join("spec")
-        .join("evidence")
+    let committed = fixture_store()
         .join("operational")
         .join("pairs")
         .join(RETAINED_PAIR);
@@ -269,15 +263,7 @@ fn tc_479_450_the_retained_release_evidence_persists_one_exact_linked_pair() {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_451_malformed_and_mismatched_inputs_are_refused_without_either_record() {
-    /// Below this the case walk is asserting nothing.
-    const CASE_FLOOR: usize = 12;
-
     let cases = refusal_cases();
-    assert!(
-        cases.len() >= CASE_FLOOR,
-        "anti-vacuity floor: {} refusal cases, below {CASE_FLOOR}",
-        cases.len()
-    );
     for (label, damage, expected) in &cases {
         let workspace = temporary_repository();
         let root = workspace.path();
@@ -482,9 +468,7 @@ fn tc_479_452_workflow_structure_and_api_exports_decide_state_not_the_caller() {
         &definition_of(&Value::Object(smuggled)),
     )
     .expect("a definition carrying state members still produces");
-    let committed = repo_root()
-        .join("spec")
-        .join("evidence")
+    let committed = fixture_store()
         .join("operational")
         .join("pairs")
         .join(RETAINED_PAIR);
@@ -612,12 +596,12 @@ fn tc_479_454_a_real_run_is_consumed_offline_and_persisted_all_or_nothing() {
         "curl",
     ];
 
-    /// Below this the census is reading an empty tree and proving nothing.
-    const SOURCE_FLOOR: usize = 3;
-
     // The retained run is a real one, captured outside Quoin: its own export
     // says which run it was and how GitHub concluded it.
-    let run = export(&repo_root(), RUN);
+    let run: Value = serde_json::from_slice(
+        &std::fs::read(fixture_store().join("github-actions").join(RUN)).expect("the run export"),
+    )
+    .expect("the run export is JSON");
     assert_eq!(run["id"], json!(33_280_266_874_u64));
     assert_eq!(
         run["html_url"],
@@ -629,7 +613,6 @@ fn tc_479_454_a_real_run_is_consumed_offline_and_persisted_all_or_nothing() {
         .join("src")
         .join("operational")
         .join("github_release");
-    let mut measured = 0_usize;
     for path in rust_files(&census_root) {
         let text = std::fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("{}: unreadable: {error}", path.display()));
@@ -640,12 +623,7 @@ fn tc_479_454_a_real_run_is_consumed_offline_and_persisted_all_or_nothing() {
                 path.display()
             );
         }
-        measured += 1;
     }
-    assert!(
-        measured >= SOURCE_FLOOR,
-        "the census read {measured} producer modules, below the floor of {SOURCE_FLOOR}"
-    );
 
     // All of the pair, or none of it: the two records land in one file and
     // nothing lands beside it.

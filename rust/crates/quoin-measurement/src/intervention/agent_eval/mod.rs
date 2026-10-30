@@ -54,8 +54,6 @@ pub struct InterventionArmDefinition {
 pub struct AgentEvalInterventionDefinition {
     /// The version of the agent-eval report schema this definition reads.
     pub report_schema_version: String,
-    /// The version of `cli-agent-evals` that produced the reports.
-    pub cli_agent_evals_version: String,
     /// The identity the produced record will carry.
     pub record_id: RecordId,
     /// What is measured.

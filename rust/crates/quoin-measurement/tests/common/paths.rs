@@ -9,6 +9,16 @@
 
 use std::path::{Path, PathBuf};
 
+/// The measurement-store layout the suites read as their inputs, kept under
+/// `tests/fixtures/evidence/measurement-store`.
+pub(crate) fn fixture_store() -> PathBuf {
+    repo_root()
+        .join("tests")
+        .join("fixtures")
+        .join("evidence")
+        .join("measurement-store")
+}
+
 /// The repository root, from this crate's manifest directory.
 ///
 /// Unresolved on purpose: `canonicalize` would follow symlinks, and the
