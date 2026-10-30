@@ -29,7 +29,7 @@ submits it through the FR-057 intake boundary.
   declared interactions/confounders, owner, gaps, and actions.
 - Exact baseline and treatment `cli-agent-evals` JSON reports retained from
   separately executed runs.
-- Immutable Quoin and `cli-agent-evals` versions, source revisions, configuration
+- Immutable Quoin and `cli-agent-evals` versions, configuration
   references, and environment identity.
 
 ## Outputs

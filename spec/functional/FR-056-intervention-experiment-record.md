@@ -65,10 +65,9 @@ or aggregate one record's strength against another's.
     "observed_at": { "type": "string", "format": "date-time" },
     "subject": {
       "type": "object",
-      "required": ["id", "revision"],
+      "required": ["id"],
       "properties": {
-        "id": { "$ref": "#/$defs/identity" },
-        "revision": { "type": "string", "minLength": 1 }
+        "id": { "$ref": "#/$defs/identity" }
       },
       "additionalProperties": false
     },
@@ -78,7 +77,6 @@ or aggregate one record's strength against another's.
         "tool_identity",
         "tool_version",
         "configuration_ref",
-        "source_revision",
         "environment",
         "definition_version"
       ],
@@ -86,7 +84,6 @@ or aggregate one record's strength against another's.
         "tool_identity": { "type": "string", "minLength": 1 },
         "tool_version": { "$ref": "#/$defs/immutable_version" },
         "configuration_ref": { "type": "string", "minLength": 1 },
-        "source_revision": { "type": "string", "minLength": 1 },
         "environment": {
           "type": "object",
           "minProperties": 1,
@@ -485,7 +482,7 @@ or aggregate one record's strength against another's.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-056-AC-1 | The schema requires version, record type and identity, observation timestamp, subject identity and revision, and the unchanged FR-044 producer tuple. | Test (TC-1195) |
+| FR-056-AC-1 | The schema requires version, record type and identity, observation timestamp, subject identity, and the unchanged FR-044 producer tuple. | Test (TC-1195) |
 | FR-056-AC-2 | The producer tuple rejects a missing field, a mutable tool version, an empty environment, and an empty configuration reference. | Test (TC-1196) |
 | FR-056-AC-3 | Repeated, randomized, and factorial designs require a positive repetition count, assignment method, and non-empty sampling conditions; randomized assignment requires a reproducible seed. | Test (TC-1197) |
 | FR-056-AC-4 | Every record carries one uniquely identified baseline, one or more uniquely identified treatments, treatment-linked changed variables, and an explicit list of held-constant variables. | Test (TC-1198) |

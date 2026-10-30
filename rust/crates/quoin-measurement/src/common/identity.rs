@@ -80,12 +80,6 @@ identity_newtype! {
 }
 
 identity_newtype! {
-    /// A source revision — `subject.revision`, and
-    /// `producer.source_revision`.
-    pub struct Revision;
-}
-
-identity_newtype! {
     /// An experiment arm — `baseline.id`, `treatments[].id` and the
     /// `treatment_id` that refers to one.
     pub struct ArmId;

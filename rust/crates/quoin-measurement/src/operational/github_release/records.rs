@@ -106,13 +106,7 @@ pub(super) fn exercise_for(
         .and_then(Value::as_str)
         .unwrap_or_default()
         .to_owned();
-    let head_sha = run
-        .get("head_sha")
-        .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_owned();
-    let mut state_before = Map::new();
-    state_before.insert("source_revision".to_owned(), Value::String(head_sha));
+    let state_before = Map::new();
     let mut state_after = Map::new();
     state_after.insert("conclusion".to_owned(), Value::String(conclusion.clone()));
     state_after.insert(

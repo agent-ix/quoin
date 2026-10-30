@@ -84,10 +84,9 @@ or aggregate one record's strength against another's.
     },
     "subject": {
       "type": "object",
-      "required": ["id", "revision"],
+      "required": ["id"],
       "properties": {
-        "id": { "$ref": "#/$defs/identity" },
-        "revision": { "type": "string", "minLength": 1 }
+        "id": { "$ref": "#/$defs/identity" }
       },
       "additionalProperties": false
     },
@@ -97,7 +96,6 @@ or aggregate one record's strength against another's.
         "tool_identity",
         "tool_version",
         "configuration_ref",
-        "source_revision",
         "environment",
         "definition_version"
       ],
@@ -105,7 +103,6 @@ or aggregate one record's strength against another's.
         "tool_identity": { "type": "string", "minLength": 1 },
         "tool_version": { "$ref": "#/$defs/immutable_version" },
         "configuration_ref": { "type": "string", "minLength": 1 },
-        "source_revision": { "type": "string", "minLength": 1 },
         "environment": {
           "type": "object",
           "minProperties": 1,

@@ -112,7 +112,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -133,8 +132,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -265,7 +263,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -286,8 +283,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -414,7 +410,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -435,8 +430,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -564,7 +558,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -585,8 +578,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -717,7 +709,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -738,8 +729,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -865,7 +855,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -886,8 +875,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -1010,7 +998,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -1031,8 +1018,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -1161,7 +1147,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -1182,8 +1167,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -1301,7 +1285,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -1322,8 +1305,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -1453,7 +1435,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -1474,8 +1455,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -1601,7 +1581,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -1622,8 +1601,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -1758,7 +1736,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -1779,8 +1756,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -1915,7 +1891,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -1936,8 +1911,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -2075,8 +2049,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -2212,7 +2185,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -2221,8 +2193,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -2358,7 +2329,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -2378,8 +2348,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -2515,7 +2484,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -2535,8 +2503,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -2672,7 +2639,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -2692,8 +2658,7 @@
         "record_type": "intervention_experiment",
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -2829,7 +2794,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -2849,8 +2813,7 @@
         "record_type": "intervention_experiment",
         "schema_version": 1,
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -2986,7 +2949,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -3140,7 +3102,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -3161,8 +3122,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         }
       },
       "id": "spec/evidence/interventions/quoin-270-cli-eval-sentinel-contract.json#remove/treatments",
@@ -3287,7 +3247,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -3309,8 +3268,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -3446,7 +3404,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -3467,8 +3424,7 @@
         "schema_version": 2,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -3604,7 +3560,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -3625,8 +3580,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -3762,7 +3716,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -3783,8 +3736,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -3920,7 +3872,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -3941,8 +3892,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -4082,7 +4032,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -4103,8 +4052,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -4244,7 +4192,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -4265,8 +4212,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -4406,7 +4352,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -4427,8 +4372,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -4568,7 +4512,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -4589,8 +4532,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -4726,7 +4668,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -4747,8 +4688,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -4879,7 +4819,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -4900,8 +4839,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -5032,7 +4970,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -5053,8 +4990,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -5190,7 +5126,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -5211,8 +5146,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -5343,7 +5277,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "1.2.3"
         },
@@ -5364,8 +5297,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -5496,7 +5428,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "v1.2.3-rc.1"
         },
@@ -5517,8 +5448,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -5649,7 +5579,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         },
@@ -5670,8 +5599,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -5807,7 +5735,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "not a version"
         },
@@ -5828,8 +5755,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -5954,7 +5880,6 @@
           "configuration_ref": "config/x.json",
           "definition_version": "cli-agent-evals.sentinel-contract-v1",
           "environment": {},
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -5975,8 +5900,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -6112,7 +6036,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -6122,8 +6045,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -6259,7 +6181,6 @@
             "suite_revision": "suite-v1",
             "treatment_runner_revision": "02ababababababababababababababababababab"
           },
-          "source_revision": "04ababababababababababababababababababab",
           "tool_identity": "quoin-agent-eval-intervention-adapter",
           "tool_version": "0.9.0"
         },
@@ -6280,8 +6201,7 @@
         "schema_version": 1,
         "status": "completed",
         "subject": {
-          "id": "agent-ix/cli-agent-evals",
-          "revision": "02ababababababababababababababababababab"
+          "id": "agent-ix/cli-agent-evals"
         },
         "treatments": [
           {
@@ -6345,7 +6265,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -6376,8 +6295,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#base",
@@ -6432,7 +6350,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -6463,8 +6380,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/actions",
@@ -6512,7 +6428,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -6543,8 +6458,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/capability",
@@ -6601,7 +6515,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -6632,8 +6545,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/control_kind",
@@ -6688,7 +6600,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -6719,8 +6630,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/gaps",
@@ -6777,7 +6687,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -6808,8 +6717,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/observed_at",
@@ -6866,7 +6774,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -6897,8 +6804,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/owner",
@@ -6973,8 +6879,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/producer",
@@ -7032,7 +6937,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7046,8 +6950,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/raw_evidence",
@@ -7105,7 +7008,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7135,8 +7037,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/record_id",
@@ -7214,7 +7115,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7244,8 +7144,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/record_shape",
@@ -7303,7 +7202,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7333,8 +7231,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/record_type",
@@ -7392,7 +7289,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7422,8 +7318,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/schema_version",
@@ -7481,7 +7376,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7507,8 +7401,7 @@
         "record_type": "operational_evidence",
         "schema_version": 1,
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#remove/scope",
@@ -7566,7 +7459,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7652,7 +7544,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7684,8 +7575,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#add/unknown-top-level-key",
@@ -7743,7 +7633,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7774,8 +7663,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/schema_version=2",
@@ -7833,7 +7721,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7864,8 +7751,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/record_type=wrong",
@@ -7923,7 +7809,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -7954,8 +7839,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/record_id=unsafe",
@@ -8013,7 +7897,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -8044,8 +7927,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/record_id=empty",
@@ -8103,7 +7985,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -8134,8 +8015,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/observed_at=date-only",
@@ -8188,7 +8068,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -8219,8 +8098,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/observed_at=lowercase-t-and-z",
@@ -8273,7 +8151,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -8304,8 +8181,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/observed_at=lowercase-t-only",
@@ -8358,7 +8234,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -8389,8 +8264,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/observed_at=lowercase-z-only",
@@ -8448,7 +8322,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -8479,8 +8352,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/observed_at=impossible-day",
@@ -8533,7 +8405,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -8564,8 +8435,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/observed_at=offset",
@@ -8618,7 +8488,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -8649,8 +8518,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/observed_at=fractional",
@@ -8708,7 +8576,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -8739,8 +8606,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/observed_at=not-a-string",
@@ -8793,7 +8659,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "1.2.3"
         },
@@ -8824,8 +8689,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/producer.tool_version=semver",
@@ -8878,7 +8742,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "v1.2.3-rc.1"
         },
@@ -8909,8 +8772,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/producer.tool_version=v-semver",
@@ -8963,7 +8825,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         },
@@ -8994,8 +8855,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/producer.tool_version=git-sha1",
@@ -9053,7 +8913,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "not a version"
         },
@@ -9084,8 +8943,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/producer.tool_version=garbage",
@@ -9137,7 +8995,6 @@
           "configuration_ref": "config/x.json",
           "definition_version": "github-actions.release-operational-v1",
           "environment": {},
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9168,8 +9025,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/producer.environment={}",
@@ -9227,7 +9083,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9242,8 +9097,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/raw_evidence=[]",
@@ -9301,7 +9155,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9332,8 +9185,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/0#set/owner=empty",
@@ -9373,9 +9225,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -9393,7 +9243,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9424,8 +9273,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#base",
@@ -9467,9 +9315,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -9487,7 +9333,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9518,8 +9363,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/actions",
@@ -9563,9 +9407,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -9583,7 +9425,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9614,8 +9455,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/control_kind",
@@ -9663,7 +9503,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9694,8 +9533,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/exercise",
@@ -9740,9 +9578,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "observed_at": "2026-08-29T23:11:38Z",
@@ -9757,7 +9593,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9788,8 +9623,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/gaps",
@@ -9834,9 +9668,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -9853,7 +9685,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9884,8 +9715,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/observed_at",
@@ -9930,9 +9760,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -9949,7 +9777,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -9980,8 +9807,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/owner",
@@ -10026,9 +9852,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10063,8 +9887,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/producer",
@@ -10109,9 +9932,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10129,7 +9950,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -10143,8 +9963,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/raw_evidence",
@@ -10189,9 +10008,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10209,7 +10026,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -10239,8 +10055,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/record_id",
@@ -10305,9 +10120,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10325,7 +10138,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -10355,8 +10167,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/record_shape",
@@ -10401,9 +10212,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10421,7 +10230,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -10451,8 +10259,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/record_type",
@@ -10497,9 +10304,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10517,7 +10322,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -10547,8 +10351,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/schema_version",
@@ -10593,9 +10396,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10613,7 +10414,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -10639,8 +10439,7 @@
         "record_type": "operational_evidence",
         "schema_version": 1,
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#remove/scope",
@@ -10685,9 +10484,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10705,7 +10502,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -10778,9 +10574,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10798,7 +10592,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -10830,8 +10623,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#add/unknown-top-level-key",
@@ -10876,9 +10668,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10896,7 +10686,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -10927,8 +10716,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/schema_version=2",
@@ -10973,9 +10761,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -10993,7 +10779,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11024,8 +10809,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/record_type=wrong",
@@ -11070,9 +10854,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11090,7 +10872,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11121,8 +10902,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/record_id=unsafe",
@@ -11167,9 +10947,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11187,7 +10965,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11218,8 +10995,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/record_id=empty",
@@ -11264,9 +11040,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11284,7 +11058,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11315,8 +11088,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/observed_at=date-only",
@@ -11356,9 +11128,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11376,7 +11146,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11407,8 +11176,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/observed_at=lowercase-t-and-z",
@@ -11448,9 +11216,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11468,7 +11234,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11499,8 +11264,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/observed_at=lowercase-t-only",
@@ -11540,9 +11304,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11560,7 +11322,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11591,8 +11352,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/observed_at=lowercase-z-only",
@@ -11637,9 +11397,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11657,7 +11415,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11688,8 +11445,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/observed_at=impossible-day",
@@ -11729,9 +11485,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11749,7 +11503,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11780,8 +11533,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/observed_at=offset",
@@ -11821,9 +11573,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11841,7 +11591,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11872,8 +11621,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/observed_at=fractional",
@@ -11918,9 +11666,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -11938,7 +11684,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -11969,8 +11714,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/observed_at=not-a-string",
@@ -12010,9 +11754,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -12030,7 +11772,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "1.2.3"
         },
@@ -12061,8 +11802,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/producer.tool_version=semver",
@@ -12102,9 +11842,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -12122,7 +11860,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "v1.2.3-rc.1"
         },
@@ -12153,8 +11890,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/producer.tool_version=v-semver",
@@ -12194,9 +11930,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -12214,7 +11948,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         },
@@ -12245,8 +11978,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/producer.tool_version=git-sha1",
@@ -12291,9 +12023,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -12311,7 +12041,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "not a version"
         },
@@ -12342,8 +12071,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/producer.tool_version=garbage",
@@ -12388,9 +12116,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -12402,7 +12128,6 @@
           "configuration_ref": "config/x.json",
           "definition_version": "github-actions.release-operational-v1",
           "environment": {},
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -12433,8 +12158,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/producer.environment={}",
@@ -12479,9 +12203,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -12499,7 +12221,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -12514,8 +12235,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/raw_evidence=[]",
@@ -12560,9 +12280,7 @@
             "run_id": 33280266874,
             "url": "https://github.com/agent-ix/quoin/actions/runs/33280266874"
           },
-          "state_before": {
-            "source_revision": "05ababababababababababababababababababab"
-          },
+          "state_before": {},
           "trigger": "workflow_dispatch"
         },
         "gaps": [
@@ -12580,7 +12298,6 @@
             "github_workflow_run_id": 33280266874,
             "release_version": "0.22.5"
           },
-          "source_revision": "06ababababababababababababababababababab",
           "tool_identity": "quoin-github-release-operational-adapter",
           "tool_version": "0.9.0"
         },
@@ -12611,8 +12328,7 @@
           "service": "agent-ix/quoin"
         },
         "subject": {
-          "id": "agent-ix/quoin",
-          "revision": "05ababababababababababababababababababab"
+          "id": "agent-ix/quoin"
         }
       },
       "id": "spec/evidence/operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json#/records/1#set/owner=empty",

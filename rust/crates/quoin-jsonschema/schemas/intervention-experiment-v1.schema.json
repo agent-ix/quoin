@@ -337,10 +337,6 @@
           "minProperties": 1,
           "type": "object"
         },
-        "source_revision": {
-          "minLength": 1,
-          "type": "string"
-        },
         "tool_identity": {
           "minLength": 1,
           "type": "string"
@@ -358,7 +354,6 @@
         "tool_identity",
         "tool_version",
         "configuration_ref",
-        "source_revision",
         "environment",
         "definition_version"
       ],
@@ -418,15 +413,10 @@
         "id": {
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$",
           "type": "string"
-        },
-        "revision": {
-          "minLength": 1,
-          "type": "string"
         }
       },
       "required": [
-        "id",
-        "revision"
+        "id"
       ],
       "type": "object"
     },

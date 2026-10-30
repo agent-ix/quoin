@@ -16,14 +16,12 @@
           "record_id": "p-beta",
           "observed_at": "2026-02-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -194,8 +192,7 @@
           "record_id": "p-beta",
           "observed_at": "2026-02-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "status": "completed",
           "claims": [
@@ -277,7 +274,6 @@
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -299,14 +295,12 @@
           "record_id": "p-alpha",
           "observed_at": "2026-02-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -407,8 +401,7 @@
           "record_id": "p-alpha",
           "observed_at": "2026-02-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "status": "inconclusive",
           "claims": [
@@ -426,7 +419,6 @@
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -448,14 +440,12 @@
           "record_id": "p-beta",
           "observed_at": "2026-02-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -626,14 +616,12 @@
           "record_id": "p-alpha",
           "observed_at": "2026-02-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -734,14 +722,12 @@
           "record_id": "p-zulu",
           "observed_at": "2026-01-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -842,8 +828,7 @@
           "record_id": "p-zulu",
           "observed_at": "2026-01-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "status": "failed",
           "claims": [
@@ -861,7 +846,6 @@
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -875,8 +859,7 @@
           "record_id": "p-alpha",
           "observed_at": "2026-02-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "status": "inconclusive",
           "claims": [
@@ -894,7 +877,6 @@
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -908,8 +890,7 @@
           "record_id": "p-beta",
           "observed_at": "2026-02-01T00:00:00.000Z",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "status": "completed",
           "claims": [
@@ -991,7 +972,6 @@
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -1021,14 +1001,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -1132,14 +1110,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -1240,14 +1216,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -1349,14 +1323,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -1458,14 +1430,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -1574,14 +1544,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -1687,14 +1655,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -1799,14 +1765,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -1913,14 +1877,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -2027,14 +1989,12 @@
           "observed_at": "2026-03-02T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -2103,14 +2063,12 @@
           "observed_at": "2026-03-02T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",
@@ -2174,14 +2132,12 @@
           "observed_at": "2026-03-01T00:00:00.000Z",
           "control_kind": "release",
           "subject": {
-            "id": "quoin",
-            "revision": "rev-1"
+            "id": "quoin"
           },
           "producer": {
             "tool_identity": "quoin",
             "tool_version": "0.9.0",
             "configuration_ref": "config/producer.json",
-            "source_revision": "rev-1",
             "environment": {
               "ci": true,
               "node": "22.11.0",

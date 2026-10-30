@@ -188,11 +188,11 @@ fn required(path: &[&str]) {
 // ------------------------------------------------------------- the gates
 
 /// The envelope: schema identity, version, record type, record identity,
-/// observation timestamp, subject identity and revision, and the FR-044
+/// observation timestamp, subject identity, and the FR-044
 /// producer tuple are all required.
 ///
 /// > FR-056-AC-1: The schema requires version, record type and identity,
-/// > observation timestamp, subject identity and revision, and the unchanged
+/// > observation timestamp, subject identity, and the unchanged
 /// > FR-044 producer tuple.
 ///
 /// Trace: FR-056-AC-1
@@ -200,15 +200,14 @@ fn required(path: &[&str]) {
 #[test]
 fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
     /// Every envelope member `intervention.test.ts:140` deleted, plus the two
-    /// discriminants and the two subject members the criterion also names.
-    const ENVELOPE: [&[&str]; 8] = [
+    /// discriminants and the subject member the criterion also names.
+    const ENVELOPE: [&[&str]; 7] = [
         &["schema_version"],
         &["record_type"],
         &["record_id"],
         &["observed_at"],
         &["subject"],
         &["subject", "id"],
-        &["subject", "revision"],
         &["producer"],
     ];
 
@@ -231,12 +230,8 @@ fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
     );
     assert_eq!(base.observed_at.as_str(), "2026-08-30T17:54:41.378Z");
     assert_eq!(base.subject.id.as_str(), "agent-ix/cli-agent-evals");
-    assert_eq!(
-        base.subject.revision.as_str(),
-        "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
-    );
 
-    assert_eq!(ENVELOPE.len(), 8, "every envelope member is measured");
+    assert_eq!(ENVELOPE.len(), 7, "every envelope member is measured");
     for path in ENVELOPE {
         required(path);
     }
@@ -260,10 +255,9 @@ fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
 #[test]
 fn tc_479_101_each_producer_defect_is_refused_independently() {
     /// The producer members `intervention.test.ts:157` deleted one at a time.
-    const PRODUCER: [&str; 5] = [
+    const PRODUCER: [&str; 4] = [
         "tool_identity",
         "tool_version",
-        "source_revision",
         "environment",
         "definition_version",
     ];
@@ -272,7 +266,7 @@ fn tc_479_101_each_producer_defect_is_refused_independently() {
     const MUTABLE: [&str; 5] = ["latest", "main", "1.2", "v1", ""];
 
     accepted(&retained(), "the retained record");
-    assert_eq!(PRODUCER.len(), 5, "every producer member is measured");
+    assert_eq!(PRODUCER.len(), 4, "every producer member is measured");
     for member in PRODUCER {
         required(&["producer", member]);
     }

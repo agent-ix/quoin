@@ -221,10 +221,9 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
         "raw_evidence",
     ];
     /// The FR-044 producer tuple, unchanged.
-    const PRODUCER: [&str; 5] = [
+    const PRODUCER: [&str; 4] = [
         "tool_identity",
         "tool_version",
-        "source_revision",
         "environment",
         "definition_version",
     ];
@@ -244,8 +243,8 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
     }
     assert_eq!(
         PRODUCER.len(),
-        5,
-        "the FR-044 producer tuple is five fields"
+        4,
+        "the FR-044 producer tuple is four fields"
     );
     for member in PRODUCER {
         refused_naming(
@@ -254,7 +253,7 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
             &format!("a producer missing `{member}`"),
         );
     }
-    for member in ["id", "revision"] {
+    for member in ["id"] {
         refused_naming(
             &without(&base, &["subject", member]),
             &required("/subject", member),

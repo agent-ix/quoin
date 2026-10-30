@@ -178,8 +178,7 @@ fn obligation() -> Value {
     json!({
         "control_kind": "release",
         "subject": {
-            "id": "agent-ix/quoin",
-            "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
+            "id": "agent-ix/quoin"
         },
         "scope": {
             "service": "agent-ix/quoin",

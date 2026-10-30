@@ -172,10 +172,10 @@ mod tests {
             "0123456789abcdef0123456789abcdef0123456",
             "sha1:0123456789abcdef0123456789abcdef01234567",
         ] {
-            let error = ImmutableVersion::parse(value, "subject.revision").unwrap_err();
+            let error = ImmutableVersion::parse(value, "x").unwrap_err();
             assert_eq!(
                 error.findings(),
-                ["producer definition requires an immutable subject.revision"],
+                ["producer definition requires an immutable x"],
                 "{value}"
             );
         }

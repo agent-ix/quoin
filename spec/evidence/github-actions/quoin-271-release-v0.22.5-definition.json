@@ -5,14 +5,12 @@
   "accepted_event": "workflow_dispatch",
   "control_id": "quoin-npm-release",
   "subject": {
-    "id": "agent-ix/quoin",
-    "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
+    "id": "agent-ix/quoin"
   },
   "producer": {
     "tool_identity": "quoin-github-release-operational-adapter",
     "tool_version": "0.9.0",
     "configuration_ref": "github-actions/quoin-271-release-v0.22.5-definition.json",
-    "source_revision": "5a5283018f779a81e6f53138abb0e6d8fc140032",
     "environment": {
       "github_repository": "agent-ix/quoin",
       "github_workflow_run_id": 33280266874,
