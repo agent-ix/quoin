@@ -3,21 +3,20 @@
 
 //! The `evidence` operations that READ or MAINTAIN the store.
 //!
-//! Collecting superseded records, re-affirming a binding, and the two bulk
-//! reads the command layer makes one call each for — the trust assessments and
-//! the pure auditor's whole input.
+//! Collecting superseded records and the two bulk reads the command layer
+//! makes one call each for — the trust assessments and the pure auditor's
+//! whole input.
 
 use std::path::Path;
 
 use quoin_evidence::independence::assess_independence;
 use quoin_evidence::mock_inspection::mock_inspection_input;
 use quoin_evidence::store::{
-    affirm, latest_runs, latest_scans, read_bindings, read_trust_decisions, scan_is_vacuous,
-    write_bindings,
+    latest_runs, latest_scans, read_bindings, read_trust_decisions, scan_is_vacuous,
 };
 use quoin_evidence::trust::assess_trust;
-use quoin_evidence::types::{Affirmation, Binding};
-use quoin_evidence::{Commit, ObligationId, StatementHash, SuiteId};
+use quoin_evidence::types::Binding;
+use quoin_evidence::{Commit, SuiteId};
 
 use crate::capabilities::Capabilities;
 use crate::error::CoreError;
@@ -25,9 +24,8 @@ use crate::protocol::Response;
 
 use super::taxonomy::map_error;
 use super::wire::{
-    AffirmPayload, AffirmRequest, AuditInputsPayload, AuditInputsRequest, GcPayload, GcRequest,
-    MAX_AFFIRM_BYTES, MAX_AUDIT_INPUTS_BYTES, MAX_GC_BYTES, MAX_TRUST_ASSESSMENTS_BYTES,
-    RepoRequest, TrustAssessmentsPayload,
+    AuditInputsPayload, AuditInputsRequest, GcPayload, GcRequest, MAX_AUDIT_INPUTS_BYTES,
+    MAX_GC_BYTES, MAX_TRUST_ASSESSMENTS_BYTES, RepoRequest, TrustAssessmentsPayload,
 };
 use super::{absolute, bound, check_scalar, host, parse, value};
 
@@ -62,69 +60,6 @@ pub fn gc(
             .map(|path| absolute(&root, path))
             .collect();
         value(&GcPayload { deleted })
-    })?;
-    Ok(Response::ok(payload))
-}
-
-/// Answer an `evidence.affirm`.
-///
-/// Reads the graph, affirms, and writes it back in ONE operation. Splitting it
-/// would put a read-modify-write across three subprocess boundaries with the
-/// graph travelling twice, and would let a caller write back a graph it had
-/// altered in between.
-///
-/// Nothing is written when no binding matched: `found: false` is the caller's
-/// answer, and an unmatched affirmation must not rewrite `bindings.json` with
-/// identical content and a fresh mtime.
-///
-/// # Errors
-///
-/// - [`CoreErrorCode::Refused`] when the request exceeds [`MAX_AFFIRM_BYTES`],
-///   or when `bindings.json` is present and unreadable.
-/// - [`CoreErrorCode::Io`] when no evidence host was granted.
-pub fn affirm_binding(
-    request: &serde_json::Value,
-    capabilities: &Capabilities<'_>,
-) -> Result<Response, CoreError> {
-    let op = "evidence.affirm";
-    bound(request, op, MAX_AFFIRM_BYTES)?;
-    let request: AffirmRequest = parse(request, op)?;
-    for (field, text) in [
-        ("repo", request.repo.as_str()),
-        ("obligation", request.obligation.as_str()),
-        ("statement_hash", request.statement_hash.as_str()),
-        ("who", request.who.as_str()),
-        ("commit", request.commit.as_str()),
-        ("suite", request.suite.as_deref().unwrap_or("")),
-    ] {
-        check_scalar(op, field, text)?;
-    }
-
-    let host = host(capabilities, op)?;
-    let payload = host.with_store(Path::new(&request.repo), &mut |source| {
-        let existing = read_bindings(source).map_err(|e| map_error(&e, op))?;
-        let suite = request.suite.as_deref().map(SuiteId::new);
-        let outcome = affirm(
-            &existing.bindings,
-            &ObligationId::new(&request.obligation),
-            suite.as_ref(),
-            &StatementHash::new(&request.statement_hash),
-            &Affirmation {
-                who: request.who.clone(),
-                commit: Commit::new(&request.commit),
-                note: request.note.clone(),
-            },
-        );
-        if outcome.found {
-            write_bindings(source, &outcome.bindings).map_err(|e| map_error(&e, op))?;
-        }
-        value(&AffirmPayload {
-            found: outcome.found,
-            obligation: request.obligation.clone(),
-            who: request.who.clone(),
-            commit: request.commit.clone(),
-            statement_hash: request.statement_hash.clone(),
-        })
     })?;
     Ok(Response::ok(payload))
 }

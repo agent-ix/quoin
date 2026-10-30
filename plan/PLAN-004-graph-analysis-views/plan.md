@@ -26,7 +26,7 @@ relationships:
 
 ### Functional Requirements
 
-- [x] **FR-062**: Derive deterministic, read-only fan-out, change-impact, and churn reports from an
+- [x] **FR-062**: Derive deterministic, read-only fan-out and change-impact reports from an
       accepted Quire assurance export, retained evidence, and unchanged auditor verdicts.
 
 ## Dependency Graph
@@ -35,7 +35,7 @@ relationships:
   Reason: Quoin must consume the hand-authored assurance-v1 schema and source-grounded records;
   inventing or re-parsing that contract is prohibited.
 - `FR-030 + FR-032 + TASK-020 -> TASK-021`
-  Reason: fan-out and churn join live exported obligations with retained bindings and affirmations.
+  Reason: fan-out joins live exported obligations with retained bindings.
 - `TASK-021 -> TASK-022`
   Reason: change impact reuses the normalized artifact, obligation, suite, and verdict indexes.
 - `TASK-020 + TASK-021 + TASK-022 -> TASK-023`
@@ -68,8 +68,8 @@ existing retained operands/verdicts, `src/graph-analysis/` for pure projections,
 - [x] **TC-1249**: fan-out set/count is duplicate- and input-order-invariant.
 - [x] **TC-1251**: relation selection, reverse closure, cycles, shared dependents, and shortest-path
       tie-breaking are deterministic.
-- [x] **TC-1254**: one copied affirmation is one event while all affected suites remain visible.
-- [x] **TC-1255**: zero-event rows, absent-obligation gaps, and churn ordering hold under permutations.
+- [x] **TC-1254**: withdrawn (PLAT-1213): the churn view is removed.
+- [x] **TC-1255**: withdrawn (PLAT-1213): the churn view is removed.
 - [x] **TC-1256**: source and module premises survive repeated analysis byte-for-byte.
 - [x] **TC-1258**: equivalent input permutations produce byte-identical JSON and matching human output.
 
@@ -93,8 +93,7 @@ existing retained operands/verdicts, `src/graph-analysis/` for pure projections,
 
 - **A1 = TASK-020** assurance-export consumer — Hard; exit: only schema-valid, accepted-premise
   exports expose typed records.
-- **A2 = TASK-021** fan-out and churn — Medium; exit: live/unresolved bindings and deduplicated
-  affirmation events produce complete deterministic rows.
+- **A2 = TASK-021** fan-out — Medium; exit: live/unresolved bindings produce complete deterministic rows.
 - **A3 = TASK-022** change impact — Hard; exit: typed reverse closure returns deterministic paths,
   joined evidence, and unchanged auditor verdicts.
 - **A4 = TASK-023** command and rendering — Medium; exit: all three subcommands emit the same report

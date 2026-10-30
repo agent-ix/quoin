@@ -57,7 +57,7 @@ This specification governs:
 - The durable semantic-module architecture record that allocates authority and
   ownership across Quire, Quoin, `filament-core-data`, module repositories, and
   consumers without activating compiler, publication, or migration work.
-- Read-only fan-out, change-impact, and reaffirmation-churn views that consume a
+- Read-only fan-out and change-impact views that consume a
   validated, source-grounded Quire assurance export and join it to Quoin's retained
   evidence and existing auditor verdicts without collecting evidence or defining policy.
 

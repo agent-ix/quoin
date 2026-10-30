@@ -97,6 +97,8 @@ impl Fixture {
                 "id": "FR-001-AC-1",
                 "document": "spec/FR-001.md",
                 "statement": "The command reports fan-out.",
+                // BLOCKED-BY quire-rs-statement-hash (owner: planner titan:QSL:plan): assurance-v1 still requires
+                // `statement_hash` on every obligation (additionalProperties: false); remove with the quire-rs field.
                 "statement_hash": DIGEST,
                 "target_ids": ["TC-1249"],
                 "locator": { "path": "spec/FR-001.md", "line": 20, "digest": DIGEST },
@@ -122,7 +124,6 @@ impl Fixture {
                 "schemaVersion": 1,
                 "bindings": [{
                     "obligation": "FR-001-AC-1",
-                    "statementHashAtBinding": DIGEST,
                     "suite": "unit",
                     "commit": REVISION,
                     "symbols": ["fan-out test"],
@@ -203,26 +204,6 @@ fn tc_1650_fan_out_reaches_real_fixture_inputs_in_json_and_human_forms() {
     let human = fixture.graph("fan-out", false, &[]);
     assert!(human.status.success(), "stderr: {}", stderr(&human));
     assert!(stdout(&human).contains("| Suite | Live obligations | Count | Unresolved |"));
-    assert!(stderr(&human).is_empty());
-}
-
-/// Trace: FR-062, FR-062-AC-1, TC-1650
-#[test]
-fn tc_1650_churn_reaches_real_fixture_inputs_in_json_and_human_forms() {
-    let fixture = Fixture::new().expect("fixture files");
-
-    let json = fixture.graph("churn", true, &[]);
-    assert!(json.status.success(), "stderr: {}", stderr(&json));
-    let report = json_stdout(&json);
-    assert_eq!(report["view"], "churn");
-    assert_eq!(report["state"], "complete");
-    assert_eq!(report["rows"][0]["obligation"], "FR-001-AC-1");
-    assert_eq!(report["rows"][0]["eventCount"], 0);
-    assert!(stderr(&json).is_empty());
-
-    let human = fixture.graph("churn", false, &[]);
-    assert!(human.status.success(), "stderr: {}", stderr(&human));
-    assert!(stdout(&human).contains("## Retained reaffirmation history"));
     assert!(stderr(&human).is_empty());
 }
 

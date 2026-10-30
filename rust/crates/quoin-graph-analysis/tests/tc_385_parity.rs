@@ -66,7 +66,7 @@ use std::path::{Path, PathBuf};
 use quoin_graph_analysis::model::binding::BindingInput;
 use quoin_graph_analysis::{
     ArtifactId, GraphAnalysis, GraphErrorCode, GraphInput, GraphInputReader, GraphLoadOptions,
-    RelationKind, analyze_change_impact, analyze_churn, analyze_fan_out, check_accepted_premises,
+    RelationKind, analyze_change_impact, analyze_fan_out, check_accepted_premises,
     check_audit_identity, load_graph_analysis_input, parse_accepted_premises,
     parse_assurance_export, parse_audit_envelope, render_graph_analysis,
     render_graph_analysis_json,
@@ -74,7 +74,7 @@ use quoin_graph_analysis::{
 use serde_json::Value;
 
 /// The counts below which this parity measurement is measuring nothing.
-const CASE_FLOOR: usize = 20;
+const CASE_FLOOR: usize = 19;
 /// As [`CASE_FLOOR`], for the input-contract corpus.
 const CONTRACT_FLOOR: usize = 25;
 /// As [`CASE_FLOOR`], for the loader corpus.
@@ -105,7 +105,7 @@ const DECLARED_DIVERGENCES: &[(&str, &str, &str)] = &[(
      applies; this crate uses `quoin_store::canonicalize_jcs` rather than reimplement that rule",
 )];
 
-/// One case's three views, each as `(view name, json, markdown)`.
+/// One case's two views, each as `(view name, json, markdown)`.
 fn rendered(case: &Value) -> Vec<(&'static str, String, String)> {
     let id = case["id"].as_str().expect("a case id");
     let input = support::input(case);
@@ -126,7 +126,6 @@ fn rendered(case: &Value) -> Vec<(&'static str, String, String)> {
 
     [
         ("fan-out", GraphAnalysis::from(analyze_fan_out(&input))),
-        ("churn", GraphAnalysis::from(analyze_churn(&input))),
         ("change-impact", GraphAnalysis::from(impact)),
     ]
     .into_iter()

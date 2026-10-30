@@ -17,7 +17,7 @@ relationships:
 
 `quoin` SHALL persist what was verified, against which statement, by which run —
 in a file store under `spec/evidence/` — and SHALL expose verbs to transcribe a
-run, re-affirm a binding, and collect unreferenced records.
+run and collect unreferenced records.
 
 Every quoin verification surface recomputes its view from scratch and emits a
 report; nothing persisted what was checked. That is the "green matrix over dead
@@ -27,9 +27,7 @@ binding to nothing while matrices read as covered**
 
 ### Governing principle: store only what cannot be recomputed
 
-> BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash
-
-Run outcomes, hash-at-binding and affirmations are facts
+Run outcomes are facts
 about the past — nothing can re-derive them tomorrow. **Obligations are not.**
 They are re-derived live from quire ([FR-053](ix://agent-ix/quire-rs/FR-053))
 on every read, so they cannot drift out of agreement with the spec. A stored
@@ -63,16 +61,11 @@ already caused exactly that rot (quire-rs TC-715), where a green "CI" meant one
 of two suites. Re-runs at the same commit are last-write-wins: flake history is
 analytics, not the record of record.
 
-### Auto-bind, explicit affirmation
+### Auto-bind
 
 First discharge binds without asking. Requiring a signature on something the
 evidence already proves puts a gate in front of the common case and teaches
-people to click through it. What stays explicit is **re-affirmation** after a
-statement changes — that is the judgement call, and the one worth a name against
-it.
-
-Re-running a test SHALL NOT clear suspicion. If it did, the suspect state would
-clear itself on the next CI run and the detector would never fire.
+people to click through it.
 
 ## Inputs
 
@@ -82,7 +75,7 @@ clear itself on the next CI run and the detector would never fire.
 ## Outputs
 
 - `spec/evidence/runs/<SUITE-N>/<commit12>.json` — one run of one suite
-- `spec/evidence/bindings.json` — obligation → hash-at-binding → evidence (BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash)
+- `spec/evidence/bindings.json` — obligation → evidence
 
 ## Behavior
 
@@ -112,7 +105,7 @@ clear itself on the next CI run and the detector would never fire.
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-030-CON-1 | quoin SHALL NOT execute a consumer's suite. It transcribes; the consumer's CI runs (ADR-0011 invariant 1). | Architecture | Inspection |
-| FR-030-CON-2 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: The store SHALL NOT persist an obligation's statement, document or method — only its id and hash. Anything re-derivable is re-derived, so the store cannot disagree with the spec. | Architecture | Test |
+| FR-030-CON-2 | The store SHALL NOT persist an obligation's statement, document or method — only its id. Anything re-derivable is re-derived, so the store cannot disagree with the spec. | Architecture | Test |
 | FR-030-CON-3 | The store SHALL NOT contain a database or a derived index. Files only. | Architecture | Inspection |
 
 ### A tool reports the id it knows
@@ -147,14 +140,14 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-1 | The store root is `spec/evidence/`, and a run path is `runs/<SUITE-N>/<commit12>.json`. | Test (TC-119) |
 | FR-030-AC-2 | Writes are canonical and byte-identical across repeated serialization of the same record. | Test (TC-120) |
 | FR-030-AC-3 | Two suites at one commit produce two files, and a re-run at the same commit is last-write-wins with one file retained. | Test (TC-121) |
-| FR-030-AC-4 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: A passing symbol binds its obligation with the hash as it stands now; a failing or skipped symbol binds nothing while its run is still recorded. | Test (TC-122) |
-| FR-030-AC-5 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: A reworded statement makes an existing binding suspect, and re-recording the same passing run does not overwrite the hash. | Test (TC-123) |
-| FR-030-AC-6 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: Affirmation moves the hash forward and records who and at which commit; affirming an unknown obligation reports rather than inventing a binding. | Test (TC-124) |
+| FR-030-AC-4 | A passing symbol binds its obligation; a failing or skipped symbol binds nothing while its run is still recorded. | Test (TC-122) |
+| FR-030-AC-5 | Withdrawn (CR note, 2026-10-29): required a reworded statement to make a binding suspect by comparing a hash stamped at binding. The store keeps no statement hash, so nothing remains to compare. | Withdrawn (TC-123) |
+| FR-030-AC-6 | Withdrawn (CR note, 2026-10-29): required `evidence affirm` to move the stamped hash forward and record who affirmed. With no stamped hash there is nothing to re-affirm, and the verb is removed. | Withdrawn (TC-124) |
 | FR-030-AC-7 | A trace id no obligation states is reported as unmatched rather than silently dropped. | Test (TC-125) |
 | FR-030-AC-8 | `gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. The command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why. | Test (TC-126, TC-263) |
 | FR-030-AC-9 | An absent store reads as an empty binding graph, an empty run list and an empty collection. | Test (TC-127) |
-| FR-030-AC-10 | BLOCKED-BY PLAT-1213 (owner: planner titan:QSL:plan): hash-at-binding and suspect-link affirmation hash: No obligation statement, document or method appears anywhere in the written store — only the id and hash (CON-2). | Test (TC-128) |
-| FR-030-AC-11 | A binding is keyed on `(obligation, suite)`: a second suite discharging the same obligation **appends** a binding rather than replacing the first, re-discharging the same suite merges into its own binding, and affirmation clears every suite's suspicion unless narrowed to one. The graph is cross-suite, so the file must be able to hold two. | Test (TC-129) |
+| FR-030-AC-10 | No obligation statement, document or method appears anywhere in the written store — only the id (CON-2). | Test (TC-128) |
+| FR-030-AC-11 | A binding is keyed on `(obligation, suite)`: a second suite discharging the same obligation **appends** a binding rather than replacing the first, re-discharging the same suite merges into its own binding. The graph is cross-suite, so the file must be able to hold two. | Test (TC-129) |
 | FR-030-AC-12 | The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. Two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine. | Test (TC-130) |
 | FR-030-AC-13 | A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph is not, because reading an empty graph would report every obligation as undischarged. | Test (TC-131) |
 | FR-030-AC-14 | Store ordering is locale-independent: written bytes are pinned by test, so a runtime's collation data cannot change the diff of a checked-in file. | Test (TC-132) |
@@ -162,11 +155,21 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-16 | A completed source-level mock inspection is recorded at `mock-inspections/<SUITE-N>/<commit12>.json`, including an empty result. Readers select the exact full commit being audited: an empty current record means the suite was inspected and no stand-in was observed; no current record means the check was not evaluated. | Test (TC-1064, TC-1065) |
 | FR-030-AC-17 | `evidence record` refuses a bare or mutable `--tool` identity and accepts an exact semantic version or full source revision (a git commit id). First-party Vitest and mock-inspection records include the version they actually ran. | Test (TC-1123, TC-1124) |
 
+> **CR note (2026-10-29, PLAT-1213):** The binding hash mechanism is removed.
+> A binding no longer stamps the obligation's statement hash, the store keeps no
+> affirmation history, and `quoin evidence affirm` and the `suspect` list of
+> `quoin evidence record` are gone. FR-030-AC-5 and FR-030-AC-6 are withdrawn,
+> with TC-123 and TC-124; the other ACs lose their hash and affirmation clauses.
+> The ids are not reused. The obligations quire derives still carry a
+> `statement_hash` on the `assurance-v1` export; quoin does not read it. BLOCKED-BY
+> quire-rs-statement-hash (owner: planner titan:QSL:plan): the `statement_hash`
+> member of the quire-rs obligation and of the `assurance-v1` schema.
+>
 > **CR note (2026-09-30, agent-ix/quoin#658):** `spec/evidence/baseline.json`
 > is no longer a store output, and FR-030-AC-13 no longer names it. The ratchet
 > that read and wrote it is removed (FR-032 CR note).
 
 ## Dependencies
 
-- **Upstream**: [FR-029](./FR-029-consume-the-quire-json-contract.md) (the validated payload the obligations arrive on), quire-rs [FR-053](ix://agent-ix/quire-rs/FR-053) (the obligation records and their hashes), `spec-artifacts-process` FR-006 (the authored registries) and FR-007-AC-8 (the declared obligation sources, without which the machinery is inert)
-- **Downstream**: the suspect-link / freshness / vacuous-evidence auditor (agent-ix/quoin#80), which reads this store and runs nothing; the evidence adapters (agent-ix/quoin#91), which normalize tool output into the run entries this verb accepts
+- **Upstream**: [FR-029](./FR-029-consume-the-quire-json-contract.md) (the validated payload the obligations arrive on), quire-rs [FR-053](ix://agent-ix/quire-rs/FR-053) (the obligation records), `spec-artifacts-process` FR-006 (the authored registries) and FR-007-AC-8 (the declared obligation sources, without which the machinery is inert)
+- **Downstream**: the freshness / vacuous-evidence auditor (agent-ix/quoin#80), which reads this store and runs nothing; the evidence adapters (agent-ix/quoin#91), which normalize tool output into the run entries this verb accepts

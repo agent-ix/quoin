@@ -18,7 +18,7 @@ use quoin_finding_types::{Finding, UnevaluatedCheck};
 use quoin_quire::model::{AssuranceExport, AssuranceSource};
 use serde::Serialize;
 
-use crate::ids::{ArtifactId, Author, Commit, ObligationId, RelationKind, SuiteId};
+use crate::ids::{ArtifactId, ObligationId, RelationKind, SuiteId};
 use crate::model::audit::AuditEnvelope;
 use crate::model::binding::BindingInput;
 use crate::model::premises::AcceptedPremises;
@@ -44,8 +44,6 @@ pub enum GraphView {
     FanOut,
     /// What depends on the requirements the caller named.
     ChangeImpact,
-    /// Which obligations were re-affirmed, by whom.
-    Churn,
 }
 
 impl GraphView {
@@ -55,7 +53,6 @@ impl GraphView {
         match self {
             Self::FanOut => "fan-out",
             Self::ChangeImpact => "change-impact",
-            Self::Churn => "churn",
         }
     }
 }
@@ -222,46 +219,6 @@ pub struct FanOutAnalysis {
     pub rows: Vec<FanOutRow>,
 }
 
-/// One recorded re-affirmation, as the churn view reports it.
-#[derive(Debug, Clone, Serialize)]
-pub struct ChurnEvent {
-    /// Who affirmed.
-    pub who: Author,
-    /// At which commit.
-    pub commit: Commit,
-    /// Their note, when they left one.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub note: Option<String>,
-    /// The suites the identical affirmation was recorded on.
-    pub suites: Vec<SuiteId>,
-}
-
-/// One obligation's row in the churn view.
-#[derive(Debug, Clone, Serialize)]
-pub struct ChurnRow {
-    /// The obligation.
-    pub obligation: ObligationId,
-    /// The artifacts that own its document.
-    pub requirements: Vec<ArtifactId>,
-    /// The suites bound to it.
-    pub suites: Vec<SuiteId>,
-    /// Its re-affirmations.
-    pub events: Vec<ChurnEvent>,
-    /// How many there are.
-    #[serde(rename = "eventCount")]
-    pub event_count: usize,
-}
-
-/// Which obligations were re-affirmed, by whom.
-#[derive(Debug, Clone, Serialize)]
-pub struct ChurnAnalysis {
-    /// The shared head.
-    #[serde(flatten)]
-    pub base: GraphReportBase,
-    /// One row per live obligation, busiest first.
-    pub rows: Vec<ChurnRow>,
-}
-
 /// One step along a reverse dependency path.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ImpactPathEdge {
@@ -342,7 +299,7 @@ pub struct ChangeImpactAnalysis {
     pub rows: Vec<ChangeImpactRow>,
 }
 
-/// Any one of the three reports.
+/// Any one of the two reports.
 ///
 /// `untagged`: the discriminant is already in the payload as `view`, and a
 /// second one would be a member the retained format does not have.
@@ -353,8 +310,6 @@ pub enum GraphAnalysis {
     FanOut(FanOutAnalysis),
     /// The change-impact view.
     ChangeImpact(ChangeImpactAnalysis),
-    /// The churn view.
-    Churn(ChurnAnalysis),
 }
 
 impl GraphAnalysis {
@@ -364,7 +319,6 @@ impl GraphAnalysis {
         match self {
             Self::FanOut(analysis) => &analysis.base,
             Self::ChangeImpact(analysis) => &analysis.base,
-            Self::Churn(analysis) => &analysis.base,
         }
     }
 }
@@ -378,11 +332,5 @@ impl From<FanOutAnalysis> for GraphAnalysis {
 impl From<ChangeImpactAnalysis> for GraphAnalysis {
     fn from(analysis: ChangeImpactAnalysis) -> Self {
         Self::ChangeImpact(analysis)
-    }
-}
-
-impl From<ChurnAnalysis> for GraphAnalysis {
-    fn from(analysis: ChurnAnalysis) -> Self {
-        Self::Churn(analysis)
     }
 }

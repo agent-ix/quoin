@@ -22,9 +22,6 @@ pub struct Locator {
     pub path: LocatorPath,
     /// The 1-based line. `z.number().int().min(1)` is a [`NonZeroU64`].
     pub line: NonZeroU64,
-    // BLOCKED-BY QSL-1276 (owner: planner titan:QSL:plan): Quire export locator digest/statement_hash: `assurance-v1` requires `locator.digest`; carried opaquely, never computed or compared.
-    /// The export's `locator.digest`, carried opaquely.
-    pub digest: NonEmptyText,
 }
 
 /// One spec artifact the export declares.
@@ -54,9 +51,6 @@ pub struct Obligation {
     pub document: NonEmptyText,
     /// The statement itself.
     pub statement: NonEmptyText,
-    // BLOCKED-BY QSL-1276 (owner: planner titan:QSL:plan): Quire export locator digest/statement_hash: `assurance-v1` requires `statement_hash`; carried opaquely, never computed or compared.
-    /// The export's `statement_hash`, carried opaquely.
-    pub statement_hash: NonEmptyText,
     /// The verification method, when declared.
     #[serde(default, deserialize_with = "absent_or")]
     pub method: Option<NonEmptyText>,

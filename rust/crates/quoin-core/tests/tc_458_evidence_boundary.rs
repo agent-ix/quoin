@@ -223,46 +223,6 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
 }
 
 ///
-/// `affirm` is the only operation that answers `found`.
-#[test]
-fn tc_458_060_affirm_clears_suspicion_on_a_binding_that_exists() {
-    let dir = repo();
-    write_store(
-        dir.path(),
-        "bindings.json",
-        &json!({
-            "schemaVersion": 1,
-            "bindings": [{
-                "obligation": "FR-1-AC-1",
-                "statementHashAtBinding": "old",
-                "suite": "unit",
-                "commit": commit('a'),
-                "symbols": [],
-            }],
-        })
-        .to_string(),
-    );
-    let payload = ok(&run(
-        "evidence.affirm",
-        &json!({
-            "repo": dir.path(),
-            "obligation": "FR-1-AC-1",
-            "statement_hash": "new",
-            "who": "peter",
-            "commit": commit('b'),
-        }),
-    ));
-    assert_eq!(payload["found"], true);
-    let written: Value =
-        serde_json::from_str(&fs::read_to_string(store_path(dir.path(), "bindings.json")).unwrap())
-            .unwrap();
-    assert_eq!(
-        written["bindings"][0]["affirmations"][0]["who"], "peter",
-        "{written}"
-    );
-}
-
-///
 /// `gc` is the only operation that answers `deleted` — and the divergence this
 /// ticket declares is asserted HERE, through the binary, because the join onto
 /// the store root is what makes the path the caller prints a real one.

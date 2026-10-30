@@ -35,7 +35,7 @@ use crate::capabilities::Capabilities;
 use crate::error::CoreErrorCode;
 use crate::protocol::Response;
 
-use super::{MAX_SCALAR_BYTES, change_impact, churn, fan_out};
+use super::{MAX_SCALAR_BYTES, change_impact, fan_out};
 
 const DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
@@ -79,6 +79,8 @@ fn export() -> Value {
             "id": "FR-001-AC-1",
             "document": "spec/FR-001.md",
             "statement": "The command reports fan-out.",
+            // BLOCKED-BY quire-rs-statement-hash (owner: planner titan:QSL:plan): assurance-v1 still requires
+            // `statement_hash` on every obligation (additionalProperties: false); remove with the quire-rs field.
             "statement_hash": DIGEST,
             "target_ids": ["TC-1249"],
             "locator": { "path": "spec/FR-001.md", "line": 20, "digest": DIGEST },
@@ -112,7 +114,6 @@ fn bindings() -> Value {
         "schemaVersion": 1,
         "bindings": [{
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": DIGEST,
             "suite": "unit",
             "commit": REVISION,
             "symbols": ["fan-out test"],
@@ -184,20 +185,14 @@ fn the_two_spellings_render_one_report() {
     assert!(rendered(&canonical).starts_with('{'));
 }
 
-/// `graph.churn` and `graph.change_impact` reach their own views.
+/// `graph.change_impact` reaches its own view.
 ///
-/// Trace: FR-062-AC-7
+/// Trace: FR-062-AC-3
 /// Provenance: quoin#500
 #[test]
 fn each_operation_reaches_its_own_view() {
     let reader = tree(true);
     let grant = Capabilities::with_graph(&reader);
-
-    let churned = churn(&request(true), &grant).unwrap();
-    let report: Value = serde_json::from_str(rendered(&churned)).expect("canonical JSON");
-    assert_eq!(report["view"], "churn");
-    assert_eq!(report["rows"][0]["obligation"], "FR-001-AC-1");
-    assert_eq!(report["rows"][0]["eventCount"], 0);
 
     let mut impact_request = request(true);
     impact_request["requirements"] = json!(["FR-001"]);

@@ -35,7 +35,7 @@ const TOPICS: &[(&str, &str)] = &[
     ),
     (
         "evidence",
-        "The evidence store — what actually ran, and against which\n                    statement (record, affirm, gc).",
+        "The evidence store — what actually ran, and against which\n                    statement (record, gc).",
     ),
     ("graph", "Read-only evidence-graph analysis views."),
     (

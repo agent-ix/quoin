@@ -283,7 +283,7 @@ fn tc_480_021_every_quire_collection_passes_through_untranslated() {
     let extra = serde_json::json!({
         "id": "FR-001",
         "artifact_type": "FR",
-        "locator": { "path": "spec/FR-001.md", "line": 1, "digest": "d".repeat(64) },
+        "locator": { "path": "spec/FR-001.md", "line": 1 },
     });
     grown["document"]["artifacts"]
         .as_array_mut()

@@ -77,13 +77,12 @@ pub fn adapt_audit(
 
 /// The receipt reason one FR-032 finding kind maps to.
 ///
-/// Four kinds have their own reason; everything else is `audit_finding`, so a
+/// Three kinds have their own reason; everything else is `audit_finding`, so a
 /// new auditor finding kind lands in the receipt rather than being dropped.
 #[must_use]
 pub fn map_audit_finding(kind: &str) -> Reason {
     match kind {
         "stale-evidence" => Reason::EvidenceStale,
-        "suspect-link" => Reason::EvidenceSuspect,
         "vacuous-evidence" => Reason::EvidenceVacuous,
         "undischarged" => Reason::EvidenceUnrelated,
         _ => Reason::AuditFinding,

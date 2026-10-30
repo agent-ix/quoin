@@ -80,7 +80,7 @@
 //!
 //! ## What the portfolio refuses to do
 //!
-//! - **It owns no graph semantics.** `premises`, `fanOut`, `churn` and
+//! - **It owns no graph semantics.** `premises`, `fanOut` and
 //!   `changeImpact` are opaque FR-062 results carried as
 //!   [`quoin_store::JsonValue`], compared by nothing and interpreted by
 //!   nothing. `graph-portfolio.ts:41-43` says so and [`input`] is that promise

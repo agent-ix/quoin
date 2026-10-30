@@ -361,7 +361,6 @@ fn tc_455_only_intact_output_and_a_healthy_audit_discharge_a_proof() {
 
     for (kind, reason) in [
         ("stale-evidence", "evidence_stale"),
-        ("suspect-link", "evidence_suspect"),
         ("vacuous-evidence", "evidence_vacuous"),
         ("undischarged", "evidence_unrelated"),
     ] {

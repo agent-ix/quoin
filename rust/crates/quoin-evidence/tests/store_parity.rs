@@ -32,18 +32,15 @@ use quoin_evidence::assurance_records::{
 use quoin_evidence::independence::assess_independence;
 use quoin_evidence::mock_inspection::inspect_mock_injections;
 use quoin_evidence::store::{
-    affirm, bind, scan_is_vacuous, write_bindings, write_mock_inspection, write_run, write_scan,
+    bind, scan_is_vacuous, write_bindings, write_mock_inspection, write_run, write_scan,
     write_trust_decision,
 };
 use quoin_evidence::trust::assess_trust;
 use quoin_evidence::types::{
-    Affirmation, Binding, FindingRecord, IndependenceRequirement, MockInspectionRecord, RunRecord,
+    Binding, FindingRecord, IndependenceRequirement, MockInspectionRecord, RunRecord,
     TrustDecision,
 };
-use quoin_evidence::{
-    Commit, DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, StatementHash,
-    SuiteId,
-};
+use quoin_evidence::{DiskEvidence, EvidenceSource, MemoryEvidence, ProfileId, SuiteId};
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
@@ -129,35 +126,7 @@ fn run_case(case: &CaseInput) -> Result<Value, String> {
             Ok(json!({
                 "bindings": outcome.bindings,
                 "created": outcome.created,
-                "suspect": outcome.suspect,
             }))
-        }
-        "affirm" => {
-            let existing: Vec<Binding> = from_value(&case.input["existing"])?;
-            let obligation = ObligationId::new(string_at(&case.input, "obligation"));
-            let suite = case
-                .input
-                .get("suite")
-                .and_then(Value::as_str)
-                .map(SuiteId::new);
-            let current_hash = StatementHash::new(string_at(&case.input, "currentHash"));
-            let affirmation = Affirmation {
-                who: string_at(&case.input, "who"),
-                commit: Commit::new(string_at(&case.input, "commit")),
-                note: case
-                    .input
-                    .get("note")
-                    .and_then(Value::as_str)
-                    .map(str::to_owned),
-            };
-            let outcome = affirm(
-                &existing,
-                &obligation,
-                suite.as_ref(),
-                &current_hash,
-                &affirmation,
-            );
-            Ok(json!({ "bindings": outcome.bindings, "found": outcome.found }))
         }
         "canonical" => canonical_case(&case.input),
         "vacuity" => {
@@ -358,7 +327,6 @@ fn tc_456_101_every_ported_behaviour_family_is_represented() {
     assert_eq!(
         kinds,
         BTreeSet::from([
-            "affirm",
             "assurance",
             "bind",
             "canonical",

@@ -22,7 +22,7 @@
 
 use crate::error::Result;
 use crate::model::report::{
-    ChangeImpactAnalysis, ChurnAnalysis, FanOutAnalysis, GraphAnalysis, GraphReportBase,
+    ChangeImpactAnalysis, FanOutAnalysis, GraphAnalysis, GraphReportBase,
 };
 
 /// The report as canonical JSON: 2-space indent, ordered members, trailing
@@ -61,7 +61,6 @@ pub fn render_graph_analysis(analysis: &GraphAnalysis) -> String {
     match analysis {
         GraphAnalysis::FanOut(report) => render_fan_out(report, &mut lines),
         GraphAnalysis::ChangeImpact(report) => render_impact(report, &mut lines),
-        GraphAnalysis::Churn(report) => render_churn(report, &mut lines),
     }
     render_gaps(base, &mut lines);
     format!("{}\n", lines.join("\n").trim_end())
@@ -161,32 +160,6 @@ fn render_impact(report: &ChangeImpactAnalysis, lines: &mut Vec<String>) {
                 row.depth,
                 cell(row.path.seed.as_str()),
                 or_dash(&cell(&obligations))
-            ));
-        }
-    }
-    lines.push(String::new());
-}
-
-fn render_churn(report: &ChurnAnalysis, lines: &mut Vec<String>) {
-    lines.push("## Retained reaffirmation history".to_owned());
-    lines.push(String::new());
-    lines.push("| Obligation | Requirements | Suites | Events |".to_owned());
-    lines.push("| --- | --- | --- | ---: |".to_owned());
-    if report.rows.is_empty() {
-        lines.push("| *(none)* | — | — | 0 |".to_owned());
-    } else {
-        for row in &report.rows {
-            let requirements = join(
-                row.requirements.iter().map(|id| id.as_str().to_owned()),
-                ", ",
-            );
-            let suites = join(row.suites.iter().map(|id| id.as_str().to_owned()), ", ");
-            lines.push(format!(
-                "| {} | {} | {} | {} |",
-                cell(row.obligation.as_str()),
-                or_dash(&cell(&requirements)),
-                or_dash(&cell(&suites)),
-                row.event_count
             ));
         }
     }

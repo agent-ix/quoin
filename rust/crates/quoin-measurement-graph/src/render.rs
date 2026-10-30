@@ -192,14 +192,13 @@ fn render_comparison(lines: &mut Vec<String>, repository: &GovernedGraphReposito
     }
 }
 
-/// The three opaque analyses, as canonical JSON. `graph-portfolio.ts:396-403`.
+/// The two opaque analyses, as canonical JSON. `graph-portfolio.ts:396-403`.
 fn render_graph(
     lines: &mut Vec<String>,
     graph: &NormalizedStructuralGraph,
 ) -> Result<(), GraphAdapterError> {
     let NormalizedStructuralGraph::Available {
         ref fan_out,
-        ref churn,
         ref change_impact,
         ..
     } = *graph
@@ -208,7 +207,6 @@ fn render_graph(
     };
     lines.push(String::new());
     lines.push(format!("Fan-out: {}", stored_pretty_text_trimmed(fan_out)?));
-    lines.push(format!("Churn: {}", stored_pretty_text_trimmed(churn)?));
     lines.push(format!(
         "Change impact: {}",
         stored_pretty_text_trimmed(&change_impact_value(change_impact))?

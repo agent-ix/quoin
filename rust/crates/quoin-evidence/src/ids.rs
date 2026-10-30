@@ -83,10 +83,6 @@ opaque_id!(
     schema = "EvidenceObligationId"
 );
 opaque_id!(SymbolId, "FR-051 stable symbol identity");
-opaque_id!(
-    StatementHash,
-    "statement hash as quire computed it; quoin only ever compares these"
-);
 
 /// A full commit sha, as the caller reported it.
 ///

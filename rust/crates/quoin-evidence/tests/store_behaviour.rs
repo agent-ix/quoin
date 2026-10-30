@@ -27,27 +27,25 @@ use quoin_evidence::mock_inspection::{inspect_mock_injections, mock_inspection_i
 use quoin_evidence::paths::{bindings_path, run_path, scan_path, trust_decision_path};
 use quoin_evidence::record::{RecordRequest, record_run};
 use quoin_evidence::store::{
-    affirm, gc, list_recorded_suites, read_bindings, read_runs, read_trust_decisions,
+    gc, list_recorded_suites, read_bindings, read_runs, read_trust_decisions,
     write_bindings, write_mock_inspection, write_run, write_trust_decision,
 };
 use quoin_evidence::trust::{assess_trust, validate_trust_decision};
 use quoin_evidence::types::{
-    Affirmation, Binding, EvidenceLineage, IndependenceDimension, IndependencePolicy,
+    Binding, EvidenceLineage, IndependenceDimension, IndependencePolicy,
     IndependenceRequirement, IndependenceStatus, MockInspectionRecord, Outcome, ProducerContext,
     RunEntry, RunRecord, STORE_SCHEMA_VERSION, TrustAdapter, TrustDecision, TrustDecisionKind,
     TrustEvidenceReference, TrustStatus, TrustTrigger, TrustUse,
 };
 use quoin_evidence::{
-    Commit, DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, StatementHash,
-    SuiteId, SymbolId, TrustDecisionId,
+    Commit, DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, SuiteId,
+    SymbolId, TrustDecisionId,
 };
 use quoin_quire_types::Obligation;
 use serde_json::json;
 
 const COMMIT: &str = "aaaaaaaaaaaa0000";
 const OTHER_COMMIT: &str = "bbbbbbbbbbbb0000";
-const HASH_A: &str = "sha256:aaaa";
-const HASH_B: &str = "sha256:bbbb";
 
 fn suite(name: &str) -> SuiteId {
     SuiteId::new(name)
@@ -57,11 +55,10 @@ fn commit(value: &str) -> Commit {
     Commit::new(value)
 }
 
-fn obligation(id: &str, hash: &str) -> Obligation {
+fn obligation(id: &str) -> Obligation {
     Obligation {
         id: id.to_owned(),
         statement: format!("the system shall {id}"),
-        statement_hash: hash.to_owned(),
         target_ids: None,
         // The three fields quoin#383 added for the auditor. Absent here, which
         // is what an obligation with no `Verification` cell, no criticality and
@@ -107,15 +104,13 @@ fn request(suite_name: &str, commit_value: &str, entries: Vec<RunEntry>) -> Reco
     }
 }
 
-fn binding(obligation_id: &str, suite_name: &str, hash: &str) -> Binding {
+fn binding(obligation_id: &str, suite_name: &str) -> Binding {
     Binding {
         obligation: ObligationId::new(obligation_id),
-        statement_hash_at_binding: StatementHash::new(hash),
         suite: suite(suite_name),
         commit: commit(COMMIT),
         symbols: vec![SymbolId::new("t")],
         lineage: None,
-        affirmations: None,
     }
 }
 
@@ -322,7 +317,7 @@ fn tc_456_202_one_file_per_suite_and_commit_and_the_last_write_wins() {
 /// Trace: FR-030-AC-4
 #[test]
 fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
-    let obligations = [obligation("FR-001-AC-1", HASH_A)];
+    let obligations = [obligation("FR-001-AC-1")];
     for (outcome, expected) in [
         (Outcome::Pass, vec![ObligationId::new("FR-001-AC-1")]),
         (Outcome::Fail, vec![]),
@@ -344,81 +339,6 @@ fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
     }
 }
 
-/// Trace: FR-030-AC-5
-#[test]
-fn tc_456_204_a_changed_statement_is_reported_suspect_and_the_hash_is_not_moved() {
-    let mut store = MemoryEvidence::new();
-    record_run(
-        &mut store,
-        &request(
-            "SUITE-001",
-            COMMIT,
-            vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
-        ),
-        &[obligation("FR-001-AC-1", HASH_A)],
-    )
-    .unwrap();
-    let outcome = record_run(
-        &mut store,
-        &request(
-            "SUITE-001",
-            OTHER_COMMIT,
-            vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
-        ),
-        &[obligation("FR-001-AC-1", HASH_B)],
-    )
-    .unwrap();
-    assert_eq!(outcome.suspect, vec![ObligationId::new("FR-001-AC-1")]);
-    assert!(
-        outcome.bound.is_empty(),
-        "a re-discharge is not a new binding"
-    );
-    assert_eq!(
-        read_bindings(&store).unwrap().bindings[0]
-            .statement_hash_at_binding
-            .as_str(),
-        HASH_A,
-        "re-running a test must not re-affirm a reworded requirement"
-    );
-}
-
-/// Trace: FR-030-AC-6
-#[test]
-fn tc_456_205_affirming_moves_the_hash_forward_and_records_who_and_where() {
-    let existing = [binding("FR-001-AC-1", "SUITE-001", HASH_A)];
-    let affirmation = Affirmation {
-        who: "peter".to_owned(),
-        commit: commit(OTHER_COMMIT),
-        note: Some("read the new statement".to_owned()),
-    };
-    let outcome = affirm(
-        &existing,
-        &ObligationId::new("FR-001-AC-1"),
-        None,
-        &StatementHash::new(HASH_B),
-        &affirmation,
-    );
-    assert!(outcome.found);
-    assert_eq!(
-        outcome.bindings[0].statement_hash_at_binding.as_str(),
-        HASH_B
-    );
-    assert_eq!(
-        outcome.bindings[0].affirmations.as_ref().unwrap()[0].who,
-        "peter"
-    );
-
-    let unknown = affirm(
-        &existing,
-        &ObligationId::new("FR-999-AC-9"),
-        None,
-        &StatementHash::new(HASH_B),
-        &affirmation,
-    );
-    assert!(!unknown.found, "an unknown obligation must not be invented");
-    assert_eq!(unknown.bindings, existing, "the graph must be untouched");
-}
-
 /// Trace: FR-030-AC-7
 #[test]
 fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
@@ -430,7 +350,7 @@ fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
             COMMIT,
             vec![entry("tests::tc001", Outcome::Pass, &["FR-404-AC-1"])],
         ),
-        &[obligation("FR-001-AC-1", HASH_A)],
+        &[obligation("FR-001-AC-1")],
     )
     .unwrap();
     assert_eq!(outcome.unmatched, vec!["FR-404-AC-1".to_owned()]);
@@ -461,7 +381,7 @@ fn tc_456_207_gc_deletes_only_unreferenced_older_runs_and_dry_run_changes_nothin
         ),
     )
     .unwrap();
-    let mut referenced = binding("FR-001-AC-1", "SUITE-001", HASH_A);
+    let mut referenced = binding("FR-001-AC-1", "SUITE-001");
     referenced.commit = commit(COMMIT);
     write_bindings(&mut store, &[referenced]).unwrap();
 
@@ -501,7 +421,7 @@ fn tc_456_208_an_unrecorded_store_reads_as_an_empty_graph_not_an_error() {
 
 /// Trace: FR-030-AC-10, FR-030-CON-2
 #[test]
-fn tc_456_209_the_graph_keeps_the_hash_and_never_the_statement() {
+fn tc_456_209_the_graph_never_keeps_the_statement() {
     let mut store = MemoryEvidence::new();
     record_run(
         &mut store,
@@ -510,11 +430,10 @@ fn tc_456_209_the_graph_keeps_the_hash_and_never_the_statement() {
             COMMIT,
             vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
         ),
-        &[obligation("FR-001-AC-1", HASH_A)],
+        &[obligation("FR-001-AC-1")],
     )
     .unwrap();
     let text = store.read(&bindings_path()).unwrap().unwrap();
-    assert!(text.contains(HASH_A), "the hash is not recorded");
     assert!(
         !text.contains("the system shall"),
         "the statement text leaked into the store"
@@ -525,9 +444,9 @@ fn tc_456_209_the_graph_keeps_the_hash_and_never_the_statement() {
 #[test]
 fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
     let mut store = MemoryEvidence::new();
-    let mut first = obligation("FR-038-AC-1", HASH_A);
+    let mut first = obligation("FR-038-AC-1");
     first.target_ids = Some(vec!["TC-EV-054".to_owned()]);
-    let mut second = obligation("FR-038-AC-2", HASH_A);
+    let mut second = obligation("FR-038-AC-2");
     second.target_ids = Some(vec!["TC-EV-054".to_owned()]);
     let outcome = record_run(
         &mut store,
@@ -553,7 +472,7 @@ fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
 #[test]
 fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
     let mut store = MemoryEvidence::new();
-    let mut sibling = obligation("FR-001-AC-1", HASH_A);
+    let mut sibling = obligation("FR-001-AC-1");
     sibling.target_ids = Some(vec!["FR-001-AC-2".to_owned()]);
     let outcome = record_run(
         &mut store,
@@ -562,7 +481,7 @@ fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
             COMMIT,
             vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-2"])],
         ),
-        &[sibling, obligation("FR-001-AC-2", HASH_A)],
+        &[sibling, obligation("FR-001-AC-2")],
     )
     .unwrap();
     assert_eq!(outcome.bound, vec![ObligationId::new("FR-001-AC-2")]);
@@ -609,9 +528,9 @@ fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
     write_bindings(
         &mut store,
         &[
-            binding("FR-001-AC-2", "SUITE-001", HASH_B),
-            binding("FR-001-AC-1", "SUITE-002", HASH_A),
-            binding("FR-001-AC-1", "SUITE-001", HASH_A),
+            binding("FR-001-AC-2", "SUITE-001"),
+            binding("FR-001-AC-1", "SUITE-002"),
+            binding("FR-001-AC-1", "SUITE-001"),
         ],
     )
     .unwrap();
@@ -635,53 +554,6 @@ fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
             .unwrap()
             .unwrap()
             .ends_with('\n')
-    );
-}
-
-/// Trace: FR-031-AC-1
-#[test]
-fn tc_456_221_affirming_clears_every_suite_not_only_the_first() {
-    let existing = [
-        binding("FR-001-AC-1", "SUITE-001", HASH_A),
-        binding("FR-001-AC-1", "SUITE-002", HASH_A),
-    ];
-    let outcome = affirm(
-        &existing,
-        &ObligationId::new("FR-001-AC-1"),
-        None,
-        &StatementHash::new(HASH_B),
-        &Affirmation {
-            who: "peter".to_owned(),
-            commit: commit(COMMIT),
-            note: None,
-        },
-    );
-    assert!(
-        outcome
-            .bindings
-            .iter()
-            .all(|item| item.statement_hash_at_binding.as_str() == HASH_B),
-        "a sibling suite was left suspect for a reason nobody could act on"
-    );
-
-    let narrowed = affirm(
-        &existing,
-        &ObligationId::new("FR-001-AC-1"),
-        Some(&suite("SUITE-002")),
-        &StatementHash::new(HASH_B),
-        &Affirmation {
-            who: "peter".to_owned(),
-            commit: commit(COMMIT),
-            note: None,
-        },
-    );
-    assert_eq!(
-        narrowed.bindings[0].statement_hash_at_binding.as_str(),
-        HASH_A
-    );
-    assert_eq!(
-        narrowed.bindings[1].statement_hash_at_binding.as_str(),
-        HASH_B
     );
 }
 
@@ -1034,7 +906,7 @@ fn lineage(actor: Option<&str>, technique: Option<&str>) -> EvidenceLineage {
 }
 
 fn lineaged(suite_name: &str, value: EvidenceLineage) -> Binding {
-    let mut item = binding("FR-001-AC-1", suite_name, HASH_A);
+    let mut item = binding("FR-001-AC-1", suite_name);
     item.lineage = Some(value);
     item
 }
@@ -1121,7 +993,7 @@ fn tc_456_283_a_common_actor_and_a_missing_dimension_stay_visible_in_the_assessm
         &requirement(&[IndependenceDimension::Actor]),
         &[
             lineaged("SUITE-A", lineage(Some("alice"), None)),
-            binding("FR-001-AC-1", "SUITE-B", HASH_A),
+            binding("FR-001-AC-1", "SUITE-B"),
         ],
     );
     assert_eq!(assessment.status, IndependenceStatus::Insufficient);
@@ -1144,7 +1016,7 @@ fn tc_456_284_a_later_run_that_states_no_lineage_clears_the_old_claim() {
         vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
     );
     first.lineage = Some(lineage(Some("alice"), None));
-    record_run(&mut store, &first, &[obligation("FR-001-AC-1", HASH_A)]).unwrap();
+    record_run(&mut store, &first, &[obligation("FR-001-AC-1")]).unwrap();
     assert_eq!(
         read_bindings(&store).unwrap().bindings[0]
             .lineage
@@ -1160,7 +1032,7 @@ fn tc_456_284_a_later_run_that_states_no_lineage_clears_the_old_claim() {
         OTHER_COMMIT,
         vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
     );
-    record_run(&mut store, &second, &[obligation("FR-001-AC-1", HASH_A)]).unwrap();
+    record_run(&mut store, &second, &[obligation("FR-001-AC-1")]).unwrap();
     assert!(
         read_bindings(&store).unwrap().bindings[0].lineage.is_none(),
         "an old independence claim was carried into evidence that did not state one"

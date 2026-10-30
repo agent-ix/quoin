@@ -5,18 +5,17 @@
 //! Deterministic, read-only assurance-graph projections (FR-062, quoin#385).
 //!
 //! The Rust successor to `src/graph-analysis/` — 1,373 lines across five files,
-//! all of which compute and none of which decide policy. Three views over one
+//! all of which compute and none of which decide policy. Two views over one
 //! input:
 //!
 //! | view | question | retained |
 //! |---|---|---|
 //! | [`analyze_fan_out`] | which suites carry which live obligations | `analysis.ts:154` |
-//! | [`analyze_churn`] | which obligations were re-affirmed, by whom | `analysis.ts:197` |
 //! | [`analyze_change_impact`] | what depends on these requirements | `analysis.ts:263` |
 //!
 //! # One IO seam, and it is the whole filesystem surface
 //!
-//! [`analyze_fan_out`], [`analyze_churn`] and [`analyze_change_impact`] take an
+//! [`analyze_fan_out`] and [`analyze_change_impact`] take an
 //! in-memory [`GraphAnalysisInput`] and touch nothing. The only reads are in
 //! [`load`], behind [`GraphInputReader`]: an existence probe and two byte
 //! reads, exactly the three calls `src/graph-analysis/load.ts` makes. No
@@ -50,16 +49,16 @@ pub mod load;
 pub mod model;
 pub mod render;
 
-pub use analysis::{analyze_change_impact, analyze_churn, analyze_fan_out};
+pub use analysis::{analyze_change_impact, analyze_fan_out};
 pub use error::{GraphError, GraphErrorCode, GraphInput, Result};
-pub use ids::{ArtifactId, Author, Commit, DocumentPath, ObligationId, RelationKind, SuiteId};
+pub use ids::{ArtifactId, Commit, DocumentPath, ObligationId, RelationKind, SuiteId};
 pub use input::{
     check_accepted_premises, check_audit_identity, parse_accepted_premises, parse_assurance_export,
     parse_audit_envelope,
 };
 pub use load::{GraphInputReader, GraphLoadOptions, OsGraphInputReader, load_graph_analysis_input};
 pub use model::{
-    AcceptedPremises, AuditEnvelope, Binding, BindingInput, ChangeImpactAnalysis, ChurnAnalysis,
+    AcceptedPremises, AuditEnvelope, Binding, BindingInput, ChangeImpactAnalysis,
     DEFAULT_RELATION_KINDS, FanOutAnalysis, GraphAnalysis, GraphAnalysisInput, GraphAnalysisState,
     GraphGap, GraphGapKind,
 };

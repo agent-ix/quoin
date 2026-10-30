@@ -186,11 +186,10 @@ impl std::error::Error for ContradictoryAudit {}
 /// The reason an empty population renders.
 pub const EMPTY_REASON: &str = "no coverage_matrix criteria: the module declares no `obligations:` source, so there is no criterion to report evidence for";
 
-/// The four kinds the auditor raises when it distrusts a binding.
-const SUSPECT_KINDS: [&str; 4] = [
+/// The three kinds the auditor raises when it distrusts a binding.
+const SUSPECT_KINDS: [&str; 3] = [
     FindingKind::INSUFFICIENT_INDEPENDENCE,
     FindingKind::MOCKED_CONFIRMATION,
-    FindingKind::SUSPECT_LINK,
     FindingKind::VACUOUS_EVIDENCE,
 ];
 

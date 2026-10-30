@@ -27,7 +27,6 @@ fn criterion(id: &str) -> Value {
 fn binding(obligation: &str, suite: &str, commit: &str) -> Value {
     json!({
         "obligation": obligation,
-        "statementHashAtBinding": "h",
         "suite": suite,
         "commit": commit,
         "symbols": ["tc_1"],
@@ -125,7 +124,6 @@ fn tc_1080_001_an_empty_store_is_no_run_evidence_and_still_carries_detail() {
 #[test]
 fn tc_1080_002_every_finding_kind_maps_to_its_status() {
     for kind in [
-        "suspect-link",
         "mocked-confirmation",
         "insufficient-independence",
         "vacuous-evidence",
@@ -171,7 +169,7 @@ fn tc_1080_003_precedence_is_bound_then_suspect_then_stale_then_undischarged() {
         EvidenceStatus::Suspect
     );
     assert_eq!(
-        status_with(&["suspect-link", "undischarged"], false, &[]),
+        status_with(&["vacuous-evidence", "undischarged"], false, &[]),
         EvidenceStatus::Suspect
     );
     assert_eq!(
@@ -209,8 +207,8 @@ fn tc_1080_004_a_contradictory_audit_is_refused_not_resolved() {
         &[binding("FR-001-AC-1", "unit", "a")],
         &audit(
             &[
-                finding("FR-001-AC-2", "suspect-link"),
-                finding("FR-001-AC-1", "suspect-link"),
+                finding("FR-001-AC-2", "vacuous-evidence"),
+                finding("FR-001-AC-1", "vacuous-evidence"),
             ],
             &["FR-001-AC-1", "FR-001-AC-2"],
             &[],

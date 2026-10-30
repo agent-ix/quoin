@@ -4,12 +4,11 @@
 //! The evidence auditor (FR-032).
 //!
 //! A trace link is currently a string match that never expires. Evidence rots
-//! in three ways, none detected before this:
+//! in two ways, none detected before this:
 //!
-//!  1. **Suspect links** — the statement changed after the evidence was bound.
-//!  2. **Stale evidence** — bound to an old commit, a failed run, or a run
+//!  1. **Stale evidence** — bound to an old commit, a failed run, or a run
 //!     that never happened.
-//!  3. **Vacuous evidence** — a tagged test that is skipped, xfail, or
+//!  2. **Vacuous evidence** — a tagged test that is skipped, xfail, or
 //!     assertion-free.
 //!
 //! **The auditor runs nothing.** It reads the store and reports (ADR-0011

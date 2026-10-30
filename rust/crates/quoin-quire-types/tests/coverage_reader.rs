@@ -29,7 +29,6 @@
 use std::path::Path;
 
 use quoin_quire_types::Obligation;
-use sha2::{Digest as _, Sha256};
 
 fn fixture() -> serde_json::Value {
     let path =
@@ -73,34 +72,6 @@ fn reads_every_obligation_quire_emitted() {
         assert!(
             !obligation.statement.is_empty(),
             "an obligation with no statement: {entry}"
-        );
-    }
-}
-
-#[test]
-fn the_fixture_carries_engine_computed_digests() {
-    // The anti-self-fixture check. `statement_hash` is sha256 of `statement`,
-    // computed by the engine. Every captured row verifies, which a fixture
-    // typed by a person would not — the author would have to have run the
-    // digest themselves, and at that point they are capturing, not inventing.
-    //
-    // It also pins the pair: editing a `statement` in the fixture to make a
-    // test convenient breaks the digest, so the bytes cannot be quietly
-    // adjusted after capture.
-    let value = fixture();
-    for entry in obligations(&value) {
-        let statement = entry
-            .get("statement")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_else(|| panic!("no statement: {entry}"));
-        let recorded = entry
-            .get("statement_hash")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_else(|| panic!("no statement_hash: {entry}"));
-        let computed = format!("{:x}", Sha256::digest(statement.as_bytes()));
-        assert_eq!(
-            computed, recorded,
-            "statement_hash does not verify, so these bytes did not come from the engine: {entry}"
         );
     }
 }

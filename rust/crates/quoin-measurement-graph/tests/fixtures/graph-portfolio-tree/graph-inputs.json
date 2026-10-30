@@ -2,13 +2,6 @@
   "graphs": {
     "alpha": {
       "availability": "available",
-      "churn": {
-        "changed": [
-          "src/a.rs",
-          "src/b.rs"
-        ],
-        "windowDays": 30
-      },
       "fanOut": {
         "edges": 30,
         "nodes": 12
@@ -47,10 +40,6 @@
           "seed": "FR-067"
         }
       ],
-      "churn": {
-        "changed": [],
-        "windowDays": 7
-      },
       "fanOut": {
         "edges": 2,
         "nodes": 3
