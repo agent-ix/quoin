@@ -13,7 +13,7 @@
 //! refuse, turned into a silent overwrite. `atomic-file.ts`, the newer of the
 //! two copies, already knows this and uses `linkSync`.
 //!
-//! Both unify on [`quoin_store::store::write_content_addressed`], which links
+//! Both unify on [`quoin_store::store::write_new_or_identical`], which links
 //! rather than renames, `fsync`s the file and the directory, and refuses with
 //! `ContentCollision`. Two declared divergences follow, both strengthenings:
 //! `store.ts`'s rename becomes a link, and durability is added.
@@ -37,7 +37,7 @@
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-use quoin_store::{JsonValue, canonical_json_bytes, store::write_content_addressed};
+use quoin_store::{JsonValue, canonical_json_bytes, store::write_new_or_identical};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
@@ -107,7 +107,7 @@ pub(crate) fn write_measurement_collection_with_plans(
         apparatus::protected_member(&protected),
     );
     let bytes = canonical_json_bytes(&written)?;
-    write_content_addressed(&path, &bytes)?;
+    write_new_or_identical(&path, &bytes)?;
     Ok(path)
 }
 

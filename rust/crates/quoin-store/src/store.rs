@@ -5,8 +5,8 @@
 //! Every write here is **crash-atomic**: the bytes are written to a temporary
 //! name in the destination directory, `fsync`ed, renamed into place, and the
 //! destination directory is `fsync`ed. A reader therefore sees either the
-//! previous file or the complete new one, never a truncated one. Evidence is
-//! referenced by digest; a half-written record is not a recoverable state.
+//! previous file or the complete new one, never a truncated one. A half-written
+//! record is not a recoverable state.
 //!
 //! The oracle's evidence-store writer (`writeCanonical` → `writeFileSync`) is
 //! *not* atomic; its change-assurance writer is. Making both atomic here is a
@@ -38,20 +38,24 @@ pub fn change_assurance_root(repo: &Path) -> PathBuf {
     store_root(repo).join("change-assurance")
 }
 
-/// A sealed change-assurance record's path.
+/// A change-assurance record's path: `records/<record_id>/<revision>.json`.
+///
+/// A record is addressed by the pair `(record_id, revision)`; nothing in the
+/// path is derived from content.
 #[must_use]
-pub fn record_path(repo: &Path, digest: &crate::digest::CanonicalDigest) -> PathBuf {
+pub fn record_path(repo: &Path, record_id: &str, revision: u64) -> PathBuf {
     change_assurance_root(repo)
         .join("records")
-        .join(format!("{}.json", digest.as_hex()))
+        .join(record_id)
+        .join(format!("{revision}.json"))
 }
 
-/// A proof attestation's directory.
+/// A proof attestation's directory: `attestations/<attestation_id>`.
 #[must_use]
-pub fn attestation_path(repo: &Path, digest: &crate::digest::CanonicalDigest) -> PathBuf {
+pub fn attestation_path(repo: &Path, attestation_id: &str) -> PathBuf {
     change_assurance_root(repo)
         .join("attestations")
-        .join(digest.as_hex())
+        .join(attestation_id)
 }
 
 fn io<'a>(
@@ -84,7 +88,7 @@ pub fn fsync_directory(path: &Path) -> Result<(), StoreError> {
 /// returns, but its *directory entry* is not — only the `fsync` of the parent
 /// makes the name survive a crash, and that fsync belongs to the caller that
 /// knows which directory finally holds the name. Every caller here is inside
-/// [`write_atomic`] or [`write_content_addressed`], both of which end with
+/// [`write_atomic`] or [`write_new_or_identical`], both of which end with
 /// [`fsync_directory`]; exporting it would let a caller believe a file is
 /// durable when a crash can still lose its name.
 fn write_durable_new(path: &Path, bytes: &[u8]) -> Result<(), StoreError> {
@@ -154,10 +158,10 @@ pub fn write_canonical(path: &Path, value: &JsonValue) -> Result<(), StoreError>
     write_atomic(path, &canonical_json_bytes(value)?)
 }
 
-/// Write content-addressed bytes, refusing a collision.
+/// Write bytes to a path that is written once, refusing a collision.
 ///
 /// If the path already exists it must already hold exactly these bytes; a
-/// differing body under a digest-named path is corruption, not an overwrite to
+/// differing body at an already-written path is corruption, not an overwrite to
 /// perform. Returns `true` when the file was newly written.
 ///
 /// The publish step is [`fs::hard_link`], not [`fs::rename`]. Rename replaces
@@ -174,7 +178,7 @@ pub fn write_canonical(path: &Path, value: &JsonValue) -> Result<(), StoreError>
 /// Refuses with [`StoreError::ContentCollision`] when `path` already holds
 /// bytes that differ from `bytes`, and on any I/O failure along the
 /// write-temporary, link, compare path.
-pub fn write_content_addressed(path: &Path, bytes: &[u8]) -> Result<bool, StoreError> {
+pub fn write_new_or_identical(path: &Path, bytes: &[u8]) -> Result<bool, StoreError> {
     let parent = path.parent().unwrap_or_else(|| Path::new("."));
     fs::create_dir_all(parent).map_err(io("create directory", parent))?;
     let temporary = temporary_beside(path);
@@ -271,7 +275,7 @@ mod tests {
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
     use super::{
-        STORE_SCHEMA_VERSION, read_bytes, write_atomic, write_content_addressed, write_durable_new,
+        STORE_SCHEMA_VERSION, read_bytes, write_atomic, write_durable_new, write_new_or_identical,
     };
     use crate::error::StoreErrorCode;
 
@@ -324,9 +328,9 @@ mod tests {
     fn tc_380_content_addressed_write_refuses_differing_bytes() {
         let dir = scratch().join("content");
         let path = dir.join("d.json");
-        assert!(write_content_addressed(&path, b"body").expect("write"));
-        assert!(!write_content_addressed(&path, b"body").expect("idempotent"));
-        let error = write_content_addressed(&path, b"other").expect_err("collision");
+        assert!(write_new_or_identical(&path, b"body").expect("write"));
+        assert!(!write_new_or_identical(&path, b"body").expect("idempotent"));
+        let error = write_new_or_identical(&path, b"other").expect_err("collision");
         assert_eq!(error.code(), StoreErrorCode::ContentCollision);
         std::fs::remove_dir_all(&dir).ok();
     }

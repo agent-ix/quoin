@@ -4,23 +4,11 @@
 //!
 //! # Why a validation failure carries a field name
 //!
-//! The retained TypeScript throws bare `Error`s and then **classifies them by
-//! matching their message text**: `src/change-assurance/verify.ts:32` tests
-//! `/digest mismatch/i` to decide between `record_digest_mismatch` and
-//! `schema_invalid`, `:44-49` tests `/missing|no parent/i`, `/revision gap/i`
-//! and `/mismatch|cross-record/i` to pick a lineage reason, and `:111` tests
-//! `/digest/i` to pick between `attestation_digest_mismatch` and
-//! `attestation_schema_invalid`. Those verdicts are contractual; the prose is
-//! not.
-//!
-//! So this crate does **not** reproduce the prose and re-run the regexes over
-//! it. [`FieldFailure`] keeps the one piece of the message the classification
-//! actually reads — which field failed, and whether it was absent, undeclared
-//! or malformed — as structured data, and [`ChangeAssuranceError`] answers the
-//! three classification questions with methods over that structure. The
-//! message text is then free to be whatever reads best, because nothing
-//! matches on it. `tests/tc_455_classification.rs` pins the mapping against
-//! the oracle's own verdicts.
+//! [`FieldFailure`] keeps the one piece of a refusal that classification reads,
+//! which field failed and whether it was absent, undeclared or malformed, as
+//! structured data, and [`ChangeAssuranceError`] answers the classification
+//! questions with methods over that structure. The message text is free to be
+//! whatever reads best, because nothing matches on it.
 
 use std::fmt;
 
@@ -41,19 +29,16 @@ pub enum ChangeAssuranceErrorCode {
     ReceiptInvalid,
     /// A decision history or ix-flow event did not satisfy its shape.
     DecisionHistoryInvalid,
-    /// A `digest` member was not 64 lowercase hexadecimal characters.
-    DigestMalformed,
-    /// A sealed value's stored digest disagreed with the recomputed one.
-    DigestMismatch,
     /// A parent chain did not satisfy strict N-1 lineage.
     LineageInvalid,
-    /// Retained output bytes did not reproduce the declared digest or size.
+    /// Retained output bytes did not have the declared size.
     OutputIntegrityMismatch,
-    /// A digest-named path already held different content.
+    /// An identity-named path already held different content.
     ContentCollision,
-    /// A record or attestation read back under a path whose digest it did not
-    /// carry.
-    PathDigestMismatch,
+    /// A stored document sat under a path naming another identity.
+    PathIdentityMismatch,
+    /// A stored receipt was not the receipt re-derived from its inputs.
+    ReceiptMismatch,
     /// A filesystem operation failed.
     Io,
     /// A refusal raised by `quoin-store` and passed through unchanged.
@@ -62,17 +47,16 @@ pub enum ChangeAssuranceErrorCode {
 
 impl ChangeAssuranceErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 12] = [
+    pub const ALL: [Self; 11] = [
         Self::RecordInvalid,
         Self::AttestationInvalid,
         Self::ReceiptInvalid,
         Self::DecisionHistoryInvalid,
-        Self::DigestMalformed,
-        Self::DigestMismatch,
         Self::LineageInvalid,
         Self::OutputIntegrityMismatch,
         Self::ContentCollision,
-        Self::PathDigestMismatch,
+        Self::PathIdentityMismatch,
+        Self::ReceiptMismatch,
         Self::Io,
         Self::Store,
     ];
@@ -85,12 +69,11 @@ impl ChangeAssuranceErrorCode {
             Self::AttestationInvalid => "QCA-ATTESTATION-INVALID",
             Self::ReceiptInvalid => "QCA-RECEIPT-INVALID",
             Self::DecisionHistoryInvalid => "QCA-DECISION-HISTORY-INVALID",
-            Self::DigestMalformed => "QCA-DIGEST-MALFORMED",
-            Self::DigestMismatch => "QCA-DIGEST-MISMATCH",
             Self::LineageInvalid => "QCA-LINEAGE-INVALID",
             Self::OutputIntegrityMismatch => "QCA-OUTPUT-INTEGRITY-MISMATCH",
             Self::ContentCollision => "QCA-CONTENT-COLLISION",
-            Self::PathDigestMismatch => "QCA-PATH-DIGEST-MISMATCH",
+            Self::PathIdentityMismatch => "QCA-PATH-IDENTITY-MISMATCH",
+            Self::ReceiptMismatch => "QCA-RECEIPT-MISMATCH",
             Self::Io => "QCA-IO",
             Self::Store => "QCA-STORE",
         }
@@ -164,17 +147,6 @@ impl FieldFailure {
         }
     }
 
-    /// Whether the failure concerns a digest-bearing member.
-    ///
-    /// Reproduces `verify.ts:111`'s `/digest/i` over the oracle's message.
-    /// Every one of those messages carries the failing field's name and
-    /// nothing else that could contain `digest`, so the name is the whole
-    /// test.
-    #[must_use]
-    pub fn concerns_a_digest(&self) -> bool {
-        self.field().to_ascii_lowercase().contains("digest")
-    }
-
     /// Whether the failure reads as an absence.
     ///
     /// Reproduces the `missing` half of `verify.ts:44`'s
@@ -198,21 +170,17 @@ impl fmt::Display for FieldFailure {
 
 /// Why a parent chain was refused.
 ///
-/// One variant per message `verifyLineage` (`records.ts:43-71`) can throw,
-/// so the lineage reason is a `match` rather than a regex.
+/// One variant per rule the strict N-1 chain can break, so the lineage reason
+/// is a `match` rather than a message comparison.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum LineageFailure {
-    /// Revision 1 carried a parent digest or a non-empty parent chain.
+    /// Revision 1 carried a non-empty parent chain.
     GenesisHasAParent,
     /// The parent chain was not exactly `revision - 1` long, or a parent sat
     /// at the wrong revision.
     RevisionGap,
     /// A parent carried a different `record_id`.
     CrossRecordParent,
-    /// A parent's own `parent_digest` was not its predecessor's digest.
-    ParentDigestMismatch,
-    /// The record's `parent_digest` was not the chain tail's digest.
-    ImmediateParentMismatch,
 }
 
 impl LineageFailure {
@@ -220,11 +188,9 @@ impl LineageFailure {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
-            Self::GenesisHasAParent => "revision 1 must have a null parent and no parent chain",
+            Self::GenesisHasAParent => "revision 1 must have no parent chain",
             Self::RevisionGap => "revision gap in parent chain",
             Self::CrossRecordParent => "cross-record parent",
-            Self::ParentDigestMismatch => "parent digest mismatch",
-            Self::ImmediateParentMismatch => "immediate parent mismatch",
         }
     }
 }
@@ -235,7 +201,7 @@ impl fmt::Display for LineageFailure {
     }
 }
 
-/// Which sealed shape a validation failure belongs to.
+/// Which shape a validation failure belongs to.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum Subject {
     /// A change-assurance record.
@@ -271,31 +237,13 @@ impl fmt::Display for Subject {
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum ChangeAssuranceError {
-    /// A sealed shape did not satisfy its v1 schema.
+    /// A shape did not satisfy its v1 schema.
     #[error("invalid {subject}: {failure}")]
     Shape {
         /// Which shape was being read.
         subject: Subject,
         /// The field, and how it failed.
         failure: FieldFailure,
-    },
-
-    /// A `digest` member was not 64 lowercase hexadecimal characters.
-    #[error("digest must be exactly 64 lowercase hexadecimal characters")]
-    DigestMalformed {
-        /// Which shape carried it.
-        subject: Subject,
-    },
-
-    /// A sealed value's stored digest disagreed with the recomputed one.
-    #[error("digest mismatch: stored {stored}, recomputed {recomputed}")]
-    DigestMismatch {
-        /// Which shape carried it.
-        subject: Subject,
-        /// The digest the value declared.
-        stored: String,
-        /// The digest its bytes actually produce.
-        recomputed: String,
     },
 
     /// A parent chain did not satisfy strict N-1 lineage.
@@ -314,42 +262,40 @@ pub enum ChangeAssuranceError {
         source: Box<ChangeAssuranceError>,
     },
 
-    /// Retained output bytes did not reproduce the declared digest or size.
+    /// Retained output bytes did not have the declared size.
     #[error(
-        "retained output integrity mismatch: declared {declared_size} bytes / {declared_digest}, \
-         observed {observed_size} bytes / {observed_digest}"
+        "retained output size mismatch: declared {declared_size} bytes, observed {observed_size}"
     )]
     OutputIntegrity {
         /// The size the attestation declared.
         declared_size: u64,
-        /// The digest the attestation declared.
-        declared_digest: String,
         /// The size of the bytes supplied.
         observed_size: u64,
-        /// The digest of the bytes supplied.
-        observed_digest: String,
     },
 
-    /// A digest-named path already held different content.
-    #[error("{what} digest collision: {digest} already holds different bytes")]
+    /// An identity-named path already held different content.
+    #[error("{what} collision: {id} already holds different bytes")]
     ContentCollision {
         /// Which artifact collided.
         what: Subject,
-        /// The digest naming the path.
-        digest: String,
+        /// The identity naming the path.
+        id: String,
     },
 
-    /// A record or attestation read back under a path whose digest it did not
-    /// carry.
-    #[error("{what} path digest mismatch: path names {expected}, content declares {found}")]
-    PathDigestMismatch {
+    /// A stored document sat under a path naming another identity.
+    #[error("{what} path identity mismatch: path names {expected}, content declares {found}")]
+    PathIdentityMismatch {
         /// Which artifact was read.
         what: Subject,
-        /// The digest the path names.
+        /// The identity the path names.
         expected: String,
-        /// The digest the content declares.
+        /// The identity the content declares.
         found: String,
     },
+
+    /// A stored receipt was not the receipt re-derived from its inputs.
+    #[error("stored receipt differs from the receipt re-derived from the retained inputs")]
+    ReceiptMismatch,
 
     /// A filesystem operation failed.
     #[error("{operation} failed for {path}")]
@@ -383,14 +329,13 @@ impl ChangeAssuranceError {
                 Subject::Receipt => ChangeAssuranceErrorCode::ReceiptInvalid,
                 Subject::DecisionHistory => ChangeAssuranceErrorCode::DecisionHistoryInvalid,
             },
-            Self::DigestMalformed { .. } => ChangeAssuranceErrorCode::DigestMalformed,
-            Self::DigestMismatch { .. } => ChangeAssuranceErrorCode::DigestMismatch,
             Self::Lineage { .. } | Self::LineageParent { .. } => {
                 ChangeAssuranceErrorCode::LineageInvalid
             }
             Self::OutputIntegrity { .. } => ChangeAssuranceErrorCode::OutputIntegrityMismatch,
             Self::ContentCollision { .. } => ChangeAssuranceErrorCode::ContentCollision,
-            Self::PathDigestMismatch { .. } => ChangeAssuranceErrorCode::PathDigestMismatch,
+            Self::PathIdentityMismatch { .. } => ChangeAssuranceErrorCode::PathIdentityMismatch,
+            Self::ReceiptMismatch => ChangeAssuranceErrorCode::ReceiptMismatch,
             Self::Io { .. } => ChangeAssuranceErrorCode::Io,
             Self::Store { .. } => ChangeAssuranceErrorCode::Store,
         }
@@ -399,30 +344,5 @@ impl ChangeAssuranceError {
     /// Build a shape refusal.
     pub(crate) fn shape(subject: Subject, failure: FieldFailure) -> Self {
         Self::Shape { subject, failure }
-    }
-
-    /// Whether this refusal is the one `verify.ts:32`'s `/digest mismatch/i`
-    /// selects — the record's own digest disagreeing with its bytes, and
-    /// nothing else.
-    ///
-    /// A malformed digest is deliberately **not** this: the oracle's
-    /// `digest must be exactly 64 lowercase hexadecimal characters` does not
-    /// contain the words `digest mismatch`, so it falls through to the
-    /// schema-invalid receipt.
-    #[must_use]
-    pub const fn is_digest_mismatch(&self) -> bool {
-        matches!(self, Self::DigestMismatch { .. })
-    }
-
-    /// Whether this refusal is one `verify.ts:111`'s `/digest/i` selects,
-    /// choosing `attestation_digest_mismatch` over
-    /// `attestation_schema_invalid`.
-    #[must_use]
-    pub fn concerns_a_digest(&self) -> bool {
-        match self {
-            Self::Shape { failure, .. } => failure.concerns_a_digest(),
-            Self::DigestMalformed { .. } | Self::DigestMismatch { .. } => true,
-            _ => false,
-        }
     }
 }

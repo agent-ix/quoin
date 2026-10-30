@@ -15,7 +15,6 @@
 //!   and the other refuses is the worst failure mode available — it is a store
 //!   file that exists for one reader and not the other.
 //! * **Canonical bytes must agree exactly**, in both serializations.
-//! * **Digests must agree exactly.**
 //! * **Refusal *messages* are not asserted.** They are diagnostics, and the
 //!   Rust port reports typed variants with stable codes rather than the
 //!   oracle's prose. The refusal itself is the contract.
@@ -28,11 +27,9 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-use ix_trace_rs::trace;
-
 use quoin_store::json::parse::parse_strict_json_str;
 use quoin_store::json::value::JsonValue;
-use quoin_store::{canonical_json, canonicalize_jcs, digest_canonical_value, digest_record};
+use quoin_store::{canonical_json, canonicalize_jcs};
 
 const FIXTURE: &str = include_str!("fixtures/jcs-oracle.json");
 
@@ -44,8 +41,6 @@ struct Case {
     accepted: bool,
     jcs: Option<String>,
     pretty: Option<String>,
-    digest: Option<String>,
-    record_digest: Option<String>,
     /// The serialization this case is a known, measured divergence in, with the
     /// reason. `None` means the two implementations must agree byte for byte.
     divergence: Option<(String, String)>,
@@ -76,8 +71,6 @@ fn load_cases() -> Vec<Case> {
                 accepted: matches!(object.get("accepted"), Some(JsonValue::Bool(true))),
                 jcs: member(object, "jcs"),
                 pretty: member(object, "pretty"),
-                digest: member(object, "digest"),
-                record_digest: member(object, "record_digest"),
                 divergence: object.get("divergence").and_then(|value| {
                     let declared = value.as_object().ok()?;
                     Some((member(declared, "form")?, member(declared, "summary")?))
@@ -97,7 +90,7 @@ fn load_cases() -> Vec<Case> {
 #[test]
 fn tc_380_every_case_states_what_it_probes_and_matches_authored_intent() {
     let cases = load_cases();
-    assert!(cases.len() >= 60, "the suite must not shrink silently");
+    assert!(cases.len() >= 50, "the suite must not shrink silently");
     for case in &cases {
         assert!(
             case.probes.len() > 40,
@@ -198,13 +191,10 @@ fn tc_380_both_canonical_serializations_are_byte_identical_to_the_oracle() {
 /// setter rather than creating an own property. `JSON.parse` *keeps*
 /// `__proto__` as an own property, so a store file containing one loses it on
 /// any rewrite, with no diagnostic. `canonicalizeJcs` is unaffected — it never
-/// assigns into an object — so digests are not involved.
+/// assigns into an object — so the JCS bytes are unaffected.
 ///
 /// The Rust port keeps the member. Reproducing a prototype-pollution artefact
 /// in a language with no prototypes would be encoding a defect as a contract.
-/// The replay tool reports whether any reachable store actually contains such a
-/// member; if one ever does, this is data loss that already happened and must
-/// be investigated before cutover, not papered over here.
 ///
 #[test]
 fn tc_380_proto_member_is_data_in_rust_and_deleted_by_the_typescript_pretty_form() {
@@ -249,72 +239,35 @@ fn tc_380_proto_member_is_data_in_rust_and_deleted_by_the_typescript_pretty_form
     );
 }
 
-/// Every digest the oracle computed is reproduced exactly.
-///
-/// Trace: FR-098-CON-1
-#[trace("FR-100-AC-11")]
-#[test]
-fn tc_380_digests_are_identical_to_the_oracle_on_every_case() {
-    let mut replayed = 0_usize;
-    for case in load_cases() {
-        let Ok(value) = parse_strict_json_str(&case.input) else {
-            continue;
-        };
-        let expected = case.digest.expect("an accepted case carries a digest");
-        assert_eq!(
-            digest_canonical_value(&value)
-                .expect("depth within budget")
-                .as_hex(),
-            expected,
-            "{}: canonical digest",
-            case.id
-        );
-        replayed += 1;
-        if let (JsonValue::Object(object), Some(expected_record)) = (&value, case.record_digest) {
-            assert_eq!(
-                digest_record(object).expect("depth within budget").as_hex(),
-                expected_record,
-                "{}: sealed-record digest",
-                case.id
-            );
-            replayed += 1;
-        }
-    }
-    assert!(replayed >= 60, "digest coverage must not erode");
-}
-
-/// Canonicalization is what makes a digest independent of source spelling.
+/// Canonicalization makes the bytes independent of source member order.
 ///
 /// Trace: FR-098-CON-1
 #[test]
-fn tc_380_member_order_in_the_source_does_not_change_the_digest() {
+fn tc_380_member_order_in_the_source_does_not_change_the_canonical_bytes() {
     let forward = parse_strict_json_str(r#"{"a":1,"b":2,"c":3}"#).expect("parses");
     let reversed = parse_strict_json_str(r#"{"c":3,"b":2,"a":1}"#).expect("parses");
     assert_eq!(
-        digest_canonical_value(&forward).expect("depth within budget"),
-        digest_canonical_value(&reversed).expect("depth within budget")
+        canonicalize_jcs(&forward).expect("depth within budget"),
+        canonicalize_jcs(&reversed).expect("depth within budget")
     );
 }
 
-/// Negative zero and zero are different documents with one digest.
+/// Negative zero and zero are different documents with one canonical form.
 ///
 /// Recorded as a known property, not as a defect: it follows from the frozen
 /// ECMAScript number model and is already true of retained evidence.
 ///
 /// Trace: FR-098-CON-1
 #[test]
-fn tc_380_negative_zero_and_zero_share_one_identity() {
+fn tc_380_negative_zero_and_zero_share_one_canonical_form() {
     let negative = parse_strict_json_str(r#"{"n":-0}"#).expect("parses");
     let positive = parse_strict_json_str(r#"{"n":0}"#).expect("parses");
-    // The two values are genuinely different doubles — the sign bit differs —
-    // and still carry one identity. Reading both through the same accessor is
-    // the point: an alias pair here would compare a value with itself and
-    // assert nothing.
+    // The two values are genuinely different doubles: the sign bit differs.
     assert_ne!(member_bits(&negative), member_bits(&positive));
     assert_eq!(member_bits(&negative) ^ member_bits(&positive), 1 << 63);
     assert_eq!(
-        digest_canonical_value(&negative).expect("depth within budget"),
-        digest_canonical_value(&positive).expect("depth within budget")
+        canonicalize_jcs(&negative).expect("depth within budget"),
+        canonicalize_jcs(&positive).expect("depth within budget")
     );
 }
 

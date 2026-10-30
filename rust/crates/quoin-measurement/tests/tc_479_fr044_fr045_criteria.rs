@@ -780,7 +780,7 @@ fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
 
 /// A name that resolves to an entry under the repository which cannot be
 /// digested refuses the publish, naming the artifact and the path. A
-/// directory and a symlink are both entries `digest_file_sha256` declines;
+/// directory and a symlink are both entries the bounded regular-file read declines;
 /// before PLAT-969 each was skipped and the record admitted unchecked.
 ///
 /// Two vacuous rewrites of the guard this test also has to catch: pinning

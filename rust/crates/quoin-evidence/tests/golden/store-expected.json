@@ -1034,15 +1034,12 @@
           "version": "0.1.0",
           "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "sourceState": "clean",
-          "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-          "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
           "capabilities": [
             "record"
           ],
           "artifacts": [
             {
-              "name": "report.json",
-              "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              "name": "report.json"
             }
           ]
         }
@@ -1077,11 +1074,6 @@
       "name": "assurance-experiment-bad-recorded-at",
       "kind": "assurance",
       "err": "recordedAt must be an ISO-8601 instant"
-    },
-    {
-      "name": "assurance-experiment-bad-digest",
-      "kind": "assurance",
-      "err": "producerProvenance.executableDigest must be sha256:<64 lowercase hex>"
     },
     {
       "name": "assurance-experiment-not-an-object",
@@ -1122,15 +1114,12 @@
           "version": "0.1.0",
           "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "sourceState": "clean",
-          "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-          "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
           "capabilities": [
             "record"
           ],
           "artifacts": [
             {
-              "name": "report.json",
-              "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              "name": "report.json"
             }
           ]
         }
@@ -1179,15 +1168,12 @@
           "version": "0.1.0",
           "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "sourceState": "clean",
-          "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-          "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
           "capabilities": [
             "record"
           ],
           "artifacts": [
             {
-              "name": "report.json",
-              "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              "name": "report.json"
             }
           ]
         }

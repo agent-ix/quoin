@@ -109,7 +109,7 @@ fn reported_store_path(root: &Path, reported: &str, relative: &str) -> PathBuf {
 }
 
 /// As [`reported_store_path`], where only the record's FAMILY is predictable —
-/// a content-addressed record's file name is derived from its own bytes.
+/// an assurance record's file name is its minted UUID.
 fn reported_store_family(root: &Path, reported: &str, family: &str) -> PathBuf {
     let prefix = store_path(root, family);
     let path = Path::new(reported);
@@ -398,13 +398,8 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
         "version": "0.1.0",
         "sourceRevision": commit('a'),
         "sourceState": "clean",
-        "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-        "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
         "capabilities": ["record"],
-        "artifacts": [{
-            "name": "report.json",
-            "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
-        }],
+        "artifacts": [{ "name": "report.json" }],
     });
 
     let payload = ok(&run(
@@ -434,35 +429,6 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
     assert_eq!(payload["created"], true);
     let experiment_path = payload["path"].as_str().unwrap().to_owned();
     reported_store_family(dir.path(), &experiment_path, "experiments");
-
-    // Append-only: publishing the same document again finds identical bytes
-    // and says so, rather than reporting a second creation.
-    let payload = ok(&run(
-        "evidence.record_experiment",
-        &json!({
-            "repo": dir.path(),
-            "document": {
-                "schemaVersion": "experiment-record-v1",
-                "subject": {"kind": "requirement", "id": "FR-001", "sourceRevision": commit('b')},
-                "recordedAt": "2026-01-01T00:00:00Z",
-                "hypothesis": "the adapter reads real output",
-                "design": {
-                    "timeBox": "1d",
-                    "corpusRefs": ["corpus/a"],
-                    "comparisonMethod": "A/B",
-                    "decisionRule": "p<0.05",
-                },
-                "result": {
-                    "status": "supported",
-                    "summary": "it did",
-                    "evidenceRefs": ["runs/SUITE-A"],
-                },
-                "producerProvenance": provenance,
-            },
-        }),
-    ));
-    assert_eq!(payload["created"], false);
-    assert_eq!(payload["path"].as_str().unwrap(), experiment_path);
 
     let payload = ok(&run(
         "evidence.record_operational",

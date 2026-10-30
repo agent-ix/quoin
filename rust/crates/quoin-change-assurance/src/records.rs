@@ -1,69 +1,42 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! Sealing, verifying and chaining change-assurance records (FR-063).
+//! Preparing, reading and chaining change-assurance records (FR-063).
 //!
-//! The port of `sealChangeRecord`, `verifyChangeRecord`, `recordBytes`,
-//! `verifyLineage` and `validateDecision`.
-//!
-//! # Sealing digests the normalized value, not the typed one
-//!
-//! [`seal_change_record`] normalizes the input JSON, validates it, and then
-//! takes the digest over **that JSON**, never over a value rebuilt from the
-//! typed [`ChangeAssuranceRecord`]. The two agree for every record this crate
-//! accepts, and a test asserts it — but "they agree" is a fact to check rather
-//! than one to rely on, because a digest that disagrees names evidence that
-//! can no longer be found.
+//! A record is addressed by `(record_id, revision)`; nothing here hashes it.
+//! Preparing normalizes the input's collections into identity order, validates
+//! the result against the v1 schema, and returns the typed record - the bytes
+//! written are those of [`record_bytes`], so two runs over the same input write
+//! the same bytes.
 
-use quoin_store::{CanonicalDigest, JsonValue, canonical_bytes, digest_canonical_value};
+use quoin_store::{JsonValue, canonical_bytes};
 
-use crate::error::{ChangeAssuranceError, LineageFailure, Subject};
+use crate::error::{ChangeAssuranceError, LineageFailure};
 use crate::model::decision::{DecisionHistory, ReviewDecision, read_review_event};
 use crate::model::outcome::{Outcome, Reason};
 use crate::model::receipt::ReceiptDecisionEvent;
 use crate::model::record::{ChangeAssuranceRecord, DECISION_EVENT_KIND, normalize_record};
 
-/// Seal an unsealed record: normalize its collections, validate it, attach its
-/// digest, and verify the result.
+/// Normalize a record body's collections and validate it.
 ///
 /// # Errors
 ///
-/// Every refusal of the v1 schema, and [`ChangeAssuranceError::DigestMismatch`]
-/// if the attached digest does not verify — which can only happen if the
-/// canonicalizer disagrees with itself.
-pub fn seal_change_record(
+/// Every refusal of the v1 schema, including an undeclared member such as a
+/// `digest`.
+pub fn prepare_change_record(
     input: &JsonValue,
 ) -> Result<ChangeAssuranceRecord, ChangeAssuranceError> {
-    let normalized = normalize_record(input);
-    crate::model::record::UnsealedRecord::from_json(&normalized)?;
-    let digest = digest_canonical_value(&normalized)?;
-    let mut sealed = normalized.as_object()?.clone();
-    sealed.set("digest", JsonValue::string(digest.as_hex()));
-    verify_change_record(&JsonValue::Object(sealed))
+    ChangeAssuranceRecord::from_json(&normalize_record(input))
 }
 
-/// Validate a sealed record and check its digest against its own bytes.
+/// Validate a stored record.
 ///
 /// # Errors
 ///
-/// Every refusal of the v1 schema, then
-/// [`ChangeAssuranceError::DigestMismatch`] when the stored digest is not the
-/// digest of the record's canonical bytes with the `digest` member removed.
-pub fn verify_change_record(
+/// Every refusal of the v1 schema.
+pub fn read_change_record_json(
     value: &JsonValue,
 ) -> Result<ChangeAssuranceRecord, ChangeAssuranceError> {
-    let record = ChangeAssuranceRecord::read_sealed(value)?;
-    let mut unsigned = value.as_object()?.clone();
-    unsigned.remove("digest");
-    let recomputed = digest_canonical_value(&JsonValue::Object(unsigned))?;
-    if recomputed == record.digest {
-        Ok(record)
-    } else {
-        Err(ChangeAssuranceError::DigestMismatch {
-            subject: Subject::Record,
-            stored: record.digest.as_hex().to_owned(),
-            recomputed: recomputed.as_hex().to_owned(),
-        })
-    }
+    ChangeAssuranceRecord::from_json(value)
 }
 
 /// The canonical bytes a record is retained as.
@@ -75,21 +48,16 @@ pub fn record_bytes(record: &ChangeAssuranceRecord) -> Result<Vec<u8>, ChangeAss
     Ok(canonical_bytes(&record.to_json()?)?)
 }
 
-/// Check a record's parent chain, returning the parent digests in revision
-/// order.
+/// Check a record's parent chain.
 ///
 /// The rule is strict N-1: revision `n` has exactly `n - 1` parents, at
-/// revisions 1 through `n - 1`, each linking to the one before, all carrying
-/// the same `record_id`, and the last being the record's own `parent_digest`.
-/// Revision 1 has none.
+/// revisions 1 through `n - 1`, all carrying the same `record_id`. Revision 1
+/// has none.
 ///
 /// # Why the parents arrive as JSON
 ///
-/// The oracle verifies each parent *inside* the walk, after the length check
-/// and in revision order, and a parent that fails to verify is a distinct
-/// verdict (`parent_invalid`) from one that is absent or mislinked. Taking
-/// already-verified parents would erase that distinction, so this takes them
-/// as retained and verifies them where the oracle does.
+/// A parent that fails to read is a distinct verdict (`parent_invalid`) from
+/// one that is absent or mislinked, so each is read where the walk reaches it.
 ///
 /// # Errors
 ///
@@ -98,27 +66,20 @@ pub fn record_bytes(record: &ChangeAssuranceRecord) -> Result<Vec<u8>, ChangeAss
 pub fn verify_lineage(
     record: &ChangeAssuranceRecord,
     parents: &[JsonValue],
-) -> Result<Vec<CanonicalDigest>, ChangeAssuranceError> {
-    // `verifyLineage`'s first statement re-verifies the subject record
-    // (`records.ts:47`). It is not redundant: a record whose digest does not
-    // verify has already been admitted by the caller with a
-    // `record_digest_mismatch`, and the chain it heads is unusable evidence
-    // even so, which the oracle records as a *second*, lineage refusal.
-    verify_change_record(&record.to_json()?)?;
+) -> Result<(), ChangeAssuranceError> {
     let mut ordered: Vec<&JsonValue> = parents.iter().collect();
-    // The oracle sorts on `a.revision - b.revision` before anything is
-    // validated, so a parent whose `revision` is not a number has no place in
-    // the order. It sorts to the front here; see `DIVERGENCE.md` §3 for why
-    // the verdict does not depend on where it lands.
+    // A parent whose `revision` is not a number has no place in the order. It
+    // sorts to the front here; see `DIVERGENCE.md` for why the verdict does
+    // not depend on where it lands.
     ordered.sort_by(|left, right| declared_revision(left).total_cmp(&declared_revision(right)));
 
     if record.revision.is_genesis() {
-        if record.parent_digest.is_some() || !ordered.is_empty() {
-            return Err(ChangeAssuranceError::Lineage {
-                failure: LineageFailure::GenesisHasAParent,
-            });
+        if ordered.is_empty() {
+            return Ok(());
         }
-        return Ok(Vec::new());
+        return Err(ChangeAssuranceError::Lineage {
+            failure: LineageFailure::GenesisHasAParent,
+        });
     }
     let expected_length = record.revision.get().saturating_sub(1);
     if u64::try_from(ordered.len()).unwrap_or(u64::MAX) != expected_length {
@@ -126,11 +87,9 @@ pub fn verify_lineage(
             failure: LineageFailure::RevisionGap,
         });
     }
-    let mut digests: Vec<CanonicalDigest> = Vec::with_capacity(ordered.len());
-    let mut expected_parent: Option<CanonicalDigest> = None;
     for (index, raw) in ordered.iter().enumerate() {
         let parent =
-            verify_change_record(raw).map_err(|source| ChangeAssuranceError::LineageParent {
+            read_change_record_json(raw).map_err(|source| ChangeAssuranceError::LineageParent {
                 index,
                 source: Box::new(source),
             })?;
@@ -144,20 +103,8 @@ pub fn verify_lineage(
                 failure: LineageFailure::RevisionGap,
             });
         }
-        if parent.parent_digest != expected_parent {
-            return Err(ChangeAssuranceError::Lineage {
-                failure: LineageFailure::ParentDigestMismatch,
-            });
-        }
-        expected_parent = Some(parent.digest.clone());
-        digests.push(parent.digest);
     }
-    if record.parent_digest != expected_parent {
-        return Err(ChangeAssuranceError::Lineage {
-            failure: LineageFailure::ImmediateParentMismatch,
-        });
-    }
-    Ok(digests)
+    Ok(())
 }
 
 /// The `revision` a retained parent declares, or zero when it declares none.
@@ -193,8 +140,8 @@ impl DecisionCheck {
 
 /// Check the retained decision history against a record.
 ///
-/// Takes the history as JSON rather than as a parsed value because the oracle
-/// distinguishes *absent* (`event_chain_missing`, incomplete) from *present
+/// Takes the history as JSON rather than as a parsed value because
+/// verification distinguishes *absent* (`event_chain_missing`, incomplete) from *present
 /// and unreadable* (`event_chain_invalid`, invalid), and a signature taking a
 /// parsed history could not express the second.
 ///
@@ -211,7 +158,9 @@ pub fn validate_decision(
     let Ok(history) = DecisionHistory::from_json(history) else {
         return DecisionCheck::refusing(Outcome::Invalid, Reason::EventChainInvalid);
     };
-    if !history.chains() {
+    // Events are read in `sequence` order, which must run 1..n with no gap and
+    // no repeat.
+    if history.in_sequence_order().is_none() {
         return DecisionCheck::refusing(Outcome::Invalid, Reason::EventChainInvalid);
     }
     if history.run_id != record.review_workflow.run_id {
@@ -234,7 +183,6 @@ pub fn validate_decision(
         .filter(|review| {
             review.payload.record_id.as_str() == record.record_id.as_str()
                 && review.payload.revision == record.revision.get()
-                && review.payload.record_digest == record.digest.as_hex()
         })
         .collect();
     // Exactly one candidate, and every candidate qualifying. Two review events
@@ -249,10 +197,7 @@ pub fn validate_decision(
     let event = ReceiptDecisionEvent {
         run_id: history.run_id.clone(),
         event_id: review.event_id.clone(),
-        event_hash: review.event_hash.clone(),
-        chain_tail_hash: history
-            .chain_tail_hash()
-            .unwrap_or_else(|| review.event_hash.clone()),
+        sequence: review.sequence,
         recorded_actor: review.recorded_actor.clone(),
         decision: review.payload.decision,
     };

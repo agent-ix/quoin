@@ -14,7 +14,7 @@ use crate::core_runtime::invoke;
 
 pub(crate) mod audit;
 
-const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> hash-at-binding -> evidence\n  runs/<SUITE-N>/<commit12>.json   one file = one run of one suite\n  experiments/sha256-<digest>.json content-addressed experiment records\n  operational/sha256-<digest>.json content-addressed operational evidence\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence affirm     re-affirm a binding after its statement changed\n  quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records nothing references";
+const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> hash-at-binding -> evidence\n  runs/<SUITE-N>/<commit12>.json   one file = one run of one suite\n  experiments/<recordId>.json      experiment records\n  operational/<recordId>.json       operational evidence\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence affirm     re-affirm a binding after its statement changed\n  quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records nothing references";
 
 /// The evidence commands whose inputs need no Quire-derived obligation set.
 pub(crate) fn command() -> Command {
@@ -92,7 +92,7 @@ pub(crate) fn command() -> Command {
 
 fn record_command(name: &'static str, help: &'static str) -> Command {
     Command::new(name)
-        .about("Publish one content-addressed evidence record")
+        .about("Publish one evidence record")
         .arg(Arg::new("input").long("input").help(help).required(true))
         .arg(repo_arg())
         .arg(json_arg())

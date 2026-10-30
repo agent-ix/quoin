@@ -1,40 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The retained ix-flow decision history (FR-013's event shape, FR-065's use
-//! of it).
+//! The retained ix-flow decision history (FR-065's use of it).
 //!
-//! # Why an event is held as its own JSON and not as a struct
+//! # Events are ordered by `sequence`
 //!
-//! `hashIxFlowEvent` (`records.ts:467`) hashes the event **as retained**: it
-//! copies `actor` and `payload` across whole, and `verifyIxFlowChain` closes
-//! only the seven top-level names. An actor carrying an eighth member is
-//! therefore inside the hash and outside the schema, and a port that parsed
-//! the actor into a struct and rebuilt it would compute a different hash for
-//! an event that already exists on disk.
-//!
-//! So [`RetainedDecisionEvent`] keeps the object it was read from. The typed
-//! accessors read out of it; the hash is taken over it.
-//!
-//! # The third serializer
-//!
-//! The oracle spells a third JSON serializer at `records.ts:500` —
-//! `canonicalIxFlowJson`, keys sorted with the default `Array.prototype.sort`
-//! and scalars through `JSON.stringify`. This crate does not reproduce it. It
-//! calls `quoin_store::canonicalize_jcs`, and `tests/tc_455_ix_flow.rs` pins
-//! that choice against bytes captured from the oracle itself. See the PR body
-//! and `DIVERGENCE.md` for what the comparison found.
+//! An ix-flow event carries a positive integer `sequence` within its run. The
+//! history is read in `sequence` order, and it must run 1..n with no gap and no
+//! repeat; no chain between events is read or checked. An event is held as its own JSON
+//! rather than as a struct, so an actor carrying a member this crate does not
+//! know is still the actor that was retained.
 
-use quoin_store::{JsonObject, JsonValue, canonical_bytes};
-use sha2::{Digest as _, Sha256};
+use quoin_store::{JsonObject, JsonValue};
 
 use crate::error::{ChangeAssuranceError, Subject};
-use crate::ids::{EventHash, EventId, Identity, NonEmptyText, RunId};
+use crate::ids::{EventId, Identity, NonEmptyText, RunId};
 use crate::model::json::{Fields, number};
 
 const SUBJECT: Subject = Subject::DecisionHistory;
 
-/// The seven names an ix-flow event carries, and no others.
-pub const EVENT_MEMBERS: [&str; 7] = ["id", "ts", "actor", "kind", "payload", "prevHash", "hash"];
+/// The six names an ix-flow event carries, and no others.
+pub const EVENT_MEMBERS: [&str; 6] = ["id", "ts", "actor", "kind", "payload", "sequence"];
 
 /// Who recorded an event.
 ///
@@ -113,9 +98,8 @@ impl RetainedDecisionEvent {
     /// Read an event, refusing anything but an object carrying exactly
     /// [`EVENT_MEMBERS`].
     ///
-    /// Nothing beyond the member set is checked here, because nothing beyond
-    /// it is checked by `verifyIxFlowChain`: a `ts` that is a number still
-    /// hashes, and still fails the chain when the hash disagrees.
+    /// Nothing beyond the member set is checked here; `sequence` is read by
+    /// [`DecisionHistory::in_sequence_order`].
     ///
     /// # Errors
     ///
@@ -141,18 +125,25 @@ impl RetainedDecisionEvent {
         JsonValue::Object(self.members.clone())
     }
 
-    /// The event's `hash`, when it is a stored hash at all.
+    /// The event's `sequence`, when it is a positive whole number.
     #[must_use]
-    pub fn stored_hash(&self) -> Option<EventHash> {
-        self.text("hash")
-            .and_then(|value| EventHash::parse(value, SUBJECT, "hash").ok())
-    }
-
-    /// The event's `prevHash`, when it is a stored hash at all.
-    #[must_use]
-    pub fn stored_prev_hash(&self) -> Option<EventHash> {
-        self.text("prevHash")
-            .and_then(|value| EventHash::parse(value, SUBJECT, "prevHash").ok())
+    pub fn sequence(&self) -> Option<u64> {
+        match self.members.get("sequence") {
+            Some(JsonValue::Number(number)) => {
+                let value = number.get();
+                if value >= 1.0 && value.fract() == 0.0 && value <= 9_007_199_254_740_991.0 {
+                    #[allow(
+                        clippy::cast_possible_truncation,
+                        clippy::cast_sign_loss,
+                        reason = "checked above: a positive whole number within 2^53"
+                    )]
+                    Some(value as u64)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
     }
 
     /// The event's `kind`, when it is a string.
@@ -175,25 +166,6 @@ impl RetainedDecisionEvent {
 
     fn text(&self, name: &str) -> Option<&str> {
         self.members.get(name).and_then(JsonValue::as_str)
-    }
-
-    /// Recompute the event's hash from everything but the `hash` member.
-    ///
-    /// # Errors
-    ///
-    /// Only [`quoin_store::StoreError::JsonNestingTooDeep`], propagated from
-    /// the canonicalizer: an event that cannot be serialized has no hash.
-    pub fn recompute_hash(&self) -> Result<EventHash, ChangeAssuranceError> {
-        let mut unsigned = self.members.clone();
-        unsigned.remove("hash");
-        let bytes = canonical_bytes(&JsonValue::Object(unsigned))?;
-        let hashed = Sha256::digest(&bytes);
-        let mut hex = String::with_capacity(64);
-        for byte in hashed {
-            use std::fmt::Write as _;
-            let _ = write!(hex, "{byte:02x}");
-        }
-        EventHash::parse(&hex, SUBJECT, "hash")
     }
 }
 
@@ -225,36 +197,24 @@ impl DecisionHistory {
         Ok(Self { run_id, events })
     }
 
-    /// Whether the events form an unbroken hash chain from the genesis hash.
+    /// The events in `sequence` order, or `None` when the sequences are not
+    /// exactly 1..n: a missing, non-integer, repeated or skipped `sequence`.
     ///
-    /// The port of `verifyIxFlowChain`. An empty history chains trivially,
-    /// which is the oracle's behaviour and the reason "no events" is
+    /// An empty history is in order trivially, which is why "no events" is
     /// `decision_missing` rather than `event_chain_invalid`.
     #[must_use]
-    pub fn chains(&self) -> bool {
-        let mut previous = EventHash::genesis();
+    pub fn in_sequence_order(&self) -> Option<Vec<&RetainedDecisionEvent>> {
+        let mut ordered: Vec<(u64, &RetainedDecisionEvent)> = Vec::with_capacity(self.events.len());
         for event in &self.events {
-            let (Some(prev), Some(stored)) = (event.stored_prev_hash(), event.stored_hash()) else {
-                return false;
-            };
-            if prev != previous {
-                return false;
-            }
-            match event.recompute_hash() {
-                Ok(recomputed) if recomputed == stored => {}
-                _ => return false,
-            }
-            previous = stored;
+            ordered.push((event.sequence()?, event));
         }
-        true
-    }
-
-    /// The hash of the last retained event.
-    #[must_use]
-    pub fn chain_tail_hash(&self) -> Option<EventHash> {
-        self.events
-            .last()
-            .and_then(RetainedDecisionEvent::stored_hash)
+        ordered.sort_by_key(|(sequence, _)| *sequence);
+        for (index, (sequence, _)) in ordered.iter().enumerate() {
+            if u64::try_from(index).ok()?.checked_add(1)? != *sequence {
+                return None;
+            }
+        }
+        Some(ordered.into_iter().map(|(_, event)| event).collect())
     }
 }
 
@@ -265,8 +225,6 @@ pub struct DecisionPayload {
     pub record_id: Identity,
     /// The revision it is about.
     pub revision: u64,
-    /// The record digest it was taken against.
-    pub record_digest: String,
     /// What was decided.
     pub decision: ReviewDecision,
     /// An optional note.
@@ -278,8 +236,8 @@ pub struct DecisionPayload {
 pub struct ReviewEvent {
     /// The event's identity.
     pub event_id: EventId,
-    /// Its own hash.
-    pub event_hash: EventHash,
+    /// Its position in the run's history.
+    pub sequence: u64,
     /// The actor recorded against it. Attribution, not authentication.
     pub recorded_actor: NonEmptyText,
     /// The decision it carries.
@@ -295,8 +253,7 @@ pub struct ReviewEvent {
 pub fn read_review_event(event: &RetainedDecisionEvent) -> Option<ReviewEvent> {
     let event_id = EventId::parse(event.text("id")?, SUBJECT, "decision event id").ok()?;
     NonEmptyText::parse(event.text("ts")?, SUBJECT, "decision event timestamp").ok()?;
-    EventHash::parse(event.text("prevHash")?, SUBJECT, "decision previous hash").ok()?;
-    let event_hash = EventHash::parse(event.text("hash")?, SUBJECT, "decision event hash").ok()?;
+    let sequence = event.sequence()?;
 
     let actor = Fields::read(event.actor()?, SUBJECT, "decision actor").ok()?;
     let carries_token = actor.optional("ackToken").is_some();
@@ -322,18 +279,11 @@ pub fn read_review_event(event: &RetainedDecisionEvent) -> Option<ReviewEvent> {
             "schema_version",
             "record_id",
             "revision",
-            "record_digest",
             "decision",
             "note",
         ]
     } else {
-        &[
-            "schema_version",
-            "record_id",
-            "revision",
-            "record_digest",
-            "decision",
-        ]
+        &["schema_version", "record_id", "revision", "decision"]
     };
     payload.exact(allowed).ok()?;
     let note = if carries_note {
@@ -353,17 +303,15 @@ pub fn read_review_event(event: &RetainedDecisionEvent) -> Option<ReviewEvent> {
     }
     let record_id = Identity::parse(payload.text("record_id").ok()?, SUBJECT, "record_id").ok()?;
     let revision = payload.whole_number("revision").ok()?;
-    let record_digest = payload.text("record_digest").ok()?.to_owned();
     let decision = ReviewDecision::parse(payload.text("decision").ok()?)?;
 
     Some(ReviewEvent {
         event_id,
-        event_hash,
+        sequence,
         recorded_actor,
         payload: DecisionPayload {
             record_id,
             revision,
-            record_digest,
             decision,
             note,
         },

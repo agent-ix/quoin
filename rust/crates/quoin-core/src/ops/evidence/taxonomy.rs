@@ -29,7 +29,7 @@ use crate::error::{CoreError, CoreErrorCode};
 ///   a checked-in store file left holding a merge conflict, or a path that
 ///   cannot be read, written, listed or removed. Fixing it means changing the
 ///   repository, not the request.
-/// - **`Refused` (2) for `RecordIntegrity`** — a content-addressed record whose
+/// - **`Refused` (2) for `RecordIntegrity`** — an assurance record whose
 ///   stored identity disagrees with its content. The store on disk is wrong,
 ///   not the request; publishing is append-only and refuses rather than
 ///   overwrites.

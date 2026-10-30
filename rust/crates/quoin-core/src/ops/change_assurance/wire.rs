@@ -17,14 +17,13 @@
 //! read by `JSON.parse` on the caller's side first, where a duplicate key is
 //! silently resolved last-wins; the strict reader would then never see the
 //! document that was actually on disk, and a record that the retained code
-//! refused would seal cleanly.
+//! refused would be written cleanly.
 //!
 //! So the documents cross as **lowercase hexadecimal of the exact file bytes**
 //! and [`quoin_store::parse_strict_json`] reads them here. The same encoding
 //! carries `output.bin`, which is not text at all. Hex rather than base64
-//! because it needs no dependency, it is the spelling every digest in this
-//! store already uses, and its cost is a factor of two on a transport whose
-//! ceiling is 64 MiB.
+//! because it needs no dependency, and its cost is a factor of two on a
+//! transport whose ceiling is 64 MiB.
 //!
 //! The size ceilings sit with the shapes rather than with the operations
 //! because each is a property of a field and not of the work: they bound what
@@ -33,21 +32,21 @@
 
 use serde::{Deserialize, Serialize};
 
-/// The largest `change_assurance.seal_record` request this domain will decide
+/// The largest `change_assurance.write_record` request this domain will decide
 /// over, in bytes.
 ///
 /// A record is a reviewed change definition: identities, statements and
 /// connections. 4 MiB is far past any record the retained TypeScript ever
-/// sealed and still refuses a stream.
-pub const MAX_SEAL_RECORD_BYTES: usize = 4 * 1024 * 1024;
+/// wrote and still refuses a stream.
+pub const MAX_WRITE_RECORD_BYTES: usize = 4 * 1024 * 1024;
 
-/// The largest `change_assurance.seal_attestation` request this domain will
+/// The largest `change_assurance.prepare_attestation` request this domain will
 /// decide over, in bytes.
 ///
 /// It carries the retained result file, hex-encoded, so the effective file
 /// ceiling is half of this. A ceiling the retained TypeScript did not have:
 /// `readFileSync` read whatever was named. See `DIVERGENCE.md`.
-pub const MAX_SEAL_ATTESTATION_BYTES: usize = 32 * 1024 * 1024;
+pub const MAX_PREPARE_ATTESTATION_BYTES: usize = 32 * 1024 * 1024;
 
 /// The largest `change_assurance.intake` request this domain will decide over,
 /// in bytes.
@@ -65,13 +64,16 @@ pub const MAX_RECOVER_BYTES: usize = 8 * 1024;
 /// in bytes.
 ///
 /// The record, its parents and the selected attestations are read from the
-/// store by digest and never ride on the request. What does ride on it is the
+/// store by identity and never ride on the request. What does ride on it is the
 /// decision history and the retained audit reports.
 pub const MAX_RECEIPT_BYTES: usize = 32 * 1024 * 1024;
 
 /// The largest `change_assurance.verify_receipt` request this domain will
 /// decide over, in bytes.
-pub const MAX_VERIFY_RECEIPT_BYTES: usize = 4 * 1024 * 1024;
+///
+/// It carries the stored receipt and the same inputs a receipt request
+/// carries, because the receipt is re-derived from them.
+pub const MAX_VERIFY_RECEIPT_BYTES: usize = 36 * 1024 * 1024;
 
 /// The largest `change_assurance.schema` request this domain will decide over,
 /// in bytes.
@@ -80,10 +82,10 @@ pub const MAX_VERIFY_RECEIPT_BYTES: usize = 4 * 1024 * 1024;
 /// nothing about their size bears on what may arrive.
 pub const MAX_SCHEMA_BYTES: usize = 8 * 1024;
 
-/// The largest single path, digest or identity string this domain will accept,
-/// in bytes.
+/// The largest single path or identity string this domain will accept, in
+/// bytes.
 ///
-/// A repository root, a 64-character digest, a revision and a proof id are all
+/// A repository root, a record id, a revision and a proof id are all
 /// one of these. 4 KiB is past every platform's `PATH_MAX` and still refuses a
 /// stream.
 pub const MAX_SCALAR_BYTES: usize = 4 * 1024;
@@ -99,36 +101,36 @@ pub const MAX_SCALAR_BYTES: usize = 4 * 1024;
 /// bindings and a diff is a list of touched files, which run larger.
 pub const MAX_DIFF_PATHS: usize = 65_536;
 
-/// The request accepted by `change_assurance.seal_record`.
+/// The request accepted by `change_assurance.write_record`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct SealRecordRequest {
+pub struct WriteRecordRequest {
     /// Repository root holding the evidence store.
     pub repo: String,
-    /// The record body, without its `digest`, as hex of the exact input bytes.
+    /// The record body, as hex of the exact input bytes.
     pub record_hex: String,
 }
 
-/// The payload `change_assurance.seal_record` writes to stdout.
+/// The payload `change_assurance.write_record` writes to stdout.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct SealRecordPayload {
-    /// The sealed record, `digest` included.
+pub struct WriteRecordPayload {
+    /// The record as written.
     pub record: serde_json::Value,
     /// Where it was retained, relative to the repository root as supplied.
     pub path: String,
     /// Whether this call retained the record, or found the same bytes already
-    /// there. Re-sealing an identical record is not an error and never was.
+    /// there. Re-writing an identical record is not an error and never was.
     pub retained: bool,
 }
 
-/// The request accepted by `change_assurance.seal_attestation`.
+/// The request accepted by `change_assurance.prepare_attestation`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct SealAttestationRequest {
-    /// The attestation body, without `digest` and without `retained_output`,
+pub struct PrepareAttestationRequest {
+    /// The attestation body, without `retained_output`,
     /// as hex of the exact input bytes.
     pub attestation_hex: String,
     /// The retained result file's exact bytes, as hex.
@@ -140,11 +142,11 @@ pub struct SealAttestationRequest {
     pub media_type: String,
 }
 
-/// The payload `change_assurance.seal_attestation` writes to stdout.
+/// The payload `change_assurance.prepare_attestation` writes to stdout.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct SealAttestationPayload {
-    /// The sealed attestation. Emitted, not retained.
+pub struct PrepareAttestationPayload {
+    /// The prepared attestation. Emitted, not retained.
     pub attestation: serde_json::Value,
 }
 
@@ -155,7 +157,7 @@ pub struct SealAttestationPayload {
 pub struct IntakeRequest {
     /// Repository root holding the evidence store.
     pub repo: String,
-    /// The sealed attestation's exact bytes, as hex.
+    /// The attestation's exact bytes, as hex.
     pub attestation_hex: String,
     /// The output's exact bytes, as hex.
     pub output_hex: String,
@@ -191,15 +193,15 @@ pub struct RecoverPayload {
     pub removed: u64,
 }
 
-/// One `<proof-id>=<attestation-digest>` selection.
+/// One `<proof-id>=<attestation-id>` selection.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct SelectionRequest {
     /// The obligation the attestation is offered against.
     pub proof_id: String,
-    /// The digest of the attestation offered.
-    pub attestation_digest: String,
+    /// The id of the attestation offered.
+    pub attestation_id: String,
 }
 
 /// The request accepted by `change_assurance.receipt`.
@@ -209,12 +211,13 @@ pub struct SelectionRequest {
 pub struct ReceiptRequest {
     /// Repository root holding the evidence store.
     pub repo: String,
-    /// Digest of the stored record to verify.
-    pub record_digest: String,
+    /// Identity of the stored record to verify.
+    pub record_id: String,
+    /// The revision of that record. Its predecessors, revisions 1 through
+    /// `revision - 1`, are read from the store by the same identity.
+    pub revision: u64,
     /// The candidate revision the selected attestations must be bound to.
     pub candidate_revision: String,
-    /// Digests of stored parent records, named rather than walked.
-    pub parent_digests: Vec<String>,
     /// Which attestation is offered for which obligation. Only these are read.
     pub selections: Vec<SelectionRequest>,
     /// The retained ix-flow decision history, as hex of the exact input bytes.
@@ -249,10 +252,10 @@ pub struct ReceiptRequest {
     /// request's `repo`, so `protected_apparatus` and `negative_controls` are
     /// read by the one parser PLAT-975 already governs — this wire shape
     /// restates none of that grammar. The plan is read from `repo`'s plan
-    /// documents as they stand on disk when the receipt is sealed, not from
+    /// documents as they stand on disk when the receipt is written, not from
     /// `candidate_revision`: a checkout that edits the plan's own
     /// `protected_apparatus` is judged against the edited list. `None` when
-    /// the caller asks no plan question, which seals an unlinked receipt
+    /// the caller asks no plan question, which writes an unlinked receipt
     /// exactly as before PLAT-997 — linking a plan is the caller's choice,
     /// like `diff_paths`, not something this operation discovers.
     #[serde(default)]
@@ -265,8 +268,6 @@ pub struct ReceiptRequest {
 pub(super) struct AuditInput {
     /// The obligation the report covers.
     pub proof_id: String,
-    /// The report's digest, as the auditor filed it.
-    pub report_digest: String,
     /// The report itself.
     pub report: AuditReportInput,
 }
@@ -308,7 +309,7 @@ pub(super) struct AuditUnevaluatedInput {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ReceiptPayload {
-    /// The sealed verification receipt, in full.
+    /// The verification receipt, in full.
     ///
     /// The whole receipt rather than a verdict: the caller prints the proof
     /// rows and the reasons, and a payload that carried only `outcome` would
@@ -321,15 +322,17 @@ pub struct ReceiptPayload {
 #[serde(deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct VerifyReceiptRequest {
-    /// The sealed receipt's exact bytes, as hex.
+    /// The stored receipt's exact bytes, as hex.
     pub receipt_hex: String,
+    /// The named retained inputs the receipt is re-derived from.
+    pub inputs: ReceiptRequest,
 }
 
 /// The payload `change_assurance.verify_receipt` writes to stdout.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct VerifyReceiptPayload {
-    /// The receipt as re-read and re-verified, in full.
+    /// The receipt as re-derived from the retained inputs, in full.
     pub receipt: serde_json::Value,
 }
 
@@ -356,7 +359,7 @@ pub struct SchemaAssetPayload {
     /// The requested asset's exact bytes, or `null` when none was requested.
     ///
     /// The text as compiled in, trailing newline included — a consumer
-    /// validates against the same bytes the sealing code was written against,
+    /// validates against the same bytes the writing code was written against,
     /// and a re-serialization here would defeat that.
     pub schema: Option<String>,
 }

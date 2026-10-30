@@ -16,8 +16,17 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 use quoin_measurement::campaign::store::run_path;
-use quoin_store::digest_bytes_sha256;
 use serde_json::{Value, json};
+
+/// Lowercase hex digest of `bytes`, from EA's own `ContentDigest`.
+///
+/// BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA validates
+/// `CampaignSource.digest`, `ProducerDescriptor.executable_digest` and
+/// `ContractBinding.digest` against a real digest, so the fixture must supply
+/// one; the value comes from EA, not from quoin.
+fn sha256_hex(bytes: &[u8]) -> String {
+    engineering_assurance::content_digest::ContentDigest::of_bytes(bytes).into_hex()
+}
 
 const PLAN: &str = r"---
 type: MeasurementPlan
@@ -120,13 +129,10 @@ fn fixture() -> tempfile::TempDir {
         .expect("revision")
         .trim()
         .to_owned();
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest
-    let source_digest = digest_bytes_sha256(&git(
+    let source_digest = sha256_hex(&git(
         repo.path(),
         &["ls-tree", "-r", "-z", "--full-tree", &revision],
-    ))
-    .as_hex()
-    .to_owned();
+    ));
     let definition = json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-campaign", "subjectName":"fictional-subject", "subjectVersion":"1",
@@ -195,13 +201,10 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
         .expect("revision")
         .trim()
         .to_owned();
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest
-    let source_digest = digest_bytes_sha256(&git(
+    let source_digest = sha256_hex(&git(
         repo.path(),
         &["ls-tree", "-r", "-z", "--full-tree", &revision],
-    ))
-    .as_hex()
-    .to_owned();
+    ));
     let definition = json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-campaign", "subjectName":"fictional-subject", "subjectVersion":"1",
@@ -216,12 +219,11 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
     )
     .expect("definition file");
     let python = fs::canonicalize("/usr/bin/python3").expect("system Python");
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest / ContractBinding.digest
-    let python_digest = quoin_store::digest_file_sha256(&python).expect("Python digest");
+    let python_digest = sha256_hex(&fs::read(&python).expect("Python bytes"));
     let contract = |kind: &str| {
         json!({
             "kind":kind, "version":"1", "revision":revision,
-            "digest":digest_bytes_sha256(kind.as_bytes()).as_hex()
+            "digest":sha256_hex(kind.as_bytes())
         })
     };
     let config = json!({
@@ -231,7 +233,7 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
             "producer":{
                 "producer":{
                     "name":"fictional-tool", "version":"1", "sourceRevision":revision,
-                    "executable":python, "executableDigest":python_digest.as_hex()
+                    "executable":python, "executableDigest":python_digest
                 },
                 "caller":contract("fictional.caller"),
                 "environment":{}, "outputs":[], "outputTrees":[],

@@ -4,9 +4,9 @@
 //!
 //! The inverse of [`super::read`], and deliberately not one traversal shared
 //! with it: a writer that reused the reader's walk would agree with the reader
-//! by construction, and the digest is taken over what this file emits.
+//! by construction.
 
-use quoin_store::{CanonicalDigest, JsonValue};
+use quoin_store::JsonValue;
 
 use crate::error::ChangeAssuranceError;
 use crate::ids::{RecordId, Revision};
@@ -16,7 +16,7 @@ use crate::model::record::{
     SCHEMA_VERSION, SourceConnection, Statement,
 };
 
-/// Build the JSON form of a record, with or without its `digest`.
+/// Build the JSON form of a record.
 #[allow(
     clippy::too_many_arguments,
     reason = "one argument per top-level member of the closed schema; grouping them \
@@ -25,8 +25,6 @@ use crate::model::record::{
 pub(super) fn write_record(
     record_id: &RecordId,
     revision: Revision,
-    parent_digest: Option<&CanonicalDigest>,
-    digest: Option<&CanonicalDigest>,
     subject: &RecordSubject,
     source_connections: &[SourceConnection],
     impact_snapshot: &ImpactSnapshot,
@@ -38,14 +36,7 @@ pub(super) fn write_record(
         ("record_type", JsonValue::string(RECORD_TYPE)),
         ("record_id", JsonValue::string(record_id.as_str())),
         ("revision", number(revision.get())?),
-        (
-            "parent_digest",
-            parent_digest.map_or(JsonValue::Null, |value| JsonValue::string(value.as_hex())),
-        ),
     ];
-    if let Some(digest) = digest {
-        members.push(("digest", JsonValue::string(digest.as_hex())));
-    }
     members.push((
         "subject",
         object(vec![
@@ -70,7 +61,6 @@ pub(super) fn write_record(
                         ),
                         ("kind", JsonValue::string(connection.kind.as_str())),
                         ("revision", JsonValue::string(connection.revision.as_str())),
-                        ("digest", JsonValue::string(connection.digest.as_hex())),
                     ])
                 })
                 .collect(),
@@ -87,7 +77,6 @@ pub(super) fn write_record(
                 "revision",
                 JsonValue::string(impact_snapshot.revision.as_str()),
             ),
-            ("digest", JsonValue::string(impact_snapshot.digest.as_hex())),
             (
                 "completeness",
                 JsonValue::string(impact_snapshot.completeness.as_str()),
@@ -149,8 +138,8 @@ fn write_definition(definition: &Definition) -> JsonValue {
                         JsonValue::string(proof.tool_identity.as_str()),
                     ),
                     (
-                        "configuration_digest",
-                        JsonValue::string(proof.configuration_digest.as_hex()),
+                        "configuration_ref",
+                        JsonValue::string(proof.configuration_ref.as_str()),
                     ),
                 ])
             })

@@ -168,10 +168,8 @@ fn provenance() -> serde_json::Value {
         "version": "0.1.0",
         "sourceRevision": "a".repeat(40),
         "sourceState": "clean",
-        "executableDigest": format!("sha256:{}", "1".repeat(64)),
-        "configurationDigest": format!("sha256:{}", "2".repeat(64)),
         "capabilities": ["record"],
-        "artifacts": [{ "name": "report.json", "digest": format!("sha256:{}", "3".repeat(64)) }],
+        "artifacts": [{ "name": "report.json" }],
     })
 }
 
@@ -783,23 +781,38 @@ fn tc_456_225_one_corrupt_run_file_is_skipped_rather_than_hiding_every_finding()
 
 /// Trace: FR-048-AC-1, FR-048-AC-2
 #[test]
-fn tc_456_240_an_assurance_record_is_identified_by_its_canonical_content() {
+fn tc_456_240_an_assurance_record_is_identified_by_an_opaque_uuid() {
     let mut store = MemoryEvidence::new();
     let first = write_experiment_record(&mut store, &experiment()).unwrap();
     assert!(first.created);
+    let id = first.record.record_id.clone();
+    let groups: Vec<usize> = id.split('-').map(str::len).collect();
+    assert_eq!(groups, [8, 4, 4, 4, 12], "{id} is not a UUID");
     assert!(
-        first.record.record_id.starts_with("sha256:"),
-        "identity is not content derived"
+        first.path.ends_with(&format!("{id}.json")),
+        "{}",
+        first.path
     );
     assert_eq!(
         first.record.input.producer_provenance.identity, "quoin",
         "the record does not carry a producer provenance tuple"
     );
 
-    let again = write_experiment_record(&mut store, &experiment()).unwrap();
-    assert!(!again.created, "an identical republish is not a new record");
-    assert_eq!(again.record.record_id, first.record.record_id);
+    // Publishing the record again under the id it was given is idempotent and
+    // byte-stable.
+    let mut given = experiment();
+    given["recordId"] = json!(id);
+    let again = write_experiment_record(&mut store, &given).unwrap();
+    assert!(!again.created, "a republish is not a new record");
+    assert_eq!(again.record.record_id, id);
     assert_eq!(store.paths().len(), 1);
+
+    // The identity is not derived from the content: the same input with no id
+    // is a new record.
+    let other = write_experiment_record(&mut store, &experiment()).unwrap();
+    assert!(other.created);
+    assert_ne!(other.record.record_id, id);
+    assert_eq!(store.paths().len(), 2);
 }
 
 /// Trace: FR-048-AC-3
@@ -807,7 +820,8 @@ fn tc_456_240_an_assurance_record_is_identified_by_its_canonical_content() {
 fn tc_456_241_invalid_provenance_is_refused_before_any_record_is_published() {
     let mut store = MemoryEvidence::new();
     let mut bad = experiment();
-    bad["producerProvenance"]["executableDigest"] = json!("sha256:not-hex");
+    // A digest member is no part of the contract: it is refused by name.
+    bad["producerProvenance"]["executableDigest"] = json!(format!("sha256:{}", "1".repeat(64)));
     let error = write_experiment_record(&mut store, &bad)
         .unwrap_err()
         .to_string();
@@ -826,7 +840,9 @@ fn tc_456_242_differing_bytes_at_an_immutable_path_are_never_overwritten() {
     store
         .write(&stored.path, b"{\"recordId\":\"tampered\"}\n")
         .unwrap();
-    let error = write_experiment_record(&mut store, &experiment())
+    let mut given = experiment();
+    given["recordId"] = json!(stored.record.record_id);
+    let error = write_experiment_record(&mut store, &given)
         .unwrap_err()
         .to_string();
     assert!(
@@ -842,10 +858,13 @@ fn tc_456_242_differing_bytes_at_an_immutable_path_are_never_overwritten() {
 
 /// Trace: FR-048-AC-5
 #[test]
-fn tc_456_243_operational_evidence_is_content_addressed_and_its_window_is_checked() {
+fn tc_456_243_operational_evidence_is_filed_by_uuid_and_its_window_is_checked() {
     let mut store = MemoryEvidence::new();
     let stored = write_operational_evidence_record(&mut store, &operational()).unwrap();
-    assert!(stored.path.starts_with("operational/sha256-"));
+    assert_eq!(
+        stored.path,
+        format!("operational/{}.json", stored.record.record_id)
+    );
 
     let mut inverted = operational();
     inverted["window"]["endedAt"] = json!("2025-12-31T00:00:00Z");
@@ -857,20 +876,37 @@ fn tc_456_243_operational_evidence_is_content_addressed_and_its_window_is_checke
 
 /// Trace: FR-048-AC-6
 #[test]
-fn tc_456_244_content_tampering_is_detected_on_read() {
+fn tc_456_244_a_record_whose_stored_id_disagrees_with_its_path_is_refused() {
     let mut store = MemoryEvidence::new();
     let stored = write_experiment_record(&mut store, &experiment()).unwrap();
     let text = store.read(&stored.path).unwrap().unwrap();
+    let elsewhere = "0b9a7a52-8f0c-4d0e-9d57-3f1b2c6a1e44";
     store
-        .write(
-            &stored.path,
-            text.replace("it did", "it did not").as_bytes(),
-        )
+        .write(&format!("experiments/{elsewhere}.json"), text.as_bytes())
         .unwrap();
-    let error = read_experiment_record(&store, &stored.record.record_id)
+    let error = read_experiment_record(&store, elsewhere)
         .unwrap_err()
         .to_string();
-    assert!(error.contains("digest does not match content"), "{error}");
+    assert!(error.contains("does not match path"), "{error}");
+}
+
+/// Trace: FR-048-AC-2
+#[test]
+fn tc_456_245_a_legacy_identifier_is_read_as_an_opaque_string() {
+    let mut store = MemoryEvidence::new();
+    let stored = write_experiment_record(&mut store, &experiment()).unwrap();
+    let text = store.read(&stored.path).unwrap().unwrap();
+    let legacy = format!("sha256:{}", "7".repeat(64));
+    store
+        .write(
+            &format!("experiments/sha256-{}.json", "7".repeat(64)),
+            text.replace(&stored.record.record_id, &legacy).as_bytes(),
+        )
+        .unwrap();
+    let read = read_experiment_record(&store, &legacy)
+        .unwrap()
+        .expect("the legacy record is readable");
+    assert_eq!(read.record_id, legacy, "the identifier is left unchanged");
 }
 
 // ---------------------------------------------------------------- FR-093 -----

@@ -168,7 +168,7 @@ discharges a proof until FR-065 checks all bindings and FR-032 findings.
 | FR-064-AC-1 | Schema v1 requires the attestation identity, reviewed record id and revision, candidate revision, proof id, exact argv/cwd, immutable tool identity/version/configuration reference, environment, timestamp, result, and retained-output media type and size; undeclared fields (including any digest member) are refused. | Test (TC-1272) |
 | FR-064-AC-2 | Passed, failed, unavailable, and not-computed results remain four distinct producer states and none is converted into a verification outcome during intake. | Test (TC-1273) |
 | FR-064-AC-3 | The retained bytes have the declared size; absent or extra bytes leave neither a new attestation nor output artifact. | Property (TC-1274) |
-| FR-064-AC-4 | Withdrawn: an attestation carries no digest to follow a canonical procedure or be invalidated (id not reused). | Property (TC-1275) |
+| FR-064-AC-4 | Withdrawn: an attestation carries no digest to follow a canonical procedure or be invalidated (id not reused). | Withdrawn (TC-1275) |
 | FR-064-AC-5 | Each missing record, candidate, proof, argv/cwd, tool, configuration, environment, timestamp, result, or output field is refused independently rather than inferred. | Property (TC-1276) |
 | FR-064-AC-6 | Repeated identical intake preserves byte identity; injected failures before the directory rename expose neither artifact and are recoverable; a same-id/different-content collision preserves the first attestation and output. | Integration (TC-1277) |
 | FR-064-AC-7 | An unavailable or not-computed producer result retains its diagnostic output, while entirely missing evidence creates no synthetic attestation. | Test (TC-1278) |

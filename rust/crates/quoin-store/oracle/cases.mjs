@@ -29,14 +29,14 @@ export const cases = [
     id: "num-negative-zero-loses-its-sign",
     expect: "accept",
     probes:
-      'ECMAScript Number::toString maps both zeros to "0", so -0 and 0 canonicalize identically and share a digest. Rust\'s own formatting prints "-0" and would mint a second identity for the same record.',
+      'ECMAScript Number::toString maps both zeros to "0", so -0 and 0 canonicalize identically and share one canonical form. Rust\'s own formatting prints "-0" and would mint a second identity for the same record.',
     input: '{"n":-0}',
   },
   {
     id: "num-exponent-carries-an-explicit-plus",
     expect: "accept",
     probes:
-      '1e21 serializes as "1e+21". ryu and Rust\'s Display both print "1e21" with no sign. One missing character changes every digest of every record containing a large number.',
+      '1e21 serializes as "1e+21". ryu and Rust\'s Display both print "1e21" with no sign. One missing character changes the canonical form of every record containing a large number.',
     input: '{"n":1e21}',
   },
   {
@@ -57,7 +57,7 @@ export const cases = [
     id: "num-integer-precision-lost-beyond-2pow53",
     expect: "accept",
     probes:
-      "9007199254740993 is not representable as a double and canonicalizes to 9007199254740992. The retained evidence already contains this loss, so the Rust port must reproduce it rather than fix it. A u64-backed number model would preserve the input and change the digest.",
+      "9007199254740993 is not representable as a double and canonicalizes to 9007199254740992. The retained evidence already contains this loss, so the Rust port must reproduce it rather than fix it. A u64-backed number model would preserve the input and change the canonical form.",
     input: '{"n":9007199254740993}',
   },
   {
@@ -78,7 +78,7 @@ export const cases = [
     id: "num-input-spelling-is-normalized-away",
     expect: "accept",
     probes:
-      "1.0E+2, 1.500 and 100 are three spellings of one double and must produce one canonical form. Canonicalization is what makes a digest independent of how the producer wrote the number.",
+      "1.0E+2, 1.500 and 100 are three spellings of one double and must produce one canonical form. Canonicalization is what makes the output independent of how the producer wrote the number.",
     input: '{"a":1.0E+2,"b":1.500,"c":100}',
   },
   {
@@ -142,7 +142,7 @@ export const cases = [
     id: "key-order-is-utf16-not-scalar-value",
     expect: "accept",
     probes:
-      "THE ordering trap. U+10000 encodes as the surrogate pair D800 DC00; U+FFFD is the single unit FFFD. RFC 8785 sorts by UTF-16 code unit, so U+10000 comes FIRST. Rust's str: Ord compares scalar values and puts U+FFFD first. A BTreeMap-ordered port silently reverses these two members and changes the digest.",
+      "THE ordering trap. U+10000 encodes as the surrogate pair D800 DC00; U+FFFD is the single unit FFFD. RFC 8785 sorts by UTF-16 code unit, so U+10000 comes FIRST. Rust's str: Ord compares scalar values and puts U+FFFD first. A BTreeMap-ordered port silently reverses these two members and changes the canonical form.",
     input: '{"\\uFFFD":1,"\\uD800\\uDC00":2}',
   },
   {
@@ -198,7 +198,7 @@ export const cases = [
     id: "key-duplicate-name-is-refused",
     expect: "refuse",
     probes:
-      "A permissive reader keeps one of the two and the digest then depends on which — first-wins and last-wins produce different evidence identities for the same bytes.",
+      "A permissive reader keeps one of the two and the result then depends on which — first-wins and last-wins produce different evidence identities for the same bytes.",
     input: '{"a":1,"a":2}',
   },
   {
@@ -259,7 +259,7 @@ export const cases = [
     id: "str-control-escapes-use-short-forms-then-lowercase-hex",
     expect: "accept",
     probes:
-      "\\b \\t \\n \\f \\r have two-character forms; every other C0 control uses \\u00xx with LOWERCASE hex. Uppercase hex is a different byte and a different digest.",
+      "\\b \\t \\n \\f \\r have two-character forms; every other C0 control uses \\u00xx with LOWERCASE hex. Uppercase hex is a different byte and a different canonical form.",
     input: '{"s":"\\u0008\\u0009\\u000a\\u000c\\u000d\\u001f\\u0000\\u007f"}',
   },
   {
@@ -287,7 +287,7 @@ export const cases = [
     id: "str-lone-high-surrogate-is-refused",
     expect: "refuse",
     probes:
-      "\\uD800 alone has no UTF-8 encoding, so it has no canonical bytes and no digest. A port using a lossy decoder would silently substitute U+FFFD and mint a digest for a document the oracle refuses.",
+      "\\uD800 alone has no UTF-8 encoding, so it has no canonical bytes. A port using a lossy decoder would silently substitute U+FFFD and mint a canonical form for a document the oracle refuses.",
     input: '{"s":"\\ud800"}',
   },
   {
@@ -336,14 +336,14 @@ export const cases = [
     id: "str-truncated-unicode-escape-is-refused",
     expect: "refuse",
     probes:
-      "\\u must be followed by exactly four hex digits. A reader that takes as many as it finds reads a different string and a different digest.",
+      "\\u must be followed by exactly four hex digits. A reader that takes as many as it finds reads a different string and a different canonical form.",
     input: '{"s":"\\u12"}',
   },
   {
     id: "str-noncharacters-are-preserved",
     expect: "accept",
     probes:
-      "U+FFFF and U+FFFE are valid Unicode scalar values and are not replaced. A decoder that sanitizes them changes the string and the digest.",
+      "U+FFFF and U+FFFE are valid Unicode scalar values and are not replaced. A decoder that sanitizes them changes the string and canonical bytes.",
     input: '{"s":"\\uffff\\ufffe\\ufffd"}',
   },
   {
@@ -366,7 +366,7 @@ export const cases = [
     id: "doc-trailing-content-is-refused",
     expect: "refuse",
     probes:
-      "A second value after the first. A reader that stops at the first value canonicalizes a prefix of the file and reports a digest for bytes it did not read.",
+      "A second value after the first. A reader that stops at the first value canonicalizes a prefix of the file and reports canonical bytes for bytes it did not read.",
     input: '{"a":1} {"b":2}',
   },
   {
@@ -387,7 +387,7 @@ export const cases = [
     id: "doc-comment-is-refused",
     expect: "refuse",
     probes:
-      "JSON has no comments. JSON5 and several tolerant readers accept them, and a store file carrying one must be refused rather than digested as if the comment were not there.",
+      "JSON has no comments. JSON5 and several tolerant readers accept them, and a store file carrying one must be refused rather than read as if the comment were not there.",
     input: '{"a":1}//c',
   },
   {
@@ -408,7 +408,7 @@ export const cases = [
     id: "doc-empty-input-is-refused",
     expect: "refuse",
     probes:
-      "An empty file is not a document. A zero-length store file must not digest to anything.",
+      "An empty file is not a document. A zero-length store file must not canonical bytes to anything.",
     input: "",
   },
   {
@@ -451,7 +451,7 @@ export const cases = [
     id: "doc-null-false-true-are-distinct-values",
     expect: "accept",
     probes:
-      "A port that coerces null to absent, or false to absent, drops a member and changes the digest.",
+      "A port that coerces null to absent, or false to absent, drops a member and changes the canonical form.",
     input: '{"a":null,"b":false,"c":true,"d":0,"e":"","f":[],"g":{}}',
   },
   {
@@ -462,34 +462,34 @@ export const cases = [
     input: `${"[".repeat(64)}1${"]".repeat(64)}`,
   },
 
-  // ---------------------------------------------------------------- digests
+  // ---------------------------------------------------------------- canonical bytes
   {
-    id: "digest-strips-only-the-top-level-digest-member",
+    id: "canonical bytes-strips-only-the-top-level-canonical bytes-member",
     expect: "accept",
     probes:
-      'A nested member also named "digest" stays in the hashed bytes. Stripping it everywhere would make two different records hash the same.',
+      'A nested member also named "canonical bytes" stays in the hashed bytes. Stripping it everywhere would make two different records hash the same.',
     input:
-      '{"digest":"0000000000000000000000000000000000000000000000000000000000000000","a":{"digest":"kept"},"b":[{"digest":"kept"}]}',
+      '{"canonical bytes":"0000000000000000000000000000000000000000000000000000000000000000","a":{"canonical bytes":"kept"},"b":[{"canonical bytes":"kept"}]}',
   },
   {
-    id: "digest-is-independent-of-source-member-order",
+    id: "canonical bytes-is-independent-of-source-member-order",
     expect: "accept",
     probes:
-      "Paired with the next case: the same members written in the reverse order must produce the same canonical bytes and the same digest, which is the whole purpose of canonicalization.",
+      "Paired with the next case: the same members written in the reverse order must produce the same canonical bytes and the same canonical bytes, which is the whole purpose of canonicalization.",
     input: '{"a":1,"b":2,"c":3}',
   },
   {
-    id: "digest-is-independent-of-source-member-order-reversed",
+    id: "canonical bytes-is-independent-of-source-member-order-reversed",
     expect: "accept",
     probes:
-      "The reversed spelling of the previous case. The two digests must be equal, or member order in whatever wrote the record leaks into the record's identity.",
+      "The reversed spelling of the previous case. The two canonical bytes must be equal, or member order in whatever wrote the record leaks into the record's identity.",
     input: '{"c":3,"b":2,"a":1}',
   },
   {
-    id: "digest-negative-zero-collides-with-zero",
+    id: "canonical bytes-negative-zero-collides-with-zero",
     expect: "accept",
     probes:
-      'Paired with num-negative-zero-loses-its-sign: {"n":-0} and {"n":0} are different documents with the same digest. This is a consequence of the frozen number model, recorded here so it is a known property rather than a surprise during an investigation.',
+      'Paired with num-negative-zero-loses-its-sign: {"n":-0} and {"n":0} are different documents with the same canonical bytes. This is a consequence of the frozen number model, recorded here so it is a known property rather than a surprise during an investigation.',
     input: '{"n":0}',
   },
 ];

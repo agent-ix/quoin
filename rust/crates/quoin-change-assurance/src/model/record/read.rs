@@ -4,10 +4,9 @@
 //!
 //! One pass: every value is parsed AS it is validated, so no partially checked
 //! record ever exists. `exact` refuses an undeclared member as firmly as an
-//! absent one at every depth, because the record is named by the digest of its
-//! own bytes.
+//! absent one at every depth.
 
-use quoin_store::{CanonicalDigest, JsonValue};
+use quoin_store::JsonValue;
 
 use crate::error::{ChangeAssuranceError, FieldFailure};
 use crate::ids::{
@@ -16,64 +15,31 @@ use crate::ids::{
 };
 use crate::model::json::{Fields, number, require_sorted, require_unique_values};
 use crate::model::record::{
-    CommandBinding, Completeness, DECISION_EVENT_KIND, Definition, Disposition, ImpactSnapshot,
-    ProofObligation, RECORD_TYPE, RecordSubject, ReviewWorkflow, SCHEMA_VERSION, SUBJECT,
-    SourceConnection, SourceKind, Statement, Unknown, UnsealedRecord,
+    ChangeAssuranceRecord, CommandBinding, Completeness, DECISION_EVENT_KIND, Definition,
+    Disposition, ImpactSnapshot, ProofObligation, RECORD_TYPE, RecordSubject, ReviewWorkflow,
+    SCHEMA_VERSION, SUBJECT, SourceConnection, SourceKind, Statement, Unknown,
 };
 
-/// Read the record shape, sealed when `digest` is supplied.
+/// Read the record shape.
 pub(super) fn read_record(
     value: &JsonValue,
-    digest: Option<&CanonicalDigest>,
-) -> Result<UnsealedRecord, ChangeAssuranceError> {
+) -> Result<ChangeAssuranceRecord, ChangeAssuranceError> {
     let root = Fields::read(value, SUBJECT, "record")?;
-    let sealed = digest.is_some();
-    let allowed: &[&str] = if sealed {
-        &[
-            "schema_version",
-            "record_type",
-            "record_id",
-            "revision",
-            "parent_digest",
-            "digest",
-            "subject",
-            "source_connections",
-            "impact_snapshot",
-            "definition",
-            "review_workflow",
-        ]
-    } else {
-        &[
-            "schema_version",
-            "record_type",
-            "record_id",
-            "revision",
-            "parent_digest",
-            "subject",
-            "source_connections",
-            "impact_snapshot",
-            "definition",
-            "review_workflow",
-        ]
-    };
-    root.exact(allowed)?;
+    root.exact(&[
+        "schema_version",
+        "record_type",
+        "record_id",
+        "revision",
+        "subject",
+        "source_connections",
+        "impact_snapshot",
+        "definition",
+        "review_workflow",
+    ])?;
     root.equals("schema_version", &number(SCHEMA_VERSION)?)?;
     root.equals("record_type", &JsonValue::string(RECORD_TYPE))?;
     let record_id = RecordId::parse(root.text("record_id")?, SUBJECT, "record_id")?;
     let revision = Revision::new(root.whole_number("revision")?, SUBJECT, "revision")?;
-    let parent_digest = root.nullable_digest("parent_digest")?;
-    if revision.is_genesis() && parent_digest.is_some() {
-        return Err(ChangeAssuranceError::shape(
-            SUBJECT,
-            FieldFailure::malformed("revision 1 parent_digest"),
-        ));
-    }
-    if !revision.is_genesis() && parent_digest.is_none() {
-        return Err(ChangeAssuranceError::shape(
-            SUBJECT,
-            FieldFailure::malformed("successor parent_digest"),
-        ));
-    }
 
     let subject = read_subject(root)?;
     let source_connections = read_source_connections(root)?;
@@ -81,10 +47,9 @@ pub(super) fn read_record(
     let definition = read_definition(root)?;
     let review_workflow = read_review_workflow(root)?;
 
-    Ok(UnsealedRecord {
+    Ok(ChangeAssuranceRecord {
         record_id,
         revision,
-        parent_digest,
         subject,
         source_connections,
         impact_snapshot,
@@ -114,20 +79,16 @@ fn read_source_connections(
     let mut connections = Vec::with_capacity(entries.len());
     for entry in entries {
         let fields = Fields::read(entry, SUBJECT, "source_connections")?;
-        fields.exact(&["source_id", "kind", "revision", "digest"])?;
+        fields.exact(&["source_id", "kind", "revision"])?;
         let source_id = SourceId::parse(fields.text("source_id")?, SUBJECT, "source_id")?;
         let kind = SourceKind::parse(fields.text("kind")?).ok_or_else(|| {
             ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("source kind"))
         })?;
         let revision = NonEmptyText::parse(fields.text("revision")?, SUBJECT, "source revision")?;
-        let digest = fields.artifact_digest("digest").map_err(|_| {
-            ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("source digest"))
-        })?;
         connections.push(SourceConnection {
             source_id,
             kind,
             revision,
-            digest,
         });
     }
     require_unique_values(
@@ -145,19 +106,9 @@ fn read_source_connections(
 
 fn read_impact_snapshot(root: Fields<'_>) -> Result<ImpactSnapshot, ChangeAssuranceError> {
     let impact = root.nested("impact_snapshot")?;
-    impact.exact(&[
-        "identity",
-        "revision",
-        "digest",
-        "completeness",
-        "truncated",
-        "gaps",
-    ])?;
+    impact.exact(&["identity", "revision", "completeness", "truncated", "gaps"])?;
     let identity = ImpactIdentity::parse(impact.text("identity")?, SUBJECT, "impact identity")?;
     let revision = NonEmptyText::parse(impact.text("revision")?, SUBJECT, "impact revision")?;
-    let digest = impact.artifact_digest("digest").map_err(|_| {
-        ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("impact digest"))
-    })?;
     let completeness = Completeness::parse(impact.text("completeness")?).ok_or_else(|| {
         ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("impact completeness"))
     })?;
@@ -171,7 +122,6 @@ fn read_impact_snapshot(root: Fields<'_>) -> Result<ImpactSnapshot, ChangeAssura
     Ok(ImpactSnapshot {
         identity,
         revision,
-        digest,
         completeness,
         truncated,
         gaps,
@@ -253,7 +203,7 @@ fn read_proof_obligations(
             "evidence_kind",
             "command",
             "tool_identity",
-            "configuration_digest",
+            "configuration_ref",
         ])?;
         let proof_id = ProofId::parse(fields.text("proof_id")?, SUBJECT, "proof_id")?;
         let statement = NonEmptyText::parse(fields.text("statement")?, SUBJECT, "proof statement")?;
@@ -272,15 +222,11 @@ fn read_proof_obligations(
         let command = CommandBinding::from_json(fields.value("command")?, SUBJECT)?;
         let tool_identity =
             NonEmptyText::parse(fields.text("tool_identity")?, SUBJECT, "tool_identity")?;
-        let configuration_digest =
-            fields
-                .artifact_digest("configuration_digest")
-                .map_err(|_| {
-                    ChangeAssuranceError::shape(
-                        SUBJECT,
-                        FieldFailure::malformed("configuration_digest"),
-                    )
-                })?;
+        let configuration_ref = NonEmptyText::parse(
+            fields.text("configuration_ref")?,
+            SUBJECT,
+            "configuration_ref",
+        )?;
         proofs.push(ProofObligation {
             proof_id,
             statement,
@@ -288,7 +234,7 @@ fn read_proof_obligations(
             evidence_kind,
             command,
             tool_identity,
-            configuration_digest,
+            configuration_ref,
         });
     }
     require_unique_values(

@@ -19,7 +19,7 @@
 //! caller's `unknown` and return nothing, so the caller keeps handling the same
 //! loosely-typed object it passed in. Here they return the parsed
 //! [`MeasurementCollection`], which is the `parse, don't validate` rule the
-//! Stage 6 plan §13.3 names and `RawFileSha256Digest::parse_stored` models.
+//! Stage 6 plan §13.3 names.
 //!
 //! The write path still writes the **caller's** bytes, not a re-serialization
 //! of the parsed value (`store.ts:40` canonicalizes `candidate`). Nothing here
