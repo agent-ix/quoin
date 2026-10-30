@@ -23,8 +23,8 @@
 //!
 //! # Where the inputs come from
 //!
-//! `tests/fixtures/portfolio-tree/` — the committed tree `tc_473_reporting.rs`
-//! captures the TypeScript's answers over, not a shape this file invented. Its
+//! `tests/fixtures/portfolio-tree/` — the committed tree, not a shape this
+//! file invented. Its
 //! seven repositories already state every population FR-045 names: a current
 //! store (`alpha`), an empty one (`bravo`), an absent one (`charlie`), a stale
 //! one (`delta`), an unreadable collection (`golf`), a location that is not a

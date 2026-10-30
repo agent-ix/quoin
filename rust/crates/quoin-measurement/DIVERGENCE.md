@@ -449,7 +449,8 @@ paragraph.
 six gated functions — `renderMeasurementReport`, `renderMeasurementReportJson`,
 `renderPortfolioReport`, `renderPortfolioReportJson`, `comparisonFor` and
 `seriesFor` — are byte-identical to the retained TypeScript on the committed
-fixture tree (`tc_473_reporting`, FR-100-AC-4). The divergences below are
+fixture tree when the port landed; that byte comparison and its recorded
+capture have since been deleted. The divergences below are
 therefore either outside those bytes, or reachable only on inputs the fixture
 states cannot occur.
 
@@ -457,7 +458,7 @@ states cannot occur.
 
 `root` and `path` are absolute in both the rendered report and its JSON, so the
 captured bytes would otherwise record whoever's checkout produced them. The
-capture script and `tc_473_reporting` both replace the fixture tree's own
+capture script replaced the fixture tree's own
 absolute root with the token `@@TREE@@` before comparing, and nothing else is
 edited. Neither side canonicalises: node's `path.resolve` absolutises and
 normalises lexically without following symlinks, and
