@@ -120,7 +120,7 @@ fn fixture() -> tempfile::TempDir {
         .expect("revision")
         .trim()
         .to_owned();
-    // EA validates the source manifest against this required field.
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest at rev 08bbf1cc
     let source_digest = digest_bytes_sha256(&git(
         repo.path(),
         &["ls-tree", "-r", "-z", "--full-tree", &revision],
@@ -195,6 +195,7 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
         .expect("revision")
         .trim()
         .to_owned();
+    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest at rev 08bbf1cc
     let source_digest = digest_bytes_sha256(&git(
         repo.path(),
         &["ls-tree", "-r", "-z", "--full-tree", &revision],
