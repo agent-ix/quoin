@@ -23,8 +23,7 @@ pub struct Producer {
     /// The repository-relative path of the configuration file.
     pub configuration_ref: ScorerOutputPath,
     /// The revision of the measured source.
-    ///
-    /// BLOCKED-BY QSL-1276 (owner: planner titan:QSL:plan): the external quire-code-rs `graph-quality-observation-v1` schema requires `producer.source_revision` with `additionalProperties: false`, and quoin's `Producer` is `deny_unknown_fields`, so dropping the field would reject the producer's own output.
+    // BLOCKED-BY QSL-1300 (owner: planner titan:QSL:plan): graph-quality-observation-v1 requires producer.source_revision (additionalProperties false).
     pub source_revision: RevisionIdentity,
     /// The revision of the measured corpus.
     pub corpus_revision: RevisionIdentity,
