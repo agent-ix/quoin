@@ -85,7 +85,7 @@ scalar!(
 );
 scalar!(
     FullRevision,
-    "A `^[0-9a-f]{40}$` value: the revision that quire-rs `assurance-v1` `sourcePremise` requires (required, additionalProperties false). Quoin reads it from the export and records nothing."
+    "A `^[0-9a-f]{40}$` value: the revision that quire-rs `assurance-v1` `sourcePremise` requires (required, additionalProperties false). Quoin reads it from the export and records nothing. BLOCKED-BY PLAT-1226 (owner: planner titan:QSL:plan): quire-rs assurance-v1 sourcePremise.revision"
 );
 scalar!(RevisionIdentity, "A full revision or a semantic version.");
 scalar!(

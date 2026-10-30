@@ -11,12 +11,14 @@ use serde::{Deserialize, Serialize};
 use crate::scalars::{FullRevision, NonEmptyText};
 
 /// Which repository, at which revision, the export was taken from.
+///
+/// BLOCKED-BY PLAT-1226 (owner: planner titan:QSL:plan): quire-rs assurance-v1 sourcePremise.revision
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SourcePremise {
     /// The repository.
     pub repository: NonEmptyText,
-    /// The full revision it was at.
+    /// The full revision it was at. BLOCKED-BY PLAT-1226 (owner: planner titan:QSL:plan): quire-rs assurance-v1 sourcePremise.revision
     pub revision: FullRevision,
 }
 
