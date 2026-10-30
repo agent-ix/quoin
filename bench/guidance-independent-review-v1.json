@@ -2,7 +2,6 @@
   "schemaVersion": "guidance-independent-review-v1",
   "populationSource": {
     "corpusRevision": "7442f2770880a4ade303fb23d725804bdef454db",
-    "corpusInputDigest": "sha256:4a806b0807eaf4c5a866ee478335c243856b5f98e701be2f9164c0c01cf271b8",
     "producer": {
       "schemaVersion": "quire-tool-provenance-v1",
       "cli": {
@@ -38,168 +37,144 @@
   "reviewRule": "Every selected record and every distinct action template was read against its raw producer evidence and controlled fixture contract.",
   "templates": [
     {
-      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
       "kind": "diagnostic",
       "text": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible",
       "outcome": "pass",
       "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
     },
     {
-      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
       "kind": "diagnostic",
       "text": "inspect the binding census, its unbound example, and the declared trace-tag forms before trusting or repairing the ratio",
       "outcome": "pass",
       "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
     },
     {
-      "templateDigest": "sha256:2c55ad05961f0c932937b5d7a1890aa549061758c9a175e2a1e5d816ba480757",
       "kind": "diagnostic",
       "text": "inspect the unbound example and declared trace-tag forms to distinguish sparse tagging from a marker-form mismatch",
       "outcome": "pass",
       "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
     },
     {
-      "templateDigest": "sha256:3df3ba6726d07bdf20d5cbafe6cc3e3c414a16c159680ddb9650004950dfcd0d",
       "kind": "remedy",
       "text": "declare at least one trace target, or remove the misleading traceability model if no ids should be minted",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:41ca545e7e8a52f921f83f7812637d0967369447ae11407d986dc805b8355895",
       "kind": "remedy",
       "text": "change the annotation to the exact minted row id",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
       "kind": "remedy",
       "text": "move the trace id to an evidence symbol, or use an Implements marker when the production symbol is the intended subject",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
       "kind": "remedy",
       "text": "align the document heading with the declared section selector",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:57cae873778a6505e0b9b76076685960ad45a5165f100ef3749353da49721e39",
       "kind": "remedy",
       "text": "compare the count for “dangerous_eval” to zero or make the match command exit non-zero when forbidden text is present",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:61275b93402b6217c38c50e817305b88e3380d43f3c63fb2493580a7b62ffc37",
       "kind": "remedy",
       "text": "compare the count for “dangerousEval” to zero or make the match command exit non-zero when forbidden text is present",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:735892152c76b2b26437c61623fb0e6934c95ad5ffba65c2668337e79fb471b7",
       "kind": "remedy",
       "text": "add the expected table under the matched section or correct the declaration's section selector",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:7968a1a8d6515660ea1ef341d10cdafb1b1460840516d1f368f995eb7a0e7936",
       "kind": "diagnostic",
       "text": "inspect inputs that bypass the narrowing guard; add an unconditional oracle or constrain the generator when those inputs are invalid",
       "outcome": "pass",
       "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
     },
     {
-      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
       "kind": "diagnostic",
       "text": "compare the example annotation with the declared trace-tag forms; correct the annotation or the declaration according to authored intent",
       "outcome": "pass",
       "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
     },
     {
-      "templateDigest": "sha256:8b5a2cbc6d704f576da5d404b5b0e45f2d33500cc2a895ef50624ee6931f910f",
       "kind": "remedy",
       "text": "correct the declared field/archetype or declare the referenced schema enum",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:8f19c6f5bdd78f3bbc6e3544294e5d3d2027529d6a6be311a2979e2ae24137e9",
       "kind": "remedy",
       "text": "align the declared id_column with the table's actual identifier header",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:8f8d87e50a7365c7236421ef3e02ee92da8641dc30de275efe5e14abf77f3b42",
       "kind": "remedy",
       "text": "add the method to the verification catalog or write an already declared method in the cell",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:90f6659f9fdccdc68e71423b7f6a5ac3d6d2883560b79970fcaf91e318824f28",
       "kind": "remedy",
       "text": "compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:995c1c37e7115e238888cca31e1a5d4307564492c53538a08202cc28bdde9327",
       "kind": "remedy",
       "text": "align the declared test-name form with the authored symbol-name convention, without widening unrelated annotation channels",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:aa3b6d58e0407b1d8c898b1adfad6681049e9559330da656693bde0e10313a82",
       "kind": "diagnostic",
       "text": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
       "outcome": "pass",
       "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
     },
     {
-      "templateDigest": "sha256:d451bb5c643c3ed1b2f85d975af6a02d6ff34e4b8a4539b12d356049ef6bedaa",
       "kind": "remedy",
       "text": "change the cited value or structure so it satisfies the named archetype assertion",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
       "kind": "diagnostic",
       "text": "choose the exact minted child that this evidence verifies, or correct the authored id/declaration; do not substitute a sibling merely to clear coverage",
       "outcome": "pass",
       "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
     },
     {
-      "templateDigest": "sha256:e91e68ff1871b52019f38b328b4761a146744aefd977f6c0fee4c42a5bff8fb1",
       "kind": "remedy",
       "text": "fill the declared statement cell or remove the row if it states no obligation",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
       "kind": "remedy",
       "text": "replace the copied calculation or helper with an independent expectation",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
     {
-      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
       "kind": "diagnostic",
       "text": "review whether the criterion is intentionally universal; otherwise name a concrete supported property shape",
       "outcome": "pass",
       "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
     },
     {
-      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
       "kind": "diagnostic",
       "text": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype",
       "outcome": "pass",
@@ -215,7 +190,6 @@
         "case": "wrong-type-cell-typescript",
         "language": "typescript"
       },
-      "templateDigest": "sha256:d451bb5c643c3ed1b2f85d975af6a02d6ff34e4b8a4539b12d356049ef6bedaa",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -244,7 +218,6 @@
         "language": "rust",
         "declaration": "alternate-status"
       },
-      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -272,7 +245,6 @@
         "language": "typescript",
         "declaration": "nfr-acceptance-criterion"
       },
-      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -300,7 +272,6 @@
         "language": "python",
         "declaration": "alternate-status"
       },
-      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -328,7 +299,6 @@
         "language": "rust",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:41ca545e7e8a52f921f83f7812637d0967369447ae11407d986dc805b8355895",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -356,7 +326,6 @@
         "case": "gate-that-gates-nothing-python",
         "language": "python"
       },
-      "templateDigest": "sha256:57cae873778a6505e0b9b76076685960ad45a5165f100ef3749353da49721e39",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -385,7 +354,6 @@
         "language": "python",
         "declaration": "criteria"
       },
-      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -414,7 +382,6 @@
         "language": "rust",
         "declaration": "nfr-acceptance-criterion"
       },
-      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -442,7 +409,6 @@
         "language": "typescript",
         "declaration": "alternate-status"
       },
-      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -469,7 +435,6 @@
         "case": "vacuous-property-suite",
         "language": "rust"
       },
-      "templateDigest": "sha256:7968a1a8d6515660ea1ef341d10cdafb1b1460840516d1f368f995eb7a0e7936",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -497,7 +462,6 @@
         "case": "mocked-confirmation-typescript",
         "language": "typescript"
       },
-      "templateDigest": "sha256:aa3b6d58e0407b1d8c898b1adfad6681049e9559330da656693bde0e10313a82",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -526,7 +490,6 @@
         "case": "wrong-type-cell-python",
         "language": "python"
       },
-      "templateDigest": "sha256:d451bb5c643c3ed1b2f85d975af6a02d6ff34e4b8a4539b12d356049ef6bedaa",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -555,7 +518,6 @@
         "language": "typescript",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:735892152c76b2b26437c61623fb0e6934c95ad5ffba65c2668337e79fb471b7",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -582,7 +544,6 @@
         "language": "typescript",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -611,7 +572,6 @@
         "language": "python",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -638,7 +598,6 @@
         "language": "python",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:8f19c6f5bdd78f3bbc6e3544294e5d3d2027529d6a6be311a2979e2ae24137e9",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -665,7 +624,6 @@
         "language": "python",
         "declaration": "metrics"
       },
-      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -692,7 +650,6 @@
         "language": "python",
         "declaration": "alternate-status"
       },
-      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -720,7 +677,6 @@
         "language": "rust",
         "declaration": "criteria"
       },
-      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -748,7 +704,6 @@
         "case": "gate-that-gates-nothing-rust",
         "language": "rust"
       },
-      "templateDigest": "sha256:90f6659f9fdccdc68e71423b7f6a5ac3d6d2883560b79970fcaf91e318824f28",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -777,7 +732,6 @@
         "language": "rust",
         "declaration": "criteria"
       },
-      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -806,7 +760,6 @@
         "language": "n/a",
         "declaration": "quality-characteristics"
       },
-      "templateDigest": "sha256:8b5a2cbc6d704f576da5d404b5b0e45f2d33500cc2a895ef50624ee6931f910f",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -834,7 +787,6 @@
         "language": "python",
         "declaration": "nfr-acceptance-criterion"
       },
-      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -862,7 +814,6 @@
         "language": "python",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -891,7 +842,6 @@
         "language": "rust",
         "declaration": "stakeholder-validation-criterion"
       },
-      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -919,7 +869,6 @@
         "language": "python",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -948,7 +897,6 @@
         "language": "typescript",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -977,7 +925,6 @@
         "language": "n/a",
         "declaration": "traceability"
       },
-      "templateDigest": "sha256:3df3ba6726d07bdf20d5cbafe6cc3e3c414a16c159680ddb9650004950dfcd0d",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1005,7 +952,6 @@
         "language": "rust",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1034,7 +980,6 @@
         "language": "rust",
         "declaration": "metrics"
       },
-      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1061,7 +1006,6 @@
         "language": "n/a",
         "declaration": "acceptance-criterion"
       },
-      "templateDigest": "sha256:8f8d87e50a7365c7236421ef3e02ee92da8641dc30de275efe5e14abf77f3b42",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1089,7 +1033,6 @@
         "language": "python",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1116,7 +1059,6 @@
         "language": "rust",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1144,7 +1086,6 @@
         "case": "oracle-helper-copy-rust",
         "language": "rust"
       },
-      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1172,7 +1113,6 @@
         "case": "wrong-type-cell-rust",
         "language": "rust"
       },
-      "templateDigest": "sha256:d451bb5c643c3ed1b2f85d975af6a02d6ff34e4b8a4539b12d356049ef6bedaa",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1201,7 +1141,6 @@
         "language": "rust",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1230,7 +1169,6 @@
         "language": "rust",
         "declaration": "metrics"
       },
-      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1257,7 +1195,6 @@
         "language": "python",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1286,7 +1223,6 @@
         "language": "python",
         "declaration": "criteria"
       },
-      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1315,7 +1251,6 @@
         "language": "rust",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:2c55ad05961f0c932937b5d7a1890aa549061758c9a175e2a1e5d816ba480757",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1344,7 +1279,6 @@
         "language": "typescript",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1373,7 +1307,6 @@
         "language": "rust",
         "declaration": "alternate-status"
       },
-      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1400,7 +1333,6 @@
         "case": "oracle-copy-rust",
         "language": "rust"
       },
-      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1428,7 +1360,6 @@
         "case": "mocked-confirmation-rust",
         "language": "rust"
       },
-      "templateDigest": "sha256:aa3b6d58e0407b1d8c898b1adfad6681049e9559330da656693bde0e10313a82",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1457,7 +1388,6 @@
         "case": "gate-that-gates-nothing-typescript",
         "language": "typescript"
       },
-      "templateDigest": "sha256:61275b93402b6217c38c50e817305b88e3380d43f3c63fb2493580a7b62ffc37",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1486,7 +1416,6 @@
         "language": "python",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1515,7 +1444,6 @@
         "language": "python",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:735892152c76b2b26437c61623fb0e6934c95ad5ffba65c2668337e79fb471b7",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1542,7 +1470,6 @@
         "language": "typescript",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1571,7 +1498,6 @@
         "language": "typescript",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1600,7 +1526,6 @@
         "language": "typescript",
         "declaration": "metrics"
       },
-      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1627,7 +1552,6 @@
         "language": "rust",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:995c1c37e7115e238888cca31e1a5d4307564492c53538a08202cc28bdde9327",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1656,7 +1580,6 @@
         "language": "typescript",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1683,7 +1606,6 @@
         "language": "rust",
         "declaration": "criteria"
       },
-      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1712,7 +1634,6 @@
         "language": "python",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1741,7 +1662,6 @@
         "language": "python",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1770,7 +1690,6 @@
         "language": "typescript",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:8f19c6f5bdd78f3bbc6e3544294e5d3d2027529d6a6be311a2979e2ae24137e9",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1797,7 +1716,6 @@
         "language": "typescript",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1826,7 +1744,6 @@
         "language": "rust",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:995c1c37e7115e238888cca31e1a5d4307564492c53538a08202cc28bdde9327",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1855,7 +1772,6 @@
         "language": "rust",
         "declaration": "nfr-acceptance-criterion"
       },
-      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1883,7 +1799,6 @@
         "language": "rust",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:735892152c76b2b26437c61623fb0e6934c95ad5ffba65c2668337e79fb471b7",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1910,7 +1825,6 @@
         "language": "rust",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1937,7 +1851,6 @@
         "language": "n/a",
         "declaration": "acceptance-criterion"
       },
-      "templateDigest": "sha256:e91e68ff1871b52019f38b328b4761a146744aefd977f6c0fee4c42a5bff8fb1",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1964,7 +1877,6 @@
         "language": "typescript",
         "declaration": "traceability.trace_tags"
       },
-      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -1993,7 +1905,6 @@
         "language": "python",
         "declaration": "nfr-acceptance-criterion"
       },
-      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -2020,7 +1931,6 @@
         "case": "mocked-confirmation-python",
         "language": "python"
       },
-      "templateDigest": "sha256:aa3b6d58e0407b1d8c898b1adfad6681049e9559330da656693bde0e10313a82",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -2050,7 +1960,6 @@
         "language": "python",
         "declaration": "criteria"
       },
-      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -2079,7 +1988,6 @@
         "language": "n/a",
         "declaration": "traces-to"
       },
-      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -2107,7 +2015,6 @@
         "language": "typescript",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -2133,7 +2040,6 @@
         "case": "oracle-copy-python",
         "language": "python"
       },
-      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -2162,7 +2068,6 @@
         "language": "rust",
         "declaration": "test-case"
       },
-      "templateDigest": "sha256:8f19c6f5bdd78f3bbc6e3544294e5d3d2027529d6a6be311a2979e2ae24137e9",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -2189,7 +2094,6 @@
         "language": "python",
         "declaration": "metrics"
       },
-      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {
@@ -2215,7 +2119,6 @@
         "case": "oracle-copy-typescript",
         "language": "typescript"
       },
-      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
       "correctness": "pass",
       "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
       "executableProof": {

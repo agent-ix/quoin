@@ -10,36 +10,24 @@
 //! The retained code tests the same regular expression four times and keeps
 //! the `string` afterwards, so nothing downstream can tell a checked version
 //! from an unchecked one. [`ImmutableVersion`] is the checked one:
-//! constructing it is the check, and it names which of the three shapes it
-//! matched, because "immutable" means three different things here — a released
-//! semantic version, a git commit, and a content digest.
-//!
-//! # One alternative is deliberately absent
-//!
-//! The retained grammar also admits a `BLAKE3:`-prefixed digest (spelled in
-//! lower case there; `tc_468_boundary` reads that token as a second hasher, so
-//! this file writes the algorithm's own upper-case name). quoin#409 recorded
-//! that it is not a digest any quoin producer emits for this field, and the
-//! Stage 6 plan §4 rules it dropped rather than carried. It is a **narrowing**
-//! divergence — this refuses a spelling the TypeScript accepts, and nothing in
-//! the retained corpus uses it. `DIVERGENCE.md` §11 records it.
+//! constructing it is the check, and it names which of the two shapes it
+//! matched, because "immutable" means two different things here — a released
+//! semantic version and a git commit.
 
 use crate::intervention::intake::{InterventionIntakeError, InterventionRefusalCode};
 
-/// Which of the three immutable shapes a version is.
+/// Which of the two immutable shapes a version is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ImmutableVersionKind {
     /// `1.2.3`, `v1.2.3`, optionally with a `-`/`+` suffix.
     SemanticVersion,
     /// A 40-character lowercase hex git object name.
     GitRevision,
-    /// `sha256:` followed by 64 lowercase hex characters.
-    Sha256Digest,
 }
 
 impl ImmutableVersionKind {
     /// Every shape, for a census that must not miss one.
-    pub const ALL: [Self; 3] = [Self::SemanticVersion, Self::GitRevision, Self::Sha256Digest];
+    pub const ALL: [Self; 2] = [Self::SemanticVersion, Self::GitRevision];
 }
 
 /// A version string that names one immutable thing.
@@ -85,15 +73,10 @@ impl ImmutableVersion {
         self.kind
     }
 
-    /// The grammar, as one pass over the three alternatives.
+    /// The grammar, as one pass over the two alternatives.
     fn classify(value: &str) -> Option<ImmutableVersionKind> {
         if is_lower_hex(value, 40) {
             return Some(ImmutableVersionKind::GitRevision);
-        }
-        if let Some(hex) = value.strip_prefix("sha256:")
-            && is_lower_hex(hex, 64)
-        {
-            return Some(ImmutableVersionKind::Sha256Digest);
         }
         is_semantic_version(value).then_some(ImmutableVersionKind::SemanticVersion)
     }
@@ -155,7 +138,7 @@ mod tests {
     /// Each accepted spelling also states which shape it is, so a grammar that
     /// widened by accident would have to widen into a named kind.
     #[test]
-    fn the_three_immutable_shapes_are_the_ones_the_regex_admits() {
+    fn the_two_immutable_shapes_are_the_ones_the_regex_admits() {
         for (value, kind) in [
             ("1.2.3", ImmutableVersionKind::SemanticVersion),
             ("v1.2.3", ImmutableVersionKind::SemanticVersion),
@@ -164,10 +147,6 @@ mod tests {
             (
                 "0123456789abcdef0123456789abcdef01234567",
                 ImmutableVersionKind::GitRevision,
-            ),
-            (
-                "sha256:0000000000000000000000000000000000000000000000000000000000000001",
-                ImmutableVersionKind::Sha256Digest,
             ),
         ] {
             let parsed = ImmutableVersion::parse(value, "x").unwrap();
@@ -191,30 +170,14 @@ mod tests {
             "V1.2.3",
             "0123456789ABCDEF0123456789abcdef01234567",
             "0123456789abcdef0123456789abcdef0123456",
-            "sha256:beef",
             "sha1:0123456789abcdef0123456789abcdef01234567",
         ] {
-            let error = ImmutableVersion::parse(value, "subject.revision").unwrap_err();
+            let error = ImmutableVersion::parse(value, "x").unwrap_err();
             assert_eq!(
                 error.findings(),
-                ["producer definition requires an immutable subject.revision"],
+                ["producer definition requires an immutable x"],
                 "{value}"
             );
         }
-    }
-
-    /// Trace: FR-100-AC-6
-    /// Provenance: quoin#471
-    ///
-    /// The one alternative this port drops, held as an assertion rather than
-    /// as a sentence in a document nobody runs. See `DIVERGENCE.md` §11.
-    ///
-    /// The prefix is concatenated so this file does not contain the token
-    /// `tc_468_boundary` forbids — the same device that test uses on itself.
-    #[test]
-    fn the_dropped_digest_alternative_is_gone() {
-        let dropped = ["blake", "3"].concat()
-            + ":0000000000000000000000000000000000000000000000000000000000000001";
-        assert!(ImmutableVersion::parse(&dropped, "cli_agent_evals_version").is_err());
     }
 }

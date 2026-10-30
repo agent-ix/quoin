@@ -37,6 +37,8 @@ Steps whose canonical replay yields the cited causal channel and a cause-disting
 
 Retained raw findings, action-template digests, evaluator contract, and stack attestation identify every observation.
 
+BLOCKED-BY QSL-1276 (owner: planner titan:QSL:plan): Quire export locator statement_hash. The retained `sha256:` finding ids, `statement_hash` members and guidance `recordId`/`selectedRecordIds` in these records are minted by the Quire export; they are removed with QSL-1276, not here.
+
 ## Environment and Sampling
 
 The same deterministic partition sampling used for correctness applies.

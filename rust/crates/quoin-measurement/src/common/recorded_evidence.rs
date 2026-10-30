@@ -5,8 +5,8 @@
 //!
 //! Distinct from [`crate::raw_evidence::RawEvidenceReference`], which quoin#468
 //! ported: that one is the reference `rawEvidenceFor` *mints*, built from
-//! `RawEvidencePath`, `NonEmptyText` and `RawFileSha256Digest`, so holding one
-//! is proof the path is well-formed and the digest is a sha256. This one is the
+//! `RawEvidencePath` and `NonEmptyText`, so holding one is proof the path is
+//! well-formed. This one is the
 //! field as it appears in a stored record — read by serde, unvalidated.
 //! Checking a record's claim against the file it names is intake's job, and
 //! [`crate::raw_evidence::verify_raw_evidence_references`] takes this type
@@ -16,15 +16,15 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::identity::{Digest, EvidencePath, MediaType};
+use crate::common::identity::{EvidencePath, MediaType};
 
 /// A retained file a record claims to rest on, as the record spells it.
 ///
 /// `intervention-types.ts:12-17`. `operational-types.ts:1` imports this type
 /// rather than redeclaring it, and so does this crate.
 ///
-/// Verifying that the file on disk still digests to [`digest`](Self::digest) is
-/// not this type's job — it is
+/// Checking that the file on disk exists with the recorded size is not this
+/// type's job — it is
 /// [`crate::raw_evidence::verify_raw_evidence_references`], which intake calls
 /// on exactly this field.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,6 +35,4 @@ pub struct RecordedEvidenceReference {
     pub media_type: MediaType,
     /// The file's size in bytes as recorded.
     pub size_bytes: u64,
-    /// The file's digest as recorded.
-    pub digest: Digest,
 }

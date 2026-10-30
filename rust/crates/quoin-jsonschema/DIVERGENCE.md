@@ -65,50 +65,11 @@ this repository moves.
 **Scope:** intervention only. The operational schema is vendored verbatim and
 was already permissive.
 
-## §2 — Ruling: `immutableVersion` drops the `blake3:` alternative (quoin#409)
+## §2 — `immutableVersion` admits no digest alternative
 
-**Input that separates them:** `producer.tool_version` =
-`"blake3:cccc…"` (64 hex) in an intervention record. ajv accepts; this crate
-refuses.
-
-`intervention-schema.ts:6-16` admits
-`(sha256|blake3):[a-f0-9]{64}` in `immutableVersion`. Measured on `main`:
-
-- the only digest producer in `src/measurement/` writes `sha256:` and nothing
-  else (`intervention.ts:123`, `:158`);
-- `git grep "blake3:"` returns eight hits and **none is data** — five doc
-  comments in `quoin-store/src/digest.rs`, one negative source guard, one
-  _rejection_ fixture, one `blake3::hash` call;
-- no `blake3:`-prefixed value exists in `spec/evidence/`, `tests/fixtures/` or
-  `corpus/`;
-- `quoin_store::DigestDomain` mints no prefixed blake3 value at all —
-  `RawBytesDigest::to_labelled` produces one and its own doc says it is never
-  the stored form.
-
-The type system already refuses to produce what the schema admits. The vendored
-pattern is therefore
-
-```
-^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|sha256:[a-f0-9]{64})$
-```
-
-**Scope:** intervention only. `operational-evidence-v1.schema.json:337` carries
-the same regex and is vendored **unchanged**, because that document is copied
-byte-for-byte and no ruling was taken about it. Closing that gap is the
-operational wave's to take, with its own measurement.
-
-## §3 — These two are the only differences, and that is asserted
-
-`intervention-schema.ts` is a program, not a document, so the vendored artifact
-cannot be reviewed against it by eye. `oracle/capture-intervention-schema.mjs` (deleted at cutover)
-ran it once and serialized the result with the repository's own `canonicalJson`
-into `tests/goldens/intervention-experiment-v1.captured.json`.
-
-`tests/tc_470_vendored_schemas.rs` then **enumerates every JSON pointer** at
-which the capture and the vendored document disagree and asserts the set equals
-§1 and §2, with exact before and after text. A third, unrecorded difference
-fails the build. A test that merely asserted the two differ would pass for a
-typo.
+`immutableVersion` is a semantic version or a 40-character git revision in
+both measurement schemas. The retained `sha256:`/`blake3:` alternative is gone
+with every digest member of both records.
 
 ## §4 — `format` asserts here only where ajv asserted it
 

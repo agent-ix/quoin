@@ -5,7 +5,7 @@
 //!
 //! # Why bytes
 //!
-//! A pair file is named by the digest of the two record identities it carries
+//! A pair file is named by the two record identities it carries
 //! and its contents are what a pull-request diff of the evidence tree shows. A
 //! port that reads the pairs but writes back different bytes has silently
 //! rewritten retained evidence: every diff moves and every reader that compared

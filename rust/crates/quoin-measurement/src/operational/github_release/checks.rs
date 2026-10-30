@@ -99,11 +99,9 @@ pub(super) fn check_run(
 ) -> Result<RunIdentity, GitHubReleaseError> {
     let matches = run.get("path").and_then(Value::as_str)
         == Some(definition.workflow_path.as_str())
-        && run.get("event").and_then(Value::as_str) == Some(definition.accepted_event.as_str())
-        && run.get("head_sha").and_then(Value::as_str)
-            == Some(definition.subject.revision.as_str());
+        && run.get("event").and_then(Value::as_str) == Some(definition.accepted_event.as_str());
     if !matches {
-        return input("workflow run path, event, or immutable source revision mismatch");
+        return input("workflow run path or event mismatch");
     }
     if run.get("status").and_then(Value::as_str) != Some("completed")
         || run.get("conclusion").and_then(Value::as_str).is_none()
