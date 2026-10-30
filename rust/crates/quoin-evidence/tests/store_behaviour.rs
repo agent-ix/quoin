@@ -196,11 +196,11 @@ fn operational() -> serde_json::Value {
 fn tc_456_200_a_run_file_is_named_by_suite_and_timestamp() {
     assert_eq!(
         record_path("runs", &suite("SUITE-001"), "2026-08-17T00:00:00Z"),
-        "runs/SUITE-001/2026-08-17T00-00-00Z.json"
+        "runs/SUITE-001/2026-08-17T00~3A00~3A00Z.json"
     );
     assert_eq!(
         record_path("scans", &suite("SUITE-001"), "2026-08-17T00:00:00Z"),
-        "scans/SUITE-001/2026-08-17T00-00-00Z.json"
+        "scans/SUITE-001/2026-08-17T00~3A00~3A00Z.json"
     );
     assert_eq!(bindings_path(), "bindings.json");
     assert_eq!(
@@ -271,8 +271,8 @@ fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
     assert_eq!(
         store.paths(),
         vec![
-            "runs/SUITE-001/2026-08-17T00-00-00Z.json",
-            "runs/SUITE-002/2026-08-17T00-00-00Z.json"
+            "runs/SUITE-001/2026-08-17T00~3A00~3A00Z.json",
+            "runs/SUITE-002/2026-08-17T00~3A00~3A00Z.json"
         ],
         "two suites at one timestamp must not merge into one file"
     );
@@ -288,7 +288,7 @@ fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
     .unwrap();
     assert_eq!(store.paths().len(), 2, "the rewrite added a file");
     let text = store
-        .read("runs/SUITE-001/2026-08-17T00-00-00Z.json")
+        .read("runs/SUITE-001/2026-08-17T00~3A00~3A00Z.json")
         .unwrap()
         .unwrap();
     assert!(text.contains("tests::later"), "the later write did not win");
@@ -355,14 +355,14 @@ fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     assert_eq!(
         wet,
         vec![
-            "runs/SUITE-001/2026-08-16T00-00-00Z.json".to_owned(),
-            "runs/SUITE-001/2026-08-17T00-00-00Z.json".to_owned(),
+            "runs/SUITE-001/2026-08-16T00~3A00~3A00Z.json".to_owned(),
+            "runs/SUITE-001/2026-08-17T00~3A00~3A00Z.json".to_owned(),
         ],
         "gc kept the newest and collected the rest"
     );
     assert!(
         store
-            .read("runs/SUITE-001/2026-08-18T00-00-00Z.json")
+            .read("runs/SUITE-001/2026-08-18T00~3A00~3A00Z.json")
             .unwrap()
             .is_some()
     );

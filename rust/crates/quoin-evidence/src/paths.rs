@@ -76,22 +76,34 @@ pub fn assurance_record_path(family: &str, stem: &str) -> String {
     format!("{family}/{stem}.json")
 }
 
-/// A record's file stem: its caller-supplied timestamp, reduced to ASCII
-/// alphanumerics and `-` so the stamp can never escape the suite directory.
-///
-/// Last-write-wins at the same timestamp, and two timestamps that differ only
-/// in characters this reduction replaces share one stem and so one file.
+/// A record's file stem: its caller-supplied timestamp, with every byte outside
+/// ASCII alphanumerics and `-` encoded as `~HH`. The encoding is injective and
+/// the stem can never escape the suite directory.
 #[must_use]
 pub fn record_stem(timestamp: &str) -> String {
-    let stem: String = timestamp
-        .chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
-        .collect();
-    if stem.is_empty() {
-        "undated".to_owned()
-    } else {
-        stem
+    if timestamp.is_empty() {
+        return "~E".to_owned();
     }
+
+    let mut stem = String::with_capacity(timestamp.len());
+    for byte in timestamp.bytes() {
+        if byte.is_ascii_alphanumeric() || byte == b'-' {
+            stem.push(char::from(byte));
+        } else {
+            stem.push('~');
+            stem.push(
+                char::from_digit(u32::from(byte >> 4), 16)
+                    .unwrap_or('0')
+                    .to_ascii_uppercase(),
+            );
+            stem.push(
+                char::from_digit(u32::from(byte & 0x0f), 16)
+                    .unwrap_or('0')
+                    .to_ascii_uppercase(),
+            );
+        }
+    }
+    stem
 }
 
 /// `<family>/<suite>/<stem>.json` — one file is one record of one suite.
@@ -115,10 +127,11 @@ mod tests {
         let suite = SuiteId::new("SUITE-1");
         assert_eq!(
             record_path("runs", &suite, "2026-09-27T00:00:00Z"),
-            "runs/SUITE-1/2026-09-27T00-00-00Z.json"
+            "runs/SUITE-1/2026-09-27T00~3A00~3A00Z.json"
         );
-        assert_eq!(record_stem("../x/y"), "---x-y");
-        assert_eq!(record_stem(""), "undated");
+        assert_eq!(record_stem("../x/y"), "~2E~2E~2Fx~2Fy");
+        assert_eq!(record_stem(""), "~E");
+        assert_ne!(record_stem(""), record_stem("undated"));
         assert_eq!(
             trust_decision_path(&TrustDecisionId::parse("ETD-12").unwrap()),
             "trust/ETD-12.json"
@@ -126,6 +139,15 @@ mod tests {
         assert_eq!(
             assurance_record_path("experiments", "0b9a7a52-8f0c-4d0e-9d57-3f1b2c6a1e44"),
             "experiments/0b9a7a52-8f0c-4d0e-9d57-3f1b2c6a1e44.json"
+        );
+    }
+
+    #[test]
+    fn distinct_timestamps_never_alias_a_record_path() {
+        let suite = SuiteId::new("SUITE-1");
+        assert_ne!(
+            record_path("runs", &suite, "2026-09-27T00:00:00Z"),
+            record_path("runs", &suite, "2026-09-27T00-00-00Z")
         );
     }
 }
