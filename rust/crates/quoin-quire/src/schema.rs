@@ -86,7 +86,8 @@ pub const SOURCE: &str = quire_rs::assurance::ASSURANCE_V1_SCHEMA;
 
 /// A document that satisfied `assurance-v1`.
 ///
-/// Parse, don't validate — modelled on [`quoin_jsonschema::ValidDocument`]: holding the value *is* the proof,
+/// Parse, don't validate — modelled on `quoin_store::RawFileSha256Digest`
+/// and [`quoin_jsonschema::ValidDocument`]: holding the value *is* the proof,
 /// so it is constructed by [`validate_assurance`] and nowhere else and no
 /// caller re-checks what it was handed.
 ///

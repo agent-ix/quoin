@@ -287,8 +287,6 @@ impl From<quire_rs::Extraction> for Extraction {
 pub struct CriterionObligation {
     /// The declared obligation source.
     pub source: String,
-    /// The hash suspect detection is `current != at_binding` over.
-    pub statement_hash: String,
     /// The declared verification method, when the cell names one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
@@ -306,7 +304,6 @@ impl From<&quire_rs::obligation::CriterionObligation> for CriterionObligation {
     fn from(obligation: &quire_rs::obligation::CriterionObligation) -> Self {
         Self {
             source: obligation.source.clone(),
-            statement_hash: obligation.statement_hash.clone(),
             method: obligation.method.clone(),
             parameters: obligation.parameters.clone(),
             criticality: obligation.criticality.clone(),
