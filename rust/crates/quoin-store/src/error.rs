@@ -69,7 +69,7 @@ pub enum StoreErrorCode {
 
 impl StoreErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 26] = [
+    pub const ALL: &'static [Self] = &[
         Self::CanonicalEncoding,
         Self::JsonNotUtf8,
         Self::JsonByteOrderMark,
@@ -132,7 +132,7 @@ impl StoreErrorCode {
     /// Recover a code from its stable spelling.
     #[must_use]
     pub fn from_code(code: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|known| known.as_str() == code)
+        Self::ALL.iter().copied().find(|known| known.as_str() == code)
     }
 }
 
@@ -399,7 +399,7 @@ mod tests {
 
     #[test]
     fn tc_380_every_code_round_trips_through_its_stable_spelling() {
-        for code in StoreErrorCode::ALL {
+        for &code in StoreErrorCode::ALL {
             assert_eq!(StoreErrorCode::from_code(code.as_str()), Some(code));
         }
     }

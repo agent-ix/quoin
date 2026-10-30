@@ -180,7 +180,11 @@ fn tc_1322_an_edited_receipt_exits_two() {
     std::fs::write(&edited, serde_json::to_vec(&body).expect("serialises")).expect("written");
     let output = verify(root.path(), &edited, "candidate-1");
     assert_eq!(output.status.code(), Some(2), "{}", text(&output.stderr));
-    assert_eq!(output.stdout, Vec::<u8>::new(), "a refused document emits nothing");
+    assert_eq!(
+        output.stdout,
+        Vec::<u8>::new(),
+        "a refused document emits nothing"
+    );
 }
 
 /// A parse error and an unknown schema name are refusals of the document the

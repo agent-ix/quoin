@@ -507,9 +507,16 @@ fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
             }),
         ));
         assert_eq!(verified["receipt"], receipt["receipt"]);
-        runs.push((record, attestation, canonical_json(&receipt["receipt"]).unwrap()));
+        runs.push((
+            record,
+            attestation,
+            canonical_json(&receipt["receipt"]).unwrap(),
+        ));
     }
-    assert_eq!(runs[0], runs[1], "two runs over the same inputs must agree byte for byte");
+    assert_eq!(
+        runs[0], runs[1],
+        "two runs over the same inputs must agree byte for byte"
+    );
     // The retained record is the document that was written, read back through
     // the schema: it names no member the caller did not supply.
     let written: Value = serde_json::from_slice(&runs[0].0).unwrap();

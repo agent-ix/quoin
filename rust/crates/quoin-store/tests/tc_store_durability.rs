@@ -20,8 +20,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use quoin_store::parse_strict_json;
 use quoin_store::store::{
-    recover_orphaned_temporaries, store_root, write_atomic, write_canonical,
-    write_new_or_identical,
+    recover_orphaned_temporaries, store_root, write_atomic, write_canonical, write_new_or_identical,
 };
 
 fn scratch(name: &str) -> PathBuf {

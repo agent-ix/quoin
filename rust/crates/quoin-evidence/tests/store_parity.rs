@@ -395,7 +395,8 @@ fn plat_989_assurance_ids_are_opaque_uuids_and_name_the_file() {
                 let stored = write_experiment_record(store, &case.input["value"]).unwrap();
                 (stored.record.record_id, stored.path)
             } else {
-                let stored = write_operational_evidence_record(store, &case.input["value"]).unwrap();
+                let stored =
+                    write_operational_evidence_record(store, &case.input["value"]).unwrap();
                 (stored.record.record_id, stored.path)
             }
         };
@@ -407,7 +408,10 @@ fn plat_989_assurance_ids_are_opaque_uuids_and_name_the_file() {
         // Not derived from content: the same input published again, without
         // the id it was given, is a different record.
         let (other, _) = publish(&mut store);
-        assert_ne!(id, other, "{name}: the identity must not follow the content");
+        assert_ne!(
+            id, other,
+            "{name}: the identity must not follow the content"
+        );
 
         let found = if experiment {
             quoin_evidence::assurance_records::read_experiment_record(&store, &id)

@@ -430,35 +430,6 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
     let experiment_path = payload["path"].as_str().unwrap().to_owned();
     reported_store_family(dir.path(), &experiment_path, "experiments");
 
-    // Append-only: publishing the same document again finds identical bytes
-    // and says so, rather than reporting a second creation.
-    let payload = ok(&run(
-        "evidence.record_experiment",
-        &json!({
-            "repo": dir.path(),
-            "document": {
-                "schemaVersion": "experiment-record-v1",
-                "subject": {"kind": "requirement", "id": "FR-001", "sourceRevision": commit('b')},
-                "recordedAt": "2026-01-01T00:00:00Z",
-                "hypothesis": "the adapter reads real output",
-                "design": {
-                    "timeBox": "1d",
-                    "corpusRefs": ["corpus/a"],
-                    "comparisonMethod": "A/B",
-                    "decisionRule": "p<0.05",
-                },
-                "result": {
-                    "status": "supported",
-                    "summary": "it did",
-                    "evidenceRefs": ["runs/SUITE-A"],
-                },
-                "producerProvenance": provenance,
-            },
-        }),
-    ));
-    assert_eq!(payload["created"], false);
-    assert_eq!(payload["path"].as_str().unwrap(), experiment_path);
-
     let payload = ok(&run(
         "evidence.record_operational",
         &json!({

@@ -71,7 +71,8 @@ fn tc_455_meaningful_collections_are_required_and_empty_ones_stay_present() {
 
     let typed = prepare_change_record(&record).expect("the scenario record prepares");
     assert!(
-        typed.definition.preservation_constraints.is_empty() && typed.definition.unknowns.is_empty(),
+        typed.definition.preservation_constraints.is_empty()
+            && typed.definition.unknowns.is_empty(),
         "the scenario's empty collections must survive as empty, not as absent"
     );
     let written = record_bytes(&typed).unwrap();
@@ -111,12 +112,16 @@ fn tc_455_meaningful_collections_are_required_and_empty_ones_stay_present() {
 fn tc_455_each_proof_obligation_fixes_the_exact_evidence_that_discharges_it() {
     let record = json(&record_text());
     let typed = prepare_change_record(&record).unwrap();
-    let JsonValue::Array(given) = member(member(&record, "definition"), "proof_obligations").clone()
+    let JsonValue::Array(given) =
+        member(member(&record, "definition"), "proof_obligations").clone()
     else {
         panic!("proof_obligations is not an array");
     };
     assert_eq!(typed.definition.proof_obligations.len(), given.len());
-    assert!(!given.is_empty(), "anti-vacuity floor: one obligation compared");
+    assert!(
+        !given.is_empty(),
+        "anti-vacuity floor: one obligation compared"
+    );
     for (proof, raw) in typed.definition.proof_obligations.iter().zip(&given) {
         let text = |name: &str| member(raw, name).as_str().unwrap().to_owned();
         assert_eq!(proof.proof_id.as_str(), text("proof_id"));
@@ -135,7 +140,12 @@ fn tc_455_each_proof_obligation_fixes_the_exact_evidence_that_discharges_it() {
 
     // Each fixed member is required: an obligation missing one is refused.
     let definition = member(&record, "definition").clone();
-    for dropped in ["tool_identity", "configuration_ref", "command", "evidence_kind"] {
+    for dropped in [
+        "tool_identity",
+        "configuration_ref",
+        "command",
+        "evidence_kind",
+    ] {
         let mut obligation = given[0].as_object().unwrap().clone();
         obligation.remove(dropped);
         let changed = replacing(
@@ -195,7 +205,10 @@ fn tc_455_admitted_gaps_and_open_unknowns_survive_writing_as_themselves() {
     let written = record_bytes(&typed).unwrap();
     let record = read_change_record_json(&quoin_store::parse_strict_json(&written).unwrap())
         .expect("the written record reads back");
-    assert_eq!(record.impact_snapshot.completeness, Completeness::Incomplete);
+    assert_eq!(
+        record.impact_snapshot.completeness,
+        Completeness::Incomplete
+    );
     assert!(record.impact_snapshot.truncated);
     let seen: Vec<Disposition> = record
         .definition

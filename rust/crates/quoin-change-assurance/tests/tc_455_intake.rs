@@ -90,7 +90,9 @@ fn tc_455_only_output_of_the_declared_size_is_retained() {
             );
         }
         assert!(
-            read_attestation(store, &attestation_id()).unwrap().is_none(),
+            read_attestation(store, &attestation_id())
+                .unwrap()
+                .is_none(),
             "{store_name}: a refused intake must leave nothing behind"
         );
 
@@ -128,9 +130,7 @@ fn tc_455_repeated_intake_is_identical_and_a_collision_preserves_the_first_pair(
             Published::AlreadyRetained,
             "{store_name}: a repeated identical intake must not rewrite anything"
         );
-        let (_, first_output) = read_attestation(store, &attestation_id())
-            .unwrap()
-            .unwrap();
+        let (_, first_output) = read_attestation(store, &attestation_id()).unwrap().unwrap();
         assert_eq!(first_output, output);
 
         // A pair whose output differs cannot arrive through
@@ -146,9 +146,7 @@ fn tc_455_repeated_intake_is_identical_and_a_collision_preserves_the_first_pair(
             matches!(refusal, Err(ChangeAssuranceError::ContentCollision { .. })),
             "{store_name}: a same-id different-content pair must collide, got {refusal:?}"
         );
-        let (_, after) = read_attestation(store, &attestation_id())
-            .unwrap()
-            .unwrap();
+        let (_, after) = read_attestation(store, &attestation_id()).unwrap().unwrap();
         assert_eq!(
             after, output,
             "{store_name}: the first pair must survive the collision unchanged"
@@ -211,15 +209,17 @@ fn tc_455_records_and_attestations_are_distinct_store_families() {
         // attestation's id is not a record identity.
         let record_as_attestation =
             AttestationId::parse("change-1", Subject::Attestation, "attestation_id").unwrap();
-        let attestation_as_record =
-            RecordId::parse("att-1", Subject::Record, "record_id").unwrap();
+        let attestation_as_record = RecordId::parse("att-1", Subject::Record, "record_id").unwrap();
         let first = Revision::GENESIS;
         assert!(
             store.attestation(&record_as_attestation).unwrap().is_none(),
             "{store_name}: a record's identity must not address an attestation"
         );
         assert!(
-            store.record(&attestation_as_record, first).unwrap().is_none(),
+            store
+                .record(&attestation_as_record, first)
+                .unwrap()
+                .is_none(),
             "{store_name}: an attestation's id must not address a record"
         );
         assert!(

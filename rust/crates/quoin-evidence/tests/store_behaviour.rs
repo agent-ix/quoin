@@ -788,7 +788,11 @@ fn tc_456_240_an_assurance_record_is_identified_by_an_opaque_uuid() {
     let id = first.record.record_id.clone();
     let groups: Vec<usize> = id.split('-').map(str::len).collect();
     assert_eq!(groups, [8, 4, 4, 4, 12], "{id} is not a UUID");
-    assert!(first.path.ends_with(&format!("{id}.json")), "{}", first.path);
+    assert!(
+        first.path.ends_with(&format!("{id}.json")),
+        "{}",
+        first.path
+    );
     assert_eq!(
         first.record.input.producer_provenance.identity, "quoin",
         "the record does not carry a producer provenance tuple"
@@ -878,10 +882,7 @@ fn tc_456_244_a_record_whose_stored_id_disagrees_with_its_path_is_refused() {
     let text = store.read(&stored.path).unwrap().unwrap();
     let elsewhere = "0b9a7a52-8f0c-4d0e-9d57-3f1b2c6a1e44";
     store
-        .write(
-            &format!("experiments/{elsewhere}.json"),
-            text.as_bytes(),
-        )
+        .write(&format!("experiments/{elsewhere}.json"), text.as_bytes())
         .unwrap();
     let error = read_experiment_record(&store, elsewhere)
         .unwrap_err()

@@ -29,8 +29,7 @@ use quoin_change_assurance::verify::verify_change_assurance;
 use quoin_store::{JsonValue, canonical_bytes};
 
 use crate::common::{
-    OUTPUT, attestation_text, base_input, history, json, member, record_text,
-    replacing,
+    OUTPUT, attestation_text, base_input, history, json, member, record_text, replacing,
 };
 
 const KIND: &str = "change_assurance.review_decided";
@@ -40,7 +39,11 @@ fn verify(input: &VerificationInput) -> VerificationReceipt {
 }
 
 fn reasons_of(receipt: &VerificationReceipt) -> Vec<&'static str> {
-    receipt.reasons.iter().map(|reason| reason.as_str()).collect()
+    receipt
+        .reasons
+        .iter()
+        .map(|reason| reason.as_str())
+        .collect()
 }
 
 /// An ix-flow event with every premise spelled out.
@@ -100,7 +103,11 @@ fn two_proofs() -> VerificationInput {
     );
     // The record's collections are in identity order: `proof-0` precedes `proof-1`.
     obligations.insert(0, JsonValue::Object(second));
-    let definition = replacing(&definition, "proof_obligations", JsonValue::Array(obligations));
+    let definition = replacing(
+        &definition,
+        "proof_obligations",
+        JsonValue::Array(obligations),
+    );
     input.record = replacing(&record, "definition", definition);
 
     let attestation = replacing(
@@ -180,7 +187,9 @@ fn tc_455_outcome_precedence_holds_over_every_reason_pair() {
     assert_eq!(incomplete.outcome, Outcome::Incomplete);
 
     let mut both = truncated.clone();
-    both.decision_history = Some(history(&[event(1, "human", KIND, "change-1", 1, "rejected")]));
+    both.decision_history = Some(history(&[event(
+        1, "human", KIND, "change-1", 1, "rejected",
+    )]));
     let invalid = verify(&both);
     assert_eq!(invalid.outcome, Outcome::Invalid);
     assert!(invalid.reasons.contains(&Reason::ImpactTruncated));
@@ -206,11 +215,22 @@ fn tc_455_one_verdict_per_proof_and_an_unknown_selection_is_a_mismatch() {
         .iter()
         .map(|proof| proof.proof_id.as_str())
         .collect();
-    assert_eq!(ids, ["proof-0", "proof-1"], "one verdict per proof, in id order");
-    assert_eq!(receipt.outcome, Outcome::Valid, "{:?}", reasons_of(&receipt));
+    assert_eq!(
+        ids,
+        ["proof-0", "proof-1"],
+        "one verdict per proof, in id order"
+    );
+    assert_eq!(
+        receipt.outcome,
+        Outcome::Valid,
+        "{:?}",
+        reasons_of(&receipt)
+    );
 
     let mut missing = two_proofs();
-    missing.selections.retain(|selection| selection.proof_id != "proof-0");
+    missing
+        .selections
+        .retain(|selection| selection.proof_id != "proof-0");
     let receipt = verify(&missing);
     assert_eq!(receipt.outcome, Outcome::Incomplete);
     assert_eq!(receipt.proofs.len(), 2);
@@ -234,7 +254,11 @@ fn tc_455_one_verdict_per_proof_and_an_unknown_selection_is_a_mismatch() {
         "an unknown selection must be named, got {:?}",
         reasons_of(&receipt)
     );
-    assert_eq!(receipt.proofs.len(), 1, "no verdict for a proof nobody reviewed");
+    assert_eq!(
+        receipt.proofs.len(),
+        1,
+        "no verdict for a proof nobody reviewed"
+    );
 
     let mut stray = base_input();
     stray.attestations.push(RetainedAttestation {
@@ -299,7 +323,11 @@ fn tc_455_each_binding_mismatch_is_named_on_its_own() {
         ),
         (
             "configuration",
-            attestation_nested("tool", "configuration_ref", JsonValue::string("config/other.toml")),
+            attestation_nested(
+                "tool",
+                "configuration_ref",
+                JsonValue::string("config/other.toml"),
+            ),
             Reason::ConfigurationMismatch,
         ),
     ];
@@ -395,8 +423,16 @@ fn tc_455_absent_evidence_is_incomplete_rather_than_invalid() {
     no_audit.audits.clear();
 
     let cases: Vec<(&str, VerificationInput, &str)> = vec![
-        ("attestation not selected", not_selected, "attestation_missing"),
-        ("attestation not retained", not_retained, "attestation_missing"),
+        (
+            "attestation not selected",
+            not_selected,
+            "attestation_missing",
+        ),
+        (
+            "attestation not retained",
+            not_retained,
+            "attestation_missing",
+        ),
         ("output missing", output_missing, "output_missing"),
         (
             "producer unavailable",
@@ -408,7 +444,11 @@ fn tc_455_absent_evidence_is_incomplete_rather_than_invalid() {
             attestation_with("result", JsonValue::string("not_computed")),
             "result_not_computed",
         ),
-        ("audit left it unevaluated", unevaluated, "audit_not_evaluated"),
+        (
+            "audit left it unevaluated",
+            unevaluated,
+            "audit_not_evaluated",
+        ),
         ("no audit", no_audit, "audit_not_evaluated"),
     ];
     for (name, input, reason) in cases {
@@ -458,13 +498,17 @@ fn tc_455_review_validity_needs_one_intact_human_approval() {
         (Outcome::Incomplete, vec!["decision_missing"])
     );
     assert_eq!(
-        review(&with_decision(&[event(1, "human", "other", "change-1", 1, "approved")])),
+        review(&with_decision(&[event(
+            1, "human", "other", "change-1", 1, "approved"
+        )])),
         (Outcome::Incomplete, vec!["decision_missing"]),
         "an event of another kind is not a decision"
     );
 
     assert_eq!(
-        review(&with_decision(&[event(2, "human", KIND, "change-1", 1, "approved")])),
+        review(&with_decision(&[event(
+            2, "human", KIND, "change-1", 1, "approved"
+        )])),
         (Outcome::Invalid, vec!["event_chain_invalid"]),
         "a history that does not start at sequence one has a gap"
     );
@@ -478,21 +522,37 @@ fn tc_455_review_validity_needs_one_intact_human_approval() {
     );
 
     assert_eq!(
-        review(&with_decision(&[event(1, "human", KIND, "change-1", 1, "rejected")])),
+        review(&with_decision(&[event(
+            1, "human", KIND, "change-1", 1, "rejected"
+        )])),
         (Outcome::Invalid, vec!["review_rejected"])
     );
     assert_eq!(
-        review(&with_decision(&[event(1, "human", KIND, "change-1", 1, "revise")])),
+        review(&with_decision(&[event(
+            1, "human", KIND, "change-1", 1, "revise"
+        )])),
         (Outcome::Invalid, vec!["review_revision_requested"])
     );
 
     // An agent's decision is not a review decision, and a decision about
     // another record or revision identifies nothing here.
     for (why, mismatched) in [
-        ("agent actor", event(1, "agent", KIND, "change-1", 1, "approved")),
-        ("service actor", event(1, "service", KIND, "change-1", 1, "approved")),
-        ("another record", event(1, "human", KIND, "change-2", 1, "approved")),
-        ("another revision", event(1, "human", KIND, "change-1", 2, "approved")),
+        (
+            "agent actor",
+            event(1, "agent", KIND, "change-1", 1, "approved"),
+        ),
+        (
+            "service actor",
+            event(1, "service", KIND, "change-1", 1, "approved"),
+        ),
+        (
+            "another record",
+            event(1, "human", KIND, "change-2", 1, "approved"),
+        ),
+        (
+            "another revision",
+            event(1, "human", KIND, "change-1", 2, "approved"),
+        ),
     ] {
         assert_eq!(
             review(&with_decision(&[mismatched])),
@@ -549,7 +609,11 @@ fn tc_455_impact_gaps_and_open_unknowns_are_named_and_force_incomplete() {
     );
 
     let mut input = base_input();
-    input.record = replacing(&replacing(&record, "impact_snapshot", snapshot), "definition", definition);
+    input.record = replacing(
+        &replacing(&record, "impact_snapshot", snapshot),
+        "definition",
+        definition,
+    );
     let receipt = verify(&input);
     assert_eq!(receipt.checks.impact.outcome, Outcome::Incomplete);
     assert_eq!(
@@ -560,7 +624,11 @@ fn tc_455_impact_gaps_and_open_unknowns_are_named_and_force_incomplete() {
             .iter()
             .map(|reason| reason.as_str())
             .collect::<Vec<_>>(),
-        ["impact_incomplete", "impact_truncated", "unresolved_unknown"]
+        [
+            "impact_incomplete",
+            "impact_truncated",
+            "unresolved_unknown"
+        ]
     );
     assert_eq!(receipt.outcome, Outcome::Incomplete);
     assert_eq!(receipt.unknowns.len(), 1, "the unknown must still be named");
@@ -586,12 +654,18 @@ fn tc_455_audit_findings_are_retained_verbatim_beside_their_mapped_reason() {
     };
     let before = input.clone();
     let receipt = verify(&input);
-    assert_eq!(input, before, "verification must not change the auditor's result");
+    assert_eq!(
+        input, before,
+        "verification must not change the auditor's result"
+    );
 
     let proof = &receipt.proofs[0];
     assert_eq!(proof.audit_findings.len(), 1);
     assert_eq!(proof.audit_findings[0].kind.as_str(), "invented-kind");
-    assert_eq!(proof.audit_findings[0].obligation_id.as_str(), "FR-063-AC-1");
+    assert_eq!(
+        proof.audit_findings[0].obligation_id.as_str(),
+        "FR-063-AC-1"
+    );
     assert!(proof.reasons.contains(&Reason::AuditFinding));
 }
 
@@ -600,9 +674,8 @@ fn tc_455_audit_findings_are_retained_verbatim_beside_their_mapped_reason() {
 /// Input and selection permutations emit byte-identical canonical receipts.
 #[test]
 fn tc_455_permuted_inputs_emit_byte_identical_receipts() {
-    let canonical = |input: &VerificationInput| {
-        canonical_bytes(&verify(input).to_json().unwrap()).unwrap()
-    };
+    let canonical =
+        |input: &VerificationInput| canonical_bytes(&verify(input).to_json().unwrap()).unwrap();
     let original = two_proofs();
     let expected = canonical(&original);
 
@@ -630,7 +703,9 @@ fn tc_455_permuted_inputs_emit_byte_identical_receipts() {
 
 /// Every `.rs` file under `src/verify/`, as `(file name, contents)`.
 fn verify_sources() -> Vec<(String, String)> {
-    let root: PathBuf = Path::new(env!("CARGO_MANIFEST_DIR")).join("src").join("verify");
+    let root: PathBuf = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("verify");
     let mut files = Vec::new();
     for entry in std::fs::read_dir(&root).expect("src/verify is readable") {
         let path = entry.expect("a directory entry").path();

@@ -173,7 +173,10 @@ mod tests {
         std::fs::create_dir_all(&dir).expect("dir");
         let file = dir.join("payload.bin");
         std::fs::write(&file, b"abc").expect("write");
-        assert_eq!(read_regular_file_bounded(&file, LIMIT).expect("reads"), b"abc");
+        assert_eq!(
+            read_regular_file_bounded(&file, LIMIT).expect("reads"),
+            b"abc"
+        );
 
         let error = read_regular_file_bounded(&dir, LIMIT).expect_err("a directory has no bytes");
         assert_eq!(error.code(), StoreErrorCode::ReadSourceNotRegularFile);
@@ -186,7 +189,8 @@ mod tests {
         #[cfg(unix)]
         {
             std::os::unix::fs::symlink(&file, &link).expect("symlink");
-            let error = read_regular_file_bounded(&link, LIMIT).expect_err("a link is not its target");
+            let error =
+                read_regular_file_bounded(&link, LIMIT).expect_err("a link is not its target");
             assert_eq!(error.code(), StoreErrorCode::ReadSourceIsSymlink);
         }
         std::fs::remove_dir_all(&dir).ok();

@@ -275,7 +275,7 @@ mod tests {
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
     use super::{
-        STORE_SCHEMA_VERSION, read_bytes, write_atomic, write_new_or_identical, write_durable_new,
+        STORE_SCHEMA_VERSION, read_bytes, write_atomic, write_durable_new, write_new_or_identical,
     };
     use crate::error::StoreErrorCode;
 

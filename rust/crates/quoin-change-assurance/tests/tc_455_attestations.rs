@@ -47,12 +47,8 @@ fn tc_455_the_attestation_schema_names_every_member_and_admits_no_other() {
     }
     for undeclared in ["undeclared", "digest"] {
         assert!(
-            read_attestation_json(&replacing(
-                &attestation,
-                undeclared,
-                JsonValue::string("x")
-            ))
-            .is_err(),
+            read_attestation_json(&replacing(&attestation, undeclared, JsonValue::string("x")))
+                .is_err(),
             "an undeclared `{undeclared}` member must refuse the attestation"
         );
     }
