@@ -20,7 +20,7 @@ capabilities, and source-artifact references. A record names no source
 revision and no clean/dirty state.
 
 The record identifier SHALL be an opaque UUID not derived from content, per
-FR-098-AC-10. Publication SHALL be atomic within the
+the FR-098 Behavior text. Publication SHALL be atomic within the
 destination directory. Re-publishing the same record is idempotent; a different
 file at an existing immutable path is reported and never overwritten.
 
@@ -34,7 +34,7 @@ separate versioned decision and migration plan.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-048-AC-1 | Every experiment and operational record carries the complete closed producer-provenance contract. | Test (TC-1137) |
-| FR-048-AC-2 | The record id is an opaque UUID not derived from content (FR-098-AC-10); re-publishing the same record is idempotent and byte-stable. | Test (TC-1138) |
+| FR-048-AC-2 | The record id is an opaque UUID not derived from content (FR-098 Behavior); re-publishing the same record is idempotent and byte-stable. | Test (TC-1138) |
 | FR-048-AC-3 | Invalid or incomplete provenance is rejected before any record is published. | Test (TC-1139) |
 | FR-048-AC-4 | A different file at an immutable record path is never overwritten and produces a named error. | Test (TC-1140) |
 | FR-048-AC-5 | Operational evidence records bind a subject, environment, ordered time window, observations, interpretations, raw evidence, and outcome. | Test (TC-1141) |
@@ -55,5 +55,5 @@ separate versioned decision and migration plan.
 - FR-044 remains the measurement-collection provenance boundary.
 
 > **Change note (strict digest removal):** Record identity is an opaque UUID per
-> FR-098-AC-10; legacy content-derived identifiers are read as opaque strings.
+> the FR-098 Behavior text; legacy content-derived identifiers are read as opaque strings.
 > Tamper detection by recomputing identity is withdrawn; git records any edit.

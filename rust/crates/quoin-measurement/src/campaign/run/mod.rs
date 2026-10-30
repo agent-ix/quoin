@@ -10,10 +10,8 @@ use std::path::{Path, PathBuf};
 use engineering_assurance::campaign::{
     CAMPAIGN_RUN_VERSION, CampaignAttempt, CampaignAttemptStatus, CampaignDefinition,
     CampaignRawArtifact, CampaignRun, CampaignVerdict, MeasurementProcedure, PlanRegistration,
-    ProcedureBindings, SourceTreeBinding, canonical_digest, resolve_procedure, validate_definition,
-    validate_run,
+    ProcedureBindings, SourceTreeBinding, resolve_procedure, validate_definition, validate_run,
 };
-use engineering_assurance::content_digest::ContentDigest;
 use engineering_assurance::producer_execution::{
     InputBinding, ProducerExecutionResult, ProducerExecutionState, ProducerExecutor,
 };
@@ -69,14 +67,6 @@ pub enum InputSource {
     },
 }
 
-/// A declared runtime environment variable derived from verified sources.
-#[derive(Clone, Debug)]
-pub enum EnvironmentSource {
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision, the only revision the campaign carries.
-    /// Exact commit revision of one campaign repository.
-    SourceRevision(String),
-}
-
 /// Machine-selected bindings for one named campaign member.
 #[derive(Clone, Debug)]
 pub struct RunMemberBindings {
@@ -88,8 +78,6 @@ pub struct RunMemberBindings {
     pub inputs: Vec<SelectedInput>,
     /// Caller-provided RFC 3339 UTC timestamp for collections.
     pub timestamp: String,
-    /// Runtime environment values selected from checked source identities.
-    pub environment_sources: BTreeMap<String, EnvironmentSource>,
 }
 
 /// One completed invocation and the exact bytes that later members and the
@@ -368,14 +356,8 @@ pub fn run_campaign_with_cancellation(
                 .map(|retained| retained.attempt.clone())
                 .collect(),
         ),
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignRun.definition_digest (checked by EA validate_run)
-        definition_digest: canonical_digest(definition)?.as_str().to_owned(),
         id: run_id.to_owned(),
         schema_version: CAMPAIGN_RUN_VERSION.to_owned(),
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignRun.source_graph_digest (checked by EA validate_run)
-        source_graph_digest: canonical_digest(&definition.source_graph)?
-            .as_str()
-            .to_owned(),
         verdict: campaign_verdict,
     };
     validate_run(&run, definition)?;

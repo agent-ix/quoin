@@ -18,16 +18,6 @@ use std::time::{Duration, Instant};
 use quoin_measurement::campaign::store::run_path;
 use serde_json::{Value, json};
 
-/// Lowercase hex digest of `bytes`, from EA's own `ContentDigest`.
-///
-/// BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA validates
-/// `CampaignSource.digest`, `ProducerDescriptor.executable_digest` and
-/// `ContractBinding.digest` against a real digest, so the fixture must supply
-/// one; the value comes from EA, not from quoin.
-fn sha256_hex(bytes: &[u8]) -> String {
-    engineering_assurance::content_digest::ContentDigest::of_bytes(bytes).into_hex()
-}
-
 const PLAN: &str = r"---
 type: MeasurementPlan
 id: MP-FIXTURE
@@ -125,19 +115,10 @@ fn fixture() -> tempfile::TempDir {
             "fictional source",
         ],
     );
-    let revision = String::from_utf8(git(repo.path(), &["rev-parse", "HEAD"]))
-        .expect("revision")
-        .trim()
-        .to_owned();
-    let source_digest = sha256_hex(&git(
-        repo.path(),
-        &["ls-tree", "-r", "-z", "--full-tree", &revision],
-    ));
     let definition = json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-campaign", "subjectName":"fictional-subject", "subjectVersion":"1",
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision and CampaignSource.digest.
-        "sourceGraph":[{"repository":"fictional/source","revision":revision,"digest":source_digest}],
+        "sourceGraph":[{"repository":"fictional/source"}],
         "members":[{
             "name":"one", "group":"fixture", "planId":"MP-FIXTURE",
             "definitionVersion":"v1", "required":true
@@ -198,19 +179,10 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
             "cancellable source",
         ],
     );
-    let revision = String::from_utf8(git(repo.path(), &["rev-parse", "HEAD"]))
-        .expect("revision")
-        .trim()
-        .to_owned();
-    let source_digest = sha256_hex(&git(
-        repo.path(),
-        &["ls-tree", "-r", "-z", "--full-tree", &revision],
-    ));
     let definition = json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-campaign", "subjectName":"fictional-subject", "subjectVersion":"1",
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision and CampaignSource.digest.
-        "sourceGraph":[{"repository":"fictional/source","revision":revision,"digest":source_digest}],
+        "sourceGraph":[{"repository":"fictional/source"}],
         "members":[{"name":"one","planId":"MP-FIXTURE","definitionVersion":"v1","required":true}],
         "completionRule":"all_required"
     });
@@ -221,12 +193,9 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
     )
     .expect("definition file");
     let python = fs::canonicalize("/usr/bin/python3").expect("system Python");
-    let python_digest = sha256_hex(&fs::read(&python).expect("Python bytes"));
     let contract = |kind: &str| {
         json!({
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.revision and ContractBinding.digest.
-            "kind":kind, "version":"1", "revision":revision,
-            "digest":sha256_hex(kind.as_bytes())
+            "kind":kind, "version":"1"
         })
     };
     let config = json!({
@@ -235,9 +204,8 @@ fn tc_1946_campaign_run_sigint_retains_inconclusive_document() {
         "members":{"one":{
             "producer":{
                 "producer":{
-                    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.source_revision and ProducerDescriptor.executable_digest.
-                    "name":"fictional-tool", "version":"1", "sourceRevision":revision,
-                    "executable":python, "executableDigest":python_digest
+                    "name":"fictional-tool", "version":"1",
+                    "executable":python
                 },
                 "caller":contract("fictional.caller"),
                 "environment":{}, "outputs":[], "outputTrees":[],

@@ -255,7 +255,6 @@ mod tests {
     /// held open rather than assumed: every member populated, `satisfiedBy`
     /// included, and the value still writes and reads back unchanged.
     ///
-    /// Trace: FR-032-AC-2
     /// Provenance: quoin#383
     #[test]
     fn the_independence_the_report_carries_is_serialisable() {

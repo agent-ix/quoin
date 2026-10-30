@@ -6,7 +6,7 @@
 //! # Identity is an opaque UUID, and the UUID is the file name
 //!
 //! A record's id is an opaque UUID that is not derived from its content
-//! (FR-098-AC-10), and its path is `<recordId>.json`. A new record is given a
+//! (FR-098), and its path is `<recordId>.json`. A new record is given a
 //! fresh UUID; a record published again with the `recordId` it was given is
 //! idempotent when the bytes are the same and a named refusal when they are
 //! not, and nothing is ever overwritten. Tampering is visible in git history;

@@ -306,7 +306,7 @@ or aggregate one record's strength against another's.
     },
     "immutable_version": {
       "type": "string",
-      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40})$"
+      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?)$"
     },
     "clock": {
       "type": "object",

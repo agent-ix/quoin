@@ -65,11 +65,13 @@ this repository moves.
 **Scope:** intervention only. The operational schema is vendored verbatim and
 was already permissive.
 
-## §2 — `immutableVersion` admits no digest alternative
+## §2 — `immutableVersion` is a semantic version
 
-`immutableVersion` is a semantic version or a 40-character git revision in
-both measurement schemas. The retained `sha256:`/`blake3:` alternative is gone
-with every digest member of both records.
+`immutableVersion` is an exact semantic version in both measurement schemas.
+The retained `sha256:`/`blake3:` and 40-character git-revision alternatives
+are gone: Quoin records no digest or revision. This moves the recorded ajv
+verdict for the corpus mutation `set/producer.tool_version=git-sha1` from valid
+to invalid, declared in `DECLARED_DIVERGENCES`.
 
 ## §4 — `format` asserts here only where ajv asserted it
 

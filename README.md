@@ -257,9 +257,8 @@ quoin measurement campaign run --repo /path/to/clean-measured-checkout \
   --config /path/to/campaign-run-config.json
 ```
 
-The definition may live outside the measured checkout, allowing it to name an
-earlier source revision without a self-referential Git commit. The run config
-uses `quoin.campaign-run-config/v1` and selects exact clean source checkouts,
+The definition may live outside the measured checkout. The run config
+uses `quoin.campaign-run-config/v1` and selects clean source checkouts,
 producer and checker executables, and runtime bindings. Member dependencies
 require ordering and completion. When an authored procedure declares
 `inputOrigins`, EA rejects mismatched runtime selections and Quoin marks the

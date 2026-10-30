@@ -7,8 +7,8 @@ use super::Retained;
 use super::domain::complete_attempt;
 use super::{
     AttemptEvidence, BTreeMap, BTreeSet, BindingFailure, CampaignAttempt, CampaignAttemptStatus,
-    CampaignDefinition, CampaignRawArtifact, CampaignRunError, ContentDigest, EnvironmentSource,
-    InputBinding, InputSource, MeasurementPlan, MeasurementProcedure, Path, ProcessEvidenceAdapter,
+    CampaignDefinition, CampaignRawArtifact, CampaignRunError, InputBinding, InputSource,
+    MeasurementPlan, MeasurementProcedure, Path, ProcessEvidenceAdapter,
     ProcessEvidenceObservation, ProducerExecutionResult, ProducerExecutionState, ProducerExecutor,
     Read, RunMemberBindings, SourceTreeBinding, VerifiedSource, encode_value, read_bounded,
     resolve_procedure,
@@ -47,20 +47,12 @@ pub(super) fn run_member(
     index: i64,
 ) -> Result<Retained, CampaignRunError> {
     let mut attempt = CampaignAttempt {
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignAttempt request/result/collection/verdict digest members
-        checker_request_digest: None,
-        checker_result_digest: None,
-        collection_digest: None,
         collection_id: None,
-        domain_verdict_digest: None,
         index,
         member: member.name.clone(),
         raw_artifacts: None,
         reason: None,
-        request_digest: None,
-        result_digest: None,
         status: CampaignAttemptStatus::InvalidRequest,
-        verdict_digest: None,
     };
     let inputs = match select_inputs(member, runtime, source, sources, prior) {
         Ok(inputs) => inputs,
@@ -78,27 +70,6 @@ pub(super) fn run_member(
         repository: source.repository.clone(),
         manifest: source.manifest.clone(),
     });
-    for (name, selected) in &runtime.environment_sources {
-        if !bindings.environment.contains_key(name) {
-            attempt.reason = Some("undeclared_source_environment".to_owned());
-            return Ok(unretained(attempt));
-        }
-        let value = match selected {
-            EnvironmentSource::SourceRevision(repository) => {
-                let Some(source) = definition
-                    .source_graph
-                    .iter()
-                    .find(|entry| entry.repository == *repository)
-                else {
-                    attempt.reason = Some("environment_source_missing".to_owned());
-                    return Ok(unretained(attempt));
-                };
-                // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision.
-                source.revision.clone()
-            }
-        };
-        bindings.environment.insert(name.clone(), value);
-    }
     let resolved = match resolve_procedure(procedure, &definition.source_graph, bindings) {
         Ok(resolved) => resolved,
         Err(_error) => {
@@ -255,8 +226,6 @@ fn select_inputs(
             Ok(InputBinding {
                 role: selected.role.clone(),
                 path: selected.path.clone(),
-                // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA InputBinding.digest is required by the producer request.
-                digest: ContentDigest::of_bytes(&bytes),
                 executable: selected.executable,
             })
         })
@@ -291,8 +260,6 @@ fn retain_artifacts(
         }
         records.push(CampaignRawArtifact {
             role: artifact.role.clone(),
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignRawArtifact.digest; the value is EA's own.
-            digest: artifact.digest.as_str().to_owned(),
         });
         retained.push((artifact.role.clone(), bytes));
     }
@@ -336,7 +303,7 @@ mod tests {
             ),
             (
                 ProducerExecutionState::Refused {
-                    reason: ExecutionRefusal::ExecutableIdentity,
+                    reason: ExecutionRefusal::Executable,
                 },
                 CampaignAttemptStatus::Refused,
             ),

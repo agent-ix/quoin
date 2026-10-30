@@ -6,14 +6,11 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 use engineering_assurance::campaign::ProcedureBindings;
-use engineering_assurance::content_digest::ContentDigest;
 use engineering_assurance::producer_execution::{
     CancellationBinding, ContainmentBinding, ContractBinding, ExecutionBudget, ExitCodeBinding,
     OutputBinding, OutputTreeBinding, ProducerDescriptor, StdinBinding,
 };
-use quoin_measurement::campaign::run::{
-    EnvironmentSource, InputSource, RunMemberBindings, SelectedInput,
-};
+use quoin_measurement::campaign::run::{InputSource, RunMemberBindings, SelectedInput};
 use serde::Deserialize;
 
 /// One closed machine configuration; the authored definition is read separately.
@@ -31,13 +28,13 @@ type SelectedBindings = (
 );
 
 impl RunSelection {
-    pub(super) fn into_parts(self) -> Result<SelectedBindings, String> {
+    pub(super) fn into_parts(self) -> SelectedBindings {
         let bindings = self
             .members
             .into_iter()
-            .map(|(name, member)| member.into_binding().map(|value| (name, value)))
-            .collect::<Result<BTreeMap<_, _>, String>>()?;
-        Ok((self.sources, bindings))
+            .map(|(name, member)| (name, member.into_binding()))
+            .collect::<BTreeMap<_, _>>();
+        (self.sources, bindings)
     }
 }
 
@@ -49,8 +46,6 @@ struct MemberBindingWire {
     #[serde(default)]
     inputs: Vec<SelectedInputWire>,
     timestamp: String,
-    #[serde(default)]
-    environment_sources: BTreeMap<String, EnvironmentSourceWire>,
 }
 
 #[derive(Deserialize)]
@@ -78,11 +73,7 @@ struct ProcedureBindingWire {
 struct ProducerWire {
     name: String,
     version: String,
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.source_revision.
-    source_revision: String,
     executable: String,
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
-    executable_digest: String,
 }
 
 #[derive(Deserialize)]
@@ -90,10 +81,6 @@ struct ProducerWire {
 struct ContractWire {
     kind: String,
     version: String,
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.revision.
-    revision: String,
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
-    digest: String,
 }
 
 #[derive(Deserialize)]
@@ -189,49 +176,30 @@ enum InputSourceWire {
     },
 }
 
-#[derive(Deserialize)]
-#[serde(
-    tag = "kind",
-    rename_all = "snake_case",
-    rename_all_fields = "camelCase",
-    deny_unknown_fields
-)]
-enum EnvironmentSourceWire {
-    SourceRevision { repository: String },
-}
-
 impl ContractWire {
-    fn into_binding(self) -> Result<ContractBinding, String> {
-        Ok(ContractBinding {
+    fn into_binding(self) -> ContractBinding {
+        ContractBinding {
             kind: self.kind,
             version: self.version,
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.revision.
-            revision: self.revision,
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
-            digest: parse_digest(&self.digest)?,
-        })
+        }
     }
 }
 
 impl ProducerWire {
-    fn into_descriptor(self) -> Result<ProducerDescriptor, String> {
-        Ok(ProducerDescriptor {
+    fn into_descriptor(self) -> ProducerDescriptor {
+        ProducerDescriptor {
             name: self.name,
             version: self.version,
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.source_revision.
-            source_revision: self.source_revision,
             executable: self.executable,
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
-            executable_digest: parse_digest(&self.executable_digest)?,
-        })
+        }
     }
 }
 
 impl ProcedureBindingWire {
-    fn into_binding(self) -> Result<ProcedureBindings, String> {
+    fn into_binding(self) -> ProcedureBindings {
         let containment = match self.containment {
             ContainmentWire::ProcessGroupV1 { contract } => ContainmentBinding::ProcessGroupV1 {
-                contract: contract.into_binding()?,
+                contract: contract.into_binding(),
             },
         };
         let cancellation = match self.cancellation {
@@ -252,9 +220,9 @@ impl ProcedureBindingWire {
             ExitCodeWire::Any => ExitCodeBinding::Any,
             ExitCodeWire::Exact(codes) => ExitCodeBinding::Exact(codes),
         };
-        Ok(ProcedureBindings {
-            producer: self.producer.into_descriptor()?,
-            caller: self.caller.into_binding()?,
+        ProcedureBindings {
+            producer: self.producer.into_descriptor(),
+            caller: self.caller.into_binding(),
             capability_root: String::new(),
             environment: self.environment,
             inputs: Vec::new(),
@@ -291,15 +259,15 @@ impl ProcedureBindingWire {
                 max_descendants: self.budget.max_descendants,
                 max_concurrency: self.budget.max_concurrency,
             },
-            response_protocol: self.response_protocol.into_binding()?,
-            response_adapter: self.response_adapter.into_binding()?,
+            response_protocol: self.response_protocol.into_binding(),
+            response_adapter: self.response_adapter.into_binding(),
             exit_codes,
-        })
+        }
     }
 }
 
 impl MemberBindingWire {
-    fn into_binding(self) -> Result<RunMemberBindings, String> {
+    fn into_binding(self) -> RunMemberBindings {
         let inputs = self
             .inputs
             .into_iter()
@@ -327,34 +295,13 @@ impl MemberBindingWire {
                 }
             })
             .collect();
-        let environment_sources = self
-            .environment_sources
-            .into_iter()
-            .map(|(name, value)| {
-                let source = match value {
-                    EnvironmentSourceWire::SourceRevision { repository } => {
-                        EnvironmentSource::SourceRevision(repository)
-                    }
-                };
-                (name, source)
-            })
-            .collect();
-        Ok(RunMemberBindings {
-            producer: self.producer.into_binding()?,
-            checker: self
-                .checker
-                .map(ProcedureBindingWire::into_binding)
-                .transpose()?,
+        RunMemberBindings {
+            producer: self.producer.into_binding(),
+            checker: self.checker.map(ProcedureBindingWire::into_binding),
             inputs,
             timestamp: self.timestamp,
-            environment_sources,
-        })
+        }
     }
-}
-
-// BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContentDigest (ContractBinding.digest, ProducerDescriptor.executable_digest)
-fn parse_digest(value: &str) -> Result<ContentDigest, String> {
-    ContentDigest::parse(value).map_err(|error| error.to_string())
 }
 
 #[cfg(test)]
@@ -371,9 +318,6 @@ mod tests {
         json!({
             "kind": "fixture.contract",
             "version": "1",
-            "revision": "fixture-revision",
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
-            "digest": "a".repeat(64)
         })
     }
 
@@ -382,10 +326,7 @@ mod tests {
             "producer": {
                 "name": "fixture-producer",
                 "version": "1",
-                "sourceRevision": "fixture-revision",
                 "executable": "/usr/bin/true",
-                // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
-                "executableDigest": "b".repeat(64)
             },
             "caller": contract(),
             "environment": {},
@@ -427,10 +368,7 @@ mod tests {
                             "path": "case.txt"
                         }
                     }],
-                    "timestamp": "2026-01-01T00:00:00Z",
-                    "environmentSources": {
-                        "SOURCE_REVISION": {"kind": "source_revision", "repository": "fixture"}
-                    }
+                    "timestamp": "2026-01-01T00:00:00Z"
                 }
             }
         })
@@ -440,7 +378,7 @@ mod tests {
     #[test]
     fn tc_1942_run_selection_builds_exact_typed_bindings() {
         let selected: RunSelection = serde_json::from_value(config()).expect("typed config");
-        let (sources, members) = selected.into_parts().expect("valid digests");
+        let (sources, members) = selected.into_parts();
         assert_eq!(sources.len(), 1);
         let member = members.get("fixture.member").expect("named member");
         assert_eq!(member.producer.producer.executable, "/usr/bin/true");

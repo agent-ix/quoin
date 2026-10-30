@@ -6,12 +6,12 @@ use super::collection::publish_collection;
 use super::{
     AttemptEvidence, BTreeMap, CHECKER_DEFINITION_PATH, CHECKER_INPUT_PATH,
     CHECKER_RAW_BUNDLE_PATH, CHECKER_REQUEST_PATH, CHECKER_RESULT_PATH, CampaignCancellation,
-    CampaignDefinition, CampaignRunError, CampaignStoreError, ContentDigest,
-    DOMAIN_CHECK_INPUT_SCHEMA, DependencyResultInput, DomainCheckInput, DomainVerdictReceipt,
-    InputBinding, MeasurementPlan, Path, ProcessEvidenceAdapter, ProcessEvidenceObservation,
-    ProducerExecutionResult, ProducerExecutionState, ProducerExecutor, RawArtifactInput, Read,
-    Retained, RunMemberBindings, SourceTreeBinding, VerifiedSource, assess_receipt, encode_value,
-    raw_artifact_bundle, resolve_procedure, staged_dependency_path, staged_dependency_raw_path,
+    CampaignDefinition, CampaignRunError, CampaignStoreError, DOMAIN_CHECK_INPUT_SCHEMA,
+    DependencyResultInput, DomainCheckInput, DomainVerdictReceipt, InputBinding, MeasurementPlan,
+    Path, ProcessEvidenceAdapter, ProcessEvidenceObservation, ProducerExecutionResult,
+    ProducerExecutionState, ProducerExecutor, RawArtifactInput, Read, Retained, RunMemberBindings,
+    SourceTreeBinding, VerifiedSource, assess_receipt, encode_value, raw_artifact_bundle,
+    resolve_procedure, staged_dependency_path, staged_dependency_raw_path,
     staged_dependency_request_path,
 };
 
@@ -333,8 +333,6 @@ fn stage_checker_input(
     Ok(InputBinding {
         role: role.to_owned(),
         path: relative.to_owned(),
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA InputBinding.digest is required by the checker request.
-        digest: ContentDigest::of_bytes(bytes),
         executable: false,
     })
 }

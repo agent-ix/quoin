@@ -31,7 +31,7 @@ producer, expected and observed locus, structural root cause, and disposition.
 
 ## Collection Procedure
 
-The Tier-1 producer records engine, corpus, declaration and scorer revisions,
+The Tier-1 producer records the scorer version,
 the complete raw report, and one typed observation per family partition. The
 raw report's `locality_miss_inventory` is the named repair inventory referenced
 by the aggregate rendering.

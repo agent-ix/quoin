@@ -134,7 +134,7 @@ time = { version = "=0.3.55", features = ["formatting"] }
 # the same =2.0.20 independently, for an unrelated reason — the two branches
 # converge here; whoever merges second should not read it as drift.
 thiserror = "=2.0.20"
-# Opaque record identities (FR-098-AC-10); `v4` is random, never content-derived.
+# Opaque record identities (FR-098); `v4` is random, never content-derived.
 uuid = { version = "=1.26.1", features = ["v4"] }
 # The regex engine the advisor's ~60-entry characteristic table is written
 # against (quoin#383) and the three the combinatorial parser uses (quoin#382).
@@ -149,7 +149,7 @@ regex = "=1.13.1"
 # in its acceptance criterion, so this is the place.
 proptest = { version = "=1.9.0", default-features = false, features = ["std", "bit-set"] }
 jsonschema = { version = "=0.56.0", default-features = false }
-engineering-assurance = { version = "=0.7.1", git = "https://github.com/agent-ix/engineering-assurance.git", rev = "08bbf1cc5acc8b5a6e636d133ec662b812fc0221", default-features = false }
+engineering-assurance = { version = "=0.7.1", git = "https://github.com/agent-ix/engineering-assurance.git", rev = "48e3763fc47c89cfd3b45f6e7b8a47b03ab10ab9", default-features = false }
 signal-hook = "=0.4.4"
 clap = { version = "=4.5.47", default-features = false, features = ["std", "help", "usage", "error-context"] }
 flate2 = "=1.1.10"

@@ -37,7 +37,7 @@ reached and why.
 
 ## Banking a finding
 
-Follow `corpus/CONTRIBUTING.md` (the `qa-corpus` submodule) for every census or
+Follow CONTRIBUTING.md in https://github.com/agent-ix/qa-corpus for every census or
 dogfood finding: bank the case
 before the fix, cover every applicable language or record a reasoned exclusion,
 and provide a language-matched healthy control. Do not paraphrase the

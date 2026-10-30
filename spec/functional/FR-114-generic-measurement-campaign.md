@@ -54,8 +54,8 @@ producer can see and write any file in the checkout.
   producer runner if EA cannot provide the declared containment profile.
 - A producer's own `pass` value is never sufficient for campaign acceptance.
 - Quoin computes, records and compares no digest, hash, seal or key for campaign
-  evidence. The digest fields that EA's generated campaign and executor types
-  require are tracked as blocked on QSL-1275 and are never populated by Quoin.
+  evidence. EA's generated campaign and executor types carry no digest or
+  revision fields, so nothing is supplied.
 
 ## Dependencies
 

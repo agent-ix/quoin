@@ -39,7 +39,7 @@ named failures. Definition `property.span-grounding-v2`.
 
 Retain label identities and multiplicities, raw `quire properties --json`
 payloads, producer versions, exact outcome counts, named misses, exclusions,
-corpus and declaration revisions, scorer, and timestamp. Preserve the
+scorer, and timestamp. Preserve the
 historical `property.span-grounding-v1` observation unchanged beside v2.
 
 ## Environment and Sampling

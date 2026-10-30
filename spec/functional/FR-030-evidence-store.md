@@ -93,8 +93,6 @@ people to click through it.
   filename — plus anything a binding references. Dir-per-suite keeps the policy local, so an expensive suite's
   retention or `.gitignore` decision touches one directory.
 - An absent store SHALL read as empty rather than as an error.
-- Every verb SHALL check the quire version premise ([FR-029](./FR-029-consume-the-quire-json-contract.md))
-  before reading a payload.
 - Every newly recorded run or scan SHALL carry an immutable tool version. A
   bare name or mutable label is refused before evidence intake, and a
   finding-format payload naming a different tool is refused rather than

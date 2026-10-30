@@ -61,8 +61,9 @@ const CORPUS_FLOOR: usize = 100;
 /// The corpus entries where the Rust verdict deliberately differs from ajv's.
 ///
 /// `(mutation, ajv verdict, Rust verdict, the ruling)`. Every entry is a
-/// delta recorded in `DIVERGENCE.md`, and all are intervention-only: the
-/// operational schema's permissive `date-time` is unchanged.
+/// delta recorded in `DIVERGENCE.md`. The `date-time` entries are
+/// intervention-only: the operational schema's permissive `date-time` is
+/// unchanged. The tool-version entry applies to every schema.
 const DECLARED_DIVERGENCES: &[(&str, bool, bool, &str)] = &[
     (
         "set/observed_at=lowercase-t-and-z",
@@ -81,6 +82,12 @@ const DECLARED_DIVERGENCES: &[(&str, bool, bool, &str)] = &[
         false,
         true,
         "quoin#440: RFC 3339 §5.6 permits lowercase z",
+    ),
+    (
+        "set/producer.tool_version=git-sha1",
+        true,
+        false,
+        "a tool identity is an exact semantic version; a bare git revision is not one",
     ),
 ];
 
@@ -174,9 +181,11 @@ fn tc_470_ajv_and_jsonschema_agree_on_every_verdict() {
         let document = with_strength(schema, &entry["document"]);
         let rust_valid = validator.is_valid(&document);
 
-        let declared = DECLARED_DIVERGENCES
-            .iter()
-            .find(|(name, ..)| *name == mutation && schema == "intervention_experiment_v1");
+        let declared = DECLARED_DIVERGENCES.iter().find(|(name, ..)| {
+            *name == mutation
+                && (schema == "intervention_experiment_v1"
+                    || *name == "set/producer.tool_version=git-sha1")
+        });
         if let Some((name, expect_ajv, expect_rust, ruling)) = declared {
             assert_eq!(
                 (ajv_valid, rust_valid),

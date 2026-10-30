@@ -3,7 +3,7 @@
 //! Every FR-067 acceptance criterion the deleted `tests/graph-portfolio.test.ts`
 //! carried, restated against this crate, plus StR-007-VC-1.
 //!
-//! Trace: FR-067-AC-1, FR-067-AC-2, FR-067-AC-3, FR-067-AC-4, FR-067-AC-5, FR-067-AC-6, FR-067-AC-7, FR-067-AC-8
+//! Trace: FR-067-AC-2, FR-067-AC-3, FR-067-AC-4, FR-067-AC-6, FR-067-AC-7, FR-067-AC-8
 //! Trace: FR-067-AC-9, FR-067-AC-10, FR-067-AC-11
 //! Trace: StR-007-VC-1
 //! Provenance: quoin#480
@@ -250,8 +250,6 @@ fn build(inputs: &[GraphPortfolioRepositoryInput]) -> GovernedGraphPortfolioRepo
 /// The current row carries the active plan, its definition, the producer
 /// tuple, the source revision, the population identity and the
 /// producer-assigned observation id.
-///
-/// Trace: FR-067-AC-1
 #[test]
 fn tc_480_050_the_current_row_carries_the_plan_the_producer_and_the_observation_id() {
     let report = build(&[one(
@@ -458,7 +456,6 @@ fn tc_480_040_availability_is_separate_from_state_and_from_numeric_zero() {
 
 /// Every graph compatibility premise blocks a delta on its own.
 ///
-/// Trace: FR-067-AC-5
 /// Provenance: quoin#480
 #[test]
 fn tc_480_041_every_compatibility_premise_blocks_a_delta_independently() {

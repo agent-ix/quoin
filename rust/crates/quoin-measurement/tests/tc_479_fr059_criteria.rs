@@ -4,7 +4,7 @@
 //! carried, restated against this crate.
 //!
 //! Trace: FR-059-AC-1, FR-059-AC-2, FR-059-AC-3, FR-059-AC-4, FR-059-AC-5
-//! Trace: FR-059-AC-6, FR-059-AC-7, FR-059-AC-8, FR-059-AC-9, FR-059-AC-10
+//! Trace: FR-059-AC-6, FR-059-AC-8, FR-059-AC-9, FR-059-AC-10
 //! Provenance: quoin#479
 //!
 //! # Why this file exists

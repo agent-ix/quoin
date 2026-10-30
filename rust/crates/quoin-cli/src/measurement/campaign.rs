@@ -72,7 +72,7 @@ fn execute(args: &ArgMatches) -> Result<Response, String> {
     if config.schema != "quoin.campaign-run-config/v1" {
         return Err("unsupported campaign run-config schema".to_owned());
     }
-    let (sources, bindings) = config.into_parts()?;
+    let (sources, bindings) = config.into_parts();
     let run = run_with_signal(&repo, &definition, &run_id, &sources, &bindings)?;
     response(CampaignReceipt {
         schema: CAMPAIGN_VERDICT_SCHEMA,

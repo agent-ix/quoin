@@ -31,9 +31,6 @@ pub enum SourceError {
     /// The selected checkout has tracked edits or staged changes.
     #[error("campaign source checkout has tracked changes: {0}")]
     Dirty(PathBuf),
-    /// `HEAD` is not the exact declared revision.
-    #[error("campaign source revision mismatch for {0}")]
-    Revision(String),
     /// A tracked path or Git tree entry is malformed or unsupported.
     #[error("campaign source path is unsafe: {0}")]
     Path(String),
@@ -186,7 +183,7 @@ impl VerifiedSource {
 /// tracked edits and staged changes always refuse.
 ///
 /// # Errors
-/// Refuses missing, dirty or wrong-revision checkouts.
+/// Refuses missing or dirty checkouts.
 pub fn verify_source_graph(
     definition: &CampaignDefinition,
     checkouts: &BTreeMap<String, PathBuf>,
@@ -317,11 +314,6 @@ fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource,
             message: "checkout is not the repository root".to_owned(),
         });
     }
-    let head = git(path, "rev-parse", &["rev-parse", "--verify", "HEAD"], 1024)?;
-    // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision is a required field and EA's source-tree binding names it.
-    if String::from_utf8_lossy(&head).trim() != source.revision {
-        return Err(SourceError::Revision(source.repository.clone()));
-    }
     let status = git(
         path,
         "status",
@@ -334,7 +326,7 @@ fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource,
     let manifest = git(
         path,
         "ls-tree",
-        &["ls-tree", "-r", "-z", "--full-tree", &source.revision],
+        &["ls-tree", "-r", "-z", "--full-tree", "HEAD"],
         MAX_SOURCE_MANIFEST_BYTES,
     )?;
     Ok(VerifiedSource {
@@ -382,17 +374,8 @@ mod tests {
                 "source",
             ],
         );
-        let revision = String::from_utf8(
-            git(repo.path(), "rev-parse", &["rev-parse", "HEAD"], 1024).expect("revision"),
-        )
-        .expect("UTF-8")
-        .trim()
-        .to_owned();
         let source = CampaignSource {
             repository: "fictional/source".to_owned(),
-            revision,
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.digest; Quoin neither computes nor checks it.
-            digest: String::new(),
         };
         let root = verify_source(&source, repo.path()).expect("repository root verifies");
         assert_eq!(

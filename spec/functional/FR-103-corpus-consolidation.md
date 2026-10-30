@@ -65,7 +65,7 @@ that resolves two corpus sources each block consolidation.
 | FR-103-AC-2 | `git diff` over the accepted-corpus tree between the commit before consolidation and the commit after it is empty, over a named non-empty population. | Test (TC-1656) |
 | FR-103-AC-3 | A measurement run resolves exactly one corpus source, and a planted second source is refused. | Test (TC-1657) |
 | FR-103-AC-4 | Corpus accounting is obtained from `engineering-assurance`, and no local corpus-accounting implementation exists in the workspace. | Test (TC-1658) |
-| FR-103-AC-7 | Withdrawn: the corpus is not a submodule, so no revision is recorded or reported. | Test (TC-1685) |
+| FR-103-AC-7 | Withdrawn: the corpus is not a submodule, so no revision is recorded or reported. | Withdrawn (TC-1685) |
 
 ## Dependencies
 

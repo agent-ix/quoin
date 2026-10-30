@@ -16,7 +16,6 @@ use std::path::Path;
 use std::process::Command;
 
 use engineering_assurance::campaign::{CampaignDefinition, CampaignVerdict};
-use engineering_assurance::content_digest::ContentDigest;
 use engineering_assurance::producer_execution::{
     CancellationBinding, ContainmentBinding, ContractBinding, ExecutionBudget, ExitCodeBinding,
     OutputBinding, ProducerDescriptor, StdinBinding,
@@ -25,16 +24,6 @@ use quoin_measurement::campaign::run::{
     InputSource, RunMemberBindings, SelectedInput, run_campaign,
 };
 use serde_json::{Value, json};
-
-/// Lowercase hex digest of `bytes`, from EA's own `ContentDigest`.
-///
-/// BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA validates
-/// `CampaignSource.digest`, `ProducerDescriptor.executable_digest` and
-/// `ContractBinding.digest` against a real digest, so the fixture must supply
-/// one; the value comes from EA, not from quoin.
-fn sha256_hex(bytes: &[u8]) -> String {
-    engineering_assurance::content_digest::ContentDigest::of_bytes(bytes).into_hex()
-}
 
 fn git(root: &Path, args: &[&str]) -> Vec<u8> {
     let output = Command::new("git")
@@ -192,11 +181,11 @@ fn write_procedures(repo: &Path) {
     .expect("consume procedure");
 }
 
-fn fixture() -> (tempfile::TempDir, CampaignDefinition, String) {
+fn fixture() -> (tempfile::TempDir, CampaignDefinition) {
     fixture_with_producer(PRODUCER)
 }
 
-fn fixture_with_producer(producer: &str) -> (tempfile::TempDir, CampaignDefinition, String) {
+fn fixture_with_producer(producer: &str) -> (tempfile::TempDir, CampaignDefinition) {
     let repo = tempfile::tempdir().expect("source repository");
     git(repo.path(), &["init", "-q"]);
     fs::create_dir_all(repo.path().join("campaign")).expect("campaign directory");
@@ -232,20 +221,10 @@ fn fixture_with_producer(producer: &str) -> (tempfile::TempDir, CampaignDefiniti
             "source",
         ],
     );
-    let revision = String::from_utf8(git(repo.path(), &["rev-parse", "HEAD"]))
-        .expect("revision")
-        .trim()
-        .to_owned();
-    let manifest = git(
-        repo.path(),
-        &["ls-tree", "-r", "-z", "--full-tree", &revision],
-    );
-    let digest = sha256_hex(&manifest);
     let definition = serde_json::from_value(json!({
         "schemaVersion":"engineering-assurance.campaign-definition/v1",
         "id":"fictional-input-origins", "subjectName":"fictional-subject", "subjectVersion":"1",
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA CampaignSource.revision and CampaignSource.digest.
-        "sourceGraph":[{"repository":"fictional/source","revision":revision,"digest":digest}],
+        "sourceGraph":[{"repository":"fictional/source"}],
         "members":[
             {"name":"prepare","planId":"MP-PREP","definitionVersion":"v1","required":true,
              "checkerProcedure":checker_procedure()},
@@ -255,12 +234,11 @@ fn fixture_with_producer(producer: &str) -> (tempfile::TempDir, CampaignDefiniti
         "completionRule":"all_required"
     }))
     .expect("typed definition");
-    (repo, definition, revision)
+    (repo, definition)
 }
 
 fn bindings(
     repo: &Path,
-    revision: &str,
     name: &str,
     checker: bool,
 ) -> engineering_assurance::campaign::ProcedureBindings {
@@ -268,20 +246,12 @@ fn bindings(
     let contract = |kind: &str| ContractBinding {
         kind: kind.to_owned(),
         version: "1".to_owned(),
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.revision.
-        revision: revision.to_owned(),
-        // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ContractBinding.digest
-        digest: ContentDigest::of_bytes(kind.as_bytes()),
     };
     engineering_assurance::campaign::ProcedureBindings {
         producer: ProducerDescriptor {
             name: name.to_owned(),
             version: "1".to_owned(),
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.source_revision.
-            source_revision: revision.to_owned(),
             executable: python.to_str().expect("UTF-8 Python path").to_owned(),
-            // BLOCKED-BY QSL-1275 (owner: planner titan:QSL:plan): EA ProducerDescriptor.executable_digest
-            executable_digest: ContentDigest::of_file(&python).expect("Python identity"),
         },
         caller: contract("fictional.caller"),
         capability_root: repo.to_string_lossy().into_owned(),
@@ -320,7 +290,7 @@ fn bindings(
     }
 }
 
-fn runtime(repo: &Path, revision: &str, prepare: bool) -> RunMemberBindings {
+fn runtime(repo: &Path, prepare: bool) -> RunMemberBindings {
     let inputs = if prepare {
         Vec::new()
     } else {
@@ -346,7 +316,7 @@ fn runtime(repo: &Path, revision: &str, prepare: bool) -> RunMemberBindings {
             },
         ]
     };
-    let mut producer = bindings(repo, revision, "fictional-tool", false);
+    let mut producer = bindings(repo, "fictional-tool", false);
     if prepare {
         producer.outputs = vec![OutputBinding {
             role: "generated".to_owned(),
@@ -356,10 +326,9 @@ fn runtime(repo: &Path, revision: &str, prepare: bool) -> RunMemberBindings {
     }
     RunMemberBindings {
         producer,
-        checker: Some(bindings(repo, revision, "fictional-checker", true)),
+        checker: Some(bindings(repo, "fictional-checker", true)),
         inputs,
         timestamp: "2026-09-24T00:00:00Z".to_owned(),
-        environment_sources: BTreeMap::new(),
     }
 }
 
@@ -371,11 +340,11 @@ fn runtime(repo: &Path, revision: &str, prepare: bool) -> RunMemberBindings {
     reason = "one authored two-member campaign and its recorded origins form one scenario"
 )]
 fn tc_1947_two_member_authored_origins_are_recorded() {
-    let (repo, definition, revision) = fixture();
+    let (repo, definition) = fixture();
     let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);
     let selections = BTreeMap::from([
-        ("prepare".to_owned(), runtime(repo.path(), &revision, true)),
-        ("consume".to_owned(), runtime(repo.path(), &revision, false)),
+        ("prepare".to_owned(), runtime(repo.path(), true)),
+        ("consume".to_owned(), runtime(repo.path(), false)),
     ]);
     let run = run_campaign(
         repo.path(),
@@ -417,12 +386,12 @@ fn tc_1947_two_member_authored_origins_are_recorded() {
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1947_selected_input_at_a_tracked_path_is_refused() {
-    let (repo, definition, revision) = fixture();
+    let (repo, definition) = fixture();
     let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);
-    let mut consume = runtime(repo.path(), &revision, false);
+    let mut consume = runtime(repo.path(), false);
     consume.inputs[0].path = "source.txt".to_owned();
     let selections = BTreeMap::from([
-        ("prepare".to_owned(), runtime(repo.path(), &revision, true)),
+        ("prepare".to_owned(), runtime(repo.path(), true)),
         ("consume".to_owned(), consume),
     ]);
     let run = run_campaign(
@@ -460,13 +429,13 @@ fn run_with(
     tempfile::TempDir,
     engineering_assurance::campaign::CampaignRun,
 ) {
-    let (repo, definition, revision) = fixture_with_producer(producer);
+    let (repo, definition) = fixture_with_producer(producer);
     let checkouts = BTreeMap::from([("fictional/source".to_owned(), repo.path().to_path_buf())]);
-    let mut prepare = runtime(repo.path(), &revision, true);
+    let mut prepare = runtime(repo.path(), true);
     tune(&mut prepare);
     let selections = BTreeMap::from([
         ("prepare".to_owned(), prepare),
-        ("consume".to_owned(), runtime(repo.path(), &revision, false)),
+        ("consume".to_owned(), runtime(repo.path(), false)),
     ]);
     let run = quoin_measurement::campaign::run::run_campaign_with_cancellation(
         repo.path(),
