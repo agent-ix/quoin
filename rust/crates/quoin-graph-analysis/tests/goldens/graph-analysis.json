@@ -6,10 +6,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -392,10 +388,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -481,7 +473,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -490,7 +481,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -499,7 +489,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -508,7 +497,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -517,7 +505,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -526,7 +513,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -535,7 +521,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -556,10 +541,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -942,10 +923,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -1031,7 +1008,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1040,7 +1016,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1049,7 +1024,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1058,7 +1032,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1067,7 +1040,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1076,7 +1048,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1085,7 +1056,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1102,10 +1072,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -1488,10 +1454,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -1577,7 +1539,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1586,7 +1547,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1595,7 +1555,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1604,7 +1563,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1613,7 +1571,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1622,7 +1579,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1631,7 +1587,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -1651,10 +1606,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -2037,10 +1988,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -2126,7 +2073,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2135,7 +2081,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2144,7 +2089,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2153,7 +2097,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2162,7 +2105,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2171,7 +2113,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2180,7 +2121,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2199,10 +2139,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -2585,10 +2521,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -2674,7 +2606,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2683,7 +2614,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2692,7 +2622,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2701,7 +2630,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2710,7 +2638,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2719,7 +2646,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2728,7 +2654,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -2752,10 +2677,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -3138,10 +3059,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -3227,7 +3144,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3236,7 +3152,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3245,7 +3160,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3254,7 +3168,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3263,7 +3176,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3272,7 +3184,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3281,7 +3192,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3307,10 +3217,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -3693,10 +3599,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -3782,7 +3684,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3791,7 +3692,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3800,7 +3700,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3809,7 +3708,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3818,7 +3716,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3827,7 +3724,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3836,7 +3732,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -3858,10 +3753,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -4244,10 +4135,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -4333,7 +4220,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4342,7 +4228,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4351,7 +4236,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4360,7 +4244,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4369,7 +4252,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4378,7 +4260,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4387,7 +4268,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4412,10 +4292,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -4798,10 +4674,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -4887,7 +4759,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4896,7 +4767,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4905,7 +4775,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4914,7 +4783,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4923,7 +4791,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4932,7 +4799,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4941,7 +4807,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -4960,10 +4825,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -5346,10 +5207,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -5446,10 +5303,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -5832,10 +5685,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -5932,10 +5781,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -6318,10 +6163,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -6418,10 +6259,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -6804,10 +6641,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -6893,7 +6726,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -6902,7 +6734,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -6911,7 +6742,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -6920,7 +6750,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -6929,7 +6758,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -6950,10 +6778,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -7120,10 +6944,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -7162,7 +6982,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -7171,7 +6990,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -7190,10 +7008,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [],
           "artifacts": [],
           "obligations": [],
@@ -7267,10 +7081,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -7295,10 +7105,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -7559,10 +7365,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -7609,7 +7411,6 @@
             {
               "obligation": "AC|1",
               "suite": "suite|with|pipes",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -7618,7 +7419,6 @@
             {
               "obligation": "AC-😀",
               "suite": "z-suite",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -7627,7 +7427,6 @@
             {
               "obligation": "AC-�",
               "suite": "a-suite",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -7636,7 +7435,6 @@
             {
               "obligation": "AC-newline",
               "suite": "m-suite",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -7655,10 +7453,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -7884,10 +7678,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -7925,7 +7715,6 @@
             {
               "obligation": "FR-005-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -7944,10 +7733,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -8330,10 +8115,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -8369,7 +8150,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8378,7 +8158,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8387,7 +8166,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8396,7 +8174,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8405,7 +8182,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8414,7 +8190,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8423,7 +8198,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8444,10 +8218,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -8830,10 +8600,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -8919,7 +8685,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8928,7 +8693,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "integration",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8937,7 +8701,6 @@
             {
               "obligation": "FR-002-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8946,7 +8709,6 @@
             {
               "obligation": "FR-004-AC-1",
               "suite": "contract",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8955,7 +8717,6 @@
             {
               "obligation": "SHARED-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8964,7 +8725,6 @@
             {
               "obligation": "GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -8973,7 +8733,6 @@
             {
               "obligation": "ALSO-GONE-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -9003,10 +8762,6 @@
         "assurance": {
           "format": "quire-assurance",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "modules": [
             {
               "name": "example",
@@ -9389,10 +9144,6 @@
         "audit": {
           "format": "quoin-audit-envelope",
           "format_version": 1,
-          "source": {
-            "repository": "agent-ix/example",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "export": {
             "format": "quire-assurance",
             "format_version": 1,
@@ -9478,7 +9229,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -9487,7 +9237,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "unit",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"
@@ -9496,7 +9245,6 @@
             {
               "obligation": "FR-001-AC-1",
               "suite": "a-suite",
-              "commit": "0000000000000000000000000000000000000000",
               "symbols": [
                 "beta",
                 "alpha"

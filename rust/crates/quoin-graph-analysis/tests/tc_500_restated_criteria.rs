@@ -49,17 +49,10 @@ use quoin_graph_analysis::{
 };
 use serde_json::{Value, json};
 
-const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-const OTHER_REVISION: &str = "dddddddddddddddddddddddddddddddddddddddd";
-
 const REQUIREMENTS: [&str; 4] = ["FR-001", "FR-002", "FR-003", "FR-004"];
 
 fn locator(path: &str, line: u32) -> Value {
     json!({ "path": path, "line": line })
-}
-
-fn source() -> Value {
-    json!({ "repository": "agent-ix/example", "revision": REVISION })
 }
 
 fn modules() -> Value {
@@ -136,7 +129,6 @@ fn export_value() -> Value {
         "format": "quire-assurance",
         "format_version": 1,
         "modules": modules(),
-        "source": source(),
         "artifacts": artifacts(),
         "obligations": obligations(),
         "symbols": [],
@@ -168,7 +160,6 @@ fn audit_value(healthy: &[&str], findings: &Value) -> Value {
     json!({
         "format": "quoin-audit-envelope",
         "format_version": 1,
-        "source": source(),
         "export": premises_value(),
         "report": { "findings": findings, "healthy": healthy, "unevaluated": [] },
     })
@@ -178,7 +169,6 @@ fn binding(obligation: &str, suite: &str) -> Value {
     json!({
         "obligation": obligation,
         "suite": suite,
-        "commit": REVISION,
         "symbols": ["test"],
     })
 }
@@ -372,15 +362,14 @@ fn tc_500_041_the_auditor_verdict_is_copied_and_never_re_decided() {
     );
 }
 
-/// Every view carries the accepted full source revision and the format/module
-/// premises, byte for byte.
+/// Every view carries the format/module premises, byte for byte.
 ///
-/// Restates "preserves source and accepted premises across every view".
+/// Restates "preserves accepted premises across every view".
 ///
 /// Trace: FR-062-AC-8
 /// Provenance: quoin#500
 #[test]
-fn tc_500_044_every_view_carries_the_accepted_source_and_premises() {
+fn tc_500_044_every_view_carries_the_accepted_premises() {
     let value = plain(&[binding("FR-001-AC-1", "unit")]);
     let views = [
         GraphAnalysis::from(analyze_fan_out(&value)),
@@ -391,11 +380,6 @@ fn tc_500_044_every_view_carries_the_accepted_source_and_premises() {
     ];
     for view in &views {
         let report = as_json(view);
-        assert_eq!(
-            report["source"],
-            source(),
-            "the full revision, never a prefix"
-        );
         assert_eq!(report["premises"], premises_value());
         assert_eq!(
             report["export"],
@@ -444,11 +428,11 @@ fn tc_500_045_bad_inputs_fail_closed_and_unavailable_is_not_zero() {
     assert!(check_accepted_premises(&export, &with_modules(extra)).is_err());
 
     let mut moved = audit_value(&["FR-001-AC-1"], &json!([]));
-    moved["source"]["revision"] = json!(OTHER_REVISION);
+    moved["export"]["modules"] = json!([]);
     let moved = parse_audit_envelope(&moved.to_string()).expect("the candidate envelope parses");
     assert!(
         check_audit_identity(&moved, &export).is_err(),
-        "an audit taken at another revision is not this export's audit"
+        "an audit taken under other premises is not this export's audit"
     );
 
     let with_store = |bindings: BindingInput| {
@@ -552,10 +536,6 @@ fn tc_500_046_equivalent_permutations_render_identical_bytes() {
     );
 
     let markdown = render_graph_analysis(&left);
-    assert!(
-        markdown.contains(REVISION),
-        "the human rendering carries the full accepted revision"
-    );
     assert!(markdown.contains("Suite"));
 }
 
@@ -740,5 +720,34 @@ fn tc_500_048_the_views_carry_no_score_or_threshold() {
         rendered.contains("obligationCount"),
         "the structural fact itself must still be there — an empty report would pass the check \
          above by saying nothing"
+    );
+}
+
+/// Bindings are read in `(obligation, suite)` order whatever order the store
+/// lists them in.
+///
+/// Provenance: quoin#500
+#[test]
+fn bindings_for_one_obligation_are_ordered_by_suite() {
+    let bindings = parse_bindings_file(&json!({
+        "schemaVersion": 1,
+        "bindings": [
+            binding("FR-001-AC-1", "unit"),
+            binding("FR-001-AC-1", "integration"),
+            binding("FR-000-AC-1", "unit"),
+        ],
+    }))
+    .expect("the store parses");
+    let order: Vec<(&str, &str)> = bindings
+        .iter()
+        .map(|b| (b.obligation.as_str(), b.suite.as_str()))
+        .collect();
+    assert_eq!(
+        order,
+        [
+            ("FR-000-AC-1", "unit"),
+            ("FR-001-AC-1", "integration"),
+            ("FR-001-AC-1", "unit"),
+        ]
     );
 }

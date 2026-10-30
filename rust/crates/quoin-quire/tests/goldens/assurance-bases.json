@@ -62,10 +62,6 @@
             "target": "TC-001"
           }
         ],
-        "source": {
-          "repository": "agent-ix/quoin",
-          "revision": "0000000000000000000000000000000000000000"
-        },
         "symbols": [
           {
             "capabilities": [
@@ -123,10 +119,6 @@
         "relation_kinds": [],
         "relation_observations": [],
         "relations": [],
-        "source": {
-          "repository": "agent-ix/quoin",
-          "revision": "1111111111111111111111111111111111111111"
-        },
         "symbols": [
           {
             "capabilities": [

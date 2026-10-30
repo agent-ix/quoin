@@ -23,7 +23,7 @@
 //! byte ceiling on the file (see [`crate::payload::PayloadLimit`]).
 
 use crate::error::Result;
-use crate::ids::{DOCUMENT_ROOT_DIR, RepositoryId, RevisionId, ScopeRoot};
+use crate::ids::{DOCUMENT_ROOT_DIR, ScopeRoot};
 use crate::modules::{ModuleSelection, Notice, NoticeKind};
 use crate::payload::PayloadLimit;
 
@@ -34,10 +34,6 @@ pub struct Request {
     pub scope: ScopeRoot,
     /// Which modules supply the archetypes and relation vocabulary.
     pub modules: ModuleSelection,
-    /// The repository identity copied into the source premise.
-    pub repository: RepositoryId,
-    /// The caller-selected immutable revision.
-    pub revision: RevisionId,
 }
 
 /// What an export build produced.
@@ -90,10 +86,6 @@ pub fn build(request: &Request) -> Result<Outcome> {
         corpus_root: &document_root,
         symbols: &extraction,
         symbol_graph: &graph,
-        source: quire_rs::AssuranceSource {
-            repository: request.repository.as_str().to_string(),
-            revision: request.revision.as_str().to_string(),
-        },
     })?;
 
     Ok(Outcome { export, notices })

@@ -89,7 +89,7 @@ pub fn check_accepted_premises(
         .map_err(|reason| GraphError::invalid(GraphInput::Premises, reason))
 }
 
-/// The audit must have been taken at the export's identity (`input.ts:149`).
+/// The audit must have been taken under the export's premises (`input.ts:149`).
 ///
 /// # Errors
 ///

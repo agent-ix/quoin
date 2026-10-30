@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Agent-IX
 //! Native Campaign CLI document and exit behavior over a fictional Git source.
 
+#![cfg(target_os = "linux")]
 #![allow(
     clippy::expect_used,
     clippy::indexing_slicing,
@@ -12,7 +13,6 @@
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-#[cfg(target_os = "linux")]
 use std::time::{Duration, Instant};
 
 use quoin_measurement::campaign::store::run_path;
@@ -136,7 +136,6 @@ fn fixture() -> tempfile::TempDir {
 /// Trace: FR-114-AC-2, FR-114-AC-5, TC-1941, TC-1946.
 /// SIGINT reaches the exact Event-bound EA request and preserves a
 /// non-success verdict document after the bounded process is cancelled.
-#[cfg(target_os = "linux")]
 #[test]
 #[allow(
     clippy::too_many_lines,

@@ -70,7 +70,7 @@ existing retained operands/verdicts, `src/graph-analysis/` for pure projections,
       tie-breaking are deterministic.
 - [x] **TC-1254**: withdrawn (PLAT-1213): the churn view is removed.
 - [x] **TC-1255**: withdrawn (PLAT-1213): the churn view is removed.
-- [x] **TC-1256**: source and module premises survive repeated analysis byte-for-byte.
+- [x] **TC-1256**: module premises survive repeated analysis byte-for-byte.
 - [x] **TC-1258**: equivalent input permutations produce byte-identical JSON and matching human output.
 
 ### Unit tests

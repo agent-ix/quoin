@@ -59,7 +59,7 @@ path of the configuration file. The scorer attachment names a media type and car
 
 ## Outputs
 
-The Quire adapter returns the accepted source and module premises plus the
+The Quire adapter returns the accepted module premises plus the
 artifact, obligation, symbol, relation, and relation-observation collections
 without renaming a field or relation kind.
 

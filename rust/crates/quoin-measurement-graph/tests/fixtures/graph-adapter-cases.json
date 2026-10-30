@@ -48,11 +48,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -115,10 +111,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -157,11 +149,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "format": "quire-assurance",
@@ -206,10 +194,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -248,11 +232,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -314,10 +294,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -356,11 +332,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -422,10 +394,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -464,11 +432,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -517,10 +481,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -559,11 +519,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -625,10 +581,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -667,11 +619,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -724,10 +672,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -766,11 +710,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -832,10 +772,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -874,11 +810,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -927,10 +859,6 @@
             }
           ],
           "relation_observations": [],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -969,11 +897,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -1034,117 +958,8 @@
               "provenance": "canonical",
               "source": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
               "target": "TC-001"
-            }
-          ],
-          "symbols": [
-            {
-              "capabilities": [
-                "verifies"
-              ],
-              "container": null,
-              "id": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
-              "kind": "test_function",
-              "language": "rust",
-              "locator": {
-                "line": 12,
-                "path": "lib/backed.rs"
-              },
-              "qualified_name": "covers_the_round_trip"
             }
           ]
-        }
-      },
-      "name": "assurance/missing/source"
-    },
-    {
-      "input": {
-        "accepted": {
-          "format": "quire-assurance",
-          "formatVersion": 1,
-          "modules": [
-            {
-              "name": "quoin-quire-fixture",
-              "schemas": [
-                {
-                  "archetype": "FR"
-                },
-                {
-                  "archetype": "TestMatrix"
-                }
-              ],
-              "version": "0.1.0"
-            }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
-        },
-        "document": {
-          "artifacts": [
-            {
-              "artifact_type": "FR",
-              "id": "FR-001",
-              "locator": {
-                "line": 1,
-                "path": "FR-001-example.md"
-              }
-            },
-            {
-              "artifact_type": "TestMatrix",
-              "id": "TM-001",
-              "locator": {
-                "line": 1,
-                "path": "TM-001-matrix.md"
-              }
-            }
-          ],
-          "format": "quire-assurance",
-          "format_version": 1,
-          "modules": [
-            {
-              "name": "quoin-quire-fixture",
-              "schemas": [
-                {
-                  "archetype": "FR"
-                },
-                {
-                  "archetype": "TestMatrix"
-                }
-              ],
-              "version": "0.1.0"
-            }
-          ],
-          "obligations": [],
-          "relation_kinds": [
-            {
-              "availability": "available",
-              "kind": "verifies",
-              "sources": [
-                "trace_binding",
-                "observed"
-              ]
-            }
-          ],
-          "relation_observations": [],
-          "relations": [
-            {
-              "form": "rust-trace-attribute",
-              "freshness": "unknown",
-              "kind": "verifies",
-              "locator": {
-                "line": 12,
-                "path": "lib/backed.rs"
-              },
-              "provenance": "canonical",
-              "source": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
-              "target": "TC-001"
-            }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
         }
       },
       "name": "assurance/missing/symbols"
@@ -1167,11 +982,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -1234,10 +1045,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -1277,120 +1084,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
-        },
-        "document": {
-          "artifacts": [
-            {
-              "artifact_type": "FR",
-              "id": "FR-001",
-              "locator": {
-                "line": 1,
-                "path": "FR-001-example.md"
-              }
-            },
-            {
-              "artifact_type": "TestMatrix",
-              "id": "TM-001",
-              "locator": {
-                "line": 1,
-                "path": "TM-001-matrix.md"
-              }
-            }
-          ],
-          "format": "quire-assurance",
-          "format_version": 1,
-          "modules": [
-            {
-              "name": "quoin-quire-fixture",
-              "schemas": [
-                {
-                  "archetype": "FR"
-                },
-                {
-                  "archetype": "TestMatrix"
-                }
-              ],
-              "version": "0.1.0"
-            }
-          ],
-          "obligations": [],
-          "relation_kinds": [
-            {
-              "availability": "available",
-              "kind": "verifies",
-              "sources": [
-                "trace_binding",
-                "observed"
-              ]
-            }
-          ],
-          "relation_observations": [],
-          "relations": [
-            {
-              "form": "rust-trace-attribute",
-              "freshness": "unknown",
-              "kind": "verifies",
-              "locator": {
-                "line": 12,
-                "path": "lib/backed.rs"
-              },
-              "provenance": "canonical",
-              "source": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
-              "target": "TC-001"
-            }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "cccccccccccccccccccccccccccccccccccccccc"
-          },
-          "symbols": [
-            {
-              "capabilities": [
-                "verifies"
-              ],
-              "container": null,
-              "id": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
-              "kind": "test_function",
-              "language": "rust",
-              "locator": {
-                "line": 12,
-                "path": "lib/backed.rs"
-              },
-              "qualified_name": "covers_the_round_trip"
-            }
           ]
-        }
-      },
-      "name": "assurance/source-revision-disagrees"
-    },
-    {
-      "input": {
-        "accepted": {
-          "format": "quire-assurance",
-          "formatVersion": 1,
-          "modules": [
-            {
-              "name": "quoin-quire-fixture",
-              "schemas": [
-                {
-                  "archetype": "FR"
-                },
-                {
-                  "archetype": "TestMatrix"
-                }
-              ],
-              "version": "0.1.0"
-            }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
         },
         "document": {
           "artifacts": [
@@ -1440,10 +1134,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -1482,120 +1172,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
-        },
-        "document": {
-          "artifacts": [
-            {
-              "artifact_type": "FR",
-              "id": "FR-001",
-              "locator": {
-                "line": 1,
-                "path": "FR-001-example.md"
-              }
-            },
-            {
-              "artifact_type": "TestMatrix",
-              "id": "TM-001",
-              "locator": {
-                "line": 1,
-                "path": "TM-001-matrix.md"
-              }
-            }
-          ],
-          "format": "quire-assurance",
-          "format_version": 1,
-          "modules": [
-            {
-              "name": "quoin-quire-fixture",
-              "schemas": [
-                {
-                  "archetype": "FR"
-                },
-                {
-                  "archetype": "TestMatrix"
-                }
-              ],
-              "version": "0.1.0"
-            }
-          ],
-          "obligations": [],
-          "relation_kinds": [
-            {
-              "availability": "available",
-              "kind": "verifies",
-              "sources": [
-                "trace_binding",
-                "observed"
-              ]
-            }
-          ],
-          "relation_observations": [],
-          "relations": [
-            {
-              "form": "rust-trace-attribute",
-              "freshness": "unknown",
-              "kind": "verifies",
-              "locator": {
-                "line": 12,
-                "path": "lib/backed.rs"
-              },
-              "provenance": "canonical",
-              "source": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
-              "target": "TC-001"
-            }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "not-a-revision"
-          },
-          "symbols": [
-            {
-              "capabilities": [
-                "verifies"
-              ],
-              "container": null,
-              "id": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
-              "kind": "test_function",
-              "language": "rust",
-              "locator": {
-                "line": 12,
-                "path": "lib/backed.rs"
-              },
-              "qualified_name": "covers_the_round_trip"
-            }
           ]
-        }
-      },
-      "name": "assurance/source-revision-malformed"
-    },
-    {
-      "input": {
-        "accepted": {
-          "format": "quire-assurance",
-          "formatVersion": 1,
-          "modules": [
-            {
-              "name": "quoin-quire-fixture",
-              "schemas": [
-                {
-                  "archetype": "FR"
-                },
-                {
-                  "archetype": "TestMatrix"
-                }
-              ],
-              "version": "0.1.0"
-            }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
         },
         "document": {
           "artifacts": [
@@ -1658,10 +1235,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -1700,11 +1273,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -1767,10 +1336,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -1809,11 +1374,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -1876,10 +1437,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -1918,11 +1475,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -1986,10 +1539,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -2028,11 +1577,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -2096,10 +1641,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -2138,11 +1679,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -2206,10 +1743,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -2248,11 +1781,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -2316,10 +1845,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -2358,11 +1883,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -2426,10 +1947,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -2468,11 +1985,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -2536,10 +2049,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -2578,11 +2087,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -2646,10 +2151,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -2688,11 +2189,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -2756,10 +2253,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [
@@ -2798,11 +2291,7 @@
               ],
               "version": "0.1.0"
             }
-          ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          }
+          ]
         },
         "document": {
           "artifacts": [
@@ -2866,10 +2355,6 @@
               "target": "TC-001"
             }
           ],
-          "source": {
-            "repository": "agent-ix/quoin",
-            "revision": "0000000000000000000000000000000000000000"
-          },
           "symbols": [
             {
               "capabilities": [

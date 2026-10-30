@@ -141,10 +141,6 @@ fn tc_500_300_each_route_answers_with_its_own_view() {
                 .any(|gap| gap["kind"] == "absent-bindings-store"),
             "{op}: an absent store must be named as a gap, not implied: {report}"
         );
-        assert_eq!(
-            report["source"]["repository"], "agent-ix/example",
-            "{op}: the accepted source identity is repeated back"
-        );
     }
 }
 
@@ -201,10 +197,6 @@ fn tc_500_302_the_markdown_spelling_is_the_same_view() {
     assert!(
         markdown.starts_with("# Evidence graph: fan-out"),
         "{markdown}"
-    );
-    assert!(
-        markdown.contains("0000000000000000000000000000000000000000"),
-        "the markdown carries the full accepted revision: {markdown}"
     );
 }
 

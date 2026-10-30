@@ -15,7 +15,7 @@ use std::cmp::Ordering;
 
 use crate::ids::compare_text;
 use quoin_finding_types::{Finding, UnevaluatedCheck};
-use quoin_quire::model::{AssuranceExport, AssuranceSource};
+use quoin_quire::model::AssuranceExport;
 use serde::Serialize;
 
 use crate::ids::{ArtifactId, ObligationId, RelationKind, SuiteId};
@@ -173,8 +173,6 @@ pub struct ExportIdentity {
 pub struct GraphReportBase {
     /// Which projection this is.
     pub view: GraphView,
-    /// The identity the export was taken at.
-    pub source: AssuranceSource,
     /// The identity the export declared for itself.
     pub export: ExportIdentity,
     /// The premises the caller accepted.

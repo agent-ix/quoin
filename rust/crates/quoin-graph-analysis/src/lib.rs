@@ -51,7 +51,7 @@ pub mod render;
 
 pub use analysis::{analyze_change_impact, analyze_fan_out};
 pub use error::{GraphError, GraphErrorCode, GraphInput, Result};
-pub use ids::{ArtifactId, Commit, DocumentPath, ObligationId, RelationKind, SuiteId};
+pub use ids::{ArtifactId, DocumentPath, ObligationId, RelationKind, SuiteId};
 pub use input::{
     check_accepted_premises, check_audit_identity, parse_accepted_premises, parse_assurance_export,
     parse_audit_envelope,

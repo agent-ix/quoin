@@ -37,9 +37,7 @@ use std::path::Path;
 
 use quoin_measurement::MeasurementPlan;
 use quoin_measurement::types::plan::{LifecycleStatus, MeasurementStage};
-use quoin_measurement_graph::assurance::premise::{
-    AcceptedQuirePremises, ModulePremise, SourcePremise,
-};
+use quoin_measurement_graph::assurance::premise::{AcceptedQuirePremises, ModulePremise};
 use quoin_measurement_graph::quality::adapt::{AdaptGraphQualityInput, TranscribedCollection};
 use quoin_measurement_graph::{
     GraphAdapterError, GraphAdapterErrorCode, adapt_graph_quality_observation,
@@ -201,14 +199,11 @@ fn facts(collection: &TranscribedCollection) -> BTreeMap<String, Option<f64>> {
 fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
     let base = case("assurance/base");
     let accepted = AcceptedQuirePremises {
-        source: serde_json::from_value::<SourcePremise>(base["accepted"]["source"].clone())
-            .expect("the capture's accepted source"),
         modules: serde_json::from_value::<Vec<ModulePremise>>(base["accepted"]["modules"].clone())
             .expect("the capture's accepted modules"),
     };
     let parsed = adapt_quire_assurance(&base["document"], &accepted)
         .expect("the captured base export is admissible");
-    assert_eq!(parsed.source, accepted.source, "the source is carried");
     assert_eq!(parsed.modules, accepted.modules, "the modules are carried");
 
     // Each drift the criterion names, taken from the capture where it holds
@@ -216,14 +211,11 @@ fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
     for name in [
         "assurance/missing/format",
         "assurance/missing/format_version",
-        "assurance/source-revision-disagrees",
         "assurance/modules-disagree",
         "assurance/unknown-key",
     ] {
         let drifted = case(name);
         let premises = AcceptedQuirePremises {
-            source: serde_json::from_value::<SourcePremise>(drifted["accepted"]["source"].clone())
-                .expect("an accepted source"),
             modules: serde_json::from_value::<Vec<ModulePremise>>(
                 drifted["accepted"]["modules"].clone(),
             )
@@ -248,8 +240,6 @@ fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
 fn tc_480_021_every_quire_collection_passes_through_untranslated() {
     let base = case("assurance/base");
     let accepted = AcceptedQuirePremises {
-        source: serde_json::from_value::<SourcePremise>(base["accepted"]["source"].clone())
-            .expect("the capture's accepted source"),
         modules: serde_json::from_value::<Vec<ModulePremise>>(base["accepted"]["modules"].clone())
             .expect("the capture's accepted modules"),
     };

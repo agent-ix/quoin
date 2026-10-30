@@ -45,7 +45,7 @@ pub struct ViewRequest {
     pub export_path: String,
     /// The accepted assurance format/module/schema premises.
     pub premises_path: String,
-    /// The source-bound FR-032 audit envelope.
+    /// The FR-032 audit envelope.
     pub audit_path: String,
     /// Canonical JSON rather than markdown.
     pub json: bool,
@@ -62,7 +62,7 @@ pub struct ChangeImpactRequest {
     pub export_path: String,
     /// The accepted assurance format/module/schema premises.
     pub premises_path: String,
-    /// The source-bound FR-032 audit envelope.
+    /// The FR-032 audit envelope.
     pub audit_path: String,
     /// Canonical JSON rather than markdown.
     pub json: bool,
