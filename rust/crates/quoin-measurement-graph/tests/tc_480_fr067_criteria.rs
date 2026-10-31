@@ -248,7 +248,7 @@ fn build(inputs: &[GraphPortfolioRepositoryInput]) -> GovernedGraphPortfolioRepo
 // ------------------------------------------------- the reading itself
 
 /// The current row carries the active plan, its definition, the producer
-/// tuple, the source revision, the population identity and the
+/// tool identity and version, the population identity and the
 /// producer-assigned observation id.
 #[test]
 fn tc_480_050_the_current_row_carries_the_plan_the_producer_and_the_observation_id() {
