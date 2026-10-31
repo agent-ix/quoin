@@ -2459,8 +2459,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -2658,8 +2657,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -2803,8 +2801,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -2947,8 +2944,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3155,8 +3151,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3354,8 +3349,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3562,8 +3556,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3711,8 +3704,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3920,8 +3912,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4120,8 +4111,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4328,8 +4318,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4536,8 +4525,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4725,8 +4713,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4924,8 +4911,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5123,8 +5109,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5331,8 +5316,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5530,8 +5514,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5738,8 +5721,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5946,8 +5928,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6154,8 +6135,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6362,8 +6342,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6570,8 +6549,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6778,8 +6756,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6986,8 +6963,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -7194,8 +7170,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -7402,8 +7377,7 @@
             "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
-            "scorer_version": "v0.4.0",
-            "source_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "scorer_version": "v0.4.0"
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
