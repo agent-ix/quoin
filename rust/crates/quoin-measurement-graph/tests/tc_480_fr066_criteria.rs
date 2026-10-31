@@ -3,9 +3,6 @@
 //! Every FR-066 acceptance criterion the deleted `tests/graph-adapters.test.ts`
 //! carried, restated against this crate.
 //!
-//! Trace: FR-066-AC-2, FR-066-AC-3, FR-066-AC-4, FR-066-AC-5, FR-066-AC-6
-//! Trace: FR-066-AC-7, FR-066-AC-8, FR-066-AC-9, FR-066-AC-10, FR-066-AC-11
-//! Trace: FR-066-AC-12
 //! Provenance: quoin#480
 //!
 //! # Why this file exists
@@ -40,9 +37,10 @@ use quoin_measurement::types::plan::{LifecycleStatus, MeasurementStage};
 use quoin_measurement_graph::assurance::premise::{AcceptedQuirePremises, ModulePremise};
 use quoin_measurement_graph::quality::adapt::{AdaptGraphQualityInput, TranscribedCollection};
 use quoin_measurement_graph::{
-    GraphAdapterError, GraphAdapterErrorCode, adapt_graph_quality_observation,
-    adapt_quire_assurance,
+    GRAPH_ADAPTER_NAMES, GraphAdapterError, GraphAdapterErrorCode,
+    adapt_graph_quality_observation, adapt_quire_assurance, select_graph_adapter,
 };
+use ix_trace_rs::trace;
 use serde_json::Value;
 
 // ------------------------------------------------------------ the capture
@@ -191,10 +189,32 @@ fn facts(collection: &TranscribedCollection) -> BTreeMap<String, Option<f64>> {
 
 // ------------------------------------------------------------- the gates
 
+/// The registry exposes exactly the two versioned adapters, and an unknown name
+/// fails with the available names.
+///
+/// Provenance: quoin#480
+#[trace("FR-066-AC-1")]
+#[test]
+fn tc_480_019_the_registry_is_exactly_the_two_versioned_adapters() {
+    assert_eq!(
+        GRAPH_ADAPTER_NAMES,
+        ["quire-assurance-v1", "quire-code-graph-quality-v1"]
+    );
+    let error = select_graph_adapter("quire-assurance-v2").unwrap_err();
+    assert_eq!(error.code(), GraphAdapterErrorCode::UnknownAdapter);
+    assert!(
+        GRAPH_ADAPTER_NAMES
+            .iter()
+            .all(|name| error.message().contains(name)),
+        "the refusal names every available adapter: {}",
+        error.message()
+    );
+}
+
 /// A valid Quire export is preserved and every premise drift is refused.
 ///
-/// Trace: FR-066-AC-2
 /// Provenance: quoin#480
+#[trace("FR-066-AC-2")]
 #[test]
 fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
     let base = case("assurance/base");
@@ -234,8 +254,8 @@ fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
 
 /// Every Quire graph collection is handed through without translation.
 ///
-/// Trace: FR-066-AC-3
 /// Provenance: quoin#480
+#[trace("FR-066-AC-3")]
 #[test]
 fn tc_480_021_every_quire_collection_passes_through_untranslated() {
     let base = case("assurance/base");
@@ -291,8 +311,8 @@ fn tc_480_021_every_quire_collection_passes_through_untranslated() {
 /// The graph-quality schema is closed and the observation id is the
 /// producer's, taken as stated.
 ///
-/// Trace: FR-066-AC-4
 /// Provenance: quoin#480
+#[trace("FR-066-AC-4")]
 #[test]
 fn tc_480_022_the_schema_is_closed_and_the_observation_id_is_taken_as_stated() {
     // Any non-empty producer-assigned observation id is admitted, and the
@@ -322,8 +342,8 @@ fn tc_480_022_the_schema_is_closed_and_the_observation_id_is_taken_as_stated() {
 
 /// The scorer bytes are retained exactly and an attachment with no type is refused.
 ///
-/// Trace: FR-066-AC-5
 /// Provenance: quoin#480
+#[trace("FR-066-AC-5")]
 #[test]
 fn tc_480_023_scorer_bytes_are_retained_and_an_untyped_attachment_refused() {
     let base = case("quality/measured");
@@ -363,8 +383,8 @@ fn tc_480_023_scorer_bytes_are_retained_and_an_untyped_attachment_refused() {
 /// Every attestation and producer field the criterion names is required, one
 /// at a time.
 ///
-/// Trace: FR-066-AC-6
 /// Provenance: quoin#480
+#[trace("FR-066-AC-6", "FR-066-CON-2")]
 #[test]
 fn tc_480_024_every_attestation_and_producer_field_is_required() {
     /// The attestation paths `graph-adapters.test.ts` deleted that remain
@@ -428,8 +448,8 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
 /// Absent, inactive, duplicated or mismatched plans are refused, and a retired
 /// plan alongside the active one is not.
 ///
-/// Trace: FR-066-AC-7
 /// Provenance: quoin#480
+#[trace("FR-066-AC-7")]
 #[test]
 fn tc_480_025_the_plan_must_be_exactly_one_active_matching_plan() {
     for name in [
@@ -477,8 +497,8 @@ fn tc_480_025_the_plan_must_be_exactly_one_active_matching_plan() {
 /// The census maps bijectively and the transcription does not depend on the
 /// order the producer wrote its census members in.
 ///
-/// Trace: FR-066-AC-8
 /// Provenance: quoin#480
+#[trace("FR-066-AC-8")]
 #[test]
 fn tc_480_026_the_census_maps_bijectively_under_every_permutation() {
     /// The four census members, whose 24 orderings must all transcribe alike.
@@ -574,8 +594,8 @@ fn permutations_of(members: &[&'static str; 4]) -> Vec<Vec<&'static str>> {
 
 /// Result facts map bijectively and a duplicate partition is refused.
 ///
-/// Trace: FR-066-AC-9
 /// Provenance: quoin#480
+#[trace("FR-066-AC-9")]
 #[test]
 fn tc_480_027_result_facts_map_bijectively_and_duplicates_are_refused() {
     let base = case("quality/measured");
@@ -648,8 +668,8 @@ fn tc_480_027_result_facts_map_bijectively_and_duplicates_are_refused() {
 /// Each not-computed population state is retained distinctly, and the census
 /// survives it.
 ///
-/// Trace: FR-066-AC-10
 /// Provenance: quoin#480
+#[trace("FR-066-AC-10")]
 #[test]
 fn tc_480_028_each_not_computed_state_is_retained_distinctly() {
     // The captured not-computed populations, plus the third state the criterion
@@ -732,8 +752,8 @@ fn tc_480_028_each_not_computed_state_is_retained_distinctly() {
 
 /// Adapted intake is idempotent and refuses a collision.
 ///
-/// Trace: FR-066-AC-11
 /// Provenance: quoin#480
+#[trace("FR-066-AC-11", "FR-066-CON-4")]
 #[test]
 fn tc_480_029_adapted_intake_is_idempotent_and_collision_safe() {
     let transcribed = adapt_quality(&case("quality/measured")).expect("admissible");
@@ -784,8 +804,8 @@ fn tc_480_029_adapted_intake_is_idempotent_and_collision_safe() {
 /// The adapters have no producer, network, Git, filesystem or frontmatter
 /// dependency.
 ///
-/// Trace: FR-066-AC-12
 /// Provenance: quoin#480
+#[trace("FR-066-AC-12", "FR-066-CON-1", "FR-066-CON-3")]
 #[test]
 fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() {
     /// The modules that are `graph-adapters.ts`. `loader` and `structural` are
@@ -804,13 +824,14 @@ fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() 
     ];
 
     /// What none of them may reach for.
-    const FORBIDDEN: [&str; 6] = [
+    const FORBIDDEN: [&str; 7] = [
         "std::process",
         "std::net",
         "std::fs",
         "quoin_graph_analysis",
         "Command::new",
         "include_str!",
+        "frontmatter",
     ];
 
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
