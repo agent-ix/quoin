@@ -2456,7 +2456,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -2654,7 +2653,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -2798,7 +2796,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -2941,7 +2938,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -3148,7 +3144,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -3346,7 +3341,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -3553,7 +3547,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -3701,7 +3694,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -3909,7 +3901,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -4108,7 +4099,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -4315,7 +4305,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -4522,7 +4511,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -4710,7 +4698,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -4908,7 +4895,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -5106,7 +5092,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -5313,7 +5298,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -5511,7 +5495,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -5718,7 +5701,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -5925,7 +5907,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -6132,7 +6113,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -6339,7 +6319,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -6546,7 +6525,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -6753,7 +6731,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -6960,7 +6937,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -7167,7 +7143,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"
@@ -7374,7 +7349,6 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "corpus_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "extractor_revision": "v1.2.3",
             "producer_contract_version": 1,
             "scorer_version": "v0.4.0"

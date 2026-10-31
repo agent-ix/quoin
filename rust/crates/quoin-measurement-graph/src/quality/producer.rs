@@ -22,8 +22,6 @@ pub struct Producer {
     pub producer_contract_version: NonZeroU64,
     /// The repository-relative path of the configuration file.
     pub configuration_ref: ScorerOutputPath,
-    /// The revision of the measured corpus.
-    pub corpus_revision: RevisionIdentity,
     /// The scorer's revision.
     pub scorer_version: RevisionIdentity,
 }
