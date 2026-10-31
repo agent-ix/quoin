@@ -66,7 +66,7 @@ without renaming a field or relation kind.
 The graph-quality adapter returns one current-schema `MeasurementCollection`:
 
 - `toolIdentity` is the contract identity `agent-ix/quire-code-rs`;
-- `toolVersion`, configuration, corpus, plan, and definition identities
+- `toolVersion`, configuration, plan, and definition identities
   copy their producer fields;
 - subject, scope, timestamp, environment, and verification stack copy the
   invocation attestation;

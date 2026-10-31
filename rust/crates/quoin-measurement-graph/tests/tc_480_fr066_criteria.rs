@@ -383,11 +383,10 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
     ];
 
     /// The producer paths it deleted that remain required.
-    const PRODUCER: [&[&str]; 5] = [
+    const PRODUCER: [&[&str]; 4] = [
         &["producer", "extractor_revision"],
         &["producer", "producer_contract_version"],
         &["producer", "configuration_ref"],
-        &["producer", "corpus_revision"],
         &["producer", "scorer_version"],
     ];
 
