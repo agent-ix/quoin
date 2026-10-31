@@ -2400,7 +2400,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -2456,9 +2455,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -2606,7 +2603,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -2653,9 +2649,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -2744,7 +2738,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -2796,9 +2789,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -2882,7 +2873,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -2938,9 +2928,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3088,7 +3076,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -3144,9 +3131,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3294,7 +3279,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -3341,9 +3325,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3491,7 +3473,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -3547,9 +3528,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3638,7 +3617,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -3694,9 +3672,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -3845,7 +3821,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -3901,9 +3876,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4043,7 +4016,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -4099,9 +4071,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4249,7 +4219,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -4305,9 +4274,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4455,7 +4422,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -4511,9 +4477,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4661,7 +4625,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -4698,9 +4661,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -4848,7 +4809,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -4895,9 +4855,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5045,7 +5003,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -5092,9 +5049,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5242,7 +5197,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -5298,9 +5252,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5448,7 +5400,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -5495,9 +5446,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5645,7 +5594,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -5701,9 +5649,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -5851,7 +5797,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -5907,9 +5852,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6057,7 +6000,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -6113,9 +6055,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6263,7 +6203,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -6319,9 +6258,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6469,7 +6406,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -6525,9 +6461,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6675,7 +6609,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -6731,9 +6664,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -6881,7 +6812,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -6937,9 +6867,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -7087,7 +7015,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -7143,9 +7070,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"
@@ -7293,7 +7218,6 @@
             "sources": {
               "agent-ix/quire-code-rs": {
                 "remote": "git@github.com:agent-ix/quire-code-rs.git",
-                "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "sourceState": "clean"
               }
             }
@@ -7349,9 +7273,7 @@
           },
           "producer": {
             "configuration_ref": "config/graph-quality.json",
-            "extractor_revision": "v1.2.3",
-            "producer_contract_version": 1,
-            "scorer_version": "v0.4.0"
+            "producer_contract_version": 1
           },
           "raw_scorer_output": {
             "path": "out/scores.json"

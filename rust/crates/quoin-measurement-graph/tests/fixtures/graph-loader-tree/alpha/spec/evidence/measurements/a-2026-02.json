@@ -1,6 +1,5 @@
 {
   "collectionId": "a-2026-02",
-  "corpusRevision": "corpus-one",
   "environment": {
     "ci": "true"
   },
@@ -53,10 +52,7 @@
   "rawEvidence": {
     "producer": {
       "observation_id": "producer-alpha-a-2026-02",
-      "producer": {
-        "extractor_revision": "v1.2.3",
-        "scorer_version": "v0.4.0"
-      },
+      "producer": {},
       "raw_scorer_output": {
         "path": "out/scores.json"
       }

@@ -58,7 +58,7 @@ and causes no graph input to be read or discovered.
 Each repository report SHALL retain its existing FR-045 fields and add:
 
 - `graph_quality`: active plan, current state, complete ordered history,
-  definition, producer tuple, population identity,
+  definition, producer contract and configuration, population identity,
   partitioned observations, comparison, and the producer-assigned observation id;
 - `graph`: export availability and premises plus FR-062 fan-out
   reports, and change-impact reports for requested seeds; and

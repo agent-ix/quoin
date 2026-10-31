@@ -1,6 +1,5 @@
 {
   "collectionId": "e-2026-02",
-  "corpusRevision": "corpus-two",
   "environment": {
     "ci": "true"
   },
@@ -31,10 +30,7 @@
   "rawEvidence": {
     "producer": {
       "observation_id": "producer-echo-two",
-      "producer": {
-        "extractor_revision": "v1.2.3",
-        "scorer_version": "v0.4.0"
-      },
+      "producer": {},
       "raw_scorer_output": {
         "path": "out/scores.json"
       }

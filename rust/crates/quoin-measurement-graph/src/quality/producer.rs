@@ -9,21 +9,17 @@ use std::num::NonZeroU64;
 
 use serde::Deserialize;
 
-use crate::scalars::{RevisionIdentity, ScorerOutputPath};
+use crate::scalars::ScorerOutputPath;
 use crate::wire::{GraphQualityDefinitionVersion, MeasurementPlanRef};
 
 /// Everything that determined what the extractor produced.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Producer {
-    /// The extractor's revision.
-    pub extractor_revision: RevisionIdentity,
     /// Which producer contract it emits.
     pub producer_contract_version: NonZeroU64,
     /// The repository-relative path of the configuration file.
     pub configuration_ref: ScorerOutputPath,
-    /// The scorer's revision.
-    pub scorer_version: RevisionIdentity,
 }
 
 /// Which plan, at which definition version, the observation is against.

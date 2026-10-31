@@ -148,7 +148,7 @@ pub fn adapt_graph_quality_observation(
         // and nothing was received that the parsed value dropped.
         "scope": member(input.attestation, "scope"),
         "toolIdentity": TOOL_IDENTITY,
-        "toolVersion": record.producer.extractor_revision.as_str(),
+        "toolVersion": env!("CARGO_PKG_VERSION"),
         "timestamp": attestation.timestamp.as_str(),
         "environment": member(input.attestation, "environment"),
         "verificationStack": member(input.attestation, "verificationStack"),
