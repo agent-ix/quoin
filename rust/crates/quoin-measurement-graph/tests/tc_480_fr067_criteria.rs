@@ -157,7 +157,7 @@ fn collection_json(id: &str, timestamp: &str) -> Value {
         "rawEvidence": {
             "producer": {
                 "observation_id": format!("obs-{id}"),
-                "producer": { "extractor_revision": "v1.2.3", "scorer_version": "v0.4.0" },
+                "producer": {},
                 "population": { "state": "measured" },
                 "raw_scorer_output": { "path": "out/scores.json" },
             },
@@ -284,11 +284,6 @@ fn tc_480_050_the_current_row_carries_the_plan_the_producer_and_the_observation_
         current.observation_id.as_deref(),
         Some("obs-a-1"),
         "the producer-assigned observation id is reported as stated"
-    );
-    let json = canonical_graph_portfolio_json(&report).expect("canonical JSON");
-    assert!(
-        json.contains("v1.2.3") && json.contains("v0.4.0"),
-        "the complete producer tuple reaches the report"
     );
 }
 

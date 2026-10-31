@@ -50,7 +50,7 @@ The invocation attestation supplies facts absent from the producer record. It
 contains no observation value, population count, result, or verdict.
 
 `graph-quality-observation-v1` carries `schemaVersion`, `observationId`,
-`toolVersion`, `configRef`, `planId`,
+`configRef`, `planId`,
 `definitionVersion`, one complete `populationIdentity`, census facts, and
 either measured quality facts or one `empty`, `unreadable`, or `unsupported`
 state. Its `observationId` is an opaque, producer-assigned unique string (a UUID),
@@ -66,8 +66,8 @@ without renaming a field or relation kind.
 The graph-quality adapter returns one current-schema `MeasurementCollection`:
 
 - `toolIdentity` is the contract identity `agent-ix/quire-code-rs`;
-- `toolVersion`, configuration, plan, and definition identities
-  copy their producer fields;
+- `toolVersion` is the adapter's own package version; configuration, plan,
+  and definition identities copy their producer fields;
 - subject, scope, timestamp, environment, and verification stack copy the
   invocation attestation;
 - `rawEvidence` retains the complete producer record and exact scorer bytes as

@@ -83,7 +83,6 @@ scalar!(
     NonEmptyText,
     "A `z.string().min(1)` value: at least one character."
 );
-scalar!(RevisionIdentity, "A full revision or a semantic version.");
 scalar!(
     LocatorPath,
     "A relative path with no `..` segment, as a source locator carries."
@@ -106,50 +105,6 @@ impl NonEmptyText {
             return Err(malformed("expected at least one character"));
         }
         Ok(Self(value.to_owned()))
-    }
-}
-
-/// Whether `value` matches `v?[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?`.
-fn is_semantic_version(value: &str) -> bool {
-    let value = value.strip_prefix('v').unwrap_or(value);
-    let (core, tail) = match value.find(['-', '+']) {
-        Some(at) => value.split_at(at),
-        None => (value, ""),
-    };
-    let mut parts = core.split('.');
-    let numeric = |part: Option<&str>| {
-        part.is_some_and(|part| !part.is_empty() && part.bytes().all(|b| b.is_ascii_digit()))
-    };
-    if !(numeric(parts.next()) && numeric(parts.next()) && numeric(parts.next()))
-        || parts.next().is_some()
-    {
-        return false;
-    }
-    // The pattern's tail is `[-+]` followed by one or more of `[0-9A-Za-z.-]`,
-    // so a bare trailing `-` does not match.
-    tail.is_empty()
-        || (tail.len() > 1
-            && tail[1..]
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-'))
-}
-
-impl RevisionIdentity {
-    /// Read either spelling a producer may name a revision with.
-    ///
-    /// # Errors
-    ///
-    /// [`MalformedScalar`] when the value is neither a 40-character revision nor a
-    /// semantic version with an optional `v` prefix.
-    pub fn parse(value: &str) -> Parsed<Self> {
-        let accepted = is_lower_hex(value, 40) || is_semantic_version(value);
-        if accepted {
-            Ok(Self(value.to_owned()))
-        } else {
-            Err(malformed(format!(
-                "expected a revision or a semantic version, got `{value}`"
-            )))
-        }
     }
 }
 
