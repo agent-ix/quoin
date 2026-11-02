@@ -32,15 +32,15 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
+use ix_trace_rs::trace;
 use quoin_measurement::MeasurementPlan;
 use quoin_measurement::types::plan::{LifecycleStatus, MeasurementStage};
 use quoin_measurement_graph::assurance::premise::{AcceptedQuirePremises, ModulePremise};
 use quoin_measurement_graph::quality::adapt::{AdaptGraphQualityInput, TranscribedCollection};
 use quoin_measurement_graph::{
-    GRAPH_ADAPTER_NAMES, GraphAdapterError, GraphAdapterErrorCode,
-    adapt_graph_quality_observation, adapt_quire_assurance, select_graph_adapter,
+    GRAPH_ADAPTER_NAMES, GraphAdapterError, GraphAdapterErrorCode, adapt_graph_quality_observation,
+    adapt_quire_assurance, select_graph_adapter,
 };
-use ix_trace_rs::trace;
 use serde_json::Value;
 
 // ------------------------------------------------------------ the capture
