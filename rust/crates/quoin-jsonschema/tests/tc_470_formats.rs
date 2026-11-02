@@ -43,11 +43,7 @@ fn is_rfc3339_date_time(value: &str) -> bool {
     Rfc3339DateTime::parse(value).is_ok()
 }
 
-/// A fixture record of this shape.
-///
-/// The probe is a document that actually occurs with one field changed, not a
-/// stub: a hand-built object would be refused by a dozen structural keywords
-/// and `format` would never be the thing under test.
+/// A complete, schema-valid fixture for each retained measurement schema.
 fn retained_base(schema: MeasurementSchema) -> Value {
     let strength = match schema {
         MeasurementSchema::InterventionExperimentV1 => "tested",
@@ -69,10 +65,11 @@ fn retained_base(schema: MeasurementSchema) -> Value {
         MeasurementSchema::InterventionExperimentV1 => {
             read("interventions/quoin-270-cli-eval-sentinel-contract.json")
         }
-        _ => read(
-            "operational/pairs/quoin-271-release-v0.22.5-capability+quoin-271-release-v0.22.5-exercise.json",
-        )["records"][0]
-            .clone(),
+        MeasurementSchema::OperationalEvidenceV1 => serde_json::from_str(include_str!(
+            "../../../../tests/fixtures/operational-date-time-probe.json"
+        ))
+        .expect("operational record fixture is JSON"),
+        other => panic!("no retained base recorded for {other}"),
     };
     document
         .as_object_mut()
