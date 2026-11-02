@@ -38,6 +38,9 @@ jobs:
         run: test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private Rust dependencies"; exit 1; }
       - name: Authenticate private Cargo sources
         run: git config --global url."https://x-access-token:${{ secrets.REGISTRY_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - name: Fetch locked Cargo dependencies for all targets
+        working-directory: rust
+        run: cargo fetch --locked --target all
       # rust/crates/quoin-semantic/build.rs embeds the semantic contract out of
       # node_modules/@agent-ix/* (PLAT-887's de-vendoring); `make rust-lint`,
       # `make rust-build` and `make rust-test` all depend on `build-inputs`,
