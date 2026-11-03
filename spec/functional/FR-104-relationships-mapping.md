@@ -47,7 +47,7 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 - The `## Relationships` section of an object artifact, and every other section and the preamble of that artifact.
 - The artifact's frontmatter `relationships:` edges.
 - The module manifest `semantic.mappings` list (FR-070) and the artifact's object type.
-- The relation vocabulary, when the extracting surface supplies one: the merged `edge_types` registry of the loaded module set (verb → `{ category, inverse? }`), the object types' `roles`, and the object type's `allowed_links` map (verb → object type, role, or `*`).
+- The relation vocabulary, when the extracting surface supplies one: the merged `edge_types` registry of the loaded module set (verb → `{ category, inverse?, composite? }`), the object types' `roles`, and the object type's `allowed_links` map (verb → object type, role, or `*`).
 - The bundle's package identity `<org>/<repo>` when the extracting surface knows it: the bundle package, else the package of an explicit `ix://<org>/<repo>/…` source identity, never the semantic module's package; and, when the extracting surface supplies a bundle index, its artifact `id`s with their object types; the package identities named in `semantic.imports`.
 - The source identity and path that FR-072 uses to build a `SourceLocus`.
 
@@ -103,7 +103,7 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 - The `Verb` cell SHALL be a forward key of the merged `edge_types` registry and a key of the object type's `allowed_links`.
 - `RelationDecl.verb` SHALL be the `Verb` cell as authored.
 - `RelationDecl.category` SHALL be the `category` of the verb's registry entry.
-- `RelationDecl.composite` SHALL be present, and `true` exactly when the verb's registry entry declares `inverse: part_of`.
+- `RelationDecl.composite` SHALL be present, and `true` exactly when the verb's registry entry declares `composite: true`.
 - The `Target` cell SHALL be the `id` of an artifact in the bundle, mapped to `ix://<org>/<repo>/<id>` with the bundle's package identity, or an `ix://<org>/<repo>/<id>` identity carried verbatim.
 - An `ix://` target whose `<org>/<repo>` is the bundle's package SHALL name an artifact `id` in the bundle.
 - An `ix://` target whose `<org>/<repo>` is not the bundle's package SHALL name a package in `semantic.imports`.
@@ -160,7 +160,7 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-104-AC-1 | `relationships.md` rows `overlay \| references \| FR-005 \| 1..1`, `entries \| contains \| FR-007 \| 0..*`, and `predecessor \| references \| FR-006 \| 0..1` have an expected `RelationDecl[]` in which `references` is `traceability`, not composite, `contains` is `structural` and composite (`inverse: part_of`), targets are `ix://agent-ix/config-service/<id>`, `0..*` has no upper bound, each element validates against `RelationDecl.json`, and each `relationSources` entry names its row and spans its row line. | Test |
+| FR-104-AC-1 | `relationships.md` rows `overlay \| references \| FR-005 \| 1..1`, `entries \| contains \| FR-007 \| 0..*`, `predecessor \| references \| FR-006 \| 0..1`, and `aggregate \| aggregates \| FR-007 \| 0..*` have an expected `RelationDecl[]` in which `references` is `traceability`, not composite, both composition verbs are structural and composite (`contains.inverse: contained_in`; `aggregates.inverse: part_of`; each declares `composite: true`), targets are `ix://agent-ix/config-service/<id>`, `0..*` has no upper bound, each element validates against `RelationDecl.json`, and each `relationSources` entry names its row and spans its row line. | Test |
 | FR-104-AC-2 | `verb-unknown` (`belongs_to`) has `reason` `unknown-verb`; `verb-inverse-label` (`composed_by`) has `reason` `inverse-verb` with a message containing `composes` and `FR-005`; `verb-not-allowed` (`depends_on`) has `reason` `verb-not-allowed`; `verb-specializes` has `reason` `generalization`; each is `semantic.invalid-model-cell` at the row. | Test |
 | FR-104-AC-3 | `target-title`, `target-undeclared-id`, `target-own-package-undeclared-id` (`ix://agent-ix/config-service/FR-999`), and `target-qualified-not-imported` have `reason` `target-not-id`; `target-not-allowed-object-type` (`references` → nested_entity `FR-007`) and `target-not-allowed-behavioral` (`references` → behavioural `FR-010`) have `reason` `target-not-allowed`; `target-qualified-import` carries `ix://agent-ix/spec-artifacts-iso/FR-001` verbatim with no diagnostic. | Test |
 | FR-104-AC-4 | `multiplicity-malformed` (`one`), `multiplicity-inverted` (`5..2`), and `multiplicity-empty` have `semantic.invalid-model-cell` with `reason` `multiplicity` at the row. | Test |

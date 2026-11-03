@@ -235,6 +235,8 @@ fn matrix_binder(source: &quoin_quire::model::CoverageMatrixBinder) -> CoverageM
 fn matrix_status(status: quoin_quire::model::CoverageMatrixStatus) -> &'static str {
     use quoin_quire::model::CoverageMatrixStatus as Status;
     match status {
+        Status::QualifiedRecord => "qualified-record",
+        Status::Retired => "retired",
         Status::Tagged => "tagged",
         Status::Untagged => "untagged",
         Status::TaggedByIgnoredTest => "tagged-by-ignored-test",
