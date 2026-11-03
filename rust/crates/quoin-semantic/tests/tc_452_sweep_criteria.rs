@@ -32,6 +32,32 @@ use quoin_semantic::sweep::{CorpusRoot, SweepIdentity};
 use quoin_semantic::{PropertiesForm, TYPED_HEADER, classify_artifact, sweep_corpus};
 use serde_json::{Value, json};
 
+/// Trace: FR-104-AC-1
+/// The published relationship fixture keeps both ISO composition verbs
+/// marked composite and gives their inverse labels unique owners.
+#[test]
+fn tc_104_001_relationship_fixture_preserves_unique_composite_inverses() {
+    let fixture = mapping_json("relationships.expected.json");
+    let edge_types = &fixture["context"]["edgeTypes"];
+    assert_eq!(edge_types["contains"]["inverse"], json!("contained_in"));
+    assert_eq!(edge_types["contains"]["composite"], json!(true));
+    assert_eq!(edge_types["aggregates"]["inverse"], json!("part_of"));
+    assert_eq!(edge_types["aggregates"]["composite"], json!(true));
+
+    let relations = fixture["relations"].as_array().expect("relations");
+    for verb in ["contains", "aggregates"] {
+        let relation = relations
+            .iter()
+            .find(|relation| relation["verb"] == verb)
+            .unwrap_or_else(|| panic!("the fixture contains {verb}"));
+        assert_eq!(relation["composite"], json!(true));
+    }
+    assert!(
+        mapping_fixture("relationships.md").contains("| aggregate | aggregates | FR-007 | 0..* |"),
+        "the fixture's authored table exercises aggregates"
+    );
+}
+
 /// The classifier's own text, read at compile time.
 ///
 /// `include_str!` and not `fs::read_to_string`: a source-reading guard that

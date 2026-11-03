@@ -259,11 +259,19 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
         statement: "The command reports coverage.".to_owned(),
         method: method.map(str::to_owned),
         binders,
+        record_binders: None,
+        identity: None,
         status,
     };
     vec![CoverageMatrixRequirement {
         document: "spec/FR-001.md".to_owned(),
         criteria: vec![
+            criterion(
+                "FR-001-AC-0",
+                Some("Test"),
+                Vec::new(),
+                CoverageMatrixStatus::QualifiedRecord,
+            ),
             criterion(
                 "FR-001-AC-1",
                 Some("Test"),
@@ -287,6 +295,12 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
                 Some("Inspection"),
                 Vec::new(),
                 CoverageMatrixStatus::MethodWithoutSymbol,
+            ),
+            criterion(
+                "FR-001-AC-5",
+                Some("Test"),
+                Vec::new(),
+                CoverageMatrixStatus::Retired,
             ),
         ],
     }]
@@ -316,7 +330,7 @@ fn coverage_projects_the_engine_matrix_in_its_own_spelling() {
     }
     assert_eq!(payload(&response)["coverage_matrix"], expected);
     assert_eq!(
-        expected[0]["criteria"][2]["status"],
+        expected[0]["criteria"][3]["status"],
         "tagged-by-ignored-test"
     );
 

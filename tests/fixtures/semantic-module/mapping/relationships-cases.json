@@ -6,7 +6,7 @@
       "edgeTypes": {
         "repository": "agent-ix/spec-artifacts-iso",
         "path": "spec_artifacts_iso/manifest.yaml",
-        "note": "contains, composes, depends_on, owns, references"
+        "note": "aggregates, contains, composes, depends_on, owns, references"
       },
       "objectTypes": {
         "repository": "agent-ix/spec-objects-business",
@@ -26,7 +26,13 @@
       },
       "contains": {
         "category": "structural",
-        "inverse": "part_of"
+        "inverse": "contained_in",
+        "composite": true
+      },
+      "aggregates": {
+        "category": "structural",
+        "inverse": "part_of",
+        "composite": true
       },
       "depends_on": {
         "category": "dependency"
@@ -59,6 +65,9 @@
         "contains": [
           "nested_entity",
           "value_object"
+        ],
+        "aggregates": [
+          "nested_entity"
         ],
         "owns": [
           "state_machine"
