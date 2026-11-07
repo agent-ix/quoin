@@ -44,10 +44,10 @@ is missing or not a string.
 
 | ID          | Criteria                                                                                              | Verification                        |
 | ----------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| FR-002-AC-1 | `version`, `--version`, and `-v` each print the package version                                       | Test (cli.test.ts, scripts.test.ts) |
-| FR-002-AC-2 | The reported value is a non-empty string                                                              | Test (cli.test.ts)                  |
-| FR-002-AC-3 | A missing or non-string version field raises an error                                                 | Test (cli-version-missing.test.ts)  |
-| FR-002-AC-4 | A non-empty baked version is reported verbatim; an empty one falls back to the `package.json` version | Test (version.test.ts)              |
+| FR-002-AC-1 | `version`, `--version`, and `-v` each print the package version                                       | Test (`quoin-cli` `src/main.rs` :: `tc_373_version_requests_keep_the_bare_native_version_surface`) |
+| FR-002-AC-2 | The reported value is a non-empty string                                                              | Test (`quoin-cli` `src/main.rs` :: `tc_373_version_requests_keep_the_bare_native_version_surface`) |
+| FR-002-AC-3 | A missing or non-string version field raises an error                                                 | No native test cited (PLAT-1275)  |
+| FR-002-AC-4 | A non-empty baked version is reported verbatim; an empty one falls back to the `package.json` version | No native test cited (PLAT-1275)              |
 
 ## Dependencies
 
