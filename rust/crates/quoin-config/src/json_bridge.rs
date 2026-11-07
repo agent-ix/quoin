@@ -24,10 +24,10 @@ use serde_yaml_ng::Value as Yaml;
 #[derive(Debug, thiserror::Error)]
 pub enum JsonBridgeError {
     /// The value could not be rendered as JSON text.
-    #[error("{0}")]
+    #[error("rendering as JSON text: {0}")]
     Render(serde_json::Error),
     /// The JSON text was not read back as YAML.
-    #[error("{0}")]
+    #[error("reading the JSON text as YAML: {0}")]
     Read(serde_yaml_ng::Error),
 }
 

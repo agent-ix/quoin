@@ -175,6 +175,10 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
             });
         }
         let resolved = self.get(log).value;
+        // Through JSON text, not `yaml_serde::to_value`: `S` is a typed config
+        // whose contract is a JSON Schema (`PluginConfigSchema::json_schema`),
+        // so it has a JSON form, and a `serde_json::Value` field inside it
+        // would otherwise leak the arbitrary_precision marker (PLAT-97).
         let Yaml::Mapping(map) =
             to_yaml_via_json_text(&resolved).map_err(|e| ConfigError::ConfigSchema {
                 plugin_id: self.plugin_id.to_string(),
