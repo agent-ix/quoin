@@ -33,24 +33,7 @@ use std::path::{Path, PathBuf};
 const HARD_CEILING: usize = 700;
 
 /// Files already over the ceiling when the census was added, each with a reason.
-const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[
-    (
-        "quoin-jev/src/verdict.rs",
-        "verdict model and rendering together; split pending",
-    ),
-    (
-        "quoin-jev/src/span_ballot.rs",
-        "ballot model and tally together; split pending",
-    ),
-    (
-        "quoin-jev/src/cassette.rs",
-        "cassette record and replay together; split pending",
-    ),
-    (
-        "quoin-jev/src/corpus_check.rs",
-        "corpus checks in one file; split pending",
-    ),
-];
+const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
 
 /// Every `src/**/*.rs` under `rust/crates`, as `(crate/relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {
