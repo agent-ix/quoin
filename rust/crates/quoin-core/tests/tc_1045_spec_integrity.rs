@@ -524,6 +524,7 @@ fn test_ts_mentions(text: &str) -> Vec<(usize, String)> {
     let mut found = Vec::new();
     for (index, line) in text.lines().enumerate() {
         for word in line.split(|c: char| !(c.is_ascii_alphanumeric() || "-_./".contains(c))) {
+            let word = word.trim_end_matches('.');
             if word.ends_with(".test.ts") {
                 found.push((index + 1, word.to_owned()));
             }
@@ -583,7 +584,7 @@ fn tc_1045_007_nfr_str_and_fr_002_cite_no_deleted_typescript_test() {
 #[test]
 fn tc_1045_008_probe_planted_test_ts_mentions_are_caught() {
     let planted = "---\nevidence:\n  - ref: tests/a-b.test.ts\n---\nSee (`cli.test.ts`, `write.test.ts`).\n\
-                   | AC | x | Test (flows.test.ts) |\nA native `tc_1.rs` test.\n";
+                   | AC | x | Test (flows.test.ts) |\nA native `tc_1.rs` test. Ends a sentence: old.test.ts.\n";
     assert_eq!(
         test_ts_mentions(planted),
         vec![
@@ -591,6 +592,7 @@ fn tc_1045_008_probe_planted_test_ts_mentions_are_caught() {
             (5, "cli.test.ts".to_owned()),
             (5, "write.test.ts".to_owned()),
             (6, "flows.test.ts".to_owned()),
+            (7, "old.test.ts".to_owned()),
         ]
     );
 }
