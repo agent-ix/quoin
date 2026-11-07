@@ -39,7 +39,7 @@ test, reverse-traceability, or medium-severity gap remains.
   the external approval gate rather than claiming approval.
 - Target matrix cases backed by executable tagged tests: 30 / 31. TC-1125..TC-1154 pass; TC-1155
   is an `Inspection` row correctly marked `🚧` and is the sole unbacked target-plan case.
-- Functional acceptance criteria backed: 26 / 26 across FR-046..FR-050.
+- Functional acceptance criteria backed: 26 / 26 across FR-117..FR-119, FR-049..FR-050.
 - NFR metrics with declared evidence targets: 7 / 7; TC-1155's declared target exists but its
   external inspection has not yet supplied evidence.
 - New untracked test symbols: 0. New unmatched trace tags: 0.
@@ -56,8 +56,8 @@ review surface is ready and stopped; it does not close TC-1155 or authorize merg
 
 ## Matrix verification
 
-Quire's source-symbol reconciliation reports all four FR-046 criteria, five FR-047 criteria, six
-FR-048 criteria, five FR-049 criteria, and six FR-050 criteria backed. Every new NFR metric resolves
+Quire's source-symbol reconciliation reports all four FR-117 criteria, five FR-118 criteria, six
+FR-119 criteria, five FR-049 criteria, and six FR-050 criteria backed. Every new NFR metric resolves
 to TC-1151..TC-1155. The only target-plan `unbacked_rows` entry is TC-1155, and there are no
 unmatched tags from `tests/semantic-module-architecture.test.ts`.
 

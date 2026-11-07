@@ -368,3 +368,47 @@ fn tc_118_003_withdrawal_is_the_banner_under_the_heading() {
         "# FR-1: x\n\nBody.\n\nSome row says ⛔ Withdrawn much later\n\n\n\n\nmore\n⛔ Withdrawn\n"
     ));
 }
+
+// ---- PLAT-1273 -----------------------------------------------------------
+
+/// Ids that name more than one spec document, with the files that share them.
+fn shared_document_ids(
+    documents: &BTreeMap<String, Vec<(PathBuf, bool)>>,
+) -> BTreeMap<String, Vec<PathBuf>> {
+    documents
+        .iter()
+        .filter(|(_, found)| found.len() > 1)
+        .map(|(id, found)| (id.clone(), found.iter().map(|(p, _)| p.clone()).collect()))
+        .collect()
+}
+
+#[test]
+fn tc_1273_001_no_id_names_two_spec_documents() {
+    let documents = spec_documents(&repo_root());
+    assert!(
+        documents.len() > 100,
+        "anti-vacuity: the spec tree must be populated"
+    );
+    let shared = shared_document_ids(&documents);
+    assert!(
+        shared.is_empty(),
+        "these ids name more than one spec document (allocate the next free id to the newer one \
+         and update every reference): {shared:?}"
+    );
+}
+
+#[test]
+fn tc_1273_002_probe_a_planted_shared_id_is_caught() {
+    let mut documents = BTreeMap::new();
+    documents.insert(
+        "FR-046".to_owned(),
+        vec![
+            (PathBuf::from("FR-046-a.md"), false),
+            (PathBuf::from("FR-046-b.md"), false),
+        ],
+    );
+    documents.insert("FR-047".to_owned(), vec![(PathBuf::from("c.md"), false)]);
+    let shared = shared_document_ids(&documents);
+    assert_eq!(shared.len(), 1);
+    assert_eq!(shared["FR-046"].len(), 2);
+}

@@ -3,8 +3,8 @@ id: ARCH-SM-002
 title: "Semantic data planes and concern-specific authority"
 status: proposed
 requirements:
-  - FR-046
-  - FR-048
+  - FR-117
+  - FR-119
 ---
 
 # Semantic data planes and concern-specific authority
@@ -110,6 +110,6 @@ ownership error instead of resolving it.
 
 ## Traceability
 
-This record implements FR-046 and FR-048 and specializes `filament-core-data` ARCH-003 and
+This record implements FR-117 and FR-119 and specializes `filament-core-data` ARCH-003 and
 ARCH-005. The exact source identities and decision status are in the
 [external decision ledger](decision-ledger.md).

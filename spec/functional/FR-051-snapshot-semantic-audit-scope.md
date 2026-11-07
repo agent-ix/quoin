@@ -5,7 +5,7 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/US-014"
     type: "traces_to"
-  - target: "ix://agent-ix/quoin/FR-046"
+  - target: "ix://agent-ix/quoin/FR-117"
     type: "references"
 ---
 

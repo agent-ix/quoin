@@ -3,7 +3,7 @@ id: SR-041
 title: "Evidence review of issue 289 semantic-module architecture requirements"
 type: SpecReview
 analysis: evidence
-scope: "FR-046..FR-050, NFR-013..NFR-014, TM-001 TC-1125..TC-1155"
+scope: "FR-117..FR-119, FR-049..FR-050, NFR-013..NFR-014, TM-001 TC-1125..TC-1155"
 review_set: all
 ---
 

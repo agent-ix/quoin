@@ -7,11 +7,11 @@ relationships:
     type: "traces_to"
   - target: "ix://agent-ix/quoin/StR-003"
     type: "traces_to"
-  - target: "ix://agent-ix/quoin/FR-046"
+  - target: "ix://agent-ix/quoin/FR-117"
     type: "traces_to"
-  - target: "ix://agent-ix/quoin/FR-047"
+  - target: "ix://agent-ix/quoin/FR-118"
     type: "traces_to"
-  - target: "ix://agent-ix/quoin/FR-048"
+  - target: "ix://agent-ix/quoin/FR-119"
     type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-049"
     type: "traces_to"
@@ -73,5 +73,5 @@ This story records the boundary before compiler, package-publication, or migrati
 - **Upstream**: [StR-002](../stakeholder/StR-002-extensible-vocabulary.md),
   [StR-003](../stakeholder/StR-003-shared-catalog.md), and
   [StR-004](../stakeholder/StR-004-governed-workflows.md)
-- **Downstream**: [FR-046](../functional/FR-046-record-semantic-data-planes.md) through
+- **Downstream**: [FR-117](../functional/FR-117-record-semantic-data-planes.md) through
   [FR-050](../functional/FR-050-reconcile-quire-decisions.md)
