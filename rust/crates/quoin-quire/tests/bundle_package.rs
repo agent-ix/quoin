@@ -27,7 +27,7 @@ fn fixture() -> PathBuf {
 fn relationship_messages(bundle_package: Option<&str>) -> Vec<String> {
     let scope = ScopeRoot::open(fixture()).expect("the fixture is checked in");
     let outcome = validate::run(&validate::Request {
-        documents: vec![fixture().join("spec").join("ENT-006-config-version.md")],
+        documents: vec![fixture().join("spec").join("FR-006-config-version.md")],
         modules: ModuleSelection::Closed(vec![
             ids::ModuleRoot::open(fixture()).expect("the fixture module is checked in"),
         ]),
