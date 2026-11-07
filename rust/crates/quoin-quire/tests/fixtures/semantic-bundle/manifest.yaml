@@ -1,0 +1,30 @@
+# Semantic module with the `relationships` mapping, for the bundle-package test
+# (quoin#557). Reduced from quire-rs's `module-ok` fixture: one entity object
+# type whose `## Relationships` table is checked against the edge types and
+# roles below.
+manifest_version: 1.0.0
+name: spec-objects-fixture
+version: 0.1.0
+description: "Semantic-module fixture carrying the relationships mapping."
+archetypes: []
+object_types:
+- name: entity
+  roles: [domain-object]
+  allowed_links: { references: [domain-object] }
+  data_schema:
+    schema: schemas/Entity.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: { from: frontmatter_field, path: [id], required: true }
+        properties: { from: section_body, after_heading: Properties, required: true }
+edge_types:
+  references: { description: references, category: traceability }
+roles:
+  domain-object: { description: domain object }
+semantic:
+  contract_version: 1.0.0
+  package: agent-ix/spec-objects-fixture
+  exports: [entity]
+  targets: [json-schema, markdown]
+  mappings: [relationships]
