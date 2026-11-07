@@ -369,7 +369,7 @@ fn tc_118_003_withdrawal_is_the_banner_under_the_heading() {
     ));
 }
 
-// ---- PLAT-1273 -----------------------------------------------------------
+// ---- PLAT-1273 (spec/ documents only; plan/ ids are a separate census) -----------------------------------------------------------
 
 /// Ids that name more than one spec document, with the files that share them.
 fn shared_document_ids(
@@ -383,7 +383,7 @@ fn shared_document_ids(
 }
 
 #[test]
-fn tc_1273_001_no_id_names_two_spec_documents() {
+fn tc_1045_003_no_id_names_two_spec_documents() {
     let documents = spec_documents(&repo_root());
     assert!(
         documents.len() > 100,
@@ -398,7 +398,7 @@ fn tc_1273_001_no_id_names_two_spec_documents() {
 }
 
 #[test]
-fn tc_1273_002_probe_a_planted_shared_id_is_caught() {
+fn tc_1045_004_probe_a_planted_shared_id_is_caught() {
     let mut documents = BTreeMap::new();
     documents.insert(
         "FR-046".to_owned(),
@@ -411,4 +411,45 @@ fn tc_1273_002_probe_a_planted_shared_id_is_caught() {
     let shared = shared_document_ids(&documents);
     assert_eq!(shared.len(), 1);
     assert_eq!(shared["FR-046"].len(), 2);
+}
+
+/// The frontmatter `id:` of a document, if it has one.
+fn frontmatter_id(text: &str) -> Option<String> {
+    let mut lines = text.lines();
+    if lines.next() != Some("---") {
+        return None;
+    }
+    lines
+        .take_while(|l| *l != "---")
+        .find_map(|l| l.strip_prefix("id:"))
+        .map(|v| v.trim().trim_matches('"').to_owned())
+}
+
+#[test]
+fn tc_1045_005_a_documents_frontmatter_id_is_the_id_its_file_name_carries() {
+    let root = repo_root();
+    let mut drifted = Vec::new();
+    for (id, found) in spec_documents(&root) {
+        for (path, _) in found {
+            let text = std::fs::read_to_string(&path).unwrap();
+            if let Some(declared) = frontmatter_id(&text)
+                && declared != id
+            {
+                drifted.push(format!(
+                    "{}: file name says {id}, frontmatter says {declared}",
+                    path.strip_prefix(&root).unwrap().display()
+                ));
+            }
+        }
+    }
+    assert!(drifted.is_empty(), "id drift:\n{}", drifted.join("\n"));
+}
+
+#[test]
+fn tc_1045_006_probe_frontmatter_id_is_read() {
+    assert_eq!(
+        frontmatter_id("---\nid: FR-9\ntitle: x\n---\n"),
+        Some("FR-9".to_owned())
+    );
+    assert_eq!(frontmatter_id("# no frontmatter\n"), None);
 }
