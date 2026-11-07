@@ -47,8 +47,9 @@ fn files_named(root: &Path, extension: &str, into: &mut Vec<PathBuf>) {
     for entry in std::fs::read_dir(root).expect("readable directory") {
         let path = entry.expect("a directory entry").path();
         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-        if path.is_dir() {
-            if !matches!(name, "target" | "node_modules" | ".git") {
+        let is_dir = std::fs::symlink_metadata(&path).is_ok_and(|m| m.is_dir());
+        if is_dir {
+            if !matches!(name, "target" | "node_modules" | ".git" | "dist" | ".venv") {
                 files_named(&path, extension, into);
             }
         } else if name.ends_with(extension) {
@@ -65,7 +66,7 @@ fn cited_test_files(row: &str) -> Vec<String> {
         .skip(1)
         .step_by(2)
         .filter(|span| span.ends_with(".test.ts"))
-        .map(|span| span.rsplit('/').next().unwrap_or(span).to_owned())
+        .map(str::to_owned)
         .collect()
 }
 
@@ -85,7 +86,11 @@ fn missing_cited_tests(matrix: &str, present: &BTreeSet<String>) -> Vec<(usize, 
             continue;
         }
         for file in cited_test_files(row) {
-            if !present.contains(&file) {
+            // A bare name is matched on its file name; a path must match as a suffix.
+            let exists = present
+                .iter()
+                .any(|have| have == &file || have.ends_with(&format!("/{file}")));
+            if !exists {
                 found.push((index + 1, file));
             }
         }
@@ -101,7 +106,12 @@ fn tc_1045_001_no_covered_matrix_row_cites_a_missing_test_file() {
     files_named(&root, ".test.ts", &mut ts);
     let present: BTreeSet<String> = ts
         .iter()
-        .filter_map(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_owned))
+        .map(|p| {
+            p.strip_prefix(&root)
+                .unwrap()
+                .to_string_lossy()
+                .replace('\\', "/")
+        })
         .collect();
 
     assert!(
@@ -198,9 +208,19 @@ fn leading_id(name: &str) -> Option<String> {
 /// document's own `# <ID>:` heading, not that the word appears somewhere.
 fn is_withdrawn(text: &str) -> bool {
     let lines: Vec<&str> = text.lines().collect();
-    lines
+    let body = if lines.first() == Some(&"---") {
+        lines
+            .iter()
+            .skip(1)
+            .position(|l| *l == "---")
+            .map_or(0, |end| end + 2)
+    } else {
+        0
+    };
+    lines[body..]
         .iter()
         .position(|l| l.starts_with("# "))
+        .map(|at| at + body)
         .is_some_and(|heading| {
             lines[heading + 1..]
                 .iter()
@@ -265,8 +285,8 @@ fn dependency_problems(
         if !inside {
             continue;
         }
-        // A sentence that explains an absence names a withdrawn id correctly.
-        let explains_absence = line.to_ascii_lowercase().contains("withdrawn");
+        // A sentence that says an id is deliberately not cited names it correctly.
+        let explains_absence = line.to_ascii_lowercase().contains("not cited");
         for id in local_citations(line) {
             match documents.get(&id) {
                 None => problems.push((index + 1, format!("{id} does not resolve to a document"))),
@@ -326,6 +346,7 @@ fn tc_118_002_probe_planted_dangling_and_withdrawn_citations_fail() {
     documents.insert("FR-002".to_owned(), vec![(PathBuf::from("b"), true)]);
     let text = "## Dependencies\n\n- Upstream: FR-001, FR-999\n- Upstream: FR-002\n\
                 - FR-002 is withdrawn and deliberately not cited here.\n\
+                - Upstream: FR-001 (see also withdrawn FR-002)\n\
                 - quire-rs [FR-777](ix://agent-ix/quire-rs/FR-777)\n## Next\n- FR-999\n";
     let found = dependency_problems(text, &documents);
     assert_eq!(
@@ -333,6 +354,7 @@ fn tc_118_002_probe_planted_dangling_and_withdrawn_citations_fail() {
         vec![
             (3, "FR-999 does not resolve to a document".to_owned()),
             (4, "FR-002 is withdrawn".to_owned()),
+            (6, "FR-002 is withdrawn".to_owned()),
         ]
     );
 }

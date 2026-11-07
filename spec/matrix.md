@@ -90,10 +90,10 @@ that exist.
 | FR-068 | ⚠️ Partial | The FR-063.FR-065 contracts moved into `quoin-change-assurance` at [quoin#457](https://github.com/agent-ix/quoin/issues/457), so the criteria about what the commands DECIDE are carried against the real `quoin-core` binary and the criteria about what stays this side of the boundary are carried in TypeScript. `quoin-core` `tc_457_change_assurance_boundary.rs` — TC-1317.TC-1321, TC-1323, TC-1325 cover record and attestation sealing from explicit inputs, atomic exact-byte intake and idempotence, receipt assembly from named selections only, preserved unavailable/not-computed/missing states, receipt re-verification, and staging recovery; every operation is reached by its wire spelling through the binary. `quoin-cli` `tc_1322_change_assurance_exit_grammar.rs` — TC-1322 and the refusal half of TC-1324 carry the whole 0/1/2 exit grammar against the real binary, its usage arm included, restored at [quoin#543](https://github.com/agent-ix/quoin/issues/543) after the native cutover deleted Criteria carried only by retired TypeScript tests are unbacked (PLAT-1045). |
 | StR-007 | ✅ Covered | `quoin-measurement-graph` `tc_480_fr067_criteria.rs` :: `tc_480_048` TC-1316 retains producer identity, partitions, availability, and comparison premises through the adapter-to-portfolio flow without execution or an aggregate verdict. |
 | FR-093 | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) — TC-297..TC-302. Exact use identity, changed-context invalidation, neutral absence, different decisions for two uses of one producer, canonical storage with visible invalid records, and assurance-context rendering are covered. Validation tests require evidence and minimum revalidation triggers. CON-1/CON-2/CON-3 → inspection of `src/evidence/trust.ts` and `src/commands/evidence/trust.ts` (no producer execution, allowlist, certification state, or inferred trust). |
-| FR-046 | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) — TC-297..TC-302. Exact use identity, changed-context invalidation, neutral absence, different decisions for two uses of one producer, canonical storage with visible invalid records, and assurance-context rendering are covered. Validation tests require evidence and minimum revalidation triggers. CON-1/CON-2/CON-3 → inspection of `src/evidence/trust.ts` and `src/commands/evidence/trust.ts` (no producer execution, allowlist, certification state, or inferred trust). |
+| FR-093 | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) — TC-297..TC-302. Exact use identity, changed-context invalidation, neutral absence, different decisions for two uses of one producer, canonical storage with visible invalid records, and assurance-context rendering are covered. Validation tests require evidence and minimum revalidation triggers. CON-1/CON-2/CON-3 → inspection of `src/evidence/trust.ts` and `src/commands/evidence/trust.ts` (no producer execution, allowlist, certification state, or inferred trust). |
 | FR-094 | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) — TC-303..TC-309. Strict lineage/policy boundaries, current-obligation validation, distinct-evidence pairing, shared/missing lineage, absent-policy compatibility, audit finding clearance, binding persistence/clearing, command reachability, and assurance-context rendering are covered. CON-1/CON-3/CON-4 → inspection of `src/evidence/independence.ts` and the two policy-consuming commands (no role/tool/vendor inference, score, or Markdown parser). CON-2 → TC-306. |
-| FR-046 | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) — TC-1125..TC-1130 (binding contract, complete partition, unresolved separation, expiry, validation, deterministic rendering). Command discovery and production build verify the `quoin discharge` boundary. |
-| FR-047 | ⚠️ Partial | `quoin-assurance` `authored/build.rs` — TC-1925 (unbacked top-claim evidence: none cited, an unresolved reference, and stale/vacuous/suspect evidence, against the auditor's own vocabulary). TC-1131..TC-1136 (claim preservation, explicit decisions, expiry/review, challenges, closed contract and authority, deterministic rendering with no score) were carried only by a retired TypeScript test and are unbacked (PLAT-1045). |
+| FR-046 | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) — TC-1990..TC-1995 (binding contract, complete partition, unresolved separation, expiry, validation, deterministic rendering). Command discovery and production build verify the `quoin discharge` boundary. |
+| FR-047 | ⚠️ Partial | `quoin-assurance` `authored/build.rs` — TC-1925 (unbacked top-claim evidence: none cited, an unresolved reference, and stale/vacuous/suspect evidence, against the auditor's own vocabulary). TC-1996..TC-2001 (claim preservation, explicit decisions, expiry/review, challenges, closed contract and authority, deterministic rendering with no score) were carried only by a retired TypeScript test and are unbacked (PLAT-1045). |
 | FR-048 | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) |
 | FR-095 | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) |
 | FR-041 | ❌ Unbacked | the cited TypeScript tests no longer exist and no native test replaced them (PLAT-1045) — TC-231..TC-236. Both fixtures are **real tool output, unedited**: `cyclonedx-real.json` from `@cyclonedx/cyclonedx-npm` 6.0.1 over a real `npm install`, and `spdx-real.json` from GitHub's dependency-graph SBOM for `sindresorhus/slugify`. A fixture written to match the reader only proves the reader parses itself. CON-1/CON-2/CON-3 → inspection of `src/evidence/adapters/sbom.ts` (no subprocess, no new record type, no verdict). CON-4 → TC-231. |
@@ -210,10 +210,10 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-025 | FR-025-AC-1, FR-025-AC-2, FR-025-AC-3, FR-025-AC-4, FR-025-AC-5, FR-025-AC-6, FR-025-AC-7, FR-025-AC-8, FR-025-AC-9, FR-025-AC-10, FR-025-AC-11 | TC-083, TC-084, TC-085, TC-086, TC-087, TC-088, TC-089, TC-090, TC-091, TC-092, TC-093 | ⚠️ Partial |
 | FR-026 | FR-026-AC-1, FR-026-AC-2, FR-026-AC-3, FR-026-AC-4, FR-026-AC-5, FR-026-AC-6, FR-026-AC-7 | TC-094, TC-095, TC-096, TC-097, TC-098, TC-099, TC-100 | ❌ Unbacked |
 | FR-027 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3, FR-027-AC-4, FR-027-AC-5, FR-027-AC-6, FR-027-AC-7, FR-027-AC-8, FR-027-AC-9 | TC-101, TC-102, TC-103, TC-104, TC-105, TC-106, TC-107, TC-108, TC-109 | ⚠️ Partial |
-| FR-046 | FR-046-AC-1, FR-046-AC-2, FR-046-AC-3, FR-046-AC-4 | TC-1125, TC-1126, TC-1127, TC-1128 | ✅ Covered |
-| FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5 | TC-1129, TC-1130, TC-1131, TC-1132, TC-1133 | ✅ Covered |
-| FR-048 | FR-048-AC-1, FR-048-AC-2, FR-048-AC-3, FR-048-AC-4, FR-048-AC-5, FR-048-AC-6 | TC-1134, TC-1135, TC-1136, TC-1137, TC-1138, TC-1139 | ✅ Covered |
-| FR-049 | FR-049-AC-1, FR-049-AC-2, FR-049-AC-3, FR-049-AC-4, FR-049-AC-5 | TC-1140, TC-1141, TC-1142, TC-1143, TC-1144 | ✅ Covered |
+| FR-046 | FR-046-AC-1, FR-046-AC-2, FR-046-AC-3, FR-046-AC-4 | TC-1125, TC-1126, TC-1127, TC-1128 | ❌ Unbacked |
+| FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5 | TC-1129, TC-1130, TC-1131, TC-1132, TC-1133 | ❌ Unbacked |
+| FR-048 | FR-048-AC-1, FR-048-AC-2, FR-048-AC-3, FR-048-AC-4, FR-048-AC-5, FR-048-AC-6 | TC-1134, TC-1135, TC-1136, TC-1137, TC-1138, TC-1139 | ❌ Unbacked |
+| FR-049 | FR-049-AC-1, FR-049-AC-2, FR-049-AC-3, FR-049-AC-4, FR-049-AC-5 | TC-1140, TC-1141, TC-1142, TC-1143, TC-1144 | ⚠️ Partial |
 | FR-050 | FR-050-AC-1, FR-050-AC-2, FR-050-AC-3, FR-050-AC-4, FR-050-AC-5 | TC-1145, TC-1146, TC-1147, TC-1148, TC-1149 | ✅ Covered |
 | FR-063 | FR-063-AC-1, FR-063-AC-2, FR-063-AC-3, FR-063-AC-4, FR-063-AC-5, FR-063-AC-6, FR-063-AC-7, FR-063-AC-8, FR-063-AC-9, FR-063-AC-10, FR-063-AC-11 | TC-1261, TC-1262, TC-1263, TC-1264, TC-1265, TC-1266, TC-1267, TC-1268, TC-1269, TC-1270, TC-1271 | ✅ Covered |
 | FR-064 | FR-064-AC-1, FR-064-AC-2, FR-064-AC-3, FR-064-AC-4, FR-064-AC-5, FR-064-AC-6, FR-064-AC-7, FR-064-AC-8, FR-064-AC-9, FR-064-AC-10 | TC-1272, TC-1273, TC-1274, TC-1275, TC-1276, TC-1277, TC-1278, TC-1279, TC-1280, TC-1884 | ⚠️ Partial |
@@ -229,9 +229,9 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-073 | FR-073-AC-1, FR-073-AC-2, FR-073-AC-3, FR-073-AC-4, FR-073-AC-5, FR-073-CON-1, FR-073-CON-2 | TC-1360, TC-1361, TC-1362, TC-1363, TC-1364, TC-1365, TC-1366 | ✅ Covered |
 | FR-074 | FR-074-AC-1, FR-074-AC-2, FR-074-AC-3, FR-074-AC-4, FR-074-AC-5, FR-074-CON-1 | TC-1367, TC-1368, TC-1369, TC-1370, TC-1371, TC-1386 | ✅ Covered |
 | FR-075 | FR-075-AC-1, FR-075-AC-3, FR-075-AC-4, FR-075-AC-5, FR-075-CON-1, FR-075-CON-2 | TC-1372, TC-1374, TC-1375, TC-1376, TC-1377, TC-1378 | ✅ Covered |
-| FR-046 | FR-046-AC-1, FR-046-AC-2, FR-046-AC-3, FR-046-AC-4, FR-046-AC-5, FR-046-AC-6 | TC-1990, TC-1991, TC-1992, TC-1993, TC-1994, TC-1995 | ✅ Covered |
-| FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5, FR-047-AC-6, FR-047-AC-7, FR-047-AC-8 | TC-1996, TC-1997, TC-1998, TC-1999, TC-2000, TC-2001, TC-1712, TC-1925 | ✅ Covered |
-| FR-048 | FR-048-AC-1, FR-048-AC-2, FR-048-AC-3, FR-048-AC-4, FR-048-AC-5, FR-048-AC-6, FR-048-AC-7 | TC-2002, TC-2003, TC-2004, TC-2005, TC-2006, TC-2007, TC-2008 | ✅ Covered |
+| FR-046 | FR-046-AC-1, FR-046-AC-2, FR-046-AC-3, FR-046-AC-4, FR-046-AC-5, FR-046-AC-6 | TC-1990, TC-1991, TC-1992, TC-1993, TC-1994, TC-1995 | ❌ Unbacked |
+| FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5, FR-047-AC-6, FR-047-AC-7, FR-047-AC-8 | TC-1996, TC-1997, TC-1998, TC-1999, TC-2000, TC-2001, TC-1712, TC-1925 | ⚠️ Partial |
+| FR-048 | FR-048-AC-1, FR-048-AC-2, FR-048-AC-3, FR-048-AC-4, FR-048-AC-5, FR-048-AC-6, FR-048-AC-7 | TC-2002, TC-2003, TC-2004, TC-2005, TC-2006, TC-2007, TC-2008 | ❌ Unbacked |
 | FR-115 | FR-115-AC-1, FR-115-AC-2, FR-115-AC-3, FR-115-AC-4, FR-115-AC-5, FR-115-AC-6, FR-115-AC-7, FR-115-AC-8, FR-115-AC-9, FR-115-AC-10, FR-115-AC-11, FR-115-AC-12, FR-115-AC-13, FR-115-AC-14, FR-115-AC-15, FR-115-CON-1, FR-115-CON-3, FR-115-CON-4 | TC-1964, TC-1965, TC-1966, TC-1967, TC-1968, TC-1969, TC-1970, TC-1971, TC-1972, TC-1973, TC-1974, TC-1975, TC-1976, TC-1977, TC-1978, TC-1979 | ✅ Covered |
 
 ## Test Case Summary
@@ -692,25 +692,25 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1076 | An inspector's unqualified source symbol joins an exact or terminally module-qualified result symbol, preserving the common Cargo adapter shape without substring matching (#204) | Unit | P0 | FR-032-AC-15, FR-032-AC-16 | ✅ |
 | TC-1123 | Evidence intake accepts an exact semantic version and rejects bare or mutable tool identities, a source SHA or executable digest included (#274) | Unit | P0 | FR-030-AC-17 | ✅ |
 | TC-1124 | The first-party mock-inspection command records the exact Quoin package version in its stored tool identity (#274) | Integration | P0 | FR-030-AC-17, FR-032-AC-16 | ✅ |
-| TC-1125 | Architecture record defines the meta, definition, execution/observation, and presentation planes | Static | P0 | FR-046-AC-1 | ✅ |
-| TC-1126 | Definition, occurrence, and presentation examples remain distinct | Static | P0 | FR-046-AC-2 | ✅ |
-| TC-1127 | Structural kind is independent of semantic role and no universal runtime envelope is introduced | Static | P0 | FR-046-AC-3 | ✅ |
-| TC-1128 | Architecture index links all records and exposes provisional gates | Static | P0 | FR-046-AC-4 | ✅ |
-| TC-1129 | Quire ownership and exclusions remain explicit | Static | P0 | FR-047-AC-1 | ✅ |
-| TC-1130 | Quoin ownership and exclusions remain explicit | Static | P0 | FR-047-AC-2 | ✅ |
-| TC-1131 | Compiler and module-repository ownership remain separate | Static | P0 | FR-047-AC-3 | ✅ |
-| TC-1132 | Consumer adapter, persistence, migration, runtime, and presentation ownership remains explicit | Static | P0 | FR-047-AC-4 | ✅ |
-| TC-1133 | Quire ADR-0011 validation levels, roles, and consumer-CI execution remain governing | Static | P0 | FR-047-AC-5 | ✅ |
-| TC-1134 | Typed Markdown remains authoritative for authored durable knowledge | Static | P0 | FR-048-AC-1 | ✅ |
-| TC-1135 | Schema/package sources remain authoritative over generated language packages | Static | P0 | FR-048-AC-2 | ✅ |
-| TC-1136 | Record cites filament-core-data ADR-0005 (TypeSpec source) and describes no fallback | Static | P0 | FR-048-AC-3 | ✅ |
-| TC-1137 | Transactional and operational stores remain authoritative over Markdown reports | Static | P0 | FR-048-AC-4 | ✅ |
-| TC-1138 | Wire, analytical, and export representations remain selectable projections | Static | P0 | FR-048-AC-5 | ✅ |
-| TC-1139 | Competing authorities stop promotion and last-writer-wins is rejected | Static | P0 | FR-048-AC-6 | ✅ |
-| TC-1140 | Dynamic consumers preserve unknown namespaced module data | Static | P0 | FR-049-AC-1 | ✅ |
-| TC-1141 | Static consumers use finite versioned native exports | Static | P0 | FR-049-AC-2 | ✅ |
-| TC-1142 | Unknown extensions follow an explicit preserve, reject, or surface profile | Static | P0 | FR-049-AC-3 | ✅ |
-| TC-1143 | Dynamic installation does not force static regeneration | Static | P0 | FR-049-AC-4 | ✅ |
+| TC-1125 | Architecture record defines the meta, definition, execution/observation, and presentation planes | Static | P0 | FR-046-AC-1 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1126 | Definition, occurrence, and presentation examples remain distinct | Static | P0 | FR-046-AC-2 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1127 | Structural kind is independent of semantic role and no universal runtime envelope is introduced | Static | P0 | FR-046-AC-3 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1128 | Architecture index links all records and exposes provisional gates | Static | P0 | FR-046-AC-4 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1129 | Quire ownership and exclusions remain explicit | Static | P0 | FR-047-AC-1 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1130 | Quoin ownership and exclusions remain explicit | Static | P0 | FR-047-AC-2 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1131 | Compiler and module-repository ownership remain separate | Static | P0 | FR-047-AC-3 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1132 | Consumer adapter, persistence, migration, runtime, and presentation ownership remains explicit | Static | P0 | FR-047-AC-4 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1133 | Quire ADR-0011 validation levels, roles, and consumer-CI execution remain governing | Static | P0 | FR-047-AC-5 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1134 | Typed Markdown remains authoritative for authored durable knowledge | Static | P0 | FR-048-AC-1 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1135 | Schema/package sources remain authoritative over generated language packages | Static | P0 | FR-048-AC-2 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1136 | Record cites filament-core-data ADR-0005 (TypeSpec source) and describes no fallback | Static | P0 | FR-048-AC-3 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1137 | Transactional and operational stores remain authoritative over Markdown reports | Static | P0 | FR-048-AC-4 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1138 | Wire, analytical, and export representations remain selectable projections | Static | P0 | FR-048-AC-5 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1139 | Competing authorities stop promotion and last-writer-wins is rejected | Static | P0 | FR-048-AC-6 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1140 | Dynamic consumers preserve unknown namespaced module data | Static | P0 | FR-049-AC-1 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1141 | Static consumers use finite versioned native exports | Static | P0 | FR-049-AC-2 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1142 | Unknown extensions follow an explicit preserve, reject, or surface profile | Static | P0 | FR-049-AC-3 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1143 | Dynamic installation does not force static regeneration | Static | P0 | FR-049-AC-4 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
 | TC-1144 | Distribution manifests remain distinct from exports, targets, mappings, and profiles | Static | P0 | FR-049-AC-5 | ✅ |
 | TC-1145 | Unified archetype shape remains structural rather than a universal semantic base class | Static | P0 | FR-050-AC-1 | ✅ |
 | TC-1146 | Direct typed Markdown and document-boundary canonical Markdown remain preserved | Static | P0 | FR-050-AC-2 | ✅ |
@@ -1232,27 +1232,27 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1581 | Withdrawn with FR-091 (#388): the corpus-measurement harness was disposed of. | Static | P1 | FR-091-AC-7, FR-091-CON-1 | ⛔ |
 | TC-1583 | Withdrawn with FR-092 and FR-085 (#388): the corpus-measurement harness was disposed of. | Integration | P0 | FR-092-AC-7, FR-085-CON-1 | ⛔ |
 | TC-1584 | Withdrawn with NFR-021 (#388): the corpus-measurement harness was disposed of. | Property | P0 | NFR-021-AC-4 | ⛔ |
-| TC-1990 | A clause-binding payload must satisfy the runtime schema before discharge accounting consumes it | Unit | P0 | FR-046-AC-1 | ✅ |
-| TC-1991 | Every binding clause is partitioned exactly once as direct evidence, approved disposition, or open, with no aggregate score | Unit | P0 | FR-046-AC-2 | ✅ |
-| TC-1992 | Unresolved applicability stays outside the binding population and a supplied fact for it is reported unused | Unit | P0 | FR-046-AC-3 | ✅ |
-| TC-1993 | An expired attestation reopens its binding clause with a visible reason | Unit | P0 | FR-046-AC-4 | ✅ |
-| TC-1994 | Duplicate discharge facts and incomplete attestations are rejected | Unit | P0 | FR-046-AC-5 | ✅ |
-| TC-1995 | Discharge rendering includes every population deterministically and never invents a score | Unit | P1 | FR-046-AC-6 | ✅ |
-| TC-1996 | The authored view preserves the claim, subject, participants, authority, and independence without a score | Unit | P0 | FR-047-AC-1 | ✅ |
-| TC-1997 | A criterion with no explicit sufficiency decision remains open rather than inheriting evidence status | Unit | P0 | FR-047-AC-2 | ✅ |
-| TC-1998 | Expired decisions and assumptions due for review reopen their branches and the top claim | Unit | P0 | FR-047-AC-3 | ✅ |
-| TC-1999 | Challenge resolution requires evidence references and accepted risk additionally requires a current expiry | Unit | P0 | FR-047-AC-4 | ✅ |
-| TC-2000 | The closed argument contract rejects unknown fields, duplicate decisions, and authority that differs from the authored participant | Unit | P0 | FR-047-AC-5 | ✅ |
-| TC-2001 | The authored Markdown view is deterministic and retains open reasons and participant authority | Unit | P1 | FR-047-AC-6 | ✅ |
+| TC-1990 | A clause-binding payload must satisfy the runtime schema before discharge accounting consumes it | Unit | P0 | FR-046-AC-1 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1991 | Every binding clause is partitioned exactly once as direct evidence, approved disposition, or open, with no aggregate score | Unit | P0 | FR-046-AC-2 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1992 | Unresolved applicability stays outside the binding population and a supplied fact for it is reported unused | Unit | P0 | FR-046-AC-3 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1993 | An expired attestation reopens its binding clause with a visible reason | Unit | P0 | FR-046-AC-4 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1994 | Duplicate discharge facts and incomplete attestations are rejected | Unit | P0 | FR-046-AC-5 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1995 | Discharge rendering includes every population deterministically and never invents a score | Unit | P1 | FR-046-AC-6 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1996 | The authored view preserves the claim, subject, participants, authority, and independence without a score | Unit | P0 | FR-047-AC-1 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1997 | A criterion with no explicit sufficiency decision remains open rather than inheriting evidence status | Unit | P0 | FR-047-AC-2 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1998 | Expired decisions and assumptions due for review reopen their branches and the top claim | Unit | P0 | FR-047-AC-3 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-1999 | Challenge resolution requires evidence references and accepted risk additionally requires a current expiry | Unit | P0 | FR-047-AC-4 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-2000 | The closed argument contract rejects unknown fields, duplicate decisions, and authority that differs from the authored participant | Unit | P0 | FR-047-AC-5 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-2001 | The authored Markdown view is deterministic and retains open reasons and participant authority | Unit | P1 | FR-047-AC-6 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
 | TC-1712 | An authored instant naming a day, hour, minute or second that does not exist is refused rather than rolled forward | Unit | P0 | FR-047-AC-7 | ✅ |
 | TC-1925 | The top claim is reported unbacked when it has no evidence references, cites an unresolved reference, or cites evidence recorded stale or vacuous — every failing reference reported, a duplicate index entry refused | Unit | P0 | FR-047-AC-8 | ✅ |
-| TC-2002 | Each assurance evidence record binds the complete producer-provenance tuple | Unit | P0 | FR-048-AC-1 | ✅ |
-| TC-2003 | The record id is an opaque UUID and identical publication is byte-stable and idempotent | Unit | P0 | FR-048-AC-2 | ✅ |
-| TC-2004 | Invalid producer provenance is rejected before any record is published | Unit | P0 | FR-048-AC-3 | ✅ |
-| TC-2005 | A different file at an immutable record path is reported and never overwritten | Unit | P0 | FR-048-AC-4 | ✅ |
-| TC-2006 | Operational records preserve their ordered window, environment, observations, evidence, and outcome | Unit | P0 | FR-048-AC-5 | ✅ |
-| TC-2007 | The new writers and readers do not touch FR-030 run-record paths | Unit | P0 | FR-048-AC-6 | ✅ |
-| TC-2008 | The built CLI records an experiment from stdin and operational evidence from a file, returning immutable ids and publication state | Integration | P0 | FR-048-AC-7 | ✅ |
+| TC-2002 | Each assurance evidence record binds the complete producer-provenance tuple | Unit | P0 | FR-048-AC-1 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-2003 | The record id is an opaque UUID and identical publication is byte-stable and idempotent | Unit | P0 | FR-048-AC-2 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-2004 | Invalid producer provenance is rejected before any record is published | Unit | P0 | FR-048-AC-3 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-2005 | A different file at an immutable record path is reported and never overwritten | Unit | P0 | FR-048-AC-4 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-2006 | Operational records preserve their ordered window, environment, observations, evidence, and outcome | Unit | P0 | FR-048-AC-5 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-2007 | The new writers and readers do not touch FR-030 run-record paths | Unit | P0 | FR-048-AC-6 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
+| TC-2008 | The built CLI records an experiment from stdin and operational evidence from a file, returning immutable ids and publication state | Integration | P0 | FR-048-AC-7 | ❌ Unbacked — its TypeScript test no longer exists and no native test replaced it (PLAT-1045) |
 | TC-1605 | `cargo build --workspace --manifest-path rust/Cargo.toml` produces the `quoin-core` binary from a workspace inside | Unit | P0 | FR-096-AC-1 | 🚧 |
 | TC-1606 | Every boundary operation emits exactly one declared-version JSON document on stdout and sends all diagnostics to | Property | P0 | FR-096-AC-2 | 🚧 |
 | TC-1607 | Unknown protocol version, an unknown operation, malformed JSON and an escaping root each refuse before any filesystem | Property | P0 | FR-096-AC-3 | 🚧 |
