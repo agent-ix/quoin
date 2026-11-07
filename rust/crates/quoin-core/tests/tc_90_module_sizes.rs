@@ -55,10 +55,6 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[
         "provider adapters in one file; split pending",
     ),
     (
-        "quoin-semantic/src/manifest.rs",
-        "manifest model and parsing together; split pending",
-    ),
-    (
         "quoin-config/src/service.rs",
         "layered config service; split pending",
     ),
