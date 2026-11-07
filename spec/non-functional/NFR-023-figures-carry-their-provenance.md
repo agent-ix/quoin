@@ -3,9 +3,6 @@ id: NFR-023
 title: "Published figures carry their provenance"
 type: NFR
 quality_attribute: maintainability
-relationships:
-  - target: "ix://agent-ix/quoin/FR-090"
-    type: "constrains"
 ---
 
 # NFR-023: Published figures carry their provenance

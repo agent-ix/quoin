@@ -183,8 +183,13 @@ fn spec_documents(root: &Path) -> BTreeMap<String, Vec<(PathBuf, bool)>> {
     let mut documents: BTreeMap<String, Vec<(PathBuf, bool)>> = BTreeMap::new();
     for path in paths {
         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-        let Some(id) = leading_id(name) else { continue };
         let text = std::fs::read_to_string(&path).unwrap();
+        // A document not named for its id (`evals.md`, `matrix.md`) declares it in frontmatter.
+        let Some(id) =
+            leading_id(name).or_else(|| frontmatter_id(&text).filter(|id| id.starts_with("TM-")))
+        else {
+            continue;
+        };
         documents
             .entry(id)
             .or_default()
@@ -300,6 +305,44 @@ fn dependency_problems(
     problems
 }
 
+/// Problems in one document's frontmatter `relationships:` targets. Only
+/// `ix://agent-ix/quoin/<ID>` targets are read; another repository's ids are
+/// not this tree's to resolve.
+fn relationship_problems(
+    text: &str,
+    documents: &BTreeMap<String, Vec<(PathBuf, bool)>>,
+) -> Vec<(usize, String)> {
+    let mut problems = Vec::new();
+    let mut lines = text.lines().enumerate();
+    if lines.next().map(|(_, l)| l) != Some("---") {
+        return problems;
+    }
+    for (index, line) in lines {
+        if line == "---" {
+            break;
+        }
+        let Some(target) = line
+            .trim()
+            .strip_prefix("- target:")
+            .map(|t| t.trim().trim_matches('"'))
+            .and_then(|t| t.strip_prefix("ix://agent-ix/quoin/"))
+        else {
+            continue;
+        };
+        match documents.get(target) {
+            None => problems.push((
+                index + 1,
+                format!("{target} does not resolve to a document"),
+            )),
+            Some(found) if found.iter().all(|(_, w)| *w) => {
+                problems.push((index + 1, format!("{target} is withdrawn")));
+            }
+            Some(_) => {}
+        }
+    }
+    problems
+}
+
 #[test]
 fn tc_118_001_dependency_citations_resolve_and_are_live() {
     let root = repo_root();
@@ -320,7 +363,10 @@ fn tc_118_001_dependency_citations_resolve_and_are_live() {
             if *withdrawn {
                 continue;
             }
-            for (line, problem) in dependency_problems(&text, &documents) {
+            let found = dependency_problems(&text, &documents)
+                .into_iter()
+                .chain(relationship_problems(&text, &documents));
+            for (line, problem) in found {
                 problems.push(format!(
                     "{}:{line}: {problem}",
                     path.strip_prefix(&root).unwrap().display()
@@ -452,4 +498,19 @@ fn tc_1045_006_probe_frontmatter_id_is_read() {
         Some("FR-9".to_owned())
     );
     assert_eq!(frontmatter_id("# no frontmatter\n"), None);
+}
+
+#[test]
+fn tc_118_004_probe_planted_frontmatter_relationships_fail() {
+    let mut documents = BTreeMap::new();
+    documents.insert("FR-001".to_owned(), vec![(PathBuf::from("a"), false)]);
+    documents.insert("FR-002".to_owned(), vec![(PathBuf::from("b"), true)]);
+    let text = "---\nid: NFR-1\nrelationships:\n  - target: \"ix://agent-ix/quoin/FR-001\"\n    type: \"constrains\"\n  - target: \"ix://agent-ix/quoin/FR-002\"\n    type: \"constrains\"\n  - target: \"ix://agent-ix/quoin/FR-999\"\n    type: \"constrains\"\n  - target: \"ix://agent-ix/quire-rs/FR-777\"\n    type: \"constrains\"\n---\n\n- target: \"ix://agent-ix/quoin/FR-999\"\n";
+    assert_eq!(
+        relationship_problems(text, &documents),
+        vec![
+            (6, "FR-002 is withdrawn".to_owned()),
+            (8, "FR-999 does not resolve to a document".to_owned()),
+        ]
+    );
 }
