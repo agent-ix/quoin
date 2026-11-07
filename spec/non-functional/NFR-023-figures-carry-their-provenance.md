@@ -81,4 +81,4 @@ figure is absent from those artifacts or disagrees with them.
 
 ## Dependencies
 
-- **Upstream**: [FR-090](../functional/FR-090-publish-rates-with-unit-population-and-method.md)
+- **Upstream**: none live. FR-090, which this requirement was first written to constrain, is withdrawn and is deliberately not cited as a dependency; the surviving measurement renderers named in Scope are the population this requirement constrains.
