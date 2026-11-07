@@ -150,13 +150,13 @@ impl StorePath {
 /// The two are different kinds of thing. A [`Content::Record`] is canonicalized
 /// on the way in, so it is canonical by construction. A [`Content::Artifact`]
 /// is opaque: its evidentiary value is that it is exactly what was received (a
-/// raw API payload, a SARIF file), so its bytes are never re-serialized. A
-/// record cannot be stored as raw bytes by accident, and an artifact cannot be
-/// pushed through the canonical writer.
+/// raw API payload, a SARIF file), so its bytes are never re-serialized. An
+/// artifact cannot be pushed through the canonical writer.
 ///
 /// Bytes a caller has already encoded (for example the RFC 8785 form the
 /// change-assurance family retains) are also [`Content::Artifact`] here: the
-/// store writes them as given.
+/// store writes them as given, so a caller that holds encoded bytes for a
+/// record chooses `Artifact` and owns that encoding.
 #[derive(Debug, Clone, Copy)]
 pub enum Content<'a> {
     /// An authored record, written in the evidence store's canonical form.
@@ -223,9 +223,10 @@ pub fn publish(destination: &StorePath, content: Content<'_>) -> Result<Publishe
     };
     let _ = fs::remove_file(&temporary);
     let published = outcome?;
-    if published == Published::Written {
-        fsync_directory(parent)?;
-    }
+    // Also on `AlreadyPresent`: the writer that created the name may have
+    // crashed before its own directory fsync, and success here must mean the
+    // name is durable.
+    fsync_directory(parent)?;
     Ok(published)
 }
 
