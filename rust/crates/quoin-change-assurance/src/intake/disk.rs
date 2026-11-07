@@ -17,7 +17,8 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use quoin_store::store::{
-    attestation_path, change_assurance_root, fsync_directory, record_path, write_new_or_identical,
+    Content, StorePath, attestation_path, change_assurance_root, fsync_directory, publish,
+    record_path,
 };
 
 use crate::error::{ChangeAssuranceError, Subject};
@@ -153,9 +154,9 @@ impl EvidenceStore for DiskEvidenceStore {
         // refuses the collision and survives the race, and there is nothing
         // to add.
         let path = record_path(&self.repo, record_id.as_str(), revision.get());
-        match write_new_or_identical(&path, bytes) {
-            Ok(true) => Ok(Published::Retained),
-            Ok(false) => Ok(Published::AlreadyRetained),
+        match publish(&StorePath::ContentAddressed(path), Content::Artifact(bytes)) {
+            Ok(quoin_store::store::Published::Written) => Ok(Published::Retained),
+            Ok(quoin_store::store::Published::AlreadyPresent) => Ok(Published::AlreadyRetained),
             Err(quoin_store::StoreError::ContentCollision { .. }) => {
                 Err(ChangeAssuranceError::ContentCollision {
                     what: Subject::Record,

@@ -23,8 +23,8 @@
 
 use std::path::{Path, PathBuf};
 
-use quoin_store::store::write_new_or_identical;
-use quoin_store::{JsonValue, canonical_json_bytes, parse_strict_json};
+use quoin_store::store::{Content, StorePath, publish};
+use quoin_store::{JsonValue, parse_strict_json};
 
 use crate::common::wire_enum::wire_enum;
 use crate::error::{MeasurementError, MeasurementErrorCode};
@@ -191,8 +191,11 @@ pub fn write_intervention_record(
     // re-serialisation of the typed record. `intervention.ts:78` does the same,
     // and it is what keeps a member this crate does not model from being
     // dropped on the way to disk.
-    let bytes = canonical_json_bytes(candidate).map_err(MeasurementError::from)?;
-    write_new_or_identical(&path, &bytes).map_err(|error| {
+    publish(
+        &StorePath::ContentAddressed(path.clone()),
+        Content::Record(candidate),
+    )
+    .map_err(|error| {
         let store: MeasurementError = error.into();
         match store.code() {
             MeasurementErrorCode::CollectionIdCollision => InterventionIntakeError::new(

@@ -969,7 +969,7 @@ fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
         "std::fs",
         "quoin_graph_analysis",
         "Command::new",
-        "write_new_or_identical",
+        "publish(",
         "adjacency",
         "traverse",
     ];
