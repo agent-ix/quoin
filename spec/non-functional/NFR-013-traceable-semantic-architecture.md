@@ -4,11 +4,11 @@ title: "Semantic architecture decisions are traceable and standalone-readable"
 type: NFR
 quality_attribute: maintainability
 relationships:
-  - target: "ix://agent-ix/quoin/FR-046"
+  - target: "ix://agent-ix/quoin/FR-117"
     type: "constrains"
-  - target: "ix://agent-ix/quoin/FR-047"
+  - target: "ix://agent-ix/quoin/FR-118"
     type: "constrains"
-  - target: "ix://agent-ix/quoin/FR-048"
+  - target: "ix://agent-ix/quoin/FR-119"
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-049"
     type: "constrains"
@@ -53,5 +53,5 @@ record can be interpreted without issue or conversation context.
 
 ## Dependencies
 
-- **Upstream**: [FR-046](../functional/FR-046-record-semantic-data-planes.md) through
+- **Upstream**: [FR-117](../functional/FR-117-record-semantic-data-planes.md) through
   [FR-050](../functional/FR-050-reconcile-quire-decisions.md)

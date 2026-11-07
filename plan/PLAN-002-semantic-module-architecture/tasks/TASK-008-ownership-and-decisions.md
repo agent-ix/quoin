@@ -6,7 +6,7 @@ track: "Architecture records"
 relationships:
   - target: "ix://agent-ix/quoin/PLAN-002"
     type: "part_of"
-  - target: "ix://agent-ix/quoin/FR-047"
+  - target: "ix://agent-ix/quoin/FR-118"
     type: "references"
   - target: "ix://agent-ix/quoin/FR-050"
     type: "references"

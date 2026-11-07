@@ -258,6 +258,11 @@ mod tests {
         let cfg = QuoinConfig::validate(&yaml("{}")).expect("empty object is valid");
         assert_eq!(cfg.org, None);
         // and it does not round-trip back as an explicit null
-        assert_eq!(serde_yaml_ng::to_string(&cfg).expect("serializes"), "{}\n");
+        #[allow(
+            clippy::disallowed_methods,
+            reason = "a typed QuoinConfig, no serde_json::Value, through its own YAML serializer"
+        )]
+        let text = serde_yaml_ng::to_string(&cfg).expect("serializes");
+        assert_eq!(text, "{}\n");
     }
 }

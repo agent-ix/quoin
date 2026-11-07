@@ -398,7 +398,7 @@ fn tc_447_606_assess_bundle_returns_a_verdict() {
 fn argument() -> Value {
     let path = Path::new(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../quoin-assurance/tests/golden/cases.json"
+        "/../../goldens/quoin-assurance/cases.json"
     ))
     .to_path_buf();
     let corpus: Value = serde_json::from_str(

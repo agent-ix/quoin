@@ -3,7 +3,7 @@ id: ARCH-SM-005
 title: "External decision and compatibility ledger"
 status: proposed
 requirements:
-  - FR-048
+  - FR-119
   - FR-050
   - NFR-013
 ---
@@ -17,8 +17,8 @@ the status owned by another repository.
 
 | Decision                       | Repository                    | Path                                                                                                        | Status                                                   | Disposition                                                                                                             |
 | ------------------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `ARCH-003`                     | `agent-ix/filament-core-data` | `docs/semantic-data-system/authority.md`                                                                    | normative                                                | preserved and specialized by FR-048                                                                                     |
-| `ARCH-004`                     | `agent-ix/filament-core-data` | `docs/semantic-data-system/ownership.md`                                                                    | normative                                                | preserved and specialized by FR-047                                                                                     |
+| `ARCH-003`                     | `agent-ix/filament-core-data` | `docs/semantic-data-system/authority.md`                                                                    | normative                                                | preserved and specialized by FR-119                                                                                     |
+| `ARCH-004`                     | `agent-ix/filament-core-data` | `docs/semantic-data-system/ownership.md`                                                                    | normative                                                | preserved and specialized by FR-118                                                                                     |
 | `ARCH-005`                     | `agent-ix/filament-core-data` | `docs/semantic-data-system/metamodel.md`                                                                    | provisional; gate `filament-core-data#9`                 | plane distinctions preserved; exact future IR remains gated                                                             |
 | `ARCH-006`                     | `agent-ix/filament-core-data` | `docs/semantic-data-system/generated-packages.md`                                                           | normative architecture contract; publication provisional | dynamic/static compatibility added; no package activated                                                                |
 | `ADR-0005 / issue #4 decision` | `agent-ix/filament-core-data` | `docs/semantic-data-system/adr/0005-typespec-structural-source.md`; `spikes/typespec-feasibility/report.md` | ADR-0005 normative; ADR-0004 historical                  | TypeSpec is the structural source; JSON Schema and Protobuf are generated projections; spike evidence frozen            |

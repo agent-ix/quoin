@@ -3,7 +3,7 @@ id: SR-043
 title: "Scope-boundary review of issue 289 semantic-module architecture requirements"
 type: SpecReview
 analysis: scope-boundary
-scope: "US-013, FR-046..FR-050, NFR-013..NFR-014"
+scope: "US-013, FR-117..FR-119, FR-049..FR-050, NFR-013..NFR-014"
 review_set: all
 ---
 
@@ -19,7 +19,7 @@ reviews, and plans.
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-034 | low | The record has a closed implementation boundary and an explicit external authority boundary; no parser, compiler, schema, manifest, publication, persistence, or migration work is in scope. | FR-046 Constraints; FR-050 Constraints; NFR-014 |
+| FND-034 | low | The record has a closed implementation boundary and an explicit external authority boundary; no parser, compiler, schema, manifest, publication, persistence, or migration work is in scope. | FR-117 Constraints; FR-050 Constraints; NFR-014 |
 
 ## Boundary allocation
 

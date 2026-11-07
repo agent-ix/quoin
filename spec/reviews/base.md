@@ -3,7 +3,7 @@ id: SR-037
 title: "Base review of issue 289 semantic-module architecture requirements"
 type: SpecReview
 analysis: base
-scope: "US-013, FR-046..FR-050, NFR-013..NFR-014, TM-001 TC-1125..TC-1155"
+scope: "US-013, FR-117..FR-119, FR-049..FR-050, NFR-013..NFR-014, TM-001 TC-1125..TC-1155"
 review_set: all
 ---
 
@@ -19,7 +19,7 @@ compatibility, traceability, and non-disruption without activating a compiler or
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-028 | low | No blocking completeness or consistency issue remains in the reviewed issue #289 requirement set. | US-013; FR-046..FR-050; NFR-013..NFR-014 |
+| FND-028 | low | No blocking completeness or consistency issue remains in the reviewed issue #289 requirement set. | US-013; FR-117..FR-119, FR-049..FR-050; NFR-013..NFR-014 |
 
 ## Coverage conclusion
 

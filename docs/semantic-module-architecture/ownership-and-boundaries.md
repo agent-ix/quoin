@@ -3,7 +3,7 @@ id: ARCH-SM-003
 title: "Semantic-module ownership and subsystem boundaries"
 status: proposed
 requirements:
-  - FR-047
+  - FR-118
   - FR-050
 ---
 
@@ -90,6 +90,6 @@ embed consumer frameworks. Consumers do not redefine common identities in isolat
 
 ## Traceability
 
-This record implements FR-047 and the ownership parts of FR-050. The reconciled source status is
+This record implements FR-118 and the ownership parts of FR-050. The reconciled source status is
 recorded in the [external decision ledger](decision-ledger.md) and the local decision is stated in
 [ADR-0002](adr/0002-preserve-quire-quoin-boundaries.md).

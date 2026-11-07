@@ -34,30 +34,6 @@ const HARD_CEILING: usize = 700;
 
 /// Files already over the ceiling when the census was added, each with a reason.
 const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[
-    (
-        "quoin-core/src/dispatch.rs",
-        "operation table plus its self-census; split pending",
-    ),
-    (
-        "quoin-cli/src/main.rs",
-        "command wiring for the whole binary; split pending",
-    ),
-    (
-        "quoin-assurance/src/authored/build.rs",
-        "authored-argument builder; split pending",
-    ),
-    (
-        "quoin-cli/src/flow/provider.rs",
-        "provider adapters in one file; split pending",
-    ),
-    (
-        "quoin-semantic/src/manifest.rs",
-        "manifest model and parsing together; split pending",
-    ),
-    (
-        "quoin-config/src/service.rs",
-        "layered config service; split pending",
-    ),
 ];
 
 /// Every `src/**/*.rs` under `rust/crates`, as `(crate/relative path, line count)`.

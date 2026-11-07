@@ -3,7 +3,7 @@ id: SR-038
 title: "Failure-domain review of issue 289 semantic-module architecture requirements"
 type: SpecReview
 analysis: failure-domain
-scope: "US-013, FR-046..FR-050, NFR-013..NFR-014"
+scope: "US-013, FR-117..FR-119, FR-049..FR-050, NFR-013..NFR-014"
 review_set: all
 ---
 
@@ -19,7 +19,7 @@ shape now has an explicit disposition or stop condition.
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-029 | low | No unhandled failure domain remains; conflicts stop promotion, unknown extensions follow a profile, external decisions carry identity, and behavior-changing paths are excluded. | FR-048-AC-6; FR-049-AC-3; FR-050-AC-6; NFR-014 |
+| FND-029 | low | No unhandled failure domain remains; conflicts stop promotion, unknown extensions follow a profile, external decisions carry identity, and behavior-changing paths are excluded. | FR-119-AC-6; FR-049-AC-3; FR-050-AC-6; NFR-014 |
 
 ## Failure inventory
 

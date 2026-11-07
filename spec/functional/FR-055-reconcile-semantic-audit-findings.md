@@ -53,6 +53,6 @@ would create the inconsistency the semantic-data program is intended to remove.
 ## Dependencies
 
 - **Upstream**: [FR-054](./FR-054-publish-semantic-audit-artifacts.md),
-  [FR-046](./FR-046-record-semantic-data-planes.md) through
+  [FR-117](./FR-117-record-semantic-data-planes.md) through
   [FR-050](./FR-050-reconcile-quire-decisions.md)
 - **External**: `agent-ix/quire-rs#385`, `agent-ix/filament-core-data#10`
