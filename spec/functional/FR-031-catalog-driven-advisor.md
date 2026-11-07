@@ -116,12 +116,12 @@ against another.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-031-AC-1 | The merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty. | Test (TC-129) |
-| FR-031-AC-2 | An obligation whose spec declares an `attack_surface` object is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test. | Test (TC-130) |
-| FR-031-AC-3 | An obligation whose statement carries temporal phrasing is recommended runtime monitoring and model checking. | Test (TC-131) |
-| FR-031-AC-4 | An obligation whose statement carries reliability phrasing is recommended fault injection. | Test (TC-132) |
-| FR-031-AC-5 | A round-trip property shape is recommended property-based and metamorphic testing, and recommendations are ordered by matching-rule count. | Test (TC-133) |
-| FR-031-AC-6 | An authored method no recommendation covers is flagged as a mismatch, and an authored method matching a recommended method's class is not. | Test (TC-134) |
+| FR-031-AC-1 | The merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty. | Test (TC-1984) |
+| FR-031-AC-2 | An obligation whose spec declares an `attack_surface` object is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test. | Test (TC-1985) |
+| FR-031-AC-3 | An obligation whose statement carries temporal phrasing is recommended runtime monitoring and model checking. | Test (TC-1986) |
+| FR-031-AC-4 | An obligation whose statement carries reliability phrasing is recommended fault injection. | Test (TC-1987) |
+| FR-031-AC-5 | A round-trip property shape is recommended property-based and metamorphic testing, and recommendations are ordered by matching-rule count. | Test (TC-1988) |
+| FR-031-AC-6 | An authored method no recommendation covers is flagged as a mismatch, and an authored method matching a recommended method's class is not. | Test (TC-1989) |
 | FR-031-AC-7 | An obligation matching no rule is reported inconclusive with no recommendations and no mismatch. | Test (TC-135) |
 | FR-031-AC-8 | A method whose rule names an axis the advisor cannot observe is still recommended on the axes it can, with only the observable reasons reported. | Test (TC-136) |
 | FR-031-AC-9 | A module whose `manifest.yaml` cannot be read or parsed is skipped and reported on the merged catalog, never thrown: a catalog missing one module's entries is still worth having, and the command that would crash is the one an operator runs to diagnose the module. | Test (TC-133) |

@@ -27,12 +27,12 @@ aggregate score.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-046-AC-1 | The consumer validates input against the `clause-binding-v1` schema before using it. | Test (TC-1125) |
-| FR-046-AC-2 | Every binding clause appears exactly once under direct evidence, approved disposition, or open work, and the result contains no score. | Test (TC-1126) |
-| FR-046-AC-3 | Unresolved and not-binding clauses remain outside the binding partition; facts supplied for them are reported as unused. | Test (TC-1127) |
-| FR-046-AC-4 | Expired, future-dated, or incoherent attestations leave a binding clause open with the reason visible. | Test (TC-1128) |
-| FR-046-AC-5 | Duplicate facts and incomplete attestations are rejected rather than resolved by ordering or defaults. | Test (TC-1129) |
-| FR-046-AC-6 | `quoin discharge` renders every population as deterministic Markdown or JSON and accepts both binding and fact inputs as files. | Test (TC-1130) |
+| FR-046-AC-1 | The consumer validates input against the `clause-binding-v1` schema before using it. | Test (TC-1990) |
+| FR-046-AC-2 | Every binding clause appears exactly once under direct evidence, approved disposition, or open work, and the result contains no score. | Test (TC-1991) |
+| FR-046-AC-3 | Unresolved and not-binding clauses remain outside the binding partition; facts supplied for them are reported as unused. | Test (TC-1992) |
+| FR-046-AC-4 | Expired, future-dated, or incoherent attestations leave a binding clause open with the reason visible. | Test (TC-1993) |
+| FR-046-AC-5 | Duplicate facts and incomplete attestations are rejected rather than resolved by ordering or defaults. | Test (TC-1994) |
+| FR-046-AC-6 | `quoin discharge` renders every population as deterministic Markdown or JSON and accepts both binding and fact inputs as files. | Test (TC-1995) |
 
 ## Constraints
 
