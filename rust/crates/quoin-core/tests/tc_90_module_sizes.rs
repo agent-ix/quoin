@@ -43,20 +43,12 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[
         "verdict model and rendering together; split pending",
     ),
     (
-        "quoin-cli/src/main.rs",
-        "command wiring for the whole binary; split pending",
-    ),
-    (
         "quoin-jev/src/span_ballot.rs",
         "ballot model and tally together; split pending",
     ),
     (
         "quoin-assurance/src/authored/build.rs",
         "authored-argument builder; split pending",
-    ),
-    (
-        "quoin-cli/src/flow/provider.rs",
-        "provider adapters in one file; split pending",
     ),
     (
         "quoin-semantic/src/manifest.rs",
