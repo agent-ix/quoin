@@ -596,3 +596,39 @@ fn tc_1045_008_probe_planted_test_ts_mentions_are_caught() {
         ]
     );
 }
+
+// ---- PLAT-1274 -----------------------------------------------------------
+
+/// Line numbers of test-case rows whose status cell is a bare `✅`, which
+/// claims coverage without naming the test that provides it.
+fn bare_covered_rows(matrix: &str) -> Vec<usize> {
+    matrix
+        .lines()
+        .enumerate()
+        .filter(|(_, row)| row.starts_with("| TC-") && row.trim_end().ends_with("| ✅ |"))
+        .map(|(index, _)| index + 1)
+        .collect()
+}
+
+#[test]
+fn tc_1045_009_no_test_case_row_is_a_bare_tick() {
+    let matrix = std::fs::read_to_string(repo_root().join("spec/matrix.md")).unwrap();
+    assert!(
+        matrix.lines().filter(|l| l.contains("✅ Backed")).count() > 100,
+        "anti-vacuity: the matrix must still carry backed rows"
+    );
+    let bare = bare_covered_rows(&matrix);
+    assert!(
+        bare.is_empty(),
+        "these test-case rows say `✅` with no citation (cite the tagged Rust test as `✅ Backed — \
+         <crate> <file> :: <test>`, or mark the row `❌ Unbacked`): lines {bare:?}"
+    );
+}
+
+#[test]
+fn tc_1045_010_probe_a_planted_bare_tick_is_caught() {
+    let planted = "| TC-1 | a | Unit | P0 | FR-1-AC-1 | ✅ |\n\
+                   | TC-2 | b | Unit | P0 | FR-1-AC-2 | ✅ Backed — `c` `t.rs` :: `t` |\n\
+                   | TC-3 | c | Unit | P0 | FR-1-AC-3 | ❌ Unbacked — none |";
+    assert_eq!(bare_covered_rows(planted), vec![1]);
+}
