@@ -43,7 +43,10 @@ command defaults to the public GitHub latest-release manifest.
 - An npm-installed `quoin` (see [FR-112](./FR-112-npm-distribution-from-release-assets.md))
   is updated by npm rather than by this command's native artifact-replacement
   path: `update` given as the first argument under an npm install defers to
-  npm instead of running the behavior above.
+  npm instead of running the behavior above. The native command SHALL also
+  refuse, naming `npm install -g @agent-ix/quoin@latest` and changing nothing,
+  whenever the running executable sits under a `node_modules` directory, so a
+  global flag placed before `update` cannot bypass that deferral.
 
 ## Acceptance Criteria
 
@@ -52,6 +55,7 @@ command defaults to the public GitHub latest-release manifest.
 | FR-022-AC-1 | `update` selects the running host's native artifact from a stable manifest and checks its byte count and single-executable layout before replacement; no hash is computed or compared | Test (Rust delivery tests) |
 | FR-022-AC-2 | `--check` reports availability without downloading an archive or mutating the installation | Test (Rust delivery tests) |
 | FR-022-AC-3 | `--registry <url>` selects an explicit manifest endpoint; its absence uses the GitHub latest-release manifest | Test (Rust CLI tests) |
+| FR-022-AC-4 | When the running executable sits under a `node_modules` directory, `update` exits with the refused outcome, names `npm install -g @agent-ix/quoin@latest` and modifies nothing; elsewhere it proceeds to the GitHub-release path | Test (Rust CLI tests) |
 
 ## Dependencies
 
