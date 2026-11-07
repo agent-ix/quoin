@@ -44,8 +44,10 @@ use serde_json::Value;
 
 fn corpus() -> Value {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
+        .join("..")
+        .join("..")
         .join("goldens")
+        .join("quoin-quire")
         .join("assurance-bases.json");
     serde_json::from_str(
         &std::fs::read_to_string(&path)

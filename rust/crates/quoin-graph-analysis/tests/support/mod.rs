@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Agent-IX
 //! The input corpus, and the one way to turn a case into inputs.
 //!
-//! `tests/goldens/graph-analysis.json` holds the analysis inputs only; no
+//! `rust/goldens/quoin-graph-analysis/graph-analysis.json` holds the analysis inputs only; no
 //! recorded output is kept.
 //!
 //! Provenance: quoin#385, quoin#500
@@ -28,8 +28,10 @@ use serde_json::Value;
 /// The captured corpus, whole.
 pub(crate) fn corpus() -> Value {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
+        .join("..")
+        .join("..")
         .join("goldens")
+        .join("quoin-graph-analysis")
         .join("graph-analysis.json");
     serde_json::from_str(
         &std::fs::read_to_string(&path)
