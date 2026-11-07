@@ -22,7 +22,7 @@ transitions and acknowledgements. Start through the installed skill as described
    the review summary FAIL, and require removal before implementation.
    Author one SpecReview per required analysis with a valid Findings table.
 4. Register every document using `ix-flow add-item <id> review_doc --item
-   '{"id":"base-review","analysis":"base","path":"spec/reviews/base.md"}'`.
+   '{"id":"base-review","analysis":"base","path":"reviews/YYYY-MM-DD-<slug>-base.md"}'`.
    Paths are resolved under the recorded repository root, never the runtime directory.
 5. Advance through reviews_rendered and validated. Quoin opens and validates the
    actual documents on the validation and acceptance transitions. A recorded name
