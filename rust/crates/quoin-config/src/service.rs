@@ -25,6 +25,10 @@
 //! command-shaped operation, so there is no concurrency to overlap and an async
 //! runtime would add a `block_on` bridge at every call site for no throughput.
 
+mod incident;
+
+pub use incident::{ConfigIncident, IncidentKind, IncidentLog};
+
 use std::fs;
 use std::io::Write as _;
 use std::marker::PhantomData;
@@ -53,10 +57,6 @@ const MANAGED_HEADER: &str = "# Managed by ix — `ix config edit` to modify saf
 /// corrupt or hostile file (a symlink swapped for a multi-gigabyte log, a fifo)
 /// is refused as an I/O incident rather than read into memory.
 pub const MAX_CONFIG_FILE_BYTES: u64 = 1 << 20;
-
-mod incident;
-
-pub use incident::{ConfigIncident, IncidentKind, IncidentLog};
 
 /// The outcome of a read: the typed config plus how it was reached.
 #[derive(Debug, Clone, PartialEq, Eq)]
