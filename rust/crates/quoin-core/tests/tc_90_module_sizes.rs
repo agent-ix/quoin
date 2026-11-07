@@ -35,10 +35,6 @@ const HARD_CEILING: usize = 700;
 /// Files already over the ceiling when the census was added, each with a reason.
 const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[
     (
-        "quoin-core/src/dispatch.rs",
-        "operation table plus its self-census; split pending",
-    ),
-    (
         "quoin-jev/src/verdict.rs",
         "verdict model and rendering together; split pending",
     ),
