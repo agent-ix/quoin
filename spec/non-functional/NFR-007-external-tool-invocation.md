@@ -46,9 +46,10 @@ exit makes problems visible to the caller, and emitting (rather than running) th
 
 ## Verification
 
-The flow tests assert that a missing `ix-flow` and a non-zero `ix-flow` exit both
-surface as a non-zero exit (`flows.test.ts`), and the write tests assert the
-`quire` command is emitted, not executed (`write.test.ts`).
+`quoin-cli` `src/flow.rs` ::
+`ix_flow_error_envelope_is_reported_before_missing_run_id` asserts that an `ix-flow` failure is
+reported. No native test is cited for a missing `ix-flow` executable or for the `quire`
+command being emitted rather than executed (PLAT-1275).
 
 ## Acceptance Criteria
 

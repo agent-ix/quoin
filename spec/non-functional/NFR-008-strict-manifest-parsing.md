@@ -42,9 +42,9 @@ Aborting makes the corruption visible at the source.
 
 ## Verification
 
-The catalog tests assert that a candidate without a manifest is skipped and that a
-present-but-unparseable manifest causes assembly to throw rather than return a
-partial catalog (`catalog.test.ts`).
+`quoin-core` `src/ops/modules/tests.rs` :: `a_malformed_manifest_never_reaches_the_host`
+asserts that a malformed manifest is refused before it reaches the host. No native test is
+cited for the skipped manifest-less candidate (PLAT-1275).
 
 ## Dependencies
 

@@ -5,9 +5,9 @@ type: StR
 verification_method: test
 evidence:
   - kind: test_case
-    ref: tests/graph-adapters.test.ts
+    ref: rust/crates/quoin-measurement-graph/tests/tc_480_fr066_criteria.rs
   - kind: test_case
-    ref: tests/graph-portfolio.test.ts
+    ref: rust/crates/quoin-measurement-graph/tests/tc_480_fr067_criteria.rs
 relationships:
   - target: "ix://agent-ix/quoin/FR-066"
     type: "satisfied_by"

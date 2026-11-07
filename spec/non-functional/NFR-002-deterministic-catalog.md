@@ -40,9 +40,9 @@ reports vary run to run, undermining trust in the catalog.
 
 ## Verification
 
-The catalog tests exercise repeated roots, duplicate names, and duplicate types
-and assert first-wins ordering and sorted duplicate-module lists
-(`catalog.test.ts` dedup and duplicate-reporting tests).
+`quoin-cli` `tests/tc_catalog_command.rs` ::
+`tc_521_catalog_methods_preserves_first_wins_data` asserts the first-wins projection. No
+native test is cited for repeated roots or sorted duplicate-module lists (PLAT-1275).
 
 ## Dependencies
 

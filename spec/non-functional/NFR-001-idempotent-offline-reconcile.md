@@ -41,9 +41,9 @@ reproducible.
 ## Verification
 
 The default-module reconcile is run twice against an already-installed set and
-asserted to perform no further install or git work, confirmed by the
-`index.test.ts` lazy-install test, which reconciles path-source fixtures with no
-network or git.
+asserted to perform no further install or git work, confirmed by
+`quoin-modules` `tests/install_reconcile.rs` ::
+`tc_381_283_a_settled_lazy_reconcile_performs_no_network_io`.
 
 ## Dependencies
 
