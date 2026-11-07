@@ -33,8 +33,8 @@
 //!
 //! # Writes go through `quoin-store`
 //!
-//! [`DiskEvidence`] writes with [`quoin_store::store::write_atomic`] for a
-//! mutable named record and [`quoin_store::store::write_new_or_identical`] for
+//! [`DiskEvidence`] writes with [`quoin_store::store::publish`] with [`StorePath::Named`](quoin_store::store::StorePath::Named) for a
+//! mutable named record and [`quoin_store::store::publish`] with [`StorePath::ContentAddressed`](quoin_store::store::StorePath::ContentAddressed) for
 //! a retained one (the #394 durability decision). Neither this module nor any
 //! other in this crate opens a file for writing itself.
 
@@ -268,22 +268,29 @@ impl EvidenceSource for DiskEvidence {
     }
 
     fn write(&mut self, path: &str, bytes: &[u8]) -> Result<(), EvidenceError> {
-        quoin_store::store::write_atomic(&self.resolve(path), bytes)
+        let destination = quoin_store::store::StorePath::Named(self.resolve(path));
+        quoin_store::store::publish(&destination, quoin_store::store::Content::Artifact(bytes))
+            .map(|_| ())
             .map_err(store_io("write", path))
     }
 
     fn publish(&mut self, path: &str, bytes: &[u8]) -> Result<bool, EvidenceError> {
-        quoin_store::store::write_new_or_identical(&self.resolve(path), bytes).map_err(|source| {
-            if matches!(source, quoin_store::StoreError::ContentCollision { .. }) {
-                EvidenceError::RecordIntegrity {
-                    what: "conflicting or corrupt immutable record",
-                    path: path.to_owned(),
-                    note: "; existing bytes were not overwritten",
+        let destination = quoin_store::store::StorePath::ContentAddressed(self.resolve(path));
+        let published =
+            quoin_store::store::publish(&destination, quoin_store::store::Content::Artifact(bytes));
+        published
+            .map(|outcome| outcome == quoin_store::store::Published::Written)
+            .map_err(|source| {
+                if matches!(source, quoin_store::StoreError::ContentCollision { .. }) {
+                    EvidenceError::RecordIntegrity {
+                        what: "conflicting or corrupt immutable record",
+                        path: path.to_owned(),
+                        note: "; existing bytes were not overwritten",
+                    }
+                } else {
+                    store_io("write", path)(source)
                 }
-            } else {
-                store_io("write", path)(source)
-            }
-        })
+            })
     }
 
     fn remove(&mut self, path: &str) -> Result<(), EvidenceError> {
