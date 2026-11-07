@@ -324,11 +324,12 @@ fn relationship_problems(
         let Some(target) = line
             .trim()
             .strip_prefix("- target:")
-            .map(|t| t.trim().trim_matches('"'))
+            .map(|t| t.trim().trim_matches(['"', '\'']))
             .and_then(|t| t.strip_prefix("ix://agent-ix/quoin/"))
         else {
             continue;
         };
+        let target = target.split(['#', '?']).next().unwrap_or(target);
         match documents.get(target) {
             None => problems.push((
                 index + 1,
@@ -511,6 +512,87 @@ fn tc_118_004_probe_planted_frontmatter_relationships_fail() {
         vec![
             (6, "FR-002 is withdrawn".to_owned()),
             (8, "FR-999 does not resolve to a document".to_owned()),
+        ]
+    );
+}
+
+// ---- PLAT-1275 -----------------------------------------------------------
+
+/// Backticked or bare `*.test.ts` names anywhere in a document: prose, a
+/// `Verification` cell or a frontmatter `ref:`.
+fn test_ts_mentions(text: &str) -> Vec<(usize, String)> {
+    let mut found = Vec::new();
+    for (index, line) in text.lines().enumerate() {
+        for word in line.split(|c: char| !(c.is_ascii_alphanumeric() || "-_./".contains(c))) {
+            let word = word.trim_end_matches('.');
+            if word.ends_with(".test.ts") {
+                found.push((index + 1, word.to_owned()));
+            }
+        }
+    }
+    found
+}
+
+/// Documents whose narrative and verification cells are held to the native
+/// suite: every `NFR`, every `StR` and `FR-002`. A mention of a deleted TypeScript
+/// suite there reads as live evidence. The other functional requirements'
+/// acceptance tables still cite `*.test.ts` and are tracked separately.
+fn native_only_documents(root: &Path) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+    for dir in ["spec/non-functional", "spec/stakeholder"] {
+        files_named(&root.join(dir), ".md", &mut paths);
+    }
+    files_named(&root.join("spec/functional"), ".md", &mut paths);
+    paths.retain(|p| {
+        let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        let functional = p.parent().is_some_and(|d| d.ends_with("functional"));
+        !functional || name.starts_with("FR-002-")
+    });
+    paths
+}
+
+#[test]
+fn tc_1045_007_nfr_str_and_fr_002_cite_no_deleted_typescript_test() {
+    let root = repo_root();
+    let paths = native_only_documents(&root);
+    assert!(
+        paths.len() > 20
+            && paths
+                .iter()
+                .any(|p| p.to_string_lossy().contains("FR-002-")),
+        "anti-vacuity: expected the NFR and StR documents and FR-002, saw {}",
+        paths.len()
+    );
+    let mut stale = Vec::new();
+    for path in &paths {
+        let text = std::fs::read_to_string(path).unwrap();
+        for (line, file) in test_ts_mentions(&text) {
+            stale.push(format!(
+                "{}:{line}: {file}",
+                path.strip_prefix(&root).unwrap().display()
+            ));
+        }
+    }
+    assert!(
+        stale.is_empty(),
+        "these documents cite a TypeScript test the repository no longer has (cite the native \
+         test, or say none is cited):\n{}",
+        stale.join("\n")
+    );
+}
+
+#[test]
+fn tc_1045_008_probe_planted_test_ts_mentions_are_caught() {
+    let planted = "---\nevidence:\n  - ref: tests/a-b.test.ts\n---\nSee (`cli.test.ts`, `write.test.ts`).\n\
+                   | AC | x | Test (flows.test.ts) |\nA native `tc_1.rs` test. Ends a sentence: old.test.ts.\n";
+    assert_eq!(
+        test_ts_mentions(planted),
+        vec![
+            (3, "tests/a-b.test.ts".to_owned()),
+            (5, "cli.test.ts".to_owned()),
+            (5, "write.test.ts".to_owned()),
+            (6, "flows.test.ts".to_owned()),
+            (7, "old.test.ts".to_owned()),
         ]
     );
 }

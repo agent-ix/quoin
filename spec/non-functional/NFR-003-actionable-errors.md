@@ -43,10 +43,11 @@ agent recover in one step, whereas a silent failure stalls the loop.
 
 ## Verification
 
-Error-path tests assert that unknown commands and subcommands, unknown types
-(with the available-type list), missing manifests, and catalog conflicts each
-raise an actionable error or set a non-zero exit (`cli.test.ts`,
-`write.test.ts`).
+`quoin-cli` `tests/tc_shell_contract.rs` ::
+`tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue` and
+`tc_1650_nested_unknown_command_keeps_the_oclif_path_identity` assert that unknown commands
+and subcommands are refused with a non-zero exit. No native test is cited for unknown
+types, missing manifests, or catalog conflicts (PLAT-1275).
 
 ## Dependencies
 

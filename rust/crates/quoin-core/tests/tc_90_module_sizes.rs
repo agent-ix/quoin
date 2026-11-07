@@ -51,10 +51,6 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[
         "provider adapters in one file; split pending",
     ),
     (
-        "quoin-config/src/service.rs",
-        "layered config service; split pending",
-    ),
-    (
         "quoin-jev/src/cassette.rs",
         "cassette record and replay together; split pending",
     ),
