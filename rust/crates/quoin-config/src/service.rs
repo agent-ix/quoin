@@ -39,6 +39,7 @@ use serde_yaml_ng::{Mapping, Value as Yaml};
 
 use crate::error::{ConfigError, ConfigIssue};
 use crate::ids::PluginId;
+use crate::json_bridge::to_yaml_via_json_text;
 use crate::paths::{Environment, RuntimeContext, config_path_for, project_config_path_for};
 use crate::schema::{KeyKind, PluginConfigSchema};
 
@@ -174,8 +175,12 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
             });
         }
         let resolved = self.get(log).value;
+        // Through JSON text, not `yaml_serde::to_value`: `S` is a typed config
+        // whose contract is a JSON Schema (`PluginConfigSchema::json_schema`),
+        // so it has a JSON form, and a `serde_json::Value` field inside it
+        // would otherwise leak the arbitrary_precision marker (PLAT-97).
         let Yaml::Mapping(map) =
-            serde_yaml_ng::to_value(&resolved).map_err(|e| ConfigError::ConfigSchema {
+            to_yaml_via_json_text(&resolved).map_err(|e| ConfigError::ConfigSchema {
                 plugin_id: self.plugin_id.to_string(),
                 path: self.user_path.clone(),
                 issues: vec![ConfigIssue {
@@ -252,25 +257,9 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
                         expected: "object or array".to_owned(),
                         detail: e.to_string(),
                     })?;
-                // Through JSON TEXT, never `serde_yaml_ng::to_value(parsed)`.
-                // `serde_json::Value` only survives a NON-serde_json serializer
-                // while `serde_json/arbitrary_precision` is off; with it on,
-                // every number leaves the serde data model as the private
-                // marker map `{"$serde_json::private::Number": "7"}` and that
-                // is what would be written to the user's config file. The
-                // feature is global and unifying, so one dependency edge
-                // anywhere in the workspace enabling it silently corrupts
-                // `quoin config set` for every complex value containing a
-                // number. serde_json's own serializer renders the token
-                // correctly, and YAML 1.2 is a superset of JSON, so a text
-                // round-trip is both faithful and immune. See quoin#442.
-                let json =
-                    serde_json::to_string(&parsed).map_err(|e| ConfigError::ConfigSetParse {
-                        key_path: key_path.to_owned(),
-                        expected: "object or array".to_owned(),
-                        detail: e.to_string(),
-                    })?;
-                serde_yaml_ng::from_str(&json).map_err(|e| ConfigError::ConfigSetParse {
+                // Through JSON text, never `serde_yaml_ng::to_value(parsed)`:
+                // see `crate::json_bridge` (quoin#442).
+                to_yaml_via_json_text(&parsed).map_err(|e| ConfigError::ConfigSetParse {
                     key_path: key_path.to_owned(),
                     expected: "object or array".to_owned(),
                     detail: e.to_string(),
@@ -632,6 +621,12 @@ fn write_yaml_atomically(path: &Path, value: &Mapping) -> Result<(), ConfigError
         source,
     })?;
 
+    // `value` is a YAML mapping built from YAML text, so no `serde_json::Value`
+    // reaches this serializer; JSON-shaped input enters through `json_bridge`.
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "serializes a yaml_serde Mapping with its own serializer"
+    )]
     let body = serde_yaml_ng::to_string(value).map_err(|e| ConfigError::ConfigWrite {
         path: path.to_path_buf(),
         source: std::io::Error::other(e.to_string()),

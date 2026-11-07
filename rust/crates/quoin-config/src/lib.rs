@@ -38,6 +38,7 @@
 
 pub mod error;
 pub mod ids;
+pub mod json_bridge;
 mod lock;
 pub mod org;
 pub mod paths;
@@ -47,6 +48,7 @@ pub mod service;
 
 pub use error::{ConfigError, ConfigErrorCode, ConfigIssue};
 pub use ids::{OrgName, PackageName, PluginId};
+pub use json_bridge::{JsonBridgeError, to_yaml_via_json_text};
 pub use org::{
     MAX_GIT_CONFIG_BYTES, OrgDocumentReport, OrgOptions, OrgSource, ResolvedOrg,
     UNRESOLVED_ORG_MESSAGE, org_from_git_config, origin_org, origin_package,
