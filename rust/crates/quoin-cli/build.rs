@@ -6,10 +6,17 @@
 //! build identifies its distance and commit. Source archives have no Git
 //! metadata, so their Cargo package version remains the deterministic fallback.
 
+use std::path::Path;
 use std::process::Command;
 
+mod build_git;
+
 fn main() {
-    println!("cargo:rerun-if-changed=../../../.git");
+    // `.git` is a text file in a linked worktree, so watching it never fires;
+    // watch the files Git itself says move HEAD, branch and tags.
+    for path in build_git::watched_paths(Path::new(".")) {
+        println!("cargo:rerun-if-changed={}", path.display());
+    }
     let version = Command::new("git")
         .args(["describe", "--tags", "--dirty"])
         .output()
