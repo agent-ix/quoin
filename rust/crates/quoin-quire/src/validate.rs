@@ -59,6 +59,13 @@ pub struct Request {
     pub modules: ModuleSelection,
     /// The documents in this batch.
     pub documents: Vec<PathBuf>,
+    /// The bundle the documents belong to, as `<org>/<repo>` (quire-rs FR-076).
+    ///
+    /// `## Relationships` targets qualify under this package and never under
+    /// the module's own. `None` is a repository whose identity is not known:
+    /// the engine then reports the table `unavailable` (`no-bundle-package`)
+    /// rather than qualifying it under a guessed package.
+    pub bundle_package: Option<String>,
 }
 
 /// How one document came out.
@@ -226,7 +233,12 @@ pub fn run(request: &Request) -> Result<Outcome> {
             continue;
         };
 
-        let result = quire_rs::validate_document_in_registry(&registry, archetype, &text);
+        let result = match request.bundle_package.as_deref() {
+            Some(package) => {
+                quire_rs::validate_document_in_bundle(&registry, archetype, &text, package, None)
+            }
+            None => quire_rs::validate_document_in_registry(&registry, archetype, &text),
+        };
         let mut diagnostics: Vec<Diagnostic> = result
             .errors
             .iter()

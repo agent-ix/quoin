@@ -2991,6 +2991,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "time",
+ "url",
 ]
 
 [[package]]

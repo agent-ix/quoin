@@ -481,6 +481,7 @@ impl Catalog {
                 .map_err(|e| fail(Code::ContextInvalid, e.to_string()))?,
             modules: self.modules.clone(),
             documents: vec![path.clone()],
+            bundle_package: quoin_config::package_from_git_config(&context.repo_root),
         })
         .map_err(|e| fail(Code::DocumentInvalid, e.to_string()))?;
         if outcome.evaluations.len() != 1

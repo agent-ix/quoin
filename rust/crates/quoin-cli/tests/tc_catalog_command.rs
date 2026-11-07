@@ -199,3 +199,24 @@ fn tc_521_catalog_methods_preserves_first_wins_data() {
         Some(&serde_json::json!("First analysis"))
     );
 }
+
+/// Bare `quoin catalog` (and `quoin catalog --json`) defaults to `list` and
+/// must not panic on the group-level `--json` flag (PLAT-1167).
+///
+/// Trace: FR-099, FR-102
+#[test]
+fn plat_1167_bare_catalog_defaults_to_list_without_panicking() {
+    let scratch = tempfile::tempdir().expect("scratch directory is created");
+    let home = scratch.path().join("ix-home");
+    copy_tree(&retained_home(), &home).expect("retained fixture is copied");
+
+    let human = invoke(&home, &["catalog"]);
+    assert!(human.status.success(), "stderr: {}", text(&human.stderr));
+    assert_eq!(human.stderr.len(), 0);
+
+    let json = invoke(&home, &["catalog", "--json"]);
+    assert!(json.status.success(), "stderr: {}", text(&json.stderr));
+    let catalog: serde_json::Value =
+        serde_json::from_slice(&json.stdout).expect("catalog JSON is emitted");
+    assert!(catalog.get("modules").is_some());
+}

@@ -49,8 +49,8 @@ pub use error::{ConfigError, ConfigErrorCode, ConfigIssue};
 pub use ids::{OrgName, PackageName, PluginId};
 pub use org::{
     MAX_GIT_CONFIG_BYTES, OrgDocumentReport, OrgOptions, OrgSource, ResolvedOrg,
-    UNRESOLVED_ORG_MESSAGE, org_from_git_config, origin_org, resolve_org,
-    resolve_org_from_documents,
+    UNRESOLVED_ORG_MESSAGE, org_from_git_config, origin_org, origin_package,
+    package_from_git_config, resolve_org, resolve_org_from_documents,
 };
 pub use paths::{
     Environment, FixedEnvironment, ProcessEnvironment, RuntimeContext, cache_root, config_path_for,

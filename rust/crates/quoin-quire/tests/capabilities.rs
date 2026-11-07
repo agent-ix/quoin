@@ -292,6 +292,7 @@ fn tc_379_114_validation_reports_an_outcome_per_document() {
         scope: fixture_scope(),
         modules: fixture_modules(),
         documents,
+        bundle_package: None,
     })
     .expect("a rejected document is not a failed run");
 
@@ -436,6 +437,7 @@ fn tc_379_117_a_document_outside_the_scope_is_refused() {
         scope: fixture_scope(),
         modules: fixture_modules(),
         documents: vec![outside],
+        bundle_package: None,
     })
     .expect_err("a path outside the scope must be refused");
     assert_eq!(error.code(), ErrorCode::PathEscapesRoot);
