@@ -33,8 +33,7 @@ use std::path::{Path, PathBuf};
 const HARD_CEILING: usize = 700;
 
 /// Files already over the ceiling when the census was added, each with a reason.
-const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[
-];
+const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
 
 /// Every `src/**/*.rs` under `rust/crates`, as `(crate/relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {
