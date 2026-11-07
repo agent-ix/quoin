@@ -3,7 +3,7 @@ id: SR-039
 title: "Integrity review of issue 289 semantic-module architecture requirements"
 type: SpecReview
 analysis: integrity
-scope: "US-013, FR-046..FR-050, NFR-013..NFR-014, TM-001"
+scope: "US-013, FR-117..FR-119, FR-049..FR-050, NFR-013..NFR-014, TM-001"
 review_set: all
 ---
 
@@ -19,11 +19,11 @@ documents grammar-clean.
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-030 | low | No unresolved integrity defect remains; the eight new documents validate with zero grammar findings and the 31 matrix cases use the next unused contiguous IDs. | US-013; FR-046..FR-050; NFR-013..NFR-014; TC-1125..TC-1155 |
+| FND-030 | low | No unresolved integrity defect remains; the eight new documents validate with zero grammar findings and the 31 matrix cases use the next unused contiguous IDs. | US-013; FR-117..FR-119, FR-049..FR-050; NFR-013..NFR-014; TC-1125..TC-1155 |
 
 ## Integrity checks
 
-- IDs continue the repository sequences: US-013, FR-046..FR-050, NFR-013..NFR-014, SR-037 onward,
+- IDs continue the repository sequences: US-013, FR-117..FR-119, FR-049..FR-050, NFR-013..NFR-014, SR-037 onward,
   and TC-1125..TC-1155.
 - Every FR has one normative SHALL statement and acceptance criteria with explicit verification.
 - The master and class indexes link the new artifacts.

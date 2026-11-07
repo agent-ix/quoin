@@ -21,7 +21,7 @@ compiled one.
 ## Rationale
 
 Ticket #293 mapping (d). Inline `{type: object}` types nothing. Emission itself is the module repository's
-build (filament-core-data compiler, FR-047-AC-3); Quoin verifies what ships.
+build (filament-core-data compiler, FR-118-AC-3); Quoin verifies what ships.
 
 ## Behavior
 

@@ -1,5 +1,5 @@
 ---
-id: FR-046
+id: FR-117
 title: "Record the semantic data planes"
 type: FR
 relationships:
@@ -7,7 +7,7 @@ relationships:
     type: "traces_to"
 ---
 
-# FR-046: Record the semantic data planes
+# FR-117: Record the semantic data planes
 
 ## Description
 
@@ -25,10 +25,10 @@ runtime envelope.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-046-AC-1 | The record defines all four planes and names representative semantic-module concepts, authorities, and projections for each. | Test (TC-1125) |
-| FR-046-AC-2 | The record distinguishes a definition from an occurrence and a presentation of that occurrence, including `TestCase`, `TestExecution`, and a run report. | Test (TC-1126) |
-| FR-046-AC-3 | The record states that structural kind and semantic role are independent and rejects a universal `SemanticObject` envelope. | Test (TC-1127) |
-| FR-046-AC-4 | The architecture index links every normative record and labels provisional decisions and external resolution gates explicitly. | Test (TC-1128) |
+| FR-117-AC-1 | The record defines all four planes and names representative semantic-module concepts, authorities, and projections for each. | Test (TC-1125) |
+| FR-117-AC-2 | The record distinguishes a definition from an occurrence and a presentation of that occurrence, including `TestCase`, `TestExecution`, and a run report. | Test (TC-1126) |
+| FR-117-AC-3 | The record states that structural kind and semantic role are independent and rejects a universal `SemanticObject` envelope. | Test (TC-1127) |
+| FR-117-AC-4 | The architecture index links every normative record and labels provisional decisions and external resolution gates explicitly. | Test (TC-1128) |
 
 ## Constraints
 
