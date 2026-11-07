@@ -645,7 +645,4 @@ fn string_array(value: Option<&Value>) -> Vec<String> {
 }
 
 #[cfg(test)]
-// Indexing and `unreachable!` are a test-only convenience: an out-of-range
-// index in a test is a failing test, not a downed worker.
-#[allow(clippy::indexing_slicing)]
 mod tests;
