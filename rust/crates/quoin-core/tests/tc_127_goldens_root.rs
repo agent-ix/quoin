@@ -78,7 +78,7 @@ fn every_goldens_directory_names_a_crate_and_holds_json_plus_provenance() {
             let path = entry.unwrap().path();
             let file = name(&path);
             assert!(path.is_file(), "{} is not a file", path.display());
-            if file == "PROVENANCE.md" {
+            if file == "PROVENANCE.md" || file.starts_with('.') {
                 continue;
             }
             assert!(

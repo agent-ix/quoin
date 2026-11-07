@@ -2,8 +2,8 @@
 // Copyright (C) 2026 Agent-IX
 //! The input corpus, and the one way to turn a case into inputs.
 //!
-//! `rust/goldens/quoin-graph-analysis/graph-analysis.json` holds the analysis inputs only; no
-//! recorded output is kept.
+//! `rust/goldens/quoin-graph-analysis/graph-analysis.json` holds the analysis
+//! inputs only; no recorded output is kept.
 //!
 //! Provenance: quoin#385, quoin#500
 

@@ -13,7 +13,7 @@ not contractual.
 
 ## Captured at
 
-c55d2561 (quoin#489).
+quoin#489.
 
 ## Divergences
 

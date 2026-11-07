@@ -29,7 +29,7 @@ Every `PROVENANCE.md` has three sections, in this order:
 - `## Origin` states what the corpus holds and how it was produced
   (captured from the retired TypeScript, or hand-authored), and whether it
   stores recorded outputs or inputs only.
-- `## Captured at` names the commit and ticket that introduced it.
+- `## Captured at` names the ticket that introduced it. Commit hashes are not copied here.
 - `## Divergences` links the crate's `DIVERGENCE.md` where Rust and the
   retired TypeScript differ, or states `None`.
 

@@ -13,7 +13,7 @@ kept, and the Rust crate computes every answer.
 
 ## Captured at
 
-7921ba0e (quoin#385), kept through 143492ca (quoin#500).
+quoin#385, kept through quoin#500.
 
 ## Divergences
 

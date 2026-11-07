@@ -12,7 +12,7 @@ that read it are live code and no recorded answer is stored.
 
 ## Captured at
 
-0a03e14e (quoin#447).
+quoin#447.
 
 ## Divergences
 
