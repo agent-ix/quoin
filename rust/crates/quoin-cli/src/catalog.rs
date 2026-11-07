@@ -18,6 +18,7 @@ const DEFAULT_MODULES: &str = include_str!("../../../../default-modules.yaml");
 pub(crate) fn command() -> Command {
     Command::new("catalog")
         .about("Read the active specification-module catalog")
+        .arg(json_flag())
         .subcommand(
             Command::new("list")
                 .about("List active artifact and object catalog modules")
