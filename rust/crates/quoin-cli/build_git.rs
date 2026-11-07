@@ -46,8 +46,12 @@ pub(crate) fn watched_paths(dir: &Path) -> Vec<PathBuf> {
     if let Some(branch) = branch {
         names.push(branch.trim().to_owned());
     }
+    // Cargo reruns a build script on every build when a watched path is
+    // missing (no tags, no packed-refs, packed branch ref), so keep only
+    // paths that exist.
     names
         .iter()
         .filter_map(|name| git_path(dir, name))
+        .filter(|path| path.exists())
         .collect()
 }
