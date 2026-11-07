@@ -39,16 +39,8 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[
         "operation table plus its self-census; split pending",
     ),
     (
-        "quoin-jev/src/verdict.rs",
-        "verdict model and rendering together; split pending",
-    ),
-    (
         "quoin-cli/src/main.rs",
         "command wiring for the whole binary; split pending",
-    ),
-    (
-        "quoin-jev/src/span_ballot.rs",
-        "ballot model and tally together; split pending",
     ),
     (
         "quoin-assurance/src/authored/build.rs",
@@ -65,14 +57,6 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[
     (
         "quoin-config/src/service.rs",
         "layered config service; split pending",
-    ),
-    (
-        "quoin-jev/src/cassette.rs",
-        "cassette record and replay together; split pending",
-    ),
-    (
-        "quoin-jev/src/corpus_check.rs",
-        "corpus checks in one file; split pending",
     ),
 ];
 
