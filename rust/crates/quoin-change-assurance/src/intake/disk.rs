@@ -89,9 +89,10 @@ impl DiskEvidenceStore {
         fs::create_dir_all(parent).map_err(io("create directory", parent))?;
         let staging = parent.join(staging_name());
         fs::create_dir(&staging).map_err(io("create staging directory", &staging))?;
-        // `publish` fsyncs each file and the staging directory entry, and
-        // refuses a name that is already taken: the one write-once
-        // implementation, not a local copy of it.
+        // `publish` fsyncs each file and the staging directory's contents, and
+        // refuses a name that is already taken, so this is not a local copy
+        // of the write-once dance. The staging directory's own entry in
+        // `parent` is made durable by `publish_attestation` after the rename.
         for (name, bytes) in [
             (ATTESTATION_FILE, &pair.attestation),
             (OUTPUT_FILE, &pair.output),

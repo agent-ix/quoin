@@ -238,9 +238,8 @@ fn replace(temporary: &Path, path: &Path) -> Result<Published, StoreError> {
 
 /// Link `temporary` at `path`; if the name is taken, it must hold `bytes`.
 ///
-/// The one write-once implementation in the workspace. It is domain-neutral
-/// and is a migration source for Engineering Assurance (gap PLAT-1280): when
-/// EA provides an atomic no-replace publish, this branch moves there.
+/// The store's write-once implementation. It is domain-neutral and a migration
+/// source for Engineering Assurance (gap PLAT-1280).
 fn link_once(temporary: &Path, path: &Path, bytes: &[u8]) -> Result<Published, StoreError> {
     match fs::hard_link(temporary, path) {
         Ok(()) => Ok(Published::Written),
