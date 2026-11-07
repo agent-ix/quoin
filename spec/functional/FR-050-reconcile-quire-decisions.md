@@ -5,9 +5,9 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/US-013"
     type: "traces_to"
-  - target: "ix://agent-ix/quoin/FR-047"
+  - target: "ix://agent-ix/quoin/FR-118"
     type: "references"
-  - target: "ix://agent-ix/quoin/FR-048"
+  - target: "ix://agent-ix/quoin/FR-119"
     type: "references"
 ---
 
@@ -42,6 +42,6 @@ must not silently reinterpret older language or make a historical proposal curre
 
 ## Dependencies
 
-- **Upstream**: [FR-047](./FR-047-allocate-semantic-module-ownership.md),
-  [FR-048](./FR-048-declare-authority-by-concern.md)
+- **Upstream**: [FR-118](./FR-118-allocate-semantic-module-ownership.md),
+  [FR-119](./FR-119-declare-authority-by-concern.md)
 - **External basis**: Quire ADR-0002, ADR-0003, ADR-0004, ADR-0011, and the current Quire specification

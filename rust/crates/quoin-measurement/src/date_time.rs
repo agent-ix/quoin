@@ -2,6 +2,9 @@
 // Copyright (C) 2026 Agent-IX
 //! The ONE RFC 3339 grammar in this domain.
 //!
+//! Migration source (PLAT-143, gap PLAT-1280): the parser is domain-neutral and
+//! is kept here only until Engineering Assurance provides RFC 3339 parsing.
+//!
 //! # Two grammars went in; one comes out
 //!
 //! The retained TypeScript has two, and they disagree:

@@ -5,7 +5,7 @@
 //! runtime (quoin#447).
 //!
 //! The inputs are the hand-authored cases in
-//! `quoin-assurance/tests/golden/cases.json`; both operations are live code and
+//! `rust/goldens/quoin-assurance/cases.json`; both operations are live code and
 //! no recorded answer is read. Error PROSE is never asserted: a refusal asserts
 //! its exit class and its diagnostic code and stops there.
 
@@ -42,7 +42,7 @@ struct Case {
 fn golden_dir() -> &'static Path {
     Path::new(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../quoin-assurance/tests/golden"
+        "/../../goldens/quoin-assurance"
     ))
 }
 

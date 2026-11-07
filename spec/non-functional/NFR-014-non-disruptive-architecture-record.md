@@ -4,7 +4,7 @@ title: "The semantic architecture record is non-disruptive"
 type: NFR
 quality_attribute: compatibility
 relationships:
-  - target: "ix://agent-ix/quoin/FR-046"
+  - target: "ix://agent-ix/quoin/FR-117"
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-049"
     type: "constrains"
@@ -44,6 +44,6 @@ The full existing quality gates run unchanged.
 
 ## Dependencies
 
-- **Upstream**: [FR-046](../functional/FR-046-record-semantic-data-planes.md),
+- **Upstream**: [FR-117](../functional/FR-117-record-semantic-data-planes.md),
   [FR-049](../functional/FR-049-preserve-dynamic-and-generated-modules.md),
   [FR-050](../functional/FR-050-reconcile-quire-decisions.md)

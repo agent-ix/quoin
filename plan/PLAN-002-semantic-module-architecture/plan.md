@@ -5,11 +5,11 @@ type: Plan
 relationships:
   - target: "ix://agent-ix/quoin/US-013"
     type: "references"
-  - target: "ix://agent-ix/quoin/FR-046"
+  - target: "ix://agent-ix/quoin/FR-117"
     type: "references"
-  - target: "ix://agent-ix/quoin/FR-047"
+  - target: "ix://agent-ix/quoin/FR-118"
     type: "references"
-  - target: "ix://agent-ix/quoin/FR-048"
+  - target: "ix://agent-ix/quoin/FR-119"
     type: "references"
   - target: "ix://agent-ix/quoin/FR-049"
     type: "references"
@@ -33,9 +33,9 @@ record its disposition without broadening it into downstream implementation auth
 ## Requirements in scope
 
 - [x] **US-013:** A maintainer can reason about definitions, occurrences, projections, and owners.
-- [x] **FR-046:** Record the meta, definition, execution/observation, and presentation planes.
-- [x] **FR-047:** Allocate Quire, Quoin, compiler, module, and consumer ownership.
-- [x] **FR-048:** Declare authority, edit direction, and provenance by concern.
+- [x] **FR-117:** Record the meta, definition, execution/observation, and presentation planes.
+- [x] **FR-118:** Allocate Quire, Quoin, compiler, module, and consumer ownership.
+- [x] **FR-119:** Declare authority, edit direction, and provenance by concern.
 - [x] **FR-049:** Preserve both dynamic module loading and finite native generated packages.
 - [x] **FR-050:** Reconcile Quire ADR-0002, ADR-0003, ADR-0004, ADR-0011, and current spec boundaries.
 - [x] **NFR-013:** Keep every normative claim standalone-readable and traceable.

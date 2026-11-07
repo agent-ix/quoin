@@ -4,7 +4,7 @@ title: "Preserve Quire and Quoin boundaries while adding semantic packages"
 status: proposed
 date: 2026-08-29
 requirements:
-  - FR-047
+  - FR-118
   - FR-050
 ---
 

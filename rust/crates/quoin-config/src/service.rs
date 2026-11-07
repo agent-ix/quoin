@@ -25,6 +25,10 @@
 //! command-shaped operation, so there is no concurrency to overlap and an async
 //! runtime would add a `block_on` bridge at every call site for no throughput.
 
+mod incident;
+
+pub use incident::{ConfigIncident, IncidentKind, IncidentLog};
+
 use std::fs;
 use std::io::Write as _;
 use std::marker::PhantomData;
@@ -35,6 +39,7 @@ use serde_yaml_ng::{Mapping, Value as Yaml};
 
 use crate::error::{ConfigError, ConfigIssue};
 use crate::ids::PluginId;
+use crate::json_bridge::to_yaml_via_json_text;
 use crate::paths::{Environment, RuntimeContext, config_path_for, project_config_path_for};
 use crate::schema::{KeyKind, PluginConfigSchema};
 
@@ -53,93 +58,6 @@ const MANAGED_HEADER: &str = "# Managed by ix — `ix config edit` to modify saf
 /// corrupt or hostile file (a symlink swapped for a multi-gigabyte log, a fifo)
 /// is refused as an I/O incident rather than read into memory.
 pub const MAX_CONFIG_FILE_BYTES: u64 = 1 << 20;
-
-/// What kind of problem produced a fallback.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum IncidentKind {
-    /// The file could not be read.
-    Io,
-    /// The file was not parsable YAML, or its top level was not a mapping.
-    Parse,
-    /// The merged document failed schema validation, or a registration clashed.
-    Schema,
-}
-
-impl IncidentKind {
-    /// The stable wire string.
-    #[must_use]
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Io => "io",
-            Self::Parse => "parse",
-            Self::Schema => "schema",
-        }
-    }
-}
-
-impl std::fmt::Display for IncidentKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-/// A recorded fallback: what went wrong, where, and when.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ConfigIncident {
-    /// The namespace whose read fell back.
-    pub plugin_id: PluginId,
-    /// The file the problem is attributed to.
-    pub file_path: PathBuf,
-    /// The class of problem.
-    pub kind: IncidentKind,
-    /// Human-readable detail.
-    pub detail: String,
-    /// Schema issues, when `kind` is [`IncidentKind::Schema`].
-    pub issues: Vec<ConfigIssue>,
-    /// Milliseconds since the Unix epoch when the incident was observed.
-    pub observed_at_ms: u128,
-}
-
-/// An in-process log of configuration fallbacks.
-///
-/// Owned by the caller and passed in, rather than a process-global: a
-/// subprocess boundary that runs one operation per process has no use for
-/// hidden global state, and an owned log keeps tests independent.
-#[derive(Debug, Clone, Default)]
-pub struct IncidentLog {
-    incidents: Vec<ConfigIncident>,
-}
-
-impl IncidentLog {
-    /// An empty log.
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Record an incident.
-    pub fn record(&mut self, incident: ConfigIncident) {
-        self.incidents.push(incident);
-    }
-
-    /// Every incident, in the order observed.
-    #[must_use]
-    pub fn incidents(&self) -> &[ConfigIncident] {
-        &self.incidents
-    }
-
-    /// Drop every incident recorded for `plugin_id` — called after a successful
-    /// write, which is what made the previous fallback stale.
-    pub fn clear_for_plugin(&mut self, plugin_id: &PluginId) {
-        self.incidents.retain(|i| &i.plugin_id != plugin_id);
-    }
-
-    /// Whether anything is recorded.
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.incidents.is_empty()
-    }
-}
 
 /// The outcome of a read: the typed config plus how it was reached.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -257,8 +175,12 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
             });
         }
         let resolved = self.get(log).value;
+        // Through JSON text, not `yaml_serde::to_value`: `S` is a typed config
+        // whose contract is a JSON Schema (`PluginConfigSchema::json_schema`),
+        // so it has a JSON form, and a `serde_json::Value` field inside it
+        // would otherwise leak the arbitrary_precision marker (PLAT-97).
         let Yaml::Mapping(map) =
-            serde_yaml_ng::to_value(&resolved).map_err(|e| ConfigError::ConfigSchema {
+            to_yaml_via_json_text(&resolved).map_err(|e| ConfigError::ConfigSchema {
                 plugin_id: self.plugin_id.to_string(),
                 path: self.user_path.clone(),
                 issues: vec![ConfigIssue {
@@ -335,25 +257,9 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
                         expected: "object or array".to_owned(),
                         detail: e.to_string(),
                     })?;
-                // Through JSON TEXT, never `serde_yaml_ng::to_value(parsed)`.
-                // `serde_json::Value` only survives a NON-serde_json serializer
-                // while `serde_json/arbitrary_precision` is off; with it on,
-                // every number leaves the serde data model as the private
-                // marker map `{"$serde_json::private::Number": "7"}` and that
-                // is what would be written to the user's config file. The
-                // feature is global and unifying, so one dependency edge
-                // anywhere in the workspace enabling it silently corrupts
-                // `quoin config set` for every complex value containing a
-                // number. serde_json's own serializer renders the token
-                // correctly, and YAML 1.2 is a superset of JSON, so a text
-                // round-trip is both faithful and immune. See quoin#442.
-                let json =
-                    serde_json::to_string(&parsed).map_err(|e| ConfigError::ConfigSetParse {
-                        key_path: key_path.to_owned(),
-                        expected: "object or array".to_owned(),
-                        detail: e.to_string(),
-                    })?;
-                serde_yaml_ng::from_str(&json).map_err(|e| ConfigError::ConfigSetParse {
+                // Through JSON text, never `serde_yaml_ng::to_value(parsed)`:
+                // see `crate::json_bridge` (quoin#442).
+                to_yaml_via_json_text(&parsed).map_err(|e| ConfigError::ConfigSetParse {
                     key_path: key_path.to_owned(),
                     expected: "object or array".to_owned(),
                     detail: e.to_string(),
@@ -715,6 +621,12 @@ fn write_yaml_atomically(path: &Path, value: &Mapping) -> Result<(), ConfigError
         source,
     })?;
 
+    // `value` is a YAML mapping built from YAML text, so no `serde_json::Value`
+    // reaches this serializer; JSON-shaped input enters through `json_bridge`.
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "serializes a yaml_serde Mapping with its own serializer"
+    )]
     let body = serde_yaml_ng::to_string(value).map_err(|e| ConfigError::ConfigWrite {
         path: path.to_path_buf(),
         source: std::io::Error::other(e.to_string()),

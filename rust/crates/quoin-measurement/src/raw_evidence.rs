@@ -2,6 +2,13 @@
 // Copyright (C) 2026 Agent-IX
 //! Raw-evidence accounting, and the definition a record may claim.
 //!
+//! # Migration source (PLAT-143, gap PLAT-1280)
+//!
+//! `raw_evidence_for` and `verify_raw_evidence_references` are domain-neutral
+//! and are kept here only until Engineering Assurance provides them; they are
+//! the single local copy, and move out when it does. `assert_governing_definition`
+//! reads quoin's measurement plans and stays.
+//!
 //! # Why this module is in Wave 1
 //!
 //! `rawEvidenceFor`, `verifyRawEvidenceReferences` and

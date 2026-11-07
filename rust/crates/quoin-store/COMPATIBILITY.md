@@ -7,8 +7,7 @@ canonicalizes differently from the TypeScript it replaces is a change to
 retained evidence, not a change to code. Everything below is therefore frozen.
 
 **What this crate does and does not do.** It parses stored documents,
-canonicalizes values, and writes bytes a caller hands it (`write_atomic`,
-`write_canonical`). It hashes no
+canonicalizes values, and writes bytes a caller hands it (`publish`). It hashes no
 change-assurance record, attestation or receipt: those are addressed by
 `(record_id, revision)` or an assigned identity, and git history is the tamper
 evidence (FR-063, FR-064, FR-065).
@@ -71,8 +70,9 @@ observable. Files written under the previous content-named layout are not read.
 ## Deliberate behaviour changes
 
 Every write this crate offers is crash-atomic: temporary in the destination
-directory, `fsync`, rename, `fsync` the directory. `write_new_or_identical`
-publishes with `hard_link` rather than `rename`, so a concurrent writer's
+directory, `fsync`, publish the name, `fsync` the directory, through the one
+entry point `publish`. A `StorePath::ContentAddressed` destination publishes
+with `hard_link` rather than `rename`, so a concurrent writer's
 differing bytes are refused rather than clobbered. Asserted by
 `tests/tc_store_durability.rs`.
 

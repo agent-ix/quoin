@@ -64,7 +64,7 @@ use quoin_measurement::{
     render_measurement_report_json,
 };
 use quoin_store::StoreError;
-use quoin_store::store::write_new_or_identical;
+use quoin_store::store::{Content, Published, StorePath, publish};
 
 /// The three exports both records reference.
 fn retained_paths() -> Vec<String> {
@@ -233,11 +233,15 @@ fn tc_479_400_valid_intake_publishes_one_complete_canonical_record() {
 
     // No-replace: different bytes at the same destination are refused and the
     // retained bytes do not move.
-    let refused = write_new_or_identical(&path, b"{}").expect_err("a replacement is refused");
+    let destination = StorePath::ContentAddressed(path.clone());
+    let refused =
+        publish(&destination, Content::Artifact(b"{}")).expect_err("a replacement is refused");
     assert!(matches!(refused, StoreError::ContentCollision { .. }));
     assert_eq!(std::fs::read(&path).unwrap(), retained);
-    assert!(
-        !write_new_or_identical(&path, &retained).expect("identical bytes are idempotent"),
+    assert_eq!(
+        publish(&destination, Content::Artifact(&retained))
+            .expect("identical bytes are idempotent"),
+        Published::AlreadyPresent,
         "republishing identical bytes reported a new write"
     );
 

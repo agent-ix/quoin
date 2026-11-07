@@ -212,9 +212,9 @@ index; the files are authoritative.
 
 **Semantic-module architecture**
 
-- [FR-046](./functional/FR-046-record-semantic-data-planes.md) — record the four semantic data planes.
-- [FR-047](./functional/FR-047-allocate-semantic-module-ownership.md) — allocate subsystem ownership.
-- [FR-048](./functional/FR-048-declare-authority-by-concern.md) — declare authority by concern.
+- [FR-117](./functional/FR-117-record-semantic-data-planes.md) — record the four semantic data planes.
+- [FR-118](./functional/FR-118-allocate-semantic-module-ownership.md) — allocate subsystem ownership.
+- [FR-119](./functional/FR-119-declare-authority-by-concern.md) — declare authority by concern.
 - [FR-049](./functional/FR-049-preserve-dynamic-and-generated-modules.md) — preserve dynamic modules and finite generated packages.
 - [FR-050](./functional/FR-050-reconcile-quire-decisions.md) — reconcile the architecture with Quire decisions.
 

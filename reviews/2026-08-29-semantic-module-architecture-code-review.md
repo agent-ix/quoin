@@ -16,7 +16,7 @@ relationships:
 
 ## Summary
 
-Reviewed the complete issue #289 architecture-only change against US-013, FR-046..FR-050,
+Reviewed the complete issue #289 architecture-only change against US-013, FR-117..FR-119, FR-049..FR-050,
 NFR-013..NFR-014, the external decision revisions, and the 30-test architecture contract. The
 change adds no production, manifest, schema, generated-package, migration, or runtime behavior.
 The tests exercise real files and Git state with exact assertions and no mocks. One authority
@@ -31,7 +31,7 @@ finding remains; merge remains independently blocked by TC-1155.
 
 | ID      | Severity | Summary                                                                                                                                                                                                                       | Refs                              |
 | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| FND-036 | low      | Fixed: the Meta-plane wording could read as though JSON Schema were always derived even when modular JSON Schema 2020-12 is the accepted fallback source; it now distinguishes source modules from normalized/bundled output. | ARCH-SM-002; FR-048-AC-2; TC-1135 |
+| FND-036 | low      | Fixed: the Meta-plane wording could read as though JSON Schema were always derived even when modular JSON Schema 2020-12 is the accepted fallback source; it now distinguishes source modules from normalized/bundled output. | ARCH-SM-002; FR-119-AC-2; TC-1135 |
 
 ## Method
 
