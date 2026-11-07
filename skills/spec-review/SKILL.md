@@ -75,8 +75,10 @@ The seven analyses:
     -   Run each analysis the user chose. Prefer running them **in parallel**.
     -   **Fetch the template from quoin** once with `quoin write . --types SpecReview`
         from the target repository — use its skeleton + schema as the contract.
-    -   Write **one `SpecReview` document per analysis** to `spec/reviews/<analysis>.md`
-        (plus `spec/reviews/base.md` for the base checklist). Findings go in a validated
+    -   Write **one `SpecReview` document per analysis** to the repo-root
+        `reviews/YYYY-MM-DD-<slug>-<analysis>.md` (plus `reviews/YYYY-MM-DD-<slug>-base.md`
+        for the base checklist), the same root `gap-analysis` uses; never `spec/reviews/`.
+        A repo that pins a different review root wins. Findings go in a validated
         `## Findings` table (`| ID | Severity | Summary | Refs |`, `FND-NNN` ids, Severity ∈
         `low`/`medium`/`high`).
 4.  Validate + record:
