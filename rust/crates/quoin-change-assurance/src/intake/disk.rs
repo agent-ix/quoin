@@ -89,9 +89,19 @@ impl DiskEvidenceStore {
         fs::create_dir_all(parent).map_err(io("create directory", parent))?;
         let staging = parent.join(staging_name());
         fs::create_dir(&staging).map_err(io("create staging directory", &staging))?;
-        write_durable(&staging.join(ATTESTATION_FILE), &pair.attestation)?;
-        write_durable(&staging.join(OUTPUT_FILE), &pair.output)?;
-        fsync_directory(&staging)?;
+        // `publish` fsyncs each file and the staging directory's contents, and
+        // refuses a name that is already taken, so this is not a local copy
+        // of the write-once dance. The staging directory's own entry in
+        // `parent` is made durable by `publish_attestation` after the rename.
+        for (name, bytes) in [
+            (ATTESTATION_FILE, &pair.attestation),
+            (OUTPUT_FILE, &pair.output),
+        ] {
+            publish(
+                &StorePath::ContentAddressed(staging.join(name)),
+                Content::Artifact(bytes),
+            )?;
+        }
         Ok(staging)
     }
 }
@@ -111,19 +121,6 @@ fn io(operation: &'static str, path: &Path) -> impl FnOnce(std::io::Error) -> Ch
         path,
         source,
     }
-}
-
-/// Write a file that must not already exist, and fsync it before returning.
-fn write_durable(path: &Path, bytes: &[u8]) -> Result<(), ChangeAssuranceError> {
-    use std::io::Write as _;
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-        .map_err(io("create", path))?;
-    file.write_all(bytes).map_err(io("write", path))?;
-    file.sync_all().map_err(io("fsync", path))?;
-    Ok(())
 }
 
 impl EvidenceStore for DiskEvidenceStore {
