@@ -178,6 +178,10 @@ when every live test case is backed, `⚠️ Partial` when some are, `❌ Unback
 when none are. The prose tables above carry the per-test detail
 (`file :: name`) this fixed-column form cannot hold.
 
+A Test Case Summary row's `Status` cell must begin with one of `✅`, `❌`, `🚧` or
+`⛔`, so a test case that is only partly backed, or whose test lives in another
+repository, reads `🚧 Partial` or `🚧 Delegated`. The rollup rows keep `⚠️ Partial`.
+
 Criteria absent here are verified by a method that produces no test — see
 "Tracking-tag coverage".
 
