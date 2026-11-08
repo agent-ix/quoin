@@ -533,34 +533,34 @@ fn test_ts_mentions(text: &str) -> Vec<(usize, String)> {
     found
 }
 
-/// Documents whose narrative and verification cells are held to the native
-/// suite: every `NFR`, every `StR` and `FR-002`. A mention of a deleted TypeScript
-/// suite there reads as live evidence. The other functional requirements'
-/// acceptance tables still cite `*.test.ts` and are tracked separately.
+/// Documents whose narrative, verification cells and frontmatter evidence are
+/// held to the native suite: every `NFR`, every `StR` and every `FR`. A mention
+/// of a deleted TypeScript suite there reads as live evidence. The matrix and
+/// the review records stay outside the set because they narrate the retirement
+/// of those suites by name.
 fn native_only_documents(root: &Path) -> Vec<PathBuf> {
     let mut paths = Vec::new();
-    for dir in ["spec/non-functional", "spec/stakeholder"] {
+    for dir in ["spec/non-functional", "spec/stakeholder", "spec/functional"] {
         files_named(&root.join(dir), ".md", &mut paths);
     }
-    files_named(&root.join("spec/functional"), ".md", &mut paths);
     paths.retain(|p| {
-        let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
-        let functional = p.parent().is_some_and(|d| d.ends_with("functional"));
-        !functional || name.starts_with("FR-002-")
+        p.file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(|n| n.starts_with("NFR-") || n.starts_with("StR-") || n.starts_with("FR-"))
     });
     paths
 }
 
 #[test]
-fn tc_1045_007_nfr_str_and_fr_002_cite_no_deleted_typescript_test() {
+fn tc_1045_007_nfr_str_and_every_fr_cite_no_deleted_typescript_test() {
     let root = repo_root();
     let paths = native_only_documents(&root);
     assert!(
         paths.len() > 20
             && paths
                 .iter()
-                .any(|p| p.to_string_lossy().contains("FR-002-")),
-        "anti-vacuity: expected the NFR and StR documents and FR-002, saw {}",
+                .any(|p| p.to_string_lossy().contains("FR-066-")),
+        "anti-vacuity: expected the NFR and StR documents and every FR including FR-066, saw {}",
         paths.len()
     );
     let mut stale = Vec::new();

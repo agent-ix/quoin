@@ -44,9 +44,9 @@ external tools such as `quire validate`.
 
 | ID          | Criteria                                                                                      | Verification         |
 | ----------- | --------------------------------------------------------------------------------------------- | -------------------- |
-| FR-017-AC-1 | First catalog access installs the default modules into the shared store and loads their types | Test (index.test.ts) |
-| FR-017-AC-2 | `plugin ensure-defaults` runs the installer and reports `{ensured:true, plugins}`             | Test (cli.test.ts)   |
-| FR-017-AC-3 | `ensure-defaults` reports installed plugin names from a non-empty registry                    | Test (cli.test.ts)   |
+| FR-017-AC-1 | First catalog access installs the default modules into the shared store and loads their types | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-017-AC-2 | `plugin ensure-defaults` runs the installer and reports `{ensured:true, plugins}`             | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-017-AC-3 | `ensure-defaults` reports installed plugin names from a non-empty registry                    | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

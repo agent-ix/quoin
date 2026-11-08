@@ -39,9 +39,9 @@ quoting.
 
 | ID          | Criteria                                                                                                     | Verification                        |
 | ----------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
-| FR-015-AC-1 | The emitted command is `quire validate --scope <repo_root> "spec/**/*.md"` with the resolved scope and globs | Test (write.test.ts, index.test.ts) |
-| FR-015-AC-2 | A clean repo path is rendered without surrounding quotes                                                     | Test (write.test.ts)                |
-| FR-015-AC-3 | A repo path containing a space is single-quoted                                                              | Test (write.test.ts)                |
+| FR-015-AC-1 | The emitted command is `quire validate --scope <repo_root> "spec/**/*.md"` with the resolved scope and globs | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-015-AC-2 | A clean repo path is rendered without surrounding quotes                                                     | Test (write.rs) |
+| FR-015-AC-3 | A repo path containing a space is single-quoted                                                              | Test (write.rs) |
 
 ## Dependencies
 

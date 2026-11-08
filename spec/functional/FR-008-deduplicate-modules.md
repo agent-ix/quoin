@@ -30,8 +30,8 @@ module that declares the same name.
 
 | ID          | Criteria                                                                       | Verification           |
 | ----------- | ------------------------------------------------------------------------------ | ---------------------- |
-| FR-008-AC-1 | A repeated module root is loaded only once                                     | Test (catalog.test.ts) |
-| FR-008-AC-2 | A second module declaring an already-seen name is skipped, including its types | Test (catalog.test.ts) |
+| FR-008-AC-1 | A repeated module root is loaded only once                                     | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-008-AC-2 | A second module declaring an already-seen name is skipped, including its types | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 
