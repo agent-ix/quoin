@@ -4,13 +4,13 @@ title: "Publish canonical artifacts and reconcile contracts"
 type: Task
 track: "Audit publication"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-003"
+  - target: "ix://agent-ix/quoin/PLAN-012"
     type: "part_of"
   - target: "ix://agent-ix/quoin/FR-054"
     type: "references"
   - target: "ix://agent-ix/quoin/FR-055"
     type: "references"
-  - target: "ix://agent-ix/quoin/TASK-015"
+  - target: "ix://agent-ix/quoin/TASK-079"
     type: "depends_on"
 ---
 

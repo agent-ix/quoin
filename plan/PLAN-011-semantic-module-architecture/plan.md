@@ -1,5 +1,5 @@
 ---
-id: PLAN-002
+id: PLAN-011
 title: "Semantic-module architecture and ownership record"
 type: Plan
 relationships:
@@ -21,7 +21,7 @@ relationships:
     type: "references"
 ---
 
-# PLAN-002: Semantic-module architecture and ownership record
+# PLAN-011: Semantic-module architecture and ownership record
 
 ## Objective
 
@@ -112,30 +112,30 @@ status and identity of each external decision without attempting to change that 
 
 | Cases            | Evidence                                                               | Owner task         |
 | ---------------- | ---------------------------------------------------------------------- | ------------------ |
-| TC-1125..TC-1128 | Four planes, distinctions, non-goal, and indexed status/gates          | TASK-006, TASK-007 |
-| TC-1129..TC-1133 | Positive and negative ownership plus ADR-0011 roles                    | TASK-006, TASK-008 |
-| TC-1134..TC-1139 | Authority matrix, schema-source status, representations, conflict stop | TASK-006, TASK-007 |
-| TC-1140..TC-1144 | Dynamic/open and finite/static coexistence                             | TASK-006, TASK-009 |
-| TC-1145..TC-1150 | Quire decision reconciliation and external identity                    | TASK-006, TASK-008 |
-| TC-1151..TC-1154 | Ledger completeness, links, status integrity, changed-path guard       | TASK-006, TASK-010 |
-| TC-1155          | Named maintainer review before merge                                   | TASK-011           |
+| TC-1125..TC-1128 | Four planes, distinctions, non-goal, and indexed status/gates          | TASK-070, TASK-071 |
+| TC-1129..TC-1133 | Positive and negative ownership plus ADR-0011 roles                    | TASK-070, TASK-072 |
+| TC-1134..TC-1139 | Authority matrix, schema-source status, representations, conflict stop | TASK-070, TASK-071 |
+| TC-1140..TC-1144 | Dynamic/open and finite/static coexistence                             | TASK-070, TASK-073 |
+| TC-1145..TC-1150 | Quire decision reconciliation and external identity                    | TASK-070, TASK-072 |
+| TC-1151..TC-1154 | Ledger completeness, links, status integrity, changed-path guard       | TASK-070, TASK-074 |
+| TC-1155          | Named maintainer review before merge                                   | TASK-075           |
 
 ## Execution order and dependencies
 
 ```text
-TASK-006 red contract tests
-    ├──> TASK-007 planes + authority
-    ├──> TASK-008 ownership + decision reconciliation + ADRs
-    └──> TASK-009 dynamic/generated compatibility
+TASK-070 red contract tests
+    ├──> TASK-071 planes + authority
+    ├──> TASK-072 ownership + decision reconciliation + ADRs
+    └──> TASK-073 dynamic/generated compatibility
              │
              v
-TASK-010 reconcile matrix + run gates + reviews
+TASK-074 reconcile matrix + run gates + reviews
              │
              v
-TASK-011 open PR and stop for maintainer review
+TASK-075 open PR and stop for maintainer review
 ```
 
-TASK-007, TASK-008, and TASK-009 own separate documentation files and may proceed independently
+TASK-071, TASK-072, and TASK-073 own separate documentation files and may proceed independently
 after the red contract exists. This execution uses one worktree and applies them sequentially to
 avoid needless coordination overhead.
 

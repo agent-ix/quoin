@@ -3,7 +3,7 @@ id: SR-045
 title: "Code review — semantic-module architecture"
 type: SpecReview
 analysis: code-review
-scope: "issue #289; docs/semantic-module-architecture/, spec/, plan/PLAN-002-semantic-module-architecture/, tests/semantic-module-architecture.test.ts"
+scope: "issue #289; docs/semantic-module-architecture/, spec/, plan/PLAN-011-semantic-module-architecture/, tests/semantic-module-architecture.test.ts"
 review_set: subset
 relationships:
   - target: "ix://agent-ix/quoin/PLAN-002"

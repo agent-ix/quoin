@@ -3,7 +3,7 @@ id: SR-046
 title: "Gap analysis — PLAN-002 semantic-module architecture"
 type: SpecReview
 analysis: gap-analysis
-scope: "plan/PLAN-002-semantic-module-architecture/, spec/matrix.md TC-1125..TC-1155, issue #289 implementation diff"
+scope: "plan/PLAN-011-semantic-module-architecture/, spec/matrix.md TC-1125..TC-1155, issue #289 implementation diff"
 review_set: subset
 relationships:
   - target: "ix://agent-ix/quoin/PLAN-002"

@@ -4,7 +4,7 @@ title: "Prove freshness, reproducibility, and non-disruption"
 type: Task
 track: "Assurance gate"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-003"
+  - target: "ix://agent-ix/quoin/PLAN-012"
     type: "part_of"
   - target: "ix://agent-ix/quoin/NFR-015"
     type: "references"

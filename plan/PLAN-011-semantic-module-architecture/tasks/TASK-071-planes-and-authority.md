@@ -1,20 +1,20 @@
 ---
-id: TASK-007
+id: TASK-071
 title: "Record semantic planes and authority by concern"
 type: Task
 track: "Architecture records"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-002"
+  - target: "ix://agent-ix/quoin/PLAN-011"
     type: "part_of"
   - target: "ix://agent-ix/quoin/FR-117"
     type: "references"
   - target: "ix://agent-ix/quoin/FR-119"
     type: "references"
-  - target: "ix://agent-ix/quoin/TASK-006"
+  - target: "ix://agent-ix/quoin/TASK-070"
     type: "depends_on"
 ---
 
-# TASK-007: Record semantic planes and authority by concern
+# TASK-071: Record semantic planes and authority by concern
 
 ## Status
 

@@ -1,10 +1,10 @@
 ---
-id: TASK-006
+id: TASK-070
 title: "Add red semantic-module architecture contract tests"
 type: Task
 track: "Test-first foundation"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-002"
+  - target: "ix://agent-ix/quoin/PLAN-011"
     type: "part_of"
   - target: "ix://agent-ix/quoin/FR-117"
     type: "references"
@@ -18,7 +18,7 @@ relationships:
     type: "references"
 ---
 
-# TASK-006: Add red semantic-module architecture contract tests
+# TASK-070: Add red semantic-module architecture contract tests
 
 ## Status
 

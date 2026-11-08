@@ -4,7 +4,7 @@ title: "Open the stacked audit PR and stop at campaign gates"
 type: Task
 track: "Promotion gate"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-003"
+  - target: "ix://agent-ix/quoin/PLAN-012"
     type: "part_of"
   - target: "ix://agent-ix/quoin/NFR-016"
     type: "references"

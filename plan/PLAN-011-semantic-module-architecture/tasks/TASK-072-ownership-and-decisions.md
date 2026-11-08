@@ -1,20 +1,20 @@
 ---
-id: TASK-008
+id: TASK-072
 title: "Record subsystem ownership and reconcile decisions"
 type: Task
 track: "Architecture records"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-002"
+  - target: "ix://agent-ix/quoin/PLAN-011"
     type: "part_of"
   - target: "ix://agent-ix/quoin/FR-118"
     type: "references"
   - target: "ix://agent-ix/quoin/FR-050"
     type: "references"
-  - target: "ix://agent-ix/quoin/TASK-006"
+  - target: "ix://agent-ix/quoin/TASK-070"
     type: "depends_on"
 ---
 
-# TASK-008: Record subsystem ownership and reconcile decisions
+# TASK-072: Record subsystem ownership and reconcile decisions
 
 ## Status
 

@@ -1,18 +1,18 @@
 ---
-id: TASK-011
+id: TASK-075
 title: "Open the architecture PR and stop at maintainer review"
 type: Task
 track: "Promotion gate"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-002"
+  - target: "ix://agent-ix/quoin/PLAN-011"
     type: "part_of"
   - target: "ix://agent-ix/quoin/NFR-014"
     type: "references"
-  - target: "ix://agent-ix/quoin/TASK-010"
+  - target: "ix://agent-ix/quoin/TASK-074"
     type: "depends_on"
 ---
 
-# TASK-011: Open the architecture PR and stop at maintainer review
+# TASK-075: Open the architecture PR and stop at maintainer review
 
 ## Status
 

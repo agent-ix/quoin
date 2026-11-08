@@ -444,6 +444,78 @@ fn tc_1045_003_no_id_names_two_spec_documents() {
     );
 }
 
+/// Plan and task documents under `plan/` by frontmatter id.
+fn plan_documents(root: &Path) -> BTreeMap<String, Vec<(PathBuf, bool)>> {
+    let mut paths = Vec::new();
+    files_named(&root.join("plan"), ".md", &mut paths);
+    let mut documents: BTreeMap<String, Vec<(PathBuf, bool)>> = BTreeMap::new();
+    for path in paths {
+        let text = std::fs::read_to_string(&path).unwrap();
+        if let Some(id) = frontmatter_id(&text) {
+            documents.entry(id).or_default().push((path, false));
+        }
+    }
+    documents
+}
+
+#[test]
+fn tc_1045_011_no_id_names_two_plan_or_task_documents() {
+    let documents = plan_documents(&repo_root());
+    assert!(
+        documents.len() > 50
+            && documents.contains_key("PLAN-001")
+            && documents.contains_key("TASK-001"),
+        "anti-vacuity: the plan tree must be populated, saw {} ids",
+        documents.len()
+    );
+    let shared = shared_document_ids(&documents);
+    assert!(
+        shared.is_empty(),
+        "these ids name more than one plan or task document (allocate the next free id to the \
+         newer one and update every reference): {shared:?}"
+    );
+}
+
+#[test]
+fn tc_1045_012_a_plan_or_task_file_carries_its_documents_id() {
+    let mut paths = Vec::new();
+    files_named(&repo_root().join("plan"), ".md", &mut paths);
+    let (mut plans, mut tasks) = (0, 0);
+    let mut mismatched = Vec::new();
+    for path in &paths {
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        let text = std::fs::read_to_string(path).unwrap();
+        let Some(id) = frontmatter_id(&text) else {
+            continue;
+        };
+        // A task file is named for its id; a plan's directory is named for the plan's id.
+        let named_for = if id.starts_with("TASK-") {
+            tasks += 1;
+            name.to_owned()
+        } else if id.starts_with("PLAN-") {
+            plans += 1;
+            path.parent()
+                .and_then(|d| d.file_name())
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_owned()
+        } else {
+            continue;
+        };
+        if !named_for.starts_with(&format!("{id}-")) {
+            mismatched.push(format!("{}: id {id}", path.display()));
+        }
+    }
+    assert!(
+        plans >= 10 && tasks >= 50,
+        "anti-vacuity: saw {plans} plans and {tasks} tasks"
+    );
+    assert!(
+        mismatched.is_empty(),
+        "these plan or task files declare an id their name does not carry: {mismatched:?}"
+    );
+}
+
 #[test]
 fn tc_1045_004_probe_a_planted_shared_id_is_caught() {
     let mut documents = BTreeMap::new();
@@ -534,7 +606,7 @@ fn test_ts_mentions(text: &str) -> Vec<(usize, String)> {
 }
 
 /// Documents whose narrative, verification cells and frontmatter evidence are
-/// held to the native suite: everything under the NFR, StR and FR directories. A mention
+/// held to the native suite: everything under the `NFR`, `StR` and `FR` directories. A mention
 /// of a deleted TypeScript suite there reads as live evidence. The matrix and
 /// the review records stay outside the set because they narrate the retirement
 /// of those suites by name.

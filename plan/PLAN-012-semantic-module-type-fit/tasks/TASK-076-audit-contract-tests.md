@@ -1,10 +1,10 @@
 ---
-id: TASK-012
+id: TASK-076
 title: "Add red semantic type-fit audit contract tests"
 type: Task
 track: "Test-first foundation"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-003"
+  - target: "ix://agent-ix/quoin/PLAN-012"
     type: "part_of"
   - target: "ix://agent-ix/quoin/FR-051"
     type: "references"
@@ -16,7 +16,7 @@ relationships:
     type: "references"
 ---
 
-# TASK-012: Add red semantic type-fit audit contract tests
+# TASK-076: Add red semantic type-fit audit contract tests
 
 ## Status
 
