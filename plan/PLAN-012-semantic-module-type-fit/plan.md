@@ -111,7 +111,7 @@ default-modules.yaml + resolved module sources + Quire/core-data evidence
 | TC-1169..TC-1176 | Semantic scoring and missing/conflict ledgers             | TASK-076, TASK-079 |
 | TC-1177..TC-1182 | Canonical output and generated projections                | TASK-076, TASK-016 |
 | TC-1183..TC-1187 | Architecture/core-data/Quire reconciliation and freshness | TASK-016, TASK-017 |
-| TC-1188..TC-1193 | Completeness, determinism, and non-mutation               | TASK-076..TASK-017 |
+| TC-1188..TC-1193 | Completeness, determinism, and non-mutation               | TASK-076..TASK-079, TASK-016, TASK-017 |
 | TC-1194          | Major-interference human gate                             | TASK-019           |
 
 ## Execution order and dependencies

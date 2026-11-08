@@ -477,26 +477,42 @@ fn tc_1045_011_no_id_names_two_plan_or_task_documents() {
 }
 
 #[test]
-fn tc_1045_012_a_plan_directory_carries_the_id_of_its_plan_document() {
-    let root = repo_root().join("plan");
-    let mut checked = 0;
-    for entry in std::fs::read_dir(&root).expect("plan directory") {
-        let dir = entry.expect("a directory entry").path();
-        let name = dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
-        let Some(prefix) = name.get(..8).filter(|p| p.starts_with("PLAN-")) else {
+fn tc_1045_012_a_plan_or_task_file_carries_its_documents_id() {
+    let mut paths = Vec::new();
+    files_named(&repo_root().join("plan"), ".md", &mut paths);
+    let (mut plans, mut tasks) = (0, 0);
+    let mut mismatched = Vec::new();
+    for path in &paths {
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        let text = std::fs::read_to_string(path).unwrap();
+        let Some(id) = frontmatter_id(&text) else {
             continue;
         };
-        let text = std::fs::read_to_string(dir.join("plan.md")).expect("a plan.md per plan");
-        assert_eq!(
-            frontmatter_id(&text).as_deref(),
-            Some(prefix),
-            "{name}/plan.md declares a different id from its directory"
-        );
-        checked += 1;
+        // A task file is named for its id; a plan's directory is named for the plan's id.
+        let named_for = if id.starts_with("TASK-") {
+            tasks += 1;
+            name.to_owned()
+        } else if id.starts_with("PLAN-") {
+            plans += 1;
+            path.parent()
+                .and_then(|d| d.file_name())
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_owned()
+        } else {
+            continue;
+        };
+        if !named_for.starts_with(&format!("{id}-")) {
+            mismatched.push(format!("{}: id {id}", path.display()));
+        }
     }
     assert!(
-        checked >= 10,
-        "anti-vacuity: saw {checked} plan directories"
+        plans >= 10 && tasks >= 50,
+        "anti-vacuity: saw {plans} plans and {tasks} tasks"
+    );
+    assert!(
+        mismatched.is_empty(),
+        "these plan or task files declare an id their name does not carry: {mismatched:?}"
     );
 }
 

@@ -3,7 +3,7 @@ id: SR-057
 title: "Gap analysis — PLAN-003 default-module semantic type-fit audit"
 type: SpecReview
 analysis: gap-analysis
-scope: "plan/PLAN-003-semantic-module-type-fit/, spec/matrix.md TC-1156..TC-1194, issue #288 implementation and PR #316"
+scope: "plan/PLAN-012-semantic-module-type-fit/, spec/matrix.md TC-1156..TC-1194, issue #288 implementation and PR #316"
 review_set: subset
 relationships:
   - target: "ix://agent-ix/quoin/PLAN-003"
