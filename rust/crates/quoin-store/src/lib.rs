@@ -42,6 +42,7 @@
 
 pub mod bounded_read;
 pub mod error;
+pub mod instant;
 pub mod json;
 pub mod store;
 

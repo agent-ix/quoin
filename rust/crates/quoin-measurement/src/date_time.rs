@@ -35,17 +35,16 @@
 //! for the inputs `intervention.ts:349` rejected and this module accepts.
 //! `tests/tc_468_date_time.rs` asserts that disagreement on `…t…z` directly.
 //!
-//! # Why this is not the seventh instant reader
+//! # The reader is `quoin_store::instant`
 //!
-//! quoin already carries six hand-rolled instant validators across
-//! `quoin-assurance`, `quoin-change-assurance` and `quoin-evidence`, accepting
-//! three different languages, all returning `bool` so every caller re-parses
-//! the string it just validated (Stage 6 plan §13.1). This one returns a
-//! **value**. Its eventual home is the shared instant reader that ticket asks
-//! for; until that exists, this is the one
-//! grammar in the measurement domain and nothing here may add a second.
+//! The grammar and the calendar arithmetic live in
+//! [`quoin_store::instant`] (PLAT-91), as `InstantGrammar::Rfc3339`, shared
+//! with every other crate that reads a timestamp. This type wraps the value it
+//! returns with the measurement error code and the strict-grammar observation;
+//! nothing here may add a second reader.
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
+use quoin_store::instant::{Instant, InstantGrammar};
 
 /// One RFC 3339 date-time, parsed.
 ///
@@ -95,160 +94,21 @@ impl Rfc3339DateTime {
     }
 
     fn try_parse(value: &str) -> Option<Self> {
-        let bytes = value.as_bytes();
-        // `YYYY-MM-DDThh:mm:ss` is 19 bytes and nothing shorter can match.
-        if bytes.len() < 20 {
-            return None;
-        }
-        let year = digits(bytes.get(0..4)?)?;
-        if *bytes.get(4)? != b'-' {
-            return None;
-        }
-        let month = digits(bytes.get(5..7)?)?;
-        if *bytes.get(7)? != b'-' {
-            return None;
-        }
-        let day = digits(bytes.get(8..10)?)?;
-        let separator = *bytes.get(10)?;
-        if separator != b'T' && separator != b't' {
-            return None;
-        }
-        let hour = digits(bytes.get(11..13)?)?;
-        if *bytes.get(13)? != b':' {
-            return None;
-        }
-        let minute = digits(bytes.get(14..16)?)?;
-        if *bytes.get(16)? != b':' {
-            return None;
-        }
-        let second = digits(bytes.get(17..19)?)?;
-
-        let mut cursor = 19;
-        let mut millis_of_second = 0_i64;
-        if bytes.get(cursor) == Some(&b'.') {
-            cursor += 1;
-            let start = cursor;
-            while bytes.get(cursor).is_some_and(u8::is_ascii_digit) {
-                cursor += 1;
-            }
-            if cursor == start {
-                return None;
-            }
-            // `Date.parse` keeps millisecond resolution and truncates the rest.
-            let mut scale = 100_i64;
-            for index in start..cursor.min(start + 3) {
-                millis_of_second += i64::from(bytes.get(index)? - b'0') * scale;
-                scale /= 10;
-            }
-        }
-
-        let (offset_minutes, lowercase_zulu) = match bytes.get(cursor)? {
-            b'Z' | b'z' => {
-                let lower = *bytes.get(cursor)? == b'z';
-                cursor += 1;
-                (0_i64, lower)
-            }
-            sign @ (b'+' | b'-') => {
-                let sign = if *sign == b'-' { -1_i64 } else { 1_i64 };
-                cursor += 1;
-                let offset_hour = digits(bytes.get(cursor..cursor + 2)?)?;
-                if *bytes.get(cursor + 2)? != b':' {
-                    return None;
-                }
-                let offset_minute = digits(bytes.get(cursor + 3..cursor + 5)?)?;
-                cursor += 5;
-                if offset_hour > 23 || offset_minute > 59 {
-                    return None;
-                }
-                (
-                    sign * (i64::from(offset_hour) * 60 + i64::from(offset_minute)),
-                    false,
-                )
-            }
-            _ => return None,
-        };
-        if cursor != bytes.len() {
-            return None;
-        }
-
-        if !(1..=12).contains(&month)
-            || day < 1
-            || day > days_in_month(year, month)
-            || hour > 23
-            || minute > 59
-            || second > 59
-        {
-            return None;
-        }
-
-        let days = days_from_civil(i64::from(year), month, day);
-        let epoch_millis =
-            ((days * 24 + i64::from(hour)) * 60 + i64::from(minute) - offset_minutes) * 60_000
-                + i64::from(second) * 1_000
-                + millis_of_second;
-
+        let read = Instant::parse(value, InstantGrammar::Rfc3339)?;
         Some(Self {
             text: value.to_owned(),
-            epoch_millis,
-            lowercase_separator: separator == b't',
-            lowercase_zulu,
+            epoch_millis: read.epoch_millis()?,
+            lowercase_separator: value.as_bytes().get(10) == Some(&b't'),
+            lowercase_zulu: value.ends_with('z'),
         })
     }
 }
 
-/// Read a fixed-width run of ASCII digits.
-fn digits(bytes: &[u8]) -> Option<u16> {
-    let mut out: u16 = 0;
-    for byte in bytes {
-        if !byte.is_ascii_digit() {
-            return None;
-        }
-        out = out.checked_mul(10)?.checked_add(u16::from(byte - b'0'))?;
-    }
-    Some(out)
-}
-
-/// Whether `year` is a leap year under the proleptic Gregorian calendar.
-fn is_leap_year(year: u16) -> bool {
-    year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400))
-}
-
-/// The length of `month` in `year`, `month` being 1-based.
-fn days_in_month(year: u16, month: u16) -> u16 {
-    match month {
-        2 => {
-            if is_leap_year(year) {
-                29
-            } else {
-                28
-            }
-        }
-        4 | 6 | 9 | 11 => 30,
-        _ => 31,
-    }
-}
-
-/// Days from 1970-01-01 to `year-month-day`, Howard Hinnant's `days_from_civil`.
-///
-/// Written out rather than pulled from a date crate because the workspace pins
-/// every dependency exactly and this is nine lines of arithmetic with no
-/// timezone database behind it.
-fn days_from_civil(year: i64, month: u16, day: u16) -> i64 {
-    let month = i64::from(month);
-    let day = i64::from(day);
-    let year = if month <= 2 { year - 1 } else { year };
-    let era = if year >= 0 { year } else { year - 399 } / 400;
-    let year_of_era = year - era * 400;
-    let day_of_year = (153 * (month + if month > 2 { -3 } else { 9 }) + 2) / 5 + day - 1;
-    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
-    era * 146_097 + day_of_era - 719_468
-}
-
 /// The civil date `days` after 1970-01-01, Howard Hinnant's `civil_from_days`.
 ///
-/// The exact inverse of [`days_from_civil`], and here rather than in a second
-/// module for the reason the module header gives: the calendar arithmetic in
-/// this crate lives in one place, and `tc_468_boundary` asserts it.
+/// The exact inverse of the day count `quoin_store::instant` reads with. It is
+/// here because only rendering needs it; the reading arithmetic lives once in
+/// the store, and `tc_468_boundary` asserts this crate carries no copy.
 fn civil_from_days(days: i64) -> (i64, i64, i64) {
     let shifted = days + 719_468;
     let era = if shifted >= 0 {

@@ -24,7 +24,6 @@ use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
 use crate::error::EvidenceError;
-use crate::instant::{Instant, InstantGrammar};
 use crate::paths::{EXPERIMENTS_DIR, OPERATIONAL_EVIDENCE_DIR, assurance_record_path};
 use crate::source::EvidenceSource;
 use crate::store::codec::{canonical_bytes_of, decode};
@@ -32,12 +31,13 @@ use crate::types::{
     ExperimentRecord, ExperimentRecordInput, OperationalEvidenceRecord,
     OperationalEvidenceRecordInput, StoredAssuranceRecord,
 };
+use quoin_store::instant::{Instant, InstantGrammar};
 
 /// The language every timestamp in an assurance record is written in.
 ///
 /// The retained check was an anchored regular expression with a mandatory
 /// zone, so a bare date is refused and nothing may follow the offset. See
-/// [`crate::instant`] for why the two grammars in this crate are not one.
+/// [`quoin_store::instant`] for why the two grammars in this crate are not one.
 const RECORDED_AT_GRAMMAR: InstantGrammar = InstantGrammar::ZonedInstant;
 
 /// Publish one experiment record, append-only.
@@ -588,7 +588,7 @@ fn literal(value: Option<&Value>, name: &str, allowed: &[&str], clauses: &mut Ve
 ///
 /// Returns the text when it reads, so the caller stores what was validated
 /// rather than re-reaching for the raw value. The grammar is named because the
-/// crate has two and they are not interchangeable; see [`crate::instant`].
+/// crate has two and they are not interchangeable; see [`quoin_store::instant`].
 fn instant(name: &str, value: Option<&Value>, clauses: &mut Vec<String>) -> Option<String> {
     let text = value.and_then(Value::as_str).unwrap_or("");
     let Some(read) = Instant::parse(text, RECORDED_AT_GRAMMAR) else {

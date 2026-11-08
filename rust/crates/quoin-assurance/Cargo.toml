@@ -21,6 +21,7 @@ workspace = true
 [dependencies]
 # The persisted binding graph (`BindingsFile`) `matrix::build` joins on.
 quoin-evidence = { workspace = true }
+quoin-store = { workspace = true }
 quoin-evidence-types = { workspace = true }
 quoin-finding-types = { workspace = true }
 quoin-quire-types = { workspace = true }
