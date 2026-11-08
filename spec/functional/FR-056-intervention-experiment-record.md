@@ -27,6 +27,34 @@ vocabulary — this schema declares no local enum for it — and, because the ty
 itself implements neither `Ord` nor `PartialOrd`, no report SHALL rank, compare,
 or aggregate one record's strength against another's.
 
+## Properties
+
+| Field             | Type       | Multiplicity | Constraints                                 |
+| ----------------- | ---------- | ------------ | ------------------------------------------- |
+| schema_version    | Integer    | 1..1         |                                             |
+| record_type       | String     | 1..1         |                                             |
+| record_id         | String     | 1..1         | minLength: 1, maxLength: 128                |
+| observed_at       | Timestamp  | 1..1         |                                             |
+| subject           | JsonObject | 1..1         |                                             |
+| producer          | JsonObject | 1..1         |                                             |
+| design            | JsonObject | 1..1         |                                             |
+| baseline          | JsonObject | 1..1         |                                             |
+| treatments        | JsonObject | 1..*         |                                             |
+| changed_variables | JsonObject | 1..*         |                                             |
+| held_constant     | JsonObject | 0..*         |                                             |
+| measured_effects  | JsonObject | 0..*         |                                             |
+| interactions      | JsonObject | 0..*         |                                             |
+| confounders       | JsonObject | 0..*         |                                             |
+| status            | String     | 1..1         | enumValues: completed\|failed\|inconclusive |
+| strength          | String     | 1..1         |                                             |
+| conclusion        | JsonObject | 1..1         |                                             |
+| gaps              | String     | 0..*         |                                             |
+| owner             | String     | 1..1         | minLength: 1                                |
+| actions           | String     | 1..*         |                                             |
+| raw_evidence      | JsonObject | 1..*         |                                             |
+
+The table declares the record's top-level fields; the schema below is the full contract, including nested definitions and cross-field rules.
+
 ## Schema
 
 ```json

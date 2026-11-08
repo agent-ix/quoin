@@ -33,6 +33,29 @@ vocabulary — this schema declares no local enum for it — and, because the ty
 itself implements neither `Ord` nor `PartialOrd`, no report SHALL rank, compare,
 or aggregate one record's strength against another's.
 
+## Properties
+
+| Field          | Type       | Multiplicity | Constraints                                                                                                                                                  |
+| -------------- | ---------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| schema_version | Integer    | 1..1         |                                                                                                                                                              |
+| record_type    | String     | 1..1         |                                                                                                                                                              |
+| record_id      | String     | 1..1         | minLength: 1, maxLength: 128                                                                                                                                 |
+| observed_at    | Timestamp  | 1..1         |                                                                                                                                                              |
+| record_shape   | String     | 1..1         | enumValues: standing_capability\|exercise                                                                                                                    |
+| control_kind   | String     | 1..1         | enumValues: release\|feature_flag\|canary_deployment\|shadow_deployment\|rollback\|kill_switch\|human_override\|appeal\|abstention\|safe_fallback\|reporting |
+| subject        | JsonObject | 1..1         |                                                                                                                                                              |
+| producer       | JsonObject | 1..1         |                                                                                                                                                              |
+| strength       | String     | 1..1         |                                                                                                                                                              |
+| scope          | JsonObject | 1..1         |                                                                                                                                                              |
+| capability     | JsonObject | 0..1         |                                                                                                                                                              |
+| exercise       | JsonObject | 0..1         |                                                                                                                                                              |
+| owner          | String     | 1..1         | minLength: 1                                                                                                                                                 |
+| gaps           | String     | 0..*         |                                                                                                                                                              |
+| actions        | String     | 1..*         |                                                                                                                                                              |
+| raw_evidence   | JsonObject | 1..*         |                                                                                                                                                              |
+
+The table declares the record's top-level fields; the schema below is the full contract, including nested definitions and cross-field rules.
+
 ## Schema
 
 ```json

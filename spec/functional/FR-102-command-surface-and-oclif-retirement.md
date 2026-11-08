@@ -2,7 +2,7 @@
 id: FR-102
 title: "Preserve the command surface and retire the oclif shell last"
 type: FR
-relationships:
+relationships: []
 ---
 
 # FR-102: Preserve the command surface and retire the oclif shell last

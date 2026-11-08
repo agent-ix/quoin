@@ -21,6 +21,14 @@ module resolves to its repository's default branch. This document defines the st
 is specified by
 [FR-017](./FR-017-reconcile-default-modules.md).
 
+## Properties
+
+| Field         | Type    | Multiplicity | Constraints                                                           |
+| ------------- | ------- | ------------ | --------------------------------------------------------------------- |
+| schemaVersion | Integer | 1..1         | min: 1, max: 1                                                        |
+| name          | String  | 0..1         |                                                                       |
+| entries       | JsonObject | 1..1      |                                                                       |
+
 ## Schema
 
 ```json
