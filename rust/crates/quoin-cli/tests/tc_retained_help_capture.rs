@@ -219,3 +219,32 @@ fn tc_373_update_help_describes_the_release_manifest_not_an_npm_install() {
     assert!(!help.contains("npm install -g to upgrade"), "{help}");
     assert!(!help.contains("registry.npmjs.org"), "{help}");
 }
+
+/// `quoin measurement record --help` describes the collection format and
+/// points at the worked example, so the format is learnable without reading
+/// the code (PLAT-1050).
+///
+/// Trace: FR-061, FR-102
+#[test]
+fn tc_1050_measurement_record_help_describes_the_collection_format() {
+    let output = invoke(&[
+        "measurement".to_owned(),
+        "record".to_owned(),
+        "--help".to_owned(),
+    ]);
+    assert_eq!(output.status.code(), Some(0));
+    let help = text(&output.stdout);
+    for literal in [
+        "collectionId",
+        "verificationStack",
+        "observations",
+        "population",
+        "sourceState",
+        "docs/measurement-walkthrough.md",
+    ] {
+        assert!(
+            help.contains(literal),
+            "help must mention {literal}: {help}"
+        );
+    }
+}

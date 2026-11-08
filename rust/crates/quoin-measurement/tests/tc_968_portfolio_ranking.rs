@@ -92,6 +92,7 @@ fn observation(plan_id: &str, value: f64) -> MeasurementObservation {
 fn collection(timestamp: &str) -> CollectionSummary {
     CollectionSummary {
         collection_id: "run-1".to_owned(),
+        subject: "fixture".to_owned(),
         timestamp: timestamp.to_owned(),
         tool_identity: "fixture".to_owned(),
         tool_version: "1".to_owned(),

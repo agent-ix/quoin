@@ -1315,7 +1315,7 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
     );
     for literal in [
         "not_computed: no record",
-        "Corpus gaps: not_computed",
+        "Corpus gaps: not reported (no collection states bounds.gap_count)",
         "finding_recall",
     ] {
         assert!(
@@ -1337,7 +1337,7 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
         "finding_recall [language=rust, tier=2] | ap-recall (spec/assurance/10-recall.md) | observe | 1e+21 ratio |",
         "unmeasured_metric | ap-unmeasured (spec/assurance/50-unmeasured.md) | gate | not_computed: no record |",
         "Corpus gaps: 3",
-        "2026-03-01T00:00:00.000Z — quoin 0.9.1",
+        "c-2026-03 (quoin) — 2026-03-01T00:00:00.000Z — quoin 0.9.1",
         "- unmeasured_metric: no collection has computed this authored plan.",
     ] {
         assert!(

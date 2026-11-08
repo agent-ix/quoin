@@ -253,7 +253,7 @@ fn tc_1948_a_malformed_interval_is_refused_and_a_well_formed_one_admitted() {
             [
                 "QM-INTERVAL-MALFORMED: metric `quality.gate` states interval \
                  {\"level\":0.95,\"lower\":0.95,\"method\":\"wilson\",\"upper\":0.99}; \
-                 value 0.9 lies outside [0.95, 0.99]"
+                 value 0.9 lies outside [0.95, 0.99] (at observations[0].interval)"
             ]
         );
 
@@ -341,7 +341,7 @@ fn tc_1950_an_absent_interval_is_refused_only_under_an_interval_level() {
         refusal.findings(),
         [
             "QM-INTERVAL-UNSTATED: metric `quality.gate` states no interval; plan MP-900 \
-             requires an interval at level 0.95 or above"
+             requires an interval at level 0.95 or above (at observations[0].interval)"
         ]
     );
     // `count` is no different: nothing is derived from the population.
@@ -415,7 +415,7 @@ fn tc_1951_a_short_interval_level_is_refused() {
         refusal.findings(),
         [
             "QM-INTERVAL-LEVEL-SHORT: metric `quality.gate` states an interval at level 0.9 \
-             but plan MP-900 requires 0.95"
+             but plan MP-900 requires 0.95 (at observations[0].interval)"
         ]
     );
     for level in [0.95, 0.99] {
@@ -484,7 +484,7 @@ fn tc_1952_interval_findings_accumulate_with_every_other_finding() {
     assert_eq!(
         findings[3],
         "metric `quality.unplanned` has no MeasurementPlan under spec/assurance or assurance; \
-         record refused"
+         record refused (at observations[3])"
     );
 }
 
