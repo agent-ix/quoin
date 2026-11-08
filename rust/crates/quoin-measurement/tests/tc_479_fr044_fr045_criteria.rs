@@ -353,6 +353,39 @@ fn tc_479_001_an_unplanned_observation_is_refused_naming_the_metric() {
     );
 }
 
+/// A drafted successor plan for a metric does not shadow the active plan:
+/// recording keeps resolving to the active one (PLAT-271).
+///
+/// FR-044-AC-1: "Every observation resolves to an active plan or the write is
+/// refused naming the metric."
+///
+/// Trace: FR-044-AC-1
+/// Provenance: quoin#300
+#[test]
+fn tc_479_001a_a_proposed_successor_does_not_shadow_the_active_plan() {
+    let candidate = from_serde(&new_collection_json()).expect("the candidate crosses the bridge");
+    let temporary = planned_repository();
+    let active = authored_plans(temporary.path());
+    assert_eq!(active.len(), 1, "the fixture repository authors one plan");
+
+    let mut draft = active[0].clone();
+    draft.id = quoin_measurement::types::ids::NonEmptyText::parse(
+        "MP-999",
+        MeasurementErrorCode::PlanInvalid,
+        "id",
+    )
+    .expect("a non-empty plan id");
+    draft.status = quoin_measurement::types::plan::LifecycleStatus::Proposed;
+
+    for plans in [
+        vec![active[0].clone(), draft.clone()],
+        vec![draft.clone(), active[0].clone()],
+    ] {
+        validate::measurement_collection(&candidate, &plans)
+            .expect("the active plan governs; a proposed successor is not consulted");
+    }
+}
+
 /// Every member FR-044-AC-1 names is required, one at a time.
 ///
 /// FR-044-AC-1: "A collection carries schema and collection identity, subject,

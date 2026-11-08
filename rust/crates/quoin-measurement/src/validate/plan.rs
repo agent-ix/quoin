@@ -12,6 +12,23 @@ use std::collections::BTreeMap;
 use crate::types::observation::{MeasurementObservation, constant_predictor_governed_metric};
 use crate::types::plan::{LifecycleStatus, MeasurementPlan};
 
+/// The plan that governs each metric. Where several plans name one metric
+/// (a drafted or retired successor beside the active plan), the active plan
+/// governs, so authoring a draft never blocks recording; with no active plan
+/// the last in `plans` order is named in the refusal.
+pub(crate) fn by_metric(plans: &[MeasurementPlan]) -> BTreeMap<&str, &MeasurementPlan> {
+    let mut governing: BTreeMap<&str, &MeasurementPlan> = BTreeMap::new();
+    for plan in plans {
+        let keep_existing = governing.get(plan.metric.as_str()).is_some_and(|held| {
+            held.status == LifecycleStatus::Active && plan.status != LifecycleStatus::Active
+        });
+        if !keep_existing {
+            governing.insert(plan.metric.as_str(), plan);
+        }
+    }
+    governing
+}
+
 /// The plan `observation` answers to, and the plan whose population rules
 /// bind it.
 ///
