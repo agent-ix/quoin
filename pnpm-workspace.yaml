@@ -15,3 +15,13 @@ minimumReleaseAgeExclude:
 updateConfig:
   ignoreDependencies:
     - typescript
+
+# Fail fast when the configured registry is unreachable. pnpm re-checks package
+# metadata for `minimumReleaseAge` even when the lockfile and the store already
+# satisfy the install, and its default of two retries a minute apart made an
+# unreachable registry look like a hang. These bound a failed fetch to seconds;
+# they do not change which registry is used.
+fetchRetries: 1
+fetchRetryMintimeout: 1000
+fetchRetryMaxtimeout: 3000
+fetchTimeout: 20000
