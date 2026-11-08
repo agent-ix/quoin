@@ -43,7 +43,7 @@ and explicit human acknowledgement.
 | ID          | Criteria                                                                                                         | Verification                      |
 | ----------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------- |
 | FR-021-AC-1 | A run spawns `ix-flow run` with the flow, skill, config root, state dir, and the `--id`/`--json`/`--target` args | None (no native test is tagged to this criterion; PLAT-1045) |
-| FR-021-AC-2 | A non-zero `ix-flow` exit is propagated as the process exit status                                               | Test (flow.rs) |
+| FR-021-AC-2 | A non-zero `ix-flow` exit is propagated as the process exit status                                               | Test (quoin-cli/src/flow.rs) |
 | FR-021-AC-3 | A signal-terminated child yields exit status 1                                                                   | None (no native test is tagged to this criterion; PLAT-1045) |
 | FR-021-AC-4 | A failure to spawn `ix-flow` surfaces an error                                                                   | None (no native test is tagged to this criterion; PLAT-1045) |
 

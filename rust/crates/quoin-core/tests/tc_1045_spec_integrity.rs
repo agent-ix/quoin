@@ -534,7 +534,7 @@ fn test_ts_mentions(text: &str) -> Vec<(usize, String)> {
 }
 
 /// Documents whose narrative, verification cells and frontmatter evidence are
-/// held to the native suite: every `NFR`, every `StR` and every `FR`. A mention
+/// held to the native suite: everything under the NFR, StR and FR directories. A mention
 /// of a deleted TypeScript suite there reads as live evidence. The matrix and
 /// the review records stay outside the set because they narrate the retirement
 /// of those suites by name.
@@ -543,11 +543,6 @@ fn native_only_documents(root: &Path) -> Vec<PathBuf> {
     for dir in ["spec/non-functional", "spec/stakeholder", "spec/functional"] {
         files_named(&root.join(dir), ".md", &mut paths);
     }
-    paths.retain(|p| {
-        p.file_name()
-            .and_then(|n| n.to_str())
-            .is_some_and(|n| n.starts_with("NFR-") || n.starts_with("StR-") || n.starts_with("FR-"))
-    });
     paths
 }
 

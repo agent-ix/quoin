@@ -44,10 +44,10 @@ directory and drop its registry entry.
 
 | ID          | Criteria                                                                                                         | Verification                                       |
 | ----------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| FR-019-AC-1 | `plugin install <path-source>` materializes the module, records it, and reports it                               | Test (install_reconcile.rs) |
+| FR-019-AC-1 | `plugin install <path-source>` materializes the module, records it, and reports it                               | Test (quoin-modules/tests/install_reconcile.rs) |
 | FR-019-AC-2 | A module name is read from a root or single-nested `manifest.yaml`; a missing or empty name raises an error      | Test (install_reconcile.rs)          |
 | FR-019-AC-3 | `plugin list` prints the registry's plugins                                                                      | None (no native test is tagged to this criterion; PLAT-1045) |
-| FR-019-AC-4 | `plugin remove <name>` deletes the module directory and drops its registry entry; a missing name raises an error | Test (install_reconcile.rs) |
+| FR-019-AC-4 | `plugin remove <name>` deletes the module directory and drops its registry entry; a missing name raises an error | Test (quoin-modules/tests/install_reconcile.rs) |
 
 ## Dependencies
 
