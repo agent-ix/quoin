@@ -13,6 +13,7 @@ make test    # make rust-gate: fmt --check, clippy -D warnings, cargo deny, carg
 make lint    # cargo fmt --all --check + cargo clippy --all-targets --all-features -D warnings
 make format  # cargo fmt --all
 make clean   # cargo clean
+make evidence # nextest JUnit run, trace tags added, bound with `quoin evidence record` (spec/evidence/suites.md)
 ```
 
 See `Makefile` for the exact targets; `rust-build`, `rust-lint`, `rust-deny`

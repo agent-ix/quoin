@@ -3254,6 +3254,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-suite-trace"
+version = "0.29.4"
+dependencies = [
+ "quoin-quire",
+ "regex",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-validators"
 version = "0.29.4"
 dependencies = [

@@ -98,6 +98,7 @@ bind to no obligation until a requirement→production-code relation exists
 | FR-033-AC-12 | `quoin evidence record --adapter cargo-mutants` records a mutation report end to end, preserving `score`. | Test (TC-162) |
 | FR-033-AC-13 | `quoin evidence record` selects the adapter from `--tool` when none is named. | Test (TC-163) |
 | FR-033-AC-14 | `quoin evidence record` still accepts the normalized shape with no adapter at all. | Test (TC-164) |
+| FR-033-AC-15 | A cargo-nextest JUnit report can carry, on each test case, the `trace` property naming the acceptance criteria the test is tagged with, read from the engine that defines the tag grammar, so `quoin evidence record --adapter junit` binds the run to those criteria. | Test (TC-165) |
 
 ## Constraints
 

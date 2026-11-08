@@ -144,6 +144,29 @@ fn tc_379_111_a_scope_without_a_traceability_model_names_that_exactly() {
     );
 }
 
+/// Trace: FR-033-AC-15
+///
+/// The per-test relation behind the `JUnit` trace properties: the fixture's one
+/// tagged test comes back with its file, its name and its id, and the untagged
+/// row yields nothing.
+#[test]
+fn tc_379_119_test_traces_names_each_tagged_test_and_its_id() {
+    let (traces, _notices) = coverage::test_traces(&coverage::Request {
+        scope: fixture_scope(),
+        modules: fixture_modules(),
+    })
+    .expect("the fixture module declares a traceability model");
+    let found: Vec<(&str, &str, &str)> = traces
+        .iter()
+        .map(|t| (t.path.as_str(), t.symbol.as_str(), t.trace_id.as_str()))
+        .collect();
+    assert_eq!(
+        found,
+        [("lib/backed.rs", "covers_the_round_trip", "TC-001")],
+        "only the tagged test carries a relation"
+    );
+}
+
 /// Trace: FR-099
 ///
 /// Properties: classification, and the agent-ix/quoin#103 partial result as

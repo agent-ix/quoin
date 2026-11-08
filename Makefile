@@ -9,7 +9,7 @@ RUST_DIR := $(CURDIR)/rust
 CARGO_TARGET := $(RUST_DIR)/target
 CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
 
-.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help
+.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate build-inputs help evidence
 
 build: rust-build
 
@@ -49,7 +49,28 @@ rust-gate: rust-lint rust-deny rust-test workflow-test
 	@echo "rust-gate: fmt, clippy -D warnings, cargo deny, tests and installed workflow scenarios passed"
 
 help:
-	@echo "Native Quoin targets: build, test, lint, format, clean"
+	@echo "Native Quoin targets: build, test, lint, format, clean, evidence"
+
+# Run the Rust suite under cargo-nextest (JUnit writer), add each test's trace
+# tags to the report, and bind the run into spec/evidence with
+# `quoin evidence record`. Needs `cargo install cargo-nextest --locked`.
+# The tests' own exit status is returned after the run is recorded, so a red
+# suite is recorded as red rather than skipped.
+EVIDENCE_DIR := $(CARGO_TARGET)/nextest/evidence
+
+evidence: build-inputs
+	@command -v cargo-nextest >/dev/null || { echo "evidence: cargo-nextest is not installed (cargo install cargo-nextest --locked)"; exit 1; }
+	@( cd $(RUST_DIR) && cargo build --locked --quiet $(CARGO_TARGET_FLAG) -p quoin-cli --bin quoin ) || exit 1; \
+	rm -f $(EVIDENCE_DIR)/junit.xml $(EVIDENCE_DIR)/junit-traced.xml; \
+	status=0; \
+	( cd $(RUST_DIR) && cargo nextest run --workspace --locked --profile evidence $(CARGO_TARGET_FLAG) ) || status=$$?; \
+	test -f $(EVIDENCE_DIR)/junit.xml || { echo "evidence: nextest wrote no JUnit report"; exit 1; }; \
+	( cd $(RUST_DIR) && cargo run --locked --quiet $(CARGO_TARGET_FLAG) -p quoin-suite-trace -- \
+		--repo $(CURDIR) --junit $(EVIDENCE_DIR)/junit.xml --out $(EVIDENCE_DIR)/junit-traced.xml ) || exit 1; \
+	$(CARGO_TARGET)/debug/quoin evidence record --repo $(CURDIR) --suite SUITE-001 --kind Unit --adapter junit \
+		--tool "cargo-nextest $$(cargo nextest --version | sed -n '1s/^cargo-nextest //;1s/ .*//p')" \
+		--results $(EVIDENCE_DIR)/junit-traced.xml || exit 1; \
+	exit $$status
 
 .PHONY: workflow-test workflow-test-runtime
 workflow-test-runtime:
