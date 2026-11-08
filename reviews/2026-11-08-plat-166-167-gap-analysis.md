@@ -58,3 +58,12 @@ bindings:
 - {test_id: tc_166_cargo_fuzz_template_puts_no_doc_comment_on_the_macro_invocation, ac_id: FR-038-AC-5, trace: correct}
 - {test_id: tc_166_cargo_fuzz_template_carriers_sit_on_a_named_wrapper, ac_id: FR-038-AC-5, trace: correct}
 ```
+
+## Dispositions
+
+Round 1, verified against fix commit 4a76f316 (head d6503ab).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | tc_167 and its FR-038-AC-4 tag removed; AC-4 is no longer counted as tagged by a prose check |
+| FND-002 | fixed | AC-5 binder now checks the id-in-name carrier and the provenance line; it reads the template the skill copies, and emitted targets remain the agent-eval method's job |
