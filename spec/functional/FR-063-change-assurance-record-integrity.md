@@ -30,6 +30,22 @@ immutable once written (a new revision is a new file, never an edit), and git
 history is the tamper evidence. A record qualifies as approved only when
 FR-065 finds a matching `approved` event.
 
+## Properties
+
+| Field              | Type       | Multiplicity | Constraints                  |
+| ------------------ | ---------- | ------------ | ---------------------------- |
+| schema_version     | Integer    | 1..1         |                              |
+| record_type        | String     | 1..1         | enumValues: change_assurance |
+| record_id          | String     | 1..1         | minLength: 1, maxLength: 256 |
+| revision           | Integer    | 1..1         | min: 1                       |
+| subject            | JsonObject | 1..1         |                              |
+| source_connections | JsonObject | 1..*         |                              |
+| impact_snapshot    | JsonObject | 1..1         |                              |
+| definition         | JsonObject | 1..1         |                              |
+| review_workflow    | JsonObject | 1..1         |                              |
+
+The table declares the record's top-level fields and their cardinality. Which keys are required, which values may be null, and the cross-field rules are stated only by the schema below, which is the full contract.
+
 ## Schema
 
 ```json

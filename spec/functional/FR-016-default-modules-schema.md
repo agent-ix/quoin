@@ -21,6 +21,18 @@ module resolves to its repository's default branch. This document defines the st
 is specified by
 [FR-017](./FR-017-reconcile-default-modules.md).
 
+## Properties
+
+| Field         | Type       | Multiplicity | Constraints    |
+| ------------- | ---------- | ------------ | -------------- |
+| schemaVersion | Integer    | 1..1         | min: 1, max: 1 |
+| name          | String     | 0..1         |                |
+| entries       | JsonObject | 0..*         |                |
+
+The table declares the manifest's top-level fields and their cardinality. Which
+keys are required, and the nested shape of each entry, are stated only by the
+schema below, which is the full contract. `schemaVersion` is the constant `1`.
+
 ## Schema
 
 ```json

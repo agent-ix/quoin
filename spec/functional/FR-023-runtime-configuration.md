@@ -27,6 +27,26 @@ the behavior that consumes it is specified by
 [FR-007](./FR-007-assemble-module-roots.md), and
 [FR-025](./FR-025-resolve-authoring-organization.md).
 
+## Properties
+
+| Field                  | Type    | Multiplicity | Constraints |
+| ---------------------- | ------- | ------------ | ----------- |
+| IX_HOME                | String  | 0..1         |             |
+| QUOIN_MODULE_PATHS     | String  | 0..1         |             |
+| IX_SPEC_WORKFLOWS_ROOT | String  | 0..1         |             |
+| QUOIN_ORG              | String  | 0..1         |             |
+| config_root            | String  | 0..1         |             |
+| org                    | String  | 0..1         |             |
+| quoin_config_file      | String  | 0..1         |             |
+| no_project_config      | Boolean | 0..1         |             |
+| json                   | Boolean | 0..1         |             |
+| registry               | String  | 0..1         |             |
+
+Each field is the identifier form of the like-named entry in the Configuration
+table: `config_root` is `--config-root`, `org` is `--org`, `quoin_config_file`
+is `config.d/quoin.yaml`, `no_project_config` is `--no-project-config`, `json`
+is `--json` and `registry` is `--registry`.
+
 ## Configuration
 
 | Name                   | Scope   | Type    | Default              | Description                                                                            |

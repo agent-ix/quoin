@@ -41,6 +41,26 @@ The verifier SHALL run no producer or proof command. Its three outcomes mean:
 
 When no invalid check exists, any incomplete check SHALL dominate `valid`.
 
+## Properties
+
+| Field               | Type       | Multiplicity | Constraints                            |
+| ------------------- | ---------- | ------------ | -------------------------------------- |
+| schema_version      | Integer    | 1..1         |                                        |
+| record_type         | String     | 1..1         | enumValues: verification_receipt       |
+| record_id           | String     | 1..1         | minLength: 1, maxLength: 256           |
+| record_revision     | Integer    | 1..1         | min: 1                                 |
+| candidate_revision  | String     | 1..1         | minLength: 1                           |
+| decision_event      | JsonObject | 1..1         |                                        |
+| checks              | JsonObject | 1..1         |                                        |
+| proofs              | JsonObject | 0..*         |                                        |
+| unknowns            | JsonObject | 0..*         |                                        |
+| outcome             | String     | 1..1         | enumValues: valid\|invalid\|incomplete |
+| reasons             | JsonObject | 0..*         |                                        |
+| governing_plan_id   | JsonObject | 1..1         |                                        |
+| diff_paths_supplied | Boolean    | 1..1         |                                        |
+
+The table declares the record's top-level fields and their cardinality. Which keys are required, which values may be null, and the cross-field rules are stated only by the schema below, which is the full contract.
+
 ## Schema
 
 ```json

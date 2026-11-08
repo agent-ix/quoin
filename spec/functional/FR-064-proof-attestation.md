@@ -30,6 +30,27 @@ local enum for it — and, because the type itself implements neither `Ord` nor
 `PartialOrd`, no report SHALL rank, compare, or aggregate one attestation's
 strength against another's.
 
+## Properties
+
+| Field              | Type       | Multiplicity | Constraints                                           |
+| ------------------ | ---------- | ------------ | ----------------------------------------------------- |
+| schema_version     | Integer    | 1..1         |                                                       |
+| record_type        | String     | 1..1         | enumValues: proof_attestation                         |
+| attestation_id     | String     | 1..1         | minLength: 1, maxLength: 256                          |
+| record_id          | String     | 1..1         | minLength: 1, maxLength: 256                          |
+| record_revision    | Integer    | 1..1         | min: 1                                                |
+| candidate_revision | String     | 1..1         | minLength: 1                                          |
+| proof_id           | String     | 1..1         | minLength: 1, maxLength: 256                          |
+| command            | JsonObject | 1..1         |                                                       |
+| tool               | JsonObject | 1..1         |                                                       |
+| environment        | JsonObject | 1..1         |                                                       |
+| observed_at        | Timestamp  | 1..1         |                                                       |
+| result             | String     | 1..1         | enumValues: passed\|failed\|unavailable\|not_computed |
+| strength           | String     | 1..1         | enumValues: proven\|bounded-checked\|tested\|observed |
+| retained_output    | JsonObject | 1..1         |                                                       |
+
+The table declares the record's top-level fields and their cardinality. Which keys are required, which values may be null, and the cross-field rules are stated only by the schema below, which is the full contract.
+
 ## Schema
 
 ```json
