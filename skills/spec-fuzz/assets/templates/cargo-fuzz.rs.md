@@ -21,15 +21,25 @@ use quire_rs::loader::manifest::parse_manifest;
 /// Trace: NFR-003-M-1
 ///
 /// spec-fuzz: obligation=NFR-003-M-1 harness=cargo-fuzz entry=loader::manifest::parse_manifest origin=advised
-fuzz_target!(|data: &[u8]| {
+fn fuzz_nfr_003_m_1_parse_manifest(data: &[u8]) {
     // `from_utf8` rather than `from_utf8_lossy`: lossy conversion silently
     // repairs the invalid sequences that are the most interesting inputs a
     // byte fuzzer produces, so the parser never sees them.
     if let Ok(text) = std::str::from_utf8(data) {
         let _ = parse_manifest(text);
     }
-});
+}
+
+fuzz_target!(|data: &[u8]| fuzz_nfr_003_m_1_parse_manifest(data));
 ```
+
+## Why a named wrapper
+
+Both carriers sit on a named `fn`, and `fuzz_target!` only calls it. A doc comment on the
+`fuzz_target!` invocation itself triggers rustc's `unused_doc_comments` warning, because
+rustdoc does not document macro invocations. The wrapper's name is the second carrier (the
+obligation id in the identifier) and its doc comment is the first, so the placement rule in
+step 3 still holds: each carrier is enclosed by the wrapper `fn`'s span.
 
 Note what is absent: no `unwrap()`, no assertion on the result, no `expect`. `parse_manifest`
 returning `Err` on garbage **is the requirement being met**. The `let _ =` is deliberate.
@@ -59,11 +69,13 @@ struct Input {
 /// Trace: FR-010-AC-3
 ///
 /// spec-fuzz: obligation=FR-010-AC-3 harness=cargo-fuzz entry=query::run_query origin=authored
-fuzz_target!(|input: Input| {
+fn fuzz_fr_010_ac_3_run_query(input: Input) {
     if let Ok(query) = Query::parse(&input.selector) {
         let _ = run_query(&query, &input.document);
     }
-});
+}
+
+fuzz_target!(|input: Input| fuzz_fr_010_ac_3_run_query(input));
 ```
 
 `arbitrary` must be a declared dependency of the **fuzz** crate. If it is not, that is the
