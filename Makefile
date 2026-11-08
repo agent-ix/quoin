@@ -16,7 +16,9 @@ build: rust-build
 # Workflow definitions ship beside plugin skills. This install supplies only
 # semantic schema build inputs; the archived workflow provider is not used.
 build-inputs:
-	pnpm install --frozen-lockfile
+	@pnpm install --frozen-lockfile || { rc=$$?; \
+	  echo "build-inputs: 'pnpm install --frozen-lockfile' failed (exit $$rc); the pnpm error is above. If it is a connection error, this step needs the registries in your npm config ('pnpm config get registry'): even a lockfile satisfied from the store re-checks package metadata. Retry waits are bounded by pnpm-workspace.yaml." >&2; \
+	  exit $$rc; }
 
 test: rust-gate
 
