@@ -127,8 +127,10 @@ allow-wildcard-paths = true
 # subtrees ONLY.
 #
 # A SECOND concession of the same shape was ruled separately for
-# `cpufeatures@0.2.17` — quoin#438 / quire-rs#430 — and is written out at its
-# entry below.
+# `cpufeatures@0.2.17` — quoin#438 / quire-rs#430. It no longer exists: the
+# skip entry is gone and `cargo deny check` passes without it, because
+# `cpufeatures` 0.2.17 is now the only version in the resolved graph (reached by
+# `sha1 0.10.7` under `gix-hash` and `sha2 0.10.9` under `quire-canonical`).
 #
 # A THIRD group, the `gix` entries at the end of the array, came in with
 # quoin#381 and was ruled on there. It is the same test against a different
@@ -142,10 +144,14 @@ allow-wildcard-paths = true
 # ---------------------------------------------------------------------------
 #
 # The `getrandom` / `r-efi` / `syn` entries below predate that ruling and stand
-# on their own reasoning: each is forced by `quire-rs`'s `jsonschema 0.18.3`
-# subtree, whose `url`/`getrandom`/`icu` chain carries older majors than the
-# rest of the graph resolves. Provenance verified with
-# `cargo tree -i --target all --edges normal,build`, recorded per entry.
+# on their own reasoning, recorded per entry from
+# `cargo tree -i --target all --edges normal,build`. The `syn` entry is forced
+# by third-party macro subtrees. The `getrandom` / `r-efi` entries are not
+# `jsonschema 0.18.3` concessions: `getrandom 0.2.17` is held by `ring 0.17.14`
+# (rustls 0.23.46 under `typesafe-sdk-http`'s reqwest 0.12.28, and under gix's
+# reqwest 0.13.5) as well as by `jsonschema 0.18.3`, and `getrandom 0.3.4` is
+# held by `tempfile 3.27.0`, `ahash 0.8.12` and `jsonschema 0.56.0`, so
+# dropping quire-rs would not retire either.
 #
 # For each pair the SKIPPED side is the one reachable only through third-party
 # subtrees; the side our own root pins land on stays checked. That matters most
@@ -178,9 +184,9 @@ allow-wildcard-paths = true
 # of the same crate — still fails. This concedes these resolutions, not the
 # check.
 skip = [
-    { crate = "getrandom@0.2.17", reason = "jsonschema 0.18.3 via quire-rs" },
-    { crate = "getrandom@0.3.4", reason = "ahash -> jsonschema 0.18.3 via quire-rs" },
-    { crate = "r-efi@5.3.0", reason = "getrandom 0.3.4 -> ahash -> jsonschema 0.18.3 via quire-rs" },
+    { crate = "getrandom@0.2.17", reason = "ring 0.17.14 (rustls 0.23.46 under reqwest 0.12.28 via typesafe-sdk-http, and reqwest 0.13.5 via gix-transport) and jsonschema 0.18.3 via quire-rs; ring 0.17 depends on getrandom 0.2" },
+    { crate = "getrandom@0.3.4", reason = "tempfile 3.27.0 (gix, quoin-measurement), ahash 0.8.12 (jsonschema 0.18.3 and 0.56.0) and jsonschema 0.56.0 / referencing (quoin-semantic); 0.4.3 stays checked and is reached by gix-utils and uuid" },
+    { crate = "r-efi@5.3.0", reason = "reached only through getrandom 0.3.4 (UEFI target dependency); see the getrandom@0.3.4 entry" },
     { crate = "syn@2.0.119", reason = "third-party macro subtrees only, by every path: strum_macros -> strum -> jsonschema 0.56.0 (quoin-semantic); synstructure/yoke-derive/zerofrom-derive -> icu -> idna -> url -> jsonschema 0.18.3 (quoin-quire -> quire-rs) and the same tail under reqwest -> gix-transport -> gix (quoin-modules); gix-macros -> gix-protocol -> gix; jiff-static -> jiff -> gix-date -> gix; jni-macros/jni-sys-macros -> jni -> rustls-platform-verifier -> reqwest -> gix; zerocopy-derive. syn 3.0.5 -- where serde_derive 1.0.229, thiserror-impl 2.0.20 and schemars_derive 1.2.2, all three our own root pins, land -- stays checked" },
     # --- The five quoin#434 / quire-rs#429 entries. Remove together. ---
     { crate = "jsonschema@0.18.3", reason = "quoin#434: 0.18.3 via quoin-quire -> quire-rs (jsonschema = \"~0.18\"); 0.56.0 via quoin-semantic, which stays checked" },
