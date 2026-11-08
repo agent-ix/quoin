@@ -204,3 +204,18 @@ fn tc_1650_native_shell_replays_the_retained_offline_contracts() {
         );
     }
 }
+
+/// `quoin update --help` describes the release-manifest path the code takes,
+/// not an npm registry install.
+///
+/// Trace: FR-022, FR-102
+#[test]
+fn tc_373_update_help_describes_the_release_manifest_not_an_npm_install() {
+    let output = invoke(&["update".to_owned(), "--help".to_owned()]);
+    assert_eq!(output.status.code(), Some(0));
+    let help = text(&output.stdout);
+    assert!(help.contains("release manifest"), "{help}");
+    assert!(help.contains("node_modules"), "{help}");
+    assert!(!help.contains("npm install -g to upgrade"), "{help}");
+    assert!(!help.contains("registry.npmjs.org"), "{help}");
+}
