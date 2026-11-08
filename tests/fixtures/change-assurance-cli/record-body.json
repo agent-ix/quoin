@@ -14,7 +14,8 @@
   {
    "source_id": "FR-068",
    "kind": "requirement",
-   "revision": "1"
+   "revision": "1",
+   "path": "spec/functional/FR-068-change-assurance-cli-surface.md"
   }
  ],
  "impact_snapshot": {

@@ -157,7 +157,7 @@ The table declares the record's top-level fields and their cardinality. Which ke
     },
     "source_connection": {
       "type": "object",
-      "required": ["source_id", "kind", "revision"],
+      "required": ["source_id", "kind", "revision", "path"],
       "properties": {
         "source_id": { "$ref": "#/$defs/identity" },
         "kind": {
@@ -172,7 +172,11 @@ The table declares the record's top-level fields and their cardinality. Which ke
             "other"
           ]
         },
-        "revision": { "type": "string", "minLength": 1 }
+        "revision": { "type": "string", "minLength": 1 },
+        "path": {
+          "type": "string",
+          "pattern": "^(?!\\.\\.?(?:/|$))[^/\\\\\\u0000]+(?:/(?!\\.\\.?(?:/|$))[^/\\\\\\u0000]+)*$"
+        }
       },
       "additionalProperties": false
     },
@@ -275,6 +279,24 @@ non-empty `resolution`; a non-resolved unknown SHALL NOT carry one.
 Each command's `working_directory` SHALL be a normalized repository-relative
 POSIX path.
 
+Each source connection SHALL bind its `source_id` to the `path` of the artifact
+it names, so a consumer reads the repository path from the record instead of
+decoding it out of the identity. `source_id` stays an opaque identity and
+carries no path convention. A `path` SHALL be a normalized repository-relative
+POSIX path under the same rule as `working_directory`, except that it SHALL NOT
+be `.`: it is not absolute, contains no backslash or NUL, has no trailing
+slash, and has no empty, `.` or `..` segment. Two connections SHALL NOT share a
+`path`; a duplicate is refused rather than deduplicated. A `path` names where
+the artifact lives and nothing more: reading the bytes at the candidate
+revision is the producer's responsibility, and the record holds no digest of
+them.
+
+Only the record body is evidence. Anything held outside it (a purpose, a
+`derived_fields` map, a lookup map, or any other declaration metadata) is not
+evidence, has no sealing authority, and is not read by verification. The
+closed schema refuses such a member inside the record body at every depth, so
+no sealed member can carry unreviewed metadata.
+
 Each `argv` SHALL contain literal arguments without shell expansion.
 
 ## Record identity and lineage
@@ -335,6 +357,8 @@ person's identity, authority, possession of a key, or non-repudiation.
 | FR-063-AC-9 | Writing a successor leaves the predecessor's path and bytes unchanged, and rejected or revise-requested records remain addressable by `(record_id, revision)` (CON-2). | Integration (TC-1269) |
 | FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, or revision cannot approve it. | Integration (TC-1270) |
 | FR-063-AC-11 | Static and golden-text checks prove writing a record runs nothing and describes actor labels only as recorded attribution, never identity, authority, signature, authenticity, or non-repudiation (CON-1, CON-3). | Analysis (TC-1271) |
+| FR-063-AC-12 | Every source connection requires a `path`, and the gate refuses an absolute path, a `..` or `.` segment, an empty segment, a backslash, a NUL, a trailing slash, the bare `.`, and a path shared by two connections; a valid path survives a write and re-read unchanged, and the published schema refuses the same malformed paths. | Test (TC-2011) |
+| FR-063-AC-13 | Only the record body is evidence: a `purpose`, `derived_fields` or lookup-map member placed inside the record body, at the top level or inside a source connection, is refused as undeclared. | Test (TC-2012) |
 
 ## Dependencies
 

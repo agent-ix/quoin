@@ -112,7 +112,7 @@
     },
     "source_connection": {
       "type": "object",
-      "required": ["source_id", "kind", "revision"],
+      "required": ["source_id", "kind", "revision", "path"],
       "properties": {
         "source_id": { "$ref": "#/$defs/identity" },
         "kind": {
@@ -127,7 +127,11 @@
             "other"
           ]
         },
-        "revision": { "type": "string", "minLength": 1 }
+        "revision": { "type": "string", "minLength": 1 },
+        "path": {
+          "type": "string",
+          "pattern": "^(?!\\.\\.?(?:/|$))[^/\\\\\\u0000]+(?:/(?!\\.\\.?(?:/|$))[^/\\\\\\u0000]+)*$"
+        }
       },
       "additionalProperties": false
     },
