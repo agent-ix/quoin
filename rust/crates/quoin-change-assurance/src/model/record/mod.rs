@@ -228,11 +228,15 @@ impl CommandBinding {
 }
 
 /// Whether `path` is what `validateCommand` accepts.
+///
+/// The one normalization rule for a repository-relative path in a record: a
+/// command's `working_directory` and a source connection's `path` both use it.
 fn is_normalized_relative_posix_path(path: &str) -> bool {
     if path == "." {
         return true;
     }
     !path.starts_with('/')
+        && !path.contains('\0')
         && !path.contains('\\')
         && !path.ends_with('/')
         && !path
@@ -260,6 +264,10 @@ pub struct SourceConnection {
     pub kind: SourceKind,
     /// The revision of it that was read.
     pub revision: NonEmptyText,
+    /// The normalized repository-relative POSIX path the artifact lives at.
+    /// Unique across the record's connections; it never names the repository
+    /// root.
+    pub path: NonEmptyText,
 }
 
 /// What the impact analysis saw.

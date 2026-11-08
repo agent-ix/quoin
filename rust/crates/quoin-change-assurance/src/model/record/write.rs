@@ -61,6 +61,7 @@ pub(super) fn write_record(
                         ),
                         ("kind", JsonValue::string(connection.kind.as_str())),
                         ("revision", JsonValue::string(connection.revision.as_str())),
+                        ("path", JsonValue::string(connection.path.as_str())),
                     ])
                 })
                 .collect(),
