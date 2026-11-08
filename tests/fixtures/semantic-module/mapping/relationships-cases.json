@@ -139,7 +139,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -166,7 +168,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -189,7 +193,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -216,7 +222,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -239,7 +247,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -262,7 +272,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -285,7 +297,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -308,7 +322,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -331,7 +347,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -354,7 +372,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -413,7 +433,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -436,7 +458,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -459,7 +483,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -482,7 +508,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -505,7 +533,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 21",
+          "reasonLoci": [
+            "second-row"
+          ],
           "lossy": false
         }
       }
@@ -528,7 +558,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 23",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -551,7 +583,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 21",
+          "reasonLoci": [
+            "second-row"
+          ],
           "lossy": false
         }
       }
@@ -582,7 +616,10 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20, 21",
+          "reasonLoci": [
+            "row",
+            "second-row"
+          ],
           "lossy": false
         }
       }
@@ -605,7 +642,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -628,7 +667,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 18",
+          "reasonLoci": [
+            "header"
+          ],
           "lossy": false
         }
       }
@@ -651,7 +692,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 18",
+          "reasonLoci": [
+            "header"
+          ],
           "lossy": false
         }
       }
@@ -688,7 +731,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 18",
+          "reasonLoci": [
+            "list"
+          ],
           "lossy": false
         }
       }
@@ -711,7 +756,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 22",
+          "reasonLoci": [
+            "second-header"
+          ],
           "lossy": false
         }
       }
@@ -734,7 +781,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 22",
+          "reasonLoci": [
+            "second-heading"
+          ],
           "lossy": false
         }
       }
@@ -757,7 +806,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 22",
+          "reasonLoci": [
+            "list"
+          ],
           "lossy": false
         }
       }
@@ -795,7 +846,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 18",
+          "reasonLoci": [
+            "header"
+          ],
           "lossy": false
         }
       }
@@ -821,7 +874,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 18",
+          "reasonLoci": [
+            "header"
+          ],
           "lossy": false
         }
       }
@@ -847,7 +902,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 10",
+          "reasonLoci": [
+            "header"
+          ],
           "lossy": false
         }
       }
@@ -880,7 +937,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 18",
+          "reasonLoci": [
+            "header"
+          ],
           "lossy": false
         }
       }
@@ -903,7 +962,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 10",
+          "reasonLoci": [
+            "header"
+          ],
           "lossy": false
         }
       }
@@ -1044,7 +1105,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -1118,7 +1181,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 22",
+          "reasonLoci": [
+            "second-header"
+          ],
           "lossy": false
         }
       }
@@ -1142,7 +1207,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 20",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -1166,7 +1233,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 21",
+          "reasonLoci": [
+            "row"
+          ],
           "lossy": false
         }
       }
@@ -1214,7 +1283,9 @@
       "availability": {
         "relations": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 22",
+          "reasonLoci": [
+            "second-header"
+          ],
           "lossy": false
         }
       }

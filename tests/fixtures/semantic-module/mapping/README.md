@@ -11,7 +11,7 @@ expected `FieldDecl[]` and that every expected diagnostic carries a locus.
 | `both-forms.md` | FR-071-AC-3 | #388 fails at the second form's locus |
 | `cell-cases.json` | FR-071-AC-4..AC-8 | #388 executes each cell/fence-line case |
 | `operations.md`, `operations.expected.json`, `operations-cases.json` | FR-072-AC-1..AC-7 | Quire extracts clauses/operations, emits the listed diagnostics, and reports the listed availability |
-| `clause-language-0.1.0-cases.json` | FR-072-AC-8 | Quire refuses a `quire` fence under `0.1.0` at the fence |
+| `clause-language-0.1.0-cases.json` | FR-072-AC-8 | Quire refuses a `quire` fence under `0.1.0` at the fence; `availability.clauses` states `reasonLoci: ["fence"]` |
 | `relationships.md`, `relationships.expected.json`, `relationships-cases.json` | FR-104-AC-1..AC-12 | #418 extracts `RelationDecl[]` and `relationSources` (the carrier until agent-ix/filament-core-data#155) under the recorded registry and bundle `context`, emits the listed diagnostics, and reports the listed availability |
 | `legacy-bullets.md`, `legacy-mixed.md`, `legacy.expected.json`, `../corpus/config-service/` | FR-074-AC-1, AC-2 | quoin's `classifyArtifact` and #388 agree on form, line, and warning |
 
@@ -34,6 +34,7 @@ Each case in `cases[]` has these fields:
 | `exactDiagnostics` | The exact number of diagnostics the extraction emits; a row that fails several checks yields one (FR-104 refusal order). |
 | `relations`, `relationSources` | Expected outputs; `relations: null` means neither is emitted. |
 | `availability` | Expected `availability`; `{}` means no `availability.relations` key. |
+| `availability.<kind>.reasonLoci` | For an `unavailable` kind caused by entry errors, the `locus` of each error diagnostic, ordered by ascending line with one entry per distinct line. The harness resolves each locus to its line in the extracted artifact and builds the `entry-errors: lines <lines>` reason from it; fixtures carry no absolute line in a reason. A kind unavailable for another cause (for example `no-relation-vocabulary`) keeps a plain `reason` string. |
 
 `context.sources` records the repository and manifest path the registry and object-type facts come from.
 

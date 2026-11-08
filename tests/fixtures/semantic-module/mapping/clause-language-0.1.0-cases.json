@@ -16,7 +16,9 @@
       "availability": {
         "clauses": {
           "state": "unavailable",
-          "reason": "entry-errors: lines 8",
+          "reasonLoci": [
+            "fence"
+          ],
           "lossy": false
         }
       }
