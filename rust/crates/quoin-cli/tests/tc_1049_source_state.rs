@@ -118,20 +118,18 @@ fn tc_1049_001_outside_git_a_clean_claim_is_stored_unverified() {
     assert_eq!(stored_state(repo.path()), "unverified");
 }
 
+/// A revision that is not a commit in `--repo` may belong to another
+/// repository: the record is accepted and the claim stored as `unverified`.
+///
 /// Trace: FR-044, PLAT-1049
 #[test]
-fn tc_1049_002_a_fabricated_revision_in_git_is_refused() {
+fn tc_1049_002_an_unresolvable_revision_in_git_is_stored_unverified() {
     let repo = tempfile::tempdir().unwrap();
     with_plan(repo.path());
     init_git(repo.path());
     let output = record(repo.path(), ZEROS, "clean");
-    assert!(!output.status.success());
-    assert!(
-        stderr(&output).contains("sources.subject.revision"),
-        "{}",
-        stderr(&output)
-    );
-    assert!(!repo.path().join("spec/evidence/measurements").exists());
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert_eq!(stored_state(repo.path()), "unverified");
 }
 
 /// Trace: FR-044, PLAT-1049

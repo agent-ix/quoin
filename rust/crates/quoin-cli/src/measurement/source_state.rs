@@ -8,12 +8,14 @@
 //! treats `sources` as opaque, and only this binary has git, so the claim is
 //! checked here, before the collection is published:
 //!
-//! - inside a git work tree, every source `revision` must resolve to a commit
-//!   and a `clean` claim must match a work tree with no uncommitted change
-//!   outside the measurement store; either mismatch refuses the record;
-//! - outside a git work tree nothing can be checked, so every source's
-//!   `sourceState` is rewritten to `unverified`. A claim of `clean` is never
-//!   stored when it could not be checked.
+//! - inside a git work tree, a source whose `revision` resolves to a commit
+//!   there is checkable: a `clean` claim must match a work tree with no
+//!   uncommitted change outside the measurement store, or the record is
+//!   refused;
+//! - a source whose `revision` does not resolve in `--repo` (it may belong to
+//!   another repository), and every source outside a git work tree, cannot be
+//!   checked, so its `sourceState` is rewritten to `unverified`. A claim of
+//!   `clean` is never stored when it could not be checked.
 //!
 //! `revision` and `sourceState` come from the collection file and are
 //! attacker-controlled: a revision reaches git only after `--end-of-options`.
@@ -73,8 +75,8 @@ fn is_dirty(repo: &str) -> Result<bool, String> {
 ///
 /// # Errors
 ///
-/// A source `revision` that does not exist in the repository, or a `clean`
-/// claim on a work tree that is not clean.
+/// A `clean` claim, on a source whose revision resolves in the repository,
+/// while the work tree is not clean.
 pub(super) fn attest(repo: &str, record: &mut Value) -> Result<(), String> {
     let Some(sources) = record
         .get_mut("verificationStack")
@@ -89,19 +91,17 @@ pub(super) fn attest(repo: &str, record: &mut Value) -> Result<(), String> {
         let Some(source) = source.as_object_mut() else {
             continue;
         };
-        if !checkable {
+        let resolves = checkable
+            && source
+                .get("revision")
+                .and_then(Value::as_str)
+                .is_some_and(|revision| revision_exists(repo, revision));
+        if !resolves {
             source.insert(
                 "sourceState".to_owned(),
                 Value::String(UNVERIFIED.to_owned()),
             );
             continue;
-        }
-        if let Some(revision) = source.get("revision").and_then(Value::as_str)
-            && !revision_exists(repo, revision)
-        {
-            return Err(format!(
-                "verificationStack.sources.{name}.revision: {revision} is not a commit in {repo}"
-            ));
         }
         if dirty && source.get("sourceState").and_then(Value::as_str) == Some("clean") {
             return Err(format!(
