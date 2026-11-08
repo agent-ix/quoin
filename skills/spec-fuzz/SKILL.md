@@ -5,7 +5,7 @@ description: >-
   selects the obligations whose verification method carries `evidence_kind: Fuzz`, grounds
   each one's entry-point symbol in the repository's source, and emits targets in the repo's
   own harness (cargo-fuzz / atheris / fast-check) keyed on the obligation id. Writes nothing
-  where the tooling is absent or the entry point cannot be grounded — a finding instead.
+  where the fuzz harness is absent or the entry point cannot be grounded — a finding instead.
   Emits a validated SpecReview recording every obligation it could not serve.
 ---
 
@@ -38,7 +38,7 @@ always, and never imply otherwise in the handoff.
 Three more:
 
 - **Never install anything.** No `cargo install`, no dependency added, no fuzz workspace
-  scaffolded. Absent tooling is a finding. (CON-2.)
+  scaffolded. An absent harness is a finding. (CON-2.)
 - **Never decide which methods are fuzz methods.** That is the catalog's, read at run time.
   (CON-1.)
 - **Never write a framework name into `spec/**`.** Inherited from FR-028-CON-2.
@@ -93,7 +93,7 @@ written here.
 ## Steps
 
 0. **[Scope and harness](references/step-0-scope-and-harness.md)** — detect the repository's
-   language and fuzz tooling from its manifest. Absent tooling stops the run here, with
+   language and fuzz harness (the repo's fuzz workspace, not globally installed tooling) from its manifest. An absent harness stops the run here, with
    findings.
 1. **[Select the obligations](references/step-1-select-obligations.md)** — those whose
    method has `evidence_kind: Fuzz`, from the catalog rather than by name.
@@ -110,7 +110,7 @@ Three distinct outcomes, and they are not interchangeable:
 
 | Outcome | Meaning | What to write |
 |---|---|---|
-| **no tooling** | the repo has no fuzz harness | finding per obligation; **no files** |
+| **no harness** | the repo has no fuzz workspace (installed `cargo-fuzz` alone does not count) | finding per obligation; **no files** |
 | **ungrounded** | no entry-point symbol found in the source | finding naming the obligation; **no file for it** |
 | **already covered** | an existing target already claims the id | nothing; record as covered |
 

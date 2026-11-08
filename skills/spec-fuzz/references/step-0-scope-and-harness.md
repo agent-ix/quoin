@@ -10,16 +10,21 @@ The **repository's manifest** says Rust, and that is the only thing that may cho
 
 | Manifest | Harness | Present when |
 |---|---|---|
-| `Cargo.toml` | cargo-fuzz / libFuzzer | a `fuzz/Cargo.toml` exists with `cargo-fuzz = true`, or `cargo fuzz --version` resolves |
+| `Cargo.toml` | cargo-fuzz / libFuzzer | a `fuzz/Cargo.toml` exists with `cargo-fuzz = true` (the repository's fuzz workspace) |
 | `pyproject.toml` / `setup.py` | atheris | `atheris` is a declared dev-dependency |
 | `package.json` | fast-check | `fast-check` is a declared dependency |
+
+**Tooling is not a harness.** A globally installed `cargo-fuzz` (`cargo fuzz --version`
+resolves) is the machine's tooling; the harness is the repository's own fuzz workspace. Tooling
+without a workspace is the absent-harness case below: no files are emitted, because a target
+with no `fuzz/Cargo.toml` to hold its `[[bin]]` block is a file nobody runs.
 
 A repository with several manifests has several harnesses; scope each obligation to the one
 its entry point lives in.
 
-## Absent tooling stops the run
+## Absent harness stops the run
 
-If the manifest is present but the harness is not, **stop here**. Emit one finding per
+If the manifest is present but the harness is not (whatever tooling is installed), **stop here**. Emit one finding per
 selected obligation and write no files (FR-038-AC-4).
 
 Do not:

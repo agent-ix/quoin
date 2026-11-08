@@ -17,8 +17,9 @@ same grep. **Two independent carriers**, so one formatting change cannot break r
 ### Placement, which is where this bites
 
 A carrier binds to the **symbol whose source span encloses it**. For a libfuzzer target that
-span is the `fuzz_target!` block — so the doc comment goes immediately above `fuzz_target!`,
-not at the top of the file.
+span is the named wrapper `fn` that `fuzz_target!` calls — so the doc comment goes immediately
+above that `fn`, never on the `fuzz_target!` invocation (rustc warns `unused_doc_comments` on a
+doc comment attached to a macro call) and not at the top of the file.
 
 A file-header comment reads correctly, passes review, matches a grep, and **binds to
 nothing**. Six generated files shipped that way in `@agent-ix/quoin@0.12.x` and every
