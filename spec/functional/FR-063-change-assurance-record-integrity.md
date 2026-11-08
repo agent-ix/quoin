@@ -35,7 +35,7 @@ FR-065 finds a matching `approved` event.
 | Field              | Type       | Multiplicity | Constraints                  |
 | ------------------ | ---------- | ------------ | ---------------------------- |
 | schema_version     | Integer    | 1..1         |                              |
-| record_type        | String     | 1..1         |                              |
+| record_type        | String     | 1..1         | enumValues: change_assurance |
 | record_id          | String     | 1..1         | minLength: 1, maxLength: 256 |
 | revision           | Integer    | 1..1         | min: 1                       |
 | subject            | JsonObject | 1..1         |                              |
@@ -44,7 +44,7 @@ FR-065 finds a matching `approved` event.
 | definition         | JsonObject | 1..1         |                              |
 | review_workflow    | JsonObject | 1..1         |                              |
 
-The table declares the record's top-level fields; the schema below is the full contract, including nested definitions and cross-field rules.
+The table declares the record's top-level fields and their cardinality. Which keys are required, which values may be null, and the cross-field rules are stated only by the schema below, which is the full contract.
 
 ## Schema
 

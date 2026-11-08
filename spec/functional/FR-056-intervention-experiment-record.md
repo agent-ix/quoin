@@ -32,7 +32,7 @@ or aggregate one record's strength against another's.
 | Field             | Type       | Multiplicity | Constraints                                 |
 | ----------------- | ---------- | ------------ | ------------------------------------------- |
 | schema_version    | Integer    | 1..1         |                                             |
-| record_type       | String     | 1..1         |                                             |
+| record_type       | String     | 1..1         | enumValues: intervention_experiment         |
 | record_id         | String     | 1..1         | minLength: 1, maxLength: 128                |
 | observed_at       | Timestamp  | 1..1         |                                             |
 | subject           | JsonObject | 1..1         |                                             |
@@ -46,14 +46,14 @@ or aggregate one record's strength against another's.
 | interactions      | JsonObject | 0..*         |                                             |
 | confounders       | JsonObject | 0..*         |                                             |
 | status            | String     | 1..1         | enumValues: completed\|failed\|inconclusive |
-| strength          | String     | 1..1         |                                             |
+| strength          | String     | 1..1         | enumValues: tested                          |
 | conclusion        | JsonObject | 1..1         |                                             |
 | gaps              | String     | 0..*         |                                             |
 | owner             | String     | 1..1         | minLength: 1                                |
 | actions           | String     | 1..*         |                                             |
 | raw_evidence      | JsonObject | 1..*         |                                             |
 
-The table declares the record's top-level fields; the schema below is the full contract, including nested definitions and cross-field rules.
+The table declares the record's top-level fields and their cardinality. Which keys are required, which values may be null, and the cross-field rules are stated only by the schema below, which is the full contract.
 
 ## Schema
 
