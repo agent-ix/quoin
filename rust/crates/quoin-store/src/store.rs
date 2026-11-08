@@ -20,6 +20,10 @@ use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use engineering_assurance::atomic_publish::{
+    self as ea, PublishError, PublishStep, write_file_atomic_no_replace,
+};
+
 use crate::error::StoreError;
 use crate::json::pretty::canonical_json_bytes;
 use crate::json::value::JsonValue;
@@ -213,16 +217,18 @@ pub fn publish(destination: &StorePath, content: Content<'_>) -> Result<Publishe
     let path = destination.path();
     let parent = path.parent().unwrap_or_else(|| Path::new("."));
     fs::create_dir_all(parent).map_err(io("create directory", parent))?;
-    let temporary = temporary_beside(path);
-    // A leftover temporary from a killed process must not block the write.
-    let _ = fs::remove_file(&temporary);
-    write_durable_new(&temporary, bytes)?;
-    let outcome = match destination {
-        StorePath::Named(_) => replace(&temporary, path),
-        StorePath::ContentAddressed(_) => link_once(&temporary, path, bytes),
+    let published = match destination {
+        StorePath::Named(_) => {
+            let temporary = temporary_beside(path);
+            // A leftover temporary from a killed process must not block the write.
+            let _ = fs::remove_file(&temporary);
+            write_durable_new(&temporary, bytes)?;
+            let outcome = replace(&temporary, path);
+            let _ = fs::remove_file(&temporary);
+            outcome?
+        }
+        StorePath::ContentAddressed(_) => publish_once(path, bytes)?,
     };
-    let _ = fs::remove_file(&temporary);
-    let published = outcome?;
     // Also on `AlreadyPresent`: the writer that created the name may have
     // crashed before its own directory fsync, and success here must mean the
     // name is durable.
@@ -236,28 +242,40 @@ fn replace(temporary: &Path, path: &Path) -> Result<Published, StoreError> {
     Ok(Published::Written)
 }
 
-/// Link `temporary` at `path`; if the name is taken, it must hold `bytes`.
-///
-/// The store's write-once implementation. It is domain-neutral and a migration
-/// source for Engineering Assurance (gap PLAT-1280).
-fn link_once(temporary: &Path, path: &Path, bytes: &[u8]) -> Result<Published, StoreError> {
-    match fs::hard_link(temporary, path) {
-        Ok(()) => Ok(Published::Written),
-        Err(source) if source.kind() == std::io::ErrorKind::AlreadyExists => {
-            let existing = fs::read(path).map_err(io("read", path))?;
-            if existing == bytes {
-                Ok(Published::AlreadyPresent)
-            } else {
-                Err(StoreError::ContentCollision {
-                    path: path.to_path_buf(),
-                })
-            }
-        }
-        Err(source) => Err(StoreError::Io {
-            operation: "link",
-            path: path.to_path_buf(),
+/// Publish `bytes` at `path` without ever replacing it, through Engineering
+/// Assurance's durable no-replace publisher. Identical bytes already at the
+/// name are [`Published::AlreadyPresent`]; differing bytes are a
+/// [`StoreError::ContentCollision`].
+fn publish_once(path: &Path, bytes: &[u8]) -> Result<Published, StoreError> {
+    match write_file_atomic_no_replace(path, bytes, ()) {
+        Ok(ea::Published::Written) => Ok(Published::Written),
+        Ok(ea::Published::AlreadyPresent) => Ok(Published::AlreadyPresent),
+        Err(PublishError::Collision { path, .. }) => Err(StoreError::ContentCollision { path }),
+        Err(PublishError::NoFileName { path }) => Err(StoreError::Io {
+            operation: "publish",
+            source: std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "destination has no file name",
+            ),
+            path,
+        }),
+        Err(PublishError::Io { step, path, source }) => Err(StoreError::Io {
+            operation: publish_step_operation(step),
+            path,
             source,
         }),
+    }
+}
+
+fn publish_step_operation(step: PublishStep) -> &'static str {
+    match step {
+        PublishStep::CreateSidecar => "create",
+        PublishStep::WriteSidecar => "write",
+        PublishStep::SyncSidecar => "fsync",
+        PublishStep::Link => "link",
+        PublishStep::ReadDestination => "read",
+        PublishStep::RemoveSidecar => "remove",
+        PublishStep::SyncDirectory => "fsync directory",
     }
 }
 
