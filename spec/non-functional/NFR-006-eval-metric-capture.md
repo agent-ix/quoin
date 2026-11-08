@@ -6,6 +6,8 @@ quality_attribute: functional_suitability
 relationships:
   - target: "ix://agent-ix/quoin/TM-002"
     type: "references"
+  - target: "ix://agent-ix/quoin/StR-001"
+    type: "traces_to"
 ---
 
 # NFR-006: The agent eval set captures efficiency metrics
