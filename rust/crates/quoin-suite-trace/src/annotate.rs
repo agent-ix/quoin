@@ -42,7 +42,16 @@ impl TraceIndex {
     pub(crate) fn build(traces: &[TestTrace], targets: &[Target]) -> Self {
         let mut ids: BTreeMap<(String, String), BTreeSet<String>> = BTreeMap::new();
         for trace in traces {
+            // A package's library and binary roots share `src/`, so a file
+            // under it matches both. The library owns it: a binary only owns a
+            // file no library does.
+            let in_lib = targets
+                .iter()
+                .any(|t| t.is_library() && t.module_path(&trace.path).is_some());
             for target in targets {
+                if in_lib && !target.is_library() {
+                    continue;
+                }
                 let Some(mut path) = target.module_path(&trace.path) else {
                     continue;
                 };
@@ -209,6 +218,30 @@ mod tests {
         assert_eq!(done.xml, xml);
         assert_eq!((done.tagged, done.cases), (0, 1));
         assert_eq!(done.unrun, ["pkg gone"]);
+    }
+
+    /// Trace: FR-033-AC-15
+    #[test]
+    fn a_file_under_a_shared_src_belongs_to_the_library_not_the_binary() {
+        let lib = crate::targets::from_metadata(
+            r#"{"packages":[{"name":"p","targets":[
+              {"name":"p","kind":["lib"],"src_path":"/r/p/src/lib.rs"},
+              {"name":"t","kind":["bin"],"src_path":"/r/p/src/main.rs"}]}]}"#,
+            std::path::Path::new("/r"),
+        )
+        .unwrap();
+        let traces = [TestTrace {
+            path: "p/src/ops.rs".to_owned(),
+            symbol: "tests::x".to_owned(),
+            trace_id: "FR-1-AC-1".to_owned(),
+        }];
+        let built = TraceIndex::build(&traces, &lib);
+        assert_eq!(built.len(), 1);
+        assert!(
+            built
+                .ids
+                .contains_key(&("p".to_owned(), "ops::tests::x".to_owned()))
+        );
     }
 
     /// Trace: FR-033-AC-15

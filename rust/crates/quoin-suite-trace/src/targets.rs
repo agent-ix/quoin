@@ -40,6 +40,11 @@ impl Target {
         &self.binary_id
     }
 
+    /// Whether this is a package's library target.
+    pub(crate) fn is_library(&self) -> bool {
+        self.kind == Kind::Crate && !self.binary_id.contains("::bin/")
+    }
+
     /// The module path `file` contributes inside this target, or `None` when
     /// the file is not one of this target's modules.
     ///

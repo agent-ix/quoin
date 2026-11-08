@@ -112,6 +112,9 @@ fn run(args: Vec<String>) -> Result<(), Error> {
         });
     }
     std::fs::write(&args.out, &done.xml).map_err(|error| io(&args.out, &error))?;
+    for name in done.unrun.iter().take(20) {
+        eprintln!("quoin-suite-trace: tagged test not in this run: {name}");
+    }
     eprintln!(
         "quoin-suite-trace: {} of {} test cases carry a trace tag; {} tagged tests were not in this run",
         done.tagged,

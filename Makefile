@@ -61,6 +61,7 @@ EVIDENCE_DIR := $(CARGO_TARGET)/nextest/evidence
 evidence: build-inputs
 	@command -v cargo-nextest >/dev/null || { echo "evidence: cargo-nextest is not installed (cargo install cargo-nextest --locked)"; exit 1; }
 	@( cd $(RUST_DIR) && cargo build --locked --quiet $(CARGO_TARGET_FLAG) -p quoin-cli --bin quoin ) || exit 1; \
+	rm -f $(EVIDENCE_DIR)/junit.xml $(EVIDENCE_DIR)/junit-traced.xml; \
 	status=0; \
 	( cd $(RUST_DIR) && cargo nextest run --workspace --locked --profile evidence $(CARGO_TARGET_FLAG) ) || status=$$?; \
 	test -f $(EVIDENCE_DIR)/junit.xml || { echo "evidence: nextest wrote no JUnit report"; exit 1; }; \
