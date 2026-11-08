@@ -129,8 +129,12 @@ allow-wildcard-paths = true
 # A SECOND concession of the same shape was ruled separately for
 # `cpufeatures@0.2.17` — quoin#438 / quire-rs#430. It no longer exists: the
 # skip entry is gone and `cargo deny check` passes without it, because
-# `cpufeatures` 0.2.17 is now the only version in the resolved graph (reached by
-# `sha1 0.10.7` under `gix-hash` and `sha2 0.10.9` under `quire-canonical`).
+# `cpufeatures` 0.2.17 is now the only version any built edge reaches (`sha1`
+# under `gix-hash` and `sha2` under `quire-canonical`). Cargo.lock still lists a
+# `cpufeatures` 0.3.1 under `chacha20`, but no enabled feature builds it:
+# `cargo tree -i chacha20 --target all` prints nothing. RE-VERIFY with
+# `cargo tree -i cpufeatures --target all --edges normal,build` if a duplicate
+# ever reappears.
 #
 # A THIRD group, the `gix` entries at the end of the array, came in with
 # quoin#381 and was ruled on there. It is the same test against a different
