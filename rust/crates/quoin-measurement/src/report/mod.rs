@@ -32,6 +32,7 @@
 
 pub mod build;
 mod gate;
+pub(crate) mod inconclusive;
 pub mod render;
 pub mod render_json;
 pub mod series;

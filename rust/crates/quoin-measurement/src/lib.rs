@@ -72,6 +72,7 @@
 //!   question no `MeasurementSource` can be asked. Its module states the
 //!   argument; the probe is three `std::fs` calls and no reader.
 
+mod all_variants;
 pub mod campaign;
 pub mod common;
 pub mod compare;
