@@ -2914,6 +2914,7 @@ dependencies = [
  "quoin-evidence-types",
  "quoin-finding-types",
  "quoin-quire-types",
+ "quoin-store",
  "schemars",
  "serde",
  "serde_json",

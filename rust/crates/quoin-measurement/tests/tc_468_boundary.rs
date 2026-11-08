@@ -98,7 +98,12 @@ fn tc_468_exactly_one_module_reads_an_instant() {
         .filter(|(_, text)| text.contains("days_from_civil") || text.contains("is_leap_year"))
         .map(|(name, _)| name)
         .collect();
-    assert_eq!(with_calendar, vec!["date_time.rs".to_owned()]);
+    // PLAT-91: the reading arithmetic now lives once in `quoin_store::instant`;
+    // no module here may carry it again.
+    assert!(
+        with_calendar.is_empty(),
+        "a measurement module grew a second instant reader: {with_calendar:?}"
+    );
 }
 
 /// Trace: FR-100-AC-4
