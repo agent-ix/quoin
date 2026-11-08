@@ -95,36 +95,10 @@ wildcards = "deny"
 # registry wildcards are refused.
 allow-wildcard-paths = true
 
-# REMOVAL CONDITION for the five `jsonschema`-family entries marked below.
-#
-# All five are deleted — not bumped, not re-scoped — the moment `quire-rs`
-# moves off `jsonschema = "~0.18"`. Tracked as agent-ix/quoin#434 (the quoin
-# side: drop these entries and re-pin quire-rs) and agent-ix/quire-rs#429 (the
-# engine side: advance the jsonschema requirement). When that lands,
-# `cargo deny check bans` MUST pass with the five entries removed. RUN IT.
-# Do not assume it: the whole point of these entries is that they hide a real
-# duplicate, so the only proof they are no longer needed is the check passing
-# without them.
-#
-# Why a skip here at all, when this file's header says "a duplicate version is
-# resolved, not conceded": neither side of the `jsonschema` pair is ours to
-# move.
-#
-#   * `jsonschema 0.18.3` is pulled by `quoin-quire -> quire-rs`, which
-#     declares `jsonschema = "~0.18"`. No revision of quire-rs resolves it.
-#   * `jsonschema 0.56.0` is pulled by `quoin-semantic`, and that pin is load
-#     bearing: `quoin-semantic/DIVERGENCE.md` §1 records that 0.18.3 is NOT
-#     conformant on draft 2020-12 — it accepts `[1]` against a `$dynamicRef`
-#     schema that ajv, 0.56.0 and the specification all reject. Moving our pin
-#     down to meet quire-rs would trade a correctness property for a lint
-#     result.
-#
-# The other four pairs are subtrees of that one: each is a transitive
-# dependency of `jsonschema`, one version per `jsonschema` major. They
-# disappear with it.
-#
-# Ruling: quoin#402. This concession covers the `jsonschema` pair and its four
-# subtrees ONLY.
+# The `jsonschema` concession (quoin#402) and its four subtree skips (bit-set,
+# bit-vec, fancy-regex, fraction) are retired: quire-rs 0.53.0 moved off
+# `jsonschema = "~0.18"` (quoin#434, quire-rs#429), so one `jsonschema` remains and
+# `cargo deny check bans` passes without them.
 #
 # A SECOND concession of the same shape was ruled separately for
 # `cpufeatures@0.2.17` — quoin#438 / quire-rs#430. It no longer exists: the
@@ -192,12 +166,6 @@ skip = [
     { crate = "getrandom@0.3.4", reason = "tempfile 3.27.0 (gix, quoin-measurement), ahash 0.8.12 (jsonschema 0.18.3 and 0.56.0) and jsonschema 0.56.0 / referencing (quoin-semantic); 0.4.3 stays checked and is reached by gix-utils and uuid" },
     { crate = "r-efi@5.3.0", reason = "reached only through getrandom 0.3.4 (UEFI target dependency); see the getrandom@0.3.4 entry" },
     { crate = "syn@2.0.119", reason = "third-party macro subtrees only, by every path: strum_macros -> strum -> jsonschema 0.56.0 (quoin-semantic); synstructure/yoke-derive/zerofrom-derive -> icu -> idna -> url -> jsonschema 0.18.3 (quoin-quire -> quire-rs) and the same tail under reqwest -> gix-transport -> gix (quoin-modules); gix-macros -> gix-protocol -> gix; jiff-static -> jiff -> gix-date -> gix; jni-macros/jni-sys-macros -> jni -> rustls-platform-verifier -> reqwest -> gix; zerocopy-derive. syn 3.0.5 -- where serde_derive 1.0.229, thiserror-impl 2.0.20 and schemars_derive 1.2.2, all three our own root pins, land -- stays checked" },
-    # --- The five quoin#434 / quire-rs#429 entries. Remove together. ---
-    { crate = "jsonschema@0.18.3", reason = "quoin#434: 0.18.3 via quoin-quire -> quire-rs (jsonschema = \"~0.18\"); 0.56.0 via quoin-semantic, which stays checked" },
-    { crate = "bit-set@0.5.3", reason = "quoin#434: 0.5.3 via fancy-regex 0.13.0 -> jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.8.0 via fancy-regex 0.19.1 -> jsonschema 0.56.0 -> quoin-semantic" },
-    { crate = "bit-vec@0.6.3", reason = "quoin#434: 0.6.3 via bit-set 0.5.3 -> fancy-regex 0.13.0 -> jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.8.0 via bit-set 0.8.0 -> fancy-regex 0.19.1 -> jsonschema 0.56.0 -> quoin-semantic" },
-    { crate = "fancy-regex@0.13.0", reason = "quoin#434: 0.13.0 via jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.19.1 via jsonschema 0.56.0 -> quoin-semantic" },
-    { crate = "fraction@0.15.4", reason = "quoin#434: 0.15.4 via jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.17.0 via jsonschema 0.56.0 (and jsonschema-value 0.56.0) -> quoin-semantic" },
     # --- The gix entries (quoin#381). ---
     #
     # These predate the two rulings above and stand on the same test, applied
