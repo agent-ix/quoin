@@ -45,6 +45,8 @@ use crate::types::plan::{GroundTruthKind, LifecycleStatus, MeasurementPlan, Meas
 pub struct CollectionSummary {
     /// The collection's identity.
     pub collection_id: String,
+    /// What it measured.
+    pub subject: String,
     /// When it was produced.
     pub timestamp: String,
     /// Which tool produced it.
@@ -236,6 +238,7 @@ fn summary_of(
     let id = CollectionId::parse(collection.collection_id.as_str())?;
     Ok(CollectionSummary {
         collection_id: collection.collection_id.as_str().to_owned(),
+        subject: collection.subject.as_str().to_owned(),
         timestamp: collection.timestamp.as_str().to_owned(),
         tool_identity: collection.tool_identity.as_str().to_owned(),
         tool_version: collection.tool_version.as_str().to_owned(),

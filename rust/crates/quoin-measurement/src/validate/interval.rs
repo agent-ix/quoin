@@ -22,7 +22,7 @@ use crate::types::observation::{MeasurementObservation, MeasurementState};
 use crate::types::plan::MeasurementPlan;
 
 /// One typed interval finding.
-type Finding = (Code, String);
+type Finding = (Code, String, &'static str);
 
 /// Every interval finding for one observation.
 ///
@@ -48,6 +48,7 @@ pub(super) fn findings(
             return vec![(
                 Code::IntervalMalformed,
                 format!("metric `{label}` states interval {spelled}; {reason}"),
+                "interval",
             )];
         }
         IntervalReading::Absent => None,
@@ -72,6 +73,7 @@ pub(super) fn findings(
                 "metric `{label}` states no interval; plan {} requires an interval at level {required} or above",
                 plan.id
             ),
+            "interval",
         )],
         Some(interval) if interval.level() < required => vec![(
             Code::IntervalLevelShort,
@@ -80,6 +82,7 @@ pub(super) fn findings(
                 js_f64_string(interval.level().get()),
                 plan.id
             ),
+            "interval",
         )],
         Some(_) => Vec::new(),
     }
