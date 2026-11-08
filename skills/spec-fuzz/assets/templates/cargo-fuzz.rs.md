@@ -79,7 +79,7 @@ fuzz_target!(|input: Input| fuzz_fr_010_ac_3_run_query(input));
 ```
 
 `arbitrary` must be a declared dependency of the **fuzz** crate. If it is not, that is the
-absent-tooling case from step 0 — add nothing, report it.
+absent-harness case from step 0 — add nothing, report it.
 
 ## The `[[bin]]` block
 

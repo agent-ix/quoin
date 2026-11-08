@@ -5,7 +5,7 @@ description: >-
   selects the obligations whose verification method carries `evidence_kind: Fuzz`, grounds
   each one's entry-point symbol in the repository's source, and emits targets in the repo's
   own harness (cargo-fuzz / atheris / fast-check) keyed on the obligation id. Writes nothing
-  where the tooling is absent or the entry point cannot be grounded — a finding instead.
+  where the fuzz harness is absent or the entry point cannot be grounded — a finding instead.
   Emits a validated SpecReview recording every obligation it could not serve.
 ---
 
@@ -38,7 +38,7 @@ always, and never imply otherwise in the handoff.
 Three more:
 
 - **Never install anything.** No `cargo install`, no dependency added, no fuzz workspace
-  scaffolded. Absent tooling is a finding. (CON-2.)
+  scaffolded. An absent harness is a finding. (CON-2.)
 - **Never decide which methods are fuzz methods.** That is the catalog's, read at run time.
   (CON-1.)
 - **Never write a framework name into `spec/**`.** Inherited from FR-028-CON-2.

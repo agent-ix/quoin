@@ -49,7 +49,7 @@ skill emits a finding naming the obligation and writes nothing.
 This is the FR-028 discipline applied to a harsher case: a property test that grounds nothing is a
 weak test, and a fuzz target that calls nothing is a build error in somebody's CI.
 
-### Absent tooling is a finding, never an install
+### An absent harness is a finding, never an install
 
 Where the repository's fuzz harness is absent — no fuzz workspace (`fuzz/Cargo.toml` with
 `cargo-fuzz = true`), no declared `atheris`, no declared `fast-check` — the skill SHALL emit one
@@ -98,7 +98,7 @@ header.
 | FR-038-AC-1 | Obligations are selected by their method's `evidence_kind: Fuzz`, read from the catalog. | agent-behaviour-eval (TC-EV-054) |
 | FR-038-AC-2 | An emitted target calls an entry point that exists in the repository's source. | agent-behaviour-eval (TC-EV-054) |
 | FR-038-AC-3 | An obligation whose entry point cannot be grounded yields a finding and no file. | agent-behaviour-eval (TC-EV-055) |
-| FR-038-AC-4 | An absent fuzz harness (no fuzz workspace in the repository, whether or not `cargo-fuzz` is installed) yields one finding per obligation and no file, and nothing is installed. | agent-behaviour-eval (TC-EV-055) |
+| FR-038-AC-4 | An absent fuzz harness (for the manifest's language: no fuzz workspace for cargo-fuzz, no declared `atheris`, no declared `fast-check`; installed tooling alone does not count) yields one finding per obligation and no file, and nothing is installed. | agent-behaviour-eval (TC-EV-055) |
 | FR-038-AC-5 | Every emitted target carries both trace carriers and a provenance line. | agent-behaviour-eval (TC-EV-054) |
 | FR-038-AC-6 | A re-run with unchanged inputs rewrites nothing. | agent-behaviour-eval (TC-EV-056) |
 | FR-038-AC-7 | The harness is chosen from the repository's manifest, never from the requirement's language. | agent-behaviour-eval (TC-EV-056) |

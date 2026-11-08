@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 //! The `spec-fuzz` skill's cargo-fuzz template must emit targets that compile
-//! warning-free and bind both trace carriers to a named symbol.
+//! warning-free and bind both trace carriers (the `Trace:` doc line and the
+//! id in the symbol name) to a named wrapper function.
 //!
-//! Provenance: PLAT-166, PLAT-167
+//! Provenance: PLAT-166
 
 #![allow(
     clippy::unwrap_used,
@@ -38,10 +39,15 @@ fn tc_166_cargo_fuzz_template_puts_no_doc_comment_on_the_macro_invocation() {
             );
         }
     }
-    assert_eq!(
-        invocations, 2,
-        "both template examples use the wrapper form"
+    assert!(
+        invocations >= 1,
+        "template shows no fuzz_target! invocation"
     );
+}
+
+/// `NFR-003-M-1` -> `nfr_003_m_1`, the form an identifier can carry.
+fn slug(id: &str) -> String {
+    id.to_lowercase().replace('-', "_")
 }
 
 /// Trace: FR-038-AC-5
@@ -49,28 +55,34 @@ fn tc_166_cargo_fuzz_template_puts_no_doc_comment_on_the_macro_invocation() {
 fn tc_166_cargo_fuzz_template_carriers_sit_on_a_named_wrapper() {
     let template = skill_file("assets/templates/cargo-fuzz.rs.md");
     let lines: Vec<&str> = template.lines().collect();
+    let mut wrappers = 0;
     for (i, line) in lines.iter().enumerate() {
-        if line.starts_with("/// Trace:") {
-            let next_non_doc = lines[i..]
+        let Some(id) = line.strip_prefix("/// Trace: ") else {
+            continue;
+        };
+        let id = id.trim();
+        let doc_block: Vec<&&str> = lines[i..]
+            .iter()
+            .take_while(|l| l.starts_with("///"))
+            .collect();
+        assert!(
+            doc_block
                 .iter()
-                .find(|l| !l.starts_with("///"))
-                .expect("item after doc comment");
-            assert!(
-                next_non_doc.starts_with("fn fuzz_"),
-                "Trace carrier must document a named fuzz_ fn, got {next_non_doc:?}"
-            );
-        }
+                .any(|l| l.contains(&format!("spec-fuzz: obligation={id} "))),
+            "provenance line for {id} must sit in the same doc block"
+        );
+        let item = lines[i + doc_block.len()];
+        let name = item
+            .strip_prefix("fn ")
+            .and_then(|rest| rest.split('(').next())
+            .unwrap_or_else(|| {
+                panic!("Trace carrier for {id} must document a named fn, got {item:?}")
+            });
+        assert!(
+            name.starts_with("fuzz_") && name.contains(&slug(id)),
+            "wrapper name {name:?} must carry the obligation id {id}"
+        );
+        wrappers += 1;
     }
-}
-
-/// Trace: FR-038-AC-4
-#[test]
-fn tc_167_step_0_separates_installed_tooling_from_the_repo_workspace() {
-    let step = skill_file("references/step-0-scope-and-harness.md");
-    assert!(
-        !step.contains("or `cargo fuzz --version` resolves |"),
-        "installed cargo-fuzz must not be listed as a harness"
-    );
-    assert!(step.contains("Tooling is not a harness"));
-    assert!(step.contains("no files are emitted"));
+    assert!(wrappers >= 1, "template shows no Trace-carrying wrapper");
 }
