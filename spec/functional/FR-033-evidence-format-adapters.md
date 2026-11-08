@@ -80,6 +80,17 @@ entries name **production** functions (`src/path.rs::function`), so they record 
 bind to no obligation until a requirement→production-code relation exists
 (`agent-ix/quire-rs#171`). That is the honest state, not a convenient one.
 
+### A nextest report names tests, not criteria
+
+cargo-nextest writes a JUnit report that identifies each test by binary and name and says nothing
+about the criteria the test exercises. The tags that say so live in source (`/// Trace: FR-002-AC-1`),
+and only the traceability engine knows their grammar. `quoin-suite-trace` therefore copies the
+engine's per-test relation into the report as a `trace` property, and the JUnit adapter reads that
+property like any other producer's declared trace ids. A case with no tags is left unchanged, and the
+ids come from the engine's relation rather than a second reading of the source. Parsing the tags a second time inside the
+adapter would give the tag grammar two owners that can drift apart; an unannotated report would
+record every run as bound to nothing.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
@@ -98,7 +109,7 @@ bind to no obligation until a requirement→production-code relation exists
 | FR-033-AC-12 | `quoin evidence record --adapter cargo-mutants` records a mutation report end to end, preserving `score`. | Test (TC-162) |
 | FR-033-AC-13 | `quoin evidence record` selects the adapter from `--tool` when none is named. | Test (TC-163) |
 | FR-033-AC-14 | `quoin evidence record` still accepts the normalized shape with no adapter at all. | Test (TC-164) |
-| FR-033-AC-15 | A cargo-nextest JUnit report can carry, on each test case, the `trace` property naming the acceptance criteria the test is tagged with, read from the engine that defines the tag grammar, so `quoin evidence record --adapter junit` binds the run to those criteria. | Test (TC-165) |
+| FR-033-AC-15 | A cargo-nextest JUnit report annotated by `quoin-suite-trace` carries, on each tagged test case, a `trace` property naming that test's acceptance criteria, so `quoin evidence record --adapter junit` binds the run to them. | Test (TC-2010) |
 
 ## Constraints
 

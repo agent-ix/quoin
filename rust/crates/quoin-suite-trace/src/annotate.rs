@@ -246,13 +246,15 @@ mod tests {
 
     /// Trace: FR-033-AC-15
     #[test]
-    fn the_annotated_report_binds_through_the_evidence_junit_adapter_shape() {
-        // The adapter reads `<property name="trace" value="…">` inside the case.
-        let xml = r#"<testcase name="t" classname="pkg"/>"#;
+    fn the_annotated_report_binds_through_the_evidence_junit_adapter() {
+        let xml = r#"<testsuite><testcase name="t" classname="pkg"/></testsuite>"#;
         let done = annotate(xml, &index(&[("pkg", "t", &["FR-9-AC-3"])]));
-        assert!(
-            done.xml
-                .contains(r#"<property name="trace" value="FR-9-AC-3"/>"#)
+        let run = quoin_evidence::adapters::parse_junit(&done.xml);
+        let entries = run.map(|result| result.entries).unwrap_or_default();
+        assert_eq!(entries.len(), 1, "the adapter reads the annotated report");
+        assert_eq!(
+            entries[0].trace_ids.as_deref(),
+            Some(["FR-9-AC-3".to_owned()].as_slice())
         );
     }
 }
