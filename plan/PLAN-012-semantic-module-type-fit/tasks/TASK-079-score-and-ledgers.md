@@ -1,18 +1,18 @@
 ---
-id: TASK-015
+id: TASK-079
 title: "Score semantic fit and build finding ledgers"
 type: Task
 track: "Audit engine"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-003"
+  - target: "ix://agent-ix/quoin/PLAN-012"
     type: "part_of"
   - target: "ix://agent-ix/quoin/FR-053"
     type: "references"
-  - target: "ix://agent-ix/quoin/TASK-014"
+  - target: "ix://agent-ix/quoin/TASK-078"
     type: "depends_on"
 ---
 
-# TASK-015: Score semantic fit and build finding ledgers
+# TASK-079: Score semantic fit and build finding ledgers
 
 ## Status
 

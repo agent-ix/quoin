@@ -1,24 +1,24 @@
 ---
-id: TASK-010
+id: TASK-074
 title: "Reconcile traceability and run implementation reviews"
 type: Task
 track: "Assurance gate"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-002"
+  - target: "ix://agent-ix/quoin/PLAN-011"
     type: "part_of"
   - target: "ix://agent-ix/quoin/NFR-013"
     type: "references"
   - target: "ix://agent-ix/quoin/NFR-014"
     type: "references"
-  - target: "ix://agent-ix/quoin/TASK-007"
+  - target: "ix://agent-ix/quoin/TASK-071"
     type: "depends_on"
-  - target: "ix://agent-ix/quoin/TASK-008"
+  - target: "ix://agent-ix/quoin/TASK-072"
     type: "depends_on"
-  - target: "ix://agent-ix/quoin/TASK-009"
+  - target: "ix://agent-ix/quoin/TASK-073"
     type: "depends_on"
 ---
 
-# TASK-010: Reconcile traceability and run implementation reviews
+# TASK-074: Reconcile traceability and run implementation reviews
 
 ## Status
 

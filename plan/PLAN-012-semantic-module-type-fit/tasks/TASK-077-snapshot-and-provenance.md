@@ -1,18 +1,18 @@
 ---
-id: TASK-013
+id: TASK-077
 title: "Implement audit snapshot and provenance"
 type: Task
 track: "Audit engine"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-003"
+  - target: "ix://agent-ix/quoin/PLAN-012"
     type: "part_of"
   - target: "ix://agent-ix/quoin/FR-051"
     type: "references"
-  - target: "ix://agent-ix/quoin/TASK-012"
+  - target: "ix://agent-ix/quoin/TASK-076"
     type: "depends_on"
 ---
 
-# TASK-013: Implement audit snapshot and provenance
+# TASK-077: Implement audit snapshot and provenance
 
 ## Status
 

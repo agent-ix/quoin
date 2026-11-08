@@ -444,6 +444,62 @@ fn tc_1045_003_no_id_names_two_spec_documents() {
     );
 }
 
+/// Plan and task documents under `plan/` by frontmatter id.
+fn plan_documents(root: &Path) -> BTreeMap<String, Vec<(PathBuf, bool)>> {
+    let mut paths = Vec::new();
+    files_named(&root.join("plan"), ".md", &mut paths);
+    let mut documents: BTreeMap<String, Vec<(PathBuf, bool)>> = BTreeMap::new();
+    for path in paths {
+        let text = std::fs::read_to_string(&path).unwrap();
+        if let Some(id) = frontmatter_id(&text) {
+            documents.entry(id).or_default().push((path, false));
+        }
+    }
+    documents
+}
+
+#[test]
+fn tc_1045_011_no_id_names_two_plan_or_task_documents() {
+    let documents = plan_documents(&repo_root());
+    assert!(
+        documents.len() > 50
+            && documents.contains_key("PLAN-001")
+            && documents.contains_key("TASK-001"),
+        "anti-vacuity: the plan tree must be populated, saw {} ids",
+        documents.len()
+    );
+    let shared = shared_document_ids(&documents);
+    assert!(
+        shared.is_empty(),
+        "these ids name more than one plan or task document (allocate the next free id to the \
+         newer one and update every reference): {shared:?}"
+    );
+}
+
+#[test]
+fn tc_1045_012_a_plan_directory_carries_the_id_of_its_plan_document() {
+    let root = repo_root().join("plan");
+    let mut checked = 0;
+    for entry in std::fs::read_dir(&root).expect("plan directory") {
+        let dir = entry.expect("a directory entry").path();
+        let name = dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        let Some(prefix) = name.get(..8).filter(|p| p.starts_with("PLAN-")) else {
+            continue;
+        };
+        let text = std::fs::read_to_string(dir.join("plan.md")).expect("a plan.md per plan");
+        assert_eq!(
+            frontmatter_id(&text).as_deref(),
+            Some(prefix),
+            "{name}/plan.md declares a different id from its directory"
+        );
+        checked += 1;
+    }
+    assert!(
+        checked >= 10,
+        "anti-vacuity: saw {checked} plan directories"
+    );
+}
+
 #[test]
 fn tc_1045_004_probe_a_planted_shared_id_is_caught() {
     let mut documents = BTreeMap::new();
@@ -534,7 +590,7 @@ fn test_ts_mentions(text: &str) -> Vec<(usize, String)> {
 }
 
 /// Documents whose narrative, verification cells and frontmatter evidence are
-/// held to the native suite: everything under the NFR, StR and FR directories. A mention
+/// held to the native suite: everything under the `NFR`, `StR` and `FR` directories. A mention
 /// of a deleted TypeScript suite there reads as live evidence. The matrix and
 /// the review records stay outside the set because they narrate the retirement
 /// of those suites by name.

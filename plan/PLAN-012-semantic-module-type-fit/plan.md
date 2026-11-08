@@ -1,5 +1,5 @@
 ---
-id: PLAN-003
+id: PLAN-012
 title: "Default-module semantic type-fit audit"
 type: Plan
 relationships:
@@ -21,7 +21,7 @@ relationships:
     type: "references"
 ---
 
-# PLAN-003: Default-module semantic type-fit audit
+# PLAN-012: Default-module semantic type-fit audit
 
 ## Objective
 
@@ -106,27 +106,27 @@ default-modules.yaml + resolved module sources + Quire/core-data evidence
 
 | Cases            | Evidence                                                  | Owner task         |
 | ---------------- | --------------------------------------------------------- | ------------------ |
-| TC-1156..TC-1161 | Snapshot and provenance                                   | TASK-012, TASK-013 |
-| TC-1162..TC-1168 | Corpus and denominator inventory                          | TASK-012, TASK-014 |
-| TC-1169..TC-1176 | Semantic scoring and missing/conflict ledgers             | TASK-012, TASK-015 |
-| TC-1177..TC-1182 | Canonical output and generated projections                | TASK-012, TASK-016 |
+| TC-1156..TC-1161 | Snapshot and provenance                                   | TASK-076, TASK-077 |
+| TC-1162..TC-1168 | Corpus and denominator inventory                          | TASK-076, TASK-078 |
+| TC-1169..TC-1176 | Semantic scoring and missing/conflict ledgers             | TASK-076, TASK-079 |
+| TC-1177..TC-1182 | Canonical output and generated projections                | TASK-076, TASK-016 |
 | TC-1183..TC-1187 | Architecture/core-data/Quire reconciliation and freshness | TASK-016, TASK-017 |
-| TC-1188..TC-1193 | Completeness, determinism, and non-mutation               | TASK-012..TASK-017 |
+| TC-1188..TC-1193 | Completeness, determinism, and non-mutation               | TASK-076..TASK-017 |
 | TC-1194          | Major-interference human gate                             | TASK-019           |
 
 ## Execution order and dependencies
 
 ```text
-TASK-012 red contract suite
+TASK-076 red contract suite
        │
        v
-TASK-013 snapshot/provenance
+TASK-077 snapshot/provenance
        │
        v
-TASK-014 complete inventory
+TASK-078 complete inventory
        │
        v
-TASK-015 scoring and ledgers
+TASK-079 scoring and ledgers
        │
        v
 TASK-016 canonical artifacts and projections

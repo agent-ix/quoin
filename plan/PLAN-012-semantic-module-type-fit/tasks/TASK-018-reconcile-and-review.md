@@ -4,7 +4,7 @@ title: "Reconcile traceability and run implementation reviews"
 type: Task
 track: "Assurance gate"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-003"
+  - target: "ix://agent-ix/quoin/PLAN-012"
     type: "part_of"
   - target: "ix://agent-ix/quoin/TASK-017"
     type: "depends_on"

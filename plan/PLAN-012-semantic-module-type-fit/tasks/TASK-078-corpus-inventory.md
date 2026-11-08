@@ -1,18 +1,18 @@
 ---
-id: TASK-014
+id: TASK-078
 title: "Inventory the complete module corpus"
 type: Task
 track: "Audit engine"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-003"
+  - target: "ix://agent-ix/quoin/PLAN-012"
     type: "part_of"
   - target: "ix://agent-ix/quoin/FR-052"
     type: "references"
-  - target: "ix://agent-ix/quoin/TASK-013"
+  - target: "ix://agent-ix/quoin/TASK-077"
     type: "depends_on"
 ---
 
-# TASK-014: Inventory the complete module corpus
+# TASK-078: Inventory the complete module corpus
 
 ## Status
 

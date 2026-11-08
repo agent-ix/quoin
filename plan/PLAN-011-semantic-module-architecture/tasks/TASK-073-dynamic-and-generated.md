@@ -1,18 +1,18 @@
 ---
-id: TASK-009
+id: TASK-073
 title: "Record dynamic and generated module compatibility"
 type: Task
 track: "Architecture records"
 relationships:
-  - target: "ix://agent-ix/quoin/PLAN-002"
+  - target: "ix://agent-ix/quoin/PLAN-011"
     type: "part_of"
   - target: "ix://agent-ix/quoin/FR-049"
     type: "references"
-  - target: "ix://agent-ix/quoin/TASK-006"
+  - target: "ix://agent-ix/quoin/TASK-070"
     type: "depends_on"
 ---
 
-# TASK-009: Record dynamic and generated module compatibility
+# TASK-073: Record dynamic and generated module compatibility
 
 ## Status
 
