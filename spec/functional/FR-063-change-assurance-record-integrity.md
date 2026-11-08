@@ -293,9 +293,9 @@ them.
 
 Only the record body is evidence. Anything held outside it (a purpose, a
 `derived_fields` map, a lookup map, or any other declaration metadata) is not
-evidence, has no sealing authority, and is not read by verification. The
+evidence, has no authority over the record, and is not read by verification. The
 closed schema refuses such a member inside the record body at every depth, so
-no sealed member can carry unreviewed metadata.
+no record member can carry unreviewed metadata.
 
 Each `argv` SHALL contain literal arguments without shell expansion.
 

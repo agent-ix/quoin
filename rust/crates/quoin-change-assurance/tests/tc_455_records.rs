@@ -377,3 +377,28 @@ fn tc_455_metadata_inside_the_record_body_is_refused_as_undeclared() {
         );
     }
 }
+
+/// Trace: FR-063-AC-12
+///
+/// The path rule a source connection uses is the one a command's
+/// `working_directory` uses, so the NUL refusal reaches the working directory
+/// too, while the root `.` and ordinary nested directories stay valid there.
+#[test]
+fn tc_455_a_working_directory_shares_the_path_rule_including_nul() {
+    let with_directory = |directory: &str| {
+        json(&record_text().replace(
+            r#""working_directory": ".""#,
+            &format!(r#""working_directory": "{directory}""#),
+        ))
+    };
+    for good in [".", "crates", "crates/x"] {
+        prepare_change_record(&with_directory(good))
+            .unwrap_or_else(|error| panic!("the directory {good:?} must be accepted: {error}"));
+    }
+    for bad in ["a\\u0000b", "/abs", "a/../b", "a/"] {
+        assert!(
+            prepare_change_record(&with_directory(bad)).is_err(),
+            "the directory {bad:?} must be refused"
+        );
+    }
+}
