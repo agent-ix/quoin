@@ -5,7 +5,7 @@ type: FR
 verification_method: test
 evidence:
   - kind: test_case
-    ref: tests/graph-portfolio.test.ts
+    ref: rust/crates/quoin-measurement-graph/tests/tc_480_fr067_criteria.rs
 relationships:
   - target: "ix://agent-ix/quoin/StR-007"
     type: "satisfies"

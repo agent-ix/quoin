@@ -3,9 +3,7 @@ id: FR-069
 title: "Campaign-native result adapters"
 type: FR
 verification_method: test
-evidence:
-  - kind: test_case
-    ref: tests/campaign-adapters.test.ts
+evidence: []
 relationships:
   - target: "ix://agent-ix/quoin/StR-005"
     type: "satisfies"

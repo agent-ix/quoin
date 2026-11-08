@@ -77,8 +77,8 @@ schema below, which is the full contract. `schemaVersion` is the constant `1`.
 
 | ID          | Criteria                                                                               | Verification         |
 | ----------- | -------------------------------------------------------------------------------------- | -------------------- |
-| FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest             | Test (index.test.ts) |
-| FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed source and no `ref`, and excludes private opt-in modules | Test (index.test.ts) |
+| FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest             | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-016-AC-2 | The committed file declares exactly ten public default modules, each with a typed source and no `ref`, and excludes private opt-in modules | None (no native test is tagged to this criterion; PLAT-1045) |
 
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-016-AC-3 is withdrawn. It
 > required every committed copy of a module's pin to agree and the manifest's

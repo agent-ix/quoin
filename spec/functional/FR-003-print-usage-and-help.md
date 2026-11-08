@@ -44,9 +44,9 @@ strings this requirement once described were removed with the dispatcher.
 
 | ID          | Criteria                                                                              | Verification                        |
 | ----------- | ------------------------------------------------------------------------------------- | ----------------------------------- |
-| FR-003-AC-1 | No command prints the root usage                                                      | Test (cli.test.ts)                  |
-| FR-003-AC-2 | `--help`/`-h` prints help for `write`, `catalog`, `plugin`, and the workflow commands | Test (cli.test.ts, scripts.test.ts) |
-| FR-003-AC-3 | `--help` on an unrecognized command falls back to the root usage                      | Test (cli.test.ts)                  |
+| FR-003-AC-1 | No command prints the root usage                                                      | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-003-AC-2 | `--help`/`-h` prints help for `write`, `catalog`, `plugin`, and the workflow commands | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-003-AC-3 | `--help` on an unrecognized command falls back to the root usage                      | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

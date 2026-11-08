@@ -77,10 +77,10 @@ organization, and a configuration file is the opposite of an invention.
 | FR-027-AC-3 | `QUOIN_ORG` layers over a stored organization and is reported with source `env`                     | Test (tc_446_org_parity.rs, config_service.rs) |
 | FR-027-AC-4 | With nothing stored, resolution falls through to the remote, and to unresolved when there is none   | Test (tc_446_org_parity.rs) |
 | FR-027-AC-5 | A malformed stored configuration leaves resolution to continue rather than failing the command      | Test (tc_446_org_parity.rs, config_service.rs) |
-| FR-027-AC-6 | The declared schema is strict, so storing an unrecognized key is rejected                           | Test (config-schema.test.ts)        |
-| FR-027-AC-7 | `ixSchema` is exported from the package main, carrying the plugin id, schema, and env binding       | Test (config-schema.test.ts)        |
-| FR-027-AC-8 | `config get`, `set`, `edit`, and `doctor` delegate to the shared ix-cli-core handlers               | Test (config-schema.test.ts, cli.test.ts) |
-| FR-027-AC-9 | A project-local configuration overrides the user-level one, and is ignored where the invocation disables it | Test (tc_446_org_parity.rs, config_service.rs, core-org.test.ts) |
+| FR-027-AC-6 | The declared schema is strict, so storing an unrecognized key is rejected                           | Test (quoin-config/src/plugin_registry.rs, quoin-config/src/schema.rs, quoin-config/tests/config_service.rs) |
+| FR-027-AC-7 | `ixSchema` is exported from the package main, carrying the plugin id, schema, and env binding       | Test (quoin-config/src/ids.rs, quoin-config/src/plugin_registry.rs, quoin-config/src/schema.rs) |
+| FR-027-AC-8 | `config get`, `set`, `edit`, and `doctor` delegate to the shared ix-cli-core handlers               | Test (quoin-config/src/lock.rs, quoin-config/src/plugin_registry.rs, quoin-config/tests/config_service.rs) |
+| FR-027-AC-9 | A project-local configuration overrides the user-level one, and is ignored where the invocation disables it | Test (quoin-config/src/paths.rs, quoin-config/tests/config_service.rs, quoin-config/tests/tc_446_org_parity.rs) |
 
 ## Dependencies
 

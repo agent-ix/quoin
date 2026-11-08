@@ -41,10 +41,10 @@ JSON under `--json`, raising an error when the type is unknown or omitted.
 
 | ID          | Criteria                                                                                           | Verification       |
 | ----------- | -------------------------------------------------------------------------------------------------- | ------------------ |
-| FR-011-AC-1 | `catalog list` prints one `name@version root` line per module; a missing version renders `unknown` | Test (cli.test.ts) |
-| FR-011-AC-2 | An omitted subcommand behaves as `list`, and `--json` prints the whole catalog                     | Test (cli.test.ts) |
-| FR-011-AC-3 | `catalog show <type>` prints the entry as text or JSON                                             | Test (cli.test.ts) |
-| FR-011-AC-4 | `catalog show` raises an error for an omitted or unknown type                                      | Test (cli.test.ts) |
+| FR-011-AC-1 | `catalog list` prints one `name@version root` line per module; a missing version renders `unknown` | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-011-AC-2 | An omitted subcommand behaves as `list`, and `--json` prints the whole catalog                     | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-011-AC-3 | `catalog show <type>` prints the entry as text or JSON                                             | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-011-AC-4 | `catalog show` raises an error for an omitted or unknown type                                      | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

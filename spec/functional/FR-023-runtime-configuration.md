@@ -83,11 +83,11 @@ stays unresolved rather than falling back to a value
 
 | ID          | Criteria                                                                                | Verification                        |
 | ----------- | --------------------------------------------------------------------------------------- | ----------------------------------- |
-| FR-023-AC-1 | `--config-root`, then `IX_HOME`, then `~/.ix` select the config root in that precedence | Test (cli.test.ts, catalog.test.ts) |
-| FR-023-AC-2 | `QUOIN_MODULE_PATHS` roots are assembled before the installed store                     | Test (catalog.test.ts)              |
-| FR-023-AC-3 | `IX_SPEC_WORKFLOWS_ROOT` is the first candidate when resolving a workflow skill         | Test (flows.test.ts)                |
-| FR-023-AC-4 | `--org`, then `QUOIN_ORG` select the authoring organization in that precedence, and neither defaults when absent | Test (tc_446_org_parity.rs, cli.test.ts) |
-| FR-023-AC-5 | The stored config file supplies the organization behind `--org`/`QUOIN_ORG` and ahead of the git remote | Test (tc_446_org_parity.rs, config_service.rs, cli.test.ts) |
+| FR-023-AC-1 | `--config-root`, then `IX_HOME`, then `~/.ix` select the config root in that precedence | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-023-AC-2 | `QUOIN_MODULE_PATHS` roots are assembled before the installed store                     | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-023-AC-3 | `IX_SPEC_WORKFLOWS_ROOT` is the first candidate when resolving a workflow skill         | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-023-AC-4 | `--org`, then `QUOIN_ORG` select the authoring organization in that precedence, and neither defaults when absent | Test (tc_446_org_parity.rs, quoin-config/tests/tc_381_org_layouts.rs) |
+| FR-023-AC-5 | The stored config file supplies the organization behind `--org`/`QUOIN_ORG` and ahead of the git remote | Test (tc_446_org_parity.rs, config_service.rs) |
 
 ## Dependencies
 

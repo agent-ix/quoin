@@ -58,13 +58,13 @@ so quoin owns the command surface but not the mechanism that serves it.
 
 | ID          | Criteria                                                                                     | Verification         |
 | ----------- | ---------------------------------------------------------------------------------------------- | -------------------- |
-| FR-026-AC-1 | The runner discovers every command quoin ships                                                 | Test (cli.test.ts)   |
-| FR-026-AC-2 | Subcommands are addressed space-separated                                                      | Test (cli.test.ts)   |
-| FR-026-AC-3 | No hand-rolled argument dispatcher remains in `src/cli.ts`                                     | Test (cli.test.ts)   |
-| FR-026-AC-4 | An unknown command, and an unknown subcommand, are each rejected by the runner                 | Test (cli.test.ts)   |
-| FR-026-AC-5 | The bare version forms are answered before dispatch; every other argv is handed to the runner  | Test (cli.test.ts)   |
-| FR-026-AC-6 | An error raised by the runner propagates to the caller                                         | Test (cli.test.ts)   |
-| FR-026-AC-7 | A package listed in `oclif.plugins` is discovered as a core plugin and its command is dispatched, with no runtime install step | Test (it-005-sync-discovery.test.ts) |
+| FR-026-AC-1 | The runner discovers every command quoin ships                                                 | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-026-AC-2 | Subcommands are addressed space-separated                                                      | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-026-AC-3 | No hand-rolled argument dispatcher remains in `src/cli.ts`                                     | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-026-AC-4 | An unknown command, and an unknown subcommand, are each rejected by the runner                 | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-026-AC-5 | The bare version forms are answered before dispatch; every other argv is handed to the runner  | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-026-AC-6 | An error raised by the runner propagates to the caller                                         | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-026-AC-7 | A package listed in `oclif.plugins` is discovered as a core plugin and its command is dispatched, with no runtime install step | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

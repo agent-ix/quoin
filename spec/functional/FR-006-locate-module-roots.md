@@ -40,10 +40,10 @@ exist, are not directories, or resolve to no manifest.
 
 | ID          | Criteria                                                             | Verification           |
 | ----------- | -------------------------------------------------------------------- | ---------------------- |
-| FR-006-AC-1 | A directory containing `manifest.yaml` resolves as a module root     | Test (catalog.test.ts) |
-| FR-006-AC-2 | A manifest one level deep under a candidate is discovered            | Test (catalog.test.ts) |
-| FR-006-AC-3 | A non-manifest child is skipped while a manifest sibling is found    | Test (catalog.test.ts) |
-| FR-006-AC-4 | A missing path, an empty directory, and a file candidate are skipped | Test (catalog.test.ts) |
+| FR-006-AC-1 | A directory containing `manifest.yaml` resolves as a module root     | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-006-AC-2 | A manifest one level deep under a candidate is discovered            | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-006-AC-3 | A non-manifest child is skipped while a manifest sibling is found    | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-006-AC-4 | A missing path, an empty directory, and a file candidate are skipped | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 
