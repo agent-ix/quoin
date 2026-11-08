@@ -579,6 +579,48 @@ fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one
     );
 }
 
+/// Two malformed `capabilities` entries are two findings, and each names its
+/// own index, so the refusal says which entries to fix rather than repeating
+/// one generic sentence.
+///
+/// PLAT-943: `capabilities()` accumulated (PLAT-931) but its per-entry message
+/// did not say which entry, unlike the sibling stack checks.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-943
+#[test]
+fn tc_479_023_each_malformed_capability_is_named_by_its_index() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["capabilities"] = json!(["ok.capability", "", 7]);
+    let refusal = validate::measurement_collection(
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+        &plans,
+    )
+    .expect_err("empty and non-string capabilities are refused");
+    let findings = refusal.findings();
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.contains("capabilities[1]")),
+        "the empty entry must be named by its index, got {findings:?}"
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.contains("capabilities[2]")),
+        "the non-string entry must be named by its index, got {findings:?}"
+    );
+    assert!(
+        !findings
+            .iter()
+            .any(|finding| finding.contains("capabilities[0]")),
+        "the valid entry must not be named, got {findings:?}"
+    );
+}
+
 /// Historical evidence stays readable after the attestation grew members it
 /// does not carry, while intake still requires them.
 ///
