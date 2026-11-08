@@ -109,10 +109,7 @@ pub(super) fn resolve_protected(
     collection: &MeasurementCollection,
     plans: &[MeasurementPlan],
 ) -> Result<BTreeMap<String, ResolvedApparatus>, MeasurementError> {
-    let by_metric: BTreeMap<&str, &MeasurementPlan> = plans
-        .iter()
-        .map(|plan| (plan.metric.as_str(), plan))
-        .collect();
+    let by_metric = crate::validate::plan::by_metric(plans);
     let mut resolved = BTreeMap::new();
     // One budget for the whole write, so both write-wide limits bound the sum
     // over every plan rather than each plan alone.
