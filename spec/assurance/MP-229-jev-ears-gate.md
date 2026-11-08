@@ -8,6 +8,11 @@ stage: gate
 metric: jev.ears_gate_verdict
 definition_version: jev.ears-gate-v1
 ground_truth_kind: agent-labelled
+statistical_design:
+  estimator: proportion
+  decision_rule:
+    comparator: ge
+    threshold: 1.0
 protected_apparatus:
   - rust/crates/quoin-jev/tests/fixtures/ears-m2-fixtures.json
   - rust/crates/quoin-jev/tests/fixtures/ears-m6-corpus.json

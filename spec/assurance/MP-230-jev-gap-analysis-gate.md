@@ -8,6 +8,11 @@ stage: gate
 metric: jev.gap_analysis_gate_verdict
 definition_version: jev.gap-analysis-gate-v1
 ground_truth_kind: mechanical
+statistical_design:
+  estimator: proportion
+  decision_rule:
+    comparator: ge
+    threshold: 1.0
 protected_apparatus:
   - rust/crates/quoin-jev/tests/fixtures/gap-semantic-corpus.json
   - rust/crates/quoin-jev/tests/fixtures/gap-battery-mutants.json

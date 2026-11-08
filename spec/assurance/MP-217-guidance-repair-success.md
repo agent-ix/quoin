@@ -8,6 +8,11 @@ stage: gate
 metric: guidance.repair_success
 definition_version: guidance.repair-success-v2
 ground_truth_kind: mechanical
+statistical_design:
+  estimator: proportion
+  decision_rule:
+    comparator: ge
+    threshold: 1.0
 protected_apparatus:
   - bench/guidance-evaluator-contract-v1.json
   - bench/guidance-independent-review-v1.json

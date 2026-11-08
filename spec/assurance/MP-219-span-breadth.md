@@ -8,6 +8,11 @@ stage: gate
 metric: span_breadth_rate
 definition_version: property.span-breadth-v2
 ground_truth_kind: agent-labelled
+statistical_design:
+  estimator: proportion
+  decision_rule:
+    comparator: ge
+    threshold: 1.0
 protected_apparatus:
   - bench/span-breadth-v1-labels.json
 negative_controls:

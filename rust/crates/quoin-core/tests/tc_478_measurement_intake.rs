@@ -262,6 +262,7 @@ fn synthetic_release_workspace() -> (tempfile::TempDir, Value) {
         "---\nid: MP-9001\ntitle: Synthetic release operational evidence\ntype: MeasurementPlan\n\
 status: active\nowner: engineering assurance\nstage: gate\nmetric: release_operational_evidence\n\
 definition_version: github-actions.release-operational-v2\nground_truth_kind: mechanical\n\
+statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    threshold: 1.0\n\
 protected_apparatus:\n  - spec/evidence/github-actions/synthetic-workflow.yml\nnegative_controls:\n  - kind: apparatus-edit\n    description: an edit to the protected apparatus without a new definition version rejects\nrelationships: []\n---\n\n# Synthetic release operational evidence\n\n## Decision Use\n\nDecide.\n",
     )
     .expect("a governing plan");

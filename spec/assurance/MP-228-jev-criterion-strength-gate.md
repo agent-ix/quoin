@@ -8,6 +8,11 @@ stage: gate
 metric: jev.criterion_strength.gate
 definition_version: jev.criterion-strength-gate-v1
 ground_truth_kind: agent-labelled
+statistical_design:
+  estimator: proportion
+  decision_rule:
+    comparator: ge
+    threshold: 1.0
 protected_apparatus:
   - skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fixtures.json
   - skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fr-context.json

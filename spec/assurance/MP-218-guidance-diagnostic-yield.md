@@ -8,6 +8,11 @@ stage: gate
 metric: guidance.diagnostic_yield
 definition_version: guidance.diagnostic-yield-v2
 ground_truth_kind: agent-labelled
+statistical_design:
+  estimator: proportion
+  decision_rule:
+    comparator: ge
+    threshold: 1.0
 protected_apparatus:
   - bench/guidance-evaluator-contract-v1.json
   - bench/guidance-independent-review-v1.json
