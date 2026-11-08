@@ -48,3 +48,17 @@ counted in the tool's summary line and bind nothing.
 
 No run record is kept in this repository; a run is transcribed by the consumer's
 CI when it executes a suite.
+
+## Open follow-ups
+
+- **The generated evidence store is not committed, on purpose.** A run record and
+  the bindings derived from it describe one commit's test run, so they go stale
+  with the next commit and would add churn to every change without adding
+  information a reader cannot regenerate with `make evidence`. The committed
+  `bindings.json` is the empty skeleton. Freshness is judged by the consumer that
+  ran the suite, not by a file in this repository.
+- **A bound-and-accepted ratchet check is not implemented.** Nothing yet fails
+  when an acceptance criterion is bound by a passing run but has no accepted
+  verdict, so a criterion can be bound indefinitely without anyone accepting it.
+  Binding records that a test exercised the criterion; it does not record that the
+  criterion is satisfied.
