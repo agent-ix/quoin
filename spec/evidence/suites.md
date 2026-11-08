@@ -20,22 +20,31 @@ FR-006).
 
 | ID | Name | Command | Tool | Evidence Kind |
 |----|------|---------|------|---------------|
-| SUITE-001 | Unit and integration suite | `make test` | vitest | Unit |
+| SUITE-001 | Unit and integration suite | `make evidence` | cargo-nextest | Unit |
 | SUITE-002 | Spec validation gate | `make validate` | quire-cli | Static |
 | SUITE-003 | Agent evals | `make evals` | cli-agent-evals | Eval |
 
 ## What the store discharges
 
-The junit adapter reads test **names**, and quoin's trace ids live in source
-comments (`// Trace: FR-002-AC-1`) where `quire coverage` reads them off symbols.
-A junit report carries no symbol, so a SUITE-001 run binds no obligation.
+A JUnit report names tests, and quoin's trace ids live in source tags
+(`/// Trace: FR-002-AC-1`, `#[trace("FR-002-AC-1")]`), so a plain report binds no
+obligation. `make evidence` closes that gap in three steps:
 
-Closing that gap needs one of two things, and neither is invented here:
+1. `cargo nextest run --profile evidence` runs the Rust workspace and writes
+   JUnit XML (profile in `rust/.config/nextest.toml`). It needs
+   `cargo install cargo-nextest --locked`. Doc tests are not run by nextest.
+2. `quoin-suite-trace` asks the quire engine, which defines the tag grammar, for
+   every test symbol and the ids it verifies, joins each to the name nextest
+   reported (binary id and module path, from `cargo metadata`), and inserts
+   `<property name="trace" value="ID,ID"/>` into that test case. It parses no
+   source comments itself and refuses a report in which no case matched.
+3. `quoin evidence record --suite SUITE-001 --adapter junit --kind Unit` records
+   the run and binds every obligation named by a *passing* case. A failing or
+   skipped case is recorded in the run and binds nothing.
 
-- test names that carry their trace id, the way the Rust corpus writes
-  `fn tc_744_…`; or
-- an adapter that reads the symbol tags rather than the report, which is the
-  same join `quire coverage` already performs.
+The target returns the tests' own exit status after recording, so a red suite is
+recorded as red. Tagged tests absent from a run (filtered or ignored) are
+counted in the tool's summary line and bind nothing.
 
 No run record is kept in this repository; a run is transcribed by the consumer's
 CI when it executes a suite.
