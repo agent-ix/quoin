@@ -59,3 +59,13 @@ No defects for this lens.
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-002 | high | TC-2013..TC-2020 collide with open quoin PR #779 (PLAT-1021, opened 2026-11-09), which assigns the same ids to FR-108-AC-15..AC-21; whichever PR merges second must renumber. | spec/matrix.md:1403-1410 |
+
+## Dispositions
+
+Round 2, against head 497d1fe5.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-002 | fixed | - |
+
+TC-2100..TC-2115 collide with nothing on origin/main (highest TC-2012), open quoin PRs #764/#774/#777/#779 (highest added TC-2020), or open quire-rs PRs #611, #615-#621.

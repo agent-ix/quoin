@@ -96,3 +96,12 @@ Round 1, against head 59833eb2.
 | FND-004 | fixed | - |
 | FND-005 | fixed | - |
 | FND-006 | fixed | - |
+
+Round 2, against head 497d1fe5.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-007 | fixed | - |
+| FND-008 | fixed | - |
+
+FND-008: the Behavior example `## Declared Type` names `declaredType` (line 70) remains; it illustrates normalization only, and the next bullet makes an owned key prose, so it is not a contradiction.
