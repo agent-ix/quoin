@@ -472,7 +472,6 @@ fn tc_456_212_a_completed_empty_inspection_is_recorded_and_read() {
 
 // ---------------------------------------------------------------- FR-031 -----
 
-#[trace("FR-030-AC-11")]
 #[test]
 fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
     let mut store = MemoryEvidence::new();
