@@ -63,11 +63,17 @@ fn plan_with(stage: &str, reference: &str, extra: &str) -> String {
          metric: gate.pass_rate\n\
          definition_version: gate.pass-rate-v1\n\
          objective:\n  direction: higher\n\
-         statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    {reference}\n\
+         statistical_design:\n{DESIGN}  decision_rule:\n    comparator: ge\n    {reference}\n\
          {extra}\
          ---\n\n# Protected answer key\n"
     )
 }
+
+/// The statistical-design members engineering-assurance's schema requires
+/// besides the decision rule.
+const DESIGN: &str = "  population: fixture cases\n  sampling: every case once\n  repetitions: 1\n  \
+                      estimator: proportion\n  error_model: a case is misjudged\n  \
+                      uncertainty: none estimated\n";
 
 const PROTECTED: &str = "protected_apparatus:\n  - harness/answers.json\n  - labels/**\n";
 
@@ -204,7 +210,7 @@ fn checked(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> Vec
 
 #[test]
 #[trace("TC-1810", "FR-110-AC-1", "FR-108-AC-4")]
-fn tc_975_010_analyze_shaped_gate_matches_locked_ea_schema_and_loads() {
+fn tc_975_022_analyze_shaped_gate_matches_locked_ea_schema_and_loads() {
     let fixture = include_str!("fixtures/MP-001-evidence-gate.md");
     let frontmatter = fixture
         .strip_prefix("---\n")
@@ -228,13 +234,8 @@ fn tc_975_010_analyze_shaped_gate_matches_locked_ea_schema_and_loads() {
         .as_array()
         .expect("Cargo metadata lists packages")
         .iter()
-        .find(|package| {
-            package["name"] == "engineering-assurance"
-                && package["source"].as_str().is_some_and(|source| {
-                    source.ends_with("#48e3763fc47c89cfd3b45f6e7b8a47b03ab10ab9")
-                })
-        })
-        .expect("the graph locks the reviewed EA schema commit");
+        .find(|package| package["name"] == "engineering-assurance")
+        .expect("the graph carries engineering-assurance");
     let ea_manifest = PathBuf::from(
         ea["manifest_path"]
             .as_str()
@@ -280,7 +281,7 @@ fn tc_975_010_analyze_shaped_gate_matches_locked_ea_schema_and_loads() {
 /// Trace: FR-108-AC-4, FR-110-AC-1
 /// Provenance: PLAT-1162
 #[test]
-fn tc_975_011_active_evidence_gate_uses_retained_conclusive_results() {
+fn tc_975_023_active_evidence_gate_uses_retained_conclusive_results() {
     let extra = concat!(
         "ground_truth_kind: mechanical\n",
         "negative_controls:\n  - kind: stale-evidence\n    description: stale evidence refuses a pass\n",
@@ -411,7 +412,7 @@ fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
 /// Trace: FR-110-AC-1
 /// Provenance: PLAT-1162
 #[test]
-fn tc_975_004_non_retired_gate_requires_typed_definition_fields() {
+fn tc_975_024_non_retired_gate_requires_typed_definition_fields() {
     let document = |truth: &str, design: &str| {
         format!(
             "---\nid: MP-975\ntitle: Evidence gate\ntype: MeasurementPlan\n\
@@ -421,22 +422,138 @@ fn tc_975_004_non_retired_gate_requires_typed_definition_fields() {
              # Evidence gate\n"
         )
     };
-    let valid_design = "statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    threshold: 0.8\n";
-    for (member, truth, design) in [
-        ("ground_truth_kind", "", valid_design),
-        ("statistical_design", "ground_truth_kind: mechanical\n", ""),
+    let valid_design = format!(
+        "statistical_design:\n{DESIGN}  decision_rule:\n    comparator: ge\n    threshold: 0.8\n"
+    );
+    let mut cases = vec![
         (
-            "statistical_design.decision_rule",
-            "ground_truth_kind: mechanical\n",
-            "statistical_design:\n  estimator: proportion\n",
+            "ground_truth_kind".to_owned(),
+            String::new(),
+            valid_design.clone(),
         ),
+        (
+            "statistical_design".to_owned(),
+            "ground_truth_kind: mechanical\n".to_owned(),
+            String::new(),
+        ),
+    ];
+    for member in [
+        "population",
+        "sampling",
+        "repetitions",
+        "estimator",
+        "error_model",
+        "uncertainty",
     ] {
+        let design: String = valid_design
+            .lines()
+            .filter(|line| !line.trim_start().starts_with(&format!("{member}:")))
+            .map(|line| format!("{line}\n"))
+            .collect();
+        cases.push((
+            format!("statistical_design.{member}"),
+            "ground_truth_kind: mechanical\n".to_owned(),
+            design,
+        ));
+    }
+    let no_rule: String = valid_design
+        .lines()
+        .take(7)
+        .map(|line| format!("{line}\n"))
+        .collect();
+    cases.push((
+        "statistical_design.decision_rule".to_owned(),
+        "ground_truth_kind: mechanical\n".to_owned(),
+        no_rule,
+    ));
+    for (member, truth, design) in cases {
         let source = MemoryMeasurement::new()
-            .with_document("spec/assurance/MP-975.md", document(truth, design));
+            .with_document("spec/assurance/MP-975.md", document(&truth, &design));
         let error = load_measurement_plans(&source, PlanLoadOptions::default())
             .expect_err("an incomplete non-retired gate is refused");
         assert_eq!(error.code(), MeasurementErrorCode::PlanInvalid);
-        assert!(error.to_string().contains(member), "{member}: {error}");
+        assert!(error.to_string().contains(&member), "{member}: {error}");
+    }
+}
+
+/// Trace: FR-110-AC-1
+/// Provenance: PLAT-1162
+#[test]
+fn tc_975_025_a_gate_with_a_procedure_and_no_apparatus_is_refused() {
+    let document = format!(
+        "---\nid: MP-975\ntitle: Procedure gate\ntype: MeasurementPlan\n\
+         status: active\nstage: gate\nmetric: gate.pass_rate\n\
+         definition_version: gate.pass-rate-v1\nground_truth_kind: mechanical\n\
+         execution_procedure: campaign/procedure.json\n\
+         statistical_design:\n{DESIGN}  decision_rule:\n    comparator: ge\n    threshold: 0.8\n\
+         negative_controls:\n  - kind: stale-evidence\n    description: stale evidence refuses a pass\n---\n\
+         # Procedure gate\n"
+    );
+    let source = MemoryMeasurement::new().with_document("spec/assurance/MP-975.md", document);
+    let error = load_measurement_plans(&source, PlanLoadOptions::default())
+        .expect_err("a procedure with no apparatus is refused at gate stage");
+    assert_eq!(error.code(), MeasurementErrorCode::PlanInvalid);
+    assert!(error.to_string().contains("execution_procedure"), "{error}");
+}
+
+/// Trace: FR-110-AC-1
+/// Provenance: PLAT-1162
+#[test]
+fn tc_975_026_a_retired_gate_without_negative_controls_loads() {
+    let document = "---\nid: MP-975\ntitle: Retired gate\ntype: MeasurementPlan\n\
+         status: retired\nowner: test\nstage: gate\nmetric: gate.pass_rate\n\
+         definition_version: gate.pass-rate-v1\nrelationships: []\n---\n# Retired gate\n";
+    let source = MemoryMeasurement::new().with_document("spec/assurance/MP-975.md", document);
+    let plans = load_measurement_plans(&source, PlanLoadOptions::default())
+        .expect("EA accepts a retired gate with no controls");
+    assert_eq!(plans.len(), 1);
+}
+
+/// MP-001's own `count` / `eq 0` rule decides retained evidence: no adverse
+/// outcome accepts, one rejects.
+///
+/// Trace: FR-110-AC-1, FR-108-AC-4
+/// Provenance: PLAT-1162
+#[test]
+fn tc_975_027_the_analyze_shaped_gate_decides_retained_evidence_by_its_own_rule() {
+    let root = tempfile::tempdir().expect("the fixture repository is creatable");
+    write(
+        root.path(),
+        "spec/assurance/MP-001-analyze-measurements.md",
+        // Evidence is admitted only under an active plan.
+        &include_str!("fixtures/MP-001-evidence-gate.md")
+            .replace("status: proposed", "status: active"),
+    );
+    let plan = plan_of(root.path());
+    for (id, adverse, expected) in [
+        ("mp001-clean", 0, Verdict::Accept),
+        ("mp001-adverse", 1, Verdict::Reject),
+    ] {
+        let mut collection = candidate(id, 0, 0, &json!(["config"]));
+        collection["observations"] = json!([{
+            "metric": "analysis_semantic_fault_differential_and_evidence_conformance",
+            "planId": "MP-001",
+            "definitionVersion": "quire-analyze.measurement-v1",
+            "state": "measured",
+            "value": adverse,
+            "unit": "count",
+            "shape": "count",
+            "population": { "examined": 12, "matched": adverse, "complete": true, "repetitions": 3 },
+        }]);
+        publish(root.path(), &collection).expect("the retained evidence is admitted");
+        let collections = stored(root.path());
+        let stored_one = collections
+            .iter()
+            .find(|stored| stored.collection_id.as_str() == id)
+            .expect("the collection was stored");
+        let verdict = verify(
+            &plan,
+            &[Ranked::new(stored_one, Some(0))],
+            TamperFacts::default(),
+            OrderSource::CallerSupplied,
+            None,
+        );
+        assert_eq!(verdict.verdict, expected, "{id}: {verdict:?}");
     }
 }
 

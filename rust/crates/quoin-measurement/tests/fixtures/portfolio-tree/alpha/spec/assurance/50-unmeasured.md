@@ -8,7 +8,12 @@ metric: unmeasured_metric
 definition_version: "1"
 ground_truth_kind: mechanical
 statistical_design:
+  population: every case
+  sampling: every case once
+  repetitions: 1
   estimator: proportion
+  error_model: a case is misjudged
+  uncertainty: none estimated
   decision_rule:
     comparator: ge
     threshold: 1.0

@@ -9,7 +9,12 @@ metric: span_breadth_rate
 definition_version: property.span-breadth-v2
 ground_truth_kind: agent-labelled
 statistical_design:
+  population: the frozen labeled population of at least 60 unique normalized criteria across five property shapes and three real repositories
+  sampling: none; the canonical stack replays every label and duplicates cannot inflate the denominator
+  repetitions: 1
   estimator: proportion
+  error_model: a label is wrong or a repository drifts from the frozen set
+  uncertainty: none estimated; the population is the full frozen label set and any wrong or unsafe span blocks promotion
   decision_rule:
     comparator: ge
     threshold: 1.0

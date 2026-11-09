@@ -9,7 +9,12 @@ metric: jev.ears_gate_verdict
 definition_version: jev.ears-gate-v1
 ground_truth_kind: agent-labelled
 statistical_design:
+  population: the four ship-as-advisory bars (MP-222 margin, MP-223 defect recall, MP-224 no-defect recall, MP-231 forward delta beyond MP-225 noise) for one reported variant
+  sampling: none; reads the already-collected upstream observations for lens ears
+  repetitions: 1
   estimator: proportion
+  error_model: agent-labelled ground truth; each bar inherits the error of its upstream observation, and a not_computed bar counts as unmet
+  uncertainty: the verdict inherits the uncertainty of the M2 corpus and of MP-225 disagreement under repetition; a bar resting on a not_computed value is NO-GO
   decision_rule:
     comparator: ge
     threshold: 1.0

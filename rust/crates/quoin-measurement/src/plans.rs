@@ -182,14 +182,9 @@ pub(crate) fn plan_from(
     let statistical_design = design::statistical_design_from(path, value)?;
     let objective = design::objective_from(path, value)?;
     design::rule_agrees_with_objective(path, statistical_design.as_ref(), objective.as_ref())?;
-    let (protected_apparatus, negative_controls) = apparatus::apparatus_from(path, value, stage)?;
-    validate_gate_definition(
-        path,
-        stage,
-        status,
-        ground_truth_kind.is_some(),
-        statistical_design.as_ref(),
-    )?;
+    let (protected_apparatus, negative_controls) =
+        apparatus::apparatus_from(path, value, stage, status)?;
+    validate_gate_definition(path, value, stage, status, ground_truth_kind.is_some())?;
     if let Some(procedure) = execution_procedure.as_deref() {
         let covered = protected_apparatus.as_ref().is_some_and(|apparatus| {
             apparatus.iter().any(|entry| {
@@ -226,35 +221,48 @@ pub(crate) fn plan_from(
     })
 }
 
+/// Refuse a non-retired `gate` plan whose definition engineering-assurance's
+/// schema would refuse: it must state `ground_truth_kind` and a
+/// `statistical_design` with every member the schema requires.
 fn validate_gate_definition(
     path: &str,
+    value: &serde_json::Value,
     stage: MeasurementStage,
     status: LifecycleStatus,
     has_ground_truth: bool,
-    statistical_design: Option<&crate::types::plan::StatisticalDesign>,
 ) -> Result<(), MeasurementError> {
     if stage != MeasurementStage::Gate || status == LifecycleStatus::Retired {
         return Ok(());
     }
-    if !has_ground_truth {
-        return Err(MeasurementError::new(
+    let missing = |member: &str| {
+        MeasurementError::new(
             CODE,
-            format!("{path}: a non-retired `gate` plan requires `ground_truth_kind`"),
-        ));
-    }
-    let Some(statistical_design) = statistical_design else {
-        return Err(MeasurementError::new(
-            CODE,
-            format!("{path}: a non-retired `gate` plan requires `statistical_design`"),
-        ));
+            format!("{path}: a non-retired `gate` plan requires `{member}`"),
+        )
     };
-    if statistical_design.decision_rule.is_none() {
-        return Err(MeasurementError::new(
-            CODE,
-            format!(
-                "{path}: a non-retired `gate` plan requires `statistical_design.decision_rule`"
-            ),
-        ));
+    if !has_ground_truth {
+        return Err(missing("ground_truth_kind"));
+    }
+    let block = value
+        .get("statistical_design")
+        .and_then(serde_json::Value::as_object)
+        .ok_or_else(|| missing("statistical_design"))?;
+    for member in [
+        "population",
+        "sampling",
+        "repetitions",
+        "estimator",
+        "error_model",
+        "uncertainty",
+        "decision_rule",
+    ] {
+        let stated = block.get(member).is_some_and(|stated| match stated {
+            serde_json::Value::String(text) => !text.is_empty(),
+            other => !other.is_null(),
+        });
+        if !stated {
+            return Err(missing(&format!("statistical_design.{member}")));
+        }
     }
     Ok(())
 }

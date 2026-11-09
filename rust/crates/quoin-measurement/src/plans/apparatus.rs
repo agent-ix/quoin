@@ -14,7 +14,7 @@ use engineering_assurance::measurement::{
 use serde::Deserialize;
 
 use crate::error::MeasurementError;
-use crate::types::plan::MeasurementStage;
+use crate::types::plan::{LifecycleStatus, MeasurementStage};
 
 use super::CODE;
 
@@ -31,12 +31,13 @@ use super::CODE;
 ///
 /// [`crate::error::MeasurementErrorCode::PlanInvalid`] when either member is
 /// present and EA refuses it, naming the member and carrying EA's reason,
-/// when a `gate` plan states no negative controls, and when an
+/// when a non-retired `gate` plan states no negative controls, and when an
 /// `apparatus-edit` control is declared with no `protected_apparatus`.
 pub(super) fn apparatus_from(
     path: &str,
     value: &serde_json::Value,
     stage: MeasurementStage,
+    status: LifecycleStatus,
 ) -> Result<(Option<ProtectedApparatus>, Option<NegativeControls>), MeasurementError> {
     let protected = value
         .get("protected_apparatus")
@@ -60,7 +61,7 @@ pub(super) fn apparatus_from(
             })
         })
         .transpose()?;
-    if stage == MeasurementStage::Gate && controls.is_none() {
+    if stage == MeasurementStage::Gate && status != LifecycleStatus::Retired && controls.is_none() {
         return Err(MeasurementError::new(
             CODE,
             format!("{path}: a `gate` plan requires `negative_controls`"),

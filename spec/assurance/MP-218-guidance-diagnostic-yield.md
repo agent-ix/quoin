@@ -9,7 +9,12 @@ metric: guidance.diagnostic_yield
 definition_version: guidance.diagnostic-yield-v2
 ground_truth_kind: agent-labelled
 statistical_design:
+  population: selected reviewed records whose structured next move is diagnostic
+  sampling: the deterministic partition sampling used for guidance correctness
+  repetitions: 1
   estimator: proportion
+  error_model: a canonical replay yields a non-distinguishing observation, or a reviewer misreads the cited causal channel
+  uncertainty: none estimated; every reviewed diagnostic record is in the denominator and exactly 100% is required
   decision_rule:
     comparator: ge
     threshold: 1.0

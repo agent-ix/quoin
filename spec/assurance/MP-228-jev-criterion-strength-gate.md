@@ -9,7 +9,12 @@ metric: jev.criterion_strength.gate
 definition_version: jev.criterion-strength-gate-v1
 ground_truth_kind: agent-labelled
 statistical_design:
+  population: the three bars of the criterion-strength gate (margin over the constant predictor, defect recall, sound recall) over the fifteen-fixture corpus
+  sampling: one gate pass per pre-registered variant; no sampling beyond the corpus
+  repetitions: 1
   estimator: proportion
+  error_model: agent-labelled ground truth; a lens answer is noisy across passes, measured by MP-225
+  uncertainty: fifteen fixtures is a small corpus and one pass can clear by luck; the GO also requires at least 3 of 5 repeated passes, reported beside the gate
   decision_rule:
     comparator: ge
     threshold: 1.0

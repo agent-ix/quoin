@@ -528,7 +528,7 @@ fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reac
 fn tc_958_009_a_plan_without_an_objective_or_at_another_stage_is_unchanged() {
     // A valid gate definition can omit an objective and authored apparatus.
     let gate_no_objective = "ground_truth_kind: mechanical\n\
-         statistical_design:\n  estimator: proportion\n  decision_rule:\n    comparator: ge\n    threshold: 0.8\n\
+         statistical_design:\n  population: every case\n  sampling: every case once\n  repetitions: 1\n  estimator: proportion\n  error_model: a case is misjudged\n  uncertainty: none estimated\n  decision_rule:\n    comparator: ge\n    threshold: 0.8\n\
          negative_controls:\n  - kind: stale-evidence\n    \
          description: admitted evidence names the subject version\n";
     for document in [
@@ -1048,7 +1048,7 @@ fn gate_plan_document(direction: &str, definition: &str, rule: &str) -> String {
          objective:\n  direction: {direction}\n\
          ground_truth_kind: mechanical\n\
          negative_controls:\n  - kind: stale-evidence\n    description: stale evidence refuses a pass\n\
-         statistical_design:\n  decision_rule:\n{rule}\
+         statistical_design:\n  population: every case\n  sampling: every case once\n  repetitions: 1\n  estimator: proportion\n  error_model: a case is misjudged\n  uncertainty: none estimated\n  decision_rule:\n{rule}\
          ---\n\
          \n\
          # Example gate\n"
