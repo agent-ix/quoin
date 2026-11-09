@@ -33,7 +33,7 @@ and expression semantics stay with `agent-ix/quire-contract-ir#52`.
 - Each table row SHALL map to one `FieldDecl` with `name` = `Field` (an `Identifier`), `type.target` from `Type`, `type.multiplicity` from `Multiplicity`, and `constraints` and flags from `Constraints`, with backticks around a cell value stripped.
 - The `Type` cell SHALL resolve, case-sensitively and in this order, to a `KernelScalar` name, an object or enumeration declared in the same bundle by frontmatter `id`, an object or enumeration declared in the same bundle by exact title, or an export of a module named in `semantic.imports`.
 - If a title is shared by two declarations, then extraction SHALL fail naming both.
-- An enumeration SHALL be an artifact of the `enumeration` object type whose `## Values` list maps to `EnumValue[]` (`- value — doc`).
+- An enumeration SHALL be an artifact of the `enumeration` object type whose `## Values` section is one table with the header `Value | Description` that maps to `EnumValue[]` (FR-123); the bullet-list form `- value — doc` is not a mapping form.
 - If a `Type` token resolves to none of those, then extraction SHALL record an advisory finding with locus and emit the field with `type.target` set to the placeholder identity `ix://<org>/<repo>/unresolved/<token>`, so the field survives to the IR reader, which reports it as unresolved, and is never lowered as a string.
 - A `Type` cell of the form `Decimal(p,s)` SHALL map to `type.decimal { precision: p, scale: s }`.
 - A `Type` cell with a trailing ` [unit]` (for example `Duration [ms]`) SHALL map the bracketed symbol to `type.unit`.

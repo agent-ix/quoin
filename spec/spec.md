@@ -225,6 +225,7 @@ index; the files are authoritative.
 - [FR-120](./functional/FR-120-trace-marks-in-test-result-output.md) — trace ids are marks in test result output.
 - [FR-121](./functional/FR-121-record-key-sections-mapping.md) — record-key sections map to a module's own record keys.
 - [FR-122](./functional/FR-122-architecture-record-keys-mapping.md) — architecture object record keys mapping.
+- [FR-123](./functional/FR-123-model-table-sections-mapping.md) — enumeration `## Values` and model-table sections map to record keys.
 
 **Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)
 
