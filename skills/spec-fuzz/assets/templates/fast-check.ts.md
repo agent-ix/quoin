@@ -14,7 +14,7 @@ while reading correctly and matching a grep (`agent-ix/quoin#61`).
 
 ```ts
 import fc from "fast-check";
-import { trace } from "../support/trace.js"; // the repo's no-op marker helper
+import { trace } from "@agent-ix/ix-trace-ts/vitest";
 import { describe, expect, it } from "vitest";
 
 import { parseManifest } from "../src/manifest.js";

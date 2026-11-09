@@ -55,6 +55,10 @@ fn rejects_an_unpinned_import() { … }
 def test_rejects_an_unpinned_import(): ...
 ```
 
+The pytest marker is registered by the `ix_trace_py` plugin (or a `markers = trace(*ids)` pytest config
+entry); the TypeScript form is `trace("FR-012-AC-3")` from `@agent-ix/ix-trace-ts/vitest`, called
+inside the `it(...)` callback (vitest only).
+
 - A `Trace: FR-012-AC-3` comment line (`/// Trace:` in Rust) no longer binds (quire engine
   0.55): ids bind only from the marker attribute, and `quire coverage` reports a comment id as
   `trace-id-outside-marker` naming the replacement form. A production item that implements a

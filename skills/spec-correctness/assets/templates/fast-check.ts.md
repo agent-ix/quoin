@@ -2,8 +2,8 @@
 
 File: `tests/props/fr-NNN.prop.test.ts`.
 Runner: whichever the repo already uses — read `vitest.config.*`, `jest.config.*`, or
-`package.json#scripts.test`. The imports below assume vitest; swap for `@jest/globals`
-where the repo uses jest.
+`package.json#scripts.test`. The imports below assume vitest, the only runner the `trace` helper
+(`@agent-ix/ix-trace-ts/vitest`) supports; a jest repo has no explicit TS trace marker.
 
 ## Anatomy
 
@@ -12,7 +12,7 @@ where the repo uses jest.
 import fc from "fast-check";
 import { describe, it, expect } from "vitest";
 import { detectDuplicates, type Entry } from "../../src/catalog.js";
-import { trace } from "../support/trace.js"; // the repo's no-op marker helper: trace(...ids: string[]): void
+import { trace } from "@agent-ix/ix-trace-ts/vitest";
 
 // grounded in step 2 from `## Inputs` + the signature at src/catalog.ts:88
 const entryArb: fc.Arbitrary<Entry> = fc.record({
@@ -40,7 +40,9 @@ describe("FR-012-AC-1 duplicate modules are sorted", () => {
 
 Both tag carriers: the `trace("FR-012-AC-1", "TC-345")` call (the criterion id plus the
 `spec/matrix.md` row's own `TC-` id; an id in a comment binds nothing), and `FR-012-AC-1` inside
-the `describe` title.
+the `describe` title. `trace(...ids: string[]): void` is a no-op at runtime unless
+`QUIRE_TRACE_EMIT=1` and `TraceReporter` are configured; `quire coverage` binds the quoted ids
+statically.
 
 **The `trace(...)` call goes inside the `it(` / `test(` callback — never in the enclosing
 `describe`.** A tag binds to the symbol whose source span encloses it, and
