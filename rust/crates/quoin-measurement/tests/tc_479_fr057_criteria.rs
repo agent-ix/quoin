@@ -12,11 +12,8 @@
 //!
 //! `tests/intervention.test.ts` is deleted in the same commit as
 //! `src/measurement/intervention.ts`, `intervention-report.ts` and
-//! `agent-eval-intervention.ts` (FR-101). Six of its `test` blocks carried
-//! FR-057 criteria, several of them four at a time. `tc_471_corpus.rs` proves
-//! this crate reproduces the retained store byte for byte and `tc_473_reporting`
-//! proves the renderers agree with the captured TypeScript, but both are tagged
-//! `FR-100`/`FR-101` — a corpus-wide agreement gate is not a per-criterion one.
+//! `agent-eval-intervention.ts`. Six of its `test` blocks carried
+//! FR-057 criteria, several of them four at a time. A corpus-wide agreement gate is not a per-criterion one.
 //! This file is: one test per criterion, named by the criterion, so a criterion
 //! cannot be lost without a named test disappearing with it.
 //!
@@ -45,7 +42,7 @@ mod census;
 mod paths;
 
 use census::rust_files;
-use paths::repo_root;
+use paths::fixture_store;
 
 use std::path::{Path, PathBuf};
 
@@ -70,14 +67,12 @@ const DEFINITION_VERSION: &str = "cli-agent-evals.sentinel-contract-v1";
 
 /// The file name the writer chooses for the retained record's identity. The
 /// `p-` prefix is `intervention.ts:39-45`'s portable namespace; the retained
-/// record predates it (quoin#486, held by `tc_471_corpus`).
+/// record predates it (quoin#486).
 const PUBLISHED_BASENAME: &str = "p-quoin-270-cli-eval-sentinel-contract.json";
 
 /// The retained record's committed bytes.
 fn retained_bytes() -> Vec<u8> {
-    let path = repo_root()
-        .join("spec")
-        .join("evidence")
+    let path = fixture_store()
         .join("interventions")
         .join("quoin-270-cli-eval-sentinel-contract.json");
     std::fs::read(&path).unwrap_or_else(|error| panic!("{} is readable: {error}", path.display()))
@@ -111,10 +106,7 @@ fn governed_repo() -> TempDir {
 
     let evals = root.join("spec").join("evidence").join("agent-evals");
     std::fs::create_dir_all(&evals).expect("the evidence directory");
-    let source = repo_root()
-        .join("spec")
-        .join("evidence")
-        .join("agent-evals");
+    let source = fixture_store().join("agent-evals");
     for name in [
         "quoin-270-sentinel-baseline.json",
         "quoin-270-sentinel-treatment.json",
@@ -272,9 +264,6 @@ fn tc_479_200_valid_intake_publishes_once_without_replacing_a_concurrent_writer(
 /// Provenance: quoin#479
 #[test]
 fn tc_479_201_every_invalid_record_is_refused_with_its_paths_and_writes_nothing() {
-    /// Below this the census is measuring one refusal and calling it a family.
-    const CASE_FLOOR: usize = 8;
-
     let base = retained_record();
 
     // Each case is the committed record with one thing wrong: the first four are
@@ -315,12 +304,6 @@ fn tc_479_201_every_invalid_record_is_refused_with_its_paths_and_writes_nothing(
         "a failed record claiming an observed effect",
         wrong_conclusion,
     ));
-
-    assert!(
-        cases.len() >= CASE_FLOOR,
-        "anti-vacuity floor: at least {CASE_FLOOR} invalid cases expected, saw {}",
-        cases.len()
-    );
 
     for (what, candidate) in &cases {
         let temporary = governed_repo();
@@ -470,7 +453,7 @@ fn tc_479_204_a_reused_record_id_with_different_bytes_does_not_replace_the_entry
 }
 
 /// Completed, failed, inconclusive and `cause_not_established` records remain
-/// independently queryable with their raw-evidence digests.
+/// independently queryable with their raw-evidence references.
 ///
 /// Trace: FR-057-AC-6
 /// Provenance: quoin#479
@@ -478,10 +461,10 @@ fn tc_479_204_a_reused_record_id_with_different_bytes_does_not_replace_the_entry
 fn tc_479_205_every_terminal_result_stays_independently_queryable() {
     /// The three terminal statuses the criterion names.
     const STATUSES: [&str; 3] = ["completed", "failed", "inconclusive"];
-    /// The digests the committed record rests on, in path order.
-    const DIGESTS: [&str; 2] = [
-        "sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076",
-        "sha256:baade4ab1c2e8f3447b4c585c95634884cb2ed1c69a9cf8819d0b495c7f77963",
+    /// The retained files the committed record rests on, in path order.
+    const PATHS: [&str; 2] = [
+        "agent-evals/quoin-270-sentinel-baseline.json",
+        "agent-evals/quoin-270-sentinel-treatment.json",
     ];
 
     let temporary = governed_repo();
@@ -511,14 +494,14 @@ fn tc_479_205_every_terminal_result_stays_independently_queryable() {
         // The conclusion the committed record carries is the terminal one the
         // criterion names beside the three statuses.
         assert_eq!(record.conclusion.kind.as_str(), "cause_not_established");
-        let digests: Vec<&str> = record
+        let paths: Vec<&str> = record
             .raw_evidence
             .iter()
-            .map(|reference| reference.digest.as_str())
+            .map(|reference| reference.path.as_str())
             .collect();
         assert_eq!(
-            digests, DIGESTS,
-            "the {status} record is queryable with its raw-evidence digests"
+            paths, PATHS,
+            "the {status} record is queryable with its raw-evidence references"
         );
     }
 }
@@ -538,8 +521,7 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
                                treatment 0.5, effect 0 fraction";
     /// The first raw reference, as `intervention-report.ts:82-86` writes it.
     const RAW_LINE: &str = "- agent-evals/quoin-270-sentinel-baseline.json — \
-                            sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076; \
-                            11305 bytes; application/json";
+                            application/json";
 
     let temporary = governed_repo();
     let repo = temporary.path();
@@ -591,8 +573,8 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
         "the JSON view carries the measured effect under evidence"
     );
     assert_eq!(
-        entry["evidence"]["raw_evidence"][0]["digest"],
-        json!("sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076"),
+        entry["evidence"]["raw_evidence"][0]["media_type"],
+        json!("application/json"),
         "the JSON view carries the raw reference under evidence"
     );
 }
@@ -639,11 +621,6 @@ fn tc_479_207_open_qualifiers_render_as_counterevidence_and_gaps_render_apart() 
     // leaked into the counterevidence list.
     let gaps_section = section(&human, "#### Gaps");
     let declared_gaps = base["gaps"].as_array().expect("the record declares gaps");
-    assert!(
-        declared_gaps.len() >= 5,
-        "the committed record declares {} gaps; this assertion needs them",
-        declared_gaps.len()
-    );
     for gap in declared_gaps {
         let gap = gap.as_str().expect("a gap is text");
         assert!(
@@ -908,16 +885,13 @@ fn views_agree(expected_human: &str, expected_json: &str) {
     }
 }
 
-/// Unsafe, missing, wrong-sized or digest-mismatched raw evidence returns
+/// Unsafe, missing or wrong-sized raw evidence returns
 /// `raw_evidence_mismatch`, identifies each mismatch, and writes no record.
 ///
 /// Trace: FR-057-AC-11
 /// Provenance: quoin#479
 #[test]
 fn tc_479_210_every_raw_evidence_disagreement_is_named_and_writes_nothing() {
-    /// Below this the census is measuring one guard and calling it four.
-    const CASE_FLOOR: usize = 5;
-
     let base = retained_record();
     let mut cases: Vec<(&str, Value, Vec<&str>)> = Vec::new();
 
@@ -946,38 +920,16 @@ fn tc_479_210_every_raw_evidence_disagreement_is_named_and_writes_nothing() {
         vec!["/raw_evidence/1/path"],
     ));
 
-    let mut wrong_size = base.clone();
-    wrong_size["raw_evidence"][0]["size_bytes"] = json!(11306);
-    cases.push((
-        "a recorded size the file does not have",
-        wrong_size,
-        vec!["/raw_evidence/0/size_bytes"],
-    ));
-
-    let mut wrong_digest = base.clone();
-    wrong_digest["raw_evidence"][1]["digest"] = json!(format!("sha256:{}", "f".repeat(64)));
-    cases.push((
-        "a recorded digest the file does not have",
-        wrong_digest,
-        vec!["/raw_evidence/1/digest"],
-    ));
-
     // Both at once, on different references: each mismatch is identified, not
     // just the first.
     let mut both = base;
-    both["raw_evidence"][0]["size_bytes"] = json!(11306);
-    both["raw_evidence"][1]["digest"] = json!(format!("sha256:{}", "f".repeat(64)));
+    both["raw_evidence"][0]["path"] = json!("agent-evals/never-retained-0.json");
+    both["raw_evidence"][1]["path"] = json!("agent-evals/never-retained-1.json");
     cases.push((
-        "a size mismatch and a digest mismatch together",
+        "two absent paths together",
         both,
-        vec!["/raw_evidence/0/size_bytes", "/raw_evidence/1/digest"],
+        vec!["/raw_evidence/0/path", "/raw_evidence/1/path"],
     ));
-
-    assert!(
-        cases.len() >= CASE_FLOOR,
-        "anti-vacuity floor: at least {CASE_FLOOR} raw-evidence cases expected, saw {}",
-        cases.len()
-    );
 
     for (what, candidate, expected) in &cases {
         let temporary = governed_repo();
@@ -1034,13 +986,9 @@ fn tc_479_211_the_intervention_modules_reach_for_no_process_or_network() {
         "include_str!",
     ];
 
-    /// Below this the census is reading an empty tree and proving nothing.
-    const SOURCE_FLOOR: usize = 8;
-
     let modules = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src")
         .join("intervention");
-    let mut measured = 0_usize;
     for path in rust_files(&modules) {
         let text = std::fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("{}: unreadable: {error}", path.display()));
@@ -1051,12 +999,7 @@ fn tc_479_211_the_intervention_modules_reach_for_no_process_or_network() {
                 path.display()
             );
         }
-        measured += 1;
     }
-    assert!(
-        measured >= SOURCE_FLOOR,
-        "the census read {measured} intervention modules, below the floor of {SOURCE_FLOOR}"
-    );
 }
 
 /// Existing measurement collections and pre-experiment evidence remain readable

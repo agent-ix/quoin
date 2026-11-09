@@ -19,19 +19,17 @@
 //! caller's `unknown` and return nothing, so the caller keeps handling the same
 //! loosely-typed object it passed in. Here they return the parsed
 //! [`MeasurementCollection`], which is the `parse, don't validate` rule the
-//! Stage 6 plan §13.3 names and `RawFileSha256Digest::parse_stored` models.
+//! Stage 6 plan §13.3 names.
 //!
 //! The write path still writes the **caller's** bytes, not a re-serialization
 //! of the parsed value (`store.ts:40` canonicalizes `candidate`). Nothing here
 //! is a lossy round trip, because nothing here round-trips.
 
 mod interval;
-mod plan;
+pub(crate) mod plan;
 mod population;
 pub(crate) mod read;
 mod stack;
-
-use std::collections::{BTreeMap, BTreeSet};
 
 use quoin_store::{JsonObject, JsonValue};
 
@@ -100,9 +98,7 @@ fn parse_stored_measurement_collection(
     let subject = read::non_empty(object, "subject", CODE, "collection")?;
     let tool_identity = read::non_empty(object, "toolIdentity", CODE, "collection")?;
     let tool_version = read::non_empty(object, "toolVersion", CODE, "collection")?;
-    let config_digest = read::non_empty(object, "configDigest", CODE, "collection")?;
     let timestamp = read::non_empty(object, "timestamp", CODE, "collection")?;
-    let source_revision = read::non_empty(object, "sourceRevision", CODE, "collection")?;
 
     let Some(JsonValue::Array(raw_observations)) = object.get("observations") else {
         return Err(refuse("collection requires at least one observation"));
@@ -127,12 +123,9 @@ fn parse_stored_measurement_collection(
     // The stack's own failure is kept alongside the parse instead of `?`-ing
     // immediately, so a caller checking further collection-level rules can
     // still see the observations read below (PLAT-929, review finding #5(a)
-    // on quoin#580). `configDigest`'s shape rides along in the same call
-    // (PLAT-939): it is a collection-envelope member, not a `verificationStack`
-    // one, but it is checked at the same schemaVersion-2 gate as `lockDigest`
-    // and `executableDigest`.
+    // on quoin#580).
     let (verification_stack, stack_error) = if schema_version == MEASUREMENT_SCHEMA_VERSION {
-        match stack::verification_stack(object.get("verificationStack"), config_digest.as_str()) {
+        match stack::verification_stack(object.get("verificationStack")) {
             Ok(stack) => (Some(stack), None),
             Err(error) => (None, Some(error)),
         }
@@ -168,10 +161,7 @@ fn parse_stored_measurement_collection(
             scope: object.get("scope").cloned().unwrap_or(JsonValue::Null),
             tool_identity,
             tool_version,
-            config_digest,
             timestamp,
-            source_revision,
-            corpus_revision: read::string(object, "corpusRevision").map(str::to_owned),
             environment,
             verification_stack,
             observations,
@@ -190,7 +180,7 @@ fn parse_stored_measurement_collection(
 ///
 /// Everything [`stored_measurement_collection`] refuses, plus a schema version
 /// other than [`MEASUREMENT_SCHEMA_VERSION`], a build profile other than
-/// release, absent toolchains, a stated `verificationStack.unverifiedArtifacts`
+/// release, a stated `verificationStack.unverifiedArtifacts`
 /// or `.protectedApparatus` (both computed by intake), and any observation
 /// whose metric has no active plan at the observation's own definition
 /// version (an item row, PLAT-1016, answers to its governed metric's plan).
@@ -249,28 +239,13 @@ pub fn measurement_collection(
                             .to_owned(),
                     );
                 }
-                if stack.toolchains.is_none() {
-                    findings.push(
-                        "verificationStack.toolchains must be present; mark a language not \
-                         used as absent or null rather than omitting the whole member"
-                            .to_owned(),
-                    );
-                }
-                // `stack::verification_stack` already refuses a `toolchains`
-                // object present with every language absent, so this check
-                // (an omitted `toolchains` member entirely) is no longer
-                // vacuous the way it was before that refusal existed (review
-                // finding #3 on quoin#580).
             }
         },
     }
 
     findings.extend(stack::stated_computed_members(value));
 
-    let by_metric: BTreeMap<&str, &MeasurementPlan> = plans
-        .iter()
-        .map(|plan| (plan.metric.as_str(), plan))
-        .collect();
+    let by_metric = plan::by_metric(plans);
     // The parse admitted every observation in order, so the stored array and
     // `collection.observations` pair up by position; the population checks
     // read the stored member, because a malformed value is exactly what the
@@ -285,54 +260,30 @@ pub fn measurement_collection(
     };
     for (index, observation) in collection.observations.iter().enumerate() {
         let (plan, population_plan) = plan::governing(&by_metric, observation);
-        findings.extend(plan::findings(observation, plan));
+        findings.extend(
+            plan::findings(observation, plan)
+                .into_iter()
+                .map(|finding| format!("{finding} (at observations[{index}])")),
+        );
         let raw_population = raw_observations
             .get(index)
             .and_then(|raw| raw.as_object().ok())
             .and_then(|raw| raw.get("population"));
-        for (code, finding) in population::findings(observation, raw_population, population_plan) {
-            typed.push(code);
-            findings.push(format!("{code}: {finding}"));
-        }
-        for (code, finding) in interval::findings(observation, population_plan) {
-            typed.push(code);
-            findings.push(format!("{code}: {finding}"));
-        }
-    }
-
-    // PLAT-936: tamper evidence, not an ordering proof. A plan that declares a
-    // `preregistration` block asserts that its own "Comparison and
-    // Enforcement" section reads today the way it did when the digest was
-    // recorded; this is the one place that assertion is checked, and only for
-    // a *new* collection — `stored_measurement_collection` never reaches this
-    // function, so historical evidence is unaffected. Residual gaps this does
-    // not close (reporting only a favourable pre-registered variant, a
-    // repeated re-run, editing an unprotected input such as the baseline
-    // instead of the bar text) are exactly what PLAT-935's design research
-    // found this class of check cannot buy, and nothing here claims
-    // otherwise.
-    //
-    // Run once per distinct metric actually referenced by an observation, not
-    // once per observation: two observations against the same gate plan (e.g.
-    // different dimensions) share one preregistration, and duplicating an
-    // identical finding for each would misreport how many distinct problems a
-    // candidate has (review finding #3 on quoin#583).
-    let mut checked_metrics = BTreeSet::new();
-    for observation in &collection.observations {
-        let metric = observation.metric.as_str();
-        if !checked_metrics.insert(metric) {
-            continue;
-        }
-        let Some(plan) = by_metric.get(metric) else {
-            continue;
-        };
-        if let Some(preregistration) = &plan.preregistration
-            && !preregistration.matches()
+        // Each finding names the JSON path of the member it concerns, so the
+        // same complaint about two observations is two locations, not one
+        // sentence repeated (PLAT-1050).
+        for (code, finding, member) in
+            population::findings(observation, raw_population, population_plan)
         {
+            typed.push(code);
             findings.push(format!(
-                "metric `{metric}` plan {} bar text no longer matches its pre-registered digest \
-                 {}; the \"Comparison and Enforcement\" section was edited since it was recorded",
-                plan.id, preregistration.declared_digest
+                "{code}: {finding} (at observations[{index}].{member})"
+            ));
+        }
+        for (code, finding, member) in interval::findings(observation, population_plan) {
+            typed.push(code);
+            findings.push(format!(
+                "{code}: {finding} (at observations[{index}].{member})"
             ));
         }
     }

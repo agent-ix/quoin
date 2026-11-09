@@ -4,8 +4,8 @@
 //! The covering-array invariants, as properties over generated spaces.
 //!
 //! quoin#382 asks for properties **and not only example cases**, and the reason
-//! is specific: the golden corpus can only say that thirty-one particular
-//! statements produce thirty-one particular answers. It cannot say that a full
+//! is specific: a list of examples can only say that particular
+//! statements produce particular answers. It cannot say that a full
 //! factorial run always closes every gap, or that adding a configuration never
 //! *removes* coverage — statements about all spaces, which no list of examples
 //! makes.
@@ -58,7 +58,7 @@ fn full_factorial(space: &ConfigurationSpace) -> Vec<Configuration> {
 ///
 /// Small on purpose: the invariants are not size-dependent, and a generator
 /// that spent its budget on enormous spaces would test the resource ceiling
-/// (`tc_382_parity.rs` does that) instead of the algebra.
+/// (`tc_382_bounds.rs` does that) instead of the algebra.
 fn generated_space(max_exclusions: usize) -> impl Strategy<Value = Generated> {
     (2_usize..=4, prop::collection::vec(2_usize..=3, 4))
         .prop_flat_map(move |(dimension_count, value_counts)| {

@@ -84,7 +84,6 @@ fn rows() -> Vec<Row> {
         "schema": corpus::SCHEMA,
         "sampling_rule": "synthetic",
         "seed": 1,
-        "source_commit": "0000000",
         "rows": [
             row_value("EV2-0001", Mode::ReqTest),
             row_value("EV2-0002", Mode::ReqCode),
@@ -306,7 +305,7 @@ fn tc_1028_s1_asks_only_present_artifacts_and_skips_absent_branches() {
         ]
     );
     assert_eq!(keys(Mode::ReqTestCode).len(), 6);
-    assert!(keys(Mode::Req).is_empty());
+    assert_eq!(keys(Mode::Req).len(), 0);
 
     // An RT row: clean test facts and no code facts at all is `none`.
     let rt = facts(&[
@@ -791,7 +790,7 @@ fn tc_1028_the_text_check_catches_rtc_wording_on_an_rt_row() {
         ..severity::S1_RT
     };
     let violations = wording_violations(&leaky, &row_in(Mode::ReqTest));
-    assert!(!violations.is_empty());
+    assert_ne!(violations.len(), 0);
     assert!(
         violations
             .iter()
@@ -885,7 +884,7 @@ fn selection_file(entries: &Value) -> Result<corpus::SelectionFile, String> {
 
 fn selection_entry(mp: &str, variant: &str, version: u32) -> Value {
     json!({"mp": mp, "variant": variant, "version": version,
-           "selected_at_commit": "358870db", "dev_evidence": "reviews/dev.md",
+           "dev_evidence": "reviews/dev.md",
            "baselines": ["S0@v1"]})
 }
 

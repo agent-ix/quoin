@@ -50,9 +50,9 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
     let version = execute(ProcessCommand::new(runner_program()).arg("--version"))?;
     let parsed = semver::Version::parse(version.trim().trim_start_matches('v'))
         .map_err(|_| "ix-flow did not report a supported semantic version".to_owned())?;
-    if parsed < semver::Version::new(0, 3, 0) {
+    if parsed < semver::Version::new(0, 3, 1) {
         return Err(
-            "ix-flow >=0.3.0 is required; run npm install -g @agent-ix/ix-flow@latest"
+            "ix-flow >=0.3.1 is required; run npm install -g @agent-ix/ix-flow@latest"
                 .to_owned()
                 .into(),
         );
@@ -103,10 +103,7 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
     let started = execute(&mut command)?;
     let result: Value = serde_json::from_str(&started)
         .map_err(|e| format!("ix-flow returned invalid JSON: {e}"))?;
-    let id = result
-        .get("instance_id")
-        .and_then(Value::as_str)
-        .ok_or_else(|| "ix-flow returned no instance_id".to_owned())?;
+    let id = instance_id(&result)?;
     let recorded = execute(
         runner(&home, "add-item")
             .arg(id)
@@ -135,6 +132,23 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
         )
     };
     Ok(Response::ok(serde_json::json!({"rendered":rendered})))
+}
+
+fn instance_id(result: &Value) -> Result<&str, String> {
+    if result.get("ok").and_then(Value::as_bool) == Some(false) {
+        return Err(result
+            .get("error")
+            .and_then(|error| error.get("message"))
+            .and_then(Value::as_str)
+            .map_or_else(
+                || "ix-flow run failed without an error message".to_owned(),
+                str::to_owned,
+            ));
+    }
+    result
+        .get("instance_id")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "ix-flow returned no instance_id".to_owned())
 }
 
 fn skill_path(name: &str, arguments: &ArgMatches) -> Result<PathBuf, String> {
@@ -287,7 +301,46 @@ fn runner_program() -> &'static str {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test assertions may panic")]
 mod tests {
-    use super::{command, run};
+    use super::{command, instance_id, run};
+
+    /// Trace: FR-021-AC-2
+    /// Provenance: PLAT-1249
+    #[test]
+    fn ix_flow_error_envelope_is_reported_before_missing_run_id() {
+        let result = serde_json::json!({
+            "ok": false,
+            "error": {
+                "code": "state_write_failed",
+                "message": "permission denied writing workflow state"
+            }
+        });
+
+        assert_eq!(
+            instance_id(&result),
+            Err("permission denied writing workflow state".to_owned())
+        );
+    }
+
+    /// Trace: FR-021-AC-2
+    /// Provenance: PLAT-1249
+    #[test]
+    fn successful_ix_flow_envelope_still_requires_run_id() {
+        let result = serde_json::json!({"ok": true});
+
+        assert_eq!(
+            instance_id(&result),
+            Err("ix-flow returned no instance_id".to_owned())
+        );
+    }
+
+    /// Trace: FR-021-AC-2
+    /// Provenance: PLAT-1249
+    #[test]
+    fn successful_ix_flow_envelope_returns_run_id() {
+        let result = serde_json::json!({"ok": true, "instance_id": "run-1"});
+
+        assert_eq!(instance_id(&result), Ok("run-1"));
+    }
 
     /// Trace: FR-020-AC-2
     #[test]

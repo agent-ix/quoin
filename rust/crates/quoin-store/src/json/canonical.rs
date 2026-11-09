@@ -15,7 +15,7 @@ pub fn canonicalize_jcs(value: &JsonValue) -> Result<String, StoreError> {
     String::from_utf8(canonical_bytes(value)?).map_err(|_| StoreError::JsonNotUtf8)
 }
 
-/// The bytes shared by every canonical-domain digest.
+/// The bytes shared by every canonical-domain identity.
 ///
 /// # Errors
 /// As [`canonicalize_jcs`]. No partial output is returned on refusal.

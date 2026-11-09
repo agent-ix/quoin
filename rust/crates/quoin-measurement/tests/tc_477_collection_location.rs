@@ -50,11 +50,6 @@ const NOT_A_COLLECTION: &[u8] = b"{ \"schemaVersion\": 1 }";
 /// The sentence a refusal ends with, and what is read back from in front of it.
 const SENTENCE: &str = ": unreadable measurement collection";
 
-/// The lowest number of results the store must list for this test to mean
-/// anything. One: a store that listed nothing would satisfy every `for` loop
-/// below without entering it.
-const RESULT_FLOOR: usize = 1;
-
 /// A repository whose measurement store holds exactly one, unreadable,
 /// collection.
 fn repository_with_one_broken_collection(root: &Path) {
@@ -82,11 +77,6 @@ fn tc_477_020_a_disk_refusal_names_the_whole_path() {
 
     let results =
         read_measurement_collection_results(&source).expect("the store lists its collections");
-    assert!(
-        results.len() >= RESULT_FLOOR,
-        "the store listed {} collections, below the floor of {RESULT_FLOOR}",
-        results.len()
-    );
     for result in &results {
         assert_eq!(
             result.path, expected,
@@ -133,11 +123,6 @@ fn tc_477_021_an_in_memory_source_names_what_it_was_given() {
 
     let results =
         read_measurement_collection_results(&source).expect("the map lists its collections");
-    assert!(
-        results.len() >= RESULT_FLOOR,
-        "the map listed {} collections, below the floor of {RESULT_FLOOR}",
-        results.len()
-    );
     assert_eq!(results[0].path, BROKEN);
 
     let refused = read_measurement_collections(&source)

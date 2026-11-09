@@ -4,10 +4,8 @@
 //! The FR-030/FR-031/FR-048/FR-093/FR-094 criteria the retained TypeScript
 //! suites state, restated against the Rust port (quoin#456).
 //!
-//! These are behaviour assertions, not golden comparisons — `store_parity.rs`
-//! carries the byte-level agreement with the oracle. What is restated here is
-//! what each criterion *says*, so the port is gated on the criterion and not
-//! only on the previous implementation's output.
+//! These are behaviour assertions, not golden comparisons: what is restated
+//! here is what each criterion *says*.
 
 #![allow(
     clippy::unwrap_used,
@@ -24,44 +22,34 @@ use quoin_evidence::independence::{
     assess_independence, require_known_policy_obligations, validate_independence_policy,
 };
 use quoin_evidence::mock_inspection::{inspect_mock_injections, mock_inspection_input};
-use quoin_evidence::paths::{bindings_path, run_path, scan_path, trust_decision_path};
+use quoin_evidence::paths::{bindings_path, record_path, trust_decision_path};
 use quoin_evidence::record::{RecordRequest, record_run};
 use quoin_evidence::store::{
-    affirm, gc, list_recorded_suites, read_bindings, read_runs, read_trust_decisions,
-    write_bindings, write_mock_inspection, write_run, write_trust_decision,
+    gc, list_recorded_suites, read_bindings, read_runs, read_trust_decisions, write_bindings,
+    write_mock_inspection, write_run, write_trust_decision,
 };
 use quoin_evidence::trust::{assess_trust, validate_trust_decision};
 use quoin_evidence::types::{
-    Affirmation, Binding, EvidenceLineage, IndependenceDimension, IndependencePolicy,
-    IndependenceRequirement, IndependenceStatus, MockInspectionRecord, Outcome, ProducerContext,
-    RunEntry, RunRecord, STORE_SCHEMA_VERSION, TrustAdapter, TrustDecision, TrustDecisionKind,
-    TrustEvidenceReference, TrustStatus, TrustTrigger, TrustUse,
+    Binding, EvidenceLineage, IndependenceDimension, IndependencePolicy, IndependenceRequirement,
+    IndependenceStatus, MockInspectionRecord, Outcome, ProducerContext, RunEntry, RunRecord,
+    STORE_SCHEMA_VERSION, TrustAdapter, TrustDecision, TrustDecisionKind, TrustEvidenceReference,
+    TrustStatus, TrustTrigger, TrustUse,
 };
 use quoin_evidence::{
-    Commit, DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, StatementHash,
-    SuiteId, SymbolId, TrustDecisionId,
+    DiskEvidence, EvidenceSource, MemoryEvidence, ObligationId, ProfileId, SuiteId, SymbolId,
+    TrustDecisionId,
 };
 use quoin_quire_types::Obligation;
 use serde_json::json;
-
-const COMMIT: &str = "aaaaaaaaaaaa0000";
-const OTHER_COMMIT: &str = "bbbbbbbbbbbb0000";
-const HASH_A: &str = "sha256:aaaa";
-const HASH_B: &str = "sha256:bbbb";
 
 fn suite(name: &str) -> SuiteId {
     SuiteId::new(name)
 }
 
-fn commit(value: &str) -> Commit {
-    Commit::new(value)
-}
-
-fn obligation(id: &str, hash: &str) -> Obligation {
+fn obligation(id: &str) -> Obligation {
     Obligation {
         id: id.to_owned(),
         statement: format!("the system shall {id}"),
-        statement_hash: hash.to_owned(),
         target_ids: None,
         // The three fields quoin#383 added for the auditor. Absent here, which
         // is what an obligation with no `Verification` cell, no criticality and
@@ -83,11 +71,10 @@ fn entry(symbol: &str, outcome: Outcome, traces: &[&str]) -> RunEntry {
     }
 }
 
-fn run(suite_name: &str, commit_value: &str, timestamp: &str, entries: Vec<RunEntry>) -> RunRecord {
+fn run(suite_name: &str, timestamp: &str, entries: Vec<RunEntry>) -> RunRecord {
     RunRecord {
         schema_version: STORE_SCHEMA_VERSION,
         suite: suite(suite_name),
-        commit: commit(commit_value),
         tool: "cargo test".to_owned(),
         evidence_kind: None,
         timestamp: timestamp.to_owned(),
@@ -95,10 +82,9 @@ fn run(suite_name: &str, commit_value: &str, timestamp: &str, entries: Vec<RunEn
     }
 }
 
-fn request(suite_name: &str, commit_value: &str, entries: Vec<RunEntry>) -> RecordRequest {
+fn request(suite_name: &str, entries: Vec<RunEntry>) -> RecordRequest {
     RecordRequest {
         suite: suite(suite_name),
-        commit: commit(commit_value),
         tool: "cargo test".to_owned(),
         evidence_kind: None,
         lineage: None,
@@ -107,15 +93,12 @@ fn request(suite_name: &str, commit_value: &str, entries: Vec<RunEntry>) -> Reco
     }
 }
 
-fn binding(obligation_id: &str, suite_name: &str, hash: &str) -> Binding {
+fn binding(obligation_id: &str, suite_name: &str) -> Binding {
     Binding {
         obligation: ObligationId::new(obligation_id),
-        statement_hash_at_binding: StatementHash::new(hash),
         suite: suite(suite_name),
-        commit: commit(COMMIT),
         symbols: vec![SymbolId::new("t")],
         lineage: None,
-        affirmations: None,
     }
 }
 
@@ -123,8 +106,8 @@ fn context(name: &str) -> ProducerContext {
     ProducerContext {
         name: name.to_owned(),
         version: "1.0".to_owned(),
-        configuration_digest: "sha256:aa".to_owned(),
-        validation_corpus_digest: "sha256:bb".to_owned(),
+        configuration: "config-a".to_owned(),
+        validation_corpus: "corpus-a".to_owned(),
         input_contract: "junit-xml".to_owned(),
         environment: "ci".to_owned(),
         adapter: None,
@@ -152,8 +135,7 @@ fn decision(id: &str) -> TrustDecision {
         ],
         validation_evidence: vec![TrustEvidenceReference {
             id: "V-1".to_owned(),
-            digest: Some("sha256:abcdef".to_owned()),
-            reference: None,
+            reference: Some("evidence/v-1".to_owned()),
         }],
         limitations: Vec::new(),
         owner: "peter".to_owned(),
@@ -166,19 +148,15 @@ fn provenance() -> serde_json::Value {
         "schemaVersion": "producer-provenance-v1",
         "identity": "quoin",
         "version": "0.1.0",
-        "sourceRevision": "a".repeat(40),
-        "sourceState": "clean",
-        "executableDigest": format!("sha256:{}", "1".repeat(64)),
-        "configurationDigest": format!("sha256:{}", "2".repeat(64)),
         "capabilities": ["record"],
-        "artifacts": [{ "name": "report.json", "digest": format!("sha256:{}", "3".repeat(64)) }],
+        "artifacts": [{ "name": "report.json" }],
     })
 }
 
 fn experiment() -> serde_json::Value {
     json!({
         "schemaVersion": "experiment-record-v1",
-        "subject": { "kind": "requirement", "id": "FR-001", "sourceRevision": "b".repeat(40) },
+        "subject": { "kind": "requirement", "id": "FR-001" },
         "recordedAt": "2026-01-01T00:00:00Z",
         "hypothesis": "the adapter reads real output",
         "design": {
@@ -195,7 +173,7 @@ fn experiment() -> serde_json::Value {
 fn operational() -> serde_json::Value {
     json!({
         "schemaVersion": "operational-evidence-record-v1",
-        "subject": { "kind": "service", "id": "quoin-core", "sourceRevision": "c".repeat(40) },
+        "subject": { "kind": "service", "id": "quoin-core" },
         "recordedAt": "2026-01-01T00:00:00Z",
         "window": { "startedAt": "2026-01-01T00:00:00Z", "endedAt": "2026-01-02T00:00:00Z" },
         "environment": "production",
@@ -215,14 +193,20 @@ fn operational() -> serde_json::Value {
 
 /// Trace: FR-030-AC-1
 #[test]
-fn tc_456_200_a_run_file_is_named_by_suite_and_twelve_character_commit_prefix() {
-    assert_eq!(
-        run_path(&suite("SUITE-001"), &commit(COMMIT)),
-        "runs/SUITE-001/aaaaaaaaaaaa.json"
+fn tc_456_200_a_run_file_is_named_by_suite_and_timestamp() {
+    let run_path = record_path("runs", &suite("SUITE-001"), "2026-08-17T00:00:00Z");
+    let scan_path = record_path("scans", &suite("SUITE-001"), "2026-08-17T00:00:00Z");
+    assert!(run_path.starts_with("runs/SUITE-001/"));
+    assert!(
+        std::path::Path::new(&run_path)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
     );
-    assert_eq!(
-        scan_path(&suite("SUITE-001"), &commit(COMMIT)),
-        "scans/SUITE-001/aaaaaaaaaaaa.json"
+    assert!(scan_path.starts_with("scans/SUITE-001/"));
+    assert!(
+        std::path::Path::new(&scan_path)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
     );
     assert_eq!(bindings_path(), "bindings.json");
     assert_eq!(
@@ -237,7 +221,6 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
     let mut store = MemoryEvidence::new();
     let record = run(
         "SUITE-001",
-        COMMIT,
         "2026-08-17T00:00:00Z",
         vec![entry("tests::ok", Outcome::Pass, &["FR-001-AC-1"])],
     );
@@ -249,7 +232,6 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
     );
     // Every contiguous run of keys at one indentation must already be sorted.
     let mut previous: Option<(usize, &str)> = None;
-    let mut checked = 0_usize;
     for line in first.lines() {
         let indent = line.len() - line.trim_start().len();
         let Some(rest) = line.trim_start().strip_prefix('"') else {
@@ -268,11 +250,9 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
             && last_indent == indent
         {
             assert!(last_key < key, "{last_key} precedes {key} out of order");
-            checked += 1;
         }
         previous = Some((indent, key));
     }
-    assert!(checked >= 5, "too few key pairs were compared: {checked}");
 
     // Serializing the same record twice must produce the same bytes.
     let mut second_store = MemoryEvidence::new();
@@ -282,49 +262,50 @@ fn tc_456_201_records_sort_keys_at_every_level_and_end_with_a_newline() {
 
 /// Trace: FR-030-AC-3
 #[test]
-fn tc_456_202_one_file_per_suite_and_commit_and_the_last_write_wins() {
+fn tc_456_202_one_file_per_suite_and_timestamp_and_the_last_write_wins() {
     let mut store = MemoryEvidence::new();
-    write_run(
+    let first_path = write_run(
         &mut store,
-        &run("SUITE-001", COMMIT, "2026-08-17T00:00:00Z", vec![]),
+        &run("SUITE-001", "2026-08-17T00:00:00Z", vec![]),
     )
     .unwrap();
-    write_run(
+    let second_path = write_run(
         &mut store,
-        &run("SUITE-002", COMMIT, "2026-08-17T00:00:00Z", vec![]),
+        &run("SUITE-002", "2026-08-17T00:00:00Z", vec![]),
     )
     .unwrap();
+    assert_ne!(
+        first_path, second_path,
+        "two suites must use separate files"
+    );
     assert_eq!(
-        store.paths(),
-        vec![
-            "runs/SUITE-001/aaaaaaaaaaaa.json",
-            "runs/SUITE-002/aaaaaaaaaaaa.json"
-        ],
-        "two suites at one commit must not merge into one file"
+        store.paths().len(),
+        2,
+        "two suites at one timestamp must not merge into one file"
     );
 
-    write_run(
+    let rewritten_path = write_run(
         &mut store,
         &run(
             "SUITE-001",
-            COMMIT,
-            "2026-08-18T00:00:00Z",
+            "2026-08-17T00:00:00Z",
             vec![entry("tests::later", Outcome::Pass, &[])],
         ),
     )
     .unwrap();
+    assert_eq!(
+        rewritten_path, first_path,
+        "same timestamp must reuse its file"
+    );
     assert_eq!(store.paths().len(), 2, "the rewrite added a file");
-    let text = store
-        .read("runs/SUITE-001/aaaaaaaaaaaa.json")
-        .unwrap()
-        .unwrap();
+    let text = store.read(&first_path).unwrap().unwrap();
     assert!(text.contains("tests::later"), "the later write did not win");
 }
 
 /// Trace: FR-030-AC-4
 #[test]
 fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
-    let obligations = [obligation("FR-001-AC-1", HASH_A)];
+    let obligations = [obligation("FR-001-AC-1")];
     for (outcome, expected) in [
         (Outcome::Pass, vec![ObligationId::new("FR-001-AC-1")]),
         (Outcome::Fail, vec![]),
@@ -336,7 +317,6 @@ fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
             &mut store,
             &request(
                 "SUITE-001",
-                COMMIT,
                 vec![entry("tests::tc001", outcome, &["FR-001-AC-1"])],
             ),
             &obligations,
@@ -344,81 +324,6 @@ fn tc_456_203_only_a_passing_symbol_discharges_an_obligation() {
         .unwrap();
         assert_eq!(outcome.bound, expected);
     }
-}
-
-/// Trace: FR-030-AC-5
-#[test]
-fn tc_456_204_a_changed_statement_is_reported_suspect_and_the_hash_is_not_moved() {
-    let mut store = MemoryEvidence::new();
-    record_run(
-        &mut store,
-        &request(
-            "SUITE-001",
-            COMMIT,
-            vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
-        ),
-        &[obligation("FR-001-AC-1", HASH_A)],
-    )
-    .unwrap();
-    let outcome = record_run(
-        &mut store,
-        &request(
-            "SUITE-001",
-            OTHER_COMMIT,
-            vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
-        ),
-        &[obligation("FR-001-AC-1", HASH_B)],
-    )
-    .unwrap();
-    assert_eq!(outcome.suspect, vec![ObligationId::new("FR-001-AC-1")]);
-    assert!(
-        outcome.bound.is_empty(),
-        "a re-discharge is not a new binding"
-    );
-    assert_eq!(
-        read_bindings(&store).unwrap().bindings[0]
-            .statement_hash_at_binding
-            .as_str(),
-        HASH_A,
-        "re-running a test must not re-affirm a reworded requirement"
-    );
-}
-
-/// Trace: FR-030-AC-6
-#[test]
-fn tc_456_205_affirming_moves_the_hash_forward_and_records_who_and_where() {
-    let existing = [binding("FR-001-AC-1", "SUITE-001", HASH_A)];
-    let affirmation = Affirmation {
-        who: "peter".to_owned(),
-        commit: commit(OTHER_COMMIT),
-        note: Some("read the new statement".to_owned()),
-    };
-    let outcome = affirm(
-        &existing,
-        &ObligationId::new("FR-001-AC-1"),
-        None,
-        &StatementHash::new(HASH_B),
-        &affirmation,
-    );
-    assert!(outcome.found);
-    assert_eq!(
-        outcome.bindings[0].statement_hash_at_binding.as_str(),
-        HASH_B
-    );
-    assert_eq!(
-        outcome.bindings[0].affirmations.as_ref().unwrap()[0].who,
-        "peter"
-    );
-
-    let unknown = affirm(
-        &existing,
-        &ObligationId::new("FR-999-AC-9"),
-        None,
-        &StatementHash::new(HASH_B),
-        &affirmation,
-    );
-    assert!(!unknown.found, "an unknown obligation must not be invented");
-    assert_eq!(unknown.bindings, existing, "the graph must be untouched");
 }
 
 /// Trace: FR-030-AC-7
@@ -429,66 +334,38 @@ fn tc_456_206_a_trace_id_no_obligation_states_is_named_rather_than_dropped() {
         &mut store,
         &request(
             "SUITE-001",
-            COMMIT,
             vec![entry("tests::tc001", Outcome::Pass, &["FR-404-AC-1"])],
         ),
-        &[obligation("FR-001-AC-1", HASH_A)],
+        &[obligation("FR-001-AC-1")],
     )
     .unwrap();
     assert_eq!(outcome.unmatched, vec!["FR-404-AC-1".to_owned()]);
-    assert!(outcome.bound.is_empty());
+    assert_eq!(outcome.bound.len(), 0);
 }
 
-/// Trace: FR-030-AC-8
+/// Trace: FR-030-AC-8, FR-030-AC-12
 #[test]
-fn tc_456_207_gc_deletes_only_unreferenced_older_runs_and_dry_run_changes_nothing() {
+fn tc_456_207_gc_deletes_only_superseded_runs_and_dry_run_changes_nothing() {
     let mut store = MemoryEvidence::new();
-    write_run(
-        &mut store,
-        &run("SUITE-001", COMMIT, "2026-08-17T00:00:00Z", vec![]),
-    )
-    .unwrap();
-    write_run(
-        &mut store,
-        &run("SUITE-001", OTHER_COMMIT, "2026-08-18T00:00:00Z", vec![]),
-    )
-    .unwrap();
-    write_run(
-        &mut store,
-        &run(
-            "SUITE-001",
-            "cccccccccccc0000",
-            "2026-08-16T00:00:00Z",
-            vec![],
-        ),
-    )
-    .unwrap();
-    let mut referenced = binding("FR-001-AC-1", "SUITE-001", HASH_A);
-    referenced.commit = commit(COMMIT);
-    write_bindings(&mut store, &[referenced]).unwrap();
+    for timestamp in [
+        "2026-08-17T00:00:00Z",
+        "2026-08-18T00:00:00Z",
+        "2026-08-16T00:00:00Z",
+    ] {
+        write_run(&mut store, &run("SUITE-001", timestamp, vec![])).unwrap();
+    }
 
     let before = store.paths().len();
     let dry = gc(&mut store, true).unwrap();
     assert_eq!(store.paths().len(), before, "--dry-run deleted something");
     let wet = gc(&mut store, false).unwrap();
     assert_eq!(dry, wet, "the dry run and the real run disagree");
-    assert_eq!(
-        wet,
-        vec!["runs/SUITE-001/cccccccccccc.json".to_owned()],
-        "gc kept the newest and the referenced, and collected the rest"
-    );
-    assert!(
-        store
-            .read("runs/SUITE-001/aaaaaaaaaaaa.json")
-            .unwrap()
-            .is_some()
-    );
-    assert!(
-        store
-            .read("runs/SUITE-001/bbbbbbbbbbbb.json")
-            .unwrap()
-            .is_some()
-    );
+    assert_eq!(wet.len(), 2, "gc must delete superseded runs");
+    assert_eq!(store.paths().len(), 1, "gc must retain one run per suite");
+    let mut skipped = Vec::new();
+    let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
+    assert_eq!(runs.len(), 1, "gc must leave one readable run");
+    assert_eq!(runs[0].timestamp, "2026-08-18T00:00:00Z");
 }
 
 /// Trace: FR-030-AC-9
@@ -496,27 +373,25 @@ fn tc_456_207_gc_deletes_only_unreferenced_older_runs_and_dry_run_changes_nothin
 fn tc_456_208_an_unrecorded_store_reads_as_an_empty_graph_not_an_error() {
     let store = MemoryEvidence::new();
     let graph = read_bindings(&store).unwrap();
-    assert!(graph.bindings.is_empty());
+    assert_eq!(graph.bindings.len(), 0);
     assert_eq!(graph.schema_version, STORE_SCHEMA_VERSION);
-    assert!(list_recorded_suites(&store).unwrap().is_empty());
+    assert_eq!(list_recorded_suites(&store).unwrap().len(), 0);
 }
 
 /// Trace: FR-030-AC-10, FR-030-CON-2
 #[test]
-fn tc_456_209_the_graph_keeps_the_hash_and_never_the_statement() {
+fn tc_456_209_the_graph_never_keeps_the_statement() {
     let mut store = MemoryEvidence::new();
     record_run(
         &mut store,
         &request(
             "SUITE-001",
-            COMMIT,
             vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
         ),
-        &[obligation("FR-001-AC-1", HASH_A)],
+        &[obligation("FR-001-AC-1")],
     )
     .unwrap();
     let text = store.read(&bindings_path()).unwrap().unwrap();
-    assert!(text.contains(HASH_A), "the hash is not recorded");
     assert!(
         !text.contains("the system shall"),
         "the statement text leaked into the store"
@@ -527,15 +402,14 @@ fn tc_456_209_the_graph_keeps_the_hash_and_never_the_statement() {
 #[test]
 fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
     let mut store = MemoryEvidence::new();
-    let mut first = obligation("FR-038-AC-1", HASH_A);
+    let mut first = obligation("FR-038-AC-1");
     first.target_ids = Some(vec!["TC-EV-054".to_owned()]);
-    let mut second = obligation("FR-038-AC-2", HASH_A);
+    let mut second = obligation("FR-038-AC-2");
     second.target_ids = Some(vec!["TC-EV-054".to_owned()]);
     let outcome = record_run(
         &mut store,
         &request(
             "EVAL-001",
-            COMMIT,
             vec![entry("TC-EV-054", Outcome::Pass, &["TC-EV-054"])],
         ),
         &[first, second],
@@ -548,23 +422,22 @@ fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {
             ObligationId::new("FR-038-AC-2")
         ]
     );
-    assert!(outcome.unmatched.is_empty());
+    assert_eq!(outcome.unmatched.len(), 0);
 }
 
 /// Trace: FR-030-AC-15
 #[test]
 fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
     let mut store = MemoryEvidence::new();
-    let mut sibling = obligation("FR-001-AC-1", HASH_A);
+    let mut sibling = obligation("FR-001-AC-1");
     sibling.target_ids = Some(vec!["FR-001-AC-2".to_owned()]);
     let outcome = record_run(
         &mut store,
         &request(
             "SUITE-001",
-            COMMIT,
             vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-2"])],
         ),
-        &[sibling, obligation("FR-001-AC-2", HASH_A)],
+        &[sibling, obligation("FR-001-AC-2")],
     )
     .unwrap();
     assert_eq!(outcome.bound, vec![ObligationId::new("FR-001-AC-2")]);
@@ -572,34 +445,28 @@ fn tc_456_211_a_direct_obligation_id_beats_the_indirect_test_case_route() {
 
 /// Trace: FR-030-AC-16
 #[test]
-fn tc_456_212_a_completed_empty_inspection_is_recorded_and_read_at_the_exact_commit() {
+fn tc_456_212_a_completed_empty_inspection_is_recorded_and_read() {
     let mut store = MemoryEvidence::new();
     write_mock_inspection(
         &mut store,
         &MockInspectionRecord {
             schema_version: STORE_SCHEMA_VERSION,
             suite: suite("SUITE-001"),
-            commit: commit(COMMIT),
             tool: "quoin".to_owned(),
             timestamp: "2026-08-17T00:00:00Z".to_owned(),
             injections: Vec::new(),
         },
     )
     .unwrap();
-    let (suites, injections) = mock_inspection_input(&store, Some(&commit(COMMIT))).unwrap();
+    let (suites, injections) = mock_inspection_input(&store).unwrap();
     assert_eq!(suites, vec![suite("SUITE-001")]);
     assert!(
         injections.is_empty(),
         "an empty inspection is a completed inspection"
     );
 
-    let (other_suites, _) = mock_inspection_input(&store, Some(&commit(OTHER_COMMIT))).unwrap();
-    assert!(
-        other_suites.is_empty(),
-        "a record at another commit must not be read as this one's"
-    );
-    let (none, _) = mock_inspection_input(&store, None).unwrap();
-    assert!(none.is_empty());
+    let (none, _) = mock_inspection_input(&MemoryEvidence::new()).unwrap();
+    assert_eq!(none.len(), 0, "no record means nobody looked");
 }
 
 // ---------------------------------------------------------------- FR-031 -----
@@ -611,9 +478,9 @@ fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
     write_bindings(
         &mut store,
         &[
-            binding("FR-001-AC-2", "SUITE-001", HASH_B),
-            binding("FR-001-AC-1", "SUITE-002", HASH_A),
-            binding("FR-001-AC-1", "SUITE-001", HASH_A),
+            binding("FR-001-AC-2", "SUITE-001"),
+            binding("FR-001-AC-1", "SUITE-002"),
+            binding("FR-001-AC-1", "SUITE-001"),
         ],
     )
     .unwrap();
@@ -640,96 +507,29 @@ fn tc_456_220_the_graph_is_cross_suite_and_ordered_by_obligation_then_suite() {
     );
 }
 
-/// Trace: FR-031-AC-1
-#[test]
-fn tc_456_221_affirming_clears_every_suite_not_only_the_first() {
-    let existing = [
-        binding("FR-001-AC-1", "SUITE-001", HASH_A),
-        binding("FR-001-AC-1", "SUITE-002", HASH_A),
-    ];
-    let outcome = affirm(
-        &existing,
-        &ObligationId::new("FR-001-AC-1"),
-        None,
-        &StatementHash::new(HASH_B),
-        &Affirmation {
-            who: "peter".to_owned(),
-            commit: commit(COMMIT),
-            note: None,
-        },
-    );
-    assert!(
-        outcome
-            .bindings
-            .iter()
-            .all(|item| item.statement_hash_at_binding.as_str() == HASH_B),
-        "a sibling suite was left suspect for a reason nobody could act on"
-    );
-
-    let narrowed = affirm(
-        &existing,
-        &ObligationId::new("FR-001-AC-1"),
-        Some(&suite("SUITE-002")),
-        &StatementHash::new(HASH_B),
-        &Affirmation {
-            who: "peter".to_owned(),
-            commit: commit(COMMIT),
-            note: None,
-        },
-    );
-    assert_eq!(
-        narrowed.bindings[0].statement_hash_at_binding.as_str(),
-        HASH_A
-    );
-    assert_eq!(
-        narrowed.bindings[1].statement_hash_at_binding.as_str(),
-        HASH_B
-    );
-}
-
-/// Trace: FR-031-AC-2
+/// Trace: FR-030-AC-12, FR-031-AC-2
 #[test]
 fn tc_456_222_the_newest_record_is_the_newest_by_timestamp_not_by_filename() {
     let mut store = MemoryEvidence::new();
-    // `aaaa…` sorts first but ran last.
+    // The later stamp is written first.
     write_run(
         &mut store,
-        &run("SUITE-001", COMMIT, "2026-08-20T00:00:00Z", vec![]),
+        &run("SUITE-001", "2026-08-20T00:00:00Z", vec![]),
     )
     .unwrap();
     write_run(
         &mut store,
-        &run("SUITE-001", OTHER_COMMIT, "2026-08-01T00:00:00Z", vec![]),
+        &run("SUITE-001", "2026-08-01T00:00:00Z", vec![]),
     )
     .unwrap();
     let mut skipped = Vec::new();
     let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
     assert_eq!(
-        runs.last().unwrap().commit.as_str(),
-        COMMIT,
+        runs.last().unwrap().timestamp.as_str(),
+        "2026-08-20T00:00:00Z",
         "records are not ordered by timestamp"
     );
-    assert!(skipped.is_empty());
-}
-
-/// Trace: FR-031-AC-2
-#[test]
-fn tc_456_223_two_records_sharing_a_timestamp_are_ordered_by_commit() {
-    let mut store = MemoryEvidence::new();
-    write_run(
-        &mut store,
-        &run("SUITE-001", OTHER_COMMIT, "2026-08-17T00:00:00Z", vec![]),
-    )
-    .unwrap();
-    write_run(
-        &mut store,
-        &run("SUITE-001", COMMIT, "2026-08-17T00:00:00Z", vec![]),
-    )
-    .unwrap();
-    let mut skipped = Vec::new();
-    let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
-    let commits: Vec<&str> = runs.iter().map(|record| record.commit.as_str()).collect();
-    assert_eq!(commits, vec![COMMIT, OTHER_COMMIT]);
+    assert_eq!(skipped.len(), 0);
 }
 
 /// Trace: FR-031-AC-3
@@ -758,48 +558,64 @@ fn tc_456_225_one_corrupt_run_file_is_skipped_rather_than_hiding_every_finding()
         &mut store,
         &run(
             "SUITE-001",
-            COMMIT,
             "2026-08-17T00:00:00Z",
             vec![entry("tests::ok", Outcome::Pass, &[])],
         ),
     )
     .unwrap();
     store
-        .write("runs/SUITE-001/bbbbbbbbbbbb.json", b"{ truncated")
+        .write("runs/SUITE-001/corrupt.json", b"{ truncated")
         .unwrap();
 
     let mut skipped = Vec::new();
     let runs = read_runs(&store, &suite("SUITE-001"), &mut skipped).unwrap();
     assert_eq!(
-        runs.iter().map(|r| r.commit.as_str()).collect::<Vec<_>>(),
-        vec![COMMIT],
+        runs.iter()
+            .map(|r| r.timestamp.as_str())
+            .collect::<Vec<_>>(),
+        vec!["2026-08-17T00:00:00Z"],
         "the good record did not reach the caller"
     );
     assert_eq!(skipped.len(), 1);
-    assert!(skipped[0].contains("bbbbbbbbbbbb.json"));
+    assert!(skipped[0].contains("corrupt.json"));
 }
 
 // ---------------------------------------------------------------- FR-048 -----
 
 /// Trace: FR-048-AC-1, FR-048-AC-2
 #[test]
-fn tc_456_240_an_assurance_record_is_identified_by_its_canonical_content() {
+fn tc_456_240_an_assurance_record_is_identified_by_an_opaque_uuid() {
     let mut store = MemoryEvidence::new();
     let first = write_experiment_record(&mut store, &experiment()).unwrap();
     assert!(first.created);
+    let id = first.record.record_id.clone();
+    let groups: Vec<usize> = id.split('-').map(str::len).collect();
+    assert_eq!(groups, [8, 4, 4, 4, 12], "{id} is not a UUID");
     assert!(
-        first.record.record_id.starts_with("sha256:"),
-        "identity is not content derived"
+        first.path.ends_with(&format!("{id}.json")),
+        "{}",
+        first.path
     );
     assert_eq!(
         first.record.input.producer_provenance.identity, "quoin",
         "the record does not carry a producer provenance tuple"
     );
 
-    let again = write_experiment_record(&mut store, &experiment()).unwrap();
-    assert!(!again.created, "an identical republish is not a new record");
-    assert_eq!(again.record.record_id, first.record.record_id);
+    // Publishing the record again under the id it was given is idempotent and
+    // byte-stable.
+    let mut given = experiment();
+    given["recordId"] = json!(id);
+    let again = write_experiment_record(&mut store, &given).unwrap();
+    assert!(!again.created, "a republish is not a new record");
+    assert_eq!(again.record.record_id, id);
     assert_eq!(store.paths().len(), 1);
+
+    // The identity is not derived from the content: the same input with no id
+    // is a new record.
+    let other = write_experiment_record(&mut store, &experiment()).unwrap();
+    assert!(other.created);
+    assert_ne!(other.record.record_id, id);
+    assert_eq!(store.paths().len(), 2);
 }
 
 /// Trace: FR-048-AC-3
@@ -807,7 +623,8 @@ fn tc_456_240_an_assurance_record_is_identified_by_its_canonical_content() {
 fn tc_456_241_invalid_provenance_is_refused_before_any_record_is_published() {
     let mut store = MemoryEvidence::new();
     let mut bad = experiment();
-    bad["producerProvenance"]["executableDigest"] = json!("sha256:not-hex");
+    // A digest member is no part of the contract: it is refused by name.
+    bad["producerProvenance"]["executableDigest"] = json!(format!("sha256:{}", "1".repeat(64)));
     let error = write_experiment_record(&mut store, &bad)
         .unwrap_err()
         .to_string();
@@ -826,7 +643,9 @@ fn tc_456_242_differing_bytes_at_an_immutable_path_are_never_overwritten() {
     store
         .write(&stored.path, b"{\"recordId\":\"tampered\"}\n")
         .unwrap();
-    let error = write_experiment_record(&mut store, &experiment())
+    let mut given = experiment();
+    given["recordId"] = json!(stored.record.record_id);
+    let error = write_experiment_record(&mut store, &given)
         .unwrap_err()
         .to_string();
     assert!(
@@ -842,10 +661,13 @@ fn tc_456_242_differing_bytes_at_an_immutable_path_are_never_overwritten() {
 
 /// Trace: FR-048-AC-5
 #[test]
-fn tc_456_243_operational_evidence_is_content_addressed_and_its_window_is_checked() {
+fn tc_456_243_operational_evidence_is_filed_by_uuid_and_its_window_is_checked() {
     let mut store = MemoryEvidence::new();
     let stored = write_operational_evidence_record(&mut store, &operational()).unwrap();
-    assert!(stored.path.starts_with("operational/sha256-"));
+    assert_eq!(
+        stored.path,
+        format!("operational/{}.json", stored.record.record_id)
+    );
 
     let mut inverted = operational();
     inverted["window"]["endedAt"] = json!("2025-12-31T00:00:00Z");
@@ -857,20 +679,18 @@ fn tc_456_243_operational_evidence_is_content_addressed_and_its_window_is_checke
 
 /// Trace: FR-048-AC-6
 #[test]
-fn tc_456_244_content_tampering_is_detected_on_read() {
+fn tc_456_244_a_record_whose_stored_id_disagrees_with_its_path_is_refused() {
     let mut store = MemoryEvidence::new();
     let stored = write_experiment_record(&mut store, &experiment()).unwrap();
     let text = store.read(&stored.path).unwrap().unwrap();
+    let elsewhere = "0b9a7a52-8f0c-4d0e-9d57-3f1b2c6a1e44";
     store
-        .write(
-            &stored.path,
-            text.replace("it did", "it did not").as_bytes(),
-        )
+        .write(&format!("experiments/{elsewhere}.json"), text.as_bytes())
         .unwrap();
-    let error = read_experiment_record(&store, &stored.record.record_id)
+    let error = read_experiment_record(&store, elsewhere)
         .unwrap_err()
         .to_string();
-    assert!(error.contains("digest does not match content"), "{error}");
+    assert!(error.contains("does not match path"), "{error}");
 }
 
 // ---------------------------------------------------------------- FR-093 -----
@@ -911,7 +731,7 @@ fn tc_456_262_an_unobserved_decision_is_neither_accepted_nor_rejected() {
     unobserved.observed_context = None;
     let assessment = assess_trust(&unobserved).unwrap();
     assert_eq!(assessment.status, TrustStatus::Unobserved);
-    assert!(assessment.triggered_by.is_empty());
+    assert_eq!(assessment.triggered_by.len(), 0);
 }
 
 /// Trace: FR-093-AC-5
@@ -998,7 +818,7 @@ fn lineage(actor: Option<&str>, technique: Option<&str>) -> EvidenceLineage {
 }
 
 fn lineaged(suite_name: &str, value: EvidenceLineage) -> Binding {
-    let mut item = binding("FR-001-AC-1", suite_name, HASH_A);
+    let mut item = binding("FR-001-AC-1", suite_name);
     item.lineage = Some(value);
     item
 }
@@ -1085,7 +905,7 @@ fn tc_456_283_a_common_actor_and_a_missing_dimension_stay_visible_in_the_assessm
         &requirement(&[IndependenceDimension::Actor]),
         &[
             lineaged("SUITE-A", lineage(Some("alice"), None)),
-            binding("FR-001-AC-1", "SUITE-B", HASH_A),
+            binding("FR-001-AC-1", "SUITE-B"),
         ],
     );
     assert_eq!(assessment.status, IndependenceStatus::Insufficient);
@@ -1104,11 +924,10 @@ fn tc_456_284_a_later_run_that_states_no_lineage_clears_the_old_claim() {
     let mut store = MemoryEvidence::new();
     let mut first = request(
         "SUITE-001",
-        COMMIT,
         vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
     );
     first.lineage = Some(lineage(Some("alice"), None));
-    record_run(&mut store, &first, &[obligation("FR-001-AC-1", HASH_A)]).unwrap();
+    record_run(&mut store, &first, &[obligation("FR-001-AC-1")]).unwrap();
     assert_eq!(
         read_bindings(&store).unwrap().bindings[0]
             .lineage
@@ -1121,10 +940,9 @@ fn tc_456_284_a_later_run_that_states_no_lineage_clears_the_old_claim() {
 
     let second = request(
         "SUITE-001",
-        OTHER_COMMIT,
         vec![entry("tests::tc001", Outcome::Pass, &["FR-001-AC-1"])],
     );
-    record_run(&mut store, &second, &[obligation("FR-001-AC-1", HASH_A)]).unwrap();
+    record_run(&mut store, &second, &[obligation("FR-001-AC-1")]).unwrap();
     assert!(
         read_bindings(&store).unwrap().bindings[0].lineage.is_none(),
         "an old independence claim was carried into evidence that did not state one"

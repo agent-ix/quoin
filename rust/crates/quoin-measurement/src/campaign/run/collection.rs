@@ -3,10 +3,9 @@
 //! Typed campaign `MeasurementCollection` emission.
 
 use super::{
-    BTreeMap, CampaignAttempt, CampaignDefinition, CampaignRawArtifact, CampaignRunError,
-    MeasurementPlan, OrderSource, Path, ProcessEvidenceObservation, ProducerExecutionResult,
-    Ranked, RunMemberBindings, TamperFacts, Verdict, VerifiedSource, canonical_digest,
-    read_bounded, retain_value, verdict_json, verify,
+    AttemptEvidence, CampaignDefinition, CampaignRunError, MeasurementPlan, OrderSource, Path,
+    ProcessEvidenceObservation, ProducerExecutionResult, Ranked, Retained, RunMemberBindings,
+    TamperFacts, Verdict, VerifiedSource, read_bounded, verify,
 };
 use serde::Serialize;
 use std::collections::BTreeSet;
@@ -22,13 +21,11 @@ struct CollectionPayload<'a> {
     scope: CollectionScope<'a>,
     tool_identity: &'a str,
     tool_version: &'a str,
-    config_digest: String,
     timestamp: &'a str,
-    source_revision: &'a str,
     environment: CollectionEnvironment<'a>,
-    verification_stack: CollectionStack<'a>,
+    verification_stack: CollectionStack,
     observations: Vec<CollectionObservation<'a>>,
-    raw_evidence: CollectionRawEvidence<'a>,
+    raw_evidence: CollectionRawEvidence,
 }
 
 #[derive(Serialize)]
@@ -47,23 +44,11 @@ struct CollectionEnvironment<'a> {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CollectionStack<'a> {
+struct CollectionStack {
     schema_version: &'static str,
-    lock_digest: String,
-    executable_digest: String,
     build_profile: &'static str,
-    toolchains: &'a BTreeMap<String, String>,
-    sources: BTreeMap<String, CollectionSource<'a>>,
     capabilities: [&'static str; 1],
-    artifacts: BTreeMap<String, String>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct CollectionSource<'a> {
-    remote: &'a str,
-    revision: &'a str,
-    source_state: &'static str,
+    artifacts: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -98,16 +83,8 @@ struct CollectionPopulation<'a> {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CollectionRawEvidence<'a> {
+struct CollectionRawEvidence {
     schema: &'static str,
-    definition_digest: String,
-    source_graph_digest: &'a str,
-    request_digest: &'a str,
-    result_digest: &'a str,
-    checker_request_digest: Option<&'a str>,
-    checker_result_digest: Option<&'a str>,
-    domain_verdict_digest: Option<&'a str>,
-    raw_artifacts: Option<&'a [CampaignRawArtifact]>,
     input_origins: InputOriginInventory,
 }
 
@@ -124,57 +101,27 @@ pub(super) fn publish_collection(
     plan: &MeasurementPlan,
     runtime: &RunMemberBindings,
     procedure: &engineering_assurance::campaign::MeasurementProcedure,
-    producer_source: &VerifiedSource,
     plan_source: &VerifiedSource,
     result: &ProducerExecutionResult<ProcessEvidenceObservation>,
-    attempt: &mut CampaignAttempt,
-    verdict: super::AttemptEvidence,
+    retained: &mut Retained,
+    verdict: AttemptEvidence,
 ) -> Result<(), CampaignRunError> {
-    if verdict == super::AttemptEvidence::Inconclusive && attempt.reason.is_none() {
-        attempt.reason = Some("independent_checker_inconclusive".to_owned());
+    if verdict == AttemptEvidence::Inconclusive && retained.attempt.reason.is_none() {
+        retained.attempt.reason = Some("independent_checker_inconclusive".to_owned());
     }
-    let score = u8::from(verdict == super::AttemptEvidence::Accept);
-    let identity_text = format!("{run_id}/{}#{}", member.name, attempt.index);
-    let collection_id = format!(
-        "campaign-{}",
-        quoin_store::digest_bytes_sha256(identity_text.as_bytes()).as_hex()
-    );
-    let mut sources = BTreeMap::new();
-    for source in &definition.source_graph {
-        let remote = runtime
-            .source_remotes
-            .get(&source.repository)
-            .ok_or_else(|| CampaignRunError::binding("source remote missing".to_owned()))?;
-        sources.insert(
-            source.repository.clone(),
-            CollectionSource {
-                remote,
-                revision: &source.revision,
-                source_state: "clean",
-            },
-        );
-    }
-    let source_graph_digest = canonical_digest(&definition.source_graph)?
-        .as_str()
-        .to_owned();
-    let result_digest = attempt
-        .result_digest
-        .as_deref()
-        .ok_or_else(|| CampaignRunError::binding("producer result missing".to_owned()))?;
-    let result_relative = format!("spec/evidence/campaigns/results/{result_digest}.json");
-    let request_digest = attempt
-        .request_digest
-        .as_deref()
-        .ok_or_else(|| CampaignRunError::binding("producer request missing".to_owned()))?;
-    let request_bytes = super::read_digest_bytes(repo, "requests", request_digest, "json")?;
-    let request_value: serde_json::Value = serde_json::from_slice(&request_bytes)
-        .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
-    let source_inventory = producer_source.input_inventory()?;
-    let input_origins = from_runtime(runtime, &request_value, &source_inventory, procedure)
+    let attempt = &retained.attempt;
+    let score = u8::from(verdict == AttemptEvidence::Accept);
+    let position = definition
+        .members
+        .iter()
+        .position(|candidate| candidate.name == member.name)
+        .unwrap_or(0);
+    let collection_id = format!("campaign-{run_id}-m{position}-{}", attempt.index);
+    let input_origins = from_runtime(runtime, procedure)
         .map_err(|error| CampaignRunError::binding(error.to_string()))?;
-    let mut artifacts = BTreeMap::new();
-    artifacts.insert(result_relative, format!("sha256:{result_digest}"));
-    artifacts.extend(protected_artifacts(plan, plan_source)?);
+    let artifacts: Vec<String> = protected_artifacts(plan, plan_source)?
+        .into_iter()
+        .collect();
     let collection_value = serde_json::to_value(CollectionPayload {
         schema_version: crate::MEASUREMENT_SCHEMA_VERSION,
         collection_id: &collection_id,
@@ -187,20 +134,14 @@ pub(super) fn publish_collection(
         },
         tool_identity: &result.producer.name,
         tool_version: &result.producer.version,
-        config_digest: format!("sha256:{source_graph_digest}"),
         timestamp: &runtime.timestamp,
-        source_revision: &result.producer.source_revision,
         environment: CollectionEnvironment {
             campaign: &definition.id,
             member: &member.name,
         },
         verification_stack: CollectionStack {
             schema_version: "verification-stack-attestation-v1",
-            lock_digest: format!("sha256:{source_graph_digest}"),
-            executable_digest: format!("sha256:{}", result.producer.executable_digest.as_str()),
             build_profile: "release",
-            toolchains: &runtime.toolchains,
-            sources,
             capabilities: ["campaign.direct-process"],
             artifacts,
         },
@@ -212,20 +153,20 @@ pub(super) fn publish_collection(
                 member: &member.name,
             },
             shape: "count",
-            state: if verdict == super::AttemptEvidence::Inconclusive {
+            state: if verdict == AttemptEvidence::Inconclusive {
                 "not_computed"
             } else {
                 "measured"
             },
-            value: (verdict != super::AttemptEvidence::Inconclusive).then_some(score),
-            reason: (verdict == super::AttemptEvidence::Inconclusive)
+            value: (verdict != AttemptEvidence::Inconclusive).then_some(score),
+            reason: (verdict == AttemptEvidence::Inconclusive)
                 .then_some(attempt.reason.as_deref())
                 .flatten(),
             unit: "accepted checks",
             population: CollectionPopulation {
                 examined: 1,
                 matched: score,
-                complete: verdict != super::AttemptEvidence::Inconclusive,
+                complete: verdict != AttemptEvidence::Inconclusive,
                 repetitions: 1,
                 identity: CollectionScope {
                     campaign: &definition.id,
@@ -237,14 +178,6 @@ pub(super) fn publish_collection(
         }],
         raw_evidence: CollectionRawEvidence {
             schema: "quoin.campaign-attempt-evidence/v1",
-            definition_digest: canonical_digest(definition)?.as_str().to_owned(),
-            source_graph_digest: &source_graph_digest,
-            request_digest,
-            result_digest,
-            checker_request_digest: attempt.checker_request_digest.as_deref(),
-            checker_result_digest: attempt.checker_result_digest.as_deref(),
-            domain_verdict_digest: attempt.domain_verdict_digest.as_deref(),
-            raw_artifacts: attempt.raw_artifacts.as_deref(),
             input_origins,
         },
     })
@@ -258,7 +191,6 @@ pub(super) fn publish_collection(
     )
     .map_err(|error| CampaignRunError::measurement(error.to_string()))?;
     let bytes = read_bounded(&path)?;
-    let collection_digest = quoin_store::digest_bytes_sha256(&bytes).as_hex().to_owned();
     let parsed = crate::validate::stored_measurement_collection(
         &quoin_store::parse_strict_json(&bytes)
             .map_err(|error| CampaignRunError::measurement(error.to_string()))?,
@@ -271,14 +203,13 @@ pub(super) fn publish_collection(
         OrderSource::CallerSupplied,
         None,
     );
-    let verdict_value =
-        verdict_json(&result).map_err(|error| CampaignRunError::measurement(error.to_string()))?;
-    let (verdict_digest, _) = retain_value(repo, "verdicts", &verdict_value)?;
-    attempt.collection_id = Some(collection_id);
-    attempt.collection_digest = Some(collection_digest);
-    attempt.verdict_digest = Some(verdict_digest);
-    if result.verdict != Verdict::Accept && verdict == super::AttemptEvidence::Accept {
-        attempt.reason = Some("measurement_plan_inconclusive_or_rejected".to_owned());
+    retained.evidence = match (verdict, result.verdict) {
+        (AttemptEvidence::Accept, Verdict::Accept) => AttemptEvidence::Accept,
+        (AttemptEvidence::Reject, _) | (_, Verdict::Reject) => AttemptEvidence::Reject,
+        _ => AttemptEvidence::Inconclusive,
+    };
+    if result.verdict != Verdict::Accept && verdict == AttemptEvidence::Accept {
+        retained.attempt.reason = Some("measurement_plan_inconclusive_or_rejected".to_owned());
     }
     Ok(())
 }
@@ -286,7 +217,7 @@ pub(super) fn publish_collection(
 fn protected_artifacts(
     plan: &MeasurementPlan,
     source: &VerifiedSource,
-) -> Result<BTreeMap<String, String>, CampaignRunError> {
+) -> Result<BTreeSet<String>, CampaignRunError> {
     let mut selected = BTreeSet::new();
     if let Some(protected) = &plan.protected_apparatus {
         let regular = source.tracked_regular_paths()?;
@@ -307,12 +238,5 @@ fn protected_artifacts(
             }
         }
     }
-    selected
-        .into_iter()
-        .map(|path| {
-            let bytes = source.read_tracked_file(&path)?;
-            let digest = quoin_store::digest_bytes_sha256(&bytes);
-            Ok((path, format!("sha256:{}", digest.as_hex())))
-        })
-        .collect()
+    Ok(selected)
 }

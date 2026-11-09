@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+#
+# quoin-suite-trace — adds each test's trace tags to a cargo-nextest JUnit report
+# so `quoin evidence record --adapter junit` can bind the run to the criteria it
+# exercised (PLAT-1279). It runs no test and records nothing itself.
+[package]
+name = "quoin-suite-trace"
+description = "Annotates a cargo-nextest JUnit report with the trace ids each test is tagged with."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+quoin-quire = { workspace = true }
+regex = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+quoin-evidence = { workspace = true }

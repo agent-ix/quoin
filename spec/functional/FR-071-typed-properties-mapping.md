@@ -52,13 +52,13 @@ and expression semantics stay with `agent-ix/quire-contract-ir#52`.
 | ID | Constraint | Type | Validation |
 |---|---|---|---|
 | FR-071-CON-1 | Quire SHALL recognise the fence at line level with source spans, treating any expression inside braces as opaque constraint text mapped by the cell grammar only. | Boundary | Extraction-only inspection |
-| FR-071-CON-2 | Quoin SHALL publish the golden fixtures (table form, fence form, expected normalized `FieldDecl[]`, expected diagnostics) under `tests/fixtures/semantic-module/` with the semantic-core version they target, for `agent-ix/quire-rs#388` to consume unchanged. | Integrity | Fixture provenance |
+| FR-071-CON-2 | Quoin SHALL publish the golden fixtures (table form, fence form, expected normalized `FieldDecl[]`, expected diagnostics) under `tests/fixtures/semantic-module/` for `agent-ix/quire-rs#388` to consume unchanged. | Integrity | Fixture provenance |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-071-AC-1 | Quoin's copy of the config-service FR-006 rows, rewritten as a typed table, has an expected `FieldDecl[]` fixture whose every element validates against the vendored semantic-core `FieldDecl.json`. | Test |
+| FR-071-AC-1 | Quoin's copy of the config-service FR-006 rows, rewritten as a typed table, has an expected `FieldDecl[]` fixture whose every element validates against the semantic-core `FieldDecl.json`. | Test |
 | FR-071-AC-2 | The `sysml` fence fixture with equal content has an expected normalized `FieldDecl[]` identical to the table fixture's. | Test |
 | FR-071-AC-3 | The both-forms fixture's expected diagnostic is a failure at the second form's locus. | Test |
 | FR-071-AC-4 | `Type` tokens `UUID`, `Decimal(10,2)`, `Duration [ms]`, `ConfigOverlay` (object by title), `Status` (enumeration by id), and an imported export resolve as specified; `Mystery` yields the advisory finding and the placeholder target. | Test |

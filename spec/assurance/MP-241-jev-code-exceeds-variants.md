@@ -33,7 +33,7 @@ The population is every dev row that:
 - is in mode `RC` (requirement plus code) or `RTC` (the full triple), and
 - carries truth for `code_exceeds_requirement`.
 
-No row is excluded by hand. A row the loader excludes (digest mismatch, patch
+No row is excluded by hand. A row the loader excludes (a patch
 that does not apply) is listed with its reason at the top of the report and is
 not in the population. The corpus had not landed when this plan was written,
 so its size and class balance are unknown here. **A truth group with fewer than 10 rows of a class a bar needs is not
@@ -114,8 +114,7 @@ mass or a quiet abstention.
 ## Collection Procedure
 
 `rust/crates/quoin-jev/tests/live_eval_v2.rs` (`live-api` feature) with
-`QUOIN_JEV_VARIANTS=E0,E0-RC,E1,E2,E4`, recorded to a cassette (`QUOIN_JEV_CASSETTE`,
-`QUOIN_JEV_MODEL` pinned). It prints the shared report, then
+`QUOIN_JEV_VARIANTS=E0,E0-RC,E1,E2,E4`, recorded to a cassette (`QUOIN_JEV_CASSETTE`). It prints the shared report, then
 `exceeds::render_diagnostics`: E1's and E4's unit counts (trivial, asked,
 parked, exceeding) and breaker rows with their truth, E2's tau sweep, and E3's
 gated curve over E0, E1, E2 and E4, with bar C's line per mode. The offline
@@ -280,7 +279,7 @@ bumps the variant's version; the bump is enforced by review.
 If no candidate qualifies, there is no held-out run, and the result is
 reported as "no claim" or negative, whichever applies.
 
-Compare only like variant version, corpus revision and label revision. An
+Compare only like variant version. An
 edit to the corpus truth is a new definition version.
 
 ## Round 2: E5, outcome necessity per unit

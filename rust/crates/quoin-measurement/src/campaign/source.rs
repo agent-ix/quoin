@@ -8,9 +8,6 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use engineering_assurance::campaign::{CampaignDefinition, CampaignSource};
-use engineering_assurance::content_digest::ContentDigest;
-use engineering_assurance::producer_execution::InputBinding;
-use quoin_store::digest_bytes_sha256;
 
 use crate::source::MemoryMeasurement;
 use thiserror::Error;
@@ -34,12 +31,6 @@ pub enum SourceError {
     /// The selected checkout has tracked edits or staged changes.
     #[error("campaign source checkout has tracked changes: {0}")]
     Dirty(PathBuf),
-    /// `HEAD` is not the exact declared revision.
-    #[error("campaign source revision mismatch for {0}")]
-    Revision(String),
-    /// The raw NUL-terminated Git tree inventory has another digest.
-    #[error("campaign source tree digest mismatch for {0}")]
-    Tree(String),
     /// A tracked path or Git tree entry is malformed or unsupported.
     #[error("campaign source path is unsafe: {0}")]
     Path(String),
@@ -52,7 +43,7 @@ pub struct VerifiedSource {
     pub repository: String,
     /// Selected clean checkout root, canonical; the EA capability root.
     pub checkout: PathBuf,
-    /// Raw NUL-delimited Git tree inventory, bound to `CampaignSource.digest`.
+    /// Raw NUL-delimited Git tree inventory handed to EA's source-tree binding.
     pub manifest: Vec<u8>,
 }
 
@@ -120,57 +111,6 @@ impl VerifiedSource {
         Ok(paths)
     }
 
-    /// Exact EA source input population implied by this Git tree.
-    ///
-    /// # Errors
-    /// Refuses unsupported tree entries and unavailable exact Git blobs.
-    pub fn input_inventory(&self) -> Result<Vec<InputBinding>, SourceError> {
-        let records = self
-            .manifest
-            .strip_suffix(&[0])
-            .ok_or_else(|| SourceError::Path("unterminated Git tree inventory".to_owned()))?;
-        let mut inventory = Vec::new();
-        for record in records.split(|byte| *byte == 0) {
-            let tab = record
-                .iter()
-                .position(|byte| *byte == b'\t')
-                .ok_or_else(|| SourceError::Path("missing Git tree separator".to_owned()))?;
-            let header = std::str::from_utf8(record.get(..tab).unwrap_or_default())
-                .map_err(|_| SourceError::Path("invalid Git header".to_owned()))?;
-            let mut tokens = header.split(' ');
-            let (Some(mode), Some("blob"), Some(_oid), None) =
-                (tokens.next(), tokens.next(), tokens.next(), tokens.next())
-            else {
-                return Err(SourceError::Path("unsupported Git tree entry".to_owned()));
-            };
-            if !matches!(mode, "100644" | "100755" | "120000") {
-                return Err(SourceError::Path("unsupported Git mode".to_owned()));
-            }
-            let raw_path = record
-                .get(tab.saturating_add(1)..)
-                .ok_or_else(|| SourceError::Path("invalid Git tree separator".to_owned()))?;
-            let path = std::str::from_utf8(raw_path)
-                .map_err(|_| SourceError::Path("non-UTF-8 Git path".to_owned()))?;
-            if mode == "120000" {
-                continue;
-            }
-            let bytes = self.read_tracked_file(path)?;
-            inventory.push(InputBinding {
-                role: format!(
-                    "{}/{path}",
-                    if mode == "100755" {
-                        "source-exec"
-                    } else {
-                        "source"
-                    }
-                ),
-                path: path.to_owned(),
-                digest: ContentDigest::of_bytes(&bytes),
-                executable: mode == "100755",
-            });
-        }
-        Ok(inventory)
-    }
     /// Read an exact tracked regular blob from the verified Git object graph.
     ///
     /// # Errors
@@ -237,14 +177,13 @@ impl VerifiedSource {
     }
 }
 
-/// Verify every source against a selected checkout before execution or replay.
+/// Verify every source against a selected checkout before execution.
 ///
 /// Untracked evidence files are not part of the source tree;
-/// tracked edits and staged changes always refuse. The manifest digest uses
-/// the raw `git ls-tree -r -z --full-tree` bytes, not a text rendering.
+/// tracked edits and staged changes always refuse.
 ///
 /// # Errors
-/// Refuses missing/dirty/wrong-revision checkouts or changed Git tree bytes.
+/// Refuses missing or dirty checkouts.
 pub fn verify_source_graph(
     definition: &CampaignDefinition,
     checkouts: &BTreeMap<String, PathBuf>,
@@ -375,10 +314,6 @@ fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource,
             message: "checkout is not the repository root".to_owned(),
         });
     }
-    let head = git(path, "rev-parse", &["rev-parse", "--verify", "HEAD"], 1024)?;
-    if String::from_utf8_lossy(&head).trim() != source.revision {
-        return Err(SourceError::Revision(source.repository.clone()));
-    }
     let status = git(
         path,
         "status",
@@ -391,12 +326,9 @@ fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource,
     let manifest = git(
         path,
         "ls-tree",
-        &["ls-tree", "-r", "-z", "--full-tree", &source.revision],
+        &["ls-tree", "-r", "-z", "--full-tree", "HEAD"],
         MAX_SOURCE_MANIFEST_BYTES,
     )?;
-    if digest_bytes_sha256(&manifest).as_hex() != source.digest {
-        return Err(SourceError::Tree(source.repository.clone()));
-    }
     Ok(VerifiedSource {
         repository: source.repository.clone(),
         checkout,
@@ -442,25 +374,8 @@ mod tests {
                 "source",
             ],
         );
-        let revision = String::from_utf8(
-            git(repo.path(), "rev-parse", &["rev-parse", "HEAD"], 1024).expect("revision"),
-        )
-        .expect("UTF-8")
-        .trim()
-        .to_owned();
-        let manifest = git(
-            repo.path(),
-            "ls-tree",
-            &["ls-tree", "-r", "-z", "--full-tree", &revision],
-            1 << 20,
-        )
-        .expect("manifest");
         let source = CampaignSource {
             repository: "fictional/source".to_owned(),
-            revision,
-            digest: quoin_store::digest_bytes_sha256(&manifest)
-                .as_hex()
-                .to_owned(),
         };
         let root = verify_source(&source, repo.path()).expect("repository root verifies");
         assert_eq!(

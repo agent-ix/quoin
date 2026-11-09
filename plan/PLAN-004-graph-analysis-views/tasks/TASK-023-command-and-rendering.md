@@ -22,7 +22,7 @@ relationships:
 
 ## Scope
 
-Expose `quoin graph fan-out`, `quoin graph change-impact`, and `quoin graph churn`, with `--json`
+Expose `quoin graph fan-out`, and `quoin graph change-impact`, with `--json`
 and human output consuming the same sorted `GraphAnalysisReport` model.
 
 ## Subtasks

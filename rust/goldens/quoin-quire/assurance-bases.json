@@ -1,0 +1,143 @@
+{
+  "bases": [
+    {
+      "document": {
+        "artifacts": [
+          {
+            "artifact_type": "FR",
+            "id": "FR-001",
+            "locator": {
+              "line": 1,
+              "path": "FR-001-example.md"
+            }
+          },
+          {
+            "artifact_type": "TestMatrix",
+            "id": "TM-001",
+            "locator": {
+              "line": 1,
+              "path": "TM-001-matrix.md"
+            }
+          }
+        ],
+        "format": "quire-assurance",
+        "format_version": 1,
+        "modules": [
+          {
+            "name": "quoin-quire-fixture",
+            "schemas": [
+              {
+                "archetype": "FR"
+              },
+              {
+                "archetype": "TestMatrix"
+              }
+            ],
+            "version": "0.1.0"
+          }
+        ],
+        "obligations": [],
+        "relation_kinds": [
+          {
+            "availability": "available",
+            "kind": "verifies",
+            "sources": [
+              "trace_binding",
+              "observed"
+            ]
+          }
+        ],
+        "relation_observations": [],
+        "relations": [
+          {
+            "form": "rust-trace-attribute",
+            "freshness": "unknown",
+            "kind": "verifies",
+            "locator": {
+              "line": 12,
+              "path": "lib/backed.rs"
+            },
+            "provenance": "canonical",
+            "source": "[\"rust\",\"lib/backed.rs\",\"covers_the_round_trip\",\"test_function\"]",
+            "target": "TC-001"
+          }
+        ],
+        "symbols": [
+          {
+            "capabilities": [
+              "verifies"
+            ],
+            "container": null,
+            "id": "[\"rust\",\"lib/backed.rs\",\"covers_the_round_trip\",\"test_function\"]",
+            "kind": "test_function",
+            "language": "rust",
+            "locator": {
+              "line": 12,
+              "path": "lib/backed.rs"
+            },
+            "qualified_name": "covers_the_round_trip"
+          }
+        ]
+      },
+      "name": "fixture-repo",
+      "origin": "rust/crates/quoin-quire/tests/fixtures/repo"
+    },
+    {
+      "document": {
+        "artifacts": [
+          {
+            "artifact_type": "FR",
+            "id": "FR-001",
+            "locator": {
+              "line": 1,
+              "path": "FR-001-example.md"
+            }
+          },
+          {
+            "artifact_type": "TestMatrix",
+            "id": "TM-001",
+            "locator": {
+              "line": 1,
+              "path": "TM-001-matrix.md"
+            }
+          }
+        ],
+        "format": "quire-assurance",
+        "format_version": 1,
+        "modules": [
+          {
+            "name": "quoin-quire-fixture-no-traceability",
+            "schemas": [
+              {
+                "archetype": "FR"
+              }
+            ],
+            "version": "0.1.0"
+          }
+        ],
+        "obligations": [],
+        "relation_kinds": [],
+        "relation_observations": [],
+        "relations": [],
+        "symbols": [
+          {
+            "capabilities": [
+              "verifies"
+            ],
+            "container": null,
+            "id": "[\"rust\",\"lib/backed.rs\",\"covers_the_round_trip\",\"test_function\"]",
+            "kind": "test_function",
+            "language": "rust",
+            "locator": {
+              "line": 12,
+              "path": "lib/backed.rs"
+            },
+            "qualified_name": "covers_the_round_trip"
+          }
+        ]
+      },
+      "name": "fixture-repo-under-a-module-with-no-traceability",
+      "origin": "rust/crates/quoin-quire/tests/fixtures/repo"
+    }
+  ]
+}

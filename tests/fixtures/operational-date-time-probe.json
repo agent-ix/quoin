@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "record_type": "operational_evidence",
+  "record_id": "fixture:operational-date-time-probe",
+  "observed_at": "2026-01-01T00:00:00Z",
+  "record_shape": "exercise",
+  "control_kind": "release",
+  "subject": { "id": "service:fixture" },
+  "producer": {
+    "tool_identity": "fixture-probe",
+    "tool_version": "1.0.0",
+    "configuration_ref": "fixture-config",
+    "environment": { "name": "test" },
+    "definition_version": "1"
+  },
+  "strength": "observed",
+  "scope": {
+    "service": "service:fixture",
+    "environment": "test",
+    "population": "fixture"
+  },
+  "exercise": {
+    "control_id": "release:fixture",
+    "mode": "actual",
+    "started_at": "2026-01-01T00:00:00Z",
+    "completed_at": "2026-01-01T00:00:01Z",
+    "actor": "test-runner",
+    "trigger": "fixture probe",
+    "outcome": "succeeded",
+    "state_before": {},
+    "state_after": {},
+    "observations": ["completed"],
+    "clock": {
+      "applicability": "not_applicable",
+      "status": "not_applicable"
+    }
+  },
+  "owner": "fixture owner",
+  "gaps": [],
+  "actions": ["none"],
+  "raw_evidence": [
+    { "path": "fixture.json", "media_type": "application/json" }
+  ]
+}

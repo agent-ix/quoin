@@ -23,7 +23,8 @@
 //! collections is `apparatus_changed` and blocks the delta, as a moved
 //! definition does. Movement in an artifact the plan does not protect is
 //! `artifact_changed`, reported beside the delta and not blocking. Both read
-//! only what each collection recorded when it was written.
+//! only what each collection recorded when it was written (FR-110). The
+//! comparison runs no git and records no revision.
 
 use std::collections::BTreeSet;
 
@@ -118,15 +119,6 @@ fn compare_one(
             ),
         ));
     }
-    if before.config_digest != after.config_digest {
-        reasons.push(ComparisonReason::new(
-            ComparisonReasonCode::ConfigurationChanged,
-            format!(
-                "{metric}: producer configuration moved {} -> {}",
-                before.config_digest, after.config_digest
-            ),
-        ));
-    }
     let protected = (
         before.protected_apparatus_of(a.plan_id.as_str()),
         after.protected_apparatus_of(b.plan_id.as_str()),
@@ -162,10 +154,10 @@ fn compare_one(
         ));
     }
 
-    if let Some(moved) = unprotected_movement(before, after, protected) {
+    if let Some(artifacts) = unprotected_movement(before, after, protected) {
         reasons.push(ComparisonReason::new(
             ComparisonReasonCode::ArtifactChanged,
-            format!("{metric}: unprotected artifacts moved: {moved}"),
+            format!("{metric}: unprotected artifacts moved: {artifacts}"),
         ));
     }
 
@@ -193,13 +185,13 @@ fn compare_one(
 /// collections, rendered, or `None` when it does not (PLAT-975).
 ///
 /// The comparison is over what each collection **recorded** when it was
-/// written, never the disk as it reads now: a file edited, a file added
-/// under or removed from a directory entry, a set recorded on only one side,
-/// and a protected path either side lists in `unverifiedArtifacts` are each
-/// a change. Two collections that both recorded nothing for the plan are not
-/// compared on apparatus at all — this layer reads no plan, so it cannot
-/// tell that from a plan that protects nothing; the report's ratchet and the
-/// checker, which hold the plan, refuse that case themselves.
+/// written, never the disk as it reads now: a file added under or removed from
+/// a directory entry, a set recorded on only one side, and a protected path
+/// either side lists in `unverifiedArtifacts` are each a change. Two
+/// collections that both recorded nothing for the plan are not compared on
+/// apparatus at all — this layer reads no plan, so it cannot tell that from a
+/// plan that protects nothing; the report's ratchet and the checker, which
+/// hold the plan, refuse that case themselves.
 fn apparatus_change(
     before: &MeasurementCollection,
     after: &MeasurementCollection,
@@ -212,32 +204,18 @@ fn apparatus_change(
         (Some(left), Some(right)) => (left, right),
     };
     let mut changes = Vec::new();
-    let edited: Vec<&str> = left
-        .iter()
-        .filter(|(path, digest)| right.get(*path).is_some_and(|other| other != *digest))
-        .map(|(path, _)| path.as_str())
-        .collect();
-    let added: Vec<&str> = right
-        .keys()
-        .filter(|path| !left.contains_key(*path))
-        .map(String::as_str)
-        .collect();
-    let removed: Vec<&str> = left
-        .keys()
-        .filter(|path| !right.contains_key(*path))
-        .map(String::as_str)
-        .collect();
+    let added: Vec<&str> = right.difference(left).map(String::as_str).collect();
+    let removed: Vec<&str> = left.difference(right).map(String::as_str).collect();
     let unverified: Vec<&str> = [before, after]
         .iter()
         .filter_map(|collection| collection.verification_stack.as_ref())
         .flat_map(|stack| &stack.unverified_artifacts)
-        .filter(|name| left.contains_key(*name) || right.contains_key(*name))
+        .filter(|name| left.contains(*name) || right.contains(*name))
         .map(String::as_str)
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
     for (label, paths) in [
-        ("edited", edited),
         ("added", added),
         ("removed", removed),
         ("listed as unverified", unverified),
@@ -249,8 +227,8 @@ fn apparatus_change(
     (!changes.is_empty()).then(|| changes.join("; "))
 }
 
-/// The `verificationStack.artifacts` names the plan does not protect whose
-/// digest moved, or that only one side states, rendered, or `None` (PLAT-975).
+/// The `verificationStack.artifacts` names the plan does not protect that
+/// only one side states, rendered, or `None` (PLAT-975).
 ///
 /// Only asked when at least one side recorded protected apparatus for the
 /// plan: "unprotected" means something only against a declared protected
@@ -266,31 +244,25 @@ fn unprotected_movement(
         return None;
     }
     let is_protected = |name: &str| {
-        left.is_some_and(|set| set.contains_key(name))
-            || right.is_some_and(|set| set.contains_key(name))
+        left.is_some_and(|set| set.contains(name)) || right.is_some_and(|set| set.contains(name))
     };
-    let earlier = before
-        .verification_stack
-        .as_ref()
-        .map(|stack| &stack.artifacts);
-    let later = after
-        .verification_stack
-        .as_ref()
-        .map(|stack| &stack.artifacts);
-    let names: BTreeSet<&String> = earlier
-        .into_iter()
-        .chain(later)
-        .flat_map(|map| map.keys())
-        .collect();
-    let moved: Vec<&str> = names
+    let names = |collection: &MeasurementCollection| -> BTreeSet<String> {
+        collection
+            .verification_stack
+            .as_ref()
+            .map(|stack| stack.artifacts.iter().cloned().collect())
+            .unwrap_or_default()
+    };
+    let (earlier, later) = (names(before), names(after));
+    let stated_by_one: BTreeSet<&String> = earlier.symmetric_difference(&later).collect();
+    let artifacts: Vec<&str> = stated_by_one
         .into_iter()
         .filter(|name| !is_protected(name))
-        .filter(|name| {
-            earlier.and_then(|map| map.get(*name)) != later.and_then(|map| map.get(*name))
-        })
         .map(String::as_str)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
         .collect();
-    (!moved.is_empty()).then(|| moved.join(", "))
+    (!artifacts.is_empty()).then(|| artifacts.join(", "))
 }
 
 /// Whether an observation's population disqualifies it from comparison.

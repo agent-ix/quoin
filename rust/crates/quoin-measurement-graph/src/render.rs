@@ -25,9 +25,9 @@ use crate::render_json::change_impact_value;
 use crate::report::{GovernedGraphPortfolioReport, GovernedGraphRepositoryReport};
 use crate::text::{inline_text, markdown_cell};
 
-/// What a digest member renders as when the collection stated none.
+/// What the observation id renders as when the collection stated none.
 /// `graph-portfolio.ts:353-354`.
-const UNKNOWN_DIGEST: &str = "unknown";
+const UNKNOWN_ID: &str = "unknown";
 
 /// What a not-computed partition renders as when it gave no reason.
 /// `graph-portfolio.ts:363`.
@@ -98,14 +98,10 @@ fn render_repository(
 /// The current reading and its partition table. `graph-portfolio.ts:346-366`.
 fn render_current(lines: &mut Vec<String>, current: &GraphQualityHistoryRow) {
     lines.push(format!(
-        "Graph quality: {}; {}; producer {}; scorer {}",
+        "Graph quality: {}; {}; observation {}",
         current.id,
         current.availability.as_str(),
-        current
-            .producer_record_digest
-            .as_deref()
-            .unwrap_or(UNKNOWN_DIGEST),
-        current.scorer_digest.as_deref().unwrap_or(UNKNOWN_DIGEST),
+        current.observation_id.as_deref().unwrap_or(UNKNOWN_ID),
     ));
     lines.push(String::new());
     lines.push("| Measure | Dimension | Key | State/value |".to_owned());
@@ -148,14 +144,11 @@ fn render_history(lines: &mut Vec<String>, history: &[GraphQualityHistoryRow]) {
     lines.push("History:".to_owned());
     for row in history {
         lines.push(format!(
-            "- {} {}: {}; producer {}; scorer {}",
+            "- {} {}: {}; observation {}",
             row.timestamp,
             row.id,
             row.availability.as_str(),
-            row.producer_record_digest
-                .as_deref()
-                .unwrap_or(UNKNOWN_DIGEST),
-            row.scorer_digest.as_deref().unwrap_or(UNKNOWN_DIGEST),
+            row.observation_id.as_deref().unwrap_or(UNKNOWN_ID),
         ));
         for partition in &row.partitions {
             lines.push(format!(
@@ -199,14 +192,13 @@ fn render_comparison(lines: &mut Vec<String>, repository: &GovernedGraphReposito
     }
 }
 
-/// The three opaque analyses, as canonical JSON. `graph-portfolio.ts:396-403`.
+/// The two opaque analyses, as canonical JSON. `graph-portfolio.ts:396-403`.
 fn render_graph(
     lines: &mut Vec<String>,
     graph: &NormalizedStructuralGraph,
 ) -> Result<(), GraphAdapterError> {
     let NormalizedStructuralGraph::Available {
         ref fan_out,
-        ref churn,
         ref change_impact,
         ..
     } = *graph
@@ -215,7 +207,6 @@ fn render_graph(
     };
     lines.push(String::new());
     lines.push(format!("Fan-out: {}", stored_pretty_text_trimmed(fan_out)?));
-    lines.push(format!("Churn: {}", stored_pretty_text_trimmed(churn)?));
     lines.push(format!(
         "Change impact: {}",
         stored_pretty_text_trimmed(&change_impact_value(change_impact))?

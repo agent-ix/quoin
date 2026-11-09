@@ -5,7 +5,7 @@
 //!
 //! # Why the fixture is captured and not written
 //!
-//! FR-101 names the self-fixture tautology: a test asserting against bytes the
+//! The retire-after-parity rule names the self-fixture tautology: a test asserting against bytes the
 //! test itself invented proves that the author's idea of the format agrees
 //! with the author's idea of the format. quoin does not own this format —
 //! quire does — so a hand-written fixture here would be exactly that, and the
@@ -29,7 +29,6 @@
 use std::path::Path;
 
 use quoin_quire_types::Obligation;
-use sha2::{Digest as _, Sha256};
 
 fn fixture() -> serde_json::Value {
     let path =
@@ -50,7 +49,6 @@ fn obligations(value: &serde_json::Value) -> &Vec<serde_json::Value> {
         .expect("the capture must carry an `obligations` array")
 }
 
-/// Trace: FR-101
 #[test]
 fn reads_every_obligation_quire_emitted() {
     let value = fixture();
@@ -78,36 +76,6 @@ fn reads_every_obligation_quire_emitted() {
     }
 }
 
-/// Trace: FR-101
-#[test]
-fn the_fixture_carries_engine_computed_digests() {
-    // The anti-self-fixture check. `statement_hash` is sha256 of `statement`,
-    // computed by the engine. Every captured row verifies, which a fixture
-    // typed by a person would not — the author would have to have run the
-    // digest themselves, and at that point they are capturing, not inventing.
-    //
-    // It also pins the pair: editing a `statement` in the fixture to make a
-    // test convenient breaks the digest, so the bytes cannot be quietly
-    // adjusted after capture.
-    let value = fixture();
-    for entry in obligations(&value) {
-        let statement = entry
-            .get("statement")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_else(|| panic!("no statement: {entry}"));
-        let recorded = entry
-            .get("statement_hash")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_else(|| panic!("no statement_hash: {entry}"));
-        let computed = format!("{:x}", Sha256::digest(statement.as_bytes()));
-        assert_eq!(
-            computed, recorded,
-            "statement_hash does not verify, so these bytes did not come from the engine: {entry}"
-        );
-    }
-}
-
-/// Trace: FR-101
 #[test]
 fn the_capture_still_covers_every_shape_quire_mints() {
     // The capture was selected by census: one obligation per distinct

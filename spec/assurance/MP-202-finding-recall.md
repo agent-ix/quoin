@@ -19,7 +19,7 @@ detect so a green aggregate cannot hide a hole.
 
 ## Population
 
-Include labelled, findable seeded defects in the pinned corpus. Preserve family,
+Include labelled, findable seeded defects in the corpus. Preserve family,
 detection level, mode, and language dimensions; exclusions remain visible.
 
 ## Measure Definition
@@ -30,7 +30,7 @@ reported per family and never macro-averaged.
 ## Collection Procedure
 
 Retain case and control identities, labels, raw outputs, scorer, tool and engine
-versions, declaration digest, corpus revision, configuration, and timestamp.
+versions, declaration, configuration, and timestamp.
 
 ## Environment and Sampling
 

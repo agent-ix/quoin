@@ -26,13 +26,13 @@ use crate::error::{CoreError, CoreErrorCode};
 ///
 /// - **`BadRequest` → Invalid (3)** — the document the caller supplied does
 ///   not satisfy the contract it claims: a record, attestation, receipt or
-///   decision history that fails its v1 schema, a malformed digest, a sealed
-///   value whose digest disagrees with its own bytes, or a parent chain that
-///   is not strict N-1. Every one of these is fixed by changing what was sent.
+///   decision history that fails its v1 schema, a stored receipt that is not
+///   the receipt re-derived from its inputs, or a parent chain that is not
+///   strict N-1. Every one of these is fixed by changing what was sent.
 /// - **`Refused` → Refused (2)** — the request was understood and the retained
-///   world declined it: output bytes that do not reproduce what the
-///   attestation declares, a digest-named slot that already holds different
-///   content, evidence filed under a digest it does not carry, a filesystem
+///   world declined it: output bytes that do not have the size the
+///   attestation declares, an identity-named slot that already holds different
+///   content, evidence filed under an identity it does not carry, a filesystem
 ///   operation that failed, and a `quoin-store` refusal passed through.
 ///   Fixing one means changing the store or the bytes on disk, not the
 ///   request.
@@ -76,13 +76,12 @@ const fn core_code(code: ChangeAssuranceErrorCode) -> Option<CoreErrorCode> {
         | ChangeAssuranceErrorCode::AttestationInvalid
         | ChangeAssuranceErrorCode::ReceiptInvalid
         | ChangeAssuranceErrorCode::DecisionHistoryInvalid
-        | ChangeAssuranceErrorCode::DigestMalformed
-        | ChangeAssuranceErrorCode::DigestMismatch
+        | ChangeAssuranceErrorCode::ReceiptMismatch
         | ChangeAssuranceErrorCode::LineageInvalid => CoreErrorCode::BadRequest,
 
         ChangeAssuranceErrorCode::OutputIntegrityMismatch
         | ChangeAssuranceErrorCode::ContentCollision
-        | ChangeAssuranceErrorCode::PathDigestMismatch
+        | ChangeAssuranceErrorCode::PathIdentityMismatch
         | ChangeAssuranceErrorCode::Io
         | ChangeAssuranceErrorCode::Store => CoreErrorCode::Refused,
 
@@ -103,7 +102,7 @@ const fn core_code(code: ChangeAssuranceErrorCode) -> Option<CoreErrorCode> {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use quoin_change_assurance::{ChangeAssuranceError, ChangeAssuranceErrorCode, Subject};
+    use quoin_change_assurance::{ChangeAssuranceError, ChangeAssuranceErrorCode};
 
     use super::{CoreErrorCode, core_code, map_error};
 
@@ -120,7 +119,7 @@ mod tests {
     fn the_error_mapping_covers_every_change_assurance_code() {
         assert_eq!(
             ChangeAssuranceErrorCode::ALL.len(),
-            12,
+            11,
             "quoin-change-assurance gained or lost an error code; map it in \
              map_error deliberately"
         );
@@ -130,14 +129,13 @@ mod tests {
             ChangeAssuranceErrorCode::AttestationInvalid,
             ChangeAssuranceErrorCode::ReceiptInvalid,
             ChangeAssuranceErrorCode::DecisionHistoryInvalid,
-            ChangeAssuranceErrorCode::DigestMalformed,
-            ChangeAssuranceErrorCode::DigestMismatch,
+            ChangeAssuranceErrorCode::ReceiptMismatch,
             ChangeAssuranceErrorCode::LineageInvalid,
         ];
         let refused = [
             ChangeAssuranceErrorCode::OutputIntegrityMismatch,
             ChangeAssuranceErrorCode::ContentCollision,
-            ChangeAssuranceErrorCode::PathDigestMismatch,
+            ChangeAssuranceErrorCode::PathIdentityMismatch,
             ChangeAssuranceErrorCode::Io,
             ChangeAssuranceErrorCode::Store,
         ];
@@ -160,19 +158,15 @@ mod tests {
     #[test]
     fn the_envelope_names_the_change_assurance_code_that_declined() {
         let envelope = map_error(
-            &ChangeAssuranceError::DigestMismatch {
-                subject: Subject::Record,
-                stored: "a".repeat(64),
-                recomputed: "b".repeat(64),
-            },
-            "change_assurance.seal_record",
+            &ChangeAssuranceError::ReceiptMismatch,
+            "change_assurance.write_record",
         );
         assert_eq!(
             envelope.context["change_assurance_code"],
-            "QCA-DIGEST-MISMATCH"
+            "QCA-RECEIPT-MISMATCH"
         );
         assert_eq!(envelope.code, CoreErrorCode::BadRequest);
         assert_eq!(envelope.outcome().code(), 3);
-        assert_eq!(envelope.context["op"], "change_assurance.seal_record");
+        assert_eq!(envelope.context["op"], "change_assurance.write_record");
     }
 }

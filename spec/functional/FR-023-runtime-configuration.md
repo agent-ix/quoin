@@ -27,6 +27,26 @@ the behavior that consumes it is specified by
 [FR-007](./FR-007-assemble-module-roots.md), and
 [FR-025](./FR-025-resolve-authoring-organization.md).
 
+## Properties
+
+| Field                  | Type    | Multiplicity | Constraints |
+| ---------------------- | ------- | ------------ | ----------- |
+| IX_HOME                | String  | 0..1         |             |
+| QUOIN_MODULE_PATHS     | String  | 0..1         |             |
+| IX_SPEC_WORKFLOWS_ROOT | String  | 0..1         |             |
+| QUOIN_ORG              | String  | 0..1         |             |
+| config_root            | String  | 0..1         |             |
+| org                    | String  | 0..1         |             |
+| quoin_config_file      | String  | 0..1         |             |
+| no_project_config      | Boolean | 0..1         |             |
+| json                   | Boolean | 0..1         |             |
+| registry               | String  | 0..1         |             |
+
+Each field is the identifier form of the like-named entry in the Configuration
+table: `config_root` is `--config-root`, `org` is `--org`, `quoin_config_file`
+is `config.d/quoin.yaml`, `no_project_config` is `--no-project-config`, `json`
+is `--json` and `registry` is `--registry`.
+
 ## Configuration
 
 | Name                   | Scope   | Type    | Default              | Description                                                                            |
@@ -63,11 +83,11 @@ stays unresolved rather than falling back to a value
 
 | ID          | Criteria                                                                                | Verification                        |
 | ----------- | --------------------------------------------------------------------------------------- | ----------------------------------- |
-| FR-023-AC-1 | `--config-root`, then `IX_HOME`, then `~/.ix` select the config root in that precedence | Test (cli.test.ts, catalog.test.ts) |
-| FR-023-AC-2 | `QUOIN_MODULE_PATHS` roots are assembled before the installed store                     | Test (catalog.test.ts)              |
-| FR-023-AC-3 | `IX_SPEC_WORKFLOWS_ROOT` is the first candidate when resolving a workflow skill         | Test (flows.test.ts)                |
-| FR-023-AC-4 | `--org`, then `QUOIN_ORG` select the authoring organization in that precedence, and neither defaults when absent | Test (ts_oracle.rs, tc_446_org_parity.rs, cli.test.ts) |
-| FR-023-AC-5 | The stored config file supplies the organization behind `--org`/`QUOIN_ORG` and ahead of the git remote | Test (ts_oracle.rs, tc_446_org_parity.rs, config_service.rs, cli.test.ts) |
+| FR-023-AC-1 | `--config-root`, then `IX_HOME`, then `~/.ix` select the config root in that precedence | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-023-AC-2 | `QUOIN_MODULE_PATHS` roots are assembled before the installed store                     | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-023-AC-3 | `IX_SPEC_WORKFLOWS_ROOT` is the first candidate when resolving a workflow skill         | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-023-AC-4 | `--org`, then `QUOIN_ORG` select the authoring organization in that precedence, and neither defaults when absent | Test (tc_446_org_parity.rs, quoin-config/tests/tc_381_org_layouts.rs) |
+| FR-023-AC-5 | The stored config file supplies the organization behind `--org`/`QUOIN_ORG` and ahead of the git remote | Test (tc_446_org_parity.rs, config_service.rs) |
 
 ## Dependencies
 

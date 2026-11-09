@@ -40,9 +40,9 @@ states the observable outcome, not the mechanism.
 
 | ID          | Criteria                                               | Verification       |
 | ----------- | ------------------------------------------------------ | ------------------ |
-| FR-005-AC-1 | An unknown command raises an error that includes usage | Test (cli.test.ts) |
-| FR-005-AC-2 | An unknown `catalog` subcommand raises an error        | Test (cli.test.ts) |
-| FR-005-AC-3 | An unknown `plugin` subcommand raises an error         | Test (cli.test.ts) |
+| FR-005-AC-1 | An unknown command raises an error that includes usage | Test (quoin-cli/tests/tc_shell_contract.rs) |
+| FR-005-AC-2 | An unknown `catalog` subcommand raises an error        | Test (quoin-cli/tests/tc_shell_contract.rs) |
+| FR-005-AC-3 | An unknown `plugin` subcommand raises an error         | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

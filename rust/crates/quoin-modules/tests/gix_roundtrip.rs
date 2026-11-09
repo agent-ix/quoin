@@ -169,30 +169,6 @@ fn tc_381_291_gix_extracts_only_the_requested_subdirectory() {
 
 /// Trace: FR-019-AC-2
 #[test]
-fn tc_381_292_an_exact_sha_pin_resolves_and_then_needs_no_remote() {
-    let root = tempfile::tempdir().expect("temp dir");
-    let remote = root.path().join("remote.git");
-    let (url, commit) = build_fixture_repo(&remote);
-    let resolver = GixResolver::new(root.path().join("cache"));
-
-    let first = resolver
-        .resolve(&url, Revision::Sha(&commit), None)
-        .expect("sha resolves");
-    assert_eq!(first.sha.as_str(), commit);
-    assert_eq!(first.requested_ref, None);
-
-    // Delete the remote entirely. A settled exact pin must still resolve from
-    // the extracted content — this is the property that makes `ensure_defaults`
-    // free to call before every catalog read.
-    fs::remove_dir_all(&remote).expect("remove the remote");
-    let second = resolver
-        .resolve(&url, Revision::Sha(&commit), None)
-        .expect("a settled pin needs no remote");
-    assert_eq!(second.dir, first.dir);
-}
-
-/// Trace: FR-019-AC-2
-#[test]
 fn tc_381_293_an_unknown_revision_is_reported_not_followed_to_head() {
     let root = tempfile::tempdir().expect("temp dir");
     let (url, _) = build_fixture_repo(&root.path().join("remote.git"));

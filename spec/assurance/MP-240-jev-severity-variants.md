@@ -86,8 +86,7 @@ ECE, no-defect recall and the per-class table are reported and not gated.
 
 `rust/crates/quoin-jev/tests/live_eval_v2.rs` (`live-api` feature), with
 `QUOIN_JEV_VARIANTS=S0,S1,S1-RT,S1-RC,S2,S2-RT,S2-RC,S2M,S2M-RT,S2M-RC,S3` and
-`QUOIN_JEV_SPLIT=dev`, through a recording cassette with the model pinned
-(`QUOIN_JEV_MODEL`). The runner sends each distinct request once per run.
+`QUOIN_JEV_SPLIT=dev`, through a recording cassette. The runner sends each distinct request once per run.
 `S2M` reuses `S2`'s answer, so it costs nothing extra. The offline tests
 `tc_1028_severity_variants.rs` run in the default gate. They check the S1 rule
 branch by branch, the S2/S2M distribution reading, S3's mapping, and the
@@ -262,7 +261,7 @@ concordance index goes to held-out. Ties are broken by higher RTC high recall,
 then by higher RTC margin, then by the lower Bar D sign-test p-value,
 then by the fixed order S1, S2, S2M, S3. The
 winning family's registered versions at selection time run once on held-out,
-in every mode it covers, under the harness's held-out seal and run log. The
+in every mode it covers, under the harness's held-out run log. The
 same four bars are reported there once. The choice is committed first as
 this plan's single entry in `fixtures/eval-v2/heldout-selection.json`
 (`rust/crates/quoin-jev/tests/fixtures/eval-v2/heldout-selection.json`)
@@ -279,5 +278,5 @@ known-truth path and none passed, the PLAT-1028 result is "no
 variant beats S0 on dev". If no family was gateable, it is "no claim": the
 corpus was too small to judge, and that says nothing about the variants.
 
-Compare only like variant version, corpus revision and label revision. An
+Compare only like variant version. An
 edit to the corpus's severity labels is a new definition version.

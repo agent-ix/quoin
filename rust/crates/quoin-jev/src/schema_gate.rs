@@ -7,7 +7,7 @@
 //! `spec-review`'s own rule: "a selected analysis absent from the installed
 //! `SpecReview.analysis` schema is an unavailable dependency, not permission
 //! to emit an invalid review document." PLAT-891 tracks that the fix
-//! (`spec-artifacts-process` `a4fb5f3`) has not reached every installed
+//! (in `spec-artifacts-process`) has not reached every installed
 //! module copy yet. This module checks the ACTUAL installed file at run
 //! time -- never a point-in-time claim about it -- per this ticket's own
 //! instruction not to assert a dated claim.

@@ -27,7 +27,7 @@ The fraction of those items the lens answered with any defect label, definition 
 ## Collection Procedure
 
 Run the lens's `live-api` test through `quoin_jev::client::production`.
-Retain the raw responses, question set, corpus and context revision, reported
+Retain the raw responses, question set, context, reported
 classifier, token counts and timestamp. Dimension every observation by `lens`
 and `variant`.
 
@@ -42,4 +42,4 @@ High recall with low MP-224 is the flag-everything failure.
 
 ## Comparison and Enforcement
 
-This plan assigns no verdict. Each lens's gate plan (MP-228, MP-229, MP-230) states its bar on this metric. Compare only like lens, variant, corpus revision and question set.
+This plan assigns no verdict. Each lens's gate plan (MP-228, MP-229, MP-230) states its bar on this metric. Compare only like lens, variant and question set.

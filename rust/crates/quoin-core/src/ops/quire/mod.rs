@@ -14,7 +14,7 @@
 //!
 //! | `src/quire/` | here |
 //! |---|---|
-//! | `exec.ts` — executable resolution, `QUOIN_EXPECTED_QUIRE_SHA256`, a 64 MiB `maxBuffer`, a three-way termination taxonomy | nothing. There is no child process |
+//! | `exec.ts` — executable resolution, a 64 MiB `maxBuffer`, a three-way termination taxonomy | nothing. There is no child process |
 //! | `contract.ts` — a `minimumCli` floor, five schema digests, `checkVersionPremise` | nothing. The premise is the `rev` pin in `quoin-quire`'s manifest, checked by Cargo at build time rather than by quoin at run time |
 //! | `validate.ts` — ajv compilation, `ContractViolation` | serde. The type a payload is read into is the engine's own |
 //! | `types.ts` — hand-written mirrors of quire's payloads | [`wire`], which restates nothing: both payloads are built from types that already cross the boundary |
@@ -47,7 +47,7 @@
 //! module, corpus and symbol walks. They are **not** on either payload.
 //! `runQuire` piped quire's stderr and discarded it on a successful run, so no
 //! quoin command has ever shown a notice to anyone; surfacing them now would be
-//! a user-visible change to six commands' output, which FR-101 says a cutover
+//! a user-visible change to six commands' output, which the retire-after-parity rule says a cutover
 //! does not get to make. Reported as quoin#513 rather than absorbed.
 
 mod taxonomy;
@@ -183,7 +183,6 @@ fn obligation(source: &quoin_quire::model::Obligation) -> Obligation {
     Obligation {
         id: source.id.clone(),
         statement: source.statement.clone(),
-        statement_hash: source.statement_hash.clone(),
         target_ids: some_unless_empty(source.target_ids.clone(), Vec::is_empty),
         method: source.method.clone(),
         criticality: source.criticality.clone(),
@@ -236,6 +235,8 @@ fn matrix_binder(source: &quoin_quire::model::CoverageMatrixBinder) -> CoverageM
 fn matrix_status(status: quoin_quire::model::CoverageMatrixStatus) -> &'static str {
     use quoin_quire::model::CoverageMatrixStatus as Status;
     match status {
+        Status::QualifiedRecord => "qualified-record",
+        Status::Retired => "retired",
         Status::Tagged => "tagged",
         Status::Untagged => "untagged",
         Status::TaggedByIgnoredTest => "tagged-by-ignored-test",

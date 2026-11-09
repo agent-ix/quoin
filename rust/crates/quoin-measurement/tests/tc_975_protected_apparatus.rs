@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! PLAT-975: a plan's protected apparatus is resolved and digested when a
+//! PLAT-975: a plan's protected apparatus is resolved (paths only) when a
 //! collection is written, and a comparison, a ratchet verdict and the
-//! verdict checker each refuse to measure across a change to it.
+//! verdict checker each refuse to measure across a change to the recorded
+//! set (FR-110).
 //!
 //! Every repository here is a real temporary directory, every collection is
 //! written through `write_measurement_collection` and read back through the
@@ -87,24 +88,12 @@ fn write(root: &Path, relative: &str, contents: &str) {
     std::fs::write(path, contents).unwrap();
 }
 
-fn digest(root: &Path, relative: &str) -> String {
-    quoin_store::digest_file_sha256(&root.join(relative))
-        .unwrap()
-        .to_stored()
-}
-
-/// The digest of every named file as it reads now, plus the `config` label
-/// every fixture collection carries.
-fn artifacts(root: &Path, names: &[&str]) -> Value {
-    let mut map = serde_json::Map::new();
-    map.insert(
-        "config".to_owned(),
-        json!(format!("sha256:{}", "3".repeat(64))),
-    );
-    for name in names {
-        map.insert((*name).to_owned(), json!(digest(root, name)));
-    }
-    Value::Object(map)
+/// The named files, plus the `config` label every fixture collection
+/// carries.
+fn artifacts(_root: &Path, names: &[&str]) -> Value {
+    let mut list = vec![json!("config")];
+    list.extend(names.iter().map(|name| json!(name)));
+    Value::Array(list)
 }
 
 /// Every file the plan protects, plus the unprotected tool.
@@ -124,23 +113,11 @@ fn candidate(id: &str, minute: u8, matched: u32, artifacts: &Value) -> Value {
         "scope": { "cases": 10 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1",
-        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": format!("2026-09-22T00:{minute:02}:00.000Z"),
-        "sourceRevision": "a".repeat(40),
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
-            "lockDigest": format!("sha256:{}", "1".repeat(64)),
-            "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
-            "toolchains": { "rust": "0.0.0" },
-            "sources": {
-                "fixture": {
-                    "revision": "a".repeat(40),
-                    "sourceState": "clean",
-                    "remote": "https://example.invalid/fixture",
-                },
-            },
             "capabilities": ["fixture.capability"],
             "artifacts": artifacts,
         },
@@ -162,11 +139,24 @@ fn publish(root: &Path, value: &Value) -> Result<PathBuf, MeasurementError> {
     write_measurement_collection(root, &from_serde(value).unwrap())
 }
 
-/// Publish a run whose artifacts map declares every file as it reads now.
+/// Publish a run whose artifact list names every file.
 fn publish_run(root: &Path, id: &str, minute: u8, matched: u32) {
     publish(
         root,
         &candidate(id, minute, matched, &artifacts(root, &ALL_FILES)),
+    )
+    .unwrap_or_else(|error| panic!("{id} is admitted: {error}"));
+}
+
+/// Publish a run whose artifact list also names the new file `labels/b.json`,
+/// which this adds under the protected `labels/` directory entry.
+fn publish_run_with_extra_label(root: &Path, id: &str, minute: u8, matched: u32) {
+    write(root, "labels/b.json", "[\"b\"]");
+    let mut names = ALL_FILES.to_vec();
+    names.push("labels/b.json");
+    publish(
+        root,
+        &candidate(id, minute, matched, &artifacts(root, &names)),
     )
     .unwrap_or_else(|error| panic!("{id} is admitted: {error}"));
 }
@@ -231,7 +221,7 @@ fn verdict_of(plan: &MeasurementPlan, collections: &[MeasurementCollection]) -> 
 #[test]
 fn tc_975_001_protected_apparatus_and_negative_controls_load_as_eas_types() {
     let temporary = repository(&format!(
-        "{PROTECTED}negative_controls:\n  - kind: apparatus-edit\n    description: the answer key is digested\n"
+        "{PROTECTED}negative_controls:\n  - kind: apparatus-edit\n    description: the answer key is protected\n"
     ));
     let plan = plan_of(temporary.path());
     let protected = plan.protected_apparatus.expect("the list loads");
@@ -307,7 +297,7 @@ type Case = (&'static str, fn(&Path));
 /// Trace: FR-110-AC-2
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_002_intake_records_the_resolved_set_it_digested_itself() {
+fn tc_975_002_intake_records_the_resolved_set_it_resolved_itself() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
@@ -315,14 +305,14 @@ fn tc_975_002_intake_records_the_resolved_set_it_digested_itself() {
     let bytes = stored_bytes(root, "run-1");
     assert_eq!(
         bytes["verificationStack"]["protectedApparatus"],
-        json!({ "MP-975": {
-            "harness/answers.json": digest(root, "harness/answers.json"),
-            "labels/a.json": digest(root, "labels/a.json"),
-            "labels/nested/.hidden": digest(root, "labels/nested/.hidden"),
-        }}),
+        json!({ "MP-975": [
+            "harness/answers.json",
+            "labels/a.json",
+            "labels/nested/.hidden",
+        ]}),
         "every file under `labels/**`, the dotfile included, and nothing unprotected"
     );
-    // Every protected file is a digested artifact, never a label.
+    // Every protected file is a local file, never a label.
     assert_eq!(
         bytes["verificationStack"].get("unverifiedArtifacts"),
         Some(&json!(["config"]))
@@ -410,14 +400,13 @@ fn tc_975_004_a_symlink_is_refused_and_never_followed() {
     }
 }
 
-/// A producer-supplied artifacts map can omit a file; intake resolves the set
-/// itself and refuses a map that leaves a protected file out or states it at
-/// another digest.
+/// A producer-supplied artifact list can omit a file; intake resolves the set
+/// itself and refuses a list that leaves a protected file out.
 ///
 /// Trace: FR-110-AC-3
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_005_an_artifacts_map_that_omits_a_protected_file_is_refused() {
+fn tc_975_005_an_artifact_list_that_omits_a_protected_file_is_refused() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     let error = publish(
@@ -444,15 +433,6 @@ fn tc_975_005_an_artifacts_map_that_omits_a_protected_file_is_refused() {
         "{error}"
     );
 
-    let mut wrong = artifacts(root, &ALL_FILES);
-    wrong["harness/answers.json"] = json!(format!("sha256:{}", "9".repeat(64)));
-    let error = publish(root, &candidate("run-1", 1, 9, &wrong))
-        .expect_err("a disagreeing digest is refused");
-    assert_eq!(
-        error.code(),
-        MeasurementErrorCode::CollectionInvalid,
-        "{error}"
-    );
     assert_eq!(stored_count(root), 0);
 }
 
@@ -495,25 +475,6 @@ fn tc_975_006_an_unreadable_protected_file_is_refused() {
 /// Trace: FR-110-AC-4
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_007_an_edited_protected_file_refuses_the_delta() {
-    let temporary = repository(PROTECTED);
-    let root = temporary.path();
-    publish_run(root, "run-1", 1, 8);
-    write(root, "harness/answers.json", "{\"answers\":[1,2,4]}");
-    publish_run(root, "run-2", 2, 8);
-
-    let collections = stored(root);
-    let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
-    assert_eq!(reasons(&rows), [ComparisonReasonCode::ApparatusChanged]);
-    assert_eq!(rows[0].status, ComparisonStatus::Incomparable);
-    assert_eq!(rows[0].delta, None);
-    assert!(rows[0].reasons[0].blocking);
-    assert!(rows[0].reasons[0].message.contains("harness/answers.json"));
-}
-
-/// Trace: FR-110-AC-4
-/// Provenance: PLAT-975
-#[test]
 fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
@@ -552,12 +513,20 @@ fn tc_975_008_a_file_added_under_a_directory_entry_is_an_apparatus_change() {
 /// Trace: FR-110-AC-4
 /// Provenance: PLAT-975
 #[test]
-fn tc_975_009_an_unprotected_artifact_moving_is_reported_and_does_not_block() {
+fn tc_975_009_an_unprotected_artifact_stated_by_one_side_is_reported_and_does_not_block() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "run-1", 1, 8);
-    write(root, "dist/tool", "tool v2");
-    publish_run(root, "run-2", 2, 8);
+    let without_tool: Vec<&str> = ALL_FILES
+        .iter()
+        .copied()
+        .filter(|name| *name != "dist/tool")
+        .collect();
+    publish(
+        root,
+        &candidate("run-2", 2, 8, &artifacts(root, &without_tool)),
+    )
+    .unwrap();
 
     let collections = stored(root);
     let rows = compare_measurement_collections(&collections[0], &collections[1]).unwrap();
@@ -569,7 +538,7 @@ fn tc_975_009_an_unprotected_artifact_moving_is_reported_and_does_not_block() {
 }
 
 /// A plan that protects nothing is compared and stored exactly as before
-/// PLAT-975: no record, and an artifact moving is not reported.
+/// PLAT-975: no record, and an artifact list is not reported on.
 ///
 /// Trace: FR-110-AC-2, FR-110-AC-4
 /// Provenance: PLAT-975
@@ -578,8 +547,6 @@ fn tc_975_010_no_apparatus_declared_leaves_behaviour_unchanged() {
     let temporary = repository("");
     let root = temporary.path();
     publish_run(root, "run-1", 1, 8);
-    write(root, "harness/answers.json", "{\"answers\":[9]}");
-    write(root, "dist/tool", "tool v2");
     publish_run(root, "run-2", 2, 8);
 
     assert_eq!(
@@ -605,13 +572,12 @@ fn tc_975_011_a_regenerated_baseline_is_still_refused_against_the_stored_one() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "baseline", 1, 8);
-    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
 
-    let regenerated = candidate("baseline", 1, 8, &artifacts(root, &ALL_FILES));
+    let regenerated = candidate("baseline", 1, 9, &artifacts(root, &ALL_FILES));
     let error = publish(root, &regenerated).expect_err("the stored baseline is write-once");
     assert_eq!(error.code(), MeasurementErrorCode::CollectionIdCollision);
     publish_run(root, "baseline-regenerated", 2, 8);
-    publish_run(root, "run", 3, 8);
+    publish_run_with_extra_label(root, "run", 3, 8);
 
     let collections = stored(root);
     let by_id = |id: &str| {
@@ -668,18 +634,17 @@ fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
-    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
-    publish_run(root, "run-2", 2, 9);
+    publish_run_with_extra_label(root, "run-2", 2, 9);
     let plan = plan_of(root);
     let collections = stored(root);
     assert_eq!(
         checked(&plan, &collections),
         [Reason::NoPrior, Reason::ApparatusEdit],
-        "the earlier run is not a usable baseline, and the unversioned change rejects"
+        "the unversioned change rejects"
     );
     assert_eq!(verdict_of(&plan, &collections), Verdict::Reject);
 
-    // The positive control: the same runs over one apparatus are accepted.
+    // The positive control: the same set on both runs is accepted.
     let same = repository(PROTECTED);
     publish_run(same.path(), "run-1", 1, 9);
     publish_run(same.path(), "run-2", 2, 9);
@@ -694,14 +659,11 @@ fn tc_975_013_a_changed_set_within_one_version_rejects_without_a_control() {
 #[test]
 fn tc_975_014_an_apparatus_edit_under_a_declared_control_also_rejects() {
     let temporary = repository(&format!(
-        "{PROTECTED}negative_controls:\n  - kind: apparatus-edit\n    description: the answer key is digested\n"
+        "{PROTECTED}negative_controls:\n  - kind: apparatus-edit\n    description: the answer key is protected\n"
     ));
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
-    write(root, "labels/b.json", "[\"b\"]");
-    let mut names = ALL_FILES.to_vec();
-    names.push("labels/b.json");
-    publish(root, &candidate("run-2", 2, 9, &artifacts(root, &names))).unwrap();
+    publish_run_with_extra_label(root, "run-2", 2, 9);
     let plan = plan_of(root);
     let collections = stored(root);
     assert_eq!(
@@ -749,8 +711,7 @@ fn tc_975_016_a_ratchet_does_not_hold_against_another_apparatus() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
-    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
-    publish_run(root, "run-2", 2, 9);
+    publish_run_with_extra_label(root, "run-2", 2, 9);
     assert_eq!(
         ratchet_outcome(root),
         RatchetOutcome::Inconclusive(InconclusiveReason::ApparatusChanged)
@@ -758,6 +719,7 @@ fn tc_975_016_a_ratchet_does_not_hold_against_another_apparatus() {
 
     let same = repository(PROTECTED);
     publish_run(same.path(), "run-1", 1, 9);
+    write(same.path(), "dist/tool", "tool v2");
     publish_run(same.path(), "run-2", 2, 9);
     assert!(matches!(
         ratchet_outcome(same.path()),
@@ -775,7 +737,8 @@ fn tc_975_017_a_malformed_stored_record_is_refused_on_read() {
     for malformed in [
         json!([]),
         json!({ "MP-975": {} }),
-        json!({ "MP-975": { "harness/answers.json": "not a digest" } }),
+        json!({ "MP-975": { "harness/answers.json": "not a list" } }),
+        json!({ "MP-975": [7] }),
     ] {
         let mut bytes = stored_bytes(root, "run-1");
         bytes["verificationStack"]["protectedApparatus"] = malformed.clone();
@@ -803,16 +766,15 @@ fn tc_985_001_protected_apparatus_key_shapes_are_validated_on_read() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
-    let digest = format!("sha256:{}", "0".repeat(64));
     for malformed in [
         // An empty plan-id key.
-        json!({ "": { "harness/answers.json": digest } }),
+        json!({ "": ["harness/answers.json"] }),
         // A `<directory>/**` glob where a resolved record must name one file.
-        json!({ "MP-975": { "labels/**": digest } }),
+        json!({ "MP-975": ["labels/**"] }),
         // An absolute path.
-        json!({ "MP-975": { "/etc/passwd": digest } }),
+        json!({ "MP-975": ["/etc/passwd"] }),
         // A `..` segment.
-        json!({ "MP-975": { "harness/../../../etc/passwd": digest } }),
+        json!({ "MP-975": ["harness/../../../etc/passwd"] }),
     ] {
         let mut bytes = stored_bytes(root, "run-1");
         bytes["verificationStack"]["protectedApparatus"] = malformed.clone();
@@ -836,7 +798,7 @@ fn tc_975_018_a_candidate_stating_a_computed_member_is_refused() {
     for (member, stated) in [
         (
             "protectedApparatus",
-            json!({ "MP-975": { "harness/answers.json": format!("sha256:{}", "0".repeat(64)) } }),
+            json!({ "MP-975": ["harness/answers.json"] }),
         ),
         ("unverifiedArtifacts", json!(["config"])),
     ] {
@@ -863,8 +825,7 @@ fn tc_975_019_removing_the_list_from_the_plan_keeps_the_series_protected() {
     let temporary = repository(PROTECTED);
     let root = temporary.path();
     publish_run(root, "run-1", 1, 9);
-    write(root, "harness/answers.json", "{\"answers\":\"easier\"}");
-    publish_run(root, "run-2", 2, 9);
+    publish_run_with_extra_label(root, "run-2", 2, 9);
     write(root, "spec/assurance/MP-975.md", &plan_document(""));
     let plan = plan_of(root);
     assert!(plan.protected_apparatus.is_none());

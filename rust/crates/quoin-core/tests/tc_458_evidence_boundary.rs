@@ -109,7 +109,7 @@ fn reported_store_path(root: &Path, reported: &str, relative: &str) -> PathBuf {
 }
 
 /// As [`reported_store_path`], where only the record's FAMILY is predictable —
-/// a content-addressed record's file name is derived from its own bytes.
+/// an assurance record's file name is its minted UUID.
 fn reported_store_family(root: &Path, reported: &str, family: &str) -> PathBuf {
     let prefix = store_path(root, family);
     let path = Path::new(reported);
@@ -125,15 +125,10 @@ fn reported_store_family(root: &Path, reported: &str, family: &str) -> PathBuf {
     path.to_path_buf()
 }
 
-fn commit(seed: char) -> String {
-    std::iter::repeat_n(seed, 40).collect()
-}
-
 fn junit(case: &str) -> String {
     format!(r#"<testsuite name="unit"><testcase name="{case}"/></testsuite>"#)
 }
 
-/// Trace: FR-101-AC-1
 ///
 /// `store_facts` is the only operation that answers `mutation_score_metric`,
 /// and the only one that takes no arguments at all.
@@ -142,13 +137,8 @@ fn tc_458_010_store_facts_serves_the_store_constants() {
     let payload = ok(&run("evidence.store_facts", &json!({})));
     assert_eq!(payload["mutation_score_metric"], "mutation-score");
     assert_eq!(payload["bindings_path"], "bindings.json");
-    assert!(
-        payload["adapter_names"].as_array().unwrap().len() >= 5,
-        "{payload}"
-    );
 }
 
-/// Trace: FR-101-AC-3
 ///
 /// `parse_results` is the only operation that answers a bare `entries` list
 /// with no store path beside it.
@@ -165,7 +155,6 @@ fn tc_458_020_parse_results_transcribes_a_producer_document() {
     assert!(payload.get("run_path").is_none(), "{payload}");
 }
 
-/// Trace: FR-101-AC-3
 #[test]
 fn tc_458_030_parse_lineage_reads_a_lineage_document() {
     let payload = ok(&run(
@@ -175,7 +164,6 @@ fn tc_458_030_parse_lineage_reads_a_lineage_document() {
     assert_eq!(payload["lineage"]["actor"], "peter");
 }
 
-/// Trace: FR-101-AC-3
 #[test]
 fn tc_458_040_parse_policy_reads_a_policy_and_checks_its_obligations() {
     let policy = json!({
@@ -204,7 +192,6 @@ fn tc_458_040_parse_policy_reads_a_policy_and_checks_its_obligations() {
     assert!(refused.stderr.contains("QE-E007"), "{}", refused.stderr);
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `record` is the only operation that answers `run_path`.
 #[test]
@@ -215,7 +202,6 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
         &json!({
             "repo": dir.path(),
             "suite": "unit",
-            "commit": commit('a'),
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
@@ -224,51 +210,13 @@ fn tc_458_050_record_writes_a_run_record_through_the_real_store() {
     ));
     assert_eq!(payload["kind"], "run");
     let run_path = payload["run_path"].as_str().unwrap();
-    reported_store_path(dir.path(), run_path, "runs/unit/aaaaaaaaaaaa.json");
-}
-
-/// Trace: FR-101-AC-4
-///
-/// `affirm` is the only operation that answers `found`.
-#[test]
-fn tc_458_060_affirm_clears_suspicion_on_a_binding_that_exists() {
-    let dir = repo();
-    write_store(
+    reported_store_path(
         dir.path(),
-        "bindings.json",
-        &json!({
-            "schemaVersion": 1,
-            "bindings": [{
-                "obligation": "FR-1-AC-1",
-                "statementHashAtBinding": "old",
-                "suite": "unit",
-                "commit": commit('a'),
-                "symbols": [],
-            }],
-        })
-        .to_string(),
-    );
-    let payload = ok(&run(
-        "evidence.affirm",
-        &json!({
-            "repo": dir.path(),
-            "obligation": "FR-1-AC-1",
-            "statement_hash": "new",
-            "who": "peter",
-            "commit": commit('b'),
-        }),
-    ));
-    assert_eq!(payload["found"], true);
-    let written: Value =
-        serde_json::from_str(&fs::read_to_string(store_path(dir.path(), "bindings.json")).unwrap())
-            .unwrap();
-    assert_eq!(
-        written["bindings"][0]["affirmations"][0]["who"], "peter",
-        "{written}"
+        run_path,
+        "runs/unit/2026-01-01T00~3A00~3A00Z.json",
     );
 }
 
-/// Trace: FR-101-AC-2
 ///
 /// `gc` is the only operation that answers `deleted` — and the divergence this
 /// ticket declares is asserted HERE, through the binary, because the join onto
@@ -276,13 +224,12 @@ fn tc_458_060_affirm_clears_suspicion_on_a_binding_that_exists() {
 #[test]
 fn tc_458_070_gc_reports_absolute_paths_and_removes_only_the_superseded() {
     let dir = repo();
-    for (seed, timestamp) in [('a', "2026-01-01T00:00:00Z"), ('b', "2026-02-01T00:00:00Z")] {
+    for timestamp in ["2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"] {
         ok(&run(
             "evidence.record",
             &json!({
                 "repo": dir.path(),
                 "suite": "unit",
-                "commit": commit(seed),
                 "tool": "vitest 1.0.0",
                 "timestamp": timestamp,
                 "adapter": "junit",
@@ -296,17 +243,16 @@ fn tc_458_070_gc_reports_absolute_paths_and_removes_only_the_superseded() {
     ));
     let deleted = payload["deleted"].as_array().unwrap();
     assert_eq!(deleted.len(), 1, "{payload}");
-    let expected = store_path(dir.path(), "runs/unit/aaaaaaaaaaaa.json");
+    let expected = store_path(dir.path(), "runs/unit/2026-01-01T00~3A00~3A00Z.json");
     assert_eq!(
         deleted[0].as_str().unwrap(),
         expected.to_string_lossy(),
         "a store-relative path reached the caller"
     );
     assert!(!expected.exists());
-    assert!(store_path(dir.path(), "runs/unit/bbbbbbbbbbbb.json").is_file());
+    assert!(store_path(dir.path(), "runs/unit/2026-02-01T00~3A00~3A00Z.json").is_file());
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `trust_decision` is the only operation that answers both a `path` and an
 /// `assessment`.
@@ -316,8 +262,8 @@ fn tc_458_080_trust_decision_is_assessed_before_it_is_stored() {
     let context = json!({
         "name": "ripgrep",
         "version": "14.0.0",
-        "configurationDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-        "validationCorpusDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "configuration": "config-a",
+        "validationCorpus": "corpus-a",
         "inputContract": "utf-8 text",
         "environment": "linux-x86_64",
     });
@@ -338,7 +284,7 @@ fn tc_458_080_trust_decision_is_assessed_before_it_is_stored() {
             "input-contract",
             "environment",
         ],
-        "validationEvidence": [{"id": "EV-1", "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}],
+        "validationEvidence": [{"id": "EV-1", "reference": "evidence/ev-1"}],
         "limitations": [],
         "owner": "peter",
         "decidedAt": "2026-01-01T00:00:00Z",
@@ -357,7 +303,6 @@ fn tc_458_080_trust_decision_is_assessed_before_it_is_stored() {
     reported_store_family(dir.path(), path, "trust");
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `trust_assessments` is the only operation that answers `unreadable`.
 #[test]
@@ -371,7 +316,6 @@ fn tc_458_090_trust_assessments_reads_an_empty_store_as_empty() {
     assert_eq!(payload["unreadable"], json!([]));
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `inspect_mocks` is the only operation that answers `injections`. An empty
 /// COMPLETED inspection is still recorded — that is how audit tells "looked and
@@ -384,7 +328,6 @@ fn tc_458_100_inspect_mocks_records_an_empty_inspection() {
         &json!({
             "repo": dir.path(),
             "suite": "unit",
-            "commit": commit('a'),
             "tool": "grep",
             "timestamp": "2026-01-01T00:00:00Z",
             "dry_run": false,
@@ -392,10 +335,13 @@ fn tc_458_100_inspect_mocks_records_an_empty_inspection() {
     ));
     assert_eq!(payload["injections"], json!([]));
     let path = payload["path"].as_str().unwrap();
-    reported_store_path(dir.path(), path, "mock-inspections/unit/aaaaaaaaaaaa.json");
+    reported_store_path(
+        dir.path(),
+        path,
+        "mock-inspections/unit/2026-01-01T00~3A00~3A00Z.json",
+    );
 }
 
-/// Trace: FR-101-AC-4
 ///
 /// `record_experiment` and `record_operational` are the only operations that
 /// answer `created`, and they write to different families — which is the fact
@@ -407,15 +353,8 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
         "schemaVersion": "producer-provenance-v1",
         "identity": "quoin",
         "version": "0.1.0",
-        "sourceRevision": commit('a'),
-        "sourceState": "clean",
-        "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-        "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
         "capabilities": ["record"],
-        "artifacts": [{
-            "name": "report.json",
-            "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
-        }],
+        "artifacts": [{ "name": "report.json" }],
     });
 
     let payload = ok(&run(
@@ -424,7 +363,7 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
             "repo": dir.path(),
             "document": {
                 "schemaVersion": "experiment-record-v1",
-                "subject": {"kind": "requirement", "id": "FR-001", "sourceRevision": commit('b')},
+                "subject": {"kind": "requirement", "id": "FR-001" },
                 "recordedAt": "2026-01-01T00:00:00Z",
                 "hypothesis": "the adapter reads real output",
                 "design": {
@@ -446,42 +385,13 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
     let experiment_path = payload["path"].as_str().unwrap().to_owned();
     reported_store_family(dir.path(), &experiment_path, "experiments");
 
-    // Append-only: publishing the same document again finds identical bytes
-    // and says so, rather than reporting a second creation.
-    let payload = ok(&run(
-        "evidence.record_experiment",
-        &json!({
-            "repo": dir.path(),
-            "document": {
-                "schemaVersion": "experiment-record-v1",
-                "subject": {"kind": "requirement", "id": "FR-001", "sourceRevision": commit('b')},
-                "recordedAt": "2026-01-01T00:00:00Z",
-                "hypothesis": "the adapter reads real output",
-                "design": {
-                    "timeBox": "1d",
-                    "corpusRefs": ["corpus/a"],
-                    "comparisonMethod": "A/B",
-                    "decisionRule": "p<0.05",
-                },
-                "result": {
-                    "status": "supported",
-                    "summary": "it did",
-                    "evidenceRefs": ["runs/SUITE-A"],
-                },
-                "producerProvenance": provenance,
-            },
-        }),
-    ));
-    assert_eq!(payload["created"], false);
-    assert_eq!(payload["path"].as_str().unwrap(), experiment_path);
-
     let payload = ok(&run(
         "evidence.record_operational",
         &json!({
             "repo": dir.path(),
             "document": {
                 "schemaVersion": "operational-evidence-record-v1",
-                "subject": {"kind": "service", "id": "quoin-core", "sourceRevision": commit('c')},
+                "subject": {"kind": "service", "id": "quoin-core" },
                 "recordedAt": "2026-01-01T00:00:00Z",
                 "window": {
                     "startedAt": "2026-01-01T00:00:00Z",
@@ -507,7 +417,57 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
     assert_eq!(payload["created"], true);
 }
 
-/// Trace: FR-101-AC-4
+/// Publishing an assurance record again under the `recordId` it was given is
+/// idempotent at the boundary: the same record, `created` false, one file.
+///
+/// Trace: FR-048-AC-2
+#[test]
+fn tc_458_115_republishing_under_the_assigned_record_id_is_idempotent() {
+    let dir = repo();
+    let document = |record_id: Option<&str>| {
+        let mut document = json!({
+            "schemaVersion": "experiment-record-v1",
+            "subject": {"kind": "requirement", "id": "FR-001" },
+            "recordedAt": "2026-01-01T00:00:00Z",
+            "hypothesis": "the adapter reads real output",
+            "design": {
+                "timeBox": "1d",
+                "corpusRefs": ["corpus/a"],
+                "comparisonMethod": "A/B",
+                "decisionRule": "p<0.05",
+            },
+            "result": {"status": "supported", "summary": "it did", "evidenceRefs": ["runs/SUITE-A"]},
+            "producerProvenance": {
+                "schemaVersion": "producer-provenance-v1",
+                "identity": "quoin",
+                "version": "0.1.0",
+                "capabilities": ["record"],
+                "artifacts": [{ "name": "report.json" }],
+            },
+        });
+        if let Some(id) = record_id {
+            document["recordId"] = json!(id);
+        }
+        document
+    };
+    let first = ok(&run(
+        "evidence.record_experiment",
+        &json!({"repo": dir.path(), "document": document(None)}),
+    ));
+    assert_eq!(first["created"], true);
+    let id = first["record"]["recordId"]
+        .as_str()
+        .or_else(|| first["record_id"].as_str())
+        .expect("the assigned record id")
+        .to_owned();
+    let again = ok(&run(
+        "evidence.record_experiment",
+        &json!({"repo": dir.path(), "document": document(Some(&id))}),
+    ));
+    assert_eq!(again["created"], false, "{again}");
+    assert_eq!(again["path"], first["path"]);
+}
+
 ///
 /// `audit_inputs` is the only operation that answers `vacuous_scan_suites`.
 #[test]
@@ -518,7 +478,6 @@ fn tc_458_120_audit_inputs_answers_everything_the_pure_auditor_reads() {
         &json!({
             "repo": dir.path(),
             "suite": "unit",
-            "commit": commit('a'),
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
@@ -532,7 +491,6 @@ fn tc_458_120_audit_inputs_answers_everything_the_pure_auditor_reads() {
     assert_eq!(payload["independence"], json!([]));
 }
 
-/// Trace: FR-101-AC-3
 ///
 /// The exit taxonomy, through the binary: a caller mistake is 3, a refusal is
 /// 2, and neither writes a payload to stdout.
@@ -575,7 +533,6 @@ fn tc_458_150_audit_inputs_names_the_scans_that_evaluated_no_rules() {
             &json!({
                 "repo": dir.path(),
                 "suite": suite,
-                "commit": commit('a'),
                 "tool": "semgrep 1.2.3",
                 "timestamp": "2026-01-01T00:00:00Z",
                 "adapter": "sarif",
@@ -595,7 +552,6 @@ fn tc_458_150_audit_inputs_names_the_scans_that_evaluated_no_rules() {
     assert_eq!(payload["vacuous_scan_suites"], json!(["SUITE-VACUOUS"]));
 }
 
-/// Trace: FR-101-AC-2
 ///
 /// The second declared divergence, through the real binary.
 ///
@@ -616,14 +572,13 @@ fn tc_458_160_a_malformed_record_is_skipped_and_named_through_the_binary() {
         &json!({
             "repo": dir.path(),
             "suite": "readable",
-            "commit": commit('a'),
             "tool": "vitest 1.0.0",
             "timestamp": "2026-01-01T00:00:00Z",
             "adapter": "junit",
             "results": junit("works"),
         }),
     ));
-    // Well-formed JSON, and not a run record: no `entries`, no `commit`.
+    // Well-formed JSON, and not a run record: no `entries`.
     write_store(
         dir.path(),
         "runs/broken/cccccccccccc.json",

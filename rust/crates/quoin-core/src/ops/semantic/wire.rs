@@ -37,7 +37,7 @@ pub const MAX_SWEEP_CORPUS_BYTES: usize = 1 << 20;
 /// The largest single path or identity string this domain will accept, in
 /// bytes.
 ///
-/// A module root, a corpus root, a repository name, a revision, a package
+/// A module root, a corpus root, a repository name, a package
 /// identity and a timestamp are all one of these. 4 KiB is past every
 /// platform's `PATH_MAX` and still refuses a stream.
 pub const MAX_SCALAR_BYTES: usize = 4 * 1024;
@@ -104,8 +104,6 @@ pub struct SweepRootRequest {
     pub root: String,
     /// The repository name recorded against every finding under it.
     pub repository: String,
-    /// The revision recorded in the report's `corpus` block.
-    pub revision: String,
 }
 
 /// The request accepted by `semantic.sweep_corpus`.

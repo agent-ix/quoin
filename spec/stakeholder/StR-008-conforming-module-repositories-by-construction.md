@@ -3,9 +3,6 @@ id: StR-008
 title: "Module owners need new semantic-module repositories to conform by construction"
 type: StR
 verification_method: test
-evidence:
-  - kind: test_case
-    ref: tests/semantic-module-template.test.ts
 relationships:
   - target: "ix://agent-ix/quoin/FR-076"
     type: "satisfied_by"

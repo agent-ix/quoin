@@ -15,3 +15,12 @@ minimumReleaseAgeExclude:
 updateConfig:
   ignoreDependencies:
     - typescript
+
+# Fail fast when the configured registry refuses connections. pnpm re-checks
+# package metadata for `minimumReleaseAge` even when the lockfile and the store
+# already satisfy the install, and its default retry wait of up to a minute made
+# an unreachable registry look like a hang. The retry count and request timeout
+# stay at pnpm's defaults; only the wait between retries is shortened. Registry
+# selection is untouched.
+fetchRetryMintimeout: 1000
+fetchRetryMaxtimeout: 3000

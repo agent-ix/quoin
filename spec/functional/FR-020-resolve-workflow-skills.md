@@ -35,7 +35,7 @@ The workflow SHALL require no archived provider package or private checkout.
 - The plugin SHALL ship SKILL.md and workflows/<name>/def.yaml for each workflow.
 - The agent SHALL launch the installed skill through ix-flow run --path.
 - The convenience CLI SHALL accept --path and initialize one quoin_context item.
-- The CLI SHALL require ix-flow >=0.3.0 before creating a run.
+- The CLI SHALL require ix-flow >=0.3.1 before creating a run.
 - Quoin SHALL record canonical repository/config roots and contained targets.
 - Quoin SHALL preserve existing runs and their recorded skill paths.
 - Quoin SHALL ignore the obsolete IX_SPEC_WORKFLOWS_ROOT override.

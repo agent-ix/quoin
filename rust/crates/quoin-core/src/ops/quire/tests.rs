@@ -40,8 +40,6 @@ use crate::protocol::Response;
 
 use super::{MAX_SCALAR_BYTES, coverage, properties};
 
-const HASH: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-
 /// What the fake engine was asked, and what it will answer.
 ///
 /// The recorded arguments are half the point: the operation's own contract is
@@ -143,7 +141,6 @@ fn obligation() -> quoin_quire::model::Obligation {
         id: "FR-001-AC-1".to_owned(),
         document: "spec/FR-001.md".to_owned(),
         statement: "The command reports coverage.".to_owned(),
-        statement_hash: HASH.to_owned(),
         method: Some("Test".to_owned()),
         parameters: BTreeMap::from([("threshold".to_owned(), "0.9".to_owned())]),
         criticality: Some("high".to_owned()),
@@ -225,7 +222,6 @@ fn coverage_projects_the_obligations_the_engine_derived() {
     let obligations = payload(&response)["obligations"].as_array().unwrap();
     assert_eq!(obligations.len(), 2);
     assert_eq!(obligations[0]["id"], "FR-001-AC-1");
-    assert_eq!(obligations[0]["statement_hash"], HASH);
     assert_eq!(obligations[0]["target_ids"], json!(["TC-1249"]));
     assert_eq!(obligations[0]["parameters"]["threshold"], "0.9");
     assert!(
@@ -263,11 +259,19 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
         statement: "The command reports coverage.".to_owned(),
         method: method.map(str::to_owned),
         binders,
+        record_binders: None,
+        identity: None,
         status,
     };
     vec![CoverageMatrixRequirement {
         document: "spec/FR-001.md".to_owned(),
         criteria: vec![
+            criterion(
+                "FR-001-AC-0",
+                Some("Test"),
+                Vec::new(),
+                CoverageMatrixStatus::QualifiedRecord,
+            ),
             criterion(
                 "FR-001-AC-1",
                 Some("Test"),
@@ -291,6 +295,12 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
                 Some("Inspection"),
                 Vec::new(),
                 CoverageMatrixStatus::MethodWithoutSymbol,
+            ),
+            criterion(
+                "FR-001-AC-5",
+                Some("Test"),
+                Vec::new(),
+                CoverageMatrixStatus::Retired,
             ),
         ],
     }]
@@ -320,7 +330,7 @@ fn coverage_projects_the_engine_matrix_in_its_own_spelling() {
     }
     assert_eq!(payload(&response)["coverage_matrix"], expected);
     assert_eq!(
-        expected[0]["criteria"][2]["status"],
+        expected[0]["criteria"][3]["status"],
         "tagged-by-ignored-test"
     );
 
@@ -368,7 +378,7 @@ fn an_absent_module_list_is_ambient_discovery() {
         &Capabilities::with_quire(&engine),
     );
     assert_eq!(response.unwrap().outcome.code(), 0);
-    assert!(engine.seen.borrow()[0].modules.is_empty());
+    assert_eq!(engine.seen.borrow()[0].modules.len(), 0);
 }
 
 /// `quire.properties` answers with the shape MAP `quoin advise` built by hand,

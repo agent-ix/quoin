@@ -1,21 +1,20 @@
 # Default Filament module set shipped with quoin.
 #
 # Lazily installed into ~/.ix/filament/modules on first catalog access. Each
-# entry checks out one module's data subdirectory from its repository at `ref`.
+# entry checks out one module's data subdirectory from its repository's
+# default branch.
 schemaVersion: 1
 name: quoin-default-modules
 entries:
   # Assurance artifacts are available by default but remain opt-in: installing
   # their vocabulary does not require a repository to author any assurance
-  # document. `ref` is the engineering-assurance commit whose schemas quoin
-  # installs.
+  # document.
   - name: engineering-assurance
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/engineering-assurance
       path: engineering_assurance
-      ref: d1de13aff9fdc3d40b54753f10c4a4ab83e98439
 
   - name: spec-artifacts-iso
     defaultEnabled: true
@@ -23,7 +22,6 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-iso
       path: spec_artifacts_iso
-      ref: 9f17d63ebbf51e548b0f0c9471ea28279e071881
 
   - name: spec-artifacts-app
     defaultEnabled: true
@@ -31,7 +29,6 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-app
       path: spec_artifacts_app
-      ref: bc8a24bce4db0b71a2bd5bc80c934f2956b452c7
 
   - name: spec-artifacts-process
     defaultEnabled: true
@@ -39,7 +36,6 @@ entries:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
-      ref: b82e42e893612b4b4ee94127714b4577ee893502
 
   - name: spec-objects-business
     defaultEnabled: true
@@ -47,7 +43,6 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-business
       path: spec_objects_business
-      ref: 4974aba6a790a42734c1addb29c18c2830b8b0f1
 
   - name: spec-objects-architecture
     defaultEnabled: true
@@ -55,7 +50,6 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-architecture
       path: spec_objects_architecture
-      ref: 96c6e51bbec9f3f6868ab66376683e5bbfca4a53
 
   - name: spec-objects-enterprise
     defaultEnabled: true
@@ -63,7 +57,6 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-enterprise
       path: spec_objects_enterprise
-      ref: d1604199209e14f978d0bf9b2609dadd7688147f
 
   - name: spec-objects-operational
     defaultEnabled: true
@@ -71,7 +64,6 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-operational
       path: spec_objects_operational
-      ref: 323db382e192f638c7c9bf44e056e2bc9210fbcb
 
   - name: spec-objects-security
     defaultEnabled: true
@@ -79,7 +71,6 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-security
       path: spec_objects_security
-      ref: 2d1083834a56e5df0f0ad8f7ef5f1160e4f0db76
 
   - name: spec-objects-safety
     defaultEnabled: true
@@ -87,4 +78,3 @@ entries:
       type: git-subdir
       url: agent-ix/spec-objects-safety
       path: spec_objects_safety
-      ref: 9ac295a25fda4021f40ba778e17756be92eaa6b9

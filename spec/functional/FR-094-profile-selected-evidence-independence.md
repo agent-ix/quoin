@@ -7,7 +7,7 @@ relationships:
     type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-030"
     type: "extends"
-  - target: "ix://agent-ix/quoin/FR-046"
+  - target: "ix://agent-ix/quoin/FR-093"
     type: "references"
 ---
 
@@ -63,7 +63,7 @@ make a claim supported.
 ## Dependencies
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) supplies the binding relationship;
-  [FR-046](./FR-046-evidence-producer-trust.md) keeps shared producer/configuration lineage
+  [FR-093](./FR-093-evidence-producer-trust.md) keeps shared producer/configuration lineage
   visible for uses that rely on automated evidence.
 - **Downstream**: [FR-040](./FR-040-assurance-case-view.md) renders the result; coding-agent
   and `ix-flow` workflows can supply the profile projection and human approval gate.

@@ -2,7 +2,7 @@
 id: PLAN-009
 title: "Advisory corpus measurement"
 type: Plan
-status: active
+status: withdrawn
 relationships:
   - target: "ix://agent-ix/quoin/US-022"
     type: references
@@ -34,9 +34,13 @@ relationships:
 
 # PLAN-009: Advisory corpus measurement
 
+> **Withdrawn.** FR-084..FR-092, US-022, NFR-021 and NFR-022 are withdrawn (gate
+> `agent-ix/quoin#291` closed) and nothing in this plan is scheduled; every item
+> below is retained for provenance and none is live work.
+
 Issue: `agent-ix/quoin#291`, under EPIC `agent-ix/quoin#286`. Reviews: SR-140..SR-148
 under `reviews/26-09-04-spec-review-*-291.md`. Upstream: the semantic-module contract
-(`agent-ix/quoin#293`, merged `3e842ce`) and the nine module schema completions of this
+(`agent-ix/quoin#293`, merged) and the nine module schema completions of this
 wave. Downstream: the promotion gate `agent-ix/quoin#290`, which has no other evidence
 to consume.
 
@@ -53,7 +57,7 @@ justifying a looser rule.
 ### Functional Requirements
 
 - [ ] **FR-084:** Enumerate and pin the governed corpus under a declared exclusion vocabulary, with the worktree, nested-repository and symlink rules, and record cleanliness and stability per repository.
-- [ ] **FR-085:** Resolve the declared required module set from each module repository's object store, record contract-surface digests, check declared `data_schema` digests, and publish the toolchain record.
+- [ ] **FR-085:** Resolve the declared required module set from each module repository's object store, resolve each declared `data_schema` path to the file read, and publish the toolchain record.
 - [ ] **FR-086:** Give every enumerated document exactly one state from `measured`, `out-of-model`, `unreadable` and `contested`, resolving types case-sensitively on a module-qualified key.
 - [ ] **FR-087:** Obtain structural conformance by running the Quire engine over each measured document against the resolved module set, recording `pass`, `fail` or `could-not-run` and never implementing a second extractor.
 - [ ] **FR-088:** Publish the Properties form census over the FR-084 population, and record the field-level semantic dimension `could-not-run` while no released toolchain exposes it.
@@ -64,7 +68,7 @@ justifying a looser rule.
 
 ### Non-Functional Requirements
 
-- [ ] **NFR-021:** Repeated runs over the committed fixture corpus produce digest-identical artifacts, including with networking disabled and in a shuffled enumeration order.
+- [ ] **NFR-021:** Repeated runs over the committed fixture corpus produce byte-identical artifacts, including with networking disabled and in a shuffled enumeration order.
 - [ ] **NFR-022:** A full run over up to 30,000 documents in 300 repositories completes inside 15 minutes on the recorded reference machine, opening every corpus file read-only.
 - [ ] **NFR-023:** Every figure the report prints names the artifact and field it came from and equals the value recomputed from it.
 
@@ -99,10 +103,10 @@ TASK-060 -> TASK-061 -> TASK-062 -> TASK-063 -> TASK-066 -> TASK-067 -> TASK-069
 | Gate                     | Condition                                                                                                                                                                                                      | Blocks           |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | G1 — population stated   | The enumerated document count, the exclusion vocabulary and every repository pin are recorded, and the per-repository counts sum to the total.                                                                 | TASK-061 onward  |
-| G2 — contract pinned     | Every required module resolves to a commit, every contract surface carries a digest, and the toolchain record names the engine and CLI revisions.                                                              | TASK-062 onward  |
+| G2 — contract pinned     | Every required module resolves to a commit, and the toolchain record names the engine and CLI revisions.                                                              | TASK-062 onward  |
 | G3 — no second extractor | No source file of the measurement parses a module mapping, builds a semantic record, or resolves a type, multiplicity or constraint keyword.                                                                   | TASK-066         |
 | G4 — nothing hidden      | Every document holds exactly one state, every finding holds exactly one class, `could-not-run` never enters a rate, and the `unknown` and `undispositioned` counts are headline figures.                       | TASK-067         |
-| G5 — reproducible        | Two runs over the fixture corpus are digest-identical, an offline run agrees, and a shuffled enumeration order agrees.                                                                                         | TASK-069         |
+| G5 — reproducible        | Two runs over the fixture corpus are byte-identical, an offline run agrees, and a shuffled enumeration order agrees.                                                                                         | TASK-069         |
 | G6 — repo green          | `make lint` passes, `npx vitest run` passes apart from the four failures already failing on `main`, `quire validate --scope . "spec/**/*.md"` is structurally clean, and every corpus repository is untouched. | the pull request |
 
 ## Test Plan

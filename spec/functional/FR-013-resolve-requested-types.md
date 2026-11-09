@@ -41,10 +41,10 @@ when a requested type is absent from the catalog.
 
 | ID          | Criteria                                                                       | Verification                      |
 | ----------- | ------------------------------------------------------------------------------ | --------------------------------- |
-| FR-013-AC-1 | An empty type list raises an error                                             | Test (write.test.ts)              |
-| FR-013-AC-2 | A missing `repo_dir`, a non-existent path, and a file path each raise an error | Test (write.test.ts, cli.test.ts) |
-| FR-013-AC-3 | Type values are comma-split, trimmed, and emptied entries dropped              | Test (write.test.ts)              |
-| FR-013-AC-4 | An unknown type raises an error listing available types in sorted order        | Test (write.test.ts)              |
+| FR-013-AC-1 | An empty type list raises an error                                             | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-013-AC-2 | A missing `repo_dir`, a non-existent path, and a file path each raise an error | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-013-AC-3 | Type values are comma-split, trimmed, and emptied entries dropped              | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-013-AC-4 | An unknown type raises an error listing available types in sorted order        | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

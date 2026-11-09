@@ -11,7 +11,7 @@
 //! is a contract nothing is responsible for.
 //!
 //! They are **data**, not logic — `quoin change-assurance schema` prints one
-//! byte-for-byte so a consumer validates against the same file the sealing
+//! byte-for-byte so a consumer validates against the same file the writer
 //! code was written against, and a re-serialization would defeat that. So they
 //! are compiled in with `include_str!` rather than read off disk: a schema read
 //! at run time is a schema that can differ from the one these tests measured.
@@ -19,14 +19,14 @@
 //! # The assets are asserted, not merely carried
 //!
 //! `tests/tc_503_schema_assets.rs` does not stop at "the file parses". Each
-//! asset is compiled and a document this crate actually sealed is validated
+//! asset is compiled and a document this crate actually wrote is validated
 //! against it, so a shape change in [`crate::model`] that nobody mirrored here
 //! fails a test rather than shipping a schema that describes the previous
 //! release. The tests live outside `src/` because they need a JSON reader and
 //! a validator, and `tests/tc_455_boundary.rs` censuses this crate's own
 //! sources for exactly that kind of dependency.
 
-/// `change-assurance-record-v1`, the FR-063 sealed record.
+/// `change-assurance-record-v1`, the FR-063 record.
 pub const CHANGE_ASSURANCE_RECORD_V1: &str =
     include_str!("../schemas/change-assurance-record-v1.schema.json");
 

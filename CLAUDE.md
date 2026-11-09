@@ -8,15 +8,22 @@ There is no Node/JavaScript executable build here. `src/semantic/` holds
 JSON schemas the Rust workspace reads, not a second build tree.
 
 ```bash
-make build   # cargo build --workspace --locked
-make test    # make rust-gate: fmt --check, clippy -D warnings, cargo deny, cargo test
-make lint    # cargo fmt --all --check + cargo clippy --all-targets --all-features -D warnings
-make format  # cargo fmt --all
-make clean   # cargo clean
+make build          # rust-build: pnpm install --frozen-lockfile (build-inputs), then cargo build --workspace --locked
+make test           # rust-gate (below)
+make lint           # rust-lint: cargo fmt --all --check + cargo clippy --workspace --all-targets --all-features -D warnings
+make format         # rust-fmt: cargo fmt --all
+make clean          # cargo clean
+make evidence       # nextest JUnit run, trace tags added, bound with `quoin evidence record` (spec/evidence/suites.md); needs cargo-nextest
+make workflow-test  # build, install the pinned workflow runner under rust/target, run quoin-workflow-check smoke scenarios
 ```
 
-See `Makefile` for the exact targets; `rust-build`, `rust-lint`, `rust-deny`
-and `rust-test` are the granular pieces `build`/`test` compose. CI
+`rust-gate` is `rust-lint` + `rust-deny` (cargo deny check) + `rust-test`
+(cargo test --workspace --locked) + `workflow-test`. `rust-build`, `rust-lint`,
+`rust-fmt`, `rust-deny` and `rust-test` are the granular targets; the `build`,
+`test`, `lint` and `format` names alias them. `build-inputs` (pnpm install) runs
+before build, lint, test and evidence.
+
+See `Makefile` for the exact targets. CI
 (`.github/workflows/build-test.yml`) runs `make rust-lint`, `make rust-build`
 and `make rust-test` directly, and releases (`.github/workflows/native-release.yml`)
 build with `cargo build --locked --release -p quoin-cli --bin quoin` and ship
@@ -96,13 +103,11 @@ Every SpecReview records the tool version it measured with.
 
 ## Rust
 
-`rust/` is a Cargo workspace inside this repository, beside `src/` — the Rust
-burn-down (#373) ports quoin's engine logic behind a `quoin-core` subprocess
-one stage at a time, and FR-101 requires both trees to be exercised at one
-candidate revision, which two repositories cannot do.
+`rust/` is the Cargo workspace that builds the `quoin` binary; `src/semantic/`
+beside it holds only schema inputs.
 
 ```bash
-make rust-gate       # fmt --check, clippy -D warnings, cargo deny, cargo test
+make rust-gate       # rust-lint, cargo deny, cargo test, workflow-test
 ```
 
 Difftest-style comparisons against canonical JSON bytes live inside the Rust

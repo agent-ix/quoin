@@ -23,16 +23,10 @@ use crate::types::observation::MeasurementObservation;
 pub struct SeriesPoint {
     /// When the collection was produced.
     pub timestamp: String,
-    /// The revision of the measured source.
-    pub source_revision: String,
     /// The producing tool's version.
     pub tool_version: String,
     /// The producing tool's identity.
     pub tool_identity: String,
-    /// The digest of the configuration it ran under.
-    pub config_digest: String,
-    /// The measured corpus revision, when the collection states one.
-    pub corpus_revision: Option<String>,
     /// The collection's stated corpus gap count, when it states one.
     pub corpus_gaps: Option<f64>,
     /// The observation itself.
@@ -66,11 +60,8 @@ fn points_of<'a>(
         .filter(move |observation| observation.metric.as_str() == metric)
         .map(move |observation| SeriesPoint {
             timestamp: collection.timestamp.as_str().to_owned(),
-            source_revision: collection.source_revision.as_str().to_owned(),
             tool_version: collection.tool_version.as_str().to_owned(),
             tool_identity: collection.tool_identity.as_str().to_owned(),
-            config_digest: collection.config_digest.as_str().to_owned(),
-            corpus_revision: collection.corpus_revision.clone(),
             corpus_gaps: gaps,
             observation: observation.clone(),
         })
@@ -98,13 +89,8 @@ pub fn render_series_json(points: &[SeriesPoint]) -> Result<String, MeasurementE
 #[serde(rename_all = "camelCase")]
 struct SeriesPointWire<'a> {
     timestamp: &'a str,
-    source_revision: &'a str,
     tool_version: &'a str,
     tool_identity: &'a str,
-    config_digest: &'a str,
-    /// `?? null`: stated as `null`, not dropped.
-    corpus_revision: Option<&'a str>,
-    /// As `corpus_revision`.
     corpus_gaps: Option<f64>,
     observation: ObservationWire,
 }
@@ -114,11 +100,8 @@ impl<'a> SeriesPointWire<'a> {
     fn of(point: &'a SeriesPoint) -> Result<Self, MeasurementError> {
         Ok(Self {
             timestamp: &point.timestamp,
-            source_revision: &point.source_revision,
             tool_version: &point.tool_version,
             tool_identity: &point.tool_identity,
-            config_digest: &point.config_digest,
-            corpus_revision: point.corpus_revision.as_deref(),
             corpus_gaps: point.corpus_gaps,
             observation: ObservationWire::of(&point.observation)?,
         })

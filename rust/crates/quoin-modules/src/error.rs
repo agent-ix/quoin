@@ -264,7 +264,7 @@ pub enum ModulesError {
     },
 
     /// A git revision could not be resolved in the fetched repository.
-    #[error("{code}: revision {revision:?} not found in {url} (a rebuilt history can orphan a pinned sha)", code = ModulesErrorCode::GitRevisionNotFound)]
+    #[error("{code}: revision {revision:?} not found in {url}", code = ModulesErrorCode::GitRevisionNotFound)]
     GitRevisionNotFound {
         /// The remote url.
         url: String,

@@ -159,10 +159,10 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         // The repository declined: retained bytes that differ, a document that
         // cannot be read back, a plan or profile that is present and
         // unacceptable, no active plan at all, a raw-evidence file that
-        // disagrees with its digest or is absent, a named artifact the
-        // repository holds in a form that cannot be digested, unreadable YAML,
-        // a protected-apparatus entry that names no file, a symlink, an
-        // undigestable file or too many files (PLAT-975), and every
+        // is absent, a named artifact the repository holds in a form that
+        // cannot be read, unreadable YAML, a protected-apparatus entry that
+        // names no file, a symlink, an unreadable file or too many files
+        // (PLAT-975), and every
         // filesystem and store refusal. Fixing any of these means changing the
         // repository, not the request.
         Code::CollectionIdCollision
@@ -228,10 +228,8 @@ const fn graph_code(code: GraphAdapterErrorCode) -> Option<CoreErrorCode> {
         | GraphAdapterErrorCode::InvalidObservation
         | GraphAdapterErrorCode::InvalidAttestation
         | GraphAdapterErrorCode::AttachmentMissing
-        | GraphAdapterErrorCode::AttachmentDigestMismatch
         | GraphAdapterErrorCode::InactivePlan
         | GraphAdapterErrorCode::DuplicatePartition
-        | GraphAdapterErrorCode::AttachmentEncodingInvalid
         | GraphAdapterErrorCode::CollectionRefused
         | GraphAdapterErrorCode::Measurement
         | GraphAdapterErrorCode::Store => CoreErrorCode::Refused,
@@ -261,7 +259,6 @@ mod tests {
     /// When this fails: a code was added to `quoin-measurement`. Decide which
     /// group it belongs to, add it to that arm, and raise the count.
     ///
-    /// Trace: FR-101-AC-7
     /// Provenance: quoin#478
     #[test]
     fn the_measurement_mapping_covers_every_code() {
@@ -342,7 +339,6 @@ mod tests {
     /// compiler guards it. The count is still asserted, because a variant
     /// REMOVED upstream would silently shrink both the match and this list.
     ///
-    /// Trace: FR-101-AC-7
     /// Provenance: quoin#478
     #[test]
     fn the_intake_mapping_covers_every_refusal_code() {
@@ -388,13 +384,12 @@ mod tests {
 
     /// `GraphAdapterErrorCode` is `#[non_exhaustive]`; the count is the guard.
     ///
-    /// Trace: FR-101-AC-7
     /// Provenance: quoin#478
     #[test]
     fn the_graph_mapping_covers_every_code() {
         assert_eq!(
             GraphAdapterErrorCode::ALL.len(),
-            16,
+            14,
             "quoin-measurement-graph gained or lost an error code; map it deliberately"
         );
 
@@ -410,10 +405,8 @@ mod tests {
             GraphAdapterErrorCode::InvalidObservation,
             GraphAdapterErrorCode::InvalidAttestation,
             GraphAdapterErrorCode::AttachmentMissing,
-            GraphAdapterErrorCode::AttachmentDigestMismatch,
             GraphAdapterErrorCode::InactivePlan,
             GraphAdapterErrorCode::DuplicatePartition,
-            GraphAdapterErrorCode::AttachmentEncodingInvalid,
             GraphAdapterErrorCode::CollectionRefused,
             GraphAdapterErrorCode::Measurement,
             GraphAdapterErrorCode::Store,
@@ -446,7 +439,6 @@ mod tests {
 
     /// The producer's two failures do not collapse into one status.
     ///
-    /// Trace: FR-101-AC-7
     /// Provenance: quoin#478
     #[test]
     fn the_release_producer_keeps_its_two_failures_apart() {

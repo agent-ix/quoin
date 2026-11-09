@@ -48,6 +48,6 @@ require a cause_not_established conclusion.
 
 ## Comparison and Enforcement
 
-Compare only reports with the same scenario set, repeat count, suite digest,
-fixture digest, and host version. Preserve failures and timeouts as observed;
+Compare only reports with the same scenario set, repeat count, suite,
+fixture, and host version. Preserve failures and timeouts as observed;
 do not replace them with constructed successes.

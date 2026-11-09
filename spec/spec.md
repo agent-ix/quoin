@@ -57,7 +57,7 @@ This specification governs:
 - The durable semantic-module architecture record that allocates authority and
   ownership across Quire, Quoin, `filament-core-data`, module repositories, and
   consumers without activating compiler, publication, or migration work.
-- Read-only fan-out, change-impact, and reaffirmation-churn views that consume a
+- Read-only fan-out and change-impact views that consume a
   validated, source-grounded Quire assurance export and join it to Quoin's retained
   evidence and existing auditor verdicts without collecting evidence or defining policy.
 
@@ -95,7 +95,7 @@ uses as its authoring contract. It installs user and community modules through
 hands their lifecycle to `ix-flow`.
 
 `quoin` declares its default module set in the committed `default-modules.yaml` as
-pinned `git-subdir` sources and auto-installs that set on first catalog access
+`git-subdir` sources and auto-installs that set on first catalog access
 into the shared `~/.ix/filament/modules` store that `quire` also reads — so
 authoring and validation see one identical catalog, and repeated work stays local.
 
@@ -117,6 +117,7 @@ index; the files are authoritative.
 - [StR-005](./stakeholder/StR-005-offline-reproducible.md) — authoring stays offline-safe and reproducible.
 - [StR-006](./stakeholder/StR-006-current-via-self-update.md) — keep quoin current with one command.
 - [StR-008](./stakeholder/StR-008-conforming-module-repositories-by-construction.md) — new semantic-module repositories conform by construction.
+- [StR-009](./stakeholder/StR-009-accepted-software-verified-by-tests-that-ran.md) — acceptance rests on tests that ran and passed.
 
 ### User Stories
 
@@ -138,6 +139,7 @@ index; the files are authoritative.
 - [US-020](./usecase/US-020-declare-a-semantic-module-contract-once.md) — declare a module's semantic contract once against the shared grammar.
 - [US-021](./usecase/US-021-generate-a-conforming-semantic-module-repository.md) — generate a semantic-module repository that already conforms to the contract.
 - [US-022](./usecase/US-022-measure-the-corpus-against-completed-modules.md) — measure the governed corpus against the completed module schemas before promotion. ⛔ **Withdrawn** (#388)
+- [US-023](./usecase/US-023-record-a-run-that-names-its-own-requirements.md) — record a run whose result file names the requirements it verified.
 
 ### Functional Requirements
 
@@ -212,11 +214,15 @@ index; the files are authoritative.
 
 **Semantic-module architecture**
 
-- [FR-046](./functional/FR-046-record-semantic-data-planes.md) — record the four semantic data planes.
-- [FR-047](./functional/FR-047-allocate-semantic-module-ownership.md) — allocate subsystem ownership.
-- [FR-048](./functional/FR-048-declare-authority-by-concern.md) — declare authority by concern.
+- [FR-117](./functional/FR-117-record-semantic-data-planes.md) — record the four semantic data planes.
+- [FR-118](./functional/FR-118-allocate-semantic-module-ownership.md) — allocate subsystem ownership.
+- [FR-119](./functional/FR-119-declare-authority-by-concern.md) — declare authority by concern.
 - [FR-049](./functional/FR-049-preserve-dynamic-and-generated-modules.md) — preserve dynamic modules and finite generated packages.
 - [FR-050](./functional/FR-050-reconcile-quire-decisions.md) — reconcile the architecture with Quire decisions.
+
+**Trace marks in test result output** (ADR-100)
+
+- [FR-120](./functional/FR-120-trace-marks-in-test-result-output.md) — trace ids are marks in test result output.
 
 **Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)
 
@@ -236,7 +242,7 @@ index; the files are authoritative.
 
 - [FR-059](./functional/FR-059-operational-evidence-records.md) — define standing-capability and exercise records.
 - [FR-060](./functional/FR-060-operational-evidence-intake-report.md) — ingest operational evidence and evaluate clocked discharge.
-- [FR-061](./functional/FR-061-github-actions-release-operational-producer.md) — produce linked operational records from a retained real GitHub Actions release run.
+- [FR-061](./functional/FR-061-github-actions-release-operational-producer.md) — produce linked operational records from retained GitHub Actions release run exports.
 
 
 **Semantic module contract (issue #293)**
@@ -245,7 +251,7 @@ index; the files are authoritative.
 - [FR-071](./functional/FR-071-typed-properties-mapping.md) — typed Properties table and SysML fence map to one `FieldDecl[]`.
 - [FR-072](./functional/FR-072-invariants-and-operations-mapping.md) — Invariants and Operations map to `ClauseRef[]` and `OperationDecl[]`.
 - [FR-104](./functional/FR-104-relationships-mapping.md) — the Relationships typed table maps to `RelationDecl[]` with a locus per row.
-- [FR-073](./functional/FR-073-data-schema-by-path-and-digest.md) — `data_schema` by emitted-schema path.
+- [FR-073](./functional/FR-073-data-schema-by-path.md) — `data_schema` by emitted-schema path.
 - [FR-074](./functional/FR-074-legacy-authoring-forms.md) — legacy authoring forms at `warning` with a declared migration.
 - [FR-075](./functional/FR-075-semantic-package-exports-and-locks.md) — package exports, imports, locks, and generated coordinates.
 
@@ -259,7 +265,7 @@ index; the files are authoritative.
 - [FR-081](./functional/FR-081-generated-public-repository-baseline.md) — generated public repository and packaging baseline.
 - [FR-082](./functional/FR-082-generated-governance-tree.md) — generated governance tree validates as rendered.
 - [FR-083](./functional/FR-083-template-render-self-tests.md) — template render self-tests and module conformance gate.
-- [FR-084](./functional/FR-084-pin-and-enumerate-the-governed-corpus.md) — pin and enumerate the governed corpus. ⛔ **Withdrawn** (#388)
+- [FR-084](./functional/FR-084-enumerate-the-governed-corpus.md) — enumerate the governed corpus. ⛔ **Withdrawn** (#388)
 - [FR-085](./functional/FR-085-resolve-the-completed-module-set.md) — resolve the completed module set and its contract surfaces. ⛔ **Withdrawn** (#388)
 - [FR-086](./functional/FR-086-assign-one-measurement-state-per-document.md) — assign exactly one measurement state to every corpus document. ⛔ **Withdrawn** (#388)
 - [FR-087](./functional/FR-087-evaluate-declared-markdown-mappings.md) — evaluate declared Markdown mappings and validate the extracted record. ⛔ **Withdrawn** (#388)
@@ -290,10 +296,11 @@ index; the files are authoritative.
 - [NFR-021](./non-functional/NFR-021-reproducible-corpus-measurement.md) — reproducible corpus measurement. ⛔ **Withdrawn** (#388)
 - [NFR-022](./non-functional/NFR-022-bounded-read-only-measurement-run.md) — bounded, read-only measurement run. ⛔ **Withdrawn** (#388)
 - [NFR-023](./non-functional/NFR-023-figures-carry-their-provenance.md) — published figures carry their provenance.
+- [NFR-029](./non-functional/NFR-029-self-contained-result-evidence.md) — a result artifact is interpretable without its source tree.
 
 ### Integration Tests
 
-- [IT-001](./integration/IT-001-default-module-reconcile.md) — default module set reconciles from pinned git tags, then serves offline.
+- [IT-001](./integration/IT-001-default-module-reconcile.md) — default module set reconciles from git, then serves offline.
 - [IT-002](./integration/IT-002-github-plugin-install.md) — community plugin installs from a GitHub source into the catalog.
 
 ### Verification Layers
@@ -311,9 +318,9 @@ Three layers verify this specification, each named in the requirements above:
 ## Module Store
 
 `quoin` declares its public default `spec-artifacts-*` and `spec-objects-*`
-modules in the committed `default-modules.yaml` as pinned `git-subdir` sources,
+modules in the committed `default-modules.yaml` as `git-subdir` sources named by repository,
 and installs that set on first catalog access into the Filament module store —
-lazily, idempotently, and (once pinned and installed) entirely offline. The
+lazily, idempotently, and (once installed) entirely offline. The
 install is triggered by the `catalog` and `write` commands and on demand via
 `quoin plugin ensure-defaults`, the explicit entry point external tools such as
 `quire validate` use to bootstrap the set. Private modules, including

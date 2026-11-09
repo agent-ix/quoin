@@ -291,14 +291,18 @@ impl OrgDocumentReport {
 /// — never an error, since "no org here" is a resolution outcome, not a failure.
 #[must_use]
 pub fn org_from_git_config(repo_root: &Path) -> Option<OrgName> {
+    origin_org(&read_git_config(repo_root)?)
+}
+
+/// The text of `<repo_root>`'s git config, or `None` when absent, unreadable or over bound.
+fn read_git_config(repo_root: &Path) -> Option<String> {
     let git_dir = resolve_git_dir(repo_root)?;
     let path = git_dir.join("config");
     let meta = fs::symlink_metadata(&path).ok()?;
     if meta.is_file() && meta.len() > MAX_GIT_CONFIG_BYTES {
         return None;
     }
-    let text = fs::read_to_string(&path).ok()?;
-    origin_org(&text)
+    fs::read_to_string(&path).ok()
 }
 
 /// Locate the git directory holding the config for `repo_root`.
@@ -358,13 +362,11 @@ fn gitdir_pointer(text: &str) -> Option<&str> {
     })
 }
 
-/// Parse the org out of the `[remote "origin"]` url in a git config.
+/// The `[remote "origin"]` url in a git config, as written.
 ///
-/// Handles both `git@host:org/repo.git` and `https://host/org/repo.git`. Git
-/// treats section names case-insensitively but subsection names (the quoted
+/// Git treats section names case-insensitively but subsection names (the quoted
 /// remote name) case-sensitively, and so does this.
-#[must_use]
-pub fn origin_org(config: &str) -> Option<OrgName> {
+fn origin_url(config: &str) -> Option<&str> {
     let mut in_origin = false;
     for line in config.split('\n') {
         let trimmed = line.trim();
@@ -381,9 +383,43 @@ pub fn origin_org(config: &str) -> Option<OrgName> {
         let Some(value) = after_key.strip_prefix('=') else {
             continue;
         };
-        return org_from_remote_url(value.trim());
+        return Some(value.trim());
     }
     None
+}
+
+/// Parse the org out of the `[remote "origin"]` url in a git config.
+///
+/// Handles both `git@host:org/repo.git` and `https://host/org/repo.git`.
+#[must_use]
+pub fn origin_org(config: &str) -> Option<OrgName> {
+    org_from_remote_url(origin_url(config)?)
+}
+
+/// The `<org>/<repo>` bundle package named by the `origin` remote in a git config.
+///
+/// The same url rules as [`origin_org`], so a remote that yields no org yields
+/// no package; the `.git` suffix is not part of the repository name.
+#[must_use]
+pub fn origin_package(config: &str) -> Option<String> {
+    let url = origin_url(config)?;
+    let org = org_from_remote_url(url)?;
+    let repo = url
+        .trim_end_matches('/')
+        .rsplit(['/', ':'])
+        .next()
+        .map(|last| last.strip_suffix(".git").unwrap_or(last))
+        .filter(|name| !name.is_empty())?;
+    Some(format!("{}/{repo}", org.as_str()))
+}
+
+/// Read the bundle package from the `origin` remote in `<repo_root>`'s git config.
+///
+/// Reads the file as [`org_from_git_config`] does, with the same bound, so an
+/// unreadable config is "no package here" and never an error.
+#[must_use]
+pub fn package_from_git_config(repo_root: &Path) -> Option<String> {
+    origin_package(&read_git_config(repo_root)?)
 }
 
 /// Extract the owning org from a remote url, or `None` when it names none.

@@ -2,17 +2,19 @@
 // Copyright (C) 2026 Agent-IX
 //! Verifying retained change-assurance evidence (FR-065).
 //!
-//! The port of `verifyChangeAssurance`, `verifyReceipt` and
-//! `schemaInvalidReceipt` (`src/change-assurance/verify.ts`).
-//!
 //! # A verification always produces a receipt
 //!
 //! Nothing here refuses to answer. A record that does not parse produces a
 //! `schema_invalid` receipt rather than an error, because "this evidence
 //! cannot be read" is itself the verification result and it has to be
-//! retainable, citable and digestible like any other. The one `Err` this
-//! module can return is a canonicalization failure, which means the receipt
-//! could not be sealed at all.
+//! retainable and citable like any other. The receipt names the record by the
+//! `(record_id, revision)` the caller asked about.
+//!
+//! # Receipts are re-derived
+//!
+//! A receipt carries no digest. [`verify_receipt`] re-derives the receipt from
+//! the retained inputs and compares the canonical bytes of the two, byte for
+//! byte.
 
 pub mod apparatus;
 pub mod audit;
@@ -20,18 +22,18 @@ pub mod input;
 pub mod lineage;
 pub mod proofs;
 
-use quoin_store::{CanonicalDigest, JsonValue, digest_canonical_value};
+use quoin_store::{JsonValue, canonical_bytes};
 
 use crate::error::ChangeAssuranceError;
-use crate::model::json::{compare_utf16, object};
+use crate::model::json::compare_utf16;
 use crate::model::outcome::{Check, Outcome, Reason, normalize_reasons, outcome_for_reasons};
-use crate::model::receipt::{ReceiptChecks, ReceiptUnknown, UnsealedReceipt, VerificationReceipt};
+use crate::model::receipt::{ReceiptChecks, ReceiptUnknown, VerificationReceipt};
 use crate::model::record::{ChangeAssuranceRecord, Completeness, Disposition};
-use crate::records::{validate_decision, verify_change_record, verify_lineage};
+use crate::records::{read_change_record_json, validate_decision, verify_lineage};
 use crate::verify::apparatus::ApparatusContext;
 use crate::verify::input::VerificationInput;
 use crate::verify::lineage::lineage_reason;
-use crate::verify::proofs::{ProofContext, declared_digest, judge, ordered_obligations};
+use crate::verify::proofs::{ProofContext, judge, ordered_obligations, retained_under};
 
 pub use crate::verify::audit::{AdaptedAudit, AuditState, adapt_audit, map_audit_finding};
 pub use crate::verify::input::{
@@ -39,41 +41,28 @@ pub use crate::verify::input::{
     RetainedAudit, Selection, VerificationInput as Input,
 };
 
-/// Verify retained evidence and produce a sealed receipt.
+/// Verify retained evidence and produce a receipt.
 ///
 /// # Errors
 ///
-/// Only when the receipt cannot be canonicalized or fails its own schema —
-/// both of which mean this crate disagrees with itself rather than that the
-/// evidence is bad.
+/// Only when the receipt fails its own schema, which means this crate
+/// disagrees with itself rather than that the evidence is bad.
 pub fn verify_change_assurance(
     input: &VerificationInput,
 ) -> Result<VerificationReceipt, ChangeAssuranceError> {
     let mut record_reasons: Vec<Reason> = Vec::new();
-    let record = match verify_change_record(&input.record) {
-        Ok(record) => record,
-        Err(error) if error.is_digest_mismatch() => {
-            record_reasons.push(Reason::RecordDigestMismatch);
-            // The shape already passed; only the digest did not. Reading it
-            // again cannot fail, but if it somehow did the verification is a
-            // schema-invalid one.
-            match ChangeAssuranceRecord::read_sealed(&input.record) {
-                Ok(record) => record,
-                Err(_) => return schema_invalid_receipt(input),
-            }
-        }
-        Err(_) => return schema_invalid_receipt(input),
+    let Ok(record) = read_change_record_json(&input.record) else {
+        return schema_invalid_receipt(input);
     };
+    if record.record_id != input.record_id || record.revision != input.record_revision {
+        record_reasons.push(Reason::RecordRevisionMismatch);
+    }
     let record_check = Check::from_reasons(&record_reasons, Outcome::Invalid);
 
     let mut lineage_reasons: Vec<Reason> = Vec::new();
-    let parent_digests: Vec<CanonicalDigest> = match verify_lineage(&record, &input.parents) {
-        Ok(digests) => digests,
-        Err(error) => {
-            lineage_reasons.push(lineage_reason(&error));
-            Vec::new()
-        }
-    };
+    if let Err(error) = verify_lineage(&record, &input.parents) {
+        lineage_reasons.push(lineage_reason(&error));
+    }
     let lineage_check = Check::from_reasons(&lineage_reasons, Outcome::Invalid);
 
     let decision = validate_decision(&record, input.decision_history.as_ref());
@@ -125,15 +114,15 @@ pub fn verify_change_assurance(
         .collect();
     unknowns.sort_by(|left, right| compare_utf16(left.id.as_str(), right.id.as_str()));
 
-    seal(UnsealedReceipt {
-        record_digest: record.digest,
+    checked(&VerificationReceipt {
+        record_id: input.record_id.clone(),
+        record_revision: input.record_revision,
         candidate_revision: crate::ids::NonEmptyText::parse(
             &input.candidate_revision,
             crate::error::Subject::Receipt,
             "candidate revision",
         )?,
         decision_event: decision.event,
-        parent_digests,
         checks: ReceiptChecks {
             record: record_check,
             lineage: lineage_check,
@@ -201,7 +190,6 @@ fn judge_proofs(
     input: &VerificationInput,
     record: &ChangeAssuranceRecord,
 ) -> Vec<crate::model::receipt::ProofResult> {
-    let record_digest = record.digest.as_hex().to_owned();
     ordered_obligations(&record.definition.proof_obligations)
         .into_iter()
         .map(|obligation| {
@@ -212,13 +200,9 @@ fn judge_proofs(
                 .collect();
             // The retained attestations are only looked up when exactly one
             // selection names this obligation: with two selections there is no
-            // single digest to look up, and the ambiguity is already refused.
+            // single id to look up, and the ambiguity is already refused.
             let retained: Vec<_> = match selected.as_slice() {
-                [only] => input
-                    .attestations
-                    .iter()
-                    .filter(|pair| declared_digest(&pair.attestation) == only.attestation_digest)
-                    .collect(),
+                [only] => retained_under(&input.attestations, &only.attestation_id),
                 _ => Vec::new(),
             };
             let audits: Vec<_> = input
@@ -228,7 +212,8 @@ fn judge_proofs(
                 .collect();
             judge(&ProofContext {
                 obligation,
-                record_digest: &record_digest,
+                record_id: &input.record_id,
+                record_revision: input.record_revision,
                 candidate_revision: &input.candidate_revision,
                 selected,
                 retained,
@@ -240,10 +225,8 @@ fn judge_proofs(
 
 /// The receipt a record that cannot be read produces.
 ///
-/// It still names the evidence: a record that declares a well-formed digest is
-/// cited by that digest, and one that does not is cited by the digest of
-/// itself wrapped in `retained_record`, so that two unreadable records are
-/// never confused with one another.
+/// It still names the evidence: the `(record_id, revision)` the caller asked
+/// about.
 ///
 /// # Errors
 ///
@@ -251,27 +234,6 @@ fn judge_proofs(
 pub fn schema_invalid_receipt(
     input: &VerificationInput,
 ) -> Result<VerificationReceipt, ChangeAssuranceError> {
-    // A record that is not a JSON object is wrapped before anything reads a
-    // member from it, and the digest is then taken over that wrapping wrapped
-    // once more (`verify.ts:284`). The double wrapping is the oracle's, and it
-    // is reproduced rather than tidied: the digest is the only name an
-    // unreadable record has, and changing it would strand every receipt that
-    // already cites one.
-    let record_object = if input.record.as_object().is_ok() {
-        input.record.clone()
-    } else {
-        object(vec![("retained_record", input.record.clone())])
-    };
-    let record_digest = match record_object
-        .as_object()
-        .ok()
-        .and_then(|fields| fields.get("digest"))
-        .and_then(JsonValue::as_str)
-        .and_then(|declared| CanonicalDigest::parse_stored(declared).ok())
-    {
-        Some(declared) => declared,
-        None => digest_canonical_value(&object(vec![("retained_record", record_object)]))?,
-    };
     let candidate_revision = crate::ids::NonEmptyText::parse(
         if input.candidate_revision.is_empty() {
             "invalid"
@@ -281,11 +243,11 @@ pub fn schema_invalid_receipt(
         crate::error::Subject::Receipt,
         "candidate revision",
     )?;
-    seal(UnsealedReceipt {
-        record_digest,
+    checked(&VerificationReceipt {
+        record_id: input.record_id.clone(),
+        record_revision: input.record_revision,
         candidate_revision,
         decision_event: None,
-        parent_digests: Vec::new(),
         checks: ReceiptChecks {
             record: Check {
                 outcome: Outcome::Invalid,
@@ -304,32 +266,29 @@ pub fn schema_invalid_receipt(
     })
 }
 
-/// Seal a receipt and re-read it, so nothing leaves here unvalidated.
-fn seal(receipt: UnsealedReceipt) -> Result<VerificationReceipt, ChangeAssuranceError> {
-    let digest = digest_canonical_value(&receipt.to_json()?)?;
-    verify_receipt(&receipt.seal_with(digest).to_json()?)
+/// Re-read a receipt through its own schema, so nothing leaves here
+/// unvalidated.
+fn checked(receipt: &VerificationReceipt) -> Result<VerificationReceipt, ChangeAssuranceError> {
+    VerificationReceipt::from_json(&receipt.to_json()?)
 }
 
-/// Read a sealed receipt and check its digest.
+/// Check a stored receipt against the receipt re-derived from the retained
+/// inputs, byte for byte.
 ///
 /// # Errors
 ///
-/// Every refusal of the receipt schema — including a reason list that is
-/// unordered or repeated, and an outcome that disagrees with the precedence
-/// its own reasons imply — and
-/// [`ChangeAssuranceError::DigestMismatch`](crate::error::ChangeAssuranceError::DigestMismatch).
-pub fn verify_receipt(value: &JsonValue) -> Result<VerificationReceipt, ChangeAssuranceError> {
-    let receipt = VerificationReceipt::read_sealed(value)?;
-    let mut unsigned = value.as_object()?.clone();
-    unsigned.remove("digest");
-    let recomputed = digest_canonical_value(&JsonValue::Object(unsigned))?;
-    if recomputed == receipt.digest {
+/// Every refusal of the receipt schema, and
+/// [`ChangeAssuranceError::ReceiptMismatch`] when the canonical bytes of the
+/// stored receipt are not those of the re-derived one.
+pub fn verify_receipt(
+    stored: &JsonValue,
+    input: &VerificationInput,
+) -> Result<VerificationReceipt, ChangeAssuranceError> {
+    let receipt = VerificationReceipt::from_json(stored)?;
+    let rederived = verify_change_assurance(input)?;
+    if canonical_bytes(stored)? == canonical_bytes(&rederived.to_json()?)? {
         Ok(receipt)
     } else {
-        Err(ChangeAssuranceError::DigestMismatch {
-            subject: crate::error::Subject::Receipt,
-            stored: receipt.digest.as_hex().to_owned(),
-            recomputed: recomputed.as_hex().to_owned(),
-        })
+        Err(ChangeAssuranceError::ReceiptMismatch)
     }
 }

@@ -26,8 +26,8 @@ packages coexist over one identity graph.
 
 ## Behavior
 
-- `quoin module install` SHALL write `<module root>/semantic/package-manifest.json` conforming to `filament-core-data` `package-manifest.schema.json`, with `contractVersion: "1.0.0"`, `package.identity` = `semantic.package`, `package.version` = the module `version`, `schemaDialect` = the v1 package-manifest constant `https://json-schema.org/draft/2020-12/schema` (the TypeSpec authority is recorded by the IR `source.dialect`, not the manifest; filament-core-data FR-021), `sourceRoots: ["schemas/"]`, `imports` = one entry per `semantic.imports` value plus `agent-ix/semantic-core` at `semantic.semantic_core`, each with `versionConstraint: "=<version>"`, `exports: []`, and `capabilities: []`, `exports` = one entry per `semantic.exports` object type with `name`, `typeIdentity: ix://<org>/<repo>/type/<Name>`, and `visibility: public`, `profiles` = one `default` profile (`version` = module version, `options: {}`) selecting all exports, `semantic.targets`, and `semantic.mappings` with `compatibilityPosture: semantic.compatibility_posture`, `targets` = `semantic.targets`, `mappings` = `[]`, `extensions` = `[]`.
-- If `semantic.imports` names a package that no installed module provides at exactly that version, then `quoin module install` SHALL fail naming the import and the installed versions.
+- `quoin module install` SHALL write `<module root>/semantic/package-manifest.json` conforming to `filament-core-data` `package-manifest.schema.json`, with `contractVersion: "1.0.0"`, `package.identity` = `semantic.package`, `package.version` = the module `version`, `schemaDialect` = the v1 package-manifest constant `https://json-schema.org/draft/2020-12/schema` (the TypeSpec authority is recorded by the IR `source.dialect`, not the manifest; filament-core-data FR-021), `sourceRoots: ["schemas/"]`, `imports` = one entry per `semantic.imports` value, each with `versionConstraint` set to the declared version requirement (any valid version requirement), `exports: []`, and `capabilities: []`, `exports` = one entry per `semantic.exports` object type with `name`, `typeIdentity: ix://<org>/<repo>/type/<Name>`, and `visibility: public`, `profiles` = one `default` profile (`version` = module version, `options: {}`) selecting all exports, `semantic.targets`, and `semantic.mappings` with `compatibilityPosture: semantic.compatibility_posture`, `targets` = `semantic.targets`, `mappings` = `[]`, `extensions` = `[]`.
+- If `semantic.imports` names a package that no installed module provides a version satisfying it, then `quoin module install` SHALL fail naming the import and the installed versions.
 - If the import graph over `semantic.imports` contains a cycle, then `quoin module install` SHALL fail naming the cycle.
 - Quoin SHALL treat generated package coordinates (`rust`, `typescript`, `python-pydantic-v2`, `python-dataclass`, `json-schema`) as declarations in the derived manifest's `targets`, leaving publication to `agent-ix/quoin#290`.
 - The dynamic load path (FR-049-AC-1) SHALL validate artifacts from the shipped schemas with no generated package present.
@@ -57,7 +57,7 @@ packages coexist over one identity graph.
 > schema bytes ship. TC-1373 is withdrawn with it. The id is not reused.
 
 > **CR note (2026-09-30, agent-ix/quoin#662):** The Behavior clause recording
-> `package` and `semantic_core` in the module's `registry.json` entry under
+> the `package` in the module's `registry.json` entry under
 > `semantic` is withdrawn. Both values are copies of the module manifest's
 > `semantic` block and nothing reads them back from the registry. The registry
 > entry no longer carries a `semantic` member.

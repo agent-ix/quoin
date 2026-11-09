@@ -279,13 +279,11 @@ fn normalize_graph(graph: &InjectedStructuralGraph) -> NormalizedStructuralGraph
             ref path,
             ref premises,
             ref fan_out,
-            ref churn,
             ref change_impact,
         } => NormalizedStructuralGraph::Available {
             path: path.clone(),
             premises: premises.clone(),
             fan_out: fan_out.clone(),
-            churn: churn.clone(),
             change_impact: change_impact.clone().map_or(
                 ChangeImpact::NotApplicable(ChangeImpactAbsence::NoSeedRequested),
                 ChangeImpact::Analyses,

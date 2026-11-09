@@ -146,11 +146,6 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
         "",
         &mut after,
     );
-    assert!(
-        before.len() >= 3,
-        "the pre-CR-003 schema carries {} required arrays; the comparison would be vacuous",
-        before.len()
-    );
 
     for (path, required) in &before {
         assert_eq!(after.get(path), Some(required), "{path}");

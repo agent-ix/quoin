@@ -56,8 +56,7 @@
 //! quoin#403 asked whether ajv's error *ordering* could be promised. It is not
 //! promised here, for anything: error text, error count and error order are all
 //! outside the contract, and no test asserts them. What is contractual is
-//! whether a document satisfies the schema, measured against the oracle on a
-//! named corpus in `tests/tc_474_assurance_parity.rs`.
+//! whether a document satisfies the schema.
 
 use std::path::Path;
 use std::sync::OnceLock;
@@ -86,8 +85,7 @@ pub const SOURCE: &str = quire_rs::assurance::ASSURANCE_V1_SCHEMA;
 
 /// A document that satisfied `assurance-v1`.
 ///
-/// Parse, don't validate — modelled on `quoin_store::RawFileSha256Digest`
-/// and [`quoin_jsonschema::ValidDocument`]: holding the value *is* the proof,
+/// Parse, don't validate — modelled on [`quoin_jsonschema::ValidDocument`]: holding the value *is* the proof,
 /// so it is constructed by [`validate_assurance`] and nowhere else and no
 /// caller re-checks what it was handed.
 ///

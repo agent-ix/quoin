@@ -27,7 +27,7 @@ and the skeletons together, then run `make schemas`.
 ## The contract this module carries
 
 `{{ cookiecutter.package_name }}/manifest.yaml` declares a `semantic` block at
-contract version `1.0.0`: the exact `@agent-ix/semantic-core` version it imports,
+contract version `1.0.0`: the `@agent-ix/semantic-core` key its schema requires,
 the package identity it exports under, its exports and imports, its generated
 targets, its mappings, `compatibility_posture: additive` and
 `legacy_forms: warning`. Every exported type references its emitted schema by

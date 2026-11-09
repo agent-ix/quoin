@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+#
+# The `evidence` profile is the one `make evidence` runs. It writes JUnit XML to
+# target/nextest/evidence/junit.xml; `quoin-suite-trace` then adds each test's
+# trace tag, and `quoin evidence record --adapter junit` binds the result.
+# Nothing here changes how `cargo test` or the default profile run.
+
+[profile.evidence]
+# A red test must still produce a report: a failing run is recorded as readily
+# as a passing one, because a suite that stopped passing is what freshness
+# checks need to see.
+fail-fast = false
+
+[profile.evidence.junit]
+path = "junit.xml"

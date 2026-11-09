@@ -104,7 +104,7 @@ pub struct VocabularyDeclarations {
 /// does not exist yet, and taking already-located roots as input would change
 /// the API this crate is meant to be parity-tested against. The successor is the
 /// catalog crate; when it lands, this function is deleted and the caller passes
-/// its result (NFR-024: every retained path has a successor).
+/// its result.
 #[must_use]
 pub fn locate_module_root(candidate: &Path) -> Option<PathBuf> {
     let root = if candidate.is_absolute() {
@@ -234,7 +234,7 @@ pub fn schema_refs_of(manifest: &str) -> Vec<String> {
 /// uses it to decide which of those files the vocabulary came out of. A second
 /// copy would let the file that is READ and the file that is LOOKED FOR drift
 /// apart, and a declaration whose schema is absent is `unresolved` either way —
-/// so neither the golden parity run nor the snapshot equivalence would see it.
+/// so the snapshot equivalence would not see it.
 fn schema_ref_for(manifest: &Value, artifact_type: &str) -> Result<String, String> {
     let Some(types) = manifest.get("artifact_types").and_then(Value::as_array) else {
         return Err("module declares no artifact_types".to_owned());
@@ -436,8 +436,8 @@ mod tests {
             "name: x\nversion: 1.0.0\n",
         );
         let loaded = load_vocabulary_coverage(&[temp.path().to_path_buf()]);
-        assert!(loaded.declarations.is_empty());
-        assert!(loaded.unresolved.is_empty());
+        assert_eq!(loaded.declarations.len(), 0);
+        assert_eq!(loaded.unresolved.len(), 0);
     }
 
     /// Trace: FR-037
@@ -458,7 +458,7 @@ mod tests {
     /// Every reason a declaration can go unresolved, each said in its own
     /// words.
     ///
-    /// FR-037-AC-2 has three branches and the golden corpus exercises two of
+    /// FR-037-AC-2 has three branches and the input corpus exercises two of
     /// them. The third — an artifact type that EXISTS but names no
     /// `frontmatter_schema_ref` — is the one a module hits while it is being
     /// written, and it is the branch a reader most needs told apart from "no

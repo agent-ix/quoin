@@ -118,4 +118,4 @@ than a failure against itself.
 
 ## Dependencies
 
-- **Upstream**: [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md), [FR-085](./FR-085-resolve-the-completed-module-set.md)
+- **Upstream**: [FR-084](./FR-084-enumerate-the-governed-corpus.md), [FR-085](./FR-085-resolve-the-completed-module-set.md)

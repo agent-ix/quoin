@@ -47,9 +47,9 @@ not only the command line.
 
 | ID          | Criteria                                                                                             | Verification           |
 | ----------- | ---------------------------------------------------------------------------------------------------- | ---------------------- |
-| FR-024-AC-1 | The package entry point exports the named plugin and catalog operations                              | Test (index.test.ts)   |
-| FR-024-AC-2 | A plugin installed through `installPlugin` is listed by `listPlugins` and assembled by `loadCatalog` | Test (index.test.ts)   |
-| FR-024-AC-3 | A library-performed install/removal targets the same shared store the CLI uses                       | Test (index.test.ts)   |
+| FR-024-AC-1 | The package entry point exports the named plugin and catalog operations                              | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-024-AC-2 | A plugin installed through `installPlugin` is listed by `listPlugins` and assembled by `loadCatalog` | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-024-AC-3 | A library-performed install/removal targets the same shared store the CLI uses                       | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

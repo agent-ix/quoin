@@ -6,7 +6,10 @@
 //! Two readings the host language decides rather than the schema: what
 //! `String.prototype.trim` removes, and which instants `Date.parse`
 //! accepts. Both are transcribed here once and shared, because a second
-//! transcription is a second chance to disagree with the oracle.
+//! transcription is a second chance to disagree with the oracle. The instant
+//! grammar itself lives in [`quoin_store::instant`] (PLAT-91).
+
+use quoin_store::instant::{Instant, InstantGrammar};
 
 /// Is this string empty once JavaScript's `trim` has run?
 ///
@@ -92,139 +95,7 @@ pub(crate) fn is_instant(value: &str) -> bool {
 /// instant on both sides and an ordering built from full precision would not
 /// agree with the oracle at a boundary.
 pub(crate) fn instant_epoch_millis(value: &str) -> Option<i64> {
-    // The shape is pure ASCII, so a multi-byte character can only be a
-    // rejection — and establishing that up front makes every `get` below a
-    // character boundary by construction rather than by argument.
-    if !value.is_ascii() {
-        return None;
-    }
-    let (Some(head), Some(rest)) = (value.get(..19), value.get(19..)) else {
-        return None;
-    };
-    if head.get(4..5) != Some("-")
-        || head.get(7..8) != Some("-")
-        || head.get(10..11) != Some("T")
-        || head.get(13..14) != Some(":")
-        || head.get(16..17) != Some(":")
-    {
-        return None;
-    }
-
-    let mut fields = [0u32; 6];
-    for (slot, (from, to)) in
-        fields
-            .iter_mut()
-            .zip([(0, 4), (5, 7), (8, 10), (11, 13), (14, 16), (17, 19)])
-    {
-        let text = head.get(from..to)?;
-        if !text.bytes().all(|byte| byte.is_ascii_digit()) {
-            return None;
-        }
-        let Ok(parsed) = text.parse::<u32>() else {
-            return None;
-        };
-        *slot = parsed;
-    }
-    let [year, month, day, hour, minute, second] = fields;
-
-    // `(?:\.\d+)?` — a dot with no digit after it is not a fraction.
-    let mut tail = rest;
-    let mut fraction_millis = 0i64;
-    if let Some(fraction) = tail.strip_prefix('.') {
-        let digits = fraction.bytes().take_while(u8::is_ascii_digit).count();
-        let (Some(remainder), Some(read)) = (fraction.get(digits..), fraction.get(..digits)) else {
-            return None;
-        };
-        if digits == 0 {
-            return None;
-        }
-        let mut scale = 100i64;
-        for byte in read.bytes().take(3) {
-            fraction_millis += i64::from(byte - b'0') * scale;
-            scale /= 10;
-        }
-        tail = remainder;
-    }
-
-    // `Z` or `±HH:MM`, and nothing else. Lowercase `z` is refused: the shared
-    // reader admits it and this module never has, so delegating the whole
-    // check would have loosened the spelling while tightening the ranges.
-    let mut offset_millis = 0i64;
-    if tail != "Z" {
-        let offset = tail.strip_prefix(['+', '-'])?;
-        let (Some(offset_hour), Some(":"), Some(offset_minute)) =
-            (offset.get(..2), offset.get(2..3), offset.get(3..))
-        else {
-            return None;
-        };
-        let (Ok(offset_hour), Ok(offset_minute)) =
-            (offset_hour.parse::<u32>(), offset_minute.parse::<u32>())
-        else {
-            return None;
-        };
-        // `parse` admits a leading sign and whitespace; the digit check does
-        // not, and the pattern is `\d{2}:\d{2}` exactly.
-        if !offset
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || byte == b':')
-            || offset.len() != 5
-            || offset_hour > 23
-            || offset_minute > 59
-        {
-            return None;
-        }
-        let magnitude = i64::from(offset_hour) * 3_600_000 + i64::from(offset_minute) * 60_000;
-        // `+05:30` is five and a half hours AHEAD of UTC, so the UTC instant
-        // is that much EARLIER than the digits read.
-        offset_millis = if tail.starts_with('-') {
-            -magnitude
-        } else {
-            magnitude
-        };
-    }
-
-    if !(1..=12).contains(&month)
-        || day < 1
-        || day > days_in_month(year, month)
-        || hour > 23
-        || minute > 59
-        || second > 59
-    {
-        return None;
-    }
-
-    let days = days_from_civil(i64::from(year), i64::from(month), i64::from(day));
-    let seconds =
-        days * 86_400 + i64::from(hour) * 3_600 + i64::from(minute) * 60 + i64::from(second);
-    Some(seconds * 1_000 + fraction_millis - offset_millis)
-}
-
-/// Days between the Unix epoch and a proleptic Gregorian date.
-///
-/// Howard Hinnant's `days_from_civil`, which is exact for every year this
-/// grammar can spell (`0000`–`9999`) and needs no dependency. The alternative
-/// was a date crate, and the workspace adds none for one arithmetic identity.
-fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
-    let year = if month <= 2 { year - 1 } else { year };
-    let era = if year >= 0 { year } else { year - 399 } / 400;
-    let year_of_era = year - era * 400;
-    let month_index = if month > 2 { month - 3 } else { month + 9 };
-    let day_of_year = (153 * month_index + 2) / 5 + day - 1;
-    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
-    era * 146_097 + day_of_era - 719_468
-}
-
-/// Days in a month, with the full Gregorian leap rule.
-fn days_in_month(year: u32, month: u32) -> u32 {
-    match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 if year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400)) => {
-            29
-        }
-        2 => 28,
-        _ => 0,
-    }
+    Instant::parse(value, InstantGrammar::CalendarInstant)?.epoch_millis()
 }
 
 #[cfg(test)]
@@ -244,12 +115,12 @@ mod tests {
         // U+FEFF: JavaScript trims it, Rust keeps it. A naive port ACCEPTS an
         // owner the retained implementation refuses.
         assert!(js_trim_is_empty("\u{FEFF}"));
-        assert!(!"\u{FEFF}".trim().is_empty());
+        assert_ne!("\u{FEFF}".trim().len(), 0);
 
         // U+0085: JavaScript keeps it, Rust trims it. A naive port REFUSES an
         // owner the retained implementation accepts.
         assert!(!js_trim_is_empty("\u{0085}"));
-        assert!("\u{0085}".trim().is_empty());
+        assert_eq!("\u{0085}".trim().len(), 0);
 
         // Where they agree, they agree.
         assert!(js_trim_is_empty(" \t\n\u{00A0}\u{3000}"));

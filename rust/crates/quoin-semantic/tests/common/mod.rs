@@ -103,15 +103,13 @@ pub fn mapping_dir() -> PathBuf {
     fixtures_dir().join("mapping")
 }
 
-/// The semantic-core version the shipped bundle's `$id` names: the one source
-/// every test reads rather than typing a literal.
-pub fn shipped_core() -> String {
-    quoin_semantic::shipped_semantic_core_versions(&semantic_root())
-        .into_iter()
-        .next()
-        .expect("the shipped bundle names a semantic-core version")
-}
-
+/// The `semantic_core` value every test manifest carries.
+///
+/// BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream
+/// module-manifest schema still requires `semantic.semantic_core` to be present
+/// and to match `^[0-9]+\.[0-9]+\.[0-9]+$`, so a manifest without it is
+/// rejected. Quoin reads nothing from the value.
+pub const SCHEMA_REQUIRED_SEMANTIC_CORE: &str = "0.0.0";
 /// The compiled validators, built from the live vendored tree.
 pub fn validators() -> SemanticValidators {
     SemanticValidators::load(&semantic_root()).expect("the vendored contract compiles")

@@ -20,8 +20,8 @@ relationships:
 
 **done** — SR-110 now includes the independent review that corrected canonical
 producer identity, mixed-plan selection, comparison/no-leak behavior,
-timestamp isolation/order, renderer safety, and masked test oracles through tip
-`371df9d`. The mechanical SR-111 pass re-audited the strengthened tests; Quire
+timestamp isolation/order, renderer safety, and masked test oracles through the
+final tip. The mechanical SR-111 pass re-audited the strengthened tests; Quire
 reports FR-066 12/12 and FR-067 11/11 backed with no #281 status lie, unbacked
 row, or unmatched tag.
 

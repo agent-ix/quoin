@@ -3,7 +3,6 @@
  "record_type": "change_assurance",
  "record_id": "change-1",
  "revision": 1,
- "parent_digest": null,
  "subject": {
   "repository": "agent-ix/quoin",
   "base_revision": "abc123",
@@ -16,13 +15,12 @@
    "source_id": "FR-068",
    "kind": "requirement",
    "revision": "1",
-   "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   "path": "spec/functional/FR-068-change-assurance-cli-surface.md"
   }
  ],
  "impact_snapshot": {
   "identity": "impact-1",
   "revision": "1",
-  "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "completeness": "complete",
   "truncated": false,
   "gaps": []
@@ -48,13 +46,13 @@
     "evidence_kind": "Unit",
     "command": {
      "argv": [
-      "pnpm",
+      "cargo",
       "test"
      ],
      "working_directory": "."
     },
-    "tool_identity": "vitest",
-    "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    "tool_identity": "cargo",
+    "configuration_ref": "config/test.toml"
    }
   ],
   "unknowns": []

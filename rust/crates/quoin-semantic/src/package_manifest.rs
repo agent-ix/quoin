@@ -24,9 +24,6 @@ use crate::ids::{ObjectTypeName, PackageIdentity};
 use crate::manifest::{CompatibilityPosture, SemanticModule};
 use crate::schema::{SchemaError, SchemaValidator, SchemaValidatorExt, read_json};
 
-/// The semantic-core package every derived manifest imports.
-pub const SEMANTIC_CORE_PACKAGE: &str = "agent-ix/semantic-core";
-
 /// `ix://<org>/<repo>/type/<name>`.
 #[must_use]
 pub fn type_identity(package: &PackageIdentity, name: &ObjectTypeName) -> String {
@@ -45,7 +42,8 @@ pub struct DerivedImport {
     /// The imported package's identity.
     #[serde(rename = "packageIdentity")]
     pub package_identity: String,
-    /// `=<version>`: the contract admits only exact pins.
+    /// The declared version, as written: the contract accepts any valid
+    /// version requirement, and a plain version is one.
     #[serde(rename = "versionConstraint")]
     pub version_constraint: String,
     /// Always empty: the `semantic` block does not name per-import exports.
@@ -109,7 +107,7 @@ pub struct DerivedPackageManifest {
     /// Always `["schemas/"]`.
     #[serde(rename = "sourceRoots")]
     pub source_roots: Vec<&'static str>,
-    /// semantic-core first, then declared imports sorted by identity.
+    /// Declared imports sorted by identity.
     pub imports: Vec<DerivedImport>,
     /// Exports, sorted by name.
     pub exports: Vec<DerivedExport>,
@@ -140,12 +138,7 @@ impl DerivedPackageManifest {
 pub fn derive_package_manifest(module: &SemanticModule) -> DerivedPackageManifest {
     let block = &module.block;
 
-    let mut imports = vec![DerivedImport {
-        package_identity: SEMANTIC_CORE_PACKAGE.to_owned(),
-        version_constraint: format!("={}", block.semantic_core),
-        exports: Vec::new(),
-        capabilities: Vec::new(),
-    }];
+    let mut imports: Vec<DerivedImport> = Vec::new();
     // `block.imports` is a BTreeMap, which is already the TypeScript's
     // `localeCompare` order for the `[a-z0-9._-]/[a-z0-9._-]` identities the
     // schema admits — those are ASCII, where byte order and locale order agree.
@@ -155,7 +148,7 @@ pub fn derive_package_manifest(module: &SemanticModule) -> DerivedPackageManifes
             .iter()
             .map(|(identity, version)| DerivedImport {
                 package_identity: identity.as_str().to_owned(),
-                version_constraint: format!("={version}"),
+                version_constraint: version.to_string(),
                 exports: Vec::new(),
                 capabilities: Vec::new(),
             }),

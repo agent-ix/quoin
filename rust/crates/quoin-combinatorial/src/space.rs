@@ -80,7 +80,7 @@ string_newtype!(DimensionValue);
 /// above the dimension count identically on both sides — and
 /// [`CoverageResult::strength`](crate::CoverageResult), which the auditor
 /// interpolates only inside a `covered < demanded` branch that a zero demand
-/// set cannot enter. `tests/tc_382_parity.rs` proves the unreachability rather
+/// set cannot enter. `tests/tc_382_bounds.rs` proves the unreachability rather
 /// than declaring the difference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -351,7 +351,7 @@ mod tests {
     #[test]
     fn a_one_clause_exclusion_is_dropped_rather_than_narrowing_a_dimension() {
         let space = parse_space("2-way over a(1|2) b(3|4) excluding[a=1]").unwrap();
-        assert!(space.exclusions().is_empty());
+        assert_eq!(space.exclusions().len(), 0);
     }
 
     #[test]

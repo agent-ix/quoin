@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Domain `change_assurance`: sealed change records, proof attestations,
-//! retained evidence and verification receipts (quoin#457, Stage 9).
+//! Domain `change_assurance`: change records, proof attestations, retained
+//! evidence and verification receipts (quoin#457, Stage 9).
 //!
 //! Replaces `src/change-assurance/`'s TypeScript. What it decided — whether a
-//! record satisfies the FR-063 schema, whether an attestation's bytes reproduce
-//! what it declares, whether a parent chain is strict N-1, and what verdict a
+//! record satisfies the FR-063 schema, whether an attestation's output has the
+//! size it declares, whether a parent chain is strict N-1, and what verdict a
 //! candidate's retained evidence comes to — is decided by
 //! `quoin-change-assurance` and reported through here.
 //!
@@ -47,8 +47,8 @@ use std::path::Path;
 use quoin_change_assurance::schemas;
 use quoin_change_assurance::verify::{RetainedAttestation, Selection};
 use quoin_change_assurance::{
-    Published, VerificationInput, attestations, intake_attestation, read_attestation, records,
-    verify, write_change_record,
+    Published, Revision, Subject, VerificationInput, attestations, intake_attestation,
+    read_attestation, records, verify, write_change_record,
 };
 use quoin_store::store::{attestation_path, record_path};
 use quoin_store::{JsonValue, parse_strict_json};
@@ -59,66 +59,70 @@ use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
 use self::support::{
-    check_bound, check_receipt_bounds, decode_hex, digest_of, governing_plan, host, missing, ok,
-    parse, read_audits, refuse_supplied, size_bytes_as_f64, stored_record, strict_document,
-    to_serde,
+    attestation_id_of, check_bound, check_receipt_bounds, decode_hex, governing_plan, host,
+    missing, ok, parse, read_audits, record_id_of, refuse_supplied, size_bytes_as_f64,
+    stored_predecessors, stored_record, strict_document, to_serde,
 };
 use self::taxonomy::map_error;
 pub use self::wire::{
-    IntakePayload, IntakeRequest, MAX_DIFF_PATHS, MAX_INTAKE_BYTES, MAX_RECEIPT_BYTES,
-    MAX_RECOVER_BYTES, MAX_SCALAR_BYTES, MAX_SCHEMA_BYTES, MAX_SEAL_ATTESTATION_BYTES,
-    MAX_SEAL_RECORD_BYTES, MAX_VERIFY_RECEIPT_BYTES, ReceiptPayload, ReceiptRequest,
-    RecoverPayload, RecoverRequest, SchemaAssetPayload, SchemaAssetRequest, SealAttestationPayload,
-    SealAttestationRequest, SealRecordPayload, SealRecordRequest, SelectionRequest,
-    VerifyReceiptPayload, VerifyReceiptRequest,
+    IntakePayload, IntakeRequest, MAX_DIFF_PATHS, MAX_INTAKE_BYTES, MAX_PREPARE_ATTESTATION_BYTES,
+    MAX_RECEIPT_BYTES, MAX_RECOVER_BYTES, MAX_SCALAR_BYTES, MAX_SCHEMA_BYTES,
+    MAX_VERIFY_RECEIPT_BYTES, MAX_WRITE_RECORD_BYTES, PrepareAttestationPayload,
+    PrepareAttestationRequest, ReceiptPayload, ReceiptRequest, RecoverPayload, RecoverRequest,
+    SchemaAssetPayload, SchemaAssetRequest, SelectionRequest, VerifyReceiptPayload,
+    VerifyReceiptRequest, WriteRecordPayload, WriteRecordRequest,
 };
 
-/// Answer a `change_assurance.seal_record`.
+/// Answer a `change_assurance.write_record`.
+///
+/// The record is addressed by the `(record_id, revision)` it declares; a body
+/// carrying a `digest` or any other undeclared member is refused by the schema.
 ///
 /// # Errors
 ///
-/// - [`CoreErrorCode::BadRequest`] when stdin is not a [`SealRecordRequest`],
+/// - [`CoreErrorCode::BadRequest`] when stdin is not a [`WriteRecordRequest`],
 ///   when the record's bytes do not parse strictly, or when the record does not
 ///   satisfy the FR-063 schema.
 /// - [`CoreErrorCode::Refused`] when the request or a field exceeds its
-///   ceiling, or when the store declines to retain it.
-pub fn seal_record(
+///   ceiling, when the revision already holds different bytes, or when the
+///   store declines to retain it.
+pub fn write_record(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,
 ) -> Result<Response, CoreError> {
-    const OP: &str = "change_assurance.seal_record";
+    const OP: &str = "change_assurance.write_record";
     let size = request_size(request)?;
-    if size > MAX_SEAL_RECORD_BYTES {
-        return Err(refusal(OP, MAX_SEAL_RECORD_BYTES, size));
+    if size > MAX_WRITE_RECORD_BYTES {
+        return Err(refusal(OP, MAX_WRITE_RECORD_BYTES, size));
     }
-    let request: SealRecordRequest = parse(request, OP)?;
+    let request: WriteRecordRequest = parse(request, OP)?;
     check_bound(OP, "repo", &request.repo, MAX_SCALAR_BYTES)?;
 
     let body = strict_document(&request.record_hex, OP, "record_hex")?;
-    // The seal derives `digest`. A body that supplies one is refused rather
-    // than overwritten: a caller holding a wrong digest must be told so, not
-    // quietly corrected into agreement.
-    refuse_supplied(&body, &["digest"], OP)?;
-    let sealed = records::seal_change_record(&body).map_err(|e| map_error(&e, OP))?;
+    let record = records::prepare_change_record(&body).map_err(|e| map_error(&e, OP))?;
 
     let host = host(capabilities, OP)?;
     let mut store = host.store(Path::new(&request.repo));
-    let published = write_change_record(store.as_mut(), &sealed).map_err(|e| map_error(&e, OP))?;
+    let published = write_change_record(store.as_mut(), &record).map_err(|e| map_error(&e, OP))?;
 
-    ok(&SealRecordPayload {
-        record: to_serde(&sealed.to_json().map_err(|e| map_error(&e, OP))?, OP)?,
-        path: record_path(Path::new(&request.repo), &sealed.digest)
-            .display()
-            .to_string(),
+    ok(&WriteRecordPayload {
+        record: to_serde(&record.to_json().map_err(|e| map_error(&e, OP))?, OP)?,
+        path: record_path(
+            Path::new(&request.repo),
+            record.record_id.as_str(),
+            record.revision.get(),
+        )
+        .display()
+        .to_string(),
         retained: published == Published::Retained,
     })
 }
 
-/// Answer a `change_assurance.seal_attestation`.
+/// Answer a `change_assurance.prepare_attestation`.
 ///
-/// The ONLY fields derived here are `retained_output.digest` and
-/// `retained_output.size_bytes`, read from the output bytes the caller sent,
-/// plus the `media_type` the caller declares. Everything else is the caller's.
+/// The ONLY field derived here is `retained_output.size_bytes`, read from the
+/// output bytes the caller sent, plus the `media_type` the caller declares.
+/// Everything else is the caller's.
 ///
 /// It needs no capability: the attestation is emitted, not retained, and
 /// `change_assurance.intake` is the retention step.
@@ -126,28 +130,28 @@ pub fn seal_record(
 /// # Errors
 ///
 /// - [`CoreErrorCode::BadRequest`] when stdin is not a
-///   [`SealAttestationRequest`], when either hex field is not hex, when the
-///   body does not parse strictly, when it supplies `digest` or
-///   `retained_output`, or when the result does not satisfy the FR-064 schema.
+///   [`PrepareAttestationRequest`], when either hex field is not hex, when the
+///   body does not parse strictly, when it supplies `retained_output`, or when
+///   the result does not satisfy the FR-064 schema.
 /// - [`CoreErrorCode::Refused`] when the request or a field exceeds its
 ///   ceiling.
-pub fn seal_attestation(request: &serde_json::Value) -> Result<Response, CoreError> {
-    const OP: &str = "change_assurance.seal_attestation";
+pub fn prepare_attestation(request: &serde_json::Value) -> Result<Response, CoreError> {
+    const OP: &str = "change_assurance.prepare_attestation";
     let size = request_size(request)?;
-    if size > MAX_SEAL_ATTESTATION_BYTES {
-        return Err(refusal(OP, MAX_SEAL_ATTESTATION_BYTES, size));
+    if size > MAX_PREPARE_ATTESTATION_BYTES {
+        return Err(refusal(OP, MAX_PREPARE_ATTESTATION_BYTES, size));
     }
-    let request: SealAttestationRequest = parse(request, OP)?;
+    let request: PrepareAttestationRequest = parse(request, OP)?;
     check_bound(OP, "media_type", &request.media_type, MAX_SCALAR_BYTES)?;
 
     let body = strict_document(&request.attestation_hex, OP, "attestation_hex")?;
-    refuse_supplied(&body, &["digest", "retained_output"], OP)?;
+    refuse_supplied(&body, &["retained_output"], OP)?;
     let output = decode_hex(&request.output_hex, OP, "output_hex")?;
 
-    // The digest and the size are read off the bytes, and both are attached
-    // before the schema is checked: an attestation whose `retained_output` the
-    // caller wrote is exactly what `refuse_supplied` above rejected, so there
-    // is no path by which a declared digest reaches the seal.
+    // The size is read off the bytes and attached before the schema is
+    // checked: an attestation whose `retained_output` the caller wrote is
+    // exactly what `refuse_supplied` above rejected, so there is no path by
+    // which a declared size reaches the document.
     let size_bytes = u64::try_from(output.len()).unwrap_or(u64::MAX);
     let mut object = body
         .as_object()
@@ -156,19 +160,15 @@ pub fn seal_attestation(request: &serde_json::Value) -> Result<Response, CoreErr
     let mut retained = quoin_store::JsonObject::new();
     retained.set("media_type", JsonValue::string(&request.media_type));
     retained.set(
-        "digest",
-        JsonValue::string(quoin_store::digest_raw_bytes(&output).as_hex()),
-    );
-    retained.set(
         "size_bytes",
         JsonValue::number(size_bytes_as_f64(size_bytes)).map_err(|e| map_error(&e.into(), OP))?,
     );
     object.set("retained_output", JsonValue::Object(retained));
 
-    let sealed = attestations::seal_attestation(&JsonValue::Object(object))
+    let attestation = attestations::read_attestation_json(&JsonValue::Object(object))
         .map_err(|e| map_error(&e, OP))?;
-    ok(&SealAttestationPayload {
-        attestation: to_serde(&sealed.to_json().map_err(|e| map_error(&e, OP))?, OP)?,
+    ok(&PrepareAttestationPayload {
+        attestation: to_serde(&attestation.to_json().map_err(|e| map_error(&e, OP))?, OP)?,
     })
 }
 
@@ -179,8 +179,8 @@ pub fn seal_attestation(request: &serde_json::Value) -> Result<Response, CoreErr
 /// - [`CoreErrorCode::BadRequest`] when stdin is not an [`IntakeRequest`] or
 ///   the attestation does not satisfy the FR-064 schema.
 /// - [`CoreErrorCode::Refused`] when a ceiling is exceeded, when the output
-///   does not reproduce what the attestation declares, or when the digest
-///   already names a different pair.
+///   does not have the size the attestation declares, or when the attestation
+///   id already names a different pair.
 pub fn intake(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,
@@ -199,11 +199,11 @@ pub fn intake(
     // Read once here for the directory the caller is told about. `intake_attestation`
     // re-reads and re-checks it against the output before anything is retained;
     // this call cannot widen what that one accepts.
-    let digest = attestations::verify_attestation(
+    let attestation_id = attestations::read_attestation_json(
         &parse_strict_json(&attestation).map_err(|e| map_error(&e.into(), OP))?,
     )
     .map_err(|e| map_error(&e, OP))?
-    .digest;
+    .attestation_id;
 
     let repo = Path::new(&request.repo);
     let host = host(capabilities, OP)?;
@@ -212,7 +212,9 @@ pub fn intake(
         intake_attestation(store.as_mut(), &attestation, &output).map_err(|e| map_error(&e, OP))?;
 
     ok(&IntakePayload {
-        directory: attestation_path(repo, &digest).display().to_string(),
+        directory: attestation_path(repo, attestation_id.as_str())
+            .display()
+            .to_string(),
         size_bytes: u64::try_from(output.len()).unwrap_or(u64::MAX),
         retained: published == Published::Retained,
     })
@@ -269,49 +271,60 @@ pub fn receipt(
         return Err(refusal(OP, MAX_RECEIPT_BYTES, size));
     }
     let request: ReceiptRequest = parse(request, OP)?;
-    check_receipt_bounds(OP, &request)?;
+    let input = receipt_input(&request, capabilities, OP)?;
+    let receipt = verify::verify_change_assurance(&input).map_err(|e| map_error(&e, OP))?;
+    ok(&ReceiptPayload {
+        receipt: to_serde(&receipt.to_json().map_err(|e| map_error(&e, OP))?, OP)?,
+    })
+}
 
-    let decisions = strict_document(&request.decisions_hex, OP, "decisions_hex")?;
+/// Read the retained inputs a receipt request names.
+fn receipt_input(
+    request: &ReceiptRequest,
+    capabilities: &Capabilities<'_>,
+    op: &'static str,
+) -> Result<VerificationInput, CoreError> {
+    check_receipt_bounds(op, request)?;
+
+    let decisions = strict_document(&request.decisions_hex, op, "decisions_hex")?;
     let audits = match request.audits_hex.as_deref() {
         None => Vec::new(),
-        Some(hex) => read_audits(&strict_document(hex, OP, "audits_hex")?, OP)?,
+        Some(hex) => read_audits(&strict_document(hex, op, "audits_hex")?, op)?,
     };
 
     let repo = Path::new(&request.repo);
-    let host = host(capabilities, OP)?;
+    let host = host(capabilities, op)?;
     let store = host.store(repo);
 
-    let record = stored_record(store.as_ref(), &request.record_digest, "record_digest", OP)?;
-    let mut parents = Vec::with_capacity(request.parent_digests.len());
-    for digest in &request.parent_digests {
-        parents.push(stored_record(store.as_ref(), digest, "parent_digests", OP)?);
-    }
+    let record_id = record_id_of(&request.record_id, op)?;
+    let revision = Revision::new(request.revision, Subject::Record, "revision")
+        .map_err(|e| map_error(&e, op))?;
+    let record = stored_record(store.as_ref(), &record_id, revision, op)?;
+    let parents = stored_predecessors(store.as_ref(), &record_id, revision, op)?;
 
     let mut selections = Vec::with_capacity(request.selections.len());
     let mut retained = Vec::with_capacity(request.selections.len());
     for selection in &request.selections {
-        let digest = digest_of(
-            &selection.attestation_digest,
-            "selections.attestation_digest",
-            OP,
-        )?;
-        let found = read_attestation(store.as_ref(), &digest)
-            .map_err(|e| map_error(&e, OP))?
+        let attestation_id =
+            attestation_id_of(&selection.attestation_id, "selections.attestation_id", op)?;
+        let found = read_attestation(store.as_ref(), &attestation_id)
+            .map_err(|e| map_error(&e, op))?
             .ok_or_else(|| {
                 missing(
-                    OP,
-                    "selections.attestation_digest",
-                    &selection.attestation_digest,
+                    op,
+                    "selections.attestation_id",
+                    &selection.attestation_id,
                     &request.repo,
                 )
             })?;
         retained.push(RetainedAttestation {
-            attestation: found.0.to_json().map_err(|e| map_error(&e, OP))?,
+            filed_as: selection.attestation_id.clone(),
+            attestation: found.0.to_json().map_err(|e| map_error(&e, op))?,
             output: Some(found.1),
         });
         selections.push(Selection {
             proof_id: selection.proof_id.clone(),
-            attestation_digest: selection.attestation_digest.clone(),
+            attestation_id: selection.attestation_id.clone(),
         });
     }
 
@@ -323,10 +336,12 @@ pub fn receipt(
     let governing = request
         .plan
         .as_deref()
-        .map(|plan| governing_plan(&request.repo, plan, OP))
+        .map(|plan| governing_plan(&request.repo, plan, op))
         .transpose()?;
 
-    let input = VerificationInput {
+    Ok(VerificationInput {
+        record_id,
+        record_revision: revision,
         record,
         parents,
         candidate_revision: request.candidate_revision.clone(),
@@ -334,29 +349,30 @@ pub fn receipt(
         attestations: retained,
         decision_history: Some(decisions),
         audits,
-        diff_paths: request.diff_paths,
-        // PLAT-1015: the resolved plan carries its own id, which the sealed
-        // receipt records as `governing_plan_id` regardless of outcome.
+        diff_paths: request.diff_paths.clone(),
+        // PLAT-1015: the resolved plan carries its own id, which the receipt
+        // records as `governing_plan_id` regardless of outcome.
         governing_plan: governing,
-    };
-    let sealed = verify::verify_change_assurance(&input).map_err(|e| map_error(&e, OP))?;
-    ok(&ReceiptPayload {
-        receipt: to_serde(&sealed.to_json().map_err(|e| map_error(&e, OP))?, OP)?,
     })
 }
 
 /// Answer a `change_assurance.verify_receipt`.
 ///
-/// Re-verifies the receipt DOCUMENT. It does not re-run verification: the
-/// underlying record, attestations and decisions are not consulted.
+/// Re-derives the receipt from the named retained inputs and compares its
+/// canonical bytes with the stored receipt's, byte for byte.
 ///
 /// # Errors
 ///
 /// - [`CoreErrorCode::BadRequest`] when stdin is not a
-///   [`VerifyReceiptRequest`], when the bytes do not parse strictly, or when
-///   the receipt does not satisfy the FR-065 schema or its own digest.
-/// - [`CoreErrorCode::Refused`] when a ceiling is exceeded.
-pub fn verify_receipt(request: &serde_json::Value) -> Result<Response, CoreError> {
+///   [`VerifyReceiptRequest`], when the bytes do not parse strictly, when the
+///   receipt does not satisfy the FR-065 schema, or when it is not the receipt
+///   re-derived from the named inputs.
+/// - [`CoreErrorCode::Refused`] when a ceiling is exceeded or a named input is
+///   not retained.
+pub fn verify_receipt(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
     const OP: &str = "change_assurance.verify_receipt";
     let size = request_size(request)?;
     if size > MAX_VERIFY_RECEIPT_BYTES {
@@ -364,7 +380,8 @@ pub fn verify_receipt(request: &serde_json::Value) -> Result<Response, CoreError
     }
     let request: VerifyReceiptRequest = parse(request, OP)?;
     let document = strict_document(&request.receipt_hex, OP, "receipt_hex")?;
-    let verified = verify::verify_receipt(&document).map_err(|e| map_error(&e, OP))?;
+    let input = receipt_input(&request.inputs, capabilities, OP)?;
+    let verified = verify::verify_receipt(&document, &input).map_err(|e| map_error(&e, OP))?;
     ok(&VerifyReceiptPayload {
         receipt: to_serde(&verified.to_json().map_err(|e| map_error(&e, OP))?, OP)?,
     })
@@ -374,7 +391,7 @@ pub fn verify_receipt(request: &serde_json::Value) -> Result<Response, CoreError
 ///
 /// The three normative assets are compiled into `quoin-change-assurance` and
 /// emitted from there, so the schema a consumer validates against and the
-/// schema the sealing code is tested against are one file (quoin#503). It
+/// schema the writing code is tested against are one file (quoin#503). It
 /// needs no capability: nothing is read from disk and nothing is written.
 ///
 /// # Errors

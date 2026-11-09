@@ -4,7 +4,7 @@
 //!
 //! A faithful port of the validator vocabulary at
 //! `src/change-assurance/records.ts:515-593` — `object`, `exact`, `array`,
-//! `nonempty`, `identity`, `digest`, `stringArray`, `unique`, `sorted`,
+//! `nonempty`, `identity`, `stringArray`, `unique`, `sorted`,
 //! `oneOf`, `equal` and `compareUtf16`. It is in one module because the oracle
 //! exports the same set to `attestations.ts` and `verify.ts`, and a port that
 //! copied it three times would be three shapes that agree by coincidence.
@@ -18,10 +18,10 @@
 
 use std::cmp::Ordering;
 
-use quoin_store::{CanonicalDigest, JsonObject, JsonValue, RawBytesDigest};
+use quoin_store::{JsonObject, JsonValue};
 
 use crate::error::{ChangeAssuranceError, FieldFailure, Subject};
-use crate::ids::{ArtifactDigest, EventHash, Identity, NonEmptyText};
+use crate::ids::{Identity, NonEmptyText};
 
 /// Compare two strings by UTF-16 code unit, as JavaScript's `<` does.
 ///
@@ -129,45 +129,6 @@ impl<'a> Fields<'a> {
         Ok(())
     }
 
-    /// [`Fields::exact`], except `optional` names may be present or absent
-    /// without either counting as an error.
-    ///
-    /// For a member added to a shape after documents were already sealed
-    /// under it (PLAT-1015): a document sealed before the addition carries
-    /// neither name, and a document sealed after always carries both, so
-    /// `required` alone would refuse every document from before the change.
-    /// `optional` is read with [`Fields::optional`], never [`Fields::value`],
-    /// so its absence is a fact the caller decides what to default to rather
-    /// than a shape refusal.
-    ///
-    /// # Errors
-    ///
-    /// [`FieldFailure::Extra`] for a member outside `required` and `optional`,
-    /// then [`FieldFailure::Missing`] for a `required` member absent.
-    pub fn exact_with_optional(
-        self,
-        required: &[&str],
-        optional: &[&str],
-    ) -> Result<(), ChangeAssuranceError> {
-        for name in self.object.names() {
-            if !required.contains(&name) && !optional.contains(&name) {
-                return Err(ChangeAssuranceError::shape(
-                    self.subject,
-                    FieldFailure::extra(name),
-                ));
-            }
-        }
-        for name in required {
-            if !self.object.contains(name) {
-                return Err(ChangeAssuranceError::shape(
-                    self.subject,
-                    FieldFailure::missing(*name),
-                ));
-            }
-        }
-        Ok(())
-    }
-
     /// The value under `name`.
     ///
     /// # Errors
@@ -221,33 +182,6 @@ impl<'a> Fields<'a> {
     /// As [`Fields::text`], plus [`Identity::parse`]'s refusals.
     pub fn identity(self, name: &str) -> Result<Identity, ChangeAssuranceError> {
         Identity::parse(self.text(name)?, self.subject, &self.path(name))
-    }
-
-    /// A stored [`CanonicalDigest`] under `name`.
-    ///
-    /// # Errors
-    ///
-    /// As [`Fields::text`], plus a refusal when the value is not 64 lowercase
-    /// hexadecimal characters.
-    pub fn digest(self, name: &str) -> Result<CanonicalDigest, ChangeAssuranceError> {
-        CanonicalDigest::parse_stored(self.text(name)?).map_err(|_| {
-            ChangeAssuranceError::shape(self.subject, FieldFailure::malformed(self.path(name)))
-        })
-    }
-
-    /// An optional stored [`CanonicalDigest`] under `name`, `null` admitted.
-    ///
-    /// # Errors
-    ///
-    /// As [`Fields::digest`] when the member is present and not `null`.
-    pub fn nullable_digest(
-        self,
-        name: &str,
-    ) -> Result<Option<CanonicalDigest>, ChangeAssuranceError> {
-        match self.value(name)? {
-            JsonValue::Null => Ok(None),
-            _ => self.digest(name).map(Some),
-        }
     }
 
     /// A boolean under `name`.
@@ -345,37 +279,6 @@ impl<'a> Fields<'a> {
                 self.failure(name),
             ))
         }
-    }
-
-    /// An [`ArtifactDigest`] under `name`.
-    ///
-    /// # Errors
-    ///
-    /// As [`Fields::text`], plus a refusal when the value is not 64 lowercase
-    /// hexadecimal characters.
-    pub fn artifact_digest(self, name: &str) -> Result<ArtifactDigest, ChangeAssuranceError> {
-        ArtifactDigest::parse(self.text(name)?, self.subject, &self.path(name))
-    }
-
-    /// An [`EventHash`] under `name`.
-    ///
-    /// # Errors
-    ///
-    /// As [`Fields::artifact_digest`].
-    pub fn event_hash(self, name: &str) -> Result<EventHash, ChangeAssuranceError> {
-        EventHash::parse(self.text(name)?, self.subject, &self.path(name))
-    }
-
-    /// A [`RawBytesDigest`] under `name` — a digest this crate recomputes over
-    /// bytes as supplied, and so one of `quoin-store`'s own domains.
-    ///
-    /// # Errors
-    ///
-    /// As [`Fields::artifact_digest`].
-    pub fn raw_bytes_digest(self, name: &str) -> Result<RawBytesDigest, ChangeAssuranceError> {
-        RawBytesDigest::parse_stored(self.text(name)?).map_err(|_| {
-            ChangeAssuranceError::shape(self.subject, FieldFailure::malformed(self.path(name)))
-        })
     }
 
     /// The refusal this object raises for a malformed `name`.

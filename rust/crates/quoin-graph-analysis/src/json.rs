@@ -74,7 +74,7 @@ pub(crate) fn canonical_text<T: Serialize>(what: &'static str, value: &T) -> Res
 /// this calls `quoin_store::canonicalize_jcs` rather than growing a third
 /// serializer. The one input shape where the two orders part company — a
 /// member name that is an ECMAScript array index — is a declared divergence
-/// with a corpus case behind it; see `tests/tc_385_parity.rs`.
+/// from the retired TypeScript.
 ///
 /// # Errors
 ///

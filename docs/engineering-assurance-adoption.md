@@ -4,8 +4,7 @@
 # Engineering Assurance adoption (quoin#373 AC-9)
 
 quoin's Rust workspace consumes `agent-ix/engineering-assurance` (EA) rather
-than regrowing assurance capability locally. The governing policy is
-quire-research `implementation-language-policy.md`, **"Shared tooling is
+than regrowing assurance capability locally. The rule is **"shared tooling is
 consumed, not regrown"**: a repository needing assurance capability CONSUMES
 EA; where EA does not fit, the response is a **gap ticket in EA**, never a local
 harness.
@@ -14,7 +13,7 @@ harness.
 evidence **store** to Quoin. That edge points from EA to Quoin and is not
 inverted here.
 
-This document is the record required by that policy: the
+This document is the record required by that rule: the
 retention test for everything quoin keeps local, and the gaps filed against EA.
 
 ## Retention test

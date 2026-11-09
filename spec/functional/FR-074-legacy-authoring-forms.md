@@ -34,7 +34,7 @@ rewritten.
 - Where the module manifest sets `semantic.legacy_forms: error`, Quire SHALL promote the warning to an error.
 - The default for `semantic.legacy_forms` SHALL be `warning`.
 - If a manifest sets `semantic.legacy_forms: error` without `semantic.sweep_report` naming a shipped file that validates against the sweep-report schema and records the same `package` and module `version`, then Quoin SHALL reject the manifest at install naming the missing or mismatched report.
-- The sweep-report schema SHALL be `{ package, version, generatedAt, corpus: [{ repository, revision }], counts: { artifacts, forms: { typed-table, free-column-table, bullet-list, sysml-fence, none }, legacy: { bullet-list, free-column-table } }, findings?: [{ path, form, line?, diagnostic? }] }`, produced by `quoin semantic sweep` (`agent-ix/quoin#291` runs it over the corpus); `repository` is the corpus root's directory name and `revision` its git `HEAD`, or `worktree` when the root is not a repository.
+- The sweep-report schema SHALL be `{ package, version, generatedAt, corpus: [{ repository }], counts: { artifacts, forms: { typed-table, free-column-table, bullet-list, sysml-fence, none }, legacy: { bullet-list, free-column-table } }, findings?: [{ path, form, line?, diagnostic? }] }`, produced by `quoin semantic sweep` (`agent-ix/quoin#291` runs it over the corpus); `repository` is the corpus root's directory name. Withdrawn: the per-root `revision`; the report records no revision.
 - When `quoin semantic sweep --out` names a path outside both the working directory and every corpus root, Quoin SHALL refuse to write it.
 - Quoin SHALL document the migration once in the module's authoring pack (`quoin write`) with a before/after example.
 - Quoin SHALL NOT edit, rewrite, or auto-migrate any artifact in a corpus repository.
@@ -49,7 +49,7 @@ rewritten.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-074-AC-1 | Quoin's pinned copy of the unmodified config-service FR-006 (free-column table `Column \| Type \| Constraints`) has an expected single `semantic.legacy-properties-form` warning naming `free-column-table` and the locus, and its `properties` extraction fixture is byte-identical to today's. | Test |
+| FR-074-AC-1 | Quoin's copy of the unmodified config-service FR-006 (free-column table `Column \| Type \| Constraints`) has an expected single `semantic.legacy-properties-form` warning naming `free-column-table` and the locus, and its `properties` extraction fixture is byte-identical to today's. | Test |
 | FR-074-AC-2 | A bullet-list Properties section has the expected warning with form `bullet-list`; a mixed section names the first block's form. | Test |
 | FR-074-AC-3 | With `semantic.legacy_forms: error` and a valid `sweep_report`, the artifact's expected diagnostic is an error; with `legacy_forms: error` and no report, or a report for another package or version, the manifest is rejected at install naming the report. | Test |
 | FR-074-AC-4 | The authoring pack shows the migration example once. | Test |
@@ -57,5 +57,5 @@ rewritten.
 
 ## Dependencies
 
-- **Upstream**: [FR-071](./FR-071-typed-properties-mapping.md), [FR-073](./FR-073-data-schema-by-path-and-digest.md)
+- **Upstream**: [FR-071](./FR-071-typed-properties-mapping.md), [FR-073](./FR-073-data-schema-by-path.md)
 - **Downstream**: `agent-ix/quoin#291` (measurement sweep), `agent-ix/quoin#287` (catalog locks), `agent-ix/quire-rs#388`

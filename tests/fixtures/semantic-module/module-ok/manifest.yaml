@@ -17,7 +17,8 @@ object_types:
     type: object
 semantic:
   contract_version: 1.0.0
-  semantic_core: 0.3.2
+  # BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream module-manifest schema requires `semantic_core`; Quoin reads no value from it
+  semantic_core: 0.0.0
   package: agent-ix/spec-objects-fixture
   exports: [entity]
   targets: [json-schema, markdown]

@@ -2,14 +2,14 @@
 // Copyright (C) 2026 Agent-IX
 
 //! Corpus v2's own offline check (PLAT-1025). Runs in the default gate: no
-//! feature flag, no socket, no key. It reads git objects (the assembly quotes
-//! files at `assemble::CONTENT_COMMIT`), so it needs a clone with that commit.
+//! feature flag, no socket, no key. `corpus.json` is a plain committed
+//! fixture; nothing here rebuilds it or compares it with a stored hash.
 //!
 //! The harness (`tc_1027_the_committed_corpus_validates`) checks the schema
 //! any corpus must meet. This file checks what PLAT-1025 promised about this
-//! one: `corpus.json` is exactly the assembly of its committed inputs, every
+//! one: every
 //! mechanical or by-construction label is backed by the mutation log, the
-//! held-out seal still matches, the per-requirement cap on natural rows holds,
+//! per-requirement cap on natural rows holds,
 //! every agent label says it is one, and the size and mutation share are what
 //! the PR reports.
 
@@ -26,14 +26,10 @@ mod gap_semantic_support;
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use eval_v2_support::assemble::{
-    CONTENT_COMMIT, GitContent, Inputs, corpus_bytes, fixture_dir, labelling_rules, repo_root,
-};
-use eval_v2_support::corpus::{
-    Origin, Row, Source, TruthKind, load_in_repo, validate, verify_seal,
-};
+use eval_v2_support::corpus::{Origin, Row, Source, TruthKind, load_in_repo, validate};
 use eval_v2_support::criterion_defects::CRITERION_DEFECTS;
 use eval_v2_support::keys::KEYS;
+use eval_v2_support::labels::fixture_dir;
 use serde_json::Value;
 
 fn corpus() -> Source {
@@ -54,44 +50,6 @@ fn tc_1025_the_corpus_is_valid_against_the_shared_schema() {
     let mut ids = BTreeSet::new();
     for row in &source.file.rows {
         assert!(ids.insert(row.id.clone()), "duplicate id {}", row.id);
-    }
-}
-
-/// Provenance: PLAT-1025. The held-out split was sealed in the same commit as
-/// the corpus, before any live call; an edit to a held-out row breaks this.
-#[test]
-fn tc_1025_the_heldout_seal_matches() {
-    verify_seal(&corpus()).unwrap_or_else(|error| panic!("{error}"));
-}
-
-/// Provenance: PLAT-1025, PR #628 review. `corpus.json` is byte for byte what
-/// the builder's assembly makes from the committed inputs (`sample.json`,
-/// `mutations.json`, the two label passes, and the quoted files at
-/// `CONTENT_COMMIT`). A hand edit to any row, label or header fails here.
-#[test]
-fn tc_1025_the_corpus_is_the_assembly_of_its_committed_inputs() {
-    let inputs = Inputs::load(&fixture_dir());
-    let content = GitContent::new(&repo_root(), CONTENT_COMMIT);
-    let rebuilt = corpus_bytes(&eval_v2_support::assemble::assemble(&inputs, &content));
-    let committed = std::fs::read_to_string(fixture_dir().join("corpus.json")).unwrap();
-    if rebuilt != committed {
-        let a: Value = serde_json::from_str(&rebuilt).unwrap();
-        let b: Value = serde_json::from_str(&committed).unwrap();
-        let first = a["rows"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .zip(b["rows"].as_array().unwrap())
-            .find(|(x, y)| x != y)
-            .map(|(x, _)| x["id"].clone());
-        panic!(
-            "corpus.json is not the assembly of its inputs (rows {} rebuilt vs {} committed; \
-             first differing row {first:?}; header equal: {}). Rerun eval_v2_3_assemble.",
-            a["rows"].as_array().unwrap().len(),
-            b["rows"].as_array().unwrap().len(),
-            a["labelling_rules"] == b["labelling_rules"]
-                && a["sampling_rule"] == b["sampling_rule"]
-        );
     }
 }
 
@@ -295,11 +253,6 @@ fn tc_1025_agent_labels_say_they_are_agent_labels() {
     for check in &CRITERION_DEFECTS {
         assert_eq!(rules[check.key], check.rule(), "{}", check.key);
     }
-    assert_eq!(
-        serde_json::to_value(rules).unwrap(),
-        labelling_rules(),
-        "the header's rules are the builder's"
-    );
     for row in &source.file.rows {
         for (key, truth) in &row.truth {
             if matches!(

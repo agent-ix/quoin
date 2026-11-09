@@ -16,23 +16,17 @@ This document **outranks** the ecosystem-wide `rust-review` and `rust-style`
 skills for this repository. Where it is silent, those apply.
 
 Governing tickets: quoin#373 (the burn-down EPIC), quoin#375 (Stage 0). The
-spec ids are FR-096 (the versioned boundary), FR-097 (schema-sourced types),
-FR-101 (retire-after-parity) and NFR-024 (bounded coexistence).
+spec id is FR-096 (the versioned boundary).
 
 ## The workspace
 
 `rust/` sits **inside** this repository, beside the retained `src/`. That is
-not a convenience: FR-101 requires old and new implementations to be exercised
+not a convenience: old and new implementations must be exercised
 at ONE candidate revision, and a second repository turns that into a
 pin-and-sync problem. Do not propose extracting it.
 
-Three crates exist:
-
-| crate | what it is |
-|---|---|
-| `quoin-core` | the boundary binary, plus the library the binary is a shell over |
-| `quoin-schemas` | where generated types will land (FR-097); holds `PROTOCOL_VERSION` today |
-| `quoin-difftest` | the dev-only differential harness |
+The workspace crates are the members listed in `rust/Cargo.toml`; `quoin-core` is
+a library the `quoin` executable links and has no binary of its own.
 
 **Do not add an empty crate to "reserve" a name from #373's topology.** An
 empty crate is noise the gates still have to walk. A crate appears in the same
@@ -276,7 +270,6 @@ make rust-gate        # everything below, cheapest failure first
 make rust-lint        # fmt --check + clippy -D warnings — the fast leg
 make rust-test
 make rust-deny
-make rust-e2e         # src/core/exec.ts against the REAL binary
 make rust-difftest    # needs both trees built; `make build` is a prerequisite
 ```
 
@@ -288,18 +281,7 @@ older than the build that was supposed to have produced it (see the
 `bench-tier1` comment in the Makefile). Discount any clean **or** failed result
 from a target directory you did not name.
 
-`make rust-e2e` sets `QUOIN_CORE` and runs `tests/core-exec-e2e.test.ts`, which
-skips itself when that variable is unset. It exists because the rest of the
-TypeScript caller's suite runs against fake binaries — the only way to produce
-an ENOBUFS death or a SIGTERM on demand — and a fake agrees with whatever the
-test wrote into it. It found a real defect on its first run: `runCoreAllowFailure`
-resolved the executable INSIDE the try block that classifies a termination, so
-a digest mismatch (no status, no signal, no errno) fell through to
-"could not be run (undefined)" and the pinning diagnostic was lost. Resolution
-now happens before the try. **The same shape is latent in `src/quire/exec.ts`**
-and was left alone — it is not this ticket's code.
-
-`make rust-difftest` is FR-101's check, not a formality: it feeds the same
+`make rust-difftest` is the retire-after-parity check, not a formality: it feeds the same
 request to the retained TypeScript and to `quoin-core` and compares canonical
 stdout, exit status, and the normalised diagnostic shape — `(code, context
 keys)`, deliberately **not** the message text, because #373 records that

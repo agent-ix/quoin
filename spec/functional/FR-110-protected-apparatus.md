@@ -16,21 +16,20 @@ relationships:
 ## Description
 
 When a `MeasurementPlan` declares `protected_apparatus`
-(engineering-assurance FR-024), Quoin SHALL resolve every entry to files and
-digest each one when it writes a collection the plan governs, SHALL record
-the resolved (path, digest) set in the stored collection, and SHALL refuse a
-delta, a ratchet floor, or a checker baseline across two collections whose
-recorded sets differ.
+(engineering-assurance FR-024), Quoin SHALL resolve every entry to files when
+it writes a collection the plan governs, SHALL record the resolved path set
+in the stored collection, and SHALL refuse a delta, a ratchet floor, or a
+checker baseline across two collections whose recorded path sets differ.
+Nothing is computed over file content, and no revision is recorded or
+compared.
 
 ## Rationale
 
-A collection's `verificationStack.artifacts` records a digest for each file
-the producer names, and nothing compared those digests. An answer key edited
-between a baseline and a new run still produced a delta, a ratchet `held`,
-and a checker `accept`. The artifacts map is also the producer's own list, so
-a producer could leave the edited file out of it. Quoin therefore resolves
-the protected set itself, and compares what each collection recorded when it
-was written, never the repository as it reads today.
+An answer key edited between a baseline and a new run still produced a
+delta, a ratchet `held`, and a checker `accept`. The producer's own list of
+files could leave the edited file out of it, so Quoin resolves the protected
+set itself and records the paths, and compares the recorded sets, never the
+repository as it reads today.
 
 ## Inputs
 
@@ -43,8 +42,7 @@ was written, never the repository as it reads today.
 ## Outputs
 
 - A stored collection whose `verificationStack.protectedApparatus` maps each
-  governing plan's id to its resolved files and their digests, or a typed
-  refusal.
+  governing plan's id to its sorted resolved file paths, or a typed refusal.
 - The comparison reasons `apparatus_changed` (blocking) and
   `artifact_changed` (not blocking).
 - The ratchet inconclusive reasons `apparatus_changed` and
@@ -86,7 +84,7 @@ was written, never the repository as it reads today.
     there, a file entry names a directory, or a directory entry's directory
     is absent or holds no file;
   - `QM-APPARATUS-SYMLINK` for a symlink;
-  - `QM-APPARATUS-UNREADABLE` when a file cannot be digested or listed,
+  - `QM-APPARATUS-UNREADABLE` when a file cannot be opened or listed,
     something under a directory entry is not a regular file, a directory or
     a symlink, or a resolved file's path is not one a stored record can hold
     (a single-file `ApparatusPath`), so intake never writes a record its own
@@ -96,35 +94,33 @@ was written, never the repository as it reads today.
     visit more than 100,000 directories (empty ones included), or when every
     plan's sets together exceed 200,000 files;
   - `QM-APPARATUS-UNDECLARED`, naming every file, when the candidate's
-    `verificationStack.artifacts` omits a resolved file;
-  - `QM-COLLECTION-INVALID` when it states a resolved file at a digest the
-    file does not have.
+    `verificationStack.artifacts` omits a resolved file.
 - Intake SHALL refuse, as `QM-COLLECTION-INVALID`, a candidate that states
   `verificationStack.protectedApparatus` or `verificationStack.unverifiedArtifacts`:
   intake computes both, and a caller that states either is mistaken or is
   writing its own answer.
 - Intake SHALL write `verificationStack.protectedApparatus` as
-  `{ <plan id>: { <path>: "sha256:…" } }`, and SHALL leave the member absent
-  when no governing plan protects apparatus. A protected file is always a digested artifact, so a protected
-  path is never listed in `unverifiedArtifacts`.
+  `{ <plan id>: [<path>, …] }`, and SHALL leave the member absent when no
+  governing plan protects apparatus. A protected path is never listed in
+  `unverifiedArtifacts`.
 - Reading a stored collection SHALL refuse a `protectedApparatus` that is not
-  an object of non-empty objects of sha256 digests, that has an empty plan-id
-  key, or that has a path key that is not a single-file `ApparatusPath`, as
+  an object of non-empty arrays of paths, that has an empty plan-id key, or
+  that holds a path that is not a single-file `ApparatusPath`, as
   `QM-COLLECTION-INVALID`. An absent member reads as no record.
 
 ### Comparison (FR-044-AC-3)
 
 - For a slice both collections measured, comparison SHALL add the blocking
   reason `apparatus_changed` — the delta `null`, the status `incomparable` —
-  when the plan's recorded sets differ: a path whose digest changed, a path
-  present on one side only (a file added under or removed from a directory
-  entry), a set recorded on one side only, or a protected path either side
-  lists in `unverifiedArtifacts`. The message names the paths.
+  when the plan's recorded sets differ: a path present on one side only (a
+  file added under or removed from a directory entry), a set recorded on one
+  side only, or a protected path either side lists in `unverifiedArtifacts`.
+  The message names the paths.
 - When either side recorded a set for the slice's plan, comparison SHALL add
   the non-blocking reason `artifact_changed`, naming each
-  `verificationStack.artifacts` entry outside the protected set whose digest
-  differs or that one side alone states.
-- Comparison reads no plan. Two collections that both recorded no set are
+  `verificationStack.artifacts` entry outside the protected set that one side
+  alone states.
+- Comparison reads no plan and runs no git. Two collections that both recorded no set are
   not compared on apparatus, and comparison output for them is unchanged.
 
 ### Ratchet verdict (FR-107)
@@ -149,10 +145,8 @@ was written, never the repository as it reads today.
   the finding `apparatus_edit` (reject). An earlier run, or a candidate, that
   recorded no set SHALL be `apparatus_unrecorded` (inconclusive).
 - `rerun_until_pass` SHALL ignore the protected set: a regressed run followed
-  by a pass of the same source revision, configuration, tool, corpus and
-  verification stack is a rerun even when the apparatus changed between them,
-  because editing the answer key between a failed run and a pass is the rerun
-  the rule exists to catch.
+  by a pass of the same tool and corpus is a rerun
+  (`rerun_until_pass`), whatever protected set either recorded.
 
 ### Why a changed set rejects
 
@@ -175,22 +169,22 @@ and never rejects.
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-110-AC-1 | `protected_apparatus` and `negative_controls` load as engineering-assurance's types; an unsafe or `**` entry, an empty or repeated list, an unknown control kind, an `apparatus-edit` control with no `protected_apparatus`, and a `gate` plan missing either list refuse the plan load as `QM-PLAN-INVALID` naming the member; a `gate` plan stating both loads. | Test (TC-1810) |
-| FR-110-AC-2 | A written collection records, under the plan's id, every file its entries resolve to — every file under a directory entry, dotfiles and nested files included — with each file's digest; no protected path is in `unverifiedArtifacts`; with no protecting plan the member is absent. A candidate stating `protectedApparatus` or `unverifiedArtifacts` is `QM-COLLECTION-INVALID` and writes nothing. | Test (TC-1811, TC-1819, TC-1827) |
-| FR-110-AC-3 | A missing protected file, a missing or empty directory entry, a file entry naming a directory, and a case-only name difference are `QM-APPARATUS-UNRESOLVED`; a symlinked entry, ancestor, or file under a directory entry is `QM-APPARATUS-SYMLINK`; a socket under a directory entry or an unlistable directory is `QM-APPARATUS-UNREADABLE`; an artifacts map omitting a resolved file is `QM-APPARATUS-UNDECLARED` naming it, and one stating another digest is `QM-COLLECTION-INVALID`; none writes a collection. | Test (TC-1812..TC-1815) |
-| FR-110-AC-4 | Comparing two stored collections, an edited protected file, a file added under or removed from a directory entry, a record on one side only, and a protected path listed as unverified each add blocking `apparatus_changed` with a `null` delta and `incomparable` status, naming the path; a moved unprotected artifact adds only non-blocking `artifact_changed` with the delta kept; under a plan that protects nothing, neither reason appears. | Test (TC-1816..TC-1819, TC-1821) |
+| FR-110-AC-2 | A written collection records, under the plan's id, every file its entries resolve to — every file under a directory entry, dotfiles and nested files included — as a sorted path list; no protected path is in `unverifiedArtifacts`; with no protecting plan the member is absent. A candidate stating `protectedApparatus` or `unverifiedArtifacts` is `QM-COLLECTION-INVALID` and writes nothing. | Test (TC-1811, TC-1819, TC-1827) |
+| FR-110-AC-3 | A missing protected file, a missing or empty directory entry, a file entry naming a directory, and a case-only name difference are `QM-APPARATUS-UNRESOLVED`; a symlinked entry, ancestor, or file under a directory entry is `QM-APPARATUS-SYMLINK`; a socket under a directory entry or an unlistable directory is `QM-APPARATUS-UNREADABLE`; an artifact list omitting a resolved file is `QM-APPARATUS-UNDECLARED` naming it; none writes a collection. | Test (TC-1812..TC-1815) |
+| FR-110-AC-4 | Comparing two stored collections, a file added under or removed from a directory entry, a record on one side only, and a protected path listed as unverified each add blocking `apparatus_changed` with a `null` delta and `incomparable` status, naming the path; an unprotected artifact stated by one side alone adds only non-blocking `artifact_changed` with the delta kept; under a plan that protects nothing, neither reason appears. | Test (TC-1816..TC-1819, TC-1821) |
 | FR-110-AC-5 | A baseline stored before the apparatus was edited cannot be rewritten under its id, and a new run is `apparatus_changed` against it even when a regenerated baseline was stored beside the run. | Test (TC-1820) |
 | FR-110-AC-6 | A ratchet whose earlier value was measured with a different recorded set is `inconclusive` (`apparatus_changed`), and one whose newest collection recorded none is `inconclusive` (`apparatus_unrecorded`), including after the list is removed from the plan; over one set it is `held`. | Test (TC-1825, TC-1828, TC-1830) |
-| FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_edit` (reject) with or without an `apparatus-edit` control, and `apparatus_unrecorded` (inconclusive) when it recorded no set; removing the list from the plan still rejects the changed series; an uncommitted answer-key edit between a regressed run and a pass is `rerun_until_pass`; the same runs over one set are accepted. | Test (TC-1822..TC-1824, TC-1828, TC-1829) |
-| FR-110-AC-8 | A stored `protectedApparatus` that is not an object, holds an empty plan entry, or holds a value that is not a sha256 digest is refused on read as `QM-COLLECTION-INVALID` naming the member. An empty plan-id key, and a path key that is not a valid single-file `ApparatusPath` (a `<directory>/**` entry, an absolute path, or a `..` segment among them), are refused the same way, and intake refuses to resolve a protected file whose path such a key could not hold as `QM-APPARATUS-UNREADABLE`. | Test (TC-1826, TC-1833, TC-1838) |
+| FR-110-AC-7 | The checker uses no baseline across a changed set: the candidate is `no_prior` and `apparatus_edit` (reject) with or without an `apparatus-edit` control, and `apparatus_unrecorded` (inconclusive) when it recorded no set; removing the list from the plan still rejects the changed series; a regressed run followed by a pass of the same tool and corpus is `rerun_until_pass`; the same runs over one set are accepted. | Test (TC-1822..TC-1824, TC-1828, TC-1829) |
+| FR-110-AC-8 | A stored `protectedApparatus` that is not an object, holds an empty plan entry, or holds a value that is not a path list is refused on read as `QM-COLLECTION-INVALID` naming the member. An empty plan-id key, and a path key that is not a valid single-file `ApparatusPath` (a `<directory>/**` entry, an absolute path, or a `..` segment among them), are refused the same way, and intake refuses to resolve a protected file whose path such a key could not hold as `QM-APPARATUS-UNREADABLE`. | Test (TC-1826, TC-1833, TC-1838) |
 | FR-110-AC-9 | One plan's resolved set past its limit (50,000 files) is `QM-APPARATUS-TOO-LARGE`; each path segment is matched exactly against the directory listing, so a case-only difference names no file on any filesystem. | Test (TC-1831, TC-1832) |
-| FR-110-AC-10 | A protected file is opened exactly once, with `O_NOFOLLOW` and `O_NONBLOCK`, and its type and bytes are read from the open handle (`fstat`), never from a second look at the path: swapping what the path names after the open changes nothing the digest reads, and a FIFO is refused as not a regular file promptly rather than blocking the resolver waiting for a writer. One write's directory walks, summed across every plan it governs, are refused as `QM-APPARATUS-TOO-LARGE` past 100,000 directories visited, counting empty ones, even when they resolve to no file; the files every plan one write governs resolve to, summed, are refused the same way past 200,000. | Test (TC-1834..TC-1837) |
+| FR-110-AC-10 | A protected file is never opened and none of its bytes is read: one `symlink_metadata` look refuses a symlink as `QM-APPARATUS-SYMLINK` and any other non-regular file, a FIFO included, as `QM-APPARATUS-UNREADABLE`, without blocking. One write's directory walks, summed across every plan it governs, are refused as `QM-APPARATUS-TOO-LARGE` past 100,000 directories visited, counting empty ones, even when they resolve to no file; the files every plan one write governs resolve to, summed, are refused the same way past 200,000. | Test (TC-1835, TC-1836) |
 
 ## Constraints
 
 - **FR-110-CON-1**: Comparison stays verdict-free (FR-107-CON-1): it withholds
   a delta and passes no judgement.
 - **FR-110-CON-2**: Every comparison reads the sets the collections recorded,
-  never the repository at comparison time.
+  never the work tree at comparison time.
 - **FR-110-CON-3**: The entry grammar, list rules and control kinds are
   engineering-assurance's; Quoin states none of them a second time.
 

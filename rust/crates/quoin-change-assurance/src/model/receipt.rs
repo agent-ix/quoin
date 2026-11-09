@@ -12,11 +12,12 @@
 //! a receipt readable without re-running the verification, and it is
 //! reproduced here exactly — including over each nested check and each proof.
 
-use quoin_store::{CanonicalDigest, JsonValue, RawBytesDigest};
+use quoin_store::JsonValue;
 
 use crate::error::{ChangeAssuranceError, FieldFailure, Subject};
 use crate::ids::{
-    ArtifactDigest, EventHash, EventId, NonEmptyText, ObligationId, ProofId, RunId, StatementId,
+    AttestationId, EventId, NonEmptyText, ObligationId, ProofId, RecordId, Revision, RunId,
+    StatementId,
 };
 use crate::model::decision::ReviewDecision;
 use crate::model::json::{Fields, number, object, string_values};
@@ -38,10 +39,8 @@ pub struct ReceiptDecisionEvent {
     pub run_id: RunId,
     /// The event that carried the decision.
     pub event_id: EventId,
-    /// That event's hash.
-    pub event_hash: EventHash,
-    /// The hash of the last event in the retained history.
-    pub chain_tail_hash: EventHash,
+    /// That event's position in the run's history, from one.
+    pub sequence: u64,
     /// The actor recorded against the decision. Attribution only.
     pub recorded_actor: NonEmptyText,
     /// What was decided.
@@ -65,11 +64,7 @@ pub struct ProofResult {
     /// The evidence obligations it discharges.
     pub obligation_ids: Vec<ObligationId>,
     /// The attestation selected for it, when one was.
-    pub attestation_digest: Option<CanonicalDigest>,
-    /// The retained output's digest, when an attestation was read.
-    pub retained_output_digest: Option<RawBytesDigest>,
-    /// The audit report's digest, when one was adapted.
-    pub audit_report_digest: Option<ArtifactDigest>,
+    pub attestation_id: Option<AttestationId>,
     /// The findings the auditor recorded against this obligation's evidence.
     pub audit_findings: Vec<AuditFinding>,
     /// The verdict.
@@ -90,7 +85,7 @@ pub struct ReceiptUnknown {
 /// The four named checks a receipt always carries.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReceiptChecks {
-    /// The record's own schema and digest.
+    /// The record's own schema.
     pub record: Check,
     /// The parent chain.
     pub lineage: Check,
@@ -100,17 +95,18 @@ pub struct ReceiptChecks {
     pub impact: Check,
 }
 
-/// A verification receipt, before its digest is attached.
+/// A verification receipt. It carries no id of its own: it is
+/// re-derived from the retained inputs and compared byte for byte.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct UnsealedReceipt {
-    /// The record verified.
-    pub record_digest: CanonicalDigest,
+pub struct VerificationReceipt {
+    /// The record verified, by identity.
+    pub record_id: RecordId,
+    /// The revision of that record.
+    pub record_revision: Revision,
     /// The candidate revision it was verified at.
     pub candidate_revision: NonEmptyText,
     /// The decision event cited, when one was found.
     pub decision_event: Option<ReceiptDecisionEvent>,
-    /// The parent chain, in revision order.
-    pub parent_digests: Vec<CanonicalDigest>,
     /// The four named checks.
     pub checks: ReceiptChecks,
     /// One verdict per proof obligation, in `proof_id` order.
@@ -141,121 +137,80 @@ pub struct UnsealedReceipt {
     pub diff_paths_supplied: bool,
 }
 
-/// A sealed verification receipt.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct VerificationReceipt {
-    /// The receipt's own digest.
-    pub digest: CanonicalDigest,
-    /// Everything the digest covers.
-    pub body: UnsealedReceipt,
-}
-
-impl UnsealedReceipt {
-    /// The JSON form, without a `digest` member.
+impl VerificationReceipt {
+    /// The JSON form.
     ///
     /// # Errors
     ///
     /// Never in practice: only [`JsonValue::number`]'s non-finite refusal.
     pub fn to_json(&self) -> Result<JsonValue, ChangeAssuranceError> {
-        write_receipt(self, None)
+        write_receipt(self)
     }
 
-    /// Attach a digest.
-    #[must_use]
-    pub fn seal_with(self, digest: CanonicalDigest) -> VerificationReceipt {
-        VerificationReceipt { digest, body: self }
-    }
-}
-
-impl VerificationReceipt {
-    /// The JSON form, `digest` included.
+    /// Read and validate a receipt's shape.
     ///
     /// # Errors
     ///
-    /// As [`UnsealedReceipt::to_json`].
-    pub fn to_json(&self) -> Result<JsonValue, ChangeAssuranceError> {
-        write_receipt(&self.body, Some(&self.digest))
-    }
-
-    /// Read and validate a receipt's shape, **without** checking its digest.
-    ///
-    /// Not public: [`crate::verify::verify_receipt`] is the entry point, and
-    /// it checks the digest.
-    pub(crate) fn read_sealed(value: &JsonValue) -> Result<Self, ChangeAssuranceError> {
+    /// Every refusal of the receipt schema, including an undeclared member
+    /// such as a stored digest, a reason list that is unordered or repeated, and an
+    /// outcome that disagrees with the precedence its own reasons imply.
+    pub fn from_json(value: &JsonValue) -> Result<Self, ChangeAssuranceError> {
         let root = Fields::read(value, SUBJECT, "verification receipt")?;
-        // `governing_plan_id` and `diff_paths_supplied` (PLAT-1015) are
-        // OPTIONAL here, not required: a receipt sealed before this ticket
-        // carries neither, and refusing to re-read it would break
-        // `verify_receipt` over evidence this crate already retained. Every
-        // receipt `write_receipt` seals from here on carries both.
-        root.exact_with_optional(
-            &[
-                "schema_version",
-                "record_type",
-                "digest",
-                "record_digest",
-                "candidate_revision",
-                "decision_event",
-                "parent_digests",
-                "checks",
-                "proofs",
-                "unknowns",
-                "outcome",
-                "reasons",
-            ],
-            &["governing_plan_id", "diff_paths_supplied"],
-        )?;
+        root.exact(&[
+            "schema_version",
+            "record_type",
+            "record_id",
+            "record_revision",
+            "candidate_revision",
+            "decision_event",
+            "checks",
+            "proofs",
+            "unknowns",
+            "outcome",
+            "reasons",
+            "governing_plan_id",
+            "diff_paths_supplied",
+        ])?;
         root.equals("schema_version", &number(SCHEMA_VERSION)?)?;
         root.equals("record_type", &JsonValue::string(RECORD_TYPE))?;
-        let digest = root.digest("digest")?;
-        let record_digest = root.digest("record_digest")?;
+        let record_id = RecordId::parse(root.text("record_id")?, SUBJECT, "record_id")?;
+        let record_revision = Revision::new(
+            root.whole_number("record_revision")?,
+            SUBJECT,
+            "record_revision",
+        )?;
         let candidate_revision = NonEmptyText::parse(
             root.text("candidate_revision")?,
             SUBJECT,
             "candidate revision",
         )?;
         let decision_event = read_decision_event(root)?;
-        let mut parent_digests = Vec::new();
-        for entry in root.array("parent_digests", false)? {
-            let text = entry.as_str().ok_or_else(|| {
-                ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("parent digest"))
-            })?;
-            parent_digests.push(CanonicalDigest::parse_stored(text).map_err(|_| {
-                ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("parent digest"))
-            })?);
-        }
         let checks = read_checks(root)?;
         let proofs = read_proofs(root)?;
         let unknowns = read_unknowns(root)?;
         let (outcome, reasons) = read_outcome_and_reasons(root)?;
-        let governing_plan_id = match root.optional("governing_plan_id") {
-            None | Some(JsonValue::Null) => None,
-            Some(_) => Some(NonEmptyText::parse(
+        let governing_plan_id = match root.value("governing_plan_id")? {
+            JsonValue::Null => None,
+            _ => Some(NonEmptyText::parse(
                 root.text("governing_plan_id")?,
                 SUBJECT,
                 "governing plan id",
             )?),
         };
-        let diff_paths_supplied = match root.optional("diff_paths_supplied") {
-            None => false,
-            Some(_) => root.boolean("diff_paths_supplied")?,
-        };
+        let diff_paths_supplied = root.boolean("diff_paths_supplied")?;
 
         Ok(Self {
-            digest,
-            body: UnsealedReceipt {
-                record_digest,
-                candidate_revision,
-                decision_event,
-                parent_digests,
-                checks,
-                proofs,
-                unknowns,
-                outcome,
-                reasons,
-                governing_plan_id,
-                diff_paths_supplied,
-            },
+            record_id,
+            record_revision,
+            candidate_revision,
+            decision_event,
+            checks,
+            proofs,
+            unknowns,
+            outcome,
+            reasons,
+            governing_plan_id,
+            diff_paths_supplied,
         })
     }
 }
@@ -270,16 +225,22 @@ fn read_decision_event(
     event.exact(&[
         "run_id",
         "event_id",
-        "event_hash",
-        "chain_tail_hash",
+        "sequence",
         "recorded_actor",
         "decision",
     ])?;
     Ok(Some(ReceiptDecisionEvent {
         run_id: RunId::parse(event.text("run_id")?, SUBJECT, "decision run_id")?,
         event_id: EventId::parse(event.text("event_id")?, SUBJECT, "decision event_id")?,
-        event_hash: event.event_hash("event_hash")?,
-        chain_tail_hash: event.event_hash("chain_tail_hash")?,
+        sequence: match event.whole_number("sequence")? {
+            0 => {
+                return Err(ChangeAssuranceError::shape(
+                    SUBJECT,
+                    FieldFailure::malformed("decision sequence"),
+                ));
+            }
+            sequence => sequence,
+        },
         recorded_actor: NonEmptyText::parse(
             event.text("recorded_actor")?,
             SUBJECT,
@@ -315,9 +276,7 @@ fn read_proofs(root: Fields<'_>) -> Result<Vec<ProofResult>, ChangeAssuranceErro
         fields.exact(&[
             "proof_id",
             "obligation_ids",
-            "attestation_digest",
-            "retained_output_digest",
-            "audit_report_digest",
+            "attestation_id",
             "audit_findings",
             "outcome",
             "reasons",
@@ -330,17 +289,13 @@ fn read_proofs(root: Fields<'_>) -> Result<Vec<ProofResult>, ChangeAssuranceErro
             })?;
             obligation_ids.push(ObligationId::parse(text, SUBJECT, "obligation_id")?);
         }
-        let attestation_digest = match fields.value("attestation_digest")? {
+        let attestation_id = match fields.value("attestation_id")? {
             JsonValue::Null => None,
-            _ => Some(fields.digest("attestation_digest")?),
-        };
-        let retained_output_digest = match fields.value("retained_output_digest")? {
-            JsonValue::Null => None,
-            _ => Some(fields.raw_bytes_digest("retained_output_digest")?),
-        };
-        let audit_report_digest = match fields.value("audit_report_digest")? {
-            JsonValue::Null => None,
-            _ => Some(fields.artifact_digest("audit_report_digest")?),
+            _ => Some(AttestationId::parse(
+                fields.text("attestation_id")?,
+                SUBJECT,
+                "attestation_id",
+            )?),
         };
         let mut audit_findings = Vec::new();
         for raw in fields.array("audit_findings", false)? {
@@ -359,9 +314,7 @@ fn read_proofs(root: Fields<'_>) -> Result<Vec<ProofResult>, ChangeAssuranceErro
         proofs.push(ProofResult {
             proof_id,
             obligation_ids,
-            attestation_digest,
-            retained_output_digest,
-            audit_report_digest,
+            attestation_id,
             audit_findings,
             outcome,
             reasons,
@@ -435,58 +388,17 @@ fn check_json(check: &Check) -> JsonValue {
     ])
 }
 
-fn write_receipt(
-    receipt: &UnsealedReceipt,
-    digest: Option<&CanonicalDigest>,
-) -> Result<JsonValue, ChangeAssuranceError> {
-    let mut members = vec![
+fn write_receipt(receipt: &VerificationReceipt) -> Result<JsonValue, ChangeAssuranceError> {
+    let members = vec![
         ("schema_version", number(SCHEMA_VERSION)?),
         ("record_type", JsonValue::string(RECORD_TYPE)),
-    ];
-    if let Some(digest) = digest {
-        members.push(("digest", JsonValue::string(digest.as_hex())));
-    }
-    members.extend([
-        (
-            "record_digest",
-            JsonValue::string(receipt.record_digest.as_hex()),
-        ),
+        ("record_id", JsonValue::string(receipt.record_id.as_str())),
+        ("record_revision", number(receipt.record_revision.get())?),
         (
             "candidate_revision",
             JsonValue::string(receipt.candidate_revision.as_str()),
         ),
-        (
-            "decision_event",
-            receipt
-                .decision_event
-                .as_ref()
-                .map_or(JsonValue::Null, |event| {
-                    object(vec![
-                        ("run_id", JsonValue::string(event.run_id.as_str())),
-                        ("event_id", JsonValue::string(event.event_id.as_str())),
-                        ("event_hash", JsonValue::string(event.event_hash.as_hex())),
-                        (
-                            "chain_tail_hash",
-                            JsonValue::string(event.chain_tail_hash.as_hex()),
-                        ),
-                        (
-                            "recorded_actor",
-                            JsonValue::string(event.recorded_actor.as_str()),
-                        ),
-                        ("decision", JsonValue::string(event.decision.as_str())),
-                    ])
-                }),
-        ),
-        (
-            "parent_digests",
-            JsonValue::Array(
-                receipt
-                    .parent_digests
-                    .iter()
-                    .map(|parent| JsonValue::string(parent.as_hex()))
-                    .collect(),
-            ),
-        ),
+        ("decision_event", decision_event_json(receipt)?),
         (
             "checks",
             object(vec![
@@ -528,7 +440,7 @@ fn write_receipt(
             "diff_paths_supplied",
             JsonValue::Bool(receipt.diff_paths_supplied),
         ),
-    ]);
+    ];
     Ok(object(members))
 }
 
@@ -546,25 +458,11 @@ fn write_proofs(proofs: &[ProofResult]) -> JsonValue {
                     ("proof_id", JsonValue::string(proof.proof_id.as_str())),
                     ("obligation_ids", string_values(&obligation_ids)),
                     (
-                        "attestation_digest",
+                        "attestation_id",
                         proof
-                            .attestation_digest
+                            .attestation_id
                             .as_ref()
-                            .map_or(JsonValue::Null, |digest| JsonValue::string(digest.as_hex())),
-                    ),
-                    (
-                        "retained_output_digest",
-                        proof
-                            .retained_output_digest
-                            .as_ref()
-                            .map_or(JsonValue::Null, |digest| JsonValue::string(digest.as_hex())),
-                    ),
-                    (
-                        "audit_report_digest",
-                        proof
-                            .audit_report_digest
-                            .as_ref()
-                            .map_or(JsonValue::Null, |digest| JsonValue::string(digest.as_hex())),
+                            .map_or(JsonValue::Null, |id| JsonValue::string(id.as_str())),
                     ),
                     (
                         "audit_findings",
@@ -590,4 +488,20 @@ fn write_proofs(proofs: &[ProofResult]) -> JsonValue {
             })
             .collect(),
     )
+}
+
+fn decision_event_json(receipt: &VerificationReceipt) -> Result<JsonValue, ChangeAssuranceError> {
+    let Some(event) = receipt.decision_event.as_ref() else {
+        return Ok(JsonValue::Null);
+    };
+    Ok(object(vec![
+        ("run_id", JsonValue::string(event.run_id.as_str())),
+        ("event_id", JsonValue::string(event.event_id.as_str())),
+        ("sequence", number(event.sequence)?),
+        (
+            "recorded_actor",
+            JsonValue::string(event.recorded_actor.as_str()),
+        ),
+        ("decision", JsonValue::string(event.decision.as_str())),
+    ]))
 }

@@ -40,8 +40,7 @@ use crate::types::ids::SafeRecordId;
 
 /// A document that is an operational evidence record.
 ///
-/// Modelled on [`quoin_jsonschema::ValidDocument`] and
-/// `quoin_store::RawFileSha256Digest::parse_stored`: constructed in exactly one
+/// Modelled on [`quoin_jsonschema::ValidDocument`]: constructed in exactly one
 /// place, below, and nowhere else.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValidOperationalRecord {
@@ -172,7 +171,7 @@ mod tests {
     fn a_value_that_is_not_a_record_is_refused_under_the_intake_code() {
         let error = validate_operational_record(&json!([])).unwrap_err();
         assert_eq!(error.code(), InterventionRefusalCode::InvalidRecord);
-        assert!(!error.findings().is_empty());
+        assert_ne!(error.findings().len(), 0);
     }
 
     /// Findings arrive deduplicated and sorted, which is what makes a refusal

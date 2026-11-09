@@ -45,7 +45,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
 mod tests {
     use super::command;
 
-    /// Trace: FR-017, FR-101
+    /// Trace: FR-017
     #[test]
     fn tc_373_plugin_alias_keeps_the_module_grammar() {
         assert!(command().try_get_matches_from(["plugin"]).is_ok());

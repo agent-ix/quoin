@@ -6,7 +6,7 @@ Install this agent plugin through the [Agent IX marketplace](https://github.com/
 
 ## Check local setup
 
-1. Confirm both the `quoin` and `ix-flow` >=0.3.0 CLIs are installed and resolve in the shell used by your agent. The Quoin plugin supplies skills and workflows; the CLIs execute them.
+1. Confirm both the `quoin` and `ix-flow` >=0.3.1 CLIs are installed and resolve in the shell used by your agent. The Quoin plugin supplies skills and workflows; the CLIs execute them.
 2. Confirm the Quoin plugin is installed in the current agent host. Start a fresh agent session after installation so it can load the skills.
 3. In the target repository, run `quoin catalog list` and `quoin catalog validate` to check module discovery. If a required module is unavailable, follow its installation instructions before retrying the skill.
 4. Check the target repository's `AGENTS.md` or `CLAUDE.md`, required spec files, and project permissions. Missing modules, malformed project artifacts, and local path or credential problems need local correction.
@@ -18,14 +18,14 @@ If these checks leave a reproducible **Agent IX Quoin bug** that blocks progress
 
 ## Owned workflows and upgrading old installations
 
-Quoin 0.29.0 ships review and planning definitions beside its agent plugin skills.
+Quoin 0.29.1 ships review and planning definitions beside its agent plugin skills.
 The CLI supplies the Rust validation provider. Install the published runner with
 `npm install -g @agent-ix/ix-flow@latest`. No archived workflow repository,
 workflow npm provider, or IX_SPEC_WORKFLOWS_ROOT override is required.
 
 Run `command -v quoin`, `quoin --version`, `command -v ix-flow`, and
-`ix-flow --version` in the agent's shell. Confirm Quoin CLI/plugin >=0.29.0 and
-ix-flow >=0.3.0. Load updated skills in a fresh session without stopping other
+`ix-flow --version` in the agent's shell. Confirm Quoin CLI/plugin >=0.29.1 and
+ix-flow >=0.3.1. Load updated skills in a fresh session without stopping other
 agents automatically.
 
 Invoke the spec-review or spec-to-plan skill. Its frontmatter declares the local

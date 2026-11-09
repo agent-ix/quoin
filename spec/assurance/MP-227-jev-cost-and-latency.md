@@ -27,7 +27,7 @@ Input and output tokens, wall-clock, per-request latency mean, p50, p90 and max,
 ## Collection Procedure
 
 Run the lens's `live-api` test through `quoin_jev::client::production`.
-Retain the raw responses, question set, corpus and context revision, reported
+Retain the raw responses, question set, context, reported
 classifier, token counts and timestamp. Dimension every observation by `lens`
 and `variant`.
 

@@ -62,7 +62,6 @@ fn plan(id: &str, objective: Option<Objective>) -> MeasurementPlan {
         path: format!("spec/assurance/{id}.md"),
         owner: None,
         action: None,
-        preregistration: None,
         ground_truth_kind: None,
         statistical_design: None,
         objective,
@@ -93,12 +92,10 @@ fn observation(plan_id: &str, value: f64) -> MeasurementObservation {
 fn collection(timestamp: &str) -> CollectionSummary {
     CollectionSummary {
         collection_id: "run-1".to_owned(),
+        subject: "fixture".to_owned(),
         timestamp: timestamp.to_owned(),
         tool_identity: "fixture".to_owned(),
         tool_version: "1".to_owned(),
-        config_digest: format!("sha256:{}", "a".repeat(64)),
-        source_revision: "a".repeat(40),
-        corpus_revision: None,
         path: "spec/evidence/measurements/run-1.json".to_owned(),
         unverified_artifacts: Vec::new(),
     }
@@ -345,7 +342,7 @@ fn tc_968_006_no_objective_is_listed_unranked_not_scored() {
         "2026-01-01T00:00:00.000Z",
     );
     let ranking = rank_portfolio(&report).expect("the ranking builds");
-    assert!(ranking.ranked.is_empty());
+    assert_eq!(ranking.ranked.len(), 0);
     assert_eq!(ranking.unranked.len(), 1);
     assert_eq!(ranking.unranked[0].plan_id, "MP-plain");
     assert_eq!(ranking.unranked[0].reason, UnrankedReason::NoObjective);
@@ -369,7 +366,7 @@ fn tc_968_007_objective_with_no_bound_is_unranked() {
         "2026-01-01T00:00:00.000Z",
     );
     let ranking = rank_portfolio(&report).expect("the ranking builds");
-    assert!(ranking.ranked.is_empty());
+    assert_eq!(ranking.ranked.len(), 0);
     assert_eq!(ranking.unranked[0].reason, UnrankedReason::NoBound);
 }
 
@@ -391,7 +388,7 @@ fn tc_968_008_no_current_estimate_is_unranked() {
     repository.measurements.as_mut().unwrap().current[0].observation = None;
     let report = report(vec![repository], "2026-01-01T00:00:00.000Z");
     let ranking = rank_portfolio(&report).expect("the ranking builds");
-    assert!(ranking.ranked.is_empty());
+    assert_eq!(ranking.ranked.len(), 0);
     assert_eq!(
         ranking.unranked[0].reason,
         UnrankedReason::NoCurrentEstimate

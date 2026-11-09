@@ -101,11 +101,6 @@ string_newtype! {
 }
 
 string_newtype! {
-    /// The `@agent-ix/semantic-core` version a manifest compiles against.
-    SemanticCoreVersion
-}
-
-string_newtype! {
     /// A named representation mapping (FR-071..073).
     MappingName
 }

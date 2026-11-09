@@ -8,7 +8,7 @@
 //! seam is real and not just a line count — nothing here knows which operation
 //! called it, and everything here is decided with no disk at all.
 //!
-//! None of it duplicates `quoin-store`. Canonicalization, digests, store paths
+//! None of it duplicates `quoin-store`. Canonicalization, store paths
 //! and atomic writes are that crate's, and are used from it; what remains is
 //! the hex transport this boundary defines, the refusals the wire shapes cannot
 //! express, and the small adapters between `JsonValue` and `serde_json`.
@@ -21,10 +21,12 @@ use quoin_change_assurance::verify::input::GoverningPlan;
 use quoin_change_assurance::verify::{
     AuditReport, ReportFinding, ReportUnevaluated, RetainedAudit,
 };
-use quoin_change_assurance::{EvidenceStore, read_change_record};
+use quoin_change_assurance::{
+    AttestationId, EvidenceStore, RecordId, Revision, Subject, read_change_record,
+};
 use quoin_measurement::plans::{PlanLoadOptions, load_measurement_plans};
 use quoin_measurement::source::DiskMeasurement;
-use quoin_store::{CanonicalDigest, JsonValue, canonical_json_bytes, parse_strict_json};
+use quoin_store::{JsonValue, canonical_json_bytes, parse_strict_json};
 
 use crate::capabilities::{Capabilities, ChangeAssuranceHost};
 use crate::error::{CoreError, CoreErrorCode};
@@ -71,50 +73,72 @@ pub(super) fn governing_plan(
     })
 }
 
-/// Read one stored record, refusing an unknown digest rather than skipping it.
+/// Read the record retained at `(record_id, revision)`, refusing an unknown
+/// identity rather than skipping it.
 pub(super) fn stored_record(
     store: &dyn EvidenceStore,
-    digest: &str,
-    field: &'static str,
+    record_id: &RecordId,
+    revision: Revision,
     op: &'static str,
 ) -> Result<JsonValue, CoreError> {
-    let parsed = digest_of(digest, field, op)?;
-    let record = read_change_record(store, &parsed)
+    let record = read_change_record(store, record_id, revision)
         .map_err(|e| map_error(&e, op))?
-        .ok_or_else(|| missing(op, field, digest, ""))?;
+        .ok_or_else(|| missing(op, "record_id", &format!("{record_id}/{revision}"), ""))?;
     record.to_json().map_err(|e| map_error(&e, op))
 }
 
-/// A stored digest, or the caller's spelling refused.
-pub(super) fn digest_of(
+/// Every retained predecessor of `revision`, in revision order, as stored.
+///
+/// Read as JSON and not validated here: a predecessor that is not a valid
+/// record is a verification result (`parent_invalid`), not a refusal to
+/// answer. One that is not retained is simply absent, and lineage reports the
+/// gap.
+pub(super) fn stored_predecessors(
+    store: &dyn EvidenceStore,
+    record_id: &RecordId,
+    revision: Revision,
+    op: &'static str,
+) -> Result<Vec<JsonValue>, CoreError> {
+    let mut parents = Vec::new();
+    for earlier in 1..revision.get() {
+        let earlier =
+            Revision::new(earlier, Subject::Record, "revision").map_err(|e| map_error(&e, op))?;
+        if let Some(bytes) = store
+            .record(record_id, earlier)
+            .map_err(|e| map_error(&e, op))?
+        {
+            parents.push(parse_strict_json(&bytes).map_err(|e| map_error(&e.into(), op))?);
+        }
+    }
+    Ok(parents)
+}
+
+/// A record id, or the caller's spelling refused.
+pub(super) fn record_id_of(value: &str, op: &'static str) -> Result<RecordId, CoreError> {
+    RecordId::parse(value, Subject::Record, "record_id").map_err(|e| map_error(&e, op))
+}
+
+/// An attestation id, or the caller's spelling refused.
+pub(super) fn attestation_id_of(
     value: &str,
     field: &'static str,
     op: &'static str,
-) -> Result<CanonicalDigest, CoreError> {
-    CanonicalDigest::parse_stored(value).map_err(|e| {
-        CoreError::new(CoreErrorCode::BadRequest, e.to_string())
-            .with_context("op", op)
-            .with_context("field", field)
-    })
+) -> Result<AttestationId, CoreError> {
+    AttestationId::parse(value, Subject::Attestation, field).map_err(|e| map_error(&e, op))
 }
 
 /// Evidence the caller named and the store does not hold.
 ///
 /// `Refused` (2) and not `BadRequest` (3): the request was understood and the
 /// spelling was fine. What is missing is in the store, which is the world.
-pub(super) fn missing(
-    op: &'static str,
-    field: &'static str,
-    digest: &str,
-    repo: &str,
-) -> CoreError {
+pub(super) fn missing(op: &'static str, field: &'static str, id: &str, repo: &str) -> CoreError {
     let error = CoreError::new(
         CoreErrorCode::Refused,
-        "no evidence is retained under that digest",
+        "no evidence is retained under that identity",
     )
     .with_context("op", op)
     .with_context("field", field)
-    .with_context("digest", digest.to_owned());
+    .with_context("id", id.to_owned());
     if repo.is_empty() {
         error
     } else {
@@ -142,7 +166,6 @@ pub(super) fn read_audits(
         .into_iter()
         .map(|audit| RetainedAudit {
             proof_id: audit.proof_id,
-            report_digest: audit.report_digest,
             report: AuditReport {
                 findings: audit
                     .report
@@ -169,9 +192,9 @@ pub(super) fn read_audits(
 
 /// Refuse a body that supplies a field the caller must not state.
 ///
-/// The sealing functions derive these members, so without this check a caller
-/// could hand in a wrong digest and receive a cleanly sealed value back, having
-/// been told nothing.
+/// The preparing operation derives these members, so without this check a
+/// caller could hand in a wrong value and receive a cleanly prepared document
+/// back, having been told nothing.
 pub(super) fn refuse_supplied(
     body: &JsonValue,
     fields: &[&str],
@@ -266,8 +289,8 @@ pub(super) fn size_bytes_as_f64(size: u64) -> f64 {
 /// carries.
 ///
 /// Through the canonical bytes rather than field by field: the canonicaliser is
-/// the one this store already seals with, so a payload cannot disagree with the
-/// digest that was taken over the same value.
+/// the one this store already writes with, so a payload cannot disagree with the
+/// bytes that were retained for the same value.
 pub(super) fn to_serde(
     value: &JsonValue,
     op: &'static str,
@@ -357,15 +380,7 @@ pub(super) fn check_receipt_bounds(
         &request.candidate_revision,
         MAX_SCALAR_BYTES,
     )?;
-    check_bound(
-        op,
-        "record_digest",
-        &request.record_digest,
-        MAX_SCALAR_BYTES,
-    )?;
-    for parent in &request.parent_digests {
-        check_bound(op, "parent_digests", parent, MAX_SCALAR_BYTES)?;
-    }
+    check_bound(op, "record_id", &request.record_id, MAX_SCALAR_BYTES)?;
     let diff_len = request.diff_paths.as_ref().map_or(0, Vec::len);
     check_count(op, "diff_paths", diff_len, MAX_DIFF_PATHS)?;
     for path in request.diff_paths.iter().flatten() {
@@ -383,8 +398,8 @@ pub(super) fn check_receipt_bounds(
         )?;
         check_bound(
             op,
-            "selections.attestation_digest",
-            &selection.attestation_digest,
+            "selections.attestation_id",
+            &selection.attestation_id,
             MAX_SCALAR_BYTES,
         )?;
     }

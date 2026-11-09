@@ -51,13 +51,13 @@ never treated as satisfied.
 
 No collection of its own. Reads the already-collected MP-222/223/224/225/232
 observations for `lens: gap-analysis` and states the verdict; retains which
-variant and corpus revision the verdict was computed against.
+variant and corpus the verdict was computed against.
 
 ## Environment and Sampling
 
-Every upstream metric it reads must share the same corpus revision, question
+Every upstream metric it reads must share the same corpus, question
 set and mutation log within one variant; a verdict computed across mismatched
-revisions is refused, not reported.
+inputs is refused, not reported.
 
 ## Interpretation
 
@@ -68,8 +68,8 @@ finding as a hard gate — those remain separate, later, user-gated decisions.
 ## Comparison and Enforcement
 
 **Bars (all three must hold; pre-registered in
-`rust/crates/quoin-jev/tests/live_gap_semantic.rs`'s module doc, commit
-`d6bb5e4`, before the first live call this plan judges):**
+`rust/crates/quoin-jev/tests/live_gap_semantic.rs`'s module doc,
+before the first live call this plan judges):**
 
 1. **MP-222 margin > 0 percentage points**, over the MP-232 mutation-graded
    subset — the lens must beat the best constant predictor the corpus admits.
@@ -86,7 +86,5 @@ Any bar unmet, or resting on a `not_computed` value, is NO-GO. A lens whose
 gate plan is missing or backdated is NO-GO by refusal per AP-202's
 Exceptions, independent of any number.
 
-The measured verdict this plan produced, and the observations it was computed
-from, are recorded as a measurement collection under
-`spec/evidence/measurements/`, not restated here — this plan defines the
-rule, not one run's result.
+This plan defines the rule, not one run's result; no run's verdict or
+observations are restated here.

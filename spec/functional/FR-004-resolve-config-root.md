@@ -40,9 +40,9 @@ enabled unless `--no-project-config` is given.
 
 | ID          | Criteria                                                                   | Verification                        |
 | ----------- | -------------------------------------------------------------------------- | ----------------------------------- |
-| FR-004-AC-1 | `--config-root` selects the config root for the run                        | Test (cli.test.ts)                  |
-| FR-004-AC-2 | With no `--config-root`, the root falls back to `IX_HOME`, then to `~/.ix` | Test (cli.test.ts, catalog.test.ts) |
-| FR-004-AC-3 | `--no-project-config` disables the project config root                     | Test (cli.test.ts)                  |
+| FR-004-AC-1 | `--config-root` selects the config root for the run                        | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-004-AC-2 | With no `--config-root`, the root falls back to `IX_HOME`, then to `~/.ix` | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-004-AC-3 | `--no-project-config` disables the project config root                     | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

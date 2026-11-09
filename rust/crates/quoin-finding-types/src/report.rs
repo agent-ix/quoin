@@ -55,7 +55,7 @@ impl UnevaluatedCheck {
 pub struct AuditReport {
     /// Every finding, sorted by obligation then kind.
     pub findings: Vec<Finding>,
-    /// Obligations with a binding whose hash still matches, sorted.
+    /// Obligations with a binding that still holds, sorted.
     pub healthy: Vec<String>,
     /// Checks that could not run, sorted by obligation then check.
     pub unevaluated: Vec<UnevaluatedCheck>,

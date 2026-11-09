@@ -76,8 +76,8 @@ weak module or type partition — cannot be met by an aggregate that is printed 
 - The measurement SHALL state, for every published rate, the unit its numerator and denominator
   count.
 - The measurement SHALL state, for every published rate, the population identifier that names the
-  corpus identifier, each repository's resolved commit, each module's resolved commit, the engine
-  source revision and the state filter the denominator was drawn from.
+  the corpus identifier, the engine
+  version and the state filter the denominator was drawn from.
 - The measurement SHALL key every by-type breakdown on the pair of module name and type name.
 - The measurement SHALL exclude `could-not-run` and `not-applicable` outcomes from both the numerator
   and the denominator of a pass rate.
@@ -106,7 +106,7 @@ weak module or type partition — cannot be met by an aggregate that is printed 
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-090-AC-1 | Every rate in the published report carries a unit, a population identifier and a method identifier. | Test (TC-1538) |
-| FR-090-AC-2 | The population identifier of every rate names the corpus revision and the module revisions it was computed against. | Test (TC-1539) |
+| FR-090-AC-2 | Withdrawn: the population identifier no longer names a corpus or module revision, which Quoin records no longer (id not reused). | Withdrawn (TC-1539) |
 | FR-090-AC-3 | A corpus in which one document reports `could-not-run` yields a rate whose denominator excludes that document and a `could-not-run` count of one beside the rate. | Test (TC-1540) |
 | FR-090-AC-4 | The mapping rate and the representation rate are published separately with their own populations and are never summed. | Test (TC-1541) |
 | FR-090-AC-5 | A module partition whose rate is more than the declared margin below the aggregate appears in the divergence list naming both rates. | Test (TC-1542) |

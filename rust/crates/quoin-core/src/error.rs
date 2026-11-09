@@ -29,14 +29,9 @@ pub enum CoreErrorCode {
     /// The request was understood and refused by a stated rule of the
     /// operation — a bound exceeded, a precondition unmet.
     Refused,
-    /// The caller's protocol expectation disagrees with this build's. The
-    /// payload is still complete and still worth reading; see [`Outcome::Partial`].
-    ProtocolSkew,
     /// An input the operation could not use in full, answered anyway from what
     /// remained. The payload is the honest answer over a reduced input, not a
-    /// complete one; the diagnostic names what was dropped. Distinct from
-    /// [`Self::ProtocolSkew`], which is about the caller's protocol version
-    /// rather than about the content it sent.
+    /// complete one; the diagnostic names what was dropped.
     Degraded,
     /// The operation completed and its payload is a verdict that rejects —
     /// `measurement.verify` finding a contradiction (FR-108). The payload is
@@ -62,7 +57,6 @@ impl CoreErrorCode {
             Self::BadJson => "CORE_BAD_JSON",
             Self::BadRequest => "CORE_BAD_REQUEST",
             Self::Refused => "CORE_REFUSED",
-            Self::ProtocolSkew => "CORE_PROTOCOL_SKEW",
             Self::Degraded => "CORE_DEGRADED",
             Self::Rejected => "CORE_REJECTED",
             Self::Inconclusive => "CORE_INCONCLUSIVE",
@@ -79,7 +73,6 @@ impl CoreErrorCode {
             Self::BadJson,
             Self::BadRequest,
             Self::Refused,
-            Self::ProtocolSkew,
             Self::Degraded,
             Self::Rejected,
             Self::Inconclusive,
@@ -102,9 +95,7 @@ impl CoreErrorCode {
     #[must_use]
     pub const fn outcome(self) -> Outcome {
         match self {
-            Self::ProtocolSkew | Self::Degraded | Self::Rejected | Self::Inconclusive => {
-                Outcome::Partial
-            }
+            Self::Degraded | Self::Rejected | Self::Inconclusive => Outcome::Partial,
             Self::Refused => Outcome::Refused,
             Self::BadUsage | Self::UnknownOp | Self::BadJson | Self::BadRequest => Outcome::Invalid,
             Self::Io => Outcome::Internal,
@@ -197,7 +188,7 @@ mod tests {
     fn the_catalogue_is_every_variant_of_the_enum() {
         assert_eq!(
             CoreErrorCode::all().len(),
-            10,
+            9,
             "a code was added to the enum; add it to `all()` too"
         );
         assert_eq!(
@@ -208,7 +199,6 @@ mod tests {
                 CoreErrorCode::BadJson,
                 CoreErrorCode::BadRequest,
                 CoreErrorCode::Refused,
-                CoreErrorCode::ProtocolSkew,
                 CoreErrorCode::Degraded,
                 CoreErrorCode::Rejected,
                 CoreErrorCode::Inconclusive,
@@ -224,10 +214,9 @@ mod tests {
     }
 
     #[test]
-    fn the_payload_carrying_codes_are_exactly_the_two_partial_ones() {
-        // Deliberately extended, not widened: `Degraded` joins `ProtocolSkew`
-        // because a partial answer over a reduced input is still an answer the
-        // caller must read. Every other code means "there is nothing to read",
+    fn the_payload_carrying_codes_are_exactly_the_three_partial_ones() {
+        // Deliberately extended, not widened: `Degraded` is a partial answer
+        // over a reduced input, which is still an answer the caller must read. Every other code means "there is nothing to read",
         // and a new entry appearing here is a design change, not a detail.
         // `Rejected` and `Inconclusive` are that design change (FR-108,
         // PLAT-961): a verdict that rejects or cannot decide is a complete
@@ -240,7 +229,6 @@ mod tests {
         assert_eq!(
             carrying,
             vec![
-                &CoreErrorCode::ProtocolSkew,
                 &CoreErrorCode::Degraded,
                 &CoreErrorCode::Rejected,
                 &CoreErrorCode::Inconclusive,

@@ -115,7 +115,14 @@ The default module set defines the spec archetypes and domain-object vocabulary.
 - **`spec-to-plan`** — convert StR/FR/NFR into a TDD project plan
 - **`spec-ideation`** — loose, exploratory drafting before formal authoring
 - **`spec-app-review`** / **`spec-object-review`** — application-spec and domain-object audits
+- **`gap-analysis`** — compare implemented behavior, requirements, and test evidence to find delivery gaps
+- **`assurance-status-report`** — report the state of an assurance campaign from recorded evidence
+- **`spec-architecture-evaluation`** — compare an implemented architecture with its stated boundaries and quality goals
+- **`spec-correctness`** — turn classified acceptance criteria into runnable property checks
+- **`spec-fuzz`** — create fuzz targets for requirements that call for fuzz evidence
 - Analysis lenses — focused review passes over a spec:
+  - **`spec-criterion-strength-analysis`** — check that acceptance criteria can fail meaningfully
+  - **`spec-ears-analysis`** — check requirement wording against EARS grammar
   - **`spec-integrity-analysis`** — completeness, consistency, and atomicity quality gates
   - **`spec-scope-boundary-analysis`** — system boundaries and responsibility allocation
   - **`spec-dependency-analysis`** — separates enablement work from feature work
@@ -249,31 +256,22 @@ See [Assurance workflows](./docs/assurance-workflows.md) for the record shapes,
 expiry behavior, and the boundary that leaves existing run records unchanged.
 
 Generic measurement campaigns run each authored procedure through Engineering
-Assurance's bounded executor and retain a separately replayable verdict:
+Assurance's bounded executor and report a campaign verdict:
 
 ```bash
 quoin measurement campaign run --repo /path/to/clean-measured-checkout \
   --definition /path/to/campaign-definition.json --run-id trial-1 \
   --config /path/to/campaign-run-config.json
-quoin measurement campaign verify --repo /path/to/clean-measured-checkout \
-  --definition-digest SHA256_JCS_DIGEST --run-id trial-1 \
-  --sources /path/to/campaign-sources.json
 ```
 
-The definition may live outside the measured checkout, allowing it to pin an
-earlier source revision without a self-referential Git commit. The run config
-uses `quoin.campaign-run-config/v1` and selects exact clean source checkouts,
-producer and checker executables, and runtime bindings. Verification reopens
-the retained evidence and the same pinned source revisions. Member dependencies
-require ordering and completion. Quoin retains every selected producer input
-byte string by digest and independently replays its recorded source-file or
-dependency-artifact origin against the exact Git tree or earlier EA result.
-When an authored procedure declares `inputOrigins`, EA rejects mismatched
-runtime selections and Quoin marks the retained inventory `enforced` only after
-matching every declared role. Older procedures without that declaration remain
-explicitly `unclaimed` for authored origin assurance; their selected bytes and
-recorded origins are still replay-checked. A domain checker interprets the
-measurement-specific meaning of those inputs.
+The definition may live outside the measured checkout. The run config
+uses `quoin.campaign-run-config/v1` and selects clean source checkouts,
+producer and checker executables, and runtime bindings. Member dependencies
+require ordering and completion. When an authored procedure declares
+`inputOrigins`, EA rejects mismatched runtime selections and Quoin marks the
+recorded inventory `enforced` only after matching every declared role. Older
+procedures without that declaration remain explicitly `unclaimed`. A domain
+checker interprets the measurement-specific meaning of those inputs.
 
 ## Development
 

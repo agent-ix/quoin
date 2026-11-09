@@ -150,7 +150,7 @@ fn tc_961_019_an_unknown_plan_or_claim_is_refused_without_a_verdict() {
         &json!({ "repo": repo.path().to_str().unwrap(), "plan": "MP-0" }).to_string(),
     );
     assert_eq!(unknown.status, 2, "{}", unknown.stderr);
-    assert!(unknown.stdout.is_empty());
+    assert_eq!(unknown.stdout.len(), 0);
     let claim = run(
         "measurement.verify",
         &json!({ "repo": repo.path().to_str().unwrap(), "plan": "MP-961", "claimed": "pass" })
@@ -184,6 +184,6 @@ fn tc_961_029_a_collection_filed_under_another_id_is_refused() {
         &json!({ "repo": repo.path().to_str().unwrap(), "plan": "MP-961" }).to_string(),
     );
     assert_eq!(refused.status, 2, "{}", refused.stderr);
-    assert!(refused.stdout.is_empty());
+    assert_eq!(refused.stdout.len(), 0);
     assert!(refused.stderr.contains("not-its-id"), "{}", refused.stderr);
 }

@@ -12,7 +12,7 @@ protected_apparatus:
   - bench/span-breadth-v1-labels.json
 negative_controls:
   - kind: apparatus-edit
-    description: the frozen label set is digested with every collection; relabelling without a new definition version rejects
+    description: the frozen label set is protected apparatus; relabelling without a new definition version rejects
   - kind: suppressed-observation
     description: every label is replayed; there is no runtime sample, so a failing label cannot be left out of the denominator
 relationships: []
@@ -34,7 +34,7 @@ Exact reviewed boundaries or explicit justified safe refusals divided by the fro
 
 ## Collection Procedure
 
-Every label names repository, full revision, document, row, statement, property, expected outcome, and review rationale.
+Every label names repository, document, row, statement, property, expected outcome, and review rationale.
 
 ## Environment and Sampling
 

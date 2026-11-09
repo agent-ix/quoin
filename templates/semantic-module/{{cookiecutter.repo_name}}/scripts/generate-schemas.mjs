@@ -58,14 +58,14 @@ function requireNode() {
 }
 
 /**
- * The semantic-core version this module extends: the one declared pin, read from
- * `semantic.semantic_core` in the manifest. No second copy of it lives here.
+ * The semantic-core base this module extends: the version of the installed
+ * `@agent-ix/semantic-core` package. No copy of it is declared anywhere else.
  */
 function semanticCoreBase() {
-  const text = readFileSync(manifestPath, "utf8");
-  const declared = text.match(/^\s{2}semantic_core:\s*(\S+)\s*$/m)?.[1];
-  if (!declared) fail("manifest.yaml declares no semantic.semantic_core");
-  return `${SCHEMA_HOST}/semantic-core/${declared}/`;
+  const pkg = resolve(repoRoot, "node_modules/@agent-ix/semantic-core/package.json");
+  if (!existsSync(pkg)) fail("@agent-ix/semantic-core is not installed; run `make install`.");
+  const { version } = JSON.parse(readFileSync(pkg, "utf8"));
+  return `${SCHEMA_HOST}/semantic-core/${version}/`;
 }
 
 /**

@@ -7,7 +7,7 @@
 
 use serde::Deserialize;
 
-use crate::scalars::{BareDigest, NonEmptyText};
+use crate::scalars::NonEmptyText;
 use crate::wire::absent_or;
 
 /// How current an edge is believed to be.
@@ -93,7 +93,7 @@ pub struct CorpusRelation {
 #[serde(deny_unknown_fields)]
 pub struct VerifiesRelation {
     /// The verifying symbol's identity.
-    pub source: BareDigest,
+    pub source: NonEmptyText,
     /// The obligation it verifies.
     pub target: NonEmptyText,
     /// The tagging form it was written in.
@@ -111,7 +111,7 @@ pub struct VerifiesRelation {
 #[serde(deny_unknown_fields)]
 pub struct ImplementsRelation {
     /// The implementing symbol's identity.
-    pub source: BareDigest,
+    pub source: NonEmptyText,
     /// The obligation it implements.
     pub target: NonEmptyText,
     /// The tagging form it was written in.

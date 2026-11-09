@@ -22,8 +22,9 @@ use crate::report::render::metric_label;
 use crate::types::observation::{MeasurementObservation, MeasurementState};
 use crate::types::plan::MeasurementPlan;
 
-/// One typed population finding.
-type Finding = (Code, String);
+/// One typed population finding, and the `observations[i]`-relative JSON path
+/// of the member it concerns.
+type Finding = (Code, String, &'static str);
 
 /// A population member as the stored document states it.
 enum Stated {
@@ -109,6 +110,7 @@ pub(super) fn findings(
             &examined,
             minimum,
             true,
+            "population.examined",
             || {
                 format!(
                     "metric `{label}` states no population.examined; plan {} requires a \
@@ -124,6 +126,7 @@ pub(super) fn findings(
                          of at least {minimum}",
                         plan.id
                     ),
+                    "population.examined",
                 )
             },
         ));
@@ -133,6 +136,7 @@ pub(super) fn findings(
             &repetitions,
             required,
             requires_repetitions,
+            "population.repetitions",
             || {
                 format!(
                     "metric `{label}` states no population.repetitions; plan {} requires \
@@ -148,6 +152,7 @@ pub(super) fn findings(
                          {required}",
                         plan.id
                     ),
+                    "population.repetitions",
                 )
             },
         ));
@@ -171,13 +176,14 @@ fn stated_count(value: Option<&JsonValue>, floor: f64, report: impl FnOnce()) ->
 }
 
 /// The finding refusing `member` of `label` for holding `value`.
-fn malformed(label: &str, member: &str, value: &JsonValue, expected: &str) -> Finding {
+fn malformed(label: &str, member: &'static str, value: &JsonValue, expected: &str) -> Finding {
     // A stored value always crosses the bridge (every JSON number here is
     // finite); the type name is the fallback, not a refusal.
     let spelled = to_serde(value).map_or_else(|_| value.type_name().to_owned(), |v| v.to_string());
     (
         Code::PopulationMalformed,
         format!("metric `{label}` states {member} {spelled}; it must be {expected}"),
+        member,
     )
 }
 
@@ -188,11 +194,12 @@ fn threshold(
     stated: &Stated,
     floor: NonZeroU32,
     absent_refused: bool,
+    path: &'static str,
     unstated: impl FnOnce() -> String,
     short: impl FnOnce(String) -> Finding,
 ) -> Option<Finding> {
     match *stated {
-        Stated::Absent => absent_refused.then(|| (Code::PopulationUnstated, unstated())),
+        Stated::Absent => absent_refused.then(|| (Code::PopulationUnstated, unstated(), path)),
         Stated::Count(value) if value < f64::from(floor.get()) => Some(short(js_f64_string(value))),
         // Malformed was already reported; a count at or above the floor passes.
         Stated::Malformed | Stated::Count(_) => None,

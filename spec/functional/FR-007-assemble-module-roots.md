@@ -40,9 +40,9 @@ variable (with empty entries dropped), then every module directory under
 
 | ID          | Criteria                                                                            | Verification           |
 | ----------- | ----------------------------------------------------------------------------------- | ---------------------- |
-| FR-007-AC-1 | `QUOIN_MODULE_PATHS` entries and installed module dirs are both included, env first | Test (catalog.test.ts) |
-| FR-007-AC-2 | Empty `QUOIN_MODULE_PATHS` entries are dropped                                      | Test (catalog.test.ts) |
-| FR-007-AC-3 | With no installed modules, only env roots are contributed                           | Test (catalog.test.ts) |
+| FR-007-AC-1 | `QUOIN_MODULE_PATHS` entries and installed module dirs are both included, env first | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-007-AC-2 | Empty `QUOIN_MODULE_PATHS` entries are dropped                                      | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-007-AC-3 | With no installed modules, only env roots are contributed                           | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

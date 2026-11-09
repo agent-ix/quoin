@@ -9,7 +9,7 @@
 //!
 //! # The graph stays opaque
 //!
-//! `premises`, `fanOut`, `churn` and `changeImpact` are declared `unknown` in
+//! `premises`, `fanOut` and `changeImpact` are declared `unknown` in
 //! the retained types and are [`JsonValue`] here for the same reason:
 //! `graph-portfolio.ts:41-43` states that the portfolio "retains object
 //! identity and never owns or interprets the graph report contract". FR-062 is
@@ -112,8 +112,6 @@ pub enum InjectedStructuralGraph {
         premises: JsonValue,
         /// The fan-out analysis, uninterpreted.
         fan_out: JsonValue,
-        /// The churn analysis, uninterpreted.
-        churn: JsonValue,
         /// The change-impact analyses, when a changed seed was requested.
         change_impact: Option<Vec<JsonValue>>,
     },
@@ -179,8 +177,6 @@ pub enum NormalizedStructuralGraph {
         premises: JsonValue,
         /// The fan-out analysis, uninterpreted.
         fan_out: JsonValue,
-        /// The churn analysis, uninterpreted.
-        churn: JsonValue,
         /// The change-impact analyses, or why there are none.
         change_impact: ChangeImpact,
     },

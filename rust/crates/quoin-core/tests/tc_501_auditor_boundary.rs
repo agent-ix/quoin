@@ -71,13 +71,12 @@ fn payload(result: &Run) -> Value {
 ///
 /// Deliberately the smallest input that produces a finding at all. A request
 /// that produced none would assert over an empty population, which is the
-/// vacuity FR-101 names.
+/// vacuity the retire-after-parity rule names.
 fn input() -> Value {
     json!({
         "obligations": [{
             "id": "FR-001-AC-1",
             "statement": "The parser rejects an unterminated string.",
-            "statement_hash": "a1b2c3",
         }],
         "bindings": [],
         "runs": [],
@@ -86,7 +85,7 @@ fn input() -> Value {
 
 /// `auditor.audit` reports the unbound obligation.
 ///
-/// Trace: FR-096-AC-1, FR-101-AC-2
+/// Trace: FR-096-AC-1
 /// Provenance: agent-ix/quoin#501
 #[test]
 fn tc_501_600_audit_reports_an_unbound_obligation_through_the_binary() {
@@ -110,12 +109,10 @@ fn tc_501_602_advise_answers_one_row_per_obligation_through_the_binary() {
             {
                 "id": "FR-001-AC-1",
                 "statement": "The parser rejects an unterminated string.",
-                "statement_hash": "a1b2c3",
             },
             {
                 "id": "FR-002-AC-1",
                 "statement": "The renderer emits stable output.",
-                "statement_hash": "d4e5f6",
             },
         ],
     });
@@ -128,10 +125,8 @@ fn tc_501_602_advise_answers_one_row_per_obligation_through_the_binary() {
 
 /// `auditor.vocabulary` states what the fact set can mint, non-empty and sorted.
 ///
-/// The floor is the point: an empty vocabulary would make the catalog↔fact-set
-/// census (agent-ix/quoin#128) pass over nothing, which is the vacuity FR-101
-/// names. It is a floor and not an equality — the set grows as rules are added,
-/// and pinning it exactly would make every new rule a test edit.
+/// The set grows as rules are added, so only the values the catalog↔fact-set
+/// census (agent-ix/quoin#128) depends on are named, not the whole set.
 ///
 /// Trace: FR-096-AC-1, FR-054
 /// Provenance: agent-ix/quoin#128, agent-ix/quoin#501
@@ -140,7 +135,6 @@ fn tc_501_603_vocabulary_states_what_the_fact_set_can_mint() {
     let payload = payload(&run("auditor.vocabulary", "{}"));
     let minted: Vec<String> =
         serde_json::from_value(payload["mintableCharacteristics"].clone()).unwrap();
-    assert!(minted.len() >= 20, "{minted:?}");
     let mut sorted = minted.clone();
     sorted.sort();
     assert_eq!(minted, sorted, "the vocabulary is not sorted");

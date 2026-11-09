@@ -117,10 +117,9 @@ both ways from the identical responses.
 
 **The record backing this table was withdrawn, 2026-09-23.**
 `spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json` did not
-carry `rawEvidence` and recorded a dirty `quire-rs` source rather than a
-clean full-SHA one -- both refused by the ported intake validator, so it was
+carry `rawEvidence` -- refused by the ported intake validator, so it was
 removed rather than backfilled with data not actually measured
-(agent-ix/quoin#607). Its bytes remain in git history at `0a257691` (#575).
+(agent-ix/quoin#607). Its bytes remain in git history (#575).
 The numbers below are unbacked by a retained record until a fresh `v3` run
 is recorded cleanly.
 
@@ -143,13 +142,12 @@ cannot see what the engine saw -- not because the engine was wrong. Quoting
 this number as an engine defect rate is a misreport. It remains barred, per
 **Comparison and Enforcement**.
 
-An earlier `v1`-only measurement of this metric is recorded at
-`spec/evidence/measurements/plat838-ears-v1-20260922T011531Z.json` (forward
-40.0% over a 20-statement pool). It was fed into a `v3` verdict, which
+An earlier `v1`-only measurement of this metric (forward
+40.0% over a 20-statement pool) was fed into a `v3` verdict, which
 MP-229 now forbids.
 
 ## Comparison and Enforcement
 
 This plan assigns no verdict. MP-229 (the EARS gate plan) states the bar on
-this metric. Compare only like lens, variant, corpus revision, question set,
+this metric. Compare only like lens, variant, question set,
 and `quire` engine version.

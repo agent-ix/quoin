@@ -26,7 +26,7 @@ protected_apparatus:
   - bench/tier1-mapping.json
 negative_controls:
   - kind: apparatus-edit
-    description: bench/metrics.json (which metrics are ratios and how each is counted) and bench/tier1-mapping.json (which payload fields feed them) are digested with every collection; an edit to either without a new definition version rejects
+    description: bench/metrics.json (which metrics are ratios and how each is counted) and bench/tier1-mapping.json (which payload fields feed them) are protected apparatus; an edit to either without a new definition version rejects
   - kind: suppressed-observation
     description: a completed producer's ratio metric that is left out of the run is a missing observation, and an incomplete producer is a refusal rather than a passing zero
 relationships: []
@@ -65,7 +65,7 @@ changed definition member takes a new version.
 ## Collection Procedure
 
 Use complete raw payloads and retain verified capabilities, tool and engine
-versions, declaration and corpus digests, configuration, and timestamp.
+versions, declaration and corpus, configuration, and timestamp.
 
 ## Environment and Sampling
 

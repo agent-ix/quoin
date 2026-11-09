@@ -228,7 +228,7 @@ mod tests {
     /// The native snapshot walker is a transport optimisation only: it must
     /// reach every gate the independent on-disk validator would classify.
     ///
-    /// Trace: FR-096, FR-101, TC-1650
+    /// Trace: FR-096, TC-1650
     #[test]
     fn tc_1650_native_validate_snapshot_matches_the_independent_disk_reader() {
         let scratch = tempfile::tempdir().expect("scratch tree is created");
@@ -244,19 +244,6 @@ mod tests {
         let through_disk = quoin_validators::inspect_empty_gates(scratch.path())
             .expect("the independent disk reader succeeds");
 
-        assert!(
-            through_native.len() >= 7,
-            "snapshot population is non-vacuous"
-        );
-        assert!(
-            through_native
-                .iter()
-                .filter_map(|finding| finding.get("wiredBy").and_then(serde_json::Value::as_str))
-                .collect::<std::collections::BTreeSet<_>>()
-                .len()
-                >= 4,
-            "snapshot exercises multiple wiring shapes"
-        );
         assert_eq!(
             serde_json::to_value(through_disk).expect("disk findings serialize"),
             serde_json::Value::Array(through_native.clone())

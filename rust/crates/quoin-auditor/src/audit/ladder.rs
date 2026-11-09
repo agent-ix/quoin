@@ -3,9 +3,9 @@
 
 //! One obligation's pass down the check ladder.
 //!
-//! The ladder is **one finding per obligation**, in a fixed order, with two
-//! exceptions the retained source makes deliberately: the pre-guard
-//! `unknown-method` check and the head-commit staleness check do not stop it.
+//! The ladder is **one finding per obligation**, in a fixed order, with one
+//! exception the retained source makes deliberately: the pre-guard
+//! `unknown-method` check does not stop it.
 //! An unbound obligation with an uncatalogued method is BOTH undischarged AND
 //! unknown-method, and hiding either behind the other cost a reader the
 //! ability to see both facts (agent-ix/quoin#165).
@@ -28,28 +28,12 @@ use super::input::AuditInput;
 use super::method::{method_conformance, unknown_method_finding};
 use super::mocks::{mocked_bindings, mocked_finding};
 use super::scores::{multiplicity_finding, mutation_finding};
-use super::stale::{behind_head, failed_run, unrecorded_evidence};
+use super::stale::{failed_run, unrecorded_evidence};
 use super::{Indexed, Pass, is_insufficient};
 use crate::error::AuditorError;
 
 /// One binding and the run that records its suite.
 pub(super) type Paired<'a> = (&'a Binding, &'a RunRecord);
-
-/// `String.prototype.slice(0, n)` — the first `n` UTF-16 code units.
-///
-/// Every value this is applied to is a hex digest, so it never splits a
-/// surrogate pair in practice; it counts code units anyway, because "in
-/// practice" is how a port acquires a divergence nobody declared.
-pub(super) fn slice_utf16(text: &str, units: usize) -> &str {
-    let mut taken = 0usize;
-    for (at, character) in text.char_indices() {
-        if taken >= units {
-            return text.get(..at).unwrap_or(text);
-        }
-        taken += character.len_utf16();
-    }
-    text
-}
 
 /// `list.join(", ")` over suite names.
 pub(super) fn join_suites(bindings: &[&&Binding]) -> String {
@@ -86,10 +70,6 @@ pub(super) fn run(
 
     if bindings.is_empty() {
         pass.findings.push(undischarged(obligation));
-        return Ok(pass);
-    }
-    if let Some(finding) = suspect_link(obligation, bindings) {
-        pass.findings.push(finding);
         return Ok(pass);
     }
     if let Some(finding) = unrecorded_evidence(indexed, obligation, bindings) {
@@ -160,11 +140,6 @@ pub(super) fn run(
 
     // Does NOT stop the ladder: an older run is a fact about freshness, and the
     // checks below are facts about content.
-    if let Some(head) = input.head_commit.as_deref().filter(|head| !head.is_empty())
-        && let Some(finding) = behind_head(obligation, &paired, head)
-    {
-        pass.findings.push(finding);
-    }
     if let Some(finding) = vacuous_run(obligation, &paired) {
         pass.findings.push(finding);
         return Ok(pass);
@@ -201,35 +176,6 @@ fn undischarged(obligation: &Obligation) -> Finding {
         Severity::medium(),
         format!("no evidence is bound to {}", obligation.id),
     )
-}
-
-/// ── 1. Suspect link ──
-///
-/// Reported when ANY binding predates the current statement. A sibling suite
-/// that re-bound after the reword does not absolve the one that did not: that
-/// binding still claims to discharge a statement it never saw.
-fn suspect_link(obligation: &Obligation, bindings: &[&Binding]) -> Option<Finding> {
-    let suspect: Vec<&&Binding> = bindings
-        .iter()
-        .filter(|binding| binding.statement_hash_at_binding.as_str() != obligation.statement_hash)
-        .collect();
-    let first = suspect.first()?;
-    Some(Finding::new(
-        FindingKind::SUSPECT_LINK,
-        &obligation.id,
-        // The highest-value single finding in the traceability design: the
-        // requirement moved and the evidence did not follow, while the matrix
-        // still reads as covered.
-        Severity::high(),
-        format!(
-            "{id} was reworded after its evidence was bound in {suites} (bound against \
-             {was}\u{2026}, now {now}\u{2026}). Re-affirm or re-verify.",
-            id = obligation.id,
-            suites = join_suites(&suspect),
-            was = slice_utf16(first.statement_hash_at_binding.as_str(), 12),
-            now = slice_utf16(&obligation.statement_hash, 12)
-        ),
-    ))
 }
 
 /// Run-backed suites with no current mock inspection.

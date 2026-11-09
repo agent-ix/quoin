@@ -112,7 +112,7 @@ mod tests {
         ];
         let result = tway_coverage(&space, &full).unwrap();
         assert_eq!((result.demanded, result.covered), (4, 4));
-        assert!(result.gaps.is_empty());
+        assert_eq!(result.gaps.len(), 0);
 
         let empty = tway_coverage(&space, &[]).unwrap();
         assert_eq!((empty.demanded, empty.covered), (4, 0));

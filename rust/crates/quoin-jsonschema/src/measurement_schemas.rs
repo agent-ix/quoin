@@ -5,27 +5,10 @@
 //!
 //! # Two documents
 //!
-//! | schema | retained source (deleted in quoin#479) | how it got here |
-//! |---|---|---|
-//! | [`MeasurementSchema::OperationalEvidenceV1`] | `src/measurement/schemas/operational-evidence-v1.schema.json` | copied byte-for-byte |
-//! | [`MeasurementSchema::InterventionExperimentV1`] | `src/measurement/intervention-schema.ts` | captured, then two recorded deltas |
-//!
-//! The retained TypeScript no longer exists: quoin#479 deleted `src/measurement/`
-//! after this port took over its routes. Both documents are therefore measured
-//! against **committed captures** under `tests/goldens/`. FR-101-AC-5 forbids a live non-Rust runtime oracle
-//! after cutover; a committed byte sequence is not one.
-//!
-//! The operational schema was already a JSON document, so it is carried over
-//! verbatim and `tests/tc_470_measurement_schemas.rs` fails if the committed
-//! document and the capture ever disagree.
-//!
-//! The intervention schema was not a document at all: `intervention-schema.ts`
-//! was a *program* that built an object out of shared fragments. It was run
-//! once, serialized with the repository's own `canonicalJson`, and the capture
-//! is committed beside the retained document as
-//! `tests/goldens/intervention-experiment-v1.captured.json`. The retained document then differs from that capture by **exactly
-//! two deltas**, both rulings recorded in `DIVERGENCE.md`, and the test
-//! enumerates the difference set rather than asserting that one exists.
+//! | schema | document |
+//! |---|---|
+//! | [`MeasurementSchema::OperationalEvidenceV1`] | `schemas/operational-evidence-v1.schema.json` |
+//! | [`MeasurementSchema::InterventionExperimentV1`] | `schemas/intervention-experiment-v1.schema.json` |
 //!
 //! # Nothing here reads the filesystem
 //!
@@ -204,7 +187,7 @@ impl MeasurementValidator {
 
 /// A document that satisfied the schema named inside it.
 ///
-/// Modelled on `quoin_store::RawFileSha256Digest::parse_stored`: holding the
+/// Parse, don't validate: holding the
 /// value *is* the proof, so it is constructed here and nowhere else.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValidDocument {

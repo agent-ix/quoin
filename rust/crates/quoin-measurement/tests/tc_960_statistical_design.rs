@@ -59,7 +59,7 @@ fn plan_document(extra: &str) -> String {
          \x20\x20- spec/assurance/MP-900.md\n\
          negative_controls:\n\
          \x20\x20- kind: apparatus-edit\n\
-         \x20\x20\x20\x20description: the plan document is digested with every collection\n\
+         \x20\x20\x20\x20description: the plan document defines the measurement\n\
          {extra}\
          ---\n\
          \n\
@@ -138,44 +138,31 @@ fn collection(observations: &[Value]) -> Value {
         "scope": { "cases": 1 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
-        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": "2026-09-22T00:00:00.000Z",
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
-            "lockDigest": format!("sha256:{}", "1".repeat(64)),
-            "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
-            "toolchains": { "node": "22.15.0", "rust": "0.0.0", "python": "3.10.12" },
-            "sources": {
-                "fixture": {
-                    "revision": "a".repeat(40),
-                    "sourceState": "clean",
-                    "remote": "https://example.invalid/fixture",
-                },
-            },
             "capabilities": ["fixture.capability"],
-            "artifacts": { "config": format!("sha256:{}", "3".repeat(64)) },
+            "artifacts": ["config"],
         },
         "observations": observations,
         "rawEvidence": { "payload": [1, 2] },
     })
 }
 
-/// Write `candidate` into `root`, declaring the protected plan document at
-/// its digest as `verificationStack.artifacts` must (PLAT-975).
+/// Write `candidate` into `root`, declaring the protected plan document by
+/// name in `verificationStack.artifacts`.
 fn write_collection(
     root: &Path,
     candidate: &Value,
 ) -> Result<std::path::PathBuf, quoin_measurement::MeasurementError> {
     let path = "spec/assurance/MP-900.md";
     let mut candidate = candidate.clone();
-    candidate["verificationStack"]["artifacts"][path] = json!(
-        quoin_store::digest_file_sha256(&root.join(path))
-            .expect("the plan is digestible")
-            .to_stored()
-    );
+    candidate["verificationStack"]["artifacts"]
+        .as_array_mut()
+        .expect("the artifact list")
+        .push(json!(path));
     write_measurement_collection(
         root,
         &from_serde(&candidate).expect("the candidate crosses"),
@@ -217,7 +204,7 @@ fn tc_960_001_a_population_below_the_minimum_is_refused_with_its_own_code() {
         refusal.findings(),
         [
             "QM-POPULATION-BELOW-MINIMUM: metric `quality.gate` examined 9 but plan MP-900 \
-             requires a population of at least 10"
+             requires a population of at least 10 (at observations[0].population.examined)"
         ]
     );
 }
@@ -258,7 +245,8 @@ fn tc_960_003_a_measured_observation_with_no_population_is_refused_under_a_minim
         refusal.findings(),
         [
             "QM-POPULATION-UNSTATED: metric `quality.gate` states no population.examined; \
-             plan MP-900 requires a population of at least 10"
+             plan MP-900 requires a population of at least 10 (at \
+             observations[0].population.examined)"
         ]
     );
 
@@ -300,13 +288,15 @@ fn tc_960_004_population_findings_accumulate_with_every_other_finding() {
         refusal.findings(),
         [
             "QM-POPULATION-BELOW-MINIMUM: metric `quality.gate` examined 2 but plan MP-900 \
-             requires a population of at least 10",
+             requires a population of at least 10 (at observations[0].population.examined)",
             "QM-POPULATION-BELOW-MINIMUM: metric `quality.gate [variant=b]` examined 3 but \
-             plan MP-900 requires a population of at least 10",
+             plan MP-900 requires a population of at least 10 (at \
+             observations[1].population.examined)",
             "QM-POPULATION-UNSTATED: metric `quality.gate [variant=c]` states no \
-             population.examined; plan MP-900 requires a population of at least 10",
+             population.examined; plan MP-900 requires a population of at least 10 (at \
+             observations[2].population.examined)",
             "metric `quality.unplanned` has no MeasurementPlan under spec/assurance or \
-             assurance; record refused",
+             assurance; record refused (at observations[3])",
         ]
     );
 }
@@ -500,7 +490,7 @@ fn tc_960_009_repetitions_short_of_the_plan_are_refused_with_their_own_code() {
     assert_eq!(
         refusal.findings(),
         [
-            "QM-REPETITIONS-SHORT: metric `quality.gate` ran 2 repetitions but plan MP-900 requires 3"
+            "QM-REPETITIONS-SHORT: metric `quality.gate` ran 2 repetitions but plan MP-900 requires 3 (at observations[0].population.repetitions)"
         ]
     );
 }
@@ -545,7 +535,7 @@ fn tc_960_011_unstated_repetitions_under_a_plan_of_more_than_one_are_refused() {
         refusal.findings(),
         [
             "QM-POPULATION-UNSTATED: metric `quality.gate` states no population.repetitions; \
-             plan MP-900 requires 3 repetitions"
+             plan MP-900 requires 3 repetitions (at observations[0].population.repetitions)"
         ]
     );
 
@@ -642,7 +632,8 @@ fn tc_960_014_a_malformed_repetition_count_is_refused_whatever_the_plan() {
                 refusal.findings(),
                 [format!(
                     "QM-POPULATION-MALFORMED: metric `quality.gate` states \
-                     population.repetitions {spelled}; it must be a whole number of at least 1"
+                     population.repetitions {spelled}; it must be a whole number of at least 1 \
+                     (at observations[0].population.repetitions)"
                 )],
                 "{document}"
             );
@@ -670,7 +661,8 @@ fn tc_960_015_a_malformed_examined_count_is_refused_under_a_minimum() {
             refusal.findings(),
             [format!(
                 "QM-POPULATION-MALFORMED: metric `quality.gate` states population.examined \
-                 {spelled}; it must be a whole number of at least 0"
+                 {spelled}; it must be a whole number of at least 0 (at \
+                 observations[0].population.examined)"
             )]
         );
     }
@@ -750,9 +742,9 @@ fn tc_960_018_population_findings_of_different_kinds_are_collection_invalid() {
         refusal.findings(),
         [
             "QM-POPULATION-BELOW-MINIMUM: metric `quality.gate` examined 2 but plan MP-900 \
-             requires a population of at least 10",
+             requires a population of at least 10 (at observations[0].population.examined)",
             "QM-REPETITIONS-SHORT: metric `quality.gate` ran 1 repetitions but plan MP-900 \
-             requires 3",
+             requires 3 (at observations[0].population.repetitions)",
         ]
     );
 }

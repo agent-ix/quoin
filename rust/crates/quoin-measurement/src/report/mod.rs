@@ -11,7 +11,6 @@
 //! | `report.ts:105-200` | [`render`] |
 //! | `report.ts:202-204` | [`render_json`] |
 //! | `report.ts:206-221` | [`series`] |
-//! | `report.ts:223-330` | [`comparison`] |
 //! | — (PLAT-958, no retained counterpart) | [`verdict`], [`vanished`] |
 //!
 //! # Why the renderers return a `Result`
@@ -32,8 +31,9 @@
 //! `tc_468_boundary` asserts over this crate's sources that it stayed that way.
 
 pub mod build;
-pub mod comparison;
 mod gate;
+pub(crate) mod inconclusive;
+mod quantity;
 pub mod render;
 pub mod render_json;
 pub mod series;
@@ -46,10 +46,6 @@ pub mod wire;
 pub use build::{
     CollectionSummary, CurrentRow, MeasurementReport, build_measurement_report,
     build_measurement_report_from,
-};
-pub use comparison::{
-    MeasurementCollectionReference, MeasurementComparisonReport, MeasurementComparisonStatus,
-    comparison_for, render_measurement_comparison, render_measurement_comparison_json,
 };
 pub use render::render_measurement_report;
 pub use render_json::render_measurement_report_json;

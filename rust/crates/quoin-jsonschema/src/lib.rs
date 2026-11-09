@@ -39,7 +39,7 @@
 //! # Verdicts are contractual, error text is not
 //!
 //! ajv and `jsonschema` agree on whether a document satisfies a schema, and
-//! that agreement is measured on a named corpus in `tests/tc_470_parity.rs`.
+//! that agreement is not recorded as a golden.
 //! They do not agree on message wording, on how many errors one refusal
 //! produces, or on the order they arrive in; the three reshapings that close
 //! the gap are documented in [`validator`] and in `DIVERGENCE.md`.

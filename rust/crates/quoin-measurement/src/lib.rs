@@ -72,6 +72,7 @@
 //!   question no `MeasurementSource` can be asked. Its module states the
 //!   argument; the probe is three `std::fs` calls and no reader.
 
+mod all_variants;
 pub mod campaign;
 pub mod common;
 pub mod compare;
@@ -115,11 +116,10 @@ pub use raw_evidence::{
     verify_raw_evidence_references,
 };
 pub use report::{
-    MeasurementComparisonReport, MeasurementReport, build_measurement_report, comparison_for,
-    render_measurement_comparison, render_measurement_comparison_json, render_measurement_report,
+    MeasurementReport, build_measurement_report, render_measurement_report,
     render_measurement_report_json, render_series_json, series_for,
 };
-pub use source::{DiskMeasurement, MeasurementSource, MemoryMeasurement, RawEvidenceFile};
+pub use source::{DiskMeasurement, MeasurementSource, MemoryMeasurement};
 pub use store::{
     MeasurementCollectionReadResult, intervention_path, interventions_root, measurement_path,
     measurements_root, read_measurement_collection_results, read_measurement_collections,

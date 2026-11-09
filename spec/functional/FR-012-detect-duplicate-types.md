@@ -43,10 +43,10 @@ exist.
 
 | ID          | Criteria                                                                                    | Verification           |
 | ----------- | ------------------------------------------------------------------------------------------- | ---------------------- |
-| FR-012-AC-1 | A type declared by two modules is reported as a duplicate with the declaring modules sorted | Test (catalog.test.ts) |
-| FR-012-AC-2 | A catalog with unique type names reports no duplicates                                      | Test (catalog.test.ts) |
-| FR-012-AC-3 | `catalog validate` reports the module count when clean (text and JSON)                      | Test (cli.test.ts)     |
-| FR-012-AC-4 | `catalog validate` emits `{ok:false,duplicates}` on stderr and exits non-zero on conflict   | Test (cli.test.ts)     |
+| FR-012-AC-1 | A type declared by two modules is reported as a duplicate with the declaring modules sorted | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-012-AC-2 | A catalog with unique type names reports no duplicates                                      | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-012-AC-3 | `catalog validate` reports the module count when clean (text and JSON)                      | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-012-AC-4 | `catalog validate` emits `{ok:false,duplicates}` on stderr and exits non-zero on conflict   | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

@@ -13,11 +13,11 @@ Negative/mismatch and custom-order variants are constructed explicitly in tests.
 row from the native IR runner.
 This candidate validates coverage-token-to-criterion ownership before execution;
 the sample names FR-011-AC-3 and FR-018-AC-1, not operation-wide Test Case aliases.
-The two matching requirement documents in `contract-ir-criteria/` are copied
-verbatim from the upstream corpus (MIT OR Apache-2.0 upstream). TC-1587 uses real Quire
-coverage over those documents and the actual evidence command/store to verify
-exact direct bindings, with no sibling Test Case fanout. Candidate integration
-is demonstrated; final producer acceptance and release qualification remain open.
+The requirement documents it names (`FR-011-AC-3`, `FR-018-AC-1`) are owned by
+`agent-ix/quire-contract-ir`; quoin keeps no copy of them. TC-1587 is unbacked until
+a native test reads them from that repository.
+Candidate integration is demonstrated; final producer acceptance and release
+qualification remain open.
 
 `cargo-audit-real.json` is **real output**, captured with
 `cargo audit --json` in `agent-ix/quire-rs`. It is not

@@ -32,7 +32,7 @@ expected refusal signal. An absent span without that reason is an
 ## Collection Procedure
 
 Retain expected and observed reasons, raw producer payload, producer version,
-named misses, source revision, and timestamp.
+named misses, and timestamp.
 
 ## Environment and Sampling
 

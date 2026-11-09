@@ -8,7 +8,8 @@ description: "{{ cookiecutter.description }}"
 # `legacy_forms` is promoted from `warning` to `error`.
 semantic:
   contract_version: 1.0.0
-  semantic_core: {{ cookiecutter.semantic_core_version }}
+  # BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream module-manifest schema requires `semantic_core` to be present and to match `^[0-9]+\.[0-9]+\.[0-9]+$`; nothing reads the value.
+  semantic_core: 0.0.0
   package: {{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
   exports:
 {%- if cookiecutter.module_kind in ("object", "mixed") %}

@@ -107,7 +107,7 @@ this SKILL.md. Before advancing, add exactly one `quoin_context` item with
 
 Alternatively `quoin to-plan --path <this-skill-directory> --id <run-id>
 --target <repo-relative-path> --json` starts the same definition and initializes
-the context. Require Quoin >=0.29.0 and ix-flow >=0.3.0 on PATH. Use the same
+the context. Require Quoin >=0.29.1 and ix-flow >=0.3.1 on PATH. Use the same
 --config-root and --state-dir on subsequent commands. Follow the
 [workflow instructions](references/workflow.md) for interview fields, artifact
 validation and explicit human acceptance. Existing external-provider runs are

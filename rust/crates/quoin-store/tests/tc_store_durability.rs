@@ -20,8 +20,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use quoin_store::parse_strict_json;
 use quoin_store::store::{
-    recover_orphaned_temporaries, store_root, write_atomic, write_canonical,
-    write_content_addressed,
+    Content, Published, StorePath, publish, recover_orphaned_temporaries, store_root,
 };
 
 fn scratch(name: &str) -> PathBuf {
@@ -65,7 +64,11 @@ fn tc_380_an_interrupted_write_leaves_no_torn_record_and_no_orphaned_temporary()
     let record = records.join("record.json");
 
     let complete = br#"{"schemaVersion":1,"value":"first"}"#;
-    write_atomic(&record, complete).unwrap();
+    publish(
+        &StorePath::Named(record.clone()),
+        Content::Artifact(complete),
+    )
+    .unwrap();
 
     // Exactly what a killed process leaves: a dot-prefixed sibling holding a
     // prefix of the bytes that were never renamed into place.
@@ -89,7 +92,7 @@ fn tc_380_an_interrupted_write_leaves_no_torn_record_and_no_orphaned_temporary()
 
     // The next run recovers the orphan, and recovery is idempotent.
     assert_eq!(recover_orphaned_temporaries(&records).unwrap(), 1);
-    assert!(temporaries_in(&records).is_empty());
+    assert_eq!(temporaries_in(&records).len(), 0);
     assert_eq!(recover_orphaned_temporaries(&records).unwrap(), 0);
     assert_eq!(std::fs::read(&record).unwrap(), complete);
 
@@ -114,7 +117,7 @@ fn tc_380_a_reader_racing_a_writer_never_observes_a_torn_record() {
 
     let short = br#"{"schemaVersion":1,"value":"a"}"#.to_vec();
     let long = format!(r#"{{"schemaVersion":1,"value":"{}"}}"#, "b".repeat(200_000)).into_bytes();
-    write_atomic(&record, &short).unwrap();
+    publish(&StorePath::Named(record.clone()), Content::Artifact(&short)).unwrap();
 
     let stop = Arc::new(AtomicBool::new(false));
     let reads = Arc::new(AtomicUsize::new(0));
@@ -142,13 +145,13 @@ fn tc_380_a_reader_racing_a_writer_never_observes_a_torn_record() {
 
     for round in 0..200 {
         let bytes = if round % 2 == 0 { &long } else { &short };
-        write_atomic(&record, bytes).unwrap();
+        publish(&StorePath::Named(record.clone()), Content::Artifact(bytes)).unwrap();
     }
     stop.store(true, Ordering::Relaxed);
     reader.join().expect("the reader saw only complete records");
 
     assert!(reads.load(Ordering::Relaxed) > 0, "the reader never ran");
-    assert!(temporaries_in(&records).is_empty());
+    assert_eq!(temporaries_in(&records).len(), 0);
     std::fs::remove_dir_all(&scratch).ok();
 }
 
@@ -173,7 +176,11 @@ fn tc_380_concurrent_writes_to_one_store_root_keep_every_completed_record() {
                     r#"{{"schemaVersion":1,"writer":{writer},"index":{index}}}"#
                 ))
                 .unwrap();
-                write_canonical(&root.join(format!("r-{writer}-{index}.json")), &value).unwrap();
+                publish(
+                    &StorePath::Named(root.join(format!("r-{writer}-{index}.json"))),
+                    Content::Record(&value),
+                )
+                .unwrap();
             }
         }));
     }
@@ -197,7 +204,7 @@ fn tc_380_concurrent_writes_to_one_store_root_keep_every_completed_record() {
             parse_strict_json(&bytes).expect("every completed record parses");
         }
     }
-    assert!(temporaries_in(&root).is_empty());
+    assert_eq!(temporaries_in(&root).len(), 0);
     std::fs::remove_dir_all(&scratch).ok();
 }
 
@@ -223,13 +230,16 @@ fn tc_380_concurrent_content_addressed_writers_refuse_rather_than_clobber() {
         let matched = Arc::clone(&matched);
         handles.push(std::thread::spawn(move || {
             let bytes = vec![u8::try_from(writer).unwrap(); 4096];
-            match write_content_addressed(&path, &bytes) {
-                Ok(true) => written.fetch_add(1, Ordering::Relaxed),
-                // `Ok(false)` means "already present with exactly these
+            match publish(
+                &StorePath::ContentAddressed(path),
+                Content::Artifact(&bytes),
+            ) {
+                Ok(Published::Written) => written.fetch_add(1, Ordering::Relaxed),
+                // `AlreadyPresent` means "already present with exactly these
                 // bytes", which cannot happen when every writer's bytes
                 // differ. Counted rather than panicked so the assertion is
                 // reported by the test thread, not lost in a worker.
-                Ok(false) => matched.fetch_add(1, Ordering::Relaxed),
+                Ok(Published::AlreadyPresent) => matched.fetch_add(1, Ordering::Relaxed),
                 Err(_) => refused.fetch_add(1, Ordering::Relaxed),
             };
         }));
@@ -251,6 +261,6 @@ fn tc_380_concurrent_content_addressed_writers_refuse_rather_than_clobber() {
         bytes.iter().all(|byte| *byte == bytes[0]),
         "the published bytes are one writer's, not a mixture"
     );
-    assert!(temporaries_in(&root).is_empty());
+    assert_eq!(temporaries_in(&root).len(), 0);
     std::fs::remove_dir_all(&scratch).ok();
 }

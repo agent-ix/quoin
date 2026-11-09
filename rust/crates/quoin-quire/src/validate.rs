@@ -59,6 +59,13 @@ pub struct Request {
     pub modules: ModuleSelection,
     /// The documents in this batch.
     pub documents: Vec<PathBuf>,
+    /// The bundle the documents belong to, as `<org>/<repo>` (quire-rs FR-076).
+    ///
+    /// `## Relationships` targets qualify under this package and never under
+    /// the module's own. `None` is a repository whose identity is not known:
+    /// the engine then reports the table `unavailable` (`no-bundle-package`)
+    /// rather than qualifying it under a guessed package.
+    pub bundle_package: Option<String>,
 }
 
 /// How one document came out.
@@ -96,6 +103,7 @@ pub enum Reason {
     Empty,
     Placeholder,
     Assert,
+    Regex,
     Frontmatter,
     DuplicateHeading,
     UnresolvedField,
@@ -114,6 +122,7 @@ impl From<quire_rs::ValidationReason> for Reason {
             quire_rs::ValidationReason::Empty => Self::Empty,
             quire_rs::ValidationReason::Placeholder => Self::Placeholder,
             quire_rs::ValidationReason::Assert => Self::Assert,
+            quire_rs::ValidationReason::Regex => Self::Regex,
             quire_rs::ValidationReason::Frontmatter => Self::Frontmatter,
             quire_rs::ValidationReason::DuplicateHeading => Self::DuplicateHeading,
             quire_rs::ValidationReason::UnresolvedField => Self::UnresolvedField,
@@ -226,7 +235,12 @@ pub fn run(request: &Request) -> Result<Outcome> {
             continue;
         };
 
-        let result = quire_rs::validate_document_in_registry(&registry, archetype, &text);
+        let result = match request.bundle_package.as_deref() {
+            Some(package) => {
+                quire_rs::validate_document_in_bundle(&registry, archetype, &text, package, None)
+            }
+            None => quire_rs::validate_document_in_registry(&registry, archetype, &text),
+        };
         let mut diagnostics: Vec<Diagnostic> = result
             .errors
             .iter()
@@ -295,7 +309,6 @@ fn archetype_of(text: &str) -> Option<String> {
 mod tests {
     use super::*;
 
-    /// Trace: FR-097
     #[test]
     fn tc_379_070_reason_labels_are_the_engines_labels() {
         let reasons = [
@@ -303,6 +316,7 @@ mod tests {
             quire_rs::ValidationReason::Empty,
             quire_rs::ValidationReason::Placeholder,
             quire_rs::ValidationReason::Assert,
+            quire_rs::ValidationReason::Regex,
             quire_rs::ValidationReason::Frontmatter,
             quire_rs::ValidationReason::DuplicateHeading,
             quire_rs::ValidationReason::UnresolvedField,

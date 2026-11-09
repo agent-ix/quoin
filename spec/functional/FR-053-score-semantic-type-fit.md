@@ -5,7 +5,7 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/US-014"
     type: "traces_to"
-  - target: "ix://agent-ix/quoin/FR-046"
+  - target: "ix://agent-ix/quoin/FR-117"
     type: "references"
   - target: "ix://agent-ix/quoin/FR-052"
     type: "depends_on"
@@ -55,5 +55,5 @@ and a representation-specific artifact that mixes definitions with accumulated e
 ## Dependencies
 
 - **Upstream**: [FR-052](./FR-052-inventory-default-module-corpus.md)
-- **Architecture**: [FR-046](./FR-046-record-semantic-data-planes.md) through
+- **Architecture**: [FR-117](./FR-117-record-semantic-data-planes.md) through
   [FR-050](./FR-050-reconcile-quire-decisions.md)

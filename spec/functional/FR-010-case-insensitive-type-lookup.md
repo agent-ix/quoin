@@ -34,8 +34,8 @@ such as `FR` and `fr` resolve to the same catalog entry.
 
 | ID          | Criteria                                                        | Verification         |
 | ----------- | --------------------------------------------------------------- | -------------------- |
-| FR-010-AC-1 | `FR` and `fr` resolve to the same artifact entry                | Test (index.test.ts) |
-| FR-010-AC-2 | A mixed-case request such as `DOMAIN` resolves the object entry | Test (index.test.ts) |
+| FR-010-AC-1 | `FR` and `fr` resolve to the same artifact entry                | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-010-AC-2 | A mixed-case request such as `DOMAIN` resolves the object entry | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

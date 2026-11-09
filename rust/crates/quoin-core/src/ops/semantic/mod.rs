@@ -119,7 +119,6 @@ pub fn sweep_corpus(
     for root in &request.roots {
         check_bound(op, "roots.root", &root.root, MAX_SCALAR_BYTES)?;
         check_bound(op, "roots.repository", &root.repository, MAX_SCALAR_BYTES)?;
-        check_bound(op, "roots.revision", &root.revision, MAX_SCALAR_BYTES)?;
     }
 
     let roots: Vec<CorpusRoot> = request
@@ -128,7 +127,6 @@ pub fn sweep_corpus(
         .map(|root| CorpusRoot {
             root: PathBuf::from(&root.root),
             repository: root.repository.clone(),
-            revision: root.revision.clone(),
         })
         .collect();
     let identity = SweepIdentity {

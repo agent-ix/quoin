@@ -3,16 +3,27 @@
 //! One bounded producer invocation and exact selected inputs.
 
 use super::CampaignCancellation;
+use super::Retained;
 use super::domain::complete_attempt;
 use super::{
-    BTreeMap, BTreeSet, BindingFailure, CampaignAttempt, CampaignAttemptStatus, CampaignDefinition,
-    CampaignRawArtifact, CampaignRunError, ContentDigest, EnvironmentSource, InputBinding,
-    InputSource, MeasurementPlan, MeasurementProcedure, Path, ProcessEvidenceAdapter,
+    AttemptEvidence, BTreeMap, BTreeSet, BindingFailure, CampaignAttempt, CampaignAttemptStatus,
+    CampaignDefinition, CampaignRawArtifact, CampaignRunError, InputBinding, InputSource,
+    MeasurementPlan, MeasurementProcedure, Path, ProcessEvidenceAdapter,
     ProcessEvidenceObservation, ProducerExecutionResult, ProducerExecutionState, ProducerExecutor,
-    Read, RunMemberBindings, SourceTreeBinding, VerifiedSource, read_bounded, read_digest_bytes,
-    resolve_procedure, retain_bytes, retain_value,
+    Read, RunMemberBindings, SourceTreeBinding, VerifiedSource, encode_value, read_bounded,
+    resolve_procedure,
 };
 use crate::campaign::input_origin::selected_declarations;
+
+fn unretained(attempt: CampaignAttempt) -> Retained {
+    Retained {
+        attempt,
+        request: Vec::new(),
+        result: Vec::new(),
+        artifacts: Vec::new(),
+        evidence: AttemptEvidence::Inconclusive,
+    }
+}
 
 #[allow(
     clippy::too_many_arguments,
@@ -22,7 +33,6 @@ use crate::campaign::input_origin::selected_declarations;
 pub(super) fn run_member(
     repo: &Path,
     definition: &CampaignDefinition,
-    definition_digest: &str,
     run_id: &str,
     member: &engineering_assurance::campaign::CampaignMember,
     plan: &MeasurementPlan,
@@ -31,31 +41,24 @@ pub(super) fn run_member(
     source: &VerifiedSource,
     plan_source: &VerifiedSource,
     sources: &BTreeMap<String, VerifiedSource>,
-    prior: &[CampaignAttempt],
+    prior: &[Retained],
     executor: &ProducerExecutor,
     cancellation: &CampaignCancellation,
     index: i64,
-) -> Result<CampaignAttempt, CampaignRunError> {
+) -> Result<Retained, CampaignRunError> {
     let mut attempt = CampaignAttempt {
-        checker_request_digest: None,
-        checker_result_digest: None,
-        collection_digest: None,
         collection_id: None,
-        domain_verdict_digest: None,
         index,
         member: member.name.clone(),
         raw_artifacts: None,
         reason: None,
-        request_digest: None,
-        result_digest: None,
         status: CampaignAttemptStatus::InvalidRequest,
-        verdict_digest: None,
     };
-    let inputs = match select_inputs(repo, member, runtime, source, sources, prior) {
+    let inputs = match select_inputs(member, runtime, source, sources, prior) {
         Ok(inputs) => inputs,
         Err(CampaignRunError::Binding(_)) => {
             attempt.reason = Some("invalid_input_binding".to_owned());
-            return Ok(attempt);
+            return Ok(unretained(attempt));
         }
         Err(error) => return Err(error),
     };
@@ -67,32 +70,11 @@ pub(super) fn run_member(
         repository: source.repository.clone(),
         manifest: source.manifest.clone(),
     });
-    for (name, selected) in &runtime.environment_sources {
-        if !bindings.environment.contains_key(name) {
-            attempt.reason = Some("undeclared_source_environment".to_owned());
-            return Ok(attempt);
-        }
-        let value = match selected {
-            EnvironmentSource::SourceRevision(repository) => {
-                let Some(source) = definition
-                    .source_graph
-                    .iter()
-                    .find(|entry| entry.repository == *repository)
-                else {
-                    attempt.reason = Some("environment_source_missing".to_owned());
-                    return Ok(attempt);
-                };
-                source.revision.clone()
-            }
-            EnvironmentSource::CleanSourceState => "clean".to_owned(),
-        };
-        bindings.environment.insert(name.clone(), value);
-    }
     let resolved = match resolve_procedure(procedure, &definition.source_graph, bindings) {
         Ok(resolved) => resolved,
         Err(_error) => {
             attempt.reason = Some("invalid_request".to_owned());
-            return Ok(attempt);
+            return Ok(unretained(attempt));
         }
     };
     let adapter = ProcessEvidenceAdapter::new(
@@ -100,16 +82,9 @@ pub(super) fn run_member(
         resolved.request.response.adapter.clone(),
     )
     .map_err(|error| CampaignRunError::binding(error.to_string()))?;
-    let request_digest = resolved.identity.digest.as_str().to_owned();
     let request_value = serde_json::to_value(&resolved.request)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
-    let (stored_request, _) = retain_value(repo, "requests", &request_value)?;
-    if stored_request != request_digest {
-        return Err(CampaignRunError::identity(
-            "EA request JCS identity".to_owned(),
-        ));
-    }
-    attempt.request_digest = Some(request_digest);
+    let request_bytes = encode_value(repo, &request_value)?;
     let executed = {
         let active = cancellation.register(resolved.request.cancellation.clone());
         executor.execute(&resolved.request, active.token(), &adapter)
@@ -118,66 +93,57 @@ pub(super) fn run_member(
         Ok(result) => result,
         Err(_error) => {
             attempt.reason = Some("invalid_request".to_owned());
-            return Ok(attempt);
+            return Ok(unretained(attempt));
         }
     };
-    let result_digest = result
-        .identity()
-        .map_err(|error| CampaignRunError::encoding(error.to_string()))?
-        .digest
-        .as_str()
-        .to_owned();
     let result_value = serde_json::to_value(&result)
         .map_err(|error| CampaignRunError::encoding(error.to_string()))?;
-    let (stored_result, _) = retain_value(repo, "results", &result_value)?;
-    if stored_result != result_digest {
-        return Err(CampaignRunError::identity(
-            "EA result JCS identity".to_owned(),
-        ));
-    }
-    let artifacts = retain_artifacts(repo, &result)?;
-    let status = status_of(&result.state);
+    let result_bytes = encode_value(repo, &result_value)?;
+    let (artifacts, artifact_bytes) = retain_artifacts(&result)?;
     attempt.raw_artifacts = Some(artifacts);
-    attempt.result_digest = Some(result_digest);
-    attempt.status = status;
-    if attempt.status == CampaignAttemptStatus::Completed
+    attempt.status = status_of(&result.state);
+    let mut retained = Retained {
+        attempt,
+        request: request_bytes,
+        result: result_bytes,
+        artifacts: artifact_bytes,
+        evidence: AttemptEvidence::Inconclusive,
+    };
+    if retained.attempt.status == CampaignAttemptStatus::Completed
         && let Err(error) = complete_attempt(
             repo,
             definition,
-            definition_digest,
             run_id,
             member,
             plan,
             runtime,
             procedure,
-            source,
             plan_source,
             sources,
             prior,
             executor,
             cancellation,
             &result,
-            &mut attempt,
+            &mut retained,
         )
     {
         match error {
             CampaignRunError::Measurement(_)
             | CampaignRunError::Binding(BindingFailure::InvalidConfiguration(_)) => {
-                attempt.reason = Some("measurement_or_checker_refused".to_owned());
+                retained.attempt.reason = Some("measurement_or_checker_refused".to_owned());
             }
             other => return Err(other),
         }
     }
-    Ok(attempt)
+    Ok(retained)
 }
 
 fn select_inputs(
-    repo: &Path,
     member: &engineering_assurance::campaign::CampaignMember,
     runtime: &RunMemberBindings,
     source: &VerifiedSource,
     sources: &BTreeMap<String, VerifiedSource>,
-    prior: &[CampaignAttempt],
+    prior: &[Retained],
 ) -> Result<Vec<InputBinding>, CampaignRunError> {
     let mut paths = BTreeSet::new();
     let mut roles = BTreeSet::new();
@@ -227,19 +193,22 @@ fn select_inputs(
                             "undeclared input dependency".to_owned(),
                         ));
                     }
-                    let artifact = prior
+                    prior
                         .iter()
-                        .find(|attempt| attempt.member == *dependency && attempt.index == *index)
-                        .and_then(|attempt| attempt.raw_artifacts.as_deref())
-                        .and_then(|items| {
-                            items
-                                .iter()
-                                .find(|artifact| artifact.role == *artifact_role)
+                        .find(|retained| {
+                            retained.attempt.member == *dependency
+                                && retained.attempt.index == *index
                         })
+                        .and_then(|retained| {
+                            retained
+                                .artifacts
+                                .iter()
+                                .find(|(role, _)| role == artifact_role)
+                        })
+                        .map(|(_, bytes)| bytes.clone())
                         .ok_or_else(|| {
                             CampaignRunError::binding("dependency artifact unavailable".to_owned())
-                        })?;
-                    read_digest_bytes(repo, "raw", &artifact.digest, "bin")?
+                        })?
                 }
             };
             let path = source.checkout.join(&selected.path);
@@ -254,46 +223,47 @@ fn select_inputs(
             }
             std::fs::write(&path, &bytes)
                 .map_err(|error| CampaignRunError::execution(error.to_string()))?;
-            retain_bytes(repo, "inputs", "bin", &bytes)?;
             Ok(InputBinding {
                 role: selected.role.clone(),
                 path: selected.path.clone(),
-                digest: ContentDigest::of_bytes(&bytes),
                 executable: selected.executable,
             })
         })
         .collect()
 }
 
+#[allow(
+    clippy::type_complexity,
+    reason = "the EA artifact record and its exact bytes travel together"
+)]
 fn retain_artifacts(
-    repo: &Path,
     result: &ProducerExecutionResult<ProcessEvidenceObservation>,
-) -> Result<Vec<CampaignRawArtifact>, CampaignRunError> {
-    result
-        .artifacts
-        .iter()
-        .map(|artifact| {
-            let mut reader = artifact
-                .try_reader()
-                .map_err(|error| CampaignRunError::execution(error.to_string()))?;
-            let mut bytes = Vec::new();
-            reader
-                .by_ref()
-                .take(crate::campaign::store::MAX_CAMPAIGN_EVIDENCE_BYTES.saturating_add(1))
-                .read_to_end(&mut bytes)
-                .map_err(|error| CampaignRunError::execution(error.to_string()))?;
-            let (digest, _) = retain_bytes(repo, "raw", "bin", &bytes)?;
-            if digest != artifact.digest.as_str() {
-                return Err(CampaignRunError::identity(
-                    "EA output artifact digest".to_owned(),
-                ));
-            }
-            Ok(CampaignRawArtifact {
-                role: artifact.role.clone(),
-                digest,
-            })
-        })
-        .collect()
+) -> Result<(Vec<CampaignRawArtifact>, Vec<(String, Vec<u8>)>), CampaignRunError> {
+    let mut records = Vec::new();
+    let mut retained = Vec::new();
+    for artifact in &result.artifacts {
+        let mut reader = artifact
+            .try_reader()
+            .map_err(|error| CampaignRunError::execution(error.to_string()))?;
+        let mut bytes = Vec::new();
+        reader
+            .by_ref()
+            .take(crate::campaign::store::MAX_CAMPAIGN_EVIDENCE_BYTES.saturating_add(1))
+            .read_to_end(&mut bytes)
+            .map_err(|error| CampaignRunError::execution(error.to_string()))?;
+        if u64::try_from(bytes.len()).unwrap_or(u64::MAX)
+            > crate::campaign::store::MAX_CAMPAIGN_EVIDENCE_BYTES
+        {
+            return Err(CampaignRunError::execution(
+                "output artifact exceeds the evidence size ceiling".to_owned(),
+            ));
+        }
+        records.push(CampaignRawArtifact {
+            role: artifact.role.clone(),
+        });
+        retained.push((artifact.role.clone(), bytes));
+    }
+    Ok((records, retained))
 }
 
 fn status_of(state: &ProducerExecutionState<ProcessEvidenceObservation>) -> CampaignAttemptStatus {
@@ -333,7 +303,7 @@ mod tests {
             ),
             (
                 ProducerExecutionState::Refused {
-                    reason: ExecutionRefusal::ExecutableIdentity,
+                    reason: ExecutionRefusal::Executable,
                 },
                 CampaignAttemptStatus::Refused,
             ),

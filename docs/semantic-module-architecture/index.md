@@ -41,11 +41,11 @@ external gate.
 ## Governing requirements
 
 - [US-013](../../spec/usecase/US-013-reason-about-semantic-module-boundaries.md)
-- [FR-046](../../spec/functional/FR-046-record-semantic-data-planes.md) through
+- [FR-117](../../spec/functional/FR-117-record-semantic-data-planes.md) through
   [FR-050](../../spec/functional/FR-050-reconcile-quire-decisions.md)
 - [NFR-013](../../spec/non-functional/NFR-013-traceable-semantic-architecture.md) and
   [NFR-014](../../spec/non-functional/NFR-014-non-disruptive-architecture-record.md)
-- [PLAN-002](../../plan/PLAN-002-semantic-module-architecture/plan.md)
+- [PLAN-011](../../plan/PLAN-011-semantic-module-architecture/plan.md)
 
 ## Non-goals
 

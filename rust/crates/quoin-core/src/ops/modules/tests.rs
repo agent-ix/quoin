@@ -45,7 +45,7 @@ fn an_absent_home_reaches_the_host_as_none_rather_than_as_a_guess() {
 
 /// The payload keeps ts-plugin-kit's camelCase record shape, because
 /// `~/.ix/filament/registry.json` is the SAME file the retained TypeScript
-/// still reads during coexistence (NFR-024).
+/// still reads during coexistence.
 #[test]
 fn the_record_shape_is_the_registrys_own() {
     let host = FakeHost::with_module("alpha");
@@ -57,7 +57,6 @@ fn the_record_shape_is_the_registrys_own() {
     assert_eq!(record["installedAt"], "2026-01-01T00:00:00Z");
     assert!(record.get("resolved_path").is_none());
     // Absent, not null — `skip_serializing_if` on the optional fields.
-    assert!(record.get("sha").is_none());
     assert!(record.get("ref").is_none());
 }
 

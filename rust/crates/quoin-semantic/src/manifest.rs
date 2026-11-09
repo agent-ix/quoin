@@ -21,15 +21,13 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 use crate::contract::{
-    SEMANTIC_CONTRACT, module_manifest_schema_path, semantic_core_dir,
-    shipped_semantic_core_versions, sweep_report_schema_path,
+    SEMANTIC_CONTRACT, module_manifest_schema_path, semantic_core_dir, sweep_report_schema_path,
 };
 use crate::data_schema::{ResolveContext, ResolvedDataSchema, resolve_data_schema};
 use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic, Severity};
 use crate::error::SemanticError;
 use crate::ids::{
     ContractVersion, MappingName, ModuleName, ModuleVersion, ObjectTypeName, PackageIdentity,
-    SemanticCoreVersion,
 };
 use crate::schema::{
     SchemaError, SchemaErrorParams, SchemaKeyword, SchemaValidator, SchemaValidatorExt, read_json,
@@ -109,8 +107,6 @@ impl LegacyForms {
 pub struct SemanticBlock {
     /// `contract_version`.
     pub contract_version: ContractVersion,
-    /// `semantic_core`.
-    pub semantic_core: SemanticCoreVersion,
     /// `package`.
     pub package: PackageIdentity,
     /// `exports`, in manifest order.
@@ -181,7 +177,6 @@ pub struct SemanticValidators {
     semantic_block: SchemaValidator,
     sweep_report: SchemaValidator,
     semantic_core_dir: PathBuf,
-    shipped_semantic_core: Vec<String>,
 }
 
 impl SemanticValidators {
@@ -209,22 +204,7 @@ impl SemanticValidators {
             semantic_block: SchemaValidator::compile(&manifest_schema_path, block_schema, &[])?,
             sweep_report: SchemaValidator::compile(&sweep_path, &sweep_schema, &[])?,
             semantic_core_dir: semantic_core_dir(semantic_root),
-            shipped_semantic_core: shipped_semantic_core_versions(semantic_root),
         })
-    }
-
-    /// True when `version` is one the loaded bundle ships (its `$id` base).
-    #[must_use]
-    pub fn ships_semantic_core(&self, version: &SemanticCoreVersion) -> bool {
-        self.shipped_semantic_core
-            .iter()
-            .any(|shipped| shipped == version.as_str())
-    }
-
-    /// The semantic-core versions the loaded bundle ships.
-    #[must_use]
-    pub fn shipped_semantic_core_versions(&self) -> &[String] {
-        &self.shipped_semantic_core
     }
 
     /// The compiled `semantic` block validator.
@@ -401,22 +381,6 @@ pub fn read_semantic_block(
         }
     }
 
-    let semantic_core = SemanticCoreVersion::new(
-        raw_map
-            .get("semantic_core")
-            .map_or_else(String::new, stringify),
-    );
-    if !validators.ships_semantic_core(&semantic_core) {
-        diagnostics.push(SemanticDiagnostic::error(
-            DiagnosticCode::UnknownSemanticCore,
-            "semantic.semantic_core",
-            format!(
-                "semantic_core {semantic_core} is not a version this quoin ships ({})",
-                validators.shipped_semantic_core.join(", ")
-            ),
-        ));
-    }
-
     let module_version = ModuleVersion::new(
         manifest_map
             .get("version")
@@ -429,7 +393,6 @@ pub fn read_semantic_block(
                 .get("contract_version")
                 .map_or_else(String::new, stringify),
         ),
-        semantic_core: semantic_core.clone(),
         package: PackageIdentity::new(raw_map.get("package").map_or_else(String::new, stringify)),
         exports,
         imports: raw_map
@@ -487,7 +450,6 @@ pub fn read_semantic_block(
         let ctx = ResolveContext {
             module_root: module_root.to_path_buf(),
             package_identity: block.package.clone(),
-            semantic_core: semantic_core.clone(),
             object_type: name.clone(),
             semantic_core_dir: validators.semantic_core_dir.clone(),
         };
@@ -683,109 +645,4 @@ fn string_array(value: Option<&Value>) -> Vec<String> {
 }
 
 #[cfg(test)]
-// Indexing and `unreachable!` are a test-only convenience: an out-of-range
-// index in a test is a failing test, not a downed worker.
-#[allow(clippy::indexing_slicing)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    /// Trace: FR-070
-    #[test]
-    fn tc_378_060_targets_locus_detection_matches_the_regex() {
-        assert!(is_targets_locus("semantic.targets"));
-        assert!(is_targets_locus("semantic.targets.0"));
-        assert!(is_targets_locus("semantic.targets.12"));
-        assert!(!is_targets_locus("semantic.targets.0.x"));
-        assert!(!is_targets_locus("semantic.mappings.0"));
-        assert!(!is_targets_locus("semantic.targetsx"));
-    }
-
-    /// Trace: FR-070
-    #[test]
-    fn tc_378_061_map_schema_error_names_each_unknown_key_separately() {
-        let diagnostic = map_schema_error(&SchemaError {
-            instance_path: String::new(),
-            keyword: SchemaKeyword::AdditionalProperties,
-            params: SchemaErrorParams::AdditionalProperty("nope".to_owned()),
-            instance: json!({}),
-            message: "irrelevant".to_owned(),
-        });
-        assert_eq!(diagnostic.code, DiagnosticCode::UnknownKey);
-        assert_eq!(diagnostic.path, "semantic.nope");
-        assert_eq!(diagnostic.message, "unknown key inside semantic: nope");
-    }
-
-    /// Trace: FR-070
-    #[test]
-    fn tc_378_062_map_schema_error_distinguishes_target_from_value() {
-        let target = map_schema_error(&SchemaError {
-            instance_path: "/targets/0".to_owned(),
-            keyword: SchemaKeyword::Enum,
-            params: SchemaErrorParams::AllowedValues(vec![json!("rust")]),
-            instance: json!("cobol"),
-            message: String::new(),
-        });
-        assert_eq!(target.code, DiagnosticCode::UnknownTarget);
-        assert_eq!(target.path, "semantic.targets.0");
-        assert_eq!(
-            target.message,
-            r#"semantic.targets.0 is "cobol", not one of ["rust"]"#
-        );
-
-        let posture = map_schema_error(&SchemaError {
-            instance_path: "/compatibility_posture".to_owned(),
-            keyword: SchemaKeyword::Enum,
-            params: SchemaErrorParams::AllowedValues(vec![json!("strict")]),
-            instance: json!("lossy"),
-            message: String::new(),
-        });
-        assert_eq!(posture.code, DiagnosticCode::InvalidValue);
-    }
-
-    /// Trace: FR-070
-    #[test]
-    fn tc_378_063_map_schema_error_distinguishes_package_from_value() {
-        let package = map_schema_error(&SchemaError {
-            instance_path: "/package".to_owned(),
-            keyword: SchemaKeyword::Pattern,
-            params: SchemaErrorParams::Pattern("^a$".to_owned()),
-            instance: json!("X"),
-            message: String::new(),
-        });
-        assert_eq!(package.code, DiagnosticCode::InvalidPackage);
-        assert_eq!(package.message, "semantic.package does not match ^a$");
-
-        let other = map_schema_error(&SchemaError {
-            instance_path: "/semantic_core".to_owned(),
-            keyword: SchemaKeyword::Pattern,
-            params: SchemaErrorParams::Pattern("^a$".to_owned()),
-            instance: json!("X"),
-            message: String::new(),
-        });
-        assert_eq!(other.code, DiagnosticCode::InvalidValue);
-    }
-
-    /// Trace: FR-070
-    #[test]
-    fn tc_378_064_map_schema_error_falls_through_to_invalid_value() {
-        let diagnostic = map_schema_error(&SchemaError {
-            instance_path: "/exports/0".to_owned(),
-            keyword: SchemaKeyword::MinLength,
-            params: SchemaErrorParams::None,
-            instance: json!(""),
-            message: "is shorter than 1 character".to_owned(),
-        });
-        assert_eq!(diagnostic.code, DiagnosticCode::InvalidValue);
-        assert_eq!(diagnostic.path, "semantic.exports.0");
-    }
-
-    /// Trace: FR-070
-    #[test]
-    fn tc_378_065_has_errors_ignores_warnings() {
-        let warning = SemanticDiagnostic::warning(DiagnosticCode::InlineDataSchema, "x", "y");
-        let error = SemanticDiagnostic::error(DiagnosticCode::UnknownKey, "x", "y");
-        assert!(!has_errors(std::slice::from_ref(&warning)));
-        assert!(has_errors(&[warning, error]));
-    }
-}
+mod tests;

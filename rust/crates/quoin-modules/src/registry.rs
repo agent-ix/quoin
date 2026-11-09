@@ -16,7 +16,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::error::ModulesError;
-use crate::ids::{CommitSha, ModuleName};
+use crate::ids::ModuleName;
 use crate::source::Source;
 
 /// Upper bound on the registry file, in bytes.
@@ -37,9 +37,6 @@ pub struct InstalledModule {
     /// The git ref (tag/branch) that was requested, if any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub r#ref: Option<String>,
-    /// The resolved commit id — the durable pin used for drift detection.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sha: Option<CommitSha>,
     /// The cache path the content was materialized from.
     pub resolved_path: String,
     /// The materialized path under the modules directory.

@@ -18,8 +18,8 @@ artifacts are opt-in: a low-impact request that asks for an ordinary requirement
 not receive an unsolicited profile, architecture description, or measurement plan.
 
 - "Add a user story for X" → one US.
-- "Add the FR that implements US-003" → one FR (traced to US-003).
-- "Add a user story and the requirement that implements it" → one US **and** one FR.
+- "Add the FR that satisfies US-003" → one FR (traced to US-003).
+- "Add a user story and the requirement that satisfies it" → one US **and** one FR.
 - "Edit FR-002 to …" → edit that one FR file in place.
 - "Define the assurance profile for this recovery change" → one installed
   `AssuranceProfile`, linked to the requirements or decisions it governs.

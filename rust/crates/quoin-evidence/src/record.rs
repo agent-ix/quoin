@@ -14,7 +14,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use quoin_quire_types::Obligation;
 
 use crate::error::EvidenceError;
-use crate::ids::{Commit, ObligationId, StatementHash, SuiteId, SymbolId};
+use crate::ids::{ObligationId, SuiteId, SymbolId};
 use crate::source::EvidenceSource;
 use crate::store::{bind, read_bindings, write_bindings, write_run};
 use crate::types::{Binding, EvidenceLineage, Outcome, RunEntry, RunRecord, STORE_SCHEMA_VERSION};
@@ -24,8 +24,6 @@ use crate::types::{Binding, EvidenceLineage, Outcome, RunEntry, RunRecord, STORE
 pub struct RecordRequest {
     /// The suite that ran.
     pub suite: SuiteId,
-    /// The commit it ran at.
-    pub commit: Commit,
     /// Tool and version, as the adapter reported them.
     pub tool: String,
     /// The declared `test_type`, when the caller names one.
@@ -46,11 +44,6 @@ pub struct RecordOutcome {
     pub run_path: String,
     /// Obligations bound for the first time by this run, sorted.
     pub bound: Vec<ObligationId>,
-    /// Obligations already bound whose statement has changed since, sorted.
-    ///
-    /// Reported, never auto-cleared: re-running a test does not re-affirm a
-    /// reworded requirement.
-    pub suspect: Vec<ObligationId>,
     /// Trace ids in the run that match no derived obligation, sorted.
     pub unmatched: Vec<String>,
 }
@@ -82,7 +75,6 @@ pub fn record_run<S: EvidenceSource + ?Sized>(
         &RunRecord {
             schema_version: STORE_SCHEMA_VERSION,
             suite: request.suite.clone(),
-            commit: request.commit.clone(),
             tool: request.tool.clone(),
             evidence_kind: request.evidence_kind.clone(),
             timestamp: request.timestamp.clone(),
@@ -151,47 +143,38 @@ pub fn record_run<S: EvidenceSource + ?Sized>(
 
     let mut bindings = read_bindings(source)?.bindings;
     let mut bound = Vec::new();
-    let mut suspect = Vec::new();
 
     // `BTreeMap` iteration is already the plain byte order the retained source
     // sorts into, and deliberately not a locale collation: the store is written
     // from this order and two machines with different ICU data would otherwise
     // produce a diff nobody made (agent-ix/quoin#106).
     for (id, symbols) in discharged {
-        let Some(obligation) = by_id.get(id) else {
+        if !by_id.contains_key(id) {
             continue;
-        };
+        }
         let mut sorted = symbols;
         sorted.sort();
         let outcome = bind(
             &bindings,
             &Binding {
                 obligation: ObligationId::new(id),
-                statement_hash_at_binding: StatementHash::new(obligation.statement_hash.clone()),
                 suite: request.suite.clone(),
-                commit: request.commit.clone(),
                 symbols: sorted,
                 lineage: request.lineage.clone(),
-                affirmations: None,
             },
         );
         bindings = outcome.bindings;
         if outcome.created {
             bound.push(ObligationId::new(id));
         }
-        if outcome.suspect {
-            suspect.push(ObligationId::new(id));
-        }
     }
 
     write_bindings(source, &bindings)?;
 
     bound.sort();
-    suspect.sort();
     Ok(RecordOutcome {
         run_path,
         bound,
-        suspect,
         unmatched: unmatched.into_iter().collect(),
     })
 }

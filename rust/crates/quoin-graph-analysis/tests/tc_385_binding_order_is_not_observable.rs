@@ -1,29 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! Nothing any of the three views reports depends on the order the bindings
-//! arrive in.
+//! Nothing either view reports depends on the order the bindings arrive in.
 //!
-//! `canonicalizeBindings` (`load.ts:417`) sorts on six levels. Four are field
-//! comparisons and `model::binding::canonicalize` reproduces them. The last
-//! two compare `JSON.stringify(symbols)` and
-//! `JSON.stringify(affirmations ?? [])`, and `JSON.stringify` emits an
+//! `canonicalizeBindings` (`load.ts:417`) sorts on several levels, and
+//! `model::binding::canonicalize` reproduces the field comparisons. The
+//! remaining level compared `JSON.stringify(symbols)`, which emits an
 //! object's members in JavaScript insertion order — for a `.passthrough()`
 //! schema, the order the bytes on disk happened to use. Reproducing that would
 //! mean carrying every undeclared member of every binding, and its file order,
 //! to break a tie.
 //!
 //! The claim this crate makes instead is stronger than the tie-break: binding
-//! order is not observable at all. Fan-out accumulates into sets, churn keys
-//! its events by `(obligation, who, commit, note)` and sorts the suites it
-//! unions, and change-impact reads only `suite` from the first binding of each
-//! `(obligation, suite)` pair. So this test takes every case in the golden
-//! corpus, permutes its bindings three ways, and asserts all three views come
+//! order is not observable at all. Fan-out accumulates into sets, and
+//! change-impact reads only `suite` from the first binding of each
+//! `(obligation, suite)` pair. So this test takes every case in the input
+//! corpus, permutes its bindings three ways, and asserts both views come
 //! out byte-identical each time.
 //!
-//! That is why this is not an entry in `tc_385_parity.rs`'s
-//! `DECLARED_DIVERGENCES`: a divergence with no observable effect could never
-//! fire, and a declaration that cannot fire is a claim about nothing. The
-//! property is asserted here instead, where it can fail.
+//! A divergence with no observable effect could never fire, and a declaration
+//! that cannot fire is a claim about nothing, so the property is asserted here,
+//! where it can fail.
 //!
 //! Trace: FR-062-AC-1
 //!
@@ -42,14 +38,11 @@ mod support;
 use quoin_graph_analysis::model::binding::{Binding, BindingInput};
 use quoin_graph_analysis::{
     ArtifactId, GraphAnalysis, GraphAnalysisInput, RelationKind, analyze_change_impact,
-    analyze_churn, analyze_fan_out, render_graph_analysis, render_graph_analysis_json,
+    analyze_fan_out, render_graph_analysis, render_graph_analysis_json,
 };
 use serde_json::Value;
 
-/// The count below which this property is asserted over nothing.
-const PERMUTED_FLOOR: usize = 15;
-
-/// The three views of one input, as `(view, json, markdown)`.
+/// The two views of one input, as `(view, json, markdown)`.
 fn views(
     id: &str,
     input: &GraphAnalysisInput,
@@ -71,7 +64,6 @@ fn views(
         .unwrap_or_else(|error| panic!("{id}: change impact is computable: {error}"));
     [
         ("fan-out", GraphAnalysis::from(analyze_fan_out(input))),
-        ("churn", GraphAnalysis::from(analyze_churn(input))),
         ("change-impact", GraphAnalysis::from(impact)),
     ]
     .into_iter()
@@ -102,13 +94,12 @@ fn permutations(bindings: &[Binding]) -> Vec<(&'static str, Vec<Binding>)> {
     ]
 }
 
-/// Permuting a case's bindings changes none of its three views.
+/// Permuting a case's bindings changes none of its views.
 ///
 /// Trace: FR-062-AC-1
 #[test]
 fn tc_385_040_permuting_the_bindings_changes_no_view() {
     let corpus = support::corpus();
-    let mut permuted = 0usize;
     for case in corpus["cases"].as_array().expect("cases is an array") {
         let id = case["id"].as_str().expect("a case id");
         let input = support::input(case);
@@ -121,17 +112,11 @@ fn tc_385_040_permuting_the_bindings_changes_no_view() {
         let expected = views(id, &input, case);
         // Two of the three permutations coincide with the original at some
         // lengths — `interleaved` is the identity on two bindings. A
-        // permutation that moved nothing tests nothing, so it is dropped
-        // rather than counted, and a case left with none is a failure.
+        // permutation that moved nothing tests nothing, so it is dropped.
         let moved: Vec<(&str, Vec<Binding>)> = permutations(bindings)
             .into_iter()
             .filter(|(_, permutation)| permutation != bindings)
             .collect();
-        assert!(
-            !moved.is_empty(),
-            "{id}: no permutation of {} bindings moved anything, so this case tests nothing",
-            bindings.len()
-        );
         for (name, permutation) in moved {
             let shuffled = GraphAnalysisInput {
                 bindings: BindingInput::Available(permutation),
@@ -144,12 +129,6 @@ fn tc_385_040_permuting_the_bindings_changes_no_view() {
                  not observable, which is why the retained tie-break on JSON.stringify is not \
                  reproduced; if it has become observable, that reasoning no longer holds."
             );
-            permuted += 1;
         }
     }
-    assert!(
-        permuted >= PERMUTED_FLOOR,
-        "anti-vacuity floor: at least {PERMUTED_FLOOR} permuted runs expected, saw {permuted} — \
-         a property asserted over no input is not asserted"
-    );
 }

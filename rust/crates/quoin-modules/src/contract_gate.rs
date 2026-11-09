@@ -314,7 +314,7 @@ impl SemanticGate for ContractGate {
         // No vendored tree means no judgement is possible. REFUSING is the only
         // honest answer: accepting unjudged would install a module the
         // TypeScript path would have rejected, silently, which is exactly the
-        // regression FR-101's retire-after-parity rule exists to prevent.
+        // regression the retire-after-parity rule exists to prevent.
         let Some(semantic_root) = self.semantic_root.as_deref() else {
             return refuse(
                 "semantic/contract-unavailable",
@@ -629,8 +629,8 @@ mod tests {
             manifest
                 .lines()
                 .map(|line| {
-                    if line.trim_start().starts_with("semantic_core:") {
-                        "  semantic_core: 9.9.9"
+                    if line.trim_start().starts_with("package:") && line.starts_with("  ") {
+                        "  package: NOT A PACKAGE"
                     } else {
                         line
                     }
@@ -640,12 +640,15 @@ mod tests {
         )
         .unwrap();
         let error = home.gate().validate_installed().unwrap_err();
+        assert_eq!(
+            error.code(),
+            crate::error::ModulesErrorCode::SemanticContractViolation
+        );
+        let message = error.to_string();
+        assert!(message.contains("module alpha rejected"), "{message}");
         assert!(
-            matches!(
-                error,
-                crate::error::ModulesError::SemanticContractViolation { .. }
-            ),
-            "{error}"
+            message.contains("semantic.package"),
+            "the refusal names the tampered key, not just a failure: {message}"
         );
     }
 

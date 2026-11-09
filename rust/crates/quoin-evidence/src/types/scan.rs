@@ -11,7 +11,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::ids::{Commit, SuiteId};
+use crate::ids::SuiteId;
 
 /// One scanner result, transcribed.
 ///
@@ -54,7 +54,7 @@ impl Finding {
     }
 }
 
-/// One finding-shaped scan of ONE suite at ONE commit.
+/// One finding-shaped scan of ONE suite.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -63,8 +63,6 @@ pub struct FindingRecord {
     pub schema_version: u32,
     /// The suite this scan covered.
     pub suite: SuiteId,
-    /// Full commit sha the scan was performed at.
-    pub commit: Commit,
     /// Tool and version, as the adapter reported them.
     pub tool: String,
     /// The declared `test_type` this scan produced, when the caller names one.

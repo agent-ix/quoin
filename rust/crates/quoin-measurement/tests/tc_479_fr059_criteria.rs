@@ -4,39 +4,16 @@
 //! carried, restated against this crate.
 //!
 //! Trace: FR-059-AC-1, FR-059-AC-2, FR-059-AC-3, FR-059-AC-4, FR-059-AC-5
-//! Trace: FR-059-AC-6, FR-059-AC-7, FR-059-AC-8, FR-059-AC-9, FR-059-AC-10
+//! Trace: FR-059-AC-6, FR-059-AC-8, FR-059-AC-9, FR-059-AC-10
 //! Provenance: quoin#479
-//!
-//! # Why this file exists
-//!
-//! `tests/operational.test.ts` is deleted in the same commit as
-//! `src/measurement/operational.ts` (FR-101). Nine FR-059 criteria were
-//! carried by five of its cases, and a criterion that appears on no test after
-//! the cutover is a criterion nothing holds. `tc_472_operational_pairs.rs`
-//! proves the one retained pair still validates, and
-//! `tc_472_github_release.rs` proves the producer rebuilds it byte for byte —
-//! but a corpus round trip is not a per-criterion gate: neither would notice
-//! if the control vocabulary lost a member or the clock stopped being derived.
-//! This file is the per-criterion gate: one `#[test]` per criterion, named by
-//! the criterion, so a criterion cannot be lost without a named test
-//! disappearing with it.
 //!
 //! # Where the inputs come from
 //!
-//! `spec/evidence/operational/pairs/c1b30a…acf8.json` — the one committed pair,
-//! produced by the retained TypeScript from real release evidence. Its
-//! capability and its exercise are the valid base cases here, and every refusal
-//! case is that base mutated **in Rust**, below. The TypeScript fixture the
-//! deleted file built by hand is deliberately not respelled: a fixture this
-//! file wrote would agree with whatever this file believes, while the committed
-//! pair was written by the implementation being retired.
-//!
-//! The one case the retained evidence cannot supply is intake against a store,
-//! which must be able to write. That runs in a `tempfile` workspace holding the
-//! producer's whole input contract — the assurance documents the governance
-//! check reads and the three retained GitHub exports the raw-evidence
-//! accounting digests — copied from this repository, exactly as
-//! `tc_472_github_release.rs` does. Nothing here writes into the repository.
+//! `common/release_evidence.rs` builds synthetic GitHub exports and a governing
+//! plan into a temporary repository; the producer writes a pair from them, and
+//! that pair's capability and exercise are the valid base cases. Every refusal
+//! case is that base mutated in Rust, below. Nothing here writes into this
+//! repository.
 
 #![allow(
     clippy::unwrap_used,
@@ -46,13 +23,13 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-#[path = "common/copy.rs"]
-mod copy;
 #[path = "common/paths.rs"]
 mod paths;
+#[path = "common/release_evidence.rs"]
+mod release_evidence;
 
-use copy::copy_tree;
 use paths::repo_root;
+use release_evidence::write_repository;
 
 use engineering_assurance::claim_strength::ClaimStrength;
 use quoin_jsonschema::MeasurementSchema;
@@ -69,46 +46,48 @@ use quoin_measurement::operational::validate::{
 use quoin_measurement::source::SystemClock;
 use serde_json::{Value, json};
 
-/// The committed pair both base cases are read from.
-const RETAINED_PAIR: &str = "c1b30a188d4d03bbe316e0fdb7582eff3fa314c55268a5f71f81f99f8ea2acf8.json";
-
 /// The requirement the schema under test is authored in.
 const REQUIREMENT: &str = "spec/functional/FR-059-operational-evidence-records.md";
 
 // ------------------------------------------------------------ the base cases
 
-/// The retained pair's record of one shape.
+/// The record of one shape, from a pair the producer writes from synthetic
+/// exports.
 fn retained(shape: &str) -> Value {
-    let path = repo_root()
-        .join("spec")
-        .join("evidence")
-        .join("operational")
-        .join("pairs")
-        .join(RETAINED_PAIR);
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-    let envelope: Value = serde_json::from_str(&text).expect("the retained pair is JSON");
+    let workspace = tempfile::tempdir().expect("a writable workspace");
+    write_repository(workspace.path());
+    let definition = serde_json::from_value(release_evidence::definition_document())
+        .expect("the definition reads");
+    let produced =
+        quoin_measurement::operational::github_release::produce_github_release_operational(
+            workspace.path(),
+            &SystemClock,
+            &definition,
+        )
+        .expect("the synthetic exports produce a pair");
+    let text = std::fs::read_to_string(&produced.path).expect("the pair is readable");
+    let envelope: Value = serde_json::from_str(&text).expect("the pair is JSON");
     let records = envelope["records"]
         .as_array()
-        .expect("the retained pair carries records");
+        .expect("the pair carries records");
     assert_eq!(
         records.len(),
         2,
-        "a pair is one capability and one exercise; the base cases come from it"
+        "a pair is one capability and one exercise"
     );
     records
         .iter()
         .find(|record| record["record_shape"] == json!(shape))
-        .unwrap_or_else(|| panic!("the retained pair carries no `{shape}` record"))
+        .unwrap_or_else(|| panic!("the pair carries no `{shape}` record"))
         .clone()
 }
 
-/// The retained standing-capability record.
+/// The standing-capability record.
 fn capability() -> Value {
     retained("standing_capability")
 }
 
-/// The retained exercise record.
+/// The exercise record.
 fn exercise() -> Value {
     retained("exercise")
 }
@@ -203,8 +182,8 @@ fn required(pointer: &str, member: &str) -> String {
 /// Provenance: quoin#479
 #[test]
 fn tc_479_300_the_envelope_requires_every_declared_member() {
-    /// The fourteen members both shapes carry.
-    const ENVELOPE: [&str; 14] = [
+    /// The thirteen members both shapes carry.
+    const ENVELOPE: [&str; 13] = [
         "schema_version",
         "record_type",
         "record_id",
@@ -214,18 +193,15 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
         "subject",
         "producer",
         "scope",
-        "configuration",
         "owner",
         "gaps",
         "actions",
         "raw_evidence",
     ];
     /// The FR-044 producer tuple, unchanged.
-    const PRODUCER: [&str; 6] = [
+    const PRODUCER: [&str; 4] = [
         "tool_identity",
         "tool_version",
-        "configuration_digest",
-        "source_revision",
         "environment",
         "definition_version",
     ];
@@ -235,7 +211,7 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
 
     // Each member independently: a record missing exactly one is refused, and
     // the refusal names the member that is gone.
-    assert_eq!(ENVELOPE.len(), 14, "the envelope census is the criterion's");
+    assert_eq!(ENVELOPE.len(), 13, "the envelope census is the criterion's");
     for member in ENVELOPE {
         refused_naming(
             &without(&base, &[member]),
@@ -243,7 +219,11 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
             &format!("an envelope missing `{member}`"),
         );
     }
-    assert_eq!(PRODUCER.len(), 6, "the FR-044 producer tuple is six fields");
+    assert_eq!(
+        PRODUCER.len(),
+        4,
+        "the FR-044 producer tuple is four fields"
+    );
     for member in PRODUCER {
         refused_naming(
             &without(&base, &["producer", member]),
@@ -251,13 +231,11 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
             &format!("a producer missing `{member}`"),
         );
     }
-    for member in ["id", "revision"] {
-        refused_naming(
-            &without(&base, &["subject", member]),
-            &required("/subject", member),
-            &format!("a subject missing `{member}`"),
-        );
-    }
+    refused_naming(
+        &without(&base, &["subject", "id"]),
+        &required("/subject", "id"),
+        "a subject missing `id`",
+    );
     for member in ["service", "environment", "population"] {
         refused_naming(
             &without(&base, &["scope", member]),
@@ -302,16 +280,15 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
 }
 
 /// The control vocabulary admits releases, flags, canary and shadow deployment,
-/// rollback and kill, override and appeal, abstention and fallback, reporting,
-/// and policy, prompt, model, tool, and data pinning.
+/// rollback and kill, override and appeal, abstention and fallback, and reporting.
 ///
 /// Trace: FR-059-AC-2
 /// Provenance: quoin#479
 #[test]
 fn tc_479_301_every_declared_control_kind_validates_and_no_other_does() {
-    /// The sixteen kinds FR-059 declares, written out rather than read back
+    /// The eleven kinds FR-059 declares, written out rather than read back
     /// from the enum being measured.
-    const KINDS: [&str; 16] = [
+    const KINDS: [&str; 11] = [
         "release",
         "feature_flag",
         "canary_deployment",
@@ -322,11 +299,6 @@ fn tc_479_301_every_declared_control_kind_validates_and_no_other_does() {
         "appeal",
         "abstention",
         "safe_fallback",
-        "policy_pin",
-        "prompt_pin",
-        "model_pin",
-        "tool_pin",
-        "data_pin",
         "reporting",
     ];
 
@@ -342,22 +314,7 @@ fn tc_479_301_every_declared_control_kind_validates_and_no_other_does() {
 
     let base = capability();
     for kind in KINDS {
-        let mut candidate = with(&base, &["control_kind"], json!(kind));
-        // A `*_pin` control is required to carry the pin it is named after;
-        // that requirement is FR-059-AC-7's, and here it is only satisfied so
-        // that this test measures the vocabulary and nothing else.
-        if let Some(pin_kind) = kind.strip_suffix("_pin") {
-            candidate = with(
-                &candidate,
-                &["configuration", "version_pins"],
-                json!([{
-                    "kind": pin_kind,
-                    "identity": "fixture",
-                    "revision": "v1",
-                    "digest": format!("sha256:{}", "2".repeat(64)),
-                }]),
-            );
-        }
+        let candidate = with(&base, &["control_kind"], json!(kind));
         admitted(&candidate, &format!("the control kind `{kind}`"));
     }
 
@@ -671,70 +628,6 @@ fn tc_479_305_a_clocked_status_is_derived_from_the_instants_and_not_believed() {
     );
 }
 
-/// Each policy, prompt, model, tool, or data pin record carries at least one
-/// matching typed identity, revision, and digest, with no duplicate
-/// kind/identity key.
-///
-/// Trace: FR-059-AC-7
-/// Provenance: quoin#479
-#[test]
-fn tc_479_306_a_pin_control_requires_one_unique_matching_typed_pin() {
-    let pinned = with(&capability(), &["control_kind"], json!("model_pin"));
-    let pin = json!({
-        "kind": "model",
-        "identity": "fixture-model",
-        "revision": "v1",
-        "digest": format!("sha256:{}", "3".repeat(64)),
-    });
-    let pinned_with = |pins: Value| with(&pinned, &["configuration", "version_pins"], pins);
-
-    // An empty pin list, and a list pinning something else, are both refused.
-    refused_naming(
-        &pinned_with(json!([])),
-        "model_pin requires a matching pin kind",
-        "a model_pin record pinning nothing",
-    );
-    refused_naming(
-        &pinned_with(json!([with(&pin, &["kind"], json!("policy"))])),
-        "model_pin requires a matching pin kind",
-        "a model_pin record carrying only a policy pin",
-    );
-
-    // One matching pin is enough.
-    admitted(
-        &pinned_with(json!([pin])),
-        "a model_pin record with a model pin",
-    );
-
-    // Two pins on one thing are refused at the second.
-    refused_naming(
-        &pinned_with(json!([pin, pin])),
-        "duplicate kind/identity",
-        "a pin list naming one thing twice",
-    );
-
-    // The pin is typed: every member is required, independently.
-    for member in ["kind", "identity", "revision", "digest"] {
-        refused_naming(
-            &pinned_with(json!([without(&pin, &[member])])),
-            &required("/configuration/version_pins/0", member),
-            &format!("a pin missing `{member}`"),
-        );
-    }
-    // And the digest is a digest, not any string.
-    refused_naming(
-        &pinned_with(json!([with(&pin, &["digest"], json!("not-a-digest"))])),
-        "/configuration/version_pins/0/digest",
-        "a pin digest outside the declared grammar",
-    );
-    // And the pin kind is the declared vocabulary.
-    refused_naming(
-        &pinned_with(json!([with(&pin, &["kind"], json!("weights"))])),
-        "/configuration/version_pins/0/kind",
-        "a pin kind outside the declared vocabulary",
-    );
-}
-
 /// Succeeded, failed, partial, and aborted exercises all validate as retained
 /// outcomes.
 ///
@@ -791,7 +684,7 @@ fn tc_479_307_every_declared_outcome_round_trips_without_collapsing() {
 /// Refuses, one defect at a time, every governance or raw-evidence member
 /// FR-059-AC-9 requires of a lone document: the three governance fields, a
 /// non-empty owner and action list, at least one raw-evidence reference with
-/// all four of its members under SHA-256, and no undeclared field.
+/// all three of its members, and no undeclared field.
 fn refuse_every_document_defect_ac9(base: &Value) {
     // Governance fields, each independently.
     for member in ["owner", "gaps", "actions"] {
@@ -824,7 +717,7 @@ fn refuse_every_document_defect_ac9(base: &Value) {
         "a record with an empty raw-evidence list",
     );
     let reference = base["raw_evidence"][0].clone();
-    for member in ["path", "media_type", "size_bytes", "digest"] {
+    for member in ["path", "media_type"] {
         refused_naming(
             &with(
                 base,
@@ -835,20 +728,6 @@ fn refuse_every_document_defect_ac9(base: &Value) {
             &format!("a raw-evidence reference missing `{member}`"),
         );
     }
-    // The content digest is SHA-256, the algorithm quoin recomputes itself.
-    refused_naming(
-        &with(
-            base,
-            &["raw_evidence"],
-            json!([with(
-                &reference,
-                &["digest"],
-                json!(format!("blake3:{}", "a".repeat(64)))
-            )]),
-        ),
-        "/raw_evidence/0/digest",
-        "a raw-evidence digest under another algorithm",
-    );
 
     // An undeclared field is refused rather than silently dropped.
     refused_naming(
@@ -863,7 +742,7 @@ fn refuse_every_document_defect_ac9(base: &Value) {
     );
 }
 
-/// Gaps, owner, actions, and at least one safe content-digested raw-evidence
+/// Gaps, owner, actions, and at least one safe raw-evidence
 /// reference with media type and byte size are retained; invalid capability
 /// links and undeclared fields are refused.
 ///
@@ -882,17 +761,7 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
     // producer's whole input contract and nothing else.
     let workspace = tempfile::tempdir().expect("a writable workspace");
     let root = workspace.path();
-    copy_tree(
-        &repo_root().join("spec").join("assurance"),
-        &root.join("spec").join("assurance"),
-    );
-    copy_tree(
-        &repo_root()
-            .join("spec")
-            .join("evidence")
-            .join("github-actions"),
-        &root.join("spec").join("evidence").join("github-actions"),
-    );
+    write_repository(root);
 
     let retained_path = write_operational_record(root, &SystemClock, &base)
         .expect("the retained capability is admissible against its own evidence");
@@ -925,40 +794,26 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
         "a refused record must leave the store as it found it"
     );
 
-    // Raw evidence that no longer digests to what it claims, and raw evidence
-    // that points outside the store, are both refused under the raw-evidence
-    // code — and both write nothing.
-    for (raw_evidence, what) in [
-        (
-            with(
-                &reference,
-                &["digest"],
-                json!(format!("sha256:{}", "f".repeat(64))),
-            ),
-            "a digest the retained bytes do not produce",
-        ),
-        (
-            with(&reference, &["path"], json!("../../etc/passwd")),
-            "a path that resolves outside the evidence store",
-        ),
-    ] {
-        let tampered = with(&exercise, &["raw_evidence"], json!([raw_evidence]));
-        let Err(error) = write_operational_record(root, &SystemClock, &tampered) else {
-            panic!("{what}: admitted, and the criterion says it is refused")
-        };
-        assert_eq!(
-            error.code(),
-            InterventionRefusalCode::RawEvidenceMismatch,
-            "{what}: refused under the wrong code"
-        );
-        assert_eq!(
-            read_operational_records(root)
-                .expect("the store reads back")
-                .len(),
-            1,
-            "{what}: a refused record must leave the store as it found it"
-        );
-    }
+    // Raw evidence that points outside the store is refused under the
+    // raw-evidence code, and writes nothing.
+    let what = "a path that resolves outside the evidence store";
+    let raw_evidence = with(&reference, &["path"], json!("../../etc/passwd"));
+    let tampered = with(&exercise, &["raw_evidence"], json!([raw_evidence]));
+    let Err(error) = write_operational_record(root, &SystemClock, &tampered) else {
+        panic!("{what}: admitted, and the criterion says it is refused")
+    };
+    assert_eq!(
+        error.code(),
+        InterventionRefusalCode::RawEvidenceMismatch,
+        "{what}: refused under the wrong code"
+    );
+    assert_eq!(
+        read_operational_records(root)
+            .expect("the store reads back")
+            .len(),
+        1,
+        "{what}: a refused record must leave the store as it found it"
+    );
 }
 
 /// Every record, of either shape, carries exactly one EA claim strength, and

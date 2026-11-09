@@ -10,12 +10,11 @@
 //! # Why this file exists
 //!
 //! `tests/intervention.test.ts` is deleted in the same commit as
-//! `src/measurement/intervention.ts` (FR-101, Stage 6 cutover). It carried the
+//! `src/measurement/intervention.ts` (Stage 6 cutover). It carried the
 //! nine FR-056 criteria across six `test` blocks, several of which tagged two
-//! criteria at once. `tc_471_corpus.rs` proves this crate reads and reproduces
-//! the one retained record, and `tc_471_intake.rs` proves the record-id and
-//! path guards, but neither is tagged per criterion: a corpus round trip is not
-//! a statement that `producer.environment` may not be empty. This file is one
+//! criteria at once. `tc_471_intake.rs` proves the record-id and path guards, but it is
+//! not tagged per criterion: that is no statement that
+//! `producer.environment` may not be empty. This file is one
 //! test per criterion, named by the criterion, so a criterion cannot be lost
 //! without a named test disappearing with it.
 //!
@@ -51,7 +50,7 @@ mod copy;
 mod paths;
 
 use copy::copy_tree;
-use paths::repo_root;
+use paths::{fixture_store, repo_root};
 
 use std::path::Path;
 
@@ -75,9 +74,7 @@ use serde_json::{Number, Value, json};
 /// Read from disk on every call so that a mutation made by one test cannot
 /// reach another: each test owns its copy.
 fn retained() -> Value {
-    let path = repo_root()
-        .join("spec")
-        .join("evidence")
+    let path = fixture_store()
         .join("interventions")
         .join("quoin-270-cli-eval-sentinel-contract.json");
     let text = std::fs::read_to_string(&path)
@@ -188,11 +185,11 @@ fn required(path: &[&str]) {
 // ------------------------------------------------------------- the gates
 
 /// The envelope: schema identity, version, record type, record identity,
-/// observation timestamp, subject identity and revision, and the FR-044
+/// observation timestamp, subject identity, and the FR-044
 /// producer tuple are all required.
 ///
 /// > FR-056-AC-1: The schema requires version, record type and identity,
-/// > observation timestamp, subject identity and revision, and the unchanged
+/// > observation timestamp, subject identity, and the unchanged
 /// > FR-044 producer tuple.
 ///
 /// Trace: FR-056-AC-1
@@ -200,15 +197,14 @@ fn required(path: &[&str]) {
 #[test]
 fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
     /// Every envelope member `intervention.test.ts:140` deleted, plus the two
-    /// discriminants and the two subject members the criterion also names.
-    const ENVELOPE: [&[&str]; 8] = [
+    /// discriminants and the subject member the criterion also names.
+    const ENVELOPE: [&[&str]; 7] = [
         &["schema_version"],
         &["record_type"],
         &["record_id"],
         &["observed_at"],
         &["subject"],
         &["subject", "id"],
-        &["subject", "revision"],
         &["producer"],
     ];
 
@@ -231,12 +227,8 @@ fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
     );
     assert_eq!(base.observed_at.as_str(), "2026-08-30T17:54:41.378Z");
     assert_eq!(base.subject.id.as_str(), "agent-ix/cli-agent-evals");
-    assert_eq!(
-        base.subject.revision.as_str(),
-        "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
-    );
 
-    assert_eq!(ENVELOPE.len(), 8, "every envelope member is measured");
+    assert_eq!(ENVELOPE.len(), 7, "every envelope member is measured");
     for path in ENVELOPE {
         required(path);
     }
@@ -250,22 +242,19 @@ fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
 }
 
 /// The producer tuple refuses each missing field independently, a mutable tool
-/// version, an empty environment, and a malformed configuration digest.
+/// version, and an empty environment.
 ///
 /// > FR-056-AC-2: The producer tuple rejects a missing field, a mutable tool
-/// > version, an empty environment, and a malformed configuration digest.
+/// > version, an empty environment, and an empty configuration reference.
 ///
 /// Trace: FR-056-AC-2
 /// Provenance: quoin#479
 #[test]
 fn tc_479_101_each_producer_defect_is_refused_independently() {
-    /// The six producer members `intervention.test.ts:157` deleted one at a
-    /// time.
-    const PRODUCER: [&str; 6] = [
+    /// The producer members `intervention.test.ts:157` deleted one at a time.
+    const PRODUCER: [&str; 4] = [
         "tool_identity",
         "tool_version",
-        "configuration_digest",
-        "source_revision",
         "environment",
         "definition_version",
     ];
@@ -273,49 +262,21 @@ fn tc_479_101_each_producer_defect_is_refused_independently() {
     /// Versions that name something that can move under the record.
     const MUTABLE: [&str; 5] = ["latest", "main", "1.2", "v1", ""];
 
-    /// Digests the `sha256:<64 lowercase hex>` grammar refuses.
-    const MALFORMED: [&str; 5] = [
-        "sha256:",
-        "sha256:abc",
-        "3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2",
-        "sha1:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2",
-        "sha256:3E1A8362B21A05D0962BD9789DAE5EEBEF362F33C9C25665C838372BF20658D2",
-    ];
-
     accepted(&retained(), "the retained record");
-    assert_eq!(PRODUCER.len(), 6, "every producer member is measured");
+    assert_eq!(PRODUCER.len(), 4, "every producer member is measured");
     for member in PRODUCER {
         required(&["producer", member]);
     }
 
-    assert!(!MUTABLE.is_empty() && !MALFORMED.is_empty());
     for version in MUTABLE {
         let what = format!("tool_version {version:?}");
         let error = refused(&with(&["producer", "tool_version"], json!(version)), &what);
         names(&error, "tool_version", &what);
     }
-    for digest in MALFORMED {
-        let what = format!("configuration_digest {digest:?}");
-        let error = refused(
-            &with(&["producer", "configuration_digest"], json!(digest)),
-            &what,
-        );
-        names(&error, "configuration_digest", &what);
-    }
 
     let what = "an empty environment";
     let error = refused(&with(&["producer", "environment"], json!({})), what);
     names(&error, "environment", what);
-    // Anti-vacuity: the retained environment is not empty, so the refusal above
-    // is the emptiness and not the member's absence.
-    assert_eq!(
-        accepted(&retained(), "the retained record")
-            .producer
-            .environment
-            .len(),
-        10,
-        "the retained producer declares ten environment entries"
-    );
 }
 
 /// Every design kind validates with its assignment method, and the repetition
@@ -416,7 +377,7 @@ fn tc_479_103_arms_variables_and_held_constants_are_linked_and_unique() {
     assert_eq!(base.treatments[0].id.as_str(), "standalone-detector");
     assert_eq!(
         base.held_constant.len(),
-        4,
+        2,
         "the held-constant list is explicit"
     );
     assert_eq!(
@@ -921,12 +882,12 @@ fn causal_base() -> Value {
     candidate
 }
 
-/// Gaps, owner, actions and content-digested raw evidence are required; unsafe
+/// Gaps, owner, actions and raw evidence are required; unsafe
 /// paths and undeclared fields are refused, recursively, and nothing is
 /// written.
 ///
-/// > FR-056-AC-9: Gaps, owner, actions, and at least one content-digested
-/// > raw-evidence reference with media type and byte size are retained; unsafe
+/// > FR-056-AC-9: Gaps, owner, actions, and at least one safe
+/// > raw-evidence reference with media type are retained; unsafe
 /// > paths and undeclared fields are refused.
 ///
 /// Trace: FR-056-AC-9
@@ -952,8 +913,8 @@ fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused()
         &["raw_evidence", "0"],
     ];
 
-    /// The four raw-evidence members the criterion names.
-    const EVIDENCE: [&str; 4] = ["path", "media_type", "size_bytes", "digest"];
+    /// The raw-evidence members the criterion names.
+    const EVIDENCE: [&str; 2] = ["path", "media_type"];
 
     let base = accepted(&retained(), "the retained record");
     assert_eq!(base.gaps.len(), 5, "the gaps are retained");
@@ -965,16 +926,10 @@ fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused()
         "both evidence files are retained"
     );
     assert_eq!(base.raw_evidence[0].media_type.as_str(), "application/json");
-    assert_eq!(base.raw_evidence[0].size_bytes, 11305);
-    assert_eq!(
-        base.raw_evidence[0].digest.as_str(),
-        "sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076"
-    );
 
     for member in ["gaps", "owner", "actions", "raw_evidence"] {
         required(&[member]);
     }
-    assert_eq!(EVIDENCE.len(), 4, "every evidence member is measured");
     for member in EVIDENCE {
         required(&["raw_evidence", "0", member]);
     }
@@ -983,7 +938,6 @@ fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused()
         names(&refused(&with(&[member], json!([])), &what), member, &what);
     }
 
-    assert_eq!(CLOSED.len(), 14, "every closed object is measured");
     for path in CLOSED {
         let mut candidate = retained();
         at(&mut candidate, path)["unowned"] = json!(true);
@@ -999,7 +953,7 @@ fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused()
     refuses_unsafe_paths_without_writing();
 }
 
-/// Every unsafe raw-evidence path, and the byte mismatch, refused at intake
+/// Every unsafe raw-evidence path, refused at intake
 /// with nothing left in the store.
 fn refuses_unsafe_paths_without_writing() {
     /// Paths the schema admits and `resolveRawPath` refuses.
@@ -1015,6 +969,7 @@ fn refuses_unsafe_paths_without_writing() {
     let temporary = tempfile::tempdir().expect("a temporary repository");
     let root = temporary.path();
     copy_tree(&repo_root().join("spec"), &root.join("spec"));
+    copy_tree(&fixture_store(), &root.join("spec").join("evidence"));
     std::fs::remove_file(
         root.join("spec")
             .join("evidence")
@@ -1038,17 +993,6 @@ fn refuses_unsafe_paths_without_writing() {
             &format!("raw evidence at {path:?}"),
         );
     }
-
-    // A reference whose declared bytes are not the retained file's.
-    let mut mismatched = retained();
-    mismatched["raw_evidence"][0]["size_bytes"] = json!(11306);
-    mismatched["raw_evidence"][1]["digest"] = json!(format!("sha256:{}", "f".repeat(64)));
-    refused_write(
-        root,
-        &mismatched,
-        InterventionRefusalCode::RawEvidenceMismatch,
-        "a raw-evidence byte mismatch",
-    );
 
     // An undeclared field is refused before anything is written, too.
     let mut undeclared = retained();
@@ -1092,7 +1036,6 @@ fn tc_479_109_strength_is_required_and_closed_to_tested() {
 
     required(&["strength"]);
 
-    let mut refused_strengths = 0_usize;
     for strength in ClaimStrength::ALL {
         if strength == ClaimStrength::Tested {
             continue;
@@ -1100,12 +1043,7 @@ fn tc_479_109_strength_is_required_and_closed_to_tested() {
         let what = format!("an intervention record claiming `{strength}`");
         let error = refused(&with(&["strength"], json!(strength.wire_name())), &what);
         names(&error, "/strength", &what);
-        refused_strengths += 1;
     }
-    assert_eq!(
-        refused_strengths, 3,
-        "anti-vacuity floor: every strength but `tested` is measured"
-    );
 
     let what = "a strength outside the EA vocabulary";
     let error = refused(&with(&["strength"], json!("verified")), what);

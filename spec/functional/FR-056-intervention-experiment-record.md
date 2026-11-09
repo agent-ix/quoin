@@ -27,6 +27,34 @@ vocabulary — this schema declares no local enum for it — and, because the ty
 itself implements neither `Ord` nor `PartialOrd`, no report SHALL rank, compare,
 or aggregate one record's strength against another's.
 
+## Properties
+
+| Field             | Type       | Multiplicity | Constraints                                 |
+| ----------------- | ---------- | ------------ | ------------------------------------------- |
+| schema_version    | Integer    | 1..1         |                                             |
+| record_type       | String     | 1..1         | enumValues: intervention_experiment         |
+| record_id         | String     | 1..1         | minLength: 1, maxLength: 128                |
+| observed_at       | Timestamp  | 1..1         |                                             |
+| subject           | JsonObject | 1..1         |                                             |
+| producer          | JsonObject | 1..1         |                                             |
+| design            | JsonObject | 1..1         |                                             |
+| baseline          | JsonObject | 1..1         |                                             |
+| treatments        | JsonObject | 1..*         |                                             |
+| changed_variables | JsonObject | 1..*         |                                             |
+| held_constant     | JsonObject | 0..*         |                                             |
+| measured_effects  | JsonObject | 0..*         |                                             |
+| interactions      | JsonObject | 0..*         |                                             |
+| confounders       | JsonObject | 0..*         |                                             |
+| status            | String     | 1..1         | enumValues: completed\|failed\|inconclusive |
+| strength          | String     | 1..1         | enumValues: tested                          |
+| conclusion        | JsonObject | 1..1         |                                             |
+| gaps              | String     | 0..*         |                                             |
+| owner             | String     | 1..1         | minLength: 1                                |
+| actions           | String     | 1..*         |                                             |
+| raw_evidence      | JsonObject | 1..*         |                                             |
+
+The table declares the record's top-level fields and their cardinality. Which keys are required, which values may be null, and the cross-field rules are stated only by the schema below, which is the full contract.
+
 ## Schema
 
 ```json
@@ -65,10 +93,9 @@ or aggregate one record's strength against another's.
     "observed_at": { "type": "string", "format": "date-time" },
     "subject": {
       "type": "object",
-      "required": ["id", "revision"],
+      "required": ["id"],
       "properties": {
-        "id": { "$ref": "#/$defs/identity" },
-        "revision": { "type": "string", "minLength": 1 }
+        "id": { "$ref": "#/$defs/identity" }
       },
       "additionalProperties": false
     },
@@ -77,16 +104,14 @@ or aggregate one record's strength against another's.
       "required": [
         "tool_identity",
         "tool_version",
-        "configuration_digest",
-        "source_revision",
+        "configuration_ref",
         "environment",
         "definition_version"
       ],
       "properties": {
         "tool_identity": { "type": "string", "minLength": 1 },
         "tool_version": { "$ref": "#/$defs/immutable_version" },
-        "configuration_digest": { "$ref": "#/$defs/digest" },
-        "source_revision": { "type": "string", "minLength": 1 },
+        "configuration_ref": { "type": "string", "minLength": 1 },
         "environment": {
           "type": "object",
           "minProperties": 1,
@@ -275,12 +300,10 @@ or aggregate one record's strength against another's.
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["path", "media_type", "size_bytes", "digest"],
+        "required": ["path", "media_type"],
         "properties": {
           "path": { "type": "string", "minLength": 1 },
-          "media_type": { "type": "string", "minLength": 1 },
-          "size_bytes": { "type": "integer", "minimum": 0 },
-          "digest": { "$ref": "#/$defs/digest" }
+          "media_type": { "type": "string", "minLength": 1 }
         },
         "additionalProperties": false
       }
@@ -416,13 +439,9 @@ or aggregate one record's strength against another's.
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
     },
-    "digest": {
-      "type": "string",
-      "pattern": "^sha256:[a-f0-9]{64}$"
-    },
     "immutable_version": {
       "type": "string",
-      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|(sha256|blake3):[a-f0-9]{64})$"
+      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?)$"
     },
     "arm": {
       "type": "object",
@@ -490,15 +509,15 @@ or aggregate one record's strength against another's.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-056-AC-1 | The schema requires version, record type and identity, observation timestamp, subject identity and revision, and the unchanged FR-044 producer tuple. | Test (TC-1195) |
-| FR-056-AC-2 | The producer tuple rejects a missing field, a mutable tool version, an empty environment, and a malformed configuration digest. | Test (TC-1196) |
+| FR-056-AC-1 | The schema requires version, record type and identity, observation timestamp, subject identity, and the unchanged FR-044 producer tuple. | Test (TC-1195) |
+| FR-056-AC-2 | The producer tuple rejects a missing field, a mutable tool version, an empty environment, and an empty configuration reference. | Test (TC-1196) |
 | FR-056-AC-3 | Repeated, randomized, and factorial designs require a positive repetition count, assignment method, and non-empty sampling conditions; randomized assignment requires a reproducible seed. | Test (TC-1197) |
 | FR-056-AC-4 | Every record carries one uniquely identified baseline, one or more uniquely identified treatments, treatment-linked changed variables, and an explicit list of held-constant variables. | Test (TC-1198) |
 | FR-056-AC-5 | Measured effects preserve treatment identity, baseline value, treatment value, effect, metric identity, and unit without replacing a missing value with zero or permitting duplicate treatment/metric keys. | Test (TC-1199) |
 | FR-056-AC-6 | Interactions and confounders remain separate collections whose entries distinguish controlled, uncontrolled, unknown, and not-applicable dispositions. | Test (TC-1200) |
 | FR-056-AC-7 | Completed, failed, and inconclusive statuses validate; failed and inconclusive records require the first-class `cause_not_established` conclusion. | Test (TC-1201) |
 | FR-056-AC-8 | A causal-effect conclusion requires positive baseline and treatment samples, at least one non-null measured effect, non-`none` attribution confidence, and no uncontrolled or unknown interaction or confounder; a no-effect conclusion requires positive samples and an observed comparison. | Test (TC-1202) |
-| FR-056-AC-9 | Gaps, owner, actions, and at least one content-digested raw-evidence reference with media type and byte size are retained; unsafe paths and undeclared fields are refused. | Test (TC-1203) |
+| FR-056-AC-9 | Gaps, owner, actions, and at least one raw-evidence reference with media type are retained; unsafe paths and undeclared fields are refused. | Test (TC-1203) |
 | FR-056-AC-10 | Every record carries `strength`, closed to Engineering Assurance's `tested` claim strength (FR-022); a record with no `strength` is refused, not defaulted. | Test (TC-1882) |
 
 ## Dependencies

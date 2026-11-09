@@ -31,8 +31,7 @@ use crate::error::{CoreError, CoreErrorCode};
 ///   model, an unknown archetype, a clause set that is not loaded: fixing any
 ///   of them means changing the repository, not the request.
 /// - **`BadRequest` (3)** — the caller's own spelling. A malformed context
-///   entry, a duplicated context key, an empty repository identity, a revision
-///   that is not 40 hex digits, a payload that is not JSON or not the declared
+///   entry, a duplicated context key, a payload that is not JSON or not the declared
 ///   shape.
 /// - **`Io` → Internal (4)** — a filesystem call failed under us, a payload
 ///   outgrew its ceiling, or quoin's own vendored `assurance-v1` schema will
@@ -82,8 +81,6 @@ const fn core_code(code: ErrorCode) -> Option<CoreErrorCode> {
         ErrorCode::PathEscapesRoot
         | ErrorCode::ContextEntryMalformed
         | ErrorCode::ContextKeyDuplicated
-        | ErrorCode::RepositoryEmpty
-        | ErrorCode::RevisionMalformed
         | ErrorCode::PayloadNotJson
         | ErrorCode::PayloadShape => CoreErrorCode::BadRequest,
 
@@ -113,19 +110,13 @@ mod tests {
     use super::{CoreErrorCode, core_code, map_error};
 
     /// [`ErrorCode`] is `#[non_exhaustive]`, so `map_error`'s `_` arm means the
-    /// compiler cannot catch a code added upstream. This pins the COUNT
-    /// instead, and lists every group by name.
+    /// compiler cannot catch a code added upstream. This lists every group by
+    /// name and requires each code in `all()` to be in exactly one.
     ///
     /// When this fails: a code was added to `quoin-quire`. Decide which of the
-    /// three groups it belongs to, add it to that arm, and raise the count.
+    /// three groups it belongs to and add it to that arm.
     #[test]
     fn the_error_mapping_covers_every_quire_code() {
-        assert_eq!(
-            ErrorCode::all().len(),
-            23,
-            "quoin-quire gained or lost an error code; map it in map_error deliberately"
-        );
-
         let refused = [
             ErrorCode::ScopeNotADirectory,
             ErrorCode::DocumentRootMissing,
@@ -144,8 +135,6 @@ mod tests {
             ErrorCode::PathEscapesRoot,
             ErrorCode::ContextEntryMalformed,
             ErrorCode::ContextKeyDuplicated,
-            ErrorCode::RepositoryEmpty,
-            ErrorCode::RevisionMalformed,
             ErrorCode::PayloadNotJson,
             ErrorCode::PayloadShape,
         ];

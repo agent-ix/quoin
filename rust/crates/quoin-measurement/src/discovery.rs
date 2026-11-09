@@ -51,10 +51,8 @@ pub fn frontmatter(text: &str) -> Option<&str> {
 /// frontmatter, or with a different `type`, is skipped rather than refused —
 /// `plans.ts:41-43` and `profiles.ts:41-43` both `return null` for those.
 ///
-/// The raw text is threaded through for [`crate::plans`]'s benefit: a
-/// `MeasurementPlan`'s optional `preregistration` block (PLAT-936) digests a
-/// heading in the document's own body, which frontmatter alone cannot see.
-/// [`crate::profiles`] does not need it and ignores the parameter.
+/// The raw text is threaded through for callers that read the document body;
+/// [`crate::profiles`] and [`crate::plans`] do not need it and ignore it.
 ///
 /// # Errors
 ///

@@ -3,8 +3,8 @@ id: ARCH-SM-002
 title: "Semantic data planes and concern-specific authority"
 status: proposed
 requirements:
-  - FR-046
-  - FR-048
+  - FR-117
+  - FR-119
 ---
 
 # Semantic data planes and concern-specific authority
@@ -70,7 +70,7 @@ extensions. Domain types remain in their owning modules and need not inherit one
 | Concern                                | Authoritative source                                    | Derived representations                                                                  | Edit direction                                          | Required provenance                                                               |
 | -------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Human/agent-authored durable knowledge | Reviewed typed Markdown plus the owning module contract | extracted JSON, graph records, search indexes, embeddings, and rendered views            | Edit and review Markdown; re-extract                    | artifact identity/version, module/archetype version, extraction tool identity     |
-| Shared schema/package definitions      | Accepted schema/package source plus package metadata    | normalized/bundled JSON Schema, generated Rust, TypeScript, and Python, wire descriptors | Edit the accepted source/metadata; regenerate           | package/type identity, semantic version, compiler/emitter identity, source digest |
+| Shared schema/package definitions      | Accepted schema/package source plus package metadata    | normalized/bundled JSON Schema, generated Rust, TypeScript, and Python, wire descriptors | Edit the accepted source/metadata; regenerate           | package/type identity, semantic version, compiler/emitter identity |
 | Transactional application state        | Owning PostgreSQL database or event store               | APIs, reports, analytical tables, Markdown snapshots                                     | Write through the owning application transaction        | tenant/aggregate identity, schema version, transaction/event position             |
 | Operational observations               | Owning run, evidence, or event store                    | reports, dashboards, alerts, Markdown summaries, analytical datasets                     | Append or correct through owning-system policy          | run/source/time/tool/config identities and evidence digest                        |
 | Interface payload conformance          | Versioned interface schema package                      | Protobuf, JSON, and Avro payloads and clients                                            | Change the interface package under compatibility policy | package/version, message type, codec/profile                                      |
@@ -110,6 +110,6 @@ ownership error instead of resolving it.
 
 ## Traceability
 
-This record implements FR-046 and FR-048 and specializes `filament-core-data` ARCH-003 and
+This record implements FR-117 and FR-119 and specializes `filament-core-data` ARCH-003 and
 ARCH-005. The exact source identities and decision status are in the
 [external decision ledger](decision-ledger.md).

@@ -30,17 +30,16 @@ command.
 
 ### US-017-EX-1: A reviewed definition verifies
 
-- **Given** a sealed record, a matching ix-flow approval event, and one healthy
+- **Given** a record revision, a matching ix-flow approval event, and one healthy
   selected attestation for every required proof
 - **When** Quoin verifies the candidate from the retained inputs
-- **Then** the receipt is `valid` and names every input digest
+- **Then** the receipt is `valid` and names every input by id and revision
 
-### US-017-EX-2: A later edit is detected
+### US-017-EX-2: A broken lineage is detected
 
-- **Given** a sealed record whose requirement, constraint, proof, source,
-  unknown, or parent field is edited without resealing
+- **Given** revision 3 of a record whose revision 2 is absent from the store
 - **When** Quoin verifies the record
-- **Then** the receipt is `invalid` with `record_digest_mismatch`
+- **Then** the receipt is `invalid` with `revision_gap`
 
 ### US-017-EX-3: Missing evidence stays incomplete
 
@@ -51,8 +50,8 @@ command.
 ## Constraints (Contextual)
 
 Quoin reads retained records, workflow events, attestations, outputs, and audit
-findings. It executes no proof command. Digests provide content integrity only;
-they establish no identity, authorization, or non-repudiation.
+findings. It executes no proof command. Nothing it reads establishes identity,
+authorization, or non-repudiation; git history is the tamper evidence.
 
 ## Dependencies (Contextual)
 

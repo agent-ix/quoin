@@ -8,9 +8,8 @@ This crate carries two things: the ajv-parity validator extracted from
 from `src/measurement/intervention-schema.ts` and
 `src/measurement/operational-schema.ts`.
 
-The retained TypeScript is still present and is still the oracle. Nothing in it
-was edited by this wave — a port declares its divergences, it does not retrofit
-the implementation it is replacing.
+The TypeScript this crate replaced is deleted; the divergences below are
+recorded against what it did.
 
 Two sections below are **owner rulings**: deliberate, recorded changes in what
 is accepted. The rest are shape differences between `ajv` and the Rust
@@ -58,57 +57,14 @@ accepts. `tests/tc_470_formats.rs` asserts the pattern and the registered check
 accept the same set, including the `…t…z` case that separated them, so the two
 expressions cannot drift apart again.
 
-**Measured:** a scan of every `.json` under `spec/evidence/` for a lowercase `t`
-separator or a trailing lowercase `z` returns nothing. No retained verdict in
-this repository moves.
-
 **Scope:** intervention only. The operational schema is vendored verbatim and
 was already permissive.
 
-## §2 — Ruling: `immutableVersion` drops the `blake3:` alternative (quoin#409)
+## §2 — `immutableVersion` is a semantic version
 
-**Input that separates them:** `producer.tool_version` =
-`"blake3:cccc…"` (64 hex) in an intervention record. ajv accepts; this crate
-refuses.
-
-`intervention-schema.ts:6-16` admits
-`(sha256|blake3):[a-f0-9]{64}` in `immutableVersion`. Measured on `main`:
-
-- the only digest producer in `src/measurement/` writes `sha256:` and nothing
-  else (`intervention.ts:123`, `:158`);
-- `git grep "blake3:"` returns eight hits and **none is data** — five doc
-  comments in `quoin-store/src/digest.rs`, one negative source guard, one
-  _rejection_ fixture, one `blake3::hash` call;
-- no `blake3:`-prefixed value exists in `spec/evidence/`, `tests/fixtures/` or
-  `corpus/`;
-- `quoin_store::DigestDomain` mints no prefixed blake3 value at all —
-  `RawBytesDigest::to_labelled` produces one and its own doc says it is never
-  the stored form.
-
-The type system already refuses to produce what the schema admits. The vendored
-pattern is therefore
-
-```
-^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|sha256:[a-f0-9]{64})$
-```
-
-**Scope:** intervention only. `operational-evidence-v1.schema.json:337` carries
-the same regex and is vendored **unchanged**, because that document is copied
-byte-for-byte and no ruling was taken about it. Closing that gap is the
-operational wave's to take, with its own measurement.
-
-## §3 — These two are the only differences, and that is asserted
-
-`intervention-schema.ts` is a program, not a document, so the vendored artifact
-cannot be reviewed against it by eye. `oracle/capture-intervention-schema.mjs` (deleted at cutover)
-ran it once and serialized the result with the repository's own `canonicalJson`
-into `tests/goldens/intervention-experiment-v1.captured.json`.
-
-`tests/tc_470_vendored_schemas.rs` then **enumerates every JSON pointer** at
-which the capture and the vendored document disagree and asserts the set equals
-§1 and §2, with exact before and after text. A third, unrecorded difference
-fails the build. A test that merely asserted the two differ would pass for a
-typo.
+`immutableVersion` is an exact semantic version in both measurement schemas.
+The retained `sha256:`/`blake3:` and 40-character git-revision alternatives
+are gone: Quoin records no digest or revision.
 
 ## §4 — `format` asserts here only where ajv asserted it
 
@@ -146,8 +102,9 @@ length in `src/validator.rs`:
 
 None of the three changes a verdict, and **the verdict is the contractual
 half**. Error count, message text and order are explicitly not contractual for
-this port. `tests/tc_470_parity.rs` measures verdicts only, on 125 corpus
-documents, and asserts §1 and §2 are the only entries where the two disagree.
+this port. No recorded ajv output is kept: the retired validator's captured verdicts were
+deleted, and the verdict contract is asserted by the schema tests against this
+crate's live behaviour.
 
 ## §6 — `quoin-jsonschema` holds no RFC 3339 grammar
 
@@ -196,21 +153,8 @@ recorded as a ruling like §1 and §2, one delta per schema:
   intervention schema:
   `tc_470_the_operational_schema_carries_exactly_the_one_recorded_delta`.
 
-`tests/goldens/ajv-verdicts.json` is **not** amended: it stays a byte-literal
-capture of the documents ajv judged and the verdicts it returned. ajv ran
-against schemas whose root is `additionalProperties: false`, so writing
-`strength` into those documents would have left the golden recording `valid`
-verdicts ajv never gave (ajv would refuse the amended documents as carrying an
-undeclared member). Instead `tc_470_parity.rs`'s `with_strength` and
-`tc_470_formats.rs`'s `retained_base` apply this delta visibly at test time —
-each family's one admissible value, added to every captured object — so the
-parity census still turns on the one thing each rung changed. Refusal of a
-missing or foreign `strength` is asserted by `quoin-measurement`'s
-`tc_479_109` and `tc_479_309`, not by the parity census.
+`tc_470_formats.rs`'s `retained_base` applies this delta visibly at test time,
+adding each family's one admissible value to the fixture record. Refusal of a
+missing or foreign `strength` is asserted by `quoin-measurement`'s `tc_479_109`
+and `tc_479_309`.
 
-`tests/fixtures/report-oracle.json` (`tc_469_reports.rs`) and the retained
-corpus records under `spec/evidence/interventions/` and
-`spec/evidence/operational/pairs/` were amended to carry `strength`. A
-structural diff of the report oracle against its pre-PLAT-972 capture shows
-only added `strength` members (5 intervention, 12 operational records); no
-rendered text, verdict or other member moved.

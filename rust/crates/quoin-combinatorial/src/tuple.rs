@@ -319,8 +319,8 @@ mod tests {
                 vec![2, 3]
             ]
         );
-        assert!(combinations(2, 3).unwrap().is_empty());
-        assert!(combinations(3, 0).unwrap().is_empty());
+        assert_eq!(combinations(2, 3).unwrap().len(), 0);
+        assert_eq!(combinations(3, 0).unwrap().len(), 0);
         assert_eq!(combinations(3, 3).unwrap(), vec![vec![0, 1, 2]]);
     }
 

@@ -325,7 +325,6 @@ mod tests {
         }
     }
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_methods_uses_the_granted_first_wins_projection() {
         let catalog = MethodCatalogFixture;
@@ -349,7 +348,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_load_is_a_single_boundary_projection() {
         let catalog = CatalogFixture;
@@ -377,7 +375,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_does_not_semantically_read_suppressed_duplicates() {
         let catalog = DuplicateCatalogFixture;

@@ -20,34 +20,45 @@ FR-006).
 
 | ID | Name | Command | Tool | Evidence Kind |
 |----|------|---------|------|---------------|
-| SUITE-001 | Unit and integration suite | `make test` | vitest | Unit |
+| SUITE-001 | Unit and integration suite | `make evidence` | cargo-nextest | Unit |
 | SUITE-002 | Spec validation gate | `make validate` | quire-cli | Static |
 | SUITE-003 | Agent evals | `make evals` | cli-agent-evals | Eval |
 
-## What the store discharges today, and what it does not
+## What the store discharges
 
-**Nothing, yet — and that is recorded rather than dressed up.** A run of
-SUITE-001 transcribes 541 vitest results into `runs/SUITE-001/`, and binds
-**zero** obligations:
+A JUnit report names tests, and quoin's trace ids live in source tags
+(`/// Trace: FR-002-AC-1`, `#[trace("FR-002-AC-1")]`), so a plain report binds no
+obligation. `make evidence` closes that gap in three steps:
 
-```
-{ "runPath": "spec/evidence/runs/SUITE-001/…json", "bound": [], "suspect": [], "unmatched": [] }
-```
+1. `cargo nextest run --profile evidence` runs the Rust workspace and writes
+   JUnit XML (profile in `rust/.config/nextest.toml`). It needs
+   `cargo install cargo-nextest --locked`. Doc tests are not run by nextest.
+2. `quoin-suite-trace` asks the quire engine, which defines the tag grammar, for
+   every test symbol and the ids it verifies, joins each to the name nextest
+   reported (binary id and module path, from `cargo metadata`), and inserts
+   `<property name="trace" value="ID,ID"/>` into that test case. It parses no
+   source comments itself and refuses a report in which no case matched.
+3. `quoin evidence record --suite SUITE-001 --adapter junit --kind Unit` records
+   the run and binds every obligation named by a *passing* case. A failing or
+   skipped case is recorded in the run and binds nothing.
 
-The reason is structural, not a misconfiguration. The junit adapter reads test
-**names**, and quoin's trace ids live in source comments (`// Trace: FR-002-AC-1`)
-where `quire coverage` reads them off symbols. A junit report carries no symbol,
-so there is nothing for an obligation id to match.
+The target returns the tests' own exit status after recording, so a red suite is
+recorded as red. Tagged tests absent from a run (filtered or ignored) are
+counted in the tool's summary line and bind nothing.
 
-So the audit reports **341 undischarged** obligations and **0 healthy**.
+No run record is kept in this repository; a run is transcribed by the consumer's
+CI when it executes a suite.
 
-Closing the binding gap needs one of two things, and neither is invented here:
+## Open follow-ups
 
-- test names that carry their trace id, the way the Rust corpus writes
-  `fn tc_744_…`; or
-- an adapter that reads the symbol tags rather than the report, which is the
-  same join `quire coverage` already performs.
-
-Recording a store that discharges nothing is still worth doing: the run
-directory and the suite ids exist now, and the next
-person meets a store with real data in it rather than an absent directory.
+- **The generated evidence store is not committed, on purpose.** A run record and
+  the bindings derived from it describe one commit's test run, so they go stale
+  with the next commit and would add churn to every change without adding
+  information a reader cannot regenerate with `make evidence`. The committed
+  `bindings.json` is the empty skeleton. Freshness is judged by the consumer that
+  ran the suite, not by a file in this repository.
+- **A bound-and-accepted ratchet check is not implemented.** Nothing yet fails
+  when an acceptance criterion is bound by a passing run but has no accepted
+  verdict, so a criterion can be bound indefinitely without anyone accepting it.
+  Binding records that a test exercised the criterion; it does not record that the
+  criterion is satisfied.

@@ -2,8 +2,7 @@
 // Copyright (C) 2026 Agent-IX
 
 //! Synthetic corpus rows shared by the offline tests and by the runner's
-//! preflight (PR #620 re-review, finding 4): the request-digest pins are
-//! computed on [`four_modes`]'s rows, so the live runner needs them too.
+//! preflight (PR #620 re-review, finding 4).
 
 use serde_json::{Value, json};
 
@@ -61,7 +60,6 @@ pub(crate) fn corpus_text(rows: &[Value]) -> String {
         "schema": corpus::SCHEMA,
         "sampling_rule": "every row, synthetic",
         "seed": 7,
-        "source_commit": "0000000",
         "rows": rows,
     }))
     .unwrap_or_default()
@@ -76,9 +74,7 @@ pub(crate) fn parse(rows: &[Value]) -> Result<CorpusFile, String> {
 }
 
 /// A four-row corpus, one per mode, with truth each mode supports. Its row
-/// in each mode is that mode's canonical row for the request-digest pins
-/// (`preflight::REQUEST_DIGEST_PINS`): changing a row here changes every
-/// pin, so do it only with a version bump of every variant.
+/// in each mode is that mode's canonical row.
 ///
 /// # Errors
 /// Never, for these rows; the signature is [`parse`]'s.
