@@ -65,15 +65,6 @@ fn run(op: &str, request: &serde_json::Value, home: &Path, semantic_root: &Path)
     }
 }
 
-/// The repository root: `rust/crates/quoin-core` up three.
-fn repo_root() -> PathBuf {
-    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    for _ in 0..3 {
-        root.pop();
-    }
-    root
-}
-
 /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production.
 /// Materialized once per process from the embedded bytes `quoin-semantic`'s
 /// `build.rs` compiles in (PLAT-887 de-vendoring), not read from a
@@ -91,13 +82,23 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
-/// The `module-ok` fixture `tests/semantic-manifest.test.ts` installs.
+/// The `quire-fixtures` `module-ok` fixture plus the `semantic_core` the
+/// module-manifest schema requires and the fixture does not carry.
 fn fixture() -> PathBuf {
-    repo_root()
-        .join("tests")
-        .join("fixtures")
-        .join("semantic-module")
-        .join("module-ok")
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root = std::env::temp_dir().join(format!("tc446-module-ok-{}", std::process::id()));
+        copy_tree(&quire_fixtures::module_ok_dir(), &root);
+        let manifest = root.join("manifest.yaml");
+        let text = std::fs::read_to_string(&manifest).unwrap();
+        std::fs::write(
+            &manifest,
+            text.replace("semantic:\n", "semantic:\n  semantic_core: 0.0.0\n"),
+        )
+        .unwrap();
+        root
+    })
+    .clone()
 }
 
 fn copy_tree(from: &Path, to: &Path) {

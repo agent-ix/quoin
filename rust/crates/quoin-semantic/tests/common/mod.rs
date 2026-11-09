@@ -4,7 +4,7 @@
 //! Shared scaffolding for the quoin#452 criterion restatements.
 //!
 //! The TypeScript these tests replace built every case the same way: copy
-//! `tests/fixtures/semantic-module/module-ok` into a scratch directory, edit
+//! the `quire-fixtures` `module-ok` fixture into a scratch directory, edit
 //! one thing in its `manifest.yaml`, and read the result. That shape is kept
 //! deliberately — a criterion restated against a hand-written fixture of the
 //! test's own invention proves the test agrees with itself, not that the
@@ -36,15 +36,6 @@ use std::path::{Path, PathBuf};
 use quoin_semantic::manifest::{SemanticValidators, read_manifest_yaml};
 use quoin_semantic::{SemanticDiagnostic, SemanticReadResult, read_module_semantic};
 use serde_json::Value;
-
-/// The repository root: `rust/crates/quoin-semantic` up three.
-pub fn repo_root() -> PathBuf {
-    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    for _ in 0..3 {
-        root.pop();
-    }
-    root
-}
 
 /// The semantic contract's root: quoin's own `sweep-report.schema.json` plus
 /// the module-manifest and semantic-core schemas quoin depends on from
@@ -84,23 +75,29 @@ pub fn schema_dir() -> PathBuf {
     quoin_semantic::contract::schema_dir(&semantic_root())
 }
 
-/// `tests/fixtures/semantic-module`.
-pub fn fixtures_dir() -> PathBuf {
-    repo_root()
-        .join("tests")
-        .join("fixtures")
-        .join("semantic-module")
-}
-
-/// The `module-ok` fixture: a valid `semantic` block, one reference-form
-/// export and one inline `data_schema`.
+/// The `quire-fixtures` `module-ok` fixture plus the `semantic_core` the
+/// module-manifest schema requires and the fixture does not carry.
 pub fn fixture() -> PathBuf {
-    fixtures_dir().join("module-ok")
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root =
+            std::env::temp_dir().join(format!("quoin-semantic-module-ok-{}", std::process::id()));
+        copy_tree(&quire_fixtures::module_ok_dir(), &root);
+        let manifest = root.join("manifest.yaml");
+        let text = std::fs::read_to_string(&manifest).unwrap();
+        std::fs::write(
+            &manifest,
+            text.replace("semantic:\n", "semantic:\n  semantic_core: 0.0.0\n"),
+        )
+        .unwrap();
+        root
+    })
+    .clone()
 }
 
-/// `tests/fixtures/semantic-module/mapping`.
+/// The authoritative mapping fixture directory.
 pub fn mapping_dir() -> PathBuf {
-    fixtures_dir().join("mapping")
+    quire_fixtures::mapping_dir()
 }
 
 /// The `semantic_core` value every test manifest carries.
@@ -221,13 +218,12 @@ pub fn rewrite_entity_schema(root: &Path, edit: impl FnOnce(&mut Value)) {
     fs::write(&file, serde_json::to_string(&schema).unwrap()).unwrap();
 }
 
-/// One fixture file's text, from `tests/fixtures/semantic-module/mapping`.
+/// One fixture file's text, from the mapping fixture directory.
 pub fn mapping_fixture(name: &str) -> String {
-    fs::read_to_string(mapping_dir().join(name))
-        .unwrap_or_else(|e| panic!("mapping fixture {name}: {e}"))
+    quire_fixtures::mapping_fixture(name)
 }
 
 /// One fixture file parsed as JSON.
 pub fn mapping_json(name: &str) -> Value {
-    serde_json::from_str(&mapping_fixture(name)).unwrap()
+    quire_fixtures::mapping_json(name)
 }

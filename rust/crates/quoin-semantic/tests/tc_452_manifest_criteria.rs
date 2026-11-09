@@ -275,7 +275,8 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
         schema["$id"]
             .as_str()
             .unwrap()
-            .ends_with("/spec-objects-fixture/Entity.json"),
+            .contains("/spec-objects-fixture/")
+            && schema["$id"].as_str().unwrap().ends_with("/Entity.json"),
         "{schema}"
     );
     // Resolution is against the shipped bundle: the document's own `$ref`s

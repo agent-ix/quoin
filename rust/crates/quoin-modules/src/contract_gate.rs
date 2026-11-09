@@ -398,15 +398,6 @@ mod tests {
     use crate::ids::ModuleName;
     use crate::semantic::{SemanticGate, Severity};
 
-    /// The repository root: `rust/crates/quoin-modules` up three.
-    fn repo_root() -> PathBuf {
-        let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        for _ in 0..3 {
-            root.pop();
-        }
-        root
-    }
-
     /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in
     /// production, not a fixture this test wrote: a gate judged against a
     /// contract of the test's own invention agrees with whatever the test put
@@ -426,13 +417,26 @@ mod tests {
         .clone()
     }
 
-    /// The `module-ok` fixture, which declares a valid `semantic` block.
+    /// The `quire-fixtures` `module-ok` fixture plus the `semantic_core` the
+    /// module-manifest schema requires and the fixture does not carry.
     fn fixture() -> PathBuf {
-        repo_root()
-            .join("tests")
-            .join("fixtures")
-            .join("semantic-module")
-            .join("module-ok")
+        static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+        ROOT.get_or_init(|| {
+            let root = std::env::temp_dir().join(format!(
+                "quoin-modules-gate-module-ok-{}",
+                std::process::id()
+            ));
+            copy_tree(&quire_fixtures::module_ok_dir(), &root);
+            let manifest = root.join("manifest.yaml");
+            let text = std::fs::read_to_string(&manifest).unwrap();
+            std::fs::write(
+                &manifest,
+                text.replace("semantic:\n", "semantic:\n  semantic_core: 0.0.0\n"),
+            )
+            .unwrap();
+            root
+        })
+        .clone()
     }
 
     fn copy_tree(from: &Path, to: &Path) {

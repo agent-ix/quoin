@@ -109,15 +109,6 @@ fn ok(result: &Run) -> Value {
     serde_json::from_str(&result.stdout).unwrap()
 }
 
-/// The repository root: `rust/crates/quoin-core` up three.
-fn repo_root() -> PathBuf {
-    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    for _ in 0..3 {
-        root.pop();
-    }
-    root
-}
-
 /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production:
 /// DATA, not code, handed across as a directory path. Materialized once per
 /// process from the embedded bytes `quoin-semantic`'s `build.rs` compiles in
@@ -137,13 +128,37 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
-/// The `module-ok` fixture, the same one `tc_446` and `tc_449` install.
+fn copy_tree(from: &std::path::Path, to: &std::path::Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for entry in std::fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_tree(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), &target).unwrap();
+        }
+    }
+}
+
+/// The `quire-fixtures` `module-ok` fixture plus the `semantic_core` the
+/// module-manifest schema requires and the fixture does not carry.
 fn fixture() -> PathBuf {
-    repo_root()
-        .join("tests")
-        .join("fixtures")
-        .join("semantic-module")
-        .join("module-ok")
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root =
+            std::env::temp_dir().join(format!("tc452-boundary-module-ok-{}", std::process::id()));
+        copy_tree(&quire_fixtures::module_ok_dir(), &root);
+        let manifest = root.join("manifest.yaml");
+        let text = std::fs::read_to_string(&manifest).unwrap();
+        std::fs::write(
+            &manifest,
+            text.replace("semantic:\n", "semantic:\n  semantic_core: 0.0.0\n"),
+        )
+        .unwrap();
+        root
+    })
+    .clone()
 }
 
 /// `semantic.read_blocks` reads a module's block against the vendored contract
