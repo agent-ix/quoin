@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 //! The `spec-fuzz` skill's cargo-fuzz template must emit targets that compile
-//! warning-free and bind both trace carriers (the `Trace:` doc line and the
+//! warning-free and bind both trace carriers (the `#[trace(...)]` marker and the
 //! id in the symbol name) to a named wrapper function.
 //!
 //! Provenance: PLAT-166
@@ -58,26 +58,27 @@ fn tc_166_cargo_fuzz_template_carriers_sit_on_a_named_wrapper() {
     let lines: Vec<&str> = template.lines().collect();
     let mut wrappers = 0;
     for (i, line) in lines.iter().enumerate() {
-        let Some(id) = line.strip_prefix("/// Trace: ") else {
+        let Some(rest) = line.strip_prefix("#[trace(\"") else {
             continue;
         };
-        let id = id.trim();
-        let doc_block: Vec<&&str> = lines[i..]
+        let id = rest.split('"').next().unwrap_or_default();
+        let doc_block: Vec<&&str> = lines[..i]
             .iter()
+            .rev()
             .take_while(|l| l.starts_with("///"))
             .collect();
         assert!(
             doc_block
                 .iter()
                 .any(|l| l.contains(&format!("spec-fuzz: obligation={id} "))),
-            "provenance line for {id} must sit in the same doc block"
+            "provenance line for {id} must sit in the doc block above its trace marker"
         );
-        let item = lines[i + doc_block.len()];
+        let item = lines[i + 1];
         let name = item
             .strip_prefix("fn ")
             .and_then(|rest| rest.split('(').next())
             .unwrap_or_else(|| {
-                panic!("Trace carrier for {id} must document a named fn, got {item:?}")
+                panic!("trace marker for {id} must sit on a named fn, got {item:?}")
             });
         assert!(
             name.starts_with("fuzz_") && name.contains(&slug(id)),
@@ -85,5 +86,5 @@ fn tc_166_cargo_fuzz_template_carriers_sit_on_a_named_wrapper() {
         );
         wrappers += 1;
     }
-    assert!(wrappers >= 1, "template shows no Trace-carrying wrapper");
+    assert!(wrappers >= 1, "template shows no trace-marked wrapper");
 }

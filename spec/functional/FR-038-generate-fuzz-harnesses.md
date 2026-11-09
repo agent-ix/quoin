@@ -76,11 +76,11 @@ exactly the `vacuous-evidence` shape FR-034 exists to name.
 ### What it inherits from FR-028
 
 The tag contract is unchanged, because `gap-analysis` reconciles by the same grep. Every emitted
-target carries **two independent carriers** — a `Trace:` line in the doc comment and the id in the
+target carries **two independent carriers** — a `#[trace("…")]` marker above the named wrapper and the id in the
 target's own name — plus a provenance line the reconciliation ignores and re-runs read.
 
 The placement rule is inherited verbatim and matters more here: a carrier binds to the symbol whose
-source span encloses it. For a `libfuzzer` target that span is the named wrapper function the `fuzz_target!` invocation calls (a doc comment on the macro invocation itself is a compiler warning), not the file
+source span encloses it. For a `libfuzzer` target that span is the named wrapper function the `fuzz_target!` invocation calls (a marker or doc comment on the macro invocation itself binds nothing), not the file
 header.
 
 ## Inputs

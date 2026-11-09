@@ -40,9 +40,9 @@ describe("FR-012-AC-1 duplicate modules are sorted", () => {
 
 Both tag carriers: the `trace("FR-012-AC-1", "TC-345")` call (the criterion id plus the
 `spec/matrix.md` row's own `TC-` id; an id in a comment binds nothing), and `FR-012-AC-1` inside
-the `describe` title. `trace(...ids: string[]): void` is a no-op at runtime unless
-`QUIRE_TRACE_EMIT=1` and `TraceReporter` are configured; `quire coverage` binds the quoted ids
-statically.
+the `describe` title. `trace(...ids: string[]): void` records the ids on the running
+test when `QUIRE_TRACE_EMIT=1` (and does nothing otherwise), so it must be called inside a test
+callback; `quire coverage` binds the quoted ids statically.
 
 **The `trace(...)` call goes inside the `it(` / `test(` callback — never in the enclosing
 `describe`.** A tag binds to the symbol whose source span encloses it, and
@@ -159,8 +159,10 @@ describe("FR-018-AC-3 source maps to one root", () => {
    * A plugin source maps to exactly one resolved root.
    * spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate
    */
-  it("holds for any plugin source", () => { … });
+  it("holds for any plugin source", () => {
     trace("FR-018-AC-3", "TC-345");
+    …
+  });
 });
 ```
 
