@@ -64,6 +64,41 @@ fn required_arrays(node: &Value, path: &str, found: &mut BTreeMap<String, Vec<St
     }
 }
 
+/// `$defs` entries added after CR-003, each the value type of an optional
+/// top-level manifest property (`plain_language_profiles`, `lint_rules`,
+/// `lexicon`, `ambiguity_terms`, `property_idioms`, `verification_catalog`,
+/// `traceability` and its column, obligation and relation helpers). The
+/// top-level `required` stays the original three keys, so a manifest that never
+/// sets such a property never evaluates the entry's `required` array.
+///
+/// `LintRuleEntry` is accepted upstream evolution of semantic-schema 0.4.2: its
+/// root `required` is `[type, id, section]` with conditional `column`/`allowed`
+/// and `pattern` fields, replacing the pre-CR-003 object-form `pattern`. A new
+/// `required` array under `ObjectTypeEntry`, `ArchetypeEntry` or
+/// `ArtifactTypeEntry` is not on this list and still fails.
+const NEW_OPTIONAL_DEFS: &[&str] = &[
+    // filament-core-service#33: an optional semantic-IR construct declaration
+    // attached through the optional `ObjectTypeEntry.properties.construct`.
+    "ConstructDeclaration",
+    "PlainLanguageProfile",
+    "LintRuleEntry",
+    "VocabularyTerm",
+    "AmbiguityTermEntry",
+    "PropertyIdiomEntry",
+    "VerificationMethodEntry",
+    "TraceTarget",
+    "DocumentReference",
+    "StatusVocabulary",
+    "TraceTagGrammar",
+    "TraceMarkerForm",
+    "ColumnVocabularies",
+    "CombinatorialColumns",
+    "ObligationSource",
+    "RequiredRelation",
+    "VocabularyCoverage",
+    "TraceImplementsForm",
+];
+
 /// The module-manifest schema admits exactly the contract's keys.
 ///
 /// Provenance: agent-ix/quoin#452
@@ -93,7 +128,7 @@ fn tc_452_640_the_module_manifest_schema_admits_the_contract_keys() {
 /// arrays, or "every one of them is unchanged" is a statement about none of
 /// them.
 ///
-/// The baseline is the 14 `(path, required)` pairs `required_arrays` produced
+/// The baseline is the 13 `(path, required)` pairs `required_arrays` produced
 /// over filament-core-service's `module-manifest.schema.json` at the commit
 /// before CR-003 (agent-ix/filament-core-service#21) added the `semantic`
 /// block — recorded here as data rather than as a second copy of the whole
@@ -154,16 +189,19 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
         assert!(
             path.contains("/properties/semantic")
                 || path.contains("/data_schema/")
-                // A new `$defs` entry (for example `ConstructDeclaration`,
-                // `AmbiguityTermEntry`, `ColumnVocabularies`): every `$defs` entry
-                // hangs off an optional top-level property, because the top-level
-                // `required` is asserted below to stay the original three keys, so
-                // a manifest that never sets that property never evaluates the
-                // entry's own `required` array and it adds no obligation.
-                || path.starts_with("/$defs/"),
+                || NEW_OPTIONAL_DEFS.iter().any(|name| {
+                    *path == format!("/$defs/{name}")
+                        || path.starts_with(&format!("/$defs/{name}/"))
+                }),
             "new required array outside the optional nodes: {path}"
         );
     }
+    // The pre-CR-003 object-form `pattern` baseline is now a plain string.
+    let schema = read_json(&module_manifest_schema_path(&semantic_root()));
+    assert_eq!(
+        schema["$defs"]["LintRuleEntry"]["properties"]["pattern"]["type"],
+        "string"
+    );
     assert_eq!(
         after.get(""),
         Some(&vec![

@@ -106,7 +106,9 @@ fn tc_452_611b_a_retired_semantic_core_declaration_is_ignored() {
             });
         });
         assert_eq!(errors(&root, &validators), Vec::<String>::new(), "{name}");
+        assert_eq!(codes(&root, &validators), Vec::<String>::new(), "{name}");
         let block = read(&root, &validators).module.expect("a module").block;
+        assert_eq!(block.contract_version.as_str(), "1.0.0", "{name}");
         assert_eq!(block.package.as_str(), "agent-ix/spec-objects-fixture");
     }
 }

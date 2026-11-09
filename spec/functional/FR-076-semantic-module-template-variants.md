@@ -53,7 +53,7 @@ and the mapping declarations it needs.
 - If `license` names anything other than an AGPL-3.0-or-later identifier, then the template SHALL abort rendering naming the value, rather than rendering a repository whose licence declarations disagree.
 - If `module_kind` names a value outside `artifact`, `object`, and `mixed`, then the template SHALL abort rendering naming the value.
 - If an entry of `imported_modules` is not of the `<org>/<repo>@<x.y.z>` form (an exact semantic version: no range, no leading zeros), then the template SHALL abort rendering naming the entry.
-- If an entry of `generated_targets` is outside the filament-core-data target registry, then the template SHALL abort rendering naming the entry.
+- Where `generated_targets` names an entry outside the filament-core-data target registry, the published module-manifest schema SHALL refuse the rendered `semantic.targets`, naming the entry; the template keeps no copy of the registry.
 - The template SHALL accept every input as an argument, so that a rendering needs no terminal.
 - Where the template is run interactively, it SHALL prompt for the same inputs it accepts as arguments.
 - The template SHALL record every target it declares but does not emit today in the rendered README and in the rendered `semantic.targets`, rather than presenting a declared target as an emitted one.
@@ -93,7 +93,7 @@ first choice for an off-list `module_kind`, so FR-076-AC-6 cannot hold there.
 | FR-076-AC-5 | `license: MIT` aborts rendering naming `MIT`; the default renders the AGPL-3.0-or-later text. | Test (TC-1404) |
 | FR-076-AC-6 | `module_kind: hybrid` aborts rendering naming `hybrid`. | Test (TC-1405) |
 | FR-076-AC-7 | `imported_modules: ["agent-ix/spec-objects-business"]`, `["agent-ix/spec-objects-business@^1.2.0"]` and `["agent-ix/spec-objects-business@01.2.3"]` abort naming the entry; `["agent-ix/spec-objects-business@1.2.3"]` and `["agent-ix/spec-objects-business@1.2.3-rc.1"]` render. | Test (TC-1406) |
-| FR-076-AC-8 | `generated_targets: ["go"]` aborts naming `go`. | Test (TC-1407) |
+| FR-076-AC-8 | A rendering with `generated_targets: ["json-schema", "go"]` carries `go` in `semantic.targets`, and validating that `semantic` block against the published schema fails naming `go`. | Test (TC-1407) |
 | FR-076-AC-9 | No rendered variant contains an `.npmrc` file at any depth. | Test (TC-1412) |
 | FR-076-AC-10 | A rendering that declares a target with no emitter today records that target as declared-not-emitted in the rendered README and in `semantic.targets`, and the two agree. | Test |
 | FR-076-AC-11 | Every variant renders unattended from arguments alone, with no prompt and no terminal. | Test (TC-1452) |
