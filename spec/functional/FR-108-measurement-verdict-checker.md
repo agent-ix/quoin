@@ -26,6 +26,11 @@ applies the plan's decision rule through engineering-assurance's own
 `DecisionRule::holds`, or `DecisionRule::holds_on_interval` when the rule
 states an `interval_level` (engineering-assurance FR-021).
 
+`quoin-jev` SHALL provide a pure function that builds the complete graded-corpus
+`MeasurementCollection` (the governed aggregate and one item row per graded
+item) from a graded corpus, so that a producer's stored collection carries the
+rows a `constant-predictor` baseline is recomputed from (PLAT-1021).
+
 ## Rationale
 
 Nothing decided a measurement verdict from the data. A producer's own
@@ -178,6 +183,15 @@ exits 1 with the complete document and a `CORE_INCONCLUSIVE` diagnostic.
 | FR-108-AC-11 | When the plan's `decision_rule` declares `interval_level`, every run is judged by engineering-assurance's `DecisionRule::holds_on_interval` (engineering-assurance FR-021-AC-14) on that run's own `interval`, the candidate for its slice decision and every earlier run for regression detection under FR-108-AC-3; `DecisionRule::holds` and the point estimate are never used for such a rule. A run the rule does not hold for at its unfavourable bound is regressed exactly as a failing point estimate is, so run 1 failing at its lower bound, the same apparatus re-run, and run 2 passing is `rerun_until_pass`. An earlier run for which `holds_on_interval` gives no answer (no interval, a level below the plan's, or an estimate outside its interval) is regressed, the conservative direction, so an absent or weakened earlier interval cannot let a rerun-until-pass through; it adds no finding of its own except `interval_malformed`. A baseline rule's baseline value remains the earlier runs' point estimates. `method` is never read. Each slice decided on an interval carries in `decisions`, additively, `intervalBound` (`lower` or `upper`), `intervalBoundValue` and `intervalLevel`; other slices carry none, and the verdict document for a plan with no `interval_level` is byte-identical to the one before this criterion. | Test (TC-1954, TC-1955, TC-1956) |
 | FR-108-AC-12 | Under a plan declaring `interval_level`, a candidate with no `interval` is `inconclusive` with `interval_unstated`; one whose `interval` does not satisfy FR-044-AC-10 is `reject` with `interval_malformed`, in any run; one whose `level` is below the plan's is `reject` with `interval_level_short`; the rule is never judged on the point estimate instead. An estimate outside its interval (engineering-assurance's `EstimateOutsideInterval`) is `inconclusive` with `rule_not_evaluable`; it is reached when a recomputed `proportion` or `count` estimate falls outside the stored interval, which FR-108-AC-4's rounding tolerance permits (stored `value` 0.67 inside an interval with `lower` 0.67, recomputed 2/3). The interval requirement does not depend on resolving the baseline: a first candidate under a baseline rule with no interval lists both `interval_unstated` and `no_prior`. A plan whose rule states `interval_level` with an `eq` comparator, at 0 or 1 or outside them, non-numeric or null, refuses the plan load as `QM-PLAN-INVALID` under FR-108-AC-1, naming the member. | Test (TC-1957, TC-1958) |
 | FR-108-AC-14 | A plan whose `decision_rule` states `margin_mode: relative` (engineering-assurance FR-021-AC-12) is decided with the relative reference in verify, so a relative margin changes the verdict a same-value absolute margin would give; a plan stating `absolute` or no `margin_mode` decides with the margin applied as an absolute offset. | Test (TC-1960) |
+| FR-108-AC-15 | `quoin_jev::graded_corpus_collection` takes a `GradedCorpus` (plan id, definition version, governed metric, collection id, subject, scope, tool identity and version, timestamp, environment, `verificationStack` capabilities and artifacts, `repetitions`, and the graded items as `ConstantPredictorItem`) and returns a candidate `MeasurementCollection` document with every member the intake contract requires filled from the input: `schemaVersion`, `collectionId`, `subject`, `scope`, `toolIdentity`, `toolVersion`, `timestamp`, `environment`, `verificationStack` exactly as the caller states it, `buildProfile` and every other member included, never defaulted or invented, non-empty `observations` and `rawEvidence` (an empty object: FR-108-CON-3, nothing is duplicated into it). It performs no I/O and reads no clock, environment or random source. | Test (TC-2013) |
+| FR-108-AC-16 | The collection's first observation is the governed aggregate: metric `metric`, state `measured`, shape `ratio`, unit `fraction`, no `dimensions`, and a `population` of `examined` = the item count, `matched` = the items whose `actual` equals their `expected` or is a member of their `contested`, `complete` = `true` and the input's `repetitions`; its `value` is `matched / examined`. | Test (TC-2014) |
+| FR-108-AC-17 | Every other observation is one item row, exactly the rows `item_observations` (FR-108-AC-10) builds for the same items and metric, in `item_id` order (FR-108-AC-19), so the item rows number exactly the aggregate's `population.examined` and `quoin measurement verify` on a plan with `baseline: constant-predictor` decides against a baseline recomputed from the stored rows after the collection passes intake, and never returns `constant_predictor_rows_absent`, `_malformed` or `_mismatch` for it. The families in the item rows are exactly the `family` values the caller's items carry; the function takes no family list and invents none. | Test (TC-2015, TC-2016) |
+| FR-108-AC-18 | `graded_corpus_collection` refuses with `QM-COLLECTION-INVALID` (`MeasurementErrorCode::CollectionInvalid`), naming the field, when `plan_id`, `definition_version`, `metric`, `collection_id`, `subject`, `tool_identity`, `tool_version` or `timestamp` is empty; when `verificationStack` capabilities or artifacts are empty; when `repetitions` is `0`; when there are no items; and for every refusal `item_observations` states (an empty `item_id`, `family` or `expected`, or a repeated `item_id`). It returns no partial collection. | Test (TC-2017) |
+| FR-108-AC-19 | The result is deterministic: the same input yields the same document and the same canonical JSON bytes on repeated calls, and permuting the order of the input items yields the same document, because item rows follow the aggregate ordered by `item_id` ascending (bytewise). | Test (TC-2018) |
+| FR-108-AC-20 | The item's `actual` is the answer class the caller grades on (for the criterion-strength harness the `Graded` row's `actual_class`, the rounded level, not the raw `actual` score). An item the graded tool did not agree with, including an unanswered or unrecognized row (whatever non-empty class the caller maps it to) or one whose `actual` is empty, is counted in `examined` and not in `matched`; the function cannot drop an item. A transport failure that aborts a pass is the caller's, and never produces a collection (MP-228's scoring rule). | Test (TC-2019) |
+| FR-108-AC-21 | The criterion-strength live harness (`tests/live_criterion_strength.rs`, the `live-api` feature, ignored by default) builds its items with the offline mapping of FR-108-AC-23, builds the collection with `graded_corpus_collection` and, when the environment names a measurement repository, writes it through `write_measurement_collection`; with none named it writes nothing. The write comes before every assertion of the test, including the unanswered and unrecognized checks and the bars, so a failing pass still leaves its evidence stored. The write needs intake's preconditions: the named repository holds the governing plan under `spec/assurance`; that plan's `protected_apparatus` entries resolve in the repository and are all listed in the collection's `verificationStack.artifacts` (FR-110); and the plan is `active` with the `definition_version` and `repetitions` the collection states. End to end, the stored collection is decided by `quoin measurement verify` with a recomputed constant-predictor baseline only against a plan whose `statistical_design` declares `baseline: constant-predictor` with an `estimator: proportion` and a `decision_rule` (FR-108-AC-1). MP-228 states no `statistical_design` today, so `verify` on it is `inconclusive` with `no_decision_rule`; it is the intended future consumer once PLAT-1020 or the plan's owner adds that design, and the end-to-end live check applies from then, not before. | Test (TC-2020) |
+| FR-108-AC-22 | `graded_corpus_collection` states no `buildProfile`: it takes `verificationStack` from the caller and never invents it. Intake refuses a new collection whose `verificationStack.buildProfile` is not `release`, so the live write happens only when the harness runs as a release build and states `release`; a debug build skips the write and says so on stderr with the reason, and never states `release` falsely. | Test (TC-2021) |
+| FR-108-AC-23 | The mapping from the harness's graded rows to `ConstantPredictorItem` (`item_id` the fixture id, `family` the answer space the fixture is graded in, `expected`, `contested`, `actual` the answer class) is a function separate from the live call, tested offline on the default path over the committed fixture corpus: it yields 15 items in two families, `weakness_kind` 11 and `coverage` 4 (FR-108's worked example), and `graded_corpus_collection` over them passes `quoin_measurement::validate` against a plan fixture. The live write itself is the only part gated by the environment and the `live-api` feature. | Test (TC-2022) |
 
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-108-AC-13 is withdrawn. It
 > required the engineering-assurance crate `version` to move to a stated value
@@ -319,6 +333,57 @@ not supported.
   document replaced under a different path with too little similarity for
   git to follow as a rename starts a new history.
 
+## Graded-corpus collection producer (PLAT-1021)
+
+PLAT-1016 built the per-item rows but no production path called
+`item_observations`: `quoin-jev` is a leaf library with no binary, and
+`quoin measurement record` takes a finished collection, so no stored
+collection carried item rows and every real `constant-predictor` plan stayed
+`constant_predictor_rows_absent`. The owner chose to close this inside the
+library: a pure function builds the whole collection, and the live Jev
+harness, the only code that grades a real corpus, writes it. No new binary,
+subcommand or crate dependency is added (`quoin-jev` already depends on
+`quoin-measurement`; neither `quoin-cli` nor `quoin-core` gains `quoin-jev`).
+
+**Function.** `quoin_jev::graded_corpus_collection(corpus: &GradedCorpus) ->
+Result<JsonValue, MeasurementError>` (module `graded_corpus`, re-exported
+from the crate root). The result is the candidate document
+`write_measurement_collection` and `quoin measurement record` accept. The
+caller supplies identity and time (`collection_id`, `timestamp`,
+`environment`, `scope`, `verificationStack`), so the function reads no clock
+or environment and stays deterministic. Intake still owns its own checks and
+merges (active plan, definition version, minimum population, repetitions,
+protected apparatus, `unverifiedArtifacts`); the function does not restate
+them.
+
+**Fields filled.** The collection's own members come from the input
+(FR-108-AC-15). Its observations are the governed aggregate (FR-108-AC-16)
+followed by the item rows (FR-108-AC-17). The aggregate and the item rows are
+computed from one pass over the same items with one agreement rule, so the
+item count equals `population.examined` by construction, which is what
+`constant_predictor_rows_mismatch` checks. `item_observations` stays the one
+builder of item rows; the collection function calls it.
+
+**Where the harness calls it.** After the graded pass of
+`the_lens_beats_the_do_nothing_baseline` in `live_criterion_strength.rs`,
+before the bars are asserted, so a failing bar still leaves the evidence of
+the run. The target repository comes from an environment variable read by the
+harness (not by the library); unset means no write. The plan id, metric and
+definition version are the governing plan's (MP-228), and a mismatch is
+refused by intake, not guarded in the harness. Other live harnesses (EARS,
+gap analysis) are not changed here; each would map its own graded rows the
+same way under its own plan.
+
+**Forward note for PLAT-1020 (data shape only).** PLAT-1020 intends a
+plan-declared `statistical_design.answer_families` list that the checker
+compares with the producer's item-row families. The shape this producer
+guarantees for that comparison is: the set of distinct `dimensions.family`
+values over a collection's item rows is exactly the set of families of the
+items the caller passed, with no family added, defaulted or merged by the
+function, and every item row has a non-empty `family`. The function neither
+reads the plan nor takes a families list. Whether the checker compares sets or
+sizes, and the reason codes for a difference, are PLAT-1020's to specify.
+
 ## Constraints
 
 - **FR-108-CON-1**: The checker performs no I/O and reads no clock; the
@@ -347,3 +412,5 @@ not supported.
   producer for `constant-predictor` baseline item observations; it depends on
   this crate's `MeasurementObservation` type and the `constant_predictor_item_metric`/
   `constant_predictor_dims` naming convention rather than restating them.
+- `quoin-jev`'s `graded_corpus` module (PLAT-1021) is the reference producer
+  of the whole graded-corpus collection, and calls `item_observations`.
