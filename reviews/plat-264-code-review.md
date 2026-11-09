@@ -104,3 +104,5 @@ scope:
 | FND-004 | fixed | dad84cf2: the conformance.yaml header no longer names the drift check, FR-083-AC-5 or the maintained repositories |
 | FND-005 | fixed | dad84cf2: renamed to `..._with_exactly_these_blocks`; the message now says which blocks the gate reads and that `contract_version` versions the file |
 | FND-006 | fixed | dad84cf2: message now reads "a job does not delegate to a shared reusable workflow" |
+| FND-007 | fixed | d0cac2c1: the doc comment now says the module-manifest schema requires `semantic.imports` values to be exact semantic versions (comment-only; no other "any valid version requirement" remains under rust/crates, spec/functional or templates) |
+| FND-008 | fixed | d0cac2c1 deletes both parametrised oracle-only tests; `test_imports_are_a_mapping_to_exact_versions` remains and reads the manifest's `semantic.imports`; the rendered file compiles |
