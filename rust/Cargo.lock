@@ -3060,6 +3060,7 @@ version = "0.29.4"
 dependencies = [
  "async-trait",
  "engineering-assurance",
+ "ix-trace-rs",
  "quoin-measurement",
  "quoin-modules",
  "quoin-store",
@@ -3083,6 +3084,7 @@ dependencies = [
 name = "quoin-jsonschema"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "jsonschema",
  "quoin-measurement",
  "serde_json",
@@ -3160,6 +3162,7 @@ dependencies = [
 name = "quoin-semantic"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "quire-fixtures",
  "quoin-jsonschema",
  "quoin-yaml",

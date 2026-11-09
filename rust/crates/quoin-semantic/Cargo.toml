@@ -48,6 +48,7 @@ schemars = { workspace = true, optional = true }
 schema = ["dep:schemars"]
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 quire-fixtures = { workspace = true }
 # Raised from =3.24.0 on the merge with main. `quoin-validators` (quoin#377,
 # already on main) pins `tempfile = "=3.27.0"`, and cargo cannot resolve two

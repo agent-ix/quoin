@@ -71,6 +71,7 @@ typesafe-sdk-questions = "=0.6.2"
 typesafe-sdk-headers = "=0.6.2"
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 # Only for `#[tokio::test]` driving this crate's own async functions in the
 # integration suite; no production code in this crate builds a runtime (see
 # `lib.rs`'s module doc: the async/blocking bridge is a future CLI caller's

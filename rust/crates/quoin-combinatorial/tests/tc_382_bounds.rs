@@ -4,6 +4,7 @@
 //! The bounds and saturation behaviour of the combinatorial space, asserted
 //! against this crate alone.
 
+use ix_trace_rs::trace;
 use quoin_combinatorial::{
     CombinatorialErrorCode, Configuration, DimensionName, DimensionValue, MAX_DEMANDED_TUPLES,
     covered_by, demanded_tuples, parse_space, tway_coverage,
@@ -11,8 +12,8 @@ use quoin_combinatorial::{
 
 /// A demand past the ceiling is refused, not exhausted.
 ///
-/// Trace: FR-035-AC-1
 /// Provenance: quoin#382
+#[trace("FR-035-AC-1")]
 #[test]
 #[allow(
     clippy::unwrap_used,
@@ -48,8 +49,8 @@ fn tc_382_002_a_demand_past_the_ceiling_is_refused() {
 
 /// A strength above `u64` saturates, and that cannot be observed.
 ///
-/// Trace: FR-035-AC-1
 /// Provenance: quoin#382
+#[trace("FR-035-AC-1")]
 #[test]
 #[allow(
     clippy::unwrap_used,
@@ -91,8 +92,8 @@ fn tc_382_003_a_strength_above_u64_saturates_and_that_cannot_be_observed() {
 
 /// A dimension named like an inherited property is an ordinary dimension.
 ///
-/// Trace: FR-035-AC-1
 /// Provenance: quoin#382
+#[trace("FR-035-AC-1")]
 #[test]
 #[allow(
     clippy::unwrap_used,

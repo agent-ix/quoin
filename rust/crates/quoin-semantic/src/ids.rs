@@ -141,8 +141,9 @@ impl PackageIdentity {
 #[allow(clippy::indexing_slicing)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-075
+    #[trace("FR-075")]
     #[test]
     fn tc_378_010_package_identity_splits() {
         let id = PackageIdentity::from("agent-ix/spec-objects");
@@ -150,7 +151,7 @@ mod tests {
         assert_eq!(id.repo(), "spec-objects");
     }
 
-    /// Trace: FR-075
+    #[trace("FR-075")]
     #[test]
     fn tc_378_011_package_identity_without_slash_has_no_repo() {
         let id = PackageIdentity::from("agent-ix");
@@ -159,7 +160,7 @@ mod tests {
         assert_eq!(id.repo(), "");
     }
 
-    /// Trace: FR-075
+    #[trace("FR-075")]
     #[test]
     fn tc_378_012_package_identity_takes_the_first_two_segments() {
         let id = PackageIdentity::from("agent-ix/spec/objects");

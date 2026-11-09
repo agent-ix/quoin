@@ -20,6 +20,7 @@
 
 mod common;
 
+use ix_trace_rs::trace;
 use std::fs;
 
 use common::{Scratch, codes, errors, read, semantic_root, validators};
@@ -45,8 +46,8 @@ fn module(
 /// Both halves: a derivation that emitted a valid but empty manifest would
 /// satisfy the schema and describe nothing.
 ///
-/// Trace: FR-075-AC-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-075-AC-1")]
 #[test]
 fn tc_452_630_the_derived_package_manifest_validates_and_carries_the_declarations() {
     let validators = validators();
@@ -90,8 +91,8 @@ fn tc_452_630_the_derived_package_manifest_validates_and_carries_the_declaration
 /// Declared mappings become `ix://` mapping identities, sorted, at the root
 /// and in the profile alike.
 ///
-/// Trace: FR-075-AC-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-075-AC-1")]
 #[test]
 fn tc_452_631_declared_mappings_become_sorted_identities_at_the_root_and_the_profile() {
     let validators = validators();
@@ -120,8 +121,8 @@ fn tc_452_631_declared_mappings_become_sorted_identities_at_the_root_and_the_pro
 /// An import no installed module provides is refused, naming the versions that
 /// ARE installed; an import cycle is refused, naming the cycle.
 ///
-/// Trace: FR-075-AC-3
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-075-AC-3")]
 #[test]
 fn tc_452_633_an_unresolved_import_names_the_installed_versions_and_a_cycle_names_the_cycle() {
     let validators = validators();
@@ -201,8 +202,8 @@ fn tc_452_633_an_unresolved_import_names_the_installed_versions_and_a_cycle_name
 /// pin the two surfaces together, which is what a consumer joining on them
 /// depends on.
 ///
-/// Trace: FR-075-AC-4
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-075-AC-4")]
 #[test]
 fn tc_452_634_the_loaded_and_the_derived_type_identities_agree() {
     let validators = validators();
@@ -232,8 +233,8 @@ fn tc_452_634_the_loaded_and_the_derived_type_identities_agree() {
 /// admitted `<org>/<repo>` package is an `ix://` identity of the declared
 /// shape.
 ///
-/// Trace: FR-075-AC-5, FR-075-CON-2
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-075-AC-5", "FR-075-CON-2")]
 #[test]
 fn tc_452_635_a_url_package_is_refused_and_admitted_packages_derive_ix_identities() {
     let validators = validators();
@@ -286,8 +287,8 @@ fn tc_452_635_a_url_package_is_refused_and_admitted_packages_derive_ix_identitie
 /// `std::fs`, and the file must be the derivation and must be substantial, or
 /// the absence it asserts is an absence from an empty string.
 ///
-/// Trace: FR-075-CON-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-075-CON-1")]
 #[test]
 fn tc_452_636_the_derivation_names_no_network_publish_or_subprocess_path() {
     const SOURCE: &str = include_str!("../src/package_manifest.rs");
