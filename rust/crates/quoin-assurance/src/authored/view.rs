@@ -339,6 +339,7 @@ pub enum EvidenceRefState {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use ix_trace_rs::trace;
     use quoin_finding_types::FindingKind;
 
     use super::super::fixtures::{AS_OF, argument, build, decision, json};
@@ -347,8 +348,8 @@ mod tests {
     /// `EvidenceRefState`'s wire spellings are the auditor's own, not a
     /// second vocabulary that happens to look similar.
     ///
-    /// Trace: FR-047-AC-8
     /// Provenance: PLAT-966
+    #[trace("FR-047-AC-8")]
     #[test]
     fn tc_1925_reuses_the_auditors_own_evidence_vocabulary() {
         let cases = [
@@ -370,8 +371,8 @@ mod tests {
     /// matters is that the unknown key is refused where it is REACHABLE, not
     /// merely that an isolated struct would have refused it.
     ///
-    /// Trace: FR-047-AC-5
     /// Provenance: agent-ix/quoin#447
+    #[trace("FR-047-AC-5")]
     #[test]
     fn tc_447_441_every_reachable_view_type_refuses_an_unknown_field() {
         let mut unused = decision();

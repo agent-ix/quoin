@@ -8,9 +8,10 @@ use super::super::fixtures::{
 use super::super::view::{EvidenceIndexEntry, EvidenceRefState, ViewStatus};
 use super::build_authored_argument_view;
 use crate::argument::parse_assurance_argument;
+use ix_trace_rs::trace;
 
-/// Trace: FR-047-AC-1
 /// Provenance: quoin#445, quoin#447
+#[trace("FR-047-AC-1")]
 #[test]
 fn tc_1131_preserves_the_authored_claim_authority_and_independence() {
     let view = build(argument(), vec![decision()], AS_OF);
@@ -31,8 +32,8 @@ fn tc_1131_preserves_the_authored_claim_authority_and_independence() {
 
 /// No score, anywhere, at any depth.
 ///
-/// Trace: FR-047-AC-1
 /// Provenance: quoin#445
+#[trace("FR-047-AC-1")]
 #[test]
 fn tc_1131_emits_no_score_at_any_depth() {
     let view = build(argument(), vec![decision()], AS_OF);
@@ -43,8 +44,8 @@ fn tc_1131_emits_no_score_at_any_depth() {
     );
 }
 
-/// Trace: FR-047-AC-2
 /// Provenance: quoin#445
+#[trace("FR-047-AC-2")]
 #[test]
 fn tc_1132_leaves_an_undecided_criterion_open_instead_of_inferring_from_evidence() {
     // The argument DOES carry an evidence reference — the challenge's
@@ -64,8 +65,8 @@ fn tc_1132_leaves_an_undecided_criterion_open_instead_of_inferring_from_evidence
     );
 }
 
-/// Trace: FR-047-AC-3
 /// Provenance: quoin#445
+#[trace("FR-047-AC-3")]
 #[test]
 fn tc_1133_reopens_expired_decisions_and_assumptions_due_for_review() {
     let assumption = with(
@@ -104,8 +105,8 @@ fn tc_1133_reopens_expired_decisions_and_assumptions_due_for_review() {
     );
 }
 
-/// Trace: FR-047-AC-5
 /// Provenance: quoin#445
+#[trace("FR-047-AC-5")]
 #[test]
 fn tc_1135_validates_the_closed_authored_contract_and_rejects_duplicate_decisions() {
     // The round trip the retained test spelled `toEqual(argument)`: the
@@ -166,8 +167,8 @@ fn tc_1135_validates_the_closed_authored_contract_and_rejects_duplicate_decision
 /// a validator that only answered yes/no would pass every test above and
 /// still order two instants wrongly.
 ///
-/// Trace: FR-047-AC-3, FR-047-AC-7
 /// Provenance: quoin#436, quoin#445
+#[trace("FR-047-AC-3", "FR-047-AC-7", "TC-1712")]
 #[test]
 fn tc_1712_the_offset_and_the_fraction_move_the_comparison() {
     // `2026-08-15T00:00:00.000Z` as an offset instant one minute EARLIER,
@@ -222,8 +223,8 @@ fn tc_1712_the_offset_and_the_fraction_move_the_comparison() {
 
 /// A decision nobody asked for is reported rather than dropped.
 ///
-/// Trace: FR-047-AC-2
 /// Provenance: quoin#445
+#[trace("FR-047-AC-2")]
 #[test]
 fn tc_1132_a_decision_matching_no_authored_criterion_is_reported_unused() {
     let view = build(
@@ -244,8 +245,8 @@ fn tc_1132_a_decision_matching_no_authored_criterion_is_reported_unused() {
 
 /// A non-active argument opens the top claim on its own.
 ///
-/// Trace: FR-047-AC-1
 /// Provenance: quoin#445
+#[trace("FR-047-AC-1")]
 #[test]
 fn tc_1131_a_proposed_argument_opens_the_top_claim() {
     let view = build(
@@ -265,8 +266,8 @@ fn tc_1131_a_proposed_argument_opens_the_top_claim() {
 /// relies on — `argument()`'s top claim carries one reference and
 /// [`request`] resolves it by default.
 ///
-/// Trace: FR-047-AC-8
 /// Provenance: PLAT-966
+#[trace("FR-047-AC-8", "TC-1925")]
 #[test]
 fn tc_1925_a_claim_backed_by_resolved_evidence_passes_clean() {
     let view = build(argument(), vec![decision()], AS_OF);
@@ -276,8 +277,8 @@ fn tc_1925_a_claim_backed_by_resolved_evidence_passes_clean() {
 
 /// A claim with no evidence references at all is unbacked.
 ///
-/// Trace: FR-047-AC-8
 /// Provenance: PLAT-966
+#[trace("FR-047-AC-8", "TC-1925")]
 #[test]
 fn tc_1925_a_claim_with_no_evidence_references_is_unbacked() {
     let claim_without_refs = with(
@@ -300,8 +301,8 @@ fn tc_1925_a_claim_with_no_evidence_references_is_unbacked() {
 /// A claim citing a reference the evidence store has never heard of is
 /// unbacked, distinctly from citing nothing.
 ///
-/// Trace: FR-047-AC-8
 /// Provenance: PLAT-966
+#[trace("FR-047-AC-8", "TC-1925")]
 #[test]
 fn tc_1925_a_claim_citing_an_unresolved_reference_is_unbacked() {
     let view = build_authored_argument_view(&request_with_evidence(
@@ -323,8 +324,8 @@ fn tc_1925_a_claim_citing_an_unresolved_reference_is_unbacked() {
 /// A claim citing evidence the auditor already flagged is unbacked, and
 /// the reason names the auditor's own word for each of the two states.
 ///
-/// Trace: FR-047-AC-8
 /// Provenance: PLAT-966
+#[trace("FR-047-AC-8", "TC-1925")]
 #[test]
 fn tc_1925_a_claim_citing_stale_or_vacuous_evidence_is_unbacked() {
     let cases = [
@@ -356,8 +357,8 @@ fn tc_1925_a_claim_citing_stale_or_vacuous_evidence_is_unbacked() {
 /// stale reference does not hide a later vacuous one, and a resolved
 /// reference between them contributes nothing.
 ///
-/// Trace: FR-047-AC-8
 /// Provenance: PLAT-966
+#[trace("FR-047-AC-8", "TC-1925")]
 #[test]
 fn tc_1925_reports_every_failing_reference_in_authored_order() {
     let claim = with(
@@ -403,8 +404,8 @@ fn tc_1925_reports_every_failing_reference_in_authored_order() {
 /// resolved by list order: last-write-wins would let a trailing
 /// `resolved` entry mask a `stale` one.
 ///
-/// Trace: FR-047-AC-8
 /// Provenance: PLAT-966
+#[trace("FR-047-AC-8", "TC-1925")]
 #[test]
 fn tc_1925_a_duplicate_evidence_index_entry_is_refused() {
     let mut evidence = vec![EvidenceIndexEntry {

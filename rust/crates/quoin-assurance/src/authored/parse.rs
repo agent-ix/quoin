@@ -163,12 +163,13 @@ mod tests {
     use super::super::view::ChallengeViewStatus;
     use crate::argument::parse_assurance_argument;
     use crate::authored::build_authored_argument_view;
+    use ix_trace_rs::trace;
 
     /// The decision-shape half of AC-5 the retained suite reached only through
     /// the unknown-field case.
     ///
-    /// Trace: FR-047-AC-5
     /// Provenance: quoin#445
+    #[trace("FR-047-AC-5")]
     #[test]
     fn tc_1135_validates_the_decision_maker_and_timestamps() {
         let cases: [(serde_json::Value, &str); 3] = [
@@ -209,8 +210,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-047-AC-7
     /// Provenance: quoin#436, quoin#445
+    #[trace("FR-047-AC-7", "TC-1712")]
     #[test]
     fn tc_1712_refuses_an_instant_naming_a_day_or_hour_that_does_not_exist() {
         // `Date.parse` ROLLED each of these rather than rejecting it.
@@ -264,8 +265,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-047-AC-4
     /// Provenance: quoin#445
+    #[trace("FR-047-AC-4")]
     #[test]
     fn tc_1134_requires_resolution_evidence_and_a_current_expiry_for_accepted_risk() {
         let risk = with(
@@ -356,8 +357,8 @@ mod tests {
     /// The other two ways a decision stops being current, which the retained
     /// suite left to the `expired` case alone.
     ///
-    /// Trace: FR-047-AC-3
     /// Provenance: quoin#445
+    #[trace("FR-047-AC-3")]
     #[test]
     fn tc_1133_a_future_decision_and_an_inverted_expiry_are_also_not_current() {
         let future = build(

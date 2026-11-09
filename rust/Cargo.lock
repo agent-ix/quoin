@@ -2830,6 +2830,7 @@ name = "quoin-assurance"
 version = "0.29.4"
 dependencies = [
  "engineering-assurance",
+ "ix-trace-rs",
  "quoin-evidence",
  "quoin-evidence-types",
  "quoin-finding-types",
@@ -2878,6 +2879,7 @@ name = "quoin-change-assurance"
 version = "0.29.4"
 dependencies = [
  "engineering-assurance",
+ "ix-trace-rs",
  "quoin-jsonschema",
  "quoin-store",
  "serde_json",

@@ -17,6 +17,7 @@
 
 mod common;
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use quoin_change_assurance::model::outcome::{Outcome, Reason, outcome_for_reasons};
@@ -139,12 +140,11 @@ fn two_proofs() -> VerificationInput {
     input
 }
 
-/// Trace: FR-065-AC-12
-///
 /// The receipt's own vocabulary. Every reason this family can record, and
 /// every word of a receipt it produces, is checked against the claims a
 /// receipt is not allowed to make: a receipt says what the evidence shows,
 /// and never that anybody was authenticated, authorized or signed anything.
+#[trace("FR-065-AC-12")]
 #[test]
 fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
     let claims = [
@@ -176,12 +176,11 @@ fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
     }
 }
 
-/// Trace: FR-065-AC-2
-///
 /// The three outcomes stay distinct and the precedence is fixed: any invalid
 /// reason dominates incomplete, any incomplete reason dominates valid, and
 /// only an empty reason set is valid. Stated over every pair of reasons, and
 /// then through real receipts.
+#[trace("FR-065-AC-2", "TC-1282")]
 #[test]
 fn tc_455_outcome_precedence_holds_over_every_reason_pair() {
     assert_eq!(outcome_for_reasons(&[]), Outcome::Valid);
@@ -238,11 +237,10 @@ fn tc_455_outcome_precedence_holds_over_every_reason_pair() {
     assert!(VerificationReceipt::from_json(&JsonValue::Object(forged)).is_err());
 }
 
-/// Trace: FR-065-AC-3
-///
 /// Exactly one proof receipt per reviewed proof, in `proof_id` order. A
 /// missing selection is incomplete, a duplicate or unknown-proof selection is
 /// invalid, and an unselected stored attestation changes nothing.
+#[trace("FR-065-AC-3", "TC-1283")]
 #[test]
 fn tc_455_one_verdict_per_proof_and_an_unknown_selection_is_a_mismatch() {
     let both = two_proofs();
@@ -310,12 +308,11 @@ fn tc_455_one_verdict_per_proof_and_an_unknown_selection_is_a_mismatch() {
     assert_eq!(verify(&stray), verify(&base_input()));
 }
 
-/// Trace: FR-065-AC-4
-///
 /// Each binding between a proof obligation and an attestation - record id,
 /// record revision, candidate revision, proof id, argv, working directory,
 /// tool identity, configuration reference - invalidates the selection on its
 /// own, and the receipt names the premise that failed.
+#[trace("FR-065-AC-4", "TC-1284")]
 #[test]
 fn tc_455_each_binding_mismatch_is_named_on_its_own() {
     let cases: Vec<(&str, VerificationInput, Reason)> = vec![
@@ -375,11 +372,10 @@ fn tc_455_each_binding_mismatch_is_named_on_its_own() {
     }
 }
 
-/// Trace: FR-065-AC-5
-///
 /// Passed evidence discharges a proof only when its retained output has the
 /// declared size and the audit calls every owning obligation healthy. A
 /// failed result, a wrong-sized output, and each auditor defect are invalid.
+#[trace("FR-065-AC-5", "TC-1285")]
 #[test]
 fn tc_455_only_intact_output_and_a_healthy_audit_discharge_a_proof() {
     let good = verify(&base_input());
@@ -429,12 +425,11 @@ fn tc_455_only_intact_output_and_a_healthy_audit_discharge_a_proof() {
     );
 }
 
-/// Trace: FR-065-AC-6
-///
 /// Absent evidence, a producer that could not answer, and an audit that did
 /// not evaluate are *incomplete*: never valid, and never invalid. The
 /// difference between "this is wrong" and "this is not finished" is the point
 /// of the third outcome.
+#[trace("FR-065-AC-6", "TC-1286")]
 #[test]
 fn tc_455_absent_evidence_is_incomplete_rather_than_invalid() {
     let mut not_selected = base_input();
@@ -509,13 +504,11 @@ fn review(input: &VerificationInput) -> (Outcome, Vec<&'static str>) {
     )
 }
 
-/// Trace: FR-065-AC-7
-/// Trace: FR-063-AC-10
-///
 /// Exactly one intact matching human `approved` event permits review
 /// validity. A missing history is incomplete; a sequence gap, a repeat, a
 /// mismatched run, kind, actor kind, record id or revision, a rejection and a
 /// revision request each fail on their own.
+#[trace("FR-065-AC-7", "FR-063-AC-10", "TC-1270", "TC-1287")]
 #[test]
 fn tc_455_review_validity_needs_one_intact_human_approval() {
     let approved = event(1, "human", KIND, "change-1", 1, "approved");
@@ -619,10 +612,9 @@ fn tc_455_review_validity_needs_one_intact_human_approval() {
     );
 }
 
-/// Trace: FR-065-AC-8
-///
 /// Incomplete or truncated impact evidence, and every unknown that is not
 /// resolved, stay named in the receipt and force an incomplete verification.
+#[trace("FR-065-AC-8", "TC-1288")]
 #[test]
 fn tc_455_impact_gaps_and_open_unknowns_are_named_and_force_incomplete() {
     let record = json(&record_text());
@@ -673,12 +665,11 @@ fn tc_455_impact_gaps_and_open_unknowns_are_named_and_force_incomplete() {
     assert_eq!(receipt.unknowns[0].id.as_str(), "unknown-1");
 }
 
-/// Trace: FR-065-AC-9
-///
 /// An auditor's finding kind and obligation id are retained byte for byte
 /// beside the reason they map to - including a kind this crate has never
 /// heard of, which maps to `audit_finding` and is still reported under its
 /// own spelling. The source report is not changed.
+#[trace("FR-065-AC-9")]
 #[test]
 fn tc_455_audit_findings_are_retained_verbatim_beside_their_mapped_reason() {
     let mut input = base_input();
@@ -707,9 +698,8 @@ fn tc_455_audit_findings_are_retained_verbatim_beside_their_mapped_reason() {
     assert!(proof.reasons.contains(&Reason::AuditFinding));
 }
 
-/// Trace: FR-065-AC-10
-///
 /// Input and selection permutations emit byte-identical canonical receipts.
+#[trace("FR-065-AC-10", "TC-1290")]
 #[test]
 fn tc_455_permuted_inputs_emit_byte_identical_receipts() {
     let canonical =
@@ -758,11 +748,10 @@ fn verify_sources() -> Vec<(String, String)> {
     files
 }
 
-/// Trace: FR-065-AC-11
-///
 /// Verification runs nothing and writes nothing: no module under `verify/`
 /// names a process, a file, the environment or a store write, and verifying
 /// leaves its input exactly as it was.
+#[trace("FR-065-AC-11")]
 #[test]
 fn tc_455_verification_runs_nothing_and_writes_nothing() {
     let files = verify_sources();

@@ -154,9 +154,10 @@ fn suffix(reason: Option<&str>) -> String {
 mod tests {
     use super::super::fixtures::{AS_OF, argument, build, decision, with};
     use super::render_authored_argument;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-047-AC-6
     /// Provenance: quoin#445
+    #[trace("FR-047-AC-6")]
     #[test]
     fn tc_1136_renders_open_reasons_and_explicit_decision_state_deterministically() {
         let view = build(argument(), vec![], AS_OF);
@@ -203,8 +204,8 @@ mod tests {
 
     /// The supported render, which drops the whole "Open reasons" section.
     ///
-    /// Trace: FR-047-AC-6
     /// Provenance: quoin#445
+    #[trace("FR-047-AC-6")]
     #[test]
     fn tc_1136_the_supported_render_carries_no_open_reasons_section() {
         let rendered = render_authored_argument(&build(argument(), vec![decision()], AS_OF));
@@ -242,8 +243,8 @@ mod tests {
 
     /// The empty-section text, which no fixture in the retained suite reached.
     ///
-    /// Trace: FR-047-AC-6
     /// Provenance: quoin#445
+    #[trace("FR-047-AC-6")]
     #[test]
     fn tc_1136_empty_assumptions_and_challenges_render_the_none_placeholder() {
         let bare = with(

@@ -17,6 +17,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_assurance::case::{NodeStatus, build_case};
 
 #[path = "common/fixtures.rs"]
@@ -51,8 +52,8 @@ fn independence() -> serde_json::Value {
     })
 }
 
-/// Trace: FR-094-AC-8
 /// Provenance: agent-ix/quoin#447, tests/independence.test.ts
+#[trace("FR-094-AC-8")]
 #[test]
 fn tc_447_415_a_satisfied_independence_assessment_renders_as_context_not_as_claim_support() {
     let mut with_assessment = input(
@@ -97,8 +98,8 @@ fn tc_447_415_a_satisfied_independence_assessment_renders_as_context_not_as_clai
     assert!(rendered.contains("do not make a claim supported"));
 }
 
-/// Trace: FR-094-AC-7, FR-094-AC-8
 /// Provenance: agent-ix/quoin#447, tests/independence.test.ts
+#[trace("FR-094-AC-7", "FR-094-AC-8")]
 #[test]
 fn tc_447_416_an_empty_independence_list_emits_no_heading_and_an_absent_one_is_legal() {
     // `(x?.length ?? 0) > 0` in the retained source: an absent list and an
@@ -132,8 +133,8 @@ fn tc_447_416_an_empty_independence_list_emits_no_heading_and_an_absent_one_is_l
     assert_eq!(render(&with_empty), render(&absent));
 }
 
-/// Trace: FR-093-AC-7
 /// Provenance: agent-ix/quoin#447, tests/trust-decision.test.ts
+#[trace("FR-093-AC-7")]
 #[test]
 fn tc_447_417_an_invalidated_producer_trust_decision_renders_without_changing_claim_support() {
     let mut with_trust = input(

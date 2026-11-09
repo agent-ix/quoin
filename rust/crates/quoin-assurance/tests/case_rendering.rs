@@ -16,6 +16,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_assurance::case::build_case;
 
 #[path = "common/fixtures.rs"]
@@ -38,8 +39,8 @@ fn mermaid(rendered: &str) -> String {
         .to_owned()
 }
 
-/// Trace: FR-040-AC-8
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
+#[trace("FR-040-AC-8", "TC-228")]
 #[test]
 fn tc_447_410_rendering_is_byte_identical_over_unchanged_inputs() {
     // A store view, never a hand-maintained document: a diff must mean the
@@ -80,8 +81,8 @@ fn tc_447_410_rendering_is_byte_identical_over_unchanged_inputs() {
     );
 }
 
-/// Trace: FR-040-AC-9
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
+#[trace("FR-040-AC-9", "TC-229")]
 #[test]
 fn tc_447_411_mermaid_cannot_be_broken_by_a_statements_punctuation() {
     // Each of these renders a broken diagram rather than a wrong one, which is
@@ -117,8 +118,8 @@ fn tc_447_411_mermaid_cannot_be_broken_by_a_statements_punctuation() {
     );
 }
 
-/// Trace: FR-040-AC-15
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts, quoin#432
+#[trace("FR-040-AC-15")]
 #[test]
 fn tc_447_412_a_mermaid_label_truncates_on_a_code_point_while_node_ids_count_code_units() {
     // quoin#432. `String.prototype.slice` counts UTF-16 CODE UNITS, so a label
@@ -176,8 +177,8 @@ fn tc_447_412_a_mermaid_label_truncates_on_a_code_point_while_node_ids_count_cod
     assert!(!block.contains("FR_001_AC__(["), "{block}");
 }
 
-/// Trace: FR-040-AC-15
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts, quoin#432
+#[trace("FR-040-AC-15")]
 #[test]
 fn tc_447_413_a_label_with_no_astral_character_truncates_byte_for_byte_as_before() {
     // The fix must not move any byte that was already correct, which is 833 of
@@ -195,8 +196,8 @@ fn tc_447_413_a_label_with_no_astral_character_truncates_byte_for_byte_as_before
     assert!(block.contains(&format!("([\"{expected}\"])")), "{block}");
 }
 
-/// Trace: FR-040-AC-10
 /// Provenance: agent-ix/quoin#447, tests/assurance.test.ts
+#[trace("FR-040-AC-10", "TC-230")]
 #[test]
 fn tc_447_414_an_empty_case_says_there_is_no_case_rather_than_rendering_one() {
     // An empty document reads as "nothing to argue". The truth is that nothing
