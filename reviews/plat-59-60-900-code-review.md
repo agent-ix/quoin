@@ -65,3 +65,20 @@ scope:
 - {id: test_skeletons_semantic.py, path: "templates/semantic-module/{{cookiecutter.repo_name}}/tests/test_skeletons_semantic.py", role: examined, excerpt: "r\"^### (\\w+)\\n\\n```quire\\n(.*?)```\""}
 - {id: quire-rs clause_language_class, path: "quire-rs:src/semantic/clauses.rs", role: context_only, excerpt: "if tag == \"quire\" { return ClauseLanguageClass::Checked; } if matches!(tag, \"ocl\" | \"sysml\" | \"fretish\") { return ClauseLanguageClass::Unchecked; }"}
 ```
+
+## Dispositions
+
+Round 1, checked against fix commit d53395c6 (head 0cd7173). The reviewer ran the installed quire Python
+wheel 0.53.0, `quire.extract_semantic`, on all four skeletons, the negative fixture and both
+config-version fixtures. Every clause extracts as `language: quire` with no clause diagnostic and
+`clauses: {state: available, lossy: false}`. The config-version table extraction equals the golden's
+`clauses` and `clauseText`. Element and Note records equal the extracted `clauses`, spans included.
+The quire CLI 0.36.2 has no surface that type-checks a Quire clause body, and no QSL checker binary is
+built on this machine. Grammar validity was therefore judged against quire-spec-language origin/main:
+the `qsl-cst` tokens `present`, `value`, `!=` and `pre`, plus FR-056 and FR-104.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | still-open | Skeletons and negative fixture fixed: `present(e) implies ...`, `self.weight_grams > 0` and `value(e) != ""` are QSL value forms, and the fields they read exist. The config-version `immutable` fence is still not valid Quire where it is used. It is a standalone `## Invariants` clause, no `Post:` line binds it (the fixture has no `## Operations`), and its body reads `pre(...)`. quire-spec-language FR-104 admits `pre(e)` only in a post clause. Fix: in config-version.table.md and config-version.fence.md, replace the clause with a current-state invariant, for example `### versionIsPositive` / `self.versionNumber >= 1`. Update the golden's `clauses[0].clauseId` and `clauseText` to match; the spans do not move. The coder's comparison with operations.md `archived` does not hold, because `Post: archived` binds that clause as a postcondition |
+| FND-002 | fixed | clause-language-0.1.0-cases.json deleted; README row 14 removed |
+| FND-003 | fixed | Both `../corpus/config-service/` references removed from the README |

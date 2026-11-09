@@ -53,3 +53,13 @@ scope:
 - {id: TC-1715, path: spec/matrix.md, role: examined, excerpt: "The `fence-ocl-carried` case (semantic-core `0.2.0`) carries the `ocl` body verbatim with one `semantic.clause-language-unchecked` advisory at the fence and a lossy clauses kind"}
 - {id: TC-1423, path: spec/matrix.md, role: examined, excerpt: "Every rendered skeleton carries at least one `quire` fence under its own `### <clauseId>` heading"}
 ```
+
+## Dispositions
+
+Round 1, checked against fix commit d53395c6 (head 0cd7173). `quire validate --scope .` on FR-070 and matrix.md exits 0.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-070 bullet names the module-manifest JSON Schema |
+| FND-002 | fixed | `agent-ix/filament-core-service#21` removed from FR-070 Upstream |
+| FND-003 | fixed | README row traces config-version to FR-072's `quire` clause Behavior |

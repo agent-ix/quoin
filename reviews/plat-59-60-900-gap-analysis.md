@@ -52,3 +52,19 @@ scope:
 - {id: TC-1423, path: spec/matrix.md, role: examined, excerpt: "Every rendered skeleton carries at least one `quire` fence under its own `### <clauseId>` heading | Property | P0 | FR-079-AC-3 | ✅ `make template-gate`"}
 - {id: TC-1715, path: spec/matrix.md, role: examined, excerpt: "The `fence-ocl-carried` case (semantic-core `0.2.0`) carries the `ocl` body verbatim with one `semantic.clause-language-unchecked` advisory at the fence and a lossy clauses kind"}
 ```
+
+## Dispositions
+
+Round 1, checked against fix commit d53395c6 (head 0cd7173) and the current PR title, body and Linear attachments.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | deferred | The executing test and the drifted copy both live in quire-rs, which is outside this PR's repo. The fix is to delete `crates/quire-fixtures/fixtures/mapping/` in quire-rs and read quoin's fixtures there; the PR body records it for PLAT-58. quoin has no lane that links quire-rs. Reviewer's manual `extract_semantic` (wheel 0.53.0) matches the golden's `clauses`, `clauseText` and `availability.clauses` |
+| FND-002 | fixed | TC-1423 and FR-079 rows no longer cite `make template-gate` |
+| FND-003 | still-open | Title now `PLAT-59/60: ...` and body `Refs PLAT-900 (partial ...)`, but PLAT-900 still carries the PR #774 GitHub attachment created under the old title. Remove that attachment from PLAT-900 before merge, or check PLAT-900's state right after merge and reopen it if automation closed it |
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | medium | The FR-079 row is now 🚧 "no quoin target renders the template", but its own test rows TC-1411, TC-1420, TC-1421, TC-1422, TC-1424, TC-1425 and TC-1426 still say `✅ make template-gate`. The requirement this PR edits now contradicts itself. Give those seven rows the same 🚧 wording as TC-1423. The other 16 `make template-gate` cells (FR-077, FR-080, NFR-019, US-021, TC-1408..1410, TC-1413, TC-1414, TC-1417, TC-1427, TC-1430, TC-1458, TC-1468, TC-1469) are byte-identical on origin/main and belong to other requirements. They are a separate defect that predates this PR and are not in this PR's scope | spec/matrix.md:1107; spec/matrix.md:1115-1121 |
