@@ -32,8 +32,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use common::{schema_dir, validators};
-use regex::Regex;
+use common::validators;
 use serde_json::Value;
 use tempfile::TempDir;
 
