@@ -41,3 +41,17 @@ The fixture adds no file paths, digests or version ledger.
 | Ticket AC-1..AC-4 (untrusted) | examined | AC-1/2 backed; AC-3 partial (FND-003); AC-4 partial (FND-001) |
 | TC-1810 matrix binding | examined | Ambiguous names (FND-002) |
 | Production code with no owning requirement | examined | None; `validate_gate_definition` traces to FR-110 Plan intake |
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | The FR-108 matrix row still credits PLAT-1162 to `tc_975_010` and `tc_975_011`. After the rename to tc_975_022/023, those names point only at the existing TC-1819/TC-1820 tests, so the row cites the wrong tests. | spec/matrix.md:135 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | ffdd4209 tc_975_027 publishes MP-001 evidence and verifies 0 adverse -> Accept and 1 adverse -> Reject under its own count / eq 0 rule |
+| FND-002 | fixed | ffdd4209 renames the new tests to tc_975_022..027 and the TC-1810 row cites `tc_975_001`, `tc_975_022`..`tc_975_027`, which are unique |
+| FND-003 | fixed | ffdd4209 tc_975_025 refuses a gate-stage plan with an execution_procedure and no apparatus, naming execution_procedure |

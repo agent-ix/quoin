@@ -557,6 +557,24 @@ fn tc_975_027_the_analyze_shaped_gate_decides_retained_evidence_by_its_own_rule(
     }
 }
 
+/// MP-228 states its 3-of-5 repeated-pass condition as a typed design.
+///
+/// Trace: FR-110-AC-1
+/// Provenance: PLAT-1162
+#[test]
+fn tc_975_028_the_criterion_strength_gate_states_five_repetitions() {
+    let document = include_str!("../../../../spec/assurance/MP-228-jev-criterion-strength-gate.md");
+    let source = MemoryMeasurement::new().with_document("spec/assurance/MP-228.md", document);
+    let plans = load_measurement_plans(&source, PlanLoadOptions::default())
+        .expect("the real MP-228 loads as a gate");
+    let design = plans[0].statistical_design.expect("MP-228 states a design");
+    assert_eq!(design.repetitions.map(std::num::NonZeroU32::get), Some(5));
+    assert!(
+        format!("{:?}", design.decision_rule).contains("0.6"),
+        "{design:?}"
+    );
+}
+
 // ------------------------------------------------------------ intake
 
 /// A named arrangement of a fixture repository.

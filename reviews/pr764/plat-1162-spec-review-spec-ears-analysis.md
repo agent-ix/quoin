@@ -32,3 +32,10 @@ Ticket: PLAT-1162. PR head: `ac41053`. This review replaces SR-186 on the closed
 | FR-110 Plan intake bullet 2 (apparatus/controls) | examined | Undecidable trigger (FND-001) |
 | FR-110-AC-1 | examined | Testable; inherits FND-002 |
 | spec/matrix.md FR-108/FR-110/TC-1810 rows | context_only | Binding issue recorded in SR-197 FND-002 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | ffdd4209 FR-110: "A plan with neither an `execution_procedure` nor an `apparatus-edit` control MAY omit `protected_apparatus`", which is the decidable trigger the code uses |
+| FND-002 | fixed | ffdd4209 FR-110 Plan intake and AC-1 now name every EA-required design member |

@@ -41,3 +41,13 @@ Tests run here: `cargo test -p quoin-measurement --locked` for `tc_975_protected
 | Edited spec/assurance gate plans | examined | Fail EA schema (FND-001); placeholder rules (FND-003) |
 | tc_958/tc_960/tc_479/tc_478 fixture edits | examined | Consistent with the new rule; tc_958_021 builds a rule-less gate by mutating `stage` after load, which is acceptable |
 | `ix-trace-rs` dev-dependency and Cargo.lock | examined | Workspace dependency; no new pin |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | ffdd4209 adds population, sampling, repetitions, error_model and uncertainty to all seven plans; `quire validate --scope .` on MP-216..219, MP-228..230 and FR-110 exits 0 |
+| FND-002 | fixed | ffdd4209 `validate_gate_definition` requires every EA-required design member and names it; tc_975_024 removes each member in turn and asserts the refusal |
+| FND-003 | still-open | Fixed for MP-216..219 (their text says "exactly 100% is required" / "any miss blocks") and faithful for MP-229 and MP-230, whose text defines a composite boolean that is GO only when every bar holds (proportion of bars met >= 1.0). Not faithful for MP-228: its Comparison and Enforcement section makes GO need all three bars on the gate run and in at least 3 of 5 repeated runs. The typed rule encodes only the gate run, `repetitions: 1` contradicts the five repeats, and the 3-of-5 condition sits only in `uncertainty` prose. So a `pass` from the rule is weaker than the plan's GO. The rule must encode the repeat condition, or the plan owner must confirm the weaker rule in the plan text |
+| FND-004 | fixed | ffdd4209 selects the EA package by name only; the SHA filter is gone |
+| FND-005 | fixed | ffdd4209 exempts a retired gate in `apparatus_from`; tc_975_026 loads a retired gate with no controls |
