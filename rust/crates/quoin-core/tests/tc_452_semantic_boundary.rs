@@ -27,6 +27,8 @@
 use std::fs;
 use std::path::PathBuf;
 
+mod common;
+
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
@@ -109,15 +111,6 @@ fn ok(result: &Run) -> Value {
     serde_json::from_str(&result.stdout).unwrap()
 }
 
-/// The repository root: `rust/crates/quoin-core` up three.
-fn repo_root() -> PathBuf {
-    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    for _ in 0..3 {
-        root.pop();
-    }
-    root
-}
-
 /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production:
 /// DATA, not code, handed across as a directory path. Materialized once per
 /// process from the embedded bytes `quoin-semantic`'s `build.rs` compiles in
@@ -137,15 +130,6 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
-/// The `module-ok` fixture, the same one `tc_446` and `tc_449` install.
-fn fixture() -> PathBuf {
-    repo_root()
-        .join("tests")
-        .join("fixtures")
-        .join("semantic-module")
-        .join("module-ok")
-}
-
 /// `semantic.read_blocks` reads a module's block against the vendored contract
 /// and answers per root, in the order asked.
 ///
@@ -157,7 +141,8 @@ fn fixture() -> PathBuf {
 /// Provenance: agent-ix/quoin#452
 #[test]
 fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
-    let module = fixture();
+    let module_dir = common::module_ok_copy();
+    let module = module_dir.path().to_path_buf();
     let request = json!({ "roots": [module.to_string_lossy(), module.to_string_lossy()] });
     let payload = ok(&run("semantic.read_blocks", &request, true));
 
@@ -224,7 +209,8 @@ fn tc_452_602_a_module_root_with_no_manifest_is_refused_not_reported_empty() {
 #[test]
 fn tc_452_603_without_a_contract_root_the_embedded_contract_answers() {
     let home = tempfile::tempdir().unwrap();
-    let request = json!({ "roots": [fixture().to_string_lossy()] });
+    let module_dir = common::module_ok_copy();
+    let request = json!({ "roots": [module_dir.path().to_string_lossy()] });
     let payload = ok(&run_isolated("semantic.read_blocks", &request, home.path()));
     let modules = payload["modules"].as_array().unwrap();
     assert_eq!(

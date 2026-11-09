@@ -2789,6 +2789,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "quire-fixtures"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/quire-rs?rev=ce172a7ddcec21815f852c06fa5a0e340b79e57b#ce172a7ddcec21815f852c06fa5a0e340b79e57b"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "quire-rs"
 version = "0.53.0"
 source = "git+https://github.com/agent-ix/quire-rs?rev=ce172a7ddcec21815f852c06fa5a0e340b79e57b#ce172a7ddcec21815f852c06fa5a0e340b79e57b"
@@ -2885,6 +2893,7 @@ dependencies = [
  "engineering-assurance",
  "ix-cli-kit",
  "ix-trace-rs",
+ "quire-fixtures",
  "quoin-assurance",
  "quoin-config",
  "quoin-core",
@@ -2953,6 +2962,7 @@ dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
  "quire-canonical",
+ "quire-fixtures",
  "quoin-assurance",
  "quoin-auditor",
  "quoin-catalog",
@@ -3112,6 +3122,7 @@ name = "quoin-modules"
 version = "0.29.4"
 dependencies = [
  "gix",
+ "quire-fixtures",
  "quoin-semantic",
  "schemars",
  "serde",
@@ -3146,6 +3157,7 @@ dependencies = [
 name = "quoin-semantic"
 version = "0.29.4"
 dependencies = [
+ "quire-fixtures",
  "quoin-jsonschema",
  "quoin-yaml",
  "schemars",

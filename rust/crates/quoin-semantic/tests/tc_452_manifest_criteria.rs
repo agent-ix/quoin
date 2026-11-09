@@ -30,7 +30,7 @@ use common::{
 };
 use quoin_semantic::data_schema::DataSchemaForm;
 use quoin_semantic::{CompatibilityPosture, LegacyForms, SEMANTIC_CONTRACT, read_semantic_block};
-use serde_json::json;
+use serde_json::{Value, json};
 
 /// A module with no `semantic` block is read clean, and reports no module.
 ///
@@ -271,13 +271,16 @@ fn tc_452_616_a_reference_data_schema_resolves_against_the_vendored_bundle() {
         .expect("the entity export resolved");
     assert_eq!(resolved.kind, DataSchemaForm::Reference);
     let schema = resolved.schema.as_ref().expect("a resolved document");
-    assert!(
-        schema["$id"]
-            .as_str()
-            .unwrap()
-            .ends_with("/spec-objects-fixture/Entity.json"),
-        "{schema}"
-    );
+    let authored: Value = serde_json::from_str(
+        &fs::read_to_string(
+            quire_fixtures::module_ok_dir()
+                .join("schemas")
+                .join("Entity.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(schema["$id"], authored["$id"], "{schema}");
     // Resolution is against the shipped bundle: the document's own `$ref`s
     // name the semantic-core bundle. A resolver that ignored `$ref`s entirely would
     // pass an assertion about `$id` alone.
@@ -456,7 +459,9 @@ fn tc_452_620_a_path_escape_or_an_ambiguous_data_schema_is_refused() {
     // are a VALID schema, so only the escape rule can refuse this one.
     let outside = scratch.path().join("outside.json");
     fs::copy(
-        common::fixture().join("schemas").join("Entity.json"),
+        quire_fixtures::module_ok_dir()
+            .join("schemas")
+            .join("Entity.json"),
         &outside,
     )
     .unwrap();

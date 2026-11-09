@@ -73,7 +73,7 @@ validation (via `src/commands/module/install.ts`); `src/write.ts` reports the
 block in the authoring pack; a new `src/semantic/` module holds the schema
 resolution, `data_schema` reference resolution, package-manifest derivation,
 and the sweep command.
-Fixtures live under `tests/fixtures/semantic-module/`.
+Fixtures live in the `quire-fixtures` crate of agent-ix/quire-rs.
 
 ## Test Plan
 

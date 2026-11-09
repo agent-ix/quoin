@@ -398,15 +398,6 @@ mod tests {
     use crate::ids::ModuleName;
     use crate::semantic::{SemanticGate, Severity};
 
-    /// The repository root: `rust/crates/quoin-modules` up three.
-    fn repo_root() -> PathBuf {
-        let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        for _ in 0..3 {
-            root.pop();
-        }
-        root
-    }
-
     /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in
     /// production, not a fixture this test wrote: a gate judged against a
     /// contract of the test's own invention agrees with whatever the test put
@@ -426,15 +417,6 @@ mod tests {
         .clone()
     }
 
-    /// The `module-ok` fixture, which declares a valid `semantic` block.
-    fn fixture() -> PathBuf {
-        repo_root()
-            .join("tests")
-            .join("fixtures")
-            .join("semantic-module")
-            .join("module-ok")
-    }
-
     fn copy_tree(from: &Path, to: &Path) {
         fs::create_dir_all(to).unwrap();
         for entry in fs::read_dir(from).unwrap() {
@@ -446,6 +428,29 @@ mod tests {
                 fs::copy(entry.path(), &target).unwrap();
             }
         }
+    }
+
+    /// `semantic.semantic_core` as the module-manifest schema pinned through
+    /// `@agent-ix/semantic-schema` requires it. The `quire-fixtures`
+    /// `module-ok` manifest omits the key, so `copy_module_ok` adds it; drop
+    /// this injection when the pinned `@agent-ix/semantic-schema` no longer
+    /// requires `semantic.semantic_core`. Quoin reads nothing from the value.
+    const SCHEMA_REQUIRED_SEMANTIC_CORE: &str = "0.0.0";
+
+    /// Copy the `quire-fixtures` `module-ok` fixture to `to` with the
+    /// `semantic_core` key the pinned schema requires.
+    fn copy_module_ok(to: &Path) {
+        copy_tree(&quire_fixtures::module_ok_dir(), to);
+        let manifest = to.join("manifest.yaml");
+        let text = fs::read_to_string(&manifest).unwrap();
+        fs::write(
+            &manifest,
+            text.replace(
+                "semantic:\n",
+                &format!("semantic:\n  semantic_core: {SCHEMA_REQUIRED_SEMANTIC_CORE}\n"),
+            ),
+        )
+        .unwrap();
     }
 
     /// A home with `names` materialised from the fixture and recorded in the
@@ -464,7 +469,7 @@ mod tests {
         let mut plugins = Vec::new();
         for name in names {
             let root = modules_dir.join(name);
-            copy_tree(&fixture(), &root);
+            copy_module_ok(&root);
             plugins.push(serde_json::json!({
                 "name": name,
                 "source": { "type": "path", "path": root.to_string_lossy() },

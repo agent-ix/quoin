@@ -29,6 +29,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+mod common;
+
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 
@@ -65,15 +67,6 @@ fn run(op: &str, request: &serde_json::Value, home: &Path, semantic_root: &Path)
     }
 }
 
-/// The repository root: `rust/crates/quoin-core` up three.
-fn repo_root() -> PathBuf {
-    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    for _ in 0..3 {
-        root.pop();
-    }
-    root
-}
-
 /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production.
 /// Materialized once per process from the embedded bytes `quoin-semantic`'s
 /// `build.rs` compiles in (PLAT-887 de-vendoring), not read from a
@@ -91,28 +84,6 @@ fn semantic_root() -> PathBuf {
     .clone()
 }
 
-/// The `module-ok` fixture `tests/semantic-manifest.test.ts` installs.
-fn fixture() -> PathBuf {
-    repo_root()
-        .join("tests")
-        .join("fixtures")
-        .join("semantic-module")
-        .join("module-ok")
-}
-
-fn copy_tree(from: &Path, to: &Path) {
-    fs::create_dir_all(to).unwrap();
-    for entry in fs::read_dir(from).unwrap() {
-        let entry = entry.unwrap();
-        let target = to.join(entry.file_name());
-        if entry.file_type().unwrap().is_dir() {
-            copy_tree(&entry.path(), &target);
-        } else {
-            fs::copy(entry.path(), &target).unwrap();
-        }
-    }
-}
-
 /// A home with `module-ok` installed through the boundary itself.
 struct Fixture {
     _root: tempfile::TempDir,
@@ -123,7 +94,7 @@ struct Fixture {
 fn install_fixture() -> Fixture {
     let root = tempfile::tempdir().unwrap();
     let source = root.path().join("source");
-    copy_tree(&fixture(), &source);
+    common::copy_module_ok(&source);
     let home = root.path().join("home");
     fs::create_dir_all(&home).unwrap();
 

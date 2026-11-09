@@ -52,7 +52,7 @@ and expression semantics stay with `agent-ix/quire-contract-ir#52`.
 | ID | Constraint | Type | Validation |
 |---|---|---|---|
 | FR-071-CON-1 | Quire SHALL recognise the fence at line level with source spans, treating any expression inside braces as opaque constraint text mapped by the cell grammar only. | Boundary | Extraction-only inspection |
-| FR-071-CON-2 | Quoin SHALL publish the golden fixtures (table form, fence form, expected normalized `FieldDecl[]`, expected diagnostics) under `tests/fixtures/semantic-module/` for `agent-ix/quire-rs#388` to consume unchanged. | Integrity | Fixture provenance |
+| FR-071-CON-2 | Quoin SHALL read the golden fixtures (table form, fence form, expected normalized `FieldDecl[]`, expected diagnostics) from the `quire-fixtures` crate in `agent-ix/quire-rs`, holding no copy of them. | Integrity | Dependency inspection |
 
 ## Acceptance Criteria
 

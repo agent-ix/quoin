@@ -3,9 +3,8 @@
 
 //! FR-071, FR-072 and FR-074, criterion by criterion (quoin#452).
 //!
-//! The mapping fixtures under `tests/fixtures/semantic-module/mapping` are
-//! published by quoin and executed by quire; what quoin owns, and what these
-//! restate, is that quoin's own legacy-form classifier agrees with the
+//! The mapping fixtures are owned by `quire-fixtures` and executed by quire;
+//! what quoin owns, and what these restate, is that quoin's own legacy-form classifier agrees with the
 //! expectations recorded beside them, that the fence subset stays a subset, and
 //! that `legacy_forms: error` is admissible only with a usable sweep report.
 //!
@@ -68,17 +67,8 @@ const SWEEP_SOURCE: &str = include_str!("../src/sweep.rs");
 /// declares, and the edit that spoils the report it ships.
 type Case = (&'static str, Option<&'static str>, Box<dyn Fn(&mut Value)>);
 
-/// The corpus the deleted TypeScript swept: five mapping fixtures, all
-/// authored by quoin, under one root.
-///
-/// `legacy-free-column-table.md` used to be a pinned copy of
-/// `agent-ix/config-service`'s real `FR-006-config-version-entity.md`, first
-/// as a byte copy with recorded provenance, then as a git submodule. Neither
-/// survived PLAT-887's de-vendoring: config-service publishes no artifact a
-/// build can depend on, so the only compliant answer was an authored fixture
-/// quoin owns outright. It keeps the same shape (a `free-column-table` legacy
-/// properties table, header at line 17) the classifier needs to exercise,
-/// invented rather than copied.
+/// The corpus the sweep runs over: five `quire-fixtures` mapping documents under
+/// one root.
 fn corpus(scratch: &Scratch) -> PathBuf {
     let root = scratch.path().join("corpus");
     let dir = root.join("spec").join("functional");
@@ -88,7 +78,7 @@ fn corpus(scratch: &Scratch) -> PathBuf {
         "legacy-bullets.md",
         "legacy-mixed.md",
         "config-version.fence.md",
-        "legacy-free-column-table.md",
+        "legacy-free-table.md",
     ] {
         fs::copy(mapping_dir().join(name), dir.join(name)).unwrap();
     }
@@ -270,10 +260,6 @@ fn tc_452_654_the_classifier_answers_every_recorded_legacy_expectation() {
             None => assert_eq!(reported, Value::Null, "{file} is an authored form"),
         }
     }
-    // `legacy-free-column-table.md` (PLAT-887: replaces what used to be a
-    // pinned copy, then a submodule, of config-service's real FR-006 spec) is
-    // one of `cases` above like any other fixture; there is nothing left to
-    // assert about it beyond that loop.
 }
 
 /// Build a module declaring `legacy_forms: error`, with `report` written to
