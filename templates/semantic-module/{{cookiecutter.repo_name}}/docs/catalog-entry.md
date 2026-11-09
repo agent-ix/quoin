@@ -14,18 +14,36 @@ through OIDC Trusted Publishing. No token is stored here.
 be the module root — `manifest.yaml` at the top, with `schemas/` and
 `skeletons/` beside it — because that is how a Filament tool discovers a module.
 
-## 2. Verify the install resolves
+## 2. Add it to the Quoin default catalog
+
+The default catalog is `default-modules.yaml` in `agent-ix/quoin`. Add one entry
+there, with the module's git location and the directory that holds its
+`manifest.yaml`:
+
+```yaml
+  - name: {{ cookiecutter.repo_name }}
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: {{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
+      path: {{ cookiecutter.package_name }}
+```
+
+Leave `defaultEnabled` off for a module that should be installable but not
+shipped by default.
+
+## 3. Verify the install resolves
 
 From a clean environment:
 
 ```bash
-quoin plugin install npm:@{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
+quoin module install github:{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}//{{ cookiecutter.package_name }}
 quoin catalog list
 ```
 
 Every type this module exports must appear.
 
-## 3. Add it to the tracking project
+## 4. Add it to the tracking project
 
 Add the repository to the organization's module tracking project (GitHub
 Project 18, "Quoin work") so its schema-completion and contract-migration work is

@@ -37,12 +37,14 @@ path — never an inline `{type: object}` placeholder.
 
 `semantic.targets` declares `{{ cookiecutter.generated_targets }}`.
 
-**Only `json-schema` is emitted today.** Every other declared target is recorded
-as declared and not emitted: the emitters for `rust`, `typescript`,
-`python-pydantic-v2` and `python-dataclass` belong to
-`agent-ix/filament-core-data#11` and do not exist yet. `spec/spec.md` lists
-them as out of scope. A declared target is not an emitted one, and this file
-will not pretend otherwise.
+**Only `json-schema` is emitted today.**
+{%- set declared_only = cookiecutter.generated_targets.split(',') | map('trim') | reject('equalto', 'json-schema') | list %}
+{%- if declared_only %} Every other declared target is recorded
+as declared and not emitted: {% for target in declared_only %}`{{ target }}`{% if not loop.last %}, {% endif %}{% endfor %} {{ 'has' if declared_only | length == 1 else 'have' }} no emitter
+today. A declared target is not an emitted one, and this file will not pretend
+otherwise.
+{%- else %} No other target is declared.
+{%- endif %}
 
 ## Getting started
 
@@ -82,7 +84,7 @@ lockfile from `package.json`; CI runs `make semantic-install`, which is
 Quoin installs it into the local module set:
 
 ```bash
-quoin plugin install npm:@{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
+quoin module install github:{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}//{{ cookiecutter.package_name }}
 ```
 
 Quire then validates artifacts against it:

@@ -56,7 +56,7 @@ contract (`agent-ix/quoin#293`, merged), filament-core-data ADR-0005,
 - [x] **FR-080:** The rendered suite treats the engine as a hard dependency and fails, naming `make dev-quire`, rather than skipping.
 - [x] **FR-081:** Public AGPL baseline: one licence identifier, the ownership and guidance files, matching Python and npm payloads, no credential, no private publication default.
 - [x] **FR-082:** The rendered `spec/` tree validates as rendered, with a Test Matrix drawn from the archetype's vocabulary and honest `🚧` rows.
-- [x] **FR-083:** Quoin's gate renders every variant into a temporary directory, checks it against a declared conformance contract, and fails on drift from the maintained repositories as checked out.
+- [x] **FR-083:** Quoin's gate renders every variant into a temporary directory, checks it against a declared conformance contract, and fails when a surface the contract names is missing.
 
 ### Non-Functional Requirements
 
@@ -75,7 +75,7 @@ TASK-045 -> TASK-046 -> TASK-047 -> TASK-048 -> TASK-050 -> TASK-051
 - TASK-046 (schema source and emit pipeline) and TASK-049 (public packaging baseline and governance tree) touch disjoint rendered surfaces and run in parallel after TASK-045.
 - TASK-047 (manifest `semantic` block) needs the emitted schemas TASK-046 produces.
 - TASK-048 (skeletons, mappings, fixtures, and the rendered suite) needs the manifest TASK-047 writes.
-- TASK-050 is the gate in this repository: it renders all three variants, scans for residue, checks conformance and drift, and is the first thing that proves the template works rather than reads well.
+- TASK-050 is the gate in this repository: it renders all three variants, scans for residue, checks conformance, and is the first thing that proves the template works rather than reads well.
 - TASK-051 closes the cycle — code review, gap analysis, the pull request.
 
 ## Execution Tracks
@@ -94,7 +94,7 @@ TASK-045 -> TASK-046 -> TASK-047 -> TASK-048 -> TASK-050 -> TASK-051
 | G2 — emits      | A rendered variant emits one schema per exported type, twice, byte-identically.                                           | TASK-047         |
 | G3 — declares   | The rendered manifest validates against the published module-manifest schema and every `data_schema.schema` names an emitted file.                      | TASK-048         |
 | G4 — verifies   | The rendered suite runs, fails without the engine, and reports zero skips with it.                                        | TASK-050         |
-| G5 — conforms   | Quoin's gate passes: conformance, residue, determinism, drift, and `quire validate` over each rendered spec tree.         | TASK-051         |
+| G5 — conforms   | Quoin's gate passes: conformance, residue, determinism, and `quire validate` over each rendered spec tree.         | TASK-051         |
 | G6 — repo green | `make lint` and `make test` pass in this repository, and `quire validate --scope . "spec/**/*.md"` is structurally clean. | the pull request |
 
 ## Test Plan
@@ -112,7 +112,7 @@ here is what makes the template verified rather than merely written.
 | Rendered suite behaviour    | `tests/semantic-module-template.test.ts` | TC-1427..TC-1431, TC-1450, TC-1460, TC-1469                   |
 | Packaging baseline          | `tests/semantic-module-template.test.ts` | TC-1432..TC-1438                                              |
 | Governance tree             | `tests/semantic-module-template.test.ts` | TC-1439..TC-1443, TC-1461 (TC-1470 withdrawn)                |
-| Gate, conformance and drift | `tests/semantic-module-template.test.ts` | TC-1444..TC-1448, TC-1463..TC-1465                            |
+| Gate and conformance       | `tests/semantic-module-template.test.ts` | TC-1444..TC-1448, TC-1463..TC-1465                            |
 
 ## Out of Scope
 

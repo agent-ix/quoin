@@ -3160,6 +3160,7 @@ dependencies = [
  "quire-fixtures",
  "quoin-jsonschema",
  "quoin-yaml",
+ "regex",
  "schemars",
  "serde",
  "serde_json",
