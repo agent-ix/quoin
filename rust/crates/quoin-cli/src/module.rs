@@ -126,52 +126,9 @@ fn inspect() -> Result<Response, String> {
     let mut inspected = Vec::with_capacity(records.len());
     let mut diagnostics = Vec::new();
     for (record, view) in records.iter().zip(views) {
-        let name = record.get("name").cloned().unwrap_or_default();
-        let block = view.get("block");
-        let mode = match block {
-            None => "no-semantic-block",
-            Some(block) if declares_compiled_target(block) => "compiled",
-            Some(_) => "dynamic",
-        };
-        let problems: Vec<&serde_json::Value> = ["diagnostics", "lock_diagnostics"]
-            .iter()
-            .filter_map(|key| view.get(*key).and_then(serde_json::Value::as_array))
-            .flatten()
-            .collect();
-        for problem in &problems {
-            if problem.get("severity").and_then(serde_json::Value::as_str) == Some("error") {
-                diagnostics.push(quoin_core::protocol::Diagnostic {
-                    code: "QM020_SEMANTIC_CONTRACT_VIOLATION".to_owned(),
-                    message: problem
-                        .get("message")
-                        .and_then(serde_json::Value::as_str)
-                        .unwrap_or_default()
-                        .to_owned(),
-                    context: std::collections::BTreeMap::from([(
-                        "module".to_owned(),
-                        name.as_str().unwrap_or_default().to_owned(),
-                    )]),
-                });
-            }
-        }
-        let mut item = serde_json::Map::new();
-        item.insert("name".to_owned(), name);
-        item.insert("mode".to_owned(), mode.into());
-        item.insert(
-            "diagnostics".to_owned(),
-            serde_json::Value::Array(problems.into_iter().cloned().collect()),
-        );
-        for (key, value) in [
-            ("ref", record.get("ref")),
-            ("version", view.get("version")),
-            ("semantic", block),
-        ] {
-            if let Some(value) = value {
-                item.insert(key.to_owned(), value.clone());
-            }
-        }
-        let item = serde_json::Value::Object(item);
+        let (item, failures) = inspect_entry(record, view);
         inspected.push(item);
+        diagnostics.extend(failures);
     }
     let rendered = serde_json::to_string_pretty(&serde_json::json!({ "modules": inspected }))
         .map_err(|error| error.to_string())?;
@@ -185,6 +142,71 @@ fn inspect() -> Result<Response, String> {
         diagnostics,
         outcome,
     })
+}
+
+/// One installed module's entry, and the stderr diagnostics for its errors.
+fn inspect_entry(
+    record: &serde_json::Value,
+    view: &serde_json::Value,
+) -> (serde_json::Value, Vec<quoin_core::protocol::Diagnostic>) {
+    let name = record.get("name").cloned().unwrap_or_default();
+    let block = view.get("block");
+    let unreadable = view.get("unreadable").and_then(serde_json::Value::as_str);
+    let mode = match block {
+        None if unreadable.is_some() => "unreadable",
+        None => "no-semantic-block",
+        Some(block) if declares_compiled_target(block) => "compiled",
+        Some(_) => "dynamic",
+    };
+    let unreadable_finding = unreadable.map(|detail| {
+        serde_json::json!({
+            "code": "inspect.manifest-unreadable",
+            "severity": "error",
+            "path": "manifest.yaml",
+            "message": detail,
+        })
+    });
+    let problems: Vec<&serde_json::Value> = ["diagnostics", "lock_diagnostics"]
+        .iter()
+        .filter_map(|key| view.get(*key).and_then(serde_json::Value::as_array))
+        .flatten()
+        .chain(unreadable_finding.as_ref())
+        .collect();
+    let failures = problems
+        .iter()
+        .filter(|p| p.get("severity").and_then(serde_json::Value::as_str) == Some("error"))
+        .map(|problem| quoin_core::protocol::Diagnostic {
+            code: quoin_modules::ModulesErrorCode::InstalledModuleInvalid
+                .as_str()
+                .to_owned(),
+            message: problem
+                .get("message")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_owned(),
+            context: std::collections::BTreeMap::from([(
+                "module".to_owned(),
+                name.as_str().unwrap_or_default().to_owned(),
+            )]),
+        })
+        .collect();
+    let mut item = serde_json::Map::new();
+    item.insert("name".to_owned(), name);
+    item.insert("mode".to_owned(), mode.into());
+    item.insert(
+        "diagnostics".to_owned(),
+        serde_json::Value::Array(problems.into_iter().cloned().collect()),
+    );
+    for (key, value) in [
+        ("ref", record.get("ref")),
+        ("version", view.get("version")),
+        ("semantic", block),
+    ] {
+        if let Some(value) = value {
+            item.insert(key.to_owned(), value.clone());
+        }
+    }
+    (serde_json::Value::Object(item), failures)
 }
 
 fn declares_compiled_target(block: &serde_json::Value) -> bool {

@@ -76,7 +76,8 @@ const fn core_code(code: ModulesErrorCode) -> Option<CoreErrorCode> {
         | ModulesErrorCode::ResourceBoundExceeded
         | ModulesErrorCode::UnsafeTreePath
         | ModulesErrorCode::SemanticContractViolation
-        | ModulesErrorCode::SemanticContractUnavailable => CoreErrorCode::Refused,
+        | ModulesErrorCode::SemanticContractUnavailable
+        | ModulesErrorCode::InstalledModuleInvalid => CoreErrorCode::Refused,
 
         ModulesErrorCode::RegistryUnreadable
         | ModulesErrorCode::RegistryUnwritable
@@ -119,7 +120,7 @@ mod tests {
     fn the_error_mapping_covers_every_modules_code() {
         assert_eq!(
             ModulesErrorCode::all().len(),
-            22,
+            23,
             "quoin-modules gained or lost an error code; map it in map_error deliberately"
         );
 
@@ -141,6 +142,7 @@ mod tests {
             ModulesErrorCode::UnsafeTreePath,
             ModulesErrorCode::SemanticContractViolation,
             ModulesErrorCode::SemanticContractUnavailable,
+            ModulesErrorCode::InstalledModuleInvalid,
         ];
         let internal = [
             ModulesErrorCode::RegistryUnreadable,

@@ -108,6 +108,12 @@ pub struct ModuleSemanticView {
     /// about every installed root at once.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub lock_diagnostics: Vec<SemanticDiagnostic>,
+    /// Why this root's manifest could not be read at all (missing, unreadable,
+    /// not YAML, not a mapping). The root is still answered, so one broken
+    /// module does not hide the rest (FR-124); a missing contract still refuses
+    /// the whole request.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unreadable: Option<String>,
 }
 
 /// One corpus root a sweep should walk.

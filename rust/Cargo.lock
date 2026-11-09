@@ -2901,6 +2901,7 @@ dependencies = [
  "quoin-evidence",
  "quoin-graph-analysis",
  "quoin-measurement",
+ "quoin-modules",
  "quoin-quire",
  "quoin-semantic",
  "quoin-store",

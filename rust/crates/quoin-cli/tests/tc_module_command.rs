@@ -229,12 +229,18 @@ fn tc_286_001_inspect_reports_dynamic_and_compiled_modules_together() {
 
     let compiled = entry(&report, "spec-objects-consumer");
     assert_eq!(compiled["mode"], "compiled");
+    assert_eq!(compiled["semantic"]["contract_version"], "1.0.0");
+    assert_eq!(
+        compiled["semantic"]["package"],
+        "agent-ix/spec-objects-consumer"
+    );
     assert_eq!(compiled["semantic"]["targets"][1], "rust");
     assert_eq!(
         compiled["semantic"]["imports"]["agent-ix/spec-objects-fixture"],
         "0.1.0"
     );
     assert!(errors(compiled).is_empty());
+    assert!(errors(dynamic).is_empty());
 }
 
 /// A module with no `semantic` block is still listed, as such, and is not an
@@ -323,4 +329,125 @@ fn tc_286_004_an_unknown_contract_major_is_reported_not_degraded_to_empty() {
             .any(|d| d["severity"] == "error" && d["message"].as_str().unwrap().contains("2.0.0")),
         "{diagnostics:?}"
     );
+}
+
+/// An installed module whose manifest cannot be read is an entry with an error
+/// diagnostic, not a failure of the whole report: the other modules are still
+/// reported and the command exits 1.
+///
+/// Trace: FR-124-AC-6
+#[test]
+fn tc_286_005_an_unreadable_installed_module_is_an_entry_not_a_failed_report() {
+    let scratch = tempfile::tempdir().expect("scratch root is created");
+    let home = scratch.path().join("ix-home");
+    install(&home, &module_source(scratch.path(), "dynamic", |t| t));
+    install(
+        &home,
+        &module_source(scratch.path(), "compiled", |t| consumer(&t)),
+    );
+    std::fs::remove_dir_all(home.join("filament/modules/spec-objects-consumer"))
+        .expect("an installed module directory is removed");
+
+    let (output, report) = inspect(&home);
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    assert_eq!(report["modules"].as_array().unwrap().len(), 2);
+    assert!(errors(entry(&report, "spec-objects-fixture")).is_empty());
+    let broken = entry(&report, "spec-objects-consumer");
+    assert_eq!(broken["mode"], "unreadable");
+    assert_eq!(errors(broken).len(), 1);
+    assert_eq!(errors(broken)[0]["code"], "inspect.manifest-unreadable");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("QM023_INSTALLED_MODULE_INVALID"),
+        "{stderr}"
+    );
+    assert!(!stderr.contains("QM020"), "{stderr}");
+}
+
+/// Two installed modules that import each other are reported as one cycle error
+/// naming the path.
+///
+/// Trace: FR-124-AC-7
+#[test]
+fn tc_286_006_an_import_cycle_is_reported() {
+    let scratch = tempfile::tempdir().expect("scratch root is created");
+    let home = scratch.path().join("ix-home");
+    install(&home, &module_source(scratch.path(), "dynamic", |t| t));
+    install(
+        &home,
+        &module_source(scratch.path(), "compiled", |t| consumer(&t)),
+    );
+    // The imported module is edited after install to import its importer.
+    let installed = home.join("filament/modules/spec-objects-fixture/manifest.yaml");
+    let text = std::fs::read_to_string(&installed).expect("installed manifest is readable");
+    std::fs::write(
+        &installed,
+        text.replace(
+            "  exports: [entity]",
+            "  imports:\n    agent-ix/spec-objects-consumer: 0.1.0\n  exports: [entity]",
+        ),
+    )
+    .expect("installed manifest is rewritten");
+
+    let (output, report) = inspect(&home);
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    let all: Vec<String> = report["modules"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(errors)
+        .map(|d| d["message"].as_str().unwrap().to_owned())
+        .collect();
+    assert!(
+        all.iter().any(|m| m.contains("import cycle:")
+            && m.contains("agent-ix/spec-objects-fixture")
+            && m.contains("agent-ix/spec-objects-consumer")),
+        "{all:?}"
+    );
+}
+
+/// `inspect` reads and reports; the registry and every installed module are
+/// byte-identical afterwards, even when it finds errors.
+///
+/// Trace: FR-124-AC-8
+#[test]
+fn tc_286_007_inspect_modifies_nothing() {
+    let scratch = tempfile::tempdir().expect("scratch root is created");
+    let home = scratch.path().join("ix-home");
+    install(&home, &module_source(scratch.path(), "dynamic", |t| t));
+    install(
+        &home,
+        &module_source(scratch.path(), "compiled", |t| consumer(&t)),
+    );
+    install(
+        &home,
+        &module_source(scratch.path(), "dynamic-0-2", |t| {
+            t.replace("version: 0.1.0", "version: 0.2.0")
+        }),
+    );
+    let snapshot = |root: &Path| -> Vec<(PathBuf, Vec<u8>)> {
+        let mut out = Vec::new();
+        let mut stack = vec![root.to_path_buf()];
+        while let Some(dir) = stack.pop() {
+            for entry in std::fs::read_dir(&dir).expect("directory is readable") {
+                let path = entry.expect("entry is readable").path();
+                if path.is_dir() {
+                    stack.push(path);
+                } else {
+                    let bytes = std::fs::read(&path).expect("file is readable");
+                    out.push((path, bytes));
+                }
+            }
+        }
+        out.sort();
+        out
+    };
+    let before = snapshot(&home.join("filament"));
+    let (output, _) = inspect(&home);
+    assert_eq!(
+        output.status.code(),
+        Some(1),
+        "inspect found the stale lock"
+    );
+    assert_eq!(before, snapshot(&home.join("filament")));
 }

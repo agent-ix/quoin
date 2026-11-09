@@ -11,6 +11,8 @@ relationships:
     type: "depends_on"
   - target: "ix://agent-ix/quoin/FR-049"
     type: "depends_on"
+  - target: "ix://agent-ix/quoin/FR-019"
+    type: "depends_on"
 ---
 
 # FR-124: Inspect installed semantic modules and their import locks
@@ -47,12 +49,15 @@ to inspect.
 
 - `quoin module inspect` SHALL write one JSON document `{ "modules": [...] }` with one entry per installed module, in registry order.
 - Each entry SHALL carry `name`, `mode`, `diagnostics`, the registry `ref` when one was recorded, and, when the module's `semantic` block validated, its `version` and the block itself.
+- `mode` SHALL be `unreadable` when the module's `manifest.yaml` is missing, unreadable, not YAML, or not a mapping.
 - `mode` SHALL be `no-semantic-block` when the module has no `semantic` block or its block was refused, `compiled` when `semantic.targets` declares any of `rust`, `typescript`, `python-pydantic-v2`, or `python-dataclass`, and `dynamic` otherwise.
 - An entry's `diagnostics` SHALL be the diagnostics of reading its block (FR-070, FR-073, FR-074) followed by one error per `semantic.imports` entry that no other installed module provides at exactly the locked version, naming the import, the locked version and the installed versions, and one error per import cycle.
 - Where a block names a contract version this build does not define, `inspect` SHALL report the refusal as a diagnostic on that module.
 - Where a block names a contract version this build does not define, `inspect` SHALL report no `semantic` view for that module.
 - If any entry carries an error-severity diagnostic, then `inspect` SHALL still write the complete document.
-- If any entry carries an error-severity diagnostic, then `inspect` SHALL exit with the partial status (1) and name each failing module on stderr.
+- If any entry carries an error-severity diagnostic, then `inspect` SHALL exit with the partial status (1) and name each failing module on stderr under the code `QM023_INSTALLED_MODULE_INVALID`, which is distinct from the install gate's rejection code.
+- If an installed module's manifest cannot be read, then `inspect` SHALL report that module as an entry carrying an error diagnostic.
+- If an installed module's manifest cannot be read, then `inspect` SHALL still report every other installed module.
 - `inspect` SHALL list a module with no `semantic` block.
 - `inspect` SHALL exit zero when the only findings are modules with no `semantic` block.
 - `inspect` SHALL leave the registry, every installed module and every consuming repository unmodified.
@@ -66,6 +71,9 @@ to inspect.
 | FR-124-AC-3 | A module with no `semantic` block is listed as `no-semantic-block` and the command exits zero. | Test |
 | FR-124-AC-4 | When an imported module is reinstalled at a version other than the locked one, `inspect` exits 1, writes the whole document, and reports on the importer an error naming the import, the locked version and the installed version. | Test |
 | FR-124-AC-5 | A block whose `contract_version` is `2.0.0` is reported with an error diagnostic naming `2.0.0` and no `semantic` view, and the command exits 1. | Test |
+| FR-124-AC-6 | With one installed module's directory removed, `inspect` still writes an entry for every installed module, reports the removed one as `unreadable` with an error diagnostic, exits 1, and names it on stderr under `QM023_INSTALLED_MODULE_INVALID`. | Test |
+| FR-124-AC-7 | Two installed modules that import each other yield an import-cycle error naming the cycle, and the command exits 1. | Test |
+| FR-124-AC-8 | The registry and every installed module file are byte-identical before and after `inspect`, including a run that finds errors. | Test |
 
 ## Dependencies
 
