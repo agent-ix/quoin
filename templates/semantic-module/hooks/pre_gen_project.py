@@ -41,6 +41,7 @@ TARGET_REGISTRY = {
     "parquet",
     "csv",
     "tsv",
+    "sysml-v2-textual",
 }
 
 # The only target with a working emitter today. Everything else is declared and
