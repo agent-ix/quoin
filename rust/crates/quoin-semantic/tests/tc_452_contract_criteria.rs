@@ -124,7 +124,6 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
         ),
         ("/$defs/EdgeTypeEntry", &["description", "category"]),
         ("/$defs/GrammarEntry", &["name"]),
-        ("/$defs/LintRuleEntry/properties/pattern", &["kind"]),
         ("/$defs/LocatorPrimitive", &["from"]),
         ("/$defs/ObjectTypeEntry", &["name"]),
         ("/$defs/RoleEntry", &["description"]),
@@ -175,12 +174,13 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
     );
 }
 
-/// The common schema's target registry is the declared five.
+/// The common schema's target registry is the published six (semantic-schema
+/// 0.4.x added `sysml-v2-textual`).
 ///
 /// Provenance: agent-ix/quoin#452
 #[trace("FR-075-AC-1")]
 #[test]
-fn tc_452_643_the_common_schema_declares_the_five_targets() {
+fn tc_452_643_the_common_schema_declares_the_published_targets() {
     let common_path = common_schema_path(&semantic_root());
     let common = read_json(&common_path);
     assert_eq!(
@@ -190,7 +190,8 @@ fn tc_452_643_the_common_schema_declares_the_five_targets() {
             "rust",
             "typescript",
             "python-pydantic-v2",
-            "python-dataclass"
+            "python-dataclass",
+            "sysml-v2-textual"
         ])
     );
 }
