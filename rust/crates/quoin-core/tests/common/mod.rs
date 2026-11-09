@@ -14,34 +14,16 @@
 use std::fs;
 use std::path::Path;
 
-/// `semantic.semantic_core` as the module-manifest schema pinned through
-/// `@agent-ix/semantic-schema` requires it. The `quire-fixtures` `module-ok`
-/// manifest omits the key, so `copy_module_ok` adds it; drop this injection
-/// when the pinned `@agent-ix/semantic-schema` no longer requires
-/// `semantic.semantic_core`. Quoin reads nothing from the value.
-const SCHEMA_REQUIRED_SEMANTIC_CORE: &str = "0.0.0";
-
-/// A removed-on-drop copy of `module-ok` with the `semantic_core` key the
-/// pinned schema requires.
+/// A removed-on-drop copy of `module-ok`.
 pub(crate) fn module_ok_copy() -> tempfile::TempDir {
     let dir = tempfile::tempdir().unwrap();
     copy_module_ok(dir.path());
     dir
 }
 
-/// Copy `module-ok` to `to`, adding the `semantic_core` key.
+/// Copy `module-ok` to `to`.
 pub(crate) fn copy_module_ok(to: &Path) {
     copy_tree(&quire_fixtures::module_ok_dir(), to);
-    let manifest = to.join("manifest.yaml");
-    let text = fs::read_to_string(&manifest).unwrap();
-    fs::write(
-        &manifest,
-        text.replace(
-            "semantic:\n",
-            &format!("semantic:\n  semantic_core: {SCHEMA_REQUIRED_SEMANTIC_CORE}\n"),
-        ),
-    )
-    .unwrap();
 }
 
 fn copy_tree(from: &Path, to: &Path) {

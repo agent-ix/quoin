@@ -74,8 +74,6 @@ MODEL_OF = {
 
 SEMANTIC_KEYS = (
     "contract_version",
-    # BLOCKED-BY PLAT-1221 (owner: planner titan:QSL:plan): the upstream module-manifest schema requires `semantic_core`
-    "semantic_core",
     "package",
     "exports",
     "imports",

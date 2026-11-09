@@ -26,8 +26,7 @@ use ix_trace_rs::trace;
 use std::fs;
 
 use common::{
-    SCHEMA_REQUIRED_SEMANTIC_CORE, Scratch, codes, errors, message_for, read,
-    rewrite_entity_schema, semantic_root, validators,
+    Scratch, codes, errors, message_for, read, rewrite_entity_schema, semantic_root, validators,
 };
 use quoin_semantic::data_schema::DataSchemaForm;
 use quoin_semantic::{CompatibilityPosture, LegacyForms, SEMANTIC_CONTRACT, read_semantic_block};
@@ -75,7 +74,6 @@ fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
     let root = scratch.module_copy("minimal", |manifest, _| {
         manifest["semantic"] = json!({
             "contract_version": "1.0.0",
-            "semantic_core": SCHEMA_REQUIRED_SEMANTIC_CORE,
             "package": "agent-ix/spec-objects-fixture",
         });
     });
@@ -90,6 +88,27 @@ fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
     assert_eq!(block.targets.len(), 0);
     assert_eq!(block.mappings.len(), 0);
     assert_eq!(block.sweep_report, None);
+}
+
+/// A manifest that still declares the retired `semantic_core` loads: the key is
+/// neither required nor checked, whatever its value (PLAT-1221).
+#[trace("FR-070-AC-2", "TC-1337")]
+#[test]
+fn tc_452_611b_a_retired_semantic_core_declaration_is_ignored() {
+    let validators = validators();
+    let scratch = Scratch::new();
+    for (name, value) in [("valid", json!("0.0.0")), ("malformed", json!(7))] {
+        let root = scratch.module_copy(name, |manifest, _| {
+            manifest["semantic"] = json!({
+                "contract_version": "1.0.0",
+                "semantic_core": value,
+                "package": "agent-ix/spec-objects-fixture",
+            });
+        });
+        assert_eq!(errors(&root, &validators), Vec::<String>::new(), "{name}");
+        let block = read(&root, &validators).module.expect("a module").block;
+        assert_eq!(block.package.as_str(), "agent-ix/spec-objects-fixture");
+    }
 }
 
 /// An unadmitted key is refused BY NAME, and every admitted key is accepted.
@@ -116,7 +135,6 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
 
     let admitted = json!({
         "contract_version": "1.0.0",
-        "semantic_core": SCHEMA_REQUIRED_SEMANTIC_CORE,
         "package": "agent-ix/spec-objects-fixture",
         "exports": ["entity"],
         "imports": { "agent-ix/spec-artifacts-iso": "0.4.0" },

@@ -339,8 +339,16 @@ pub fn read_semantic_block(
 
     let mut diagnostics: Vec<SemanticDiagnostic> = Vec::new();
 
-    if !validators.semantic_block.is_valid(raw) {
-        for error in validators.semantic_block.errors(raw) {
+    // `semantic_core` is a retired key (PLAT-1221): a module declares no
+    // semantic-core version, so a manifest that still carries one loads, and
+    // the value is neither required nor checked. Validate the block without it,
+    // as quire-rs FR-069 does, rather than re-admitting it in the schema.
+    let mut validated = raw.clone();
+    if let Some(map) = validated.as_object_mut() {
+        map.remove("semantic_core");
+    }
+    if !validators.semantic_block.is_valid(&validated) {
+        for error in validators.semantic_block.errors(&validated) {
             diagnostics.push(map_schema_error(&error));
         }
         return SemanticReadResult {
