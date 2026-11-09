@@ -46,3 +46,12 @@ Not mergeable as written: FND-001 is high (two requirements contradict). Clean: 
 outcome the runner did not report". The id-less entry carries only the runner's outcome, and its non-binding effect
 agrees with FR-030's binding rule (trace id on a passing entry only) and with FR-030-AC-18 (the symbol join never binds).
 FR-032 checks entries by symbol, so these entries still feed its vacuity and stale-run checks. ADR-100 is unaffected.
+
+## Dispositions
+
+Round 1 (fix commit 93ed5146).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |

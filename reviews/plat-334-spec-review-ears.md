@@ -38,3 +38,11 @@ Emitter contract rule E-4 and FR-120-AC-5. One finding (low).
 
 Low only. The AC-5 wording is reviewed under base (SR-16390 FND-001) and is not repeated here. The unchanged E-4 first
 sentence ("SHALL NOT write an outcome the runner did not report") stays a correct Ubiquitous negative.
+
+## Dispositions
+
+Round 1 (fix commit 93ed5146).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |

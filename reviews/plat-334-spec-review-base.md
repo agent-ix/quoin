@@ -43,3 +43,11 @@ the runner's outcome. It is consistent with FR-030: the run record keeps every e
 passing entry only (record.rs:118-134), so an entry with no ids binds nothing, and FR-030-AC-18's symbol join never
 binds. It also helps FR-032, whose vacuity and stale-run checks match entries by symbol (ladder.rs:273-280), so a
 skipped or failed id-less entry is still seen. E-2, E-3, E-5 and E-10 are not contradicted.
+
+## Dispositions
+
+Round 1 (fix commit 93ed5146).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
