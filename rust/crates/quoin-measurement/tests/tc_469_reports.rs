@@ -15,7 +15,7 @@ use quoin_measurement::intervention::report::render_intervention_report;
 use quoin_measurement::operational::report::render_operational_report;
 
 /// Provenance: quoin#469
-#[trace("FR-100-AC-4")]
+#[trace("FR-100-AC-4", "TC-1636")]
 #[test]
 fn tc_469_an_empty_report_renders_as_nothing_at_all() {
     assert_eq!(render_intervention_report(&[]), "");

@@ -125,7 +125,7 @@ fn member_names(body: &str) -> Vec<String> {
 }
 
 /// Provenance: quoin#472, quoin#471
-#[trace("FR-100-AC-4", "NFR-025-AC-3")]
+#[trace("FR-100-AC-4", "NFR-025-AC-3", "TC-1636", "TC-1667")]
 #[test]
 fn tc_472_a_retained_evidence_file_has_exactly_two_representations() {
     let sources = sources();
@@ -166,7 +166,7 @@ fn tc_472_a_retained_evidence_file_has_exactly_two_representations() {
 /// The deleted third spelling has not come back under its own name.
 ///
 /// Provenance: quoin#472
-#[trace("FR-100-AC-4")]
+#[trace("FR-100-AC-4", "TC-1636")]
 #[test]
 fn tc_472_the_deleted_claim_type_is_still_deleted() {
     let sources = sources();

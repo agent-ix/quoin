@@ -194,7 +194,7 @@ fn required(path: &[&str]) {
 /// > FR-044 producer tuple.
 ///
 /// Provenance: quoin#479
-#[trace("FR-056-AC-1")]
+#[trace("FR-056-AC-1", "TC-1195")]
 #[test]
 fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
     /// Every envelope member `intervention.test.ts:140` deleted, plus the two
@@ -249,7 +249,7 @@ fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
 /// > version, an empty environment, and an empty configuration reference.
 ///
 /// Provenance: quoin#479
-#[trace("FR-056-AC-2")]
+#[trace("FR-056-AC-2", "TC-1196")]
 #[test]
 fn tc_479_101_each_producer_defect_is_refused_independently() {
     /// The producer members `intervention.test.ts:157` deleted one at a time.
@@ -289,7 +289,7 @@ fn tc_479_101_each_producer_defect_is_refused_independently() {
 /// > conditions; randomized assignment requires a reproducible seed.
 ///
 /// Provenance: quoin#479
-#[trace("FR-056-AC-3")]
+#[trace("FR-056-AC-3", "TC-1197")]
 #[test]
 fn tc_479_102_every_design_and_assignment_boundary_is_enforced() {
     /// The three (kind, method) pairs `intervention.test.ts:192` walked.
@@ -363,7 +363,7 @@ fn tc_479_102_every_design_and_assignment_boundary_is_enforced() {
 /// > variables, and an explicit list of held-constant variables.
 ///
 /// Provenance: quoin#479
-#[trace("FR-056-AC-4")]
+#[trace("FR-056-AC-4", "TC-1198")]
 #[test]
 fn tc_479_103_arms_variables_and_held_constants_are_linked_and_unique() {
     /// The four arm members, each required on the baseline and on a treatment.
@@ -480,7 +480,7 @@ fn tc_479_103_arms_variables_and_held_constants_are_linked_and_unique() {
 /// > treatment/metric keys.
 ///
 /// Provenance: quoin#479
-#[trace("FR-056-AC-5")]
+#[trace("FR-056-AC-5", "TC-1199")]
 #[test]
 fn tc_479_104_measured_effects_keep_their_values_and_reject_duplicates() {
     /// The six measured-effect members, each required.
@@ -586,7 +586,7 @@ fn effect_case(baseline: Value, treatment: Value, effect: Value) -> MeasuredEffe
 /// > not-applicable dispositions.
 ///
 /// Provenance: quoin#479
-#[trace("FR-056-AC-6")]
+#[trace("FR-056-AC-6", "TC-1200")]
 #[test]
 fn tc_479_105_qualifier_collections_stay_separate_and_keep_every_disposition() {
     let dispositions = InterventionDisposition::all();
@@ -676,7 +676,7 @@ fn tc_479_105_qualifier_collections_stay_separate_and_keep_every_disposition() {
 /// > `cause_not_established` conclusion.
 ///
 /// Provenance: quoin#479
-#[trace("FR-056-AC-7")]
+#[trace("FR-056-AC-7", "TC-1201")]
 #[test]
 fn tc_479_106_terminal_statuses_require_cause_not_established() {
     /// The finding a terminal status with any other conclusion carries.
@@ -738,7 +738,7 @@ fn tc_479_106_terminal_statuses_require_cause_not_established() {
 /// > observed comparison.
 ///
 /// Provenance: quoin#479
-#[trace("FR-056-AC-8")]
+#[trace("FR-056-AC-8", "TC-1202")]
 #[test]
 fn tc_479_107_causal_conclusions_require_their_support() {
     /// The findings the semantic pass emits for each unsupported causal claim.
@@ -892,7 +892,7 @@ fn causal_base() -> Value {
 /// > paths and undeclared fields are refused.
 ///
 /// Provenance: quoin#479
-#[trace("FR-056-AC-9")]
+#[trace("FR-056-AC-9", "TC-1203")]
 #[test]
 fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused() {
     /// Every object the schema closes, by the path an undeclared member is
@@ -1029,7 +1029,7 @@ fn refuses_unsafe_paths_without_writing() {
 /// > is refused, not defaulted.
 ///
 /// Provenance: PLAT-972
-#[trace("FR-056-AC-10")]
+#[trace("FR-056-AC-10", "TC-1882")]
 #[test]
 fn tc_479_109_strength_is_required_and_closed_to_tested() {
     let base = accepted(&retained(), "the retained record");

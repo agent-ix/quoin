@@ -48,7 +48,7 @@ fn sources() -> Vec<(String, String)> {
 }
 
 /// Provenance: quoin#468
-#[trace("FR-100-AC-4", "NFR-025-AC-3")]
+#[trace("FR-100-AC-4", "NFR-025-AC-3", "TC-1636", "TC-1667")]
 #[test]
 fn tc_468_no_second_hasher_serializer_or_yaml_reader_appeared() {
     // (token, what owns it instead)
@@ -87,7 +87,7 @@ fn tc_468_no_second_hasher_serializer_or_yaml_reader_appeared() {
 }
 
 /// Provenance: quoin#468
-#[trace("FR-100-AC-2", "NFR-025-AC-3")]
+#[trace("FR-100-AC-2", "NFR-025-AC-3", "TC-1634", "TC-1667")]
 #[test]
 fn tc_468_exactly_one_module_reads_an_instant() {
     // The civil-date arithmetic an instant reader needs. If a second module
@@ -108,7 +108,7 @@ fn tc_468_exactly_one_module_reads_an_instant() {
 }
 
 /// Provenance: quoin#468
-#[trace("FR-100-AC-4")]
+#[trace("FR-100-AC-4", "TC-1636")]
 #[test]
 fn tc_468_the_manifest_depends_on_nothing_that_would_duplicate_the_store() {
     let manifest =

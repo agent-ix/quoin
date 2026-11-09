@@ -180,7 +180,7 @@ fn required(pointer: &str, member: &str) -> String {
 /// evidence, and every unchanged FR-044 producer-tuple field.
 ///
 /// Provenance: quoin#479
-#[trace("FR-059-AC-1")]
+#[trace("FR-059-AC-1", "TC-1223")]
 #[test]
 fn tc_479_300_the_envelope_requires_every_declared_member() {
     /// The thirteen members both shapes carry.
@@ -284,7 +284,7 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
 /// rollback and kill, override and appeal, abstention and fallback, and reporting.
 ///
 /// Provenance: quoin#479
-#[trace("FR-059-AC-2")]
+#[trace("FR-059-AC-2", "TC-1224")]
 #[test]
 fn tc_479_301_every_declared_control_kind_validates_and_no_other_does() {
     /// The eleven kinds FR-059 declares, written out rather than read back
@@ -333,7 +333,7 @@ fn tc_479_301_every_declared_control_kind_validates_and_no_other_does() {
 /// them.
 ///
 /// Provenance: quoin#479
-#[trace("FR-059-AC-3")]
+#[trace("FR-059-AC-3", "TC-1225")]
 #[test]
 fn tc_479_302_a_capability_requires_its_surface_and_a_complete_clock_choice() {
     /// The eight members a standing capability carries.
@@ -416,7 +416,7 @@ fn tc_479_302_a_capability_requires_its_surface_and_a_complete_clock_choice() {
 /// one observation, and clock applicability.
 ///
 /// Provenance: quoin#479
-#[trace("FR-059-AC-4")]
+#[trace("FR-059-AC-4", "TC-1226")]
 #[test]
 fn tc_479_303_an_exercise_requires_its_whole_shape_and_ordered_timing() {
     /// The eleven members an exercise carries.
@@ -488,7 +488,7 @@ fn tc_479_303_an_exercise_requires_its_whole_shape_and_ordered_timing() {
 /// data, and exercise excludes capability data.
 ///
 /// Provenance: quoin#479
-#[trace("FR-059-AC-5")]
+#[trace("FR-059-AC-5", "TC-1227")]
 #[test]
 fn tc_479_304_exactly_one_shape_payload_is_present() {
     let capability = capability();
@@ -528,7 +528,7 @@ fn tc_479_304_exactly_one_shape_payload_is_present() {
 /// timestamps.
 ///
 /// Provenance: quoin#479
-#[trace("FR-059-AC-6")]
+#[trace("FR-059-AC-6", "TC-1228")]
 #[test]
 fn tc_479_305_a_clocked_status_is_derived_from_the_instants_and_not_believed() {
     let base = exercise();
@@ -633,7 +633,7 @@ fn tc_479_305_a_clocked_status_is_derived_from_the_instants_and_not_believed() {
 /// outcomes.
 ///
 /// Provenance: quoin#479
-#[trace("FR-059-AC-8")]
+#[trace("FR-059-AC-8", "TC-1230")]
 #[test]
 fn tc_479_307_every_declared_outcome_round_trips_without_collapsing() {
     /// The four outcomes FR-059 declares, written out rather than read back
@@ -748,7 +748,7 @@ fn refuse_every_document_defect_ac9(base: &Value) {
 /// links and undeclared fields are refused.
 ///
 /// Provenance: quoin#479
-#[trace("FR-059-AC-9")]
+#[trace("FR-059-AC-9", "TC-1231")]
 #[test]
 fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refused() {
     let base = capability();
@@ -827,7 +827,7 @@ fn tc_479_308_governance_and_safe_raw_evidence_are_required_and_bad_links_refuse
 /// > `strength` is refused, not defaulted.
 ///
 /// Provenance: PLAT-972
-#[trace("FR-059-AC-10")]
+#[trace("FR-059-AC-10", "TC-1883")]
 #[test]
 fn tc_479_309_strength_is_required_and_closed_to_observed() {
     let mut measured = 0_usize;

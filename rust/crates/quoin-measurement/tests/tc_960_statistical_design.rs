@@ -192,7 +192,7 @@ fn intake(
 /// the metric, the plan, what was examined and what was required.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7")]
+#[trace("FR-044-AC-7", "TC-1740")]
 #[test]
 fn tc_960_001_a_population_below_the_minimum_is_refused_with_its_own_code() {
     let repository = repository_with(&plan_document(&design_with_minimum("10")));
@@ -213,7 +213,7 @@ fn tc_960_001_a_population_below_the_minimum_is_refused_with_its_own_code() {
 /// Reaching the minimum exactly is enough, and exceeding it is too.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7")]
+#[trace("FR-044-AC-7", "TC-1741")]
 #[test]
 fn tc_960_002_a_population_at_or_above_the_minimum_is_admitted() {
     let repository = repository_with(&plan_document(&design_with_minimum("10")));
@@ -233,7 +233,7 @@ fn tc_960_002_a_population_at_or_above_the_minimum_is_admitted() {
 /// `not_computed` observation carries no value to trust and is not checked.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7")]
+#[trace("FR-044-AC-7", "TC-1742")]
 #[test]
 fn tc_960_003_a_measured_observation_with_no_population_is_refused_under_a_minimum() {
     let repository = repository_with(&plan_document(&design_with_minimum("10")));
@@ -267,7 +267,7 @@ fn tc_960_003_a_measured_observation_with_no_population_is_refused_under_a_minim
 /// code as its first word.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7")]
+#[trace("FR-044-AC-7", "TC-1743")]
 #[test]
 fn tc_960_004_population_findings_accumulate_with_every_other_finding() {
     let repository = repository_with(&plan_document(&design_with_minimum("10")));
@@ -309,7 +309,7 @@ fn tc_960_004_population_findings_accumulate_with_every_other_finding() {
 /// JSON.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7", "FR-044-AC-8")]
+#[trace("FR-044-AC-7", "FR-044-AC-8", "TC-1744")]
 #[test]
 fn tc_960_005_a_plan_without_the_fields_behaves_exactly_as_before() {
     let repository = repository_with(&plan_document(""));
@@ -341,7 +341,7 @@ fn tc_960_005_a_plan_without_the_fields_behaves_exactly_as_before() {
 /// the text view's Plan cell, and as the plan's `groundTruthKind` in JSON.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-8")]
+#[trace("FR-044-AC-8", "TC-1745")]
 #[test]
 fn tc_960_006_the_report_states_the_plans_ground_truth_kind() {
     let repository = repository_with(&plan_document(&design_with_minimum("10")));
@@ -389,7 +389,7 @@ fn tc_960_006_the_report_states_the_plans_ground_truth_kind() {
 /// every `ground_truth_kind` spelling the schema allows is accepted.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7")]
+#[trace("FR-044-AC-7", "TC-1746")]
 #[test]
 fn tc_960_007_the_design_members_are_parsed_into_the_plan() {
     let repository = repository_with(&plan_document(&design(
@@ -423,7 +423,7 @@ fn tc_960_007_the_design_members_are_parsed_into_the_plan() {
 /// rounded, coerced or clamped.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7")]
+#[trace("FR-044-AC-7", "TC-1746")]
 #[test]
 fn tc_960_008_a_malformed_design_member_refuses_the_plan_load() {
     let cases = [
@@ -476,7 +476,7 @@ fn tc_960_008_a_malformed_design_member_refuses_the_plan_load() {
 /// metric, the plan, what ran and what was required.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-9")]
+#[trace("FR-044-AC-9", "TC-1747")]
 #[test]
 fn tc_960_009_repetitions_short_of_the_plan_are_refused_with_their_own_code() {
     let repository = repository_with(&plan_document(&design_with_repetitions("3")));
@@ -499,7 +499,7 @@ fn tc_960_009_repetitions_short_of_the_plan_are_refused_with_their_own_code() {
 /// Running exactly the plan's repetitions is enough, and running more is too.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-9")]
+#[trace("FR-044-AC-9", "TC-1748")]
 #[test]
 fn tc_960_010_repetitions_at_or_above_the_plan_are_admitted() {
     let repository = repository_with(&plan_document(&design_with_repetitions("3")));
@@ -523,7 +523,7 @@ fn tc_960_010_repetitions_at_or_above_the_plan_are_admitted() {
 /// `not_computed` observation is exempt.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-9")]
+#[trace("FR-044-AC-9", "TC-1749")]
 #[test]
 fn tc_960_011_unstated_repetitions_under_a_plan_of_more_than_one_are_refused() {
     let repository = repository_with(&plan_document(&design_with_repetitions("3")));
@@ -554,7 +554,7 @@ fn tc_960_011_unstated_repetitions_under_a_plan_of_more_than_one_are_refused() {
 /// every collection predating `population.repetitions` already is.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-9")]
+#[trace("FR-044-AC-9", "TC-1750")]
 #[test]
 fn tc_960_012_unstated_repetitions_under_a_plan_of_one_are_admitted() {
     let repository = repository_with(&plan_document(&design_with_repetitions("1")));
@@ -576,7 +576,7 @@ fn tc_960_012_unstated_repetitions_under_a_plan_of_one_are_admitted() {
 /// member, so its bytes are unchanged.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-9")]
+#[trace("FR-044-AC-9", "TC-1751")]
 #[test]
 fn tc_960_013_the_json_report_carries_a_stated_repetition_count() {
     let repository = repository_with(&plan_document(&design_with_repetitions("3")));
@@ -605,7 +605,7 @@ fn tc_960_013_the_json_report_carries_a_stated_repetition_count() {
 /// and an object alike. It is never coerced, and never read as absent.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-9")]
+#[trace("FR-044-AC-9", "TC-1752")]
 #[test]
 fn tc_960_014_a_malformed_repetition_count_is_refused_whatever_the_plan() {
     for document in [
@@ -647,7 +647,7 @@ fn tc_960_014_a_malformed_repetition_count_is_refused_whatever_the_plan() {
 /// a negative count is malformed rather than short.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7")]
+#[trace("FR-044-AC-7", "TC-1753")]
 #[test]
 fn tc_960_015_a_malformed_examined_count_is_refused_under_a_minimum() {
     let repository = repository_with(&plan_document(&design_with_minimum("10")));
@@ -674,7 +674,7 @@ fn tc_960_015_a_malformed_examined_count_is_refused_under_a_minimum() {
 /// raw value rather than dropping what it cannot parse.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-9")]
+#[trace("FR-044-AC-9", "TC-1754")]
 #[test]
 fn tc_960_016_the_json_report_keeps_a_stored_non_numeric_repetition_count() {
     let repository = repository_with(&plan_document(""));
@@ -705,7 +705,7 @@ fn tc_960_016_the_json_report_keeps_a_stored_non_numeric_repetition_count() {
 /// `QM-COLLECTION-INVALID`, not the population code.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7")]
+#[trace("FR-044-AC-7", "TC-1755")]
 #[test]
 fn tc_960_017_a_population_finding_beside_an_unplanned_metric_is_collection_invalid() {
     let repository = repository_with(&plan_document(&design_with_minimum("10")));
@@ -724,7 +724,7 @@ fn tc_960_017_a_population_finding_beside_an_unplanned_metric_is_collection_inva
 /// mixed refusal: `QM-COLLECTION-INVALID`, each finding naming its own code.
 ///
 /// Provenance: PLAT-960
-#[trace("FR-044-AC-7", "FR-044-AC-9")]
+#[trace("FR-044-AC-7", "FR-044-AC-9", "TC-1755")]
 #[test]
 fn tc_960_018_population_findings_of_different_kinds_are_collection_invalid() {
     let repository = repository_with(&plan_document(&design(

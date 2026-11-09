@@ -351,7 +351,7 @@ mod tests {
     /// Provenance: PLAT-1071
     /// A tracked `.quoin-campaign` link cannot carry checker input bytes out of
     /// the checkout, and a tracked file at an input path is not overwritten.
-    #[trace("FR-114-AC-2")]
+    #[trace("FR-114-AC-2", "TC-1942")]
     #[cfg(unix)]
     #[test]
     fn tc_1942_checker_input_refuses_tracked_link_and_tracked_path() {

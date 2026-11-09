@@ -91,7 +91,7 @@ fn code_of(contents: &str) -> String {
 /// The one place canonical JSON is written, and the one place it comes from.
 ///
 /// Provenance: quoin#476
-#[trace("FR-100-AC-8")]
+#[trace("FR-100-AC-8", "TC-1640")]
 #[test]
 fn tc_476_020_there_is_exactly_one_canonical_json_writer() {
     let mut writers: Vec<String> = Vec::new();
@@ -132,7 +132,7 @@ fn tc_476_020_there_is_exactly_one_canonical_json_writer() {
 /// One base64 codec (quoin#475's), one bridge.
 ///
 /// Provenance: quoin#476
-#[trace("FR-100-AC-8")]
+#[trace("FR-100-AC-8", "TC-1640")]
 #[test]
 fn tc_476_021_there_is_no_second_codec_or_bridge() {
     let mut base64: Vec<String> = Vec::new();
@@ -188,7 +188,7 @@ fn tc_476_022_no_test_runs_the_retained_typescript() {
 /// Every entry point the deleted module exported still has a Rust home.
 ///
 /// Provenance: quoin#476
-#[trace("FR-100-AC-4")]
+#[trace("FR-100-AC-4", "TC-1636")]
 #[test]
 fn tc_476_023_every_ported_entry_point_is_still_exported() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));

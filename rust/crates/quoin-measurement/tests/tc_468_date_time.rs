@@ -48,7 +48,7 @@ fn the_strict_grammar_would_accept(value: &str) -> bool {
 }
 
 /// Provenance: quoin#468
-#[trace("FR-100-AC-2", "NFR-025-AC-3")]
+#[trace("FR-100-AC-2", "NFR-025-AC-3", "TC-1634", "TC-1667")]
 #[test]
 fn tc_468_the_two_retained_grammars_disagree_on_a_lowercase_t_and_z() {
     // The one input the two retained implementations disagree about.
@@ -77,7 +77,7 @@ fn tc_468_the_two_retained_grammars_disagree_on_a_lowercase_t_and_z() {
 }
 
 /// Provenance: quoin#468
-#[trace("FR-100-AC-2")]
+#[trace("FR-100-AC-2", "TC-1634")]
 #[test]
 fn tc_468_both_grammars_still_refuse_what_date_parse_would_have_accepted() {
     // The reason `date-time.ts` exists at all: `Date.parse` accepts these and

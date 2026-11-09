@@ -152,7 +152,7 @@ fn obligation() -> OperationalObligation {
 /// timing, outcome, and observations match the input data.
 ///
 /// Provenance: quoin#479
-#[trace("FR-061-AC-1")]
+#[trace("FR-061-AC-1", "TC-1244")]
 #[test]
 fn tc_479_450_synthetic_release_inputs_produce_one_exact_linked_pair() {
     let workspace = temporary_repository();
@@ -213,7 +213,7 @@ fn tc_479_450_synthetic_release_inputs_produce_one_exact_linked_pair() {
 /// refused without either operational record.
 ///
 /// Provenance: quoin#479
-#[trace("FR-061-AC-2")]
+#[trace("FR-061-AC-2", "TC-1245")]
 #[test]
 fn tc_479_451_malformed_and_mismatched_inputs_are_refused_without_either_record() {
     let cases = refusal_cases();
@@ -402,7 +402,7 @@ fn job_refusal_cases() -> Vec<RefusalCase> {
 /// replacements cannot change them.
 ///
 /// Provenance: quoin#479
-#[trace("FR-061-AC-3")]
+#[trace("FR-061-AC-3", "TC-1246")]
 #[test]
 fn tc_479_452_workflow_structure_and_api_exports_decide_state_not_the_caller() {
     // A definition carrying every state member a caller might hope to supply.
@@ -478,7 +478,7 @@ fn tc_479_452_workflow_structure_and_api_exports_decide_state_not_the_caller() {
 /// cannot discharge the clocked release obligation.
 ///
 /// Provenance: quoin#479
-#[trace("FR-061-AC-4")]
+#[trace("FR-061-AC-4", "TC-1247")]
 #[test]
 fn tc_479_453_every_non_success_conclusion_is_named_and_cannot_discharge() {
     /// Every conclusion GitHub reports, and the outcome it must become. A
@@ -536,7 +536,7 @@ fn tc_479_453_every_non_success_conclusion_is_named_and_cannot_discharge() {
 /// FR-060.
 ///
 /// Provenance: quoin#479
-#[trace("FR-061-AC-5")]
+#[trace("FR-061-AC-5", "TC-1248")]
 #[test]
 fn tc_479_454_synthetic_exports_are_consumed_offline_and_persisted_all_or_nothing() {
     /// The producer reads files. Anything here would be Quoin running the

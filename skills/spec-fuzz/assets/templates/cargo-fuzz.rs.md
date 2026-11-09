@@ -12,15 +12,15 @@ from the directory — a `.rs` file with no block is a file nobody runs, which i
 ```rust
 #![no_main]
 
+use ix_trace_rs::trace;
 use libfuzzer_sys::fuzz_target;
 
 use quire_rs::loader::manifest::parse_manifest;
 
 /// The manifest loader does not panic on arbitrary input.
 ///
-/// Trace: NFR-003-M-1
-///
 /// spec-fuzz: obligation=NFR-003-M-1 harness=cargo-fuzz entry=loader::manifest::parse_manifest origin=advised
+#[trace("NFR-003-M-1")]
 fn fuzz_nfr_003_m_1_parse_manifest(data: &[u8]) {
     // `from_utf8` rather than `from_utf8_lossy`: lossy conversion silently
     // repairs the invalid sequences that are the most interesting inputs a

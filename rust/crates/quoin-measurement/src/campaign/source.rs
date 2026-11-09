@@ -354,7 +354,7 @@ mod tests {
     /// Provenance: PLAT-1071
     /// Manifest paths are repository-root relative, so a subdirectory of the
     /// repository is not a checkout.
-    #[trace("FR-114-AC-2")]
+    #[trace("FR-114-AC-2", "TC-1942")]
     #[test]
     fn tc_1942_source_checkout_must_be_the_repository_root() {
         let repo = tempfile::tempdir().expect("repository");

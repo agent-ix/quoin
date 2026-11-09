@@ -10,6 +10,7 @@ under `tests/props/` compiles as a helper module and never runs. See step 4.
 
 ```rust
 // tests/props_fr_012.rs
+use ix_trace_rs::trace;
 use proptest::prelude::*;
 use quoin::catalog::{detect_duplicates, Entry};
 
@@ -19,8 +20,9 @@ fn entry() -> impl Strategy<Value = Entry> {
 }
 
 proptest! {
-    /// Trace: FR-012-AC-1 — declaring modules are listed in sorted order.
+    /// Declaring modules are listed in sorted order.
     /// spec-correctness: row=FR-012-AC-1 property=ordering extraction=extractable origin=regex review=none
+    #[trace("FR-012-AC-1", "TC-345")]
     #[test]
     fn fr_012_ac_1_duplicate_modules_sorted(entries in prop::collection::vec(entry(), 0..32)) {
         for dup in detect_duplicates(&entries).duplicates {

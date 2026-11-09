@@ -353,7 +353,7 @@ mod tests {
     }
 
     /// Provenance: PLAT-1043
-    #[trace("FR-114-AC-4")]
+    #[trace("FR-114-AC-4", "TC-1945")]
     #[test]
     fn tc_1945_required_members_decide_and_optional_groups_remain_visible() {
         let members = [
@@ -371,7 +371,7 @@ mod tests {
     }
 
     /// Provenance: PLAT-1043
-    #[trace("FR-114-AC-4")]
+    #[trace("FR-114-AC-4", "TC-1945")]
     #[test]
     fn tc_1945_failed_or_rejected_attempt_cannot_be_hidden_by_a_later_pass() {
         let members = [member("native-test", None, true, &[])];
@@ -403,7 +403,7 @@ mod tests {
     }
 
     /// Provenance: PLAT-1043
-    #[trace("FR-114-AC-1", "FR-114-AC-4")]
+    #[trace("FR-114-AC-1", "FR-114-AC-4", "TC-1940", "TC-1945")]
     #[test]
     fn tc_1940_unknown_cycle_and_duplicate_attempts_reject() {
         let cycle_a = ["b".to_owned()];
@@ -432,7 +432,7 @@ mod tests {
     }
 
     /// Provenance: PLAT-1043
-    #[trace("FR-114-AC-4")]
+    #[trace("FR-114-AC-4", "TC-1945")]
     #[test]
     fn tc_1945_dependency_outcome_propagates_without_domain_specific_names() {
         let dependencies = ["compile".to_owned()];

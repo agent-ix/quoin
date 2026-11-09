@@ -298,7 +298,7 @@ fn a_definition_move_reaches_the_portfolio() {
 /// refused naming the metric."
 ///
 /// Provenance: quoin#479
-#[trace("FR-044-AC-1")]
+#[trace("FR-044-AC-1", "TC-1003")]
 #[test]
 fn tc_479_001_an_unplanned_observation_is_refused_naming_the_metric() {
     let candidate = from_serde(&new_collection_json()).expect("the candidate crosses the bridge");
@@ -361,7 +361,7 @@ fn tc_479_001_an_unplanned_observation_is_refused_naming_the_metric() {
 /// refused naming the metric."
 ///
 /// Provenance: quoin#300
-#[trace("FR-044-AC-1")]
+#[trace("FR-044-AC-1", "TC-1003")]
 #[test]
 fn tc_479_001a_a_proposed_successor_does_not_shadow_the_active_plan() {
     let candidate = from_serde(&new_collection_json()).expect("the candidate crosses the bridge");
@@ -395,7 +395,7 @@ fn tc_479_001a_a_proposed_successor_does_not_shadow_the_active_plan() {
 /// attached raw evidence."
 ///
 /// Provenance: quoin#479
-#[trace("FR-044-AC-1")]
+#[trace("FR-044-AC-1", "TC-1003")]
 #[test]
 fn tc_479_002_every_member_the_criterion_names_is_required() {
     /// The eleven members the criterion enumerates, each named the way the
@@ -459,7 +459,7 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
 /// makes. The criterion text is the gap, and closing it is a spec change.
 ///
 /// Provenance: quoin#479, PLAT-930
-#[trace("FR-044-AC-1")]
+#[trace("FR-044-AC-1", "TC-1003")]
 #[test]
 fn tc_479_003_a_new_collection_requires_a_release_build() {
     let temporary = planned_repository();
@@ -498,7 +498,7 @@ fn tc_479_003_a_new_collection_requires_a_release_build() {
 /// second submission to learn about the unplanned metric.
 ///
 /// Provenance: PLAT-929
-#[trace("FR-044-AC-1")]
+#[trace("FR-044-AC-1", "TC-1003")]
 #[test]
 fn tc_479_020_a_bad_build_profile_and_an_unplanned_metric_are_both_named_in_one_refusal() {
     let temporary = planned_repository();
@@ -545,7 +545,7 @@ fn tc_479_020_a_bad_build_profile_and_an_unplanned_metric_are_both_named_in_one_
 /// each side of it on its own (review finding #5(a) on quoin#580).
 ///
 /// Provenance: PLAT-929
-#[trace("FR-044-AC-1")]
+#[trace("FR-044-AC-1", "TC-1003")]
 #[test]
 fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one_refusal() {
     let temporary = planned_repository();
@@ -588,7 +588,7 @@ fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one
 /// did not say which entry, unlike the sibling stack checks.
 ///
 /// Provenance: PLAT-943
-#[trace("FR-044-AC-1")]
+#[trace("FR-044-AC-1", "TC-1003")]
 #[test]
 fn tc_479_023_each_malformed_capability_is_named_by_its_index() {
     let temporary = planned_repository();
@@ -633,7 +633,7 @@ fn tc_479_023_each_malformed_capability_is_named_by_its_index() {
 /// between the stored envelope and what AC-1 requires for a write.
 ///
 /// Provenance: quoin#479
-#[trace("FR-044-AC-1")]
+#[trace("FR-044-AC-1", "TC-1003")]
 #[test]
 fn tc_479_004_historical_evidence_reads_before_the_profile_field() {
     let temporary = planned_repository();
@@ -681,7 +681,7 @@ fn tc_479_004_historical_evidence_reads_before_the_profile_field() {
 /// collection, and writing identical bytes for the same id is idempotent."
 ///
 /// Provenance: quoin#479
-#[trace("FR-044-AC-2")]
+#[trace("FR-044-AC-2", "TC-1004")]
 #[test]
 fn tc_479_005_a_collection_lands_atomically_and_an_identical_rewrite_is_idempotent() {
     let temporary = planned_repository();
@@ -788,7 +788,7 @@ fn stored_collections(root: &Path) -> Vec<String> {
 /// digest unchecked.
 ///
 /// Provenance: PLAT-969
-#[trace("FR-044-AC-13")]
+#[trace("FR-044-AC-13", "TC-1731")]
 #[test]
 fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
     let temporary = planned_repository();
@@ -836,7 +836,7 @@ fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
 /// link itself is there and `symlink_metadata` sees it.
 ///
 /// Provenance: PLAT-969
-#[trace("FR-044-AC-13")]
+#[trace("FR-044-AC-13", "TC-1732")]
 #[test]
 fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish() {
     let temporary = planned_repository();
@@ -920,7 +920,7 @@ fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish
 /// `lstat`-ed as `NotFound` and passed as a label.
 ///
 /// Provenance: PLAT-969
-#[trace("FR-044-AC-13")]
+#[trace("FR-044-AC-13", "TC-1732")]
 #[test]
 fn tc_969_004_a_symlinked_path_component_refuses_before_digest_or_label() {
     let temporary = planned_repository();
@@ -980,7 +980,7 @@ fn tc_969_004_a_symlinked_path_component_refuses_before_digest_or_label() {
 /// array.
 ///
 /// Provenance: PLAT-969
-#[trace("FR-044-AC-13")]
+#[trace("FR-044-AC-13", "TC-1734")]
 #[test]
 fn tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not() {
     let temporary = planned_repository();
@@ -1031,7 +1031,7 @@ fn tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not
 /// rendered text and in the JSON view alike (PLAT-969).
 ///
 /// Provenance: PLAT-969
-#[trace("FR-044-AC-13")]
+#[trace("FR-044-AC-13", "TC-1734")]
 #[test]
 fn tc_969_006_the_report_shows_an_unverified_artifact_next_to_its_provenance() {
     let temporary = planned_repository();
@@ -1085,7 +1085,7 @@ fn tc_969_003_a_publish_whose_every_local_artifact_is_readable_is_admitted() {
 /// populations with actionable reasons […]".
 ///
 /// Provenance: quoin#479
-#[trace("FR-044-AC-3")]
+#[trace("FR-044-AC-3", "TC-1005")]
 #[test]
 fn tc_479_006_a_moved_definition_refuses_a_delta_and_an_incomplete_population_does_too() {
     let before = admit(&new_collection_json());
@@ -1153,7 +1153,7 @@ fn tc_479_006_a_moved_definition_refuses_a_delta_and_an_incomplete_population_do
 /// quality verdict or severity."
 ///
 /// Provenance: quoin#479
-#[trace("FR-044-AC-3")]
+#[trace("FR-044-AC-3", "TC-1006")]
 #[test]
 fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() {
     let before = admit(&new_collection_json());
@@ -1248,7 +1248,7 @@ fn tc_479_007_population_movement_sits_beside_the_delta_and_nothing_is_graded() 
 /// FR-044-AC-3: "[…] reports a missing metric as `not_computed` […]".
 ///
 /// Provenance: quoin#479
-#[trace("FR-044-AC-3")]
+#[trace("FR-044-AC-3", "TC-1007")]
 #[test]
 fn tc_479_008_a_metric_in_only_one_collection_is_not_computed() {
     let before = admit(&new_collection_json());
@@ -1297,7 +1297,7 @@ fn tc_479_008_a_metric_in_only_one_collection_is_not_computed() {
 /// attention items."
 ///
 /// Provenance: quoin#479
-#[trace("FR-044-AC-4")]
+#[trace("FR-044-AC-4", "TC-1008")]
 #[test]
 fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible() {
     // `bravo` authors one plan and has never recorded a collection — the exact
@@ -1362,7 +1362,7 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
 /// because this crate has no command surface. See this file's report.
 ///
 /// Provenance: quoin#479
-#[trace("FR-045-AC-1")]
+#[trace("FR-045-AC-1", "TC-1013")]
 #[test]
 fn tc_479_012_repeated_repository_locations_produce_one_report_entry() {
     let alpha = repo_in_tree("alpha");
@@ -1432,7 +1432,7 @@ fn tc_479_012_repeated_repository_locations_produce_one_report_entry() {
 /// path prefix the move implies.
 ///
 /// Provenance: quoin#479
-#[trace("FR-045-AC-1")]
+#[trace("FR-045-AC-1", "TC-1013")]
 #[test]
 fn tc_479_013_a_corpus_oriented_root_assurance_directory_is_a_governed_store() {
     let temporary = tempfile::tempdir().expect("a temporary directory");
@@ -1517,7 +1517,7 @@ fn tc_479_013_a_corpus_oriented_root_assurance_directory_is_a_governed_store() {
 /// value is never zero."
 ///
 /// Provenance: quoin#479
-#[trace("FR-045-AC-2")]
+#[trace("FR-045-AC-2", "TC-1011")]
 #[test]
 fn tc_479_014_missing_unreadable_storeless_and_stale_repositories_stay_distinct() {
     let report = build_portfolio_report(&every_location());
@@ -1638,7 +1638,7 @@ fn tc_479_014_missing_unreadable_storeless_and_stale_repositories_stay_distinct(
 /// assigning a verdict."
 ///
 /// Provenance: quoin#479
-#[trace("FR-045-AC-3")]
+#[trace("FR-045-AC-3", "TC-1012")]
 #[test]
 fn tc_479_015_every_observation_names_its_plan_and_collection_path() {
     let report = build_portfolio_report(&every_location());
@@ -1717,7 +1717,7 @@ fn tc_479_015_every_observation_names_its_plan_and_collection_path() {
 /// computes no cross-repository aggregate."
 ///
 /// Provenance: quoin#479
-#[trace("FR-045-AC-4")]
+#[trace("FR-045-AC-4", "TC-1012")]
 #[test]
 fn tc_479_016_the_two_views_render_one_report_object_deterministically() {
     let report = build_portfolio_report(&every_location());
@@ -1808,7 +1808,7 @@ fn tc_479_016_the_two_views_render_one_report_object_deterministically() {
 /// restated here against the crate that now owns it.
 ///
 /// Provenance: quoin#479
-#[trace("FR-067-AC-8")]
+#[trace("FR-067-AC-8", "TC-1312")]
 #[test]
 fn tc_479_017_each_collection_is_read_independently_so_corruption_hides_no_sibling() {
     let temporary = tempfile::tempdir().expect("a temporary directory");

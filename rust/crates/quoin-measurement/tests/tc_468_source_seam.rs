@@ -74,7 +74,7 @@ fn summary<S: MeasurementSource + ?Sized>(source: &S) -> (Vec<String>, Vec<Strin
 }
 
 /// Provenance: quoin#468
-#[trace("FR-100-AC-2", "FR-100-AC-4")]
+#[trace("FR-100-AC-2", "FR-100-AC-4", "TC-1634", "TC-1636")]
 #[test]
 fn tc_468_one_analysis_runs_unchanged_on_disk_and_in_memory() {
     let temporary = tempfile::tempdir().expect("a temporary directory");
@@ -110,7 +110,7 @@ fn tc_468_one_analysis_runs_unchanged_on_disk_and_in_memory() {
 /// The refusal is reserved for a path the source was never given.
 ///
 /// Provenance: quoin#468, quoin#484
-#[trace("FR-100-AC-4", "FR-100-CON-4")]
+#[trace("FR-100-AC-4", "FR-100-CON-4", "TC-1636")]
 #[test]
 fn tc_484_a_memory_source_accounts_for_the_files_it_holds() {
     use quoin_measurement::{MeasurementErrorCode, RawEvidencePath};

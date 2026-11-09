@@ -32,7 +32,7 @@ use quoin_measurement::{
 ///
 /// The grammar of `intervention.ts:34`, including the byte the cap is written
 /// in terms of: 128 characters pass, 129 do not.
-#[trace("FR-100-AC-2")]
+#[trace("FR-100-AC-2", "TC-1634")]
 #[test]
 fn tc_471_the_record_id_grammar_is_the_retained_one() {
     for accepted in [
@@ -79,7 +79,7 @@ fn tc_471_the_record_id_grammar_is_the_retained_one() {
 /// basename can alias an encoded one. Asserted over the ids that actually
 /// stress it — a portable id that *looks* like base64url, and the encoding of
 /// an id that differs from it only in the characters that force encoding.
-#[trace("FR-100-AC-2")]
+#[trace("FR-100-AC-2", "TC-1634")]
 #[test]
 fn tc_471_the_two_basename_namespaces_are_disjoint() {
     let ids = [
@@ -129,7 +129,7 @@ fn tc_471_the_two_basename_namespaces_are_disjoint() {
 /// The arithmetic the module header states: at the 128-byte cap the longer of
 /// the two basenames is 173 bytes, 178 with `.json`, which is inside the
 /// 255-byte `NAME_MAX` every filesystem this runs on enforces.
-#[trace("FR-100-AC-2")]
+#[trace("FR-100-AC-2", "TC-1634")]
 #[test]
 fn tc_471_the_longest_basename_fits_a_file_name() {
     const NAME_MAX: usize = 255;
@@ -152,7 +152,7 @@ fn tc_471_the_longest_basename_fits_a_file_name() {
 /// encoder's own output — with the two §5 substitutions (`+` becomes `-`, `/`
 /// becomes `_`) and the padding stripped, which is what Node's `"base64url"`
 /// emits.
-#[trace("FR-100-AC-2")]
+#[trace("FR-100-AC-2", "TC-1634")]
 #[test]
 fn tc_471_the_encoder_reproduces_the_rfc_4648_vectors() {
     // RFC 4648 §10 lists these for base64; §5 defines base64url as the same
@@ -184,7 +184,7 @@ fn tc_471_the_encoder_reproduces_the_rfc_4648_vectors() {
 /// The encoder's alphabet is RFC 4648 §5's table, in order, and every symbol
 /// it can emit comes from it — so the non-panicking fallback in `symbol` is
 /// dead code rather than a silent replacement character in a file name.
-#[trace("FR-100-AC-2")]
+#[trace("FR-100-AC-2", "TC-1634")]
 #[test]
 fn tc_471_the_encoder_alphabet_is_the_url_safe_table() {
     let alphabet = quoin_measurement::intervention::ids::base64url_alphabet();
@@ -206,7 +206,7 @@ fn tc_471_the_encoder_alphabet_is_the_url_safe_table() {
 }
 
 /// Provenance: quoin#471
-#[trace("FR-100-AC-2")]
+#[trace("FR-100-AC-2", "TC-1634")]
 #[test]
 fn tc_471_a_record_id_names_a_file_under_the_interventions_directory() {
     let repo = Path::new("/repo");
@@ -222,7 +222,7 @@ fn tc_471_a_record_id_names_a_file_under_the_interventions_directory() {
 /// `resolveRawPath`'s filesystem half, on a real tree: a symlink that leaves
 /// the store is refused even though every lexical guard passes, and an absent
 /// path and a directory are refused with the oracle's own sentence.
-#[trace("FR-100-AC-2", "FR-100-AC-4")]
+#[trace("FR-100-AC-2", "FR-100-AC-4", "TC-1634", "TC-1636")]
 #[test]
 fn tc_471_raw_evidence_resolution_refuses_every_escape() {
     let temporary = tempfile::tempdir().expect("a temporary directory");
