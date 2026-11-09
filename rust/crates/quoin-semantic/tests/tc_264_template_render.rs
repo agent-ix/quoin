@@ -68,7 +68,31 @@ impl Render {
     }
 }
 
+/// `cookiecutter` 1.x silently replaces an off-list choice with the first one,
+/// so FR-076-AC-6 cannot hold there; the floor is 2.x (FR-076).
+fn assert_renderer_floor() {
+    static CHECKED: std::sync::Once = std::sync::Once::new();
+    CHECKED.call_once(|| {
+        let out = Command::new("cookiecutter").arg("--version").output().expect(
+            "`cookiecutter` is not installed; install it with `pipx install cookiecutter` \
+             (NFR-020 declares it a toolchain floor, so this is a failure, not a skip)",
+        );
+        let text = String::from_utf8_lossy(&out.stdout);
+        let major: u32 = text
+            .split_whitespace()
+            .nth(1)
+            .and_then(|v| v.split('.').next())
+            .and_then(|m| m.parse().ok())
+            .unwrap_or_else(|| panic!("unreadable `cookiecutter --version`: {text}"));
+        assert!(
+            major >= 2,
+            "cookiecutter {major}.x is below the 2.x floor (FR-076); upgrade with `pipx upgrade cookiecutter`"
+        );
+    });
+}
+
 fn cookiecutter(output: &Path, args: &[&str]) -> std::process::Output {
+    assert_renderer_floor();
     Command::new("cookiecutter")
         .args(["--no-input", "--output-dir"])
         .arg(output)
@@ -261,6 +285,13 @@ fn tc_264_006_an_unknown_module_kind_aborts_naming_it() {
 fn tc_264_007_an_import_without_an_exact_version_aborts_naming_the_entry() {
     let bare = "agent-ix/spec-objects-business";
     assert!(refused(&[&format!("imported_modules={bare}")]).contains(bare));
+    let zeros = "agent-ix/spec-objects-business@01.2.3";
+    assert!(refused(&["module_kind=mixed", &format!("imported_modules={zeros}")]).contains(zeros));
+    let pre = render("mixed", "agent-ix/spec-objects-business@1.2.3-rc.1", &[]);
+    assert_eq!(
+        pre.manifest()["semantic"]["imports"]["agent-ix/spec-objects-business"],
+        "1.2.3-rc.1"
+    );
     let range = "agent-ix/spec-objects-business@^1.2.0";
     assert!(refused(&["module_kind=mixed", &format!("imported_modules={range}")]).contains(range));
     let r = render("mixed", "agent-ix/spec-objects-business@1.2.0", &[]);
@@ -381,6 +412,7 @@ fn tc_264_014_every_refusal_leaves_no_directory_behind() {
 
 /// Trace: FR-078-AC-1
 /// Trace: FR-078-AC-6
+/// Trace: FR-078-CON-1
 #[test]
 fn tc_264_020_the_semantic_block_has_the_nine_keys_validates_and_matches_the_types() {
     let nine: BTreeSet<&str> = [
@@ -565,7 +597,7 @@ fn tc_264_033_release_workflows_are_manual_and_delegate_publication() {
         for job in doc["jobs"].as_object().unwrap().values() {
             assert!(
                 job.get("uses").is_some(),
-                "{name}: a job carries its own steps"
+                "{name}: a job does not delegate to a shared reusable workflow"
             );
             assert!(
                 job.get("steps").is_none(),
@@ -739,6 +771,7 @@ fn conformance(variant: &str, kind: &str, root: &Path, package: &str) -> Vec<Fin
 }
 
 /// Trace: FR-083-AC-1
+/// Trace: FR-081-AC-4
 #[test]
 fn tc_264_040_every_variant_renders_and_conforms() {
     let mut failures = Vec::new();
@@ -834,7 +867,7 @@ fn tc_264_043_a_missing_surface_fails_naming_it() {
 
 /// Trace: FR-083-CON-2
 #[test]
-fn tc_264_044_the_conformance_contract_is_a_declared_file_with_no_dead_blocks() {
+fn tc_264_044_the_conformance_contract_is_a_declared_file_with_exactly_these_blocks() {
     let contract = contract();
     let keys: BTreeSet<&str> = contract
         .as_object()
@@ -851,6 +884,179 @@ fn tc_264_044_the_conformance_contract_is_a_declared_file_with_no_dead_blocks() 
             "residue",
             "private_registry"
         ]),
-        "every block of the contract is read by the gate; a block nothing reads is deleted"
+        "the gate reads `all`, `kinds`, `residue` and `private_registry`; `contract_version` versions the file itself; a block nothing reads is deleted"
     );
+}
+
+// ---------------------------------------------------------------- render-only criteria
+
+/// Trace: FR-078-AC-7
+#[test]
+fn tc_264_050_no_type_name_is_declared_twice() {
+    for (kind, r) in all_variants() {
+        let manifest = r.manifest();
+        let mut names = type_names(&manifest, "artifact_types");
+        names.extend(type_names(&manifest, "object_types"));
+        let unique: BTreeSet<&String> = names.iter().collect();
+        assert_eq!(unique.len(), names.len(), "variant {kind}: {names:?}");
+    }
+}
+
+/// Trace: FR-081-AC-8
+/// Trace: FR-081-CON-1
+#[test]
+fn tc_264_051_no_dependency_is_a_local_path_or_has_an_upper_bound() {
+    let r = render("mixed", IMPORT, &[]);
+    let pyproject = r.text("pyproject.toml");
+    let mut in_deps = false;
+    for line in pyproject.lines() {
+        if line.starts_with('[') {
+            in_deps = line.ends_with("dependencies]");
+            continue;
+        }
+        // The interpreter constraint is not a dependency declaration.
+        if !in_deps || line.trim().is_empty() || line.starts_with("python ") {
+            continue;
+        }
+        for bad in ["path", "develop", "<", "file:", "git ="] {
+            assert!(
+                !line.contains(bad),
+                "dependency line `{line}` contains {bad}"
+            );
+        }
+    }
+    let package: Value = serde_json::from_str(&r.text("package.json")).unwrap();
+    for section in ["dependencies", "devDependencies"] {
+        for (name, spec) in package[section].as_object().into_iter().flatten() {
+            let spec = spec.as_str().unwrap();
+            for bad in ["file:", "link:", "workspace:", "<", ".."] {
+                assert!(!spec.contains(bad), "{name}: {spec} contains {bad}");
+            }
+        }
+    }
+}
+
+fn spec_files(r: &Render) -> Vec<(String, String)> {
+    files_under(&r.root.join("spec"))
+        .into_iter()
+        .map(|(name, bytes)| (name, String::from_utf8(bytes).unwrap()))
+        .collect()
+}
+
+/// Trace: FR-082-AC-3
+#[test]
+fn tc_264_052_no_verification_cell_carries_a_test_case_id() {
+    let tc = Regex::new(r"\bTC-[A-Z]*-?\d+").unwrap();
+    for (kind, r) in all_variants() {
+        for (name, text) in spec_files(&r) {
+            for line in text
+                .lines()
+                .filter(|l| l.starts_with("| ") && l.contains("-AC-"))
+            {
+                assert!(!tc.is_match(line), "variant {kind}: {name}: {line}");
+            }
+        }
+    }
+}
+
+/// Trace: FR-082-AC-4
+#[test]
+fn tc_264_053_every_rendered_test_carries_a_trace_tag_naming_an_existing_criterion() {
+    let tag = Regex::new(r#"pytest\.mark\.trace\("([^"]+)"\)"#).unwrap();
+    for (kind, r) in all_variants() {
+        let spec: String = spec_files(&r).into_iter().map(|(_, t)| t).collect();
+        for (name, bytes) in files_under(&r.root.join("tests")) {
+            if Path::new(&name).extension().is_none_or(|e| e != "py") {
+                continue;
+            }
+            let text = String::from_utf8(bytes).unwrap();
+            let lines: Vec<&str> = text.lines().collect();
+            for (i, line) in lines.iter().enumerate() {
+                if !line.starts_with("def test_") {
+                    continue;
+                }
+                let mut ids = Vec::new();
+                let mut j = i;
+                while j > 0 && lines[j - 1].starts_with('@') {
+                    j -= 1;
+                    ids.extend(tag.captures_iter(lines[j]).map(|c| c[1].to_owned()));
+                }
+                assert!(
+                    !ids.is_empty(),
+                    "variant {kind}: {name}: `{line}` has no trace tag"
+                );
+                for id in ids {
+                    assert!(
+                        spec.contains(&format!("| {id} |")),
+                        "variant {kind}: {name}: `{line}` traces {id}, which is not a rendered criterion"
+                    );
+                }
+            }
+        }
+    }
+}
+
+/// Trace: FR-082-AC-6
+/// Trace: FR-082-CON-2
+#[test]
+fn tc_264_054_the_rendered_spec_leaves_the_domain_to_the_maintainer_and_copies_no_module() {
+    let catalog = quoin_yaml::from_str(
+        &fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../../default-modules.yaml"
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+    let maintained: Vec<String> = catalog["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["name"].as_str().unwrap().to_owned())
+        .collect();
+    assert!(maintained.len() >= 10);
+    for (kind, r) in all_variants() {
+        let spec = r.text("spec/spec.md");
+        let scope = spec
+            .split("### Out of Scope")
+            .nth(1)
+            .expect("an Out of Scope section");
+        assert!(
+            scope.contains("This module's domain vocabulary") && scope.contains("maintainer's"),
+            "variant {kind}: Out of Scope does not leave the domain to the maintainer"
+        );
+        for (name, text) in spec_files(&r) {
+            for module in &maintained {
+                assert!(
+                    !text.contains(module.as_str()),
+                    "variant {kind}: {name} names {module}"
+                );
+            }
+        }
+    }
+}
+
+/// Trace: FR-076-CON-1
+#[test]
+fn tc_264_055_the_template_carries_no_emitter_runtime_or_grammar_copy() {
+    let project = Path::new(TEMPLATE).join("{{cookiecutter.repo_name}}");
+    for (name, bytes) in files_under(&project) {
+        let text = String::from_utf8_lossy(&bytes);
+        assert!(!name.contains("node_modules"), "{name}");
+        let ext = Path::new(&name)
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+        assert!(
+            !["rs", "ts", "js", "wasm"].contains(&ext),
+            "{name} is source of an emitter or runtime"
+        );
+        assert!(
+            !text.contains("model FieldDecl") && !text.contains("model ClauseRef"),
+            "{name} copies the semantic-core grammar"
+        );
+    }
+    let main = fs::read_to_string(project.join("typespec/main.tsp")).unwrap();
+    assert!(main.contains("import \"@agent-ix/semantic-core\";"));
+    assert!(main.contains("import \"@typespec/json-schema\";"));
 }

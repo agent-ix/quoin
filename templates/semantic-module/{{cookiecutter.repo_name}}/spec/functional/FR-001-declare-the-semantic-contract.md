@@ -27,7 +27,7 @@ and SHALL reference every exported type's emitted schema by path.
 - The manifest SHALL declare each type name exactly once.
 - The manifest SHALL carry `data_schema` as a `{schema}` mapping for every exported type.
 - The manifest SHALL carry `data_schema: {type: object}` for no exported type.
-- The manifest SHALL map each entry of `semantic.imports` to a version requirement.
+- The manifest SHALL map each entry of `semantic.imports` to an exact semantic version.
 
 ## Acceptance Criteria
 
@@ -39,7 +39,7 @@ and SHALL reference every exported type's emitted schema by path.
 | FR-001-AC-4 | No type name is declared twice. | Test |
 | FR-001-AC-5 | Every exported type references its schema as a `{schema}` mapping naming that type's emitted file. | Test |
 | FR-001-AC-6 | No exported type carries the placeholder `{type: object}` contract. | Test |
-| FR-001-AC-8 | Every `semantic.imports` entry maps to a valid version requirement and carries no hash, digest, or revision. The earlier clause that mandated an exact version is withdrawn: a version requirement is not a pin. | Test |
+| FR-001-AC-8 | Every `semantic.imports` entry maps to an exact semantic version (`x.y.z`, optionally with a prerelease or build suffix), which is what the published module-manifest schema admits; a range such as `^1.2`, `>=1 <2` or `1.x` is not accepted. | Test |
 
 ## Dependencies
 

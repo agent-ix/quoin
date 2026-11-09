@@ -1,8 +1,7 @@
 # Conformance contract for rendered Quire semantic-module repositories.
 #
 # FR-083-CON-2: a declared file rather than a list inside a test body, so a
-# contract change is reviewable on its own and the drift check (FR-083-AC-5) has
-# something to compare the maintained module repositories against.
+# contract change is reviewable on its own.
 #
 # `required_paths` are repository-relative. A `{package}` segment is replaced by
 # the rendered package directory name. A path ending in `/` must exist and be

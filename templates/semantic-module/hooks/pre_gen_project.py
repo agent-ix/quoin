@@ -58,7 +58,10 @@ AGPL_IDENTIFIERS = {"AGPL-3.0-or-later", "AGPL-3.0+"}
 SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 SLUG = re.compile(r"^[a-z][a-z0-9-]*[a-z0-9]$")
 PY_IDENT = re.compile(r"^[a-z][a-z0-9_]*$")
-IMPORT_REF = re.compile(r"^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*@[0-9]+\.[0-9]+\.[0-9]+$")
+# The module-manifest schema's `semver` pattern, which `semantic.imports` values
+# must match: no leading zeros, optional prerelease and build suffixes.
+EXACT_SEMVER = r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"
+IMPORT_REF = re.compile(r"^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*@" + EXACT_SEMVER + "$")
 
 
 def fail(message):

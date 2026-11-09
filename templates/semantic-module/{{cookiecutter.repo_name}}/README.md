@@ -40,10 +40,9 @@ path — never an inline `{type: object}` placeholder.
 **Only `json-schema` is emitted today.**
 {%- set declared_only = cookiecutter.generated_targets.split(',') | map('trim') | reject('equalto', 'json-schema') | list %}
 {%- if declared_only %} Every other declared target is recorded
-as declared and not emitted: {% for target in declared_only %}`{{ target }}`{% if not loop.last %}, {% endif %}{% endfor %} have no emitter
-today (the code-generation emitters belong to `agent-ix/filament-core-data#11`).
-`spec/spec.md` lists them as out of scope. A declared target is not an emitted
-one, and this file will not pretend otherwise.
+as declared and not emitted: {% for target in declared_only %}`{{ target }}`{% if not loop.last %}, {% endif %}{% endfor %} {{ 'has' if declared_only | length == 1 else 'have' }} no emitter
+today. A declared target is not an emitted one, and this file will not pretend
+otherwise.
 {%- else %} No other target is declared.
 {%- endif %}
 
