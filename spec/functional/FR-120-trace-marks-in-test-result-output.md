@@ -99,7 +99,7 @@ file path, and the evidence store reports an ambiguous join (FR-030-AC-18).
 | FR-120-AC-2 | A case whose `classname` equals its `name` records the name unchanged, including a name containing `.` or a space. | Test |
 | FR-120-AC-3 | The JUnit adapter records a case's `file` attribute, and the normalized shape its `path` field, as the entry's path. | Test |
 | FR-120-AC-4 | The join of an entry to a symbol, and the ambiguity report for an entry with no path, are those of FR-030-AC-18; the adapter performs neither and reads no source file. | Inspection |
-| FR-120-AC-5 | A failing, erroring or skipped tagged test produces an entry with that outcome and its ids when they are known, and that entry discharges nothing; a case whose ids are not known at record time produces an entry with the runner's outcome and no `trace` property, which binds no obligation and discharges nothing. | Test |
+| FR-120-AC-5 | A failing, erroring or skipped tagged test produces an entry with that outcome and its ids, and that entry discharges nothing. A `<testcase>` with no `trace` property produces an entry with the case's outcome and no `traceIds`, which binds no obligation and discharges nothing. | Test |
 | FR-120-AC-6 | A case with a `<flakyFailure>` or `<rerunFailure>` child records the outcome of its final attempt. | Test |
 
 ## Constraints
@@ -120,7 +120,7 @@ helper (PLAT-334), and the pytest plugin (PLAT-335). Quoin tests none of it.
 | E-1 Marks | An emitter SHALL write each tagged test's mark in the form above and in no other carrier; a different carrier needs an amendment to this requirement first. |
 | E-2 Symbols | An emitter SHALL report, for each tagged test, the `qualified_name` and `path` that `quire coverage --json` reports for the same test, including a top-level, a nested and a parametrized test (rstest cases and `it.each` titles as above). |
 | E-3 Declared ids | An emitter SHALL write only ids the source marker declared, and SHALL NOT infer an id from a test name. |
-| E-4 Outcome | An emitter SHALL NOT write an outcome the runner did not report. A test that panics or throws is recorded `fail`, with its ids when they are known, never absent. An emitter whose ids are only known once the test body reaches its trace call SHALL still record the case with the runner's outcome when the call is never reached (skipped, or thrown before it); that entry carries no `trace` property and is non-binding: it binds no obligation and discharges nothing. |
+| E-4 Outcome | An emitter SHALL NOT write an outcome the runner did not report. A test that panics or throws is recorded `fail` with its ids, never absent. When an emitter's ids are supplied by a call made inside the test body and the test never reaches that call, the emitter SHALL record the case with the runner's outcome and no `trace` property. |
 | E-5 Once | Under the runner's default parallel execution, an emitter SHALL record each tagged test once, with its ids unmixed with another test's. |
 | E-6 Inert | While emission is not enabled, an emitter SHALL leave compiled output byte-identical to a build without the emitter and SHALL write no `trace` property. Enabling is an explicit switch (a cargo feature, an environment variable, or the runner's equivalent), never the mere presence of the marker, and the emitter adds no runtime dependency to a build that does not enable it. |
 | E-7 Cost | While emission is enabled, an emitter SHOULD add under 2% and SHALL add under 5% to the median wall-clock time of a suite. |
