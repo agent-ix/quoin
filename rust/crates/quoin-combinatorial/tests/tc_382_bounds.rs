@@ -13,7 +13,7 @@ use quoin_combinatorial::{
 /// A demand past the ceiling is refused, not exhausted.
 ///
 /// Provenance: quoin#382
-#[trace("FR-035-AC-1")]
+#[trace("FR-035-AC-1", "TC-180")]
 #[test]
 #[allow(
     clippy::unwrap_used,
@@ -50,7 +50,7 @@ fn tc_382_002_a_demand_past_the_ceiling_is_refused() {
 /// A strength above `u64` saturates, and that cannot be observed.
 ///
 /// Provenance: quoin#382
-#[trace("FR-035-AC-1")]
+#[trace("FR-035-AC-1", "TC-180")]
 #[test]
 #[allow(
     clippy::unwrap_used,
@@ -93,7 +93,7 @@ fn tc_382_003_a_strength_above_u64_saturates_and_that_cannot_be_observed() {
 /// A dimension named like an inherited property is an ordinary dimension.
 ///
 /// Provenance: quoin#382
-#[trace("FR-035-AC-1")]
+#[trace("FR-035-AC-1", "TC-180")]
 #[test]
 #[allow(
     clippy::unwrap_used,

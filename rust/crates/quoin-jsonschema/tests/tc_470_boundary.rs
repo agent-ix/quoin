@@ -15,8 +15,6 @@
 //! it is read off the crate's own `src/` tree instead. The forbidden tokens are
 //! spelled with a concatenation so that this file does not itself contain the
 //! strings it forbids.
-//!
-//! Trace: FR-098
 
 #![allow(
     clippy::unwrap_used,

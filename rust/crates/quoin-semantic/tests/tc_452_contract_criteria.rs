@@ -67,7 +67,7 @@ fn required_arrays(node: &Value, path: &str, found: &mut BTreeMap<String, Vec<St
 /// The module-manifest schema admits exactly the contract's keys.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-070-CON-2")]
+#[trace("FR-070-CON-2", "TC-1343")]
 #[test]
 fn tc_452_640_the_module_manifest_schema_admits_the_contract_keys() {
     let path = module_manifest_schema_path(&semantic_root());
@@ -103,7 +103,7 @@ fn tc_452_640_the_module_manifest_schema_admits_the_contract_keys() {
 /// constraint.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-070-CON-1", "NFR-017-AC-4")]
+#[trace("FR-070-CON-1", "NFR-017-AC-4", "TC-1342", "TC-1382")]
 #[test]
 fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
     const PRE_CR003_REQUIRED_ARRAYS: &[(&str, &[&str])] = &[
@@ -178,7 +178,7 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
 /// The common schema's target registry is the declared five.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-075-AC-1")]
+#[trace("FR-075-AC-1", "TC-1372")]
 #[test]
 fn tc_452_643_the_common_schema_declares_the_five_targets() {
     let common_path = common_schema_path(&semantic_root());

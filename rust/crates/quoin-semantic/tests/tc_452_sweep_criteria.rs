@@ -34,7 +34,7 @@ use serde_json::{Value, json};
 
 /// The published relationship fixture keeps both ISO composition verbs
 /// marked composite and gives their inverse labels unique owners.
-#[trace("FR-104-AC-1")]
+#[trace("FR-104-AC-1", "TC-1717")]
 #[test]
 fn tc_104_001_relationship_fixture_preserves_unique_composite_inverses() {
     let fixture = mapping_json("relationships.expected.json");
@@ -112,7 +112,7 @@ fn tc_452_650_the_typed_table_fixture_classifies_as_the_authored_form() {
 /// declarations, and it classifies as the fence rather than as a legacy form.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-071-AC-2")]
+#[trace("FR-071-AC-2", "TC-1345")]
 #[test]
 fn tc_452_651_the_fence_fixture_declares_the_tables_rows_and_classifies_as_the_fence() {
     let fence = mapping_fixture("config-version.fence.md");
@@ -150,7 +150,7 @@ fn tc_452_651_the_fence_fixture_declares_the_tables_rows_and_classifies_as_the_f
 /// the classifier carries no expression parser or evaluator.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-071-CON-1")]
+#[trace("FR-071-CON-1", "TC-1351")]
 #[test]
 fn tc_452_652_the_fence_subset_is_declarations_only_and_nothing_evaluates_them() {
     let fence = mapping_fixture("config-version.fence.md");
@@ -191,7 +191,7 @@ fn tc_452_652_the_fence_subset_is_declarations_only_and_nothing_evaluates_them()
 /// crate and not to this guard fails here rather than escaping it.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-072-CON-1")]
+#[trace("FR-072-CON-1", "TC-1359")]
 #[test]
 fn tc_452_653_no_source_in_the_crate_typechecks_or_evaluates_a_clause() {
     const LIB: &str = include_str!("../src/lib.rs");
@@ -234,7 +234,14 @@ fn tc_452_653_no_source_in_the_crate_typechecks_or_evaluates_a_clause() {
 /// classifier answers — form, line, and the advisory diagnostic in full.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-074-AC-1", "FR-074-AC-2", "FR-074-CON-1")]
+#[trace(
+    "FR-074-AC-1",
+    "FR-074-AC-2",
+    "FR-074-CON-1",
+    "TC-1367",
+    "TC-1368",
+    "TC-1371"
+)]
 #[test]
 fn tc_452_654_the_classifier_answers_every_recorded_legacy_expectation() {
     let expected = mapping_json("legacy.expected.json");
@@ -314,7 +321,7 @@ fn report(root: &Path) -> Value {
 /// refused would satisfy the other five.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-074-AC-3")]
+#[trace("FR-074-AC-3", "TC-1369")]
 #[test]
 fn tc_452_655_legacy_forms_error_needs_a_matching_schema_valid_sweep_report() {
     let validators = validators();

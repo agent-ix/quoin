@@ -105,7 +105,7 @@ fn assert_refusal(case: &Value, code: &str, severity: &str, locus: &str) {
 /// The both-forms fixture carries a typed table and then a `sysml` fence under
 /// one `## Properties`, and the recorded expectation is a failure at the
 /// second form's line.
-#[trace("FR-071-AC-3")]
+#[trace("FR-071-AC-3", "TC-1346")]
 #[test]
 fn tc_278_003_both_forms_fails_at_the_second_forms_locus() {
     let artifact = mapping_fixture("both-forms.md");
@@ -140,7 +140,7 @@ fn tc_278_003_both_forms_fails_at_the_second_forms_locus() {
 
 /// `Type` tokens resolve as FR-071 orders them, and an unknown token is an
 /// advisory finding on a placeholder identity rather than a string.
-#[trace("FR-071-AC-4")]
+#[trace("FR-071-AC-4", "TC-1347")]
 #[test]
 fn tc_278_004_type_cells_record_the_expected_targets_and_the_unresolved_placeholder() {
     let uuid = case("type-kernel");
@@ -196,7 +196,7 @@ fn tc_278_004_type_cells_record_the_expected_targets_and_the_unresolved_placehol
 
 /// Multiplicity cells map to the expected `Multiplicity` objects; an inverted
 /// range and a flag on a single value are errors with a row locus.
-#[trace("FR-071-AC-5")]
+#[trace("FR-071-AC-5", "TC-1348")]
 #[test]
 fn tc_278_005_multiplicity_cells_map_and_invalid_cells_are_errors() {
     let multiplicity = semantic_core_validator("Multiplicity");
@@ -258,7 +258,7 @@ fn tc_278_005_multiplicity_cells_map_and_invalid_cells_are_errors() {
 
 /// Constraint cells map to the closed IR v1.1 constraint models and the
 /// `identity` flag; a keyword outside the vocabulary is an error with locus.
-#[trace("FR-071-AC-6")]
+#[trace("FR-071-AC-6", "TC-1349")]
 #[test]
 fn tc_278_006_constraint_cells_map_to_the_closed_vocabulary() {
     let kinds = |id: &str| -> Vec<String> {
@@ -314,7 +314,7 @@ fn tc_278_006_constraint_cells_map_to_the_closed_vocabulary() {
 }
 
 /// Fence lines outside the declarations-only subset are errors at the line.
-#[trace("FR-071-AC-7")]
+#[trace("FR-071-AC-7", "TC-1350")]
 #[test]
 fn tc_278_007_fence_lines_outside_the_subset_are_errors_with_locus() {
     for (id, line) in [
@@ -335,7 +335,7 @@ fn tc_278_007_fence_lines_outside_the_subset_are_errors_with_locus() {
 
 /// A row violating a semantic-core reader rule yields that rule's diagnostic at
 /// the row, under the rule's own code.
-#[trace("FR-071-AC-8")]
+#[trace("FR-071-AC-8", "TC-1384")]
 #[test]
 fn tc_278_008_a_reader_rule_violation_is_reported_at_the_row() {
     let refused = case("reader-rule-bare-decimal");

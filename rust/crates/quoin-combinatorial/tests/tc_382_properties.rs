@@ -122,7 +122,7 @@ proptest! {
     /// account for each other exactly.
     ///
     /// Provenance: quoin#382
-    #[trace("FR-035-AC-1")]
+    #[trace("FR-035-AC-1", "TC-180")]
     #[test]
     fn tc_382_010_demanded_equals_covered_plus_gaps(
         generated in generated_space(2),
@@ -151,7 +151,7 @@ proptest! {
     /// The gap list is ordered, and by UTF-16 code unit specifically.
     ///
     /// Provenance: quoin#382
-    #[trace("FR-035-AC-1")]
+    #[trace("FR-035-AC-1", "TC-180")]
     #[test]
     fn tc_382_011_gaps_are_strictly_ordered(generated in generated_space(2)) {
         let result = tway_coverage(&generated.space, &[]).map_err(|error| {
@@ -173,7 +173,7 @@ proptest! {
     /// gap at all — whatever the strength, whatever the exclusions.
     ///
     /// Provenance: quoin#382
-    #[trace("FR-035-AC-1")]
+    #[trace("FR-035-AC-1", "TC-180")]
     #[test]
     fn tc_382_012_the_full_factorial_covers_everything_demanded(generated in generated_space(2)) {
         let space = &generated.space;
@@ -193,7 +193,7 @@ proptest! {
     /// Coverage is monotone: adding a configuration never uncovers a tuple.
     ///
     /// Provenance: quoin#382
-    #[trace("FR-035-AC-1")]
+    #[trace("FR-035-AC-1", "TC-180")]
     #[test]
     fn tc_382_013_adding_a_configuration_never_removes_coverage(
         generated in generated_space(2),
@@ -231,7 +231,7 @@ proptest! {
     /// ask someone to run a configuration that is not allowed to exist.
     ///
     /// Provenance: quoin#382
-    #[trace("FR-035-AC-1")]
+    #[trace("FR-035-AC-1", "TC-180")]
     #[test]
     fn tc_382_014_an_excluded_combination_is_never_demanded(generated in generated_space(2)) {
         let space = &generated.space;
@@ -270,7 +270,7 @@ proptest! {
     /// a tautology.
     ///
     /// Provenance: quoin#382
-    #[trace("FR-035-AC-1")]
+    #[trace("FR-035-AC-1", "TC-180")]
     #[test]
     fn tc_382_015_an_unconstrained_demand_matches_the_counting_formula(
         generated in generated_space(0),
@@ -311,7 +311,7 @@ proptest! {
     /// named with a declared value.
     ///
     /// Provenance: quoin#382
-    #[trace("FR-035-AC-1")]
+    #[trace("FR-035-AC-1", "TC-180")]
     #[test]
     fn tc_382_016_a_cover_never_names_a_value_the_configuration_did_not_run(
         generated in generated_space(2),
@@ -350,7 +350,7 @@ proptest! {
 /// vacuous.
 ///
 /// Provenance: quoin#382
-#[trace("FR-035-AC-1")]
+#[trace("FR-035-AC-1", "TC-180")]
 #[test]
 #[allow(
     clippy::unwrap_used,
