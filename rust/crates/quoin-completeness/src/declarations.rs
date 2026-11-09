@@ -390,14 +390,15 @@ fn enum_for(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_220_an_absent_candidate_locates_nothing() {
         assert_eq!(locate_module_root(Path::new("/definitely/not/here")), None);
     }
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_221_a_root_with_a_manifest_locates_itself() {
         let Ok(temp) = tempfile::tempdir() else {
@@ -410,7 +411,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_222_a_root_whose_child_has_a_manifest_locates_the_child() {
         let Ok(temp) = tempfile::tempdir() else {
@@ -425,7 +426,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_223_a_module_declaring_no_coverage_contributes_none() {
         let Ok(temp) = tempfile::tempdir() else {
@@ -440,7 +441,7 @@ mod tests {
         assert_eq!(loaded.unresolved.len(), 0);
     }
 
-    /// Trace: FR-037
+    #[trace("FR-037")]
     #[test]
     fn tc_378_224_the_same_root_listed_twice_is_read_once() {
         let Ok(temp) = tempfile::tempdir() else {
@@ -467,8 +468,8 @@ mod tests {
     /// is what makes them distinguishable; asserting only that the count is
     /// three would pass with one sentence repeated.
     ///
-    /// Trace: FR-037-AC-2
     /// Provenance: agent-ix/quoin#445
+    #[trace("FR-037-AC-2", "TC-207")]
     #[test]
     fn tc_445_230_an_artifact_type_with_no_schema_is_unresolved_in_its_own_words() {
         let manifest = concat!(
@@ -508,8 +509,8 @@ mod tests {
 
     /// A manifest with no `artifact_types` at all is a fourth, earlier reason.
     ///
-    /// Trace: FR-037-AC-2
     /// Provenance: agent-ix/quoin#445
+    #[trace("FR-037-AC-2")]
     #[test]
     fn tc_445_231_a_manifest_declaring_no_artifact_types_says_so() {
         let manifest = concat!(
@@ -552,8 +553,8 @@ mod tests {
     /// would restate the implementation — but that a caller which reads EXACTLY
     /// what `schema_refs_of` names can resolve every declaration.
     ///
-    /// Trace: FR-037-AC-2
     /// Provenance: agent-ix/quoin#445
+    #[trace("FR-037-AC-2")]
     #[test]
     fn tc_445_232_the_refs_the_shell_reads_are_the_refs_the_resolver_looks_for() {
         let manifest = concat!(
@@ -607,8 +608,8 @@ mod tests {
     /// over two declarations reading different schemas, so a single minted
     /// answer cannot satisfy both.
     ///
-    /// Trace: FR-037-AC-1, FR-037-CON-1
     /// Provenance: agent-ix/quoin#449
+    #[trace("FR-037-AC-1", "FR-037-CON-1", "TC-206")]
     #[test]
     fn tc_449_240_the_vocabulary_is_the_schema_enum_not_a_minted_list() {
         let manifest = concat!(

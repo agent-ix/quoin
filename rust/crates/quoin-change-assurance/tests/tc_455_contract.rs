@@ -14,6 +14,7 @@
 
 mod common;
 
+use ix_trace_rs::trace;
 use quoin_change_assurance::attestations::read_attestation_json;
 use quoin_change_assurance::error::{ChangeAssuranceError, Subject};
 use quoin_change_assurance::ids::{RecordId, Revision};
@@ -26,10 +27,9 @@ use quoin_store::JsonValue;
 
 use crate::common::{attestation_text, base_input, event_text, history, json, record_text};
 
-/// Trace: FR-063-AC-1
-///
 /// An undeclared member - a `digest` among them - is refused, on a record and
 /// on an attestation.
+#[trace("FR-063-AC-1", "TC-1261")]
 #[test]
 fn tc_455_001_a_digest_member_is_refused() {
     let mut record = json(&record_text()).as_object().unwrap().clone();
@@ -41,10 +41,9 @@ fn tc_455_001_a_digest_member_is_refused() {
     assert!(read_attestation_json(&JsonValue::Object(attestation)).is_err());
 }
 
-/// Trace: FR-063-AC-1
-///
 /// A record is retained at `(record_id, revision)` and read back from there;
 /// rewriting the same bytes is idempotent, different bytes are a collision.
+#[trace("FR-063-AC-1")]
 #[test]
 fn tc_455_002_records_are_addressed_by_identity_and_revision() {
     let record = prepare_change_record(&json(&record_text())).unwrap();
@@ -82,10 +81,9 @@ fn tc_455_002_records_are_addressed_by_identity_and_revision() {
     ));
 }
 
-/// Trace: FR-065-AC-1
-///
 /// Everything agreeing verifies `valid` with no reasons, and the receipt is
 /// re-derived byte for byte; a receipt that differs is refused.
+#[trace("FR-065-AC-1")]
 #[test]
 fn tc_455_003_a_receipt_is_re_derived_and_compared_byte_for_byte() {
     let input = base_input();
@@ -103,10 +101,9 @@ fn tc_455_003_a_receipt_is_re_derived_and_compared_byte_for_byte() {
     ));
 }
 
-/// Trace: FR-065-AC-1
-///
 /// Decision events are read in `sequence` order; a gap or a repeat is an
 /// invalid history, and two matching decisions are a mismatch.
+#[trace("FR-065-AC-1")]
 #[test]
 fn tc_455_004_decision_events_are_ordered_by_sequence() {
     let kind = "change_assurance.review_decided";
@@ -135,9 +132,8 @@ fn tc_455_004_decision_events_are_ordered_by_sequence() {
     assert_eq!(receipt.reasons, vec![Reason::DecisionMismatch]);
 }
 
-/// Trace: FR-065-AC-1
-///
 /// Retained output is checked by its declared size alone.
+#[trace("FR-065-AC-1")]
 #[test]
 fn tc_455_005_retained_output_is_checked_by_size() {
     let mut input = base_input();
@@ -146,9 +142,8 @@ fn tc_455_005_retained_output_is_checked_by_size() {
     assert_eq!(receipt.reasons, vec![Reason::OutputSizeMismatch]);
 }
 
-/// Trace: FR-063-AC-1
-///
 /// Revision 2 with no retained revision 1 has a gap in its lineage.
+#[trace("FR-063-AC-1")]
 #[test]
 fn tc_455_006_a_later_revision_needs_its_predecessor() {
     let mut input = base_input();

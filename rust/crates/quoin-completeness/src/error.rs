@@ -97,8 +97,9 @@ impl CompletenessError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_378_200_every_code_round_trips_and_is_unique() {
         let mut seen = std::collections::BTreeSet::new();

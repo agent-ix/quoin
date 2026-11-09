@@ -17,6 +17,7 @@
 mod common;
 
 use engineering_assurance::claim_strength::ClaimStrength;
+use ix_trace_rs::trace;
 use quoin_change_assurance::attestations::read_attestation_json;
 use quoin_change_assurance::error::{ChangeAssuranceError, FieldFailure};
 use quoin_change_assurance::model::attestation::ProducerResult;
@@ -24,11 +25,10 @@ use quoin_store::JsonValue;
 
 use crate::common::{OUTPUT, attestation_text, json, names, replacing, without};
 
-/// Trace: FR-064-AC-1
-///
 /// The attestation schema is closed: the scenario attestation reads, dropping
 /// any member refuses it, and a member the schema does not name - a `digest`
 /// among them - refuses it.
+#[trace("FR-064-AC-1")]
 #[test]
 fn tc_455_the_attestation_schema_names_every_member_and_admits_no_other() {
     let attestation = json(&attestation_text());
@@ -49,10 +49,9 @@ fn tc_455_the_attestation_schema_names_every_member_and_admits_no_other() {
     }
 }
 
-/// Trace: FR-064-AC-5
-///
 /// Each absent member is refused as that member, not as a generic malformed
 /// attestation and not by inferring a value for it.
+#[trace("FR-064-AC-5")]
 #[test]
 fn tc_455_each_absent_member_is_refused_by_name_rather_than_inferred() {
     let attestation = json(&attestation_text());
@@ -71,11 +70,10 @@ fn tc_455_each_absent_member_is_refused_by_name_rather_than_inferred() {
     }
 }
 
-/// Trace: FR-064-AC-2
-///
 /// The four producer results stay four. Each reads back as itself and none is
 /// turned into a verification outcome on the way: `result` is the producer's
 /// word, retained, and a verification outcome is refused in its place.
+#[trace("FR-064-AC-2", "TC-1273")]
 #[test]
 fn tc_455_the_four_producer_results_stay_four_distinct_states() {
     let attestation = json(&attestation_text());
@@ -113,13 +111,12 @@ fn tc_455_the_four_producer_results_stay_four_distinct_states() {
     );
 }
 
-/// Trace: FR-064-AC-7
-///
 /// A producer that could not run, or ran and computed nothing, still retains
 /// its diagnostic output: the attestation reads, and records the size of the
 /// bytes kept. What is never created is evidence for a producer that reported
 /// nothing at all - that is an absent attestation, not a synthetic one, so an
 /// attestation with no `result` is refused rather than defaulted.
+#[trace("FR-064-AC-7", "TC-1278")]
 #[test]
 fn tc_455_a_producer_that_reported_nothing_useful_still_retains_its_output() {
     let attestation = json(&attestation_text());
@@ -149,12 +146,12 @@ fn tc_455_a_producer_that_reported_nothing_useful_still_retains_its_output() {
     );
 }
 
-/// Trace: FR-064-AC-10
 /// Provenance: PLAT-972
 ///
 /// A proof attestation carries exactly one EA `ClaimStrength`. Every declared
 /// wire name reads back as itself, and writing it out again produces the same
 /// spelling that was read in.
+#[trace("FR-064-AC-10", "TC-1884")]
 #[test]
 fn tc_455_every_claim_strength_round_trips() {
     let attestation = json(&attestation_text());
@@ -185,11 +182,11 @@ fn tc_455_every_claim_strength_round_trips() {
     }
 }
 
-/// Trace: FR-064-AC-10
 /// Provenance: PLAT-972
 ///
 /// An attestation with no `strength` is refused by name, not silently
 /// defaulted to one of the four values.
+#[trace("FR-064-AC-10", "TC-1884")]
 #[test]
 fn tc_455_an_attestation_with_no_strength_is_refused_not_defaulted() {
     let attestation = json(&attestation_text());
@@ -202,11 +199,11 @@ fn tc_455_an_attestation_with_no_strength_is_refused_not_defaulted() {
     }
 }
 
-/// Trace: FR-064-AC-10
 /// Provenance: PLAT-972
 ///
 /// A `strength` outside the EA vocabulary is refused as malformed, not
 /// coerced to a known value.
+#[trace("FR-064-AC-10", "TC-1884")]
 #[test]
 fn tc_455_an_unknown_strength_is_refused() {
     let attestation = json(&attestation_text());

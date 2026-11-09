@@ -35,6 +35,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_assurance::discharge::{
     BuildDischargeRequest, DischargeState, DispositionDecision, FactKind, UnusedFactReason,
     build_discharge_report, render_discharge_report,
@@ -118,8 +119,8 @@ fn ids(entries: &[quoin_assurance::discharge::ClauseDischarge]) -> Vec<&str> {
         .collect()
 }
 
-/// Trace: FR-046-AC-2
 /// Provenance: quoin#384, tests/discharge.test.ts
+#[trace("FR-046-AC-2")]
 #[test]
 fn tc_1126_every_binding_clause_lands_in_exactly_one_population_and_no_score_is_emitted() {
     let report = build_discharge_report(&request(vec![direct(), disposition()]))
@@ -148,8 +149,8 @@ fn tc_1126_every_binding_clause_lands_in_exactly_one_population_and_no_score_is_
     assert!(value.get("score").is_none());
 }
 
-/// Trace: FR-046-AC-3
 /// Provenance: quoin#384, tests/discharge.test.ts
+#[trace("FR-046-AC-3")]
 #[test]
 fn tc_1127_unresolved_and_not_binding_clauses_stay_outside_the_partition_and_spend_no_fact() {
     let mut unresolved_fact = direct();
@@ -198,8 +199,8 @@ fn tc_1127_unresolved_and_not_binding_clauses_stay_outside_the_partition_and_spe
     );
 }
 
-/// Trace: FR-046-AC-4
 /// Provenance: quoin#384, tests/discharge.test.ts
+#[trace("FR-046-AC-4")]
 #[test]
 fn tc_1128_expired_future_dated_and_incoherent_attestations_leave_the_clause_open() {
     let reopened = |mutate: fn(&mut serde_json::Value)| {
@@ -250,8 +251,8 @@ fn tc_1128_expired_future_dated_and_incoherent_attestations_leave_the_clause_ope
     assert!(report.binding.open[0].fact.is_none());
 }
 
-/// Trace: FR-046-AC-5
 /// Provenance: quoin#384, tests/discharge.test.ts
+#[trace("FR-046-AC-5")]
 #[test]
 fn tc_1129_duplicate_facts_and_incomplete_attestations_are_rejected() {
     let refused = |facts: Vec<serde_json::Value>| {
@@ -333,8 +334,8 @@ fn tc_1129_duplicate_facts_and_incomplete_attestations_are_rejected() {
     );
 }
 
-/// Trace: FR-046-AC-6
 /// Provenance: quoin#384, tests/discharge.test.ts
+#[trace("FR-046-AC-6")]
 #[test]
 fn tc_1130_every_population_renders_deterministically_and_without_a_score() {
     let report = build_discharge_report(&request(vec![direct(), disposition()]))
@@ -412,8 +413,8 @@ fn tc_1130_every_population_renders_deterministically_and_without_a_score() {
 /// legitimate `build_discharge` → `render_discharge` hop goes through, which
 /// is the hop `quoin-core` makes over two invocations.
 ///
-/// Trace: FR-046-AC-5, FR-046-AC-6
 /// Provenance: agent-ix/quoin#447
+#[trace("FR-046-AC-5", "FR-046-AC-6")]
 #[test]
 fn tc_447_451_a_computed_discharge_report_round_trips_through_the_validating_door() {
     let report = build_discharge_report(&request(vec![direct(), disposition()]))
@@ -431,8 +432,8 @@ fn tc_447_451_a_computed_discharge_report_round_trips_through_the_validating_doo
 /// so neither half can move alone. Flipping `DischargeState` to `camelCase`
 /// passed every test in this crate before quoin#447; it fails here.
 ///
-/// Trace: FR-046-AC-5, FR-046-AC-6
 /// Provenance: agent-ix/quoin#447
+#[trace("FR-046-AC-5", "FR-046-AC-6")]
 #[test]
 fn tc_447_452_the_wire_spelling_of_every_closed_vocabulary_has_one_source() {
     for kind in FactKind::all() {
@@ -569,8 +570,8 @@ fn every_state_report() -> quoin_assurance::DischargeReport {
 /// unused reason appears here, so the pin covers the whole vocabulary rather
 /// than the two spellings the other fixtures happen to reach.
 ///
-/// Trace: FR-046-AC-2, FR-046-AC-6
 /// Provenance: agent-ix/quoin#447
+#[trace("FR-046-AC-2", "FR-046-AC-6")]
 #[test]
 fn tc_447_453_the_emitted_json_document_is_pinned_byte_for_byte() {
     let report = every_state_report();
@@ -595,8 +596,8 @@ fn tc_447_453_the_emitted_json_document_is_pinned_byte_for_byte() {
 /// being read standalone: an isolated struct refusing it says nothing about
 /// the path a caller actually reaches it by.
 ///
-/// Trace: FR-046-AC-1, FR-046-AC-5
 /// Provenance: agent-ix/quoin#447
+#[trace("FR-046-AC-1", "FR-046-AC-5")]
 #[test]
 fn tc_447_442_every_reachable_discharge_type_refuses_an_unknown_field() {
     let document: serde_json::Value =
@@ -638,8 +639,8 @@ fn tc_447_442_every_reachable_discharge_type_refuses_an_unknown_field() {
 
 /// The forged discharge report quoin#447's review demonstrated, replayed.
 ///
-/// Trace: FR-046-AC-5
 /// Provenance: agent-ix/quoin#447
+#[trace("FR-046-AC-5")]
 #[test]
 fn tc_447_450_a_forged_discharge_report_is_refused_by_the_deserialiser() {
     assert!(
