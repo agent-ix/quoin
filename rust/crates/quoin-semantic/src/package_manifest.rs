@@ -433,8 +433,9 @@ impl<'a> CycleVisitor<'a> {
 #[allow(clippy::indexing_slicing)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-075
+    #[trace("FR-075")]
     #[test]
     fn tc_378_070_type_identity_is_ix_scheme() {
         assert_eq!(
@@ -446,7 +447,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-075
+    #[trace("FR-075")]
     #[test]
     fn tc_378_071_mapping_identity_is_ix_scheme() {
         assert_eq!(

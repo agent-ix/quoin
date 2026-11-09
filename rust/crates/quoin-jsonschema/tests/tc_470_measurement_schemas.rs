@@ -2,7 +2,6 @@
 // Copyright (C) 2026 Agent-IX
 //! The committed measurement schema documents parse and name themselves.
 //!
-//! Trace: FR-100-AC-4
 //! Provenance: quoin#479
 
 #![allow(
@@ -13,12 +12,12 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_jsonschema::MeasurementSchema;
 use serde_json::Value;
 
 /// Both vendored documents parse, and the census is not measuring nothing.
-///
-/// Trace: FR-100-AC-4
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_470_every_vendored_schema_parses() {
     for schema in MeasurementSchema::ALL {

@@ -25,6 +25,7 @@
 
 mod common;
 
+use ix_trace_rs::trace;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -181,7 +182,7 @@ fn type_names(manifest: &Value, section: &str) -> Vec<String> {
 
 // ---------------------------------------------------------------- FR-076
 
-/// Trace: FR-076-AC-1
+#[trace("FR-076-AC-1", "TC-1400")]
 #[test]
 fn tc_264_001_object_variant_declares_object_types_and_no_artifact_types() {
     let r = render("object", "", &[]);
@@ -190,7 +191,7 @@ fn tc_264_001_object_variant_declares_object_types_and_no_artifact_types() {
     assert!(type_names(&manifest, "artifact_types").is_empty());
 }
 
-/// Trace: FR-076-AC-2
+#[trace("FR-076-AC-2", "TC-1401")]
 #[test]
 fn tc_264_002_artifact_variant_declares_artifact_types_and_no_object_types() {
     let r = render("artifact", "", &[]);
@@ -199,7 +200,7 @@ fn tc_264_002_artifact_variant_declares_artifact_types_and_no_object_types() {
     assert!(type_names(&manifest, "object_types").is_empty());
 }
 
-/// Trace: FR-076-AC-3
+#[trace("FR-076-AC-3", "TC-1402")]
 #[test]
 fn tc_264_003_mixed_variant_declares_both_sections_and_an_import() {
     let r = render("mixed", IMPORT, &[]);
@@ -214,8 +215,7 @@ fn tc_264_003_mixed_variant_declares_both_sections_and_an_import() {
 /// One template core: the template has a single project directory, and every
 /// file that is byte-identical across the three variants comes from exactly
 /// one template file.
-///
-/// Trace: FR-076-AC-4
+#[trace("FR-076-AC-4", "TC-1403")]
 #[test]
 fn tc_264_004_shared_surfaces_exist_exactly_once_in_the_template_source() {
     let template_roots: Vec<_> = fs::read_dir(TEMPLATE)
@@ -262,7 +262,7 @@ fn tc_264_004_shared_surfaces_exist_exactly_once_in_the_template_source() {
     }
 }
 
-/// Trace: FR-076-AC-5
+#[trace("FR-076-AC-5", "TC-1404")]
 #[test]
 fn tc_264_005_a_non_agpl_license_aborts_and_the_default_renders_agpl() {
     assert!(refused(&["license=MIT"]).contains("MIT"));
@@ -274,13 +274,13 @@ fn tc_264_005_a_non_agpl_license_aborts_and_the_default_renders_agpl() {
     assert!(r.text("LICENSE").contains("Version 3, 19 November 2007"));
 }
 
-/// Trace: FR-076-AC-6
+#[trace("FR-076-AC-6", "TC-1405")]
 #[test]
 fn tc_264_006_an_unknown_module_kind_aborts_naming_it() {
     assert!(refused(&["module_kind=hybrid"]).contains("hybrid"));
 }
 
-/// Trace: FR-076-AC-7
+#[trace("FR-076-AC-7", "TC-1406")]
 #[test]
 fn tc_264_007_an_import_without_an_exact_version_aborts_naming_the_entry() {
     let bare = "agent-ix/spec-objects-business";
@@ -301,7 +301,7 @@ fn tc_264_007_an_import_without_an_exact_version_aborts_naming_the_entry() {
     );
 }
 
-/// Trace: FR-076-AC-8
+#[trace("FR-076-AC-8", "TC-1407")]
 #[test]
 fn tc_264_008_a_target_outside_the_registry_aborts_naming_it() {
     assert!(refused(&["generated_targets=json-schema,go"]).contains("go"));
@@ -310,8 +310,7 @@ fn tc_264_008_a_target_outside_the_registry_aborts_naming_it() {
 /// The target list the pre-generation hook validates against is the
 /// filament-core-data registry Quoin reads (`target` plus
 /// `representationFormat`), not a stale copy of it.
-///
-/// Trace: FR-076-AC-8
+#[trace("FR-076-AC-8")]
 #[test]
 fn tc_264_009_the_hooks_target_registry_equals_the_published_registry() {
     let common: Value = serde_json::from_str(
@@ -339,8 +338,8 @@ fn tc_264_009_the_hooks_target_registry_equals_the_published_registry() {
     assert_eq!(in_hook, published);
 }
 
-/// Trace: FR-076-AC-9
-/// Trace: FR-076-CON-2
+#[trace("FR-076-AC-9")]
+#[trace("FR-076-CON-2", "TC-1412")]
 #[test]
 fn tc_264_010_no_variant_carries_an_npmrc() {
     for (kind, r) in all_variants() {
@@ -354,8 +353,7 @@ fn tc_264_010_no_variant_carries_an_npmrc() {
 
 /// A declared target with no emitter is recorded as declared-not-emitted in the
 /// README and in `semantic.targets`, and the two agree.
-///
-/// Trace: FR-076-AC-10
+#[trace("FR-076-AC-10", "TC-1451")]
 #[test]
 fn tc_264_011_declared_not_emitted_targets_agree_between_readme_and_manifest() {
     let r = render(
@@ -380,7 +378,7 @@ fn tc_264_011_declared_not_emitted_targets_agree_between_readme_and_manifest() {
     }
 }
 
-/// Trace: FR-076-AC-11
+#[trace("FR-076-AC-11", "TC-1452")]
 #[test]
 fn tc_264_012_every_variant_renders_unattended() {
     // `cookiecutter` runs with a null stdin and `--no-input`; reaching here for
@@ -388,13 +386,13 @@ fn tc_264_012_every_variant_renders_unattended() {
     assert_eq!(all_variants().len(), 3);
 }
 
-/// Trace: FR-076-AC-12
+#[trace("FR-076-AC-12", "TC-1453")]
 #[test]
 fn tc_264_013_a_mixed_module_without_imports_aborts() {
     assert!(refused(&["module_kind=mixed"]).contains("at least one import"));
 }
 
-/// Trace: FR-076-AC-13
+#[trace("FR-076-AC-13", "TC-1454")]
 #[test]
 fn tc_264_014_every_refusal_leaves_no_directory_behind() {
     for args in [
@@ -410,9 +408,9 @@ fn tc_264_014_every_refusal_leaves_no_directory_behind() {
 
 // ---------------------------------------------------------------- FR-078
 
-/// Trace: FR-078-AC-1
-/// Trace: FR-078-AC-6
-/// Trace: FR-078-CON-1
+#[trace("FR-078-AC-1")]
+#[trace("FR-078-AC-6")]
+#[trace("FR-078-CON-1", "TC-1417", "TC-1468")]
 #[test]
 fn tc_264_020_the_semantic_block_has_the_nine_keys_validates_and_matches_the_types() {
     let nine: BTreeSet<&str> = [
@@ -455,8 +453,8 @@ fn tc_264_020_the_semantic_block_has_the_nine_keys_validates_and_matches_the_typ
     }
 }
 
-/// Trace: FR-078-AC-2
-/// Trace: FR-078-AC-3
+#[trace("FR-078-AC-2")]
+#[trace("FR-078-AC-3", "TC-1409", "TC-1410")]
 #[test]
 fn tc_264_021_every_type_names_an_emitted_schema_never_an_inline_object() {
     for (kind, r) in all_variants() {
@@ -484,7 +482,7 @@ fn tc_264_021_every_type_names_an_emitted_schema_never_an_inline_object() {
     }
 }
 
-/// Trace: FR-078-AC-5
+#[trace("FR-078-AC-5", "TC-1466")]
 #[test]
 fn tc_264_022_imports_carry_the_declared_exact_versions() {
     let two = "agent-ix/spec-artifacts-iso@0.1.0,agent-ix/spec-objects-business@2.3.0";
@@ -505,7 +503,7 @@ fn tc_264_022_imports_carry_the_declared_exact_versions() {
     );
 }
 
-/// Trace: FR-078-AC-8
+#[trace("FR-078-AC-8", "TC-1459")]
 #[test]
 fn tc_264_023_a_duplicated_import_identity_aborts_naming_it() {
     let dup = "agent-ix/spec-artifacts-iso@0.1.0,agent-ix/spec-artifacts-iso@0.2.0";
@@ -517,7 +515,7 @@ fn tc_264_023_a_duplicated_import_identity_aborts_naming_it() {
 
 // ---------------------------------------------------------------- FR-081 / FR-082
 
-/// Trace: FR-081-AC-1
+#[trace("FR-081-AC-1", "TC-1434")]
 #[test]
 fn tc_264_030_one_spdx_identifier_across_every_declaration() {
     for (kind, r) in all_variants() {
@@ -545,7 +543,7 @@ fn tc_264_030_one_spdx_identifier_across_every_declaration() {
     }
 }
 
-/// Trace: FR-081-AC-2
+#[trace("FR-081-AC-2", "TC-1435")]
 #[test]
 fn tc_264_031_the_public_repository_baseline_is_present() {
     for (kind, r) in all_variants() {
@@ -565,7 +563,7 @@ fn tc_264_031_the_public_repository_baseline_is_present() {
     }
 }
 
-/// Trace: FR-081-AC-5
+#[trace("FR-081-AC-5", "TC-1436")]
 #[test]
 fn tc_264_032_the_npm_target_is_the_public_registry() {
     let r = render("object", "", &[]);
@@ -577,7 +575,7 @@ fn tc_264_032_the_npm_target_is_the_public_registry() {
     assert_eq!(package["publishConfig"]["access"], "public");
 }
 
-/// Trace: FR-081-AC-6
+#[trace("FR-081-AC-6", "TC-1437")]
 #[test]
 fn tc_264_033_release_workflows_are_manual_and_delegate_publication() {
     let r = render("object", "", &[]);
@@ -609,8 +607,7 @@ fn tc_264_033_release_workflows_are_manual_and_delegate_publication() {
 
 /// The rendered catalog document names the Quoin catalog file and the tracking
 /// project, and names the real install command rather than a retired one.
-///
-/// Trace: FR-081-AC-7
+#[trace("FR-081-AC-7", "TC-1438")]
 #[test]
 fn tc_264_034_the_catalog_document_names_the_catalog_file_and_tracking_project() {
     let r = render("object", "", &[]);
@@ -639,8 +636,8 @@ fn tc_264_034_the_catalog_document_names_the_catalog_file_and_tracking_project()
     }
 }
 
-/// Trace: FR-082-AC-2
-/// Trace: FR-082-AC-5
+#[trace("FR-082-AC-2", "TC-1440")]
+#[trace("FR-082-AC-5", "TC-1443")]
 #[test]
 fn tc_264_035_the_governance_tree_has_its_folders_and_no_hand_kept_matrix() {
     for (kind, r) in all_variants() {
@@ -770,8 +767,8 @@ fn conformance(variant: &str, kind: &str, root: &Path, package: &str) -> Vec<Fin
     findings
 }
 
-/// Trace: FR-083-AC-1
-/// Trace: FR-081-AC-4
+#[trace("FR-083-AC-1")]
+#[trace("FR-081-AC-4", "TC-1436", "TC-1444")]
 #[test]
 fn tc_264_040_every_variant_renders_and_conforms() {
     let mut failures = Vec::new();
@@ -782,9 +779,8 @@ fn tc_264_040_every_variant_renders_and_conforms() {
 }
 
 /// A rendered directory does not outlive its checks, whether they pass or fail.
-///
-/// Trace: FR-083-AC-2
-/// Trace: FR-083-CON-1
+#[trace("FR-083-AC-2")]
+#[trace("FR-083-CON-1", "TC-1445")]
 #[test]
 fn tc_264_041_a_rendered_directory_is_removed_after_a_failing_check() {
     let r = render("object", "", &[]);
@@ -807,8 +803,7 @@ fn tc_264_041_a_rendered_directory_is_removed_after_a_failing_check() {
 
 /// Each class of residue, injected into a rendered file, fails conformance
 /// naming that file.
-///
-/// Trace: FR-083-AC-3
+#[trace("FR-083-AC-3", "TC-1446")]
 #[test]
 fn tc_264_042_injected_residue_fails_naming_the_file() {
     let injections = [
@@ -847,8 +842,7 @@ fn tc_264_042_injected_residue_fails_naming_the_file() {
 }
 
 /// Removing a surface the contract names fails naming that surface and variant.
-///
-/// Trace: FR-083-AC-4
+#[trace("FR-083-AC-4", "TC-1447")]
 #[test]
 fn tc_264_043_a_missing_surface_fails_naming_it() {
     let r = render("artifact", "", &[]);
@@ -865,7 +859,7 @@ fn tc_264_043_a_missing_surface_fails_naming_it() {
     }
 }
 
-/// Trace: FR-083-CON-2
+#[trace("FR-083-CON-2")]
 #[test]
 fn tc_264_044_the_conformance_contract_is_a_declared_file_with_exactly_these_blocks() {
     let contract = contract();
@@ -890,7 +884,7 @@ fn tc_264_044_the_conformance_contract_is_a_declared_file_with_exactly_these_blo
 
 // ---------------------------------------------------------------- render-only criteria
 
-/// Trace: FR-078-AC-7
+#[trace("FR-078-AC-7", "TC-1458")]
 #[test]
 fn tc_264_050_no_type_name_is_declared_twice() {
     for (kind, r) in all_variants() {
@@ -902,8 +896,8 @@ fn tc_264_050_no_type_name_is_declared_twice() {
     }
 }
 
-/// Trace: FR-081-AC-8
-/// Trace: FR-081-CON-1
+#[trace("FR-081-AC-8")]
+#[trace("FR-081-CON-1", "TC-1432")]
 #[test]
 fn tc_264_051_no_dependency_is_a_local_path_or_has_an_upper_bound() {
     let r = render("mixed", IMPORT, &[]);
@@ -944,7 +938,7 @@ fn spec_files(r: &Render) -> Vec<(String, String)> {
         .collect()
 }
 
-/// Trace: FR-082-AC-3
+#[trace("FR-082-AC-3", "TC-1441")]
 #[test]
 fn tc_264_052_no_verification_cell_carries_a_test_case_id() {
     let tc = Regex::new(r"\bTC-[A-Z]*-?\d+").unwrap();
@@ -960,7 +954,7 @@ fn tc_264_052_no_verification_cell_carries_a_test_case_id() {
     }
 }
 
-/// Trace: FR-082-AC-4
+#[trace("FR-082-AC-4", "TC-1442")]
 #[test]
 fn tc_264_053_every_rendered_test_carries_a_trace_tag_naming_an_existing_criterion() {
     let tag = Regex::new(r#"pytest\.mark\.trace\("([^"]+)"\)"#).unwrap();
@@ -997,8 +991,8 @@ fn tc_264_053_every_rendered_test_carries_a_trace_tag_naming_an_existing_criteri
     }
 }
 
-/// Trace: FR-082-AC-6
-/// Trace: FR-082-CON-2
+#[trace("FR-082-AC-6")]
+#[trace("FR-082-CON-2", "TC-1461")]
 #[test]
 fn tc_264_054_the_rendered_spec_leaves_the_domain_to_the_maintainer_and_copies_no_module() {
     let catalog = quoin_yaml::from_str(
@@ -1037,7 +1031,7 @@ fn tc_264_054_the_rendered_spec_leaves_the_domain_to_the_maintainer_and_copies_n
     }
 }
 
-/// Trace: FR-076-CON-1
+#[trace("FR-076-CON-1", "TC-1455")]
 #[test]
 fn tc_264_055_the_template_carries_no_emitter_runtime_or_grammar_copy() {
     let project = Path::new(TEMPLATE).join("{{cookiecutter.repo_name}}");

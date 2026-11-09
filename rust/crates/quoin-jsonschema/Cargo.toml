@@ -27,6 +27,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 # The ONE RFC 3339 grammar in the measurement domain (quoin#468). This crate
 # sits below `quoin-measurement` so it cannot depend on it at build time — the
 # `date-time` check is a parameter of `VendoredSchema::compile` for exactly

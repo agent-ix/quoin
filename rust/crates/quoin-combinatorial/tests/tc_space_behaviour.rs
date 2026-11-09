@@ -30,7 +30,7 @@ fn config(pairs: &[(&str, &str)]) -> Configuration {
 
 /// A statement that is not a configuration space yields `None`; that is the
 /// whole test for whether an obligation is combinatorial.
-#[trace("FR-035-AC-2")]
+#[trace("FR-035-AC-2", "TC-181")]
 #[test]
 fn a_statement_that_is_not_a_configuration_space_yields_none() {
     for prose in [
@@ -48,7 +48,7 @@ fn a_statement_that_is_not_a_configuration_space_yields_none() {
 }
 
 /// An exclusion is read as an exclusion, never as a dimension.
-#[trace("FR-035-AC-3")]
+#[trace("FR-035-AC-3", "TC-182")]
 #[test]
 fn an_exclusion_is_not_mistaken_for_a_dimension() {
     let space = parse_space("2-way over a(1|2) b(3|4) excluding[a=1,b=3]").unwrap();
@@ -69,7 +69,7 @@ fn an_exclusion_is_not_mistaken_for_a_dimension() {
 
 /// The demanded-tuple count is the number of value pairs across dimension
 /// pairs, which this test counts by enumeration rather than by formula.
-#[trace("FR-035-AC-4")]
+#[trace("FR-035-AC-4", "TC-183")]
 #[test]
 fn the_demanded_count_is_the_number_of_value_combinations() {
     let sizes = [3usize, 2, 2];
@@ -89,7 +89,7 @@ fn the_demanded_count_is_the_number_of_value_combinations() {
 }
 
 /// A combination the space forbids is not demanded, and is not a gap.
-#[trace("FR-035-AC-5")]
+#[trace("FR-035-AC-5", "TC-184")]
 #[test]
 fn a_forbidden_combination_is_not_demanded() {
     let allowed = parse_space("2-way over a(1|2) b(3|4)").unwrap();
@@ -102,7 +102,7 @@ fn a_forbidden_combination_is_not_demanded() {
 }
 
 /// The result names the combinations that never ran, not only how many.
-#[trace("FR-035-AC-6")]
+#[trace("FR-035-AC-6", "TC-185")]
 #[test]
 fn the_result_names_the_combinations_that_never_ran() {
     let space = parse_space("2-way over a(1|2) b(3|4)").unwrap();
@@ -117,7 +117,7 @@ fn the_result_names_the_combinations_that_never_ran() {
 }
 
 /// A configuration exercising values the spec never declared covers nothing.
-#[trace("FR-035-AC-7")]
+#[trace("FR-035-AC-7", "TC-186")]
 #[test]
 fn values_the_spec_never_declared_cover_nothing() {
     let space = parse_space("2-way over a(1|2) b(3|4)").unwrap();
@@ -131,7 +131,7 @@ fn values_the_spec_never_declared_cover_nothing() {
 }
 
 /// Full coverage reports an empty gap list.
-#[trace("FR-035-AC-8")]
+#[trace("FR-035-AC-8", "TC-187")]
 #[test]
 fn full_coverage_reports_an_empty_gap_list() {
     let space = parse_space("2-way over a(1|2) b(3|4)").unwrap();

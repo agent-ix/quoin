@@ -20,8 +20,6 @@
 //!
 //! The operational schema is the sharper probe: its nine `date-time` fields
 //! carry **no** `pattern`, so `format` is the only thing that can refuse them.
-//!
-//! Trace: FR-100-AC-4, FR-098
 
 #![allow(
     clippy::unwrap_used,
@@ -31,6 +29,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_jsonschema::{
@@ -111,8 +110,7 @@ fn annotated(schema: MeasurementSchema) -> SchemaValidator {
 
 /// With the format registered, an impossible calendar day is refused; without
 /// it, the same document is accepted.
-///
-/// Trace: FR-100-AC-4
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_470_date_time_is_asserted_on_both_schemas_and_annotation_only_without_it() {
     // 2026-02-30 matches the intervention schema's `pattern`, and the
@@ -147,8 +145,7 @@ fn tc_470_date_time_is_asserted_on_both_schemas_and_annotation_only_without_it()
 /// The pattern and the registered check must accept the same language: if the
 /// widening had landed in only one of them, this passes on one schema and fails
 /// on the other.
-///
-/// Trace: FR-098
+#[trace("FR-098")]
 #[test]
 fn tc_470_the_widened_lowercase_form_is_accepted_by_pattern_and_by_format() {
     for schema in MeasurementSchema::ALL {
@@ -179,8 +176,7 @@ fn tc_470_the_widened_lowercase_form_is_accepted_by_pattern_and_by_format() {
 ///
 /// Parse, don't validate: the caller cannot hold a [`quoin_jsonschema::ValidDocument`]
 /// without having passed the schema, so nothing downstream re-validates.
-///
-/// Trace: FR-100-AC-4
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_470_parsing_returns_the_document_or_the_refusal() {
     let validator = MeasurementSchema::InterventionExperimentV1
@@ -222,8 +218,7 @@ fn tc_470_parsing_returns_the_document_or_the_refusal() {
 }
 
 /// A vendored document that does not compile is refused under its own code.
-///
-/// Trace: FR-100-AC-4
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_470_a_schema_that_does_not_compile_names_itself() {
     let error = SchemaValidator::compile_vendored(
@@ -241,8 +236,7 @@ fn tc_470_a_schema_that_does_not_compile_names_itself() {
 }
 
 /// Every error code round-trips through its wire spelling.
-///
-/// Trace: FR-100-AC-4
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_470_every_error_code_round_trips() {
     for code in JsonSchemaErrorCode::ALL {

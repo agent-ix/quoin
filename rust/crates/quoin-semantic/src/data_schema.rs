@@ -469,9 +469,10 @@ impl RefWalker<'_> {
 #[allow(clippy::indexing_slicing)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
     use serde_json::json;
 
-    /// Trace: FR-073
+    #[trace("FR-073")]
     #[test]
     fn tc_378_051_parent_segments_are_caught_under_either_separator() {
         assert!(has_parent_segment("../a.json"));
@@ -481,7 +482,7 @@ mod tests {
         assert!(!has_parent_segment("schemas/Entity.json"));
     }
 
-    /// Trace: FR-073
+    #[trace("FR-073")]
     #[test]
     fn tc_378_052_collect_refs_walks_arrays_and_nested_objects() {
         let mut refs = Vec::new();
@@ -493,7 +494,7 @@ mod tests {
         assert_eq!(refs, vec!["one", "three", "two"]);
     }
 
-    /// Trace: FR-073
+    #[trace("FR-073")]
     #[test]
     fn tc_378_053_a_ref_that_is_not_a_string_is_not_collected() {
         let mut refs = Vec::new();

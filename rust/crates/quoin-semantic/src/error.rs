@@ -233,8 +233,9 @@ impl SemanticError {
 #[allow(clippy::indexing_slicing)]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_378_001_every_code_round_trips() {
         for code in SemanticErrorCode::all() {
@@ -242,7 +243,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_378_002_codes_are_unique() {
         let mut seen = std::collections::BTreeSet::new();
@@ -252,7 +253,7 @@ mod tests {
         assert_eq!(seen.len(), SemanticErrorCode::all().len());
     }
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_378_003_unknown_code_is_none() {
         assert_eq!(SemanticErrorCode::from_code("QSEM-999"), None);

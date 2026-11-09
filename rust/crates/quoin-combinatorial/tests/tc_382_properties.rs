@@ -15,6 +15,7 @@
 //! vacuously (an empty demand satisfies almost everything), the test carries an
 //! explicit anti-vacuity assertion that fails at zero.
 
+use ix_trace_rs::trace;
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 
@@ -120,8 +121,8 @@ proptest! {
     /// Every gap is a demanded tuple no run reached, and the three numbers
     /// account for each other exactly.
     ///
-    /// Trace: FR-035-AC-1
     /// Provenance: quoin#382
+    #[trace("FR-035-AC-1")]
     #[test]
     fn tc_382_010_demanded_equals_covered_plus_gaps(
         generated in generated_space(2),
@@ -149,8 +150,8 @@ proptest! {
 
     /// The gap list is ordered, and by UTF-16 code unit specifically.
     ///
-    /// Trace: FR-035-AC-1
     /// Provenance: quoin#382
+    #[trace("FR-035-AC-1")]
     #[test]
     fn tc_382_011_gaps_are_strictly_ordered(generated in generated_space(2)) {
         let result = tway_coverage(&generated.space, &[]).map_err(|error| {
@@ -171,8 +172,8 @@ proptest! {
     /// covering array of every strength, so a space measured against it has no
     /// gap at all — whatever the strength, whatever the exclusions.
     ///
-    /// Trace: FR-035-AC-1
     /// Provenance: quoin#382
+    #[trace("FR-035-AC-1")]
     #[test]
     fn tc_382_012_the_full_factorial_covers_everything_demanded(generated in generated_space(2)) {
         let space = &generated.space;
@@ -191,8 +192,8 @@ proptest! {
 
     /// Coverage is monotone: adding a configuration never uncovers a tuple.
     ///
-    /// Trace: FR-035-AC-1
     /// Provenance: quoin#382
+    #[trace("FR-035-AC-1")]
     #[test]
     fn tc_382_013_adding_a_configuration_never_removes_coverage(
         generated in generated_space(2),
@@ -229,8 +230,8 @@ proptest! {
     /// A gap list is a work list. Naming a combination the spec forbids would
     /// ask someone to run a configuration that is not allowed to exist.
     ///
-    /// Trace: FR-035-AC-1
     /// Provenance: quoin#382
+    #[trace("FR-035-AC-1")]
     #[test]
     fn tc_382_014_an_excluded_combination_is_never_demanded(generated in generated_space(2)) {
         let space = &generated.space;
@@ -268,8 +269,8 @@ proptest! {
     /// from the implementation's own walk, so agreement is evidence rather than
     /// a tautology.
     ///
-    /// Trace: FR-035-AC-1
     /// Provenance: quoin#382
+    #[trace("FR-035-AC-1")]
     #[test]
     fn tc_382_015_an_unconstrained_demand_matches_the_counting_formula(
         generated in generated_space(0),
@@ -309,8 +310,8 @@ proptest! {
     /// A configuration covers only tuples built from dimensions it actually
     /// named with a declared value.
     ///
-    /// Trace: FR-035-AC-1
     /// Provenance: quoin#382
+    #[trace("FR-035-AC-1")]
     #[test]
     fn tc_382_016_a_cover_never_names_a_value_the_configuration_did_not_run(
         generated in generated_space(2),
@@ -348,8 +349,8 @@ proptest! {
 /// The generator itself must produce spaces, or every property above is
 /// vacuous.
 ///
-/// Trace: FR-035-AC-1
 /// Provenance: quoin#382
+#[trace("FR-035-AC-1")]
 #[test]
 #[allow(
     clippy::unwrap_used,
