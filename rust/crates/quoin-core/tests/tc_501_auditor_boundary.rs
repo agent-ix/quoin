@@ -26,6 +26,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
@@ -85,8 +86,8 @@ fn input() -> Value {
 
 /// `auditor.audit` reports the unbound obligation.
 ///
-/// Trace: FR-096-AC-1
 /// Provenance: agent-ix/quoin#501
+#[trace("FR-096-AC-1")]
 #[test]
 fn tc_501_600_audit_reports_an_unbound_obligation_through_the_binary() {
     let result = run("auditor.audit", &json!({ "input": input() }).to_string());
@@ -99,8 +100,8 @@ fn tc_501_600_audit_reports_an_unbound_obligation_through_the_binary() {
 
 /// `auditor.advise` answers one row per obligation, in the order they arrived.
 ///
-/// Trace: FR-096-AC-1, FR-054
 /// Provenance: agent-ix/quoin#501
+#[trace("FR-096-AC-1", "FR-054")]
 #[test]
 fn tc_501_602_advise_answers_one_row_per_obligation_through_the_binary() {
     let request = json!({
@@ -128,8 +129,8 @@ fn tc_501_602_advise_answers_one_row_per_obligation_through_the_binary() {
 /// The set grows as rules are added, so only the values the catalog↔fact-set
 /// census (agent-ix/quoin#128) depends on are named, not the whole set.
 ///
-/// Trace: FR-096-AC-1, FR-054
 /// Provenance: agent-ix/quoin#128, agent-ix/quoin#501
+#[trace("FR-096-AC-1", "FR-054")]
 #[test]
 fn tc_501_603_vocabulary_states_what_the_fact_set_can_mint() {
     let payload = payload(&run("auditor.vocabulary", "{}"));

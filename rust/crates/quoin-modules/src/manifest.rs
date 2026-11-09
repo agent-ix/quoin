@@ -138,10 +138,11 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
 
     use super::*;
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_220_schema_version_must_be_one() {
         let err = MarketplaceManifest::from_yaml("schemaVersion: 2\nentries: []\n")
@@ -149,7 +150,7 @@ mod tests {
         assert!(err.to_string().contains("schemaVersion"), "{err}");
     }
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_221_an_entry_requires_a_name() {
         let err = MarketplaceManifest::from_yaml(
@@ -159,7 +160,7 @@ mod tests {
         assert!(err.to_string().contains("name"), "{err}");
     }
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_222_default_enabled_false_is_skipped() {
         let manifest = MarketplaceManifest::from_yaml(

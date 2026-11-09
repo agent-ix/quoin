@@ -30,6 +30,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::PathBuf;
 
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
@@ -92,8 +93,8 @@ fn request() -> Value {
 /// `quire.coverage` derives the obligations the module's `obligations:` source
 /// declares, over a real `spec/` tree.
 ///
-/// Trace: FR-099
 /// Provenance: quoin#502
+#[trace("FR-099")]
 #[test]
 fn tc_502_010_coverage_derives_the_obligations_the_repository_states() {
     let result = run("quire.coverage", &request().to_string());
@@ -121,8 +122,8 @@ fn tc_502_010_coverage_derives_the_obligations_the_repository_states() {
 /// `quire.properties` classifies the same criteria and answers with the shape
 /// map, keyed on the obligation id.
 ///
-/// Trace: FR-052
 /// Provenance: quoin#502
+#[trace("FR-052")]
 #[test]
 fn tc_502_011_properties_classifies_the_documents_under_spec() {
     // No `documents`: the empty list asks for the `spec/**/*.md` the retained
@@ -152,8 +153,8 @@ fn tc_502_011_properties_classifies_the_documents_under_spec() {
 /// A scope with no `spec/` is the world declining, not the request being
 /// malformed: exit 2, naming the engine rule.
 ///
-/// Trace: FR-099
 /// Provenance: quoin#502
+#[trace("FR-099")]
 #[test]
 fn tc_502_012_a_repository_without_a_document_root_is_refused_by_name() {
     let mut request = request();

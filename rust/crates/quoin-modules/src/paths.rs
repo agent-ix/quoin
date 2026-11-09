@@ -97,10 +97,11 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
 
     use super::*;
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_240_home_derives_modules_dir_and_registry() {
         let home = IxHome::new("/h");
@@ -111,7 +112,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_241_ix_home_env_var_wins_over_the_home_directory() {
         assert_eq!(

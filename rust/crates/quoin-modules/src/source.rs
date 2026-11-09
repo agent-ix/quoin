@@ -262,10 +262,11 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
 
     use super::*;
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_210_option_like_fields_are_refused() {
         let evil = Source::Github {
@@ -276,7 +277,7 @@ mod tests {
         assert_eq!(err.code(), crate::error::ModulesErrorCode::InvalidSource);
     }
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_211_package_prefix_with_no_package_is_refused() {
         let err = parse_source_arg("package:").expect_err("no package named");

@@ -13,6 +13,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 fn skill_file(relative: &str) -> String {
@@ -23,7 +24,7 @@ fn skill_file(relative: &str) -> String {
     std::fs::read_to_string(root.join("skills/spec-fuzz").join(relative)).expect("skill file")
 }
 
-/// Trace: FR-038-AC-5
+#[trace("FR-038-AC-5")]
 #[test]
 fn tc_166_cargo_fuzz_template_puts_no_doc_comment_on_the_macro_invocation() {
     let template = skill_file("assets/templates/cargo-fuzz.rs.md");
@@ -50,7 +51,7 @@ fn slug(id: &str) -> String {
     id.to_lowercase().replace('-', "_")
 }
 
-/// Trace: FR-038-AC-5
+#[trace("FR-038-AC-5")]
 #[test]
 fn tc_166_cargo_fuzz_template_carriers_sit_on_a_named_wrapper() {
     let template = skill_file("assets/templates/cargo-fuzz.rs.md");

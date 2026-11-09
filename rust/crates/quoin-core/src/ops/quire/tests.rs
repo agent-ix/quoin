@@ -26,6 +26,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -206,8 +207,8 @@ fn payload(response: &Response) -> &Value {
 /// `quire.coverage` carries the engine's obligations, and an empty collection
 /// stays the absence it was on the wire.
 ///
-/// Trace: FR-099
 /// Provenance: quoin#502
+#[trace("FR-099")]
 #[test]
 fn coverage_projects_the_obligations_the_engine_derived() {
     let engine = FakeEngine {
@@ -310,8 +311,7 @@ fn engine_matrix() -> Vec<quoin_quire::model::CoverageMatrixRequirement> {
 /// the projection equals the engine's `Serialize` output minus `statement`,
 /// so a renamed field or status in quire-rs fails here rather than reading
 /// as an empty or wrong column downstream. An empty matrix stays absent.
-///
-/// Trace: FR-115-AC-7, TC-1970
+#[trace("FR-115-AC-7", "TC-1970")]
 #[test]
 fn coverage_projects_the_engine_matrix_in_its_own_spelling() {
     let engine = FakeEngine {
@@ -348,8 +348,8 @@ fn coverage_projects_the_engine_matrix_in_its_own_spelling() {
 
 /// The scope and module roots reach the engine as the caller spelled them.
 ///
-/// Trace: FR-099
 /// Provenance: quoin#502
+#[trace("FR-099")]
 #[test]
 fn the_request_reaches_the_engine_unchanged() {
     let engine = FakeEngine::default();
@@ -368,8 +368,8 @@ fn the_request_reaches_the_engine_unchanged() {
 /// An absent `modules` is ambient discovery, and reaches the host as the empty
 /// list that says so rather than as a refusal.
 ///
-/// Trace: FR-099
 /// Provenance: quoin#502
+#[trace("FR-099")]
 #[test]
 fn an_absent_module_list_is_ambient_discovery() {
     let engine = FakeEngine::default();
@@ -384,8 +384,8 @@ fn an_absent_module_list_is_ambient_discovery() {
 /// `quire.properties` answers with the shape MAP `quoin advise` built by hand,
 /// keyed on the obligation id, and skips a criterion that has no id to key on.
 ///
-/// Trace: FR-052-CON-3
 /// Provenance: quoin#502
+#[trace("FR-052-CON-3")]
 #[test]
 fn properties_answers_with_the_shape_map_keyed_on_the_obligation_id() {
     let engine = FakeEngine {
@@ -422,8 +422,8 @@ fn properties_answers_with_the_shape_map_keyed_on_the_obligation_id() {
 /// An unresolved document is a partial result and not a failure — the exit
 /// status `runQuireAllowFailure` existed to swallow (agent-ix/quoin#103).
 ///
-/// Trace: FR-052
 /// Provenance: quoin#502
+#[trace("FR-052")]
 #[test]
 fn an_unresolved_document_is_a_clean_partial_answer() {
     let engine = FakeEngine {
@@ -452,8 +452,8 @@ fn an_unresolved_document_is_a_clean_partial_answer() {
 /// declined — which is the whole of what "quire exited 1" could not say
 /// (quoin#106).
 ///
-/// Trace: FR-099
 /// Provenance: quoin#502
+#[trace("FR-099")]
 #[test]
 fn an_engine_refusal_names_the_rule_that_declined() {
     let engine = FakeEngine {

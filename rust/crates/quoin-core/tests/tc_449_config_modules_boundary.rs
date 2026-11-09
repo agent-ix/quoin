@@ -22,6 +22,7 @@
 )]
 
 use ix_cli_kit::exit::Outcome;
+use ix_trace_rs::trace;
 use quoin_core::protocol::Response;
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
@@ -37,8 +38,8 @@ fn ok(result: Response) -> Value {
     result.payload
 }
 
-/// Trace: FR-096-AC-1
 /// Provenance: agent-ix/quoin#449, routing quoin#450's operations
+#[trace("FR-096-AC-1")]
 #[test]
 fn tc_449_612_config_resolve_org_reports_the_source_that_won() {
     // The flag outranks everything, and `source` names it. Two cases rather
@@ -59,8 +60,8 @@ fn tc_449_612_config_resolve_org_reports_the_source_that_won() {
     assert_eq!(by_git["source"], json!("git"));
 }
 
-/// Trace: FR-096-AC-1
 /// Provenance: agent-ix/quoin#449, routing quoin#450's operations
+#[trace("FR-096-AC-1")]
 #[test]
 fn tc_449_613_config_unresolved_org_message_is_the_sentence_the_shell_prints() {
     let payload = ok(run("config.unresolved_org_message", &json!({})));

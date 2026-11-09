@@ -3127,6 +3127,7 @@ name = "quoin-modules"
 version = "0.29.4"
 dependencies = [
  "gix",
+ "ix-trace-rs",
  "quire-fixtures",
  "quoin-semantic",
  "schemars",
@@ -3201,6 +3202,7 @@ dependencies = [
 name = "quoin-validators"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "regex",
  "schemars",
  "serde",
@@ -3221,6 +3223,7 @@ dependencies = [
 name = "quoin-yaml"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "saphyr",
  "serde_json",
  "thiserror",

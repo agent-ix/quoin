@@ -14,6 +14,7 @@
 //! quoin does not own a second syn-based Rust source auditor; when this one
 //! does not fit, the answer is a ticket in agent-ix/engineering-assurance.
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use engineering_assurance::source_audit::{
@@ -50,8 +51,8 @@ fn library_sources(dir: &Path, out: &mut Vec<PathBuf>) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Trace: FR-096
 /// Provenance: quoin#373
+#[trace("FR-096")]
 #[test]
 fn tc_373_the_library_half_names_no_host_capability() {
     let root = crate_root();

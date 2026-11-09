@@ -19,6 +19,7 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
+ix-trace-rs = { workspace = true }
 # The four auditor types this view joins on live in ONE crate (quoin#384,
 # quoin#385). Not `quoin-auditor`: a leaf view crate has no business linking an
 # 1,800-line engine to name a report.
@@ -40,6 +41,3 @@ quoin-store = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-
-[dev-dependencies]
-ix-trace-rs = { workspace = true }

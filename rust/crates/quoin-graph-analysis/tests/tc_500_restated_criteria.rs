@@ -38,6 +38,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use quoin_graph_analysis::model::binding::{BindingInput, parse_bindings_file};
@@ -220,8 +221,8 @@ fn as_json(analysis: &GraphAnalysis) -> Value {
 /// Restates `tests/graph-analysis.test.ts` "joins every reached requirement and
 /// isolates an unknown seed".
 ///
-/// Trace: FR-062-AC-4
 /// Provenance: quoin#500
+#[trace("FR-062-AC-4")]
 #[test]
 fn tc_500_040_a_reached_requirement_joins_and_an_unknown_seed_is_isolated() {
     let mut export = export_value();
@@ -307,8 +308,8 @@ fn tc_500_040_a_reached_requirement_joins_and_an_unknown_seed_is_isolated() {
 ///
 /// Restates "copies the existing auditor verdict apart from exposure".
 ///
-/// Trace: FR-062-AC-5, FR-062-CON-3
 /// Provenance: quoin#500
+#[trace("FR-062-AC-5", "FR-062-CON-3")]
 #[test]
 fn tc_500_041_the_auditor_verdict_is_copied_and_never_re_decided() {
     let finding = json!({
@@ -366,8 +367,8 @@ fn tc_500_041_the_auditor_verdict_is_copied_and_never_re_decided() {
 ///
 /// Restates "preserves accepted premises across every view".
 ///
-/// Trace: FR-062-AC-8
 /// Provenance: quoin#500
+#[trace("FR-062-AC-8")]
 #[test]
 fn tc_500_044_every_view_carries_the_accepted_premises() {
     let value = plain(&[binding("FR-001-AC-1", "unit")]);
@@ -395,8 +396,8 @@ fn tc_500_044_every_view_carries_the_accepted_premises() {
 /// Restates "rejects invalid premises/audit identity and distinguishes
 /// unavailable bindings".
 ///
-/// Trace: FR-062-AC-9
 /// Provenance: quoin#500
+#[trace("FR-062-AC-9")]
 #[test]
 fn tc_500_045_bad_inputs_fail_closed_and_unavailable_is_not_zero() {
     assert!(parse_accepted_premises("not json").is_err());
@@ -501,8 +502,8 @@ fn tc_500_045_bad_inputs_fail_closed_and_unavailable_is_not_zero() {
 ///
 /// Restates "renders equivalent permutations as identical canonical JSON".
 ///
-/// Trace: FR-062-AC-10
 /// Provenance: quoin#500
+#[trace("FR-062-AC-10")]
 #[test]
 fn tc_500_046_equivalent_permutations_render_identical_bytes() {
     let bindings = vec![binding("FR-002-AC-1", "z"), binding("FR-001-AC-1", "a")];
@@ -547,8 +548,8 @@ fn tc_500_046_equivalent_permutations_render_identical_bytes() {
 /// canonical on the way in, which is a fact about the contracts and not about
 /// the renderer.
 ///
-/// Trace: FR-062-AC-10
 /// Provenance: quoin#500
+#[trace("FR-062-AC-10")]
 #[test]
 fn tc_500_049_a_permuted_premise_set_and_audit_parse_to_one_value() {
     let two_modules = |reverse: bool| {
@@ -633,8 +634,8 @@ fn tc_500_049_a_permuted_premise_set_and_audit_parse_to_one_value() {
 /// second graph outside every view". The COMMAND half of that criterion stays
 /// on the TypeScript side, where the commands still live.
 ///
-/// Trace: FR-062-AC-11, FR-062-CON-1, FR-062-CON-4
 /// Provenance: quoin#500
+#[trace("FR-062-AC-11", "FR-062-CON-1", "FR-062-CON-4")]
 #[test]
 fn tc_500_047_the_analysis_half_reaches_nothing_but_its_one_reader() {
     /// The one module permitted to name the filesystem, and why.
@@ -698,8 +699,8 @@ fn tc_500_047_the_analysis_half_reaches_nothing_but_its_one_reader() {
 ///
 /// Restates "emits structural facts without scores or threshold labels".
 ///
-/// Trace: FR-062-AC-12, FR-062-CON-2
 /// Provenance: quoin#500
+#[trace("FR-062-AC-12", "FR-062-CON-2")]
 #[test]
 fn tc_500_048_the_views_carry_no_score_or_threshold() {
     let rendered =

@@ -23,6 +23,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -160,8 +161,8 @@ fn scratch() -> (tempfile::TempDir, PathBuf) {
 /// The first install is the control: without it a gate that refused every
 /// install would satisfy the refusal.
 ///
-/// Trace: FR-070-AC-6
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-6")]
 #[test]
 fn tc_452_660_a_second_module_claiming_an_installed_package_is_refused_naming_both() {
     let (dir, home) = scratch();
@@ -178,8 +179,8 @@ fn tc_452_660_a_second_module_claiming_an_installed_package_is_refused_naming_bo
 
 /// A re-install refused by the contract restores the version that was there.
 ///
-/// Trace: FR-070-AC-3
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-3")]
 #[test]
 fn tc_452_661_a_rejected_reinstall_restores_the_installed_version() {
     let (dir, home) = scratch();
@@ -208,8 +209,8 @@ fn tc_452_661_a_rejected_reinstall_restores_the_installed_version() {
 
 /// Installing a semantic module writes the derived package manifest beside it.
 ///
-/// Trace: FR-075-AC-1
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-075-AC-1")]
 #[test]
 fn tc_452_662_installing_writes_the_derived_manifest() {
     let (dir, home) = scratch();
@@ -234,8 +235,8 @@ fn tc_452_662_installing_writes_the_derived_manifest() {
 /// `legacy_forms: error` without a usable sweep report refuses the install and
 /// leaves nothing behind.
 ///
-/// Trace: FR-074-AC-3
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-074-AC-3")]
 #[test]
 fn tc_452_663_legacy_forms_error_without_a_sweep_report_refuses_the_install() {
     let (dir, home) = scratch();

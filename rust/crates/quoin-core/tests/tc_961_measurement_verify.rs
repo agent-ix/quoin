@@ -21,6 +21,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
@@ -83,8 +84,8 @@ fn verify(repo: &Path, claimed: Option<&str>) -> (i32, Value, String) {
     (result.status, payload, result.stderr)
 }
 
-/// Trace: FR-108-AC-2, FR-108-AC-4, FR-108-AC-7
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-2", "FR-108-AC-4", "FR-108-AC-7")]
 #[test]
 fn tc_961_018_record_verify_accepts_then_a_tampered_observation_is_rejected() {
     let repo = repository();
@@ -140,8 +141,8 @@ fn tc_961_018_record_verify_accepts_then_a_tampered_observation_is_rejected() {
     assert_eq!(diagnostics[0]["context"]["verdict"], "reject");
 }
 
-/// Trace: FR-108-AC-7
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-7")]
 #[test]
 fn tc_961_019_an_unknown_plan_or_claim_is_refused_without_a_verdict() {
     let repo = repository();
@@ -167,8 +168,8 @@ fn tc_961_019_an_unknown_plan_or_claim_is_refused_without_a_verdict() {
     assert_eq!(diagnostics[0]["code"], "CORE_INCONCLUSIVE");
 }
 
-/// Trace: FR-108-AC-2, FR-108-AC-7
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-2", "FR-108-AC-7")]
 #[test]
 fn tc_961_029_a_collection_filed_under_another_id_is_refused() {
     let repo = repository();
