@@ -17,7 +17,7 @@ use quoin_jsonschema::MeasurementSchema;
 use serde_json::Value;
 
 /// Both vendored documents parse, and the census is not measuring nothing.
-#[trace("FR-100-AC-4", "TC-1636")]
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_470_every_vendored_schema_parses() {
     for schema in MeasurementSchema::ALL {

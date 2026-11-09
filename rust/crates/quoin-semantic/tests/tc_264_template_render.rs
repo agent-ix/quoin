@@ -310,7 +310,7 @@ fn tc_264_008_a_target_outside_the_registry_aborts_naming_it() {
 /// The target list the pre-generation hook validates against is the
 /// filament-core-data registry Quoin reads (`target` plus
 /// `representationFormat`), not a stale copy of it.
-#[trace("FR-076-AC-8", "TC-1407")]
+#[trace("FR-076-AC-8")]
 #[test]
 fn tc_264_009_the_hooks_target_registry_equals_the_published_registry() {
     let common: Value = serde_json::from_str(
@@ -353,7 +353,7 @@ fn tc_264_010_no_variant_carries_an_npmrc() {
 
 /// A declared target with no emitter is recorded as declared-not-emitted in the
 /// README and in `semantic.targets`, and the two agree.
-#[trace("FR-076-AC-10", "TC-1451")]
+#[trace("FR-076-AC-10")]
 #[test]
 fn tc_264_011_declared_not_emitted_targets_agree_between_readme_and_manifest() {
     let r = render(
@@ -637,7 +637,7 @@ fn tc_264_034_the_catalog_document_names_the_catalog_file_and_tracking_project()
 }
 
 #[trace("FR-082-AC-2")]
-#[trace("FR-082-AC-5", "TC-1440", "TC-1443")]
+#[trace("FR-082-AC-5", "TC-1443")]
 #[test]
 fn tc_264_035_the_governance_tree_has_its_folders_and_no_hand_kept_matrix() {
     for (kind, r) in all_variants() {
@@ -768,7 +768,7 @@ fn conformance(variant: &str, kind: &str, root: &Path, package: &str) -> Vec<Fin
 }
 
 #[trace("FR-083-AC-1")]
-#[trace("FR-081-AC-4", "TC-1436", "TC-1444")]
+#[trace("FR-081-AC-4", "TC-1444")]
 #[test]
 fn tc_264_040_every_variant_renders_and_conforms() {
     let mut failures = Vec::new();
@@ -859,7 +859,7 @@ fn tc_264_043_a_missing_surface_fails_naming_it() {
     }
 }
 
-#[trace("FR-083-CON-2", "TC-1447")]
+#[trace("FR-083-CON-2")]
 #[test]
 fn tc_264_044_the_conformance_contract_is_a_declared_file_with_exactly_these_blocks() {
     let contract = contract();
@@ -938,7 +938,7 @@ fn spec_files(r: &Render) -> Vec<(String, String)> {
         .collect()
 }
 
-#[trace("FR-082-AC-3", "TC-1441")]
+#[trace("FR-082-AC-3")]
 #[test]
 fn tc_264_052_no_verification_cell_carries_a_test_case_id() {
     let tc = Regex::new(r"\bTC-[A-Z]*-?\d+").unwrap();
@@ -954,7 +954,7 @@ fn tc_264_052_no_verification_cell_carries_a_test_case_id() {
     }
 }
 
-#[trace("FR-082-AC-4", "TC-1442")]
+#[trace("FR-082-AC-4")]
 #[test]
 fn tc_264_053_every_rendered_test_carries_a_trace_tag_naming_an_existing_criterion() {
     let tag = Regex::new(r#"pytest\.mark\.trace\("([^"]+)"\)"#).unwrap();

@@ -92,7 +92,7 @@ fn tc_452_630_the_derived_package_manifest_validates_and_carries_the_declaration
 /// and in the profile alike.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-075-AC-1", "TC-1372")]
+#[trace("FR-075-AC-1")]
 #[test]
 fn tc_452_631_declared_mappings_become_sorted_identities_at_the_root_and_the_profile() {
     let validators = validators();

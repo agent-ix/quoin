@@ -34,7 +34,7 @@ use serde_json::{Value, json};
 
 /// The published relationship fixture keeps both ISO composition verbs
 /// marked composite and gives their inverse labels unique owners.
-#[trace("FR-104-AC-1", "TC-1717")]
+#[trace("FR-104-AC-1")]
 #[test]
 fn tc_104_001_relationship_fixture_preserves_unique_composite_inverses() {
     let fixture = mapping_json("relationships.expected.json");
@@ -150,7 +150,7 @@ fn tc_452_651_the_fence_fixture_declares_the_tables_rows_and_classifies_as_the_f
 /// the classifier carries no expression parser or evaluator.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-071-CON-1", "TC-1351")]
+#[trace("FR-071-CON-1")]
 #[test]
 fn tc_452_652_the_fence_subset_is_declarations_only_and_nothing_evaluates_them() {
     let fence = mapping_fixture("config-version.fence.md");

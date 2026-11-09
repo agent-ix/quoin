@@ -170,7 +170,7 @@ fn tc_452_613_an_export_must_name_a_declared_type() {
 /// internal object types.
 ///
 /// Provenance: quoin#537
-#[trace("FR-070-AC-4", "TC-1339")]
+#[trace("FR-070-AC-4")]
 #[test]
 fn tc_537_001_an_export_may_name_an_artifact_type_with_a_pinned_schema() {
     let validators = validators();
