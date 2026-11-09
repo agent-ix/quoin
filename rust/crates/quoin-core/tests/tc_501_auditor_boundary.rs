@@ -101,7 +101,7 @@ fn tc_501_600_audit_reports_an_unbound_obligation_through_the_binary() {
 /// `auditor.advise` answers one row per obligation, in the order they arrived.
 ///
 /// Provenance: agent-ix/quoin#501
-#[trace("FR-096-AC-1", "FR-054")]
+#[trace("FR-096-AC-1", "FR-031-AC-10")]
 #[test]
 fn tc_501_602_advise_answers_one_row_per_obligation_through_the_binary() {
     let request = json!({
@@ -130,7 +130,7 @@ fn tc_501_602_advise_answers_one_row_per_obligation_through_the_binary() {
 /// census (agent-ix/quoin#128) depends on are named, not the whole set.
 ///
 /// Provenance: agent-ix/quoin#128, agent-ix/quoin#501
-#[trace("FR-096-AC-1", "FR-054")]
+#[trace("FR-096-AC-1", "FR-031-AC-12")]
 #[test]
 fn tc_501_603_vocabulary_states_what_the_fact_set_can_mint() {
     let payload = payload(&run("auditor.vocabulary", "{}"));

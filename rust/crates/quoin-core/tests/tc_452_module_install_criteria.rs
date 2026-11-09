@@ -210,7 +210,7 @@ fn tc_452_661_a_rejected_reinstall_restores_the_installed_version() {
 /// Installing a semantic module writes the derived package manifest beside it.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-075-AC-1", "TC-1372")]
+#[trace("FR-075-AC-1")]
 #[test]
 fn tc_452_662_installing_writes_the_derived_manifest() {
     let (dir, home) = scratch();
@@ -236,7 +236,7 @@ fn tc_452_662_installing_writes_the_derived_manifest() {
 /// leaves nothing behind.
 ///
 /// Provenance: agent-ix/quoin#452
-#[trace("FR-074-AC-3", "TC-1369")]
+#[trace("FR-074-AC-3")]
 #[test]
 fn tc_452_663_legacy_forms_error_without_a_sweep_report_refuses_the_install() {
     let (dir, home) = scratch();

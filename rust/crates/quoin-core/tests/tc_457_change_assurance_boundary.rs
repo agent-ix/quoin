@@ -244,7 +244,7 @@ fn retained(root: &Path) -> Vec<String> {
 /// answer `directory` and fail here.
 ///
 /// Provenance: agent-ix/quoin#457
-#[trace("FR-068-AC-1", "TC-1317")]
+#[trace("FR-068-AC-1")]
 #[test]
 fn tc_457_600_write_record_retains_a_record_under_its_identity() {
     let root = repo();
@@ -478,7 +478,7 @@ fn tc_457_606_recover_removes_only_interrupted_staging() {
 /// against its own inputs.
 ///
 /// Provenance: agent-ix/quoin#457
-#[trace("FR-068-AC-10", "FR-068-CON-4", "TC-1326")]
+#[trace("FR-068-AC-10", "FR-068-CON-4")]
 #[test]
 fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
     let mut runs = Vec::new();

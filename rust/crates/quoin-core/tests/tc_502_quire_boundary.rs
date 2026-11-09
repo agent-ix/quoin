@@ -123,7 +123,6 @@ fn tc_502_010_coverage_derives_the_obligations_the_repository_states() {
 /// map, keyed on the obligation id.
 ///
 /// Provenance: quoin#502
-#[trace("FR-052")]
 #[test]
 fn tc_502_011_properties_classifies_the_documents_under_spec() {
     // No `documents`: the empty list asks for the `spec/**/*.md` the retained

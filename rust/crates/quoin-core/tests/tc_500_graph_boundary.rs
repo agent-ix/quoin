@@ -188,7 +188,7 @@ fn tc_500_301_an_absent_relation_list_is_not_an_empty_one() {
 /// Both spellings come from one report: the markdown is the same view.
 ///
 /// Provenance: quoin#500
-#[trace("FR-062-AC-10", "TC-1258")]
+#[trace("FR-062-AC-10")]
 #[test]
 fn tc_500_302_the_markdown_spelling_is_the_same_view() {
     let result = run("graph.fan_out", &request(false).to_string());
