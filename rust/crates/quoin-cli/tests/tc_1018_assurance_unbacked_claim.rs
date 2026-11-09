@@ -79,7 +79,7 @@ fn write(root: &Path, relative: &str, bytes: &[u8]) -> PathBuf {
 /// nothing.
 ///
 /// Provenance: PLAT-966, PLAT-1018
-#[trace("FR-047-AC-8")]
+#[trace("FR-047-AC-8", "TC-1925")]
 #[test]
 fn tc_1018_a_claim_with_no_evidence_references_is_open_through_the_real_binary() {
     let root = repo_with_argument("argument-no-refs.md");
@@ -116,7 +116,7 @@ fn tc_1018_a_claim_with_no_evidence_references_is_open_through_the_real_binary()
 /// real binary — distinctly from citing nothing at all.
 ///
 /// Provenance: PLAT-966, PLAT-1018
-#[trace("FR-047-AC-8")]
+#[trace("FR-047-AC-8", "TC-1925")]
 #[test]
 fn tc_1018_a_claim_citing_an_unresolved_reference_is_open_through_the_real_binary() {
     let root = repo_with_argument("argument-unresolved-ref.md");

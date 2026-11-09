@@ -274,7 +274,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-025-AC-5")]
+    #[trace("FR-025-AC-5", "TC-087")]
     #[test]
     fn tc_381_003_org_name_refuses_blank() {
         assert_eq!(OrgName::parse("  acme ").expect("trims").as_str(), "acme");

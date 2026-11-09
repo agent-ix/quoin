@@ -12,7 +12,6 @@
 //! absent, because "nobody said" is a distinct outcome from any value quoin
 //! could pick (FR-025).
 
-use ix_trace_rs::implements;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_yaml_ng::Value as Yaml;
@@ -175,10 +174,9 @@ impl PluginConfigSchema for QuoinConfig {
     }
 }
 
-/// The `ixSchema` convention (ix-cli-core FR-014) as a value rather than a
+/// The `ixSchema` convention (the ix-cli-core convention) as a value rather than a
 /// named module export: what a host's init hook would read off a loaded plugin
 /// and hand to the schema registry.
-#[implements("FR-014")]
 #[derive(Debug, Clone)]
 pub struct IxSchema {
     /// The namespace.

@@ -156,10 +156,10 @@ fn intake_attestation(root: &Path) -> String {
 
 /// `quoin change-assurance receipt` with `--diff-path` and `--plan` reports
 /// `apparatus_touched` and refuses the receipt, through the real binary — the
-/// gap the constraint recorded until this ticket.
+/// gap the apparatus-touched constraint recorded until this ticket.
 ///
 /// Provenance: PLAT-997
-#[trace("FR-111-CON-3", "FR-111-AC-1", "TC-1889")]
+#[trace("FR-111-AC-1", "TC-1889")]
 #[test]
 fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
     let root = repo();

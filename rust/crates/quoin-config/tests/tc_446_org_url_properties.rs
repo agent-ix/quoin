@@ -60,7 +60,7 @@ fn origin_org(config: &str) -> Option<String> {
 const SEGMENTS: &[&str] = &["a", "agent-ix", "acme", "x9", "a-b-c", "abcdefghijkl"];
 
 /// Provenance: quoin#446, carried from the prior TypeScript property suite
-#[trace("FR-025-AC-9")]
+#[trace("FR-025-AC-9", "TC-091")]
 #[test]
 fn tc_446_050_a_remote_that_names_no_organization_yields_none() {
     // The four families `orgFromRemoteUrl` documented as carrying no org. A
@@ -83,7 +83,7 @@ fn tc_446_050_a_remote_that_names_no_organization_yields_none() {
 }
 
 /// Provenance: quoin#446, carried from the prior TypeScript property suite
-#[trace("FR-025-AC-10")]
+#[trace("FR-025-AC-10", "TC-092")]
 #[test]
 fn tc_446_051_a_nested_namespace_qualifies_by_the_segment_before_the_repository() {
     // Depths 2..=6, the range the original generated, in both url forms.
@@ -105,7 +105,7 @@ fn tc_446_051_a_nested_namespace_qualifies_by_the_segment_before_the_repository(
 }
 
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
-#[trace("FR-025-AC-2", "FR-025-AC-3")]
+#[trace("FR-025-AC-2", "FR-025-AC-3", "TC-084", "TC-085")]
 #[test]
 fn tc_446_052_both_url_forms_yield_the_owner_across_their_whole_matrix() {
     for owner in SEGMENTS {
@@ -162,7 +162,7 @@ fn casings(word: &str) -> Vec<String> {
 }
 
 /// Provenance: quoin#446, carried from tests/props/second-pass.prop.test.ts
-#[trace("FR-025-AC-11")]
+#[trace("FR-025-AC-11", "TC-093")]
 #[test]
 fn tc_446_053_the_section_name_matches_case_insensitively_and_the_remote_name_does_not() {
     // The asymmetry is git's own: a section name is case-insensitive, the
