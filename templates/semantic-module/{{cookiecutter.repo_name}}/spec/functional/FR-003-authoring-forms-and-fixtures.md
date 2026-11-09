@@ -4,7 +4,7 @@ title: "Demonstrate the authoring forms and exercise their refusals"
 type: FR
 relationships:
   - target: "ix://{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}/US-001"
-    type: "implements"
+    type: "satisfies"
 ---
 
 # FR-003: Demonstrate the authoring forms and exercise their refusals
