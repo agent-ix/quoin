@@ -118,7 +118,7 @@ pub struct Document {
     pub criteria: Vec<Criterion>,
 }
 
-/// A byte-offset span carrying its own text (engine-owned).
+/// A byte-offset span carrying its own text (quire-rs requirement 52).
 ///
 /// Offsets so a consumer can assert the decomposition partitions the
 /// statement; text because handing a UTF-16 consumer raw UTF-8 byte offsets is
@@ -279,7 +279,7 @@ impl From<quire_rs::Extraction> for Extraction {
     }
 }
 
-/// The obligation as nested on a criterion record (engine-owned).
+/// The obligation as nested on a criterion record (quire-rs requirement 53).
 ///
 /// Carries no `id`, `statement` or `document`: the criterion and its enclosing
 /// document object already have all three.
@@ -364,7 +364,7 @@ impl From<&quire_rs::AcClassification> for Criterion {
 /// The one glob quoin actually passes is `spec/**/*.md`, so this is that glob
 /// as a function rather than a pattern language. Sorted, because
 /// `documents[]` order is the payload's order and a walk order is not a
-/// contract (engine-owned).
+/// contract (quire-rs non-functional requirement 6).
 ///
 /// # Errors
 /// [`Error::DocumentRootMissing`] when `<scope>/spec` is absent, and

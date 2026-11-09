@@ -191,7 +191,7 @@ fn tc_164_the_normalized_entries_shape_is_accepted_with_no_adapter() {
     );
 }
 
-#[trace("FR-034-AC-6", "TC-170")]
+#[trace("FR-034-AC-6")]
 #[test]
 fn tc_170_cargo_audit_reads_the_database_size_as_the_rule_count() {
     let raw = r#"{
@@ -210,7 +210,7 @@ fn tc_170_cargo_audit_reads_the_database_size_as_the_rule_count() {
     assert_eq!(result.findings[1].severity.as_deref(), Some("unmaintained"));
 }
 
-#[trace("FR-036-AC-1", "TC-197")]
+#[trace("FR-036-AC-1")]
 #[test]
 fn tc_197_an_all_passing_audit_run_is_rules_that_ran_and_found_nothing() {
     let result = parse_audit_script("check_a: OK\ncheck_b: OK\ncheck_c: OK\n").unwrap();

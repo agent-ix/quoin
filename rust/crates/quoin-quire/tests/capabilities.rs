@@ -146,7 +146,7 @@ fn tc_379_111_a_scope_without_a_traceability_model_names_that_exactly() {
 /// The per-test relation behind the `JUnit` trace properties: the fixture's one
 /// tagged test comes back with its file, its name and its id, and the untagged
 /// row yields nothing.
-#[trace("FR-033-AC-15", "TC-2010")]
+#[trace("FR-033-AC-15")]
 #[test]
 fn tc_379_119_test_traces_names_each_tagged_test_and_its_id() {
     let (traces, _notices) = coverage::test_traces(&coverage::Request {

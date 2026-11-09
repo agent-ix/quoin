@@ -325,7 +325,7 @@ fn structured_parameters_mint_a_quantified_threshold() {
 
 /// A hyphenated compound is one token: a keyword that is a fragment of one
 /// mints nothing, while a pattern naming the whole compound still matches.
-#[trace("FR-031-AC-20", "TC-267")]
+#[trace("FR-031-AC-20")]
 #[test]
 fn a_hyphenated_compound_is_one_token() {
     assert!(!has(
@@ -446,7 +446,7 @@ fn uncatalogued_mismatch_and_inconclusive_are_three_states() {
 
 /// Diagnostics with no `value` (an engine predating the classification) degrade
 /// the advisor to two states; no such diagnostics at all is not degraded.
-#[trace("FR-031-AC-23", "TC-273", "TC-275")]
+#[trace("FR-031-AC-23")]
 #[test]
 fn a_valueless_diagnostic_degrades_and_silence_does_not() {
     use quoin_auditor::uncatalogued_authored_methods;

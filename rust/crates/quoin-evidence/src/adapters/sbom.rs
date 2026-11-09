@@ -195,7 +195,7 @@ mod tests {
     /// given a fabricated symbol that binds to nothing.
     ///
     /// Provenance: quoin#458
-    #[trace("FR-041-AC-1", "FR-041-AC-5", "FR-041-CON-4", "TC-231", "TC-235")]
+    #[trace("FR-041-AC-1", "FR-041-AC-5", "FR-041-CON-4", "TC-235")]
     #[test]
     fn tc_458_230_cyclonedx_prefers_purl_then_name_at_version_then_name() {
         let result = parse_sbom(
@@ -220,7 +220,7 @@ mod tests {
     /// depending on which format produced it.
     ///
     /// Provenance: quoin#458
-    #[trace("FR-041-AC-2", "TC-232")]
+    #[trace("FR-041-AC-2")]
     #[test]
     fn tc_458_231_spdx_reads_the_purl_external_ref() {
         let result = parse_sbom(

@@ -5,7 +5,7 @@
 //!
 //! Trace: quoin#383-AC-3 — execution is unrepresentable in the auditor's
 //! inputs, not merely unused by its code.
-//! Trace: FR-032-CON-2 — the auditor reads no clock, walks no filesystem and
+//! The auditor reads no clock, walks no filesystem and
 //! spawns no subprocess. Carried over from `tests/arch-boundaries.test.ts`,
 //! deleted with `src/auditor/` at cutover (quoin#501); the Rust form is the
 //! stronger one, since an impure input cannot be `Inert` at all.
@@ -43,6 +43,7 @@
 
 use std::path::{Path, PathBuf};
 
+use ix_trace_rs::trace;
 use quoin_auditor::advise::ObligationFacts;
 use quoin_auditor::audit::AuditInput;
 use quoin_auditor::catalog::MethodCatalog;
@@ -54,6 +55,7 @@ use quoin_auditor::inert::Inert;
 /// `inert!` entry fails to compile here as well as in `src/inert.rs`.
 fn assert_inert<T: Inert>() {}
 
+#[trace("FR-032-CON-2")]
 #[test]
 fn tc_383_040_every_auditor_input_is_inert() {
     assert_inert::<AuditInput>();
@@ -100,6 +102,7 @@ fn sources() -> Vec<(String, String)> {
     found
 }
 
+#[trace("FR-032-CON-2")]
 #[test]
 fn tc_383_041_the_auditor_and_the_advisor_name_nothing_that_reaches_the_world() {
     let sources = sources();
@@ -127,6 +130,7 @@ fn tc_383_041_the_auditor_and_the_advisor_name_nothing_that_reaches_the_world() 
     }
 }
 
+#[trace("FR-032-CON-2")]
 #[test]
 fn tc_383_042_the_inert_census_still_names_every_input() {
     // `src/inert.rs` carries the `inert!` list and a `const _` that forces each

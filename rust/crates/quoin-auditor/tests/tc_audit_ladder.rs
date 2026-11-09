@@ -327,7 +327,7 @@ fn an_undeclared_method_is_reported_as_unknown() {
 /// The catalog is merged from exactly the module roots supplied: an ambient
 /// module cannot extend an explicit set, and the supplied order decides which
 /// module wins a colliding id.
-#[trace("FR-032-AC-12", "TC-148")]
+#[trace("FR-032-AC-12")]
 #[test]
 fn an_explicit_module_set_supplies_the_catalog_and_ambient_modules_cannot_extend_it() {
     let manifest = |name: &str, id: &str| {
@@ -356,7 +356,7 @@ fn an_explicit_module_set_supplies_the_catalog_and_ambient_modules_cannot_extend
 
 /// `unknown-method` is evaluated before the binding guard: an unbound
 /// obligation with an uncatalogued method is both undischarged and unknown.
-#[trace("FR-032-AC-14", "TC-264", "TC-265")]
+#[trace("FR-032-AC-14", "TC-264")]
 #[test]
 fn unknown_method_fires_whatever_the_evidence_state() {
     let mut audited = input(
@@ -383,17 +383,7 @@ fn injection(suite: &str, symbol: &str, injects: &[&str]) -> MockInjection {
 /// An obligation discharged only by tests injecting a stand-in for its own
 /// subject is `mocked-confirmation` at medium, with the locus; one real suite
 /// alongside a mocked one is ordinary test design.
-#[trace(
-    "FR-032-AC-15",
-    "TC-936",
-    "TC-937",
-    "TC-938",
-    "TC-939",
-    "TC-940",
-    "TC-1065",
-    "TC-1075",
-    "TC-1076"
-)]
+#[trace("FR-032-AC-15", "TC-936", "TC-937", "TC-938")]
 #[test]
 fn only_mocked_bindings_make_a_mocked_confirmation() {
     let statement = "the parser SHALL reject malformed input";

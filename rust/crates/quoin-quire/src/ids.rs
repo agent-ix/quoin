@@ -153,7 +153,7 @@ impl std::fmt::Display for DocumentPath {
     }
 }
 
-/// The exact identity of a module-supplied clause set (engine-owned).
+/// The exact identity of a module-supplied clause set (quire-rs requirement 67).
 ///
 /// Three `String` arguments in a row is precisely the call site this type
 /// exists to make un-swappable.
