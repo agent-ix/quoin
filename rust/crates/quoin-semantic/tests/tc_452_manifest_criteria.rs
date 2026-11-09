@@ -90,29 +90,6 @@ fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
     assert_eq!(block.sweep_report, None);
 }
 
-/// A manifest that still declares the retired `semantic_core` loads: the key is
-/// neither required nor checked, whatever its value (PLAT-1221).
-#[trace("FR-070-AC-2", "TC-1337")]
-#[test]
-fn tc_452_611b_a_retired_semantic_core_declaration_is_ignored() {
-    let validators = validators();
-    let scratch = Scratch::new();
-    for (name, value) in [("valid", json!("0.0.0")), ("malformed", json!(7))] {
-        let root = scratch.module_copy(name, |manifest, _| {
-            manifest["semantic"] = json!({
-                "contract_version": "1.0.0",
-                "semantic_core": value,
-                "package": "agent-ix/spec-objects-fixture",
-            });
-        });
-        assert_eq!(errors(&root, &validators), Vec::<String>::new(), "{name}");
-        assert_eq!(codes(&root, &validators), Vec::<String>::new(), "{name}");
-        let block = read(&root, &validators).module.expect("a module").block;
-        assert_eq!(block.contract_version.as_str(), "1.0.0", "{name}");
-        assert_eq!(block.package.as_str(), "agent-ix/spec-objects-fixture");
-    }
-}
-
 /// An unadmitted key is refused BY NAME, and every admitted key is accepted.
 ///
 /// Both halves, because either alone is satisfiable by a broken reader: a
@@ -133,6 +110,16 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
         codes(&bad, &validators).contains(&"error:semantic.unknown-key@semantic.foo".to_owned()),
         "{:?}",
         codes(&bad, &validators)
+    );
+
+    let retired = scratch.module_copy("retired-key", |manifest, _| {
+        manifest["semantic"]["semantic_core"] = json!("0.0.0");
+    });
+    assert!(
+        codes(&retired, &validators)
+            .contains(&"error:semantic.unknown-key@semantic.semantic_core".to_owned()),
+        "{:?}",
+        codes(&retired, &validators)
     );
 
     let admitted = json!({
