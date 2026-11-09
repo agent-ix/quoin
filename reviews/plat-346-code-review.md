@@ -74,3 +74,10 @@ scope:
   role: context_only
   excerpt: "type: \"satisfied_by\""
 ```
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | 4072c8d9 points the verb list at spec-artifacts-iso FR-004 `edge_types` and adds a Traceability & Lineage group with `satisfies`/`satisfied_by`, `traces_to`, `derives_from`, `constrains`, `verifies`, `exercises`, `supersedes`; `implements` now states it is not lineage. Every listed verb, and `relates_to` (replacing the non-existent `related_to`), was checked against spec-artifacts-iso origin/main `spec_artifacts_iso/manifest.yaml`; `satisfies` is the declared inverse of `satisfied_by` |
+| FND-002 | fixed | 4072c8d9 changes both scoping examples to "the FR that satisfies US-003" and "the requirement that satisfies it" |
