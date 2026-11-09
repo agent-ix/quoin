@@ -10,7 +10,6 @@
 //! `error` read as healthy on a red build, and the upcoming computed
 //! matrix maps `healthy` to "bound by a passing run" (PLAT-1086).
 //!
-//! Trace: FR-032-AC-17
 //! Provenance: PLAT-1086
 
 #![allow(
@@ -21,6 +20,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_auditor::audit::{AuditInput, audit};
 use quoin_evidence::ids::{ObligationId, SuiteId, SymbolId};
 use quoin_evidence::source::MemoryEvidence;
@@ -117,8 +117,7 @@ fn the_stale_finding<'a>(report: &'a AuditReport, obligation: &str) -> &'a Findi
 /// A pass-then-fail run pair: the criterion leaves `healthy` and a
 /// `stale-evidence` finding names the failing suite, and symbol at
 /// `high` severity.
-///
-/// Trace: FR-032-AC-17
+#[trace("FR-032-AC-17", "TC-1963")]
 #[test]
 fn tc_1963_a_pass_then_fail_run_raises_stale_evidence() {
     let obligation = an_obligation("FR-900-AC-1");
@@ -153,8 +152,7 @@ fn tc_1963_a_pass_then_fail_run_raises_stale_evidence() {
 }
 
 /// A pass-then-error run pair: `Error` is treated the same as `Fail`.
-///
-/// Trace: FR-032-AC-17
+#[trace("FR-032-AC-17", "TC-1963")]
 #[test]
 fn tc_1963_a_pass_then_error_run_raises_stale_evidence() {
     let obligation = an_obligation("FR-901-AC-1");
@@ -185,8 +183,7 @@ fn tc_1963_a_pass_then_error_run_raises_stale_evidence() {
 
 /// A pass-then-pass control: an obligation whose tagged test still passes
 /// stays healthy.
-///
-/// Trace: FR-032-AC-17
+#[trace("FR-032-AC-17", "TC-1963")]
 #[test]
 fn tc_1963_a_pass_then_pass_run_stays_healthy() {
     let obligation = an_obligation("FR-902-AC-1");
@@ -209,8 +206,7 @@ fn tc_1963_a_pass_then_pass_run_stays_healthy() {
 
 /// A fail on a DIFFERENT obligation's test, in the same run, must not spill
 /// over: this obligation's own bound symbol still passed.
-///
-/// Trace: FR-032-AC-17
+#[trace("FR-032-AC-17", "TC-1963")]
 #[test]
 fn tc_1963_a_different_obligations_failure_leaves_this_one_healthy() {
     let watched = an_obligation("FR-903-AC-1");
@@ -252,8 +248,7 @@ fn tc_1963_a_different_obligations_failure_leaves_this_one_healthy() {
 /// — the path production uses, not `Indexed::of`'s insertion order — with the
 /// newer one failing: the criterion is stale, proving the auditor reads the
 /// newest run, not whichever run sorts last in the input `Vec`.
-///
-/// Trace: FR-032-AC-17
+#[trace("FR-032-AC-17", "TC-1963")]
 #[test]
 fn tc_1963_two_runs_pass_then_newer_fail_flags_stale() {
     let obligation = an_obligation("FR-904-AC-1");
@@ -296,8 +291,7 @@ fn tc_1963_two_runs_pass_then_newer_fail_flags_stale() {
 /// The reciprocal: an older failing run superseded by a newer passing run of
 /// the same suite must stay healthy. Kills the "oldest run wins" mutant from
 /// the other side.
-///
-/// Trace: FR-032-AC-17
+#[trace("FR-032-AC-17", "TC-1963")]
 #[test]
 fn tc_1963_two_runs_fail_then_newer_pass_stays_healthy() {
     let obligation = an_obligation("FR-905-AC-1");
@@ -340,8 +334,7 @@ fn tc_1963_two_runs_fail_then_newer_pass_stays_healthy() {
 /// bypassing the store, so it pins the index's own resolution rather than
 /// the store's — a real caller could otherwise assemble bindings from a
 /// pre-`latest_runs` list and get this wrong silently.
-///
-/// Trace: FR-032-AC-17
+#[trace("FR-032-AC-17", "TC-1963")]
 #[test]
 fn tc_1963_the_index_keeps_the_last_run_supplied_for_a_suite() {
     let obligation = an_obligation("FR-907-AC-1");
@@ -377,8 +370,7 @@ fn tc_1963_the_index_keeps_the_last_run_supplied_for_a_suite() {
 /// The reciprocal: a failing run followed, in supply order, by a passing one
 /// for the same suite must stay healthy. Kills a mutant that made the index
 /// keep the FIRST run instead of the last.
-///
-/// Trace: FR-032-AC-17
+#[trace("FR-032-AC-17", "TC-1963")]
 #[test]
 fn tc_1963_the_index_keeps_the_last_run_supplied_for_a_suite_reciprocal() {
     let obligation = an_obligation("FR-908-AC-1");

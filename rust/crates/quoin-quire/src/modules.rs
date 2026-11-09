@@ -185,8 +185,9 @@ pub(crate) fn collect(
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_040_notice_kinds_have_distinct_stable_tokens() {
         let kinds = [
@@ -200,7 +201,7 @@ mod tests {
         assert_eq!(tokens.len(), kinds.len());
     }
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_041_a_closed_set_naming_nothing_loadable_is_refused_by_name() {
         let scope = tempdir();

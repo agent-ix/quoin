@@ -7,11 +7,12 @@
 //! the reader still required would refuse every genuine report. This builds a
 //! clause set, evaluates it with `quire_rs`, wraps it exactly as
 //! `quire clauses evaluate --format json` does, and reads the bytes back.
+use ix_trace_rs::trace;
 use quoin_quire::ClauseBindingPayload;
 use quoin_quire_types::{ClauseBindingOutcome, ClauseBindingReport};
 
-/// Trace: FR-046-AC-1
 /// Provenance: quoin#502
+#[trace("FR-046-AC-1")]
 #[test]
 fn tc_502_030_an_engine_produced_binding_report_reads_through_quoin()
 -> Result<(), Box<dyn std::error::Error>> {

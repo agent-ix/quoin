@@ -162,8 +162,9 @@ pub fn test_traces(request: &Request) -> Result<(Vec<TestTrace>, Vec<Notice>)> {
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-099
+    #[trace("FR-099")]
     #[test]
     fn tc_379_050_a_scope_without_a_document_root_is_named_not_walked() {
         let scratch = crate::testing::Scratch::new("coverage-no-spec");

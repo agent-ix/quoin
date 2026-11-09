@@ -40,7 +40,7 @@ use crate::catalog::{MethodCatalog, VerificationMethod};
 /// The four applicability axes this advisor can observe.
 ///
 /// A rule naming any other axis is **skipped, not failed**: the engine
-/// deliberately leaves the axis set open (FR-054-CON-2), so a module may
+/// deliberately leaves the axis set open (the engine's axis-set contract), so a module may
 /// declare rules this advisor has no facts for — that is a gap in what can be
 /// observed, not a reason to reject the method.
 struct ObservedAxes {

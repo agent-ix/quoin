@@ -16,6 +16,8 @@
 //! a plain type or length failure is zod's own prose and is not byte-copied
 //! here; a consumer that matched on it was matching on a dependency's wording.
 
+use ix_trace_rs::implements;
+
 use crate::error::EvidenceError;
 use crate::types::{
     ProducerContext, TrustAssessment, TrustDecision, TrustDecisionKind, TrustStatus, TrustTrigger,
@@ -50,6 +52,7 @@ pub const REQUIRED_TRIGGERS: [TrustTrigger; 5] = [
 /// [`EvidenceError::InvalidRecord`] carrying every clause that failed, joined
 /// with `; ` — all of them, not the first, because a decision with three
 /// problems should take one round trip to fix and not three.
+#[implements("FR-093")]
 pub fn validate_trust_decision(decision: &TrustDecision) -> Result<(), EvidenceError> {
     let mut clauses: Vec<String> = Vec::new();
 

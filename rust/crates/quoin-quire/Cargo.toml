@@ -45,4 +45,5 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+ix-trace-rs = { workspace = true }
 quoin-quire-types = { workspace = true }

@@ -129,7 +129,6 @@ pub struct RunRecord {
 mod tests {
     use super::{Outcome, RunEntry, RunRecord};
 
-    /// Trace: FR-030-AC-1, FR-030-AC-13
     #[test]
     fn run_reader_refuses_unmodeled_record_fields() {
         let text = r#"{"schemaVersion":1,"suite":"SUITE-001","tool":"runner 1","timestamp":"2026-08-17T00:00:00Z","entries":[],"retiredMember":true}"#;

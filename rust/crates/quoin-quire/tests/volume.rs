@@ -11,6 +11,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_quire::{CoveragePayload, ErrorCode, PayloadLimit, payload};
 
 /// The captured payload.
@@ -49,13 +50,12 @@ fn tc_379_100_the_incident_payload_is_read_whole() {
     assert_ne!(provenance.engine.len(), 0);
 }
 
-/// Trace: NFR-025
-///
 /// Round-trip, in the sense that matters for an evidence store: re-encoding
 /// the value and reading it again must yield the same value. NFR-025 makes
 /// stored bytes immutable across the port, so a reader that quietly drops a
 /// field would be unrecoverable — and a field dropped on the way in is
 /// invisible in a single read.
+#[trace("NFR-025")]
 #[test]
 fn tc_379_101_the_incident_payload_round_trips() {
     let first: CoveragePayload = payload::from_slice(

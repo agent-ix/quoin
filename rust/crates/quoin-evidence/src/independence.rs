@@ -10,6 +10,8 @@
 
 use std::collections::BTreeSet;
 
+use ix_trace_rs::implements;
+
 use crate::error::EvidenceError;
 use crate::ids::{ObligationId, ProfileId, SuiteId};
 use crate::types::{
@@ -24,6 +26,7 @@ use crate::types::{
 ///
 /// [`EvidenceError::InvalidRecord`] carrying every clause that failed, joined
 /// with `; `.
+#[implements("FR-094")]
 pub fn validate_independence_policy(policy: &IndependencePolicy) -> Result<(), EvidenceError> {
     let mut clauses: Vec<String> = Vec::new();
     if policy.schema_version != 1 {
@@ -85,6 +88,7 @@ pub fn validate_independence_policy(policy: &IndependencePolicy) -> Result<(), E
 ///
 /// [`EvidenceError::InvalidRecord`] when the lineage names nothing at all: an
 /// empty object claims to have recorded separation facts while recording none.
+#[implements("FR-094")]
 pub fn validate_evidence_lineage(lineage: &EvidenceLineage) -> Result<(), EvidenceError> {
     if lineage.is_empty() {
         return Err(EvidenceError::invalid(
