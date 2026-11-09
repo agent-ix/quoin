@@ -28,3 +28,9 @@ empty). The matrix row is consistent with the ACs. One low wording finding.
 | ID      | Severity | Summary | Refs |
 | ------- | -------- | ------- | ---- |
 | FND-001 | low | AC-17 says the item rows are "exactly the rows item_observations builds for the same items", but item_observations keeps input order while AC-19 orders rows by item_id; it should say the rows item_observations builds for the items in item_id order | FR-108-AC-17; FR-108-AC-19 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | ------- | ------ |
+| FND-001 | fixed | Round 1: AC-17 now reads "for the same items and metric, in item_id order (FR-108-AC-19)". |

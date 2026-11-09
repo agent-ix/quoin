@@ -45,3 +45,10 @@ base review instead (each new AC names a concrete, failing observable).
 | ------- | -------- | ------- | ---- |
 | FND-001 | high | TC-2013..TC-2020 are cited by FR-108-AC-15..AC-21 and the FR-108 matrix row but have no rows in spec/matrix.md's Test Case Summary; spec-ahead criteria elsewhere (TC-1656) carry a planned row, so these eight ids are undefined and TC-2020's offline method (cassette or factored mapping) is unstated | spec/matrix.md Test Case Summary; FR-108-AC-15..AC-21 |
 | FND-002 | high | FR-108-AC-21 says the written collection "is decided by quoin measurement verify on the governing plan with a recomputed constant-predictor baseline", and the section names MP-228 as that plan; MP-228 on main has no statistical_design (no estimator, no decision_rule, no constant-predictor baseline) and its metric jev.criterion_strength.gate is a three-bar gate, so verify returns inconclusive no_decision_rule; the PR neither amends MP-228 nor names a plan that carries such a rule | FR-108-AC-21; spec/assurance/MP-228-jev-criterion-strength-gate.md; quoin-measurement src/verify/mod.rs:139 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | ------- | ------ |
+| FND-001 | fixed | Round 1 (head 414d946f): spec/matrix.md Test Case Summary now carries planned (🚧) rows TC-2013..TC-2022, ids unused on main; TC-2020 is marked on-demand under live-api and TC-2022 gives the offline default-path test. |
+| FND-002 | fixed | Round 1: FR-108-AC-21 now limits the end-to-end verify claim to a plan whose statistical_design declares baseline: constant-predictor with estimator proportion and a decision_rule, and states MP-228 has none today so verify on it is inconclusive no_decision_rule (matches verify/mod.rs:139 on main). |
