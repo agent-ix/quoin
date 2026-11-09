@@ -1,6 +1,6 @@
 # Corpus measurement against the completed module contracts
 
-**Advisory. Report only.** No corpus repository was edited, no validator was weakened, and nothing was normalized. Findings feed the later corpus normalization campaign that PLAT-277 (Quoin#291) names; that campaign is not yet a ticket and this report does not create one. This report supersedes the 2026-09 measurement (`report.md` in this directory), which was produced by a measurement tool that no longer exists.
+**Advisory. Report only.** No corpus repository was edited, no validator was weakened, and nothing was normalized. Findings feed the later corpus normalization campaign that PLAT-277 (Quoin#291) names; that campaign is not yet a ticket and this report does not create one. This report replaces the 2026-09 measurement, which was produced by a measurement tool that no longer exists; that report and its machine-bound JSON files are deleted in the same change.
 
 Tools run, stated once: `quire 0.38.4 (engine 0.53.0)`, built from the current `quire-cli` main; the ten default modules from their current `main`, at manifest versions engineering-assurance 0.8.0, spec-artifacts-app 0.2.0, spec-artifacts-iso 0.3.0, spec-artifacts-process 0.2.1, spec-objects-architecture 0.5.0, spec-objects-business 0.9.0, spec-objects-enterprise 0.2.0, spec-objects-operational 0.3.0, spec-objects-safety 0.3.0, spec-objects-security 0.2.0. The modules require `quire ^0.52` and that engine was built from source because the internal PyPI is not reachable from this machine (HTTP 401); nothing in this run used a private registry.
 
@@ -12,12 +12,12 @@ That figure is not the result. It is dominated by the 9,863 documents typed by `
 
 | Weak partition | Documents | Pass rate | Why |
 |---|---|---|---|
-| Object-typed FRs, `spec-objects-architecture` | 292 | 3.4 % | data schema requires a member the module's own locator treats as optional (F1) |
-| Object-typed FRs, `spec-objects-operational` | 52 | 5.8 % | same (F1) |
-| `Standard` (`spec-artifacts-process`) | 41 | 4.9 % | schema requires `code`, which the locator never reads (F2) |
+| Documents composing an `object:` type, `spec-objects-architecture` | 292 | 3.4 % | data schema requires a member the module's own locator treats as optional (F1) |
+| Documents composing an `object:` type, `spec-objects-operational` | 52 | 5.8 % | same (F1) |
+| `Standard` (`spec-artifacts-process`) | 41 | 4.9 % | the inline data schema on `object_types.standard` requires `code`, which its own locator already reads from frontmatter (F2); the 39 failures are `type: Standard` documents carrying `object: standard` |
 | `TestMatrix` (`spec-artifacts-process`) | 250 | 22.8 % | `Coverage Status` header against the accepted `Status` contract |
-| Object-typed FRs, `spec-objects-business` | 452 | 59.1 % | `process` FRs carry Workflow diagrams where a Step table is required (F8), plus the F1 shape |
-| Documents typed with a value no module declares | 291 | 0.0 % | `type: log` (228) and legacy spellings |
+| Documents composing an `object:` type, `spec-objects-business` | 452 | 59.1 % | `process` FRs carry Workflow diagrams where a Step table is required (F8), plus the F1 shape |
+| Documents typed with a value no module declares | 291 | 0.0 % | `type: log` (228, retired artifact kind, stale corpus: F3) and legacy spellings |
 | Documents with no `type` | 162 | 0.0 % | no frontmatter `type` |
 
 ## What was measured
@@ -25,7 +25,46 @@ That figure is not the result. It is dominated by the 9,863 documents typed by `
 - **Population.** `spec/**/*.md` on the default branch of every non-archived `agent-ix` repository that has a `spec/` directory, read from fresh shallow clones on 2026-11-09. 328 repositories were listed; 283 contain at least one Markdown document under `spec/` (58 public, 225 private); 45 contain none and are unavailable as a population, not passes. `quire-research` was excluded by policy. Documents outside `spec/` (`plan/`, `reviews/`, `docs/`) are outside this population.
 - **Documents:** 13,131. Document `type` frontmatter is the only routing; a document with no `type` is validated as such and fails, it is not skipped.
 - **Method.** One `quire validate` per document with the ten module directories passed as `--module` (a closed module set; `IX_FILAMENT_MODULES_PATH` and the default install root are not consulted), `--scope` at the repository root, diagnostics as JSON. Pass means exit 0. This evaluates each module's frontmatter schema, locator assertions and the semantic data schemas, which are the completed contracts. Advisory grammar warnings never fail a document and are reported separately below.
-- **Reproduce.** Clone the repositories, then per document: `quire validate --module <each module dir> --scope <repo> --diagnostics-format json <doc>`. The per-document results are not committed: they name files in private repositories. Pass and fail counts here are the counts of that run.
+- **Reproduce.** Raw per-document results are not retained or committed: they name files in private repositories. Regenerate them with the steps in "Reproduction recipe" below; the class partition is a deterministic function of them.
+
+## Reproduction recipe
+
+Enumeration (population):
+
+```bash
+gh repo list agent-ix --limit 500 --no-archived --json name -q '.[].name' | grep -vx quire-research > repos.txt
+# per repo: shallow, blobless, spec/ only, default branch
+git clone -q --depth 1 --filter=blob:none --sparse --no-tags https://github.com/agent-ix/$r.git $r
+git -C $r sparse-checkout set spec
+# documents: every *.md under $r/spec (os.walk, symlinked directories not followed)
+```
+
+Verdict per document (exit 0 = pass, exit 3 = fail; record the JSON diagnostics from stderr; keep `ValidationError` and `ValidationWarning` entries, drop the module-load diagnostics that repeat on every run):
+
+```bash
+quire validate --module <dir of each of the ten modules> --scope <repo root> \
+  --diagnostics-format json <repo>/<doc>      # cwd = repo root
+```
+
+`type` and `object` are read from the document's own frontmatter (`type:` and `object:` lines); the owning module is the module whose manifest declares that name under `artifact_types`, then `archetypes`, then `object_types`.
+
+Classification, applied to each `ValidationError` by message (first match wins):
+
+| Diagnostic | Class |
+|---|---|
+| `unknown type 'X'`, X one of user-story, functional-requirement, non-functional-requirement, stakeholder-requirement, test-matrix, review, MasterRequirements | malformed-document (non-canonical spelling) |
+| `unknown type 'log'` | malformed-document (stale: archetype retired, F3) |
+| `unknown type` for any other value | legitimate-undeclared-value |
+| `required 'type' is missing` | malformed-document |
+| `table columns ... do not match asserted columns` | malformed-document |
+| `semantic.record-invalid ... is a required property` | contract-defect |
+| `semantic.feature-not-extractable` | unsupported-representation |
+| `semantic.invalid-model-cell` | legitimate-undeclared-value |
+| `required ... (table_row(under Workflow))` on `object: process` | unsupported-representation |
+| any other `required '...' ... is missing`, or a required frontmatter property absent, or an empty/absent required heading | missing-structure |
+| section pattern, row-width, enum or other cell-pattern mismatch, `ac:non-singular` | malformed-document (a `Status` cell outside the declared pattern, and a frontmatter enum value outside its set, are legitimate-undeclared-value) |
+
+A failing document's primary class is the first present in this order: contract-defect, unsupported-representation, legitimate-undeclared-value, missing-structure, malformed-document. Repository visibility comes from `gh repo list --json name,visibility`.
 
 ## Pass rates by module (module owning the document `type`)
 
@@ -44,7 +83,7 @@ That figure is not the result. It is dominated by the 9,863 documents typed by `
 
 ## Pass rates by composed object module
 
-Documents of type `FR` may carry `object: <type>`, which composes a second module's contract onto the ISO one. The by-module table above credits such a document to `spec-artifacts-iso` and so hides this partition; it is shown separately.
+Documents may carry `object: <type>`, which composes a second module's contract onto the document's own type: mostly `type: FR` (composing onto the ISO contract), and the 39 `type: Standard` documents carrying `object: standard`. The by-module table above credits an FR to `spec-artifacts-iso` and so hides this partition; it is shown separately. The 39 Standards are also counted in the `Standard` by-type row.
 
 | Partition | Documents | Pass | Fail | Pass rate |
 |---|---|---|---|---|
@@ -214,9 +253,9 @@ Ten weakest private repositories (anonymized, ordered by pass rate then size):
 |---|---|---|---|
 | contract-defect | 392 | 392 | 392 |
 | unsupported-representation | 161 | 161 | 309 |
-| legitimate-undeclared-value | 243 | 243 | 263 |
+| legitimate-undeclared-value | 15 | 15 | 35 |
 | missing-structure | 142 | 172 | 323 |
-| malformed-document | 356 | 377 | 563 |
+| malformed-document | 584 | 605 | 791 |
 | stale-module | 0 | 0 | 0 |
 | tool-defect | 0 | 0 | 0 |
 | **unclassified** | 0 | 0 | 0 |
@@ -232,7 +271,7 @@ Each failing diagnostic maps to exactly one row, so every failure has an owner a
 | contract-defect | record-invalid: `operations` required (api_endpoint) | 124 | 18 | spec-objects-architecture | Contract fix (finding F1/F2); corpus untouched |
 | contract-defect | record-invalid: `fields` required (ui_component) | 78 | 15 | spec-objects-architecture | Contract fix (finding F1/F2); corpus untouched |
 | contract-defect | record-invalid: `fields` required (configuration) | 47 | 26 | spec-objects-operational | Contract fix (finding F1/F2); corpus untouched |
-| contract-defect | record-invalid: `code` required (standard) | 39 | 1 | spec-artifacts-process | Contract fix (finding F1/F2); corpus untouched |
+| contract-defect | record-invalid: `code` required (standard) | 39 | 1 | spec-artifacts-process | Contract fix in progress (finding F2, spec-artifacts-process PR #134); corpus untouched |
 | contract-defect | record-invalid: `fields` required (data_schema) | 36 | 4 | spec-objects-architecture | Contract fix (finding F1/F2); corpus untouched |
 | contract-defect | record-invalid: `operations` required (action) | 18 | 4 | spec-objects-architecture | Contract fix (finding F1/F2); corpus untouched |
 | contract-defect | record-invalid: `featureOrder` required (interface) | 14 | 7 | spec-objects-architecture | Contract fix (finding F1/F2); corpus untouched |
@@ -251,7 +290,6 @@ Each failing diagnostic maps to exactly one row, so every failure has an owner a
 | unsupported-representation | feature-not-extractable: members (aggregate_root) | 5 | 3 | spec-objects-business | Module owner decides if the representation is admitted (finding F8); else deferred corpus fix |
 | unsupported-representation | feature-not-extractable: relationships (nested_entity) | 4 | 1 | spec-objects-business | Module owner decides if the representation is admitted (finding F8); else deferred corpus fix |
 | unsupported-representation | feature-not-extractable: states (state_machine) | 3 | 3 | spec-objects-business | Module owner decides if the representation is admitted (finding F8); else deferred corpus fix |
-| legitimate-undeclared-value | unknown type `log` | 228 | 216 | spec-artifacts-iso | Contract fix (finding F3) |
 | legitimate-undeclared-value | 6 one-off or two-document rules (each at most 2 documents) | 8 | - | owning module (see findings) | Module owner decides declare-or-retype (finding F7); else deferred corpus fix |
 | legitimate-undeclared-value | unknown type `discovery` | 7 | 1 | owning module (see findings) | Module owner decides declare-or-retype (finding F7); else deferred corpus fix |
 | missing-structure | missing structure (TestMatrix) | 89 | 87 | owning repository | Deferred to the later corpus normalization campaign |
@@ -264,6 +302,7 @@ Each failing diagnostic maps to exactly one row, so every failure has an owner a
 | missing-structure | missing structure (FR/aggregate_root) | 5 | 3 | owning repository | Deferred to the later corpus normalization campaign |
 | missing-structure | missing structure (StR) | 4 | 2 | owning repository | Deferred to the later corpus normalization campaign |
 | missing-structure | missing structure (NFR) | 3 | 2 | owning repository | Deferred to the later corpus normalization campaign |
+| malformed-document | stale `type: log` document (archetype retired, PLAT-1156) | 228 | 216 | owning repository | Deferred corpus cleanup: delete the file; no archetype is re-declared (finding F3) |
 | malformed-document | frontmatter has no type | 162 | 33 | owning repository | Deferred to the later corpus normalization campaign |
 | malformed-document | TestMatrix header `Coverage Status` vs asserted `Status` | 111 | 103 | owning repository | Deferred to the later corpus normalization campaign |
 | malformed-document | table row width differs from header | 32 | 17 | owning repository | Deferred to the later corpus normalization campaign |
@@ -292,15 +331,15 @@ Findings are listed, not applied: no module or validator was edited. "Cheap" mea
 | Id | Priority | Class | Module | Finding and evidence | Owner |
 |---|---|---|---|---|---|
 | F1 | P1 | contract defect | `spec-objects-architecture`, `spec-objects-business`, `spec-objects-operational` | A data schema marks `operations`, `fields`, `featureOrder` or `clauses` required while the same module's locator declares the matching section `required: false` or extracts nothing for it. A document that satisfies every mandatory locator still fails. Probe: a fully formed `process` FR (valid Workflow Step table, Description, ACs) fails only on `fields` required. 392 documents; 369 fail on this alone. Largest: `api_endpoint` `operations` 124, `ui_component` `fields` 78, `configuration` `fields` 47, `data_schema` `fields` 36. Decision needed: relax the schema, make the locator mandatory, or declare the mapping that feeds the member. Not cheap: it picks between three contracts. | Module owners; needs a human owner decision |
-| F2 | P1 | contract defect | `spec-artifacts-process` | `schemas/Standard.json` requires `code`; the Standard locator never reads it and the corpus carries `code:` in frontmatter. 39 of 41 `Standard` documents (all in one repository) fail. The manifest comment states every Standard document validates without the typed sections. Cheap: feed `code` from frontmatter or drop it from `required`. | spec-artifacts-process owner |
-| F3 | P1 | legitimate undeclared value | `spec-artifacts-iso` | `type: log` is declared by no module: 228 documents in 216 repositories (the OKF bundle update log, `spec/log.md`), against the declared sibling `index`. Cheap: declare a `log` archetype beside `index`. | spec-artifacts-iso owner |
-| F4 | P2 | contract defect (loader) | `spec-artifacts-process` | Every run reports `DuplicateArchetype` for ADR, Plan, Review, SpecReview and Standard contributed twice by this one module (first-wins), and `semantic.inline-data-schema` for `standard`. Non-fatal. Cheap: declare each once and use the `{ schema }` reference form. | spec-artifacts-process owner |
+| F2 | P1 | contract defect | `spec-artifacts-process` | The failing declaration is the inline `data_schema` on `object_types.standard` (not `schemas/Standard.json`, which accepts these documents: re-measured on a failing Standard, it fails `"code" is a required property`, and the same document with only its `object: standard` line removed passes). That inline schema requires `code` while its own locator already reads `code` from frontmatter (`required: true`). 39 of 41 `Standard` documents (all in one repository) fail. Fix is open as spec-artifacts-process PR #134, which drops the inline data schema. | spec-artifacts-process owner; contract fix in progress |
+| F3 | P2 | stale corpus | corpus repositories | `type: log` (228 documents in 216 repositories, `spec/log.md`) is undeclared on purpose: spec-artifacts-iso#59 (PLAT-1156) retired the `log` archetype and quoin#685 stopped skills creating `log.md`, because a hand-kept log is file and version tracking. Not a contract defect; no archetype is re-declared. Disposition: deferred corpus cleanup, delete the files, in the normalization campaign. | Each repository / normalization campaign |
+| F4 | P2 | contract defect (loader) | `spec-artifacts-process` | Every run reports `DuplicateArchetype` for ADR, Plan, Review, SpecReview and Standard, and `semantic.inline-data-schema` for `standard`. Cause: a naming collision between the manifest's `archetypes:` Filament rows and five `artifact_types:` entries of the same names. Non-fatal. Fix is in spec-artifacts-process PR #134 (archetype display names renamed; the same PR removes the inline schema). | spec-artifacts-process owner; contract fix in progress |
 | F5 | P2 | tool defect | `quire-rs` | `semantic.feature-not-extractable` says "the module manifest does not declare it" when the manifest does declare the feature through a locator and the document's section is in another form (a Workflow diagram). The message sends the reader to the wrong fix. 140 diagnostics on `process` alone. | quire-rs owner |
-| F6 | P1 | stale tool | `quire-cli` release lane | The `quire` installed on this machine (0.36.2, engine 0.50.2) cannot load the completed modules: a one-document probe reports `unknown type 'FR'` for a valid FR, so every typed document would fail. The modules require `quire ^0.52`. Only this probe was run with the installed CLI; the corpus was not measured with it. Needs the installed CLI and `quoin module ensure-defaults` pins brought to the completed modules before enforcement. | quire-cli / quoin release owners |
+| F6 | P1 | stale tool | `quire-cli` release lane | The `quire` installed on this machine (0.36.2, engine 0.50.2) cannot load the completed modules: a one-document probe reports `unknown type 'FR'` for a valid FR, so every typed document would fail. The modules require `quire ^0.52`. Only this probe was run with the installed CLI; the corpus was not measured with it. Needs the installed CLI, and any already-installed module clones, brought to the completed modules before enforcement (`default-modules.yaml` carries no pins; its entries track each module's default branch). | quire-cli / quoin release owners |
 | F7 | P2 | legitimate undeclared value | `spec-objects-business`, `spec-artifacts-process`, `spec-artifacts-iso` | Small counts of values the contract rejects and a human must rule on: kebab-case enumeration values rejected as non-`Identifier` (22 diagnostics, 2 documents); TestMatrix `Status` cell outside the emoji pattern (`Superseded`); `type: discovery` (7 documents, one repository), `Evidence`, `SpecAnalysis`; an NFR category `interoperability`. Declare or retype each; not cheap, because the Identifier rule is shared. | Module owners |
 | F8 | P2 | unsupported representation | `spec-objects-business` | 128 `process` FRs in 23 repositories carry `## Workflow` as a sequence diagram where the module requires a Step table; smaller counts for `## Relationships`, `## States`, `## Members`, `## Properties` in non-table forms. Decide whether a diagram is an admitted representation; otherwise the documents are rewritten in the normalization campaign. | Module owner, then corpus campaign |
 
-F1, F2, F3 and F6 are P0/P1 contract findings awaiting an explicit human-owner acceptance or fix; none is resolved by this report. A 9.9 % failure rate pauses promotion of these constraints to enforcement; it does not justify weakening a validator, and none was weakened.
+F1 and F6 are P0/P1 findings awaiting an explicit human-owner acceptance or fix, and F2 is P1 with a fix in progress (PR #134); none is resolved by this report. A 9.9 % failure rate pauses promotion of these constraints to enforcement; it does not justify weakening a validator, and none was weakened.
 
 ## Advisory grammar findings
 
@@ -329,5 +368,5 @@ F1, F2, F3 and F6 are P0/P1 contract findings awaiting an explicit human-owner a
 - The three modules `spec-objects-security`, `spec-objects-enterprise`, `spec-objects-safety` have no measured population in this corpus; their contracts are untested here.
 - Documents outside `spec/` and non-Markdown spec files (JSON, YAML) were not validated.
 - Documents were validated one at a time with `--scope` at their repository, so cross-document and cross-repository link resolution is whatever a one-document run sees.
-- Stale-module effects of the shipped `default-modules.yaml` pins against current `main` were not measured beyond F6.
+- Module clones already installed on developer machines may be older than `main`; their effect was not measured beyond F6.
 - The `quire` field-level semantic checks beyond what the engine emitted in this run were not separately assessed.
