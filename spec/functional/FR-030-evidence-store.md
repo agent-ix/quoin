@@ -84,6 +84,7 @@ people to click through it.
 - The store SHALL bind an obligation only on a **passing** symbol. A failing or
   skipped result is evidence the suite ran, which the run record already holds;
   binding on it would make the store agree with a red build.
+- The store SHALL join a run entry to a declared symbol by the entry's `path` and `qualified_name` (FR-051 identity). For an entry with no `path` whose qualified name matches symbols in more than one file, the store SHALL report the join ambiguous and join the entry to none of them; the trace ids on the entry still bind the criteria they name, because the mark is what binds.
 - The store SHALL write a run record whatever its outcome. A suite that stopped
   passing is exactly what a freshness check needs to see.
 - The `record` verb SHALL report a trace id matching no derived obligation
@@ -152,6 +153,7 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-15 | A run's trace id binds through an obligation's declared test cases as well as its own id, so a tool keyed on the Test Matrix discharges the criteria that name it. A direct obligation id wins over the indirect route, and an id no obligation states by either route is still reported unmatched. | Test (TC-245) |
 | FR-030-AC-16 | A completed source-level mock inspection is recorded at `mock-inspections/<SUITE-N>/<timestamp>.json`, including an empty result. Readers select the newest record of each suite: an empty record means the suite was inspected and no stand-in was observed; no record means the check was not evaluated. Withdrawn: selection by exact full commit. | Test (TC-1064, TC-1065) |
 | FR-030-AC-17 | `evidence record` refuses a bare or mutable `--tool` identity and accepts an exact semantic version. Withdrawn: acceptance of a full source revision (a git commit id); tool identity is the exact semantic version, with no sha. First-party Vitest and mock-inspection records include the version they actually ran. | Test (TC-1123, TC-1124) |
+| FR-030-AC-18 | A run entry with no `path`, whose qualified name matches symbols in more than one file, is reported ambiguous and joined to none of them, while its trace ids still bind. An entry with a `path` joins only the symbol at that path. | Test |
 
 > **CR note (PLAT-1228, 2026-10-30):** Run, scan, mock-inspection and binding
 > records no longer carry a commit. Filenames derive from the record's
