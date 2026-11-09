@@ -226,6 +226,7 @@ index; the files are authoritative.
 - [FR-121](./functional/FR-121-record-key-sections-mapping.md) — record-key sections map to a module's own record keys.
 - [FR-122](./functional/FR-122-architecture-record-keys-mapping.md) — architecture object record keys mapping.
 - [FR-123](./functional/FR-123-model-table-sections-mapping.md) — enumeration `## Values` and model-table sections map to record keys.
+- [FR-124](./functional/FR-124-inspect-installed-semantic-modules.md) — `quoin module inspect` reports each installed module's semantic contract and import locks.
 
 **Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)
 

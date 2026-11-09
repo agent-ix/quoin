@@ -43,6 +43,10 @@ pub(crate) fn command() -> Command {
                 .arg(Arg::new("name").value_name("NAME").required(true)),
         )
         .subcommand(
+            Command::new("inspect")
+                .about("Show each installed module's semantic contract state and its import locks"),
+        )
+        .subcommand(
             Command::new("ensure-defaults")
                 .about("Idempotently install the default specification module set"),
         )
@@ -53,6 +57,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
     let (subcommand, arguments) = matches.subcommand().unwrap_or(("list", matches));
     match subcommand {
         "list" => list(),
+        "inspect" => inspect(),
         "install" => install(arguments),
         "remove" => remove(arguments),
         "ensure-defaults" => ensure_defaults(),
@@ -68,6 +73,152 @@ fn list() -> Result<Response, String> {
             .ok_or_else(|| "modules.list did not return modules".to_owned())?;
         modules_json(plugins, false)
     })
+}
+
+/// Generated-package targets: a module declaring any of these is consumed
+/// statically as well as dynamically (FR-124).
+const COMPILED_TARGETS: &[&str] = &[
+    "rust",
+    "typescript",
+    "python-pydantic-v2",
+    "python-dataclass",
+];
+
+/// `quoin module inspect` (FR-124): the installed modules, each with the
+/// semantic contract it declares and whether its import locks still hold.
+///
+/// Composed from `modules.list` and `semantic.read_blocks` over every installed
+/// root at once, because an import lock is judged against the other installed
+/// modules.
+fn inspect() -> Result<Response, String> {
+    let listed = invoke("modules.list", &serde_json::json!({}))?;
+    if !listed.outcome.carries_payload() {
+        return Ok(listed);
+    }
+    let records = listed
+        .payload
+        .get("modules")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| "modules.list did not return modules".to_owned())?;
+    let roots = records
+        .iter()
+        .map(|record| {
+            record
+                .get("targetPath")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+                .ok_or_else(|| "a module record has no targetPath".to_owned())
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let read = invoke(
+        "semantic.read_blocks",
+        &serde_json::json!({ "roots": roots }),
+    )?;
+    if !read.outcome.carries_payload() {
+        return Ok(read);
+    }
+    let views = read
+        .payload
+        .get("modules")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| "semantic.read_blocks did not return modules".to_owned())?;
+
+    let mut inspected = Vec::with_capacity(records.len());
+    let mut diagnostics = Vec::new();
+    for (record, view) in records.iter().zip(views) {
+        let (item, failures) = inspect_entry(record, view);
+        inspected.push(item);
+        diagnostics.extend(failures);
+    }
+    let rendered = serde_json::to_string_pretty(&serde_json::json!({ "modules": inspected }))
+        .map_err(|error| error.to_string())?;
+    let outcome = if diagnostics.is_empty() {
+        Outcome::Ok
+    } else {
+        Outcome::Partial
+    };
+    Ok(Response {
+        payload: serde_json::json!({ "rendered": rendered }),
+        diagnostics,
+        outcome,
+    })
+}
+
+/// One installed module's entry, and the stderr diagnostics for its errors.
+fn inspect_entry(
+    record: &serde_json::Value,
+    view: &serde_json::Value,
+) -> (serde_json::Value, Vec<quoin_core::protocol::Diagnostic>) {
+    let name = record.get("name").cloned().unwrap_or_default();
+    let block = view.get("block");
+    let unreadable = view.get("unreadable").and_then(serde_json::Value::as_str);
+    let mode = match block {
+        None if unreadable.is_some() => "unreadable",
+        None => "no-semantic-block",
+        Some(block) if declares_compiled_target(block) => "compiled",
+        Some(_) => "dynamic",
+    };
+    let unreadable_finding = unreadable.map(|detail| {
+        serde_json::json!({
+            "code": "inspect.manifest-unreadable",
+            "severity": "error",
+            "path": "manifest.yaml",
+            "message": detail,
+        })
+    });
+    let problems: Vec<&serde_json::Value> = ["diagnostics", "lock_diagnostics"]
+        .iter()
+        .filter_map(|key| view.get(*key).and_then(serde_json::Value::as_array))
+        .flatten()
+        .chain(unreadable_finding.as_ref())
+        .collect();
+    let failures = problems
+        .iter()
+        .filter(|p| p.get("severity").and_then(serde_json::Value::as_str) == Some("error"))
+        .map(|problem| quoin_core::protocol::Diagnostic {
+            code: quoin_modules::ModulesErrorCode::InstalledModuleInvalid
+                .as_str()
+                .to_owned(),
+            message: problem
+                .get("message")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_owned(),
+            context: std::collections::BTreeMap::from([(
+                "module".to_owned(),
+                name.as_str().unwrap_or_default().to_owned(),
+            )]),
+        })
+        .collect();
+    let mut item = serde_json::Map::new();
+    item.insert("name".to_owned(), name);
+    item.insert("mode".to_owned(), mode.into());
+    item.insert(
+        "diagnostics".to_owned(),
+        serde_json::Value::Array(problems.into_iter().cloned().collect()),
+    );
+    for (key, value) in [
+        ("ref", record.get("ref")),
+        ("version", view.get("version")),
+        ("semantic", block),
+    ] {
+        if let Some(value) = value {
+            item.insert(key.to_owned(), value.clone());
+        }
+    }
+    (serde_json::Value::Object(item), failures)
+}
+
+fn declares_compiled_target(block: &serde_json::Value) -> bool {
+    block
+        .get("targets")
+        .and_then(serde_json::Value::as_array)
+        .is_some_and(|targets| {
+            targets
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .any(|target| COMPILED_TARGETS.contains(&target))
+        })
 }
 
 fn install(arguments: &ArgMatches) -> Result<Response, String> {

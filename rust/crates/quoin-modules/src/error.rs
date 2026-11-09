@@ -60,6 +60,9 @@ pub enum ModulesErrorCode {
     /// The semantic contract itself could not be reached, so nothing could be
     /// judged against it.
     SemanticContractUnavailable,
+    /// A read-only inspection found an installed module's manifest, semantic
+    /// block or import lock invalid. Nothing was rejected or rolled back.
+    InstalledModuleInvalid,
 }
 
 impl ModulesErrorCode {
@@ -89,6 +92,7 @@ impl ModulesErrorCode {
             Self::SemanticContractViolation => "QM020_SEMANTIC_CONTRACT_VIOLATION",
             Self::FetchDeadlineUnavailable => "QM021_FETCH_DEADLINE_UNAVAILABLE",
             Self::SemanticContractUnavailable => "QM022_SEMANTIC_CONTRACT_UNAVAILABLE",
+            Self::InstalledModuleInvalid => "QM023_INSTALLED_MODULE_INVALID",
         }
     }
 
@@ -118,6 +122,7 @@ impl ModulesErrorCode {
             Self::SemanticContractViolation,
             Self::FetchDeadlineUnavailable,
             Self::SemanticContractUnavailable,
+            Self::InstalledModuleInvalid,
         ]
     }
 

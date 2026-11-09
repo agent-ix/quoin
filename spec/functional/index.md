@@ -124,3 +124,5 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-120: Trace ids are marks in test result output](./FR-120-trace-marks-in-test-result-output.md)
 - [FR-121: Record-key sections mapping to a module's own record keys](./FR-121-record-key-sections-mapping.md)
 - [FR-122: Architecture object record keys mapping](./FR-122-architecture-record-keys-mapping.md)
+- [FR-123: Enumeration Values and model-table sections mapping to record keys](./FR-123-model-table-sections-mapping.md)
+- [FR-124: Inspect installed semantic modules and their import locks](./FR-124-inspect-installed-semantic-modules.md)

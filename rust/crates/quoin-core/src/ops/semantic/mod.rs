@@ -78,16 +78,59 @@ pub fn read_blocks(
     }
 
     let host = host(capabilities, "semantic.read_blocks")?;
-    let mut modules = Vec::with_capacity(request.roots.len());
+    let mut results = Vec::with_capacity(request.roots.len());
     for root in &request.roots {
-        let result = host
-            .read_module(Path::new(root))
-            .map_err(|e| map_error(&e, "semantic.read_blocks"))?;
-        modules.push(ModuleSemanticView {
-            root: root.clone(),
-            block: result.module.map(|module| module.block),
-            diagnostics: result.diagnostics,
+        results.push(match host.read_module(Path::new(root)) {
+            Ok(result) => Ok(result),
+            // A manifest that cannot be read is THIS root's finding. A missing or
+            // broken contract is not: nothing could be judged, so it refuses.
+            Err(
+                error @ (quoin_semantic::SemanticError::ManifestUnreadable { .. }
+                | quoin_semantic::SemanticError::ManifestNotYaml { .. }
+                | quoin_semantic::SemanticError::ManifestNotAMapping { .. }),
+            ) => Err(error.to_string()),
+            Err(error) => return Err(map_error(&error, "semantic.read_blocks")),
         });
+    }
+
+    // The lock check is judged over the requested population: the provider index
+    // is built once and every candidate is judged against it.
+    let population: Vec<&quoin_semantic::SemanticModule> = results
+        .iter()
+        .filter_map(|r| r.as_ref().ok().and_then(|r| r.module.as_ref()))
+        .collect();
+    let mut by_package = std::collections::BTreeMap::new();
+    for module in &population {
+        by_package.insert(&module.block.package, *module);
+    }
+    let mut modules = Vec::with_capacity(results.len());
+    for (root, result) in request.roots.iter().zip(&results) {
+        let view = match result {
+            Err(detail) => ModuleSemanticView {
+                root: root.clone(),
+                name: None,
+                version: None,
+                block: None,
+                diagnostics: Vec::new(),
+                lock_diagnostics: Vec::new(),
+                unreadable: Some(detail.clone()),
+            },
+            Ok(result) => ModuleSemanticView {
+                root: root.clone(),
+                name: result.module.as_ref().map(|m| m.name.as_str().to_owned()),
+                version: result
+                    .module
+                    .as_ref()
+                    .map(|m| m.version.as_str().to_owned()),
+                block: result.module.as_ref().map(|m| m.block.clone()),
+                diagnostics: result.diagnostics.clone(),
+                lock_diagnostics: result.module.as_ref().map_or_else(Vec::new, |candidate| {
+                    quoin_semantic::resolve_imports_in(candidate, &by_package, &population)
+                }),
+                unreadable: None,
+            },
+        };
+        modules.push(view);
     }
     ok(&ReadBlocksPayload { modules })
 }
