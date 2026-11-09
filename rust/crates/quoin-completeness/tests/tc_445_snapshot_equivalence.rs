@@ -302,7 +302,7 @@ fn descend(root: &Path, prefix: &Path, out: &mut Vec<(String, String)>) {
 }
 
 /// Provenance: quoin#445, agent-ix/quoin#448
-#[trace("FR-037", "FR-096")]
+#[trace("FR-037", "FR-096-AC-8")]
 #[test]
 fn tc_445_320_the_disk_reader_and_the_snapshot_reader_agree_on_one_real_tree() {
     let temp = bundle();
@@ -464,7 +464,7 @@ fn module_under(root: &Path) -> Option<ModuleSource> {
 ///
 /// Both entry points are live code run over the same committed input corpus
 /// (`tests/fixtures/assess-bundle-inputs.json`); no recorded answer is read.
-#[trace("FR-037", "FR-096")]
+#[trace("FR-037", "FR-096-AC-8")]
 #[test]
 fn tc_445_310_the_content_in_path_answers_what_the_filesystem_path_answers() {
     let corpus = fixture("assess-bundle-inputs.json");

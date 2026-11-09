@@ -79,7 +79,7 @@ fn assert_valid(
 ///
 /// The asset vocabulary is closed: three names, each resolving, and nothing
 /// else resolving to anything.
-#[trace("FR-068-AC-8", "TC-1324")]
+#[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_010_the_asset_vocabulary_is_closed() {
     assert_eq!(ASSET_NAMES.len(), 3);
@@ -163,7 +163,7 @@ fn tc_503_012_written_documents_satisfy_their_schemas() {
 ///
 /// The named constants and the `asset` lookup are the same bytes. They are two
 /// surfaces onto one file and a consumer may read either.
-#[trace("FR-068-AC-8", "TC-1324")]
+#[trace("FR-068-AC-8")]
 #[test]
 fn tc_503_015_the_named_constants_and_the_lookup_agree() {
     assert_eq!(asset(ASSET_NAMES[0]), Some(CHANGE_ASSURANCE_RECORD_V1));

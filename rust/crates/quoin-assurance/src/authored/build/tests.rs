@@ -168,7 +168,7 @@ fn tc_1135_validates_the_closed_authored_contract_and_rejects_duplicate_decision
 /// still order two instants wrongly.
 ///
 /// Provenance: quoin#436, quoin#445
-#[trace("FR-047-AC-3", "FR-047-AC-7", "TC-1712")]
+#[trace("FR-047-AC-3")]
 #[test]
 fn tc_1712_the_offset_and_the_fraction_move_the_comparison() {
     // `2026-08-15T00:00:00.000Z` as an offset instant one minute EARLIER,
