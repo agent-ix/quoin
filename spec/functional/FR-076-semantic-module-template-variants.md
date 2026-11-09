@@ -65,18 +65,14 @@ and the mapping declarations it needs.
 
 The emit driver the rendered repository carries is a driver, not the emitter:
 it invokes the official `@typespec/json-schema` emitter and never reimplements
-it (FR-076-CON-1). It is nevertheless the same file in every rendered
-repository, which is a fleet-drift surface of its own. FR-076-CON-3 keeps every
-rendered copy byte-identical to the template's, so the drift is detectable;
-extracting it into a versioned package is tracked as `agent-ix/quoin#345` and is
-not a condition of this requirement.
+it (FR-076-CON-1). Extracting it into a versioned package is tracked as
+`agent-ix/quoin#345` and is not a condition of this requirement.
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-076-CON-1 | The template SHALL contain no copy of the schema emitter, the Quire runtime, or the semantic-core grammar; each is reached as a versioned dependency. | Architecture | Test (TC-1455) |
-| FR-076-CON-3 | The rendered emit driver SHALL be byte-identical to the template's copy, so a fleet-wide correction is one edit rather than a sweep. | Maintainability | Test (TC-1456) |
 | FR-076-CON-2 | The rendered repository SHALL contain no `.npmrc`; `@agent-ix` resolves from the user-level npm configuration. | Packaging | Test (TC-1412) |
 
 ## Acceptance Criteria
@@ -89,7 +85,7 @@ not a condition of this requirement.
 | FR-076-AC-4 | Every file byte-identical across the three rendered variants exists exactly once in the template source. | Test (TC-1403) |
 | FR-076-AC-5 | `license: MIT` aborts rendering naming `MIT`; the default renders the AGPL-3.0-or-later text. | Test (TC-1404) |
 | FR-076-AC-6 | `module_kind: hybrid` aborts rendering naming `hybrid`. | Test (TC-1405) |
-| FR-076-AC-7 | `imported_modules: ["agent-ix/spec-objects-business"]` aborts naming the entry; the `<org>/<repo>@<version>` form renders. | Test (TC-1406) |
+| FR-076-AC-7 | `imported_modules: ["agent-ix/spec-objects-business"]` and `["agent-ix/spec-objects-business@^1.2.0"]` abort naming the entry; the exact `<org>/<repo>@<x.y.z>` form renders, because the module-manifest schema admits exact versions only. | Test (TC-1406) |
 | FR-076-AC-8 | `generated_targets: ["go"]` aborts naming `go`. | Test (TC-1407) |
 | FR-076-AC-9 | No rendered variant contains an `.npmrc` file at any depth. | Test (TC-1412) |
 | FR-076-AC-10 | A rendering that declares a target with no emitter today records that target as declared-not-emitted in the rendered README and in `semantic.targets`, and the two agree. | Test |
