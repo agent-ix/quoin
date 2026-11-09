@@ -112,7 +112,7 @@ pub fn vocabulary(_request: &serde_json::Value) -> Result<Response, CoreError> {
 ///
 /// `advise_all` itself is total: an obligation no rule matched is advised as
 /// inconclusive, which is an answer rather than a failure.
-#[implements("FR-054")]
+#[implements("FR-031")]
 pub fn advise(request: &serde_json::Value) -> Result<Response, CoreError> {
     let op = "auditor.advise";
     let request: AdviseRequest = read(request, op)?;

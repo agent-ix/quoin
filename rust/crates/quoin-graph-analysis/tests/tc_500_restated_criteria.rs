@@ -24,10 +24,6 @@
 //! than by constructing the model types, because that is the path every caller
 //! takes and a hand-built value could satisfy a shape no document can reach.
 //!
-//! Trace: FR-062-AC-4, FR-062-AC-5, FR-062-AC-8,
-//! FR-062-AC-9, FR-062-AC-10, FR-062-AC-11, FR-062-AC-12, FR-062-CON-2,
-//! FR-062-CON-3
-//!
 //! Provenance: quoin#500
 
 #![allow(

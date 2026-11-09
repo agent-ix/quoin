@@ -301,6 +301,7 @@ fn refusal(field: &str, limit: usize, observed: usize) -> CoreError {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use ix_trace_rs::trace;
     use quoin_config::OrgSource;
 
     use super::*;
@@ -405,6 +406,7 @@ mod tests {
     /// A malformed config is a COMPLETE payload with a diagnostic — exit 1, the
     /// `Partial` case — not a failure. An author must keep writing specs
     /// (FR-027-AC-5), and the boundary must still say what went wrong.
+    #[trace("FR-027-AC-5", "TC-105")]
     #[test]
     fn a_malformed_layer_is_partial_not_refused() {
         let response = resolve_org(&serde_json::json!({

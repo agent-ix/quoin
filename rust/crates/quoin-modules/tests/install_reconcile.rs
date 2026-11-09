@@ -143,7 +143,7 @@ fn home() -> Home {
     }
 }
 
-#[trace("FR-019-AC-1", "FR-019-AC-2", "FR-019-AC-4")]
+#[trace("FR-019-AC-1", "FR-019-AC-2", "FR-019-AC-4", "TC-061", "TC-064")]
 #[test]
 fn tc_381_280_install_lists_and_removes_a_path_module() {
     let h = home();

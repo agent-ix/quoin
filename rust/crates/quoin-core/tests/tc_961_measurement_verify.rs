@@ -85,7 +85,7 @@ fn verify(repo: &Path, claimed: Option<&str>) -> (i32, Value, String) {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-2", "FR-108-AC-4", "FR-108-AC-7")]
+#[trace("FR-108-AC-2", "FR-108-AC-4", "FR-108-AC-7", "TC-1796")]
 #[test]
 fn tc_961_018_record_verify_accepts_then_a_tampered_observation_is_rejected() {
     let repo = repository();
@@ -142,7 +142,7 @@ fn tc_961_018_record_verify_accepts_then_a_tampered_observation_is_rejected() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-7")]
+#[trace("FR-108-AC-7", "TC-1796")]
 #[test]
 fn tc_961_019_an_unknown_plan_or_claim_is_refused_without_a_verdict() {
     let repo = repository();
@@ -169,7 +169,7 @@ fn tc_961_019_an_unknown_plan_or_claim_is_refused_without_a_verdict() {
 }
 
 /// Provenance: PLAT-961
-#[trace("FR-108-AC-2", "FR-108-AC-7")]
+#[trace("FR-108-AC-2", "FR-108-AC-7", "TC-1806")]
 #[test]
 fn tc_961_029_a_collection_filed_under_another_id_is_refused() {
     let repo = repository();

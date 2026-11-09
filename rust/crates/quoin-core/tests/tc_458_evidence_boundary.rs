@@ -420,7 +420,7 @@ fn tc_458_110_the_two_assurance_record_operations_write_different_families() {
 
 /// Publishing an assurance record again under the `recordId` it was given is
 /// idempotent at the boundary: the same record, `created` false, one file.
-#[trace("FR-048-AC-2")]
+#[trace("FR-048-AC-2", "TC-2003")]
 #[test]
 fn tc_458_115_republishing_under_the_assigned_record_id_is_idempotent() {
     let dir = repo();

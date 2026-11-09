@@ -244,7 +244,7 @@ fn retained(root: &Path) -> Vec<String> {
 /// answer `directory` and fail here.
 ///
 /// Provenance: agent-ix/quoin#457
-#[trace("FR-068-AC-1")]
+#[trace("FR-068-AC-1", "TC-1317")]
 #[test]
 fn tc_457_600_write_record_retains_a_record_under_its_identity() {
     let root = repo();
@@ -278,7 +278,7 @@ fn tc_457_600_write_record_retains_a_record_under_its_identity() {
 /// size; a caller-written `retained_output` is refused.
 ///
 /// Provenance: agent-ix/quoin#457
-#[trace("FR-068-AC-2", "FR-068-CON-2")]
+#[trace("FR-068-AC-2", "FR-068-CON-2", "TC-1318")]
 #[test]
 fn tc_457_601_prepare_attestation_derives_only_the_retained_output_size() {
     let prepared = ok(&run(
@@ -478,7 +478,7 @@ fn tc_457_606_recover_removes_only_interrupted_staging() {
 /// against its own inputs.
 ///
 /// Provenance: agent-ix/quoin#457
-#[trace("FR-068-AC-10", "FR-068-CON-4")]
+#[trace("FR-068-AC-10", "FR-068-CON-4", "TC-1326")]
 #[test]
 fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
     let mut runs = Vec::new();
@@ -530,7 +530,7 @@ fn tc_457_607_record_attestation_and_receipt_reproduce_byte_identical_json() {
 /// constant the writing tests use.
 ///
 /// Provenance: agent-ix/quoin#503
-#[trace("FR-068-AC-8")]
+#[trace("FR-068-AC-8", "TC-1324")]
 #[test]
 fn tc_503_610_schema_emits_the_shipped_assets_and_refuses_any_other_name() {
     let listed = ok(&run("change_assurance.schema", &json!({})));
@@ -588,7 +588,7 @@ fn write_protecting_plan(root: &Path, id: &str, entries: &[&str]) {
 /// `quoin-measurement`'s own plan intake and folds FR-111's judgment into the
 /// receipt: a diff touching the linked plan's `protected_apparatus` is
 /// `apparatus_touched` and the receipt is `invalid`, through this operation
-/// and not only through the library (closes FR-111-CON-3).
+/// and not only through the library.
 ///
 /// Provenance: PLAT-997
 #[trace("FR-111-AC-1", "TC-1889")]

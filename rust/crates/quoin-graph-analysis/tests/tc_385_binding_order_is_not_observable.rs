@@ -21,8 +21,6 @@
 //! that cannot fire is a claim about nothing, so the property is asserted here,
 //! where it can fail.
 //!
-//! Trace: FR-062-AC-1
-//!
 //! Provenance: quoin#385
 
 #![allow(

@@ -147,7 +147,7 @@ fn rendered(response: &Response) -> &str {
 /// `graph.fan_out` renders the canonical JSON the retained command printed.
 ///
 /// Provenance: quoin#500
-#[trace("FR-062-AC-1")]
+#[trace("FR-062-AC-1", "TC-1249")]
 #[test]
 fn fan_out_answers_with_the_canonical_json_report() {
     let reader = tree(true);

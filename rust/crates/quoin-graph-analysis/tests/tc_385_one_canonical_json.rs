@@ -21,8 +21,6 @@
 //! carries a floor: if it stops finding modules, or stops finding the calls it
 //! is guarding, it fails rather than passing on an empty tree.
 //!
-//! Trace: FR-100-CON-4
-//!
 //! Provenance: quoin#385
 
 #![allow(

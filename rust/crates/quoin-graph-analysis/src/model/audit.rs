@@ -20,7 +20,6 @@
 //! map for exactly this reason.
 
 use crate::ids::compare_text;
-use ix_trace_rs::implements;
 use quoin_finding_types::AuditReport;
 use serde::Serialize;
 use serde_json::Value;
@@ -36,7 +35,6 @@ pub const AUDIT_FORMAT: &str = "quoin-audit-envelope";
 pub const AUDIT_FORMAT_VERSION: u32 = 1;
 
 /// One FR-032 audit, with the premises it was taken under.
-#[implements("FR-032")]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditEnvelope {
     /// The exact identity copied from the export, not the caller's acceptance

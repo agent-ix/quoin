@@ -153,7 +153,7 @@ fn tc_500_300_each_route_answers_with_its_own_view() {
 /// with no edges.
 ///
 /// Provenance: quoin#500
-#[trace("FR-062-AC-3")]
+#[trace("FR-062-AC-3", "TC-1251")]
 #[test]
 fn tc_500_301_an_absent_relation_list_is_not_an_empty_one() {
     let mut absent = request(true);
@@ -188,7 +188,7 @@ fn tc_500_301_an_absent_relation_list_is_not_an_empty_one() {
 /// Both spellings come from one report: the markdown is the same view.
 ///
 /// Provenance: quoin#500
-#[trace("FR-062-AC-10")]
+#[trace("FR-062-AC-10", "TC-1258")]
 #[test]
 fn tc_500_302_the_markdown_spelling_is_the_same_view() {
     let result = run("graph.fan_out", &request(false).to_string());
@@ -205,7 +205,7 @@ fn tc_500_302_the_markdown_spelling_is_the_same_view() {
 /// fault and not an empty report.
 ///
 /// Provenance: quoin#500
-#[trace("FR-062-AC-9")]
+#[trace("FR-062-AC-9", "TC-1257")]
 #[test]
 fn tc_500_303_a_missing_declared_input_is_refused_by_name() {
     let mut broken = request(true);
