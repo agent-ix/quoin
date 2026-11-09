@@ -18,13 +18,12 @@ const RECORD_KEYS: &[&str] = &[
     "name",
     "source",
     "ref",
-    "sha",
     "resolvedPath",
     "targetPath",
     "installedAt",
 ];
 const SOURCE_KEYS: &[&str] = &[
-    "type", "repo", "url", "path", "package", "ref", "sha", "version", "registry",
+    "type", "repo", "url", "path", "package", "ref", "version", "registry",
 ];
 type NestedOrder = fn(&str) -> Option<&'static [&'static str]>;
 
@@ -242,7 +241,7 @@ fn indent_json(value: &str, indent: usize) -> String {
 mod tests {
     use super::{command, modules_json};
 
-    /// Trace: FR-017, FR-101
+    /// Trace: FR-017
     #[test]
     fn tc_373_module_defaults_to_list_and_requires_mutation_arguments() {
         assert!(command().try_get_matches_from(["module"]).is_ok());
@@ -268,7 +267,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-017, FR-101
+    /// Trace: FR-017
     #[test]
     fn tc_373_module_output_keeps_the_registry_field_order() {
         let rendered = modules_json(
@@ -276,7 +275,6 @@ mod tests {
                 "installedAt": "2026-01-01T00:00:00.000Z",
                 "name": "custom",
                 "ref": "v1",
-                "sha": "abc",
                 "source": { "path": "custom", "type": "path" },
                 "targetPath": "/modules/custom",
             }]),
@@ -294,7 +292,6 @@ mod tests {
         "path": "custom"
       },
       "ref": "v1",
-      "sha": "abc",
       "targetPath": "/modules/custom",
       "installedAt": "2026-01-01T00:00:00.000Z"
     }

@@ -23,7 +23,6 @@ use crate::common::identity::{MetricName, WireInstant};
 use crate::common::scalar::{EffectValue, EnvironmentValue, ScalarValue};
 use crate::intervention::agent_eval::AgentEvalInterventionDefinition;
 use crate::intervention::agent_eval::report::AgentEvalReport;
-use crate::intervention::agent_eval::version::ImmutableVersion;
 use crate::intervention::intake::{
     InterventionIntakeError, InterventionRefusalCode, write_intervention_record,
 };
@@ -163,15 +162,6 @@ fn validate_definition(
             )],
         ));
     }
-    ImmutableVersion::parse(
-        &definition.cli_agent_evals_version,
-        "cli_agent_evals_version",
-    )?;
-    ImmutableVersion::parse(definition.subject.revision.as_str(), "subject.revision")?;
-    ImmutableVersion::parse(
-        definition.producer.source_revision.as_str(),
-        "producer.source_revision",
-    )?;
     let baseline = definition.baseline_evidence_path.as_str();
     let treatment = definition.treatment_evidence_path.as_str();
     if baseline.is_empty() || treatment.is_empty() || baseline == treatment {
@@ -205,14 +195,10 @@ fn read_retained<S: MeasurementSource + ?Sized>(
     Ok(source.raw_evidence_text(&reference.path)?)
 }
 
-/// The producer as recorded: the definition's, with the two versions this
-/// production was run at recorded into its environment.
+/// The producer as recorded: the definition's, with the report-schema version
+/// this production read recorded into its environment.
 fn producer(definition: &AgentEvalInterventionDefinition) -> crate::common::producer::Producer {
     let mut producer = definition.producer.clone();
-    producer.environment.insert(
-        "cli_agent_evals_version".to_owned(),
-        EnvironmentValue::String(definition.cli_agent_evals_version.clone()),
-    );
     producer.environment.insert(
         "report_schema_version".to_owned(),
         EnvironmentValue::String(definition.report_schema_version.clone()),

@@ -32,8 +32,8 @@ authorized person can reach it, or that it completes inside a reporting or recov
 clock. Those are separate claims and need separate records.
 
 The same distinction applies across releases, feature flags, canary and shadow
-deployments, human override and appeal, abstention and safe fallback, and pinned
-policy, prompt, model, tool, and data revisions. Operational reporting must retain
+deployments, human override and appeal, abstention and safe fallback, and the
+policy, prompt, model, tool, and data in effect. Operational reporting must retain
 failed and partial exercises because removing them would erase the evidence that
 most directly drives remediation.
 

@@ -8,7 +8,7 @@
 //! writer's staging unlikely to collide with another's; nothing reads them
 //! back and no decision depends on either.
 //!
-//! Paths come from `quoin-store` — [`record_path`] and [`attestation_path`] —
+//! Paths come from `quoin-store` - [`record_path`] and [`attestation_path`] -
 //! so the layout is stated in one place for every family that shares the
 //! store.
 
@@ -16,18 +16,19 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use quoin_store::CanonicalDigest;
 use quoin_store::store::{
-    attestation_path, change_assurance_root, fsync_directory, record_path, write_content_addressed,
+    Content, StorePath, attestation_path, change_assurance_root, fsync_directory, publish,
+    record_path,
 };
 
 use crate::error::{ChangeAssuranceError, Subject};
+use crate::ids::{AttestationId, RecordId, Revision};
 use crate::intake::{EvidenceStore, Published, RetainedPair};
 
 /// The prefix every staging directory carries.
 ///
 /// A leading dot keeps it out of the store's own listings, and a reader that
-/// addresses attestations by digest never resolves a name beginning with one:
+/// addresses attestations by id never resolves a name beginning with one:
 /// staging is invisible by construction rather than by convention.
 pub const STAGING_PREFIX: &str = ".tmp-attestation-";
 
@@ -88,9 +89,19 @@ impl DiskEvidenceStore {
         fs::create_dir_all(parent).map_err(io("create directory", parent))?;
         let staging = parent.join(staging_name());
         fs::create_dir(&staging).map_err(io("create staging directory", &staging))?;
-        write_durable(&staging.join(ATTESTATION_FILE), &pair.attestation)?;
-        write_durable(&staging.join(OUTPUT_FILE), &pair.output)?;
-        fsync_directory(&staging)?;
+        // `publish` fsyncs each file and the staging directory's contents, and
+        // refuses a name that is already taken, so this is not a local copy
+        // of the write-once dance. The staging directory's own entry in
+        // `parent` is made durable by `publish_attestation` after the rename.
+        for (name, bytes) in [
+            (ATTESTATION_FILE, &pair.attestation),
+            (OUTPUT_FILE, &pair.output),
+        ] {
+            publish(
+                &StorePath::ContentAddressed(staging.join(name)),
+                Content::Artifact(bytes),
+            )?;
+        }
         Ok(staging)
     }
 }
@@ -112,22 +123,13 @@ fn io(operation: &'static str, path: &Path) -> impl FnOnce(std::io::Error) -> Ch
     }
 }
 
-/// Write a file that must not already exist, and fsync it before returning.
-fn write_durable(path: &Path, bytes: &[u8]) -> Result<(), ChangeAssuranceError> {
-    use std::io::Write as _;
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-        .map_err(io("create", path))?;
-    file.write_all(bytes).map_err(io("write", path))?;
-    file.sync_all().map_err(io("fsync", path))?;
-    Ok(())
-}
-
 impl EvidenceStore for DiskEvidenceStore {
-    fn record(&self, digest: &CanonicalDigest) -> Result<Option<Vec<u8>>, ChangeAssuranceError> {
-        let path = record_path(&self.repo, digest);
+    fn record(
+        &self,
+        record_id: &RecordId,
+        revision: Revision,
+    ) -> Result<Option<Vec<u8>>, ChangeAssuranceError> {
+        let path = record_path(&self.repo, record_id.as_str(), revision.get());
         match fs::read(&path) {
             Ok(bytes) => Ok(Some(bytes)),
             Err(source) if source.kind() == std::io::ErrorKind::NotFound => Ok(None),
@@ -141,18 +143,21 @@ impl EvidenceStore for DiskEvidenceStore {
 
     fn publish_record(
         &mut self,
-        digest: &CanonicalDigest,
+        record_id: &RecordId,
+        revision: Revision,
         bytes: &[u8],
     ) -> Result<Published, ChangeAssuranceError> {
-        // One file named by its own digest: `quoin-store` already refuses the
-        // collision and survives the race, and there is nothing to add.
-        match write_content_addressed(&record_path(&self.repo, digest), bytes) {
-            Ok(true) => Ok(Published::Retained),
-            Ok(false) => Ok(Published::AlreadyRetained),
+        // One file at its `(record_id, revision)` path: `quoin-store` already
+        // refuses the collision and survives the race, and there is nothing
+        // to add.
+        let path = record_path(&self.repo, record_id.as_str(), revision.get());
+        match publish(&StorePath::ContentAddressed(path), Content::Artifact(bytes)) {
+            Ok(quoin_store::store::Published::Written) => Ok(Published::Retained),
+            Ok(quoin_store::store::Published::AlreadyPresent) => Ok(Published::AlreadyRetained),
             Err(quoin_store::StoreError::ContentCollision { .. }) => {
                 Err(ChangeAssuranceError::ContentCollision {
                     what: Subject::Record,
-                    digest: digest.as_hex().to_owned(),
+                    id: format!("{record_id}/{revision}"),
                 })
             }
             Err(source) => Err(source.into()),
@@ -161,9 +166,9 @@ impl EvidenceStore for DiskEvidenceStore {
 
     fn attestation(
         &self,
-        digest: &CanonicalDigest,
+        attestation_id: &AttestationId,
     ) -> Result<Option<RetainedPair>, ChangeAssuranceError> {
-        let directory = attestation_path(&self.repo, digest);
+        let directory = attestation_path(&self.repo, attestation_id.as_str());
         let attestation = match fs::read(directory.join(ATTESTATION_FILE)) {
             Ok(bytes) => bytes,
             Err(source) if source.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -188,20 +193,20 @@ impl EvidenceStore for DiskEvidenceStore {
 
     fn publish_attestation(
         &mut self,
-        digest: &CanonicalDigest,
+        attestation_id: &AttestationId,
         pair: &RetainedPair,
     ) -> Result<Published, ChangeAssuranceError> {
-        let final_directory = attestation_path(&self.repo, digest);
+        let final_directory = attestation_path(&self.repo, attestation_id.as_str());
         let parent = final_directory
             .parent()
             .map_or_else(|| self.attestations_directory(), Path::to_path_buf);
-        if let Some(existing) = self.attestation(digest)? {
+        if let Some(existing) = self.attestation(attestation_id)? {
             return if &existing == pair {
                 Ok(Published::AlreadyRetained)
             } else {
                 Err(ChangeAssuranceError::ContentCollision {
                     what: Subject::Attestation,
-                    digest: digest.as_hex().to_owned(),
+                    id: attestation_id.as_str().to_owned(),
                 })
             };
         }

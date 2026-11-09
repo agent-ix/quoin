@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The captured oracle corpus, and the one way to turn a case into inputs.
+//! The input corpus, and the one way to turn a case into inputs.
 //!
-//! `tests/goldens/graph-analysis.json` was written once by a capture script
-//! run against the retained `src/graph-analysis/`. Both are deleted at HEAD
-//! (quoin#500) and neither was ever consulted at test time (FR-101-AC-5). Two
-//! tests read the corpus, so the reading lives here rather than twice.
+//! `rust/goldens/quoin-graph-analysis/graph-analysis.json` holds the analysis
+//! inputs only; no recorded output is kept.
 //!
 //! Provenance: quoin#385, quoin#500
 
@@ -30,8 +28,10 @@ use serde_json::Value;
 /// The captured corpus, whole.
 pub(crate) fn corpus() -> Value {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
+        .join("..")
+        .join("..")
         .join("goldens")
+        .join("quoin-graph-analysis")
         .join("graph-analysis.json");
     serde_json::from_str(
         &std::fs::read_to_string(&path)

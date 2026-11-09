@@ -1,0 +1,17 @@
+[package]
+name = "quoin-workflow-check"
+description = "Native release workflow smoke checks and read-only historical inventory"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde_json = { workspace = true }
+tempfile = { workspace = true }

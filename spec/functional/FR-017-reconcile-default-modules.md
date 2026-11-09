@@ -17,8 +17,7 @@ relationships:
 
 The CLI SHALL lazily reconcile the default module set into
 `~/.ix/filament/modules` on first `catalog` or `write` access — installing each
-module idempotently and performing no git work once a module is installed and
-pinned — and SHALL expose a `plugin ensure-defaults` command as an explicit entry
+module idempotently and performing no git work once a module is installed — and SHALL expose a `plugin ensure-defaults` command as an explicit entry
 point that performs the same install and reports the resulting registry for
 external tools such as `quire validate`.
 
@@ -37,7 +36,7 @@ external tools such as `quire validate`.
 - On first `catalog`/`write` access, the CLI SHALL reconcile the default set into
   the shared store.
 - Reconciliation SHALL be idempotent and SHALL skip git work for a module that is
-  already installed and pinned.
+  already installed, by name.
 - `plugin ensure-defaults` SHALL run the reconcile explicitly and report the
   installed module names so external tools can trigger the bootstrap directly.
 
@@ -45,9 +44,9 @@ external tools such as `quire validate`.
 
 | ID          | Criteria                                                                                      | Verification         |
 | ----------- | --------------------------------------------------------------------------------------------- | -------------------- |
-| FR-017-AC-1 | First catalog access installs the default modules into the shared store and loads their types | Test (index.test.ts) |
-| FR-017-AC-2 | `plugin ensure-defaults` runs the installer and reports `{ensured:true, plugins}`             | Test (cli.test.ts)   |
-| FR-017-AC-3 | `ensure-defaults` reports installed plugin names from a non-empty registry                    | Test (cli.test.ts)   |
+| FR-017-AC-1 | First catalog access installs the default modules into the shared store and loads their types | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-017-AC-2 | `plugin ensure-defaults` runs the installer and reports `{ensured:true, plugins}`             | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-017-AC-3 | `ensure-defaults` reports installed plugin names from a non-empty registry                    | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

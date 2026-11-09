@@ -32,21 +32,30 @@ command defaults to the public GitHub latest-release manifest.
 - The CLI SHALL compare the running version (see
   [FR-002](./FR-002-print-package-version.md)) against a stable native release
   manifest and safely stage its target-specific artifact before replacement.
+- The manifest carries no digest of any artifact. The update path SHALL check
+  only that the downloaded byte count equals the manifest's `size` and that the
+  archive holds the one safe executable; it trusts the HTTPS transport and the
+  release host for the bytes themselves, and SHALL NOT compute or compare a
+  hash.
 - The CLI SHALL report availability without installing when `--check` is given.
 - The CLI SHALL pass a `--registry` manifest endpoint through, and SHALL
   otherwise default to GitHub's stable latest-release manifest.
 - An npm-installed `quoin` (see [FR-112](./FR-112-npm-distribution-from-release-assets.md))
   is updated by npm rather than by this command's native artifact-replacement
   path: `update` given as the first argument under an npm install defers to
-  npm instead of running the behavior above.
+  npm instead of running the behavior above. The native command SHALL also
+  refuse, naming `npm install -g @agent-ix/quoin@latest` and changing nothing,
+  whenever the running executable sits under a `node_modules` directory, so a
+  global flag placed before `update` cannot bypass that deferral.
 
 ## Acceptance Criteria
 
 | ID          | Criteria                                                                                                              | Verification          |
 | ----------- | --------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| FR-022-AC-1 | `update` selects the running host's native artifact from a stable manifest and verifies it before replacement | Test (Rust delivery tests) |
+| FR-022-AC-1 | `update` selects the running host's native artifact from a stable manifest and checks its byte count and single-executable layout before replacement; no hash is computed or compared | Test (Rust delivery tests) |
 | FR-022-AC-2 | `--check` reports availability without downloading an archive or mutating the installation | Test (Rust delivery tests) |
 | FR-022-AC-3 | `--registry <url>` selects an explicit manifest endpoint; its absence uses the GitHub latest-release manifest | Test (Rust CLI tests) |
+| FR-022-AC-4 | When the running executable sits under a `node_modules` directory, `update` exits with the refused outcome, names `npm install -g @agent-ix/quoin@latest` and modifies nothing; elsewhere it proceeds to the GitHub-release path | Test (Rust CLI tests) |
 
 ## Dependencies
 

@@ -148,11 +148,6 @@ string_literal!(
     "release",
     "`buildProfile: \"release\"`: a debug build is not an attestation."
 );
-string_literal!(
-    CleanSourceState,
-    "clean",
-    "`sourceState: \"clean\"`: a dirty tree is not an attestation."
-);
 
 integer_literal!(FormatVersion1, 1, "`format_version: 1`.");
 integer_literal!(SchemaVersion1, 1, "`schema_version: 1`.");

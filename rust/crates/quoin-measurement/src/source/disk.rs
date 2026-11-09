@@ -3,18 +3,16 @@
 //! The filesystem host: a repository read off disk.
 //!
 //! Split out of `source.rs` when quoin#471's and quoin#472's waves met on one
-//! tree; see that module's header for the contract this implements and for
-//! why `raw_evidence_file` digests through `quoin_store` rather than hashing
-//! bytes here.
+//! tree; see that module's header for the contract this implements.
 
 use std::path::{Path, PathBuf};
 
-use quoin_store::{digest_file_sha256, store::store_root};
+use quoin_store::store::store_root;
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::raw_evidence::RawEvidencePath;
 
-use super::{MeasurementSource, RawEvidenceFile, has_extension};
+use super::{MeasurementSource, has_extension};
 
 /// A repository on disk.
 #[derive(Clone, Debug)]
@@ -41,7 +39,7 @@ impl DiskMeasurement {
     /// parsed. What is left is the part that needs a filesystem: the target
     /// must exist, must be a regular file, and must still be inside the store
     /// once both ends are resolved — the lexical guards say nothing about a
-    /// symlink. Written once, because reading a retained file and digesting it
+    /// symlink. Written once, because reading a retained file and sizing it
     /// must resolve the same path or they are not talking about the same file.
     fn resolve_raw_evidence(&self, path: &RawEvidencePath) -> Result<PathBuf, MeasurementError> {
         let root = store_root(&self.repo);
@@ -183,18 +181,10 @@ impl MeasurementSource for DiskMeasurement {
         std::fs::read_to_string(&resolved).map_err(|error| io(&resolved, &error))
     }
 
-    fn raw_evidence_file(
-        &self,
-        path: &RawEvidencePath,
-    ) -> Result<RawEvidenceFile, MeasurementError> {
+    fn raw_evidence_file(&self, path: &RawEvidencePath) -> Result<(), MeasurementError> {
         let resolved = self.resolve_raw_evidence(path)?;
-        let size_bytes = std::fs::metadata(&resolved)
-            .map_err(|error| io(&resolved, &error))?
-            .len();
-        Ok(RawEvidenceFile {
-            size_bytes,
-            digest: digest_file_sha256(&resolved)?,
-        })
+        std::fs::metadata(&resolved).map_err(|error| io(&resolved, &error))?;
+        Ok(())
     }
 
     fn retained_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError> {

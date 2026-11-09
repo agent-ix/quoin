@@ -28,7 +28,7 @@ close the cycle with a code review, a gap analysis and a pull request.
 - [ ] Run the full measurement and retain the raw results.
 - [ ] Classify every finding; re-run until the `unknown` and `undispositioned` counts are either zero or explicitly accepted by the owner.
 - [ ] File one issue per contract defect and per tool defect, naming the owning repository.
-- [ ] Publish the report under `analysis/corpus-measurement/` with its manifest and digests.
+- [ ] Publish the report under `analysis/corpus-measurement/` with its manifest.
 - [ ] Run `/code-review` and `/gap-analysis` and apply every finding.
 - [ ] Open the pull request with a mergeable comment; do not merge and do not publish.
 

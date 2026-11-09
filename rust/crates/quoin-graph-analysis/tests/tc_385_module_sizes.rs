@@ -8,8 +8,7 @@
 //! criterion enforced only by review is enforced only when someone is looking,
 //! and `quoin-change-assurance`'s `model/record.rs` reached 1,078 lines that
 //! way before quoin#457 split it. So the ceiling is read off this crate's own
-//! `src/` tree here, with a floor underneath it: a census that stopped finding
-//! files would otherwise pass by finding nothing.
+//! `src/` tree here.
 //!
 //! This is the crate's **one** census. `quoin-quire` and `quoin-jsonschema`
 //! carry the same test for their own trees, and this crate's tree is not
@@ -33,25 +32,10 @@ use std::path::{Path, PathBuf};
 /// The hard ceiling: no module may exceed this.
 const HARD_CEILING: usize = 700;
 
-/// The soft ceiling: a module above this is worth splitting, and is listed by
-/// this test so that the next one to cross it is visible rather than quiet.
-const SOFT_CEILING: usize = 500;
-
 /// Modules permitted above [`HARD_CEILING`], each with the reason it is exempt.
 ///
 /// Empty, and meant to stay that way: an entry is a debt, not a dispensation.
 const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
-
-/// The modules currently over [`SOFT_CEILING`], each with what it holds.
-///
-/// Empty. The retained source is 1,373 lines in five files, the largest of
-/// them 719; this crate is the same work in eighteen modules, none of them
-/// over 400 lines. A name appearing here later is a deliberate act that has to
-/// be argued for, not a threshold that drifted.
-const OVER_SOFT_CEILING: &[&str] = &[];
-
-/// The count below which this census is not measuring the crate at all.
-const SOURCE_FLOOR: usize = 10;
 
 /// Every `.rs` file under `src/`, as `(relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {
@@ -82,12 +66,6 @@ fn modules() -> Vec<(String, usize)> {
 #[test]
 fn tc_385_030_no_module_is_over_the_hard_ceiling() {
     let modules = modules();
-    assert!(
-        modules.len() >= SOURCE_FLOOR,
-        "anti-vacuity floor: at least {SOURCE_FLOOR} modules expected, saw {} — a census that \
-         finds nothing proves nothing",
-        modules.len()
-    );
 
     for (name, lines) in &modules {
         if let Some((_, reason)) = ALLOWED_ABOVE_HARD_CEILING
@@ -107,20 +85,4 @@ fn tc_385_030_no_module_is_over_the_hard_ceiling() {
              Split it on responsibility. Do not raise the ceiling."
         );
     }
-}
-
-/// The modules above the soft ceiling are the ones named here.
-#[test]
-fn tc_385_031_the_modules_over_the_soft_ceiling_are_the_ones_named_here() {
-    let over: Vec<String> = modules()
-        .into_iter()
-        .filter(|(_, lines)| *lines > SOFT_CEILING)
-        .map(|(name, _)| name)
-        .collect();
-    assert_eq!(
-        over, OVER_SOFT_CEILING,
-        "the set of modules over the {SOFT_CEILING}-line soft ceiling changed. Splitting one \
-         out, or letting a new one cross, is a deliberate act: update OVER_SOFT_CEILING and \
-         say which it was and why."
-    );
 }

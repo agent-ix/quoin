@@ -61,7 +61,7 @@ gets run once, and a census run once is a census whose unknowns never get resolv
 
 ## Verification
 
-A timed run over the pinned corpus records wall-clock duration and peak resident memory; a run under
+A timed run over the corpus records wall-clock duration and peak resident memory; a run under
 an open-mode assertion records the mode of every corpus and module file the measurement opens.
 
 ## Acceptance Criteria

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Build and versioning scripts for {{ cookiecutter.package_name }}."""
 
-import hashlib
 import os
 import subprocess
 import sys
@@ -22,7 +21,7 @@ def git_tag() -> str:
 
 
 def git_commit() -> str:
-    """Get short commit hash."""
+    """Get short commit id."""
     commit = run("git rev-parse --short HEAD 2>/dev/null")
     return commit if commit else "local"
 
@@ -42,17 +41,6 @@ def git_status() -> str:
     return "dirty" if diff or untracked else "clean"
 
 
-def dirty_hash() -> str:
-    """Hash of uncommitted changes."""
-    diff = run("git diff --no-ext-diff 2>/dev/null")
-    untracked_files = run("git ls-files --others --exclude-standard 2>/dev/null")
-    content = diff
-    for f in untracked_files.split("\n"):
-        if f and Path(f).exists():
-            content += Path(f).read_text(errors="ignore")
-    return hashlib.sha256(content.encode()).hexdigest()[:8]
-
-
 def full_version() -> str:
     """Compute full PEP440-compliant version."""
     tag = git_tag().lstrip("v")
@@ -61,7 +49,7 @@ def full_version() -> str:
 
     if status == "dirty":
         timestamp = datetime.now().strftime("%Y%m%d.%H%M%S")
-        return f"{tag}+{timestamp}.{commit}.{dirty_hash()}"
+        return f"{tag}+{timestamp}.{commit}"
 
     # Check if we're exactly on a tag
     exact = run("git describe --tags --exact-match 2>/dev/null")
@@ -83,8 +71,6 @@ def cmd_info():
     print(f"Commit:     {git_commit()}")
     print(f"Branch:     {git_branch()}")
     print(f"Status:     {status}")
-    if status == "dirty":
-        print(f"Dirty hash: {dirty_hash()}")
     print(f"Local Ver:  {full_version()}")
     poetry_ver = run("poetry version -s 2>/dev/null")
     print(f"Poetry Ver: {poetry_ver or 'N/A'}")

@@ -14,8 +14,8 @@
 //! premises file naming a different format as matching.
 //!
 //! The module and schema premises below are this document's for the same
-//! reason: the engine's are not `min(1)` on name or version and not
-//! `^[0-9a-f]{64}$` on the digest, and those constraints are the contract.
+//! reason: the engine's are not `min(1)` on name or version, and that
+//! constraint is the contract.
 //!
 //! # The export's own identity is never this type
 //!

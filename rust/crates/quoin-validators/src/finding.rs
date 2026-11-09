@@ -6,7 +6,7 @@
 //! Field order below is the order `JSON.stringify` emits for the TypeScript
 //! object literal in `src/validators/gates.ts`, and serde preserves declaration
 //! order, so the two implementations produce byte-identical JSON. That is not
-//! decoration: the golden corpus compares serialised payloads.
+//! decoration: the payload is the command's wire output.
 
 use std::fmt;
 

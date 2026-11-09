@@ -49,7 +49,7 @@ fn plan_document(rule_extra: &str, estimator: &str) -> String {
          \x20\x20- spec/assurance/MP-900.md\n\
          negative_controls:\n\
          \x20\x20- kind: apparatus-edit\n\
-         \x20\x20\x20\x20description: the plan document is digested with every collection\n\
+         \x20\x20\x20\x20description: the plan document defines the measurement\n\
          ground_truth_kind: human-labelled\n\
          statistical_design:\n\
          \x20\x20population: every labelled case\n\
@@ -117,25 +117,13 @@ fn collection(observations: &[Value]) -> Value {
         "scope": { "cases": 1 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
-        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": "2026-09-22T00:00:00.000Z",
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
-            "lockDigest": format!("sha256:{}", "1".repeat(64)),
-            "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
-            "toolchains": { "node": "22.15.0", "rust": "0.0.0", "python": "3.10.12" },
-            "sources": {
-                "fixture": {
-                    "revision": "a".repeat(40),
-                    "sourceState": "clean",
-                    "remote": "https://example.invalid/fixture",
-                },
-            },
             "capabilities": ["fixture.capability"],
-            "artifacts": { "config": format!("sha256:{}", "3".repeat(64)) },
+            "artifacts": ["config"],
         },
         "observations": observations,
         "rawEvidence": { "payload": [1, 2] },
@@ -153,19 +141,18 @@ fn intake(
     .map(|admitted| admitted.collection_id.as_str().to_owned())
 }
 
-/// Write `candidate` into `root`, declaring the protected plan document at
-/// its digest as `verificationStack.artifacts` must (PLAT-975).
+/// Write `candidate` into `root`, declaring the protected plan document by
+/// name in `verificationStack.artifacts`.
 fn write_collection(
     root: &Path,
     candidate: &Value,
 ) -> Result<std::path::PathBuf, quoin_measurement::MeasurementError> {
     let path = "spec/assurance/MP-900.md";
     let mut candidate = candidate.clone();
-    candidate["verificationStack"]["artifacts"][path] = json!(
-        quoin_store::digest_file_sha256(&root.join(path))
-            .expect("the plan is digestible")
-            .to_stored()
-    );
+    candidate["verificationStack"]["artifacts"]
+        .as_array_mut()
+        .expect("the artifact list")
+        .push(json!(path));
     write_measurement_collection(
         root,
         &from_serde(&candidate).expect("the candidate crosses"),
@@ -266,7 +253,7 @@ fn tc_1948_a_malformed_interval_is_refused_and_a_well_formed_one_admitted() {
             [
                 "QM-INTERVAL-MALFORMED: metric `quality.gate` states interval \
                  {\"level\":0.95,\"lower\":0.95,\"method\":\"wilson\",\"upper\":0.99}; \
-                 value 0.9 lies outside [0.95, 0.99]"
+                 value 0.9 lies outside [0.95, 0.99] (at observations[0].interval)"
             ]
         );
 
@@ -354,7 +341,7 @@ fn tc_1950_an_absent_interval_is_refused_only_under_an_interval_level() {
         refusal.findings(),
         [
             "QM-INTERVAL-UNSTATED: metric `quality.gate` states no interval; plan MP-900 \
-             requires an interval at level 0.95 or above"
+             requires an interval at level 0.95 or above (at observations[0].interval)"
         ]
     );
     // `count` is no different: nothing is derived from the population.
@@ -428,7 +415,7 @@ fn tc_1951_a_short_interval_level_is_refused() {
         refusal.findings(),
         [
             "QM-INTERVAL-LEVEL-SHORT: metric `quality.gate` states an interval at level 0.9 \
-             but plan MP-900 requires 0.95"
+             but plan MP-900 requires 0.95 (at observations[0].interval)"
         ]
     );
     for level in [0.95, 0.99] {
@@ -497,7 +484,7 @@ fn tc_1952_interval_findings_accumulate_with_every_other_finding() {
     assert_eq!(
         findings[3],
         "metric `quality.unplanned` has no MeasurementPlan under spec/assurance or assurance; \
-         record refused"
+         record refused (at observations[3])"
     );
 }
 

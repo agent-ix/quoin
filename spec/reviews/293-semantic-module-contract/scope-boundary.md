@@ -3,7 +3,7 @@ id: SR-124
 title: "Scope-boundary review of issue 293 semantic module contract requirements"
 type: SpecReview
 analysis: scope-boundary
-scope: "spec/spec.md, US-020, FR-070..FR-075, NFR-017, FR-047"
+scope: "spec/spec.md, US-020, FR-070..FR-075, NFR-017, FR-118"
 review_set: all
 ---
 
@@ -19,7 +19,7 @@ emitted schemas, compiler, and target registry; module repositories own
 vocabulary, archetypes, and the schemas they ship; clause semantics stay with
 `agent-ix/quire-contract-ir#52`; publication (`#290`), the sweep (`#291`), and
 catalog locks (`#287`) are sibling tickets. The allocation is consistent with
-FR-047 except for one unowned capability: the SysML fence to `FieldDecl[]`
+FR-118 except for one unowned capability: the SysML fence to `FieldDecl[]`
 mapping requires line-level parsing of fence content, which the boundary facts
 and US-020 deny to Quire and no other component is named to perform. Three
 further boundaries (`loader`/`validator` naming, the sweep-report guard, and
@@ -30,14 +30,14 @@ the lock shape) are consumed without a named owner or contract, and
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-143 | high | The `sysml` fence to `FieldDecl[]` mapping has no allocated implementer: FR-071 requires recognising `attribute`, `ref item`, `item`, and `:>` lines and failing on `part def` with locus, but US-020 constrains Quire to never parse fence content and FR-071-CON-1 limits Quire to extraction with span; either the constraint admits a lexical SysML subset in Quire or a named frontend owns it. | FR-071; FR-071-CON-1; FR-071-AC-7; US-020; FR-047-AC-1 |
+| FND-143 | high | The `sysml` fence to `FieldDecl[]` mapping has no allocated implementer: FR-071 requires recognising `attribute`, `ref item`, `item`, and `:>` lines and failing on `part def` with locus, but US-020 constrains Quire to never parse fence content and FR-071-CON-1 limits Quire to extraction with span; either the constraint admits a lexical SysML subset in Quire or a named frontend owns it. | FR-071; FR-071-CON-1; FR-071-AC-7; US-020; FR-118-AC-1 |
 | FND-144 | medium | `spec/spec.md` In Scope has no bullet for the semantic-module contract (manifest block, mapping contract, golden fixtures, lock derivation); the nearest bullet is the architecture record, which is qualified "without activating compiler, publication, or migration work". | spec/spec.md Scope; FR-070..FR-075 |
-| FND-145 | medium | FR-070, FR-073, and FR-074 address "the loader" and "the validator" without naming the component; Quire and Quoin both read the shared module store, so install-time rejection (FR-070-AC-6, FR-073-AC-2, FR-075-AC-3) is Quoin's and artifact-time diagnostics (FR-073 last bullet, FR-074 warnings) are Quire's, but the text lets either be read as one program. | FR-070; FR-073; FR-074; FR-047-AC-1; FR-047-AC-2 |
+| FND-145 | medium | FR-070, FR-073, and FR-074 address "the loader" and "the validator" without naming the component; Quire and Quoin both read the shared module store, so install-time rejection (FR-070-AC-6, FR-073-AC-2, FR-075-AC-3) is Quoin's and artifact-time diagnostics (FR-073 last bullet, FR-074 warnings) are Quire's, but the text lets either be read as one program. | FR-070; FR-073; FR-074; FR-118-AC-1; FR-118-AC-2 |
 | FND-146 | medium | The `legacy_forms: error` promotion guard consumes a "recorded advisory sweep report" from `agent-ix/quoin#291` with no named location, format, or contract, while FR-074 lists `#291` as downstream; the guard cannot be implemented or tested without that artifact's shape. | FR-074; FR-074-AC-3; NFR-017 |
 | FND-147 | medium | FR-075 writes per-export schema digests into the catalog lock and fails `quoin install` on absent import versions, yet lists `agent-ix/quoin#287` (catalog locks) as downstream; the lock's shape is an assumed dependency with no contract in this bundle. | FR-075; FR-075-AC-2; FR-075-AC-3 |
 | FND-148 | low | `semantic.targets` values come from the `filament-core-data` declared target registry, an assumed dependency; no acceptance criterion rejects an unknown target, so the boundary is unverified. | FR-070 |
 | FND-149 | low | FR-071-AC-1 and FR-074-AC-1 use config-service FR-006 as the fixture; config-service is read-only, so the rewritten typed table and the unmodified copy must live as Quoin-held fixtures, which the text does not state. | FR-071-AC-1; FR-074-AC-1; FR-071-CON-2 |
-| FND-150 | low | Emitted schemas referenced by path and digest ship inside the module (FR-073-CON-1) but are produced by the `filament-core-data` compiler; the emission step is correctly outside this specification and belongs to module repositories under FR-047-AC-3, which the text leaves implicit. | FR-073; FR-073-CON-1; FR-047-AC-3 |
+| FND-150 | low | Emitted schemas referenced by path and digest ship inside the module (FR-073-CON-1) but are produced by the `filament-core-data` compiler; the emission step is correctly outside this specification and belongs to module repositories under FR-118-AC-3, which the text leaves implicit. | FR-073; FR-073-CON-1; FR-118-AC-3 |
 
 ## Boundary allocation
 

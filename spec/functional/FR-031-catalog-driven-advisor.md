@@ -116,12 +116,12 @@ against another.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-031-AC-1 | The merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty. | Test (TC-129) |
-| FR-031-AC-2 | An obligation whose spec declares an `attack_surface` object is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test. | Test (TC-130) |
-| FR-031-AC-3 | An obligation whose statement carries temporal phrasing is recommended runtime monitoring and model checking. | Test (TC-131) |
-| FR-031-AC-4 | An obligation whose statement carries reliability phrasing is recommended fault injection. | Test (TC-132) |
-| FR-031-AC-5 | A round-trip property shape is recommended property-based and metamorphic testing, and recommendations are ordered by matching-rule count. | Test (TC-133) |
-| FR-031-AC-6 | An authored method no recommendation covers is flagged as a mismatch, and an authored method matching a recommended method's class is not. | Test (TC-134) |
+| FR-031-AC-1 | The merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty. | Test (TC-1984) |
+| FR-031-AC-2 | An obligation whose spec declares an `attack_surface` object is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test. | Test (TC-1985) |
+| FR-031-AC-3 | An obligation whose statement carries temporal phrasing is recommended runtime monitoring and model checking. | Test (TC-1986) |
+| FR-031-AC-4 | An obligation whose statement carries reliability phrasing is recommended fault injection. | Test (TC-1987) |
+| FR-031-AC-5 | A round-trip property shape is recommended property-based and metamorphic testing, and recommendations are ordered by matching-rule count. | Test (TC-1988) |
+| FR-031-AC-6 | An authored method no recommendation covers is flagged as a mismatch, and an authored method matching a recommended method's class is not. | Test (TC-1989) |
 | FR-031-AC-7 | An obligation matching no rule is reported inconclusive with no recommendations and no mismatch. | Test (TC-135) |
 | FR-031-AC-8 | A method whose rule names an axis the advisor cannot observe is still recommended on the axes it can, with only the observable reasons reported. | Test (TC-136) |
 | FR-031-AC-9 | A module whose `manifest.yaml` cannot be read or parsed is skipped and reported on the merged catalog, never thrown: a catalog missing one module's entries is still worth having, and the command that would crash is the one an operator runs to diagnose the module. | Test (TC-133) |
@@ -138,7 +138,7 @@ against another.
 | FR-031-AC-20 | A hyphenated compound is one token: a characteristic keyword appearing as a fragment of one (`unsafe` in `unsafe-audit`) mints nothing, while a regex naming the whole compound (`memory-safe`, `thread-safety`, `use-after-free`) still matches it. | Test (TC-267) |
 | FR-031-AC-21 | A statement claiming an architectural fact in the corpus's own wording — a zero-dependencies declaration, a dependency-check rejection, an acyclicity constraint, an architecture-absence claim — mints `layering` or `module-boundary`, so `architecture-conformance` is reachable; `top-level claim` mints neither. | Test (TC-268) |
 | FR-031-AC-22 | The advisor distinguishes three states rather than two: an authored value the engine's `uncatalogued-verification-method` diagnostic names — joined by the diagnostic's `value`, byte-equal to the obligation's `method` — is reported **uncatalogued** and never as a mismatch; a declared method or class not among the recommendations remains a **mismatch**; an obligation no rule matched remains **inconclusive**, and the uncatalogued fact survives silence rather than being consumed by it. | Test (TC-273, TC-274) |
-| FR-031-AC-23 | A payload whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine predating quire-rs CR-091 — degrades the advisor to the two-state behaviour with an explicit "engine predates vocabulary classification" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued. | Test (TC-273, TC-275) |
+| FR-031-AC-23 | A payload whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine predating quire-rs CR-091 — sets `degraded` and classifies no value as uncatalogued, degrading the advisor to the two-state behaviour rather than misclassifying; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued. | Test (TC-273, TC-275) |
 | FR-031-AC-24 | `--mismatch-only` returns only genuine method disagreements; combined `--*-only` filters select the union rather than the guaranteed-empty intersection; and the footer tallies mismatch, uncatalogued and inconclusive over the full obligation population, with the shown count reported separately. | Test (TC-274, TC-276) |
 
 > **CR-026 note (the advisor reads evidence — 2026-08-19):** `concolic-execution`

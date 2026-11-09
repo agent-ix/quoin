@@ -8,7 +8,7 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "FR-062 read-only assurance-graph projections: fan-out, churn and change impact."
+description = "FR-062 read-only assurance-graph projections: fan-out and change impact."
 publish.workspace = true
 
 [lib]
@@ -40,3 +40,6 @@ quoin-store = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+ix-trace-rs = { workspace = true }

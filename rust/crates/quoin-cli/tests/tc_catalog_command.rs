@@ -30,41 +30,6 @@ fn retained_home() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/retained-catalog/ix-home")
 }
 
-/// The registry's module refs, taken from `default-modules.yaml` at test time so
-/// the fixture carries no copy of them: each registry entry names a module, and
-/// the ref it was installed at is the one the catalog declares for that name.
-fn write_registry_refs(home: &Path) {
-    let catalog = quoin_yaml::from_str(include_str!("../../../../default-modules.yaml"))
-        .expect("default-modules.yaml parses");
-    let entries = catalog
-        .get("entries")
-        .and_then(serde_json::Value::as_array)
-        .expect("default-modules.yaml lists entries");
-    let path = home.join("filament/registry.json");
-    let mut registry: serde_json::Value =
-        serde_json::from_slice(&fs::read(&path).expect("registry fixture is readable"))
-            .expect("registry fixture is JSON");
-    let plugins = registry
-        .get_mut("plugins")
-        .and_then(serde_json::Value::as_array_mut)
-        .expect("registry fixture lists plugins");
-    for plugin in plugins {
-        let name = plugin.get("name").and_then(serde_json::Value::as_str);
-        let reference = entries
-            .iter()
-            .find(|entry| entry.get("name").and_then(serde_json::Value::as_str) == name)
-            .and_then(|entry| entry.pointer("/source/ref"))
-            .expect("every registry entry names a default module with a ref")
-            .clone();
-        plugin["ref"] = reference;
-    }
-    fs::write(
-        &path,
-        serde_json::to_vec(&registry).expect("registry serializes"),
-    )
-    .expect("registry is rewritten");
-}
-
 /// A real, on-disk semantic contract root for `QUOIN_SEMANTIC_ROOT`, so these
 /// tests exercise the override path deliberately rather than always falling
 /// through to the binary's own per-`IX_HOME` auto-materialization. Built once
@@ -110,17 +75,16 @@ fn text(bytes: &[u8]) -> String {
 /// fixture deliberately has no resolved module roots: its contract is the
 /// empty JSON module list and an entirely empty human response.
 ///
-/// Trace: FR-099, FR-101, FR-102, TC-1650
+/// Trace: FR-099, FR-102, TC-1650
 #[test]
 fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
     let home = scratch.path().join("ix-home");
     copy_tree(&retained_home(), &home).expect("retained fixture is copied");
-    write_registry_refs(&home);
 
     let json = invoke(&home, &["catalog", "list", "--json"]);
     assert!(json.status.success(), "stderr: {}", text(&json.stderr));
-    assert!(json.stderr.is_empty());
+    assert_eq!(json.stderr.len(), 0);
     let catalog: serde_json::Value =
         serde_json::from_slice(&json.stdout).expect("catalog JSON is emitted");
     let modules = catalog
@@ -134,14 +98,14 @@ fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
 
     let human = invoke(&home, &["catalog", "list"]);
     assert!(human.status.success(), "stderr: {}", text(&human.stderr));
-    assert!(human.stderr.is_empty());
-    assert!(human.stdout.is_empty());
+    assert_eq!(human.stderr.len(), 0);
+    assert_eq!(human.stdout.len(), 0);
 }
 
 /// The shipped command, rather than the retired protocol executable, discovers
 /// one nested module root and preserves its declared artifact projection.
 ///
-/// Trace: FR-099, FR-101, FR-102
+/// Trace: FR-099, FR-102
 #[test]
 fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
@@ -179,7 +143,7 @@ fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
 
 /// Candidate discovery preserves the lexical symlink root the operator passed.
 ///
-/// Trace: FR-099, FR-101, FR-102
+/// Trace: FR-099, FR-102
 #[cfg(unix)]
 #[test]
 fn tc_521_catalog_list_preserves_a_symlink_candidate_path() {
@@ -205,7 +169,7 @@ fn tc_521_catalog_list_preserves_a_symlink_candidate_path() {
 
 /// The shipped `catalog methods` command retains first-wins merge semantics.
 ///
-/// Trace: FR-099, FR-101, FR-102
+/// Trace: FR-099, FR-102
 #[test]
 fn tc_521_catalog_methods_preserves_first_wins_data() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
@@ -234,4 +198,25 @@ fn tc_521_catalog_methods_preserves_first_wins_data() {
         analysis.get("name"),
         Some(&serde_json::json!("First analysis"))
     );
+}
+
+/// Bare `quoin catalog` (and `quoin catalog --json`) defaults to `list` and
+/// must not panic on the group-level `--json` flag (PLAT-1167).
+///
+/// Trace: FR-099, FR-102
+#[test]
+fn plat_1167_bare_catalog_defaults_to_list_without_panicking() {
+    let scratch = tempfile::tempdir().expect("scratch directory is created");
+    let home = scratch.path().join("ix-home");
+    copy_tree(&retained_home(), &home).expect("retained fixture is copied");
+
+    let human = invoke(&home, &["catalog"]);
+    assert!(human.status.success(), "stderr: {}", text(&human.stderr));
+    assert_eq!(human.stderr.len(), 0);
+
+    let json = invoke(&home, &["catalog", "--json"]);
+    assert!(json.status.success(), "stderr: {}", text(&json.stderr));
+    let catalog: serde_json::Value =
+        serde_json::from_slice(&json.stdout).expect("catalog JSON is emitted");
+    assert!(catalog.get("modules").is_some());
 }

@@ -191,3 +191,28 @@ fn tc_446_053_the_section_name_matches_case_insensitively_and_the_remote_name_do
         assert_eq!(origin_org(&config), None, "remote {name}");
     }
 }
+
+/// Trace: FR-025-AC-2, FR-025-AC-3
+///
+/// The bundle package is the org and repository of the same remote url, with
+/// `.git` dropped, and a remote that names no org names no package.
+#[test]
+fn tc_557_origin_package_is_org_slash_repo() {
+    for (url, expected) in [
+        ("git@github.com:agent-ix/quoin.git", Some("agent-ix/quoin")),
+        (
+            "https://github.com/agent-ix/quoin.git",
+            Some("agent-ix/quoin"),
+        ),
+        ("https://github.com/agent-ix/quoin/", Some("agent-ix/quoin")),
+        ("https://host:8443/agent-ix/quoin", Some("agent-ix/quoin")),
+        ("/srv/git/quoin.git", None),
+        ("https://host/quoin.git", None),
+    ] {
+        assert_eq!(
+            quoin_config::origin_package(&git_config(url, "remote \"origin\"")).as_deref(),
+            expected,
+            "{url}"
+        );
+    }
+}

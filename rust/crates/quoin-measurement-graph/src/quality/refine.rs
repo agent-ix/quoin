@@ -28,9 +28,6 @@ pub(crate) fn violations(record: &GraphQualityObservationV1) -> Vec<String> {
     let mut found: Vec<String> = Vec::new();
     let mut note = |detail: String| found.push(detail);
 
-    if record.producer.parser_grammars.is_empty() {
-        note("producer.parser_grammars: expected at least 1, got 0".to_owned());
-    }
     if let Some(results) = record.results.as_ref()
         && let Err(error) = results.check_floors()
     {

@@ -114,25 +114,13 @@ fn collection_json(id: &str, timestamp: &str, observations: &[Value]) -> Value {
         "scope": { "cases": 1 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
-        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": timestamp,
-        "sourceRevision": "aaaaaaaaaaaaaaaa",
         "environment": { "runner": "test" },
         "verificationStack": {
             "schemaVersion": "verification-stack-attestation-v1",
-            "lockDigest": format!("sha256:{}", "1".repeat(64)),
-            "executableDigest": format!("sha256:{}", "2".repeat(64)),
             "buildProfile": "release",
-            "toolchains": { "node": "22.15.0", "rust": "0.0.0", "python": "3.10.12" },
-            "sources": {
-                "fixture": {
-                    "revision": "a".repeat(40),
-                    "sourceState": "clean",
-                    "remote": "https://example.invalid/fixture",
-                },
-            },
             "capabilities": ["fixture.capability"],
-            "artifacts": { "config": format!("sha256:{}", "3".repeat(64)) },
+            "artifacts": ["config"],
         },
         "observations": observations,
         "rawEvidence": { "payload": [1, 2] },
@@ -958,7 +946,7 @@ fn tc_958_016_a_slice_the_newest_collection_drops_is_reported_inconclusive() {
 
     // Nothing dropped: no such member, and no such attention item.
     let steady = steady_report(&plans);
-    assert!(steady.vanished_slices.is_empty());
+    assert_eq!(steady.vanished_slices.len(), 0);
     let json_text = render_measurement_report_json(&steady).expect("the JSON renders");
     assert!(!json_text.contains("vanishedSlices"), "{json_text}");
 }
@@ -1088,7 +1076,7 @@ fn stored_gate(
     );
     if let Some(digit) = digit {
         value["verificationStack"]["protectedApparatus"] = json!({
-            "MP-958": { "answers.json": format!("sha256:{}", digit.to_string().repeat(64)) }
+            "MP-958": [format!("answers-{digit}.json")]
         });
     }
     quoin_measurement::stored_measurement_collection(&from_serde(&value).expect("the bridge"))

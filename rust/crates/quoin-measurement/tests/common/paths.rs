@@ -1,13 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The repository root, for the quoin#479 criterion suites.
+//! Shared repository paths for the quoin#479 criterion suites.
 //!
-//! All seven suites read committed evidence under `spec/`, so all seven need
-//! this. It is here once rather than seven times so that a change to the crate's
-//! depth in the tree is a one-line change.
+//! Some suites read committed fixtures; the release-producer suites build
+//! synthetic inputs in temporary repositories. Keep the common repository-root
+//! calculation here so a change to the crate's depth is a one-line change.
 
 use std::path::{Path, PathBuf};
+
+/// The committed measurement-store fixture root used by the FR-056..FR-058 suites.
+#[allow(
+    dead_code,
+    reason = "the shared path module is included by suites that use different helpers"
+)]
+pub(crate) fn fixture_store() -> PathBuf {
+    repo_root()
+        .join("tests")
+        .join("fixtures")
+        .join("evidence")
+        .join("measurement-store")
+}
 
 /// The repository root, from this crate's manifest directory.
 ///

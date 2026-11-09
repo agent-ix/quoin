@@ -7,7 +7,7 @@
 //! Not every `string` in `intervention-types.ts` and `operational-types.ts` is
 //! an identity. A newtype earns its place when two values of the same Rust type
 //! could be swapped at a call site and the compiler would not care — a
-//! `record_id` handed where a `control_id` belongs, a digest handed where a path
+//! `record_id` handed where a `control_id` belongs, a revision handed where a path
 //! belongs. Those are the ones below.
 //!
 //! Free prose is left as `String`: `owner`, `unit`, `surface`, `coverage`,
@@ -20,8 +20,7 @@
 //! The four files this wave ports are type declarations. They validate nothing —
 //! `intervention.ts` and `operational.ts` do, and those are quoin#471/#472. A
 //! constructor that refused here would be behaviour this port invented, so
-//! `parse_stored`-style refusals (the `quoin_store::RawFileSha256Digest` shape)
-//! are deliberately absent, and named as deferred rather than quietly skipped.
+//! parse-style refusals are deliberately absent, and named as deferred rather than quietly skipped.
 //!
 //! [`WireInstant`] is the sharpest case. quoin already carries six hand-rolled
 //! instant validators across four crates, accepting three different languages
@@ -81,12 +80,6 @@ identity_newtype! {
 }
 
 identity_newtype! {
-    /// A source revision — `subject.revision`, `producer.source_revision` and a
-    /// version pin's `revision`.
-    pub struct Revision;
-}
-
-identity_newtype! {
     /// An experiment arm — `baseline.id`, `treatments[].id` and the
     /// `treatment_id` that refers to one.
     pub struct ArmId;
@@ -105,15 +98,6 @@ identity_newtype! {
 identity_newtype! {
     /// A path to a retained evidence file, relative to the store.
     pub struct EvidencePath;
-}
-
-identity_newtype! {
-    /// A digest as stored, algorithm prefix included.
-    ///
-    /// Deliberately not `quoin_store::RawFileSha256Digest`: this wave declares
-    /// record shapes and reaches outside the crate for nothing. Verification —
-    /// where that type is the right one — is quoin#471/#472.
-    pub struct Digest;
 }
 
 identity_newtype! {

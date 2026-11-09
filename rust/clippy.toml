@@ -1,12 +1,28 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Agent-IX
 #
-# The MSRV clippy checks lint suggestions against. Must equal the channel in
-# rust-toolchain.toml and the `rust-version` in [workspace.package]: a lower
-# value here silently suppresses suggestions this workspace could take.
-msrv = "1.98.1"
+# clippy takes its MSRV from `rust-version` in [workspace.package]; none is
+# restated here.
 
 # `quoin-core` reads a request off stdin. Anything it accumulates from an
 # untrusted stream needs a ceiling, so the large-* thresholds are set rather
 # than left at clippy's defaults.
 too-many-arguments-threshold = 6
+
+# A `serde_json::Value` must not pass through a non-serde_json serializer.
+# With `serde_json/arbitrary_precision` on (a global, unifying cargo feature)
+# every number leaves the serde data model as the private marker map
+# `{"$serde_json::private::Number": "7"}`, and the other serializer writes that
+# marker. Carry JSON-shaped data into YAML as JSON text instead:
+# `quoin_config::to_yaml_via_json_text`. A call that provably serializes a
+# YAML-native or typed value takes `#[allow(clippy::disallowed_methods,
+# reason = "...")]` naming why. PLAT-97, quoin#442.
+#
+# The paths name the crate as it is published (`yaml_serde`), not the
+# `serde_yaml_ng` alias quoin-config imports it under: clippy resolves the
+# real crate name, and an alias path matches nothing.
+disallowed-methods = [
+    { path = "yaml_serde::to_value", reason = "bridges serde_json::Value through a non-serde_json serializer; use quoin_config::to_yaml_via_json_text (PLAT-97)" },
+    { path = "yaml_serde::to_string", reason = "a serde_json::Value serialized here leaks the arbitrary_precision number marker; allow only for YAML-native or typed values, with a reason (PLAT-97)" },
+    { path = "yaml_serde::to_writer", reason = "a serde_json::Value serialized here leaks the arbitrary_precision number marker; allow only for YAML-native or typed values, with a reason (PLAT-97)" },
+]

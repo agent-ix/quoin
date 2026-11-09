@@ -90,6 +90,7 @@ pub(super) fn check_workflow(
 pub(super) struct RunIdentity {
     pub(super) id: u64,
     pub(super) attempt: u64,
+    pub(super) head_sha: String,
 }
 
 /// `github-release-operational.ts:47-64`.
@@ -99,20 +100,26 @@ pub(super) fn check_run(
 ) -> Result<RunIdentity, GitHubReleaseError> {
     let matches = run.get("path").and_then(Value::as_str)
         == Some(definition.workflow_path.as_str())
-        && run.get("event").and_then(Value::as_str) == Some(definition.accepted_event.as_str())
-        && run.get("head_sha").and_then(Value::as_str)
-            == Some(definition.subject.revision.as_str());
+        && run.get("event").and_then(Value::as_str) == Some(definition.accepted_event.as_str());
     if !matches {
-        return input("workflow run path, event, or immutable source revision mismatch");
+        return input("workflow run path or event mismatch");
     }
     if run.get("status").and_then(Value::as_str) != Some("completed")
         || run.get("conclusion").and_then(Value::as_str).is_none()
     {
         return input("workflow run is not completed with a conclusion");
     }
+    let Some(head_sha) = run
+        .get("head_sha")
+        .and_then(Value::as_str)
+        .filter(|head_sha| !head_sha.is_empty())
+    else {
+        return input("workflow run has no head_sha");
+    };
     Ok(RunIdentity {
         id: positive_safe_integer(run.get("id"), "workflow-run.id")?,
         attempt: positive_integer(run.get("run_attempt"), "workflow-run.run_attempt")?,
+        head_sha: head_sha.to_owned(),
     })
 }
 
@@ -166,13 +173,12 @@ pub(super) fn check_job(
         return input("configured release job is unstarted or incomplete");
     }
     let same_run = positive_safe_integer(job.get("run_id"), "job.run_id")? == identity.id
-        && job.get("head_sha").and_then(Value::as_str)
-            == run.get("head_sha").and_then(Value::as_str)
         && positive_integer(job.get("run_attempt"), "job.run_attempt")? == identity.attempt;
     if !same_run {
-        return input(
-            "configured release job run, revision, or attempt does not match workflow run",
-        );
+        return input("configured release job run or attempt does not match workflow run");
+    }
+    if job.get("head_sha").and_then(Value::as_str) != Some(identity.head_sha.as_str()) {
+        return input("configured release job revision does not match workflow run");
     }
     let started = instant(
         Some(&Value::String(started_at.to_owned())),

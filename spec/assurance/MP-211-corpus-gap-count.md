@@ -18,7 +18,7 @@ Keep unrepresented corpus cells visible beside every detection-recall score.
 
 ## Population
 
-Adopt every declared bounds cell in the pinned `qa-corpus`.
+Adopt every declared bounds cell in the `qa-corpus`.
 
 ## Measure Definition
 

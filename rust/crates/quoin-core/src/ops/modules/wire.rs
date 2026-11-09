@@ -116,7 +116,7 @@ pub struct EnsureDefaultsRequest {
     /// The `~/.ix` home to reconcile.
     #[serde(default)]
     pub home: Option<String>,
-    /// `lazy` (the default) installs only what is missing or re-pinned; `sync`
+    /// `lazy` (the default) installs only what is missing; `sync`
     /// re-resolves every entry.
     #[serde(default)]
     pub mode: Mode,
@@ -127,7 +127,7 @@ pub struct EnsureDefaultsRequest {
 #[serde(rename_all = "lowercase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Mode {
-    /// Install only what is missing or re-pinned.
+    /// Install only what is missing.
     ///
     /// The default, and deliberately so: `ensureDefaultModules` ran on every
     /// `quoin write`, and a default of `sync` would put a git fetch on the
@@ -153,7 +153,7 @@ impl From<Mode> for ReconcileMode {
 pub struct EnsureDefaultsPayload {
     /// Entries installed for the first time.
     pub installed: Vec<String>,
-    /// Entries already present and correctly pinned; no network was used.
+    /// Entries already present; no network was used.
     pub unchanged: Vec<String>,
     /// Entries re-resolved to a different commit.
     pub updated: Vec<String>,

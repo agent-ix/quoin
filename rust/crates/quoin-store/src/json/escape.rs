@@ -9,7 +9,7 @@
 //!
 //! No Unicode normalization is applied. JCS explicitly does not normalize, so
 //! a name spelled `e` + `U+0301` and a name spelled `U+00E9` are two different
-//! members with two different digests. Normalizing would silently merge
+//! members with two different spellings. Normalizing would silently merge
 //! records that the retained evidence holds apart.
 
 /// Append the canonical JSON string literal for `text`, quotes included.

@@ -12,9 +12,8 @@
 //! `quoin_validators`' `RepoSource` do. The alternative is two copies of the
 //! analysis, and a port that duplicates the thing it ported has not ported it.
 //!
-//! [`DiskMeasurement`] is what the shipped command runs on, so the retained
-//! corpus under `spec/evidence/measurements/` exercises the same code the
-//! boundary runs. [`MemoryMeasurement`] is what a caller with no filesystem
+//! [`DiskMeasurement`] is what the shipped command runs on, so the code the
+//! boundary runs is the code the library runs. [`MemoryMeasurement`] is what a caller with no filesystem
 //! uses, and is what lets this crate's tests state a repository in three lines.
 //!
 //! # Two path spaces, said out loud
@@ -28,21 +27,10 @@
 //!   the lexical guards of `intervention.ts:179-190` before it reaches a
 //!   source.
 //!
-//! # `raw_evidence_file` is a host capability, not a hash function
+//! # `raw_evidence_file` is a host capability
 //!
-//! The retained `rawEvidenceFor` reads the file and hashes the bytes
-//! (`intervention.ts:116-124`). Hashing is `quoin-store`'s, and it stays
-//! `quoin-store`'s: the digest is taken by the source that owns the bytes,
-//! through a `quoin-store` entry point, and neither host here grows a private
-//! `sha2` dependency (FR-100-CON-4, Stage 6 plan §13.2).
-//!
-//! [`DiskMeasurement`] has a path and uses [`quoin_store::digest_file_sha256`],
-//! which keeps that function's symlink, file-type, size and short-read guards.
-//! [`MemoryMeasurement`] has only bytes and uses
-//! [`quoin_store::digest_bytes_sha256`] (quoin#484). Until that existed there
-//! was no public bytes-wise sha256 at all and the in-memory host refused with
-//! [`MeasurementErrorCode::RawEvidenceUnavailable`] rather than mint a second
-//! one; it now refuses only for a path it was never given.
+//! It reports the size of a retained file and that the file exists. The
+//! source that owns the bytes answers; no digest is taken or recorded.
 //!
 //! # Why the clock is here too
 //!
@@ -65,8 +53,6 @@
 
 mod disk;
 mod memory;
-
-use quoin_store::RawFileSha256Digest;
 
 use crate::error::MeasurementError;
 use crate::raw_evidence::RawEvidencePath;
@@ -110,15 +96,6 @@ impl Clock for SystemClock {
     fn wait(&self, millis: u32) {
         std::thread::sleep(std::time::Duration::from_millis(u64::from(millis)));
     }
-}
-
-/// One retained file, as the raw-evidence accounting sees it.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct RawEvidenceFile {
-    /// The file's size in bytes.
-    pub size_bytes: u64,
-    /// Its sha256 digest, in the `sha256:<64 hex>` spelling.
-    pub digest: RawFileSha256Digest,
 }
 
 /// Where measurement inputs are read from.
@@ -205,7 +182,7 @@ pub trait MeasurementSource {
     /// read as UTF-8.
     fn raw_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError>;
 
-    /// The size and sha256 digest of one retained raw-evidence file.
+    /// Whether one retained raw-evidence file is present and readable.
     ///
     /// # Errors
     ///
@@ -213,10 +190,7 @@ pub trait MeasurementSource {
     /// outside the evidence store or names something that is not a regular
     /// file, and [`MeasurementErrorCode::RawEvidenceUnavailable`] from a source
     /// that holds no files.
-    fn raw_evidence_file(
-        &self,
-        path: &RawEvidencePath,
-    ) -> Result<RawEvidenceFile, MeasurementError>;
+    fn raw_evidence_file(&self, path: &RawEvidencePath) -> Result<(), MeasurementError>;
 
     /// The UTF-8 text of one retained raw-evidence file.
     ///
@@ -224,7 +198,7 @@ pub trait MeasurementSource {
     /// GitHub exports this way, after accounting for them with
     /// [`raw_evidence_file`](Self::raw_evidence_file). Separate from that
     /// method because a producer needs the *content* and the accounting needs
-    /// only the size and the digest, and a 15 MiB export should not be held in
+    /// only its presence, and a 15 MiB export should not be held in
     /// memory to be measured.
     ///
     /// # Errors

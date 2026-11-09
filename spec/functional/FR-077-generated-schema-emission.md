@@ -29,7 +29,7 @@ the emitter leaves relative, and render deterministically.
 
 ## Inputs
 
-- `typespec/main.tsp`, importing `@agent-ix/semantic-core` at the version the manifest declares
+- `typespec/main.tsp`, importing `@agent-ix/semantic-core`
 - `typespec/tspconfig.yaml`, selecting the official `@typespec/json-schema` emitter
 - The manifest `version`
 
@@ -47,7 +47,7 @@ the emitter leaves relative, and render deterministically.
 - The rendered emit command SHALL write one JSON Schema file per type the rendered manifest exports.
 - When the emitter leaves an `$id` or `$ref` relative, the emit command SHALL rewrite it to an absolute URL under this module's base or under the semantic-core base.
 - The emit command SHALL discard the schemas the emitter re-emits for imported libraries, so that only this module's namespace is written.
-- Where a `$ref` names a model of an imported semantic module, the emit command SHALL rewrite it to that module's schema base at the exact version `semantic.imports` records, rather than to this module's base or to the semantic-core base.
+- Where a `$ref` names a model of an imported semantic module, the emit command SHALL rewrite it to that module's schema base at the version `semantic.imports` declares, rather than to this module's base or to the semantic-core base.
 - If a `$ref` resolves to no declared base — this module's, the semantic-core base, or an imported module's — then the emit command SHALL fail naming the reference, rather than writing a schema whose reference points nowhere.
 - When the `@jsonSchema` base declared in the source and the manifest `version` disagree, the emit command SHALL fail naming both values, leaving the committed output untouched.
 - When `tsp compile` fails, the emit command SHALL fail carrying the compiler diagnostics, leaving the committed output untouched.
@@ -76,5 +76,5 @@ the emitter leaves relative, and render deterministically.
 
 ## Dependencies
 
-- **Upstream**: [FR-076](./FR-076-semantic-module-template-variants.md), [FR-073](./FR-073-data-schema-by-path-and-digest.md)
+- **Upstream**: [FR-076](./FR-076-semantic-module-template-variants.md), [FR-073](./FR-073-data-schema-by-path.md)
 - **Downstream**: [FR-078](./FR-078-generated-manifest-semantic-block.md), [NFR-019](../non-functional/NFR-019-deterministic-rendering.md)

@@ -8,11 +8,11 @@
 //! # The producer decides nothing it is not shown
 //!
 //! Every value in the two records it writes comes from the definition or from
-//! one of the three retained exports, and every cross-check the retained code
-//! makes is kept: the run's workflow path, event and head revision against the
-//! definition, the job's run id, revision and attempt against the run, and the
-//! three instants against each other. A producer that filled a gap with a
-//! default would be producing evidence rather than recording it.
+//! one of the three input exports, and every cross-check is retained: the run's
+//! workflow path and event against the definition, the job's run id, head
+//! revision and attempt against the run, and the three instants against each
+//! other. A producer that filled a gap with a default would be producing
+//! evidence rather than recording it.
 //!
 //! # The workflow export is read as YAML 1.2, and `on:` is a key
 //!
@@ -20,8 +20,7 @@
 //! which every libyaml binding implements — the plain scalar `on` resolves to
 //! the boolean `true`, and this lookup would miss on every GitHub workflow file
 //! there is. [`quoin_yaml::from_str`] is YAML 1.2 core, where `on` is the
-//! string it looks like, and `tests/tc_472_github_release.rs` asserts that
-//! against the retained export rather than trusting it.
+//! string it looks like.
 //!
 //! # Two error shapes, because there are two failures
 //!
@@ -43,8 +42,8 @@ use crate::intervention::intake::InterventionIntakeError;
 use crate::json_bridge::to_serde;
 use crate::operational::intake::write_operational_pair;
 use crate::operational::record::{
-    CapabilityStatus, ClockSupport, OperationalConfiguration, OperationalExerciseRecord,
-    OperationalScope, StandingCapability, StandingCapabilityRecord,
+    CapabilityStatus, ClockSupport, OperationalExerciseRecord, OperationalScope,
+    StandingCapability, StandingCapabilityRecord,
 };
 use crate::raw_evidence::{RawEvidencePath, raw_evidence_for};
 use crate::source::{Clock, DiskMeasurement, MeasurementSource};
@@ -74,8 +73,6 @@ pub struct GitHubReleaseProducerDefinition {
     pub producer: Producer,
     /// Where the control is observed.
     pub scope: OperationalScope,
-    /// What the control runs under.
-    pub configuration: OperationalConfiguration,
     /// The state transition the control supports.
     pub supported_transition: String,
     /// Who may use it.
@@ -224,8 +221,8 @@ fn read_export(
 
 /// `github-release-operational.ts:216-223`: account for the file, then read it.
 ///
-/// The accounting is not incidental — it is what puts the file's size and
-/// digest under the same guards the record's `raw_evidence` is checked against,
+/// The accounting is not incidental — it is what puts the file's size
+/// under the same guards the record's `raw_evidence` is checked against,
 /// so a producer cannot read a file the record could not then reference.
 fn retained_text(
     source: &DiskMeasurement,

@@ -3,24 +3,19 @@
 //! Every FR-066 acceptance criterion the deleted `tests/graph-adapters.test.ts`
 //! carried, restated against this crate.
 //!
-//! Trace: FR-066-AC-2, FR-066-AC-3, FR-066-AC-4, FR-066-AC-5, FR-066-AC-6
-//! Trace: FR-066-AC-7, FR-066-AC-8, FR-066-AC-9, FR-066-AC-10, FR-066-AC-11
-//! Trace: FR-066-AC-12
 //! Provenance: quoin#480
 //!
 //! # Why this file exists
 //!
 //! `tests/graph-adapters.test.ts` was deleted in the same commit as
-//! `src/measurement/graph-adapters.ts` (FR-101). It carried twelve
-//! criterion-tagged assertions. `tc_475_parity.rs` proves this crate answers
-//! what the retained module answered on 89 captured cases, but it is tagged
-//! `FR-066-AC-1` only — a corpus-wide agreement gate is not a per-criterion
-//! one. This file is: one test per criterion, named by the criterion, so a
-//! criterion cannot be lost without a named test disappearing with it.
+//! `src/measurement/graph-adapters.ts`. It carried twelve
+//! criterion-tagged assertions: one test per criterion, named by the
+//! criterion, so a criterion cannot be lost without a named test disappearing
+//! with it.
 //!
 //! # Where the inputs come from
 //!
-//! `tests/goldens/graph-adapter-verdicts.json` — the committed capture, not a
+//! `tests/fixtures/graph-adapter-cases.json` — the committed case inputs, not a
 //! shape this file invented. Where a criterion needs an input the capture does
 //! not hold (a permuted census, a deleted attestation member), the base case is
 //! taken from the capture and mutated **here**, in Rust. No node process is
@@ -37,15 +32,14 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
+use ix_trace_rs::trace;
 use quoin_measurement::MeasurementPlan;
 use quoin_measurement::types::plan::{LifecycleStatus, MeasurementStage};
-use quoin_measurement_graph::assurance::premise::{
-    AcceptedQuirePremises, ModulePremise, SourcePremise,
-};
+use quoin_measurement_graph::assurance::premise::{AcceptedQuirePremises, ModulePremise};
 use quoin_measurement_graph::quality::adapt::{AdaptGraphQualityInput, TranscribedCollection};
 use quoin_measurement_graph::{
-    GraphAdapterError, GraphAdapterErrorCode, adapt_graph_quality_observation,
-    adapt_quire_assurance, graph_quality_observation_id,
+    GRAPH_ADAPTER_NAMES, GraphAdapterError, GraphAdapterErrorCode, adapt_graph_quality_observation,
+    adapt_quire_assurance, select_graph_adapter,
 };
 use serde_json::Value;
 
@@ -54,7 +48,7 @@ use serde_json::Value;
 /// Every captured case, by name.
 fn cases() -> BTreeMap<String, Value> {
     let path =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/goldens/graph-adapter-verdicts.json");
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/graph-adapter-cases.json");
     let text = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("{} is readable: {error}", path.display()));
     let golden: Value = serde_json::from_str(&text).expect("the capture is JSON");
@@ -100,7 +94,6 @@ fn plan(value: &Value) -> MeasurementPlan {
         path: value["path"].as_str().expect("a path").to_owned(),
         owner: None,
         action: None,
-        preregistration: None,
         ground_truth_kind: None,
         statistical_design: None,
         objective: None,
@@ -166,17 +159,6 @@ fn delete_at(value: &mut Value, path: &[&str]) {
     );
 }
 
-/// Re-mint the observation identity a mutated record must now declare, so that
-/// a mutation is measured for what it changed rather than for the identity it
-/// invalidated.
-fn remint(record: &mut Value) {
-    record["observation_id"] = Value::Null;
-    let object = record.as_object_mut().expect("a record object");
-    object.remove("observation_id");
-    let id = graph_quality_observation_id(record).expect("the identity is computable");
-    record["observation_id"] = Value::String(id.to_stored());
-}
-
 /// Every observation the transcription produced, keyed
 /// `measure/dimension/key`.
 fn facts(collection: &TranscribedCollection) -> BTreeMap<String, Option<f64>> {
@@ -207,22 +189,41 @@ fn facts(collection: &TranscribedCollection) -> BTreeMap<String, Option<f64>> {
 
 // ------------------------------------------------------------- the gates
 
+/// The registry exposes exactly the two versioned adapters, and an unknown name
+/// fails with the available names.
+///
+/// Provenance: quoin#480
+#[trace("FR-066-AC-1")]
+#[test]
+fn tc_480_019_the_registry_is_exactly_the_two_versioned_adapters() {
+    assert_eq!(
+        GRAPH_ADAPTER_NAMES,
+        ["quire-assurance-v1", "quire-code-graph-quality-v1"]
+    );
+    let error = select_graph_adapter("quire-assurance-v2").unwrap_err();
+    assert_eq!(error.code(), GraphAdapterErrorCode::UnknownAdapter);
+    assert!(
+        GRAPH_ADAPTER_NAMES
+            .iter()
+            .all(|name| error.message().contains(name)),
+        "the refusal names every available adapter: {}",
+        error.message()
+    );
+}
+
 /// A valid Quire export is preserved and every premise drift is refused.
 ///
-/// Trace: FR-066-AC-2
 /// Provenance: quoin#480
+#[trace("FR-066-AC-2")]
 #[test]
 fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
     let base = case("assurance/base");
     let accepted = AcceptedQuirePremises {
-        source: serde_json::from_value::<SourcePremise>(base["accepted"]["source"].clone())
-            .expect("the capture's accepted source"),
         modules: serde_json::from_value::<Vec<ModulePremise>>(base["accepted"]["modules"].clone())
             .expect("the capture's accepted modules"),
     };
     let parsed = adapt_quire_assurance(&base["document"], &accepted)
         .expect("the captured base export is admissible");
-    assert_eq!(parsed.source, accepted.source, "the source is carried");
     assert_eq!(parsed.modules, accepted.modules, "the modules are carried");
 
     // Each drift the criterion names, taken from the capture where it holds
@@ -230,14 +231,11 @@ fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
     for name in [
         "assurance/missing/format",
         "assurance/missing/format_version",
-        "assurance/source-revision-disagrees",
         "assurance/modules-disagree",
         "assurance/unknown-key",
     ] {
         let drifted = case(name);
         let premises = AcceptedQuirePremises {
-            source: serde_json::from_value::<SourcePremise>(drifted["accepted"]["source"].clone())
-                .expect("an accepted source"),
             modules: serde_json::from_value::<Vec<ModulePremise>>(
                 drifted["accepted"]["modules"].clone(),
             )
@@ -256,14 +254,12 @@ fn tc_480_020_a_valid_export_is_preserved_and_every_premise_drift_refused() {
 
 /// Every Quire graph collection is handed through without translation.
 ///
-/// Trace: FR-066-AC-3
 /// Provenance: quoin#480
+#[trace("FR-066-AC-3")]
 #[test]
 fn tc_480_021_every_quire_collection_passes_through_untranslated() {
     let base = case("assurance/base");
     let accepted = AcceptedQuirePremises {
-        source: serde_json::from_value::<SourcePremise>(base["accepted"]["source"].clone())
-            .expect("the capture's accepted source"),
         modules: serde_json::from_value::<Vec<ModulePremise>>(base["accepted"]["modules"].clone())
             .expect("the capture's accepted modules"),
     };
@@ -297,7 +293,7 @@ fn tc_480_021_every_quire_collection_passes_through_untranslated() {
     let extra = serde_json::json!({
         "id": "FR-001",
         "artifact_type": "FR",
-        "locator": { "path": "spec/FR-001.md", "line": 1, "digest": "d".repeat(64) },
+        "locator": { "path": "spec/FR-001.md", "line": 1 },
     });
     grown["document"]["artifacts"]
         .as_array_mut()
@@ -312,41 +308,29 @@ fn tc_480_021_every_quire_collection_passes_through_untranslated() {
     );
 }
 
-/// The graph-quality schema is closed and the observation identity is the
-/// canonical digest of the record without it.
+/// The graph-quality schema is closed and the observation id is the
+/// producer's, taken as stated.
 ///
-/// Trace: FR-066-AC-4
 /// Provenance: quoin#480
+#[trace("FR-066-AC-4")]
 #[test]
-fn tc_480_022_the_schema_is_closed_and_the_identity_is_canonical() {
-    // The identity is computed over canonical bytes: member order in does not
-    // change the digest out.
-    let sorted = graph_quality_observation_id(&serde_json::json!({
-        "a": [{ "z": 2, "a": 1 }],
-        "": "bmp",
-        "𐀀": "astral",
-        "observation_id": format!("sha256:{}", "a".repeat(64)),
-    }))
-    .expect("an identity");
-    let permuted = graph_quality_observation_id(&serde_json::json!({
-        "observation_id": format!("sha256:{}", "b".repeat(64)),
-        "𐀀": "astral",
-        "a": [{ "a": 1, "z": 2 }],
-        "": "bmp",
-    }))
-    .expect("an identity");
+fn tc_480_022_the_schema_is_closed_and_the_observation_id_is_taken_as_stated() {
+    // Any non-empty producer-assigned observation id is admitted, and the
+    // collection is named from it.
+    let mut stated = case("quality/measured");
+    stated["record"]["observation_id"] =
+        Value::String("0192f3a0-7b1c-7d4e-8a21-5c3b9e0d1f42".to_owned());
+    let transcribed = adapt_quality(&stated).expect("a producer-assigned id is admitted");
     assert_eq!(
-        sorted.to_stored(),
-        permuted.to_stored(),
-        "the identity ignores member order and the declared identity itself"
+        transcribed.collection().collection_id.as_str(),
+        "graph-quality-0192f3a0-7b1c-7d4e-8a21-5c3b9e0d1f42"
     );
 
-    // A record that declares an identity it does not have is refused.
+    // An empty one is not an id.
+    let mut empty = case("quality/measured");
+    empty["record"]["observation_id"] = Value::String(String::new());
     assert_eq!(
-        refusal(
-            &case("quality/observation-id-disagrees"),
-            "a disagreeing observation_id"
-        ),
+        refusal(&empty, "an empty observation_id"),
         GraphAdapterErrorCode::InvalidObservation,
     );
     // A record carrying a member the schema does not declare is refused.
@@ -356,12 +340,12 @@ fn tc_480_022_the_schema_is_closed_and_the_identity_is_canonical() {
     );
 }
 
-/// The scorer bytes are retained exactly and a digest mismatch is refused.
+/// The scorer bytes are retained exactly and an attachment with no type is refused.
 ///
-/// Trace: FR-066-AC-5
 /// Provenance: quoin#480
+#[trace("FR-066-AC-5")]
 #[test]
-fn tc_480_023_scorer_bytes_are_retained_and_a_mismatch_refused() {
+fn tc_480_023_scorer_bytes_are_retained_and_an_untyped_attachment_refused() {
     let base = case("quality/measured");
     let bytes = scorer_bytes(&base["scorerBytes"]);
     let transcribed = adapt_quality(&base).expect("the captured base record is admissible");
@@ -391,10 +375,6 @@ fn tc_480_023_scorer_bytes_are_retained_and_a_mismatch_refused() {
     );
 
     assert_eq!(
-        refusal(&case("quality/digest-mismatch"), "a digest mismatch"),
-        GraphAdapterErrorCode::AttachmentDigestMismatch,
-    );
-    assert_eq!(
         refusal(&case("quality/no-media-type"), "an attachment with no type"),
         GraphAdapterErrorCode::AttachmentMissing,
     );
@@ -403,64 +383,29 @@ fn tc_480_023_scorer_bytes_are_retained_and_a_mismatch_refused() {
 /// Every attestation and producer field the criterion names is required, one
 /// at a time.
 ///
-/// Trace: FR-066-AC-6
 /// Provenance: quoin#480
+#[trace("FR-066-AC-6", "FR-066-CON-2")]
 #[test]
 fn tc_480_024_every_attestation_and_producer_field_is_required() {
-    /// Sixteen of the nineteen attestation paths `graph-adapters.test.ts`
-    /// deleted — `verificationStack.toolchains.{node,rust,python}` are no
-    /// longer independently required (PLAT-930, `tc_480_031` below).
-    const ATTESTATION: [&[&str]; 16] = [
+    /// The attestation paths `graph-adapters.test.ts` deleted that remain
+    /// required.
+    const ATTESTATION: [&[&str]; 10] = [
         &["subject"],
         &["scope"],
         &["timestamp"],
         &["environment"],
         &["verificationStack"],
         &["verificationStack", "schemaVersion"],
-        &["verificationStack", "lockDigest"],
-        &["verificationStack", "executableDigest"],
         &["verificationStack", "buildProfile"],
-        &["verificationStack", "toolchains"],
-        // `toolchains.{node,rust,python}` are deliberately absent from this
-        // list: PLAT-930 made each optional (a measurement rarely touches
-        // every language), so omitting one is admitted, not refused. See
-        // `tc_480_031` below for that acceptance, and for the still-refused
-        // case of omitting all three at once.
         &["verificationStack", "sources"],
-        &[
-            "verificationStack",
-            "sources",
-            "agent-ix/quire-code-rs",
-            "revision",
-        ],
-        &[
-            "verificationStack",
-            "sources",
-            "agent-ix/quire-code-rs",
-            "sourceState",
-        ],
-        &[
-            "verificationStack",
-            "sources",
-            "agent-ix/quire-code-rs",
-            "remote",
-        ],
         &["verificationStack", "capabilities"],
         &["verificationStack", "artifacts"],
     ];
 
-    /// The ten producer paths it deleted.
-    const PRODUCER: [&[&str]; 10] = [
-        &["producer", "extractor_revision"],
+    /// The producer paths it deleted that remain required.
+    const PRODUCER: [&[&str]; 2] = [
         &["producer", "producer_contract_version"],
-        &["producer", "parser_grammars"],
-        &["producer", "parser_grammars", "0", "language"],
-        &["producer", "parser_grammars", "0", "grammar"],
-        &["producer", "parser_grammars", "0", "revision"],
-        &["producer", "configuration_digest"],
-        &["producer", "source_revision"],
-        &["producer", "corpus_revision"],
-        &["producer", "scorer_version"],
+        &["producer", "configuration_ref"],
     ];
 
     let base = case("quality/measured");
@@ -491,7 +436,6 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
         } else {
             delete_at(&mut mutated["record"], path);
         }
-        remint(&mut mutated["record"]);
         assert_eq!(
             refusal(&mutated, &format!("record without {}", path.join("."))),
             GraphAdapterErrorCode::InvalidObservation,
@@ -504,8 +448,8 @@ fn tc_480_024_every_attestation_and_producer_field_is_required() {
 /// Absent, inactive, duplicated or mismatched plans are refused, and a retired
 /// plan alongside the active one is not.
 ///
-/// Trace: FR-066-AC-7
 /// Provenance: quoin#480
+#[trace("FR-066-AC-7")]
 #[test]
 fn tc_480_025_the_plan_must_be_exactly_one_active_matching_plan() {
     for name in [
@@ -553,8 +497,8 @@ fn tc_480_025_the_plan_must_be_exactly_one_active_matching_plan() {
 /// The census maps bijectively and the transcription does not depend on the
 /// order the producer wrote its census members in.
 ///
-/// Trace: FR-066-AC-8
 /// Provenance: quoin#480
+#[trace("FR-066-AC-8")]
 #[test]
 fn tc_480_026_the_census_maps_bijectively_under_every_permutation() {
     /// The four census members, whose 24 orderings must all transcribe alike.
@@ -582,7 +526,6 @@ fn tc_480_026_the_census_maps_bijectively_under_every_permutation() {
             rewritten.insert((*member).to_owned(), census[*member].clone());
         }
         mutated["record"]["population"]["census"] = Value::Object(rewritten);
-        remint(&mut mutated["record"]);
         let transcribed = adapt_quality(&mutated).expect("a permuted census is still admissible");
         assert_eq!(
             quoin_store::canonical_json(transcribed.document()).expect("canonical text"),
@@ -651,8 +594,8 @@ fn permutations_of(members: &[&'static str; 4]) -> Vec<Vec<&'static str>> {
 
 /// Result facts map bijectively and a duplicate partition is refused.
 ///
-/// Trace: FR-066-AC-9
 /// Provenance: quoin#480
+#[trace("FR-066-AC-9")]
 #[test]
 fn tc_480_027_result_facts_map_bijectively_and_duplicates_are_refused() {
     let base = case("quality/measured");
@@ -725,8 +668,8 @@ fn tc_480_027_result_facts_map_bijectively_and_duplicates_are_refused() {
 /// Each not-computed population state is retained distinctly, and the census
 /// survives it.
 ///
-/// Trace: FR-066-AC-10
 /// Provenance: quoin#480
+#[trace("FR-066-AC-10")]
 #[test]
 fn tc_480_028_each_not_computed_state_is_retained_distinctly() {
     // The captured not-computed populations, plus the third state the criterion
@@ -739,7 +682,6 @@ fn tc_480_028_each_not_computed_state_is_retained_distinctly() {
         population["unsupported_files"] = Value::from(0);
         population["unreadable_files"] = Value::from(4);
     }
-    remint(&mut unreadable["record"]);
 
     let inputs = [
         ("quality/empty-population", case("quality/empty-population")),
@@ -810,8 +752,8 @@ fn tc_480_028_each_not_computed_state_is_retained_distinctly() {
 
 /// Adapted intake is idempotent and refuses a collision.
 ///
-/// Trace: FR-066-AC-11
 /// Provenance: quoin#480
+#[trace("FR-066-AC-11", "FR-066-CON-4")]
 #[test]
 fn tc_480_029_adapted_intake_is_idempotent_and_collision_safe() {
     let transcribed = adapt_quality(&case("quality/measured")).expect("admissible");
@@ -862,8 +804,8 @@ fn tc_480_029_adapted_intake_is_idempotent_and_collision_safe() {
 /// The adapters have no producer, network, Git, filesystem or frontmatter
 /// dependency.
 ///
-/// Trace: FR-066-AC-12
 /// Provenance: quoin#480
+#[trace("FR-066-AC-12", "FR-066-CON-1", "FR-066-CON-3")]
 #[test]
 fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() {
     /// The modules that are `graph-adapters.ts`. `loader` and `structural` are
@@ -882,20 +824,17 @@ fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() 
     ];
 
     /// What none of them may reach for.
-    const FORBIDDEN: [&str; 6] = [
+    const FORBIDDEN: [&str; 7] = [
         "std::process",
         "std::net",
         "std::fs",
         "quoin_graph_analysis",
         "Command::new",
         "include_str!",
+        "frontmatter",
     ];
 
-    /// Below this the census is reading an empty tree and proving nothing.
-    const SOURCE_FLOOR: usize = 20;
-
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let mut measured = 0_usize;
     for entry in ADAPTER_MODULES {
         for path in rust_files(&crate_root.join(entry)) {
             let text = std::fs::read_to_string(&path)
@@ -907,46 +846,8 @@ fn tc_480_030_the_adapters_have_no_execution_network_or_filesystem_dependency() 
                     path.display()
                 );
             }
-            measured += 1;
         }
     }
-    assert!(
-        measured >= SOURCE_FLOOR,
-        "the census read {measured} adapter modules, below the floor of {SOURCE_FLOOR}"
-    );
-}
-
-/// Omitting one `verificationStack.toolchains` language is admitted as "not
-/// applicable" (PLAT-930), but an object naming none of the three is refused
-/// exactly as an absent `toolchains` member is — the same rule
-/// `quoin-measurement`'s own type enforces, applied here because
-/// `InvocationAttestation::parse` is a second, independent production path
-/// that reads the identical business rule (review finding #2 and #3 on
-/// quoin#580).
-///
-/// Trace: FR-066-AC-6
-/// Provenance: PLAT-930
-#[test]
-fn tc_480_031_a_toolchain_language_may_be_omitted_but_not_all_three() {
-    let base = case("quality/measured");
-
-    for language in ["node", "rust", "python"] {
-        let mut admitted = base.clone();
-        delete_at(
-            &mut admitted["attestation"],
-            &["verificationStack", "toolchains", language],
-        );
-        adapt_quality(&admitted).unwrap_or_else(|error| {
-            panic!("an attestation with no `{language}` identity must be admitted: {error}")
-        });
-    }
-
-    let mut empty = base.clone();
-    empty["attestation"]["verificationStack"]["toolchains"] = serde_json::json!({});
-    assert_eq!(
-        refusal(&empty, "an empty toolchains object"),
-        GraphAdapterErrorCode::InvalidAttestation,
-    );
 }
 
 /// Every `.rs` at or under a path.

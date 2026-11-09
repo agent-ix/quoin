@@ -98,10 +98,6 @@ pub fn verify(request: &serde_json::Value) -> Result<Response, CoreError> {
         .map(|collection| Ranked {
             collection,
             intake: positions.get(collection.collection_id.as_str()).copied(),
-            apparatus_forged: request
-                .apparatus_forged
-                .iter()
-                .any(|id| id == collection.collection_id.as_str()),
         })
         .collect();
     // A deleted or edited collection is attributed to this plan when the

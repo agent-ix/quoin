@@ -67,9 +67,6 @@ title: Three criteria
 | FR-001-AC-3 | The reader shall name the refused field. |  |
 ";
 
-/// A commit no repository here has, so a run recorded at it is behind HEAD.
-const OLD_COMMIT: &str = "0000000000000000000000000000000000000001";
-
 struct Fixture {
     dir: tempfile::TempDir,
     home: tempfile::TempDir,
@@ -109,53 +106,21 @@ impl Fixture {
     }
 }
 
-/// A repository holding the module and `spec`, committed, with no store.
-fn repository(module: &str, git: bool) -> Fixture {
+/// A directory holding the module and `spec`, with no store.
+fn repository(module: &str) -> Fixture {
     let fixture = Fixture {
         dir: tempfile::tempdir().unwrap(),
         home: tempfile::tempdir().unwrap(),
     };
     fixture.write("manifest.yaml", module);
     fixture.write("spec/FR-001-example.md", SPEC);
-    if git {
-        for arguments in [
-            &["init", "-q"][..],
-            &["add", "-A"],
-            &[
-                "-c",
-                "user.email=t@example.invalid",
-                "-c",
-                "user.name=t",
-                "commit",
-                "-qm",
-                "fixture",
-            ],
-        ] {
-            let status = Command::new("git")
-                .args(arguments)
-                .current_dir(fixture.repo())
-                .status()
-                .unwrap();
-            assert!(status.success(), "git {arguments:?}");
-        }
-    }
     fixture
 }
 
-fn head(fixture: &Fixture) -> String {
-    let output = Command::new("git")
-        .args(["rev-parse", "HEAD"])
-        .current_dir(fixture.repo())
-        .output()
-        .unwrap();
-    String::from_utf8(output.stdout).unwrap().trim().to_owned()
-}
-
-/// One passing `unit` run at HEAD for AC-1 with its mock inspection at HEAD,
-/// and one passing `legacy` run behind HEAD for AC-2. AC-3 is bound nowhere.
+/// One passing `unit` run for AC-1 with its mock inspection, and one `legacy`
+/// binding for AC-2 whose run record is gone. AC-3 is bound nowhere.
 fn populated() -> Fixture {
-    let fixture = repository(MODULE, true);
-    let head = head(&fixture);
+    let fixture = repository(MODULE);
     // Outside the repository, so the results file is not part of the tree.
     let junit = |suite: &str, id: &str| {
         let path = fixture.home.path().join(format!("{suite}.xml"));
@@ -168,10 +133,7 @@ fn populated() -> Fixture {
         .unwrap();
         path
     };
-    for (suite, commit, id) in [
-        ("unit", head.as_str(), "FR-001-AC-1"),
-        ("legacy", OLD_COMMIT, "FR-001-AC-2"),
-    ] {
+    for (suite, id) in [("unit", "FR-001-AC-1"), ("legacy", "FR-001-AC-2")] {
         let results = junit(suite, id);
         fixture.ok(&[
             "evidence",
@@ -182,8 +144,6 @@ fn populated() -> Fixture {
             ".",
             "--suite",
             suite,
-            "--commit",
-            commit,
             "--tool",
             "fixture",
             "--adapter",
@@ -201,11 +161,11 @@ fn populated() -> Fixture {
         ".",
         "--suite",
         "unit",
-        "--commit",
-        &head,
         "--timestamp",
         "2026-01-01T00:00:00Z",
     ]);
+    // The binding stays; the run it names does not.
+    std::fs::remove_dir_all(fixture.repo().join("spec/evidence/runs/legacy")).unwrap();
     fixture
 }
 
@@ -224,7 +184,7 @@ fn statuses(matrix: &Value) -> BTreeMap<String, String> {
         .collect()
 }
 
-/// A passing binding with a mock inspection at HEAD, a binding behind HEAD
+/// A passing binding with a mock inspection, a binding whose run is missing
 /// and no binding at all read as three distinct statuses in one matrix, and
 /// agree with what `quoin evidence audit` reports for the same tree.
 ///
@@ -283,8 +243,8 @@ fn tc_1080_200_a_real_store_yields_bound_stale_and_undischarged() {
     assert!(
         from_audit
             .iter()
-            .any(|(id, summary)| id == "FR-001-AC-2" && summary.contains("not at HEAD")),
-        "the stale status must come from the auditor's behind-HEAD check: {from_audit:?}"
+            .any(|(id, summary)| id == "FR-001-AC-2" && summary.contains("no recorded run")),
+        "the stale status must come from the auditor's missing-run check: {from_audit:?}"
     );
 }
 
@@ -326,7 +286,7 @@ fn tc_1080_202_no_obligations_source_renders_the_reason() {
         "",
     );
     assert_ne!(without, MODULE, "the fixture edit must remove the source");
-    let fixture = repository(&without, true);
+    let fixture = repository(&without);
     let markdown = fixture.ok(&["matrix", "--module", "."]);
     assert_eq!(
         markdown,
@@ -380,21 +340,6 @@ fn tc_1080_203_writes_nothing_under_spec() {
     assert_eq!(snapshot(fixture.repo()), before);
 }
 
-/// Without a resolvable HEAD the command refuses with exit 2 and prints no
-/// matrix.
-///
-/// Trace: FR-115-AC-14, TC-1977
-#[test]
-fn tc_1080_204_an_unresolvable_head_is_refused() {
-    let fixture = repository(MODULE, false);
-    let output = fixture.quoin(&["matrix", "--module", "."]);
-    assert_eq!(output.status.code(), Some(2));
-    assert!(output.stdout.is_empty(), "no partial matrix");
-    let diagnostics: Value = serde_json::from_slice(&output.stderr).unwrap();
-    assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
-    assert_eq!(diagnostics[0]["context"]["op"], "matrix");
-}
-
 /// `quoin matrix` never launches `ix-flow`: an `ix-flow` on PATH that would
 /// leave a marker is never run.
 ///
@@ -436,7 +381,7 @@ fn tc_1080_205_never_spawns_ix_flow() {
 /// Trace: FR-115-AC-15, TC-1978
 #[test]
 fn tc_1080_206_help_describes_the_evidence_backed_render() {
-    let fixture = repository(MODULE, false);
+    let fixture = repository(MODULE);
     let page = fixture.ok(&["matrix", "--help"]);
     assert!(
         page.starts_with("Render the evidence-backed test matrix, per criterion.\n"),

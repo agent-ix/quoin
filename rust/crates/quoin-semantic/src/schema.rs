@@ -218,7 +218,7 @@ mod tests {
     fn tc_378_037_valid_document_produces_no_errors() {
         let v = validator(&json!({"type": "string"}));
         assert!(v.is_valid(&json!("x")));
-        assert!(v.errors(&json!("x")).is_empty());
+        assert_eq!(v.errors(&json!("x")).len(), 0);
     }
 
     /// Trace: FR-070

@@ -1,0 +1,46 @@
+name: review
+version: 1.0.0
+description: Quoin-owned specification review with validated per-analysis artifacts.
+initialPhase: intake
+phases:
+  - {name: intake}
+  - {name: analyses_run}
+  - {name: reviews_rendered}
+  - {name: validated}
+  - {name: accepted, terminal: true}
+transitions:
+  - from: intake
+    to: analyses_run
+    invariants: ["interview.complete:request", review_selection_consistent, human_acceptance_required]
+    defaultGate: auto
+  - from: analyses_run
+    to: reviews_rendered
+    invariants: [human_acceptance_required]
+    defaultGate: auto
+  - from: reviews_rendered
+    to: validated
+    invariants: [selected_analyses_covered, human_acceptance_required]
+    defaultGate: auto
+  - from: validated
+    to: accepted
+    invariants: [selected_analyses_covered, human_acceptance_required]
+    defaultGate: hitl
+itemSchemas:
+  quoin_context: {}
+  operation_request: {}
+  review_doc:
+    required: [id, analysis, path]
+    properties:
+      id: {type: string}
+      analysis: {type: string}
+      path: {type: string}
+linkSchemas: {}
+interviews:
+  request:
+    itemType: operation_request
+    completenessRule: all_required
+    questions:
+      - {key: review_set, prompt: "Choose base, all, or subset.", type: enum, options: [base, all, subset], required: true}
+      - {key: selected_analyses, prompt: "Selected lenses; empty for base or all.", type: "list<text>", required: false}
+      - {key: assurance_profiles, prompt: "Applicable active AssuranceProfile paths.", type: "list<text>", required: false}
+      - {key: profile_disposition, prompt: "Explain applicable profiles, or why none applies.", type: text, required: true}

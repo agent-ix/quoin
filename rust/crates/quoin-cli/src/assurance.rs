@@ -3,8 +3,6 @@
 
 //! Rust adapter for the retained read-only `quoin assurance` view.
 
-use std::process::Command as ProcessCommand;
-
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
@@ -123,10 +121,9 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
     }
     let obligations = field(&coverage.payload, "obligations")?;
     let policy = policy(arguments, &obligations)?;
-    let head = revision(&repo);
     let store = invoke(
         "evidence.audit_inputs",
-        &serde_json::json!({ "repo": repo, "head_commit": (!head.is_empty()).then_some(head.as_str()), "independence_policy": policy }),
+        &serde_json::json!({ "repo": repo, "independence_policy": policy }),
     )?;
     if !store.outcome.carries_payload() {
         return Ok(store);
@@ -151,7 +148,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
             "mockInspectionSuites": field(&store.payload, "mock_inspection_suites")?,
             "vacuousScanSuites": field(&store.payload, "vacuous_scan_suites")?,
             "independence": field(&store.payload, "independence")?, "catalog": catalog.payload,
-            "headCommit": (!head.is_empty()).then_some(head.as_str()), "independencePolicy": policy
+            "independencePolicy": policy
         }}),
     )?;
     if !audit.outcome.carries_payload() {
@@ -244,15 +241,6 @@ fn json_file(path: &str, label: &str) -> Result<serde_json::Value, String> {
     let text = std::fs::read_to_string(path)
         .map_err(|error| format!("{label} are not readable JSON: {error}"))?;
     serde_json::from_str(&text).map_err(|error| format!("{label} are not readable JSON: {error}"))
-}
-fn revision(repo: &str) -> String {
-    ProcessCommand::new("git")
-        .args(["-C", repo, "rev-parse", "HEAD"])
-        .output()
-        .ok()
-        .filter(|output| output.status.success())
-        .and_then(|output| String::from_utf8(output.stdout).ok())
-        .map_or_else(String::new, |head| head.trim().to_owned())
 }
 fn values(arguments: &ArgMatches, name: &str) -> Vec<String> {
     arguments

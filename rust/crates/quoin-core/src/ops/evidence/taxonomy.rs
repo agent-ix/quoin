@@ -29,7 +29,7 @@ use crate::error::{CoreError, CoreErrorCode};
 ///   a checked-in store file left holding a merge conflict, or a path that
 ///   cannot be read, written, listed or removed. Fixing it means changing the
 ///   repository, not the request.
-/// - **`Refused` (2) for `RecordIntegrity`** — a content-addressed record whose
+/// - **`Refused` (2) for `RecordIntegrity`** — an assurance record whose
 ///   stored identity disagrees with its content. The store on disk is wrong,
 ///   not the request; publishing is append-only and refuses rather than
 ///   overwrites.
@@ -100,7 +100,6 @@ mod tests {
     /// When this fails: a code was added to `quoin-evidence`. Decide which
     /// group it belongs to, add it to that arm, and raise the count.
     ///
-    /// Trace: FR-101-AC-3
     #[test]
     fn the_error_mapping_covers_every_evidence_code() {
         assert_eq!(

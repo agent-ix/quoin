@@ -293,7 +293,7 @@ mod tests {
             r#"{"runs":[{"tool":{"driver":{"name":"semgrep","version":"1.2.3","rules":[]}},"results":[]}]}"#,
         )
         .unwrap();
-        assert!(result.findings.is_empty());
+        assert_eq!(result.findings.len(), 0);
         assert_eq!(result.tool.as_deref(), Some("semgrep 1.2.3"));
         // `rules: []` is a tool that reported ZERO rules, not one that said
         // nothing. The two are different facts and FR-034 turns on it.

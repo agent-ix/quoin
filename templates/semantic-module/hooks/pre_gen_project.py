@@ -17,7 +17,6 @@ PACKAGE_NAME = "{{ cookiecutter.package_name }}"
 MODULE_KIND = "{{ cookiecutter.module_kind }}"
 LICENSE = "{{ cookiecutter.license }}"
 VERSION = "{{ cookiecutter.version }}"
-SEMANTIC_CORE = "{{ cookiecutter.semantic_core_version }}"
 GENERATED_TARGETS = "{{ cookiecutter.generated_targets }}"
 IMPORTED_MODULES = "{{ cookiecutter.imported_modules }}"
 NAV_CATEGORY_ORDER = "{{ cookiecutter.nav_category_order }}"
@@ -59,7 +58,7 @@ AGPL_IDENTIFIERS = {"AGPL-3.0-or-later", "AGPL-3.0+"}
 SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 SLUG = re.compile(r"^[a-z][a-z0-9-]*[a-z0-9]$")
 PY_IDENT = re.compile(r"^[a-z][a-z0-9_]*$")
-IMPORT_REF = re.compile(r"^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*@\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
+IMPORT_REF = re.compile(r"^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*@[\^~<>=]*\d[0-9A-Za-z.*,<>=^~+-]*$")
 
 
 def fail(message):
@@ -99,13 +98,8 @@ def main():
             "importable package directory." % PACKAGE_NAME
         )
 
-    # The two versions this template takes as inputs are checked here.
-    for name, value in (
-        ("version", VERSION),
-        ("semantic_core_version", SEMANTIC_CORE),
-    ):
-        if not SEMVER.match(value):
-            fail("%s %r is not an exact semantic version." % (name, value))
+    if not SEMVER.match(VERSION):
+        fail("version %r is not an exact semantic version." % VERSION)
 
     if not NAV_CATEGORY_ORDER.isdigit():
         fail(
@@ -135,8 +129,8 @@ def main():
         if not IMPORT_REF.match(entry):
             fail(
                 "imported_modules entry %r is not of the form "
-                "<org>/<repo>@<exact-version>. An import without an exact version "
-                "resolves differently on two machines." % entry
+                "<org>/<repo>@<version-requirement>. An import without a version "
+                "requirement resolves differently on two machines." % entry
             )
         identity = entry.split("@", 1)[0]
         if identity in seen:

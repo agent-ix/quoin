@@ -11,7 +11,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 [[package]]
 name = "agent-ix-engineering-assurance-campaign"
 version = "0.0.0"
-source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=08bbf1cc5acc8b5a6e636d133ec662b812fc0221#08bbf1cc5acc8b5a6e636d133ec662b812fc0221"
+source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=f70528df9890a892b5a5488e89f26dd990f99c3b#f70528df9890a892b5a5488e89f26dd990f99c3b"
 dependencies = [
  "serde",
 ]
@@ -19,7 +19,7 @@ dependencies = [
 [[package]]
 name = "agent-ix-semantic-schema"
 version = "0.3.0"
-source = "git+https://github.com/agent-ix/filament-core-data?tag=semantic-schema-v0.3.0#6156f9e0e891f7d508ce7b137ba1f6eb849a099e"
+source = "git+https://github.com/agent-ix/filament-core-data?branch=main#45a927b258c297159567e4be6a40b6f466a42516"
 
 [[package]]
 name = "ahash"
@@ -57,12 +57,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
 
 [[package]]
-name = "anyhow"
-version = "1.0.104"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
-
-[[package]]
 name = "arc-swap"
 version = "1.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -76,12 +70,6 @@ name = "arraydeque"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d902e3d592a523def97af8f317b08ce16b7ab854c1985a0c671e6f15cebc236"
-
-[[package]]
-name = "arrayref"
-version = "0.3.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb"
 
 [[package]]
 name = "arrayvec"
@@ -149,27 +137,12 @@ checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
 
 [[package]]
 name = "bit-set"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0700ddab506f33b20a03b13996eccd309a48e5ff77d0d95926aa0210fb4e95f1"
-dependencies = [
- "bit-vec 0.6.3",
-]
-
-[[package]]
-name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08807e080ed7f9d5433fa9b275196cfc35414f66a0c79d864dc51a0d825231a3"
 dependencies = [
- "bit-vec 0.8.0",
+ "bit-vec",
 ]
-
-[[package]]
-name = "bit-vec"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
 
 [[package]]
 name = "bit-vec"
@@ -190,35 +163,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06"
 
 [[package]]
-name = "blake3"
-version = "1.8.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76ae7bad254120e9e4c63bafc385310756f90c484eac0e36b8317cf09cb92a77"
-dependencies = [
- "arrayref",
- "arrayvec",
- "cc",
- "cfg-if",
- "constant_time_eq",
- "cpufeatures 0.3.1",
-]
-
-[[package]]
 name = "block-buffer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
 dependencies = [
  "generic-array",
-]
-
-[[package]]
-name = "block-buffer"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2f6c7dbe95a6ed67ad9f18e57daf93a2f034c524b99fd2b76d18fdfeb6660aa"
-dependencies = [
- "hybrid-array",
 ]
 
 [[package]]
@@ -357,12 +307,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "constant_time_eq"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
-
-[[package]]
 name = "core-foundation"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -456,15 +400,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crypto-common"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce6e4c961d6cd6c9a86db418387425e8bdeaf05b3c8bc1411e6dca4c252f1453"
-dependencies = [
- "hybrid-array",
-]
-
-[[package]]
 name = "dashmap"
 version = "6.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -527,18 +462,8 @@ version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
 dependencies = [
- "block-buffer 0.10.4",
- "crypto-common 0.1.7",
-]
-
-[[package]]
-name = "digest"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1dd6dbb5841937940781866fa1281a1ff7bd3bf827091440879f9994983d5c2"
-dependencies = [
- "block-buffer 0.12.1",
- "crypto-common 0.2.2",
+ "block-buffer",
+ "crypto-common",
 ]
 
 [[package]]
@@ -597,15 +522,13 @@ dependencies = [
 [[package]]
 name = "engineering-assurance"
 version = "0.7.1"
-source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=08bbf1cc5acc8b5a6e636d133ec662b812fc0221#08bbf1cc5acc8b5a6e636d133ec662b812fc0221"
+source = "git+https://github.com/agent-ix/engineering-assurance.git?rev=f70528df9890a892b5a5488e89f26dd990f99c3b#f70528df9890a892b5a5488e89f26dd990f99c3b"
 dependencies = [
  "agent-ix-engineering-assurance-campaign",
  "rustix",
  "serde",
  "serde_json",
  "serde_json_canonicalizer",
- "sha1",
- "sha2 0.11.0",
  "syn 3.0.5",
  "thiserror",
 ]
@@ -623,18 +546,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "fancy-regex"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "531e46835a22af56d1e3b66f04844bed63158bc094a628bec1d321d9b4c44bf2"
-dependencies = [
- "bit-set 0.5.3",
- "regex-automata",
- "regex-syntax",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -643,7 +555,7 @@ version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d301f5bf187b3c295fce6468d3875037a0bccc5f6b151c63cac2f85babf21912"
 dependencies = [
- "bit-set 0.8.0",
+ "bit-set",
  "regex-automata",
  "regex-syntax",
 ]
@@ -721,16 +633,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
 dependencies = [
  "percent-encoding",
-]
-
-[[package]]
-name = "fraction"
-version = "0.15.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e076045bb43dac435333ed5f04caf35c7463631d0dae2deb2638d94dd0a5b872"
-dependencies = [
- "lazy_static",
- "num",
 ]
 
 [[package]]
@@ -1998,15 +1900,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eaec953f16e5bcf6b8a3cb3aa959b17e5577dbd2693e94554c462c08be22624b"
 
 [[package]]
-name = "hybrid-array"
-version = "0.4.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27f864f10dfb56725ce5ce5472bc52252c8f93a4ab86327122cebf62c5f59a17"
-dependencies = [
- "typenum",
-]
-
-[[package]]
 name = "hyper"
 version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2215,15 +2108,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "791930b43c0d5973160d90a8f3894509f2b273430f5c5c73b668636d0287c5c0"
 
 [[package]]
-name = "iso8601"
-version = "0.6.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ffd3254cf2b0fc53e38414bdba99719f3e269db8a6519731b68a3a90040c41b"
-dependencies = [
- "nom",
-]
-
-[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2370,34 +2254,6 @@ dependencies = [
 
 [[package]]
 name = "jsonschema"
-version = "0.18.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa0f4bea31643be4c6a678e9aa4ae44f0db9e5609d5ca9dc9083d06eb3e9a27a"
-dependencies = [
- "ahash",
- "anyhow",
- "base64 0.22.1",
- "bytecount",
- "fancy-regex 0.13.0",
- "fraction 0.15.4",
- "getrandom 0.2.17",
- "iso8601",
- "itoa",
- "memchr",
- "num-cmp",
- "once_cell",
- "parking_lot",
- "percent-encoding",
- "regex",
- "serde",
- "serde_json",
- "time",
- "url",
- "uuid",
-]
-
-[[package]]
-name = "jsonschema"
 version = "0.56.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6a806f80c1f5560431009ce5ec29b59d38f950e0cd7db5f1b8925e6d8104e21"
@@ -2406,8 +2262,8 @@ dependencies = [
  "bytecount",
  "data-encoding",
  "email_address",
- "fancy-regex 0.19.2",
- "fraction 0.17.0",
+ "fancy-regex",
+ "fraction",
  "getrandom 0.3.4",
  "itoa",
  "jsonschema-regex",
@@ -2441,7 +2297,7 @@ checksum = "a05cd404c5ff6e2731dbbf7e290a27417750acfb59e329560a1d0af384c93fb0"
 dependencies = [
  "ahash",
  "bytecount",
- "fraction 0.17.0",
+ "fraction",
  "getrandom 0.3.4",
  "num-cmp",
  "num-traits",
@@ -2596,15 +2452,6 @@ name = "multiversion_no_op"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
-
-[[package]]
-name = "nom"
-version = "8.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df9761775871bdef83bee530e60050f7e54b1105350d6884eb0fb4f46c2f9405"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "nonempty"
@@ -2838,8 +2685,8 @@ version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bee689443a2bd0a16ab0348b52ee43e3b2d1b1f931c8aa5c9f8de4c86fbe8c40"
 dependencies = [
- "bit-set 0.8.0",
- "bit-vec 0.8.0",
+ "bit-set",
+ "bit-vec",
  "bitflags 2.13.2",
  "num-traits",
  "rand 0.9.5",
@@ -2903,7 +2750,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2915,7 +2762,7 @@ dependencies = [
  "ryu-js",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "thiserror",
 ]
 
@@ -2943,23 +2790,21 @@ dependencies = [
 
 [[package]]
 name = "quire-rs"
-version = "0.50.2"
-source = "git+https://github.com/agent-ix/quire-rs?rev=0649f7c0a88ff81f1a75b6754d55bd8cddc937f2#0649f7c0a88ff81f1a75b6754d55bd8cddc937f2"
+version = "0.53.0"
+source = "git+https://github.com/agent-ix/quire-rs?rev=ce172a7ddcec21815f852c06fa5a0e340b79e57b#ce172a7ddcec21815f852c06fa5a0e340b79e57b"
 dependencies = [
  "agent-ix-semantic-schema",
  "globset",
  "ignore",
  "indexmap",
- "jsonschema 0.18.3",
+ "jsonschema",
  "loom",
  "quire-rust-extraction",
  "rayon",
  "regex",
  "serde",
  "serde_json",
- "sha2 0.10.9",
  "thiserror",
- "unicode-normalization",
  "uuid",
  "yaml_serde",
 ]
@@ -2967,20 +2812,21 @@ dependencies = [
 [[package]]
 name = "quire-rust-extraction"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=0649f7c0a88ff81f1a75b6754d55bd8cddc937f2#0649f7c0a88ff81f1a75b6754d55bd8cddc937f2"
+source = "git+https://github.com/agent-ix/quire-rs?rev=ce172a7ddcec21815f852c06fa5a0e340b79e57b#ce172a7ddcec21815f852c06fa5a0e340b79e57b"
 dependencies = [
  "quire-code-parse",
 ]
 
 [[package]]
 name = "quoin-assurance"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "engineering-assurance",
  "quoin-evidence",
  "quoin-evidence-types",
  "quoin-finding-types",
  "quoin-quire-types",
+ "quoin-store",
  "schemars",
  "serde",
  "serde_json",
@@ -2988,8 +2834,9 @@ dependencies = [
 
 [[package]]
 name = "quoin-auditor"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "proptest",
  "quoin-combinatorial",
  "quoin-evidence",
@@ -3008,7 +2855,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-catalog"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "quoin-semantic",
  "quoin-yaml",
@@ -3020,24 +2867,24 @@ dependencies = [
 
 [[package]]
 name = "quoin-change-assurance"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "engineering-assurance",
  "quoin-jsonschema",
  "quoin-store",
  "serde_json",
- "sha2 0.10.9",
  "tempfile",
  "thiserror",
 ]
 
 [[package]]
 name = "quoin-cli"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "clap",
  "engineering-assurance",
  "ix-cli-kit",
+ "ix-trace-rs",
  "quoin-assurance",
  "quoin-config",
  "quoin-core",
@@ -3045,6 +2892,7 @@ dependencies = [
  "quoin-evidence",
  "quoin-graph-analysis",
  "quoin-measurement",
+ "quoin-quire",
  "quoin-semantic",
  "quoin-store",
  "quoin-validators",
@@ -3054,13 +2902,16 @@ dependencies = [
  "serde_json",
  "signal-hook",
  "tempfile",
+ "thiserror",
  "time",
+ "url",
 ]
 
 [[package]]
 name = "quoin-combinatorial"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "proptest",
  "regex",
  "serde",
@@ -3070,8 +2921,9 @@ dependencies = [
 
 [[package]]
 name = "quoin-completeness"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "quoin-yaml",
  "schemars",
  "serde",
@@ -3082,20 +2934,20 @@ dependencies = [
 
 [[package]]
 name = "quoin-config"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "engineering-assurance",
  "schemars",
  "serde",
  "serde_json",
- "serde_yaml_ng",
  "tempfile",
  "thiserror",
+ "yaml_serde",
 ]
 
 [[package]]
 name = "quoin-core"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "engineering-assurance",
  "ix-cli-kit",
@@ -3127,14 +2979,13 @@ dependencies = [
 
 [[package]]
 name = "quoin-delivery"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "flate2",
  "reqwest 0.13.5",
  "semver",
  "serde",
  "serde_json",
- "sha2 0.10.9",
  "tar",
  "tempfile",
  "thiserror",
@@ -3144,7 +2995,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "ix-trace-rs",
  "quoin-quire-types",
@@ -3155,11 +3006,12 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror",
+ "uuid",
 ]
 
 [[package]]
 name = "quoin-evidence-types"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "serde",
  "serde_json",
@@ -3167,7 +3019,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-finding-types"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "quoin-evidence",
  "schemars",
@@ -3177,8 +3029,9 @@ dependencies = [
 
 [[package]]
 name = "quoin-graph-analysis"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "quoin-evidence",
  "quoin-finding-types",
  "quoin-quire",
@@ -3190,7 +3043,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-jev"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "async-trait",
  "engineering-assurance",
@@ -3215,9 +3068,9 @@ dependencies = [
 
 [[package]]
 name = "quoin-jsonschema"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
- "jsonschema 0.56.0",
+ "jsonschema",
  "quoin-measurement",
  "serde_json",
  "thiserror",
@@ -3225,7 +3078,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "engineering-assurance",
  "proptest",
@@ -3241,8 +3094,9 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement-graph"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "quoin-graph-analysis",
  "quoin-measurement",
  "quoin-quire",
@@ -3255,24 +3109,25 @@ dependencies = [
 
 [[package]]
 name = "quoin-modules"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "gix",
  "quoin-semantic",
  "schemars",
  "serde",
  "serde_json",
- "serde_yaml_ng",
  "tempfile",
  "thiserror",
+ "yaml_serde",
 ]
 
 [[package]]
 name = "quoin-quire"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "quire-rs",
  "quoin-jsonschema",
+ "quoin-quire-types",
  "serde",
  "serde_json",
  "thiserror",
@@ -3280,17 +3135,16 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire-types"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "schemars",
  "serde",
  "serde_json",
- "sha2 0.10.9",
 ]
 
 [[package]]
 name = "quoin-semantic"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "quoin-jsonschema",
  "quoin-yaml",
@@ -3303,20 +3157,30 @@ dependencies = [
 
 [[package]]
 name = "quoin-store"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
- "blake3",
+ "engineering-assurance",
  "ix-trace-rs",
  "libc",
  "quire-canonical",
  "serde_json",
- "sha2 0.10.9",
+ "thiserror",
+]
+
+[[package]]
+name = "quoin-suite-trace"
+version = "0.29.4"
+dependencies = [
+ "quoin-evidence",
+ "quoin-quire",
+ "regex",
+ "serde_json",
  "thiserror",
 ]
 
 [[package]]
 name = "quoin-validators"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "regex",
  "schemars",
@@ -3327,8 +3191,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-workflow-check"
+version = "0.29.4"
+dependencies = [
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "quoin-yaml"
-version = "0.28.4"
+version = "0.29.4"
 dependencies = [
  "saphyr",
  "serde_json",
@@ -3635,14 +3507,14 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
 name = "rustls"
-version = "0.23.45"
+version = "0.23.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
+checksum = "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf"
 dependencies = [
  "aws-lc-rs",
  "once_cell",
@@ -3693,7 +3565,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3704,9 +3576,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.15"
+version = "0.103.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
+checksum = "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281"
 dependencies = [
  "aws-lc-rs",
  "ring",
@@ -3917,19 +3789,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_yaml_ng"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b4db627b98b36d4203a7b458cf3573730f2bb591b28871d916dfa9efabfd41f"
-dependencies = [
- "indexmap",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
-]
-
-[[package]]
 name = "sha1"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3937,7 +3796,7 @@ checksum = "a978451301f4db1d02937a4ab3ccce137717b81826e79b7d49ffe3244a13c3b8"
 dependencies = [
  "cfg-if",
  "cpufeatures 0.2.17",
- "digest 0.10.7",
+ "digest",
 ]
 
 [[package]]
@@ -3946,7 +3805,7 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "89f599ac0c323ebb1c6082821a54962b839832b03984598375bff3975b804423"
 dependencies = [
- "digest 0.10.7",
+ "digest",
  "sha1",
 ]
 
@@ -3958,18 +3817,7 @@ checksum = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
 dependencies = [
  "cfg-if",
  "cpufeatures 0.2.17",
- "digest 0.10.7",
-]
-
-[[package]]
-name = "sha2"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "446ba717509524cb3f22f17ecc096f10f4822d76ab5c0b9822c5f9c284e825f4"
-dependencies = [
- "cfg-if",
- "cpufeatures 0.3.1",
- "digest 0.11.3",
+ "digest",
 ]
 
 [[package]]
@@ -4153,7 +4001,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4233,9 +4081,9 @@ checksum = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
 
 [[package]]
 name = "tokio"
-version = "1.48.0"
+version = "1.51.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff360e02eab121e0bc37a2d3b4d4dc622e6eda3a8e5253d5435ecf5bd4c68408"
+checksum = "a13e32eacd0222f9658be2ccbd83b718bfd9bfb0d54b5921913c184cb86124a5"
 dependencies = [
  "bytes",
  "libc",
@@ -4248,13 +4096,13 @@ dependencies = [
 
 [[package]]
 name = "tokio-macros"
-version = "2.6.1"
+version = "2.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c55a2eff8b69ce66c84f85e1da1c233edc36ceb85a2058d11b0d6a3c7e7569c"
+checksum = "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.5",
 ]
 
 [[package]]
@@ -4622,12 +4470,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "unsafe-libyaml"
-version = "0.2.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
-
-[[package]]
 name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4815,18 +4657,18 @@ dependencies = [
 
 [[package]]
 name = "webpki-root-certs"
-version = "1.0.9"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b96554aa2acc8ccdb7e1c9a58a7a68dd5d13bccc69cd124cb09406db612a1c9b"
+checksum = "58ec80e73fd8baf57bf0d9615554c75348bda990d6d5bbeab964dd068319fecb"
 dependencies = [
  "rustls-pki-types",
 ]
 
 [[package]]
 name = "webpki-roots"
-version = "1.0.9"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a"
+checksum = "1c1c8e20c8a38fc7d65abfe74eb7280e4aa667e8eec8bc84996d2874810748d9"
 dependencies = [
  "rustls-pki-types",
 ]
@@ -4853,7 +4695,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5099,9 +4941,9 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "8.6.0"
+version = "9.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d04a6b5381502aa6087c94c669499eb1602eb9c5e8198e534de571f7154809b"
+checksum = "711e8c9646791c49b7eb799a19c4ae70a9b8372ddc6a1fa4778defd1e2aa5d5e"
 dependencies = [
  "crc32fast",
  "flate2",

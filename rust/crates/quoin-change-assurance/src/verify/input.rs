@@ -16,18 +16,22 @@
 use engineering_assurance::measurement::{NegativeControls, ProtectedApparatus};
 use quoin_store::JsonValue;
 
+use crate::ids::{RecordId, Revision};
+
 /// One selection: which attestation is offered for which proof obligation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Selection {
     /// The obligation the attestation is offered against.
     pub proof_id: String,
-    /// The digest of the attestation offered.
-    pub attestation_digest: String,
+    /// The id of the attestation offered.
+    pub attestation_id: String,
 }
 
 /// One retained attestation and the output filed beside it.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RetainedAttestation {
+    /// The id it was filed under.
+    pub filed_as: String,
     /// The attestation as retained.
     pub attestation: JsonValue,
     /// The output bytes as retained, or `None` when they are not present.
@@ -61,13 +65,11 @@ pub struct AuditReport {
     pub unevaluated: Vec<ReportUnevaluated>,
 }
 
-/// A retained audit, with the digest of the report it came from.
+/// A retained audit.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RetainedAudit {
     /// The obligation the report covers.
     pub proof_id: String,
-    /// The report's digest, as the auditor filed it.
-    pub report_digest: String,
     /// The report itself.
     pub report: AuditReport,
 }
@@ -84,12 +86,12 @@ pub struct RetainedAudit {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GoverningPlan {
     /// The `MeasurementPlan` id this plan was resolved from (PLAT-1015,
-    /// FR-111), sealed onto the receipt as `governing_plan_id`.
+    /// FR-111), written onto the receipt as `governing_plan_id`.
     ///
     /// A member of the plan rather than a sibling of it on
     /// [`VerificationInput`], so a receipt cannot record one plan id (or
     /// none) while its apparatus judgment ran against a different plan (or
-    /// one): the id sealed is always the id of the plan that was read.
+    /// one): the id written is always the id of the plan that was read.
     pub id: String,
     /// The plan's declared `protected_apparatus`, when it declares one.
     pub protected_apparatus: Option<ProtectedApparatus>,
@@ -100,6 +102,10 @@ pub struct GoverningPlan {
 /// Everything one verification reads.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerificationInput {
+    /// The identity of the record under verification.
+    pub record_id: RecordId,
+    /// The revision of the record under verification.
+    pub record_revision: Revision,
     /// The record under verification, as retained.
     pub record: JsonValue,
     /// Its parent chain, as retained.

@@ -68,8 +68,8 @@ makes the number a statement about the corpus, not the lens.
 
 ## Evidence Policy
 
-Retain the raw service responses, the question set, the corpus and context
-revision, the classifier identity the service reports, token counts, and the
+Retain the raw service responses, the question set, the corpus and context,
+the classifier identity the service reports, token counts, and the
 timestamp, as measurement collections under `spec/evidence/measurements`.
 
 ## Measurement Ownership

@@ -55,7 +55,7 @@ pub enum NodeKind {
 /// Whether a node's part of the argument holds.
 ///
 /// `open` is the point of the whole view. An undischarged obligation or a
-/// suspect binding stays in the tree as an **undeveloped goal** rather than
+/// distrusted binding stays in the tree as an **undeveloped goal** rather than
 /// being dropped: a case that silently narrows to only what it can prove reads
 /// as complete, and that is the failure this program exists to catch.
 ///
@@ -108,7 +108,7 @@ pub struct Unreadable {
 /// what `src/assurance/graph.ts` already returns to every consumer, and the
 /// difftest compares canonical stdout bytes, so a renamed key here is a
 /// difference. The **request** is new surface minted at this boundary, and it
-/// follows the boundary's own convention (`expect_protocol`, `obligation_id`).
+/// follows the boundary's own convention (`obligation_id`).
 ///
 /// # Why the two assessments are type parameters
 ///

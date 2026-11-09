@@ -61,4 +61,4 @@ ground truth cannot itself be contested the way a labeller's reading can.
 ## Comparison and Enforcement
 
 This plan assigns no verdict. MP-230 states gap-analysis's bar on this
-metric. Compare only like lens, variant, corpus revision and mutation log.
+metric. Compare only like lens, variant and mutation log.

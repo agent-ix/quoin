@@ -40,6 +40,6 @@ non-scoring, export-driven, and additive to existing evidence, assurance, and me
 ## Notes
 
 - This is the landing gate for issue #152 and the prerequisite for issue #281.
-- The full pinned Vitest run passes 819/819 tests. The reusable skill-contract gate prefers the
-  active installed module schema over a stale development checkout, and the suite uses the pinned
+- The full Vitest run passes 819/819 tests. The reusable skill-contract gate prefers the
+  active installed module schema over a stale development checkout, and the suite uses the
   Quire contract build from issue #386.

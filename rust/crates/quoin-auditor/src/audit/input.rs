@@ -66,9 +66,6 @@ pub struct AuditInput {
     /// The merged verification-method catalog, for method conformance.
     #[serde(default)]
     pub catalog: Option<MethodCatalog>,
-    /// Commit being audited, for freshness.
-    #[serde(default)]
-    pub head_commit: Option<String>,
     /// Criticality values that demand two independent methods.
     #[serde(default)]
     pub multiplicity_requires: Option<Vec<String>>,

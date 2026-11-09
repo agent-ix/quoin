@@ -18,13 +18,13 @@ the wrong thing.
 
 ## The design
 
-An independent oracle: `cargo-mutants` kill rates over the pinned tier-2
+An independent oracle: `cargo-mutants` kill rates over the tier-2
 corpus.
 
-1. Run `cargo mutants` over `agent-ix/filament-ide-rs` at the pinned SHA,
-   recording each mutant's file, span and outcome (killed / survived /
+1. Run `cargo mutants` over `agent-ix/filament-ide-rs` at one checked-out
+   revision, recording each mutant's file, span and outcome (killed / survived /
    unviable).
-2. Run `quire coverage --json` at the same SHA and take `unbacked_rows` plus
+2. Run `quire coverage --json` at the same checkout and take `unbacked_rows` plus
    the `verifies` relations behind the backed set.
 3. For each mutant, attribute it to the requirement(s) whose `implements`
    markers name the file it mutated (quire-rs FR-062).
@@ -48,10 +48,9 @@ narratable.
 
 Three prerequisites, each real:
 
-1. **The corpus must be at the pin.** It is currently at `16eca41`, not the
-   adjudicated `fc5d644`, and both `make bench` and `make battletest` refuse to
-   score it — correctly, because a score over a different tree answers a
-   different question.
+1. **The corpus must be the adjudicated tree.** The checked-out corpus is not
+   the tree the adjudication covered, so a score over it would answer a
+   different question than the one adjudicated.
 2. **`implements` coverage.** Step 3 needs requirement→file attribution, and
    quire-rs CR-082 measured that at 55 of 58 requirements _in quire-rs itself_.
    The tier-2 corpus has not been annotated, so most mutants would attribute to

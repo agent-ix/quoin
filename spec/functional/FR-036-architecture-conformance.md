@@ -94,7 +94,7 @@ loads it first.
 
 **quoin executes exactly `git`, `quire` and `ix-flow`.** This is ADR-0011 invariant 1 made mechanical.
 A run record's claim is *"this ran in your CI"*, which holds only while quoin is not the thing running
-it. NFR-007 names `quire` and `ix-flow`; `git` is the `rev-parse HEAD` the evidence store is keyed on.
+it. NFR-007 names `quire` and `ix-flow`; `git` is the repository inspection the corpus enumeration uses.
 
 The set is asserted **whole and sorted**, not as membership. A new binary fails by default rather than
 passing until someone remembers to extend a list — the failure mode of every denylist, and the one

@@ -11,13 +11,12 @@ relationships:
 ## Story
 
 **As an** assurance owner reviewing a change
-**I want** read-only fan-out, change-impact, and reaffirmation-churn views over the governed evidence graph
-**So that** I can find concentrated evidence, affected obligations, and repeatedly reaffirmed statements without collecting new evidence or treating an incomplete graph as complete.
+**I want** read-only fan-out and change-impact views over the governed evidence graph
+**So that** I can find concentrated evidence and affected obligations without collecting new evidence or treating an incomplete graph as complete.
 
 ## Context
 
-The evidence store already relates obligations to suites, records explicit
-reaffirmations, and retains the auditor's binding verdicts. Quire owns the
+The evidence store already relates obligations to suites and retains the auditor's binding verdicts. Quire owns the
 artifact relationship graph. Today those facts can be inspected separately,
 but there is no deterministic view that joins them and keeps unresolved or
 unavailable inputs visible.
@@ -36,11 +35,9 @@ unavailable inputs visible.
 - **When** the owner opens the change-impact view
 - **Then** each reached requirement, obligation, suite, and relationship path is shown without replacing the auditor's verdict
 
-### US-018-EX-3: Reaffirmation history is not multiplied by suites
+### US-018-EX-3: Withdrawn
 
-- **Given** one reaffirmation copied to several bindings for the same obligation
-- **When** the owner opens the churn view
-- **Then** it counts as one reaffirmation event and the affected suites remain listed separately
+Withdrawn (2026-10-29, PLAT-1213): the reaffirmation-churn view is removed with the affirmation history it counted. The id is not reused.
 
 ## Constraints (Contextual)
 

@@ -21,7 +21,7 @@
 //! # Two path spaces, said out loud
 //!
 //! Store paths ([`EvidenceSource::read`] and friends) are **store-root
-//! relative**, `/`-separated: `runs/SUITE-1/0123456789ab.json`. The root is
+//! relative**, `/`-separated: `runs/SUITE-1/<record-name>.json`. The root is
 //! `quoin-store`'s ([`quoin_store::store::store_root`]) and never appears here.
 //!
 //! Repository paths ([`EvidenceSource::source_files`],
@@ -33,8 +33,8 @@
 //!
 //! # Writes go through `quoin-store`
 //!
-//! [`DiskEvidence`] writes with [`quoin_store::store::write_atomic`] for a
-//! mutable named record and [`quoin_store::store::write_content_addressed`] for
+//! [`DiskEvidence`] writes with [`quoin_store::store::publish`] with [`StorePath::Named`](quoin_store::store::StorePath::Named) for a
+//! mutable named record and [`quoin_store::store::publish`] with [`StorePath::ContentAddressed`](quoin_store::store::StorePath::ContentAddressed) for
 //! a retained one (the #394 durability decision). Neither this module nor any
 //! other in this crate opens a file for writing itself.
 
@@ -84,7 +84,7 @@ pub trait EvidenceSource {
     /// [`EvidenceError::StoreIo`] when the write cannot be completed.
     fn write(&mut self, path: &str, bytes: &[u8]) -> Result<(), EvidenceError>;
 
-    /// Publish a content-addressed record, refusing a differing body.
+    /// Publish an append-only record, refusing a differing body.
     ///
     /// Returns `true` when the record was newly written and `false` when the
     /// identical bytes were already there — the append-only publish of FR-048.
@@ -268,22 +268,29 @@ impl EvidenceSource for DiskEvidence {
     }
 
     fn write(&mut self, path: &str, bytes: &[u8]) -> Result<(), EvidenceError> {
-        quoin_store::store::write_atomic(&self.resolve(path), bytes)
+        let destination = quoin_store::store::StorePath::Named(self.resolve(path));
+        quoin_store::store::publish(&destination, quoin_store::store::Content::Artifact(bytes))
+            .map(|_| ())
             .map_err(store_io("write", path))
     }
 
     fn publish(&mut self, path: &str, bytes: &[u8]) -> Result<bool, EvidenceError> {
-        quoin_store::store::write_content_addressed(&self.resolve(path), bytes).map_err(|source| {
-            if matches!(source, quoin_store::StoreError::ContentCollision { .. }) {
-                EvidenceError::RecordIntegrity {
-                    what: "content-address collision or corrupt immutable record",
-                    path: path.to_owned(),
-                    note: "; existing bytes were not overwritten",
+        let destination = quoin_store::store::StorePath::ContentAddressed(self.resolve(path));
+        let published =
+            quoin_store::store::publish(&destination, quoin_store::store::Content::Artifact(bytes));
+        published
+            .map(|outcome| outcome == quoin_store::store::Published::Written)
+            .map_err(|source| {
+                if matches!(source, quoin_store::StoreError::ContentCollision { .. }) {
+                    EvidenceError::RecordIntegrity {
+                        what: "conflicting or corrupt immutable record",
+                        path: path.to_owned(),
+                        note: "; existing bytes were not overwritten",
+                    }
+                } else {
+                    store_io("write", path)(source)
                 }
-            } else {
-                store_io("write", path)(source)
-            }
-        })
+            })
     }
 
     fn remove(&mut self, path: &str) -> Result<(), EvidenceError> {
@@ -403,7 +410,7 @@ impl EvidenceSource for MemoryEvidence {
         match self.store.get(path) {
             Some(existing) if *existing == incoming => Ok(false),
             Some(_) => Err(EvidenceError::RecordIntegrity {
-                what: "content-address collision or corrupt immutable record",
+                what: "conflicting or corrupt immutable record",
                 path: path.to_owned(),
                 note: "; existing bytes were not overwritten",
             }),
@@ -448,25 +455,22 @@ mod tests {
     fn an_absent_store_path_reads_as_none_not_as_an_error() {
         let source = MemoryEvidence::new();
         assert_eq!(source.read("bindings.json").unwrap(), None);
-        assert!(source.list_files("runs/SUITE-1").unwrap().is_empty());
-        assert!(source.list_directories("runs").unwrap().is_empty());
+        assert_eq!(source.list_files("runs/SUITE-1").unwrap().len(), 0);
+        assert_eq!(source.list_directories("runs").unwrap().len(), 0);
     }
 
     #[test]
     fn listing_separates_files_from_sub_directories() {
         let source = MemoryEvidence::new()
-            .with_file("runs/SUITE-1/aaaaaaaaaaaa.json", "{}")
-            .with_file("runs/SUITE-2/bbbbbbbbbbbb.json", "{}")
+            .with_file("runs/SUITE-1/first.json", "{}")
+            .with_file("runs/SUITE-2/second.json", "{}")
             .with_file("bindings.json", "{}")
             .with_file("runs/SUITE-1/notes.txt", "");
         assert_eq!(
             source.list_directories("runs").unwrap(),
             ["SUITE-1", "SUITE-2"]
         );
-        assert_eq!(
-            source.list_files("runs/SUITE-1").unwrap(),
-            ["aaaaaaaaaaaa.json"]
-        );
+        assert_eq!(source.list_files("runs/SUITE-1").unwrap(), ["first.json"]);
         assert_eq!(source.list_files("").unwrap(), ["bindings.json"]);
     }
 

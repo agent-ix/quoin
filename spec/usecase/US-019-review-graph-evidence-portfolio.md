@@ -17,7 +17,7 @@ relationships:
 ## Context
 
 Quire can export the source-grounded artifact graph and quire-code-rs can emit a
-versioned quality observation over a pinned truth corpus. Quoin already stores
+versioned quality observation over a truth corpus. Quoin already stores
 plan-governed numeric observations and renders repository portfolios. The
 missing boundary is a lossless adapter for each producer and a portfolio view
 that preserves graph partitions, raw evidence, availability, and comparison

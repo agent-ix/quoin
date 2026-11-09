@@ -14,7 +14,7 @@ use crate::core_runtime::invoke;
 
 pub(crate) mod audit;
 
-const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> hash-at-binding -> evidence\n  runs/<SUITE-N>/<commit12>.json   one file = one run of one suite\n  experiments/sha256-<digest>.json content-addressed experiment records\n  operational/sha256-<digest>.json content-addressed operational evidence\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence affirm     re-affirm a binding after its statement changed\n  quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records nothing references";
+const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> evidence\n  runs/<SUITE-N>/<timestamp>.json  one file = one run of one suite\n  experiments/<recordId>.json      experiment records\n  operational/<recordId>.json       operational evidence\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records superseded by a newer one";
 
 /// The evidence commands whose inputs need no Quire-derived obligation set.
 pub(crate) fn command() -> Command {
@@ -50,7 +50,6 @@ pub(crate) fn command() -> Command {
             Command::new("inspect-mocks")
                 .about("Inspect test source and record explicit mock substitutions")
                 .arg(Arg::new("suite").long("suite").required(true))
-                .arg(Arg::new("commit").long("commit").required(true))
                 .arg(repo_arg())
                 .arg(Arg::new("timestamp").long("timestamp"))
                 .arg(
@@ -61,21 +60,9 @@ pub(crate) fn command() -> Command {
                 .arg(json_arg()),
         )
         .subcommand(
-            Command::new("affirm")
-                .about("Re-affirm a binding after its statement changed")
-                .arg(Arg::new("obligation").long("obligation").required(true))
-                .arg(Arg::new("who").long("who").required(true))
-                .arg(Arg::new("note").long("note"))
-                .arg(Arg::new("commit").long("commit"))
-                .arg(repo_arg())
-                .arg(Arg::new("module").long("module"))
-                .arg(json_arg()),
-        )
-        .subcommand(
             Command::new("record")
                 .about("Transcribe one suite run into the evidence store")
                 .arg(Arg::new("suite").long("suite").required(true))
-                .arg(Arg::new("commit").long("commit").required(true))
                 .arg(Arg::new("tool").long("tool").required(true))
                 .arg(Arg::new("kind").long("kind"))
                 .arg(Arg::new("lineage").long("lineage"))
@@ -92,7 +79,7 @@ pub(crate) fn command() -> Command {
 
 fn record_command(name: &'static str, help: &'static str) -> Command {
     Command::new(name)
-        .about("Publish one content-addressed evidence record")
+        .about("Publish one evidence record")
         .arg(Arg::new("input").long("input").help(help).required(true))
         .arg(repo_arg())
         .arg(json_arg())
@@ -109,7 +96,6 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "record-experiment" => record(arguments, "evidence.record_experiment"),
         "record-operational" => record(arguments, "evidence.record_operational"),
         "inspect-mocks" => inspect_mocks(arguments),
-        "affirm" => affirm(arguments),
         "record" => record_run(arguments),
         "audit" => audit::run(arguments),
         _ => Err("an unknown evidence command reached dispatch".to_owned()),
@@ -158,7 +144,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
     let response = invoke(
         "evidence.record",
         &serde_json::json!({
-            "repo": repo, "suite": required(arguments, "suite")?, "commit": required(arguments, "commit")?, "tool": required(arguments, "tool")?,
+            "repo": repo, "suite": required(arguments, "suite")?, "tool": required(arguments, "tool")?,
             "kind": arguments.get_one::<String>("kind"), "lineage": lineage, "timestamp": timestamp, "adapter": arguments.get_one::<String>("adapter"),
             "results": results, "discharges": discharges, "obligations": coverage.payload.get("obligations").cloned().unwrap_or_else(|| serde_json::json!([])),
         }),
@@ -169,18 +155,16 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
         }
         match payload.get("kind").and_then(serde_json::Value::as_str) {
             Some("scan") => Ok(format!(
-                "recorded scan {} @ {} → {}",
+                "recorded scan {} → {}",
                 required(arguments, "suite")?,
-                required(arguments, "commit")?.get(..12).unwrap_or(""),
                 payload
                     .get("scan_path")
                     .and_then(serde_json::Value::as_str)
                     .unwrap_or("")
             )),
             Some("run") => Ok(format!(
-                "recorded {} @ {} → {}",
+                "recorded {} → {}",
                 required(arguments, "suite")?,
-                required(arguments, "commit")?.get(..12).unwrap_or(""),
                 payload
                     .get("run_path")
                     .and_then(serde_json::Value::as_str)
@@ -189,76 +173,6 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
             _ => Err("evidence.record returned an unknown payload kind".to_owned()),
         }
     })
-}
-
-fn affirm(arguments: &ArgMatches) -> Result<Response, String> {
-    let repo = required(arguments, "repo")?;
-    let modules = arguments
-        .get_one::<String>("module")
-        .map_or_else(Vec::new, |module| vec![module.clone()]);
-    let coverage = invoke(
-        "quire.coverage",
-        &serde_json::json!({ "scope": repo, "modules": modules }),
-    )?;
-    if !coverage.outcome.carries_payload() {
-        return Ok(coverage);
-    }
-    let obligation = required(arguments, "obligation")?;
-    let current = coverage
-        .payload
-        .get("obligations")
-        .and_then(serde_json::Value::as_array)
-        .and_then(|items| {
-            items.iter().find(|item| {
-                item.get("id").and_then(serde_json::Value::as_str) == Some(obligation.as_str())
-            })
-        })
-        .ok_or_else(|| {
-            format!("no obligation `{obligation}` is derived from this specification today")
-        })?;
-    let statement_hash = current
-        .get("statement_hash")
-        .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| format!("obligation `{obligation}` has no statement_hash"))?;
-    let commit = arguments
-        .get_one::<String>("commit")
-        .cloned()
-        .unwrap_or_else(|| revision(&repo));
-    let response = invoke(
-        "evidence.affirm",
-        &serde_json::json!({ "repo": repo, "obligation": obligation, "statement_hash": statement_hash, "who": required(arguments, "who")?, "commit": commit, "note": arguments.get_one::<String>("note") }),
-    )?;
-    render(response, |payload| {
-        if !payload
-            .get("found")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(false)
-        {
-            return Err(format!(
-                "no binding exists for `{obligation}`, so there is nothing to affirm"
-            ));
-        }
-        if arguments.get_flag("json") {
-            return serde_json::to_string_pretty(&serde_json::json!({ "obligation": obligation, "who": required(arguments, "who")?, "commit": commit, "statementHash": statement_hash })).map_err(|error| error.to_string());
-        }
-        Ok(format!(
-            "affirmed {obligation} by {} at {} (hash {}…)",
-            required(arguments, "who")?,
-            commit.get(..12).unwrap_or(&commit),
-            statement_hash.get(..12).unwrap_or(statement_hash)
-        ))
-    })
-}
-
-pub(crate) fn revision(repo: &str) -> String {
-    std::process::Command::new("git")
-        .args(["-C", repo, "rev-parse", "HEAD"])
-        .output()
-        .ok()
-        .filter(|output| output.status.success())
-        .and_then(|output| String::from_utf8(output.stdout).ok())
-        .map(|value| value.trim().to_owned())
-        .unwrap_or_default()
 }
 
 fn inspect_mocks(arguments: &ArgMatches) -> Result<Response, String> {
@@ -274,12 +188,11 @@ fn inspect_mocks(arguments: &ArgMatches) -> Result<Response, String> {
             Ok,
         )?;
     let suite = required(arguments, "suite")?;
-    let commit = required(arguments, "commit")?;
     let dry_run = arguments.get_flag("dry-run");
     let response = invoke(
         "evidence.inspect_mocks",
         &serde_json::json!({
-            "repo": required(arguments, "repo")?, "suite": suite, "commit": commit,
+            "repo": required(arguments, "repo")?, "suite": suite,
             "tool": concat!("quoin mock-inspection ", env!("CARGO_PKG_VERSION")),
             "timestamp": timestamp, "dry_run": dry_run,
         }),
@@ -301,13 +214,12 @@ fn inspect_mocks(arguments: &ArgMatches) -> Result<Response, String> {
         }
         let count = injections.as_array().map_or(0, Vec::len);
         Ok(format!(
-            "{} {suite} @ {}{}\n  injections: {count}",
+            "{} {suite}{}\n  injections: {count}",
             if dry_run {
                 "inspected"
             } else {
                 "recorded mock inspection"
             },
-            commit.get(..12).unwrap_or(&commit),
             path.as_str().map_or_else(
                 || " (dry run; wrote nothing)".to_owned(),
                 |path| format!(" -> {path}")
@@ -483,7 +395,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-030, FR-101
+    /// Trace: FR-030
     #[test]
     fn tc_373_evidence_store_command_grammar_is_retained() {
         assert!(

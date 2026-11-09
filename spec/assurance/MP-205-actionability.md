@@ -29,8 +29,7 @@ Findings naming a row id or document line over emitted findings, definition
 
 ## Collection Procedure
 
-Retain each finding and locus, raw output, scorer, tools, engine, corpus and
-source revisions, configuration, and timestamp.
+Retain each finding and locus, raw output, scorer, tools, engine, configuration, and timestamp.
 
 ## Environment and Sampling
 

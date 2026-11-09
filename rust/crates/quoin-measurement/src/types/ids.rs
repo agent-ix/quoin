@@ -4,17 +4,10 @@
 //!
 //! # Parse, don't validate
 //!
-//! `quoin_store::RawFileSha256Digest::parse_stored` is the in-repo model: it
-//! returns the type, and holding the type *is* the proof. Every constructor
-//! here does the same. The retained TypeScript instead validates with
-//! predicates and keeps passing the `string` around
-//! (`store.ts:104-109`'s `safeId`, `validate.ts:118-124`'s digest regexes), so
-//! every consumer re-checks or forgets to.
-//!
-//! `RawFileSha256Digest` is used directly for the three digest-bearing fields
-//! rather than wrapped again — `verificationStack.lockDigest`,
-//! `.executableDigest` and each `.artifacts` member all carry the
-//! `sha256:<64 hex>` spelling that type already owns.
+//! Every constructor here returns the type, and holding the type *is* the
+//! proof. The retained TypeScript instead validates with predicates and keeps
+//! passing the `string` around (`store.ts:104-109`'s `safeId`), so every
+//! consumer re-checks or forgets to.
 
 use std::fmt;
 
@@ -119,7 +112,7 @@ pub const MAX_RECORD_ID_BYTES: usize = 128;
 ///
 /// `^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$`, the **shared** first guard of
 /// `operational.ts:455` and `intervention.ts:34`. The two files differ only in
-/// what they do next — operational hashes the identity, intervention encodes
+/// what they do next — operational uses the identity as it is, intervention encodes
 /// it into `p-`/`b-` namespaces — so the guard is declared once here rather
 /// than twice in `operational/` and `intervention/`.
 ///
@@ -169,49 +162,6 @@ impl fmt::Display for SafeRecordId {
     }
 }
 
-/// A full 40-character lowercase git object name.
-///
-/// `validate.ts:137` checks `^[0-9a-f]{40}$` on every
-/// `verificationStack.sources.*.revision`; an abbreviated revision is not a
-/// source attestation, it is a hint.
-#[derive(Clone, Debug, Eq, PartialEq, Hash, PartialOrd, Ord)]
-pub struct FullGitRevision(String);
-
-impl FullGitRevision {
-    /// Read a full git revision.
-    ///
-    /// # Errors
-    ///
-    /// `code` when `value` is not exactly 40 lowercase hexadecimal characters.
-    pub fn parse(
-        value: &str,
-        code: MeasurementErrorCode,
-        subject: &str,
-    ) -> Result<Self, MeasurementError> {
-        let full = value.len() == 40
-            && value
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));
-        if full {
-            Ok(Self(value.to_owned()))
-        } else {
-            Err(MeasurementError::new(code, subject.to_owned()))
-        }
-    }
-
-    /// The revision.
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl fmt::Display for FullGitRevision {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.0)
-    }
-}
-
 #[allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -221,7 +171,7 @@ impl fmt::Display for FullGitRevision {
 )]
 #[cfg(test)]
 mod tests {
-    use super::{CollectionId, FullGitRevision, MAX_RECORD_ID_BYTES, NonEmptyText, SafeRecordId};
+    use super::{CollectionId, MAX_RECORD_ID_BYTES, NonEmptyText, SafeRecordId};
     use crate::error::MeasurementErrorCode;
 
     #[test]
@@ -243,15 +193,6 @@ mod tests {
             CollectionId::parse("tier1-2026").unwrap().store_path(),
             "measurements/tier1-2026.json"
         );
-    }
-
-    #[test]
-    fn an_abbreviated_or_upper_case_revision_is_not_a_full_one() {
-        let code = MeasurementErrorCode::CollectionInvalid;
-        assert!(FullGitRevision::parse(&"a".repeat(40), code, "s").is_ok());
-        assert!(FullGitRevision::parse(&"a".repeat(39), code, "s").is_err());
-        assert!(FullGitRevision::parse(&"A".repeat(40), code, "s").is_err());
-        assert!(FullGitRevision::parse(&"g".repeat(40), code, "s").is_err());
     }
 
     /// The cap is 128 bytes inclusive, and it is measured in bytes.

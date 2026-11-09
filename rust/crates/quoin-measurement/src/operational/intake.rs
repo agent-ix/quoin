@@ -32,7 +32,7 @@
 
 use std::path::{Path, PathBuf};
 
-use quoin_store::store::{store_root, write_content_addressed};
+use quoin_store::store::{Content, StorePath, publish, store_root};
 use serde_json::{Map, Value};
 
 use crate::intervention::intake::{InterventionIntakeError, InterventionRefusalCode};
@@ -240,11 +240,15 @@ fn linked(capability: &StandingCapabilityRecord, exercise: &OperationalExerciseR
 
 /// `operational.ts:273-278`: write, and refuse to replace.
 ///
-/// [`write_content_addressed`] links rather than renames and `fsync`s both the
+/// [`publish`] to a content-addressed path links rather than renames and `fsync`s both the
 /// file and its directory — the same strengthening the measurement store took
 /// in quoin#468, declared in `DIVERGENCE.md`.
 fn write_once(path: &Path, bytes: &[u8]) -> Result<(), InterventionIntakeError> {
-    write_content_addressed(path, bytes).map_err(|error| match error {
+    publish(
+        &StorePath::ContentAddressed(path.to_path_buf()),
+        Content::Artifact(bytes),
+    )
+    .map_err(|error| match error {
         quoin_store::StoreError::ContentCollision { .. } => {
             collision(vec![format!("{}: retained bytes differ", path.display())])
         }

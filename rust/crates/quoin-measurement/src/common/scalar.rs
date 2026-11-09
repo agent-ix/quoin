@@ -6,9 +6,9 @@
 //! `String(value)`. That is not `{value}` — `String(1e21)` in JavaScript is
 //! `"1e+21"` and `String(1e-7)` is `"1e-7"`, while Rust's `Display` for `f64`
 //! never uses exponential notation and writes `1000000000000000000000` and
-//! `0.0000001` instead. The committed oracle capture holds both spellings
-//! (`tests/fixtures/report-oracle.json`, case `single_full`), so this is a
-//! measured difference and not a hypothetical one.
+//! `0.0000001` instead. Both spellings occur in the records the
+//! renderers print, so this is a measured difference and not a hypothetical
+//! one.
 //!
 //! [`js_number_string`] implements ECMA-262 `Number::toString` radix 10, which
 //! is the function `String(number)` reduces to. It is the only number

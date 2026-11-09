@@ -44,7 +44,7 @@ boundary cases belong in the criteria text.
 ## Population
 
 The `dev` split of corpus v2 (PLAT-1025, plus any PLAT-1026 external rows),
-mode `R` rows only, at the corpus revision whose held-out seal is committed.
+mode `R` rows only.
 Two kinds of row:
 
 - **Natural rows.** Criteria as they ship, with two independent agent
@@ -163,15 +163,13 @@ committed. Each is a dependency, not a present fact:
   shared helper, and the rules stated under bar D below stay the same: one
   pair per mutation id, and a success crosses τ, with the source below 0.5
   and the mutant at or above, and a rise of at least δ.
-- **The held-out selection file and digest pinning (#620).** These are
-  introduced by PLAT-1028's #620 review fixes:
+- **The held-out selection file (#620).** Introduced by PLAT-1028's #620
+  review fixes:
   - `rust/crates/quoin-jev/tests/fixtures/eval-v2/heldout-selection.json`,
     with one entry per MP, and a runner that refuses any held-out variant
-    not listed there;
-  - pinned per-version request digests, so a wording change without a
-    version bump fails a test.
+    not listed there.
 
-**Phase 2 of PLAT-1031 is blocked until these merge.** Phase 2 then pins
+**Phase 2 of PLAT-1031 is blocked until these merge.** Phase 2 then runs
 K1@v1 and K2@v1. K1's final dev version is now K1@v2 (PLAT-1024 exp2), which
 asks `compound` in the canonical definition's words; it is not on the
 held-out selection.
@@ -301,6 +299,6 @@ has no step for that. It is not eligible for held-out under this plan. If it
 is wanted, it gets its own definition version and bars, committed before it
 is fitted.
 
-Compare only like variant version, corpus revision and label revision. A
+Compare only like variant version. A
 change to any question text, example or derive rule bumps the variant's
 version, and that is a new instrument.

@@ -3,7 +3,7 @@ id: SR-040
 title: "Dependency review of issue 289 semantic-module architecture requirements"
 type: SpecReview
 analysis: dependency
-scope: "US-013, FR-046..FR-050, NFR-013..NFR-014"
+scope: "US-013, FR-117..FR-119, FR-049..FR-050, NFR-013..NFR-014"
 review_set: all
 ---
 
@@ -19,7 +19,7 @@ publication, or `filament-core-data#9`. Those downstream items remain separately
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-031 | low | No hidden implementation dependency remains; all external inputs are documentary evidence and every behavior-changing consumer is downstream. | FR-046 Dependencies; FR-048-AC-3; NFR-014 |
+| FND-031 | low | No hidden implementation dependency remains; all external inputs are documentary evidence and every behavior-changing consumer is downstream. | FR-117 Dependencies; FR-119-AC-3; NFR-014 |
 
 ## Dependency allocation
 

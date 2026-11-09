@@ -47,10 +47,10 @@ requirement below states what an invocation observes, not how it is parsed.
 
 | ID          | Criteria                                                             | Verification                        |
 | ----------- | -------------------------------------------------------------------- | ----------------------------------- |
-| FR-001-AC-1 | Both `--flag=value` and `--flag value` bind the value                | Test (cli.test.ts)                  |
-| FR-001-AC-2 | A bareword after `write` is parsed as a positional, not a subcommand | Test (cli.test.ts)                  |
-| FR-001-AC-3 | A long flag with no following value is recorded as boolean `true`    | Test (cli.test.ts)                  |
-| FR-001-AC-4 | Repeated `--types`/`--target` accumulate into an ordered list        | Test (write.test.ts, index.test.ts) |
+| FR-001-AC-1 | Both `--flag=value` and `--flag value` bind the value                | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-001-AC-2 | A bareword after `write` is parsed as a positional, not a subcommand | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-001-AC-3 | A long flag with no following value is recorded as boolean `true`    | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-001-AC-4 | Repeated `--types`/`--target` accumulate into an ordered list        | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

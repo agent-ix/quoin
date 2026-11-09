@@ -74,7 +74,7 @@ fn plan_document(rule: &str, direction: &str) -> String {
          \x20\x20- spec/assurance/MP-961-gate.md\n\
          negative_controls:\n\
          \x20\x20- kind: apparatus-edit\n\
-         \x20\x20\x20\x20description: the plan document is digested with every collection\n\
+         \x20\x20\x20\x20description: the plan document defines the measurement\n\
          ---\n\
          \n\
          # Interval gate\n"

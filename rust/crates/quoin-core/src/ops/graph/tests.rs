@@ -9,8 +9,8 @@
 //! `tests/tc_library_containment.rs` makes a rule: `ops/graph/` is handed what
 //! it may read and acquires nothing.
 //!
-//! What the three views COMPUTE is `quoin-graph-analysis`' and is pinned there
-//! against the captured oracle corpus (`tc_385_parity.rs`). What is pinned here
+//! What the three views COMPUTE is `quoin-graph-analysis`' and is tested there.
+//! What is pinned here
 //! is the boundary: that a request reaches those functions unchanged, that a
 //! refusal reaches the caller as the status `src/commands/graph/*` exited with,
 //! and that the payload is the bytes the renderer wrote.
@@ -35,10 +35,7 @@ use crate::capabilities::Capabilities;
 use crate::error::CoreErrorCode;
 use crate::protocol::Response;
 
-use super::{MAX_SCALAR_BYTES, change_impact, churn, fan_out};
-
-const DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+use super::{MAX_SCALAR_BYTES, change_impact, fan_out};
 
 /// A tree of files, and nothing else, standing in for the filesystem.
 struct FakeTree(BTreeMap<PathBuf, String>);
@@ -68,20 +65,18 @@ fn export() -> Value {
         "format": "quire-assurance",
         "format_version": 1,
         "modules": modules(),
-        "source": { "repository": "agent-ix/example", "revision": REVISION },
         "artifacts": [{
             "id": "FR-001",
             "artifact_type": "FR",
-            "locator": { "path": "spec/FR-001.md", "line": 1, "digest": DIGEST },
+            "locator": { "path": "spec/FR-001.md", "line": 1 },
         }],
         "obligations": [{
             "source": "acceptance-criterion",
             "id": "FR-001-AC-1",
             "document": "spec/FR-001.md",
             "statement": "The command reports fan-out.",
-            "statement_hash": DIGEST,
             "target_ids": ["TC-1249"],
-            "locator": { "path": "spec/FR-001.md", "line": 20, "digest": DIGEST },
+            "locator": { "path": "spec/FR-001.md", "line": 20 },
         }],
         "symbols": [],
         "relation_kinds": quoin_graph_analysis::DEFAULT_RELATION_KINDS
@@ -101,7 +96,6 @@ fn audit() -> Value {
     json!({
         "format": "quoin-audit-envelope",
         "format_version": 1,
-        "source": { "repository": "agent-ix/example", "revision": REVISION },
         "export": premises(),
         "report": { "findings": [], "healthy": ["FR-001-AC-1"], "unevaluated": [] },
     })
@@ -112,9 +106,7 @@ fn bindings() -> Value {
         "schemaVersion": 1,
         "bindings": [{
             "obligation": "FR-001-AC-1",
-            "statementHashAtBinding": DIGEST,
             "suite": "unit",
-            "commit": REVISION,
             "symbols": ["fan-out test"],
         }],
     })
@@ -179,25 +171,18 @@ fn the_two_spellings_render_one_report() {
     let markdown = fan_out(&request(false), &grant).unwrap();
     let canonical = fan_out(&request(true), &grant).unwrap();
     assert!(rendered(&markdown).contains("Suite"));
-    assert!(rendered(&markdown).contains(REVISION));
     assert!(!rendered(&markdown).starts_with('{'));
     assert!(rendered(&canonical).starts_with('{'));
 }
 
-/// `graph.churn` and `graph.change_impact` reach their own views.
+/// `graph.change_impact` reaches its own view.
 ///
-/// Trace: FR-062-AC-7
+/// Trace: FR-062-AC-3
 /// Provenance: quoin#500
 #[test]
 fn each_operation_reaches_its_own_view() {
     let reader = tree(true);
     let grant = Capabilities::with_graph(&reader);
-
-    let churned = churn(&request(true), &grant).unwrap();
-    let report: Value = serde_json::from_str(rendered(&churned)).expect("canonical JSON");
-    assert_eq!(report["view"], "churn");
-    assert_eq!(report["rows"][0]["obligation"], "FR-001-AC-1");
-    assert_eq!(report["rows"][0]["eventCount"], 0);
 
     let mut impact_request = request(true);
     impact_request["requirements"] = json!(["FR-001"]);

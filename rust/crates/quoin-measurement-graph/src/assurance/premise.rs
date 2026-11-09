@@ -2,23 +2,13 @@
 // Copyright (C) 2026 Agent-IX
 //! The premises an export is read *under*, and the ones it states.
 //!
-//! Ports `sourcePremiseSchema`, `schemaPremiseSchema`, `modulePremiseSchema`
+//! Ports `schemaPremiseSchema`, `modulePremiseSchema`
 //! and `AcceptedQuirePremises` (`src/measurement/graph-adapters.ts:63-76,
 //! 205-210`).
 
 use serde::{Deserialize, Serialize};
 
-use crate::scalars::{FullRevision, NonEmptyText};
-
-/// Which repository, at which revision, the export was taken from.
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct SourcePremise {
-    /// The repository.
-    pub repository: NonEmptyText,
-    /// The full revision it was at.
-    pub revision: FullRevision,
-}
+use crate::scalars::NonEmptyText;
 
 /// One archetype schema a module contributed.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -48,8 +38,6 @@ pub struct ModulePremise {
 /// stronger check.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AcceptedQuirePremises {
-    /// The source the caller accepts.
-    pub source: SourcePremise,
     /// The module set the caller accepts, in the order it accepts them in.
     pub modules: Vec<ModulePremise>,
 }

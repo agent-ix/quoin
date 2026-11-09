@@ -48,11 +48,11 @@ lowercase-filename variant.
 
 | ID          | Criteria                                                                                           | Verification                        |
 | ----------- | -------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| FR-009-AC-1 | A manifest without a `name` falls back to the directory basename                                   | Test (catalog.test.ts)              |
-| FR-009-AC-2 | Modules with and without `version`, and artifacts with and without a schema ref, resolve correctly | Test (catalog.test.ts)              |
-| FR-009-AC-3 | Non-array and malformed type entries are ignored                                                   | Test (catalog.test.ts)              |
-| FR-009-AC-4 | A skeleton resolves via the lowercase-filename fallback                                            | Test (write.test.ts, index.test.ts, catalog.test.ts) |
-| FR-009-AC-5 | A skeleton named with the type's own casing resolves, and a filename in any other casing does not — on a case-insensitive filesystem as on a case-sensitive one | Test (catalog.test.ts)              |
+| FR-009-AC-1 | A manifest without a `name` falls back to the directory basename                                   | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-009-AC-2 | Modules with and without `version`, and artifacts with and without a schema ref, resolve correctly | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-009-AC-3 | Non-array and malformed type entries are ignored                                                   | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-009-AC-4 | A skeleton resolves via the lowercase-filename fallback                                            | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-009-AC-5 | A skeleton named with the type's own casing resolves, and a filename in any other casing does not — on a case-insensitive filesystem as on a case-sensitive one | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

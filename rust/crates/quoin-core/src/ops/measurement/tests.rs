@@ -26,17 +26,15 @@ use crate::error::CoreErrorCode;
 use super::record::Intake;
 use super::wire::{
     MAX_COLLECTION_BYTES, MAX_GRAPH_MAPPING_BYTES, MAX_INTERVENTION_RECORD_BYTES,
-    MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES, MAX_RECORD_ID_BYTES, MAX_REVISION_BYTES,
+    MAX_METRIC_NAME_BYTES, MAX_OPERATIONAL_RECORD_BYTES, MAX_RECORD_ID_BYTES,
 };
-use super::{
-    build_graph_portfolio, build_series, produce_agent_eval_intervention, record, render_comparison,
-};
+use super::{build_graph_portfolio, build_series, produce_agent_eval_intervention, record};
 
 /// The `record_type` member alone decides which intake accepts a candidate,
 /// and an unrecognised or absent one is a collection — the retained
 /// `record.ts` ternary, which falls through to `writeMeasurementCollection`.
 ///
-/// Trace: FR-096, FR-101-AC-2
+/// Trace: FR-096
 /// Provenance: quoin#478
 #[test]
 fn the_candidates_own_record_type_names_its_intake() {
@@ -70,7 +68,6 @@ fn the_candidates_own_record_type_names_its_intake() {
 /// the store were opened, this test would report an I/O failure instead — which
 /// is exactly the defect the ordering exists to prevent.
 ///
-/// Trace: FR-101-AC-2
 /// Provenance: quoin#478
 #[test]
 fn a_record_past_its_intakes_ceiling_is_refused_before_the_store_is_opened() {
@@ -95,11 +92,10 @@ fn a_record_past_its_intakes_ceiling_is_refused_before_the_store_is_opened() {
 
 /// A field ceiling names the field, so the caller knows which member to shrink.
 ///
-/// Trace: FR-101-AC-2
 /// Provenance: quoin#478
 #[test]
 fn a_field_past_its_ceiling_is_refused_and_named() {
-    let cases: [(&str, &str, usize, crate::error::CoreError); 4] = [
+    let cases: [(&str, &str, usize, crate::error::CoreError); 3] = [
         (
             "measurement.build_series",
             "metric",
@@ -107,16 +103,6 @@ fn a_field_past_its_ceiling_is_refused_and_named() {
             build_series(&json!({
                 "repo": "/nonexistent/quoin-478",
                 "metric": "m".repeat(MAX_METRIC_NAME_BYTES + 1),
-            }))
-            .unwrap_err(),
-        ),
-        (
-            "measurement.render_comparison",
-            "before_revision",
-            MAX_REVISION_BYTES,
-            render_comparison(&json!({
-                "repo": "/nonexistent/quoin-478",
-                "before_revision": "r".repeat(MAX_REVISION_BYTES + 1),
             }))
             .unwrap_err(),
         ),
@@ -143,7 +129,7 @@ fn a_field_past_its_ceiling_is_refused_and_named() {
     ];
     // The anti-vacuity floor: a refactor that stopped constructing cases would
     // otherwise leave this test asserting over an empty population.
-    assert_eq!(cases.len(), 4, "every field ceiling has a case here");
+    assert_eq!(cases.len(), 3, "every field ceiling has a case here");
 
     for (op, field, limit, error) in cases {
         assert_eq!(error.code, CoreErrorCode::Refused, "{op}/{field}");
@@ -164,7 +150,6 @@ fn a_field_past_its_ceiling_is_refused_and_named() {
 /// would reject records the store would take; a shorter one would admit records
 /// it will not write.
 ///
-/// Trace: FR-101-AC-7
 /// Provenance: quoin#478
 #[test]
 fn the_identity_ceiling_is_the_stores_own() {
@@ -174,7 +159,6 @@ fn the_identity_ceiling_is_the_stores_own() {
 /// A request of the wrong shape is the caller's mistake (3), not a refusal (2),
 /// and it names the operation that could not read it.
 ///
-/// Trace: FR-101-AC-2
 /// Provenance: quoin#478
 #[test]
 fn a_misshapen_request_is_a_bad_request() {

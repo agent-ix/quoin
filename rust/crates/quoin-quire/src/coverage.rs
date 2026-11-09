@@ -99,6 +99,61 @@ pub fn compute(request: &Request) -> Result<Outcome> {
     Ok(Outcome { report, notices })
 }
 
+/// One test symbol and one trace id it verifies.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct TestTrace {
+    /// Repo-relative, `/`-separated path of the file declaring the test.
+    pub path: String,
+    /// Qualified name of the test within that file (`outer::inner::name`).
+    pub symbol: String,
+    /// The trace id the declared tag form yields, exactly as written.
+    pub trace_id: String,
+}
+
+/// Every `verifies` relation the engine binds for one scope.
+///
+/// This is the same symbol walk and trace binding [`compute`] runs, returned
+/// as the per-test relation rather than reduced to row counts. It exists so a
+/// caller that needs to know which test carries which trace tag asks the engine
+/// that defines the tag grammar instead of re-parsing source comments.
+///
+/// # Errors
+/// [`Error::ModuleLoad`] / [`Error::ModuleSetEmpty`] when the module set does
+/// not resolve, and [`Error::TraceabilityModelUndeclared`] when no active
+/// module declares a `traceability:` model.
+pub fn test_traces(request: &Request) -> Result<(Vec<TestTrace>, Vec<Notice>)> {
+    let mut notices = Vec::new();
+    let registry = request.modules.resolve(&request.scope, &mut notices)?;
+    let Some(model) = registry.traceability() else {
+        return Err(Error::TraceabilityModelUndeclared);
+    };
+    let extraction = quire_rs::symbols::extract_tree_scoped(
+        request.scope.as_path(),
+        &[std::path::Path::new(DOCUMENT_ROOT_DIR)],
+        &model.source_exclude,
+    );
+    for diagnostic in &extraction.diagnostics {
+        notices.push(Notice {
+            kind: NoticeKind::SymbolExtraction,
+            message: diagnostic.reason.clone(),
+            path: Some(diagnostic.path.clone()),
+        });
+    }
+    let graph = quire_rs::symbols::trace::bind(&extraction, model);
+    let mut traces: Vec<TestTrace> = graph
+        .verifies
+        .iter()
+        .map(|relation| TestTrace {
+            path: relation.path.clone(),
+            symbol: relation.symbol.clone(),
+            trace_id: relation.trace_id.clone(),
+        })
+        .collect();
+    traces.sort();
+    traces.dedup();
+    Ok((traces, notices))
+}
+
 #[cfg(test)]
 #[allow(
     clippy::expect_used,

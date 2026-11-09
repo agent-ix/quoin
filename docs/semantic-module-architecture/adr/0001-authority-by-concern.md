@@ -4,8 +4,8 @@ title: "Assign semantic data authority by concern"
 status: proposed
 date: 2026-08-29
 requirements:
-  - FR-046
-  - FR-048
+  - FR-117
+  - FR-119
   - FR-049
 ---
 

@@ -128,10 +128,7 @@ fn collection(id: &str, observations: Vec<MeasurementObservation>) -> Measuremen
         scope: quoin_store::JsonValue::Object(quoin_store::JsonObject::new()),
         tool_identity: text("quoin-jev"),
         tool_version: text("0.0.0"),
-        config_digest: text("digest-1"),
         timestamp: text("2026-09-23T00:00:00Z"),
-        source_revision: text("0000000000000000000000000000000000000000"),
-        corpus_revision: None,
         environment: quoin_store::JsonObject::new(),
         verification_stack: None,
         observations,
@@ -150,7 +147,6 @@ fn plan(decision_rule: DecisionRule) -> MeasurementPlan {
         path: "spec/assurance/MP-1016.md".to_owned(),
         owner: None,
         action: None,
-        preregistration: None,
         ground_truth_kind: None,
         statistical_design: Some(StatisticalDesign {
             minimum_population: None,

@@ -20,8 +20,8 @@
 //! The seam is a trait rather than two entry points because the alternative is
 //! two copies of the analysis, and a port that duplicates the thing it ported
 //! has not ported it. The disk implementation ([`crate::repo::DiskRepo`]) is
-//! what `inspect_empty_gates` runs on, so the 46-case golden corpus exercises
-//! the same analysis the boundary runs.
+//! what `inspect_empty_gates` runs on, so the library and the boundary run
+//! the same analysis.
 //!
 //! # On-demand reads are part of the contract
 //!

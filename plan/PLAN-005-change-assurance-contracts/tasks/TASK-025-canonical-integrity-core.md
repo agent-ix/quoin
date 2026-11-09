@@ -28,14 +28,14 @@ relationships:
 
 ## Scope
 
-Build shared schemas and the strict raw JSON, RFC 8785, BLAKE3, ordering, and
-digest-validation primitives used by all three records.
+Build shared schemas and the strict raw JSON, RFC 8785, and ordering
+primitives used by all three records; no digest primitive exists.
 
 ## Subtasks
 
 - [x] Write red vector, malformed-input, closed-schema, and mutation properties.
 - [x] Implement duplicate-preserving raw parsing and I-JSON validation.
-- [x] Implement canonical bytes and BLAKE3 digest helpers without reusing generic sorted JSON.
+- [x] Implement canonical bytes without reusing generic sorted JSON; the BLAKE3 digest helpers are removed.
 
 ## Deliverables
 

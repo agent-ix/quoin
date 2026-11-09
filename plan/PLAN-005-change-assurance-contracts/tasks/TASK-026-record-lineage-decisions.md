@@ -24,13 +24,13 @@ relationships:
 
 ## Scope
 
-Seal and retain immutable record revisions, verify strict N-1 lineage, and
+Write and retain immutable record revisions, verify strict N-1 lineage, and
 validate exact retained ix-flow human decisions without invoking ix-flow.
 
 ## Subtasks
 
 - [x] Write generated genesis/successor/adversarial lineage tests.
-- [x] Implement digest-addressed record persistence and parent preservation.
+- [x] Implement `(record_id, revision)`-addressed record persistence and predecessor preservation.
 - [x] Implement pure decision-event matching and static side-effect boundaries.
 
 ## Deliverables

@@ -371,7 +371,6 @@ mod tests {
 
     use super::{EntryKind, ModuleDocument, build, find_entry};
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_projects_manifest_types_and_real_skeleton_casing() {
         let catalog = build(
@@ -402,7 +401,6 @@ mod tests {
         assert_eq!(object.kind, EntryKind::Object);
     }
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_matches_node_path_and_skeleton_precedence() {
         let catalog = build(
@@ -448,7 +446,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_deduplicates_roots_names_and_reports_duplicate_types() {
         let document = |root: &str, name: &str| ModuleDocument {
@@ -477,7 +474,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_duplicate_groups_keep_first_declaration_order() {
         let document = |root: &str, name: &str, types: &str| ModuleDocument {
@@ -505,7 +501,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_sorts_duplicate_module_names_as_javascript_does() {
         let document = |root: &str, name: &str| ModuleDocument {

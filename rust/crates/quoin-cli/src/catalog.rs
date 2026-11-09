@@ -18,6 +18,7 @@ const DEFAULT_MODULES: &str = include_str!("../../../../default-modules.yaml");
 pub(crate) fn command() -> Command {
     Command::new("catalog")
         .about("Read the active specification-module catalog")
+        .arg(json_flag())
         .subcommand(
             Command::new("list")
                 .about("List active artifact and object catalog modules")
@@ -294,7 +295,6 @@ fn render_catalog(
 mod tests {
     use super::command;
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_default_and_named_list_preserve_the_retained_grammar() {
         let default = command()
@@ -309,7 +309,6 @@ mod tests {
         assert!(arguments.get_flag("json"));
     }
 
-    /// Trace: FR-101
     #[test]
     fn tc_373_catalog_methods_and_show_keep_their_filter_and_required_argument() {
         let methods = command()

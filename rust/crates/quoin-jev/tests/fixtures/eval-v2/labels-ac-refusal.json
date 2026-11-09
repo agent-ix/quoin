@@ -290,34 +290,6 @@
         "why": "no if any of the five checks is yes"
       }
     },
-    "N-034": {
-      "fr_id": "FR-032",
-      "ac_id": "FR-032-AC-1",
-      "oracle_is_adjectival": {
-        "answer": "no",
-        "why": "none found in the criterion"
-      },
-      "domain_unbounded": {
-        "answer": "no",
-        "why": "none found in the criterion"
-      },
-      "names_single_witness": {
-        "answer": "no",
-        "why": "none found in the criterion"
-      },
-      "describes_its_own_test": {
-        "answer": "no",
-        "why": "none found in the criterion"
-      },
-      "static_or_demonstration": {
-        "answer": "no",
-        "why": "none found in the criterion"
-      },
-      "criterion_groundable": {
-        "answer": "yes",
-        "why": "yes when none of the five checks is yes"
-      }
-    },
     "N-043": {
       "fr_id": "FR-094",
       "ac_id": "FR-094-AC-3",
@@ -486,40 +458,6 @@
       "static_or_demonstration": {
         "answer": "yes",
         "why": "not executing a producer while recording shows in no output for an input; read as a design constraint it is a fact about the source tree",
-        "alternatives": [
-          "no"
-        ]
-      },
-      "criterion_groundable": {
-        "answer": "no",
-        "why": "no if any of the five checks is yes",
-        "alternatives": [
-          "yes"
-        ]
-      }
-    },
-    "N-063": {
-      "fr_id": "FR-099",
-      "ac_id": "FR-099-AC-2",
-      "oracle_is_adjectival": {
-        "answer": "no",
-        "why": "none found in the criterion"
-      },
-      "domain_unbounded": {
-        "answer": "no",
-        "why": "none found in the criterion"
-      },
-      "names_single_witness": {
-        "answer": "no",
-        "why": "none found in the criterion"
-      },
-      "describes_its_own_test": {
-        "answer": "no",
-        "why": "none found in the criterion"
-      },
-      "static_or_demonstration": {
-        "answer": "yes",
-        "why": "the clause 'with `quire-rs` consumed as a Cargo dependency' is a fact about the dependency graph; the verdict equality is a result",
         "alternatives": [
           "no"
         ]

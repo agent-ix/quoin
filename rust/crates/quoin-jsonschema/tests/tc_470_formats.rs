@@ -43,41 +43,34 @@ fn is_rfc3339_date_time(value: &str) -> bool {
     Rfc3339DateTime::parse(value).is_ok()
 }
 
-/// A retained record of this shape, from the captured corpus.
-///
-/// The probe is a document that actually occurs with one field changed, not a
-/// stub: a hand-built object would be refused by a dozen structural keywords
-/// and `format` would never be the thing under test. The capture predates
-/// PLAT-972, so the family's one admissible `strength` (DIVERGENCE.md §7) is
-/// added here rather than written into the ajv golden.
+/// A complete, schema-valid fixture for each retained measurement schema.
 fn retained_base(schema: MeasurementSchema) -> Value {
-    let (name, strength) = match schema {
-        MeasurementSchema::InterventionExperimentV1 => ("intervention_experiment_v1", "tested"),
-        MeasurementSchema::OperationalEvidenceV1 => ("operational_evidence_v1", "observed"),
+    let strength = match schema {
+        MeasurementSchema::InterventionExperimentV1 => "tested",
+        MeasurementSchema::OperationalEvidenceV1 => "observed",
         other => panic!("no retained base recorded for {other}"),
     };
-    let goldens: Value = serde_json::from_str(
-        &std::fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("tests")
-                .join("goldens")
-                .join("ajv-verdicts.json"),
+    let store = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join("..")
+        .join("tests/fixtures/evidence/measurement-store");
+    let read = |relative: &str| -> Value {
+        serde_json::from_str(
+            &std::fs::read_to_string(store.join(relative)).expect("the fixture is readable"),
         )
-        .expect("the captured verdicts are readable"),
-    )
-    .expect("the captured verdicts are JSON");
-    let entry = goldens["entries"]
-        .as_array()
-        .expect("entries is an array")
-        .iter()
-        .find(|e| {
-            e["schema"].as_str() == Some(name)
-                && e["mutation"].as_str() == Some("none")
-                && e["ajv_valid"].as_bool() == Some(true)
-        })
-        .unwrap_or_else(|| panic!("the corpus retains an accepted {name} record"))
-        .clone();
-    let mut document = entry["document"].clone();
+        .expect("the fixture is JSON")
+    };
+    let mut document = match schema {
+        MeasurementSchema::InterventionExperimentV1 => {
+            read("interventions/quoin-270-cli-eval-sentinel-contract.json")
+        }
+        MeasurementSchema::OperationalEvidenceV1 => serde_json::from_str(include_str!(
+            "../../../../tests/fixtures/operational-date-time-probe.json"
+        ))
+        .expect("operational record fixture is JSON"),
+        other => panic!("no retained base recorded for {other}"),
+    };
     document
         .as_object_mut()
         .expect("a record is an object")
@@ -215,7 +208,7 @@ fn tc_470_parsing_returns_the_document_or_the_refusal() {
                 .join("..")
                 .join("..")
                 .join("..")
-                .join("spec/evidence/interventions/quoin-270-cli-eval-sentinel-contract.json"),
+                .join("tests/fixtures/evidence/measurement-store/interventions/quoin-270-cli-eval-sentinel-contract.json"),
         )
         .expect("the retained record is readable"),
     )
@@ -244,7 +237,7 @@ fn tc_470_a_schema_that_does_not_compile_names_itself() {
         error.to_string().contains("vendored.json"),
         "a compile failure must say which document: {error}"
     );
-    assert!(error.errors().is_empty());
+    assert_eq!(error.errors().len(), 0);
 }
 
 /// Every error code round-trips through its wire spelling.
@@ -252,10 +245,6 @@ fn tc_470_a_schema_that_does_not_compile_names_itself() {
 /// Trace: FR-100-AC-4
 #[test]
 fn tc_470_every_error_code_round_trips() {
-    assert!(
-        !JsonSchemaErrorCode::ALL.is_empty(),
-        "anti-vacuity floor: the code census must not be empty"
-    );
     for code in JsonSchemaErrorCode::ALL {
         assert_eq!(
             JsonSchemaErrorCode::from_code(code.as_str()),

@@ -72,6 +72,15 @@ static CONSUMED: LazyLock<Regex> = LazyLock::new(|| literal_regex(r"\|\s*(?:grep
 static COMPARED: LazyLock<Regex> =
     LazyLock::new(|| literal_regex(r"(?:==|!=|\b(?:eq|ne|gt|ge|lt|le)\b)"));
 
+/// `name=$(` at the start of a statement, with an optional `export`/`local`.
+static CAPTURE: LazyLock<Regex> = LazyLock::new(|| {
+    literal_regex(r"^\s*(?:(?:export|local|readonly)\s+)?([A-Za-z_][A-Za-z0-9_]*)=\$\(")
+});
+
+/// A shell test construct: `[`, `[[`, `test` or `((`.
+static TEST_CONSTRUCT: LazyLock<Regex> =
+    LazyLock::new(|| literal_regex(r"(?:^|[\s;&|(])(?:\[\[?|test|\(\()(?:\s|$)"));
+
 /// `/\b(?:grep|rg)\b[^\n]*?["']([^"']+)["']/`
 static QUOTED_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| literal_regex(r#"\b(?:grep|rg)\b[^\n]*?["']([^"']+)["']"#));
@@ -102,7 +111,7 @@ pub fn inspect_empty_gates(repo: &Path) -> Result<Vec<EmptyGateFinding>, Validat
 /// The analysis itself, over whatever [`RepoSource`] supplies the bytes: a
 /// directory on disk ([`DiskRepo`], via [`inspect_empty_gates`]) or a snapshot
 /// the caller already read ([`crate::MemoryRepo`], via `quoin-core`'s
-/// `validators.run`). There is one copy of it, so the golden corpus and the
+/// `validators.run`). There is one copy of it, so the library and the
 /// boundary cannot drift apart (quoin#412).
 ///
 /// Classification stays here rather than with the caller: a caller that
@@ -151,18 +160,20 @@ pub fn inspect_empty_gates_in(
         };
         let wired_by = wired_by.as_str();
 
-        findings.extend(split_lines(&body).enumerate().filter_map(|(index, line)| {
-            let pattern = unasserted_count_pattern(line)?;
-            claim_mentions(&claim.statement, pattern).then(|| {
-                finding(
-                    &claim,
-                    repo_path,
-                    wired_by,
-                    LineNumber::from_zero_based(index),
-                    pattern,
-                )
-            })
-        }));
+        findings.extend(
+            unasserted_count_lines(&body)
+                .into_iter()
+                .filter(|(_, pattern)| claim_mentions(&claim.statement, pattern))
+                .map(|(index, pattern)| {
+                    finding(
+                        &claim,
+                        repo_path,
+                        wired_by,
+                        LineNumber::from_zero_based(index),
+                        pattern,
+                    )
+                }),
+        );
     }
 
     findings.sort_by(|a, b| a.sort_key().cmp(&b.sort_key()));
@@ -250,6 +261,49 @@ fn gate_claim(source: &str) -> Option<GateClaim> {
     })
 }
 
+/// Every line of `body` that counts matches without asserting the count, as
+/// `(zero-based line index, searched token)`.
+///
+/// A count captured into a variable (`n=$(grep ... | wc -l)`) is asserted when
+/// a later line tests or compares that variable, so a working two-line gate
+/// stays silent.
+fn unasserted_count_lines(body: &str) -> Vec<(usize, &str)> {
+    let lines: Vec<&str> = split_lines(body).collect();
+    lines
+        .iter()
+        .enumerate()
+        .filter_map(|(index, line)| {
+            let pattern = unasserted_count_pattern(line)?;
+            let asserted_later = captured_variable(line).is_some_and(|name| {
+                lines
+                    .iter()
+                    .skip(index + 1)
+                    .any(|later| asserts_variable(later, name))
+            });
+            (!asserted_later).then_some((index, pattern))
+        })
+        .collect()
+}
+
+/// The variable a `name=$(...)` line captures its output into.
+fn captured_variable(line: &str) -> Option<&str> {
+    let captures = CAPTURE.captures(line)?;
+    Some(captures.get(1)?.as_str())
+}
+
+/// Does `line` test or compare `$name` / `${name}`?
+fn asserts_variable(line: &str, name: &str) -> bool {
+    let braced = format!("${{{name}}}");
+    let plain = format!("${name}");
+    let mentions = line.match_indices(&braced).next().is_some()
+        || line.match_indices(&plain).any(|(at, _)| {
+            line.get(at + plain.len()..)
+                .and_then(|rest| rest.chars().next())
+                .is_none_or(|next| !(next.is_ascii_alphanumeric() || next == '_'))
+        });
+    mentions && (COMPARED.is_match(line) || TEST_CONSTRUCT.is_match(line))
+}
+
 /// Return the searched token when a line merely prints its match count.
 fn unasserted_count_pattern(line: &str) -> Option<&str> {
     if CONTROL_FLOW.is_match(line) {
@@ -310,8 +364,27 @@ fn split_lines(source: &str) -> impl Iterator<Item = &str> {
 )]
 mod tests {
     use super::{
-        CLAIM, claim_mentions, gate_claim, references_script, split_lines, unasserted_count_pattern,
+        CLAIM, claim_mentions, gate_claim, references_script, split_lines, unasserted_count_lines,
+        unasserted_count_pattern,
     };
+
+    /// A count captured into a variable and asserted on a later line is a
+    /// working gate and stays silent; one never asserted is still flagged
+    /// (PLAT-269, FR-043-AC-20).
+    ///
+    /// Trace: FR-043-AC-20
+    #[test]
+    fn tc_377_012a_a_count_asserted_on_a_later_line_is_silent() {
+        let working = "count=$(grep -r \"unwrap\" src/ | wc -l)\n[ \"$count\" -eq 0 ] || exit 1\n";
+        assert_eq!(unasserted_count_lines(working), vec![]);
+        let braced = "n=$(rg 'panic!' . | wc -l)\necho checking\ntest \"${n}\" = 0 || exit 1\n";
+        assert_eq!(unasserted_count_lines(braced), vec![]);
+        let never_asserted = "count=$(grep -r \"unwrap\" src/ | wc -l)\necho \"$count\"\n";
+        assert_eq!(unasserted_count_lines(never_asserted), vec![(0, "unwrap")]);
+        let other_var =
+            "count=$(grep -r \"unwrap\" src/ | wc -l)\n[ \"$other\" -eq 0 ] || exit 1\n";
+        assert_eq!(unasserted_count_lines(other_var), vec![(0, "unwrap")]);
+    }
 
     /// The claim regex: keyword, obligation and statement, case-insensitively,
     /// with the first match winning.

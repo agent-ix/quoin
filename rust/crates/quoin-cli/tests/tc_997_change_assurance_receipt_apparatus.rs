@@ -8,7 +8,7 @@
 //! Before this ticket, `change_assurance.receipt`'s wire request carried no
 //! diff and no plan link, so none of FR-111's reasons could ever fire through
 //! this command (the known gap FR-111-CON-3 recorded). This file drives the
-//! whole producer path — `seal-record`, `seal-attestation`, `intake`, then
+//! whole producer path — `write-record`, `prepare-attestation`, `intake`, then
 //! `receipt` with `--diff-path` and `--plan` — against a real repository on
 //! disk, exactly as a caller would.
 
@@ -83,11 +83,11 @@ fn write_protecting_plan(root: &Path, id: &str, entries: &[&str]) {
     );
 }
 
-/// Seal the fixture record, retain it, and answer its digest.
-fn seal_record(root: &Path) -> String {
+/// Write the fixture record and retain it.
+fn write_record(root: &Path) {
     let record_path = write(root, "record-body.json", &read_fixture("record-body.json"));
     let output = quoin(&[
-        "seal-record",
+        "write-record",
         "--input",
         record_path.to_str().unwrap(),
         "--repo",
@@ -97,20 +97,13 @@ fn seal_record(root: &Path) -> String {
     assert_eq!(
         output.status.code(),
         Some(0),
-        "seal-record: stderr {}",
+        "write-record: stderr {}",
         text(&output.stderr)
     );
-    let payload: serde_json::Value =
-        serde_json::from_str(text(&output.stdout).trim()).expect("--json emits one document");
-    payload["digest"].as_str().expect("a digest").to_owned()
 }
 
-/// Seal and retain the fixture attestation and a fresh output file, and
-/// answer the sealed attestation's digest.
-///
-/// `attestation-body.json`'s own `record_digest` is a fixed value computed
-/// over `record-body.json`'s fixed content; `seal_record` above must answer
-/// the same value or the fixtures have drifted apart.
+/// Prepare and retain the fixture attestation and a fresh output file, and
+/// answer the attestation id.
 fn intake_attestation(root: &Path) -> String {
     let attestation_body = write(
         root,
@@ -118,8 +111,8 @@ fn intake_attestation(root: &Path) -> String {
         &read_fixture("attestation-body.json"),
     );
     let output_bytes = write(root, "output.bin", b"passed\n");
-    let sealed = quoin(&[
-        "seal-attestation",
+    let prepared = quoin(&[
+        "prepare-attestation",
         "--input",
         attestation_body.to_str().unwrap(),
         "--output",
@@ -128,20 +121,23 @@ fn intake_attestation(root: &Path) -> String {
         "text/plain",
     ]);
     assert_eq!(
-        sealed.status.code(),
+        prepared.status.code(),
         Some(0),
-        "seal-attestation: stderr {}",
-        text(&sealed.stderr)
+        "prepare-attestation: stderr {}",
+        text(&prepared.stderr)
     );
-    let sealed_path = write(root, "sealed-attestation.json", &sealed.stdout);
-    let payload: serde_json::Value =
-        serde_json::from_str(text(&sealed.stdout).trim()).expect("seal-attestation emits JSON");
-    let digest = payload["digest"].as_str().expect("a digest").to_owned();
+    let prepared_path = write(root, "prepared-attestation.json", &prepared.stdout);
+    let payload: serde_json::Value = serde_json::from_str(text(&prepared.stdout).trim())
+        .expect("prepare-attestation emits JSON");
+    let attestation_id = payload["attestation_id"]
+        .as_str()
+        .expect("an attestation id")
+        .to_owned();
 
     let intake = quoin(&[
         "intake",
         "--attestation",
-        sealed_path.to_str().unwrap(),
+        prepared_path.to_str().unwrap(),
         "--output",
         output_bytes.to_str().unwrap(),
         "--repo",
@@ -154,7 +150,7 @@ fn intake_attestation(root: &Path) -> String {
         "intake: stderr {}",
         text(&intake.stderr)
     );
-    digest
+    attestation_id
 }
 
 /// `quoin change-assurance receipt` with `--diff-path` and `--plan` reports
@@ -166,12 +162,8 @@ fn intake_attestation(root: &Path) -> String {
 #[test]
 fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
     let root = repo();
-    let record_digest = seal_record(root.path());
-    assert_eq!(
-        record_digest, "1972d0d5d3ee3fb06a2a8ca2cc97f3e239d956958368d209ebbe0a52f9b61630",
-        "record-body.json and attestation-body.json's record_digest have drifted apart"
-    );
-    let attestation_digest = intake_attestation(root.path());
+    write_record(root.path());
+    let attestation_id = intake_attestation(root.path());
     write_protecting_plan(root.path(), "MP-997-CLI-A", &["checker/config.toml"]);
     let decisions = write(
         root.path(),
@@ -185,11 +177,13 @@ fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
         "--repo",
         root.path().to_str().unwrap(),
         "--record",
-        &record_digest,
+        "change-1",
+        "--revision",
+        "1",
         "--candidate-revision",
         "candidate-1",
         "--select",
-        &format!("proof-1={attestation_digest}"),
+        &format!("proof-1={attestation_id}"),
         "--decisions",
         decisions.to_str().unwrap(),
         "--audits",
@@ -224,8 +218,8 @@ fn tc_997_620_receipt_reports_apparatus_touched_through_the_real_binary() {
 #[test]
 fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {
     let root = repo();
-    let record_digest = seal_record(root.path());
-    let attestation_digest = intake_attestation(root.path());
+    write_record(root.path());
+    let attestation_id = intake_attestation(root.path());
     write_protecting_plan(root.path(), "MP-997-CLI-B", &["checker/config.toml"]);
     let decisions = write(
         root.path(),
@@ -239,11 +233,13 @@ fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {
         "--repo",
         root.path().to_str().unwrap(),
         "--record",
-        &record_digest,
+        "change-1",
+        "--revision",
+        "1",
         "--candidate-revision",
         "candidate-1",
         "--select",
-        &format!("proof-1={attestation_digest}"),
+        &format!("proof-1={attestation_id}"),
         "--decisions",
         decisions.to_str().unwrap(),
         "--audits",
@@ -265,9 +261,9 @@ fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {
 }
 
 /// `quoin change-assurance receipt --json` prints `governing_plan_id` and
-/// `diff_paths_supplied` on the sealed receipt, through the real binary: a
-/// receipt sealed with `--plan`/`--diff-path` records the plan id and
-/// `true`; one sealed with neither records `null` and `false` explicitly, so
+/// `diff_paths_supplied` on the receipt, through the real binary: a
+/// receipt written with `--plan`/`--diff-path` records the plan id and
+/// `true`; one written with neither records `null` and `false` explicitly, so
 /// an auditor reading `quoin change-assurance receipt`'s own output can tell
 /// a caller's omission apart from a genuinely unlinked receipt (PLAT-1015).
 ///
@@ -276,8 +272,8 @@ fn tc_997_621_receipt_reports_diff_missing_through_the_real_binary() {
 #[test]
 fn tc_1015_622_receipt_records_the_omission_through_the_real_binary() {
     let root = repo();
-    let record_digest = seal_record(root.path());
-    let attestation_digest = intake_attestation(root.path());
+    write_record(root.path());
+    let attestation_id = intake_attestation(root.path());
     write_protecting_plan(root.path(), "MP-1015-CLI", &["checker/config.toml"]);
     let decisions = write(
         root.path(),
@@ -291,11 +287,13 @@ fn tc_1015_622_receipt_records_the_omission_through_the_real_binary() {
         "--repo",
         root.path().to_str().unwrap(),
         "--record",
-        &record_digest,
+        "change-1",
+        "--revision",
+        "1",
         "--candidate-revision",
         "candidate-1",
         "--select",
-        &format!("proof-1={attestation_digest}"),
+        &format!("proof-1={attestation_id}"),
         "--decisions",
         decisions.to_str().unwrap(),
         "--audits",
@@ -322,11 +320,13 @@ fn tc_1015_622_receipt_records_the_omission_through_the_real_binary() {
         "--repo",
         root.path().to_str().unwrap(),
         "--record",
-        &record_digest,
+        "change-1",
+        "--revision",
+        "1",
         "--candidate-revision",
         "candidate-1",
         "--select",
-        &format!("proof-1={attestation_digest}"),
+        &format!("proof-1={attestation_id}"),
         "--decisions",
         decisions.to_str().unwrap(),
         "--audits",

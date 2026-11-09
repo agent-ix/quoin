@@ -84,7 +84,7 @@ fn row_value(id: &str, ac_text: &str, truth: &Value, source: Option<&str>) -> Va
 fn parse(values: &[Value]) -> Vec<Row> {
     let text = serde_json::to_string(&json!({
         "schema": corpus::SCHEMA, "sampling_rule": "synthetic", "seed": 1,
-        "source_commit": "0000000", "rows": values,
+        "rows": values,
     }))
     .unwrap();
     corpus::parse(&text).unwrap().rows
@@ -250,7 +250,7 @@ fn tc_1031_the_checks_match_the_corpus_keys() {
     );
     for variant in [K1, K2] {
         assert_eq!(variant.modes, [Mode::Req]);
-        assert!(variant.references.is_empty());
+        assert_eq!(variant.references.len(), 0);
         assert_eq!(variant.grades, GRADES);
         assert!(variant::REGISTRY.iter().any(|v| v.id == variant.id));
     }

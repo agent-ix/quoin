@@ -14,7 +14,7 @@ protected_apparatus:
   - skills/spec-criterion-strength-analysis/assets/question-set.json
 negative_controls:
   - kind: apparatus-edit
-    description: the fixture corpus, its FR-context sidecar and the question set are digested with every collection; an edit to any of them without a new definition version rejects
+    description: the fixture corpus, its FR-context sidecar and the question set are protected apparatus; an edit to any of them without a new definition version rejects
   - kind: suppressed-observation
     description: a transport failure aborts the pass and is never scored, so a fixture the lens fails to answer cannot be quietly left out of the denominator
 relationships: []
@@ -149,8 +149,8 @@ recall on defect kinds the corpus does not hold.
 
 ## Comparison and Enforcement
 
-The bars below were first committed in `55c467d9a57d21be3c15ff0bbf1be0db1e4b429c`
-(agent-ix/quoin, branch `plat-jev-live-tests`), in the module doc of
+The bars below were first committed on branch `plat-jev-live-tests`
+(agent-ix/quoin), in the module doc of
 `rust/crates/quoin-jev/tests/live_criterion_strength.rs`, before any round-two
 call to the service. They are reproduced here word for word.
 

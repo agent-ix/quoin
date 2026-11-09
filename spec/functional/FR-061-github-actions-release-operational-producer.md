@@ -16,7 +16,7 @@ relationships:
 ## Description
 
 When given a retained GitHub Actions release workflow and retained API exports from
-one of its real runs, Quoin SHALL provide a first-party producer that derives one
+one of its runs, Quoin SHALL provide a first-party producer that derives one
 standing-capability record and one exercise record and submits both through the
 FR-060 intake boundary.
 
@@ -28,7 +28,7 @@ FR-060 intake boundary.
 - A versioned producer definition naming the workflow path, release job, control
   identity, deployed subject and scope, supported transition, authorized roles,
   coverage, limitations, owner, gaps, actions, accepted event, and clock deadline.
-- Immutable Quoin version, producer source revision, definition version, and
+- Immutable Quoin version, definition version, and
   environment identity.
 
 ## Outputs
@@ -36,18 +36,18 @@ FR-060 intake boundary.
 - One `release` standing-capability record and one linked `release` exercise
   record accepted through FR-060, or an actionable refusal with no partial pair.
 - Raw-evidence references to the unmodified workflow and API responses with
-  computed media type, byte size, and content digest.
+  computed media type.
 
 ## Behavior
 
 - The producer SHALL parse the workflow structurally and require the configured
   release job and accepted manual-dispatch event to exist.
 - The producer SHALL require the workflow-run export to identify the configured
-  workflow path, accepted event, immutable source revision, and completed run.
+  workflow path, accepted event, and completed run.
 - The producer SHALL refuse the input unless the jobs export contains exactly one
   started and completed instance of the configured release job.
 - The producer SHALL derive capability availability and surface from the workflow.
-- The producer SHALL derive exercise actor, trigger, source revision, start/completion times,
+- The producer SHALL derive exercise actor, trigger, start/completion times,
   outcome, before/after state, observations, and clock state from the retained API
   responses rather than caller-supplied observations.
 - The producer SHALL map a successful release job to `succeeded`.
@@ -58,7 +58,7 @@ FR-060 intake boundary.
 - The producer SHALL submit both records as one pair so neither record is retained
   if validation or persistence of the other fails.
 - The producer SHALL compute raw-evidence metadata from the exact input bytes.
-- The producer SHALL NOT accept caller-supplied digests, byte sizes, timestamps, conclusions, or
+- The producer SHALL NOT accept caller-supplied timestamps, conclusions, or
   clock status.
 - The producer SHALL NOT contact GitHub, dispatch a workflow, publish a release,
   invoke a process, or alter any operational control. It consumes already-retained
@@ -68,16 +68,18 @@ FR-060 intake boundary.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-061-AC-1 | Quoin's retained release workflow and a real completed workflow-run/jobs export produce one linked standing-capability and exercise pair whose workflow, revision, actor, timing, outcome, and observations match the source artifacts. | Test (TC-1244) |
-| FR-061-AC-2 | Missing or malformed YAML/JSON, a workflow/path/event/revision mismatch, or an absent, duplicate, unstarted, or incomplete release job is refused without either operational record. | Test (TC-1245) |
+| FR-061-AC-1 | A release workflow and a completed workflow-run/jobs export produce one linked standing-capability and exercise pair whose workflow, actor, timing, outcome, and observations match the source artifacts. | Test (TC-1244) |
+| FR-061-AC-2 | Missing or malformed YAML/JSON, a workflow/path/event mismatch, a release-job run-id, attempt, or `head_sha` mismatch, or an absent, duplicate, unstarted, or incomplete release job is refused without either operational record. | Test (TC-1245) |
 | FR-061-AC-3 | Capability state is derived from the parsed workflow and exercise state and clock status are derived from the retained API exports; caller-supplied replacements cannot change them. | Test (TC-1246) |
 | FR-061-AC-4 | Every non-success GitHub conclusion remains a named non-success exercise and cannot discharge the clocked release obligation. | Test (TC-1247) |
-| FR-061-AC-5 | A real release-run integration captures workflow-run and jobs responses outside Quoin, then the Quoin producer consumes the retained files without network or process execution and atomically persists the pair through FR-060. | Test (TC-1248) |
+| FR-061-AC-5 | The Quoin producer consumes the retained workflow-run and jobs files without network or process execution and atomically persists the pair through FR-060. | Test (TC-1248) |
 
 ## Constraints
 
-- Real-run fixtures and transcripts SHALL satisfy the repository's content-rights
-  policy; constructed API responses SHALL NOT be labelled as real producer evidence.
+- Tests SHALL build their workflow-run and workflow-jobs exports in the test, labelled
+  synthetic, with generated `head_sha` values; no export of a real run or fixed head
+  revision is committed to the repository. The producer compares the run and job
+  `head_sha` values and persists neither.
 - The producer is a retained-evidence adapter, not a GitHub client or release runner.
 - The initial producer supports GitHub Actions release workflows only; FR-059 and
   FR-060 remain engine-independent for other deployment surfaces and producers.

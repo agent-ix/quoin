@@ -4,7 +4,7 @@
 //! Applying a mutation's unified diff to one file's text (PLAT-1027).
 //!
 //! An external corpus row (PLAT-1026) carries no body: it names a file in a
-//! sibling checkout and a content digest, and its mutation is a `git diff` of
+//! sibling checkout, and its mutation is a `git diff` of
 //! that one file. This module turns the pristine file plus the patch into the
 //! mutated file, so the harness can cut the mutated symbol out of it. In-repo
 //! rows never pass through here: their bodies are already the mutated text

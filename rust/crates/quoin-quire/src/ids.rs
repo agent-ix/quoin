@@ -153,62 +153,6 @@ impl std::fmt::Display for DocumentPath {
     }
 }
 
-/// A repository identity copied into an assurance source premise.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct RepositoryId(String);
-
-impl RepositoryId {
-    /// Accept a non-empty identity.
-    ///
-    /// # Errors
-    /// [`Error::RepositoryEmpty`] for an empty or whitespace-only value.
-    pub fn new(value: impl Into<String>) -> Result<Self> {
-        let value = value.into();
-        if value.trim().is_empty() {
-            return Err(Error::RepositoryEmpty);
-        }
-        Ok(Self(value))
-    }
-
-    /// The identity.
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-/// A full lowercase Git object id.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct RevisionId(String);
-
-impl RevisionId {
-    /// Accept 40 lowercase hexadecimal digits.
-    ///
-    /// Checked here as well as in the engine: the engine's refusal is the
-    /// fail-closed backstop, and this one lets a caller reject a bad argument
-    /// before a whole corpus walk has been paid for.
-    ///
-    /// # Errors
-    /// [`Error::RevisionMalformed`] for anything else.
-    pub fn new(value: impl Into<String>) -> Result<Self> {
-        let value = value.into();
-        let well_formed = value.len() == 40
-            && value
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));
-        if !well_formed {
-            return Err(Error::RevisionMalformed { revision: value });
-        }
-        Ok(Self(value))
-    }
-
-    /// The revision.
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
 /// The exact identity of a module-supplied clause set (quire-rs FR-067).
 ///
 /// Three `String` arguments in a row is precisely the call site this type
@@ -285,32 +229,6 @@ nonempty_newtype!(
 )]
 mod tests {
     use super::*;
-
-    /// Trace: FR-096
-    #[test]
-    fn tc_379_010_a_revision_must_be_forty_lowercase_hex() {
-        assert!(RevisionId::new("a".repeat(40)).is_ok());
-        for bad in [
-            "a".repeat(39),
-            "a".repeat(41),
-            "A".repeat(40),
-            "g".repeat(40),
-            String::new(),
-        ] {
-            let error = RevisionId::new(bad.clone()).expect_err("must refuse");
-            assert_eq!(error.code(), crate::error::ErrorCode::RevisionMalformed);
-        }
-    }
-
-    /// Trace: FR-096
-    #[test]
-    fn tc_379_011_an_empty_repository_identity_is_refused() {
-        assert!(RepositoryId::new("agent-ix/quoin").is_ok());
-        assert_eq!(
-            RepositoryId::new("   ").expect_err("must refuse").code(),
-            crate::error::ErrorCode::RepositoryEmpty
-        );
-    }
 
     /// Trace: FR-096
     #[test]

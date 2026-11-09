@@ -25,7 +25,7 @@ relationships:
 and five more modules are in flight. Both hand migrations converged on the same
 shape: a TypeSpec source importing `@agent-ix/semantic-core`, a deterministic
 emit script that writes one JSON Schema per declared type and rewrites the
-manifest digests textually, a `semantic` manifest block naming the contract and
+manifest `schema` paths textually, a `semantic` manifest block naming the contract and
 package identity, typed authoring skeletons with a negative fixture per failure
 mode, and a suite that fails rather than skips when the engine is absent. Nothing
 in that shape is business- or ISO-specific, and nothing in it is discoverable by
@@ -42,7 +42,7 @@ baseline, and — where the source predates the contract — its
 
 - **Given** a maintainer answering the template's prompts with an organization, repository name, and `module_kind: object`
 - **When** the template renders and the maintainer runs the rendered repository's own gate
-- **Then** the schemas emit from the TypeSpec source, the manifest digests match, `quire validate` passes over the rendered `spec/` tree, and the suite is green — with no file hand-edited after rendering
+- **Then** the schemas emit from the TypeSpec source, every manifest `schema` path names an emitted file, `quire validate` passes over the rendered `spec/` tree, and the suite is green — with no file hand-edited after rendering
 
 ### US-021-EX-2: The engine's absence is a failure, not a pass
 

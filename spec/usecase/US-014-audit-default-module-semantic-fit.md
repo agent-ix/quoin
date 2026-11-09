@@ -61,7 +61,7 @@ repository impact without promoting a schema or modifying a module.
 
 ### US-014-EX-2: A document cannot be parsed
 
-- **Given** a Markdown file within a pinned module corpus
+- **Given** a Markdown file within a module corpus
 - **When** Quire cannot parse or resolve it
 - **Then** the inventory retains the file and its failure classification instead of shrinking the denominator
 

@@ -8,27 +8,25 @@
 //! Two of the oracle's rules are worth naming, because both are about
 //! **immutability of the thing attested to** rather than about syntax:
 //!
-//! * `tool.version` must be a release version, a 40-hex commit or a 64-hex
-//!   digest — never a branch name or `latest`. An attestation whose tool
-//!   version can be repointed is an attestation that proves nothing later.
+//! * `tool.version` must be a release version or a 40-hex commit - never a
+//!   branch name or `latest`. An attestation whose tool version can be
+//!   repointed is an attestation that proves nothing later.
 //! * `observed_at` must be an instant a calendar actually has. The oracle
 //!   enforces this by running the regex **and then** `Date.parse`, which
 //!   refuses `2026-02-30`; the regex alone would not.
 //!
 //! `normalizeAttestation` sorts `environment`'s keys. That is not reproduced
 //! as a step here and does not need to be: `JsonObject` is a map with no
-//! insertion order, and the JCS serializer sorts member names itself. The
-//! oracle's sort is observable only through the digest, and the digest is
-//! taken over JCS bytes in both trees.
+//! insertion order, and the JCS serializer sorts member names itself.
 
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
 use engineering_assurance::claim_strength::ClaimStrength;
-use quoin_store::{CanonicalDigest, JsonValue, RawBytesDigest};
+use quoin_store::JsonValue;
 
 use crate::error::{ChangeAssuranceError, FieldFailure, Subject};
-use crate::ids::{ArtifactDigest, AttestationId, NonEmptyText, ProofId};
+use crate::ids::{AttestationId, NonEmptyText, ProofId, RecordId, Revision};
 use crate::model::attestation_shape::{is_a_real_instant, is_an_immutable_version};
 use crate::model::json::{Fields, number, object};
 use crate::model::record::CommandBinding;
@@ -134,11 +132,10 @@ impl EnvironmentValue {
 pub struct ToolBinding {
     /// The tool's identity.
     pub identity: NonEmptyText,
-    /// An immutable version: a release version, a 40-hex commit, or a 64-hex
-    /// digest.
+    /// An immutable version: a release version or a 40-hex commit.
     pub version: NonEmptyText,
-    /// The configuration it ran under.
-    pub configuration_digest: ArtifactDigest,
+    /// The configuration reference it ran under.
+    pub configuration_ref: NonEmptyText,
 }
 
 /// The producer output an attestation retains.
@@ -146,21 +143,19 @@ pub struct ToolBinding {
 pub struct RetainedOutput {
     /// The output's media type.
     pub media_type: NonEmptyText,
-    /// Its blake3 digest over the bytes as produced.
-    pub digest: RawBytesDigest,
     /// Its length in bytes.
     pub size_bytes: u64,
 }
 
-/// A sealed proof attestation.
+/// A proof attestation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProofAttestation {
-    /// The attestation's own identity, distinct from its digest.
+    /// The attestation's own identity, assigned by its producer.
     pub attestation_id: AttestationId,
-    /// Its own digest.
-    pub digest: CanonicalDigest,
-    /// The change-assurance record it attests against.
-    pub record_digest: CanonicalDigest,
+    /// The change-assurance record it attests against, by identity.
+    pub record_id: RecordId,
+    /// The revision of that record.
+    pub record_revision: Revision,
     /// The candidate revision it was taken at.
     pub candidate_revision: NonEmptyText,
     /// The proof obligation it discharges.
@@ -181,163 +176,56 @@ pub struct ProofAttestation {
     pub retained_output: RetainedOutput,
 }
 
-/// An attestation read but not yet sealed: everything but the `digest`.
-#[derive(Clone, Debug, PartialEq)]
-pub struct UnsealedAttestation {
-    /// The attestation's own identity.
-    pub attestation_id: AttestationId,
-    /// The change-assurance record it attests against.
-    pub record_digest: CanonicalDigest,
-    /// The candidate revision it was taken at.
-    pub candidate_revision: NonEmptyText,
-    /// The proof obligation it discharges.
-    pub proof_id: ProofId,
-    /// The exact command that was run.
-    pub command: CommandBinding,
-    /// The tool that ran it.
-    pub tool: ToolBinding,
-    /// What was observed about the environment.
-    pub environment: BTreeMap<String, EnvironmentValue>,
-    /// When it was observed.
-    pub observed_at: NonEmptyText,
-    /// What the producer reported.
-    pub result: ProducerResult,
-    /// The kind of support behind this proof (FR-022, EA `ClaimStrength`).
-    pub strength: ClaimStrength,
-    /// The output retained alongside it.
-    pub retained_output: RetainedOutput,
-}
-
-impl UnsealedAttestation {
-    /// Read and validate the unsealed shape.
+impl ProofAttestation {
+    /// Read and validate an attestation.
     ///
     /// # Errors
     ///
-    /// Every refusal `validateAttestationShape(value, false)` produces.
+    /// Every refusal of the v1 attestation schema, including an undeclared
+    /// member such as a `digest`.
     pub fn from_json(value: &JsonValue) -> Result<Self, ChangeAssuranceError> {
-        read_attestation(value, false).map(|(unsealed, _)| unsealed)
+        read_attestation(value)
     }
 
-    /// The JSON form, without a `digest` member.
+    /// The JSON form.
     ///
     /// # Errors
     ///
     /// Never in practice: only [`JsonValue::number`]'s non-finite refusal,
     /// which no value of this type can hold.
     pub fn to_json(&self) -> Result<JsonValue, ChangeAssuranceError> {
-        write_attestation(self, None)
-    }
-
-    /// Attach a digest, producing the sealed attestation.
-    #[must_use]
-    pub fn seal_with(self, digest: CanonicalDigest) -> ProofAttestation {
-        ProofAttestation {
-            attestation_id: self.attestation_id,
-            digest,
-            record_digest: self.record_digest,
-            candidate_revision: self.candidate_revision,
-            proof_id: self.proof_id,
-            command: self.command,
-            tool: self.tool,
-            environment: self.environment,
-            observed_at: self.observed_at,
-            result: self.result,
-            strength: self.strength,
-            retained_output: self.retained_output,
-        }
+        write_attestation(self)
     }
 }
 
-impl ProofAttestation {
-    /// Read and validate the sealed shape, **without** checking the digest.
-    ///
-    /// Not public: [`crate::attestations::verify_attestation`] is the only way
-    /// to obtain a `ProofAttestation` from bytes, and it checks the digest.
-    pub(crate) fn read_sealed(value: &JsonValue) -> Result<Self, ChangeAssuranceError> {
-        let (unsealed, digest) = read_attestation(value, true)?;
-        let digest = digest
-            .ok_or_else(|| ChangeAssuranceError::shape(SUBJECT, FieldFailure::missing("digest")))?;
-        Ok(unsealed.seal_with(digest))
-    }
-
-    /// Everything but the digest.
-    #[must_use]
-    pub fn unsealed(&self) -> UnsealedAttestation {
-        UnsealedAttestation {
-            attestation_id: self.attestation_id.clone(),
-            record_digest: self.record_digest.clone(),
-            candidate_revision: self.candidate_revision.clone(),
-            proof_id: self.proof_id.clone(),
-            command: self.command.clone(),
-            tool: self.tool.clone(),
-            environment: self.environment.clone(),
-            observed_at: self.observed_at.clone(),
-            result: self.result,
-            strength: self.strength,
-            retained_output: self.retained_output.clone(),
-        }
-    }
-
-    /// The JSON form, `digest` included.
-    ///
-    /// # Errors
-    ///
-    /// As [`UnsealedAttestation::to_json`].
-    pub fn to_json(&self) -> Result<JsonValue, ChangeAssuranceError> {
-        write_attestation(&self.unsealed(), Some(&self.digest))
-    }
-}
-
-fn read_attestation(
-    value: &JsonValue,
-    sealed: bool,
-) -> Result<(UnsealedAttestation, Option<CanonicalDigest>), ChangeAssuranceError> {
+fn read_attestation(value: &JsonValue) -> Result<ProofAttestation, ChangeAssuranceError> {
     let root = Fields::read(value, SUBJECT, "attestation")?;
-    let allowed: &[&str] = if sealed {
-        &[
-            "schema_version",
-            "record_type",
-            "attestation_id",
-            "digest",
-            "record_digest",
-            "candidate_revision",
-            "proof_id",
-            "command",
-            "tool",
-            "environment",
-            "observed_at",
-            "result",
-            "strength",
-            "retained_output",
-        ]
-    } else {
-        &[
-            "schema_version",
-            "record_type",
-            "attestation_id",
-            "record_digest",
-            "candidate_revision",
-            "proof_id",
-            "command",
-            "tool",
-            "environment",
-            "observed_at",
-            "result",
-            "strength",
-            "retained_output",
-        ]
-    };
-    root.exact(allowed)?;
+    root.exact(&[
+        "schema_version",
+        "record_type",
+        "attestation_id",
+        "record_id",
+        "record_revision",
+        "candidate_revision",
+        "proof_id",
+        "command",
+        "tool",
+        "environment",
+        "observed_at",
+        "result",
+        "strength",
+        "retained_output",
+    ])?;
     root.equals("schema_version", &number(SCHEMA_VERSION)?)?;
     root.equals("record_type", &JsonValue::string(RECORD_TYPE))?;
     let attestation_id =
         AttestationId::parse(root.text("attestation_id")?, SUBJECT, "attestation_id")?;
-    let digest = if sealed {
-        Some(root.digest("digest")?)
-    } else {
-        None
-    };
-    let record_digest = root.digest("record_digest")?;
+    let record_id = RecordId::parse(root.text("record_id")?, SUBJECT, "record_id")?;
+    let record_revision = Revision::new(
+        root.whole_number("record_revision")?,
+        SUBJECT,
+        "record_revision",
+    )?;
     let candidate_revision = NonEmptyText::parse(
         root.text("candidate_revision")?,
         SUBJECT,
@@ -361,27 +249,25 @@ fn read_attestation(
         .map_err(|_| ChangeAssuranceError::shape(SUBJECT, FieldFailure::malformed("strength")))?;
     let retained_output = read_retained_output(root)?;
 
-    Ok((
-        UnsealedAttestation {
-            attestation_id,
-            record_digest,
-            candidate_revision,
-            proof_id,
-            command,
-            tool,
-            environment,
-            observed_at,
-            result,
-            strength,
-            retained_output,
-        },
-        digest,
-    ))
+    Ok(ProofAttestation {
+        attestation_id,
+        record_id,
+        record_revision,
+        candidate_revision,
+        proof_id,
+        command,
+        tool,
+        environment,
+        observed_at,
+        result,
+        strength,
+        retained_output,
+    })
 }
 
 fn read_tool(root: Fields<'_>) -> Result<ToolBinding, ChangeAssuranceError> {
     let tool = root.nested("tool")?;
-    tool.exact(&["identity", "version", "configuration_digest"])?;
+    tool.exact(&["identity", "version", "configuration_ref"])?;
     let identity = NonEmptyText::parse(tool.text("identity")?, SUBJECT, "tool.identity")?;
     let version = NonEmptyText::parse(tool.text("version")?, SUBJECT, "tool.version")?;
     if !is_an_immutable_version(version.as_str()) {
@@ -390,11 +276,15 @@ fn read_tool(root: Fields<'_>) -> Result<ToolBinding, ChangeAssuranceError> {
             FieldFailure::malformed("tool.version is not immutable"),
         ));
     }
-    let configuration_digest = tool.artifact_digest("configuration_digest")?;
+    let configuration_ref = NonEmptyText::parse(
+        tool.text("configuration_ref")?,
+        SUBJECT,
+        "tool.configuration_ref",
+    )?;
     Ok(ToolBinding {
         identity,
         version,
-        configuration_digest,
+        configuration_ref,
     })
 }
 
@@ -417,13 +307,12 @@ fn read_environment(
 
 fn read_retained_output(root: Fields<'_>) -> Result<RetainedOutput, ChangeAssuranceError> {
     let output = root.nested("retained_output")?;
-    output.exact(&["media_type", "digest", "size_bytes"])?;
+    output.exact(&["media_type", "size_bytes"])?;
     let media_type = NonEmptyText::parse(
         output.text("media_type")?,
         SUBJECT,
         "retained_output.media_type",
     )?;
-    let digest = output.raw_bytes_digest("digest")?;
     let size_bytes = output.whole_number("size_bytes").map_err(|_| {
         ChangeAssuranceError::shape(
             SUBJECT,
@@ -432,34 +321,29 @@ fn read_retained_output(root: Fields<'_>) -> Result<RetainedOutput, ChangeAssura
     })?;
     Ok(RetainedOutput {
         media_type,
-        digest,
         size_bytes,
     })
 }
 
-fn write_attestation(
-    attestation: &UnsealedAttestation,
-    digest: Option<&CanonicalDigest>,
-) -> Result<JsonValue, ChangeAssuranceError> {
+fn write_attestation(attestation: &ProofAttestation) -> Result<JsonValue, ChangeAssuranceError> {
     let mut environment = quoin_store::JsonObject::new();
     for (name, value) in &attestation.environment {
         environment.set(name.clone(), value.to_json()?);
     }
-    let mut members = vec![
+    Ok(object(vec![
         ("schema_version", number(SCHEMA_VERSION)?),
         ("record_type", JsonValue::string(RECORD_TYPE)),
         (
             "attestation_id",
             JsonValue::string(attestation.attestation_id.as_str()),
         ),
-    ];
-    if let Some(digest) = digest {
-        members.push(("digest", JsonValue::string(digest.as_hex())));
-    }
-    members.extend([
         (
-            "record_digest",
-            JsonValue::string(attestation.record_digest.as_hex()),
+            "record_id",
+            JsonValue::string(attestation.record_id.as_str()),
+        ),
+        (
+            "record_revision",
+            number(attestation.record_revision.get())?,
         ),
         (
             "candidate_revision",
@@ -479,8 +363,8 @@ fn write_attestation(
                     JsonValue::string(attestation.tool.version.as_str()),
                 ),
                 (
-                    "configuration_digest",
-                    JsonValue::string(attestation.tool.configuration_digest.as_hex()),
+                    "configuration_ref",
+                    JsonValue::string(attestation.tool.configuration_ref.as_str()),
                 ),
             ]),
         ),
@@ -502,15 +386,10 @@ fn write_attestation(
                     JsonValue::string(attestation.retained_output.media_type.as_str()),
                 ),
                 (
-                    "digest",
-                    JsonValue::string(attestation.retained_output.digest.as_hex()),
-                ),
-                (
                     "size_bytes",
                     number(attestation.retained_output.size_bytes)?,
                 ),
             ]),
         ),
-    ]);
-    Ok(object(members))
+    ]))
 }

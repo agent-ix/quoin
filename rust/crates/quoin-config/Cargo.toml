@@ -24,7 +24,7 @@ thiserror = { workspace = true }
 # of one crate in two manifests is the conflict git does not mark. One pin in
 # one place is the only arrangement `multiple-versions = "deny"` permits.
 schemars = { workspace = true }
-serde_yaml_ng = "=0.10.0"
+serde_yaml_ng = { package = "yaml_serde", version = "=0.10.7" }
 
 [dev-dependencies]
 # For the test-local `PluginConfigSchema` in `tests/config_service.rs`: the

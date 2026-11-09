@@ -6,19 +6,6 @@
 //! [`crate::discovery::documents`] — see that module for why it is shared with
 //! [`crate::profiles`] rather than written twice.
 //!
-//! # `preregistration` (PLAT-936)
-//!
-//! A plan's optional `preregistration.bar_digest` is a tamper-evidence digest
-//! over the document's own [`BAR_SECTION_HEADING`] section, read here at load
-//! time so [`crate::validate::measurement_collection`] can compare it against
-//! what the document says today. A malformed block (not an object, no valid
-//! `bar_digest`, or the section missing or empty) refuses the whole plan load
-//! with [`MeasurementErrorCode::PlanInvalid`], the same as any other shape
-//! error this module already refuses — a *mismatched* digest is a different
-//! question (does this bar still read the way it was pre-registered to?) and
-//! is answered once per plan actually referenced by a collection, under
-//! [`crate::error::MeasurementErrorCode::CollectionInvalid`], not here.
-//!
 //! # `ground_truth_kind` and `statistical_design` (PLAT-960)
 //!
 //! Both are optional. A document that states neither loads exactly as it did
@@ -26,7 +13,7 @@
 //! a `ground_truth_kind` outside its three spellings, a `statistical_design`
 //! that is not an object, or a `minimum_population` or `repetitions` that is
 //! not a whole number from 1 to 4,294,967,295 — refuses the plan load with
-//! [`MeasurementErrorCode::PlanInvalid`], the same as `preregistration`.
+//! [`MeasurementErrorCode::PlanInvalid`], the same as any other shape error here.
 //! Enforcing `minimum_population` and `repetitions` against a collection is
 //! [`crate::validate::measurement_collection`]'s job, not this module's.
 //!
@@ -64,21 +51,12 @@ use crate::discovery;
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::source::MeasurementSource;
 use crate::types::ids::NonEmptyText;
-use crate::types::plan::{
-    BarDigest, LifecycleStatus, MeasurementPlan, MeasurementStage, PlanPreregistration,
-};
+use crate::types::plan::{LifecycleStatus, MeasurementPlan, MeasurementStage};
 #[cfg(feature = "campaign")]
 use std::collections::BTreeSet;
 
 /// The code every refusal in this module carries.
 const CODE: MeasurementErrorCode = MeasurementErrorCode::PlanInvalid;
-
-/// The heading a `preregistration` block digests.
-///
-/// Fixed rather than configurable: PLAT-936 scopes this check to one named
-/// section, and a configurable heading would let an author point the digest
-/// at prose nobody actually reviews as the enforcement bar.
-const BAR_SECTION_HEADING: &str = "Comparison and Enforcement";
 
 /// What a plan load should include beyond the members every caller needs.
 ///
@@ -105,8 +83,8 @@ pub fn load_measurement_plans<S: MeasurementSource + ?Sized>(
     source: &S,
     options: PlanLoadOptions,
 ) -> Result<Vec<MeasurementPlan>, MeasurementError> {
-    let mut plans = discovery::documents(source, "MeasurementPlan", |path, value, text| {
-        plan_from(path, value, text, options)
+    let mut plans = discovery::documents(source, "MeasurementPlan", |path, value, _text| {
+        plan_from(path, value, options)
     })?;
     // Stable, so documents that agree on metric and id keep the walk's own
     // path order, as `Array.prototype.sort` does in V8.
@@ -125,13 +103,13 @@ pub(crate) fn load_selected_measurement_plans<S: MeasurementSource + ?Sized>(
     source: &S,
     ids: &BTreeSet<&str>,
 ) -> Result<Vec<MeasurementPlan>, MeasurementError> {
-    let mut plans = discovery::documents(source, "MeasurementPlan", |path, value, text| {
+    let mut plans = discovery::documents(source, "MeasurementPlan", |path, value, _text| {
         if value
             .get("id")
             .and_then(serde_json::Value::as_str)
             .is_some_and(|id| ids.contains(id))
         {
-            plan_from(path, value, text, PlanLoadOptions::default()).map(Some)
+            plan_from(path, value, PlanLoadOptions::default()).map(Some)
         } else {
             Ok(None)
         }
@@ -146,7 +124,6 @@ pub(crate) fn load_selected_measurement_plans<S: MeasurementSource + ?Sized>(
 pub(crate) fn plan_from(
     path: &str,
     value: &serde_json::Value,
-    text: &str,
     options: PlanLoadOptions,
 ) -> Result<MeasurementPlan, MeasurementError> {
     let required = |name: &str| -> Result<NonEmptyText, MeasurementError> {
@@ -201,7 +178,6 @@ pub(crate) fn plan_from(
             None
         }
     };
-    let preregistration = preregistration_from(path, value, text)?;
     let ground_truth_kind = design::ground_truth_kind_from(path, value)?;
     let statistical_design = design::statistical_design_from(path, value)?;
     let objective = design::objective_from(path, value)?;
@@ -235,7 +211,6 @@ pub(crate) fn plan_from(
         path: path.to_owned(),
         owner: governance("owner"),
         action: governance("action"),
-        preregistration,
         ground_truth_kind,
         statistical_design,
         objective,
@@ -275,183 +250,6 @@ fn execution_procedure_from(
         ));
     }
     Ok(Some(procedure_path.to_owned()))
-}
-
-/// Read the optional `preregistration` block, or `None` when the document
-/// declares no such attestation.
-///
-/// # Errors
-///
-/// [`MeasurementErrorCode::PlanInvalid`] when `preregistration` is present but
-/// is not an object carrying a valid `bar_digest` (`sha256:<64 hex>`), or when
-/// the document has no non-empty [`BAR_SECTION_HEADING`] section for it to
-/// digest — an empty section is refused here rather than admitted with a
-/// vacuous digest over nothing.
-fn preregistration_from(
-    path: &str,
-    value: &serde_json::Value,
-    text: &str,
-) -> Result<Option<PlanPreregistration>, MeasurementError> {
-    let Some(block) = value.get("preregistration") else {
-        return Ok(None);
-    };
-    let malformed = || {
-        MeasurementError::new(
-            CODE,
-            format!("{path}: preregistration must be an object with a `bar_digest` sha256 digest"),
-        )
-    };
-    let declared_digest = block
-        .as_object()
-        .and_then(|object| object.get("bar_digest"))
-        .and_then(serde_json::Value::as_str)
-        .and_then(BarDigest::parse_stored)
-        .ok_or_else(malformed)?;
-    let section = bar_section(text).ok_or_else(|| {
-        MeasurementError::new(
-            CODE,
-            format!(
-                "{path}: declares preregistration but its \"{BAR_SECTION_HEADING}\" section is \
-                 missing or empty"
-            ),
-        )
-    })?;
-    Ok(Some(PlanPreregistration {
-        declared_digest,
-        computed_digest: BarDigest::of(section.as_bytes()),
-    }))
-}
-
-/// The document's own [`BAR_SECTION_HEADING`] section, normalized, or `None`
-/// when no such non-empty heading exists.
-///
-/// Extraction: an ATX heading line (`#` through `######`) whose text, after
-/// the hashes and surrounding whitespace, is exactly [`BAR_SECTION_HEADING`].
-/// The section runs from the line after that heading to the next heading of
-/// the same or a shallower level, or to the end of the document. A heading
-/// line found inside a fenced code block does not count — see
-/// [`fenced_code_lines`] — so a `#`-prefixed shell or Python comment inside a
-/// ```` ``` ```` or `~~~` fence pasted into the section cannot be misread as
-/// the heading that ends it.
-///
-/// Normalization: `\r\n` becomes `\n`, each line's trailing whitespace is
-/// trimmed, and leading and trailing blank lines are dropped. This is
-/// deliberately insensitive to whitespace an editor's save action might touch
-/// without changing the bar's meaning, and deliberately sensitive to
-/// everything else the section's own prose says.
-///
-/// `None` for a section that is present but reduces to nothing after
-/// normalization (blank, or entirely inside a code fence): an empty digest
-/// would pass vacuously forever, which is not tamper evidence over anything.
-fn bar_section(text: &str) -> Option<String> {
-    let normalized = text.replace("\r\n", "\n");
-    let lines: Vec<&str> = normalized.lines().collect();
-    let fenced = fenced_code_lines(&lines);
-    let start = lines.iter().enumerate().position(|(index, line)| {
-        !fenced.get(index).copied().unwrap_or(true)
-            && heading_text(line).is_some_and(|(_, title)| title == BAR_SECTION_HEADING)
-    })?;
-    let (level, _) = heading_text(lines.get(start)?)?;
-    let after_heading = lines.get(start + 1..)?;
-    let after_fenced = fenced.get(start + 1..)?;
-    let body_end = after_heading
-        .iter()
-        .zip(after_fenced)
-        .position(|(line, in_fence)| {
-            !in_fence && heading_text(line).is_some_and(|(found, _)| found <= level)
-        })
-        .unwrap_or(after_heading.len());
-    let body: Vec<&str> = after_heading
-        .get(..body_end)?
-        .iter()
-        .map(|line| line.trim_end())
-        .collect();
-    let first = body.iter().position(|line| !line.is_empty())?;
-    let last = body
-        .iter()
-        .rposition(|line| !line.is_empty())
-        .unwrap_or(first);
-    Some(body.get(first..=last)?.join("\n"))
-}
-
-/// Whether each line of `lines` sits inside a fenced code block (` ``` ` or
-/// `~~~`, three or more of the same character, opened with at most three
-/// leading spaces — matching `CommonMark`'s own fence rule closely enough for
-/// this purpose). Both the opening and closing fence line are marked `true`
-/// along with everything between them: neither is a heading candidate.
-///
-/// A closing fence must repeat the same character at least as many times as
-/// the opener; anything else (a mismatched character, or a shorter run) does
-/// not close it, matching how every common Markdown renderer reads fences.
-/// An unclosed fence runs to the end of the document.
-fn fenced_code_lines(lines: &[&str]) -> Vec<bool> {
-    let mut in_fence: Option<(char, usize)> = None;
-    lines
-        .iter()
-        .map(|line| {
-            let indent = line.len() - line.trim_start_matches(' ').len();
-            let trimmed = line.trim_start_matches(' ');
-            let marker = |character: char| -> Option<usize> {
-                if indent > 3 {
-                    return None;
-                }
-                let run = trimmed
-                    .chars()
-                    .take_while(|found| *found == character)
-                    .count();
-                (run >= 3).then_some(run)
-            };
-            match in_fence {
-                None => {
-                    if let Some(run) = marker('`').or_else(|| marker('~')) {
-                        let character = trimmed.chars().next().unwrap_or('`');
-                        in_fence = Some((character, run));
-                    }
-                    // `true` exactly when this line just opened a fence: the
-                    // opening delimiter itself is never a heading candidate.
-                    in_fence.is_some()
-                }
-                Some((character, run)) => {
-                    if marker(character).is_some_and(|closing| closing >= run) {
-                        in_fence = None;
-                    }
-                    // The closing delimiter line is also never a heading
-                    // candidate, regardless of whether it just closed the
-                    // fence.
-                    true
-                }
-            }
-        })
-        .collect()
-}
-
-/// An ATX heading's level (1 through 6 `#`s) and title text, or `None` when
-/// `line` is not a heading at all.
-///
-/// A bare `#` with nothing after it on the line **is** a heading, with an
-/// empty title — matching `CommonMark` and every common Markdown renderer.
-/// More than six `#`s, or fewer than four leading spaces of indentation past
-/// that, is not.
-///
-/// Indentation past three spaces disqualifies a line from being a heading at
-/// all, matching `CommonMark`'s own rule that four or more leading spaces start
-/// an indented code block instead: `heading_text` is never fooled by a
-/// `#`-prefixed comment sitting in one.
-fn heading_text(line: &str) -> Option<(usize, &str)> {
-    let indent = line.len() - line.trim_start_matches(' ').len();
-    if indent > 3 || line.starts_with('\t') {
-        return None;
-    }
-    let trimmed = line.trim();
-    let hashes = trimmed
-        .chars()
-        .take_while(|character| *character == '#')
-        .count();
-    if hashes == 0 || hashes > 6 {
-        return None;
-    }
-    let rest = trimmed.get(hashes..)?;
-    (rest.is_empty() || rest.starts_with(char::is_whitespace)).then(|| (hashes, rest.trim()))
 }
 
 #[allow(

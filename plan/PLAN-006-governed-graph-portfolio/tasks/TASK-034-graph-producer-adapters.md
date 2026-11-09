@@ -29,7 +29,7 @@ partitions, and FR-044 collections with no execution or frontmatter dependency.
 ## Scope
 
 Implement the exact adapter registry, Quire premise validation/handoff, graph-
-quality record and attestation validation, SHA-256 identities, raw attachment,
+quality record validation, raw attachment,
 bijective observations, and reuse of FR-044 collection validation/write behavior.
 
 ## Subtasks

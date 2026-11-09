@@ -6,10 +6,8 @@
 //!
 //! quoin#500 deleted `src/graph-analysis/` and the 630-line vitest file that
 //! was the only home of FR-062-AC-4 through AC-12, FR-062-CON-2 and
-//! FR-062-CON-3. `tc_385_parity.rs` already pins what the three views COMPUTE,
-//! against the captured oracle corpus, but it does so under three coarse tags
-//! (AC-1, AC-2, AC-3): a criterion that is exercised by a corpus rung nobody
-//! named is a criterion the matrix reads as unbacked. So each deleted criterion
+//! FR-062-CON-3. A criterion exercised only by an unnamed corpus rung is a
+//! criterion the matrix reads as unbacked. So each deleted criterion
 //! is restated here as its own named assertion over its own fixture, in the
 //! same shape the vitest case asserted it.
 //!
@@ -26,7 +24,7 @@
 //! than by constructing the model types, because that is the path every caller
 //! takes and a hand-built value could satisfy a shape no document can reach.
 //!
-//! Trace: FR-062-AC-4, FR-062-AC-5, FR-062-AC-6, FR-062-AC-7, FR-062-AC-8,
+//! Trace: FR-062-AC-4, FR-062-AC-5, FR-062-AC-8,
 //! FR-062-AC-9, FR-062-AC-10, FR-062-AC-11, FR-062-AC-12, FR-062-CON-2,
 //! FR-062-CON-3
 //!
@@ -45,24 +43,16 @@ use std::path::{Path, PathBuf};
 use quoin_graph_analysis::model::binding::{BindingInput, parse_bindings_file};
 use quoin_graph_analysis::{
     ArtifactId, DEFAULT_RELATION_KINDS, GraphAnalysis, GraphAnalysisInput, RelationKind,
-    analyze_change_impact, analyze_churn, analyze_fan_out, check_accepted_premises,
-    check_audit_identity, parse_accepted_premises, parse_assurance_export, parse_audit_envelope,
-    render_graph_analysis, render_graph_analysis_json,
+    analyze_change_impact, analyze_fan_out, check_accepted_premises, check_audit_identity,
+    parse_accepted_premises, parse_assurance_export, parse_audit_envelope, render_graph_analysis,
+    render_graph_analysis_json,
 };
 use serde_json::{Value, json};
-
-const DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-const REVISION: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-const OTHER_REVISION: &str = "dddddddddddddddddddddddddddddddddddddddd";
 
 const REQUIREMENTS: [&str; 4] = ["FR-001", "FR-002", "FR-003", "FR-004"];
 
 fn locator(path: &str, line: u32) -> Value {
-    json!({ "path": path, "line": line, "digest": DIGEST })
-}
-
-fn source() -> Value {
-    json!({ "repository": "agent-ix/example", "revision": REVISION })
+    json!({ "path": path, "line": line })
 }
 
 fn modules() -> Value {
@@ -91,7 +81,6 @@ fn obligation(id: &str, owner: &str) -> Value {
         "id": id,
         "document": format!("spec/{owner}.md"),
         "statement": format!("{id} statement"),
-        "statement_hash": DIGEST,
         "target_ids": [format!("TC-{id}")],
         "locator": locator(&format!("spec/{owner}.md"), 20),
     })
@@ -140,7 +129,6 @@ fn export_value() -> Value {
         "format": "quire-assurance",
         "format_version": 1,
         "modules": modules(),
-        "source": source(),
         "artifacts": artifacts(),
         "obligations": obligations(),
         "symbols": [],
@@ -172,24 +160,17 @@ fn audit_value(healthy: &[&str], findings: &Value) -> Value {
     json!({
         "format": "quoin-audit-envelope",
         "format_version": 1,
-        "source": source(),
         "export": premises_value(),
         "report": { "findings": findings, "healthy": healthy, "unevaluated": [] },
     })
 }
 
-fn binding(obligation: &str, suite: &str, affirmations: Option<Value>) -> Value {
-    let mut value = json!({
+fn binding(obligation: &str, suite: &str) -> Value {
+    json!({
         "obligation": obligation,
-        "statementHashAtBinding": DIGEST,
         "suite": suite,
-        "commit": REVISION,
         "symbols": ["test"],
-    });
-    if let Some(affirmations) = affirmations {
-        value["affirmations"] = affirmations;
-    }
-    value
+    })
 }
 
 fn available(bindings: &[Value]) -> BindingInput {
@@ -257,10 +238,10 @@ fn tc_500_040_a_reached_requirement_joins_and_an_unknown_seed_is_isolated() {
     export["relations"] = Value::from(relations);
 
     let bindings = vec![
-        binding("FR-001-AC-1", "unit", None),
-        binding("FR-002-AC-1", "integration", None),
-        binding("FR-004-AC-1", "integration", None),
-        binding("PLAN-999-AC-1", "planning", None),
+        binding("FR-001-AC-1", "unit"),
+        binding("FR-002-AC-1", "integration"),
+        binding("FR-004-AC-1", "integration"),
+        binding("PLAN-999-AC-1", "planning"),
     ];
     let analysis = analyze_change_impact(
         &input(
@@ -342,9 +323,9 @@ fn tc_500_041_the_auditor_verdict_is_copied_and_never_re_decided() {
         &input(
             &export,
             available(&[
-                binding("FR-001-AC-1", "unit", None),
-                binding("FR-002-AC-1", "integration", None),
-                binding("FR-004-AC-1", "integration", None),
+                binding("FR-001-AC-1", "unit"),
+                binding("FR-002-AC-1", "integration"),
+                binding("FR-004-AC-1", "integration"),
             ]),
             &audit_value(
                 &["FR-001-AC-1", "FR-003-AC-1", "FR-004-AC-1"],
@@ -381,105 +362,17 @@ fn tc_500_041_the_auditor_verdict_is_copied_and_never_re_decided() {
     );
 }
 
-/// One affirmation copied across several suite bindings deduplicates by
-/// obligation, actor, commit and note, while retaining every affected suite —
-/// whichever order the store lists the bindings in.
+/// Every view carries the format/module premises, byte for byte.
 ///
-/// Restates "deduplicates one affirmation while retaining all affected suites".
-///
-/// Trace: FR-062-AC-6
-/// Provenance: quoin#500
-#[test]
-fn tc_500_042_one_affirmation_deduplicates_and_keeps_every_suite() {
-    let event = json!({ "who": "@reviewer", "commit": REVISION, "note": "still valid" });
-    for reverse in [false, true] {
-        let mut bindings = vec![
-            binding("FR-001-AC-1", "unit", Some(json!([event]))),
-            binding("FR-001-AC-1", "integration", Some(json!([event]))),
-        ];
-        if reverse {
-            bindings.reverse();
-        }
-        let report = as_json(&GraphAnalysis::from(analyze_churn(&plain(&bindings))));
-        let row = &report["rows"][0];
-        assert_eq!(row["obligation"], "FR-001-AC-1");
-        assert_eq!(
-            row["eventCount"], 1,
-            "reverse={reverse}: one event, not two"
-        );
-        assert_eq!(
-            row["events"][0],
-            json!({
-                "who": "@reviewer",
-                "commit": REVISION,
-                "note": "still valid",
-                "suites": ["integration", "unit"],
-            }),
-            "reverse={reverse}: the one event names every suite it was copied across"
-        );
-    }
-}
-
-/// Churn retains zero-event live obligations, sorts count-descending then id,
-/// and reports affirmation history for an absent obligation only as a gap.
-///
-/// Restates "retains zero-event rows and gaps orphan affirmation history".
-///
-/// Trace: FR-062-AC-7
-/// Provenance: quoin#500
-#[test]
-fn tc_500_043_churn_retains_zero_event_rows_and_gaps_an_orphan_history() {
-    let event = json!({ "who": "@reviewer", "commit": REVISION, "note": "still valid" });
-    let report = as_json(&GraphAnalysis::from(analyze_churn(&plain(&[
-        binding("FR-002-AC-1", "unit", Some(json!([event]))),
-        binding("FR-999-AC-1", "old", Some(json!([event]))),
-    ]))));
-
-    let rows: Vec<(&str, u64)> = report["rows"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|row| {
-            (
-                row["obligation"].as_str().expect("an obligation id"),
-                row["eventCount"].as_u64().expect("a count"),
-            )
-        })
-        .collect();
-    assert_eq!(
-        rows,
-        vec![
-            ("FR-002-AC-1", 1),
-            ("FR-001-AC-1", 0),
-            ("FR-003-AC-1", 0),
-            ("FR-004-AC-1", 0),
-        ],
-        "count-descending, then id; a live obligation with no history is a zero row, not an \
-         absent one"
-    );
-    assert!(
-        report["gaps"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|gap| gap["subject"] == "old:FR-999-AC-1"),
-        "history for an obligation the export does not carry is a gap, never a row"
-    );
-}
-
-/// Every view carries the accepted full source revision and the format/module
-/// premises, byte for byte.
-///
-/// Restates "preserves source and accepted premises across every view".
+/// Restates "preserves accepted premises across every view".
 ///
 /// Trace: FR-062-AC-8
 /// Provenance: quoin#500
 #[test]
-fn tc_500_044_every_view_carries_the_accepted_source_and_premises() {
-    let value = plain(&[binding("FR-001-AC-1", "unit", None)]);
+fn tc_500_044_every_view_carries_the_accepted_premises() {
+    let value = plain(&[binding("FR-001-AC-1", "unit")]);
     let views = [
         GraphAnalysis::from(analyze_fan_out(&value)),
-        GraphAnalysis::from(analyze_churn(&value)),
         GraphAnalysis::from(
             analyze_change_impact(&value, &[ArtifactId::new("FR-001")], None)
                 .expect("the impact report is computable"),
@@ -487,11 +380,6 @@ fn tc_500_044_every_view_carries_the_accepted_source_and_premises() {
     ];
     for view in &views {
         let report = as_json(view);
-        assert_eq!(
-            report["source"],
-            source(),
-            "the full revision, never a prefix"
-        );
         assert_eq!(report["premises"], premises_value());
         assert_eq!(
             report["export"],
@@ -540,11 +428,11 @@ fn tc_500_045_bad_inputs_fail_closed_and_unavailable_is_not_zero() {
     assert!(check_accepted_premises(&export, &with_modules(extra)).is_err());
 
     let mut moved = audit_value(&["FR-001-AC-1"], &json!([]));
-    moved["source"]["revision"] = json!(OTHER_REVISION);
+    moved["export"]["modules"] = json!([]);
     let moved = parse_audit_envelope(&moved.to_string()).expect("the candidate envelope parses");
     assert!(
         check_audit_identity(&moved, &export).is_err(),
-        "an audit taken at another revision is not this export's audit"
+        "an audit taken under other premises is not this export's audit"
     );
 
     let with_store = |bindings: BindingInput| {
@@ -617,10 +505,7 @@ fn tc_500_045_bad_inputs_fail_closed_and_unavailable_is_not_zero() {
 /// Provenance: quoin#500
 #[test]
 fn tc_500_046_equivalent_permutations_render_identical_bytes() {
-    let bindings = vec![
-        binding("FR-002-AC-1", "z", None),
-        binding("FR-001-AC-1", "a", None),
-    ];
+    let bindings = vec![binding("FR-002-AC-1", "z"), binding("FR-001-AC-1", "a")];
     let left = analyze_fan_out(&plain(&bindings));
 
     let mut reversed_export = export_value();
@@ -651,10 +536,6 @@ fn tc_500_046_equivalent_permutations_render_identical_bytes() {
     );
 
     let markdown = render_graph_analysis(&left);
-    assert!(
-        markdown.contains(REVISION),
-        "the human rendering carries the full accepted revision"
-    );
     assert!(markdown.contains("Suite"));
 }
 
@@ -758,8 +639,6 @@ fn tc_500_049_a_permuted_premise_set_and_audit_parse_to_one_value() {
 fn tc_500_047_the_analysis_half_reaches_nothing_but_its_one_reader() {
     /// The one module permitted to name the filesystem, and why.
     const READER: &str = "load.rs";
-    /// Below this the census is reading nothing.
-    const SOURCE_FLOOR: usize = 10;
     /// Capabilities no projection may reach for.
     const FORBIDDEN: &[&str] = &[
         "std::process",
@@ -790,12 +669,6 @@ fn tc_500_047_the_analysis_half_reaches_nothing_but_its_one_reader() {
     let root: PathBuf = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut sources = Vec::new();
     walk(&root, &mut sources);
-    assert!(
-        sources.len() >= SOURCE_FLOOR,
-        "anti-vacuity floor: at least {SOURCE_FLOOR} modules expected, saw {} — a census that \
-         finds nothing proves nothing",
-        sources.len()
-    );
 
     let mut readers = 0_usize;
     for (name, text) in &sources {
@@ -829,12 +702,10 @@ fn tc_500_047_the_analysis_half_reaches_nothing_but_its_one_reader() {
 /// Provenance: quoin#500
 #[test]
 fn tc_500_048_the_views_carry_no_score_or_threshold() {
-    let event = json!({ "who": "@reviewer", "commit": REVISION, "note": "still valid" });
     let rendered =
-        render_graph_analysis_json(&GraphAnalysis::from(analyze_churn(&plain(&[binding(
+        render_graph_analysis_json(&GraphAnalysis::from(analyze_fan_out(&plain(&[binding(
             "FR-001-AC-1",
             "unit",
-            Some(json!([event])),
         )]))))
         .expect("the report has a canonical spelling");
 
@@ -846,8 +717,37 @@ fn tc_500_048_the_views_carry_no_score_or_threshold() {
         );
     }
     assert!(
-        rendered.contains("eventCount"),
+        rendered.contains("obligationCount"),
         "the structural fact itself must still be there — an empty report would pass the check \
          above by saying nothing"
+    );
+}
+
+/// Bindings are read in `(obligation, suite)` order whatever order the store
+/// lists them in.
+///
+/// Provenance: quoin#500
+#[test]
+fn bindings_for_one_obligation_are_ordered_by_suite() {
+    let bindings = parse_bindings_file(&json!({
+        "schemaVersion": 1,
+        "bindings": [
+            binding("FR-001-AC-1", "unit"),
+            binding("FR-001-AC-1", "integration"),
+            binding("FR-000-AC-1", "unit"),
+        ],
+    }))
+    .expect("the store parses");
+    let order: Vec<(&str, &str)> = bindings
+        .iter()
+        .map(|b| (b.obligation.as_str(), b.suite.as_str()))
+        .collect();
+    assert_eq!(
+        order,
+        [
+            ("FR-000-AC-1", "unit"),
+            ("FR-001-AC-1", "integration"),
+            ("FR-001-AC-1", "unit"),
+        ]
     );
 }

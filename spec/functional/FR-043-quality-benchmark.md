@@ -37,14 +37,14 @@ can be added, fire a thousand times, and nobody can say whether any of them were
 > **CR note (2026-09-29, agent-ix/quoin#654):** FR-043-AC-32 and FR-043-AC-33
 > are withdrawn. They specified `make verification-relock` preparing a candidate
 > verification-stack lock. That lock and its relock procedure are deleted by
-> quoin#654, the `make` target does not exist, and the test the matrix cited,
-> `tests/verification-relock.test.ts`, does not exist either. TC-1589..TC-1592
+> quoin#654, the `make` target does not exist, and the test the matrix cited
+> does not exist either. TC-1589..TC-1592
 > are withdrawn with them. The ids are not reused.
 >
 > FR-043-AC-34 and FR-043-AC-35 are withdrawn for the same reason. They
 > specified the lock's v2 policy (a per-module SHA-256 file inventory) and v2
 > relocking and replay from it. The lock is deleted, and the matrix cited the
-> same nonexistent `tests/verification-relock.test.ts` for them.
+> same nonexistent test for them.
 > TC-1593..TC-1596 are withdrawn with them, and so is the prose note that
 > qualified AC-35. The ids are not reused.
 >

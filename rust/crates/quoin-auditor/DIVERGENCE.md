@@ -10,56 +10,17 @@ owns.
 
 The retained TypeScript is still present and is still the oracle. Nothing in it
 was edited by this wave: a port declares its divergences, it does not retrofit
-the implementation it is replacing (FR-018). **In particular, the defect in §1
-was not fixed in the TypeScript.** It is reported on quoin#383 so it can be
-noted against the ticket that shipped it.
+the implementation it is replacing (FR-018).
 
-There are **four** divergences, **one** non-divergence that would look like one
+There are **three** divergences, **one** non-divergence that would look like one
 in a diff, and **one** inherited refusal. Each is named below with the assertion
 that would fail if it stopped being true.
 
 ---
 
-## §1 — `headCommit` staleness: the retained code throws where this one answers
+## §1 — Withdrawn
 
-**Input that separates them:** an obligation bound to two suites, one backed by
-a finding-shaped scan and one by a run, with `headCommit` set. The corpus case
-is `a-scan-only-binding-beside-a-run-throws-in-the-retained-code`.
-
-`src/auditor/audit.ts:412-419`:
-
-```ts
-const runBindings = bindings.filter((b) => runsBySuite.has(b.suite));
-if (runBindings.length === 0) continue;
-const runs = runBindings.map((b) => runsBySuite.get(b.suite)!);
-if (input.headCommit) {
-  const behind = bindings.filter((b, i) => runs[i].commit !== input.headCommit);
-```
-
-`runs` is built from `runBindings`. The filter that indexes it walks
-`bindings`. Whenever any binding is scan-backed, `bindings` is longer than
-`runs`, the last index is out of range, `runs[i]` is `undefined`, and reading
-`.commit` throws a `TypeError` — for every obligation in the report, not just
-that one, because the throw escapes `audit()` entirely. Before the last index
-it is worse than a crash: binding _i_ is compared against a run that belongs to
-a different suite, so a finding can name the wrong suite.
-
-This is **the same defect that was found and fixed in the block immediately
-below it**. `src/auditor/audit.ts:444-446` carries its own comment saying the
-pairing must be per-binding for exactly this reason. The fix was applied there
-and not here.
-
-This crate pairs each binding with its own run — `Vec<(&Binding, &RunRecord)>`
-built in one pass — so there is no second array to index and the mismatch is not
-expressible. The reported suite is always the suite whose run is behind.
-
-**Must-have-fired:**
-`tc_383_002_the_case_the_retained_code_throws_on_pairs_correctly_here` asserts
-that the retained capture still carries the `TypeError`, that it carries no
-report, and that this crate reports exactly one `stale-evidence` finding naming
-the run-backed suite. `tc_383_001` additionally asserts that **exactly one**
-case in the corpus is a divergence of this kind: a second one would be a
-regression, not a corpus refresh.
+The `headCommit` staleness check and its divergence are removed; no record carries a commit.
 
 ---
 
@@ -182,7 +143,7 @@ is the coverage for it.
 ## What is NOT divergent
 
 - **The ladder order**, including the two checks that deliberately do not stop
-  it: the pre-guard `unknown-method` check and the `headCommit` staleness check.
+  it: the pre-guard `unknown-method` check.
   An unbound obligation with an uncatalogued method is BOTH undischarged AND
   unknown-method (quoin#165), and the corpus asserts both findings appear.
   Excepting §6's `failed_run` rung, which the retained ladder never had.

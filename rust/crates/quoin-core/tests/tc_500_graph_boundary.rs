@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The three `graph.*` routes, each driven through the production runtime.
+//! The two `graph.*` routes, each driven through the production runtime.
 //!
 //! # Why by name, through the runtime
 //!
-//! `graph.fan_out`, `graph.churn` and `graph.change_impact` take the SAME
+//! `graph.fan_out` and `graph.change_impact` take the SAME
 //! request apart from the two change-impact members, so a swapped match arm in
-//! `dispatch` would answer every one of them with a well-formed report of the
+//! `dispatch` would answer both of them with a well-formed report of the
 //! wrong view and leave every unit test green — the condition
 //! `tc_447_operation_census.rs` exists to make impossible. Each route is
 //! therefore run by its own name here and asserted on the one member only its
@@ -104,7 +104,7 @@ fn request(json_output: bool) -> Value {
 /// Each named route answers with its own view, and an absent retained store is
 /// a report rather than a refusal.
 ///
-/// Trace: FR-062-AC-9, FR-096-AC-2, FR-101-AC-2
+/// Trace: FR-062-AC-9, FR-096-AC-2
 /// Provenance: quoin#500
 #[test]
 fn tc_500_300_each_route_answers_with_its_own_view() {
@@ -120,11 +120,6 @@ fn tc_500_300_each_route_answers_with_its_own_view() {
             "graph.fan_out",
             report(&run("graph.fan_out", &request(true).to_string())),
             "fan-out",
-        ),
-        (
-            "graph.churn",
-            report(&run("graph.churn", &request(true).to_string())),
-            "churn",
         ),
         (
             "graph.change_impact",
@@ -145,10 +140,6 @@ fn tc_500_300_each_route_answers_with_its_own_view() {
                 .iter()
                 .any(|gap| gap["kind"] == "absent-bindings-store"),
             "{op}: an absent store must be named as a gap, not implied: {report}"
-        );
-        assert_eq!(
-            report["source"]["repository"], "agent-ix/example",
-            "{op}: the accepted source identity is repeated back"
         );
     }
 }
@@ -206,10 +197,6 @@ fn tc_500_302_the_markdown_spelling_is_the_same_view() {
     assert!(
         markdown.starts_with("# Evidence graph: fan-out"),
         "{markdown}"
-    );
-    assert!(
-        markdown.contains("0000000000000000000000000000000000000000"),
-        "the markdown carries the full accepted revision: {markdown}"
     );
 }
 

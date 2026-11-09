@@ -9,8 +9,7 @@
 //! payload paths are all decided by this module, so they can all be exercised
 //! without a vendored contract tree, a module or a corpus.
 //!
-//! What the real host does with a real tree is `quoin-semantic`'s own golden
-//! parity suite, and what the wire spelling is end to end is
+//! What the real host does with a real tree is `quoin-semantic`'s own suite, and what the wire spelling is end to end is
 //! `tests/tc_452_semantic_boundary.rs` against the real binary.
 
 #![allow(
@@ -40,7 +39,6 @@ use crate::error::CoreErrorCode;
 fn block(package: &str) -> SemanticBlock {
     SemanticBlock {
         contract_version: "1.0.0".into(),
-        semantic_core: "0.0.0".into(),
         package: package.into(),
         exports: vec!["Entity".into()],
         imports: BTreeMap::new(),
@@ -307,7 +305,7 @@ fn sweep_corpus_hands_the_host_the_roots_identity_and_clock_it_was_given() {
     let host = Recorder::answering(None, vec![]);
     let response = sweep_corpus(
         &serde_json::json!({
-            "roots": [{ "root": "/corpus", "repository": "quire-rs", "revision": "abc" }],
+            "roots": [{ "root": "/corpus", "repository": "quire-rs" }],
             "package": "agent-ix/spec-objects-business",
             "version": "0.0.0",
             "generated_at": "2026-09-12T00:00:00.000Z",
@@ -321,7 +319,6 @@ fn sweep_corpus_hands_the_host_the_roots_identity_and_clock_it_was_given() {
     assert_eq!(roots.len(), 1);
     assert_eq!(roots[0].root, PathBuf::from("/corpus"));
     assert_eq!(roots[0].repository, "quire-rs");
-    assert_eq!(roots[0].revision, "abc");
     assert_eq!(identity.package.as_str(), "agent-ix/spec-objects-business");
     assert_eq!(identity.version, "0.0.0");
     // The clock is the CALLER's. A timestamp minted inside the boundary could

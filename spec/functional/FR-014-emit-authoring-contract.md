@@ -39,10 +39,10 @@ neither a skeleton nor a schema as "manifest only".
 
 | ID          | Criteria                                                          | Verification                      |
 | ----------- | ----------------------------------------------------------------- | --------------------------------- |
-| FR-014-AC-1 | Each type renders name, kind, module, and root as text            | Test (write.test.ts, cli.test.ts) |
-| FR-014-AC-2 | Skeleton and schema paths render when present                     | Test (write.test.ts)              |
-| FR-014-AC-3 | A type with neither skeleton nor schema is marked "manifest only" | Test (write.test.ts)              |
-| FR-014-AC-4 | `--json` renders the whole pack as JSON                           | Test (write.test.ts, cli.test.ts) |
+| FR-014-AC-1 | Each type renders name, kind, module, and root as text            | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-014-AC-2 | Skeleton and schema paths render when present                     | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-014-AC-3 | A type with neither skeleton nor schema is marked "manifest only" | None (no native test is tagged to this criterion; PLAT-1045) |
+| FR-014-AC-4 | `--json` renders the whole pack as JSON                           | None (no native test is tagged to this criterion; PLAT-1045) |
 
 ## Dependencies
 

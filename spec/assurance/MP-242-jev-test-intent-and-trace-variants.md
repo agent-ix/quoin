@@ -60,29 +60,27 @@ both, matching the corpus's `trace_correct` rule ("test and/or code").
 
 Bar D and the `mutation.source_id` field it pairs by are implemented on this
 branch (`intent::bar_d`), because no shared paired-contrast helper is on
-`main`. Pinning the request digests and the first dev run are blocked until
+`main`. The first dev run is blocked until
 both of these are on `main`. Neither is on `main` today:
 
 - The corpus itself, `rust/crates/quoin-jev/tests/fixtures/eval-v2/corpus.json`,
   from PLAT-1025 (pending).
 - The held-out selection file
   `rust/crates/quoin-jev/tests/fixtures/eval-v2/heldout-selection.json` and
-  per-variant request digest pinning, introduced by PLAT-1028's PR #620 review
-  fixes (pending).
+  introduced by PLAT-1028's PR #620 review fixes (pending).
 
 **Bar D qualification (path 2) also needs PLAT-1025's mutant top-up.** The
-corpus as first sealed has fewer than the 10 `yes`-sourced dev mutants Bar D
+corpus as first fixed has fewer than the 10 `yes`-sourced dev mutants Bar D
 needs, for both `test_weakening` and `trace_swap`, and no RT-sourced
 `test_weakening` mutants at all. PLAT-1025 is adding more dev pairs of both
-kinds, RT-sourced `test_weakening` among them. Until that top-up is sealed,
+kinds, RT-sourced `test_weakening` among them. Until that top-up lands,
 Bar D is computed and reported, and path 2 is not gateable for any variant:
 it cannot qualify one. Path 1 is unaffected.
 
 ## Population
 
-The dev split of corpus v2 as sealed by PLAT-1025, in-repo rows plus any
-external rows loaded by reference. The run records the held-out seal digest
-of every source it read.
+The dev split of corpus v2 as fixed by PLAT-1025, in-repo rows plus any
+external rows loaded by reference. The run records the source it read.
 
 - `test_asserts_intent`, T1 and T2: every dev row in mode `RT` or `RTC` that
   carries truth for the key.
@@ -180,7 +178,7 @@ A malformed response is never scored as unanswered.
 
 `rust/crates/quoin-jev/tests/live_eval_v2.rs` (`live-api` feature) with
 `QUOIN_JEV_VARIANTS=T0,T0-RT,T1,T2,TC-RT,TC-RC,TC-RTC` and
-`QUOIN_JEV_SPLIT=dev`, with `QUOIN_JEV_CASSETTE` and `QUOIN_JEV_MODEL` set. The
+`QUOIN_JEV_SPLIT=dev`, with `QUOIN_JEV_CASSETTE` set. The
 runner refuses to start a live run that selects any of MP-242's own variants
 (T0-RT, T1, T2 and the three TC variants) without a cassette
 (`intent::require_cassette`). T0 alone does not need one: it is PLAT-1027's
@@ -229,8 +227,7 @@ in the default gate. It checks:
 
 ## Environment and Sampling
 
-The whole dev split, one pass per variant. The model is pinned by
-`QUOIN_JEV_MODEL`, and the run records which model answered every request.
+The whole dev split, one pass per variant. The run records which model answered every request.
 Replications are reported as replications and are not pooled.
 
 ## Interpretation
@@ -357,7 +354,7 @@ path-2-only qualifiers, the smaller sign-test p-value wins. If still equal,
 T1 is selected, since it sends fewer tokens. If neither T variant qualifies
 and TC does, TC is the entry. If none qualifies, MP-242 gets no entry, nothing
 from this plan runs on held-out, and the dev result is the reported result.
-The held-out run happens once, under the harness's seal and log
+The held-out run happens once, under the harness's run log
 (`QUOIN_JEV_HELDOUT=1`), and its numbers are reported against the same bars,
 judged the same way.
 
@@ -365,18 +362,15 @@ judged the same way.
 
 - Any change to a variant's wording or derive rule bumps its version, and the
   bumped version is a new instrument, judged against the same bars.
-- Each variant+version will carry a pinned request digest, using the pinning
-  introduced by PLAT-1028's PR #620 review fixes (pending); a wording change
-  without a version bump will then fail a test. The digests for `T0-RT@v1`,
-  `T1@v1`, `T2@v1`, `TC-RT@v1`, `TC-RC@v1` and `TC-RTC@v1` are pinned in phase
-  2. No version of any of these has been sent to Jev, so v1 is the wording on
-  this branch as merged.
+- Variants `T0-RT@v1`, `T1@v1`, `T2@v1`, `TC-RT@v1`, `TC-RC@v1` and
+  `TC-RTC@v1` are the first versions. No version of any of these has been sent
+  to Jev, so v1 is the wording on this branch as merged.
 - Dev iteration is capped at 5 versions per family. The families are T1, T2
   and TC, where one TC version covers all three of its modes.
 - The report lists every version run on dev, with its numbers, so a selection
   is always shown with how many versions were tried to reach it.
 
-Compare only like variant version, corpus seal and label revision. A change to
+Compare only like variant version and label set. A change to
 the corpus labels is a new definition version of this plan.
 
 ## Round 2: T3, assertion selection

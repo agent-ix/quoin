@@ -33,8 +33,8 @@ pub(crate) const EXCLUDED: [&str; 6] = [".git", "dist", "node_modules", "spec", 
 
 /// A repository on disk, read lazily.
 ///
-/// The [`RepoSource`] the library's own entry point runs on, so the golden
-/// corpus exercises the analysis the boundary also runs. Bodies are cached
+/// The [`RepoSource`] the library's own entry point runs on, so the
+/// analysis the boundary also runs is the one the library runs. Bodies are cached
 /// after their first read; the TypeScript re-reads the same wiring body once
 /// per candidate script, and caching only ever removes a re-read of a file
 /// already opened, so the set of files opened is unchanged.

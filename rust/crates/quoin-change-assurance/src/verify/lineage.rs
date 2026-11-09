@@ -13,9 +13,7 @@
 //! ```
 //!
 //! This is that mapping written over the refusal's structure instead of over
-//! its prose, one arm per message the oracle can throw. The correspondence is
-//! not left to inspection: `tests/tc_455_classification.rs` drives the same
-//! inputs through both trees and compares the reason.
+//! its prose, one arm per message the oracle can throw.
 
 use crate::error::{ChangeAssuranceError, LineageFailure};
 use crate::model::outcome::Reason;
@@ -33,18 +31,12 @@ pub fn lineage_reason(error: &ChangeAssuranceError) -> Reason {
             // caught by `/no parent/i`, not by `/mismatch/i`.
             LineageFailure::GenesisHasAParent => Reason::ParentMissing,
             LineageFailure::RevisionGap => Reason::RevisionGap,
-            LineageFailure::CrossRecordParent
-            | LineageFailure::ParentDigestMismatch
-            | LineageFailure::ImmediateParentMismatch => Reason::ParentMismatch,
+            LineageFailure::CrossRecordParent => Reason::ParentMismatch,
         },
-
-        // A parent whose own digest did not verify.
-        ChangeAssuranceError::DigestMismatch { .. } => Reason::ParentMismatch,
 
         // A parent missing a required member. Note that an *undeclared* member
         // is `extra field x`, which matches none of the three regexes and so
-        // lands on `parent_invalid` — as does a malformed digest, whose
-        // message says "must be exactly 64 lowercase hexadecimal characters".
+        // lands on `parent_invalid`.
         ChangeAssuranceError::Shape { failure, .. } if failure.reads_as_absence() => {
             Reason::ParentMissing
         }

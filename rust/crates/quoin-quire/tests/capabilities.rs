@@ -144,6 +144,29 @@ fn tc_379_111_a_scope_without_a_traceability_model_names_that_exactly() {
     );
 }
 
+/// Trace: FR-033-AC-15
+///
+/// The per-test relation behind the `JUnit` trace properties: the fixture's one
+/// tagged test comes back with its file, its name and its id, and the untagged
+/// row yields nothing.
+#[test]
+fn tc_379_119_test_traces_names_each_tagged_test_and_its_id() {
+    let (traces, _notices) = coverage::test_traces(&coverage::Request {
+        scope: fixture_scope(),
+        modules: fixture_modules(),
+    })
+    .expect("the fixture module declares a traceability model");
+    let found: Vec<(&str, &str, &str)> = traces
+        .iter()
+        .map(|t| (t.path.as_str(), t.symbol.as_str(), t.trace_id.as_str()))
+        .collect();
+    assert_eq!(
+        found,
+        [("lib/backed.rs", "covers_the_round_trip", "TC-001")],
+        "only the tagged test carries a relation"
+    );
+}
+
 /// Trace: FR-099
 ///
 /// Properties: classification, and the agent-ix/quoin#103 partial result as
@@ -224,7 +247,6 @@ fn tc_379_112_classification_reports_partial_results_as_data() {
     );
 }
 
-/// Trace: FR-097
 ///
 /// The hand-written properties payload is a `Serialize` struct, so it has a
 /// reviewable field list — and it survives a round trip, which a
@@ -293,6 +315,7 @@ fn tc_379_114_validation_reports_an_outcome_per_document() {
         scope: fixture_scope(),
         modules: fixture_modules(),
         documents,
+        bundle_package: None,
     })
     .expect("a rejected document is not a failed run");
 
@@ -349,15 +372,12 @@ fn tc_379_115_an_assurance_export_builds_and_reads_back_under_its_own_premises()
     let outcome = assurance::build(&assurance::Request {
         scope: fixture_scope(),
         modules: fixture_modules(),
-        repository: ids::RepositoryId::new("agent-ix/quoin").expect("non-empty"),
-        revision: ids::RevisionId::new("0".repeat(40)).expect("40 hex"),
     })
     .expect("the fixture corpus exports");
 
     let export = &outcome.export;
     assert_eq!(export.format, "quire-assurance");
     assert_eq!(export.format_version, 1);
-    assert_eq!(export.source.repository, "agent-ix/quoin");
     assert!(
         export.artifacts.len() >= 2,
         "the FR and the matrix are artifacts: {:?}",
@@ -440,12 +460,12 @@ fn tc_379_117_a_document_outside_the_scope_is_refused() {
         scope: fixture_scope(),
         modules: fixture_modules(),
         documents: vec![outside],
+        bundle_package: None,
     })
     .expect_err("a path outside the scope must be refused");
     assert_eq!(error.code(), ErrorCode::PathEscapesRoot);
 }
 
-/// Trace: FR-097
 ///
 /// The capability list is not decorative: every token this build publishes
 /// names an engine surface, and the witnesses in `engine.rs` are what make
@@ -454,7 +474,7 @@ fn tc_379_117_a_document_outside_the_scope_is_refused() {
 #[test]
 fn tc_379_118_the_published_capabilities_reach_a_payload() {
     let provenance = engine::Provenance::current();
-    assert!(!provenance.capabilities.is_empty());
+    assert_ne!(provenance.capabilities.len(), 0);
     for token in ["binding_census", "assurance_export.v1", "clause_sets"] {
         assert!(
             provenance.capabilities.iter().any(|c| c == token),

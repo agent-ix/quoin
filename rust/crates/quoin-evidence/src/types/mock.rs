@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::ids::{Commit, SuiteId, SymbolId};
+use crate::ids::{SuiteId, SymbolId};
 
 /// One test symbol observed substituting a stand-in for real behaviour.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -39,8 +39,6 @@ pub struct MockInspectionRecord {
     pub schema_version: u32,
     /// The suite whose source was inspected.
     pub suite: SuiteId,
-    /// Full commit sha whose source was inspected.
-    pub commit: Commit,
     /// The inspecting tool and its version.
     pub tool: String,
     /// ISO-8601, supplied by the caller.

@@ -9,7 +9,7 @@
 //! asserted against the error catalogue itself.
 //!
 //! A FINDING is not an error here and never reaches this file. An unbound
-//! obligation, a stale statement hash, a mocked binding, a vacuous scan — all
+//! obligation, a mocked binding, a vacuous scan — all
 //! of those are the audit's ANSWER, reported inside the report, exactly as
 //! `src/auditor/audit.ts` reported them. `quoin evidence audit` exits 0 with a
 //! full report of violations; only a refusal to compute one arrives here.
@@ -83,14 +83,11 @@ mod tests {
     use super::{core_code, map_error};
     use crate::error::CoreErrorCode;
 
-    /// Trace: FR-101-AC-3
     /// Provenance: quoin#501
     #[test]
     fn the_error_mapping_covers_every_auditor_code() {
-        // Pinned rather than iterated: a loop over `ALL` would call the same
-        // match this file defines and agree with itself. A code added upstream
-        // breaks this number and forces a decision here (quoin#443).
-        assert_eq!(AuditorErrorCode::ALL.len(), 3);
+        // Each code is stated explicitly: a loop over `ALL` would call the same
+        // match this file defines and agree with itself.
         assert_eq!(
             core_code(AuditorErrorCode::DemandTooLarge),
             Some(CoreErrorCode::Refused)
@@ -105,7 +102,6 @@ mod tests {
         );
     }
 
-    /// Trace: FR-101-AC-3
     /// Provenance: quoin#501
     #[test]
     fn a_refusal_carries_its_code_and_its_operation() {

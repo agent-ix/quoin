@@ -9,9 +9,9 @@
 //! 1. The **published contract**: [`quoin_quire::validate_assurance`], which is
 //!    the Rust successor to `validateAssurance` and the reason quoin#474
 //!    vendored `assurance-v1` at all.
-//! 2. The **premises**: the export's own `source` and `modules` must be the
-//!    ones the caller stated. An export that satisfies the schema but was taken
-//!    from a different revision is a valid document and the wrong evidence.
+//! 2. The **premises**: the export's own `modules` must be the ones the caller
+//!    stated. An export that satisfies the schema but was produced under
+//!    different modules is a valid document and the wrong evidence.
 //!
 //! The order is kept because the first refusal is the one a caller sees, and
 //! a document that is not an `assurance-v1` document at all should be refused
@@ -46,7 +46,7 @@ fn refuse(detail: impl Into<String>) -> GraphAdapterError {
 ///
 /// [`GraphAdapterErrorCode::InvalidPremise`] when the document does not satisfy
 /// `assurance-v1`, when it does not satisfy the adapter's stricter shape, and
-/// when its `source` or `modules` disagree with `accepted`.
+/// when its `modules` disagree with `accepted`.
 pub fn adapt_quire_assurance(
     document: &Value,
     accepted: &AcceptedQuirePremises,
@@ -55,9 +55,6 @@ pub fn adapt_quire_assurance(
     let parsed =
         QuireAssuranceV1::deserialize(document).map_err(|error| refuse(error.to_string()))?;
 
-    if parsed.source != accepted.source {
-        return Err(premise_failure("source", &accepted.source, &parsed.source)?);
-    }
     if parsed.modules != accepted.modules {
         return Err(premise_failure(
             "modules",
