@@ -178,21 +178,25 @@ fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
     assert_eq!(modules[1]["block"], modules[0]["block"]);
 }
 
-/// A module root with no `manifest.yaml` is refused, and the refusal names the
-/// `quoin-semantic` code that declined it.
+/// A module root with no `manifest.yaml` is answered, not reported empty and
+/// not a failure of the whole request: the entry carries no block and says why
+/// it could not be read, so the other roots are still answered (FR-124).
 ///
-/// Trace: FR-070-AC-1, FR-096
+/// Trace: FR-124-AC-6
 /// Provenance: agent-ix/quoin#452
 #[test]
-fn tc_452_602_a_module_root_with_no_manifest_is_refused_not_reported_empty() {
+fn tc_452_602_a_module_root_with_no_manifest_is_answered_as_unreadable_not_empty() {
     let temp = tempfile::tempdir().unwrap();
     let request = json!({ "roots": [temp.path().to_string_lossy()] });
     let result = run("semantic.read_blocks", &request, true);
-    assert_eq!(result.status, 2, "{}", result.stderr);
-    assert_eq!(result.stdout, "", "a refusal carries no payload");
-    let diagnostics: Value = serde_json::from_str(&result.stderr).unwrap();
-    assert_eq!(diagnostics[0]["context"]["semantic_code"], "QSEM-001");
-    assert_eq!(diagnostics[0]["context"]["op"], "semantic.read_blocks");
+    assert_eq!(result.status, 0, "{}", result.stderr);
+    let payload: Value = serde_json::from_str(&result.stdout).unwrap();
+    let entry = &payload["modules"][0];
+    assert!(entry.get("block").is_none(), "no block is invented");
+    assert!(
+        entry["unreadable"].as_str().unwrap().contains("manifest"),
+        "{entry}"
+    );
 }
 
 /// With no vendored contract root supplied, the boundary falls back to its
