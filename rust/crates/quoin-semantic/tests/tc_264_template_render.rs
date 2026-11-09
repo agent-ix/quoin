@@ -33,6 +33,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use common::validators;
+use regex::Regex;
 use serde_json::Value;
 use tempfile::TempDir;
 
