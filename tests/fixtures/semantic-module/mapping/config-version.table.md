@@ -32,5 +32,5 @@ The service SHALL persist configuration versions as immutable `ConfigVersion` en
 ### immutable
 
 ```quire
-context ConfigVersion inv immutable: self.versionNumber = self.versionNumber@pre and self.data = self.data@pre and self.hash = self.hash@pre
+self.versionNumber = pre(self.versionNumber) and self.data = pre(self.data) and self.hash = pre(self.hash)
 ```

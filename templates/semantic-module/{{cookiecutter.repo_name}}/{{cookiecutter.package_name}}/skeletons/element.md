@@ -36,15 +36,11 @@ under its own `### <clauseId>` heading.
 ### DispatchedShipmentHasTrackingCode
 
 ```quire
-context Shipment
-inv DispatchedShipmentHasTrackingCode:
-  self.dispatched_at->notEmpty() implies self.tracking_code->notEmpty()
+present(self.dispatched_at) implies self.tracking_code != ""
 ```
 
 ### WeightIsPositive
 
 ```quire
-context Shipment
-inv WeightIsPositive:
-  self.weight_grams > 0
+self.weight_grams > 0
 ```

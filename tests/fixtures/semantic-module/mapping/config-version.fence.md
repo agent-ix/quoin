@@ -32,5 +32,5 @@ attribute createdBy : String[1] { maxLength: 64 }
 ### immutable
 
 ```quire
-context ConfigVersion inv immutable: self.versionNumber = self.versionNumber@pre and self.data = self.data@pre and self.hash = self.hash@pre
+self.versionNumber = pre(self.versionNumber) and self.data = pre(self.data) and self.hash = pre(self.hash)
 ```
