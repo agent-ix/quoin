@@ -154,13 +154,13 @@ fn tc_452_641_the_vendored_schema_adds_no_required_key_versus_pre_cr003() {
         assert!(
             path.contains("/properties/semantic")
                 || path.contains("/data_schema/")
-                // `$defs/ConstructDeclaration` (filament-core-service#33): an optional
-                // semantic-IR construct declaration a manifest may attach to an object
-                // type via `ObjectTypeEntry.properties.construct`, which is itself
-                // optional -- a manifest that never sets `construct` never has this
-                // def's own `required` array evaluated, so it adds no obligation to a
-                // manifest that validated before.
-                || path.contains("/$defs/ConstructDeclaration"),
+                // A new `$defs` entry (for example `ConstructDeclaration`,
+                // `AmbiguityTermEntry`, `ColumnVocabularies`): every `$defs` entry
+                // hangs off an optional top-level property, because the top-level
+                // `required` is asserted below to stay the original three keys, so
+                // a manifest that never sets that property never evaluates the
+                // entry's own `required` array and it adds no obligation.
+                || path.starts_with("/$defs/"),
             "new required array outside the optional nodes: {path}"
         );
     }
