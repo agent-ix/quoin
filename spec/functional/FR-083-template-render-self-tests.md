@@ -22,11 +22,9 @@ is verified by instantiation rather than by reading.
 
 A template that has never been instantiated is unverified: every defect it
 carries is latent until the first maintainer meets it, and the maintainer meeting
-it has no way to tell a template defect from their own. The second failure mode
-is slower — the contract moves, the maintained module repositories follow, and
-the template silently keeps rendering the previous shape. A conformance contract
-that names the required surfaces turns that drift into a failing test in this
-repository rather than a discovery in the next migration.
+it has no way to tell a template defect from their own. A conformance contract
+that names the required surfaces turns a dropped surface into a failing test in
+this repository rather than a discovery in the next module.
 
 ## Inputs
 
@@ -48,8 +46,6 @@ repository rather than a discovery in the next migration.
 - Quoin's gate SHALL assert the rendered manifest validates against the published module-manifest schema.
 - Where the schema toolchain is installed, Quoin's gate SHALL run the rendered emit command, asserting that it reproduces the committed schemas byte for byte.
 - If the schema toolchain is not installed, then Quoin's gate SHALL fail naming the install command, rather than skipping the emission checks.
-- The conformance contract SHALL record, for every surface a maintained repository carries and the contract deliberately does not require, the reason it is exempt.
-- If a maintained semantic-module repository carries a surface the conformance contract omits, then Quoin's gate SHALL fail naming that surface.
 
 ## Constraints
 

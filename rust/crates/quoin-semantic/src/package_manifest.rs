@@ -42,8 +42,8 @@ pub struct DerivedImport {
     /// The imported package's identity.
     #[serde(rename = "packageIdentity")]
     pub package_identity: String,
-    /// The declared version, as written: the contract accepts any valid
-    /// version requirement, and a plain version is one.
+    /// The declared version, as written: the module-manifest schema requires
+    /// `semantic.imports` values to be exact semantic versions.
     #[serde(rename = "versionConstraint")]
     pub version_constraint: String,
     /// Always empty: the `semantic` block does not name per-import exports.
