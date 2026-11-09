@@ -63,3 +63,10 @@ bindings:
 - {test_id: tc_278_008_a_reader_rule_violation_is_reported_at_the_row, ac_id: FR-071-AC-8, trace: correct}
 - {test_id: tc_452_650_the_typed_table_fixture_classifies_as_the_authored_form, ac_id: FR-071-AC-1, trace: wrong}
 ```
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | 195d3608 retags `tc_452_650` from `Trace: FR-071-AC-1` to `Trace: FR-071`, so the matrix no longer counts AC-1 as backed. tc_452_sweep_criteria passes 7/7 |
+| FND-002 | fixed | 195d3608 renames the test to `tc_278_004_type_cells_record_the_expected_targets_and_the_unresolved_placeholder`, so it no longer claims to exercise resolution order. AC-4 lists single-candidate tokens only |

@@ -52,3 +52,11 @@ scope:
 - {id: tc_278_008_a_reader_rule_violation_is_reported_at_the_row, path: rust/crates/quoin-semantic/tests/tc_278_mapping_expectations.rs, role: examined, excerpt: "Trace: FR-071-AC-8"}
 - {id: tests/common/mod.rs, path: rust/crates/quoin-semantic/tests/common/mod.rs, role: context_only, excerpt: "pub fn mapping_json(name: &str) -> Value { quire_fixtures::mapping_json(name) }"}
 ```
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | 195d3608 rewrites the module doc. It now says the pin is 0.3.2, the fixtures are right, IR-994 (7e6f209e) moved semantic-core to `{kind, value}`, and the owner is PLAT-1377 with an expiry; "vendored" is gone |
+| FND-002 | fixed | 195d3608 narrows the header to "FR-071-AC-3 to AC-8, criterion by criterion" |
+| FND-003 | fixed | 195d3608 uses `contract::semantic_core_dir(&semantic_root())`, finds the target schema among the loaded resources, and moves the documents into `borrowed` instead of cloning them twice. Tests pass 6/6; clippy `-D warnings` and fmt are clean |

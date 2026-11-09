@@ -52,3 +52,11 @@ scope:
 - {id: FR-071-verification-note, path: spec/functional/FR-071-typed-properties-mapping.md, role: examined, excerpt: "FR-071-AC-1's schema validation is not yet assertable: the goldens record `TypeRef.target` and constraints in a tagged `{kind, value}` shape that the semantic-core 0.3.0 schemas Quoin reads do not accept. The goldens belong to `quire-rs`; the mismatch is reported there rather than copied or weakened here."}
 - {id: FR-071, path: spec/functional/FR-071-typed-properties-mapping.md, role: context_only, excerpt: "Quoin SHALL publish the mapping from a `## Properties` section ... to a semantic-core `FieldDecl[]`, as golden fixtures that Quire implements"}
 ```
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | 195d3608's note says the fixtures are not at fault, that IR-994 (7e6f209e) moved semantic-core to `{kind, value}`, that quoin's pin (0.3.2) predates it, and that no quire-rs change is needed |
+| FND-002 | fixed | The note names owner PLAT-1377 (verified: exists, Backlog, title matches, and its scope covers the release, the quoin pin bump and the AC-1/AC-4/AC-6 checks). It states the expiry: the pin is bumped, the checks are added, and the note is deleted |
+| FND-003 | fixed | 195d3608 drops "Quoin's copy" from AC-1, so it no longer contradicts CON-2 |
