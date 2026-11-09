@@ -16,3 +16,4 @@ description: "Index of stakeholder requirements (StR) for quoin."
 - [StR-006: Operators keep quoin current with one command](./StR-006-current-via-self-update.md)
 - [StR-007: Assurance owners inspect governed evidence without rerunning producers](./StR-007-governed-assurance-portfolio.md)
 - [StR-008: Module owners need new semantic-module repositories to conform by construction](./StR-008-conforming-module-repositories-by-construction.md)
+- [StR-009: Acceptance rests on tests that ran and passed, not tests that are annotated](./StR-009-accepted-software-verified-by-tests-that-ran.md)

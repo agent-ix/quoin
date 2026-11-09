@@ -117,6 +117,7 @@ index; the files are authoritative.
 - [StR-005](./stakeholder/StR-005-offline-reproducible.md) — authoring stays offline-safe and reproducible.
 - [StR-006](./stakeholder/StR-006-current-via-self-update.md) — keep quoin current with one command.
 - [StR-008](./stakeholder/StR-008-conforming-module-repositories-by-construction.md) — new semantic-module repositories conform by construction.
+- [StR-009](./stakeholder/StR-009-accepted-software-verified-by-tests-that-ran.md) — acceptance rests on tests that ran and passed.
 
 ### User Stories
 
@@ -138,6 +139,7 @@ index; the files are authoritative.
 - [US-020](./usecase/US-020-declare-a-semantic-module-contract-once.md) — declare a module's semantic contract once against the shared grammar.
 - [US-021](./usecase/US-021-generate-a-conforming-semantic-module-repository.md) — generate a semantic-module repository that already conforms to the contract.
 - [US-022](./usecase/US-022-measure-the-corpus-against-completed-modules.md) — measure the governed corpus against the completed module schemas before promotion. ⛔ **Withdrawn** (#388)
+- [US-023](./usecase/US-023-record-a-run-that-names-its-own-requirements.md) — record a run whose result file names the requirements it verified.
 
 ### Functional Requirements
 
@@ -218,6 +220,10 @@ index; the files are authoritative.
 - [FR-049](./functional/FR-049-preserve-dynamic-and-generated-modules.md) — preserve dynamic modules and finite generated packages.
 - [FR-050](./functional/FR-050-reconcile-quire-decisions.md) — reconcile the architecture with Quire decisions.
 
+**Trace marks in test result output** (ADR-100)
+
+- [FR-120](./functional/FR-120-trace-marks-in-test-result-output.md) — trace ids are marks in test result output.
+
 **Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)
 
 - [FR-051](./functional/FR-051-snapshot-semantic-audit-scope.md) — snapshot audit scope and provenance.
@@ -290,6 +296,7 @@ index; the files are authoritative.
 - [NFR-021](./non-functional/NFR-021-reproducible-corpus-measurement.md) — reproducible corpus measurement. ⛔ **Withdrawn** (#388)
 - [NFR-022](./non-functional/NFR-022-bounded-read-only-measurement-run.md) — bounded, read-only measurement run. ⛔ **Withdrawn** (#388)
 - [NFR-023](./non-functional/NFR-023-figures-carry-their-provenance.md) — published figures carry their provenance.
+- [NFR-029](./non-functional/NFR-029-self-contained-result-evidence.md) — a result artifact is interpretable without its source tree.
 
 ### Integration Tests
 
