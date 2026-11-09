@@ -122,3 +122,5 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-115: Evidence-backed test matrix (`matrix.build`)](./FR-115-evidence-backed-test-matrix.md)
 - [FR-116: Positive owner qualification for Quire retained evidence](./FR-116-owner-qualified-quire-evidence.md) — draft contract; implementation planned (PLAT-1196)
 - [FR-120: Trace ids are marks in test result output](./FR-120-trace-marks-in-test-result-output.md)
+- [FR-121: Record-key sections mapping to a module's own record keys](./FR-121-record-key-sections-mapping.md)
+- [FR-122: Architecture object record keys mapping](./FR-122-architecture-record-keys-mapping.md)
