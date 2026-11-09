@@ -422,6 +422,7 @@ fn properties_answers_with_the_shape_map_keyed_on_the_obligation_id() {
 /// status `runQuireAllowFailure` existed to swallow (agent-ix/quoin#103).
 ///
 /// Provenance: quoin#502
+#[trace("FR-031-AC-11", "TC-150")]
 #[test]
 fn an_unresolved_document_is_a_clean_partial_answer() {
     let engine = FakeEngine {
