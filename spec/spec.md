@@ -220,7 +220,7 @@ index; the files are authoritative.
 - [FR-049](./functional/FR-049-preserve-dynamic-and-generated-modules.md) — preserve dynamic modules and finite generated packages.
 - [FR-050](./functional/FR-050-reconcile-quire-decisions.md) — reconcile the architecture with Quire decisions.
 
-**Trace marks in test result output** (ADR-001)
+**Trace marks in test result output** (ADR-100)
 
 - [FR-120](./functional/FR-120-trace-marks-in-test-result-output.md) — trace ids are marks in test result output.
 - [FR-121](./functional/FR-121-emitter-mechanism-constraints.md) — emitter mechanism constraints.

@@ -1,5 +1,5 @@
 ---
-id: ADR-001
+id: ADR-100
 title: "Execution evidence is emitted by the run, not derived by matching"
 type: ADR
 relationships:
@@ -10,11 +10,13 @@ relationships:
   - target: "ix://agent-ix/quoin/StR-009"
     type: "relates_to"
 ---
-# ADR-001: Execution evidence is emitted by the run, not derived by matching
+# ADR-100: Execution evidence is emitted by the run, not derived by matching
 
 ## Status
 
-Proposed. Supersedes nothing. Tracked by PLAT-332.
+Proposed. Supersedes the post-run `quoin-suite-trace` annotator of FR-033-AC-15, which stays as an interim until the emitters of PLAT-333 and its siblings land, and is then removed. Tracked by PLAT-332.
+
+Spec decisions in `spec/adrs/` are numbered from 100 so that ADR-100 cannot be read as `ARCH-SM-ADR-0001` or `-0002` (semantic-module architecture) or as one of Quire's `ADR-00NN` records, such as ADR-0011.
 
 ## Context
 
@@ -69,16 +71,17 @@ The constraints on how an emitter produces it are
 ## Consequences
 
 - An emitter per runtime (pytest, vitest/jest, Rust), each held to one contract.
-- Rust adopts `cargo-nextest` wherever JUnit output is needed; stock `cargo test`
-  has no stable machine-readable output.
+- The Rust run must write the FR-120 shape itself. Stock `cargo test` has no
+  stable machine-readable output, and the runner or harness that does is chosen
+  in PLAT-333.
 - The emitted symbol must equal what the static extractor reports, so the
   symbol-naming rules in FR-120 are a cost every emitter carries.
 - Cases the old matcher would have absorbed (parametrization, nested suites,
   same name in two files) must be settled once in the contract, not per emitter.
-- The existing nextest annotator in FR-033-AC-15 derives a `trace` property from
-  the traceability engine after the run. It is a matcher in this ADR's sense and
-  is not the emission contract. Its disposition once the Rust emitter lands is
-  recorded in PLAT-333, not here.
+- The nextest annotator of FR-033-AC-15 derives a `trace` property from the
+  traceability engine after the run. It is a matcher in this ADR's sense, so this
+  decision supersedes it. FR-033 marks it interim, and it is removed once the
+  emitters of FR-120 land.
 
 ## Alternatives Considered
 

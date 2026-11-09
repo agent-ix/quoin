@@ -35,7 +35,9 @@ source tree it came from.
 
 | ID | Criteria | Validation |
 | --- | --- | --- |
-| StR-009-VC-1 | A recorded run binds an obligation only through ids the run emitted; a failing, erroring or skipped test discharges nothing; and the result file is interpretable without the source tree. | Test |
+| StR-009-VC-1 | A recorded run binds an obligation only through ids the run emitted. | Test |
+| StR-009-VC-2 | A failing, erroring or skipped test discharges nothing. | Test |
+| StR-009-VC-3 | The result file is interpretable without the source tree. | Test |
 
 ## Stakeholders
 
@@ -45,5 +47,5 @@ Affected parties are maintainers of the pytest, vitest/jest and Rust emitters.
 ## Dependencies
 
 FR-120 owns the mark contract, FR-121 the emitter mechanism constraints, NFR-028
-inertness and cost, and NFR-029 self-contained evidence. ADR-001 records why the
+inertness and cost, and NFR-029 self-contained evidence. ADR-100 records why the
 ids are emitted rather than derived.
