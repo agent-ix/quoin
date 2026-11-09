@@ -87,12 +87,27 @@ pub struct ModuleSemanticView {
     /// answer with its own module record, and a list that says which root each
     /// entry is for cannot be mis-paired by a change to either side.
     pub root: String,
+    /// The module's own `name`, present exactly when the block validated.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// The module's own `version`, present exactly when the block validated.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
     /// The parsed block, absent when the manifest declares none or its block
     /// was refused.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub block: Option<SemanticBlock>,
     /// Every diagnostic reading the block produced, in the order produced.
     pub diagnostics: Vec<SemanticDiagnostic>,
+    /// Whether each `semantic.imports` entry is provided at exactly its locked
+    /// version by another module in the same request, and whether the import
+    /// graph is acyclic (FR-075, FR-124). Empty for a module with no block.
+    ///
+    /// Judged against the OTHER ROOTS OF THIS REQUEST and nothing else, so a
+    /// caller that wants the verdict over the whole installed population asks
+    /// about every installed root at once.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub lock_diagnostics: Vec<SemanticDiagnostic>,
 }
 
 /// One corpus root a sweep should walk.

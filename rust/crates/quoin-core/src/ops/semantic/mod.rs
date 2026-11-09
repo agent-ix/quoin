@@ -78,15 +78,38 @@ pub fn read_blocks(
     }
 
     let host = host(capabilities, "semantic.read_blocks")?;
-    let mut modules = Vec::with_capacity(request.roots.len());
+    let mut results = Vec::with_capacity(request.roots.len());
     for root in &request.roots {
-        let result = host
-            .read_module(Path::new(root))
-            .map_err(|e| map_error(&e, "semantic.read_blocks"))?;
+        results.push(
+            host.read_module(Path::new(root))
+                .map_err(|e| map_error(&e, "semantic.read_blocks"))?,
+        );
+    }
+
+    // The lock check is judged over the requested population, one candidate at
+    // a time against every other validated module in it.
+    let population: Vec<&quoin_semantic::SemanticModule> =
+        results.iter().filter_map(|r| r.module.as_ref()).collect();
+    let mut modules = Vec::with_capacity(results.len());
+    for (root, result) in request.roots.iter().zip(&results) {
+        let lock_diagnostics = result.module.as_ref().map_or_else(Vec::new, |candidate| {
+            let others: Vec<quoin_semantic::SemanticModule> = population
+                .iter()
+                .filter(|other| !std::ptr::eq(**other, candidate))
+                .map(|other| (*other).clone())
+                .collect();
+            quoin_semantic::resolve_imports(candidate, &others)
+        });
         modules.push(ModuleSemanticView {
             root: root.clone(),
-            block: result.module.map(|module| module.block),
-            diagnostics: result.diagnostics,
+            name: result.module.as_ref().map(|m| m.name.as_str().to_owned()),
+            version: result
+                .module
+                .as_ref()
+                .map(|m| m.version.as_str().to_owned()),
+            block: result.module.as_ref().map(|m| m.block.clone()),
+            diagnostics: result.diagnostics.clone(),
+            lock_diagnostics,
         });
     }
     ok(&ReadBlocksPayload { modules })
