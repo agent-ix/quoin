@@ -53,7 +53,7 @@ fn sources() -> Vec<(String, String)> {
 /// No second instant grammar, hasher or canonicalizer grew here.
 ///
 /// Provenance: quoin#470
-#[trace("FR-098")]
+#[trace("FR-098-CON-2")]
 #[test]
 fn tc_470_no_second_grammar_hasher_or_canonicalizer_appeared() {
     // (token, what owns it instead)
@@ -127,7 +127,7 @@ fn tc_470_no_module_reads_a_schema_from_the_filesystem() {
 /// in rather than looked up.
 ///
 /// Provenance: quoin#470
-#[trace("FR-098")]
+#[trace("FR-098-CON-2")]
 #[test]
 fn tc_470_the_manifest_holds_no_grammar_and_no_cycle() {
     let manifest =

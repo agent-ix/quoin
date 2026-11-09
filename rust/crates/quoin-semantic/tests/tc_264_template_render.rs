@@ -353,7 +353,7 @@ fn tc_264_010_no_variant_carries_an_npmrc() {
 
 /// A declared target with no emitter is recorded as declared-not-emitted in the
 /// README and in `semantic.targets`, and the two agree.
-#[trace("FR-076-AC-10")]
+#[trace("FR-076-AC-10", "TC-1451")]
 #[test]
 fn tc_264_011_declared_not_emitted_targets_agree_between_readme_and_manifest() {
     let r = render(
@@ -636,7 +636,7 @@ fn tc_264_034_the_catalog_document_names_the_catalog_file_and_tracking_project()
     }
 }
 
-#[trace("FR-082-AC-2")]
+#[trace("FR-082-AC-2", "TC-1440")]
 #[trace("FR-082-AC-5", "TC-1443")]
 #[test]
 fn tc_264_035_the_governance_tree_has_its_folders_and_no_hand_kept_matrix() {
@@ -768,7 +768,7 @@ fn conformance(variant: &str, kind: &str, root: &Path, package: &str) -> Vec<Fin
 }
 
 #[trace("FR-083-AC-1")]
-#[trace("FR-081-AC-4", "TC-1444")]
+#[trace("FR-081-AC-4", "TC-1436", "TC-1444")]
 #[test]
 fn tc_264_040_every_variant_renders_and_conforms() {
     let mut failures = Vec::new();
@@ -938,7 +938,7 @@ fn spec_files(r: &Render) -> Vec<(String, String)> {
         .collect()
 }
 
-#[trace("FR-082-AC-3")]
+#[trace("FR-082-AC-3", "TC-1441")]
 #[test]
 fn tc_264_052_no_verification_cell_carries_a_test_case_id() {
     let tc = Regex::new(r"\bTC-[A-Z]*-?\d+").unwrap();
@@ -954,7 +954,7 @@ fn tc_264_052_no_verification_cell_carries_a_test_case_id() {
     }
 }
 
-#[trace("FR-082-AC-4")]
+#[trace("FR-082-AC-4", "TC-1442")]
 #[test]
 fn tc_264_053_every_rendered_test_carries_a_trace_tag_naming_an_existing_criterion() {
     let tag = Regex::new(r#"pytest\.mark\.trace\("([^"]+)"\)"#).unwrap();
