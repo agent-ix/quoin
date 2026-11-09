@@ -50,6 +50,7 @@ mod copy;
 mod paths;
 
 use copy::copy_tree;
+use ix_trace_rs::trace;
 use paths::{fixture_store, repo_root};
 
 use std::path::Path;
@@ -192,8 +193,8 @@ fn required(path: &[&str]) {
 /// > observation timestamp, subject identity, and the unchanged
 /// > FR-044 producer tuple.
 ///
-/// Trace: FR-056-AC-1
 /// Provenance: quoin#479
+#[trace("FR-056-AC-1", "TC-1195")]
 #[test]
 fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
     /// Every envelope member `intervention.test.ts:140` deleted, plus the two
@@ -247,8 +248,8 @@ fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
 /// > FR-056-AC-2: The producer tuple rejects a missing field, a mutable tool
 /// > version, an empty environment, and an empty configuration reference.
 ///
-/// Trace: FR-056-AC-2
 /// Provenance: quoin#479
+#[trace("FR-056-AC-2", "TC-1196")]
 #[test]
 fn tc_479_101_each_producer_defect_is_refused_independently() {
     /// The producer members `intervention.test.ts:157` deleted one at a time.
@@ -287,8 +288,8 @@ fn tc_479_101_each_producer_defect_is_refused_independently() {
 /// > positive repetition count, assignment method, and non-empty sampling
 /// > conditions; randomized assignment requires a reproducible seed.
 ///
-/// Trace: FR-056-AC-3
 /// Provenance: quoin#479
+#[trace("FR-056-AC-3", "TC-1197")]
 #[test]
 fn tc_479_102_every_design_and_assignment_boundary_is_enforced() {
     /// The three (kind, method) pairs `intervention.test.ts:192` walked.
@@ -361,8 +362,8 @@ fn tc_479_102_every_design_and_assignment_boundary_is_enforced() {
 /// > or more uniquely identified treatments, treatment-linked changed
 /// > variables, and an explicit list of held-constant variables.
 ///
-/// Trace: FR-056-AC-4
 /// Provenance: quoin#479
+#[trace("FR-056-AC-4", "TC-1198")]
 #[test]
 fn tc_479_103_arms_variables_and_held_constants_are_linked_and_unique() {
     /// The four arm members, each required on the baseline and on a treatment.
@@ -478,8 +479,8 @@ fn tc_479_103_arms_variables_and_held_constants_are_linked_and_unique() {
 /// > replacing a missing value with zero or permitting duplicate
 /// > treatment/metric keys.
 ///
-/// Trace: FR-056-AC-5
 /// Provenance: quoin#479
+#[trace("FR-056-AC-5", "TC-1199")]
 #[test]
 fn tc_479_104_measured_effects_keep_their_values_and_reject_duplicates() {
     /// The six measured-effect members, each required.
@@ -584,8 +585,8 @@ fn effect_case(baseline: Value, treatment: Value, effect: Value) -> MeasuredEffe
 /// > whose entries distinguish controlled, uncontrolled, unknown, and
 /// > not-applicable dispositions.
 ///
-/// Trace: FR-056-AC-6
 /// Provenance: quoin#479
+#[trace("FR-056-AC-6", "TC-1200")]
 #[test]
 fn tc_479_105_qualifier_collections_stay_separate_and_keep_every_disposition() {
     let dispositions = InterventionDisposition::all();
@@ -674,8 +675,8 @@ fn tc_479_105_qualifier_collections_stay_separate_and_keep_every_disposition() {
 /// > failed and inconclusive records require the first-class
 /// > `cause_not_established` conclusion.
 ///
-/// Trace: FR-056-AC-7
 /// Provenance: quoin#479
+#[trace("FR-056-AC-7", "TC-1201")]
 #[test]
 fn tc_479_106_terminal_statuses_require_cause_not_established() {
     /// The finding a terminal status with any other conclusion carries.
@@ -736,8 +737,8 @@ fn tc_479_106_terminal_statuses_require_cause_not_established() {
 /// > confounder; a no-effect conclusion requires positive samples and an
 /// > observed comparison.
 ///
-/// Trace: FR-056-AC-8
 /// Provenance: quoin#479
+#[trace("FR-056-AC-8", "TC-1202")]
 #[test]
 fn tc_479_107_causal_conclusions_require_their_support() {
     /// The findings the semantic pass emits for each unsupported causal claim.
@@ -890,8 +891,8 @@ fn causal_base() -> Value {
 /// > raw-evidence reference with media type are retained; unsafe
 /// > paths and undeclared fields are refused.
 ///
-/// Trace: FR-056-AC-9
 /// Provenance: quoin#479
+#[trace("FR-056-AC-9", "TC-1203")]
 #[test]
 fn tc_479_108_governance_fields_unsafe_paths_and_undeclared_fields_are_refused() {
     /// Every object the schema closes, by the path an undeclared member is
@@ -1027,8 +1028,8 @@ fn refuses_unsafe_paths_without_writing() {
 /// > Assurance's `tested` claim strength (FR-022); a record with no `strength`
 /// > is refused, not defaulted.
 ///
-/// Trace: FR-056-AC-10
 /// Provenance: PLAT-972
+#[trace("FR-056-AC-10", "TC-1882")]
 #[test]
 fn tc_479_109_strength_is_required_and_closed_to_tested() {
     let base = accepted(&retained(), "the retained record");

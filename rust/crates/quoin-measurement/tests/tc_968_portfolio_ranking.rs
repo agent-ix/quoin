@@ -26,6 +26,7 @@
               recomputation that could drift by rounding"
 )]
 
+use ix_trace_rs::trace;
 use std::collections::BTreeMap;
 
 use engineering_assurance::measurement::{Direction, Objective};
@@ -152,7 +153,7 @@ fn report(repositories: Vec<PortfolioRepositoryReport>, newest: &str) -> Portfol
 /// A plan far from its bound outranks one close to its bound, with equal
 /// weight.
 ///
-/// Trace: FR-113-AC-1
+#[trace("FR-113-AC-1", "TC-1904")]
 #[test]
 fn tc_968_001_ranks_by_gap_to_bound_when_weights_are_equal() {
     let far = plan(
@@ -181,7 +182,7 @@ fn tc_968_001_ranks_by_gap_to_bound_when_weights_are_equal() {
 /// unweighted, larger one — the "with and without weight" comparison the
 /// acceptance criterion asks for.
 ///
-/// Trace: FR-113-AC-1
+#[trace("FR-113-AC-1", "TC-1905")]
 #[test]
 fn tc_968_002_weight_can_reorder_a_smaller_gap_ahead_of_a_larger_one() {
     let small_gap_high_weight = plan(
@@ -223,7 +224,7 @@ fn tc_968_002_weight_can_reorder_a_smaller_gap_ahead_of_a_larger_one() {
 /// A stale gap, discounted by its half-life, sorts behind a fresher, smaller
 /// gap it would otherwise outrank.
 ///
-/// Trace: FR-113-AC-2
+#[trace("FR-113-AC-2", "TC-1906")]
 #[test]
 fn tc_968_003_half_life_discount_can_move_a_stale_large_gap_behind_a_fresh_small_one() {
     let stale = plan(
@@ -254,7 +255,7 @@ fn tc_968_003_half_life_discount_can_move_a_stale_large_gap_behind_a_fresh_small
 
 /// No `value_half_life` applies no discount, regardless of age.
 ///
-/// Trace: FR-113-AC-2
+#[trace("FR-113-AC-2", "TC-1907")]
 #[test]
 fn tc_968_004_no_half_life_applies_no_discount() {
     let old_no_half_life = plan(
@@ -277,7 +278,7 @@ fn tc_968_004_no_half_life_applies_no_discount() {
 /// A larger declared budget divides the score down; a near-zero budget is
 /// floored rather than sending the score to an absurd extreme.
 ///
-/// Trace: FR-113-AC-3
+#[trace("FR-113-AC-3", "TC-1908")]
 #[test]
 fn tc_968_005_budget_normalizes_the_score_and_a_tiny_budget_is_floored() {
     let cheap = plan(
@@ -329,7 +330,7 @@ fn tc_968_005_budget_normalizes_the_score_and_a_tiny_budget_is_floored() {
 /// A plan with no objective is listed as unranked, not scored, and does not
 /// appear in the ranked list.
 ///
-/// Trace: FR-113-AC-4
+#[trace("FR-113-AC-4", "TC-1909")]
 #[test]
 fn tc_968_006_no_objective_is_listed_unranked_not_scored() {
     let report = report(
@@ -350,7 +351,7 @@ fn tc_968_006_no_objective_is_listed_unranked_not_scored() {
 
 /// An objective with no bound is listed as unranked with `no_bound`.
 ///
-/// Trace: FR-113-AC-4
+#[trace("FR-113-AC-4", "TC-1910")]
 #[test]
 fn tc_968_007_objective_with_no_bound_is_unranked() {
     let report = report(
@@ -373,7 +374,7 @@ fn tc_968_007_objective_with_no_bound_is_unranked() {
 /// A row with no usable current value is unranked with `no_current_estimate`,
 /// never scored as though its gap were zero.
 ///
-/// Trace: FR-113-AC-4
+#[trace("FR-113-AC-4", "TC-1911")]
 #[test]
 fn tc_968_008_no_current_estimate_is_unranked() {
     let mut repository = repository_with_row(
@@ -398,7 +399,7 @@ fn tc_968_008_no_current_estimate_is_unranked() {
 /// An empty portfolio ranks and lists nothing, and both rendered forms still
 /// carry the ranking and its advisory sentence.
 ///
-/// Trace: FR-113-AC-5
+#[trace("FR-113-AC-5", "TC-1912", "TC-1913")]
 #[test]
 fn tc_968_009_empty_portfolio_ranks_nothing() {
     let empty = PortfolioReport {
@@ -428,7 +429,7 @@ fn tc_968_009_empty_portfolio_ranks_nothing() {
 /// row and an unranked plan's reason; the JSON carries the same information
 /// under `ranking.advisory`, `ranking.ranked` and `ranking.unranked`.
 ///
-/// Trace: FR-113-AC-5
+#[trace("FR-113-AC-5", "TC-1912", "TC-1913")]
 #[test]
 fn tc_968_010_rendered_text_and_json_both_state_the_ranking_is_advisory() {
     let ranked = plan(
@@ -476,7 +477,7 @@ fn tc_968_010_rendered_text_and_json_both_state_the_ranking_is_advisory() {
 /// have no gap and sort behind a plan that still falls short, however far
 /// they cleared the bound; overshooting a `target` still counts as a gap.
 ///
-/// Trace: FR-113-AC-1
+#[trace("FR-113-AC-1", "TC-1914")]
 #[test]
 fn tc_968_011_a_met_bound_has_no_gap_in_the_objectives_direction() {
     let objective = |direction, bound| Some(Objective::new(direction, Some(bound)).unwrap());
@@ -622,8 +623,8 @@ fn multi_slice_report(slices: &[(&str, Option<f64>)]) -> PortfolioReport {
 /// prints each row's sliced label, so a whole-document `contains` would pass
 /// even if the ranking still printed the bare metric.
 ///
-/// Trace: FR-113-AC-6
 /// Provenance: PLAT-1019
+#[trace("FR-113-AC-6", "TC-1926")]
 #[test]
 fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
     let report = multi_slice_report(&[
@@ -715,8 +716,8 @@ fn tc_1019_multi_slice_rows_carry_distinct_dimension_labels() {
 /// text form escapes them (and `\\`, so the escapes stay unambiguous) while
 /// the JSON `label` keeps the authored bytes.
 ///
-/// Trace: FR-113-AC-6
 /// Provenance: PLAT-1019
+#[trace("FR-113-AC-6", "TC-1926")]
 #[test]
 fn tc_1019_ranking_text_escapes_label_characters_that_break_markdown() {
     let report = multi_slice_report(&[("type|script", Some(0.1)), ("a\\b\r\nc", None)]);

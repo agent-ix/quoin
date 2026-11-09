@@ -10,11 +10,12 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_measurement::intervention::report::render_intervention_report;
 use quoin_measurement::operational::report::render_operational_report;
 
-/// Trace: FR-100-AC-4
 /// Provenance: quoin#469
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_469_an_empty_report_renders_as_nothing_at_all() {
     assert_eq!(render_intervention_report(&[]), "");

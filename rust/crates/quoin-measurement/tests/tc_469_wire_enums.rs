@@ -22,6 +22,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::collections::BTreeSet;
 use std::fmt::Debug;
 
@@ -78,8 +79,8 @@ where
     all.len()
 }
 
-/// Trace: FR-100-AC-4
 /// Provenance: quoin#469
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_469_every_wire_union_round_trips_through_its_spelling() {
     round_trips::<InterventionDisposition>();
@@ -109,8 +110,8 @@ fn tc_469_every_wire_union_round_trips_through_its_spelling() {
 /// gate, so it is asserted against the literal spellings rather than against
 /// `all()`, which would agree with whatever the code says.
 ///
-/// Trace: FR-100-AC-4
 /// Provenance: quoin#469
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_469_the_intake_refusal_codes_are_the_typescript_codes() {
     let spellings: Vec<&str> = InterventionRefusalCode::all()
@@ -132,8 +133,8 @@ fn tc_469_the_intake_refusal_codes_are_the_typescript_codes() {
 
 /// A refusal carries its code, its findings, and the message they compose to.
 ///
-/// Trace: FR-100-AC-4
 /// Provenance: quoin#469
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_469_an_intake_refusal_carries_its_code_and_findings() {
     let error = InterventionIntakeError::new(

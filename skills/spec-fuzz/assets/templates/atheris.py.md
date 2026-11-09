@@ -12,19 +12,19 @@ reports coverage, finds nothing, and looks like it worked.
 #!/usr/bin/env python3
 """The config loader does not raise on arbitrary input.
 
-Trace: NFR-003-M-1
-
 spec-fuzz: obligation=NFR-003-M-1 harness=atheris entry=myapp.config.parse_config origin=advised
 """
 
 import sys
 
 import atheris
+import pytest
 
 with atheris.instrument_imports():
     from myapp.config import parse_config
 
 
+@pytest.mark.trace("NFR-003-M-1")
 def test_one_input(data: bytes) -> None:
     fdp = atheris.FuzzedDataProvider(data)
     text = fdp.ConsumeUnicodeNoSurrogates(fdp.remaining_bytes())

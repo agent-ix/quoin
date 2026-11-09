@@ -37,6 +37,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 /// The two representations, and the only two.
@@ -123,8 +124,8 @@ fn member_names(body: &str) -> Vec<String> {
         .collect()
 }
 
-/// Trace: FR-100-AC-4, NFR-025-AC-3
 /// Provenance: quoin#472, quoin#471
+#[trace("FR-100-AC-4", "NFR-025-AC-3")]
 #[test]
 fn tc_472_a_retained_evidence_file_has_exactly_two_representations() {
     let sources = sources();
@@ -164,8 +165,8 @@ fn tc_472_a_retained_evidence_file_has_exactly_two_representations() {
 
 /// The deleted third spelling has not come back under its own name.
 ///
-/// Trace: FR-100-AC-4
 /// Provenance: quoin#472
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_472_the_deleted_claim_type_is_still_deleted() {
     let sources = sources();

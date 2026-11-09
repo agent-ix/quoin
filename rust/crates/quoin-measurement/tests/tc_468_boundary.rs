@@ -21,6 +21,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 fn sources() -> Vec<(String, String)> {
@@ -46,8 +47,8 @@ fn sources() -> Vec<(String, String)> {
     found
 }
 
-/// Trace: FR-100-AC-4, NFR-025-AC-3
 /// Provenance: quoin#468
+#[trace("FR-100-AC-4", "NFR-025-AC-3")]
 #[test]
 fn tc_468_no_second_hasher_serializer_or_yaml_reader_appeared() {
     // (token, what owns it instead)
@@ -85,8 +86,8 @@ fn tc_468_no_second_hasher_serializer_or_yaml_reader_appeared() {
     }
 }
 
-/// Trace: FR-100-AC-2, NFR-025-AC-3
 /// Provenance: quoin#468
+#[trace("FR-100-AC-2", "NFR-025-AC-3")]
 #[test]
 fn tc_468_exactly_one_module_reads_an_instant() {
     // The civil-date arithmetic an instant reader needs. If a second module
@@ -106,8 +107,8 @@ fn tc_468_exactly_one_module_reads_an_instant() {
     );
 }
 
-/// Trace: FR-100-AC-4
 /// Provenance: quoin#468
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_468_the_manifest_depends_on_nothing_that_would_duplicate_the_store() {
     let manifest =

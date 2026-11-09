@@ -10,6 +10,7 @@ under `tests/props/` compiles as a helper module and never runs. See step 4.
 
 ```rust
 // tests/props_fr_012.rs
+use ix_trace_rs::trace;
 use proptest::prelude::*;
 use quoin::catalog::{detect_duplicates, Entry};
 
@@ -19,8 +20,9 @@ fn entry() -> impl Strategy<Value = Entry> {
 }
 
 proptest! {
-    /// Trace: FR-012-AC-1 — declaring modules are listed in sorted order.
+    /// Declaring modules are listed in sorted order.
     /// spec-correctness: row=FR-012-AC-1 property=ordering extraction=extractable origin=regex review=none
+    #[trace("FR-012-AC-1", "TC-345")]
     #[test]
     fn fr_012_ac_1_duplicate_modules_sorted(entries in prop::collection::vec(entry(), 0..32)) {
         for dup in detect_duplicates(&entries).duplicates {
@@ -32,8 +34,9 @@ proptest! {
 }
 ```
 
-Both tag carriers are present: `Trace:` on its own doc-comment line, and `fr_012_ac_1_` in
-the function name.
+Both tag carriers are present: the `#[trace("FR-012-AC-1", "TC-345")]` attribute (the
+criterion id plus the `spec/matrix.md` row's own `TC-` id; a comment id binds nothing), and
+`fr_012_ac_1_` in the function name.
 
 ## Family bodies
 
@@ -60,8 +63,9 @@ prop_assert!(resolve(&x).len() <= MAX_MODULES);
 
 ```rust
 proptest! {
-    /// Trace: FR-005-AC-1 — an unknown command raises an error that names the usage.
-    /// spec-correctness: row=FR-005-AC-1 property=error-case extraction=extractable origin=regex review=none
+    /// An unknown command raises an error that names the usage.
+        /// spec-correctness: row=FR-005-AC-1 property=error-case extraction=extractable origin=regex review=none
+    #[trace("FR-005-AC-1", "TC-345")]
     #[test]
     fn fr_005_ac_1_unknown_command_errors(
         cmd in "[a-z]{1,12}".prop_filter("must be unknown", |c| !KNOWN.contains(&c.as_str()))
@@ -77,8 +81,9 @@ proptest! {
 
 ```rust
 proptest! {
-    /// Trace: FR-040-AC-2 — a session accepts exactly the ops its state allows.
-    /// spec-correctness: row=FR-040-AC-2 property=lifecycle extraction=extractable origin=regex review=none
+    /// A session accepts exactly the ops its state allows.
+        /// spec-correctness: row=FR-040-AC-2 property=lifecycle extraction=extractable origin=regex review=none
+    #[trace("FR-040-AC-2", "TC-345")]
     #[test]
     fn fr_040_ac_2_session_lifecycle(ops in prop::collection::vec(any_op(), 1..24)) {
         let (mut model, mut sut) = (Model::default(), Session::new());
@@ -98,8 +103,9 @@ proptest! {
 Not a `proptest!` block; `loom` enumerates interleavings itself.
 
 ```rust
-/// Trace: FR-050-AC-1 — concurrent writers never lose an entry.
+/// Concurrent writers never lose an entry.
 /// spec-correctness: row=FR-050-AC-1 property=concurrency extraction=extractable origin=regex review=none
+#[trace("FR-050-AC-1", "TC-345")]
 #[test]
 fn fr_050_ac_1_concurrent_writes_linearizable() {
     loom::model(|| {
@@ -123,8 +129,9 @@ to disable a test:
 
 ```rust
 proptest! {
-    /// Trace: FR-018-AC-3 — a plugin source maps to exactly one resolved root.
-    /// spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate
+    /// A plugin source maps to exactly one resolved root.
+        /// spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate
+    #[trace("FR-018-AC-3", "TC-345")]
     #[test]
     fn fr_018_ac_3_source_maps_to_one_root(src in plugin_source()) { … }
 }
