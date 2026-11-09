@@ -40,3 +40,9 @@ another repo's content instead of the restated obligation.
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | low | TC-1352 now reads "Golden fixtures in `quire-fixtures` carry expected diagnostics" and is marked Complete. FR-071-CON-2 now obliges quoin to read the goldens from quire-fixtures and hold no copy. The TC describes a property of quire-rs's content, not quoin's obligation, which is met by the dev-dependency and the absence of a local copy | spec/matrix.md:946 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | d4daf114: TC-1352 reads "Quoin reads the golden mapping fixtures from `quire-fixtures` and holds no copy", matching FR-071-CON-2 |

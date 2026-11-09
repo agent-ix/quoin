@@ -31,3 +31,9 @@ vendoring language.
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | medium | Matrix rows contradict the restated FR-071-CON-2. TC-1353..TC-1358, TC-1715 and TC-1717..TC-1730 still say "fixture(s) published here". The FR-104 row, which this PR edited, still says "TC-1729 and TC-1730 run from the vendored fixture once quire-rs re-vendors it". The FR-072 row, also edited, still says "TC-1716 awaits agent-ix/quire-rs#432", although TC-1716 is withdrawn (line 955). A reader or agent following these rows would believe quoin owns and publishes the goldens and might restore a local copy | spec/matrix.md:947-969; spec/matrix.md:133; spec/matrix.md:86 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | d4daf114: TC-1353..TC-1358, TC-1715 and TC-1717..TC-1730 say "fixture(s) held in `quire-fixtures`"; the FR-104 row's re-vendoring sentence and the FR-072 row's stale TC-1716 clause are removed; `spec/matrix.md` has no "published here", "re-vendor" or "vendored fixture" text left |

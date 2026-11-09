@@ -65,3 +65,13 @@ against the pinned contract. The findings are maintainability and comment accura
 | FND-003 | low | The scratch copies at `std::env::temp_dir().join("<name>-<pid>")` are never removed. Every test process leaves one in /tmp; ten were present after the coder's and this reviewer's runs. The pattern copies the existing `semantic_root()` helpers, which leak the same way, so this is a convention to fix once, not a regression unique to this PR | rust/crates/quoin-semantic/tests/common/mod.rs:82-84 |
 | FND-004 | low | The tc_452_616 `$id` check was loosened to `contains("/spec-objects-fixture/") && ends_with("/Entity.json")`. It still rejects any other bundle document, but it could assert equality with the authoritative file's own `$id`, read from `quire_fixtures::module_ok_dir()`, and keep the earlier exactness | rust/crates/quoin-semantic/tests/tc_452_manifest_criteria.rs:274-280 |
 | FND-005 | low | Cargo.lock moves `agent-ix-semantic-schema` (branch=main) from 45a927b to d694d7f, and the windows-sys edges change from 0.61.2 to 0.52.0. Cargo produces both on any re-resolution. The filament commits differ only in four test files, so there is no functional change. `cargo update -p agent-ix-semantic-schema --precise 45a927b258c297159567e4be6a40b6f466a42516` reverts that part and stays stable. The windows-sys edges affect Windows targets only | rust/Cargo.lock:22; rust/Cargo.lock:549 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | d4daf114: one `copy_module_ok` per crate (quoin-core `tests/common/mod.rs`, quoin-semantic `tests/common/mod.rs`, quoin-modules `contract_gate::tests`, quoin-cli `tc_module_command.rs`), each formatting `SCHEMA_REQUIRED_SEMANTIC_CORE` instead of a literal |
+| FND-002 | fixed | d4daf114: the const's doc comment names the expiry condition: drop the injection when the pinned `@agent-ix/semantic-schema` no longer requires `semantic.semantic_core` |
+| FND-003 | fixed | d4daf114: the shared `temp_dir()/<name>-<pid>` copies are gone; callers copy into their own `tempfile` scratch, or `module_ok_copy()` returns a removed-on-drop `TempDir` |
+| FND-004 | fixed | d4daf114: tc_452_616 asserts `schema["$id"] == authored["$id"]`, read from `quire_fixtures::module_ok_dir()/schemas/Entity.json` |
+| FND-005 | fixed | d4daf114: the lock diff against main is now only the `quire-fixtures` package and its four dependent edges; `agent-ix-semantic-schema` is back at 45a927b and the windows-sys edges are back at 0.61.2 |
