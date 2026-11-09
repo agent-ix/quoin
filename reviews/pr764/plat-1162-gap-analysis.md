@@ -55,3 +55,4 @@ The fixture adds no file paths, digests or version ledger.
 | FND-001 | fixed | ffdd4209 tc_975_027 publishes MP-001 evidence and verifies 0 adverse -> Accept and 1 adverse -> Reject under its own count / eq 0 rule |
 | FND-002 | fixed | ffdd4209 renames the new tests to tc_975_022..027 and the TC-1810 row cites `tc_975_001`, `tc_975_022`..`tc_975_027`, which are unique |
 | FND-003 | fixed | ffdd4209 tc_975_025 refuses a gate-stage plan with an execution_procedure and no apparatus, naming execution_procedure |
+| FND-004 | fixed | 0a0f6d26: the FR-108 row names `tc_975_022` and `tc_975_023` |

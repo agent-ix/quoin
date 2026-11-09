@@ -11,6 +11,7 @@ ground_truth_kind: agent-labelled
 statistical_design:
   population: graded passes of one variant over the fifteen-fixture corpus, each pass counting as clearing only when all three bars hold (margin over the constant predictor, defect recall, sound recall)
   sampling: five repeated passes (JEV_RUNS=5) of the variant under consideration; no sampling beyond the corpus
+  minimum_population: 5
   repetitions: 5
   estimator: proportion
   error_model: agent-labelled ground truth; a lens answer is noisy across passes, measured by MP-225

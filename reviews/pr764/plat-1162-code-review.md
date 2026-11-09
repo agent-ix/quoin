@@ -42,6 +42,13 @@ Tests run here: `cargo test -p quoin-measurement --locked` for `tc_975_protected
 | tc_958/tc_960/tc_479/tc_478 fixture edits | examined | Consistent with the new rule; tc_958_021 builds a rule-less gate by mutating `stage` after load, which is acceptable |
 | `ix-trace-rs` dev-dependency and Cargo.lock | examined | Workspace dependency; no new pin |
 
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-006 | low | MP-228's design states no `minimum_population`, and the checker does not bind `examined` to `repetitions`. So an observation of 1 clearing pass out of 1 (or 2 of 2), stating `repetitions: 5`, recomputes to 1.0 and passes `ge 0.6`, although the plan's condition is 3 of 5 passes. `minimum_population: 5` would close it. MP-228's NO-GO is final and no producer writes its collections today, so nothing returns a wrong verdict right now. | spec/assurance/MP-228-jev-criterion-strength-gate.md:11-20; rust/crates/quoin-measurement/src/verify/rows.rs:199-212 |
+| FND-007 | low | `tc_975_028` asserts plan data, not behaviour: `repetitions == 5`, and `"0.6"` found in the `Debug` string of the decision rule. A Debug substring match is brittle (it also matches `0.65`), and pinning a spec value in a test adds no functional coverage beyond "the real MP-228 loads as a gate". | rust/crates/quoin-measurement/tests/tc_975_protected_apparatus.rs:565-576 |
+
 ## Dispositions
 
 | FND | Outcome | Reason |
@@ -51,3 +58,4 @@ Tests run here: `cargo test -p quoin-measurement --locked` for `tc_975_protected
 | FND-003 | still-open | Fixed for MP-216..219 (their text says "exactly 100% is required" / "any miss blocks") and faithful for MP-229 and MP-230, whose text defines a composite boolean that is GO only when every bar holds (proportion of bars met >= 1.0). Not faithful for MP-228: its Comparison and Enforcement section makes GO need all three bars on the gate run and in at least 3 of 5 repeated runs. The typed rule encodes only the gate run, `repetitions: 1` contradicts the five repeats, and the 3-of-5 condition sits only in `uncertainty` prose. So a `pass` from the rule is weaker than the plan's GO. The rule must encode the repeat condition, or the plan owner must confirm the weaker rule in the plan text |
 | FND-004 | fixed | ffdd4209 selects the EA package by name only; the SHA filter is gone |
 | FND-005 | fixed | ffdd4209 exempts a retired gate in `apparatus_from`; tc_975_026 loads a retired gate with no controls |
+| FND-003 | fixed | 0a0f6d26: MP-228 now encodes the repeat condition as `repetitions: 5`, a proportion of passes that clear all three bars, and `ge 0.6`, which is exactly 3 of 5 when the five passes are the population. The gate-run requirement cannot be typed, because the schema has one rule over one estimate. It is stated in both `uncertainty` and Comparison and Enforcement, so the plan says the typed `accept` is necessary but not sufficient for GO. The remaining hole is recorded as FND-006 |

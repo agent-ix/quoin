@@ -24,7 +24,7 @@ use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use engineering_assurance::measurement::NegativeControlKind;
+use engineering_assurance::measurement::{Comparator, DecisionRule, NegativeControlKind};
 use quoin_jsonschema::SchemaValidator;
 use quoin_measurement::error::MeasurementErrorCode;
 use quoin_measurement::json_bridge::from_serde;
@@ -557,7 +557,9 @@ fn tc_975_027_the_analyze_shaped_gate_decides_retained_evidence_by_its_own_rule(
     }
 }
 
-/// MP-228 states its 3-of-5 repeated-pass condition as a typed design.
+/// MP-228 states its 3-of-5 repeated-pass condition as a typed design, and
+/// the checker decides by it: 3 of 5 clearing passes accepts, 2 of 5 rejects,
+/// and a population under the five passes is refused.
 ///
 /// Trace: FR-110-AC-1
 /// Provenance: PLAT-1162
@@ -569,10 +571,63 @@ fn tc_975_028_the_criterion_strength_gate_states_five_repetitions() {
         .expect("the real MP-228 loads as a gate");
     let design = plans[0].statistical_design.expect("MP-228 states a design");
     assert_eq!(design.repetitions.map(std::num::NonZeroU32::get), Some(5));
-    assert!(
-        format!("{:?}", design.decision_rule).contains("0.6"),
-        "{design:?}"
+    assert_eq!(
+        design.minimum_population.map(std::num::NonZeroU32::get),
+        Some(5)
     );
+    assert_eq!(
+        design.decision_rule,
+        Some(DecisionRule::against_threshold(Comparator::Ge, 0.6).unwrap())
+    );
+
+    let root = tempfile::tempdir().expect("the repository is creatable");
+    write(root.path(), "spec/assurance/MP-228.md", document);
+    let apparatus = plans[0]
+        .protected_apparatus
+        .as_ref()
+        .expect("MP-228 protects its corpus");
+    let names: Vec<String> = apparatus
+        .iter()
+        .map(|entry| entry.as_str().to_owned())
+        .collect();
+    for name in &names {
+        write(root.path(), name, "{}");
+    }
+    let plan = plan_of(root.path());
+    let names: Vec<&str> = names.iter().map(String::as_str).collect();
+    for (id, matched, examined, expected) in [
+        ("mp228-three", 3, 5, Some(Verdict::Accept)),
+        ("mp228-two", 2, 5, Some(Verdict::Reject)),
+        ("mp228-one", 1, 1, None),
+    ] {
+        let mut collection = candidate(id, 0, 0, &artifacts(root.path(), &names));
+        collection["observations"][0]["metric"] = json!("jev.criterion_strength.gate");
+        collection["observations"][0]["planId"] = json!("MP-228");
+        collection["observations"][0]["definitionVersion"] =
+            json!("jev.criterion-strength-gate-v1");
+        collection["observations"][0]["value"] = json!(f64::from(matched) / f64::from(examined));
+        collection["observations"][0]["population"] =
+            json!({ "examined": examined, "matched": matched, "complete": true, "repetitions": 5 });
+        let written = publish(root.path(), &collection);
+        let Some(expected) = expected else {
+            assert!(written.is_err(), "{id}: a 1-of-1 population is refused");
+            continue;
+        };
+        written.unwrap_or_else(|error| panic!("{id} is admitted: {error}"));
+        let collections = stored(root.path());
+        let stored_one = collections
+            .iter()
+            .find(|stored| stored.collection_id.as_str() == id)
+            .expect("the collection was stored");
+        let verdict = verify(
+            &plan,
+            &[Ranked::new(stored_one, Some(0))],
+            TamperFacts::default(),
+            OrderSource::CallerSupplied,
+            None,
+        );
+        assert_eq!(verdict.verdict, expected, "{id}: {verdict:?}");
+    }
 }
 
 // ------------------------------------------------------------ intake
