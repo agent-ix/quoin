@@ -30,7 +30,7 @@ rules come from the `FR` template (`quoin write . --types FR`).
      `quoin catalog show <type>`.
 3. **Author** each FR as its own file (`quoin write . --types FR` for the contract),
    and link it back to the story via frontmatter `relationships:`
-   (`type: implements`, target the `US-XXX`).
+   (`type: satisfies`, target the `US-XXX`).
 4. **Specify** inputs/outputs (typed and validated), error handling (failure
    modes), and constraints (technical limits, not options).
 5. **Separation of concerns**: keep behavioral triggers/validation in behavioral

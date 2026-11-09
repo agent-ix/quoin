@@ -4,7 +4,7 @@ title: "Declare the semantic-module contract in the manifest"
 type: FR
 relationships:
   - target: "ix://{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}/US-001"
-    type: "implements"
+    type: "satisfies"
 ---
 
 # FR-001: Declare the semantic-module contract in the manifest

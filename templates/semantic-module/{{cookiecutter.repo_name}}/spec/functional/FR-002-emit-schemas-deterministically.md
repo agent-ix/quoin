@@ -4,7 +4,7 @@ title: "Emit the declaration schemas deterministically from the TypeSpec source"
 type: FR
 relationships:
   - target: "ix://{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}/US-001"
-    type: "implements"
+    type: "satisfies"
 ---
 
 # FR-002: Emit the declaration schemas deterministically from the TypeSpec source
