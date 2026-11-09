@@ -24,6 +24,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::PathBuf;
 
@@ -137,8 +138,8 @@ fn semantic_root() -> PathBuf {
 /// for, and a handler that answered only the first — or answered out of order —
 /// would satisfy a single-root assertion.
 ///
-/// Trace: FR-070-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-070-AC-1", "FR-096")]
 #[test]
 fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
     let module_dir = common::module_ok_copy();
@@ -182,8 +183,8 @@ fn tc_452_601_read_blocks_reads_a_module_block_through_the_boundary() {
 /// not a failure of the whole request: the entry carries no block and says why
 /// it could not be read, so the other roots are still answered (FR-124).
 ///
-/// Trace: FR-124-AC-6
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-124-AC-6")]
 #[test]
 fn tc_452_602_a_module_root_with_no_manifest_is_answered_as_unreadable_not_empty() {
     let temp = tempfile::tempdir().unwrap();
@@ -208,8 +209,8 @@ fn tc_452_602_a_module_root_with_no_manifest_is_answered_as_unreadable_not_empty
 /// contract materialised under this run's `IX_HOME` cache — is asserted
 /// directly rather than only inferred from the read succeeding.
 ///
-/// Trace: FR-070-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452, agent-ix/quoin#527, agent-ix/quoin#539
+#[trace("FR-070-AC-1", "FR-096")]
 #[test]
 fn tc_452_603_without_a_contract_root_the_embedded_contract_answers() {
     let home = tempfile::tempdir().unwrap();
@@ -234,8 +235,8 @@ fn tc_452_603_without_a_contract_root_the_embedded_contract_answers() {
 
 /// `semantic.sweep_corpus` walks a real tree and classifies what it finds.
 ///
-/// Trace: FR-074-AC-3, FR-074-AC-4, FR-096
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-074-AC-3", "FR-074-AC-4", "FR-096")]
 #[test]
 fn tc_452_604_sweep_corpus_classifies_a_real_tree_through_the_boundary() {
     let temp = tempfile::tempdir().unwrap();
@@ -301,8 +302,8 @@ fn tc_452_604_sweep_corpus_classifies_a_real_tree_through_the_boundary() {
 /// text alone would pass with a copy that had drifted from what the sweep
 /// actually asks for.
 ///
-/// Trace: FR-074-AC-1, FR-096
 /// Provenance: agent-ix/quoin#452
+#[trace("FR-074-AC-1", "FR-096")]
 #[test]
 fn tc_452_605_migration_example_is_the_guidance_a_legacy_finding_directs_to() {
     let payload = ok(&run("semantic.migration_example", &json!({}), false));

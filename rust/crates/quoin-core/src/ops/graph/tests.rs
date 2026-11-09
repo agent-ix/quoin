@@ -25,6 +25,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -145,8 +146,8 @@ fn rendered(response: &Response) -> &str {
 
 /// `graph.fan_out` renders the canonical JSON the retained command printed.
 ///
-/// Trace: FR-062-AC-1
 /// Provenance: quoin#500
+#[trace("FR-062-AC-1")]
 #[test]
 fn fan_out_answers_with_the_canonical_json_report() {
     let reader = tree(true);
@@ -162,8 +163,8 @@ fn fan_out_answers_with_the_canonical_json_report() {
 /// The markdown spelling is the other rendering of the SAME report, not a
 /// second report.
 ///
-/// Trace: FR-062-AC-10
 /// Provenance: quoin#500
+#[trace("FR-062-AC-10")]
 #[test]
 fn the_two_spellings_render_one_report() {
     let reader = tree(true);
@@ -177,8 +178,8 @@ fn the_two_spellings_render_one_report() {
 
 /// `graph.change_impact` reaches its own view.
 ///
-/// Trace: FR-062-AC-3
 /// Provenance: quoin#500
+#[trace("FR-062-AC-3")]
 #[test]
 fn each_operation_reaches_its_own_view() {
     let reader = tree(true);
@@ -198,8 +199,8 @@ fn each_operation_reaches_its_own_view() {
 /// walk with no edges. The two are different answers and the wire keeps them
 /// apart.
 ///
-/// Trace: FR-062-AC-3
 /// Provenance: quoin#500
+#[trace("FR-062-AC-3")]
 #[test]
 fn an_absent_relation_list_is_not_an_empty_one() {
     let reader = tree(true);
@@ -229,8 +230,8 @@ fn an_absent_relation_list_is_not_an_empty_one() {
 /// A declared input that is not there is the caller's file, not the caller's
 /// request: exit 2, naming which input.
 ///
-/// Trace: FR-062-AC-9
 /// Provenance: quoin#500
+#[trace("FR-062-AC-9")]
 #[test]
 fn a_missing_declared_input_is_refused_by_name() {
     let mut files = tree(true);
@@ -246,8 +247,8 @@ fn a_missing_declared_input_is_refused_by_name() {
 /// was computed, which is the distinction `src/graph-analysis/load.ts` drew and
 /// the one a healthy zero would erase.
 ///
-/// Trace: FR-062-AC-9
 /// Provenance: quoin#500
+#[trace("FR-062-AC-9")]
 #[test]
 fn an_absent_bindings_store_is_a_report_and_not_a_refusal() {
     let reader = tree(false);

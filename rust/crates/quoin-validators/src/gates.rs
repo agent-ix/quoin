@@ -367,12 +367,12 @@ mod tests {
         CLAIM, claim_mentions, gate_claim, references_script, split_lines, unasserted_count_lines,
         unasserted_count_pattern,
     };
+    use ix_trace_rs::trace;
 
     /// A count captured into a variable and asserted on a later line is a
     /// working gate and stays silent; one never asserted is still flagged
     /// (PLAT-269, FR-043-AC-20).
-    ///
-    /// Trace: FR-043-AC-20
+    #[trace("FR-043-AC-20")]
     #[test]
     fn tc_377_012a_a_count_asserted_on_a_later_line_is_silent() {
         let working = "count=$(grep -r \"unwrap\" src/ | wc -l)\n[ \"$count\" -eq 0 ] || exit 1\n";

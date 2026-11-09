@@ -26,6 +26,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -132,8 +133,8 @@ fn ensure_defaults(home: &Path) -> Run {
     )
 }
 
-/// Trace: FR-070-AC-1, NFR-017-AC-1
 /// Provenance: quoin#446
+#[trace("FR-070-AC-1", "NFR-017-AC-1")]
 #[test]
 fn tc_446_040_a_clean_home_reconciles_without_complaint() {
     // The positive control. Without it, the refusal below would be consistent
@@ -145,8 +146,8 @@ fn tc_446_040_a_clean_home_reconciles_without_complaint() {
     assert_eq!(payload["installed"], serde_json::json!([]));
 }
 
-/// Trace: FR-070-AC-1, NFR-017-AC-1
 /// Provenance: quoin#446
+#[trace("FR-070-AC-1", "NFR-017-AC-1")]
 #[test]
 fn tc_446_041_a_tampered_installed_module_is_refused_on_the_reconcile_path() {
     let fixture = install_fixture();
@@ -179,8 +180,8 @@ fn tc_446_041_a_tampered_installed_module_is_refused_on_the_reconcile_path() {
     );
 }
 
-/// Trace: FR-070-AC-1, NFR-017-AC-1
 /// Provenance: quoin#446
+#[trace("FR-070-AC-1", "NFR-017-AC-1")]
 #[test]
 fn tc_446_042_an_unavailable_contract_refuses_rather_than_reporting_clean() {
     // Unjudged is not clean. `ContractGate` refuses an install it cannot judge;

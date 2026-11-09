@@ -612,10 +612,11 @@ mod tests {
         clippy::indexing_slicing,
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
+    use ix_trace_rs::trace;
 
     use super::*;
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_250_cache_keys_are_single_path_segments() {
         let key = sanitize_cache_key("https://github.com/agent-ix/quoin.git");
@@ -629,14 +630,14 @@ mod tests {
         assert_eq!(sanitize_cache_key(""), "_empty");
     }
 
-    /// Trace: FR-019-AC-2
+    #[trace("FR-019-AC-2")]
     #[test]
     fn tc_381_251_revision_of_follows_the_ref_else_the_default_branch() {
         assert_eq!(Revision::of(Some("v1")), Revision::Ref("v1"));
         assert_eq!(Revision::of(None), Revision::Head);
     }
 
-    /// Trace: NFR-004
+    #[trace("NFR-004")]
     #[test]
     fn tc_381_252_deadline_raises_the_interrupt_flag_and_joins() {
         let deadline = Deadline::start(Duration::from_millis(50)).expect("watchdog spawns");

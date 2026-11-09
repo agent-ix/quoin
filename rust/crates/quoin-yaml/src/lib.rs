@@ -157,10 +157,11 @@ fn scalar_to_value(scalar: &Scalar<'_>) -> Value {
 )]
 mod tests {
     use super::{YamlError, from_str};
+    use ix_trace_rs::trace;
     use serde_json::json;
 
-    /// Trace: FR-037
     /// Provenance: agent-ix/quoin#378
+    #[trace("FR-037")]
     #[test]
     fn tc_378_310_ambiguous_scalars_resolve_under_the_yaml_1_2_core_schema() {
         // Each expectation here was measured against the `yaml` npm package
@@ -173,8 +174,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-037
     /// Provenance: agent-ix/quoin#378
+    #[trace("FR-037")]
     #[test]
     fn tc_378_311_an_empty_stream_is_null_and_a_multi_document_stream_is_refused() {
         assert_eq!(from_str("").expect("empty"), serde_json::Value::Null);
@@ -184,8 +185,8 @@ mod tests {
         assert_eq!(found, 2);
     }
 
-    /// Trace: FR-037
     /// Provenance: agent-ix/quoin#378
+    #[trace("FR-037")]
     #[test]
     fn tc_378_312_malformed_yaml_is_an_error_and_aliases_resolve() {
         assert!(matches!(from_str("id: [unclosed"), Err(YamlError::Scan(_))));
@@ -195,8 +196,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-037
     /// Provenance: agent-ix/quoin#378
+    #[trace("FR-037")]
     #[test]
     fn tc_378_313_non_string_mapping_keys_take_their_source_spelling() {
         assert_eq!(

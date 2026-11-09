@@ -19,6 +19,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use serde_json::json;
 
 use crate::error::CoreErrorCode;
@@ -34,8 +35,8 @@ use super::{build_graph_portfolio, build_series, produce_agent_eval_intervention
 /// and an unrecognised or absent one is a collection — the retained
 /// `record.ts` ternary, which falls through to `writeMeasurementCollection`.
 ///
-/// Trace: FR-096
 /// Provenance: quoin#478
+#[trace("FR-096")]
 #[test]
 fn the_candidates_own_record_type_names_its_intake() {
     assert_eq!(
