@@ -118,7 +118,7 @@ pub struct Document {
     pub criteria: Vec<Criterion>,
 }
 
-/// A byte-offset span carrying its own text (quire-rs FR-052).
+/// A byte-offset span carrying its own text (engine-owned).
 ///
 /// Offsets so a consumer can assert the decomposition partitions the
 /// statement; text because handing a UTF-16 consumer raw UTF-8 byte offsets is
@@ -143,7 +143,7 @@ impl From<&quire_rs::PropertySpan> for Span {
     }
 }
 
-/// The FR-047 shape axis. Closed in the engine, so closed here.
+/// The engine's shape axis. Closed in the engine, so closed here.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum AcShape {
@@ -170,7 +170,7 @@ impl From<quire_rs::grammar::ac::AcShape> for AcShape {
     }
 }
 
-/// The FR-052 property-shape axis. Closed by FR-052-CON-3.
+/// The engine's property-shape axis, closed on the engine side.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum PropertyShape {
@@ -279,7 +279,7 @@ impl From<quire_rs::Extraction> for Extraction {
     }
 }
 
-/// The obligation as nested on a criterion record (quire-rs FR-053).
+/// The obligation as nested on a criterion record (engine-owned).
 ///
 /// Carries no `id`, `statement` or `document`: the criterion and its enclosing
 /// document object already have all three.
@@ -364,7 +364,7 @@ impl From<&quire_rs::AcClassification> for Criterion {
 /// The one glob quoin actually passes is `spec/**/*.md`, so this is that glob
 /// as a function rather than a pattern language. Sorted, because
 /// `documents[]` order is the payload's order and a walk order is not a
-/// contract (quire-rs NFR-006).
+/// contract (engine-owned).
 ///
 /// # Errors
 /// [`Error::DocumentRootMissing`] when `<scope>/spec` is absent, and
@@ -506,6 +506,7 @@ fn archetype_of(text: &str) -> Option<String> {
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     #[test]
     fn tc_379_063_local_labels_are_the_engines_labels() {
@@ -569,7 +570,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_064_an_unresolved_document_names_which_premise_failed() {
         let undeclared = serde_json::to_value(Unresolved {
@@ -596,7 +597,6 @@ mod tests {
     /// reaches this test through `all()` and fails here before it can reach a
     /// consumer as the wrong label.
     ///
-    /// Trace: FR-052-CON-3
     /// Provenance: quoin#502
     #[test]
     fn tc_502_001_every_shape_token_matches_its_serde_spelling() {

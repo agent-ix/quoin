@@ -71,7 +71,7 @@ pub struct UnreadableModule {
 
 /// The merged catalog plus what the merge could not use.
 ///
-/// Merge is **first-wins by method id**, matching quire-rs FR-054 exactly. If
+/// Merge is **first-wins by method id**, matching the engine exactly. If
 /// the two disagreed, the advisor would recommend from one catalog while the
 /// auditor checked conformance against another.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

@@ -110,14 +110,23 @@ fn score_of(result: &Value) -> Option<f64> {
 mod tests {
     use super::parse_agent_eval;
     use crate::types::Outcome;
+    use ix_trace_rs::trace;
 
     /// One entry per scenario, keyed on the scenario id, which is its own
     /// trace id — and the harness's own verdict is taken rather than recomputed
     /// from the pass rate, which is kept because "flaky" and "failing" are
     /// different facts.
     ///
-    /// Trace: FR-042-AC-1, FR-042-AC-2, FR-042-AC-3, FR-042-CON-2
     /// Provenance: quoin#458
+    #[trace(
+        "FR-042-AC-1",
+        "FR-042-AC-2",
+        "FR-042-AC-3",
+        "FR-042-CON-2",
+        "TC-240",
+        "TC-241",
+        "TC-242"
+    )]
     #[test]
     fn tc_458_220_keys_each_entry_on_the_scenario_id_and_traces_it_to_itself() {
         let result = parse_agent_eval(
@@ -152,8 +161,8 @@ mod tests {
     /// A suite that ran nothing. Recording it would manufacture evidence from
     /// a file proving only that the harness started.
     ///
-    /// Trace: FR-042-AC-4
     /// Provenance: quoin#458
+    #[trace("FR-042-AC-4", "TC-243")]
     #[test]
     fn tc_458_221_refuses_a_report_with_no_results() {
         assert_eq!(

@@ -3145,6 +3145,7 @@ dependencies = [
 name = "quoin-quire"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "quire-rs",
  "quoin-jsonschema",
  "quoin-quire-types",
@@ -3194,6 +3195,7 @@ dependencies = [
 name = "quoin-suite-trace"
 version = "0.29.4"
 dependencies = [
+ "ix-trace-rs",
  "quoin-evidence",
  "quoin-quire",
  "regex",

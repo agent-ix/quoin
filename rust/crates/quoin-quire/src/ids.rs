@@ -153,7 +153,7 @@ impl std::fmt::Display for DocumentPath {
     }
 }
 
-/// The exact identity of a module-supplied clause set (quire-rs FR-067).
+/// The exact identity of a module-supplied clause set (engine-owned).
 ///
 /// Three `String` arguments in a row is precisely the call site this type
 /// exists to make un-swappable.
@@ -229,8 +229,9 @@ nonempty_newtype!(
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_012_a_missing_scope_is_refused_rather_than_walked() {
         let error = ScopeRoot::open("/definitely/not/here").expect_err("must refuse");

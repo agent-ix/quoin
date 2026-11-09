@@ -90,7 +90,7 @@ pub enum Severity {
     Warning,
 }
 
-/// Why a diagnostic was raised. The engine's FR-032 reason vocabulary.
+/// Why a diagnostic was raised. The engine's reason vocabulary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[allow(
@@ -308,6 +308,7 @@ fn archetype_of(text: &str) -> Option<String> {
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     #[test]
     fn tc_379_070_reason_labels_are_the_engines_labels() {
@@ -333,7 +334,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-096
+    #[trace("FR-096")]
     #[test]
     fn tc_379_071_could_not_run_is_distinguishable_from_fail_on_the_wire() {
         let never = serde_json::to_value(not_run(

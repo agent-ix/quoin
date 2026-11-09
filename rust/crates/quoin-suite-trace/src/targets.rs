@@ -159,6 +159,7 @@ fn relative_to(repo: &Path, path: &Path) -> Option<String> {
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     fn target(binary_id: &str, root: &str, kind: Kind) -> Target {
         Target {
@@ -168,7 +169,7 @@ mod tests {
         }
     }
 
-    /// Trace: FR-033-AC-15
+    #[trace("FR-033-AC-15")]
     #[test]
     fn a_library_file_contributes_its_path_as_the_module_path() {
         let lib = target("pkg", "r/crates/p/src/lib.rs", Kind::Crate);
@@ -184,7 +185,7 @@ mod tests {
         assert_eq!(lib.module_path("r/crates/p/tests/x.rs"), None);
     }
 
-    /// Trace: FR-033-AC-15
+    #[trace("FR-033-AC-15")]
     #[test]
     fn an_integration_test_owns_only_its_own_file_and_directory() {
         let suite = target("pkg::suite", "r/crates/p/tests/suite.rs", Kind::Test);
@@ -197,7 +198,7 @@ mod tests {
         assert_eq!(suite.module_path("r/crates/p/tests/other.rs"), None);
     }
 
-    /// Trace: FR-033-AC-15
+    #[trace("FR-033-AC-15")]
     #[test]
     fn metadata_yields_the_binary_ids_nextest_reports() {
         let json = r#"{"packages":[{"name":"pkg","targets":[

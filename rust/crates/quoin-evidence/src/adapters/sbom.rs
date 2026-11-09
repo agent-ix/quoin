@@ -188,13 +188,14 @@ fn unrecognised(root: &Value) -> EvidenceError {
 )]
 mod tests {
     use super::parse_sbom;
+    use ix_trace_rs::trace;
 
     /// One entry per component, keyed on the purl where the document carries
     /// one — and a component with no identity at all is dropped rather than
     /// given a fabricated symbol that binds to nothing.
     ///
-    /// Trace: FR-041-AC-1, FR-041-AC-5, FR-041-CON-4
     /// Provenance: quoin#458
+    #[trace("FR-041-AC-1", "FR-041-AC-5", "FR-041-CON-4", "TC-231", "TC-235")]
     #[test]
     fn tc_458_230_cyclonedx_prefers_purl_then_name_at_version_then_name() {
         let result = parse_sbom(
@@ -218,8 +219,8 @@ mod tests {
     /// `name` alone would give the same component a different identity
     /// depending on which format produced it.
     ///
-    /// Trace: FR-041-AC-2
     /// Provenance: quoin#458
+    #[trace("FR-041-AC-2", "TC-232")]
     #[test]
     fn tc_458_231_spdx_reads_the_purl_external_ref() {
         let result = parse_sbom(
@@ -235,8 +236,8 @@ mod tests {
         assert_eq!(symbols, ["pkg:cargo/a@1", "b@2"]);
     }
 
-    /// Trace: FR-041-AC-3
     /// Provenance: quoin#458
+    #[trace("FR-041-AC-3", "TC-233")]
     #[test]
     fn tc_458_232_an_empty_inventory_is_entries_zero_and_not_a_refusal() {
         // The distinction the record type exists to make: a tool that ran and
@@ -248,8 +249,8 @@ mod tests {
     /// Zero entries is a real finding about the consumer's build; a file the
     /// adapter simply could not read must not masquerade as one.
     ///
-    /// Trace: FR-041-AC-4
     /// Provenance: quoin#458
+    #[trace("FR-041-AC-4", "TC-234")]
     #[test]
     fn tc_458_233_an_unrecognised_document_names_its_first_six_keys() {
         let error = parse_sbom(r#"{"a":1,"b":2,"c":3,"d":4,"e":5,"f":6,"g":7}"#).unwrap_err();

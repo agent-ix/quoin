@@ -26,6 +26,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -61,8 +62,8 @@ fn adapters_dir() -> PathBuf {
 
 /// Every adapter module is pure over the text it was handed.
 ///
-/// Trace: FR-033-AC-3, FR-030-AC-17
 /// Provenance: quoin#323, quoin#458
+#[trace("FR-033-AC-3", "FR-030-AC-17", "TC-153", "TC-1123", "TC-1124")]
 #[test]
 fn tc_458_250_no_adapter_module_names_a_host_capability() {
     for entry in fs::read_dir(adapters_dir()).expect("src/adapters is readable") {
