@@ -58,3 +58,18 @@ Round 1 (fix commit 90cc763e).
 | FND-002 | fixed | - |
 | FND-003 | fixed | - |
 | FND-004 | fixed | - |
+
+Round 2 (fix commit 12f7887d).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-005 | fixed | - |
+| FND-006 | fixed | - |
+
+## New findings (disposition pass 2)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | low | FR-120 Dependencies: the Upstream and Downstream bullets are fused into one line with a dangling 'and' | spec/functional/FR-120-trace-marks-in-test-result-output.md:133 |
+
+- **FND-007** (FR-120): Removing FR-115 from the Upstream list left '[FR-030](...) and - **Downstream**: ...' on one line. The Downstream bullet no longer renders as its own item, and the Upstream list ends in a dangling 'and'. Split it back into two bullets.

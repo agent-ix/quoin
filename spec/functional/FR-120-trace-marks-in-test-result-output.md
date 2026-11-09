@@ -130,4 +130,5 @@ helper (PLAT-334), and the pytest plugin (PLAT-335). Quoin tests none of it.
 
 ## Dependencies
 
-- **Upstream**: [FR-033](./FR-033-evidence-format-adapters.md) (the adapter this extends), [FR-030](./FR-030-evidence-store.md) and - **Downstream**: the pytest plugin (PLAT-335), the vitest/jest helper (PLAT-334) and the Rust emitter (PLAT-333), each in its own repository.
+- **Upstream**: [FR-033](./FR-033-evidence-format-adapters.md) (the adapter this extends), [FR-030](./FR-030-evidence-store.md) (the store that owns the join).
+- **Downstream**: the pytest plugin (PLAT-335), the vitest/jest helper (PLAT-334) and the Rust emitter (PLAT-333), each in its own repository.

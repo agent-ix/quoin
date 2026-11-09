@@ -47,3 +47,9 @@ Round 1 (fix commit 90cc763e).
 | FND-002 | fixed | - |
 | FND-003 | fixed | - |
 | FND-004 | fixed | - |
+
+Round 2 (fix commit 12f7887d).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
