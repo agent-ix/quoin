@@ -82,3 +82,9 @@ the `qsl-cst` tokens `present`, `value`, `!=` and `pre`, plus FR-056 and FR-104.
 | FND-001 | still-open | Skeletons and negative fixture fixed: `present(e) implies ...`, `self.weight_grams > 0` and `value(e) != ""` are QSL value forms, and the fields they read exist. The config-version `immutable` fence is still not valid Quire where it is used. It is a standalone `## Invariants` clause, no `Post:` line binds it (the fixture has no `## Operations`), and its body reads `pre(...)`. quire-spec-language FR-104 admits `pre(e)` only in a post clause. Fix: in config-version.table.md and config-version.fence.md, replace the clause with a current-state invariant, for example `### versionIsPositive` / `self.versionNumber >= 1`. Update the golden's `clauses[0].clauseId` and `clauseText` to match; the spans do not move. The coder's comparison with operations.md `archived` does not hold, because `Post: archived` binds that clause as a postcondition |
 | FND-002 | fixed | clause-language-0.1.0-cases.json deleted; README row 14 removed |
 | FND-003 | fixed | Both `../corpus/config-service/` references removed from the README |
+
+Round 2, checked against fix commit 9dc24f75 (head 2631154). The reviewer re-ran the quire wheel 0.53.0 `extract_semantic` on config-version.table.md and config-version.fence.md. Each yields `versionIsPositive`, `language: quire`, no clause diagnostic and `{state: available, lossy: false}`, equal to the golden's `clauses`, `clauseText` and `availability.clauses`. `versionNumber` is a required `Integer` (`1`, `min: 1`), and the clause reads no `pre(...)`, so it is a valid current-state invariant.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | config-version clause is now `### versionIsPositive` / `self.versionNumber >= 1` in both fixtures and the golden |

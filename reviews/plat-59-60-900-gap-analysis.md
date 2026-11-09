@@ -63,6 +63,13 @@ Round 1, checked against fix commit d53395c6 (head 0cd7173) and the current PR t
 | FND-002 | fixed | TC-1423 and FR-079 rows no longer cite `make template-gate` |
 | FND-003 | still-open | Title now `PLAT-59/60: ...` and body `Refs PLAT-900 (partial ...)`, but PLAT-900 still carries the PR #774 GitHub attachment created under the old title. Remove that attachment from PLAT-900 before merge, or check PLAT-900's state right after merge and reopen it if automation closed it |
 
+Round 2, checked against fix commit 9dc24f75 (head 2631154) and PLAT-900's Linear attachments.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-003 | still-open | PLAT-900 still carries the PR #774 GitHub attachment. Remove it before merge, or have the merging lead check PLAT-900's state right after merge and reopen it if automation closed it |
+| FND-004 | fixed | TC-1411, TC-1420, TC-1421, TC-1422, TC-1424, TC-1425 and TC-1426 are 🚧 and each names a rendered-suite test that exists in test_skeletons_semantic.py. TC-1422's named test checks only the fixture's shape, and its refusal runs through TC-1424's test. The row is 🚧, so it claims nothing false |
+
 ## New findings (disposition pass 1)
 
 | ID | Severity | Summary | Refs |
