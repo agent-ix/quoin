@@ -24,12 +24,12 @@ attribute dispatched_at : Timestamp[0..1]
 
 ## Invariants
 
-The clauses a Shipment declaration enforces. Each clause owns one `ocl` fence
+The clauses a Shipment declaration enforces. Each clause owns one `quire` fence
 under its own `### <clauseId>` heading.
 
 ### DispatchedShipmentHasTrackingCode
 
-```ocl
+```quire
 context Shipment
 inv DispatchedShipmentHasTrackingCode:
   self.dispatched_at->notEmpty() implies self.tracking_code->notEmpty()
@@ -37,7 +37,7 @@ inv DispatchedShipmentHasTrackingCode:
 
 ### WeightIsPositive
 
-```ocl
+```quire
 context Shipment
 inv WeightIsPositive:
   self.weight_grams > 0

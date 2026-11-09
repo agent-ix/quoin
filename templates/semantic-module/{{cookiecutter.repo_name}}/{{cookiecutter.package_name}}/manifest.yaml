@@ -27,7 +27,7 @@ semantic:
 {%- else %} {}
 {%- endif %}
   targets: [{{ cookiecutter.generated_targets.split(',') | map('trim') | join(', ') }}]
-  mappings: [typed-table, sysml-fence, ocl-clause]
+  mappings: [typed-table, sysml-fence, quire-clause]
   compatibility_posture: additive
   legacy_forms: warning
 

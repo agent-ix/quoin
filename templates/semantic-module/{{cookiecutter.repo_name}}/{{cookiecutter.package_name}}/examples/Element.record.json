@@ -2,7 +2,7 @@
   "clauses": [
     {
       "clauseId": "DispatchedShipmentHasTrackingCode",
-      "language": "ocl",
+      "language": "quire",
       "sourceSpan": {
         "endColumn": 4,
         "endLine": 42,
@@ -14,7 +14,7 @@
     },
     {
       "clauseId": "WeightIsPositive",
-      "language": "ocl",
+      "language": "quire",
       "sourceSpan": {
         "endColumn": 4,
         "endLine": 50,

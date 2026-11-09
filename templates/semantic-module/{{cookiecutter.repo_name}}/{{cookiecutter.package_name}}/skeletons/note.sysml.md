@@ -24,7 +24,7 @@ The clauses a Handover Note declaration enforces.
 
 ### SupersededNoteIsNotItself
 
-```ocl
+```quire
 context HandoverNote
 inv SupersededNoteIsNotItself:
   self.supersedes->notEmpty() implies self.supersedes <> self.id

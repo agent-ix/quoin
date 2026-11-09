@@ -11,7 +11,7 @@ type: note
        header exactly `Field | Type | Multiplicity | Constraints`. A note carries
        no identity row: a document's identity is its frontmatter `id`.
      - "## Invariants" (H2, optional): one `### <clauseId>` per clause, each
-       owning exactly one ```ocl``` fence.
+       owning exactly one ```quire``` fence.
      REPLACE the vocabulary. `Handover Note` is a worked example of the SHAPE. -->
 # [note-001] Handover Note
 
@@ -30,7 +30,7 @@ The clauses a Handover Note declaration enforces.
 
 ### SupersededNoteIsNotItself
 
-```ocl
+```quire
 context HandoverNote
 inv SupersededNoteIsNotItself:
   self.supersedes->notEmpty() implies self.supersedes <> self.id

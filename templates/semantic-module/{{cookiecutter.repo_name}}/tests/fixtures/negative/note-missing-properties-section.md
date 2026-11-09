@@ -11,7 +11,7 @@ because: "the manifest marks the Properties section required for a note"
 
 ### SupersededNoteIsNotItself
 
-```ocl
+```quire
 context HandoverNote
 inv SupersededNoteIsNotItself:
   self.supersedes->notEmpty() implies self.supersedes <> self.id
