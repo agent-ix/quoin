@@ -45,3 +45,11 @@ Planless. Plan completion: not assessed. Spec-only diff, no production code. `qu
 ## Verdict
 
 Pending rows consistent; fix the AC-8 owner list.
+
+## Dispositions
+
+Round 1, against head 8ecfb3ef.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |

@@ -46,3 +46,13 @@ Checked who owns each artifact FR-123 depends on: quire-rs FR-075/FR-076 and its
 ## Verdict
 
 One high: the members target resolution is a quire-rs FR-075 change that is not named.
+
+## Dispositions
+
+Round 1, against head 8ecfb3ef.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

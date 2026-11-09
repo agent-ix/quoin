@@ -54,3 +54,12 @@ Checked every FR-123 behaviour statement and the FR-071/FR-121 edits for EARS fo
 ## Verdict
 
 Medium and low findings only; the PR is not mergeable because of SR-16399 and SR-16402.
+
+## Dispositions
+
+Round 1, against head 8ecfb3ef.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |

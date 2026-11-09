@@ -55,3 +55,14 @@ Checked each FR-123 AC and CON for a failing case, a verification method and a T
 ## Verdict
 
 ACs map one-to-one to TCs with audit rows; fix the vacuous clauses.
+
+## Dispositions
+
+Round 1, against head 8ecfb3ef.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |

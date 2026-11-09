@@ -72,3 +72,18 @@ Checked FR-123 and the FR-071/FR-121 edits for single-source-per-key, consistenc
 ## Verdict
 
 Not mergeable: FND-001 and FND-003 are high. Clean: FR-071 amendment (table-only, list refused, no FR-074 legacy path), values/states/steps/vocabulary mapping, emits/persists via FR-076, source via FR-121, no-sourceSpan rule, FR-070 untouched.
+
+## Dispositions
+
+Round 1, against head 8ecfb3ef.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
+| FND-006 | fixed | - |
+| FND-007 | fixed | - |
+| FND-008 | fixed | - |
