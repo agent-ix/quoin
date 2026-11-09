@@ -67,6 +67,13 @@ and expression semantics stay with `agent-ix/quire-contract-ir#52`.
 | FR-071-AC-7 | Fence lines `item x : Y;`, `part def X;`, and `:> Y` are errors with locus. | Test |
 | FR-071-AC-8 | A fixture row violating a semantic-core reader rule (`Decimal` without `(p,s)`) yields the rule's diagnostic at the row locus. | Test |
 
+> **Verification note (PLAT-278):** FR-071-AC-3 to AC-8 are asserted over the
+> `quire-fixtures` goldens by `tc_278_mapping_expectations.rs`. FR-071-AC-1's
+> schema validation is not yet assertable: the goldens record `TypeRef.target`
+> and constraints in a tagged `{kind, value}` shape that the semantic-core 0.3.0
+> schemas Quoin reads do not accept. The goldens belong to `quire-rs`; the
+> mismatch is reported there rather than copied or weakened here.
+
 ## Dependencies
 
 - **Upstream**: [FR-070](./FR-070-semantic-module-manifest-extension.md), semantic-core `FieldDecl`/`TypeRef` and reader rules (`agent-ix/filament-core-data` FR-031), IR v1.1 constraints (FR-029)
