@@ -69,7 +69,7 @@ and is checked by record validation (FR-073), not by this extraction.
 - Quire SHALL read record-key sections only when `semantic.mappings` names the token `record-sections`.
 - Quire SHALL compare a section heading with a record property name the way it compares a header cell with a field name: lowercase both and remove spaces, hyphens and underscores, so `## Declared Type` names `declaredType` and `## Associated Types` names `associated_types`. The rule is total over camelCase and snake_case keys.
 - If two properties of one record normalize to the same name, then Quire SHALL emit `semantic.feature-not-extractable` at the heading with `reason` `key-ambiguous` and read neither.
-- Quire SHALL read a section as a record key only when its heading names a property of the object type's record that no other mapping owns, so every key has exactly one authored source. The keys other mappings own are: `fields` (FR-071), `clauses` and `operations` (FR-072), `relations` (FR-104), the typed relation keys quire-rs FR-076 derives from `## Relationships` rows (FR-076-CON-4), `featureOrder` and the systems-kind members quire-rs FR-075 lowers, and the keys FR-122 maps by its own form (`associated_types`, `thresholds`, `records`, `endianness`).
+- Quire SHALL read a section as a record key only when its heading names a property of the object type's record that no other mapping owns, so every key has exactly one authored source. The keys other mappings own are: `fields` (FR-071), `clauses` and `operations` (FR-072), `relations` (FR-104), the typed relation keys quire-rs FR-076 derives from `## Relationships` rows (FR-076-CON-4), `featureOrder` and the systems-kind members quire-rs FR-075 lowers, and, for the `queue`, `api_endpoint`, `interface`, `binary_format`, `rate_limit`, `external_contract` and `extension_point` object types of `agent-ix/spec-objects-architecture` only, the keys FR-122 maps by its own form (`associated_types`, `thresholds`, `records`, `endianness`). A record of any other module with a property of one of those names is read under this requirement.
 - A section whose heading names no readable record key, including a heading that names an owned key, SHALL be prose to this mapping.
 - When `semantic.mappings` does not name `record-sections`, Quire SHALL treat every section as prose to this mapping, with no diagnostic and no `availability.recordKeys`.
 - If an artifact holds a second section naming the same key, then Quire SHALL emit the error `semantic.duplicate-section` at the second heading with `reason` `second-section`.
@@ -94,10 +94,10 @@ and is checked by record validation (FR-073), not by this extraction.
 - Quire SHALL strip surrounding backticks from a cell value and type it by the matched property: `integer` and `number` by their literal (a non-literal is `reason` `cell-type`), `boolean` by `true` or `false`, and a string, an enumeration, or an `anyOf` of enumerations and strings as the authored text.
 - Quire SHALL type a property that is `anyOf` an integer and a string as the integer when the cell is a decimal integer literal, else the string.
 - Quire SHALL NOT check a cell against an enumeration or a `format`; the referenced schema does that at record validation (FR-073).
-- A cell authored `unknown`, `not_assessed`, or `not_applicable` SHALL extract as that exact string, never as an absent field and never as a value of the field's scale.
-- An empty cell SHALL omit the field; Quire SHALL NOT substitute a default, an empty string, or a scale value.
-- A property typed as an object or an array of objects SHALL NOT be authored in a cell; Quire SHALL emit `semantic.invalid-model-cell` at the cell's row with `reason` `nested-object-cell`. A key with such a field uses its own published form (FR-122).
-- A property typed `SemanticId` SHALL take its value from the cell by the `Target` rules of FR-104, with the same refusals and the same `semantic.unresolved-target` advisory.
+- Quire SHALL extract a cell authored `unknown`, `not_assessed`, or `not_applicable` as that exact string, never as an absent field and never as a value of the field's scale.
+- Quire SHALL omit the field of an empty cell and SHALL NOT substitute a default, an empty string, or a scale value.
+- If a cell targets a property typed as an object or an array of objects, then Quire SHALL emit `semantic.invalid-model-cell` at the cell's row with `reason` `nested-object-cell`. A key with such a field uses its own published form (FR-122).
+- Quire SHALL take the value of a `SemanticId` property from the cell by the `Target` rules of FR-104, with the same refusals and the same `semantic.unresolved-target` advisory.
 - Quire SHALL apply the cell checks left to right in row order and report only the first failing check per cell.
 
 ### Availability
@@ -125,7 +125,7 @@ and is checked by record validation (FR-073), not by this extraction.
 | FR-121-AC-6 | `column-unknown`, `column-duplicate`, `second-row`, `no-row`, `nested-object-cell`, and `cell-type` fixtures each yield `semantic.invalid-model-cell` with that `reason` at the row or header, and a second `## Assessment` section yields `semantic.duplicate-section` `second-section`; each key is `unavailable` with `entry-errors: lines <lines>` and no value. | Test |
 | FR-121-AC-7 | A bullet list under a table-form key, and a list after a valid table, each yield `semantic.feature-not-extractable` with `reason` the key name; a prose-only record-key section yields the warning `semantic.record-key-no-block` and `not_applicable`. | Test |
 | FR-121-AC-8 | Without the token `record-sections`, the AC-1 fixture yields no `record`, no diagnostic, and no `availability.recordKeys`; under the token, a heading that names no record key (`## Notes`) and a heading that names an owned key (`## Thresholds`, `## Requires`, `## Endianness`) are prose and yield no diagnostic. | Test |
-| FR-121-AC-9 | A record with a camelCase key (`declaredType`) is reached by `## Declared Type`, and a record with two properties that normalize equal yields `semantic.feature-not-extractable` `key-ambiguous`. | Test |
+| FR-121-AC-9 | A record with a camelCase key (`retryPolicy`) is reached by `## Retry Policy`, and a record with two properties that normalize equal yields `semantic.feature-not-extractable` `key-ambiguous`. | Test |
 
 ## Dependencies
 

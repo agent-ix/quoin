@@ -18,9 +18,9 @@ relationships:
 ## Description
 
 Quoin SHALL publish the authored form of each record key of
-`agent-ix/spec-objects-architecture` that no other mapping owns (`delivery`,
-`versioning`, `registration`, `stability`, `routes`, `associated_types`,
-`records`, `endianness`, `thresholds`), and SHALL name the owner of every other
+`agent-ix/spec-objects-architecture` that no other mapping owns (`provider`,
+`exposes`, `delivery`, `versioning`, `registration`, `stability`, `routes`,
+`associated_types`, `records`, `endianness`, `thresholds`), and SHALL name the owner of every other
 key, as golden fixtures that the Quire extractor implements, so that every
 optional key of that module has exactly one owner and one authored form.
 
@@ -31,15 +31,16 @@ authored Markdown fills. The keys fall into four groups, and each has one owner:
 
 - `fields`, `operations`, `clauses`: FR-071 and FR-072.
 - `relations` and the typed relation keys (`requires`, `carries`, `renders`,
-  `triggers`, `serializes`, `throttles`, `provider`, `exposes`): FR-104 and
-  quire-rs FR-076, which derive them from `## Relationships` rows only
+  `triggers`, `serializes`, `throttles`): arrays of `SemanticId` named after an
+  `allowed_links` verb, owned by FR-104 and quire-rs FR-076, which derive them from `## Relationships` rows only
   (FR-076-CON-4). This requirement adds no second authoring form for them; an
   author declares `requires` as a `## Relationships` row with the verb
   `requires`.
 - `featureOrder` and the systems-kind members (`owner`, `declaredType`,
   `multiplicity`, `direction`, `interfaceType`, `sourceEnd`, `targetEnd`,
   `flowDirection`, `sourceElement`, `targetElement`): quire-rs FR-075.
-- The nine keys above: this requirement, by FR-121 or by its own form.
+- `provider` and `exposes`: single `SemanticId` values that name no verb, so FR-076 does not derive them; this requirement, by the FR-121 single-value form.
+- The other nine keys above: this requirement, by FR-121 or by its own form.
 
 Adopting `record-sections` is a breaking change for the module's artifacts, not
 an additive one: a conforming `rate_limit` already carries `## Thresholds` as a
@@ -56,6 +57,8 @@ it names the token (Dependencies). No key is declared not-authored.
 
 | Object type | Key | Heading | Form |
 |---|---|---|---|
+| `external_contract` | `provider` | `## Provider` | one inline id |
+| `extension_point` | `exposes` | `## Exposes` | one inline id |
 | `queue` | `delivery` | `## Delivery` | one-row table `Semantics \| Ordering \| Retention` |
 | `external_contract` | `versioning` | `## Versioning` | one-row table `Scheme \| Breaking Change Signal` |
 | `extension_point` | `registration` | `## Registration` | one-row table `Mechanism \| Conflict \| Discovery` |
@@ -78,7 +81,7 @@ it names the token (Dependencies). No key is declared not-authored.
 
 ### Relation keys
 
-- Quire SHALL derive `relations` and the typed relation keys of the Rationale from `## Relationships` rows (FR-104, quire-rs FR-076) and SHALL NOT read a `## Requires`, `## Carries`, or similar heading as a source of them (FR-121 excludes them).
+- Quire SHALL derive `relations` and the six typed relation keys of the Rationale from `## Relationships` rows (FR-104, quire-rs FR-076) and SHALL NOT read a `## Requires`, `## Carries`, or similar heading as a source of them (FR-121 excludes them).
 - A module that ships them SHALL name the token `relationships`.
 
 ## Constraints
@@ -92,7 +95,7 @@ it names the token (Dependencies). No key is declared not-authored.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-122-AC-1 | The `delivery`, `versioning`, `registration` and `stability` one-row tables extract to objects that validate against `DeliveryPolicy.json`, `VersioningPolicy.json`, `RegistrationPolicy.json` and `StabilityPolicy.json`, and an omitted optional cell omits its field; the module's current bullet-list `## Registration` is refused as `semantic.feature-not-extractable`. | Test |
+| FR-122-AC-1 | A `## Provider` and a `## Exposes` section each holding one inline id extract `provider` and `exposes` as one `SemanticId`; the `delivery`, `versioning`, `registration` and `stability` one-row tables extract to objects that validate against `DeliveryPolicy.json`, `VersioningPolicy.json`, `RegistrationPolicy.json` and `StabilityPolicy.json`, and an omitted optional cell omits its field; the module's current bullet-list `## Registration` is refused as `semantic.feature-not-extractable`. | Test |
 | FR-122-AC-2 | A `## Routes` table extracts to `routes` that validates against `RouteDecl.json`; a route naming an operation the artifact does not declare yields `route-operation-unknown`. | Test |
 | FR-122-AC-3 | A `## Associated Types` table `Type \| Multiplicity` extracts to `associated_types` as `TypeRef[]` that validates against `TypeRef.json`; an `interface` whose `## Contract` fence lists `associated_types` that its table omits extracts none from the fence. | Test |
 | FR-122-AC-4 | The `binary_format` skeleton's `## Layout` fence extracts `endianness` `little` and two `RecordLayout`s, `tag: 0x21` as `"0x21"`, `posting_tuple.payload` with `size: payload_len` as the identifier resolving to `metadata_block.payload_len`, and `magic` absent, and the record validates against `BinaryFormat.json`; a `size` naming no field yields `size-unknown-field` and one naming a field in two records yields `size-ambiguous`; a `## Endianness` section is prose. | Test |
@@ -104,4 +107,4 @@ it names the token (Dependencies). No key is declared not-authored.
 
 - **Upstream**: [FR-121](./FR-121-record-key-sections-mapping.md), [FR-071](./FR-071-typed-properties-mapping.md) (`Type` and `Multiplicity` cells), [FR-072](./FR-072-invariants-and-operations-mapping.md), [FR-104](./FR-104-relationships-mapping.md), quire-rs FR-075 and FR-076, `agent-ix/spec-objects-architecture` FR-004 and FR-006 (the record models and the interface lowering adopted here)
 - **Upstream, quire-rs**: the `semantic-v1.schema.json` change of FR-121 (`recordSources`, `availability.recordKeys`), owned by `agent-ix/quire-rs`, lane P-PLAT-101
-- **Downstream**: the extractor in `agent-ix/quire-rs`; `agent-ix/spec-objects-architecture` changes that are that module's to make: convert the `## Thresholds`, `## Registration` and `## Stability` skeleton sections from bullet lists to the tables above (breaking for its corpus), add `## Delivery`, `## Versioning` and `## Routes`, drop `associated_types[]` as a source in FR-006, widen the `LayoutField.size` doc, revisit its decision #20, and name PLAT-196 as the owner in its Out of Scope
+- **Downstream**: the extractor in `agent-ix/quire-rs`; `agent-ix/spec-objects-architecture` changes that are that module's to make: convert the `## Thresholds`, `## Registration` and `## Stability` skeleton sections from bullet lists to the tables above (breaking for its corpus), add the `relationships` token to its manifest `semantic.mappings` (today `typed-table`, `sysml-fence`, `ocl-clause`, `generalization`), since FR-076 yields no typed relation keys until then, add `record-sections`, add `## Provider`, `## Exposes`, `## Delivery`, `## Versioning` and `## Routes`, drop `associated_types[]` as a source in FR-006, widen the `LayoutField.size` doc, revisit its decision #20, and name PLAT-196 as the owner in its Out of Scope

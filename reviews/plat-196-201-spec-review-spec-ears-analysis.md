@@ -40,3 +40,13 @@ Checked the FR statements and Behavior bullets for EARS form. Both Descriptions 
 ## Verdict
 
 No defects for this lens.
+
+## Dispositions
+
+Round 1, against head 59833eb2.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+
+FR-121 lines 81-84 now state Quire responses. Lines 97-100 (`A cell authored ...`, `An empty cell SHALL omit`, `A property typed as an object ... SHALL NOT be authored`) still take the data as subject; they were not in the finding's cited range and are left as is.

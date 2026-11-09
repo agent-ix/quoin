@@ -76,3 +76,23 @@ Checked FR-121 and FR-122 for consistency with each other, with quoin FR-070/071
 ## Verdict
 
 Not mergeable until the high findings are fixed.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | high | FR-122 assigns provider and exposes to quire-rs FR-076 as typed relation keys, but FR-076 defines a typed relation key as an array of SemanticId named by a verb in the type's allowed_links; provider and exposes are single SemanticIds and neither is a verb (external_contract allows conforms_to/implements/references, extension_point extends/references), so no owner produces them, FR-121's exclusion (defined by FR-076) does not exclude them, and AC-7 fails on FR-122's own table. | spec/functional/FR-122-architecture-record-keys-mapping.md:33-37 |
+| FND-008 | low | FR-121 excludes the FR-122 own-form key names (associated_types, thresholds, records, endianness) for every module and object type, though FR-122 owns them only on the architecture types; and the heading-rule example and AC-9 use declaredType, which the next bullet excludes as a quire-rs FR-075 systems member. | spec/functional/FR-121-record-key-sections-mapping.md:70-72,128 |
+
+## Dispositions
+
+Round 1, against head 59833eb2.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |
+| FND-005 | fixed | - |
+| FND-006 | fixed | - |

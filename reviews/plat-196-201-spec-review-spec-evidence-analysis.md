@@ -61,3 +61,19 @@ Checked each AC and CON for a verification method that can fail and a matrix row
 ## Verdict
 
 Not mergeable until the high findings are fixed.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | TC-2028 says it is executed by the quire-rs extractor against goldens, but FR-122-AC-7 is an ownership audit over the architecture schemas that no extraction run performs; the row should name what checks it. | spec/matrix.md:1418 |
+
+## Dispositions
+
+Round 1, against head 59833eb2.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

@@ -50,3 +50,19 @@ Checked who owns each artifact FR-121/FR-122 create or depend on: fixtures, the 
 ## Verdict
 
 Not mergeable until the high findings are fixed.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | FR-122's Downstream list of spec-objects-architecture changes omits naming the relationships token in the module manifest (today: typed-table, sysml-fence, ocl-clause, generalization), which FR-122 and quire-rs FR-076 require before any typed relation key is produced. | spec/functional/FR-122-architecture-record-keys-mapping.md:107 |
+
+## Dispositions
+
+Round 1, against head 59833eb2.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

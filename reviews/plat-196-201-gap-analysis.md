@@ -56,3 +56,11 @@ Planless. Plan completion: not assessed. Spec-only diff, no production code. `qu
 ## Verdict
 
 No defects for this lens.
+
+## Dispositions
+
+Round 1, against head 59833eb2.
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
