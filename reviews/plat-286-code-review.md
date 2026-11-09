@@ -71,3 +71,18 @@ scope:
 - {id: quoin-semantic/src/package_manifest.rs#resolve_imports, path: rust/crates/quoin-semantic/src/package_manifest.rs, role: context_only, excerpt: "pub fn resolve_imports(candidate: &SemanticModule, installed: &[SemanticModule]) -> Vec<SemanticDiagnostic>"}
 - {id: tc_166_spec_fuzz_skill.rs, path: rust/crates/quoin-core/tests/tc_166_spec_fuzz_skill.rs, role: context_only, excerpt: "clippy::panic at 79:17; unchanged from origin/main"}
 ```
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | The fix raised the literal count pin `assert_eq!(ModulesErrorCode::all().len(), 23, ...)` from 22 to 23. The pin is ceremony. The next assertion (`bad_request.len() + refused.len() + internal.len() == all().len()`) already fails when a code is added and left out of every group. The per-group `core_code` loops already fail when a grouped code falls through to the `_ => None` arm. Only a new code can change the literal, and the code-reviewed grouping is what decides whether it is handled. Delete the literal assertion, and the doc comment and wildcard-arm comment that cite it, instead of bumping it | rust/crates/quoin-core/src/ops/modules/taxonomy.rs:90-94,110-125 |
+| FND-005 | low | `ModulesError::InstalledModuleInvalid { name, detail }` is never constructed anywhere in the workspace. `inspect` uses only `ModulesErrorCode::InstalledModuleInvalid` for its stderr diagnostic. The variant is dead public API with a format string and a `code()` arm. Delete it and keep the code | rust/crates/quoin-modules/src/error.rs:361-372,456 |
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | 1ba15754 and 1ea79a75: `read_blocks` answers a root whose manifest is missing, unreadable, not YAML or not a mapping with `unreadable: <detail>` and keeps going. A missing contract still refuses. `inspect` reports that root as `mode: unreadable` with an error diagnostic and exit 1. tc_286_005 removes an installed module dir and asserts 2 entries, `unreadable` and QM023 on stderr (passes) |
+| FND-002 | fixed | `by_package` is built once over the population, and `resolve_imports_in` borrows it. No per-candidate clone remains |
+| FND-003 | fixed | New `QM023_INSTALLED_MODULE_INVALID` in `ModulesErrorCode`, ERROR_CODES.md and the taxonomy mapping. `inspect` emits it, and tc_286_005 asserts QM023 is present and QM020 absent |

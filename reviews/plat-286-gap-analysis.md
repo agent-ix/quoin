@@ -52,3 +52,10 @@ bindings:
 - {test_id: tc_286_003_an_import_lock_the_installed_set_no_longer_satisfies_is_reported, ac_id: FR-124-AC-4, trace: correct}
 - {test_id: tc_286_004_an_unknown_contract_major_is_reported_not_degraded_to_empty, ac_id: FR-124-AC-5, trace: correct}
 ```
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | tc_286_001 now asserts the compiled entry's `contract_version` 1.0.0 and `package` agent-ix/spec-objects-consumer, and `errors(dynamic).is_empty()` |
+| FND-002 | fixed | FR-124-AC-7 (cycle) and AC-8 (read-only) were added with tc_286_006, which edits an installed manifest into a two-module cycle and asserts an "import cycle:" error naming both packages, and tc_286_007, a byte snapshot of `filament/` before and after an erroring run. The unreadable case is AC-6 / tc_286_005 and tc_452_602. All pass, and `quoin matrix` shows AC-6 to AC-8 tagged |

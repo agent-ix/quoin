@@ -49,3 +49,10 @@ scope:
 - {id: spec/functional/index.md, path: spec/functional/index.md, role: examined, excerpt: "- [FR-124: Inspect installed semantic modules and their import locks](./FR-124-inspect-installed-semantic-modules.md)"}
 - {id: FR-075, path: spec/functional/FR-075-semantic-package-exports-and-locks.md, role: context_only, excerpt: "semantic.imports maps an imported package identity to an exact version"}
 ```
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | FR-124 adds `mode` `unreadable` (missing, unreadable, not YAML, not a mapping), two EARS clauses ("If an installed module's manifest cannot be read, then inspect SHALL report that module as an entry carrying an error diagnostic" / "...SHALL still report every other installed module"), and FR-124-AC-6 |
+| FND-002 | fixed | The frontmatter `relationships` gains `ix://agent-ix/quoin/FR-019` `depends_on` |

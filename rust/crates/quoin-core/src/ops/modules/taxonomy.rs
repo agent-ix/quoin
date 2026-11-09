@@ -30,9 +30,8 @@ use crate::error::{CoreError, CoreErrorCode};
 ///
 /// `ModulesErrorCode` is `#[non_exhaustive]`, so this match needs a `_` arm and
 /// the compiler will NOT flag a code added upstream. `the_error_mapping_covers_
-/// every_modules_code` pins `ModulesErrorCode::all().len()`, which a loop over
-/// `all()` could not do — such a loop re-runs this same match and agrees with
-/// itself (the quoin#443 failure mode).
+/// every_modules_code` lists every code by group and checks the groups sum to
+/// `all()`, so a code mapped to no group fails there.
 pub(super) fn map_error(error: &ModulesError, op: &'static str) -> CoreError {
     let code = error.code();
     let mapped = core_code(code);
@@ -89,7 +88,7 @@ const fn core_code(code: ModulesErrorCode) -> Option<CoreErrorCode> {
 
         // Required by `#[non_exhaustive]`. A code this build has never seen is
         // reported as unmapped and exits Internal — the safest answer, since an
-        // unknown rule is not one the caller can act on. The count pin in
+        // unknown rule is not one the caller can act on. The group-sum check in
         // `the_error_mapping_covers_every_modules_code` is what makes reaching
         // this arm a test failure rather than a silent widening.
         _ => return None,
@@ -109,21 +108,14 @@ mod tests {
     use crate::ops::modules::support::error_with_code;
 
     /// `ModulesErrorCode` is `#[non_exhaustive]`, so `map_error`'s `_` arm
-    /// means the compiler cannot catch a code added upstream. This pins the
-    /// COUNT instead. A loop over `all()` would only re-run the same match and
-    /// agree with itself — the quoin#443 failure mode — so the number is
-    /// written out here, and every group is listed by name.
+    /// means the compiler cannot catch a code added upstream. Every group is
+    /// listed by name and their sizes must sum to `all()`, so a code in none of
+    /// them fails here.
     ///
     /// When this fails: a code was added to `quoin-modules`. Decide which of
-    /// the three groups it belongs to, add it to that arm, and raise the count.
+    /// the three groups it belongs to and add it to that arm and list.
     #[test]
     fn the_error_mapping_covers_every_modules_code() {
-        assert_eq!(
-            ModulesErrorCode::all().len(),
-            23,
-            "quoin-modules gained or lost an error code; map it in map_error deliberately"
-        );
-
         let bad_request = [
             ModulesErrorCode::InvalidSource,
             ModulesErrorCode::UnsupportedSource,

@@ -358,19 +358,6 @@ pub enum ModulesError {
         detail: String,
     },
 
-    /// A read-only inspection found an installed module invalid.
-    ///
-    /// Distinct from [`ModulesError::SemanticContractViolation`] on purpose:
-    /// that one is the install gate rejecting a module and carries a rollback;
-    /// this one rejects nothing and rolls nothing back.
-    #[error("{code}: installed module {name} is invalid: {detail}", code = ModulesErrorCode::InstalledModuleInvalid)]
-    InstalledModuleInvalid {
-        /// The installed module.
-        name: String,
-        /// What inspection found.
-        detail: String,
-    },
-
     /// An installed module violated the semantic contract.
     #[error("{code}: module {name} rejected: semantic contract violations\n{report}", code = ModulesErrorCode::SemanticContractViolation)]
     SemanticContractViolation {
@@ -453,7 +440,6 @@ impl ModulesError {
             Self::SemanticContractUnavailable { .. } => {
                 ModulesErrorCode::SemanticContractUnavailable
             }
-            Self::InstalledModuleInvalid { .. } => ModulesErrorCode::InstalledModuleInvalid,
         }
     }
 }
