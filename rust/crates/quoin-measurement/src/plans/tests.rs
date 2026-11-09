@@ -8,6 +8,7 @@ use super::{PlanLoadOptions, load_measurement_plans};
 use crate::error::MeasurementErrorCode;
 use crate::source::MemoryMeasurement;
 use crate::types::plan::{LifecycleStatus, MeasurementStage};
+use ix_trace_rs::trace;
 #[cfg(feature = "campaign")]
 use std::collections::BTreeSet;
 
@@ -50,8 +51,8 @@ fn plans_come_back_sorted_by_metric_then_id() {
     assert_eq!(plans[0].status, LifecycleStatus::Active);
 }
 
-/// Trace: FR-114-AC-1
 /// Provenance: PLAT-1043
+#[trace("FR-114-AC-1")]
 #[test]
 fn tc_1940_runnable_procedure_must_be_a_protected_repo_file() {
     let front = "---\ntype: MeasurementPlan\nid: MP-1\ntitle: T\nstatus: active\

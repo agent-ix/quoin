@@ -26,6 +26,7 @@
     reason = "FR-108-AC-4 makes exact equality the contract: a recomputed estimate either is the stored value or is not"
 )]
 
+use ix_trace_rs::trace;
 use std::num::NonZeroU32;
 use std::path::{Path, PathBuf};
 
@@ -170,8 +171,8 @@ fn accepted_with(edit: impl FnOnce(&mut MeasurementObservation)) -> MeasurementC
     collection
 }
 
-/// Trace: FR-108-AC-1
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-1")]
 #[test]
 fn tc_961_001_estimator_and_decision_rule_are_read_into_eas_types() {
     let gate = plan("MP-961");
@@ -193,8 +194,8 @@ fn plan_document(design: &str, objective: &str) -> String {
     )
 }
 
-/// Trace: FR-108-AC-1
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-1")]
 #[test]
 fn tc_961_002_a_malformed_estimator_or_rule_refuses_the_plan_load() {
     let higher = "objective:\n  direction: higher\n";
@@ -238,8 +239,8 @@ fn tc_961_002_a_malformed_estimator_or_rule_refuses_the_plan_load() {
     }
 }
 
-/// Trace: FR-108-AC-2, FR-108-AC-4
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-2", "FR-108-AC-4")]
 #[test]
 fn tc_961_003_a_consistent_collection_is_accepted_and_its_estimate_recomputed() {
     let verdict = check("MP-961", "right/accept", Some(Verdict::Accept));
@@ -259,8 +260,8 @@ fn tc_961_003_a_consistent_collection_is_accepted_and_its_estimate_recomputed() 
     assert_eq!(verdict.counts.regressed_runs, 0);
 }
 
-/// Trace: FR-108-AC-5
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-5")]
 #[test]
 fn tc_961_004_a_wrong_claimed_verdict_is_rejected() {
     let verdict = check(
@@ -282,8 +283,8 @@ fn tc_961_004_a_wrong_claimed_verdict_is_rejected() {
     assert_eq!(understated.reasons, [Reason::ClaimedVerdictDisagrees]);
 }
 
-/// Trace: FR-108-AC-3, FR-108-AC-4
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-3", "FR-108-AC-4")]
 #[test]
 fn tc_961_005_a_hand_edited_baseline_is_rejected() {
     let verdict = check("MP-961-prior", "wrong/hand-edited-baseline", None);
@@ -303,8 +304,8 @@ fn tc_961_005_a_hand_edited_baseline_is_rejected() {
     assert_ne!(verdict.decisions[0].holds, Some(true));
 }
 
-/// Trace: FR-108-AC-3
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_006_a_selectively_reported_run_is_rejected_and_the_regression_counted() {
     let verdict = check("MP-961", "wrong/selectively-reported-run", None);
@@ -317,8 +318,8 @@ fn tc_961_006_a_selectively_reported_run_is_rejected_and_the_regression_counted(
     assert_eq!(verdict.regressed_runs, ["verify-rerun-regressed"]);
 }
 
-/// Trace: FR-108-AC-4
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_007_a_short_population_is_rejected() {
     let verdict = check("MP-961", "wrong/short-population", None);
@@ -326,8 +327,8 @@ fn tc_961_007_a_short_population_is_rejected() {
     assert_eq!(verdict.reasons, [Reason::PopulationBelowMinimum]);
 }
 
-/// Trace: FR-108-AC-4
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_008_a_tampered_observation_is_rejected() {
     let verdict = check(
@@ -342,8 +343,8 @@ fn tc_961_008_a_tampered_observation_is_rejected() {
     assert_eq!(verdict.counts.observations_asserted, 0);
 }
 
-/// Trace: FR-108-AC-4
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_009_an_empty_incomplete_or_unstated_population_is_inconclusive_never_accepted() {
     let gate = plan("MP-961");
@@ -407,8 +408,8 @@ fn tc_961_009_an_empty_incomplete_or_unstated_population_is_inconclusive_never_a
     assert_eq!(verdict.reasons, [Reason::PopulationEmpty]);
 }
 
-/// Trace: FR-108-AC-5
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-5")]
 #[test]
 fn tc_961_010_a_plan_without_a_rule_or_estimator_or_any_run_is_inconclusive() {
     let accepted = case("right/accept");
@@ -441,8 +442,8 @@ fn tc_961_010_a_plan_without_a_rule_or_estimator_or_any_run_is_inconclusive() {
     );
 }
 
-/// Trace: FR-108-AC-3
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_011_a_constant_predictor_baseline_is_inconclusive_without_per_item_rows() {
     let mut gate = plan("MP-961");
@@ -460,8 +461,8 @@ fn tc_961_011_a_constant_predictor_baseline_is_inconclusive_without_per_item_row
     assert_eq!(verdict.reasons, [Reason::ConstantPredictorRowsAbsent]);
 }
 
-/// Trace: FR-108-AC-2
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-2")]
 #[test]
 fn tc_961_012_intake_order_decides_the_candidate_and_a_tie_is_unattested() {
     // Backdate the regressed run's stated timestamp to after the pass: the
@@ -506,8 +507,8 @@ fn tc_961_012_intake_order_decides_the_candidate_and_a_tie_is_unattested() {
     assert_eq!(verdict.counts.order_unattested, 1);
 }
 
-/// Trace: FR-108-AC-3
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_013_baselines_come_from_recomputed_rows_through_eas_rule() {
     let prior = plan("MP-961-prior");
@@ -556,8 +557,8 @@ fn tc_961_013_baselines_come_from_recomputed_rows_through_eas_rule() {
     assert_eq!(first.reasons, [Reason::NoPrior]);
 }
 
-/// Trace: FR-108-AC-4
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_014_an_estimate_no_row_data_can_check_is_counted_as_asserted() {
     let mut gate = plan("MP-961");
@@ -602,8 +603,8 @@ fn rounds_to(stated: f64, matched: f64, examined: f64) -> bool {
 }
 
 proptest! {
-    /// Trace: FR-108-AC-4
     /// Provenance: PLAT-961
+    #[trace("FR-108-AC-4")]
     #[test]
     fn tc_961_015_proportion_and_count_are_recomputed_from_matched_and_examined(
         examined in 1_u32..1_000_000,
@@ -628,8 +629,8 @@ proptest! {
         prop_assert_eq!(estimate.basis, EstimateBasis::Recomputed);
     }
 
-    /// Trace: FR-108-AC-4
     /// Provenance: PLAT-961
+    #[trace("FR-108-AC-4")]
     #[test]
     fn tc_961_016_a_stored_value_is_consistent_only_within_its_stated_precision(
         examined in 1_u32..1_000_000,
@@ -673,8 +674,8 @@ proptest! {
     }
 }
 
-/// Trace: FR-108-AC-5, FR-108-AC-6
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-5", "FR-108-AC-6")]
 #[test]
 fn tc_961_017_the_verdict_document_has_the_documented_wire_shape() {
     let verdict = check(
@@ -750,8 +751,8 @@ fn at<'a>(positions: &[(&'a MeasurementCollection, u64)]) -> Vec<Ranked<'a>> {
         .collect()
 }
 
-/// Trace: FR-108-AC-4
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_021_a_proportion_or_count_with_no_matched_has_no_rows_and_is_not_asserted() {
     let no_matched = accepted_with(|o| o.population.as_mut().unwrap().matched = None);
@@ -772,8 +773,8 @@ fn tc_961_021_a_proportion_or_count_with_no_matched_has_no_rows_and_is_not_asser
     assert_eq!(verdict.counts.observations_asserted, 1);
 }
 
-/// Trace: FR-108-AC-2
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-2")]
 #[test]
 fn tc_961_022_a_slice_measured_before_and_dropped_by_the_candidate_is_inconclusive() {
     let earlier = renamed(case("right/accept").remove(0), "earlier");
@@ -795,8 +796,8 @@ fn tc_961_022_a_slice_measured_before_and_dropped_by_the_candidate_is_inconclusi
     assert_eq!(verdict.decisions[0].holds, Some(true));
 }
 
-/// Trace: FR-108-AC-2
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-2")]
 #[test]
 fn tc_961_023_a_later_collection_without_the_plans_observation_leaves_the_pass_open() {
     let pass = case("right/accept").remove(0);
@@ -822,8 +823,8 @@ fn tc_961_023_a_later_collection_without_the_plans_observation_leaves_the_pass_o
     );
 }
 
-/// Trace: FR-108-AC-4
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_024_a_percent_unit_is_unsupported_and_a_rounded_value_is_consistent() {
     let gate = plan("MP-961");
@@ -850,8 +851,8 @@ fn tc_961_024_a_percent_unit_is_unsupported_and_a_rounded_value_is_consistent() 
     assert!(!consistent(0.9468, 480.0, 507.0));
 }
 
-/// Trace: FR-108-AC-3
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_025_an_earlier_shortfall_is_history_but_earlier_tampering_still_rejects() {
     let gate = plan("MP-961");
@@ -871,8 +872,8 @@ fn tc_961_025_an_earlier_shortfall_is_history_but_earlier_tampering_still_reject
     assert_eq!(verdict.reasons, [Reason::PopulationMalformed]);
 }
 
-/// Trace: FR-108-AC-2, FR-108-AC-3
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-2", "FR-108-AC-3")]
 #[test]
 fn tc_961_026_a_prior_collection_tied_with_another_run_is_order_unattested() {
     let prior = plan("MP-961-prior");
@@ -886,8 +887,8 @@ fn tc_961_026_a_prior_collection_tied_with_another_run_is_order_unattested() {
     assert_eq!(ordered.verdict, Verdict::Accept);
 }
 
-/// Trace: FR-108-AC-4
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-4")]
 #[test]
 fn tc_961_027_a_count_plan_is_recomputed_from_matched() {
     let mut count = plan("MP-961");
@@ -904,8 +905,8 @@ fn tc_961_027_a_count_plan_is_recomputed_from_matched() {
     assert_eq!(verdict.reasons, [Reason::ValueDisagreesWithRows]);
 }
 
-/// Trace: FR-108-AC-8
 /// Provenance: PLAT-961
+#[trace("FR-108-AC-8")]
 #[test]
 fn tc_961_028_a_shallow_history_attests_no_order_and_says_where_the_order_came_from() {
     let accepted = case("right/accept");
@@ -944,8 +945,8 @@ fn tc_961_028_a_shallow_history_attests_no_order_and_says_where_the_order_came_f
 /// exists, a different and misleading claim here) and never silently
 /// swallowed by a wildcard match arm.
 ///
-/// Trace: FR-108-AC-3
 /// Provenance: PLAT-1032
+#[trace("FR-108-AC-3")]
 #[test]
 fn tc_961_030_an_external_reference_baseline_is_inconclusive_with_its_own_reason() {
     let mut gate = plan("MP-961");

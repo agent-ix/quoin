@@ -24,6 +24,7 @@
     reason = "the decision's bound and level are stated values, compared exactly"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 use quoin_measurement::error::MeasurementErrorCode;
@@ -167,8 +168,8 @@ fn decided(plan: &MeasurementPlan, runs: &[MeasurementCollection]) -> Measuremen
 /// `rule_not_met`, and the `decisions` entry carries the three interval
 /// members.
 ///
-/// Trace: FR-108-AC-11, TC-1954
 /// Provenance: EA-26
+#[trace("FR-108-AC-11", "TC-1954")]
 #[test]
 fn tc_1954_the_rule_is_judged_at_the_unfavourable_bound() {
     let gate = threshold_plan();
@@ -257,8 +258,8 @@ fn tc_1954_the_rule_is_judged_at_the_unfavourable_bound() {
 /// `decisions` entries carrying no interval member, even when the candidate
 /// states an `interval`.
 ///
-/// Trace: FR-108-AC-11, TC-1955
 /// Provenance: EA-26
+#[trace("FR-108-AC-11", "TC-1955")]
 #[test]
 fn tc_1955_a_plan_without_an_interval_level_is_byte_identical() {
     let plain = load(
@@ -303,8 +304,8 @@ fn tc_1955_a_plan_without_an_interval_level_is_byte_identical() {
 /// level or an estimate outside its interval is regressed; changing only an
 /// interval's `method` changes nothing.
 ///
-/// Trace: FR-108-AC-11, TC-1956
 /// Provenance: EA-26
+#[trace("FR-108-AC-11", "TC-1956")]
 #[test]
 fn tc_1956_every_run_is_judged_on_its_own_interval() {
     let gate = threshold_plan();
@@ -385,8 +386,8 @@ fn tc_1956_every_run_is_judged_on_its_own_interval() {
 /// rule with no interval lists both `interval_unstated` and `no_prior`; the
 /// point estimate is never used instead.
 ///
-/// Trace: FR-108-AC-12, TC-1957
 /// Provenance: EA-26
+#[trace("FR-108-AC-12", "TC-1957")]
 #[test]
 fn tc_1957_a_missing_malformed_or_short_interval_is_never_judged_on_the_point_estimate() {
     let gate = threshold_plan();
@@ -453,8 +454,8 @@ fn tc_1957_a_missing_malformed_or_short_interval_is_never_judged_on_the_point_es
 /// non-numeric or null refuses the plan load as `QM-PLAN-INVALID` naming the
 /// member; a valid `interval_level` loads.
 ///
-/// Trace: FR-108-AC-12, TC-1958
 /// Provenance: EA-26
+#[trace("FR-108-AC-12", "TC-1958")]
 #[test]
 fn tc_1958_a_bad_interval_level_refuses_the_plan_load() {
     for (why, rule) in [
@@ -515,8 +516,8 @@ fn tc_1958_a_bad_interval_level_refuses_the_plan_load() {
 /// the same-numbers absolute margin, and `absolute` or no `margin_mode`
 /// decides as before.
 ///
-/// Trace: FR-108-AC-14, TC-1960
 /// Provenance: EA-26
+#[trace("FR-108-AC-14", "TC-1960")]
 #[test]
 fn tc_1960_a_relative_margin_is_applied_in_verify() {
     // `ge` the prior estimate less a margin of 0.05. Run 1 is 0.5 and run 2
@@ -561,8 +562,8 @@ fn gate_outcome(plan: &MeasurementPlan, runs: &[MeasurementCollection]) -> GateO
 /// the row carries the three interval members, and rows for plans without
 /// `interval_level` are byte-identical.
 ///
-/// Trace: FR-107-AC-10, TC-1961
 /// Provenance: EA-26
+#[trace("FR-107-AC-10", "TC-1961")]
 #[test]
 fn tc_1961_a_gate_is_decided_on_the_newest_observations_interval() {
     let gate = threshold_plan();
@@ -640,8 +641,8 @@ fn tc_1961_a_gate_is_decided_on_the_newest_observations_interval() {
 /// without `interval_level` decides on the point estimate with no interval on
 /// its outcome.
 ///
-/// Trace: FR-107-AC-10, TC-1961
 /// Provenance: EA-26
+#[trace("FR-107-AC-10", "TC-1961")]
 #[test]
 fn tc_1961_a_gate_baseline_rule_reads_the_interval_before_the_baseline() {
     let inconclusive = |reason| GateOutcome::Inconclusive(reason);
@@ -702,8 +703,8 @@ fn tc_1961_a_gate_baseline_rule_reads_the_interval_before_the_baseline() {
 /// the relative reference in the report; `absolute` or an absent mode is
 /// unchanged.
 ///
-/// Trace: FR-107-AC-11, TC-1962
 /// Provenance: EA-26
+#[trace("FR-107-AC-11", "TC-1962")]
 #[test]
 fn tc_1962_a_relative_margin_is_applied_by_the_gate() {
     let runs = [

@@ -19,6 +19,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_measurement::error::MeasurementErrorCode;
@@ -194,8 +195,8 @@ fn best(value: f64, collection: &str) -> BestPrior {
 /// `higher`: the best prior is the maximum; the newest value holds at or
 /// above it and regresses below it.
 ///
-/// Trace: FR-107-AC-2
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-2")]
 #[test]
 fn tc_958_001_a_higher_ratchet_holds_at_or_above_the_maximum_and_regresses_below_it() {
     let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
@@ -225,8 +226,8 @@ fn tc_958_001_a_higher_ratchet_holds_at_or_above_the_maximum_and_regresses_below
 /// `lower`: the best prior is the minimum; the newest value holds at or below
 /// it and regresses above it.
 ///
-/// Trace: FR-107-AC-2
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-2")]
 #[test]
 fn tc_958_002_a_lower_ratchet_holds_at_or_below_the_minimum_and_regresses_above_it() {
     let plans = plans(&plan_document("ratchet", "v1", &objective("lower", None)));
@@ -248,8 +249,8 @@ fn tc_958_002_a_lower_ratchet_holds_at_or_below_the_minimum_and_regresses_above_
 
 /// `zero`: the best prior is the one closest to zero, on either side.
 ///
-/// Trace: FR-107-AC-2
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-2")]
 #[test]
 fn tc_958_003_a_zero_ratchet_holds_against_the_value_closest_to_zero() {
     let plans = plans(&plan_document("ratchet", "v1", &objective("zero", None)));
@@ -271,8 +272,8 @@ fn tc_958_003_a_zero_ratchet_holds_against_the_value_closest_to_zero() {
 
 /// `target`: the best prior is the one closest to the bound.
 ///
-/// Trace: FR-107-AC-2
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-2")]
 #[test]
 fn tc_958_004_a_target_direction_ratchet_holds_against_the_value_closest_to_the_bound() {
     let plans = plans(&plan_document(
@@ -299,8 +300,8 @@ fn tc_958_004_a_target_direction_ratchet_holds_against_the_value_closest_to_the_
 /// The first collection a ratchet sees has nothing to hold against, and is
 /// `inconclusive` — never `held`.
 ///
-/// Trace: FR-107-AC-3
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-3")]
 #[test]
 fn tc_958_005_a_ratchets_first_collection_is_inconclusive_not_held() {
     for direction in ["higher", "lower", "zero"] {
@@ -322,8 +323,8 @@ fn tc_958_005_a_ratchets_first_collection_is_inconclusive_not_held() {
 /// An incomplete or empty newest population is `inconclusive`, however good
 /// the value; and an incomplete or empty earlier value never sets the best.
 ///
-/// Trace: FR-107-AC-3
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-3")]
 #[test]
 fn tc_958_006_an_incomplete_or_empty_population_is_inconclusive_and_sets_no_best() {
     let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
@@ -376,8 +377,8 @@ fn tc_958_006_an_incomplete_or_empty_population_is_inconclusive_and_sets_no_best
 /// best, however good its value; and a newest value under another definition
 /// is `inconclusive`.
 ///
-/// Trace: FR-107-AC-2, FR-107-AC-3
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-2", "FR-107-AC-3")]
 #[test]
 fn tc_958_007_collections_under_another_definition_version_are_ignored_for_best_seen() {
     let current = plans(&plan_document("ratchet", "v2", &objective("higher", None)));
@@ -421,8 +422,8 @@ fn tc_958_007_collections_under_another_definition_version_are_ignored_for_best_
 /// A `target` plan reports distance to the bound and whether it has been
 /// reached, per direction; an incomplete population is `inconclusive`.
 ///
-/// Trace: FR-107-AC-4
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-4")]
 #[test]
 fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reached() {
     let higher = plans(&plan_document(
@@ -522,8 +523,8 @@ fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reac
 /// `trend`, a stage this requirement never decides regardless of its
 /// `objective`, carries no verdict and renders exactly as before.
 ///
-/// Trace: FR-107-AC-6
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-6")]
 #[test]
 fn tc_958_009_a_plan_without_an_objective_or_at_another_stage_is_unchanged() {
     // A `gate` plan requires `protected_apparatus` and `negative_controls`
@@ -586,8 +587,8 @@ fn regressed_repository() -> tempfile::TempDir {
 /// The verdict is rendered in the text report, the JSON report and the
 /// portfolio's text and JSON, and a regression is an attention item.
 ///
-/// Trace: FR-107-AC-5
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-5")]
 #[test]
 fn tc_958_010_the_verdict_is_rendered_in_text_json_and_the_portfolio() {
     let repository = regressed_repository();
@@ -657,8 +658,8 @@ fn tc_958_010_the_verdict_is_rendered_in_text_json_and_the_portfolio() {
 /// An inconclusive verdict and a target's progress render with their reason
 /// and numbers, and the JSON states every member of its stage.
 ///
-/// Trace: FR-107-AC-5
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-5")]
 #[test]
 fn tc_958_011_inconclusive_and_target_verdicts_render_with_reason_and_numbers() {
     let ratchet = plans(&plan_document("ratchet", "v1", &objective("lower", None)));
@@ -728,8 +729,8 @@ fn tc_958_011_inconclusive_and_target_verdicts_render_with_reason_and_numbers() 
 /// `objective` is parsed into engineering-assurance's type, and a block EA
 /// refuses refuses the plan load as `QM-PLAN-INVALID`, naming the member.
 ///
-/// Trace: FR-107-AC-1
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-1")]
 #[test]
 fn tc_958_012_the_objective_is_parsed_and_a_malformed_one_refuses_the_plan() {
     use engineering_assurance::measurement::Direction;
@@ -805,8 +806,8 @@ fn held(plans: &[MeasurementPlan], current: f64, best_prior: BestPrior) -> Stage
 /// earlier value in another slice, under another plan id, or under another
 /// metric never becomes the best.
 ///
-/// Trace: FR-107-AC-2
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-2")]
 #[test]
 fn tc_958_013_the_best_prior_is_taken_from_the_same_slice_plan_and_metric_only() {
     let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
@@ -848,8 +849,8 @@ fn tc_958_013_the_best_prior_is_taken_from_the_same_slice_plan_and_metric_only()
 
 /// Equal best values name the earliest collection that reached them.
 ///
-/// Trace: FR-107-AC-2
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-2")]
 #[test]
 fn tc_958_014_a_tie_for_the_best_prior_names_the_earliest_collection() {
     let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
@@ -864,8 +865,8 @@ fn tc_958_014_a_tie_for_the_best_prior_names_the_earliest_collection() {
 
 /// A newest value naming another plan is `inconclusive` (`plan_mismatch`).
 ///
-/// Trace: FR-107-AC-3
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-3")]
 #[test]
 fn tc_958_015_a_newest_value_under_another_plan_id_is_inconclusive() {
     let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
@@ -890,8 +891,8 @@ fn tc_958_015_a_newest_value_under_another_plan_id_is_inconclusive() {
 /// reported `inconclusive` (`no_current_value`) and named as an attention
 /// item, so a slice cannot regress by being dropped.
 ///
-/// Trace: FR-107-AC-3, FR-107-AC-5
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-3", "FR-107-AC-5")]
 #[test]
 fn tc_958_016_a_slice_the_newest_collection_drops_is_reported_inconclusive() {
     let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
@@ -962,8 +963,8 @@ fn steady_report(plans: &[MeasurementPlan]) -> MeasurementReport {
 /// (`population_unstated`) for a ratchet and a target alike, and an earlier
 /// one never sets a ratchet's best.
 ///
-/// Trace: FR-107-AC-3, FR-107-AC-4
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-3", "FR-107-AC-4")]
 #[test]
 fn tc_958_017_an_unstated_population_is_inconclusive_for_ratchet_and_target() {
     let ratchet = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
@@ -1000,8 +1001,8 @@ fn tc_958_017_an_unstated_population_is_inconclusive_for_ratchet_and_target() {
 /// A `target`-direction target is reached only on exact IEEE equality, with
 /// no tolerance, and its distance is `0` there.
 ///
-/// Trace: FR-107-AC-4
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-4")]
 #[test]
 fn tc_958_018_a_target_direction_is_reached_only_on_exact_equality() {
     let exact = plans(&plan_document(
@@ -1111,8 +1112,8 @@ fn gate_over(plans: &[MeasurementPlan], values: &[f64]) -> GateOutcome {
 /// and fails otherwise, in both directions, and the same value passes or
 /// fails depending only on the rule's own comparator and threshold.
 ///
-/// Trace: FR-107-AC-7
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-7")]
 #[test]
 fn tc_958_019_a_threshold_gate_passes_or_fails_by_the_rule_alone_in_both_directions() {
     let higher = plans(&gate_plan_document(
@@ -1206,8 +1207,8 @@ fn tc_958_019_a_threshold_gate_passes_or_fails_by_the_rule_alone_in_both_directi
 /// value, and `best-seen` is the maximum for `gt`/`ge` and the minimum for
 /// `lt`/`le`/`eq`, over the plan's own slice.
 ///
-/// Trace: FR-107-AC-7
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-7")]
 #[test]
 fn tc_958_020_a_baseline_gate_reads_prior_collection_or_best_seen() {
     let prior = plans(&gate_plan_document(
@@ -1288,8 +1289,8 @@ fn tc_958_020_a_baseline_gate_reads_prior_collection_or_best_seen() {
 /// `constant-predictor`, which needs per-item rows no collection here
 /// carries.
 ///
-/// Trace: FR-107-AC-8
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-8")]
 #[test]
 fn tc_958_021_a_gate_is_inconclusive_with_no_rule_no_prior_or_an_unsupported_baseline() {
     // No `statistical_design` at all: `no_decision_rule`.
@@ -1333,8 +1334,8 @@ fn tc_958_021_a_gate_is_inconclusive_with_no_rule_no_prior_or_an_unsupported_bas
 /// the value, exactly as for a ratchet and a target (AC-2's usable-evidence
 /// rule applies to a gate too) — never a green `pass`.
 ///
-/// Trace: FR-107-AC-8
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-8")]
 #[test]
 fn tc_958_022_an_incomplete_or_empty_population_is_inconclusive_for_a_gate() {
     let threshold = plans(&gate_plan_document(
@@ -1382,8 +1383,8 @@ fn tc_958_022_an_incomplete_or_empty_population_is_inconclusive_for_a_gate() {
 /// its baseline, in the JSON `stageVerdict`, and a `fail` adds an attention
 /// item, alongside a `regressed` ratchet's.
 ///
-/// Trace: FR-107-AC-9
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-9")]
 #[test]
 fn tc_958_023_a_gate_verdict_renders_in_text_and_json_and_a_fail_is_an_attention_item() {
     let plans = plans(&gate_plan_document(
@@ -1449,8 +1450,8 @@ fn tc_958_023_a_gate_verdict_renders_in_text_and_json_and_a_fail_is_an_attention
 /// `baseline` gate is `no_prior` — never `pass`. Each slice is gated against
 /// its own history alone.
 ///
-/// Trace: FR-107-AC-7, FR-107-AC-8
 /// Provenance: PLAT-958
+#[trace("FR-107-AC-7", "FR-107-AC-8")]
 #[test]
 fn tc_958_024_no_unusable_or_foreign_earlier_value_becomes_a_gate_baseline() {
     let rule = "    comparator: gt\n    baseline: prior-collection\n";
@@ -1563,8 +1564,8 @@ fn plans_v2(rule: &str) -> Vec<MeasurementPlan> {
 /// `apparatus_unrecorded` — where comparing the numbers alone would pass. A
 /// `threshold` gate compares against no earlier value, and is unaffected.
 ///
-/// Trace: FR-107-AC-8, FR-107-CON-3
 /// Provenance: PLAT-958, PLAT-975
+#[trace("FR-107-AC-8", "FR-107-CON-3")]
 #[test]
 fn tc_958_025_a_baseline_gate_does_not_compare_across_another_apparatus() {
     let plans = plans(&gate_plan_document(
@@ -1622,8 +1623,8 @@ fn tc_958_025_a_baseline_gate_does_not_compare_across_another_apparatus() {
 /// exists — never `no_prior` (a different claim) and never silently treated
 /// as `prior-collection` or `best-seen` by a wildcard match arm.
 ///
-/// Trace: FR-107-AC-8
 /// Provenance: PLAT-1032
+#[trace("FR-107-AC-8")]
 #[test]
 fn tc_958_026_an_external_reference_baseline_is_inconclusive_with_its_own_reason() {
     let external_reference = plans(&gate_plan_document(

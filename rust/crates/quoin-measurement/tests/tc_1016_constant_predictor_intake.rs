@@ -20,6 +20,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_measurement::error::MeasurementErrorCode;
@@ -216,8 +217,8 @@ fn with_items(matched: u32, plan_id: &str) -> Vec<Value> {
 /// The admitted collection's rule is then decided against the recomputed
 /// `0.8` baseline: holds at 13/15, does not at 12/15.
 ///
-/// Trace: FR-108-AC-10
 /// Provenance: PLAT-1016
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_001_intake_admits_item_rows_and_the_admitted_collection_verifies() {
     let repository = repository(METRIC);
@@ -257,8 +258,8 @@ fn tc_1016_001_intake_admits_item_rows_and_the_admitted_collection_verifies() {
 /// An item row is held to its governed plan's identity: one naming another
 /// plan id is refused like any other observation would be.
 ///
-/// Trace: FR-108-AC-10
 /// Provenance: PLAT-1016
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_002_an_item_row_naming_another_plan_is_refused() {
     let plans = load(METRIC).unwrap();
@@ -280,8 +281,8 @@ fn tc_1016_002_an_item_row_naming_another_plan_is_refused() {
 
 /// An item row whose governed metric has no plan is refused as unplanned.
 ///
-/// Trace: FR-108-AC-10
 /// Provenance: PLAT-1016
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_003_an_item_row_of_an_unplanned_metric_is_refused() {
     let plans = load("other.metric").unwrap();
@@ -297,8 +298,8 @@ fn tc_1016_003_an_item_row_of_an_unplanned_metric_is_refused() {
 /// A plan cannot claim a metric ending in the reserved item suffix: it would
 /// read another plan's item rows as its own run.
 ///
-/// Trace: FR-108-AC-10
 /// Provenance: PLAT-1016
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_004_a_plan_metric_with_the_reserved_suffix_is_refused() {
     let refusal = load(ITEM_METRIC).unwrap_err();
@@ -314,8 +315,8 @@ fn tc_1016_004_a_plan_metric_with_the_reserved_suffix_is_refused() {
 /// `compare` compares the governed slice and leaves the item rows out, even
 /// when the graded tool's per-item answers moved between the two runs.
 ///
-/// Trace: FR-108-AC-10
 /// Provenance: PLAT-1016
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_005_compare_leaves_item_rows_out() {
     let plans = load(METRIC).unwrap();
@@ -333,8 +334,8 @@ fn tc_1016_005_compare_leaves_item_rows_out() {
 /// `constant_predictor_rows_mismatch`, never a baseline computed from the
 /// survivors.
 ///
-/// Trace: FR-108-AC-10
 /// Provenance: PLAT-1016
+#[trace("FR-108-AC-10")]
 #[test]
 fn tc_1016_006_lost_item_rows_are_inconclusive_not_a_smaller_baseline() {
     let plans = load(METRIC).unwrap();

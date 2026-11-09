@@ -346,11 +346,12 @@ fn stage_checker_input(
 )]
 mod tests {
     use super::{CampaignRunError, VerifiedSource, stage_checker_input};
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-114-AC-2
     /// Provenance: PLAT-1071
     /// A tracked `.quoin-campaign` link cannot carry checker input bytes out of
     /// the checkout, and a tracked file at an input path is not overwritten.
+    #[trace("FR-114-AC-2")]
     #[cfg(unix)]
     #[test]
     fn tc_1942_checker_input_refuses_tracked_link_and_tracked_path() {

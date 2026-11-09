@@ -34,6 +34,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_measurement::source::{DiskMeasurement, MeasurementSource, MemoryMeasurement};
@@ -61,8 +62,8 @@ fn repository_with_one_broken_collection(root: &Path) {
 /// The disk seam names a collection by the whole path, which is what the
 /// refusal then renders.
 ///
-/// Trace: FR-100-AC-4
 /// Provenance: quoin#477
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_477_020_a_disk_refusal_names_the_whole_path() {
     let temporary = tempfile::tempdir().expect("a temporary directory");
@@ -114,8 +115,8 @@ fn tc_477_020_a_disk_refusal_names_the_whole_path() {
 /// a path. Asserting it keeps the two implementations from converging on a
 /// join an in-memory store cannot make.
 ///
-/// Trace: FR-100-AC-4
 /// Provenance: quoin#477
+#[trace("FR-100-AC-4")]
 #[test]
 fn tc_477_021_an_in_memory_source_names_what_it_was_given() {
     let source = MemoryMeasurement::new().with_collection(BROKEN, NOT_A_COLLECTION);

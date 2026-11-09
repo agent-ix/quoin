@@ -106,6 +106,7 @@ mod tests {
     use engineering_assurance::producer_execution::{
         CapturedStream, ProcessEvidence, ProducerResponseAdapter, TerminalStatus,
     };
+    use ix_trace_rs::trace;
 
     use super::{
         PROCESS_EVIDENCE_ADAPTER, PROCESS_EVIDENCE_ADAPTER_VERSION, PROCESS_EVIDENCE_PROTOCOL,
@@ -122,8 +123,8 @@ mod tests {
         }
     }
 
-    /// Trace: FR-114-AC-2
     /// Provenance: PLAT-1059
+    #[trace("FR-114-AC-2")]
     #[test]
     fn tc_1941_nonzero_native_exit_remains_a_completed_observation() {
         let adapter = ProcessEvidenceAdapter::new(

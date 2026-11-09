@@ -10,6 +10,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
@@ -332,7 +333,8 @@ fn runtime(repo: &Path, prepare: bool) -> RunMemberBindings {
     }
 }
 
-/// Trace: FR-114-AC-2, FR-114-AC-3. Provenance: PLAT-1061, TC-1947.
+/// Provenance: PLAT-1061, TC-1947.
+#[trace("FR-114-AC-2", "FR-114-AC-3")]
 #[cfg(target_os = "linux")]
 #[test]
 #[allow(
@@ -380,9 +382,10 @@ fn tc_1947_two_member_authored_origins_are_recorded() {
     );
 }
 
-/// Trace: FR-114-AC-2. Provenance: PLAT-1071, TC-1947.
+/// Provenance: PLAT-1071, TC-1947.
 /// A selected input at a path tracked in the source tree is refused before
 /// launch and the tracked file keeps its bytes.
+#[trace("FR-114-AC-2")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1947_selected_input_at_a_tracked_path_is_refused() {
@@ -463,8 +466,9 @@ fn assert_first_attempt(
     }
 }
 
-/// Trace: FR-114-AC-2. Provenance: PLAT-1043, TC-1941.
+/// Provenance: PLAT-1043, TC-1941.
 /// A producer past its deadline is retained as timed out, with no Collection.
+#[trace("FR-114-AC-2")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1941_timed_out_producer_is_retained() {
@@ -480,9 +484,10 @@ fn tc_1941_timed_out_producer_is_retained() {
     );
 }
 
-/// Trace: FR-114-AC-2. Provenance: PLAT-1043, TC-1941.
+/// Provenance: PLAT-1043, TC-1941.
 /// A descendant that escapes the observed process group is retained as a
 /// containment failure, with no Collection.
+#[trace("FR-114-AC-2")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1941_escaped_descendant_containment_failure_is_retained() {
@@ -499,9 +504,10 @@ fn tc_1941_escaped_descendant_containment_failure_is_retained() {
     );
 }
 
-/// Trace: FR-114-AC-2. Provenance: PLAT-1043, TC-1941.
+/// Provenance: PLAT-1043, TC-1941.
 /// A caller cancelling the registered Event-bound process is retained as
 /// cancelled, with no Collection.
+#[trace("FR-114-AC-2")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1941_live_event_cancellation_is_retained() {
@@ -535,9 +541,10 @@ fn tc_1941_live_event_cancellation_is_retained() {
     );
 }
 
-/// Trace: FR-114-AC-3. Provenance: PLAT-1043, TC-1944.
+/// Provenance: PLAT-1043, TC-1944.
 /// A producer that wrote none of its required outputs leaves the campaign
 /// inconclusive and mints no Collection.
+#[trace("FR-114-AC-3")]
 #[cfg(target_os = "linux")]
 #[test]
 fn tc_1944_no_collection_when_the_producer_yields_none() {

@@ -201,14 +201,15 @@ fn gate_baseline(
 )]
 mod tests {
     use super::*;
+    use ix_trace_rs::trace;
 
     /// The gate reads an observation's stored `value` as its estimate, and a
     /// stored value outside its own interval is a malformed interval, so
     /// `EstimateOutside` cannot arise from a stored observation here; the
     /// mapping still holds FR-107-AC-10's `rule_not_evaluable` for it.
     ///
-    /// Trace: FR-107-AC-10
     /// Provenance: EA-26
+    #[trace("FR-107-AC-10")]
     #[test]
     fn each_interval_refusal_maps_to_its_inconclusive_reason() {
         for (refusal, reason) in [

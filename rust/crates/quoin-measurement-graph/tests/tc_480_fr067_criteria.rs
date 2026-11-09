@@ -33,6 +33,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -290,7 +291,7 @@ fn tc_480_050_the_current_row_carries_the_plan_the_producer_and_the_observation_
 /// History keeps every structurally readable collection in timestamp then id
 /// order, including one the active plan no longer governs.
 ///
-/// Trace: FR-067-AC-2
+#[trace("FR-067-AC-2")]
 #[test]
 fn tc_480_051_history_keeps_every_readable_collection_in_order() {
     let stale = collection_with("h-mid", "2026-02-01T00:00:00Z", |value| {
@@ -339,7 +340,7 @@ fn tc_480_051_history_keeps_every_readable_collection_in_order() {
 /// Every measure/dimension/key partition is its own row in the text and the
 /// JSON, and nothing is summed or averaged across them.
 ///
-/// Trace: FR-067-AC-3
+#[trace("FR-067-AC-3")]
 #[test]
 fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
     let report = build(&[
@@ -390,8 +391,8 @@ fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
 /// Availability is a separate axis from measurement state, and neither is a
 /// numeric zero.
 ///
-/// Trace: FR-067-AC-4
 /// Provenance: quoin#480
+#[trace("FR-067-AC-4")]
 #[test]
 fn tc_480_040_availability_is_separate_from_state_and_from_numeric_zero() {
     for availability in GapAvailability::ALL {
@@ -572,8 +573,8 @@ fn retired_plan_evidence_is_reported_incomparable() {
 
 /// The producer's observation id reaches every view.
 ///
-/// Trace: FR-067-AC-6
 /// Provenance: quoin#480
+#[trace("FR-067-AC-6")]
 #[test]
 fn tc_480_042_the_observation_id_reaches_every_view() {
     let report = build(&[one(
@@ -605,8 +606,8 @@ fn tc_480_042_the_observation_id_reaches_every_view() {
 /// Structural report objects are carried unchanged, and an absent input is
 /// stated rather than implied.
 ///
-/// Trace: FR-067-AC-7
 /// Provenance: quoin#480
+#[trace("FR-067-AC-7")]
 #[test]
 fn tc_480_043_structural_objects_are_carried_and_absences_are_explicit() {
     let fan_out_value = json!({ "rows": [{ "id": "FR-001", "count": 2 }], "type": "fan-out" });
@@ -702,8 +703,8 @@ fn tc_480_043_structural_objects_are_carried_and_absences_are_explicit() {
 
 /// Corrupt collections and graph inputs become local gaps that hide no sibling.
 ///
-/// Trace: FR-067-AC-8
 /// Provenance: quoin#480
+#[trace("FR-067-AC-8")]
 #[test]
 fn tc_480_044_corruption_is_a_local_gap() {
     let refused = GraphCollectionRead::refused(
@@ -768,8 +769,8 @@ fn tc_480_044_corruption_is_a_local_gap() {
 
 /// The report is canonical under permutation, and the mappings are too.
 ///
-/// Trace: FR-067-AC-9
 /// Provenance: quoin#480
+#[trace("FR-067-AC-9")]
 #[test]
 fn tc_480_045_the_report_and_the_mappings_are_canonical_under_permutation() {
     let build_from = |order: [(&str, [&str; 2]); 2]| {
@@ -905,8 +906,8 @@ fn mappings_resolve_canonically() {
 /// Historical evidence stays historical, and the report reaches no verdict of
 /// its own.
 ///
-/// Trace: FR-067-AC-10
 /// Provenance: quoin#480
+#[trace("FR-067-AC-10")]
 #[test]
 fn tc_480_046_old_evidence_stays_historical_and_nothing_is_aggregated() {
     let report = build(&[one(
@@ -939,8 +940,8 @@ fn tc_480_046_old_evidence_stays_historical_and_nothing_is_aggregated() {
 /// The projection consumes injected objects: it executes nothing, traverses no
 /// graph and writes nothing.
 ///
-/// Trace: FR-067-AC-11
 /// Provenance: quoin#480
+#[trace("FR-067-AC-11")]
 #[test]
 fn tc_480_047_the_projection_has_no_execution_traversal_or_write_dependency() {
     /// The modules that are `graph-portfolio.ts`. `loader` and `structural` are
@@ -1075,8 +1076,8 @@ fn adapted_producer_evidence() -> (MeasurementCollection, MeasurementPlan, Strin
 /// Real producer evidence, adapted by FR-066 and then projected by FR-067 —
 /// the two halves of StR-007 joined, as the deleted test joined them.
 ///
-/// Trace: StR-007-VC-1
 /// Provenance: quoin#480
+#[trace("StR-007-VC-1")]
 #[test]
 fn tc_480_048_adapted_evidence_reaches_the_portfolio_intact() {
     let (adapted, producer_plan, declared_identity) = adapted_producer_evidence();

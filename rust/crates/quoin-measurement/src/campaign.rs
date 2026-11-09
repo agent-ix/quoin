@@ -327,6 +327,7 @@ fn is_reject(reason: CampaignReason) -> bool {
 )]
 mod tests {
     use super::{Attempt, AttemptEvidence, CampaignOutcome, CampaignReason, Member, all_required};
+    use ix_trace_rs::trace;
 
     fn member<'a>(
         name: &'a str,
@@ -351,8 +352,8 @@ mod tests {
         }
     }
 
-    /// Trace: FR-114-AC-4
     /// Provenance: PLAT-1043
+    #[trace("FR-114-AC-4")]
     #[test]
     fn tc_1945_required_members_decide_and_optional_groups_remain_visible() {
         let members = [
@@ -369,8 +370,8 @@ mod tests {
         assert_eq!(missing.members[0].reasons, [CampaignReason::MissingAttempt]);
     }
 
-    /// Trace: FR-114-AC-4
     /// Provenance: PLAT-1043
+    #[trace("FR-114-AC-4")]
     #[test]
     fn tc_1945_failed_or_rejected_attempt_cannot_be_hidden_by_a_later_pass() {
         let members = [member("native-test", None, true, &[])];
@@ -401,8 +402,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-114-AC-1, FR-114-AC-4
     /// Provenance: PLAT-1043
+    #[trace("FR-114-AC-1", "FR-114-AC-4")]
     #[test]
     fn tc_1940_unknown_cycle_and_duplicate_attempts_reject() {
         let cycle_a = ["b".to_owned()];
@@ -430,8 +431,8 @@ mod tests {
         );
     }
 
-    /// Trace: FR-114-AC-4
     /// Provenance: PLAT-1043
+    #[trace("FR-114-AC-4")]
     #[test]
     fn tc_1945_dependency_outcome_propagates_without_domain_specific_names() {
         let dependencies = ["compile".to_owned()];

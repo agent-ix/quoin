@@ -345,15 +345,16 @@ fn verify_source(source: &CampaignSource, path: &Path) -> Result<VerifiedSource,
 )]
 mod tests {
     use super::{CampaignSource, SourceError, git, verify_source};
+    use ix_trace_rs::trace;
 
     fn run(root: &std::path::Path, args: &[&str]) {
         git(root, "test", args, 1 << 20).expect("Git runs");
     }
 
-    /// Trace: FR-114-AC-2
     /// Provenance: PLAT-1071
     /// Manifest paths are repository-root relative, so a subdirectory of the
     /// repository is not a checkout.
+    #[trace("FR-114-AC-2")]
     #[test]
     fn tc_1942_source_checkout_must_be_the_repository_root() {
         let repo = tempfile::tempdir().expect("repository");

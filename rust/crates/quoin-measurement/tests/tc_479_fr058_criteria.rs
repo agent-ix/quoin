@@ -41,6 +41,7 @@ mod paths;
 
 use census::rust_files;
 use copy::copy_tree;
+use ix_trace_rs::trace;
 use paths::{fixture_store, repo_root};
 
 use std::path::{Path, PathBuf};
@@ -146,8 +147,8 @@ fn refusal(repo: &Path, value: &Value, what: &str) -> InterventionIntakeError {
 /// observations whose sample counts, pass rates, computed effects, and
 /// observation timestamp match the reports.
 ///
-/// Trace: FR-058-AC-1
 /// Provenance: quoin#479
+#[trace("FR-058-AC-1")]
 #[test]
 fn tc_479_250_two_retained_runs_produce_the_observations_the_reports_state() {
     let (temporary, retained) = producing_repo();
@@ -205,8 +206,8 @@ fn tc_479_250_two_retained_runs_produce_the_observations_the_reports_state() {
 /// structurally incompatible, duplicate-scenario, or baseline/treatment
 /// scenario-mismatch reports are refused without an intervention store entry.
 ///
-/// Trace: FR-058-AC-2
 /// Provenance: quoin#479
+#[trace("FR-058-AC-2")]
 #[test]
 fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_entry() {
     /// What a case does to the committed base before the producer runs.
@@ -312,8 +313,8 @@ fn tc_479_251_every_unreadable_declaration_or_report_is_refused_without_a_store_
 /// are computed from the exact unmodified reports; caller-supplied substitutes
 /// cannot change them.
 ///
-/// Trace: FR-058-AC-3
 /// Provenance: quoin#479
+#[trace("FR-058-AC-3")]
 #[test]
 fn tc_479_252_caller_supplied_substitutes_do_not_reach_the_record() {
     let (temporary, _) = producing_repo();
@@ -381,8 +382,8 @@ fn tc_479_252_caller_supplied_substitutes_do_not_reach_the_record() {
 /// attribution method produces `cause_not_established` with `none` confidence
 /// and explicit gaps rather than a causal conclusion.
 ///
-/// Trace: FR-058-AC-4
 /// Provenance: quoin#479
+#[trace("FR-058-AC-4")]
 #[test]
 fn tc_479_253_an_underpowered_production_states_its_gaps_and_claims_no_cause() {
     let (temporary, _) = producing_repo();
@@ -454,8 +455,8 @@ fn tc_479_253_an_underpowered_production_states_its_gaps_and_claims_no_cause() {
 /// Quoin producer consumes the retained reports without spawning any process
 /// and persists the record through FR-057.
 ///
-/// Trace: FR-058-AC-5
 /// Provenance: quoin#479
+#[trace("FR-058-AC-5")]
 #[test]
 fn tc_479_254_the_producer_spawns_nothing_and_persists_through_the_intake() {
     /// What the producer may not reach for. A process spawn or a socket is how

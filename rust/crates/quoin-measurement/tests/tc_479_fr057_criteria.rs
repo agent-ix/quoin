@@ -42,6 +42,7 @@ mod census;
 mod paths;
 
 use census::rust_files;
+use ix_trace_rs::trace;
 use paths::fixture_store;
 
 use std::path::{Path, PathBuf};
@@ -209,8 +210,8 @@ fn aggregate_score_mention(text: &str) -> Option<String> {
 /// same-directory no-replace publication; a concurrent destination cannot be
 /// overwritten.
 ///
-/// Trace: FR-057-AC-1
 /// Provenance: quoin#479
+#[trace("FR-057-AC-1")]
 #[test]
 fn tc_479_200_valid_intake_publishes_once_without_replacing_a_concurrent_writer() {
     let temporary = governed_repo();
@@ -260,8 +261,8 @@ fn tc_479_200_valid_intake_publishes_once_without_replacing_a_concurrent_writer(
 /// Invalid schema or cross-record integrity input writes nothing and returns
 /// `invalid_record` with every failing JSON path and reason.
 ///
-/// Trace: FR-057-AC-2
 /// Provenance: quoin#479
+#[trace("FR-057-AC-2")]
 #[test]
 fn tc_479_201_every_invalid_record_is_refused_with_its_paths_and_writes_nothing() {
     let base = retained_record();
@@ -339,8 +340,8 @@ fn tc_479_201_every_invalid_record_is_refused_with_its_paths_and_writes_nothing(
 /// `definition_mismatch`; both write nothing and name the requested, expected
 /// and observed definitions that apply.
 ///
-/// Trace: FR-057-AC-3
 /// Provenance: quoin#479
+#[trace("FR-057-AC-3")]
 #[test]
 fn tc_479_202_an_absent_and_a_mismatched_governing_definition_are_different_refusals() {
     let record = retained_record();
@@ -381,8 +382,8 @@ fn tc_479_202_an_absent_and_a_mismatched_governing_definition_are_different_refu
 
 /// Repeating an identical record id and canonical payload is byte-idempotent.
 ///
-/// Trace: FR-057-AC-4
 /// Provenance: quoin#479
+#[trace("FR-057-AC-4")]
 #[test]
 fn tc_479_203_repeating_an_identical_record_is_byte_idempotent() {
     let temporary = governed_repo();
@@ -415,8 +416,8 @@ fn tc_479_203_repeating_an_identical_record_is_byte_idempotent() {
 /// Reusing a record id for different semantic bytes returns
 /// `record_id_collision` without replacing the retained entry.
 ///
-/// Trace: FR-057-AC-5
 /// Provenance: quoin#479
+#[trace("FR-057-AC-5")]
 #[test]
 fn tc_479_204_a_reused_record_id_with_different_bytes_does_not_replace_the_entry() {
     let temporary = governed_repo();
@@ -455,8 +456,8 @@ fn tc_479_204_a_reused_record_id_with_different_bytes_does_not_replace_the_entry
 /// Completed, failed, inconclusive and `cause_not_established` records remain
 /// independently queryable with their raw-evidence references.
 ///
-/// Trace: FR-057-AC-6
 /// Provenance: quoin#479
+#[trace("FR-057-AC-6")]
 #[test]
 fn tc_479_205_every_terminal_result_stays_independently_queryable() {
     /// The three terminal statuses the criterion names.
@@ -509,8 +510,8 @@ fn tc_479_205_every_terminal_result_stays_independently_queryable() {
 /// The report renders conclusion statements as claims and measured effects plus
 /// raw references as evidence.
 ///
-/// Trace: FR-057-AC-7
 /// Provenance: quoin#479
+#[trace("FR-057-AC-7")]
 #[test]
 fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
     /// The conclusion the committed record states, verbatim.
@@ -582,8 +583,8 @@ fn tc_479_206_conclusions_render_as_claims_and_measurements_as_evidence() {
 /// Uncontrolled or unknown interactions and confounders render as
 /// counterevidence; declared gaps render separately beside owner and actions.
 ///
-/// Trace: FR-057-AC-8
 /// Provenance: quoin#479
+#[trace("FR-057-AC-8")]
 #[test]
 fn tc_479_207_open_qualifiers_render_as_counterevidence_and_gaps_render_apart() {
     /// The three open qualifiers the committed record declares, in the order
@@ -678,8 +679,8 @@ fn tc_479_207_open_qualifiers_render_as_counterevidence_and_gaps_render_apart() 
 /// Neither human nor JSON output contains an aggregate trust, confidence or
 /// quality score derived from experiment records.
 ///
-/// Trace: FR-057-AC-9, FR-057-CON-2
 /// Provenance: quoin#479
+#[trace("FR-057-AC-9", "FR-057-CON-2")]
 #[test]
 fn tc_479_208_no_view_computes_an_aggregate_trust_or_quality_score() {
     let temporary = governed_repo();
@@ -724,8 +725,8 @@ fn tc_479_208_no_view_computes_an_aggregate_trust_or_quality_score() {
 /// views expose the same claims, evidence, counterevidence, gaps, owners and
 /// actions.
 ///
-/// Trace: FR-057-AC-10
 /// Provenance: quoin#479
+#[trace("FR-057-AC-10")]
 #[test]
 fn tc_479_209_a_reordered_store_renders_byte_identically_in_both_views() {
     let temporary = governed_repo();
@@ -888,8 +889,8 @@ fn views_agree(expected_human: &str, expected_json: &str) {
 /// Unsafe, missing or wrong-sized raw evidence returns
 /// `raw_evidence_mismatch`, identifies each mismatch, and writes no record.
 ///
-/// Trace: FR-057-AC-11
 /// Provenance: quoin#479
+#[trace("FR-057-AC-11")]
 #[test]
 fn tc_479_210_every_raw_evidence_disagreement_is_named_and_writes_nothing() {
     let base = retained_record();
@@ -967,8 +968,8 @@ fn tc_479_210_every_raw_evidence_disagreement_is_named_and_writes_nothing() {
 /// Quoin does not execute an experiment or producer while recording or
 /// reporting evidence.
 ///
-/// Trace: FR-057-CON-1
 /// Provenance: quoin#479
+#[trace("FR-057-CON-1")]
 #[test]
 fn tc_479_211_the_intervention_modules_reach_for_no_process_or_network() {
     /// What no intervention module may reach for. `intervention.test.ts:404`
@@ -1005,8 +1006,8 @@ fn tc_479_211_the_intervention_modules_reach_for_no_process_or_network() {
 /// Existing measurement collections and pre-experiment evidence remain readable
 /// without migration.
 ///
-/// Trace: FR-057-CON-3
 /// Provenance: quoin#479
+#[trace("FR-057-CON-3")]
 #[test]
 fn tc_479_212_an_empty_intervention_store_preserves_measurement_reporting() {
     // A repository that has never held an intervention: the store reads as

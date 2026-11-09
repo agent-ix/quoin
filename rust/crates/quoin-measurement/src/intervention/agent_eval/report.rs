@@ -196,6 +196,7 @@ fn refuse(finding: String) -> InterventionIntakeError {
 )]
 mod tests {
     use super::AgentEvalReport;
+    use ix_trace_rs::trace;
 
     fn report(results: &str, repeats: &str) -> String {
         format!(
@@ -203,8 +204,8 @@ mod tests {
         )
     }
 
-    /// Trace: FR-100-AC-6
     /// Provenance: quoin#471
+    #[trace("FR-100-AC-6")]
     #[test]
     fn a_report_reads_as_one_rate_per_scenario_in_id_order() {
         let raw = report(
@@ -221,12 +222,12 @@ mod tests {
         assert!((parsed.scenarios()["zeta"].rate() - 0.5).abs() < f64::EPSILON);
     }
 
-    /// Trace: FR-100-AC-6
     /// Provenance: quoin#471
     ///
     /// Every refusal sentence is the retained one, spelled here rather than
     /// derived, so a reworded message is a test failure and not a silent
     /// contract change.
+    #[trace("FR-100-AC-6")]
     #[test]
     fn each_structural_refusal_keeps_its_sentence() {
         for (raw, expected) in [
