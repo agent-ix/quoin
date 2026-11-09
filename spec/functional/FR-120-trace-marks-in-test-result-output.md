@@ -28,9 +28,8 @@ marker declarations that name the source tags (`trace_tags`) belong to
 
 ### What an emitter writes
 
-Every pytest, vitest/jest and Rust emitter writes the mark below. The criteria
-that bind emitters are allocated to the emitter repositories (see Acceptance
-Criteria); this section is the shared contract they implement.
+Every pytest, vitest/jest and Rust emitter writes the mark below, under the
+emitter contract at the end of this requirement.
 
 In JUnit XML the mark is a `<property>` child of `<testcase>`:
 
@@ -45,7 +44,7 @@ In JUnit XML the mark is a `<property>` child of `<testcase>`:
 | Property name | `trace`. The JUnit adapter also reads `traceIds` and `trace_ids`; an emitter writes `trace`. |
 | Value | One or more ids separated by commas or whitespace. |
 | Repetition | Several `<property>` elements on one case accumulate. |
-| Outcome | The case's final child element: `<error>` is `error`, `<failure>` is `fail`, `<skipped>` is `skip`, none is `pass`; the most severe wins. A `<flakyFailure>` or `<rerunFailure>` child records an earlier retry attempt and does not change the outcome, so a test that passed on retry is `pass` and one that failed its last attempt is `fail`. |
+| Outcome | The runner's own result for the case, read from its final child element: `<error>` is `error`, `<failure>` is `fail`, `<skipped>` is `skip`, none is `pass`; the most severe wins. A `<flakyFailure>` or `<rerunFailure>` child records an earlier retry attempt and does not change the outcome, so a test that passed on retry is `pass` and one that failed its last attempt is `fail`. |
 | Normalized JSON | A runtime no adapter reads writes `{"entries":[{"symbol","path","outcome","traceIds"}]}`. `path` is the same repo-relative path the JUnit `file` attribute carries, and the `RunEntry` type gains an optional `path` field to hold it. |
 
 ### The symbol must equal the extractor's
@@ -80,20 +79,17 @@ Awkward cases, settled once here:
 ### Who joins symbols
 
 The JUnit adapter stays pure over the result text and never learns the static
-symbol set. The component that already holds that set, the matrix builder
-(`matrix.build`, [FR-115](./FR-115-evidence-backed-test-matrix.md)), joins an
-entry to a declared symbol by `path` and `qualified_name`. When an entry has no
-`path` and its qualified name matches symbols in more than one file, the builder
-reports the join as ambiguous and attaches the entry to none of those symbols.
-The trace ids on the entry still bind the criteria they name, because the mark
-is what binds; the symbol join only places the test in the source.
+symbol set. The evidence store owns the join of a run entry to a declared symbol
+by `path` and `qualified_name`, and the ambiguity report for an entry that has no
+`path`: [FR-030](./FR-030-evidence-store.md), criterion FR-030-AC-18. The trace
+ids on an entry bind the criteria they name regardless of the symbol join.
 
 ## Rationale
 
 Without a shared contract each emitter would pick a different symbol spelling, and
 the static and execution views would never join. The JUnit adapter already reads
 the mark. Two quoin-side changes are needed: the adapter and `RunEntry` carry the
-file path, and the matrix builder reports an ambiguous join.
+file path, and the evidence store reports an ambiguous join (FR-030-AC-18).
 
 ## Acceptance Criteria
 
@@ -102,21 +98,36 @@ file path, and the matrix builder reports an ambiguous join.
 | FR-120-AC-1 | A `<testcase>` carrying `<property name="trace" value="FR-001-AC-1,TC-041"/>` records both ids on that case's entry; repeated properties accumulate and whitespace also separates ids. | Test |
 | FR-120-AC-2 | A case whose `classname` equals its `name` records the name unchanged, including a name containing `.` or a space. | Test |
 | FR-120-AC-3 | The JUnit adapter records a case's `file` attribute, and the normalized shape its `path` field, as the entry's path. | Test |
-| FR-120-AC-4 | An entry with no `path`, whose qualified name matches symbols in more than one file, is reported ambiguous by the matrix builder and attached to none of them, while its trace ids still bind. | Test |
+| FR-120-AC-4 | The join of an entry to a symbol, and the ambiguity report for an entry with no path, are those of FR-030-AC-18; the adapter performs neither and reads no source file. | Inspection |
 | FR-120-AC-5 | A failing, erroring or skipped tagged test produces an entry with that outcome and its ids, and that entry discharges nothing. | Test |
 | FR-120-AC-6 | A case with a `<flakyFailure>` or `<rerunFailure>` child records the outcome of its final attempt. | Test |
-| FR-120-AC-7 | Each emitter's reported `qualified_name` and `path` for a tagged test equal those of the same test in `quire coverage --json`, for a top-level, a nested and a parametrized test, including the rstest and `it.each` cases above. | Test (cross-repo: owned by each emitter repository's spec; PLAT-333 for Rust) |
-| FR-120-AC-8 | A worked end-to-end run in one repository goes from source marker, to a run, to a result file with marks, to `quoin evidence record`, to a bound obligation, and a failing variant binds nothing. | Demonstration (cross-repo: the repository chosen for the example) |
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-120-CON-1 | An emitter SHALL NOT write an id the source marker did not declare. | Design | Inspection |
-| FR-120-CON-2 | An emitter SHALL NOT infer an id from a test name. | Design | Inspection |
-| FR-120-CON-3 | The adapter SHALL NOT read the source tree to complete a symbol; it uses only the result file (FR-033-CON-1). | Design | Inspection |
+| FR-120-CON-1 | The adapter SHALL NOT read the source tree to complete a symbol; it uses only the result file (FR-033-CON-1). | Design | Inspection |
+
+## Emitter contract
+
+This section binds the emitters. It is normative for the repositories that own
+them, and each of those repositories' own specs must carry criteria satisfying
+it: `quire-rs` and `ix-trace-rs` for the Rust emitter (PLAT-333), the vitest/jest
+helper (PLAT-334), and the pytest plugin (PLAT-335). Quoin tests none of it.
+
+| Rule | Requirement |
+| --- | --- |
+| E-1 Marks | An emitter SHALL write each tagged test's mark in the form above and in no other carrier; a different carrier needs an amendment to this requirement first. |
+| E-2 Symbols | An emitter SHALL report, for each tagged test, the `qualified_name` and `path` that `quire coverage --json` reports for the same test, including a top-level, a nested and a parametrized test (rstest cases and `it.each` titles as above). |
+| E-3 Declared ids | An emitter SHALL write only ids the source marker declared, and SHALL NOT infer an id from a test name. |
+| E-4 Outcome | An emitter SHALL NOT write an outcome the runner did not report. A test that panics or throws is recorded `fail` with its ids, never absent. |
+| E-5 Once | Under the runner's default parallel execution, an emitter SHALL record each tagged test once, with its ids unmixed with another test's. |
+| E-6 Inert | While emission is not enabled, an emitter SHALL leave compiled output byte-identical to a build without the emitter and SHALL write no `trace` property. Enabling is an explicit switch (a cargo feature, an environment variable, or the runner's equivalent), never the mere presence of the marker, and the emitter adds no runtime dependency to a build that does not enable it. |
+| E-7 Cost | While emission is enabled, an emitter SHOULD add under 2% and SHALL add under 5% to the median wall-clock time of a suite. |
+| E-8 No rewrite | The run's own harness SHALL write the final result file. No sidecar file is merged afterward and no post-run step rewrites names or ids. |
+| E-9 Rust shape | The Rust run SHALL write JUnit in which each case carries `name` and `classname` equal to the extractor's `qualified_name`, a `file` attribute and the `trace` property. The runner or harness that meets this shape, whether a custom harness or a nextest feature confirmed to provide it, is chosen in PLAT-333. |
+| E-10 Worked example | One repository SHALL demonstrate source marker, run, result file with marks, `quoin evidence record`, and a bound obligation, plus a failing variant that binds nothing. |
 
 ## Dependencies
 
-- **Upstream**: [FR-033](./FR-033-evidence-format-adapters.md) (the adapter this extends), [FR-030](./FR-030-evidence-store.md) and [FR-115](./FR-115-evidence-backed-test-matrix.md).
-- **Downstream**: [FR-121](./FR-121-emitter-mechanism-constraints.md); the pytest, vitest/jest and Rust emitters (PLAT-333 and its siblings).
+- **Upstream**: [FR-033](./FR-033-evidence-format-adapters.md) (the adapter this extends), [FR-030](./FR-030-evidence-store.md) and - **Downstream**: the pytest plugin (PLAT-335), the vitest/jest helper (PLAT-334) and the Rust emitter (PLAT-333), each in its own repository.

@@ -50,7 +50,7 @@ file only and never runs the suite.
 ## Dependencies (Contextual)
 
 Upstream: the source markers (quire-rs, spec-artifacts-process `trace_tags`).
-Downstream: FR-120 and FR-121, and the existing evidence store (FR-030) and
+Downstream: FR-120, and the existing evidence store (FR-030) and
 auditor (FR-032).
 
 ## Priority and Risk (Informative)

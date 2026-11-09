@@ -14,7 +14,7 @@ relationships:
 
 ## Status
 
-Proposed. Supersedes the post-run `quoin-suite-trace` annotator of FR-033-AC-15, which stays as an interim until the emitters of PLAT-333 and its siblings land, and is then removed. Tracked by PLAT-332.
+Proposed. Supersedes the post-run `quoin-suite-trace` annotator of FR-033-AC-15, which is interim and is removed when the PLAT-333 Rust emitter lands. Tracked by PLAT-332.
 
 Spec decisions in `spec/adrs/` are numbered from 100 so that ADR-100 cannot be read as `ARCH-SM-ADR-0001` or `-0002` (semantic-module architecture) or as one of Quire's `ADR-00NN` records, such as ADR-0011.
 
@@ -41,10 +41,9 @@ mark on each test case, and `quoin evidence record` reads them as given.
 Execution evidence SHALL be emitted by the run. A result file names the trace
 ids of each test case itself; nothing downstream infers them from names.
 
-The mark contract is [FR-120](../functional/FR-120-trace-marks-in-test-result-output.md).
-The constraints on how an emitter produces it are
-[FR-121](../functional/FR-121-emitter-mechanism-constraints.md),
-[NFR-028](../non-functional/NFR-028-inert-and-low-cost-emission.md) and
+The mark contract, including the emitter contract that each emitter repository's
+own spec must satisfy, is [FR-120](../functional/FR-120-trace-marks-in-test-result-output.md).
+The result artifact's self-containment is
 [NFR-029](../non-functional/NFR-029-self-contained-result-evidence.md).
 
 ## Why emit wins
@@ -80,8 +79,8 @@ The constraints on how an emitter produces it are
   same name in two files) must be settled once in the contract, not per emitter.
 - The nextest annotator of FR-033-AC-15 derives a `trace` property from the
   traceability engine after the run. It is a matcher in this ADR's sense, so this
-  decision supersedes it. FR-033 marks it interim, and it is removed once the
-  emitters of FR-120 land.
+  decision supersedes it. FR-033 marks it interim, and it is removed when the
+  PLAT-333 Rust emitter lands.
 
 ## Alternatives Considered
 

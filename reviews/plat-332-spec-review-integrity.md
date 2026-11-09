@@ -36,3 +36,25 @@ for context. It records 4 findings (4 high).
 
 Not mergeable as written: high findings open.
 Clean units (examined, no finding from this lens): every other unit listed in the reviewer comment scope.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-005 | medium | FR-120 gives matrix.build (FR-115) a path-aware symbol join and an ambiguous-join report that FR-115 neither defines nor is amended to include | spec/functional/FR-120-trace-marks-in-test-result-output.md:80-90,107 |
+| FND-006 | low | The interim annotator's removal condition is stated four different ways | spec/functional/FR-033-evidence-format-adapters.md:83-85,114 |
+
+- **FND-005** (FR-120-AC-4): The fix makes `matrix.build` (FR-115) join run entries to declared symbols by path and qualified_name and report ambiguous joins. FR-115 is unchanged. It describes matrix.build as 'a join, not a new check' over coverage_matrix, the FR-030 binding graph and the FR-032 AuditReport, per criterion. It has no entry-to-symbol join by path and no ambiguity report. Today the run-entry to bound-symbol match lives in the FR-030/FR-032 binding evaluation. So the owner named in FR-120 has no requirement for the behaviour, and AC-4 tests another FR's component from inside FR-120. Fix: amend FR-115 (or FR-032, wherever the entry-symbol match actually lives) with the path-aware join and the ambiguity outcome, and move or cross-reference AC-4 there.
+
+- **FND-006** (FR-033-AC-15): The FR-033 section says 'until the Rust emitter of PLAT-333 lands'. FR-033-AC-15 says 'when the FR-120 emitters land'. ADR-100 Status says 'until the emitters of PLAT-333 and its siblings land'. ADR-100 Consequences says 'once the emitters of FR-120 land'. The annotator only serves Rust/nextest, so the condition should be the Rust emitter (PLAT-333), stated once and cited.
+
+## Dispositions
+
+Round 1 (fix commit 90cc763e).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |

@@ -33,3 +33,21 @@ for context. It records 3 findings (0 high).
 
 No blocking findings from this lens.
 Clean units (examined, no finding from this lens): every other unit listed in the reviewer comment scope.
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | The fix dropped 'The emitter never writes an outcome the runner did not report' and no constraint replaces it | spec/functional/FR-120-trace-marks-in-test-result-output.md:48 |
+
+- **FND-004** (FR-120): The rewritten Outcome row removed the only statement that an emitter must not synthesise an outcome. FR-120-CON-1/2 constrain ids only, and FR-033-CON-2 binds the adapter, not emitters. An emitter that wrote `pass` for a test the runner never reported (for example a panicking test lost by the harness) now violates nothing. Restore it as an FR-120 constraint.
+
+## Dispositions
+
+Round 1 (fix commit 90cc763e).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

@@ -36,3 +36,14 @@ for context. It records 4 findings (0 high).
 
 No blocking findings from this lens.
 Clean units (examined, no finding from this lens): every other unit listed in the reviewer comment scope.
+
+## Dispositions
+
+Round 1 (fix commit 90cc763e).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |

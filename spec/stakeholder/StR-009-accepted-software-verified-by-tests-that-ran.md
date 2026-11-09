@@ -5,10 +5,6 @@ type: StR
 relationships:
   - target: "ix://agent-ix/quoin/FR-120"
     type: "satisfied_by"
-  - target: "ix://agent-ix/quoin/FR-121"
-    type: "satisfied_by"
-  - target: "ix://agent-ix/quoin/NFR-028"
-    type: "satisfied_by"
   - target: "ix://agent-ix/quoin/NFR-029"
     type: "satisfied_by"
 ---
@@ -46,6 +42,6 @@ Affected parties are maintainers of the pytest, vitest/jest and Rust emitters.
 
 ## Dependencies
 
-FR-120 owns the mark contract, FR-121 the emitter mechanism constraints, NFR-028
-inertness and cost, and NFR-029 self-contained evidence. ADR-100 records why the
+FR-120 owns the mark contract and the emitter contract, and NFR-029 self-contained
+evidence. ADR-100 records why the
 ids are emitted rather than derived.

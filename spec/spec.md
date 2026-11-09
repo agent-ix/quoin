@@ -223,7 +223,6 @@ index; the files are authoritative.
 **Trace marks in test result output** (ADR-100)
 
 - [FR-120](./functional/FR-120-trace-marks-in-test-result-output.md) — trace ids are marks in test result output.
-- [FR-121](./functional/FR-121-emitter-mechanism-constraints.md) — emitter mechanism constraints.
 
 **Semantic-module type-fit audit** — ⛔ **Withdrawn** (#654)
 
@@ -297,7 +296,6 @@ index; the files are authoritative.
 - [NFR-021](./non-functional/NFR-021-reproducible-corpus-measurement.md) — reproducible corpus measurement. ⛔ **Withdrawn** (#388)
 - [NFR-022](./non-functional/NFR-022-bounded-read-only-measurement-run.md) — bounded, read-only measurement run. ⛔ **Withdrawn** (#388)
 - [NFR-023](./non-functional/NFR-023-figures-carry-their-provenance.md) — published figures carry their provenance.
-- [NFR-028](./non-functional/NFR-028-inert-and-low-cost-emission.md) — trace emission is inert by default and does not slow the suite.
 - [NFR-029](./non-functional/NFR-029-self-contained-result-evidence.md) — a result artifact is interpretable without its source tree.
 
 ### Integration Tests

@@ -36,3 +36,14 @@ for context. It records 4 findings (0 high).
 
 No blocking findings from this lens.
 Clean units (examined, no finding from this lens): every other unit listed in the reviewer comment scope.
+
+## Dispositions
+
+Round 1 (fix commit 90cc763e).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | still-open | The emitter criteria (FR-120-AC-7/8, FR-121-AC-1..6, NFR-028 metrics) are still in quoin's spec, now annotated 'Test (cross-repo: ...)'. FR-121 asserts that 'quoin's matrix carries them as cross-repo rows', but no such capability exists: neither quire-rs src/ nor quoin-core/auditor has a cross-repo matrix row concept. The parenthetical is prose, so these rows stay permanently untagged in quoin's computed matrix. Still missing: move the criteria to the emitter repos' specs (FR-120/121 citing them), or specify and build cross-repo row support (owning FR plus a test). |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |
+| FND-004 | fixed | - |

@@ -33,3 +33,13 @@ for context. It records 3 findings (1 high).
 
 Not mergeable as written: high findings open.
 Clean units (examined, no finding from this lens): every other unit listed in the reviewer comment scope.
+
+## Dispositions
+
+Round 1 (fix commit 90cc763e).
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | - |
+| FND-002 | fixed | - |
+| FND-003 | fixed | - |

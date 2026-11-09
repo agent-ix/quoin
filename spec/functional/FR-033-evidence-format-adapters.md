@@ -82,7 +82,7 @@ bind to no obligation until a requirement→production-code relation exists
 
 ### A nextest report names tests, not criteria (interim)
 
-**Interim.** [ADR-100](../adrs/ADR-100-execution-evidence-is-emitted-by-the-run.md) supersedes this annotator: ids are emitted by the run ([FR-120](./FR-120-trace-marks-in-test-result-output.md)), not derived afterward. It remains until the Rust emitter of PLAT-333 lands and is then removed.
+**Interim.** [ADR-100](../adrs/ADR-100-execution-evidence-is-emitted-by-the-run.md) supersedes this annotator: ids are emitted by the run ([FR-120](./FR-120-trace-marks-in-test-result-output.md)), not derived afterward. It is removed when the PLAT-333 Rust emitter lands.
 
 cargo-nextest writes a JUnit report that identifies each test by binary and name and says nothing
 about the criteria the test exercises. The tags that say so live in source (`/// Trace: FR-002-AC-1`),
@@ -111,7 +111,7 @@ record every run as bound to nothing.
 | FR-033-AC-12 | `quoin evidence record --adapter cargo-mutants` records a mutation report end to end, preserving `score`. | Test (TC-162) |
 | FR-033-AC-13 | `quoin evidence record` selects the adapter from `--tool` when none is named. | Test (TC-163) |
 | FR-033-AC-14 | `quoin evidence record` still accepts the normalized shape with no adapter at all. | Test (TC-164) |
-| FR-033-AC-15 | Interim, removed when the FR-120 emitters land (ADR-100): a cargo-nextest JUnit report annotated by `quoin-suite-trace` carries, on each tagged test case, a `trace` property naming that test's acceptance criteria, so `quoin evidence record --adapter junit` binds the run to them. | Test (TC-2010) |
+| FR-033-AC-15 | Interim, removed when the PLAT-333 Rust emitter lands (ADR-100): a cargo-nextest JUnit report annotated by `quoin-suite-trace` carries, on each tagged test case, a `trace` property naming that test's acceptance criteria, so `quoin evidence record --adapter junit` binds the run to them. | Test (TC-2010) |
 
 ## Constraints
 

@@ -33,5 +33,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-023: Published figures carry their provenance](./NFR-023-figures-carry-their-provenance.md)
 - [NFR-025: Evidence and accepted-corpus bytes are immutable across the port](./NFR-025-immutable-evidence-and-corpus-bytes.md)
 - [NFR-027: Rust implementation idioms and the gates that enforce them](./NFR-027-rust-implementation-idioms-and-gates.md)
-- [NFR-028: Emission is inert by default and does not slow the suite](./NFR-028-inert-and-low-cost-emission.md)
 - [NFR-029: A result artifact is interpretable without its source tree](./NFR-029-self-contained-result-evidence.md)
