@@ -29,8 +29,8 @@ attribute createdBy : String[1] { maxLength: 64 }
 
 ## Invariants
 
-### immutable
+### versionIsPositive
 
 ```quire
-self.versionNumber = pre(self.versionNumber) and self.data = pre(self.data) and self.hash = pre(self.hash)
+self.versionNumber >= 1
 ```

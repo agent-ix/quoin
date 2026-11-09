@@ -94,7 +94,7 @@
   "clauses": [
     {
       "language": "quire",
-      "clauseId": "immutable",
+      "clauseId": "versionIsPositive",
       "sourceSpan": {
         "sourceIdentity": "ix://agent-ix/config-service/spec",
         "path": "config-version.table.md",
@@ -110,7 +110,7 @@
     "config-version.fence.md": "fence"
   },
   "clauseText": {
-    "immutable": "self.versionNumber = pre(self.versionNumber) and self.data = pre(self.data) and self.hash = pre(self.hash)"
+    "versionIsPositive": "self.versionNumber >= 1"
   },
   "availability": {
     "clauses": {
