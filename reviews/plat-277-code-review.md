@@ -1,94 +1,55 @@
 ---
-id: SR-20261103118145
-title: "Code review of quoin PR 784 (advisory corpus measurement report)"
+id: SR-20261102086812
+title: "PLAT-277 process PR134 code-review"
 type: SpecReview
-analysis: base
-scope: "agent-ix/quoin@03792cc8; analysis/corpus-measurement/contract-measurement-2026-11.md"
+analysis: code-review
+scope: "agent-ix/spec-artifacts-process PR134 @9878e24 over origin/main 9fc6a8b; spec_artifacts_process/manifest.yaml, tests/test_semantic_manifest.py, tests/test_manifest.py"
 review_set: subset
 ---
 
-# Code review of quoin PR 784
-
 ## Summary
 
-Ticket: PLAT-277. Scoped to `git diff origin/main...HEAD` at 03792cc8: one new Markdown report,
-`analysis/corpus-measurement/contract-measurement-2026-11.md`. Markdown-only, so no cargo gates;
-`quoin validate --repo .` (quoin 0.29.1) reports no findings.
+Ticket: PLAT-277. Code review of contract fixes F2 (drop the inline `data_schema`
+on `object_types.standard`) and F4 (rename five `archetypes:` display names).
 
-Checks run. Arithmetic: every partition table was re-summed (by-module 13,131 / 11,837; untyped
-291 = sum of undeclared types; public + private 6,981 + 6,150; 39 public + 219 banded private =
-258 failing repositories; primary classes 1,294; contract-defect rows 392); all agree.
-Re-measurement: quire-cli origin/main (2b6cc6f, `quire 0.38.4 (engine 0.53.0)`) was built from
-source through `locked-build.sh`, and the published recipe (ten `--module` dirs, `--scope` at the
-repo root, `--diagnostics-format json`) was run on six documents with the ten modules at origin/main
-(spec-objects-business at 0.9.0, 15f9138, matching the report's manifest version). An
-`api_endpoint` FR fails on `operations` required, a `configuration` FR on `fields` required (F1),
-`spec/log.md` on `unknown type 'log'` (F3), a `process` FR with a mermaid sequence diagram under
-`## Workflow` on missing `steps` plus the misleading `feature-not-extractable` message (F5, F8),
-and every run emits the five `DuplicateArchetype` lines and `semantic.inline-data-schema` for
-`standard` without changing the exit code (F4). F4 traced to the manifest: `archetypes:` (kinds adr,
-plan, review, spec-review, standard) and `artifact_types:` both declare ADR, Plan, Review,
-SpecReview and Standard. F3: no module manifest on origin/main declares `log`; `index` is declared
-by spec-artifacts-iso. F1: `ApiEndpoint.json` requires `operations` while the locator marks
-`## Operations` `required: false`; `UiComponent.json` requires `fields` while the locator mandates
-`## Props`. F2 did not reproduce as stated (FND-001).
+Measured with quire 0.38.4 (engine 0.54.0), built from quire-cli main with
+quire-rs main 6789f7d. All 40 `filament-standards/spec/standards/*.md` validate
+with exit 0 under the full installed module set plus the PR module. The only
+diagnostic printed is `DuplicateInverseEdge`, which another module owns. On
+base the same run prints five `DuplicateArchetype` lines, the
+`semantic.inline-data-schema` warning and
+`semantic.record-invalid ... "code" is a required property` on every Standard
+(exit 3). So F2's premise holds. A Standard with `code:` removed is still
+refused, by the `Standard` frontmatter schema and by the `standard` locator. An
+integer `code` is refused by the frontmatter schema. F2 loses no validation.
 
-Leak check: all 39 repositories named in the public table, plus the module and tool repositories
-named elsewhere, were checked with `gh repo view` and are PUBLIC. Private repositories appear only as
-`private-N` and band counts; no private repository name, path or document title appears. The one
-repository holding the Standard documents is private and is correctly left unnamed.
-
-## Verdict
-
-**CHANGES REQUESTED (one high, two medium, two low).** The measurement is sound and honestly
-partitioned: every weak partition is surfaced, failures are classified with owners, no private
-names leak and the report carries no digest or manifest ceremony of its own. But finding F2, a P1
-contract finding, names the wrong schema and the wrong fix, and F6 directs owners to pins that do
-not exist. The PR leaves the superseded 2026-09 report and its manifest files beside the new one.
-Separately from this PR's defects, PLAT-277's acceptance criterion that P0/P1 findings be resolved
-or accepted by a human owner is not met by a report; the ticket stays open after merge.
+F4 removes the diagnostics, but the rename has two side effects in consumers
+(FND-002, FND-003).
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | high | F2 names the wrong contract. It says `schemas/Standard.json` requires `code` and "the Standard locator never reads it", with the fix "feed `code` from frontmatter or drop it from `required`". Reproduced on a failing corpus Standard document: it fails `semantic.record-invalid ... "code" is a required property`, and the same document with only its `object: standard` line removed passes. So `Standard.json` (artifact type `Standard`) accepts it; the failing contract is `object_types: standard`, whose inline `data_schema` requires `code` while its own locator already reads `code` from frontmatter (`required: true`). The proposed cheap fix edits a schema that is not failing. The weak-partition row and the contract-defect rule row repeat the same attribution | analysis/corpus-measurement/contract-measurement-2026-11.md:295, :17, :235 |
-| FND-002 | medium | F6 asks for "`quoin module ensure-defaults` pins brought to the completed modules", and the limits section lists "stale-module effects of the shipped `default-modules.yaml` pins". `default-modules.yaml` on quoin main has no pins: each entry checks out the module's default branch. The stale state is the installed CLI and already-installed module clones, not a pin; the finding sends the owner to fix something that does not exist | analysis/corpus-measurement/contract-measurement-2026-11.md:299, :332 |
-| FND-003 | medium | The report states it supersedes the 2026-09 `report.md`, "produced by a measurement tool that no longer exists", but the PR keeps `report.md` and its `run-manifest.json`, `figure-index.json`, `census.json`, `rates.json`, `findings.json` and `states.json` in the same directory. A superseded report beside its replacement is two contradictory measurements, and the run manifest and figure-binding index are file-tracking ceremony. Delete them in this PR | analysis/corpus-measurement/contract-measurement-2026-11.md:3 |
-| FND-004 | low | "Pass rates by composed object module" says "Documents of type `FR` may carry `object: <type>`" and the weak-partition table heads these rows "Object-typed FRs", but the `spec-artifacts-process / object: standard` row (39 documents) is `type: Standard` documents carrying `object: standard`, not FRs. The same 39 documents are also counted in the `Standard` by-type row, so the section is not FR-only and the heading misstates its population | analysis/corpus-measurement/contract-measurement-2026-11.md:47, :51, :62 |
-| FND-005 | low | The recipe reproduces per-document verdicts (confirmed), but not the class partition. The diagnostic-to-class rules, the primary-class order applied in code and the repository enumeration (listing filter, shallow default-branch clone) are stated only in prose, and the raw per-document results are kept nowhere, although the ticket asks to retain them. The normalization campaign needs that work list. State where the per-document results are kept (a private location) or give the enumeration and classification commands | analysis/corpus-measurement/contract-measurement-2026-11.md:28 |
+| FND-001 | medium | The `semantic` block's header comment still says `object_types.standard` "keeps its inline `data_schema`" and that its "inline schema describes the frontmatter projection". The PR removed that schema, so the comment now contradicts the new comment at line 600. Rewrite or drop the stale sentences. | spec_artifacts_process/manifest.yaml:1740-1749; spec_artifacts_process/manifest.yaml:600-604 |
+| FND-002 | medium | filament-core-service `ModuleService.activate` upserts archetypes by `(tenant_id, kind, name)` and never prunes this module's rows that are absent from the new manifest. On re-activation each renamed entry inserts a new row, and the old `ADR`/`Plan`/`Review`/`SpecReview`/`Standard` rows stay with the same `module_id`. The archetype list then shows both names. `ArchetypeService.get_by_kind` returns `rows[0]` with no `ORDER BY` when both rows share a tenant, so new containers bind to whichever row the database returns first. Existing containers keep their old ids. Fix this in filament-core-service by deleting this module's archetype rows that are not in the manifest on activation, or avoid the rename (see FND-003). Before re-activating, any live deployment needs a force deactivate. | spec_artifacts_process/manifest.yaml:7-46; filament-core-service filament_core_service/services/module_service.py:250-268; filament-core-service filament_core_service/services/archetype_service.py:60-76 |
+| FND-003 | medium | Quire compiles every `archetypes:` entry into the validation registry (`Manifest::all_archetypes`). An entry with no schema becomes a permissive type. After the rename, `type: Project Plan`, `type: Spec Review`, `type: Architecture Decision Record`, `type: Review Report` and `type: Standard Definition` all validate with exit 0 and no checks. Measured: a `type: Project Plan` document passes, and `type: NoSuchType` is refused. The cause is in quire-rs: Filament nav entries should not compile as validation types. Either skip `archetypes:` entries that declare no validation parts, or fold a same-module same-name `archetypes:` entry into its `artifact_types` entry. That fix needs no rename, which also avoids FND-002. Renaming `artifact_types` instead is worse, because every corpus document's `type:` would change. | spec_artifacts_process/manifest.yaml:7-46; quire-rs src/loader/manifest.rs:430-445 |
+| FND-004 | low | The module docstring lists the rows the file covers ("rows TC-089, TC-093, TC-094, TC-096, TC-128, TC-135") and already omits the new TC-167. The list is a hand-kept inventory of what the `trace` marks already state. Delete it rather than extending it. | tests/test_semantic_manifest.py:3 |
+
+## Verdict
+
+**CHANGES REQUESTED.** F2 is correct and loses no validation. The rename in F4
+is a workaround for an engine defect. In quire it leaves five permissive type
+names (FND-003), and in filament-core-service it leaves duplicate archetype rows
+(FND-002). FND-001 is a one-line comment fix.
 
 ## Examined scope
 
 ```yaml
-clean: false
 scope:
-- id: report/headline-and-weak-partitions
-  path: analysis/corpus-measurement/contract-measurement-2026-11.md
-  role: examined
-  excerpt: "11,837 / 13,131 documents pass = 90.1 %. ... Weak partition | Documents | Pass rate | Why"
-- id: report/what-was-measured
-  path: analysis/corpus-measurement/contract-measurement-2026-11.md
-  role: examined
-  excerpt: "Reproduce. Clone the repositories, then per document: quire validate --module <each module dir> --scope <repo> --diagnostics-format json <doc>."
-- id: report/pass-rates
-  path: analysis/corpus-measurement/contract-measurement-2026-11.md
-  role: examined
-  excerpt: "Pass rates by module / by composed object module / by document type / by repository"
-- id: report/failure-partition
-  path: analysis/corpus-measurement/contract-measurement-2026-11.md
-  role: examined
-  excerpt: "1,294 failing documents, every one classified; unclassified = 0."
-- id: report/findings-F1-F8
-  path: analysis/corpus-measurement/contract-measurement-2026-11.md
-  role: examined
-  excerpt: "F1 ... F8 findings table with priority, class, module, evidence, owner"
-- id: report/limits
-  path: analysis/corpus-measurement/contract-measurement-2026-11.md
-  role: examined
-  excerpt: "What this measurement could not establish"
-- id: default-modules.yaml
-  path: default-modules.yaml
-  role: context_only
-  excerpt: "Each entry checks out one module's data subdirectory from its repository's default branch."
+- {id: object_types.standard, path: spec_artifacts_process/manifest.yaml, role: examined}
+- {id: archetypes, path: spec_artifacts_process/manifest.yaml, role: examined}
+- {id: semantic, path: spec_artifacts_process/manifest.yaml, role: examined}
+- {id: TC-096, path: tests/test_semantic_manifest.py, role: examined}
+- {id: TC-167, path: tests/test_semantic_manifest.py, role: examined}
+- {id: test_spec_review_archetype_registered_with_findings_validation, path: tests/test_manifest.py, role: examined}
 ```
