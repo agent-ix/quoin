@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! FR-071-AC-1 and AC-3 to AC-8, criterion by criterion (PLAT-278).
+//! FR-071-AC-3 to AC-8, criterion by criterion (PLAT-278).
 //!
 //! Quire executes the Markdown to `FieldDecl[]` extraction against the
 //! `quire-fixtures` goldens. What Quoin owns, and what these assert, is the
@@ -11,12 +11,14 @@
 //! `quire-fixtures`; Quoin holds no copy.
 //!
 //! Not asserted here: that the recorded `TypeRef` targets and constraint
-//! declarations validate against the vendored semantic-core 0.3.0 schemas. They
-//! do not. The `quire-fixtures` goldens record a tagged `{kind, value}` target
-//! and constraint shape, and semantic-core 0.3.0 declares `target` as a plain
-//! string and flattens constraints. That is a fixture-owner defect (FR-071-AC-1
-//! as written cannot pass until `quire-fixtures` is regenerated), reported on
-//! the ticket rather than weakened or asserted-as-broken here.
+//! declarations validate against the semantic-core schemas Quoin pins (0.3.2),
+//! so FR-071-AC-1, AC-4 and AC-6 are not schema-checked. The fixtures are right:
+//! filament-core-data main (IR-994, commit 7e6f209e) moved semantic-core
+//! `TypeRef.target` and constraint values to the tagged `{kind, value}` form the
+//! fixtures record, and Quoin's pin predates it. No semantic-core tag contains
+//! IR-994 yet. Owner: Linear PLAT-1377. Expiry: the pin is bumped, the
+//! `FieldDecl`, `TypeRef` and `ConstraintDecl` schema checks are added here, and
+//! this paragraph is deleted.
 
 #![allow(
     clippy::unwrap_used,
@@ -30,14 +32,15 @@ mod common;
 
 use std::fs;
 
-use common::{mapping_fixture, mapping_json, schema_dir};
+use common::{mapping_fixture, mapping_json, semantic_root};
+use quoin_semantic::contract::semantic_core_dir;
 use quoin_semantic::schema::{SchemaValidator, SchemaValidatorExt};
 use serde_json::Value;
 
 /// A compiler for one semantic-core schema, with every sibling registered under
 /// its `$id` so `$ref`s resolve in memory.
 fn semantic_core_validator(name: &str) -> SchemaValidator {
-    let dir = schema_dir().join("semantic-core");
+    let dir = semantic_core_dir(&semantic_root());
     let mut resources: Vec<(String, Value)> = Vec::new();
     for entry in fs::read_dir(&dir).unwrap() {
         let path = entry.unwrap().path();
@@ -49,10 +52,17 @@ fn semantic_core_validator(name: &str) -> SchemaValidator {
         }
     }
     let target = dir.join(format!("{name}.json"));
-    let schema: Value = serde_json::from_str(&fs::read_to_string(&target).unwrap()).unwrap();
-    let borrowed: Vec<(&str, Value)> = resources
+    let suffix = format!("/{name}.json");
+    let schema = resources
         .iter()
-        .map(|(id, doc)| (id.as_str(), doc.clone()))
+        .find(|(id, _)| id.ends_with(&suffix))
+        .map(|(_, doc)| doc.clone())
+        .unwrap();
+    let ids: Vec<String> = resources.iter().map(|(id, _)| id.clone()).collect();
+    let borrowed: Vec<(&str, Value)> = ids
+        .iter()
+        .map(String::as_str)
+        .zip(resources.into_iter().map(|(_, doc)| doc))
         .collect();
     SchemaValidator::compile(&target, &schema, &borrowed).unwrap()
 }
@@ -133,7 +143,7 @@ fn tc_278_003_both_forms_fails_at_the_second_forms_locus() {
 ///
 /// Trace: FR-071-AC-4
 #[test]
-fn tc_278_004_type_cells_resolve_in_the_specified_order() {
+fn tc_278_004_type_cells_record_the_expected_targets_and_the_unresolved_placeholder() {
     let uuid = case("type-kernel");
     assert_eq!(uuid["cell"]["Type"], "UUID");
     assert_eq!(uuid["expected"]["target"]["kind"], "KernelScalar");

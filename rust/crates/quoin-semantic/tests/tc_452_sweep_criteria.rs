@@ -88,7 +88,7 @@ fn corpus(scratch: &Scratch) -> PathBuf {
 /// The typed Properties table fixture is the authored form, and the classifier
 /// recognises it by the four-column header the contract names.
 ///
-/// Trace: FR-071-AC-1
+/// Trace: FR-071
 /// Provenance: agent-ix/quoin#452
 #[test]
 fn tc_452_650_the_typed_table_fixture_classifies_as_the_authored_form() {

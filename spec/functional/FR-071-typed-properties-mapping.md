@@ -58,7 +58,7 @@ and expression semantics stay with `agent-ix/quire-contract-ir#52`.
 
 | ID | Criteria | Verification |
 |---|---|---|
-| FR-071-AC-1 | Quoin's copy of the config-service FR-006 rows, rewritten as a typed table, has an expected `FieldDecl[]` fixture whose every element validates against the semantic-core `FieldDecl.json`. | Test |
+| FR-071-AC-1 | The config-service FR-006 rows, rewritten as a typed table, has an expected `FieldDecl[]` fixture whose every element validates against the semantic-core `FieldDecl.json`. | Test |
 | FR-071-AC-2 | The `sysml` fence fixture with equal content has an expected normalized `FieldDecl[]` identical to the table fixture's. | Test |
 | FR-071-AC-3 | The both-forms fixture's expected diagnostic is a failure at the second form's locus. | Test |
 | FR-071-AC-4 | `Type` tokens `UUID`, `Decimal(10,2)`, `Duration [ms]`, `ConfigOverlay` (object by title), `Status` (enumeration by id), and an imported export resolve as specified; `Mystery` yields the advisory finding and the placeholder target. | Test |
@@ -68,11 +68,16 @@ and expression semantics stay with `agent-ix/quire-contract-ir#52`.
 | FR-071-AC-8 | A fixture row violating a semantic-core reader rule (`Decimal` without `(p,s)`) yields the rule's diagnostic at the row locus. | Test |
 
 > **Verification note (PLAT-278):** FR-071-AC-3 to AC-8 are asserted over the
-> `quire-fixtures` goldens by `tc_278_mapping_expectations.rs`. FR-071-AC-1's
-> schema validation is not yet assertable: the goldens record `TypeRef.target`
-> and constraints in a tagged `{kind, value}` shape that the semantic-core 0.3.0
-> schemas Quoin reads do not accept. The goldens belong to `quire-rs`; the
-> mismatch is reported there rather than copied or weakened here.
+> `quire-fixtures` goldens by `tc_278_mapping_expectations.rs`. The schema
+> validation in AC-1 (and the `TypeRef`/`ConstraintDecl` checks for AC-4/AC-6)
+> is not yet assertable, and the fixtures are not at fault: filament-core-data
+> main (IR-994, commit 7e6f209e) moved semantic-core `TypeRef.target` and
+> constraint values to the tagged `{kind, value}` form the goldens record, and
+> Quoin's semantic-core pin (0.3.2) predates it. No semantic-core tag contains
+> IR-994 yet. No quire-rs change is needed. Owner: Linear PLAT-1377 ("Release
+> semantic-core with the IR-994 {kind,value} form, then bump quoin and module
+> pins"). Expiry: the pin is bumped, the `FieldDecl.json`, `TypeRef` and
+> `ConstraintDecl` checks are added to the test, and this note is deleted.
 
 ## Dependencies
 
