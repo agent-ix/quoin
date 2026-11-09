@@ -505,8 +505,9 @@ fn hex_of(bytes: &[u8]) -> String {
 )]
 mod tests {
     use super::{DESCRIPTION, command, run};
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-062, FR-068, FR-102
+    #[trace("FR-062", "FR-068", "FR-102")]
     #[test]
     fn tc_373_change_assurance_without_a_subcommand_keeps_its_description() {
         let matches = command()
@@ -522,7 +523,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-068
+    #[trace("FR-068")]
     #[test]
     fn tc_373_change_assurance_schema_and_recover_preserve_their_grammar() {
         assert!(

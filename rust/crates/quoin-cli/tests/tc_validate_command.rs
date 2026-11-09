@@ -9,6 +9,7 @@
     reason = "test assertions report command-contract failures"
 )]
 
+use ix_trace_rs::trace;
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::process::Command;
@@ -38,8 +39,7 @@ fn invoke(root: &Path, strict: bool) -> std::process::Output {
 ///
 /// Findings remain advisory unless the explicit strict flag turns them into a
 /// partial command result.
-///
-/// Trace: FR-102
+#[trace("FR-102")]
 #[test]
 fn tc_521_validate_keeps_findings_advisory_until_strict() {
     let scratch = tempfile::tempdir().unwrap();

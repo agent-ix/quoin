@@ -494,6 +494,7 @@ fn validate_record(record: &ArtifactRecord) -> Result<(), DeliveryError> {
     reason = "test fixtures may panic"
 )]
 mod tests {
+    use ix_trace_rs::trace;
     use std::collections::BTreeMap;
 
     use super::*;
@@ -541,7 +542,7 @@ mod tests {
         archive.finish().unwrap().into_inner()
     }
 
-    /// Trace: FR-022
+    #[trace("FR-022")]
     #[test]
     fn tc_373_746_manifest_rejects_prereleases_and_duplicate_targets() {
         let prerelease = br#"{"schema_version":2,"version":"1.0.0-rc.1","artifacts":[]}"#;
@@ -557,7 +558,7 @@ mod tests {
         ));
     }
 
-    /// Trace: FR-022
+    #[trace("FR-022")]
     #[test]
     fn tc_373_747_check_only_never_fetches_or_mutates_the_archive() {
         let archive_url = "https://example.test/quoin.tar.gz";
@@ -586,7 +587,7 @@ mod tests {
         assert_eq!(fs::read(executable).unwrap(), b"old executable");
     }
 
-    /// Trace: FR-022
+    #[trace("FR-022")]
     #[test]
     fn tc_373_748_size_mismatch_leaves_the_installed_binary_unchanged() {
         let archive_url = "https://example.test/quoin.tar.gz";
@@ -613,7 +614,7 @@ mod tests {
         assert_eq!(fs::read(executable).unwrap(), b"old executable");
     }
 
-    /// Trace: FR-022
+    #[trace("FR-022")]
     #[test]
     fn tc_373_749_archive_paths_and_traversal_are_refused_before_installation() {
         let archive = tar(b"malicious", "nested/quoin");
@@ -632,7 +633,7 @@ mod tests {
         ));
     }
 
-    /// Trace: FR-022
+    #[trace("FR-022")]
     #[test]
     fn tc_373_750_verified_archive_replaces_the_real_staged_binary() {
         let archive_url = "https://example.test/quoin.tar.gz";

@@ -9,6 +9,7 @@
 
 use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
+use ix_trace_rs::implements;
 use quoin_core::protocol::Response;
 
 use crate::core_runtime::invoke;
@@ -90,6 +91,7 @@ const COMPILED_TARGETS: &[&str] = &[
 /// Composed from `modules.list` and `semantic.read_blocks` over every installed
 /// root at once, because an import lock is judged against the other installed
 /// modules.
+#[implements("FR-124")]
 fn inspect() -> Result<Response, String> {
     let listed = invoke("modules.list", &serde_json::json!({}))?;
     if !listed.outcome.carries_payload() {
@@ -391,8 +393,9 @@ fn indent_json(value: &str, indent: usize) -> String {
 )]
 mod tests {
     use super::{command, modules_json};
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-017
+    #[trace("FR-017")]
     #[test]
     fn tc_373_module_defaults_to_list_and_requires_mutation_arguments() {
         assert!(command().try_get_matches_from(["module"]).is_ok());
@@ -418,7 +421,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-017
+    #[trace("FR-017")]
     #[test]
     fn tc_373_module_output_keeps_the_registry_field_order() {
         let rendered = modules_json(

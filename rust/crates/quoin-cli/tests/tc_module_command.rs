@@ -11,6 +11,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -95,8 +96,8 @@ fn output_text(output: &Output) -> String {
 /// Install, list, and remove must operate on one real temporary IX home through
 /// the shipped command—not the retired protocol executable.
 ///
-/// Trace: FR-070, FR-102
 /// Provenance: quoin#449, quoin#521
+#[trace("FR-070", "FR-102")]
 #[test]
 fn tc_521_module_install_list_and_remove_use_the_shipped_binary() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
@@ -128,8 +129,8 @@ fn tc_521_module_install_list_and_remove_use_the_shipped_binary() {
 /// A release executable owns its semantic contract; it must not rely on the
 /// source checkout that happened to build it.
 ///
-/// Trace: FR-070
 /// Provenance: quoin#527, quoin#531, quoin#533
+#[trace("FR-070")]
 #[test]
 fn tc_527_001_native_module_install_bootstraps_without_a_semantic_root_env() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
@@ -202,9 +203,7 @@ fn consumer(text: &str) -> String {
 
 /// Dynamic-only and compiled modules sit in one installed set, each reported
 /// with its package, contract version and mode, and a clean set exits zero.
-///
-/// Trace: FR-124-AC-1
-/// Trace: FR-124-AC-2
+#[trace("FR-124-AC-1", "FR-124-AC-2")]
 #[test]
 fn tc_286_001_inspect_reports_dynamic_and_compiled_modules_together() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
@@ -245,8 +244,7 @@ fn tc_286_001_inspect_reports_dynamic_and_compiled_modules_together() {
 
 /// A module with no `semantic` block is still listed, as such, and is not an
 /// error: the block is optional.
-///
-/// Trace: FR-124-AC-3
+#[trace("FR-124-AC-3")]
 #[test]
 fn tc_286_002_a_module_without_a_semantic_block_is_reported_and_clean() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
@@ -266,8 +264,7 @@ fn tc_286_002_a_module_without_a_semantic_block_is_reported_and_clean() {
 /// An import locked at a version no installed module provides any more is
 /// reported against the importing module, naming the installed versions, and
 /// the command exits non-zero while still writing the whole report.
-///
-/// Trace: FR-124-AC-4
+#[trace("FR-124-AC-4")]
 #[test]
 fn tc_286_003_an_import_lock_the_installed_set_no_longer_satisfies_is_reported() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
@@ -302,8 +299,7 @@ fn tc_286_003_an_import_lock_the_installed_set_no_longer_satisfies_is_reported()
 
 /// A block whose contract major this build does not know is reported with its
 /// diagnostic and no semantic view, rather than as an empty model.
-///
-/// Trace: FR-124-AC-5
+#[trace("FR-124-AC-5")]
 #[test]
 fn tc_286_004_an_unknown_contract_major_is_reported_not_degraded_to_empty() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
@@ -334,8 +330,7 @@ fn tc_286_004_an_unknown_contract_major_is_reported_not_degraded_to_empty() {
 /// An installed module whose manifest cannot be read is an entry with an error
 /// diagnostic, not a failure of the whole report: the other modules are still
 /// reported and the command exits 1.
-///
-/// Trace: FR-124-AC-6
+#[trace("FR-124-AC-6")]
 #[test]
 fn tc_286_005_an_unreadable_installed_module_is_an_entry_not_a_failed_report() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
@@ -366,8 +361,7 @@ fn tc_286_005_an_unreadable_installed_module_is_an_entry_not_a_failed_report() {
 
 /// Two installed modules that import each other are reported as one cycle error
 /// naming the path.
-///
-/// Trace: FR-124-AC-7
+#[trace("FR-124-AC-7")]
 #[test]
 fn tc_286_006_an_import_cycle_is_reported() {
     let scratch = tempfile::tempdir().expect("scratch root is created");
@@ -408,8 +402,7 @@ fn tc_286_006_an_import_cycle_is_reported() {
 
 /// `inspect` reads and reports; the registry and every installed module are
 /// byte-identical afterwards, even when it finds errors.
-///
-/// Trace: FR-124-AC-8
+#[trace("FR-124-AC-8")]
 #[test]
 fn tc_286_007_inspect_modifies_nothing() {
     let scratch = tempfile::tempdir().expect("scratch root is created");

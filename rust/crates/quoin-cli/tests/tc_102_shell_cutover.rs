@@ -8,6 +8,7 @@
     reason = "test setup failures are the intended failure report"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
 fn repository_root() -> PathBuf {
@@ -31,8 +32,8 @@ fn node_sources(path: &Path, found: &mut Vec<PathBuf>) {
     }
 }
 
-/// Trace: FR-102-AC-6
 /// Provenance: quoin#373, quoin#521
+#[trace("FR-102-AC-6")]
 #[test]
 fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
     let root = repository_root();

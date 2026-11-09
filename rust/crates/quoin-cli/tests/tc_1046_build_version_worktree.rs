@@ -9,6 +9,7 @@
 #[path = "../build_git.rs"]
 mod build_git;
 
+use ix_trace_rs::trace;
 use std::path::Path;
 use std::process::Command;
 
@@ -29,7 +30,7 @@ fn git(dir: &Path, args: &[&str]) {
     assert!(status.success(), "git {args:?} failed");
 }
 
-/// Trace: FR-002
+#[trace("FR-002")]
 #[test]
 fn tc_1046_linked_worktree_watches_its_own_head_and_the_shared_branch_ref() {
     let root = tempfile::tempdir().expect("tempdir");
@@ -76,7 +77,7 @@ fn tc_1046_linked_worktree_watches_its_own_head_and_the_shared_branch_ref() {
     );
 }
 
-/// Trace: FR-002
+#[trace("FR-002")]
 #[test]
 fn tc_1046_main_checkout_still_watches_head_and_branch() {
     let root = tempfile::tempdir().expect("tempdir");

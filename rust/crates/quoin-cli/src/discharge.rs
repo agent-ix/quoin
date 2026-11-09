@@ -86,8 +86,9 @@ fn json_input(source: &str, label: &str) -> Result<serde_json::Value, String> {
 #[cfg(test)]
 mod tests {
     use super::command;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-046
+    #[trace("FR-046")]
     #[test]
     fn tc_373_discharge_requires_the_retained_inputs() {
         assert!(command().try_get_matches_from(["discharge"]).is_err());

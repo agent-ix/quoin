@@ -19,6 +19,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -77,8 +78,8 @@ fn write(root: &Path, relative: &str, bytes: &[u8]) -> PathBuf {
 /// real binary — never vacuously `supported` because the caller cited
 /// nothing.
 ///
-/// Trace: FR-047-AC-8
 /// Provenance: PLAT-966, PLAT-1018
+#[trace("FR-047-AC-8")]
 #[test]
 fn tc_1018_a_claim_with_no_evidence_references_is_open_through_the_real_binary() {
     let root = repo_with_argument("argument-no-refs.md");
@@ -114,8 +115,8 @@ fn tc_1018_a_claim_with_no_evidence_references_is_open_through_the_real_binary()
 /// never resolves reads as `open`, naming the specific reference, through the
 /// real binary — distinctly from citing nothing at all.
 ///
-/// Trace: FR-047-AC-8
 /// Provenance: PLAT-966, PLAT-1018
+#[trace("FR-047-AC-8")]
 #[test]
 fn tc_1018_a_claim_citing_an_unresolved_reference_is_open_through_the_real_binary() {
     let root = repo_with_argument("argument-unresolved-ref.md");
@@ -160,8 +161,8 @@ fn tc_1018_a_claim_citing_an_unresolved_reference_is_open_through_the_real_binar
 /// nothing either — so it is this case that proves the refusal comes from the
 /// index's content and that the fixture is otherwise clean.
 ///
-/// Trace: FR-047-AC-8
 /// Provenance: PLAT-966, PLAT-1018
+#[trace("FR-047-AC-8")]
 #[test]
 fn tc_1018_the_same_claim_with_its_reference_resolved_is_supported_through_the_real_binary() {
     let root = repo_with_argument("argument-unresolved-ref.md");

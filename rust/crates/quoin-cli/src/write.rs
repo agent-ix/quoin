@@ -303,7 +303,7 @@ mod tests {
 
     use super::{command, org_environment, quote, types};
 
-    /// Trace: FR-025, FR-062
+    #[trace("FR-025", "FR-062")]
     #[test]
     fn tc_373_743_write_preserves_positional_and_repeatable_type_grammar() {
         let matches = command()
@@ -331,18 +331,17 @@ mod tests {
         assert!(matches.get_flag("json"));
     }
 
-    /// Trace: FR-025
-    #[trace("FR-015-AC-2", "FR-015-AC-3")]
+    #[trace("FR-025", "FR-015-AC-2", "FR-015-AC-3")]
     #[test]
     fn tc_373_744_quotes_validation_scopes_for_a_posix_shell() {
         assert_eq!(quote("/tmp/my repo"), "'/tmp/my repo'");
         assert_eq!(quote("/tmp/plain"), "/tmp/plain");
     }
 
-    /// Trace: FR-025
     /// Provenance: quoin#525
     /// The normal, unset environment must still cross the core boundary as the
     /// required object, not JSON `null`.
+    #[trace("FR-025")]
     #[test]
     fn tc_525_001_unset_org_environment_is_an_empty_object() {
         assert_eq!(org_environment(None), serde_json::json!({}));

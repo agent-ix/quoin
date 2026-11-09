@@ -9,13 +9,14 @@
     reason = "test assertions may panic"
 )]
 use super::serve;
+use ix_trace_rs::trace;
 use serde_json::{Value, json};
 
 fn request() -> Value {
     json!({"protocol":"quoin.workflow-invariants/v1","evaluated_at":"2026-10-24T00:00:00Z","invariants":["unknown"],"instance":{"defName":"review","items":{},"gateConfig":{}}})
 }
 
-/// Trace: FR-021-AC-5
+#[trace("FR-021-AC-5")]
 #[test]
 fn protocol_errors_never_emit_a_success_payload() {
     for input in [
@@ -40,7 +41,7 @@ fn protocol_errors_never_emit_a_success_payload() {
     assert_eq!(output.len(), 0);
 }
 
-/// Trace: FR-021-AC-5
+#[trace("FR-021-AC-5")]
 #[test]
 fn failed_checks_are_ordered_provider_outcomes_and_not_infrastructure_success() {
     let mut input = request();

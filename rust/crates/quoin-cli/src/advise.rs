@@ -215,8 +215,9 @@ fn recommendations(advice: &serde_json::Value) -> Result<String, String> {
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
     use super::render;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-031, FR-062, FR-102
+    #[trace("FR-031", "FR-062", "FR-102")]
     #[test]
     fn tc_373_advice_human_output_keeps_methods_reasons_and_the_three_row_limit() {
         let rows = serde_json::json!([

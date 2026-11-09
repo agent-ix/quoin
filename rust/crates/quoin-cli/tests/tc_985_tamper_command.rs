@@ -21,6 +21,7 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
+use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -123,8 +124,8 @@ const MEASUREMENTS: &str = "spec/evidence/measurements";
 /// reports a `collection_deleted` finding, so deleting a regressed run
 /// cannot defeat "counts every collection".
 ///
-/// Trace: FR-108-AC-9
 /// Provenance: PLAT-985
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_103_a_collection_deleted_after_being_counted_is_rejected() {
     let repo = tempfile::tempdir().unwrap();
@@ -182,8 +183,8 @@ fn tc_985_103_a_collection_deleted_after_being_counted_is_rejected() {
 /// it, is `collection_edited` — the store's git history shows a hand-made
 /// change intake never made.
 ///
-/// Trace: FR-108-AC-9
 /// Provenance: PLAT-985
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_104_a_collection_edited_after_intake_is_rejected() {
     let repo = tempfile::tempdir().unwrap();
@@ -225,11 +226,11 @@ fn tc_985_104_a_collection_edited_after_intake_is_rejected() {
 /// The plan document's own objective, estimator, decision rule or protected
 /// apparatus changing between two committed revisions that share a
 /// `definition_version` is `definition_changed_without_version_bump`
-/// (engineering-assurance FR-021's `definition_change_without_version_bump`,
+/// (engineering-assurance's `definition_change_without_version_bump` check,
 /// wired here with access to the plan's git history).
 ///
-/// Trace: FR-108-AC-9
 /// Provenance: PLAT-985
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_105_a_decision_rule_edited_without_a_version_bump_is_rejected() {
     let repo = tempfile::tempdir().unwrap();
@@ -288,8 +289,8 @@ fn rewrite(repo: &Path, id: &str, edit: impl FnOnce(&mut Value)) {
 /// in two commits, is `collection_edited` — `--no-renames` alone would read
 /// the re-add as a fresh intake.
 ///
-/// Trace: FR-108-AC-9
 /// Provenance: PLAT-985
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_107_a_delete_and_re_add_under_the_same_id_is_edited() {
     let repo = tempfile::tempdir().unwrap();
@@ -331,8 +332,8 @@ fn tc_985_107_a_delete_and_re_add_under_the_same_id_is_edited() {
 /// it from the plan's runs; it is still `collection_edited` for the plan the
 /// run was first added under.
 ///
-/// Trace: FR-108-AC-9
 /// Provenance: PLAT-985
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_108_an_edit_moving_a_run_off_the_plan_is_still_edited() {
     let repo = tempfile::tempdir().unwrap();
@@ -358,8 +359,8 @@ fn tc_985_108_an_edit_moving_a_run_off_the_plan_is_still_edited() {
 /// Corrupting a collection's file before deleting it still attributes the
 /// deletion to the plan intake first added it under.
 ///
-/// Trace: FR-108-AC-9
 /// Provenance: PLAT-985
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_109_a_collection_corrupted_then_deleted_is_still_attributed() {
     let repo = tempfile::tempdir().unwrap();
@@ -387,8 +388,8 @@ fn tc_985_109_a_collection_corrupted_then_deleted_is_still_attributed() {
 /// `definition_changed_without_version_bump`: each revision is read at the
 /// path it had in its own commit.
 ///
-/// Trace: FR-108-AC-9
 /// Provenance: PLAT-985
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_110_a_rename_does_not_hide_the_revisions_before_it() {
     let repo = tempfile::tempdir().unwrap();
@@ -422,8 +423,8 @@ fn tc_985_110_a_rename_does_not_hide_the_revisions_before_it() {
 /// stored collection or to the plan's decision rule is caught as surely as a
 /// committed one.
 ///
-/// Trace: FR-108-AC-9
 /// Provenance: PLAT-985
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_111_uncommitted_work_tree_tampering_is_caught() {
     let repo = tempfile::tempdir().unwrap();
@@ -459,8 +460,8 @@ fn tc_985_111_uncommitted_work_tree_tampering_is_caught() {
 /// uncommitted intake, and a committed plan edit that does bump
 /// `definition_version` raise none of the four tamper reasons.
 ///
-/// Trace: FR-108-AC-9
 /// Provenance: PLAT-985
+#[trace("FR-108-AC-9")]
 #[test]
 fn tc_985_112_honest_history_raises_no_tamper_reason() {
     let repo = tempfile::tempdir().unwrap();

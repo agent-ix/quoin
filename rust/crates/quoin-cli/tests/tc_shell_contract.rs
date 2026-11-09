@@ -25,8 +25,7 @@ fn text(bytes: &[u8]) -> String {
 
 /// The root help response keeps the retained stdout-only shell contract and
 /// advertises the native command inventory, not Clap's synthetic help route.
-///
-/// Trace: FR-003, FR-102, TC-1650
+#[trace("FR-003", "FR-102", "TC-1650")]
 #[test]
 fn tc_1650_root_help_is_a_successful_stdout_catalogue() {
     let output = invoke(&["--help"]);
@@ -43,9 +42,7 @@ fn tc_1650_root_help_is_a_successful_stdout_catalogue() {
 
 /// Unknown command refusals are not parser-success output: they retain exit 2
 /// and send the actionable command catalogue to stderr.
-///
-/// Trace: FR-005, FR-102, TC-1650
-#[trace("FR-005-AC-1")]
+#[trace("FR-005", "FR-102", "TC-1650", "FR-005-AC-1")]
 #[test]
 fn tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue() {
     let output = invoke(&["not-a-command"]);
@@ -60,9 +57,7 @@ fn tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue() {
 
 /// Oclif reports the entire unresolved command path with colon separators,
 /// while excluding flags from that identity.
-///
-/// Trace: FR-005, FR-102, TC-1650
-#[trace("FR-005-AC-2")]
+#[trace("FR-005", "FR-102", "TC-1650", "FR-005-AC-2")]
 #[test]
 fn tc_1650_nested_unknown_command_keeps_the_oclif_path_identity() {
     let output = invoke(&["catalog", "not-a-command", "--format", "json"]);

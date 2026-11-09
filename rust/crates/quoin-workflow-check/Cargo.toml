@@ -13,5 +13,6 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+ix-trace-rs = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }

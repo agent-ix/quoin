@@ -7,6 +7,7 @@ mod campaign;
 mod source_state;
 mod tamper;
 
+use ix_trace_rs::implements;
 use std::io::Read as _;
 
 use clap::{Arg, ArgMatches, Command};
@@ -101,6 +102,7 @@ fn record(arguments: &ArgMatches) -> Result<Response, String> {
 /// PLAT-985 adds git-derived tamper facts alongside the intake order,
 /// gathered in [`tamper`] for the reason stated there: only this binary has
 /// git, and the checker itself stays pure.
+#[implements("FR-108")]
 fn verify(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
     let plan = required(arguments, "plan")?;
@@ -149,6 +151,7 @@ struct IntakeOrder {
 /// the real ones: the order is dropped and the checker reports
 /// `order_unattested`. Any other git failure is an error, not a silent
 /// absence of order.
+#[implements("FR-108-AC-2")]
 fn intake_order(repo: &str) -> Result<IntakeOrder, String> {
     let git = |arguments: &[&str]| {
         std::process::Command::new("git")
@@ -269,8 +272,9 @@ fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
 #[allow(clippy::expect_used, reason = "test assertions report failures")]
 mod tests {
     use super::command;
+    use ix_trace_rs::trace;
 
-    /// Trace: FR-061, FR-102
+    #[trace("FR-061", "FR-102")]
     #[test]
     fn tc_373_measurement_preserves_the_retained_grammar() {
         assert!(command().try_get_matches_from(["measurement"]).is_ok());

@@ -22,6 +22,7 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
+ix-trace-rs = { workspace = true }
 ix-cli-kit = { workspace = true }
 clap = { workspace = true }
 quoin-core = { workspace = true }
@@ -51,7 +52,6 @@ time = { workspace = true }
 
 [dev-dependencies]
 quire-fixtures = { workspace = true }
-ix-trace-rs = { workspace = true }
 quoin-semantic = { workspace = true }
 quoin-validators = { workspace = true }
 serde = { workspace = true }

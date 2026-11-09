@@ -65,12 +65,13 @@ pub(crate) fn current() -> Invocation {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test assertions report failures")]
 mod tests {
+    use ix_trace_rs::trace;
     use std::path::PathBuf;
 
     use super::{Invocation, current, with_current};
     use clap::{Arg, ArgAction, Command};
 
-    /// Trace: FR-016, FR-062
+    #[trace("FR-016", "FR-062")]
     #[test]
     fn tc_373_invocation_context_is_scoped_to_one_parsed_command() {
         let matches = Command::new("quoin")

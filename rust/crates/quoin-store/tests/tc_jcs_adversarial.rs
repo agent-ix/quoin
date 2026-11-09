@@ -15,13 +15,13 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use quoin_store::json::parse::parse_strict_json_str;
 use quoin_store::json::value::JsonValue;
 use quoin_store::{canonical_json, canonicalize_jcs};
 
 /// Strict parsing accepts and refuses by the authored rule.
-///
-/// Trace: FR-098-AC-9
+#[trace("FR-098-AC-9")]
 #[test]
 fn tc_380_strict_parse_accepts_and_refuses_the_authored_documents() {
     let refused: [(&str, &str); 5] = [
@@ -64,8 +64,7 @@ fn tc_380_proto_member_is_kept_as_data() {
 }
 
 /// Canonicalization makes the bytes independent of source member order.
-///
-/// Trace: FR-098-CON-1
+#[trace("FR-098-CON-1")]
 #[test]
 fn tc_380_member_order_in_the_source_does_not_change_the_canonical_bytes() {
     let forward = parse_strict_json_str(r#"{"a":1,"b":2,"c":3}"#).expect("parses");
@@ -80,8 +79,7 @@ fn tc_380_member_order_in_the_source_does_not_change_the_canonical_bytes() {
 ///
 /// Recorded as a known property, not as a defect: it follows from the frozen
 /// ECMAScript number model and is already true of retained evidence.
-///
-/// Trace: FR-098-CON-1
+#[trace("FR-098-CON-1")]
 #[test]
 fn tc_380_negative_zero_and_zero_share_one_canonical_form() {
     let negative = parse_strict_json_str(r#"{"n":-0}"#).expect("parses");

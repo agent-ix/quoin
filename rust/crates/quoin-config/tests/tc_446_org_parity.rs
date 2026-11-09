@@ -25,6 +25,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
+use ix_trace_rs::trace;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -140,9 +141,18 @@ fn org_of(resolved: &ResolvedOrg) -> Option<&str> {
     resolved.org.as_ref().map(quoin_config::OrgName::as_str)
 }
 
-/// Trace: FR-025-AC-1, FR-025-AC-2, FR-027-AC-1, FR-027-AC-2, FR-027-AC-3,
-/// FR-027-AC-4, FR-027-AC-9, FR-096
 /// Provenance: quoin#446
+#[trace(
+    "FR-025-AC-1",
+    "FR-025-AC-2",
+    "FR-027-AC-1",
+    "FR-027-AC-2",
+    "FR-027-AC-3",
+    "FR-027-AC-4",
+    "FR-027-AC-9",
+    "FR-096"
+)]
+#[trace("FR-027-AC-4", "FR-027-AC-9", "FR-096")]
 #[test]
 fn tc_446_026_the_document_path_answers_what_the_filesystem_path_answers() {
     // The flag beats everything present underneath it.
@@ -205,8 +215,8 @@ fn tc_446_026_the_document_path_answers_what_the_filesystem_path_answers() {
     assert_eq!(resolved.source, OrgSource::Config);
 }
 
-/// Trace: FR-027-AC-5, FR-096
 /// Provenance: quoin#446
+#[trace("FR-027-AC-5", "FR-096")]
 #[test]
 fn tc_446_027_a_broken_layer_degrades_identically_and_stops_neither_path() {
     let broken = tree()
@@ -242,8 +252,8 @@ fn tc_446_027_a_broken_layer_degrades_identically_and_stops_neither_path() {
     );
 }
 
-/// Trace: FR-025-AC-2, FR-096
 /// Provenance: quoin#446
+#[trace("FR-025-AC-2", "FR-096")]
 #[test]
 fn tc_446_028_a_worktree_git_file_resolves_to_the_common_config() {
     // `src/org.ts` followed `.git` as a FILE ("gitdir: …") before reading the
