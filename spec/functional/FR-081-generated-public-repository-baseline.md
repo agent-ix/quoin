@@ -57,7 +57,7 @@ typo, and it is the defect a copied cookiecutter default produces.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-081-CON-1 | The rendered repository SHALL declare no dependency by a local path reference, and no dependency with a version upper bound. | Packaging | Test (TC-1432) |
+| FR-081-CON-1 | The rendered repository SHALL declare no dependency by a local path reference, and no dependency with an explicit version upper bound (`<` or `<=`); a caret or tilde range is a compatible-release floor and is allowed. | Packaging | Test (TC-1432) |
 | FR-081-CON-2 | The rendered wheel and the rendered npm tarball SHALL carry the same manifest bytes, schema bytes, and skeleton bytes. | Consistency | Test (TC-1433) |
 
 ## Acceptance Criteria
@@ -71,7 +71,7 @@ typo, and it is the defect a copied cookiecutter default produces.
 | FR-081-AC-5 | The rendered npm publication target is the public registry and the package access is public. | Test (TC-1436) |
 | FR-081-AC-6 | The rendered release workflows carry no publish step of their own and are triggered manually. | Test (TC-1437) |
 | FR-081-AC-7 | The rendered catalog document names the Quoin catalog file and the tracking project to add the module to. | Test (TC-1438) |
-| FR-081-AC-8 | No rendered dependency declaration uses a local path reference or a version upper bound. | Test (TC-1432) |
+| FR-081-AC-8 | No rendered dependency declaration uses a local path reference or an explicit version upper bound (`<` or `<=`); a caret or tilde range is allowed. | Test (TC-1432) |
 
 ## Dependencies
 

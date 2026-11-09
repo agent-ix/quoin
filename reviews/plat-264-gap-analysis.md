@@ -63,3 +63,17 @@ scope:
 - {id: FR-083-AC-6, path: spec/functional/FR-083-template-render-self-tests.md, role: context_only, excerpt: "With the schema toolchain absent, the gate fails naming the install command and reports no skipped emission check."}
 - {id: NFR-020, path: spec/non-functional/NFR-020-declared-toolchain-floors.md, role: examined, excerpt: "When an external command the template or a rendered repository invokes is absent, the invoking command SHALL fail naming the command and how to install it."}
 ```
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-004 | low | `tc_264_051` treats only a literal `<` as a version upper bound. Poetry caret requirements in the rendered dev dependencies (`^26.1.0`, which means `<27`) pass, so whether FR-081-AC-8 forbids an implicit caret cap is decided by the test's spelling rather than by the criterion | rust/crates/quoin-semantic/tests/tc_264_template_render.rs:908-937 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | dad84cf2 adds tc_264_050..055, tagged FR-078-AC-7, FR-081-AC-8/CON-1, FR-082-AC-3, FR-082-AC-4, FR-082-AC-6/CON-2 and FR-076-CON-1; each renders and passes (35/35) |
+| FND-002 | fixed | dad84cf2 adds `/// Trace: FR-078-CON-1` to tc_264_020 and `/// Trace: FR-081-AC-4` to tc_264_040 |
+| FND-003 | fixed | dad84cf2: FR-076 states the cookiecutter 2.x floor, and `assert_renderer_floor` fails every render below it. Re-run with `/usr/bin/cookiecutter` 1.7.3: tc_264_006 fails with "cookiecutter 1.x is below the 2.x floor (FR-076)" |

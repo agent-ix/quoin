@@ -54,3 +54,11 @@ scope:
 - {id: TC-1456, path: spec/matrix.md, role: context_only, excerpt: "| TC-1456 | The rendered emit driver is byte-identical to the template's copy in every variant | Property | P1 | FR-076-CON-3 |"}
 - {id: TASK-045, path: plan/PLAN-008-semantic-module-cookiecutter/tasks/TASK-045-template-core-and-input-contract.md, role: examined, excerpt: "Keeping every rendered copy byte-identical to the template's is FR-076-CON-3; extracting it into a versioned package is separate work."}
 ```
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | dad84cf2: StR-008-VC-3 now reads "A surface the conformance contract names that a rendered repository omits is reported by the render gate, naming the variant and the surface", which FR-083-AC-1/AC-4 realise |
+| FND-002 | fixed | dad84cf2: FR-076 Inputs and Behavior now say `<org>/<repo>@<x.y.z>` (exact, no range, no leading zeros); the rationale moved to the Description; AC-7 lists refused and rendered examples |
+| FND-003 | fixed | dad84cf2: TASK-045 drops the FR-076-CON-3 note; plan.md, index.md and TASK-050 drop the drift check |

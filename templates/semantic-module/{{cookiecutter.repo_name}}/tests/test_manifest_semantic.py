@@ -75,15 +75,3 @@ def test_imports_are_a_mapping_to_exact_versions(semantic_block):
         assert isinstance(version, str) and EXACT_SEMVER.match(version), (
             f"{identity}: {version!r} is not an exact semantic version"
         )
-
-
-@pytest.mark.trace("FR-001-AC-8")
-@pytest.mark.parametrize("version", ["^1.2", ">=1 <2", "1.x", "1.2", "01.2.3", "sha256:abc"])
-def test_a_range_or_malformed_version_is_not_exact(version):
-    assert not EXACT_SEMVER.match(version)
-
-
-@pytest.mark.trace("FR-001-AC-8")
-@pytest.mark.parametrize("version", ["1.2.3", "0.0.0", "1.2.3-rc.1", "1.2.3+build.5"])
-def test_an_exact_version_is_accepted(version):
-    assert EXACT_SEMVER.match(version)

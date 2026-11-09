@@ -86,3 +86,21 @@ scope:
   role: context_only
   excerpt: "- name: spec-artifacts-iso defaultEnabled: true source: type: git-subdir url: agent-ix/spec-artifacts-iso path: spec_artifacts_iso"
 ```
+
+## New findings (disposition pass 1)
+
+| ID | Severity | Summary | Refs |
+| --- | --- | --- | --- |
+| FND-007 | low | The doc comment on `DerivedImport::version_constraint` still says "the contract accepts any valid version requirement, and a plain version is one". That contradicts the exact-semver ruling, FR-075 as now edited, and the schema. No code change is needed, but the comment now misleads | rust/crates/quoin-semantic/src/package_manifest.rs:45-46 |
+| FND-008 | low | The two new parametrised tests in the rendered suite (`test_a_range_or_malformed_version_is_not_exact`, `test_an_exact_version_is_accepted`) exercise only the test file's own `EXACT_SEMVER` constant. They can never observe the module's manifest, so they add rows tagged FR-001-AC-8 that test the oracle, not the module | templates/semantic-module/{{cookiecutter.repo_name}}/tests/test_manifest_semantic.py:80-89 |
+
+## Dispositions
+
+| FND | Outcome | Reason |
+| --- | --- | --- |
+| FND-001 | fixed | dad84cf2: rendered FR-001 statement and FR-001-AC-8 now require an exact semantic version and refuse ranges; the rendered test checks the schema's semver pattern; FR-075 prose says exact; matches the lead's exact-everywhere ruling |
+| FND-002 | fixed | dad84cf2: `IMPORT_REF` now embeds the schema's semver pattern (no leading zeros, prerelease/build allowed); `tc_264_007` refuses `@01.2.3` and renders `@1.2.3-rc.1` (35/35 pass) |
+| FND-003 | fixed | dad84cf2: the `spec/spec.md` cross-reference and the "code-generation" wording are gone, and the verb agrees with the count. The default render reads "`markdown` has no emitter today" |
+| FND-004 | fixed | dad84cf2: the conformance.yaml header no longer names the drift check, FR-083-AC-5 or the maintained repositories |
+| FND-005 | fixed | dad84cf2: renamed to `..._with_exactly_these_blocks`; the message now says which blocks the gate reads and that `contract_version` versions the file |
+| FND-006 | fixed | dad84cf2: message now reads "a job does not delegate to a shared reusable workflow" |

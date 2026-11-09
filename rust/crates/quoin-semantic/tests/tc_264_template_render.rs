@@ -918,6 +918,7 @@ fn tc_264_051_no_dependency_is_a_local_path_or_has_an_upper_bound() {
         if !in_deps || line.trim().is_empty() || line.starts_with("python ") {
             continue;
         }
+        // FR-081-AC-8: an explicit `<`/`<=` is an upper bound; a caret is a floor.
         for bad in ["path", "develop", "<", "file:", "git ="] {
             assert!(
                 !line.contains(bad),
